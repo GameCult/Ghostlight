@@ -834,7 +834,7 @@ impl WorldCompiler {
         validate_user_text("starting time", &start.when, 500)?;
         validate_user_text("player goal", &start.goal, 1_000)?;
         validate_required_relationship_actor_inputs(required_relationship_actors)?;
-        let (queries, retrieval_receipt) = self
+        let (planned_queries, retrieval_receipt) = self
             .plan_queries(
                 "custom_retrieval_plan",
                 "custom-start",
@@ -842,6 +842,7 @@ impl WorldCompiler {
                 3,
             )
             .await?;
+        let queries = retrieval_queries_for_start(planned_queries, approved_contract);
         let global_queries = global_agency_queries(&start);
         let (local_evidence, global_evidence) = tokio::join!(
             self.retrieve_all(&queries, &start.when, 8),
@@ -850,7 +851,7 @@ impl WorldCompiler {
         let receipts = local_evidence?;
         let global_receipts = global_evidence?;
         let (classified, global_catalog) = tokio::join!(
-            self.classify_evidence(&start, &receipts),
+            self.classify_evidence(&start, approved_contract, &receipts),
             self.compile_global_agency_catalog(&start, &global_receipts),
         );
         let (evidence_coverage, relevance_receipts) = classified?;
@@ -1927,6 +1928,7 @@ impl WorldCompiler {
     async fn classify_evidence(
         &self,
         start: &CustomStart,
+        approved_contract: Option<&CampaignContract>,
         receipts: &[VaultEvidenceReceipt],
     ) -> Result<(Vec<EvidenceCoverage>, Vec<ModelStageReceipt>)> {
         let mut source_briefs = BTreeMap::new();
@@ -1951,10 +1953,15 @@ impl WorldCompiler {
         // Keep the provider schema stable across campaigns for prefix-cache reuse.
         // Exact membership and cardinality belong to the local validator below.
         let schema = serde_json::to_value(schema_for!(EvidenceUsePlan))?;
+        let approved_contract_context = approved_contract
+            .map(|contract| serde_json::to_string(contract).map_err(Into::into))
+            .transpose()?
+            .unwrap_or_else(|| "null".into());
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nClassify every supplied source exactly once for this requested custom start. direct_seed means the source directly supports this specific local place, era, role, goal, pressure, or a causal actor/institution that should actually be present. setting_background means the source supports general setting history, mechanics, geography, or institution identity, but its story-specific cast, incident, clocks, goals, and postures must not be imported into the new branch. excluded means it is merely nearby in search space. A shared place name or era alone does not make another story episode current. Keep each rationale to one short sentence.\nSTART:\n{}\nSOURCES:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nClassify every supplied source exactly once for this requested custom start. When APPROVED CONTRACT is present, its premise and canon_horizon are retrieval authority: a source that directly witnesses a named canon anchor belongs in direct_seed even when the requested opening geometry is branch-local. direct_seed means the source directly supports this specific local place, era, role, goal, pressure, canon anchor, or a causal actor/institution that should actually be present. setting_background means the source supports general setting history, mechanics, geography, or institution identity, but its story-specific cast, incident, clocks, goals, and postures must not be imported into the new branch. excluded means it is merely nearby in search space. A shared place name or era alone does not make another story episode current. Keep each rationale to one short sentence.\nSTART:\n{}\nAPPROVED CONTRACT:\n{}\nSOURCES:\n{}",
             serde_json::to_string(&schema)?,
             serde_json::to_string(start)?,
+            approved_contract_context,
             serde_json::to_string(&source_briefs.values().collect::<Vec<_>>())?,
         );
         let source_receipt_ids = receipt_ids(receipts);
@@ -2714,6 +2721,25 @@ fn validate_fission_request(request: &GestaltFissionRequest) -> Result<BTreeSet<
         ));
     }
     Ok(requested)
+}
+
+fn retrieval_queries_for_start(
+    mut planned_queries: Vec<String>,
+    approved_contract: Option<&CampaignContract>,
+) -> Vec<String> {
+    let Some(canon_horizon) = approved_contract
+        .map(|contract| contract.canon_horizon.trim())
+        .filter(|value| !value.is_empty())
+    else {
+        return planned_queries;
+    };
+    if !planned_queries
+        .iter()
+        .any(|query| query.trim() == canon_horizon)
+    {
+        planned_queries.insert(0, canon_horizon.to_owned());
+    }
+    planned_queries
 }
 
 fn global_agency_queries(start: &CustomStart) -> Vec<String> {
@@ -4659,6 +4685,28 @@ mod tests {
         request.reason = "x".repeat(501);
         assert!(validate_fission_request(&request).is_err());
     }
+
+    #[test]
+    fn approved_canon_horizon_is_an_owned_retrieval_query() {
+        let mut contract = CampaignContract::default();
+        contract.canon_horizon =
+            "Branch from The Road That Returned's unresolved canonical history.".into();
+        let planned = vec![
+            "Raincross storm route".into(),
+            "Harrow Station ledger".into(),
+            "Selza'a warning marks".into(),
+        ];
+
+        let queries = retrieval_queries_for_start(planned.clone(), Some(&contract));
+        assert_eq!(queries[0], contract.canon_horizon);
+        assert_eq!(&queries[1..], planned.as_slice());
+
+        let deduplicated =
+            retrieval_queries_for_start(vec![contract.canon_horizon.clone()], Some(&contract));
+        assert_eq!(deduplicated, vec![contract.canon_horizon.clone()]);
+        assert_eq!(retrieval_queries_for_start(planned.clone(), None), planned);
+    }
+
     use crate::{
         domain::SourceWitness,
         model::ModelPort,
@@ -4701,6 +4749,7 @@ mod tests {
         shared_stage_was_private_free: AtomicBool,
         shared_stage_received_operational_playability: AtomicBool,
         shared_stage_received_approved_contract: AtomicBool,
+        evidence_stage_received_approved_contract: AtomicBool,
         private_stage_was_minimal: AtomicBool,
     }
 
@@ -4771,6 +4820,17 @@ mod tests {
     impl ModelPort for PrivateBoundaryCompilerModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             match request.stage.as_str() {
+                "evidence_relevance" => {
+                    self.evidence_stage_received_approved_contract.store(
+                        request.lived_stream.contains("APPROVED CONTRACT")
+                            && request
+                                .lived_stream
+                                .contains("A convoy has reached a strained logistics yard")
+                            && request.lived_stream.contains("canon_horizon")
+                            && request.lived_stream.contains("fixture"),
+                        Ordering::SeqCst,
+                    );
+                }
                 "world_compile" => {
                     self.shared_stage_was_private_free.store(
                         !request.lived_stream.contains("convoy quartermaster")
@@ -5341,6 +5401,7 @@ mod tests {
             shared_stage_was_private_free: AtomicBool::new(false),
             shared_stage_received_operational_playability: AtomicBool::new(false),
             shared_stage_received_approved_contract: AtomicBool::new(false),
+            evidence_stage_received_approved_contract: AtomicBool::new(false),
             private_stage_was_minimal: AtomicBool::new(false),
         });
         let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
@@ -5395,6 +5456,11 @@ mod tests {
         assert!(
             model
                 .shared_stage_received_approved_contract
+                .load(Ordering::SeqCst)
+        );
+        assert!(
+            model
+                .evidence_stage_received_approved_contract
                 .load(Ordering::SeqCst)
         );
         assert!(model.private_stage_was_minimal.load(Ordering::SeqCst));
