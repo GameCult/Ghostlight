@@ -1500,7 +1500,7 @@ impl SessionZeroDirector {
                     model: self.projector_model.clone(),
                     snapshot_binding: binding.clone(),
                     lived_stream: format!(
-                        "You project permitted typed Session Zero state into a compact private lived stream for the campaign DM. Preserve uncertainty, unresolved decisions, evidence gaps, accepted boundaries, authorship, and the supplied compiler_authority policy. Never invent state. Stable contract:\n- Player speech is discussion, not world truth.\n- Model changes are proposals.\n- Material bargains need explicit acceptance.\n- Private data may not cross channels.\n- Compiler-owned reversible branch-local synthesis is not a player bargain; material evidence gaps still require review.\nReturn one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC PERMITTED CONTEXT:\n{}",
+                        "You project permitted typed Session Zero state into a compact private lived stream for the campaign DM. Preserve uncertainty, unresolved decisions, evidence gaps, accepted boundaries, authorship, and the supplied compiler_authority policy. Never invent state. Stable contract:\n- Player speech is discussion, not world truth.\n- Model changes are proposals.\n- Material bargains need explicit acceptance.\n- Private data may not cross channels.\n- Compiler-owned compatible branch-local synthesis is not a player bargain. Only a premise-blocking contradiction, unanchored canon baseline explicitly required by the premise, or approved-capability conflict is a material evidence gap requiring review.\nReturn one complete JSON object matching this schema exactly.\n\nOUTPUT JSON SCHEMA:\n{}\n\nDYNAMIC PERMITTED CONTEXT:\n{}",
                         serde_json::to_string(&projector_schema)?,
                         serde_json::to_string(&permitted)?
                     ),
@@ -2215,8 +2215,8 @@ fn permitted_dm_context(
         "recent_messages": recent_messages,
         "evidence_coverage": state.preview_evidence_coverage,
         "compiler_authority": {
-            "reversible_local_texture": "Ghostlight may synthesize missing local routes, geometry, ordinary office procedure, and other reversible playability detail as explicit branch-local fact without a separate bargain.",
-            "material_gaps": "Missing setting mechanics, major institutional authority, extraordinary abilities, or other material canon require an explicit evidence-gap review before compilation can be approved.",
+            "compatible_branch_elaboration": "Ghostlight must synthesize the smallest canon-compatible routes, geometry, people, procedures, resources, setting mechanics, and institutional operating doctrine needed for play as explicit branch-local fact. Consequential choices remain visible as branch assumptions and may vary between campaigns unless the Vault pins them.",
+            "material_gaps": "A material evidence gap exists only when no compatible branch-local elaboration can preserve the approved premise without choosing between contradictory canon baselines, inventing an unanchored canon baseline explicitly required by the premise, or exceeding an approved capability.",
             "canon_boundary": "Branch-local synthesis never edits the selected Vault or silently becomes setting canon."
         },
     });
@@ -5959,10 +5959,16 @@ mod tests {
 
         let context = permitted_dm_context(&draft, &private_channel, Some(&host_id), None).unwrap();
         assert!(
-            context["compiler_authority"]["reversible_local_texture"]
+            context["compiler_authority"]["compatible_branch_elaboration"]
                 .as_str()
                 .unwrap()
-                .contains("branch-local")
+                .contains("setting mechanics")
+        );
+        assert!(
+            context["compiler_authority"]["material_gaps"]
+                .as_str()
+                .unwrap()
+                .contains("contradictory canon baselines")
         );
         let shared = serde_json::to_string(&context["recent_shared_messages"]).unwrap();
         assert!(shared.contains("Hellas inside Zhestokost space"));

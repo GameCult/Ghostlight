@@ -588,9 +588,14 @@ Begin Session Zero
   -> CreateCampaign commit
 ```
 
-Reversible local texture may enter as provisional branch fact. Material gaps in
-geography, mechanics, institutions, or extraordinary capability require
-approval. Canon candidates are review/export records and cannot edit the Vault.
+The compiler synthesizes the smallest canon-compatible routes, geometry, people,
+procedures, resources, setting mechanics, and institutional operating doctrine
+needed for play as branch-local fact. Consequential choices remain visible as
+branch assumptions and may vary between campaigns unless the Vault pins them.
+A material gap is reserved for contradictory canon baselines, an unanchored canon
+baseline explicitly required by the approved premise, or conflict with an
+approved capability. Canon candidates are review/export records and cannot edit
+the Vault.
 The approval preview exposes the source-use coverage. Only direct evidence may
 shape the local seed. Background evidence remains receipted as setting coverage
 for the tester and future non-causal lore projections, but its source prose does
