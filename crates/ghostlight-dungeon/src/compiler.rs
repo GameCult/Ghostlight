@@ -834,15 +834,19 @@ impl WorldCompiler {
         validate_user_text("starting time", &start.when, 500)?;
         validate_user_text("player goal", &start.goal, 1_000)?;
         validate_required_relationship_actor_inputs(required_relationship_actors)?;
+        let retrieval_subject = serde_json::to_string(&serde_json::json!({
+            "start": &start,
+            "approved_contract": approved_contract,
+        }))?;
         let (planned_queries, retrieval_receipt) = self
             .plan_queries(
                 "custom_retrieval_plan",
                 "custom-start",
-                &serde_json::to_string(&start)?,
+                &retrieval_subject,
                 3,
             )
             .await?;
-        let queries = retrieval_queries_for_start(planned_queries, approved_contract);
+        let queries = planned_queries;
         let global_queries = global_agency_queries(&start);
         let (local_evidence, global_evidence) = tokio::join!(
             self.retrieve_all(&queries, &start.when, 8),
@@ -1831,7 +1835,7 @@ impl WorldCompiler {
     ) -> Result<(Vec<String>, ModelStageReceipt)> {
         let schema = serde_json::to_value(schema_for!(RetrievalQueryPlan))?;
         let prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nPlan exactly {count} distinct source-search queries for the supplied subject. Each query must be a concise natural-language search string of 1 to 240 Unicode characters. Preserve proper nouns, era, place, institutions, mechanics, geography, and pressure when relevant. Do not answer the subject. SUBJECT:\n{subject}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nPlan exactly {count} distinct source-search queries for the supplied subject. Each query must be a concise natural-language search string of 1 to 240 Unicode characters. Preserve proper nouns, era, place, institutions, mechanics, geography, and pressure when relevant. When the subject contains an approved_contract, at least one query must directly target its named canon_horizon; synthesize a bounded search query instead of copying an overlong paragraph verbatim. Do not answer the subject. SUBJECT:\n{subject}",
             serde_json::to_string(&schema)?
         );
         let output = run_validated_stage(
@@ -2721,25 +2725,6 @@ fn validate_fission_request(request: &GestaltFissionRequest) -> Result<BTreeSet<
         ));
     }
     Ok(requested)
-}
-
-fn retrieval_queries_for_start(
-    mut planned_queries: Vec<String>,
-    approved_contract: Option<&CampaignContract>,
-) -> Vec<String> {
-    let Some(canon_horizon) = approved_contract
-        .map(|contract| contract.canon_horizon.trim())
-        .filter(|value| !value.is_empty())
-    else {
-        return planned_queries;
-    };
-    if !planned_queries
-        .iter()
-        .any(|query| query.trim() == canon_horizon)
-    {
-        planned_queries.insert(0, canon_horizon.to_owned());
-    }
-    planned_queries
 }
 
 fn global_agency_queries(start: &CustomStart) -> Vec<String> {
@@ -4686,27 +4671,6 @@ mod tests {
         assert!(validate_fission_request(&request).is_err());
     }
 
-    #[test]
-    fn approved_canon_horizon_is_an_owned_retrieval_query() {
-        let mut contract = CampaignContract::default();
-        contract.canon_horizon =
-            "Branch from The Road That Returned's unresolved canonical history.".into();
-        let planned = vec![
-            "Raincross storm route".into(),
-            "Harrow Station ledger".into(),
-            "Selza'a warning marks".into(),
-        ];
-
-        let queries = retrieval_queries_for_start(planned.clone(), Some(&contract));
-        assert_eq!(queries[0], contract.canon_horizon);
-        assert_eq!(&queries[1..], planned.as_slice());
-
-        let deduplicated =
-            retrieval_queries_for_start(vec![contract.canon_horizon.clone()], Some(&contract));
-        assert_eq!(deduplicated, vec![contract.canon_horizon.clone()]);
-        assert_eq!(retrieval_queries_for_start(planned.clone(), None), planned);
-    }
-
     use crate::{
         domain::SourceWitness,
         model::ModelPort,
@@ -4746,6 +4710,7 @@ mod tests {
     }
 
     struct PrivateBoundaryCompilerModel {
+        retrieval_stage_received_approved_contract: AtomicBool,
         shared_stage_was_private_free: AtomicBool,
         shared_stage_received_operational_playability: AtomicBool,
         shared_stage_received_approved_contract: AtomicBool,
@@ -4820,6 +4785,20 @@ mod tests {
     impl ModelPort for PrivateBoundaryCompilerModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             match request.stage.as_str() {
+                "custom_retrieval_plan" => {
+                    self.retrieval_stage_received_approved_contract.store(
+                        request.lived_stream.contains("approved_contract")
+                            && request
+                                .lived_stream
+                                .contains("A convoy has reached a strained logistics yard")
+                            && request.lived_stream.contains("canon_horizon")
+                            && request.lived_stream.contains("fixture")
+                            && request.lived_stream.contains(
+                                "synthesize a bounded search query instead of copying an overlong paragraph verbatim",
+                            ),
+                        Ordering::SeqCst,
+                    );
+                }
                 "evidence_relevance" => {
                     self.evidence_stage_received_approved_contract.store(
                         request.lived_stream.contains("APPROVED CONTRACT")
@@ -5398,6 +5377,7 @@ mod tests {
     #[tokio::test]
     async fn approved_private_relationship_identity_never_enters_shared_world_compilation() {
         let model = Arc::new(PrivateBoundaryCompilerModel {
+            retrieval_stage_received_approved_contract: AtomicBool::new(false),
             shared_stage_was_private_free: AtomicBool::new(false),
             shared_stage_received_operational_playability: AtomicBool::new(false),
             shared_stage_received_approved_contract: AtomicBool::new(false),
@@ -5447,6 +5427,11 @@ mod tests {
 
         let (preview, _) = compiler.compile_approved_brief(&brief).await.unwrap();
 
+        assert!(
+            model
+                .retrieval_stage_received_approved_contract
+                .load(Ordering::SeqCst)
+        );
         assert!(model.shared_stage_was_private_free.load(Ordering::SeqCst));
         assert!(
             model
