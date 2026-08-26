@@ -163,10 +163,7 @@ pub async fn propose_resolution_wave_with_policy(
                 }),
         );
     }
-    let cell_model_receipt_hashes = stages
-        .iter()
-        .map(|stage| stage.receipt.storage_key().to_owned())
-        .collect::<Vec<_>>();
+    let cell_model_receipt_hashes = distinct_model_receipt_hashes(&stages);
     let mut wave = ResolutionWaveCommit {
         schema: "ghostlight.resolution_wave_commit.v1".into(),
         world_revision: campaign.revision,
@@ -215,10 +212,7 @@ pub async fn propose_resolution_wave_with_policy(
     }
     stages.extend(outcome_stages);
     wave.activity_outcomes = activity_outcomes;
-    wave.model_receipt_hashes = stages
-        .iter()
-        .map(|stage| stage.receipt.storage_key().to_owned())
-        .collect();
+    wave.model_receipt_hashes = distinct_model_receipt_hashes(&stages);
     validate_and_resolve_wave(campaign, &wave)?;
     let aggregate_receipt_hash = format!(
         "sha256:{:x}",
@@ -230,6 +224,17 @@ pub async fn propose_resolution_wave_with_policy(
         private_cell_traces,
         aggregate_receipt_hash,
     })
+}
+
+fn distinct_model_receipt_hashes(stages: &[ModelStageOutput]) -> Vec<String> {
+    let mut seen = BTreeSet::new();
+    stages
+        .iter()
+        .filter_map(|stage| {
+            let hash = stage.receipt.storage_key().to_owned();
+            seen.insert(hash.clone()).then_some(hash)
+        })
+        .collect()
 }
 
 async fn project_resolution_demand(
@@ -1588,6 +1593,21 @@ mod tests {
         assert_eq!(output.wave.cover.cells.len(), 2);
         assert_eq!(output.wave.appraisals.len(), 2);
         assert_eq!(output.stages.len(), 7);
+        assert_eq!(
+            output.wave.model_receipt_hashes.len(),
+            output
+                .wave
+                .model_receipt_hashes
+                .iter()
+                .collect::<BTreeSet<_>>()
+                .len()
+        );
+        let mut repeated_stage = output.stages.clone();
+        repeated_stage.push(output.stages[0].clone());
+        assert_eq!(
+            distinct_model_receipt_hashes(&repeated_stage),
+            output.wave.model_receipt_hashes
+        );
         assert!(model.maximum.load(Ordering::SeqCst) <= 2);
         validate_and_resolve_wave(&campaign, &output.wave).unwrap();
     }
