@@ -1324,7 +1324,7 @@ impl CellProjectionEngine {
         let permission_guidance = format!(
             concat!(
                 "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first. ",
-                "Each action carries an effects object whose exact subject-specific lane keys are supplied by the schema. Scalar lanes contain one typed effect. An activities lane is one object keyed by up to three distinct chosen activity kinds; each kind occurs at most once and its value contains the union of that means' exact targets and locations. Use null for any schema-required optional lane or activity key the subject does not use. A lane or activity key absent from the schema is structurally unavailable: do not emit it and do not invent a destination. Pressure and migration lanes each have one slot. When one chosen act includes travel followed by local attempts at the supplied destination, preserve every means in one action by filling movement and the keyed activities object. Runtime lowers movement before local activity; the activity keys are an atomic set rather than a second timeline. Never split one subject's single choice into multiple actions. ",
+                "Each action carries an effects object whose exact subject-specific lane keys are supplied by the schema. Scalar lanes contain one typed effect. An activities lane is one object keyed by up to three distinct chosen activity kinds; each kind occurs at most once and its value contains the union of that means' exact targets and locations. Top-level lane names are stable across subjects: use null for a null-only unavailable lane and for any schema-required optional lane or activity key the subject does not use. A non-null lane or activity key absent from its exact schema is structurally unavailable: do not emit it and do not invent a destination. Pressure and migration lanes each have one slot. When one chosen act includes travel followed by local attempts at the supplied destination, preserve every means in one action by filling movement and the keyed activities object. Runtime lowers movement before local activity; the activity keys are an atomic set rather than a second timeline. Never split one subject's single choice into multiple actions. ",
                 "Use gestalt_activities or member_activities for concrete attempts that do not themselves change pressure. A cohesive Gestalt coordinating its own unnamed internal members uses coordinate with an empty target_subject_ids list; do not invent its containing population, a distant population, or another canonical subject as the target of internal coordination. Cite the smallest exact set of state_references that materially supports each attempt; the permission list is an upper bound, not a checklist to echo. ",
                 "target_subject_ids and location_ids must come from that exact subject's permissions. activity_targets is the exact canonical target map: each key is the authoritative ID and each value supplies the target's name and current canonical locations. Use an ID only when the Persona addresses that named target, never merely because the ID is permitted. If an addressed person or role has no matching activity_targets entry, it is not a canonical target in this slice. reachable_destinations maps exact actor-movement destination IDs to names. migration_destinations maps exact population destination IDs to names and locations. When the Persona chooses to go to a canonical target, compare the target's current locations with the acting subject's current location and exact reachable destinations; never guess a destination from an opaque ID. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
                 "Write intended_effect as the attempted act, never its hoped-for outcome or target response. Merely waiting, watching, staying, holding position, or remaining ready is attributed inaction, not prepare. prepare requires concrete work on a bounded arrangement, repair, resource, or capability-backed readiness change. Institution posture must be a specific materially new commitment or withholding of at most 240 characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references. public_channels means durable publication of this attempt through exact allowed_persistent_publication_channels; it is not a perception method or ordinary local speech. Use [] when that exact list is empty. ",
@@ -1783,11 +1783,11 @@ fn strict_cell_effect_candidate_values(
 ) -> Result<serde_json::Map<String, serde_json::Value>> {
     let mut strict = serde_json::Map::new();
     for (lane, lane_schema) in effect_properties {
-        if lane.ends_with("_activities") {
-            let activity_properties = lane_schema
+        if lane.ends_with("_activities")
+            && let Some(activity_properties) = lane_schema
                 .get("properties")
                 .and_then(serde_json::Value::as_object)
-                .ok_or_else(|| anyhow!("cell correction activity lane has no exact keys"))?;
+        {
             strict.insert(
                 lane.clone(),
                 serde_json::Value::Object(
@@ -2835,7 +2835,7 @@ fn exact_constituent_effect_bundle_schema(subject: &CellConstituentSlice) -> ser
                 .map(|destination| destination.location_id.clone()),
         )
         .collect::<BTreeSet<_>>();
-    let mut properties = serde_json::Map::new();
+    let mut properties = null_cell_effect_lane_properties();
     match subject.subject_kind {
         crate::domain::AgencySubjectKind::Institution => {
             properties.insert(
@@ -2927,10 +2927,11 @@ fn exact_member_effect_bundle_schema(member: &CellMemberSlice) -> serde_json::Va
                 .map(|destination| destination.location_id.clone()),
         )
         .collect::<BTreeSet<_>>();
-    let mut properties = serde_json::Map::from_iter([(
+    let mut properties = null_cell_effect_lane_properties();
+    properties.insert(
         "member_activities".into(),
         exact_activity_effects_schema(&activity_target_ids, &activity_location_ids, 1, false),
-    )]);
+    );
     if !member.migration_destinations.is_empty() {
         properties.insert(
             "member_migration".into(),
@@ -2949,6 +2950,22 @@ fn exact_member_effect_bundle_schema(member: &CellMemberSlice) -> serde_json::Va
 
 fn nullable_effect_schema(effect: serde_json::Value) -> serde_json::Value {
     serde_json::json!({"anyOf":[effect,{"type":"null"}]})
+}
+
+fn null_cell_effect_lane_properties() -> serde_json::Map<String, serde_json::Value> {
+    [
+        "institution",
+        "gestalt_pressure",
+        "gestalt_activities",
+        "gestalt_migration",
+        "actor_move",
+        "actor_activities",
+        "member_activities",
+        "member_migration",
+    ]
+    .into_iter()
+    .map(|lane| (lane.to_owned(), serde_json::json!({"type":"null"})))
+    .collect()
 }
 
 fn exact_migration_effect_schema<'a>(
@@ -3758,7 +3775,7 @@ mod tests {
     }
 
     #[test]
-    fn cell_schema_removes_effect_lanes_the_exact_actor_cannot_use() {
+    fn cell_schema_keeps_unavailable_effect_lanes_null_only() {
         let mut slice = fixture_cell_slice();
         let actor_id = "relationship-anchor:reed".to_owned();
         {
@@ -3871,6 +3888,11 @@ mod tests {
             vec!["actor_activities"]
         );
         let strict_shaped_action = action(serde_json::json!({
+            "institution":null,
+            "gestalt_pressure":null,
+            "gestalt_activities":null,
+            "gestalt_migration":null,
+            "actor_move":null,
             "actor_activities":{
                 "prepare":{
                     "target_subject_ids":[],
@@ -3882,7 +3904,9 @@ mod tests {
                 "obstruct":null,
                 "trade":null,
                 "communicate":null
-            }
+            },
+            "member_activities":null,
+            "member_migration":null
         }));
         assert!(
             validator.is_valid(&strict_shaped_action),
@@ -3894,9 +3918,18 @@ mod tests {
             .pointer("/properties/actions/items/anyOf/0/properties/effects/properties")
             .and_then(serde_json::Value::as_object)
             .unwrap();
+        assert_eq!(strict_effect_properties.len(), 8);
         assert_eq!(
-            strict_effect_properties.keys().collect::<Vec<_>>(),
-            vec!["actor_activities"]
+            strict_effect_properties
+                .get("actor_move")
+                .and_then(|schema| schema.get("type")),
+            Some(&serde_json::json!("null"))
+        );
+        assert_eq!(
+            strict_effect_properties
+                .get("member_migration")
+                .and_then(|schema| schema.get("type")),
+            Some(&serde_json::json!("null"))
         );
         assert!(
             jsonschema::validator_for(&strict_schema)
