@@ -1954,7 +1954,7 @@ impl WorldCompiler {
         // Exact membership and cardinality belong to the local validator below.
         let schema = serde_json::to_value(schema_for!(EvidenceUsePlan))?;
         let approved_contract_context = approved_contract
-            .map(|contract| serde_json::to_string(contract).map_err(Into::into))
+            .map(serde_json::to_string)
             .transpose()?
             .unwrap_or_else(|| "null".into());
         let base_prompt = format!(
