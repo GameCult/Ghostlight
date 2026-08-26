@@ -508,7 +508,7 @@ pub fn validate_plan_activity_outcomes(
             (
                 activity.action_digest.clone(),
                 CellActionProposal {
-                    subject_id: format!("member:{}", activity.member_id),
+                    subject_id: crate::domain::gestalt_member_subject_id(&activity.member_id),
                     intent: "committed strategic activity".into(),
                     intended_effect: "resolve the committed strategic activity".into(),
                     priority: 0,
@@ -820,14 +820,20 @@ fn resolved_outcome_summary(
         }
         StrategicOutcomeEffect::MemberMemory { member_id, memory } => format!(
             "{} retains a new memory: {memory}.",
-            subject_name(campaign, &format!("member:{member_id}"))?
+            subject_name(
+                campaign,
+                &crate::domain::gestalt_member_subject_id(member_id)
+            )?
         ),
         StrategicOutcomeEffect::MemberObligation {
             member_id,
             obligation,
         } => format!(
             "{} accepts an obligation: {obligation}.",
-            subject_name(campaign, &format!("member:{member_id}"))?
+            subject_name(
+                campaign,
+                &crate::domain::gestalt_member_subject_id(member_id)
+            )?
         ),
         StrategicOutcomeEffect::MemberRelationship {
             member_id,
@@ -835,7 +841,10 @@ fn resolved_outcome_summary(
             description,
         } => format!(
             "{}'s relationship with {} becomes: {description}.",
-            subject_name(campaign, &format!("member:{member_id}"))?,
+            subject_name(
+                campaign,
+                &crate::domain::gestalt_member_subject_id(member_id)
+            )?,
             subject_name(campaign, other_subject_id)?
         ),
         StrategicOutcomeEffect::KnowledgeLearned {

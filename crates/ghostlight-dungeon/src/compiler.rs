@@ -183,6 +183,9 @@ struct CompiledLocation {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct CompiledGestaltMemberDelta {
     schema: String,
+    #[schemars(
+        description = "Local stable member ID without the world-subject `member:` namespace prefix."
+    )]
     id: String,
     gestalt_id: String,
     version: u64,
@@ -2505,7 +2508,7 @@ fn validate_shared_seed_excludes_locally_owned_subjects(
             seed.gestalt_members
                 .iter()
                 .filter(|member| locally_owned_names.contains(&normalized_identity(&member.name)))
-                .map(|member| format!("member:{}", member.id)),
+                .map(|member| crate::domain::gestalt_member_subject_id(&member.id)),
         )
         .collect::<Vec<_>>();
     if collisions.is_empty() {
@@ -2723,7 +2726,7 @@ fn canonical_relationship_subject_ids(campaign: &Campaign) -> BTreeSet<String> {
         campaign
             .gestalt_members
             .keys()
-            .map(|member_id| format!("member:{member_id}")),
+            .map(|member_id| crate::domain::gestalt_member_subject_id(member_id)),
     );
     targets
 }
@@ -3845,7 +3848,13 @@ fn ensure_distinct_fields<const N: usize>(
     }
 }
 
-fn seed_to_campaign(seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Result<Campaign> {
+fn seed_to_campaign(mut seed: CompiledSeed, receipts: &[VaultEvidenceReceipt]) -> Result<Campaign> {
+    for member in &mut seed.gestalt_members {
+        member.id = crate::domain::canonical_gestalt_member_local_id(&member.id);
+        if member.id.is_empty() {
+            return Err(anyhow!("compiled gestalt member ID is empty"));
+        }
+    }
     require_unique_ids(
         "location",
         seed.locations.iter().map(|item| item.id.as_str()),
@@ -4340,7 +4349,16 @@ pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
             ));
         }
     }
-    for member in c.gestalt_members.values() {
+    for (member_key, member) in &c.gestalt_members {
+        if member_key != &member.id
+            || member.id.is_empty()
+            || crate::domain::canonical_gestalt_member_local_id(&member.id) != member.id
+        {
+            return Err(anyhow!(
+                "gestalt member {} must use one canonical local ID without a member: prefix",
+                member.id
+            ));
+        }
         if !c.gestalts.contains_key(&member.gestalt_id) {
             return Err(anyhow!(
                 "gestalt member {} references unknown gestalt {}",
@@ -5190,7 +5208,7 @@ mod tests {
                         "locations":[{"id":"yard","name":"Yard","container_id":null,"routes":[{"route_id":"out","destination_id":destination,"distance":"near","travel_minutes":5}],"persistent_features":["same yard"]}],
                         "actors":[],
                         "gestalts":[{"schema":"ghostlight.gestalt_persona_state.v1","id":"yard-workers","name":"Yard workers","version":0,"home_location_id":"yard","shared_capabilities":["maintain machinery"],"shared_knowledge":["yard routines"],"resources":["tool shed"],"goals":["finish the shift"],"pressures":["the gate is failing"]}],
-                        "gestalt_members":[{"schema":"ghostlight.gestalt_member_delta.v1","id":"john","gestalt_id":"yard-workers","version":0,"name":"John the smith","capability_additions":["forge hinges"],"capability_removals":[],"knowledge_additions":[],"knowledge_removals":[],"equipment":["hammer"],"conditions":[],"obligations":[],"relationships":[],"goals":[],"memories":[],"last_location_id":"yard","materialized_actor_id":null}],
+                        "gestalt_members":[{"schema":"ghostlight.gestalt_member_delta.v1","id":"member:john","gestalt_id":"yard-workers","version":0,"name":"John the smith","capability_additions":["forge hinges"],"capability_removals":[],"knowledge_additions":[],"knowledge_removals":[],"equipment":["hammer"],"conditions":[],"obligations":[],"relationships":[],"goals":[],"memories":[],"last_location_id":"yard","materialized_actor_id":null}],
                         "institutions":[],"clocks":[{"id":"shift","label":"Shift ends","progress":0,"threshold":4,"consequence":"night"}],
                         "facts":[
                             {"id":"f","statement":"A witnessed fact","scope":"canon_baseline","evidence_receipt_ids":["fixture"]},

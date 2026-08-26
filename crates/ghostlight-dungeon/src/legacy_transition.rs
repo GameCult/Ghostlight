@@ -213,7 +213,7 @@ pub fn lower_fission(
             .get(&member.id)
             .unwrap_or(&preview.residual_child_id);
         mutations.push(WorldMutation::ChangePopulationMembership {
-            actor: actor_subject(&format!("member:{}", member.id)),
+            actor: actor_subject(&crate::domain::gestalt_member_subject_id(&member.id)),
             operation: PopulationMembershipOperation::Transfer,
             source_population: Some(parent.clone()),
             destination_population: Some(population_subject(destination)),
@@ -657,7 +657,7 @@ fn project_accepted_fission(
             .member_child_assignments
             .get(&member_id)
             .unwrap_or(&preview.residual_child_id);
-        let actor = actor_subject(&format!("member:{member_id}"));
+        let actor = actor_subject(&crate::domain::gestalt_member_subject_id(&member_id));
         let active_destinations = next
             .memberships
             .iter()
@@ -1043,7 +1043,7 @@ pub fn lower_strategic_wave(
             .last_location_id
             .as_deref()
             .unwrap_or(&source.home_location_id);
-        let subject = actor_subject(&format!("member:{}", action.member_id));
+        let subject = actor_subject(&crate::domain::gestalt_member_subject_id(&action.member_id));
         if origin != action.destination_location_id {
             mutations.push(WorldMutation::Relocate {
                 subject: subject.clone(),
@@ -1196,7 +1196,7 @@ fn push_strategic_outcome_mutations(
         StrategicOutcomeEffect::MemberMemory { member_id, memory } => {
             ensure_member(campaign, member_id)?;
             mutations.push(WorldMutation::ChangeMemory {
-                subject: actor_subject(&format!("member:{member_id}")),
+                subject: actor_subject(&crate::domain::gestalt_member_subject_id(member_id)),
                 operation: MemoryMutationOperation::Record,
                 memory_id: format!(
                     "memory:strategic:{}:{}",
@@ -1213,7 +1213,7 @@ fn push_strategic_outcome_mutations(
         } => {
             ensure_member(campaign, member_id)?;
             mutations.push(WorldMutation::ChangeCommitment {
-                subject: actor_subject(&format!("member:{member_id}")),
+                subject: actor_subject(&crate::domain::gestalt_member_subject_id(member_id)),
                 operation: CommitmentMutationOperation::Create,
                 kind: CommitmentKind::Obligation,
                 commitment_id: format!(
@@ -1233,7 +1233,7 @@ fn push_strategic_outcome_mutations(
             let member = ensure_member(campaign, member_id)?;
             let target = resolve_subject(campaign, other_subject_id)
                 .ok_or_else(|| anyhow!("strategic member relationship target is unknown"))?;
-            let source = actor_subject(&format!("member:{member_id}"));
+            let source = actor_subject(&crate::domain::gestalt_member_subject_id(member_id));
             mutations.push(WorldMutation::ChangeRelationship {
                 source: source.clone(),
                 target,
@@ -1781,7 +1781,7 @@ fn component_snapshot(campaign: &Campaign) -> Result<ComponentWorldState> {
         }
     }
     for member in campaign.gestalt_members.values() {
-        let subject = actor_subject(&format!("member:{}", member.id));
+        let subject = actor_subject(&crate::domain::gestalt_member_subject_id(&member.id));
         let gestalt = campaign
             .gestalts
             .get(&member.gestalt_id)
@@ -1811,12 +1811,13 @@ fn component_snapshot(campaign: &Campaign) -> Result<ComponentWorldState> {
                     .unwrap_or(&gestalt.home_location_id),
             ),
         );
+        let identity_id = format!("identity:canonical:{}", subject.id);
         state
             .identities
-            .entry(format!("identity:canonical:member:{}", member.id))
+            .entry(identity_id.clone())
             .or_insert_with(|| IdentityHandleState {
                 schema: "ghostlight.identity_handle.v1".into(),
-                id: format!("identity:canonical:member:{}", member.id),
+                id: identity_id,
                 subject: subject.clone(),
                 value: member.name.clone(),
                 active: true,
@@ -2833,7 +2834,7 @@ fn legacy_resources(campaign: &Campaign) -> BTreeSet<(SubjectRef, String)> {
         }
     }
     for member in campaign.gestalt_members.values() {
-        let owner = actor_subject(&format!("member:{}", member.id));
+        let owner = actor_subject(&crate::domain::gestalt_member_subject_id(&member.id));
         for resource in &member.equipment {
             resources.insert((owner.clone(), resource.clone()));
         }

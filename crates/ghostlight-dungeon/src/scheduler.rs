@@ -699,7 +699,7 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
                     member.goals.clone()
                 };
                 let mut permitted_state_references = BTreeSet::from([
-                    format!("member:{}", member.id),
+                    crate::domain::gestalt_member_subject_id(&member.id),
                     format!("gestalt:{}", member.gestalt_id),
                     format!("location:{origin}"),
                 ]);
@@ -723,7 +723,7 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
                 let migration_destinations = migration_destination_slices(campaign, &destinations)?;
                 let activity_targets = activity_target_slices(campaign, &activity_target_ids)?;
                 Ok(CellMemberSlice {
-                    subject_id: format!("member:{}", member.id),
+                    subject_id: crate::domain::gestalt_member_subject_id(&member.id),
                     member_id: member.id.clone(),
                     name: member.name.clone(),
                     source_gestalt_id: member.gestalt_id.clone(),

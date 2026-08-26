@@ -778,7 +778,7 @@ fn member_outcome_kind(
 ) -> Option<&'static str> {
     use ghostlight_dungeon::domain::StrategicOutcomeEffect;
 
-    let member_subject_id = format!("member:{member_id}");
+    let member_subject_id = ghostlight_dungeon::domain::gestalt_member_subject_id(member_id);
     match effect {
         StrategicOutcomeEffect::MemberMemory {
             member_id: owner, ..

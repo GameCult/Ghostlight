@@ -49,7 +49,7 @@ impl GestaltPresencePlanner {
                     "member": member,
                     "player_relationship_to_member": player
                         .relationships
-                        .get(&format!("member:{}", member.id)),
+                        .get(&crate::domain::gestalt_member_subject_id(&member.id)),
                 })
             })
             .collect::<Vec<_>>();

@@ -158,6 +158,22 @@ pub struct GestaltMemberDelta {
     pub relevance_lease_until_revision: u64,
 }
 
+/// Gestalt member records own a local identity. The `member:` namespace is a
+/// world-subject projection and must never become part of that stored local ID.
+/// Repeated prefixes are accepted only at model and legacy-state boundaries so
+/// every downstream organ converges on one canonical person.
+pub fn canonical_gestalt_member_local_id(value: &str) -> String {
+    let mut value = value.trim();
+    while let Some(unprefixed) = value.strip_prefix("member:") {
+        value = unprefixed;
+    }
+    value.to_owned()
+}
+
+pub fn gestalt_member_subject_id(member_id: &str) -> String {
+    format!("member:{}", canonical_gestalt_member_local_id(member_id))
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct GestaltPromotion {
     pub gestalt_id: String,

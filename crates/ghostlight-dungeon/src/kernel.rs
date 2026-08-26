@@ -1688,7 +1688,8 @@ fn apply_individuation(
     campaign: &mut Campaign,
     individuation: &GestaltIndividuation,
 ) -> Result<(), KernelError> {
-    let member = &individuation.member;
+    let mut member = individuation.member.clone();
+    member.id = crate::domain::canonical_gestalt_member_local_id(&member.id);
     let gestalt = campaign
         .gestalts
         .get(&individuation.gestalt_id)
@@ -1773,7 +1774,7 @@ fn apply_promotion(
             "gestalt member is already materialized".into(),
         ));
     }
-    let actor_id = format!("member:{}", member.id);
+    let actor_id = crate::domain::gestalt_member_subject_id(&member.id);
     if campaign.actors.contains_key(&actor_id) {
         return Err(KernelError::Invalid(
             "materialized actor id collides".into(),
@@ -2267,7 +2268,7 @@ fn apply_strategic_tick_plan(
         merge_strategic_outcome_event_context(
             &mut outcome_event_context,
             &activity.action_digest,
-            &format!("member:{}", activity.member_id),
+            &crate::domain::gestalt_member_subject_id(&activity.member_id),
             &activity.location_ids,
             &activity.public_channels,
         )?;
@@ -2742,7 +2743,7 @@ fn apply_strategic_tick_plan(
             .filter(|target| campaign.institutions.contains_key(*target))
             .cloned()
             .collect();
-        let mut actor_ids = vec![format!("member:{}", action.member_id)];
+        let mut actor_ids = vec![crate::domain::gestalt_member_subject_id(&action.member_id)];
         actor_ids.extend(
             action
                 .target_subject_ids
@@ -2772,7 +2773,7 @@ fn apply_strategic_tick_plan(
             &prospective_actor_locations,
             &prospective_gestalt_locations,
             &prospective_member_locations,
-            &format!("member:{}", action.member_id),
+            &crate::domain::gestalt_member_subject_id(&action.member_id),
             &action.location_ids,
         )?;
         let event = Event {
@@ -2828,7 +2829,7 @@ fn apply_strategic_tick_plan(
                 "{member_name} moves from {origin} to {} and joins {}.",
                 action.destination_location_id, action.destination_gestalt_id
             ),
-            actor_ids: vec![format!("member:{}", action.member_id)],
+            actor_ids: vec![crate::domain::gestalt_member_subject_id(&action.member_id)],
             institution_ids: vec![],
             gestalt_ids: vec![action.source_gestalt_id, action.destination_gestalt_id],
             location_ids: vec![origin, action.destination_location_id],
@@ -2949,7 +2950,7 @@ fn collect_outcome_subject_ids(
         StrategicOutcomeEffect::MemberMemory { member_id, .. }
         | StrategicOutcomeEffect::MemberObligation { member_id, .. }
         | StrategicOutcomeEffect::MemberRelationship { member_id, .. } => {
-            subjects.insert(format!("member:{member_id}"));
+            subjects.insert(crate::domain::gestalt_member_subject_id(member_id));
             if let StrategicOutcomeEffect::MemberRelationship {
                 other_subject_id, ..
             } = effect
@@ -3662,7 +3663,7 @@ mod tests {
                 .chain(plan.member_activities.iter().map(|activity| {
                     (
                         activity.action_digest.clone(),
-                        format!("member:{}", activity.member_id),
+                        crate::domain::gestalt_member_subject_id(&activity.member_id),
                     )
                 }))
                 .map(
@@ -4724,7 +4725,7 @@ mod tests {
             let actor = materialize_actor(
                 &value.gestalts[destination],
                 member,
-                &format!("member:{id}"),
+                &crate::domain::gestalt_member_subject_id(id),
                 location,
             );
             assert_eq!(actor.name, old.name);

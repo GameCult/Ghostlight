@@ -63,7 +63,7 @@ pub async fn resolve_speech_addresses(
             return None;
         }
         Some((
-            format!("member:{}", member.id),
+            crate::domain::gestalt_member_subject_id(&member.id),
             serde_json::json!({
                 "public_name": member.name,
                 "presence": "nearby_folded_person",

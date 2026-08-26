@@ -61,6 +61,8 @@ impl CampaignRegistry {
                 .load::<Campaign>("campaign.v1", &keys[0])?
                 .ok_or_else(|| anyhow!("campaign row vanished during migration"))?;
             let before = campaign.clone();
+            let normalized_member_identities =
+                crate::resolution::normalize_legacy_gestalt_member_identities(&mut campaign)?;
             crate::resolution::ensure_agency_profiles(&mut campaign);
             if campaign != before {
                 let previous_resolution_epoch = campaign.resolution_policy.resolution_epoch;
@@ -79,7 +81,11 @@ impl CampaignRegistry {
                         provider_configuration_epoch: campaign
                             .resolution_policy
                             .provider_configuration_epoch,
-                        operation: "migrate_flat_agency_state".into(),
+                        operation: if normalized_member_identities {
+                            "normalize_gestalt_member_identity".into()
+                        } else {
+                            "migrate_flat_agency_state".into()
+                        },
                         active_cell_budget: campaign.resolution_policy.active_cell_budget,
                         pin_ids: campaign.resolution_pins.keys().cloned().collect(),
                         committed_at: Utc::now(),

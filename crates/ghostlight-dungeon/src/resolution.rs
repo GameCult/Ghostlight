@@ -116,6 +116,248 @@ pub fn ensure_agency_profiles(campaign: &mut Campaign) {
     ensure_structural_relations(campaign);
 }
 
+/// Normalize the one historical compiler shape that stored the world-subject
+/// `member:` namespace inside a Gestalt member's local ID. This migrates only
+/// current canonical references. Event history and persisted receipts remain
+/// immutable witnesses of the version that produced them.
+pub(crate) fn normalize_legacy_gestalt_member_identities(campaign: &mut Campaign) -> Result<bool> {
+    let mut next = campaign.clone();
+    let changed = normalize_legacy_gestalt_member_identities_inner(&mut next)?;
+    if changed {
+        *campaign = next;
+    }
+    Ok(changed)
+}
+
+fn normalize_legacy_gestalt_member_identities_inner(campaign: &mut Campaign) -> Result<bool> {
+    let mut changed = false;
+    let mut subject_aliases = BTreeMap::new();
+    let mut normalized_members = BTreeMap::new();
+
+    for (stored_key, mut member) in std::mem::take(&mut campaign.gestalt_members) {
+        if stored_key != member.id {
+            return Err(anyhow!(
+                "gestalt member map key {:?} disagrees with record ID {:?}",
+                stored_key,
+                member.id
+            ));
+        }
+        let old_local_id = member.id.clone();
+        let local_id = crate::domain::canonical_gestalt_member_local_id(&old_local_id);
+        if local_id.is_empty() {
+            return Err(anyhow!("gestalt member has an empty canonical local ID"));
+        }
+        let canonical_subject_id = crate::domain::gestalt_member_subject_id(&local_id);
+        let legacy_subject_id = format!("member:{old_local_id}");
+        if old_local_id != local_id {
+            changed = true;
+            insert_identity_alias(
+                &mut subject_aliases,
+                legacy_subject_id.clone(),
+                canonical_subject_id.clone(),
+            )?;
+        }
+
+        match member.materialized_actor_id.clone() {
+            Some(old_actor_id) => {
+                let actor = campaign.actors.get(&old_actor_id).ok_or_else(|| {
+                    anyhow!(
+                        "materialized gestalt member {} references missing actor {}",
+                        old_local_id,
+                        old_actor_id
+                    )
+                })?;
+                if actor.id != old_actor_id {
+                    return Err(anyhow!(
+                        "materialized actor map key {:?} disagrees with record ID {:?}",
+                        old_actor_id,
+                        actor.id
+                    ));
+                }
+                if old_actor_id != canonical_subject_id {
+                    changed = true;
+                    insert_identity_alias(
+                        &mut subject_aliases,
+                        old_actor_id,
+                        canonical_subject_id.clone(),
+                    )?;
+                }
+                member.materialized_actor_id = Some(canonical_subject_id);
+            }
+            None => {
+                if campaign.actors.contains_key(&canonical_subject_id)
+                    || (legacy_subject_id != canonical_subject_id
+                        && campaign.actors.contains_key(&legacy_subject_id))
+                {
+                    return Err(anyhow!(
+                        "dormant gestalt member {} collides with a materialized actor",
+                        old_local_id
+                    ));
+                }
+            }
+        }
+        member.id = local_id.clone();
+        if normalized_members
+            .insert(local_id.clone(), member)
+            .is_some()
+        {
+            return Err(anyhow!(
+                "gestalt member IDs collide after normalization at {local_id}"
+            ));
+        }
+    }
+    campaign.gestalt_members = normalized_members;
+
+    if !changed {
+        return Ok(false);
+    }
+
+    let mut normalized_actors = BTreeMap::new();
+    for (stored_key, mut actor) in std::mem::take(&mut campaign.actors) {
+        if stored_key != actor.id {
+            return Err(anyhow!(
+                "actor map key {:?} disagrees with record ID {:?}",
+                stored_key,
+                actor.id
+            ));
+        }
+        let actor_id = rewritten_subject_id(&subject_aliases, &stored_key);
+        actor.id = actor_id.clone();
+        if normalized_actors.insert(actor_id.clone(), actor).is_some() {
+            return Err(anyhow!(
+                "actor IDs collide after gestalt member normalization at {actor_id}"
+            ));
+        }
+    }
+    campaign.actors = normalized_actors;
+    campaign.player_actor_id = rewritten_subject_id(&subject_aliases, &campaign.player_actor_id);
+
+    for actor in campaign.actors.values_mut() {
+        rewrite_relationship_targets(&mut actor.relationships, &subject_aliases)?;
+    }
+    for member in campaign.gestalt_members.values_mut() {
+        rewrite_relationship_targets(&mut member.relationships, &subject_aliases)?;
+    }
+    for proposal in &mut campaign.pending_world_proposals {
+        proposal.actor_id = rewritten_subject_id(&subject_aliases, &proposal.actor_id);
+        for reference in &mut proposal.state_references {
+            *reference = rewritten_state_reference(&subject_aliases, reference);
+        }
+    }
+
+    let mut normalized_profiles = BTreeMap::new();
+    for (stored_key, mut profile) in std::mem::take(&mut campaign.agency_profiles) {
+        let subject_id = rewritten_subject_id(&subject_aliases, &profile.subject_id);
+        let profile_key = rewritten_subject_id(&subject_aliases, &stored_key);
+        if profile_key != subject_id {
+            return Err(anyhow!(
+                "agency profile key {:?} disagrees with normalized subject {:?}",
+                profile_key,
+                subject_id
+            ));
+        }
+        if let Some(old_subject_id) = subject_aliases
+            .iter()
+            .find_map(|(old, new)| (new == &subject_id).then_some(old))
+        {
+            let legacy_profile_id = format!("agency-profile:{old_subject_id}");
+            if profile.id == legacy_profile_id {
+                profile.id = format!("agency-profile:{subject_id}");
+            }
+        }
+        profile.subject_id = subject_id.clone();
+        profile.collective_authority_id = profile
+            .collective_authority_id
+            .as_deref()
+            .map(|id| rewritten_subject_id(&subject_aliases, id));
+        profile.parent_subject_id = profile
+            .parent_subject_id
+            .as_deref()
+            .map(|id| rewritten_subject_id(&subject_aliases, id));
+        if normalized_profiles
+            .insert(subject_id.clone(), profile)
+            .is_some()
+        {
+            return Err(anyhow!(
+                "agency profiles collide after gestalt member normalization at {subject_id}"
+            ));
+        }
+    }
+    campaign.agency_profiles = normalized_profiles;
+
+    for relation in campaign.agency_relations.values_mut() {
+        relation.from_subject_id =
+            rewritten_subject_id(&subject_aliases, &relation.from_subject_id);
+        relation.to_subject_id = rewritten_subject_id(&subject_aliases, &relation.to_subject_id);
+    }
+    for pin in campaign.resolution_pins.values_mut() {
+        pin.subject_ids = pin
+            .subject_ids
+            .iter()
+            .map(|id| rewritten_subject_id(&subject_aliases, id))
+            .collect();
+    }
+    campaign.resolution_cover = None;
+    Ok(true)
+}
+
+fn insert_identity_alias(
+    aliases: &mut BTreeMap<String, String>,
+    old: String,
+    new: String,
+) -> Result<()> {
+    if old == new {
+        return Ok(());
+    }
+    if aliases
+        .insert(old.clone(), new.clone())
+        .is_some_and(|prior| prior != new)
+    {
+        return Err(anyhow!(
+            "legacy subject {old} maps to multiple canonical identities"
+        ));
+    }
+    Ok(())
+}
+
+fn rewritten_subject_id(aliases: &BTreeMap<String, String>, value: &str) -> String {
+    aliases
+        .get(value)
+        .cloned()
+        .unwrap_or_else(|| value.to_owned())
+}
+
+fn rewritten_state_reference(aliases: &BTreeMap<String, String>, value: &str) -> String {
+    if let Some(rewritten) = aliases.get(value) {
+        return rewritten.clone();
+    }
+    for namespace in ["subject:", "actor:"] {
+        if let Some(subject_id) = value.strip_prefix(namespace)
+            && let Some(rewritten) = aliases.get(subject_id)
+        {
+            return format!("{namespace}{rewritten}");
+        }
+    }
+    value.to_owned()
+}
+
+fn rewrite_relationship_targets(
+    relationships: &mut BTreeMap<String, String>,
+    aliases: &BTreeMap<String, String>,
+) -> Result<()> {
+    let mut normalized = BTreeMap::new();
+    for (subject_id, description) in std::mem::take(relationships) {
+        let subject_id = rewritten_subject_id(aliases, &subject_id);
+        if normalized.insert(subject_id.clone(), description).is_some() {
+            return Err(anyhow!(
+                "relationship targets collide after gestalt member normalization at {subject_id}"
+            ));
+        }
+    }
+    *relationships = normalized;
+    Ok(())
+}
+
 fn base_profile(
     subject_id: &str,
     kind: AgencySubjectKind,
@@ -2510,7 +2752,7 @@ pub fn member_state_references(campaign: &Campaign, member_id: &str) -> Result<B
         .get(&member.gestalt_id)
         .ok_or_else(|| anyhow!("gestalt member baseline is unknown"))?;
     let mut references = BTreeSet::from([
-        format!("member:{member_id}"),
+        crate::domain::gestalt_member_subject_id(member_id),
         format!("gestalt:{}", member.gestalt_id),
         format!(
             "location:{}",
@@ -2726,7 +2968,7 @@ pub fn strategic_activity_targets(campaign: &Campaign, subject_id: &str) -> BTre
             source
                 .location_ids
                 .contains(&location)
-                .then(|| format!("member:{}", member.id))
+                .then(|| crate::domain::gestalt_member_subject_id(&member.id))
         }));
     }
     targets
@@ -2741,7 +2983,7 @@ pub fn member_activity_targets(campaign: &Campaign, member_id: &str) -> Result<B
     dormant_member_location(campaign, member_id)?;
     let mut targets = strategic_activity_targets(campaign, &member.gestalt_id);
     targets.insert(member.gestalt_id.clone());
-    targets.remove(&format!("member:{member_id}"));
+    targets.remove(&crate::domain::gestalt_member_subject_id(member_id));
     Ok(targets)
 }
 
@@ -2750,16 +2992,18 @@ pub fn member_activity_targets(campaign: &Campaign, member_id: &str) -> Result<B
 /// stable ID, so the `member:` prefix cannot own their current subject kind.
 pub fn dormant_member_id_for_subject<'a>(
     campaign: &'a Campaign,
-    subject_id: &'a str,
+    subject_id: &str,
 ) -> Option<&'a str> {
-    let member_id = subject_id.strip_prefix("member:")?;
     campaign
         .gestalt_members
-        .get(member_id)
+        .values()
         .filter(|member| {
-            member.materialized_actor_id.is_none() && !campaign.actors.contains_key(subject_id)
+            member.materialized_actor_id.is_none()
+                && crate::domain::gestalt_member_subject_id(&member.id) == subject_id
+                && !campaign.actors.contains_key(subject_id)
         })
-        .map(|_| member_id)
+        .map(|member| member.id.as_str())
+        .next()
 }
 
 pub fn validate_active_gestalt_presence_location(
@@ -3252,6 +3496,151 @@ pub(crate) mod tests {
             "member:sable"
         ));
         assert_eq!(dormant_member_id_for_subject(&value, "member:sable"), None);
+    }
+
+    #[test]
+    fn legacy_prefixed_member_identity_migrates_once_without_losing_person_state() {
+        let mut value = campaign(1, 1);
+        value.gestalts.insert(
+            "raincross-households".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "raincross-households".into(),
+                name: "Raincross households".into(),
+                version: 0,
+                home_location_id: "center".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        value.gestalt_members.insert(
+            "member:cal_rusk".into(),
+            GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "member:cal_rusk".into(),
+                gestalt_id: "raincross-households".into(),
+                version: 3,
+                name: "Cal Rusk".into(),
+                capability_additions: BTreeSet::from(["read flood trails".into()]),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::from(["the bypass is passable".into()]),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::from([(
+                    "member:member:cal_rusk".into(),
+                    "trusts his own survey".into(),
+                )]),
+                goals: vec!["keep the households alive".into()],
+                memories: vec!["surveyed the bypass".into()],
+                last_location_id: Some("center".into()),
+                materialized_actor_id: Some("member:member:cal_rusk".into()),
+                last_relevant_revision: 5,
+                relevance_lease_until_revision: 9,
+            },
+        );
+        value.actors.insert(
+            "member:member:cal_rusk".into(),
+            ActorState {
+                id: "member:member:cal_rusk".into(),
+                name: "Cal Rusk".into(),
+                location_id: "center".into(),
+                capabilities: BTreeSet::from(["read flood trails".into()]),
+                knowledge: BTreeSet::from(["the bypass is passable".into()]),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec!["keep the households alive".into()],
+                memories: vec!["surveyed the bypass".into()],
+            },
+        );
+        value.actors["player"].relationships.insert(
+            "member:member:cal_rusk".into(),
+            "heard his careful report".into(),
+        );
+        value.pending_world_proposals.push(WorldActionProposal {
+            actor_id: "member:member:cal_rusk".into(),
+            intent: "check the route".into(),
+            intended_effect: "keep the route legible".into(),
+            priority: 1,
+            state_references: vec!["subject:member:member:cal_rusk".into()],
+        });
+        ensure_agency_profiles(&mut value);
+        value
+            .agency_profiles
+            .get_mut("member:member:cal_rusk")
+            .unwrap()
+            .detail_debt = 17;
+        value.agency_relations.insert(
+            "cal-households".into(),
+            AgencyRelation {
+                schema: "ghostlight.agency_relation.v1".into(),
+                id: "cal-households".into(),
+                from_subject_id: "member:member:cal_rusk".into(),
+                to_subject_id: "raincross-households".into(),
+                kind: AgencyRelationKind::Membership,
+                strength: 100,
+                active: true,
+                evidence_receipt_ids: vec![],
+            },
+        );
+        value.resolution_pins.insert(
+            "pin-cal".into(),
+            ResolutionPin {
+                schema: "ghostlight.resolution_pin.v1".into(),
+                id: "pin-cal".into(),
+                kind: ResolutionPinKind::MinimumIndividualDetail,
+                subject_ids: BTreeSet::from(["member:member:cal_rusk".into()]),
+                reason: "foreground".into(),
+                created_world_revision: 5,
+            },
+        );
+        value.resolution_cover =
+            Some(plan_cover(&value, default_demand(&value, "legacy cover")).unwrap());
+
+        assert!(normalize_legacy_gestalt_member_identities(&mut value).unwrap());
+        assert!(!normalize_legacy_gestalt_member_identities(&mut value).unwrap());
+        assert!(!value.gestalt_members.contains_key("member:cal_rusk"));
+        let member = &value.gestalt_members["cal_rusk"];
+        assert_eq!(member.id, "cal_rusk");
+        assert_eq!(
+            member.materialized_actor_id.as_deref(),
+            Some("member:cal_rusk")
+        );
+        assert!(
+            member
+                .knowledge_additions
+                .contains("the bypass is passable")
+        );
+        assert!(member.memories.contains(&"surveyed the bypass".into()));
+        assert!(member.relationships.contains_key("member:cal_rusk"));
+        assert!(!value.actors.contains_key("member:member:cal_rusk"));
+        assert_eq!(value.actors["member:cal_rusk"].name, "Cal Rusk");
+        assert!(
+            value.actors["player"]
+                .relationships
+                .contains_key("member:cal_rusk")
+        );
+        assert_eq!(value.pending_world_proposals[0].actor_id, "member:cal_rusk");
+        assert_eq!(
+            value.pending_world_proposals[0].state_references,
+            ["subject:member:cal_rusk"]
+        );
+        assert_eq!(value.agency_profiles["member:cal_rusk"].detail_debt, 17);
+        assert_eq!(
+            value.agency_relations["cal-households"].from_subject_id,
+            "member:cal_rusk"
+        );
+        assert_eq!(
+            value.resolution_pins["pin-cal"].subject_ids,
+            BTreeSet::from(["member:cal_rusk".into()])
+        );
+        assert!(value.resolution_cover.is_none());
     }
 
     #[test]
