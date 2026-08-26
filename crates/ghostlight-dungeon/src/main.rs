@@ -341,7 +341,6 @@ async fn main() -> anyhow::Result<()> {
                 &secret_path,
                 fast_model.clone(),
                 capable_model.clone(),
-                connector_max_concurrent_requests,
             )?),
             "codex-connector" => Arc::new(CodexConnectorModelPort::from_runtime_secret(
                 std::env::var("GHOSTLIGHT_MODEL_CONNECTOR")
@@ -352,6 +351,7 @@ async fn main() -> anyhow::Result<()> {
                     .unwrap_or_else(|_| "ghostlight-dungeon-yggdrasil".to_string()),
                 fast_model.clone(),
                 capable_model.clone(),
+                connector_max_concurrent_requests,
             )?),
             _ => unreachable!("provider name was validated above"),
         };
