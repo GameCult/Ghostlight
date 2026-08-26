@@ -174,6 +174,19 @@ pub fn gestalt_member_subject_id(member_id: &str) -> String {
     format!("member:{}", canonical_gestalt_member_local_id(member_id))
 }
 
+/// State-reference namespaces wrap a canonical world ID exactly once. World
+/// compilers may choose already-qualified IDs (for example
+/// `gestalt:raincross_households`), while older fixtures use local IDs. Both
+/// must project to the same evidence handle rather than accumulating prefixes.
+pub fn gestalt_state_reference(gestalt_id: &str) -> String {
+    let gestalt_id = gestalt_id.trim();
+    if gestalt_id.starts_with("gestalt:") {
+        gestalt_id.to_owned()
+    } else {
+        format!("gestalt:{gestalt_id}")
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct GestaltPromotion {
     pub gestalt_id: String,
@@ -552,6 +565,9 @@ pub struct CellAppraisal {
     pub cell_id: String,
     pub world_revision: u64,
     pub resolution_epoch: u64,
+    /// Exact projected decision owners for this wave. The resolution cover
+    /// separately proves representation of every canonical cell constituent;
+    /// each ID here must own exactly one action or explicit inaction.
     pub considered_subject_ids: BTreeSet<String>,
     pub actions: Vec<CellActionProposal>,
     pub inactions: Vec<CellInaction>,

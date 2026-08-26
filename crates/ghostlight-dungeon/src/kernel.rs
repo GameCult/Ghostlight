@@ -7618,23 +7618,25 @@ mod tests {
             appraisals: cover
                 .cells
                 .iter()
-                .map(|cell| CellAppraisal {
-                    schema: "ghostlight.cell_appraisal.v1".into(),
-                    cell_id: cell.id.clone(),
-                    world_revision: campaign.revision,
-                    resolution_epoch: campaign.resolution_policy.resolution_epoch,
-                    considered_subject_ids: cell.subject_ids.clone(),
-                    actions: vec![],
-                    inactions: cell
-                        .subject_ids
-                        .iter()
-                        .next()
-                        .map(|subject_id| crate::domain::CellInaction {
-                            subject_id: subject_id.clone(),
+                .map(|cell| {
+                    let decision_owner = cell
+                        .detail_focus_subject_id
+                        .as_ref()
+                        .or_else(|| cell.subject_ids.iter().next())
+                        .expect("a simulation cell has at least one subject")
+                        .clone();
+                    CellAppraisal {
+                        schema: "ghostlight.cell_appraisal.v1".into(),
+                        cell_id: cell.id.clone(),
+                        world_revision: campaign.revision,
+                        resolution_epoch: campaign.resolution_policy.resolution_epoch,
+                        considered_subject_ids: BTreeSet::from([decision_owner.clone()]),
+                        actions: vec![],
+                        inactions: vec![crate::domain::CellInaction {
+                            subject_id: decision_owner,
                             reason: "No justified move.".into(),
-                        })
-                        .into_iter()
-                        .collect(),
+                        }],
+                    }
                 })
                 .collect(),
             cover,
@@ -7942,11 +7944,19 @@ mod tests {
             .unwrap()
             .1;
         let mut wave = inaction_wave(&persisted, &store);
+        let refugees_cell_id = wave
+            .cover
+            .cells
+            .iter()
+            .find(|cell| cell.subject_ids.contains("refugees-east"))
+            .map(|cell| cell.id.clone())
+            .unwrap();
         let appraisal = wave
             .appraisals
             .iter_mut()
-            .find(|appraisal| appraisal.considered_subject_ids.contains("refugees-east"))
+            .find(|appraisal| appraisal.cell_id == refugees_cell_id)
             .unwrap();
+        appraisal.considered_subject_ids = BTreeSet::from(["refugees-east".into()]);
         let proposal = CellActionProposal {
             subject_id: "refugees-east".into(),
             intent: "prepare storm lashings".into(),

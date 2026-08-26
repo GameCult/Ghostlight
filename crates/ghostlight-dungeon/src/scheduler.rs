@@ -700,7 +700,7 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
                 };
                 let mut permitted_state_references = BTreeSet::from([
                     crate::domain::gestalt_member_subject_id(&member.id),
-                    format!("gestalt:{}", member.gestalt_id),
+                    crate::domain::gestalt_state_reference(&member.gestalt_id),
                     format!("location:{origin}"),
                 ]);
                 permitted_state_references.extend(
@@ -717,7 +717,8 @@ fn member_exceptions(campaign: &Campaign, cell: &SimulationCell) -> Result<Vec<C
                         .map(|value| format!("resource:{value}")),
                 );
                 for (gestalt_id, location_id) in &destinations {
-                    permitted_state_references.insert(format!("gestalt:{gestalt_id}"));
+                    permitted_state_references
+                        .insert(crate::domain::gestalt_state_reference(gestalt_id));
                     permitted_state_references.insert(format!("location:{location_id}"));
                 }
                 let migration_destinations = migration_destination_slices(campaign, &destinations)?;
@@ -846,7 +847,7 @@ fn constituent_slice(campaign: &Campaign, id: &str) -> Result<CellConstituentSli
             for (destination_id, location_id) in &destinations {
                 value
                     .permitted_state_references
-                    .insert(format!("gestalt:{destination_id}"));
+                    .insert(crate::domain::gestalt_state_reference(destination_id));
                 value
                     .permitted_state_references
                     .insert(format!("location:{location_id}"));
@@ -975,6 +976,18 @@ mod tests {
         active: AtomicUsize,
         maximum: AtomicUsize,
         malformed_cell: bool,
+    }
+
+    #[test]
+    fn gestalt_state_references_qualify_canonical_ids_exactly_once() {
+        assert_eq!(
+            crate::domain::gestalt_state_reference("raincross_households"),
+            "gestalt:raincross_households"
+        );
+        assert_eq!(
+            crate::domain::gestalt_state_reference("gestalt:raincross_households"),
+            "gestalt:raincross_households"
+        );
     }
 
     #[test]

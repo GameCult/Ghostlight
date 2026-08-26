@@ -1877,34 +1877,80 @@ pub fn select_resolution_wave(
             .get(appraisal.cell_id.as_str())
             .ok_or_else(|| anyhow!("cell appraisal references an inactive cell"))?;
         if !seen_cells.insert(appraisal.cell_id.as_str())
+            || appraisal.schema != "ghostlight.cell_appraisal.v1"
             || appraisal.world_revision != campaign.revision
             || appraisal.resolution_epoch != campaign.resolution_policy.resolution_epoch
-            || appraisal.considered_subject_ids != cell.subject_ids
-            || (appraisal.actions.is_empty() && appraisal.inactions.is_empty())
         {
             return Err(anyhow!("cell appraisal is incomplete or stale"));
         }
         let quota = cell_action_limit(cell);
-        if appraisal.actions.len() > quota || appraisal.inactions.len() > quota {
+        if appraisal.considered_subject_ids.is_empty()
+            || appraisal.considered_subject_ids.len() > quota
+            || appraisal.actions.len() + appraisal.inactions.len() > quota
+        {
             return Err(anyhow!("cell appraisal exceeds its action quota"));
         }
-        let action_subject_ids = appraisal
-            .actions
+        if appraisal
+            .considered_subject_ids
             .iter()
-            .map(|proposal| proposal.subject_id.as_str())
-            .collect::<BTreeSet<_>>();
+            .any(|subject_id| !cell_contains_attributed_subject(campaign, cell, subject_id))
+        {
+            return Err(anyhow!(
+                "cell appraisal considered a subject outside its exact cell authority"
+            ));
+        }
+        if cell
+            .detail_focus_subject_id
+            .as_ref()
+            .is_some_and(|focus| !appraisal.considered_subject_ids.contains(focus))
+        {
+            return Err(anyhow!(
+                "cell appraisal omitted its mandatory detail-focus subject"
+            ));
+        }
+        let mut action_subject_ids = BTreeSet::new();
+        for proposal in &appraisal.actions {
+            if !action_subject_ids.insert(proposal.subject_id.as_str())
+                || !appraisal
+                    .considered_subject_ids
+                    .contains(&proposal.subject_id)
+            {
+                return Err(anyhow!(
+                    "cell appraisal contains a duplicate or unconsidered action owner"
+                ));
+            }
+        }
         let mut inaction_subject_ids = BTreeSet::new();
         for inaction in &appraisal.inactions {
             if inaction.reason.trim().is_empty()
                 || inaction.reason.chars().count() > 240
                 || action_subject_ids.contains(inaction.subject_id.as_str())
                 || !inaction_subject_ids.insert(inaction.subject_id.as_str())
+                || !appraisal
+                    .considered_subject_ids
+                    .contains(&inaction.subject_id)
                 || !cell_contains_attributed_subject(campaign, cell, &inaction.subject_id)
             {
                 return Err(anyhow!(
                     "cell appraisal contains an invalid attributed inaction"
                 ));
             }
+        }
+        let decided_subject_ids = action_subject_ids
+            .iter()
+            .chain(&inaction_subject_ids)
+            .copied()
+            .collect::<BTreeSet<_>>();
+        if decided_subject_ids
+            != appraisal
+                .considered_subject_ids
+                .iter()
+                .map(String::as_str)
+                .collect::<BTreeSet<_>>()
+        {
+            return Err(anyhow!(
+                "every considered cell subject must own exactly one action or explicit inaction"
+            ));
         }
         for proposal in &appraisal.actions {
             validate_cell_proposal(campaign, cell, proposal)?;
@@ -2753,7 +2799,7 @@ pub fn member_state_references(campaign: &Campaign, member_id: &str) -> Result<B
         .ok_or_else(|| anyhow!("gestalt member baseline is unknown"))?;
     let mut references = BTreeSet::from([
         crate::domain::gestalt_member_subject_id(member_id),
-        format!("gestalt:{}", member.gestalt_id),
+        crate::domain::gestalt_state_reference(&member.gestalt_id),
         format!(
             "location:{}",
             member
@@ -2784,7 +2830,7 @@ pub fn member_state_references(campaign: &Campaign, member_id: &str) -> Result<B
             && relation.from_subject_id == member.gestalt_id
     }) {
         if let Some(destination) = campaign.gestalts.get(&relation.to_subject_id) {
-            references.insert(format!("gestalt:{}", destination.id));
+            references.insert(crate::domain::gestalt_state_reference(&destination.id));
             references.insert(format!("location:{}", destination.home_location_id));
         }
     }
@@ -2925,7 +2971,7 @@ pub fn subject_state_references(campaign: &Campaign, subject_id: &str) -> Result
         for (destination_id, location_id) in
             gestalt_migration_destinations(campaign, subject_id, &gestalt.home_location_id)
         {
-            references.insert(format!("gestalt:{destination_id}"));
+            references.insert(crate::domain::gestalt_state_reference(&destination_id));
             references.insert(format!("location:{location_id}"));
         }
     }
@@ -4052,23 +4098,26 @@ pub(crate) mod tests {
         let cover = plan_cover(&value, default_demand(&value, "espionage")).unwrap();
         let cell = cover.cells[0].clone();
         assert_eq!(cell.mode, SimulationCellMode::Arena);
-        let make_wave = |proposal: CellActionProposal| ResolutionWaveCommit {
-            schema: "ghostlight.resolution_wave_commit.v1".into(),
-            world_revision: value.revision,
-            resolution_epoch: value.resolution_policy.resolution_epoch,
-            plan_receipt: plan_receipt(&value, &cover),
-            appraisals: vec![CellAppraisal {
-                schema: "ghostlight.cell_appraisal.v1".into(),
-                cell_id: cell.id.clone(),
+        let make_wave = |proposal: CellActionProposal| {
+            let decision_owner = proposal.subject_id.clone();
+            ResolutionWaveCommit {
+                schema: "ghostlight.resolution_wave_commit.v1".into(),
                 world_revision: value.revision,
                 resolution_epoch: value.resolution_policy.resolution_epoch,
-                considered_subject_ids: cell.subject_ids.clone(),
-                actions: vec![proposal],
-                inactions: vec![],
-            }],
-            cover: cover.clone(),
-            activity_outcomes: vec![],
-            model_receipt_hashes: vec![],
+                plan_receipt: plan_receipt(&value, &cover),
+                appraisals: vec![CellAppraisal {
+                    schema: "ghostlight.cell_appraisal.v1".into(),
+                    cell_id: cell.id.clone(),
+                    world_revision: value.revision,
+                    resolution_epoch: value.resolution_policy.resolution_epoch,
+                    considered_subject_ids: BTreeSet::from([decision_owner]),
+                    actions: vec![proposal],
+                    inactions: vec![],
+                }],
+                cover: cover.clone(),
+                activity_outcomes: vec![],
+                model_receipt_hashes: vec![],
+            }
         };
         let collective = CellActionProposal {
             subject_id: cell.id.clone(),
@@ -4113,11 +4162,23 @@ pub(crate) mod tests {
             }],
         };
         let mut mixed = make_wave(valid_action.clone());
+        mixed.appraisals[0]
+            .considered_subject_ids
+            .insert("faction-0001".into());
         mixed.appraisals[0].inactions = vec![CellInaction {
             subject_id: "faction-0001".into(),
             reason: "The rival deliberately holds its separate position.".into(),
         }];
         validate_and_resolve_wave(&value, &mixed).unwrap();
+
+        let mut omitted = mixed.clone();
+        omitted.appraisals[0].inactions.clear();
+        assert!(
+            validate_and_resolve_wave(&value, &omitted)
+                .unwrap_err()
+                .to_string()
+                .contains("every considered cell subject")
+        );
 
         let mut contradictory = make_wave(valid_action);
         contradictory.appraisals[0].inactions = vec![CellInaction {
@@ -4232,23 +4293,26 @@ pub(crate) mod tests {
                 destination_gestalt_id: "dockers".into(),
             }],
         };
-        let make_wave = |proposal: CellActionProposal| ResolutionWaveCommit {
-            schema: "ghostlight.resolution_wave_commit.v1".into(),
-            world_revision: value.revision,
-            resolution_epoch: value.resolution_policy.resolution_epoch,
-            plan_receipt: plan_receipt(&value, &cover),
-            appraisals: vec![CellAppraisal {
-                schema: "ghostlight.cell_appraisal.v1".into(),
-                cell_id: cover.cells[0].id.clone(),
+        let make_wave = |proposal: CellActionProposal| {
+            let decision_owner = proposal.subject_id.clone();
+            ResolutionWaveCommit {
+                schema: "ghostlight.resolution_wave_commit.v1".into(),
                 world_revision: value.revision,
                 resolution_epoch: value.resolution_policy.resolution_epoch,
-                considered_subject_ids: cover.cells[0].subject_ids.clone(),
-                actions: vec![proposal],
-                inactions: vec![],
-            }],
-            cover: cover.clone(),
-            activity_outcomes: vec![],
-            model_receipt_hashes: vec![],
+                plan_receipt: plan_receipt(&value, &cover),
+                appraisals: vec![CellAppraisal {
+                    schema: "ghostlight.cell_appraisal.v1".into(),
+                    cell_id: cover.cells[0].id.clone(),
+                    world_revision: value.revision,
+                    resolution_epoch: value.resolution_policy.resolution_epoch,
+                    considered_subject_ids: BTreeSet::from([decision_owner]),
+                    actions: vec![proposal],
+                    inactions: vec![],
+                }],
+                cover: cover.clone(),
+                activity_outcomes: vec![],
+                model_receipt_hashes: vec![],
+            }
         };
         let plan = validate_and_resolve_wave(&value, &make_wave(proposal.clone())).unwrap();
         assert_eq!(plan.member_migrations.len(), 1);
@@ -4293,7 +4357,7 @@ pub(crate) mod tests {
                 cell_id: cover.cells[0].id.clone(),
                 world_revision: value.revision,
                 resolution_epoch: value.resolution_policy.resolution_epoch,
-                considered_subject_ids: cover.cells[0].subject_ids.clone(),
+                considered_subject_ids: BTreeSet::from(["member:mira".into()]),
                 actions: vec![member_activity.clone(), proposal.clone()],
                 inactions: vec![],
             }],
@@ -4301,11 +4365,7 @@ pub(crate) mod tests {
             activity_outcomes: vec![],
             model_receipt_hashes: vec![],
         };
-        let same_member_plan = select_resolution_wave(&value, &same_member_wave)
-            .unwrap()
-            .plan;
-        assert_eq!(same_member_plan.member_activities.len(), 1);
-        assert!(same_member_plan.member_migrations.is_empty());
+        assert!(select_resolution_wave(&value, &same_member_wave).is_err());
 
         let mut announced = proposal.clone();
         announced.public_channels = vec!["camp-bulletin".into()];
@@ -4369,7 +4429,7 @@ pub(crate) mod tests {
                 cell_id: cover.cells[0].id.clone(),
                 world_revision: value.revision,
                 resolution_epoch: value.resolution_policy.resolution_epoch,
-                considered_subject_ids: cover.cells[0].subject_ids.clone(),
+                considered_subject_ids: BTreeSet::from(["refugees".into()]),
                 actions: vec![exact_rival_activity.clone(), lower_priority_pressure],
                 inactions: vec![],
             }],
@@ -4377,11 +4437,7 @@ pub(crate) mod tests {
             activity_outcomes: vec![],
             model_receipt_hashes: vec![],
         };
-        let same_subject_plan = select_resolution_wave(&value, &same_subject_wave)
-            .unwrap()
-            .plan;
-        assert_eq!(same_subject_plan.gestalt_activities.len(), 1);
-        assert!(same_subject_plan.gestalt_actions.is_empty());
+        assert!(select_resolution_wave(&value, &same_subject_wave).is_err());
 
         let mut borrowed_rival_channel = exact_rival_activity.clone();
         borrowed_rival_channel.public_channels = vec!["private dock code".into()];

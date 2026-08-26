@@ -1347,6 +1347,7 @@ impl CellProjectionEngine {
         let permission_guidance = format!(
             concat!(
                 "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first. ",
+                "Every subject in exact_permissions owns a projected internal perspective and must appear exactly once across actions and inactions. Do not let a voiced constituent vanish during interpretation. ",
                 "Each action carries an effects object whose exact subject-specific lane keys are supplied by the schema. Scalar lanes contain one typed effect. An activities lane is one object keyed by up to three distinct chosen activity kinds; each kind occurs at most once and its value contains the union of that means' exact targets and locations. Top-level lane names are stable across subjects: use null for a null-only unavailable lane and for any schema-required optional lane or activity key the subject does not use. A non-null lane or activity key absent from its exact schema is structurally unavailable: do not emit it and do not invent a destination. Pressure and migration lanes each have one slot. Preserve every means of one chosen course in one action. With relocation, activities at the exact snapshot location occur before departure and activities at the exact admitted destination occur after arrival; activity keys inside each location phase are an atomic set. Field order is not chronology. Never split one subject's single choice into multiple actions. ",
                 "Use gestalt_activities or member_activities for concrete attempts that do not themselves change pressure. A cohesive Gestalt coordinating its own unnamed internal members uses coordinate with an empty target_subject_ids list; do not invent its containing population, a distant population, or another canonical subject as the target of internal coordination. Cite the smallest exact set of state_references that materially supports each attempt; the permission list is an upper bound, not a checklist to echo. ",
                 "target_subject_ids and location_ids must come from that exact subject's permissions. activity_targets is the exact canonical target map: each key is the authoritative ID and each value supplies the target's name and current canonical locations. Use an ID only when the Persona addresses that named target, never merely because the ID is permitted. If an addressed person or role has no matching activity_targets entry, it is not a canonical target in this slice. reachable_destinations maps exact actor-movement destination IDs to names. migration_destinations maps exact population destination IDs to names and locations. When the Persona chooses to go to a canonical target, compare the target's current locations with the acting subject's current location and exact reachable destinations; never guess a destination from an opaque ID. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
@@ -1399,7 +1400,7 @@ impl CellProjectionEngine {
                         stage_receipts: Vec::new(),
                     }));
                 }
-                let appraisal = bind_cell_appraisal(&slice, proposal)?;
+                let appraisal = bind_cell_appraisal(&slice, &active_subject_ids, proposal)?;
                 validate_cell_appraisal(&slice, &appraisal)?;
                 validate_active_decision_owners(&active_subject_ids, &appraisal)?;
                 Ok(appraisal)
@@ -1715,6 +1716,11 @@ fn cell_correction_guidance(error: &anyhow::Error) -> &'static str {
         "The named subject already has a concrete chosen attempt in actions. Remove its inaction entry. Waiting for that attempt's result or declining some other option is not inaction. Do not change a faithful permitted action merely to preserve the duplicate inaction."
     } else if error.to_string().contains("duplicate strategic actions") {
         "The named subject may own exactly one strategic choice in this horizon. Merge all faithful chosen means into one action and use its orthogonal effect slots together; remove any separate alternative, deliberation, or unreachable choice rather than emitting a second action."
+    } else if error
+        .to_string()
+        .contains("omitted explicit strategic decisions")
+    {
+        "Every projected perspective must end in exactly one attributed decision. Preserve existing valid decisions and add an action only when the Persona explicitly chose a concrete attempt; otherwise add that voiced subject's explicit hold or wait as an inaction. Never invent a decision for an unprojected subject."
     } else {
         "Repair the semantic mismatch named by the verifier while preserving every unaffected faithful effect. A correction may retain exact unaffected values; do not alter text merely to make it bytewise different. Compress bounded text into complete clauses rather than truncating its meaning."
     }
@@ -1836,6 +1842,7 @@ pub fn cell_effect_verification_binding(
 
 fn bind_cell_appraisal(
     slice: &PermittedCellSlice,
+    active_subject_ids: &BTreeSet<String>,
     proposal: CellAppraisalProposal,
 ) -> Result<crate::domain::CellAppraisal> {
     let actions = proposal
@@ -1955,11 +1962,7 @@ fn bind_cell_appraisal(
         cell_id: slice.cell_id.clone(),
         world_revision: slice.world_revision,
         resolution_epoch: slice.resolution_epoch,
-        considered_subject_ids: slice
-            .constituents
-            .iter()
-            .map(|subject| subject.subject_id.clone())
-            .collect(),
+        considered_subject_ids: active_subject_ids.clone(),
         actions,
         inactions: proposal.inactions,
     })
@@ -1969,25 +1972,19 @@ fn validate_cell_appraisal(
     slice: &PermittedCellSlice,
     appraisal: &crate::domain::CellAppraisal,
 ) -> Result<()> {
-    let expected: BTreeSet<_> = slice
-        .constituents
-        .iter()
-        .map(|value| value.subject_id.clone())
-        .collect();
     if appraisal.schema != "ghostlight.cell_appraisal.v1"
         || appraisal.cell_id != slice.cell_id
         || appraisal.world_revision != slice.world_revision
         || appraisal.resolution_epoch != slice.resolution_epoch
-        || appraisal.considered_subject_ids != expected
     {
         return Err(anyhow!(
             "appraisal has a stale or incomplete runtime binding"
         ));
     }
-    if appraisal.actions.len() > slice.max_actions {
+    if appraisal.actions.len() + appraisal.inactions.len() > slice.max_actions {
         return Err(anyhow!(
-            "appraisal emitted {} actions but this cell permits at most {}",
-            appraisal.actions.len(),
+            "appraisal emitted {} attributed decisions but this cell permits at most {}",
+            appraisal.actions.len() + appraisal.inactions.len(),
             slice.max_actions
         ));
     }
@@ -2007,8 +2004,28 @@ fn validate_cell_appraisal(
                 .map(|member| member.subject_id.as_str()),
         )
         .collect::<BTreeSet<_>>();
+    if appraisal.considered_subject_ids.is_empty()
+        || appraisal.considered_subject_ids.len() > slice.max_actions
+        || appraisal
+            .considered_subject_ids
+            .iter()
+            .any(|subject_id| !permitted_subject_ids.contains(subject_id.as_str()))
+    {
+        return Err(anyhow!(
+            "appraisal considered subjects are empty, over quota, or outside this cell's exact decision owners"
+        ));
+    }
     let mut action_subject_ids = BTreeSet::new();
     for action in &appraisal.actions {
+        if !appraisal
+            .considered_subject_ids
+            .contains(&action.subject_id)
+        {
+            return Err(anyhow!(
+                "action subject {} was not an exact projected decision owner",
+                action.subject_id
+            ));
+        }
         if !action_subject_ids.insert(action.subject_id.as_str()) {
             return Err(anyhow!(
                 "subject {} has duplicate strategic actions; combine every chosen movement and activity means into one composed action",
@@ -2037,6 +2054,15 @@ fn validate_cell_appraisal(
                 inaction.subject_id
             ));
         }
+        if !appraisal
+            .considered_subject_ids
+            .contains(&inaction.subject_id)
+        {
+            return Err(anyhow!(
+                "inaction subject {} was not an exact projected decision owner",
+                inaction.subject_id
+            ));
+        }
         if action_subject_ids.contains(inaction.subject_id.as_str()) {
             return Err(anyhow!(
                 "subject {} appears in both actions and inactions; retain exactly one of those decisions",
@@ -2052,6 +2078,21 @@ fn validate_cell_appraisal(
     }
     for action in &appraisal.actions {
         validate_cell_action(slice, action)?;
+    }
+    let decided_subject_ids = action_subject_ids
+        .into_iter()
+        .chain(inaction_subject_ids)
+        .collect::<BTreeSet<_>>();
+    let missing = appraisal
+        .considered_subject_ids
+        .iter()
+        .map(String::as_str)
+        .filter(|subject_id| !decided_subject_ids.contains(subject_id))
+        .collect::<BTreeSet<_>>();
+    if !missing.is_empty() {
+        return Err(anyhow!(
+            "appraisal omitted explicit strategic decisions for projected subjects {missing:?}"
+        ));
     }
     Ok(())
 }
@@ -2202,6 +2243,11 @@ fn validate_active_decision_owners(
     active_subject_ids: &BTreeSet<String>,
     appraisal: &crate::domain::CellAppraisal,
 ) -> Result<()> {
+    if appraisal.considered_subject_ids != *active_subject_ids {
+        return Err(anyhow!(
+            "appraisal decision owners do not match the exact projected perspectives"
+        ));
+    }
     let inactive = appraisal
         .actions
         .iter()
@@ -3461,6 +3507,7 @@ mod tests {
         let mut slice = fixture_cell_slice();
         let mut appraisal = bind_cell_appraisal(
             &slice,
+            &BTreeSet::from(["faction-06".into()]),
             CellAppraisalProposal {
                 actions: vec![],
                 inactions: vec![crate::domain::CellInaction {
@@ -3509,6 +3556,41 @@ mod tests {
                 .to_string()
                 .contains("subject faction-06 has duplicate strategic actions")
         );
+    }
+
+    #[test]
+    fn every_projected_decision_owner_requires_an_action_or_explicit_inaction() {
+        let mut slice = fixture_cell_slice();
+        let mut second = slice.constituents[0].clone();
+        second.subject_id = "faction-07".into();
+        second.name = "Faction Seven".into();
+        second.permitted_state_references = BTreeSet::from(["institution:faction-07".into()]);
+        slice.constituents.push(second);
+        slice.max_actions = 2;
+        let active = BTreeSet::from(["faction-06".into(), "faction-07".into()]);
+        let mut appraisal = bind_cell_appraisal(
+            &slice,
+            &active,
+            CellAppraisalProposal {
+                actions: vec![],
+                inactions: vec![crate::domain::CellInaction {
+                    subject_id: "faction-06".into(),
+                    reason: "Faction Six explicitly holds its current course.".into(),
+                }],
+            },
+        )
+        .unwrap();
+
+        let error = validate_cell_appraisal(&slice, &appraisal).unwrap_err();
+        assert!(error.to_string().contains("faction-07"));
+        assert!(cell_correction_guidance(&error).contains("Every projected perspective must end"));
+
+        appraisal.inactions.push(crate::domain::CellInaction {
+            subject_id: "faction-07".into(),
+            reason: "Faction Seven explicitly waits for the vote count.".into(),
+        });
+        validate_cell_appraisal(&slice, &appraisal).unwrap();
+        validate_active_decision_owners(&active, &appraisal).unwrap();
     }
 
     #[test]
@@ -4091,6 +4173,7 @@ mod tests {
         subject.permitted_state_references = BTreeSet::from(["gestalt:crowd".into()]);
         let appraisal = bind_cell_appraisal(
             &slice,
+            &BTreeSet::from(["crowd".into()]),
             CellAppraisalProposal {
                 actions: vec![CellActionCandidate {
                     subject_id: "crowd".into(),
@@ -4246,6 +4329,7 @@ mod tests {
         });
         let appraisal = bind_cell_appraisal(
             &slice,
+            &BTreeSet::from(["member:mira".into()]),
             CellAppraisalProposal {
                 actions: vec![CellActionCandidate {
                     subject_id: "member:mira".into(),
@@ -4302,6 +4386,7 @@ mod tests {
 
         let appraisal = bind_cell_appraisal(
             &slice,
+            &BTreeSet::from(["actor:liaison".into()]),
             CellAppraisalProposal {
                 actions: vec![CellActionCandidate {
                     subject_id: "actor:liaison".into(),
@@ -4333,6 +4418,7 @@ mod tests {
 
         let wrong_lane = bind_cell_appraisal(
             &slice,
+            &BTreeSet::from(["actor:liaison".into()]),
             CellAppraisalProposal {
                 actions: vec![CellActionCandidate {
                     subject_id: "actor:liaison".into(),
@@ -4380,6 +4466,7 @@ mod tests {
 
         let proposal = bind_cell_appraisal(
             &slice,
+            &BTreeSet::from(["actor:director".into()]),
             CellAppraisalProposal {
                 actions: vec![CellActionCandidate {
                     subject_id: "actor:director".into(),
