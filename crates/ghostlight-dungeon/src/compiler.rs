@@ -2052,7 +2052,7 @@ impl WorldCompiler {
         let receipts = canonical_worldbuilding_receipts(receipts);
         let schema = serde_json::to_value(schema_for!(ExtractedGlobalAgencyCatalog))?;
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nExtract evidence for the coarse remote strategic agency catalog at the requested historical horizon. This stage extracts; it does not write simulation doctrine. Include major powers and strategically distinct movements supported by the supplied witnesses. For each candidate, copy its exact displayed name and 1-3 short, contiguous supporting_claims verbatim from institution-specific source prose. A claim may establish the institution's existence or identity, or an explicit role, interest, method, constraint, refusal, or pressure. Exact institution-specific evidence of existence is enough to admit a major power; missing operational detail will be compiled later as branch-local doctrine. Do not use mere index links, shared headings, category descriptions, movement lists, or story-specific incidents. Do not infer current posture, territory, capability inventory, or branch facts. Report a material evidence gap only when the witnesses cannot anchor the institution or historical horizon at all, not merely because they omit game-scale doctrine, routes, or daily operations. Return no narrative analysis.\nHORIZON:\n{}\nREQUESTED PLACE (relevance only; not local authority):\n{}\nEVIDENCE:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nExtract evidence for the coarse remote strategic agency catalog at the requested historical horizon. This stage extracts; it does not write simulation doctrine. Include major powers and strategically distinct movements supported by the supplied witnesses. For each candidate, copy its exact displayed name and 1-3 contiguous supporting_claims verbatim from institution-specific source prose; every claim must contain 1 to 320 Unicode characters. A claim may establish the institution's existence or identity, or an explicit role, interest, method, constraint, refusal, or pressure. Exact institution-specific evidence of existence is enough to admit a major power; missing operational detail will be compiled later as branch-local doctrine. Do not use mere index links, shared headings, category descriptions, movement lists, or story-specific incidents. Do not infer current posture, territory, capability inventory, or branch facts. Report a material evidence gap only when the witnesses cannot anchor the institution or historical horizon at all, not merely because they omit game-scale doctrine, routes, or daily operations. Return no narrative analysis.\nHORIZON:\n{}\nREQUESTED PLACE (relevance only; not local authority):\n{}\nEVIDENCE:\n{}",
             serde_json::to_string(&schema)?,
             start.when,
             start.where_,
@@ -2104,7 +2104,13 @@ impl WorldCompiler {
                     mark_semantic_invalid(&mut receipt, &error);
                     stage_receipts.push(receipt);
                     correction = format!(
-                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS GLOBAL AGENCY CATALOG: {error}\nReturn one corrected complete catalog against the same HORIZON and EVIDENCE."
+                        "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS GLOBAL AGENCY CATALOG: {error}\nPREVIOUS_REJECTED_CATALOG:\n{}\nReturn one corrected complete catalog against the same HORIZON and EVIDENCE. Shorten or replace the exact invalid claim while preserving verbatim source grounding.",
+                        output
+                            .structured
+                            .as_ref()
+                            .map(serde_json::to_string)
+                            .transpose()?
+                            .unwrap_or_else(|| "null".into())
                     );
                 }
                 Err(error) => {
