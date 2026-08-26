@@ -217,8 +217,15 @@ pub async fn run_validated_stage_with_timeout(
                 Ok(value) => {
                     let validation = validator.as_ref().expect("structured validator");
                     if let Err(error) = validation.validate(&value) {
-                        let diagnostic =
-                            schema_validation_diagnostic(&request.stage, &error, &value);
+                        let diagnostic = schema_validation_diagnostic(
+                            &request.stage,
+                            &error,
+                            &value,
+                            request
+                                .output_schema
+                                .as_ref()
+                                .expect("validated structured output has a schema"),
+                        );
                         provider_attempts
                             .last_mut()
                             .expect("attempt was just recorded")
@@ -326,6 +333,7 @@ fn schema_validation_diagnostic(
     stage: &str,
     error: &jsonschema::ValidationError<'_>,
     rejected: &serde_json::Value,
+    output_schema: &serde_json::Value,
 ) -> String {
     let mut diagnostic = format!(
         "stage {stage}, instance {}, schema {}: {error}",
@@ -345,7 +353,53 @@ fn schema_validation_diagnostic(
             if path.is_empty() { "/" } else { &path }
         ));
     }
+    if let Some(detail) = matching_action_schema_diagnostic(output_schema, rejected, &instance_path)
+    {
+        diagnostic.push_str(&format!("; exact attributed action failure: {detail}"));
+    }
     diagnostic
+}
+
+fn matching_action_schema_diagnostic(
+    output_schema: &serde_json::Value,
+    rejected: &serde_json::Value,
+    instance_path: &str,
+) -> Option<String> {
+    let mut segments = instance_path.split('/').skip(1);
+    if segments.next()? != "actions" {
+        return None;
+    }
+    let action_index = segments.next()?.parse::<usize>().ok()?;
+    let action_path = format!("/actions/{action_index}");
+    let action = rejected.pointer(&action_path)?;
+    let subject_id = action.get("subject_id")?.as_str()?;
+    let alternative = output_schema
+        .pointer("/properties/actions/items/anyOf")?
+        .as_array()?
+        .iter()
+        .find(|candidate| {
+            candidate
+                .pointer("/properties/subject_id/const")
+                .and_then(serde_json::Value::as_str)
+                == Some(subject_id)
+        })?;
+
+    let mut isolated = serde_json::Map::new();
+    if let Some(dialect) = output_schema.get("$schema") {
+        isolated.insert("$schema".into(), dialect.clone());
+    }
+    if let Some(definitions) = output_schema.get("$defs") {
+        isolated.insert("$defs".into(), definitions.clone());
+    }
+    isolated.insert("allOf".into(), serde_json::json!([alternative]));
+    let isolated = serde_json::Value::Object(isolated);
+    let validator = jsonschema::validator_for(&isolated).ok()?;
+    let nested_error = validator.validate(action).err()?;
+    Some(format!(
+        "subject {subject_id}, instance {action_path}{}, schema {}: {nested_error}",
+        nested_error.instance_path(),
+        nested_error.schema_path()
+    ))
 }
 
 fn action_rejected_context(
@@ -660,13 +714,66 @@ mod tests {
         let validator = jsonschema::validator_for(&schema).unwrap();
         let error = validator.validate(&rejected).unwrap_err();
 
-        let diagnostic = schema_validation_diagnostic("cell_interpreter", &error, &rejected);
+        let diagnostic =
+            schema_validation_diagnostic("cell_interpreter", &error, &rejected, &schema);
 
         assert!(diagnostic.contains("instance /actions/0/effect/target_subject_ids"));
         assert!(diagnostic.contains("rejected containing value at /actions/0"));
         assert!(diagnostic.contains("\"activity\":\"coordinate\""));
         assert!(diagnostic.contains("member:reed"));
         assert!(!diagnostic.contains("must not be repeated"));
+    }
+
+    #[test]
+    fn schema_diagnostic_descends_into_matching_attributed_action() {
+        let schema = serde_json::json!({
+            "type":"object",
+            "properties":{
+                "actions":{
+                    "type":"array",
+                    "items":{
+                        "anyOf":[
+                            {
+                                "type":"object",
+                                "required":["subject_id","public_channels"],
+                                "properties":{
+                                    "subject_id":{"const":"actor:one"},
+                                    "public_channels":{
+                                        "type":"array",
+                                        "items":{"enum":["exact-channel"]}
+                                    }
+                                }
+                            },
+                            {
+                                "type":"object",
+                                "required":["subject_id","public_channels"],
+                                "properties":{
+                                    "subject_id":{"const":"actor:two"},
+                                    "public_channels":{"type":"array","maxItems":0}
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        });
+        let rejected = serde_json::json!({
+            "actions":[{
+                "subject_id":"actor:one",
+                "public_channels":["invented-channel"]
+            }]
+        });
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        let error = validator.validate(&rejected).unwrap_err();
+
+        let diagnostic =
+            schema_validation_diagnostic("cell_interpreter", &error, &rejected, &schema);
+
+        assert!(diagnostic.contains("exact attributed action failure"));
+        assert!(diagnostic.contains("subject actor:one"));
+        assert!(diagnostic.contains("/actions/0/public_channels/0"));
+        assert!(diagnostic.contains("invented-channel"));
+        assert!(diagnostic.contains("exact-channel"));
     }
 
     #[tokio::test]
