@@ -2606,7 +2606,6 @@ fn constrain_cell_proposal_schema(
     if exact_subject_actions.len() > slice.max_actions {
         return Err(anyhow!("cell proposal schema exceeds its decision budget"));
     }
-    let definitions = schema.get("$defs").cloned().unwrap_or_default();
     let mut decision_properties = serde_json::Map::new();
     let mut required_subjects = Vec::new();
     for (subject_id, action_schema) in exact_subject_actions {
@@ -2652,7 +2651,6 @@ fn constrain_cell_proposal_schema(
     }
     *schema = serde_json::json!({
         "$schema":"https://json-schema.org/draft/2020-12/schema",
-        "$defs":definitions,
         "type":"object",
         "additionalProperties":false,
         "required":["decisions"],
@@ -3701,6 +3699,8 @@ mod tests {
         .unwrap();
         let schema_text = serde_json::to_string(&schema).unwrap();
         assert!(schema_text.contains("\"maxLength\":240"));
+        assert!(schema.get("$defs").is_none());
+        assert!(!schema_text.contains("\"$ref\""));
         assert!(schema.pointer("/properties/decisions").is_some());
         assert!(schema.pointer("/properties/actions").is_none());
         assert!(schema.pointer("/properties/inactions").is_none());
