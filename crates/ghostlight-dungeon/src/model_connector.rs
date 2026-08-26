@@ -11,6 +11,7 @@ use codex_connector::{
     CodexTransportOutcome,
 };
 use sha2::{Digest, Sha256};
+use tokio::sync::Semaphore;
 use zeroize::Zeroizing;
 
 use crate::model::{
@@ -23,6 +24,7 @@ const REQUEST_EXPIRY: Duration = Duration::from_secs(150);
 #[derive(Clone)]
 pub struct CodexConnectorModelPort {
     client: CodexConnectorClient,
+    request_gate: std::sync::Arc<Semaphore>,
     caller_runtime_id: String,
     fast_model: String,
     capable_model: String,
@@ -35,14 +37,19 @@ impl CodexConnectorModelPort {
         caller_runtime_id: impl Into<String>,
         fast_model: impl Into<String>,
         capable_model: impl Into<String>,
+        max_concurrent_requests: usize,
     ) -> Result<Self> {
         let caller_runtime_id = caller_runtime_id.into();
         if caller_runtime_id.trim().is_empty() || caller_runtime_id.trim() != caller_runtime_id {
             bail!("CodexConnector caller runtime must be a non-empty exact identity")
         }
+        if !(1..=128).contains(&max_concurrent_requests) {
+            bail!("CodexConnector caller concurrency must be between 1 and 128")
+        }
         let client = CodexConnectorClient::new(endpoint, connection_key, MAX_FRAME_BYTES, None)?;
         Ok(Self {
             client,
+            request_gate: std::sync::Arc::new(Semaphore::new(max_concurrent_requests)),
             caller_runtime_id,
             fast_model: fast_model.into(),
             capable_model: capable_model.into(),
@@ -55,6 +62,7 @@ impl CodexConnectorModelPort {
         caller_runtime_id: impl Into<String>,
         fast_model: impl Into<String>,
         capable_model: impl Into<String>,
+        max_concurrent_requests: usize,
     ) -> Result<Self> {
         let bytes = Zeroizing::new(std::fs::read(path.as_ref())?);
         let raw = std::str::from_utf8(bytes.as_slice())?;
@@ -68,6 +76,7 @@ impl CodexConnectorModelPort {
             caller_runtime_id,
             fast_model,
             capable_model,
+            max_concurrent_requests,
         )
     }
 
@@ -125,9 +134,19 @@ impl ModelPort for CodexConnectorModelPort {
     }
 
     async fn run_observed(&self, request: &ModelStageRequest) -> Result<ModelProviderOutput> {
+        let permit = self
+            .request_gate
+            .clone()
+            .acquire_owned()
+            .await
+            .map_err(|_| anyhow::anyhow!("CodexConnector request gate closed"))?;
         let port = self.clone();
         let request = request.clone();
-        tokio::task::spawn_blocking(move || port.invoke(&request)).await?
+        tokio::task::spawn_blocking(move || {
+            let _permit = permit;
+            port.invoke(&request)
+        })
+        .await?
     }
 
     fn provider(&self) -> &'static str {
@@ -588,7 +607,9 @@ mod tests {
             "ghostlight-dungeon-yggdrasil",
             "gpt-5.6-luna",
             "gpt-5.6-luna",
+            1,
         )?;
+        assert_eq!(port.request_gate.available_permits(), 1);
         let output = port
             .run_observed(&ModelStageRequest {
                 stage: "test_interpreter".to_string(),

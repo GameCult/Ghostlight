@@ -316,6 +316,11 @@ async fn main() -> anyhow::Result<()> {
         std::env::var("GHOSTLIGHT_MODEL_FAST").unwrap_or_else(|_| default_fast_model.into());
     let capable_model =
         std::env::var("GHOSTLIGHT_MODEL_CAPABLE").unwrap_or_else(|_| default_capable_model.into());
+    let connector_max_concurrent_requests =
+        std::env::var("GHOSTLIGHT_CODEX_CONNECTOR_MAX_CONCURRENT_REQUESTS")
+            .unwrap_or_else(|_| "8".to_string())
+            .parse::<usize>()
+            .context("GHOSTLIGHT_CODEX_CONNECTOR_MAX_CONCURRENT_REQUESTS must be an integer")?;
     let secret_path = std::env::var_os("GHOSTLIGHT_MODEL_CREDENTIAL")
         .map(PathBuf::from)
         .unwrap_or_else(|| runtime_root.join("secrets").join(default_secret_name));
@@ -336,6 +341,7 @@ async fn main() -> anyhow::Result<()> {
                 &secret_path,
                 fast_model.clone(),
                 capable_model.clone(),
+                connector_max_concurrent_requests,
             )?),
             "codex-connector" => Arc::new(CodexConnectorModelPort::from_runtime_secret(
                 std::env::var("GHOSTLIGHT_MODEL_CONNECTOR")
