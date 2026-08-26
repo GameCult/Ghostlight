@@ -83,8 +83,10 @@ current acceptance surface covers:
 - persistent DM-led Session Zero with shared/private channels, typed contracts,
   private boundaries, character bargains, digest-bound unanimous approval, and
   atomic publication;
-- source-grounded world compilation from an approved brief, with evidence gaps
-  returned to negotiation instead of borrowing a nearby story;
+- source-constrained world compilation from an approved brief: canon evidence
+  pins what must remain true, compatible game-scale connective tissue becomes
+  disclosed branch-local state, and genuine premise conflicts return to
+  negotiation instead of borrowing a nearby story;
 - selectable Aetheria and Kalsa Vaults, with Kalsa's player-safe `Public` and
   GM-only `Spoilers` evidence lanes preserved through exact receipts;
 - persistent campaigns, forks, resets, exports, and Heimdall-account-isolated sessions;

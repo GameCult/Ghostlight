@@ -59,7 +59,8 @@ Ghostlight’s existing v0 schemas and training fixtures remain evidence and reg
   4. Produce an approval preview containing the initial topology, cast, institutions, capabilities, clocks, evidence coverage, gaps, and branch-local assumptions.
   5. Commit only after approval.
 - Materialize a bounded playable region and surrounding institutional pressure graph, not the entire universe. New destinations compile on demand and attach to stable containment, route, distance, and travel-time records.
-- Automatically improvise reversible local texture as provisional branch fact. Material gaps in geography, mechanics, institutions, or extraordinary abilities require approval before the world seed or action is admitted.
+- Treat Vault evidence as canon constraints rather than an exhaustive game map. Automatically synthesize the smallest coherent routes, geometry, local people, ordinary procedures, supplies, responsibilities, capacity choices, and operational doctrine required for play; store them as reversible `branch_local` or `provisional_local` facts and disclose consequential choices in `branch_assumptions`. Ordinary source silence is not a material gap, and generated details may vary between campaigns unless the Vault pins them.
+- Reserve material gaps for an exact approved premise that cannot be preserved without choosing between contradictory canon baselines, inventing an explicitly requested but unanchored canon baseline, or exceeding an approved extraordinary capability. Those gaps return to Session Zero negotiation before publication.
 - Store useful gaps as `CanonCandidate` records with originating campaign, evidence, conflicts, proposed wording, and affected Vault sources. The lab can review and export Markdown plus `.cc` evidence; it cannot edit AetheriaLore or open PRs.
 
 ### Persona and world action loop
