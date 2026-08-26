@@ -21,11 +21,11 @@ const ASSESSMENT_PROPOSAL_CACHE_KIND: &str = "assessment_proposal_cache.v1";
 const ASSESSMENT_PROPOSAL_CACHE_SCHEMA: &str = "ghostlight.private.assessment_proposal_cache.v6";
 const ASSESSMENT_SCOPE_CACHE_KIND: &str = "assessment_mutation_scope_cache.v1";
 const ASSESSMENT_SCOPE_CACHE_SCHEMA: &str = "ghostlight.private.assessment_mutation_scope_cache.v5";
-const ASSESSMENT_SEMANTICS_VERSION: &str = "ghostlight.action_assessment.v11";
+const ASSESSMENT_SEMANTICS_VERSION: &str = "ghostlight.action_assessment.v12";
 
-const ASSESSMENT_SCOPE_INSTRUCTIONS: &str = "You own the compact admission and mutation-scope preflight for one fiction-first attempt. Decide 'deny' only when no d20 outcome can realize the exact intended effect from the supplied authority: the attempt lacks required capability, custody, access, spatial reach, extraordinary permission, or demands guaranteed control over another subject's independent future choices. A bounded attempt to influence a present subject's voluntary response is not guaranteed control: when the means can plausibly reach that subject, assess it and represent a successful voluntary promise, agreement, plan, goal, or obligation through actor_commitments. Difficulty, opposition, danger, or a costly but bounded effect are not reasons to deny; use 'assess' and let the full assessor set the DC and ceiling. For 'assess', select the smallest causally plausible typed mutation vocabulary. Availability is never relevance. Put every selected lane in lanes. Also put in required_success_lanes every lane whose non-empty mutation is necessary for strong and ordinary success to realize the intended effect; direct costs or incidental consequences are allowed lanes but are not required success lanes. actor_conditions changes bodily or situational conditions. actor_commitments adds or retires an exact present actor's goal or obligation; it records that actor's voluntary commitment and never grants custody of them or guarantees behavior beyond it. actor_knowledge_additions acquires or communicates an exact existing fact. actor_observations admits a new branch-local finding only when the acting actor's exact means directly perceives, measures, inspects, or tests something within current spatial reach; it cannot invent a remote event, hidden motive, unsupported identity, or conclusion beyond the intended effect and effect ceiling. Do not select either information lane for ordinary speech, promises, persuasion, trust, or scene texture. actor_relationship_updates changes durable trust, regard, leverage, or another exact relationship. actor_moves relocates the acting character along an admitted route. clock_advances and clock_reductions change an existing pressure. institution_postures changes an institution's durable policy or stance. For 'deny', both lane sets must be empty and denial must state the exact missing permission, the maximum effect declaration alone can have, one concise refusal stake, and one to four actionable bargains that could admit a narrower future assessment. For 'assess', denial must be null. Never infer a new lane, target, route, clock, institution, possession, or permission. New propositions are permitted only through actor_observations. Return only the typed JSON.";
+const ASSESSMENT_SCOPE_INSTRUCTIONS: &str = "You own the compact admission and mutation-scope preflight for one fiction-first attempt. Decide 'deny' only when no d20 outcome can realize the exact intended effect from the supplied authority: the attempt lacks required capability, custody, access, spatial reach, extraordinary permission, an exact typed mutation path, or demands guaranteed control over another subject's independent future choices. A bounded attempt to influence a present subject's voluntary response is not guaranteed control: when the means can plausibly reach that subject, assess it and represent a successful voluntary promise, agreement, plan, goal, or obligation through actor_commitments. Difficulty, opposition, danger, or a costly but bounded effect are not reasons to deny; use 'assess' and let the full assessor set the DC and ceiling. For 'assess', select the smallest causally plausible typed mutation vocabulary. Availability is never relevance. Put every selected lane in lanes. Also put in required_success_lanes every lane whose non-empty mutation is necessary for strong and ordinary success to realize the intended effect; direct costs or incidental consequences are allowed lanes but are not required success lanes. actor_conditions changes bodily or situational conditions. actor_commitments adds or retires an exact present actor's goal or obligation; it records that actor's voluntary commitment and never grants custody of them or guarantees behavior beyond it. actor_knowledge_additions acquires or communicates an exact existing fact to an exact present actor allowed by the supplied lane. A subject receiving, recognizing, learning, remembering, or becoming able to act on information is a canonical knowledge transition even when narration is the only player-visible effect. If the intended recipient is an institution, population, place, remote actor, absent actor, unspecified office, or other subject for which no exact knowledge-recipient lane is structurally available, deny the intended effect and name the missing recipient/channel mutation path. Do not assess with empty information lanes while promising receipt or recognition in the stakes. actor_observations admits a new branch-local finding only when the acting actor's exact means directly perceives, measures, inspects, or tests something within current spatial reach; it cannot invent a remote event, hidden motive, unsupported identity, or conclusion beyond the intended effect and effect ceiling. Do not select either information lane for ordinary speech, promises, persuasion, trust, or scene texture. actor_relationship_updates changes durable trust, regard, leverage, or another exact relationship. actor_moves relocates the acting character along an admitted route. clock_advances and clock_reductions change an existing pressure. institution_postures changes an institution's durable policy or stance; posture is not a substitute for knowledge receipt. For 'deny', both lane sets must be empty and denial must state the exact missing permission or mutation path, the maximum effect declaration alone can have, one concise refusal stake, and one to four actionable bargains that could admit a narrower future assessment. For 'assess', denial must be null. Never infer a new lane, target, route, clock, institution, possession, or permission. New propositions are permitted only through actor_observations. Return only the typed JSON.";
 
-const ASSESSMENT_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between the fiction-first action assessor and the world kernel. Structural authority, reach, knowledge access, and mutation shape were already checked. Judge the complete four-band typed effect bundle against the player's exact means and intended effect. Every non-empty mutation must be a direct realization of the intended effect or a concrete, previewed consequence of the attempted means in that exact outcome band. Acquiring or communicating an existing fact requires a causally related information action. Admitting a new actor_observations finding requires exact local means that directly perceive, measure, inspect, or test it, and the statement must remain within the intended effect and effect ceiling. An actor_observations entry becomes canonical knowledge if its outcome is committed. It must therefore be a concrete, truth-apt proposition about what the inspection actually finds. Reject an entry that merely says the actor determines, establishes, learns, or discovers whether something is true; repeats the intended question; preserves an 'if one exists' placeholder; or otherwise reports completion of an inquiry without resolving it. A bounded concrete negative finding is valid. When supplied canon does not determine harmless local texture, the assessment may preview the smallest reversible branch-local detail consistent with the location and evidence; it must state that detail rather than leave a template for a later resolver. A plausible general reaction does not justify changing a commitment, relationship, condition, clock, posture, movement, or knowledge record that the attempted means and stakes do not cause. A target actor's new commitment must be a plausible voluntary response to the attempted influence, never disguised custody or guaranteed obedience. Failure and mixed effects may impose direct costs or complications, but not arbitrary available state changes. The effect ceiling and visible stakes must describe the same bounded consequences as the typed effects. Do not reassess admissibility, DC, or modifiers, and do not choose replacement effects. Return one JSON object. If every typed mutation is causally faithful and epistemically complete, use result 'match' with null mismatch_kind and null repair_guidance. Otherwise use result 'mismatch', one mismatch_kind, and one concrete repair sentence of at most 240 characters naming what must be removed or aligned. Shape: {\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}.";
+const ASSESSMENT_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between the fiction-first action assessor and the world kernel. Structural authority, reach, knowledge access, and mutation shape were already checked. Judge the complete four-band typed effect bundle against the player's exact means and intended effect. Every non-empty mutation must be a direct realization of the intended effect or a concrete, previewed consequence of the attempted means in that exact outcome band. Every visible stake must also be backed by the typed mutations that would make its canonical claims true. A subject receiving, recognizing, learning, remembering, or becoming able to act on information is a knowledge transition. If a stake claims such a transition without an exact typed knowledge mutation for that exact recipient, return mismatch_kind 'effect_omission'; ordinary speech, narration, an institution posture change, or a sender's observation is not a substitute. Acquiring or communicating an existing fact requires a causally related information action. Admitting a new actor_observations finding requires exact local means that directly perceive, measure, inspect, or test it, and the statement must remain within the intended effect and effect ceiling. An actor_observations entry becomes canonical knowledge if its outcome is committed. It must therefore be a concrete, truth-apt proposition about what the inspection actually finds. Reject an entry that merely says the actor determines, establishes, learns, or discovers whether something is true; repeats the intended question; preserves an 'if one exists' placeholder; or otherwise reports completion of an inquiry without resolving it. A bounded concrete negative finding is valid. When supplied canon does not determine harmless local texture, the assessment may preview the smallest reversible branch-local detail consistent with the location and evidence; it must state that detail rather than leave a template for a later resolver. A plausible general reaction does not justify changing a commitment, relationship, condition, clock, posture, movement, or knowledge record that the attempted means and stakes do not cause. A target actor's new commitment must be a plausible voluntary response to the attempted influence, never disguised custody or guaranteed obedience. Failure and mixed effects may impose direct costs or complications, but not arbitrary available state changes. The effect ceiling and visible stakes must describe the same bounded consequences as the typed effects. Do not reassess admissibility, DC, or modifiers, and do not choose replacement effects. Return one JSON object. If every typed mutation is causally faithful and epistemically complete, use result 'match' with null mismatch_kind and null repair_guidance. Otherwise use result 'mismatch', one mismatch_kind, and one concrete repair sentence of at most 240 characters naming what must be removed or aligned. Shape: {\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}.";
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct AssessmentProposal {
@@ -380,7 +380,7 @@ impl ActionAssessor {
         constrain_effect_schema_to_scope(&mut schema, &mutation_scope.lanes)?;
         require_success_scope(&mut schema, &mutation_scope.required_success_lanes)?;
         let base_prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. The private scope projection has already removed mutation lanes that are not causally plausible for this exact attempt. The remaining lanes are an upper bound, not a request to use all of them. When admissible, every required_success_lane in MUTATION SCOPE must contain at least one mutation entry in both strong_effect and success_effect; a success stake may not claim an intended canonical change that its typed effect omits. Every non-empty mutation must be directly caused by the exact attempted means or realize the exact intended effect in that outcome band. A fact, relationship, clock, posture, or route being true, nearby, discoverable, or useful does not make changing it a consequence of an unrelated attempt. Do not append scene context as an observed finding unless the attempted means actually communicates it or the intended effect actually investigates or discloses it. Each supplied mutation lane is a bounded array of exact entries. Use an empty array when that lane does not change in an outcome; never add a duplicate or contradictory entry. Supplied entries may only name IDs copied exactly from PRESENT ACTORS and the enumerated schema, add or retire their exact goals or obligations, change their conditions or relationships, move only the acting actor along an existing route, advance or reduce existing clocks by a positive amount, or change existing institution posture. An actor_commitments entry records a present actor voluntarily adopting or retiring a bounded goal or obligation as an outcome; it does not make that actor a puppet, transfer authority, or guarantee unrelated future conduct. Strong and ordinary success share one visible stake, so give them identical commitment changes; the runtime binds each exact commitment into that stake. Use clock_advances when an outcome moves a pressure toward its consequence. Use clock_reductions when repair, relief, delay, or obstruction removes established progress. Never name the same clock in both arrays for one outcome. Existing informational outcomes may copy an exact statement from AVAILABLE INFORMATION FACTS through actor_knowledge_additions. A direct observation, measurement, inspection, or test may instead state one new bounded result through actor_observations. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. Each actor_knowledge_additions or actor_observations entry contains the player-readable statement, never a fact ID, key, or label. An actor_observations statement is itself the canonical branch-local proposition committed on that outcome: state what is actually true. Do not say that the actor determines or establishes whether something is true, do not repeat the intended question, and do not leave 'if one exists' or another unresolved placeholder. A concrete negative result is valid. If canon is silent about harmless local texture needed to answer a direct inspection, improvise the smallest reversible detail consistent with the supplied location and evidence and preview it exactly; material geography, mechanics, institutions, or extraordinary capabilities remain outside this lane. actor_observations may target only the acting actor and must state only what the exact attempted means could establish at the current location; never use it for remote events, hidden motives, unsupported identities, or conclusions beyond the effect ceiling. Strong and ordinary success share one visible stake, so give them identical knowledge additions and observations. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports an intended disclosure, leave actor_knowledge_additions empty. If an intended local investigation can directly establish a bounded result, use actor_observations; otherwise make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep an effect empty only when the outcome truly has no canonical state change.\nMUTATION SCOPE:\n{}\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAssess an attempted effect, not whether words can be spoken. Impossible actions are inadmissible and receive bargains, not a roll. Choose DC only from 5,10,15,20,25,30. Every modifier reference must be copied exactly from ALLOWED REFERENCES. Modifier total is capped at +/-10. Never grant capability, custody, access, knowledge, or spatial reach absent from state. Accepted extraordinary permissions are binding: preserve their prerequisites, costs, limits, exposure, and effect ceiling exactly; they admit only effects within that scope. The campaign contract governs tone, pacing, focus, consequence style, and DM style. Obey every aggregate content boundary: line excludes the topic, veil keeps it off-screen, ask_first admits no new depiction without a current explicit acceptance. Never reveal attribution. State concrete success, mixed, and failure consequences and a bounded effect ceiling. The private scope projection has already removed mutation lanes that are not causally plausible for this exact attempt. The remaining lanes are an upper bound, not a request to use all of them. When admissible, every required_success_lane in MUTATION SCOPE must contain at least one mutation entry in both strong_effect and success_effect; a success stake may not claim an intended canonical change that its typed effect omits. Every non-empty mutation must be directly caused by the exact attempted means or realize the exact intended effect in that outcome band. A fact, relationship, clock, posture, or route being true, nearby, discoverable, or useful does not make changing it a consequence of an unrelated attempt. Do not append scene context as an observed finding unless the attempted means actually communicates it or the intended effect actually investigates or discloses it. Each supplied mutation lane is a bounded array of exact entries. Use an empty array when that lane does not change in an outcome; never add a duplicate or contradictory entry. Supplied entries may only name IDs copied exactly from PRESENT ACTORS and the enumerated schema, add or retire their exact goals or obligations, change their conditions or relationships, move only the acting actor along an existing route, advance or reduce existing clocks by a positive amount, or change existing institution posture. An actor_commitments entry records a present actor voluntarily adopting or retiring a bounded goal or obligation as an outcome; it does not make that actor a puppet, transfer authority, or guarantee unrelated future conduct. Strong and ordinary success share one visible stake, so give them identical commitment changes; the runtime binds each exact commitment into that stake. Use clock_advances when an outcome moves a pressure toward its consequence. Use clock_reductions when repair, relief, delay, or obstruction removes established progress. Never name the same clock in both arrays for one outcome. Existing informational outcomes may copy an exact statement from AVAILABLE INFORMATION FACTS through actor_knowledge_additions. A direct observation, measurement, inspection, or test may instead state one new bounded result through actor_observations. A subject receiving, recognizing, learning, remembering, or becoming able to act on information is a canonical knowledge transition and must have an exact actor_knowledge_additions entry for that exact present recipient. Never promise remote, institutional, population, place, office, or absent-actor receipt in a stake when no exact recipient knowledge lane exists; posture, narration, speech, and sender observation are not substitutes. Choose the fact that most directly answers the intended effect, preferring a relevant branch_local or provisional_local fact over generic canon background. A location-discoverable fact may be added only to the acting actor. A fact already known by the acting actor may instead be communicated to another present actor. Each actor_knowledge_additions or actor_observations entry contains the player-readable statement, never a fact ID, key, or label. An actor_observations statement is itself the canonical branch-local proposition committed on that outcome: state what is actually true. Do not say that the actor determines or establishes whether something is true, do not repeat the intended question, and do not leave 'if one exists' or another unresolved placeholder. A concrete negative result is valid. If canon is silent about harmless local texture needed to answer a direct inspection, improvise the smallest reversible detail consistent with the supplied location and evidence and preview it exactly; material geography, mechanics, institutions, or extraordinary capabilities remain outside this lane. actor_observations may target only the acting actor and must state only what the exact attempted means could establish at the current location; never use it for remote events, hidden motives, unsupported identities, or conclusions beyond the effect ceiling. Strong and ordinary success share one visible stake, so give them identical knowledge additions and observations. The runtime binds each exact finding into the player-visible stake; do not spend prose repeating it solely for formatting. If no supplied fact supports an intended disclosure, leave actor_knowledge_additions empty. If an intended local investigation can directly establish a bounded result, use actor_observations; otherwise make the limitation explicit in the stakes or mark the attempt inadmissible. Never invent remote events, hidden actors, unsupported proper nouns, or conclusions beyond the effect ceiling. Keep an effect empty only when the outcome truly has no canonical state change.\nMUTATION SCOPE:\n{}\nCAMPAIGN CONTRACT:\n{}\nAGGREGATE CONTENT BOUNDARIES:\n{}\nAGENCY BOUNDARY:\n{}\nLEGACY HOST ACTOR ID (not an authority):\n{}\nINTENT:\n{}\nACTOR:\n{}\nACCEPTED EXTRAORDINARY PERMISSIONS:\n{}\nLOCATION:\n{}\nPRESENT ACTORS:\n{}\nVISIBLE INSTITUTIONS:\n{}\nAVAILABLE INFORMATION FACTS:\n{}\nALLOWED REFERENCES:\n{}",
             serde_json::to_string(&schema)?,
             serde_json::to_string(&mutation_scope)?,
             serde_json::to_string(&campaign_contract)?,
@@ -2796,6 +2796,10 @@ mod tests {
         calls: AtomicUsize,
     }
 
+    struct DenyingUnsupportedRecipientModel {
+        calls: AtomicUsize,
+    }
+
     #[async_trait]
     impl ModelPort for DenyingScopeModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
@@ -2823,6 +2827,38 @@ mod tests {
 
         fn provider(&self) -> &'static str {
             "denying-scope-fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for DenyingUnsupportedRecipientModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            assert_eq!(request.stage, "assessment_mutation_scope");
+            assert!(request.lived_stream.contains(
+                "A subject receiving, recognizing, learning, remembering, or becoming able to act on information is a canonical knowledge transition"
+            ));
+            assert!(request.lived_stream.contains("Harrow Station office"));
+            Ok(serde_json::json!({
+                "decision":"deny",
+                "lanes":[],
+                "required_success_lanes":[],
+                "denial":{
+                    "normalized_intent":"Deliver Vesa Orn's exact message to the Harrow Station office and establish its receipt.",
+                    "missing_permission":"No exact foreground knowledge-recipient and channel mutation path is available for the remote Harrow Station office.",
+                    "effect_ceiling":"Asha may speak into or deposit the message in the apparatus, but cannot establish institutional receipt or recognition.",
+                    "refusal_stake":"No roll occurs and no remote or institutional subject acquires the message.",
+                    "bargains":[
+                        "Reach an exact present Harrow representative who can receive the message.",
+                        "Establish an admitted bidirectional channel bound to an exact recipient."
+                    ]
+                }
+            })
+            .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "unsupported-recipient-scope-fixture"
         }
     }
 
@@ -2877,6 +2913,49 @@ mod tests {
         assert_eq!(second.revision, 1);
         assert_ne!(first.digest, second.digest);
         assert_eq!(second_receipt.validation_result, "valid_cache_hit");
+    }
+
+    #[tokio::test]
+    async fn unsupported_remote_or_institution_recipient_is_denied_before_resolution() {
+        let model = Arc::new(DenyingUnsupportedRecipientModel {
+            calls: AtomicUsize::new(0),
+        });
+        let assessor = ActionAssessor::with_models(model.clone(), "fast", "capable");
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        campaign.institutions.insert(
+            "harrow-station-office".into(),
+            crate::domain::InstitutionState {
+                id: "harrow-station-office".into(),
+                name: "Harrow Station office".into(),
+                resources: vec![],
+                goals: vec!["maintain the station's message service".into()],
+                posture: "unverified".into(),
+            },
+        );
+        let intent = ActionIntent {
+            actor_id: "player".into(),
+            description:
+                "Use the marked message tube to recite Vesa Orn's exact message unchanged.".into(),
+            intended_effect:
+                "The Harrow Station office receives and recognizes Vesa Orn's exact words.".into(),
+        };
+
+        let (assessment, receipt) = assessor
+            .assess_with_context(&campaign, intent, &[], None, &[])
+            .await
+            .unwrap();
+
+        assert!(!assessment.admissible);
+        assert!(
+            assessment
+                .missing_permission
+                .as_deref()
+                .is_some_and(|value| value.contains("knowledge-recipient"))
+        );
+        assert_eq!(assessment.strong_effect, WorldEffectDelta::default());
+        assert_eq!(assessment.success_effect, WorldEffectDelta::default());
+        assert_eq!(receipt.stage, "assessment_mutation_scope");
+        assert_eq!(model.calls.load(Ordering::SeqCst), 1);
     }
 
     fn proposal_value_for_request(
@@ -3169,6 +3248,64 @@ mod tests {
         verifier_calls: AtomicUsize,
     }
 
+    struct OmittedRecipientEffectModel {
+        assessment_calls: AtomicUsize,
+        verifier_calls: AtomicUsize,
+    }
+
+    #[async_trait]
+    impl ModelPort for OmittedRecipientEffectModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            match request.stage.as_str() {
+                "assessment_mutation_scope" => Ok(serde_json::json!({
+                    "decision":"assess",
+                    "lanes":[],
+                    "required_success_lanes":[],
+                    "denial":null
+                })
+                .to_string()),
+                "action_assessment" => {
+                    self.assessment_calls.fetch_add(1, Ordering::SeqCst);
+                    assert!(request.lived_stream.contains(
+                        "Never promise remote, institutional, population, place, office, or absent-actor receipt"
+                    ));
+                    let mut value = proposal_value_for_request(request, proposal("actor:player"))?;
+                    value["proposal"]["normalized_intent"] =
+                        serde_json::json!("send Vesa Orn's exact message to Harrow Station");
+                    value["proposal"]["effect_ceiling"] = serde_json::json!(
+                        "The station office may receive and recognize the exact message."
+                    );
+                    value["proposal"]["success_stake"] = serde_json::json!(
+                        "The Harrow Station office receives and recognizes Vesa Orn's exact words."
+                    );
+                    value["proposal"]["mixed_stake"] = serde_json::json!(
+                        "The office receives only part of the message and cannot authenticate it."
+                    );
+                    value["proposal"]["failure_stake"] =
+                        serde_json::json!("The message does not reach the office.");
+                    Ok(serde_json::to_string(&value)?)
+                }
+                "assessment_effect_verifier" => {
+                    self.verifier_calls.fetch_add(1, Ordering::SeqCst);
+                    assert!(request.lived_stream.contains(
+                        "If a stake claims such a transition without an exact typed knowledge mutation for that exact recipient"
+                    ));
+                    Ok(serde_json::json!({
+                        "result":"mismatch",
+                        "mismatch_kind":"effect_omission",
+                        "repair_guidance":"The stake claims Harrow Station learned the message without an exact recipient knowledge mutation; deny the intended delivery rather than narrating receipt."
+                    })
+                    .to_string())
+                }
+                stage => Err(anyhow!("unexpected fixture stage {stage}")),
+            }
+        }
+
+        fn provider(&self) -> &'static str {
+            "omitted-recipient-effect-fixture"
+        }
+    }
+
     #[async_trait]
     impl ModelPort for ConcretizingObservationModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
@@ -3280,6 +3417,32 @@ mod tests {
             BTreeSet::from(["The station is visibly unoccupied, but a weatherproof platform dispatch box is powered and accepts written messages for the Harrow watch.".into()])
         );
         assert!(!assessment.success_stake.contains("if one exists"));
+    }
+
+    #[tokio::test]
+    async fn semantic_verifier_aborts_narrated_receipt_without_a_recipient_mutation() {
+        let model = Arc::new(OmittedRecipientEffectModel {
+            assessment_calls: AtomicUsize::new(0),
+            verifier_calls: AtomicUsize::new(0),
+        });
+        let assessor = ActionAssessor::with_models(model.clone(), "flash", "capable");
+        let campaign = crate::resolution::tests::campaign(0, 1);
+        let intent = ActionIntent {
+            actor_id: "player".into(),
+            description: "Recite Vesa Orn's exact message into the station tube.".into(),
+            intended_effect: "The Harrow Station office receives and recognizes it.".into(),
+        };
+
+        let error = assessor
+            .assess_with_context(&campaign, intent, &[], None, &[])
+            .await
+            .unwrap_err()
+            .to_string();
+
+        assert!(error.contains("failed semantic effect verification after one correction"));
+        assert!(error.contains("without an exact recipient knowledge mutation"));
+        assert_eq!(model.assessment_calls.load(Ordering::SeqCst), 2);
+        assert_eq!(model.verifier_calls.load(Ordering::SeqCst), 2);
     }
 
     struct CorrectingEffectModel {
