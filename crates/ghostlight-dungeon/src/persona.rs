@@ -4092,6 +4092,13 @@ mod tests {
         let actor = &mut slice.constituents[0];
         actor.subject_kind = AgencySubjectKind::Actor;
         actor.current_posture = None;
+        actor.activity_targets = BTreeMap::from([(
+            "inst_zhestokost".into(),
+            CellActivityTargetSlice {
+                name: "Zhestokost".into(),
+                locations: BTreeMap::from([("forum".into(), "Forum".into())]),
+            },
+        )]);
         let actor_id = actor.subject_id.clone();
         let active = BTreeSet::from([actor_id.clone()]);
         let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
