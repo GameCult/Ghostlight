@@ -1596,6 +1596,8 @@ async fn run_cell_effect_verifier_wave(
                 "subject_id":action.subject_id,
                 "intent":action.intent,
                 "intended_effect":action.intended_effect,
+                "state_references":action.state_references,
+                "public_channels":action.public_channels,
                 "typed_effects":action.effects,
             },
             "campaign_policy":campaign_policy,
@@ -1699,6 +1701,8 @@ fn rejected_action_diagnostic(
                         "subject_id": action.subject_id,
                         "intent": action.intent,
                         "intended_effect": action.intended_effect,
+                        "state_references": action.state_references,
+                        "public_channels": action.public_channels,
                         "typed_effects": action.effects,
                     })
                 })
@@ -4173,6 +4177,8 @@ mod tests {
         assert!(!first.contains("faction-07"));
         assert!(!second.contains("faction-06"));
         assert!(first.contains("exact_subject_permission"));
+        assert!(first.contains("\"state_references\":[\"institution:faction-06\"]"));
+        assert!(first.contains("\"public_channels\":[\"public bulletin\"]"));
         assert!(!first.contains("exact_typed_permissions"));
     }
 
