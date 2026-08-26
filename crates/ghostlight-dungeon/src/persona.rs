@@ -156,6 +156,10 @@ pub struct PermittedCellSlice {
     pub shared_capabilities: BTreeSet<String>,
     pub perceived_events: Vec<CellPerceivedEventSlice>,
     pub world_clock_pressure: Vec<String>,
+    /// Canonical names for the exact current locations already represented by
+    /// this slice. This is identity context only; it grants no movement,
+    /// activity, or mutation authority.
+    pub canonical_locations: BTreeMap<String, String>,
     pub detail_focus_subject_id: Option<String>,
     /// Exact subjects that own this cell's bounded decision slots for the
     /// current strategic wave. Resolution chooses these before inference;
@@ -378,7 +382,7 @@ const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
   }
 }"#;
 
-const CELL_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between an Interpreter and the world kernel. Judge this one candidate action's typed effects as one composition against the exact attributed subject's choice in the Persona turn. Structural permissions were already checked. Use exact_subject_permission as the sole map of canonical subjects, locations, and destinations for this actor. activity_targets supplies each canonical target's exact name and current locations; reachable_destinations supplies exact actor-movement destination IDs and names; migration_destinations supplies exact population names and locations. Preserve every distinct affirmative means the subject actually chooses. Do not invent another means from a purpose, refusal, restraint, condition to preserve, desired social norm, or hoped-for state. Keeping someone's choice open, declining to coerce them, leaving state unchanged, respecting autonomy, or waiting for another subject's decision requires no additional typed effect unless the Persona separately chooses an observable act to do it. Communication can therefore be faithfully combined with restraint without implying coordinate, recruit, posture, or pressure effects. Reject effect omission only when the Persona explicitly undertakes another observable act. When one choice contains relocation, an activity at the subject's exact snapshot location occurs before relocation and an activity at the exact admitted destination occurs after arrival; activities within one location phase are an unordered atomic set. Array and object field order are not chronology. When the Persona chooses to go to a canonical target, actor_move must use that target's actual different reachable location. If actor and target are already co-located, reject movement to some other place; a local communicate, coordinate, or prepare may encode the stated attempt instead. A place named only in prose and absent from reachable_destinations and migration_destinations is local texture inside the supplied activity location; walking to it cannot justify rejecting a concrete local prepare or repair as omitted travel. Return exactly one verdict with action_index 0. A gestalt_migration means that exact population leaf chooses to travel together to the supplied destination within the strategic horizon; loading, waiting, giving away passage, sending only some other subject, or merely considering travel does not entail it. Conversely, when the population chooses to board, depart, or relocate together, reject gestalt_activity prepare that erases the chosen journey. Gestalt migration never entails that a named member moved. A member_migration means that named member personally chooses to travel to the destination. Boarding a transport whose supplied destination is unambiguous in the lived stream is a chosen journey; the Persona need not repeat the place name. Giving away a berth, sending somebody else, waiting, or merely considering travel does not entail migration. Conversely, when the member chooses to board, depart, travel, or join the supplied destination, reject member_activity that reduces that commitment to preparing, queuing, or approaching. A member_activity belongs only to that exact named person's stated attempt; it cannot be reassigned to their population. Communication targets must be the exact canonical subjects actually addressed in the Persona turn. An exact activity_targets entry is sufficient authority to attempt direct communication with that named subject; allowed_persistent_publication_channels governs only durable public publication and is never an additional requirement for direct contact. One communicate activity is also the complete supported composition when the same utterance addresses exact canonical targets and an unnamed public audience: target_subject_ids names the canonical addressees and candidate_action.public_channels names the simultaneous public reach. Do not demand a second targetless communicate for that same utterance. Use a targetless communicate only when the communication has no exact canonical addressee. Internal-population coordination is owner-specific: apply only coordination_target_contract.rule for this exact attributed subject, never a rule belonging to another subject kind. If the Persona addresses an unnamed clerk, dock master, passerby, or local environment, reject any effect that substitutes a containing population, related institution, or merely permitted ID. A targetless local investigate at the subject's exact current or paired movement destination is the faithful supported shape for seeking information from an unnamed role or the environment; its empty target list is intentional and must not itself be grounds for rejection. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. An activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, acceptance, or target response. Reject omissions, reversals, subject swaps, wrong destinations, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object. A faithful verdict uses result \"match\", null mismatch_kind, and null repair_guidance. Otherwise use result \"mismatch\", exactly one mismatch_kind (\"subject_swap\", \"effect_omission\", \"effect_reversal\", \"target_substitution\", \"invented_outcome\", or \"wrong_effect_kind\"), and one concrete repair_guidance sentence of at most 240 characters. Name the exact omitted choice, substituted target, or wrong destination. When no supplied typed effect composition can faithfully encode the choice, explicitly say to remove the action rather than downgrade or redirect it. Shape: {\"verdicts\":[{\"action_index\":0,\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}]}";
+const CELL_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between an Interpreter and the world kernel. Judge this one candidate action's typed effects as one composition against the exact attributed subject's choice in the Persona turn. Structural permissions were already checked. Use exact_subject_permission as the sole map of canonical subjects, locations, and destinations for this actor. canonical_locations is sibling identity context: compare it with exact_subject_permission.location_ids, and never treat a name as granting locality, co-presence, reach, publication, movement, target, effect, or mutation authority. A matching current-location name denotes that place or its unnamed local public, not an omitted canonical subject. activity_targets supplies each canonical target's exact name and current locations; reachable_destinations supplies exact actor-movement destination IDs and names; migration_destinations supplies exact population names and locations. Preserve every distinct affirmative means the subject actually chooses. Do not invent another means from a purpose, refusal, restraint, condition to preserve, desired social norm, or hoped-for state. Keeping someone's choice open, declining to coerce them, leaving state unchanged, respecting autonomy, or waiting for another subject's decision requires no additional typed effect unless the Persona separately chooses an observable act to do it. Communication can therefore be faithfully combined with restraint without implying coordinate, recruit, posture, or pressure effects. Reject effect omission only when the Persona explicitly undertakes another observable act. When one choice contains relocation, an activity at the subject's exact snapshot location occurs before relocation and an activity at the exact admitted destination occurs after arrival; activities within one location phase are an unordered atomic set. Array and object field order are not chronology. When the Persona chooses to go to a canonical target, actor_move must use that target's actual different reachable location. If actor and target are already co-located, reject movement to some other place; a local communicate, coordinate, or prepare may encode the stated attempt instead. A place named only in prose and absent from reachable_destinations and migration_destinations is local texture inside the supplied activity location; walking to it cannot justify rejecting a concrete local prepare or repair as omitted travel. Return exactly one verdict with action_index 0. A gestalt_migration means that exact population leaf chooses to travel together to the supplied destination within the strategic horizon; loading, waiting, giving away passage, sending only some other subject, or merely considering travel does not entail it. Conversely, when the population chooses to board, depart, or relocate together, reject gestalt_activity prepare that erases the chosen journey. Gestalt migration never entails that a named member moved. A member_migration means that named member personally chooses to travel to the destination. Boarding a transport whose supplied destination is unambiguous in the lived stream is a chosen journey; the Persona need not repeat the place name. Giving away a berth, sending somebody else, waiting, or merely considering travel does not entail migration. Conversely, when the member chooses to board, depart, travel, or join the supplied destination, reject member_activity that reduces that commitment to preparing, queuing, or approaching. A member_activity belongs only to that exact named person's stated attempt; it cannot be reassigned to their population. Communication targets must be the exact canonical subjects actually addressed in the Persona turn. An exact activity_targets entry is sufficient authority to attempt direct communication with that named subject; allowed_persistent_publication_channels governs only durable public publication and is never an additional requirement for direct contact. One communicate activity is also the complete supported composition when the same utterance addresses exact canonical targets and an unnamed public audience: target_subject_ids names the canonical addressees and candidate_action.public_channels names the simultaneous public reach. A call to unnamed people at a canonical location is such public or local audience, not a missing activity target. Do not demand a second targetless communicate for that same utterance. Use a targetless communicate only when the communication has no exact canonical addressee. Internal-population coordination is owner-specific: apply only coordination_target_contract.rule for this exact attributed subject, never a rule belonging to another subject kind. If the Persona addresses an unnamed clerk, dock master, passerby, or local environment, reject any effect that substitutes a containing population, related institution, or merely permitted ID. A targetless local investigate at the subject's exact current or paired movement destination is the faithful supported shape for seeking information from an unnamed role or the environment; its empty target list is intentional and must not itself be grounds for rejection. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. An activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, acceptance, or target response. Reject omissions, reversals, subject swaps, wrong destinations, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object. A faithful verdict uses result \"match\", null mismatch_kind, and null repair_guidance. Otherwise use result \"mismatch\", exactly one mismatch_kind (\"subject_swap\", \"effect_omission\", \"effect_reversal\", \"target_substitution\", \"invented_outcome\", or \"wrong_effect_kind\"), and one concrete repair_guidance sentence of at most 240 characters. Name the exact omitted choice, substituted target, or wrong destination. When no supplied typed effect composition can faithfully encode the choice, explicitly say to remove the action rather than downgrade or redirect it. Shape: {\"verdicts\":[{\"action_index\":0,\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}]}";
 
 const CELL_ACTIVITY_CLASSIFICATION_GUIDANCE: &str = "Classify the chosen means by what the subject actually does. communicate means speak, send, offer, ask, or notify; coordinate means arrange a joint attempt; investigate means inspect, examine, diagnose, measure, test, or assess an existing condition in order to learn; recruit means invite; trade means offer an exchange; obstruct means attempt interference. prepare means materially repair, build, arrange, or ready a bounded resource, capability, or plan. Merely inspecting a handcart, regulator, record, route, patient, or other existing condition before deciding what to do is investigate, not prepare. Only actual repair or readiness work is prepare.";
 
@@ -748,6 +752,7 @@ fn cell_projector_context(slice: &PermittedCellSlice) -> serde_json::Value {
         "shared_capabilities": slice.shared_capabilities,
         "perceived_events": slice.perceived_events,
         "world_clock_pressure": slice.world_clock_pressure,
+        "canonical_locations": slice.canonical_locations,
         "detail_focus_subject_id": slice.detail_focus_subject_id,
         "max_actions": slice.max_actions,
     })
@@ -762,6 +767,7 @@ fn cell_interpreter_context(
         "mode": slice.mode,
         "world_revision": slice.world_revision,
         "resolution_epoch": slice.resolution_epoch,
+        "canonical_locations": slice.canonical_locations,
         "detail_focus_subject_id": slice.detail_focus_subject_id,
         "max_actions": slice.max_actions,
         "exact_permissions": slice.constituents.iter().filter(|subject| active_subject_ids.contains(&subject.subject_id)).map(constituent_permission_context).collect::<Vec<_>>(),
@@ -1570,6 +1576,7 @@ async fn run_cell_effect_verifier_wave(
             "spatial_effect_contract":"A prepare, investigate, or other activity may include incidental walking, approaching, queuing, carrying, or repositioning around an unnamed local feature while the source remains inside the effect's supplied canonical location. The activity records the attempt and need not serialize every footstep. Reject omitted movement only when the Persona clearly commits the subject to a different supplied canonical location or population destination; local texture does not create topology or establish arrival.",
             "coordination_target_contract":coordination_target_contract,
             "exact_subject_permission":exact_subject_permission,
+            "canonical_locations":slice.canonical_locations,
             "lived_stream":lived_stream,
             "persona_turn":persona_turn,
             "candidate_action":{
@@ -3327,6 +3334,7 @@ mod tests {
                 perceived_by_subject_ids: BTreeSet::from(["house-a".into(), "house-b".into()]),
             }],
             world_clock_pressure: vec!["vote 5/6".into()],
+            canonical_locations: BTreeMap::from([("forum".into(), "Forum".into())]),
             detail_focus_subject_id: Some("faction-06".into()),
             decision_owner_ids: BTreeSet::from(["faction-06".into()]),
             max_actions: 1,
@@ -4044,6 +4052,30 @@ mod tests {
             CELL_EFFECT_VERIFIER_INSTRUCTIONS
                 .contains("Do not demand a second targetless communicate for that same utterance")
         );
+        assert!(CELL_EFFECT_VERIFIER_INSTRUCTIONS.contains(
+            "A matching current-location name denotes that place or its unnamed local public"
+        ));
+        let mut slice = fixture_cell_slice();
+        slice.canonical_locations = BTreeMap::from([("yard".into(), "Thornweald Assembly".into())]);
+        let permission = cell_action_verifier_permission(&slice, "faction-06").unwrap();
+        assert!(permission.get("canonical_locations").is_none());
+        assert!(
+            permission["activity_targets"]
+                .as_object()
+                .unwrap()
+                .is_empty()
+        );
+        let unauthorized = validate_constituent_effect(
+            &slice.constituents[0],
+            &StrategicCellEffect::Institution {
+                institution_id: "faction-06".into(),
+                posture: "moving the public deadline to the assembly".into(),
+                location_ids: vec!["yard".into()],
+            },
+            None,
+        )
+        .unwrap_err();
+        assert!(unauthorized.to_string().contains("exact allowed locations"));
     }
 
     #[test]
@@ -4284,6 +4316,19 @@ mod tests {
                 "\"cross_location_order\":\"snapshot_location_activity_then_relocation_then_destination_activity\""
             ));
             assert!(prompt.contains("\"field_order\":\"not_chronology\""));
+            let context: serde_json::Value = serde_json::from_str(
+                prompt
+                    .split("CONTEXT:\n")
+                    .nth(1)
+                    .expect("verifier prompt contains one context document"),
+            )
+            .unwrap();
+            assert_eq!(context["canonical_locations"]["forum"], "Forum");
+            assert!(
+                context["exact_subject_permission"]
+                    .get("canonical_locations")
+                    .is_none()
+            );
         }
         let prompts = prompts.lock().unwrap();
         assert_eq!(prompts.len(), 2);
@@ -5127,6 +5172,9 @@ mod tests {
         assert!(boundaries.contains("Faction Six"));
         assert!(!boundaries.contains("Faction Seven"));
         let context = cell_interpreter_context(&slice, &active);
+        let projector_context = cell_projector_context(&slice);
+        assert_eq!(projector_context["canonical_locations"]["forum"], "Forum");
+        assert_eq!(context["canonical_locations"]["forum"], "Forum");
         assert_eq!(context["exact_permissions"].as_array().unwrap().len(), 1);
         assert_eq!(context["exact_permissions"][0]["subject_id"], "faction-06");
 

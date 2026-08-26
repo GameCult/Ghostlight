@@ -786,6 +786,22 @@ fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCel
             .collect(),
     );
     let perceived_events = cell_perceived_events(campaign, &constituents, &member_exceptions);
+    let canonical_locations = constituents
+        .iter()
+        .flat_map(|subject| subject.location_ids.iter())
+        .chain(
+            member_exceptions
+                .iter()
+                .map(|member| &member.source_location_id),
+        )
+        .map(|location_id| {
+            let location = campaign
+                .locations
+                .get(location_id)
+                .ok_or_else(|| anyhow!("simulation cell location vanished from campaign"))?;
+            Ok((location_id.clone(), location.name.clone()))
+        })
+        .collect::<Result<BTreeMap<_, _>>>()?;
     Ok(PermittedCellSlice {
         cell_id: cell.id.clone(),
         mode: cell.mode.clone(),
@@ -805,6 +821,7 @@ fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCel
             .values()
             .map(project_world_clock_pressure)
             .collect(),
+        canonical_locations,
         detail_focus_subject_id: cell.detail_focus_subject_id.clone(),
         decision_owner_ids,
         max_actions: cell_action_limit(cell),
@@ -1703,6 +1720,16 @@ mod tests {
     fn cell_slice_rotates_exact_member_decision_owners_without_hiding_the_cell() {
         use crate::domain::*;
         let mut campaign = crate::resolution::tests::campaign(0, 1);
+        campaign.locations.insert(
+            "unsliced".into(),
+            Location {
+                id: "unsliced".into(),
+                name: "Remote Unsliced Court".into(),
+                container_id: None,
+                routes: BTreeMap::new(),
+                persistent_features: vec![],
+            },
+        );
         let gestalt = |id: &str, name: &str| GestaltPersonaState {
             schema: "ghostlight.gestalt_persona_state.v1".into(),
             id: id.into(),
@@ -1778,6 +1805,11 @@ mod tests {
         )
         .unwrap();
         let slice = cell_slice(&campaign, &cover.cells[0]).unwrap();
+        assert_eq!(
+            slice.canonical_locations.get("center").map(String::as_str),
+            Some("Center")
+        );
+        assert!(!slice.canonical_locations.contains_key("unsliced"));
         assert_eq!(slice.member_exceptions.len(), 1);
         assert_eq!(slice.member_exceptions[0].member_id, "mira");
         assert!(slice.decision_owner_ids.contains("member:mira"));
