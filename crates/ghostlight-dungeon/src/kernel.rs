@@ -3185,6 +3185,33 @@ fn commit_gestalt_presence(
     campaign.resolution_policy.resolution_epoch = previous_resolution_epoch.saturating_add(1);
     campaign.resolution_cover = None;
     let committed_at = Utc::now();
+    let player_location = campaign.actors[&campaign.player_actor_id]
+        .location_id
+        .clone();
+    let visible_arrivals = changes
+        .iter()
+        .filter(|change| change.operation != "dematerialized")
+        .filter_map(|change| {
+            let actor = campaign.actors.get(&change.actor_id)?;
+            (actor.location_id == player_location).then(|| {
+                format!(
+                    "{} is here with {} at {}.",
+                    actor.name,
+                    campaign.gestalts[&change.gestalt_id].name,
+                    campaign.locations[&actor.location_id].name
+                )
+            })
+        })
+        .collect::<Vec<_>>();
+    campaign
+        .transcript
+        .extend(visible_arrivals.into_iter().map(|text| NarrativeTurn {
+            revision: campaign.revision,
+            at: committed_at,
+            speaker: "world".into(),
+            text,
+            persona_response_actor_ids: BTreeSet::new(),
+        }));
     let receipt = WorldCommitReceipt {
         schema: "ghostlight.world_commit_receipt.v1".into(),
         campaign_id: campaign.id,
@@ -3502,6 +3529,19 @@ fn commit_governed_time_advance(
     Ok(CommandResult::Committed { campaign, receipt })
 }
 
+fn join_public_names(names: &[String]) -> String {
+    match names {
+        [] => "The party".into(),
+        [name] => name.clone(),
+        [first, second] => format!("{first} and {second}"),
+        _ => format!(
+            "{}, and {}",
+            names[..names.len() - 1].join(", "),
+            names.last().expect("non-empty names")
+        ),
+    }
+}
+
 fn commit_governed_group_travel(
     store: &CampaignStore,
     campaign_row: cultcache_legacy::CultCacheEnvelope,
@@ -3521,7 +3561,7 @@ fn commit_governed_group_travel(
             "group-travel proposal no longer matches the shared scene".into(),
         ));
     }
-    let route_minutes = campaign
+    let route = campaign
         .locations
         .get(&proposal.origin_location_id)
         .and_then(|location| {
@@ -3529,20 +3569,35 @@ fn commit_governed_group_travel(
                 .routes
                 .values()
                 .find(|route| route.destination_id == proposal.destination_location_id)
-                .map(|route| route.travel_minutes)
+                .cloned()
         })
         .ok_or_else(|| KernelError::Invalid("group-travel route no longer exists".into()))?;
-    if route_minutes != proposal.travel_minutes {
+    if route.travel_minutes != proposal.travel_minutes {
         return Err(KernelError::Invalid(
             "group-travel route changed after proposal".into(),
         ));
     }
+    let origin_name = campaign.locations[&proposal.origin_location_id]
+        .name
+        .clone();
+    let destination_name = campaign.locations[&proposal.destination_location_id]
+        .name
+        .clone();
+    let traveler_names = active_actor_ids
+        .iter()
+        .filter_map(|actor_id| {
+            campaign
+                .actors
+                .get(actor_id)
+                .map(|actor| actor.name.clone())
+        })
+        .collect::<Vec<_>>();
     let transition = crate::legacy_transition::lower_group_travel(
         &campaign,
         &active_actor_ids,
         &proposal.origin_location_id,
         &proposal.destination_location_id,
-        route_minutes,
+        route.travel_minutes,
         &proposal.id,
         Utc::now() + Duration::minutes(5),
     )
@@ -3556,14 +3611,31 @@ fn commit_governed_group_travel(
     campaign.pending_ticks = 0;
     let previous_revision = campaign.revision;
     campaign.revision = campaign.revision.saturating_add(1);
+    let travel_summary = format!(
+        "{} {} from {} to {} — {}. {} minutes pass.",
+        join_public_names(&traveler_names),
+        if traveler_names.len() == 1 {
+            "travels"
+        } else {
+            "travel"
+        },
+        origin_name,
+        destination_name,
+        route.distance,
+        route.travel_minutes
+    );
+    campaign.transcript.push(NarrativeTurn {
+        revision: campaign.revision,
+        at: campaign.world_time,
+        speaker: "world".into(),
+        text: travel_summary.clone(),
+        persona_response_actor_ids: BTreeSet::new(),
+    });
     campaign.events.push(Event {
         id: format!("group-travel:{}", campaign.revision),
         at: campaign.world_time,
         kind: "group_travel".into(),
-        summary: format!(
-            "The party travels from {} to {}.",
-            proposal.origin_location_id, proposal.destination_location_id
-        ),
+        summary: travel_summary,
         actor_ids: active_actor_ids.into_iter().collect(),
         institution_ids: vec![],
         gestalt_ids: vec![],
@@ -5680,10 +5752,17 @@ mod tests {
                 .as_deref(),
             Some("member:water-cart-taren")
         );
+        let arrival = campaign.transcript.last().unwrap();
+        assert_eq!(arrival.speaker, "world");
+        assert!(arrival.text.contains("Taren"));
+        assert!(arrival.text.contains("Refugees"));
+        assert!(arrival.text.contains("Room"));
         assert!(
             campaign
                 .transcript
-                .last()
+                .iter()
+                .rev()
+                .find(|turn| turn.speaker == campaign.player_actor_id)
                 .unwrap()
                 .persona_response_actor_ids
                 == BTreeSet::from(["member:water-cart-taren".into()])
@@ -8366,6 +8445,11 @@ mod tests {
         assert_eq!(campaign.world_time, start_time + Duration::minutes(20));
         assert_eq!(campaign.actors["player"].location_id, "harbor");
         assert_eq!(campaign.actors["guest"].location_id, "harbor");
+        let travel_turn = campaign.transcript.last().unwrap();
+        assert_eq!(travel_turn.speaker, "world");
+        assert!(travel_turn.text.contains("Room"));
+        assert!(travel_turn.text.contains("Harbor"));
+        assert!(travel_turn.text.contains("20 minutes pass"));
         assert_eq!(
             campaign.agency_profiles["player"].location_ids,
             BTreeSet::from(["harbor".into()])
