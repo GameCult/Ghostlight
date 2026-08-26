@@ -5427,6 +5427,11 @@ fn player_command_projection(result: &CommandResult) -> serde_json::Value {
             "revision":receipt.revision,
             "receipt":receipt,
         }),
+        CommandResult::ExternalSnapshotCommitted { receipt, .. } => serde_json::json!({
+            "kind":"external_snapshot_committed",
+            "revision":receipt.world_revision,
+            "receipt":receipt,
+        }),
         CommandResult::ResolutionUpdated { receipt, .. } => serde_json::json!({
             "kind":"resolution_updated",
             "receipt":receipt,
@@ -5475,6 +5480,7 @@ fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) ->
         WorldCommand::Attempt { .. } => false,
         WorldCommand::Wait { .. } | WorldCommand::SetResolutionBudget { .. } => true,
         WorldCommand::CreateCampaign { .. }
+        | WorldCommand::ApplyExternalInstitutionSnapshot { .. }
         | WorldCommand::ProposeTimeAdvance { .. }
         | WorldCommand::ApproveTimeAdvance { .. }
         | WorldCommand::ProposeGroupTravel { .. }
@@ -6993,7 +6999,7 @@ mod tests {
         );
         let runtime = state
             .registry
-            .create(campaign.clone(), vec![], vec![])
+            .create_unadmitted_fixture(campaign.clone(), vec![], vec![])
             .await
             .unwrap();
         process_due_ticks(
@@ -7045,7 +7051,7 @@ mod tests {
         );
         let runtime = state
             .registry
-            .create(campaign.clone(), vec![], vec![])
+            .create_unadmitted_fixture(campaign.clone(), vec![], vec![])
             .await
             .unwrap();
 
@@ -7080,7 +7086,7 @@ mod tests {
         let campaign = seed("Membership-bound");
         let runtime = state
             .registry
-            .create(campaign.clone(), vec![], vec![])
+            .create_unadmitted_fixture(campaign.clone(), vec![], vec![])
             .await
             .unwrap();
         runtime
@@ -7157,7 +7163,7 @@ mod tests {
         let campaign = seed("Export witness");
         let runtime = state
             .registry
-            .create(campaign.clone(), vec![], vec![])
+            .create_unadmitted_fixture(campaign.clone(), vec![], vec![])
             .await
             .unwrap();
         let expected_export = load_campaign(&runtime.store).unwrap();

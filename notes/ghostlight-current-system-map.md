@@ -98,22 +98,21 @@ own their canonical Persona state and consequence commits.
 
 ## DELVE/HOLD consumer profile
 
-DELVE/HOLD is admitted as a consumer of Ghostlight's generic API for one
-canonical world outside the Greathold. Its target contract supplies an authored
+Delvehold is the first proving consumer for Ghostlight's generic API for one
+canonical world beyond a consumer-owned boundary. Its target contract supplies an authored
 ontology and fixed seed rather than invoking Session Zero world generation.
 That bypass ends at generation: publication and every later transition must
 still enter `WorldKernel` through typed validation and atomic CultCache commit.
 
 Delvehold owns players, workshops, dungeons, civic state, contracts, and its
 quantitative economy. Ghostlight owns external actors, institutions, Gestalts,
-relationships, knowledge, pressures, and strategic decisions. The admitted
-consumer configuration contains one externally owned boundary subject,
-`greathold`, projecting only committed macro effects into Ghostlight and
-receiving no Persona or strategic turn. Ghostlight currently lacks the generic
-subject-authority contract and shared consumer-seed admission primitive;
-ordinary institution selection is not enforcement. External consequences
-return as generic attributed proposals for Delvehold admission, not direct
-mutations.
+relationships, knowledge, pressures, and strategic decisions. Consumer
+configurations may bind institution subjects through `ExternalSubjectAuthority`.
+Those institutions project committed revisioned snapshots into Ghostlight,
+receive no Persona or strategic turn, and remain targets of foreign action.
+Such actions persist as attributed proposals in the same strategic-wave commit
+and return for consumer admission, not direct mutation. Compiler and consumer
+producers share one `WorldSeed` admission transaction.
 
 The Delvehold adapter remains Delvehold-owned. It lowers committed Greathold
 projections and realized effects into generic Ghostlight operations, then raises

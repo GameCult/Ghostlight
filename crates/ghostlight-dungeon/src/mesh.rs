@@ -204,6 +204,19 @@ impl MeshPublisher {
                 "heimdall.access_gate_state.v1"
             ],
             "witnesses":[{"kind":"source-commit","ref":option_env!("GHOSTLIGHT_BUILD_COMMIT").unwrap_or("development")}],
+            "worldConsumerBoundary":{
+                "serviceId":"ghostlight.world.consumer",
+                "transport":"cultnet.transport.rudp.v0",
+                "endpoint":"127.0.0.1:4102",
+                "exposure":"loopback-only",
+                "operations":[
+                    "ghostlight.world.seed.admit",
+                    "ghostlight.world.external.snapshot.apply",
+                    "ghostlight.world.external.proposals.list",
+                    "ghostlight.world.external.proposal.acknowledge"
+                ],
+                "ownership":"Consumers own declared external subjects; Ghostlight owns all simulated world subjects and emits proposals across that boundary."
+            },
             "surfaces":[{
                 "surfaceId":SURFACE_ID,
                 "schema":"gamecult.eve.surface.v1",
@@ -237,7 +250,8 @@ impl MeshPublisher {
             }],
             "commands":[
                 {"command":COMMAND_BOUNDARY,"transport":"https-json","summary":"Canonical Ghostlight Eve command boundary."},
-                {"command":"ghostlight.native.player","transport":"cultnet.transport.rudp.v0","summary":"Loopback native access to the same actor-filtered surface and Eve command authority."}
+                {"command":"ghostlight.native.player","transport":"cultnet.transport.rudp.v0","summary":"Loopback native access to the same actor-filtered surface and Eve command authority."},
+                {"command":"ghostlight.world.consumer","transport":"cultnet.transport.rudp.v0","summary":"Typed world-seed admission, external snapshots, and proposal exchange for game consumers."}
             ]
         })
     }
@@ -567,7 +581,18 @@ fn schema_catalog() -> Value {
     json!({
         "ghostlight.campaign.v1": schemars::schema_for!(Campaign),
         "ghostlight.session_zero.v1": schemars::schema_for!(SessionZeroState),
-        "ghostlight.vault_source_manifest.v1": schemars::schema_for!(VaultSourceManifest)
+        "ghostlight.vault_source_manifest.v1": schemars::schema_for!(VaultSourceManifest),
+        "ghostlight.world_seed.v1": schemars::schema_for!(crate::consumer::WorldSeed),
+        "ghostlight.world_seed_admission_request.v1": schemars::schema_for!(crate::consumer::WorldSeedAdmissionRequest),
+        "ghostlight.world_seed_admission_receipt.v1": schemars::schema_for!(crate::consumer::WorldSeedAdmissionReceipt),
+        "ghostlight.external_subject_authority.v1": schemars::schema_for!(crate::consumer::ExternalSubjectAuthority),
+        "ghostlight.external_institution_snapshot.v1": schemars::schema_for!(crate::consumer::ExternalInstitutionSnapshot),
+        "ghostlight.external_snapshot_receipt.v1": schemars::schema_for!(crate::consumer::ExternalSnapshotReceipt),
+        "ghostlight.external_world_proposal.v1": schemars::schema_for!(crate::consumer::ExternalWorldProposal),
+        "ghostlight.external_proposal_list_request.v1": schemars::schema_for!(crate::consumer::ExternalProposalListRequest),
+        "ghostlight.external_proposal_list.v1": schemars::schema_for!(crate::consumer::ExternalProposalList),
+        "ghostlight.external_proposal_acknowledgement.v1": schemars::schema_for!(crate::consumer::ExternalProposalAcknowledgement),
+        "ghostlight.external_proposal_receipt.v1": schemars::schema_for!(crate::consumer::ExternalProposalReceipt)
     })
 }
 
@@ -595,7 +620,7 @@ mod tests {
             .get_required::<SchemaCatalogRecord>("ghostlight:schema-catalog")
             .unwrap();
         let schemas = catalog.value["schemas"].as_object().unwrap();
-        assert_eq!(schemas.len(), 3);
+        assert_eq!(schemas.len(), 14);
         assert!(schemas["ghostlight.campaign.v1"]["$schema"].is_string());
         assert!(schemas["ghostlight.session_zero.v1"]["$schema"].is_string());
         assert!(schemas["ghostlight.vault_source_manifest.v1"]["$schema"].is_string());

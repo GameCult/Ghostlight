@@ -44,7 +44,7 @@ async fn main() -> anyhow::Result<()> {
         persona_response_actor_ids: Default::default(),
     });
     let store = CampaignStore::open(root.join("campaign.cc"))?;
-    store.create_campaign(&campaign, &[], &[])?;
+    store.create_unadmitted_fixture_campaign(&campaign, &[], &[])?;
     let model: Arc<dyn ModelPort> = Arc::new(DeepSeekPort::from_runtime_secret(secret)?);
     let engine = PersonaProjectionEngine {
         model,

@@ -47,6 +47,10 @@ pub enum CommandResult {
         campaign: Campaign,
         receipt: WorldCommitReceipt,
     },
+    ExternalSnapshotCommitted {
+        campaign: Campaign,
+        receipt: crate::consumer::ExternalSnapshotReceipt,
+    },
     ResolutionUpdated {
         campaign: Campaign,
         receipt: ResolutionControlReceipt,
@@ -88,7 +92,7 @@ pub struct WorldKernel {
 }
 
 impl WorldKernel {
-    pub fn initialize_campaign(
+    pub(crate) fn initialize_campaign(
         store: &CampaignStore,
         command: WorldCommand,
     ) -> Result<CommandResult, KernelError> {
@@ -204,7 +208,11 @@ fn execute(
         crate::compiler::validate_campaign_seed(&campaign)
             .map_err(|error| KernelError::Invalid(error.to_string()))?;
         store
-            .create_campaign(&campaign, &evidence_receipts, &model_stage_receipts)
+            .create_unadmitted_fixture_campaign(
+                &campaign,
+                &evidence_receipts,
+                &model_stage_receipts,
+            )
             .map_err(persist)?;
         return Ok(CommandResult::Created { campaign });
     }
@@ -214,6 +222,130 @@ fn execute(
         .map_err(persist)?
         .ok_or(KernelError::NotFound)?;
     match command {
+        WorldCommand::ApplyExternalInstitutionSnapshot { snapshot } => {
+            if snapshot.schema != "ghostlight.external_institution_snapshot.v1"
+                || snapshot.campaign_id != campaign.id
+            {
+                return Err(KernelError::Invalid(
+                    "external snapshot targets another campaign".into(),
+                ));
+            }
+            let receipt_key = format!("{}:{}", snapshot.authority_id, snapshot.source_revision);
+            if let Some((_, receipt)) = store
+                .load::<crate::consumer::ExternalSnapshotReceipt>(
+                    "external_snapshot_receipt.v1",
+                    &receipt_key,
+                )
+                .map_err(persist)?
+            {
+                return if receipt.payload_digest == snapshot.payload_digest
+                    && receipt.owner_id == snapshot.owner_id
+                {
+                    Ok(CommandResult::ExternalSnapshotCommitted { campaign, receipt })
+                } else {
+                    Err(KernelError::Invalid(
+                        "external snapshot idempotency conflict".into(),
+                    ))
+                };
+            }
+            let (authority_row, authority) = store
+                .load::<crate::consumer::ExternalSubjectAuthority>(
+                    "external_subject_authority.v1",
+                    &snapshot.authority_id,
+                )
+                .map_err(persist)?
+                .ok_or_else(|| {
+                    KernelError::Invalid("external subject authority is unknown".into())
+                })?;
+            if authority.campaign_id != snapshot.campaign_id
+                || authority.owner_id != snapshot.owner_id
+                || authority.subject_id != snapshot.projection.id
+            {
+                return Err(KernelError::Invalid(
+                    "external snapshot does not match its authority".into(),
+                ));
+            }
+            crate::consumer::validate_authority_key(&authority, &snapshot.authority_key)
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let actual_digest = crate::consumer::snapshot_payload_digest(&snapshot)
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            if actual_digest != snapshot.payload_digest {
+                return Err(KernelError::Invalid(
+                    "external snapshot payload digest is invalid".into(),
+                ));
+            }
+            if authority
+                .last_source_revision
+                .is_some_and(|revision| snapshot.source_revision <= revision)
+            {
+                return Err(KernelError::Invalid(
+                    "external snapshot source revision is stale".into(),
+                ));
+            }
+            require_revision(&campaign, snapshot.expected_world_revision)?;
+            campaign
+                .institutions
+                .insert(snapshot.projection.id.clone(), snapshot.projection.clone());
+            if let Some(profile) = campaign.agency_profiles.get_mut(&snapshot.projection.id) {
+                profile.facets.insert(
+                    AgencyAxis::Authority,
+                    BTreeSet::from([
+                        snapshot.projection.id.clone(),
+                        snapshot.projection.posture.clone(),
+                    ]),
+                );
+                profile.facets.insert(
+                    AgencyAxis::EconomyRole,
+                    snapshot.projection.resources.iter().cloned().collect(),
+                );
+            }
+            let previous_world_revision = campaign.revision;
+            campaign.revision = campaign.revision.saturating_add(1);
+            let now = Utc::now();
+            campaign.events.push(Event {
+                id: format!(
+                    "external-snapshot:{}:{}",
+                    snapshot.authority_id, snapshot.source_revision
+                ),
+                at: now,
+                kind: "external_institution_snapshot".into(),
+                summary: format!(
+                    "{} supplied an authoritative external institution snapshot.",
+                    snapshot.owner_id
+                ),
+                actor_ids: Vec::new(),
+                institution_ids: vec![snapshot.projection.id.clone()],
+                gestalt_ids: Vec::new(),
+                location_ids: Vec::new(),
+                public_channels: Vec::new(),
+            });
+            let mut next_authority = authority;
+            next_authority.last_source_revision = Some(snapshot.source_revision);
+            next_authority.last_payload_digest = Some(snapshot.payload_digest.clone());
+            let receipt = crate::consumer::ExternalSnapshotReceipt {
+                schema: "ghostlight.external_snapshot_receipt.v1".into(),
+                id: receipt_key,
+                campaign_id: snapshot.campaign_id,
+                authority_id: snapshot.authority_id,
+                subject_id: snapshot.projection.id,
+                owner_id: snapshot.owner_id,
+                source_revision: snapshot.source_revision,
+                payload_digest: snapshot.payload_digest,
+                previous_world_revision,
+                world_revision: campaign.revision,
+                committed_at: now,
+            };
+            store
+                .append_external_snapshot(
+                    &row,
+                    &authority_row,
+                    &campaign,
+                    &next_authority,
+                    &receipt,
+                )
+                .map_err(persist)?;
+            Ok(CommandResult::ExternalSnapshotCommitted { campaign, receipt })
+        }
         WorldCommand::Assess {
             expected_revision,
             intent,
@@ -955,6 +1087,25 @@ fn execute(
                 .map(|wave| crate::resolution::validate_and_resolve_wave(&campaign, wave))
                 .transpose()
                 .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let external_subject_ids = store
+                .load_all::<crate::consumer::ExternalSubjectAuthority>(
+                    "external_subject_authority.v1",
+                )
+                .map_err(persist)?
+                .into_iter()
+                .map(|authority| authority.subject_id)
+                .collect::<BTreeSet<_>>();
+            if resolved_plan
+                .as_ref()
+                .or(plan.as_ref())
+                .is_some_and(|plan| {
+                    strategic_plan_writes_external_subject(plan, &external_subject_ids)
+                })
+            {
+                return Err(KernelError::Invalid(
+                    "strategic resolution cannot mutate an external subject or bypass its proposal boundary".into(),
+                ));
+            }
             if (plan.is_some() || resolution_wave.is_some())
                 && model_receipt_hash
                     .as_deref()
@@ -1646,6 +1797,58 @@ fn execute(
         }
         WorldCommand::CreateCampaign { .. } => unreachable!(),
     }
+}
+
+fn external_outcome_writes_subject(
+    effect: &StrategicOutcomeEffect,
+    external_subject_ids: &BTreeSet<String>,
+) -> bool {
+    match effect {
+        StrategicOutcomeEffect::ResourceCreated {
+            owner_subject_id, ..
+        }
+        | StrategicOutcomeEffect::ResourceConsumed {
+            owner_subject_id, ..
+        }
+        | StrategicOutcomeEffect::KnowledgeLearned {
+            owner_subject_id, ..
+        } => external_subject_ids.contains(owner_subject_id),
+        StrategicOutcomeEffect::ResourceTransferred {
+            from_subject_id,
+            to_subject_id,
+            ..
+        } => {
+            external_subject_ids.contains(from_subject_id)
+                || external_subject_ids.contains(to_subject_id)
+        }
+        StrategicOutcomeEffect::KnowledgeCommunicated { to_subject_ids, .. } => to_subject_ids
+            .iter()
+            .any(|subject_id| external_subject_ids.contains(subject_id)),
+        StrategicOutcomeEffect::NoMaterialChange { .. }
+        | StrategicOutcomeEffect::GestaltPressure { .. }
+        | StrategicOutcomeEffect::AgencyRelationShift { .. }
+        | StrategicOutcomeEffect::MemberMemory { .. }
+        | StrategicOutcomeEffect::MemberObligation { .. }
+        | StrategicOutcomeEffect::MemberRelationship { .. } => false,
+    }
+}
+
+fn strategic_plan_writes_external_subject(
+    plan: &StrategicTickPlan,
+    external_subject_ids: &BTreeSet<String>,
+) -> bool {
+    plan.selected_actions.iter().any(|action| {
+        crate::consumer::proposal_targets(action)
+            .iter()
+            .any(|target| external_subject_ids.contains(*target))
+    }) || plan
+        .institution_actions
+        .iter()
+        .any(|action| external_subject_ids.contains(&action.institution_id))
+        || plan
+            .activity_outcomes
+            .iter()
+            .any(|outcome| external_outcome_writes_subject(&outcome.effect, external_subject_ids))
 }
 
 fn expected_activity_outcome_bindings(
@@ -3256,6 +3459,23 @@ fn commit_strategic_tick(
     let previous_revision = campaign.revision;
     campaign.revision += 1;
     let committed_at = Utc::now();
+    let external_authorities = store
+        .load_all::<crate::consumer::ExternalSubjectAuthority>("external_subject_authority.v1")
+        .map_err(persist)?;
+    let external_proposals = resolution_wave
+        .as_ref()
+        .map(|wave| {
+            external_proposals_for_wave(
+                campaign.id,
+                campaign.revision,
+                committed_at,
+                wave,
+                &external_authorities,
+            )
+        })
+        .transpose()
+        .map_err(|error| KernelError::Invalid(error.to_string()))?
+        .unwrap_or_default();
     let receipt = WorldCommitReceipt {
         schema: "ghostlight.world_commit_receipt.v1".into(),
         campaign_id: campaign.id,
@@ -3295,12 +3515,57 @@ fn commit_strategic_tick(
             &receipt,
             &strategic,
             resolution_wave.as_ref(),
+            &external_proposals,
             mutation
                 .as_ref()
                 .map(|(transition, receipt)| (&transition.authority, &transition.batch, receipt)),
         )
         .map_err(persist)?;
     Ok(CommandResult::Committed { campaign, receipt })
+}
+
+fn external_proposals_for_wave(
+    campaign_id: uuid::Uuid,
+    world_revision: u64,
+    created_at: chrono::DateTime<Utc>,
+    wave: &ResolutionWaveCommit,
+    authorities: &[crate::consumer::ExternalSubjectAuthority],
+) -> anyhow::Result<Vec<crate::consumer::ExternalWorldProposal>> {
+    let mut proposals = Vec::new();
+    for appraisal in &wave.appraisals {
+        for action in &appraisal.actions {
+            let action_digest = crate::resolution::cell_action_digest(action)?;
+            for authority in authorities {
+                if crate::consumer::proposal_targets(action)
+                    .contains(&authority.subject_id.as_str())
+                {
+                    let id = crate::legacy_transition::digest_serializable(&(
+                        campaign_id,
+                        world_revision,
+                        &authority.id,
+                        &action_digest,
+                    ))?;
+                    proposals.push(crate::consumer::ExternalWorldProposal {
+                        schema: "ghostlight.external_world_proposal.v1".into(),
+                        id: format!("external-proposal:{id}"),
+                        campaign_id,
+                        world_revision,
+                        authority_id: authority.id.clone(),
+                        external_subject_id: authority.subject_id.clone(),
+                        source_subject_id: action.subject_id.clone(),
+                        intent: action.intent.clone(),
+                        intended_effect: action.intended_effect.clone(),
+                        action_digest: action_digest.clone(),
+                        public_channels: action.public_channels.clone(),
+                        state_references: action.state_references.clone(),
+                        status: crate::consumer::ExternalProposalStatus::Pending,
+                        created_at,
+                    });
+                }
+            }
+        }
+    }
+    Ok(proposals)
 }
 
 fn commit_resolution_control(
@@ -4304,7 +4569,9 @@ mod tests {
 
         let mut aggregate = campaign();
         aggregate.id = campaign_id;
-        store.create_campaign(&aggregate, &[], &[]).unwrap();
+        store
+            .create_unadmitted_fixture_campaign(&aggregate, &[], &[])
+            .unwrap();
         let error = kernel
             .commit_mutation_batch(authority, batch)
             .await
@@ -7778,6 +8045,93 @@ mod tests {
             activity_outcomes: vec![],
             model_receipt_hashes: hashes,
         }
+    }
+
+    #[test]
+    fn direct_strategic_plan_cannot_write_external_subject_state() {
+        let external = BTreeSet::from(["external-hold".to_string()]);
+        let mut plan = StrategicTickPlan::default();
+        plan.institution_actions.push(StrategicInstitutionAction {
+            institution_id: "external-hold".into(),
+            posture: "overwritten".into(),
+            location_ids: Vec::new(),
+            public_channels: Vec::new(),
+        });
+        assert!(strategic_plan_writes_external_subject(&plan, &external));
+
+        plan.institution_actions.clear();
+        plan.activity_outcomes.push(StrategicActivityOutcome {
+            schema: "ghostlight.strategic_activity_outcome.v1".into(),
+            action_digest: format!("sha256:{}", "a".repeat(64)),
+            source_subject_id: "foreign-court".into(),
+            band: StrategicOutcomeBand::Success,
+            summary: "Attempted cross-boundary resource mutation.".into(),
+            supporting_state_references: Vec::new(),
+            effect: StrategicOutcomeEffect::ResourceConsumed {
+                owner_subject_id: "external-hold".into(),
+                resource: "ore".into(),
+            },
+        });
+        assert!(strategic_plan_writes_external_subject(&plan, &external));
+
+        plan.activity_outcomes.clear();
+        plan.selected_actions.push(CellActionProposal {
+            subject_id: "foreign-court".into(),
+            intent: "Contact the hold.".into(),
+            intended_effect: "Request negotiation.".into(),
+            priority: 1,
+            state_references: Vec::new(),
+            public_channels: Vec::new(),
+            effects: vec![StrategicCellEffect::ActorActivity {
+                actor_id: "foreign-court".into(),
+                activity: StrategicActivityKind::Communicate,
+                target_subject_ids: vec!["external-hold".into()],
+                location_ids: Vec::new(),
+            }],
+        });
+        assert!(strategic_plan_writes_external_subject(&plan, &external));
+    }
+
+    #[test]
+    fn strategic_wave_derives_attributed_external_proposal() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let campaign = crate::resolution::tests::campaign(2, 2);
+        let mut wave = inaction_wave(&campaign, &store);
+        let appraisal = wave.appraisals.first_mut().unwrap();
+        let source_subject_id = appraisal.inactions[0].subject_id.clone();
+        appraisal.inactions.clear();
+        appraisal.actions.push(CellActionProposal {
+            subject_id: source_subject_id.clone(),
+            intent: "Open talks with the external hold.".into(),
+            intended_effect: "Establish a negotiating channel.".into(),
+            priority: 1,
+            state_references: Vec::new(),
+            public_channels: vec!["diplomatic".into()],
+            effects: vec![StrategicCellEffect::ActorActivity {
+                actor_id: source_subject_id.clone(),
+                activity: StrategicActivityKind::Communicate,
+                target_subject_ids: vec!["external-hold".into()],
+                location_ids: Vec::new(),
+            }],
+        });
+        let authorities = vec![crate::consumer::ExternalSubjectAuthority {
+            schema: "ghostlight.external_subject_authority.v1".into(),
+            id: "authority:external-hold".into(),
+            campaign_id: campaign.id,
+            subject_id: "external-hold".into(),
+            subject_kind: AgencySubjectKind::Institution,
+            owner_id: "fixture-consumer".into(),
+            authority_key_sha256: crate::consumer::authority_key_digest("secret"),
+            last_source_revision: None,
+            last_payload_digest: None,
+        }];
+        let proposals =
+            external_proposals_for_wave(campaign.id, 1, Utc::now(), &wave, &authorities).unwrap();
+        assert_eq!(proposals.len(), 1);
+        assert_eq!(proposals[0].source_subject_id, source_subject_id);
+        assert_eq!(proposals[0].external_subject_id, "external-hold");
+        assert_eq!(proposals[0].authority_id, "authority:external-hold");
     }
 
     #[tokio::test]

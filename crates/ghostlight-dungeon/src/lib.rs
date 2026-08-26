@@ -3,6 +3,7 @@
 pub mod agency_corpus;
 pub mod assessor;
 pub mod compiler;
+pub mod consumer;
 pub mod d20;
 pub mod domain;
 pub mod gestalt;

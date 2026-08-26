@@ -1,3 +1,7 @@
+use crate::consumer::{
+    ExternalProposalReceipt, ExternalSnapshotReceipt, ExternalSubjectAuthority,
+    ExternalWorldProposal, WorldSeedAdmission, WorldSeedAdmissionReceipt,
+};
 use crate::domain::{
     Campaign, CampaignLifecycleReceipt, GestaltMaterializationReceipt, ResolutionControlReceipt,
     ResolutionWaveCommit, StrategicTickReceipt, VaultEvidenceReceipt, VaultManifest,
@@ -152,16 +156,46 @@ impl CampaignStore {
         Ok(next_row)
     }
 
-    pub fn create_campaign(
+    #[doc(hidden)]
+    pub fn create_unadmitted_fixture_campaign(
         &self,
         campaign: &Campaign,
         receipts: &[VaultEvidenceReceipt],
         model_receipts: &[crate::model::ModelStageReceipt],
     ) -> Result<CultCacheEnvelope> {
-        self.create_campaign_rows(campaign, receipts, model_receipts, None)
+        self.create_campaign_rows(campaign, receipts, model_receipts, None, None)
     }
 
-    pub fn create_session_zero_campaign(
+    pub fn create_admitted_campaign(
+        &self,
+        campaign: &Campaign,
+        receipts: &[VaultEvidenceReceipt],
+        model_receipts: &[crate::model::ModelStageReceipt],
+        admission: &WorldSeedAdmission,
+        admission_receipt: &WorldSeedAdmissionReceipt,
+        session_zero_publication: Option<&PublishedSessionZeroSeed>,
+    ) -> Result<CultCacheEnvelope> {
+        if admission.campaign_id != campaign.id
+            || admission_receipt.campaign_id != campaign.id
+            || admission.seed_digest != admission_receipt.seed_digest
+            || admission.producer_id != admission_receipt.producer_id
+            || admission.idempotency_key != admission_receipt.idempotency_key
+        {
+            return Err(anyhow!(
+                "world seed admission persistence bundle is inconsistent"
+            ));
+        }
+        self.create_campaign_rows(
+            campaign,
+            receipts,
+            model_receipts,
+            Some((admission, admission_receipt)),
+            session_zero_publication,
+        )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn create_session_zero_campaign(
         &self,
         campaign: &Campaign,
         receipts: &[VaultEvidenceReceipt],
@@ -173,7 +207,7 @@ impl CampaignStore {
         {
             return Err(anyhow!("Session Zero publication targets another campaign"));
         }
-        self.create_campaign_rows(campaign, receipts, model_receipts, Some(publication))
+        self.create_campaign_rows(campaign, receipts, model_receipts, None, Some(publication))
     }
 
     fn create_campaign_rows(
@@ -181,6 +215,7 @@ impl CampaignStore {
         campaign: &Campaign,
         receipts: &[VaultEvidenceReceipt],
         model_receipts: &[crate::model::ModelStageReceipt],
+        admission: Option<(&WorldSeedAdmission, &WorldSeedAdmissionReceipt)>,
         publication: Option<&PublishedSessionZeroSeed>,
     ) -> Result<CultCacheEnvelope> {
         let campaign_row = envelope(
@@ -196,6 +231,28 @@ impl CampaignStore {
             &campaign.id.to_string(),
             campaign,
         )?);
+        if let Some((admission, receipt)) = admission {
+            rows.push(envelope(
+                "world_seed_admission.v1",
+                "ghostlight.world_seed_admission.v1",
+                &campaign.id.to_string(),
+                admission,
+            )?);
+            rows.push(envelope(
+                "world_seed_admission_receipt.v1",
+                "ghostlight.world_seed_admission_receipt.v1",
+                &campaign.id.to_string(),
+                receipt,
+            )?);
+            for authority in &admission.external_subjects {
+                rows.push(envelope(
+                    "external_subject_authority.v1",
+                    "ghostlight.external_subject_authority.v1",
+                    &authority.id,
+                    authority,
+                )?);
+            }
+        }
         let manifest = merge_vault_manifest(None, receipts);
         rows.push(envelope(
             "vault_manifest.v1",
@@ -298,6 +355,95 @@ impl CampaignStore {
             return Err(anyhow!("campaign store is not empty"));
         }
         Ok(campaign_row)
+    }
+
+    pub fn append_external_snapshot(
+        &self,
+        expected_campaign: &CultCacheEnvelope,
+        expected_authority: &CultCacheEnvelope,
+        next_campaign: &Campaign,
+        next_authority: &ExternalSubjectAuthority,
+        receipt: &ExternalSnapshotReceipt,
+    ) -> Result<CultCacheEnvelope> {
+        if expected_campaign.key != next_campaign.id.to_string()
+            || expected_authority.key != next_authority.id
+            || receipt.campaign_id != next_campaign.id
+            || receipt.authority_id != next_authority.id
+            || receipt.subject_id != next_authority.subject_id
+            || receipt.world_revision != next_campaign.revision
+            || receipt.previous_world_revision.saturating_add(1) != next_campaign.revision
+        {
+            return Err(anyhow!(
+                "external snapshot persistence bundle is inconsistent"
+            ));
+        }
+        let next_campaign_row = envelope(
+            "campaign.v1",
+            "ghostlight.campaign.v1",
+            &next_campaign.id.to_string(),
+            next_campaign,
+        )?;
+        let rows = vec![
+            next_campaign_row.clone(),
+            envelope(
+                "external_subject_authority.v1",
+                "ghostlight.external_subject_authority.v1",
+                &next_authority.id,
+                next_authority,
+            )?,
+            envelope(
+                "external_snapshot_receipt.v1",
+                "ghostlight.external_snapshot_receipt.v1",
+                &format!("{}:{}", receipt.authority_id, receipt.source_revision),
+                receipt,
+            )?,
+        ];
+        if !self.inner.compare_and_swap_batch(
+            &[expected_campaign.clone(), expected_authority.clone()],
+            rows,
+        )? {
+            return Err(anyhow!("stale external snapshot or authority watermark"));
+        }
+        Ok(next_campaign_row)
+    }
+
+    pub fn append_external_proposals(
+        &self,
+        rows: &mut Vec<CultCacheEnvelope>,
+        proposals: &[ExternalWorldProposal],
+    ) -> Result<()> {
+        for proposal in proposals {
+            rows.push(envelope(
+                "external_world_proposal.v1",
+                "ghostlight.external_world_proposal.v1",
+                &proposal.id,
+                proposal,
+            )?);
+        }
+        Ok(())
+    }
+
+    pub fn record_external_proposal_receipt(
+        &self,
+        receipt: &ExternalProposalReceipt,
+    ) -> Result<ExternalProposalReceipt> {
+        let key = receipt.proposal_id.clone();
+        if let Some((_, existing)) =
+            self.load::<ExternalProposalReceipt>("external_proposal_receipt.v1", &key)?
+        {
+            return if existing == *receipt {
+                Ok(existing)
+            } else {
+                Err(anyhow!("external proposal receipt idempotency conflict"))
+            };
+        }
+        self.insert(
+            "external_proposal_receipt.v1",
+            "ghostlight.external_proposal_receipt.v1",
+            &key,
+            receipt,
+        )?;
+        Ok(receipt.clone())
     }
 
     pub fn snapshot_to(&self, path: impl AsRef<Path>) -> Result<()> {
@@ -730,6 +876,7 @@ impl CampaignStore {
         world_receipt: &WorldCommitReceipt,
         strategic_receipt: &StrategicTickReceipt,
         resolution_wave: Option<&ResolutionWaveCommit>,
+        external_proposals: &[ExternalWorldProposal],
         mutation: Option<(
             &MutationAuthorityEnvelope,
             &WorldMutationBatch,
@@ -797,6 +944,7 @@ impl CampaignStore {
                 )?);
             }
         }
+        self.append_external_proposals(&mut rows, external_proposals)?;
         if let Some((authority, batch, mutation_receipt)) = mutation {
             if mutation_receipt.previous_world_revision != world_receipt.previous_revision
                 || mutation_receipt.world_revision != world_receipt.revision

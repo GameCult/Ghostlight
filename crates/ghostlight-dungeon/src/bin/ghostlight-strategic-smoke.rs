@@ -51,7 +51,7 @@ async fn main() -> anyhow::Result<()> {
         .location_id
         .clone();
     let store = CampaignStore::open(root.join("campaign.cc"))?;
-    store.create_campaign(&campaign, &[], &[])?;
+    store.create_unadmitted_fixture_campaign(&campaign, &[], &[])?;
     let model: Arc<dyn ModelPort> = Arc::new(DeepSeekPort::from_runtime_secret(secret)?);
     let started = Instant::now();
     let output = propose_resolution_wave(

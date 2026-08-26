@@ -1,4 +1,11 @@
 use crate::{
+    consumer::{
+        ExternalProposalAcknowledgement, ExternalProposalList, ExternalProposalListRequest,
+        ExternalProposalReceipt, ExternalProposalStatus, ExternalSubjectAuthority,
+        ExternalWorldProposal, WorldSeed, WorldSeedAdmission, WorldSeedAdmissionReceipt,
+        WorldSeedAdmissionRequest, WorldSeedProducerKind, validate_authority_key,
+        validate_seed_admission,
+    },
     domain::{Campaign, CampaignLifecycleReceipt, VaultEvidenceReceipt},
     kernel::WorldKernel,
     model::ModelStageReceipt,
@@ -117,7 +124,8 @@ impl CampaignRegistry {
         self.runtimes.read().await.keys().copied().collect()
     }
 
-    pub async fn create(
+    #[doc(hidden)]
+    pub async fn create_unadmitted_fixture(
         &self,
         campaign: Campaign,
         evidence: Vec<VaultEvidenceReceipt>,
@@ -152,46 +160,77 @@ impl CampaignRegistry {
                 "every campaign member must bind an existing human-protected actor"
             ));
         }
-        if let Ok(existing) = self.runtime(campaign.id).await {
-            let stored = existing
-                .store
-                .load::<PublishedSessionZeroSeed>(
-                    "session_zero_publication.v1",
-                    &campaign.id.to_string(),
-                )?
-                .map(|(_, value)| value);
-            return match stored {
-                Some(stored) if stored.approved_seed_digest == publication.approved_seed_digest => {
-                    Ok(existing)
-                }
-                _ => Err(anyhow!(
-                    "campaign id is already published from another seed"
-                )),
-            };
+        let seed = WorldSeed::from_campaign(&campaign)?;
+        let admission = WorldSeedAdmission {
+            schema: "ghostlight.world_seed_admission.v1".into(),
+            campaign_id: campaign.id,
+            producer_id: format!("session-zero:{}", publication.session_zero_id),
+            producer_kind: WorldSeedProducerKind::Compiler,
+            seed_digest: seed.digest()?,
+            idempotency_key: publication.approved_seed_digest.clone(),
+            external_subjects: Vec::new(),
+        };
+        self.admit_seed(
+            seed,
+            admission,
+            "",
+            evidence,
+            model_receipts,
+            Some(publication),
+        )
+        .await
+        .map(|(runtime, _)| runtime)
+    }
+
+    pub async fn admit_world_seed(
+        &self,
+        request: WorldSeedAdmissionRequest,
+    ) -> Result<(CampaignRuntime, WorldSeedAdmissionReceipt)> {
+        if request.schema != "ghostlight.world_seed_admission_request.v1" {
+            return Err(anyhow!("world seed admission request schema is invalid"));
+        }
+        self.admit_seed(
+            request.seed,
+            request.admission,
+            &request.authority_key,
+            Vec::new(),
+            Vec::new(),
+            None,
+        )
+        .await
+    }
+
+    async fn admit_seed(
+        &self,
+        seed: WorldSeed,
+        admission: WorldSeedAdmission,
+        authority_key: &str,
+        evidence: Vec<VaultEvidenceReceipt>,
+        model_receipts: Vec<ModelStageReceipt>,
+        publication: Option<PublishedSessionZeroSeed>,
+    ) -> Result<(CampaignRuntime, WorldSeedAdmissionReceipt)> {
+        let campaign = validate_seed_admission(&seed, &admission, authority_key)?;
+        let receipt = WorldSeedAdmissionReceipt {
+            schema: "ghostlight.world_seed_admission_receipt.v1".into(),
+            campaign_id: campaign.id,
+            producer_id: admission.producer_id.clone(),
+            seed_digest: admission.seed_digest.clone(),
+            idempotency_key: admission.idempotency_key.clone(),
+            admitted_subject_ids: admission
+                .external_subjects
+                .iter()
+                .map(|item| item.subject_id.clone())
+                .collect(),
+            admitted_at: Utc::now(),
+        };
+        if let Some(existing) = self.open_existing_admission(&admission).await? {
+            return Ok(existing);
         }
         let directory = self.root.join(campaign.id.to_string());
         if directory.exists() {
-            let store = CampaignStore::open(directory.join("campaign.cc"))?;
-            let stored = store
-                .load::<PublishedSessionZeroSeed>(
-                    "session_zero_publication.v1",
-                    &campaign.id.to_string(),
-                )?
-                .map(|(_, value)| value);
-            if stored.as_ref().is_some_and(|stored| {
-                stored.approved_seed_digest == publication.approved_seed_digest
-            }) {
-                let runtime = CampaignRuntime {
-                    kernel: WorldKernel::start(store.clone()),
-                    store,
-                };
-                self.runtimes
-                    .write()
-                    .await
-                    .insert(campaign.id, runtime.clone());
-                return Ok(runtime);
-            }
-            return Err(anyhow!("campaign directory belongs to another seed"));
+            return Err(anyhow!(
+                "campaign directory belongs to another admitted seed"
+            ));
         }
         let staging = self
             .root
@@ -199,11 +238,13 @@ impl CampaignRegistry {
         fs::create_dir(&staging)?;
         let prepared = (|| -> Result<()> {
             let store = CampaignStore::open(staging.join("campaign.cc"))?;
-            store.create_session_zero_campaign(
+            store.create_admitted_campaign(
                 &campaign,
                 &evidence,
                 &model_receipts,
-                &publication,
+                &admission,
+                &receipt,
+                publication.as_ref(),
             )?;
             drop(store);
             fs::rename(&staging, &directory)?;
@@ -222,7 +263,169 @@ impl CampaignRegistry {
             .write()
             .await
             .insert(campaign.id, runtime.clone());
-        Ok(runtime)
+        Ok((runtime, receipt))
+    }
+
+    async fn open_existing_admission(
+        &self,
+        admission: &WorldSeedAdmission,
+    ) -> Result<Option<(CampaignRuntime, WorldSeedAdmissionReceipt)>> {
+        let runtime = if let Ok(runtime) = self.runtime(admission.campaign_id).await {
+            Some(runtime)
+        } else {
+            let directory = self.root.join(admission.campaign_id.to_string());
+            if !directory.exists() {
+                None
+            } else {
+                let store = CampaignStore::open(directory.join("campaign.cc"))?;
+                Some(CampaignRuntime {
+                    kernel: WorldKernel::start(store.clone()),
+                    store,
+                })
+            }
+        };
+        let Some(runtime) = runtime else {
+            return Ok(None);
+        };
+        let stored = runtime
+            .store
+            .load::<WorldSeedAdmission>(
+                "world_seed_admission.v1",
+                &admission.campaign_id.to_string(),
+            )?
+            .map(|(_, value)| value);
+        let stored_receipt = runtime
+            .store
+            .load::<WorldSeedAdmissionReceipt>(
+                "world_seed_admission_receipt.v1",
+                &admission.campaign_id.to_string(),
+            )?
+            .map(|(_, value)| value);
+        match (stored, stored_receipt) {
+            (Some(stored), Some(receipt)) if stored == *admission => {
+                self.runtimes
+                    .write()
+                    .await
+                    .insert(admission.campaign_id, runtime.clone());
+                Ok(Some((runtime, receipt)))
+            }
+            _ => Err(anyhow!("campaign id is already admitted from another seed")),
+        }
+    }
+
+    pub async fn apply_external_institution_snapshot(
+        &self,
+        snapshot: crate::consumer::ExternalInstitutionSnapshot,
+    ) -> Result<crate::consumer::ExternalSnapshotReceipt> {
+        let runtime = self.runtime(snapshot.campaign_id).await?;
+        match runtime
+            .kernel
+            .command(crate::domain::WorldCommand::ApplyExternalInstitutionSnapshot { snapshot })
+            .await
+            .map_err(|error| anyhow!(error.to_string()))?
+        {
+            crate::kernel::CommandResult::ExternalSnapshotCommitted { receipt, .. } => Ok(receipt),
+            _ => Err(anyhow!(
+                "kernel returned the wrong external snapshot result"
+            )),
+        }
+    }
+
+    pub async fn list_external_proposals(
+        &self,
+        request: ExternalProposalListRequest,
+    ) -> Result<ExternalProposalList> {
+        if request.schema != "ghostlight.external_proposal_list_request.v1" {
+            return Err(anyhow!("external proposal list request schema is invalid"));
+        }
+        let runtime = self.runtime(request.campaign_id).await?;
+        let (_, authority) = runtime
+            .store
+            .load::<ExternalSubjectAuthority>(
+                "external_subject_authority.v1",
+                &request.authority_id,
+            )?
+            .ok_or_else(|| anyhow!("external subject authority is unknown"))?;
+        if authority.campaign_id != request.campaign_id || authority.owner_id != request.owner_id {
+            return Err(anyhow!(
+                "external proposal request does not match its authority"
+            ));
+        }
+        validate_authority_key(&authority, &request.authority_key)?;
+        let receipts = runtime
+            .store
+            .load_all::<ExternalProposalReceipt>("external_proposal_receipt.v1")?;
+        let acknowledged: std::collections::BTreeSet<_> = receipts
+            .into_iter()
+            .map(|receipt| receipt.proposal_id)
+            .collect();
+        let proposals = runtime
+            .store
+            .load_all::<ExternalWorldProposal>("external_world_proposal.v1")?
+            .into_iter()
+            .filter(|proposal| {
+                proposal.authority_id == request.authority_id
+                    && !acknowledged.contains(&proposal.id)
+            })
+            .collect();
+        Ok(ExternalProposalList {
+            schema: "ghostlight.external_proposal_list.v1".into(),
+            campaign_id: request.campaign_id,
+            authority_id: request.authority_id,
+            proposals,
+        })
+    }
+
+    pub async fn acknowledge_external_proposal(
+        &self,
+        acknowledgement: ExternalProposalAcknowledgement,
+    ) -> Result<ExternalProposalReceipt> {
+        if acknowledgement.schema != "ghostlight.external_proposal_acknowledgement.v1"
+            || acknowledgement.status == ExternalProposalStatus::Pending
+            || acknowledgement.idempotency_key.trim().is_empty()
+            || acknowledgement.result_summary.trim().is_empty()
+            || acknowledgement.result_summary.chars().count() > 1000
+        {
+            return Err(anyhow!("external proposal acknowledgement is invalid"));
+        }
+        let runtime = self.runtime(acknowledgement.campaign_id).await?;
+        let (_, authority) = runtime
+            .store
+            .load::<ExternalSubjectAuthority>(
+                "external_subject_authority.v1",
+                &acknowledgement.authority_id,
+            )?
+            .ok_or_else(|| anyhow!("external subject authority is unknown"))?;
+        if authority.owner_id != acknowledgement.owner_id {
+            return Err(anyhow!(
+                "external acknowledgement does not match its authority"
+            ));
+        }
+        validate_authority_key(&authority, &acknowledgement.authority_key)?;
+        let (_, proposal) = runtime
+            .store
+            .load::<ExternalWorldProposal>(
+                "external_world_proposal.v1",
+                &acknowledgement.proposal_id,
+            )?
+            .ok_or_else(|| anyhow!("external proposal is unknown"))?;
+        if proposal.authority_id != acknowledgement.authority_id
+            || proposal.campaign_id != acknowledgement.campaign_id
+        {
+            return Err(anyhow!("external proposal belongs to another authority"));
+        }
+        runtime
+            .store
+            .record_external_proposal_receipt(&ExternalProposalReceipt {
+                schema: "ghostlight.external_proposal_receipt.v1".into(),
+                campaign_id: acknowledgement.campaign_id,
+                authority_id: acknowledgement.authority_id,
+                proposal_id: acknowledgement.proposal_id,
+                idempotency_key: acknowledgement.idempotency_key,
+                status: acknowledgement.status,
+                result_summary: acknowledgement.result_summary,
+                acknowledged_at: acknowledgement.acknowledged_at,
+            })
     }
 
     async fn create_with_lifecycle(
@@ -587,7 +790,7 @@ mod tests {
             provider_attempts: vec![],
         };
         registry
-            .create(original.clone(), vec![], vec![model_receipt.clone()])
+            .create_unadmitted_fixture(original.clone(), vec![], vec![model_receipt.clone()])
             .await
             .unwrap();
         let fork = registry.fork(original.id, "Fork".into()).await.unwrap();
@@ -655,7 +858,7 @@ mod tests {
         let registry = CampaignRegistry::new(dir.path().join("campaigns")).unwrap();
         let original = seed("Original");
         registry
-            .create(original.clone(), vec![], vec![])
+            .create_unadmitted_fixture(original.clone(), vec![], vec![])
             .await
             .unwrap();
 
@@ -694,13 +897,18 @@ mod tests {
             .unwrap()
             .location_id = "missing".into();
 
-        assert!(registry.create(invalid, vec![], vec![]).await.is_err());
+        assert!(
+            registry
+                .create_unadmitted_fixture(invalid, vec![], vec![])
+                .await
+                .is_err()
+        );
         assert!(registry.list().await.is_empty());
         assert_eq!(std::fs::read_dir(&root).unwrap().count(), 0);
 
         let valid = seed("Valid");
         let runtime = registry
-            .create(valid.clone(), vec![], vec![])
+            .create_unadmitted_fixture(valid.clone(), vec![], vec![])
             .await
             .unwrap();
         assert_eq!(
@@ -751,6 +959,8 @@ mod tests {
             .unwrap();
         for document_type in [
             "campaign.v1",
+            "world_seed_admission.v1",
+            "world_seed_admission_receipt.v1",
             "session_zero_publication.v1",
             "campaign_membership.v1",
             "campaign_contract.v1",
@@ -893,7 +1103,9 @@ mod tests {
         let campaign_root = root.join(flat.id.to_string());
         std::fs::create_dir_all(&campaign_root).unwrap();
         let store = CampaignStore::open(campaign_root.join("campaign.cc")).unwrap();
-        store.create_campaign(&flat, &[], &[]).unwrap();
+        store
+            .create_unadmitted_fixture_campaign(&flat, &[], &[])
+            .unwrap();
         drop(store);
         let registry = CampaignRegistry::new(&root).unwrap();
         registry.load_existing().await.unwrap();
@@ -915,6 +1127,234 @@ mod tests {
                 .unwrap()
                 .len(),
             1
+        );
+    }
+
+    #[tokio::test]
+    async fn consumer_seed_admission_and_external_snapshot_share_one_authoritative_path() {
+        let dir = tempfile::tempdir().unwrap();
+        let registry = CampaignRegistry::new(dir.path()).unwrap();
+        let mut campaign = seed("Consumer world");
+        campaign.institutions.insert(
+            "external-hold".into(),
+            crate::domain::InstitutionState {
+                id: "external-hold".into(),
+                name: "External Hold".into(),
+                resources: vec!["ore".into()],
+                goals: vec!["remain sovereign".into()],
+                posture: "watchful".into(),
+            },
+        );
+        campaign.player_actor_id = "external-hold".into();
+        let seed = WorldSeed::from_campaign(&campaign).unwrap();
+        let authority_key = "test-authority-key";
+        let admission = WorldSeedAdmission {
+            schema: "ghostlight.world_seed_admission.v1".into(),
+            campaign_id: campaign.id,
+            producer_id: "fixture-consumer".into(),
+            producer_kind: WorldSeedProducerKind::Consumer,
+            seed_digest: seed.digest().unwrap(),
+            idempotency_key: "admit-once".into(),
+            external_subjects: vec![ExternalSubjectAuthority {
+                schema: "ghostlight.external_subject_authority.v1".into(),
+                id: "authority:external-hold".into(),
+                campaign_id: campaign.id,
+                subject_id: "external-hold".into(),
+                subject_kind: crate::domain::AgencySubjectKind::Institution,
+                owner_id: "fixture-consumer".into(),
+                authority_key_sha256: crate::consumer::authority_key_digest(authority_key),
+                last_source_revision: None,
+                last_payload_digest: None,
+            }],
+        };
+        let request = WorldSeedAdmissionRequest {
+            schema: "ghostlight.world_seed_admission_request.v1".into(),
+            seed,
+            admission,
+            authority_key: authority_key.into(),
+        };
+        let (runtime, receipt) = registry.admit_world_seed(request.clone()).await.unwrap();
+        assert_eq!(receipt.admitted_subject_ids, vec!["external-hold"]);
+        assert!(
+            !runtime
+                .store
+                .load::<Campaign>("campaign.v1", &campaign.id.to_string())
+                .unwrap()
+                .unwrap()
+                .1
+                .agency_profiles["external-hold"]
+                .simulation_eligible
+        );
+        let (_, repeated) = registry.admit_world_seed(request).await.unwrap();
+        assert_eq!(repeated.seed_digest, receipt.seed_digest);
+
+        let mut snapshot = crate::consumer::ExternalInstitutionSnapshot {
+            schema: "ghostlight.external_institution_snapshot.v1".into(),
+            campaign_id: campaign.id,
+            expected_world_revision: 0,
+            authority_id: "authority:external-hold".into(),
+            owner_id: "fixture-consumer".into(),
+            authority_key: authority_key.into(),
+            source_revision: 7,
+            idempotency_key: "snapshot-seven".into(),
+            payload_digest: String::new(),
+            projection: crate::domain::InstitutionState {
+                id: "external-hold".into(),
+                name: "External Hold".into(),
+                resources: vec!["ore".into(), "grain".into()],
+                goals: vec!["remain sovereign".into()],
+                posture: "mobilized".into(),
+            },
+        };
+        snapshot.payload_digest = crate::consumer::snapshot_payload_digest(&snapshot).unwrap();
+        let mut denied = snapshot.clone();
+        denied.authority_key = "wrong-key".into();
+        assert!(
+            registry
+                .apply_external_institution_snapshot(denied)
+                .await
+                .is_err()
+        );
+        assert_eq!(
+            runtime
+                .store
+                .load::<Campaign>("campaign.v1", &campaign.id.to_string())
+                .unwrap()
+                .unwrap()
+                .1
+                .revision,
+            0
+        );
+        let snapshot_receipt = registry
+            .apply_external_institution_snapshot(snapshot.clone())
+            .await
+            .unwrap();
+        assert_eq!(snapshot_receipt.world_revision, 1);
+        let updated = runtime
+            .store
+            .load::<Campaign>("campaign.v1", &campaign.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(updated.institutions["external-hold"].posture, "mobilized");
+        assert!(
+            updated.agency_profiles["external-hold"].facets[&crate::domain::AgencyAxis::Authority]
+                .contains("mobilized")
+        );
+        assert!(
+            updated.agency_profiles["external-hold"].facets
+                [&crate::domain::AgencyAxis::EconomyRole]
+                .contains("grain")
+        );
+        assert_eq!(
+            registry
+                .apply_external_institution_snapshot(snapshot)
+                .await
+                .unwrap(),
+            snapshot_receipt
+        );
+        let mut stale_snapshot = crate::consumer::ExternalInstitutionSnapshot {
+            schema: "ghostlight.external_institution_snapshot.v1".into(),
+            campaign_id: campaign.id,
+            expected_world_revision: 1,
+            authority_id: "authority:external-hold".into(),
+            owner_id: "fixture-consumer".into(),
+            authority_key: authority_key.into(),
+            source_revision: 6,
+            idempotency_key: "snapshot-six".into(),
+            payload_digest: String::new(),
+            projection: campaign.institutions["external-hold"].clone(),
+        };
+        stale_snapshot.payload_digest =
+            crate::consumer::snapshot_payload_digest(&stale_snapshot).unwrap();
+        assert!(
+            registry
+                .apply_external_institution_snapshot(stale_snapshot)
+                .await
+                .is_err()
+        );
+        assert_eq!(
+            runtime
+                .store
+                .load::<Campaign>("campaign.v1", &campaign.id.to_string())
+                .unwrap()
+                .unwrap()
+                .1
+                .revision,
+            1
+        );
+        let proposal = ExternalWorldProposal {
+            schema: "ghostlight.external_world_proposal.v1".into(),
+            id: "external-proposal:test".into(),
+            campaign_id: campaign.id,
+            world_revision: 1,
+            authority_id: "authority:external-hold".into(),
+            external_subject_id: "external-hold".into(),
+            source_subject_id: "foreign-court".into(),
+            intent: "Offer a treaty.".into(),
+            intended_effect: "Open negotiations.".into(),
+            action_digest: format!("sha256:{}", "a".repeat(64)),
+            public_channels: vec!["diplomatic".into()],
+            state_references: Vec::new(),
+            status: ExternalProposalStatus::Pending,
+            created_at: Utc::now(),
+        };
+        runtime
+            .store
+            .insert(
+                "external_world_proposal.v1",
+                "ghostlight.external_world_proposal.v1",
+                &proposal.id,
+                &proposal,
+            )
+            .unwrap();
+        let proposals = registry
+            .list_external_proposals(ExternalProposalListRequest {
+                schema: "ghostlight.external_proposal_list_request.v1".into(),
+                campaign_id: campaign.id,
+                authority_id: "authority:external-hold".into(),
+                owner_id: "fixture-consumer".into(),
+                authority_key: authority_key.into(),
+            })
+            .await
+            .unwrap();
+        assert_eq!(proposals.proposals, vec![proposal.clone()]);
+        let acknowledgement = ExternalProposalAcknowledgement {
+            schema: "ghostlight.external_proposal_acknowledgement.v1".into(),
+            campaign_id: campaign.id,
+            authority_id: "authority:external-hold".into(),
+            owner_id: "fixture-consumer".into(),
+            authority_key: authority_key.into(),
+            proposal_id: proposal.id,
+            idempotency_key: "ack-treaty".into(),
+            status: ExternalProposalStatus::Rejected,
+            result_summary: "The hold declined.".into(),
+            acknowledged_at: Utc::now(),
+        };
+        let acknowledgement_receipt = registry
+            .acknowledge_external_proposal(acknowledgement.clone())
+            .await
+            .unwrap();
+        assert_eq!(
+            registry
+                .acknowledge_external_proposal(acknowledgement)
+                .await
+                .unwrap(),
+            acknowledgement_receipt
+        );
+        assert!(
+            registry
+                .list_external_proposals(ExternalProposalListRequest {
+                    schema: "ghostlight.external_proposal_list_request.v1".into(),
+                    campaign_id: campaign.id,
+                    authority_id: "authority:external-hold".into(),
+                    owner_id: "fixture-consumer".into(),
+                    authority_key: authority_key.into(),
+                })
+                .await
+                .unwrap()
+                .proposals
+                .is_empty()
         );
     }
 }

@@ -4527,8 +4527,11 @@ pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
     if c.tick_hours == 0 {
         return Err(anyhow!("strategic tick duration must be positive"));
     }
-    if !c.actors.contains_key(&c.player_actor_id) {
-        return Err(anyhow!("player actor is missing"));
+    if !c.actors.contains_key(&c.player_actor_id)
+        && !c.institutions.contains_key(&c.player_actor_id)
+        && !c.gestalts.contains_key(&c.player_actor_id)
+    {
+        return Err(anyhow!("primary controlled subject is missing"));
     }
     crate::resolution::validate_policy(&c.resolution_policy)?;
     crate::resolution::validate_pins(c, &c.resolution_pins)?;

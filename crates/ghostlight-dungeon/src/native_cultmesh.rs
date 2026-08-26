@@ -232,7 +232,10 @@ async fn handle_operation_inner(
     else {
         bail!("native boundary accepts only operation requests");
     };
-    if service_id != NATIVE_SERVICE_ID || payload_encoding != "messagepack-base64" {
+    if payload_encoding != "messagepack-base64"
+        || (service_id != NATIVE_SERVICE_ID
+            && service_id != ghostlight_dungeon::consumer::WORLD_CONSUMER_SERVICE_ID)
+    {
         bail!("native request does not match the advertised service contract");
     }
     if target_runtime_id
@@ -240,6 +243,74 @@ async fn handle_operation_inner(
         .is_some_and(|target| target != state.mesh.identity().runtime_id)
     {
         bail!("native request targets another runtime");
+    }
+    if service_id == ghostlight_dungeon::consumer::WORLD_CONSUMER_SERVICE_ID {
+        return match operation.as_str() {
+            ghostlight_dungeon::consumer::ADMIT_WORLD_OPERATION => {
+                require_schema(payload_schema, "ghostlight.world_seed_admission_request.v1")?;
+                let command: ghostlight_dungeon::consumer::WorldSeedAdmissionRequest =
+                    decode_request(request)?;
+                require_schema(
+                    &command.schema,
+                    "ghostlight.world_seed_admission_request.v1",
+                )?;
+                let (_, receipt) = state.registry.admit_world_seed(command).await?;
+                success_response(
+                    request,
+                    "ghostlight.world_seed_admission_receipt.v1",
+                    &receipt,
+                )
+            }
+            ghostlight_dungeon::consumer::APPLY_EXTERNAL_SNAPSHOT_OPERATION => {
+                require_schema(
+                    payload_schema,
+                    "ghostlight.external_institution_snapshot.v1",
+                )?;
+                let command: ghostlight_dungeon::consumer::ExternalInstitutionSnapshot =
+                    decode_request(request)?;
+                require_schema(
+                    &command.schema,
+                    "ghostlight.external_institution_snapshot.v1",
+                )?;
+                let receipt = state
+                    .registry
+                    .apply_external_institution_snapshot(command)
+                    .await?;
+                success_response(request, "ghostlight.external_snapshot_receipt.v1", &receipt)
+            }
+            ghostlight_dungeon::consumer::LIST_EXTERNAL_PROPOSALS_OPERATION => {
+                require_schema(
+                    payload_schema,
+                    "ghostlight.external_proposal_list_request.v1",
+                )?;
+                let command: ghostlight_dungeon::consumer::ExternalProposalListRequest =
+                    decode_request(request)?;
+                require_schema(
+                    &command.schema,
+                    "ghostlight.external_proposal_list_request.v1",
+                )?;
+                let proposals = state.registry.list_external_proposals(command).await?;
+                success_response(request, "ghostlight.external_proposal_list.v1", &proposals)
+            }
+            ghostlight_dungeon::consumer::ACKNOWLEDGE_EXTERNAL_PROPOSAL_OPERATION => {
+                require_schema(
+                    payload_schema,
+                    "ghostlight.external_proposal_acknowledgement.v1",
+                )?;
+                let command: ghostlight_dungeon::consumer::ExternalProposalAcknowledgement =
+                    decode_request(request)?;
+                require_schema(
+                    &command.schema,
+                    "ghostlight.external_proposal_acknowledgement.v1",
+                )?;
+                let receipt = state
+                    .registry
+                    .acknowledge_external_proposal(command)
+                    .await?;
+                success_response(request, "ghostlight.external_proposal_receipt.v1", &receipt)
+            }
+            _ => bail!("world consumer operation is not advertised by Ghostlight"),
+        };
     }
     match operation.as_str() {
         NATIVE_AUTH_BEGIN => {
@@ -346,17 +417,22 @@ fn failure_response(request: &CultNetMessage, code: &str, message: &str) -> Resu
 }
 
 fn bare_failure_response(request: &CultNetMessage) -> CultNetMessage {
-    let (message_id, operation) = match request {
+    let (message_id, service_id, operation) = match request {
         CultNetMessage::OperationRequest {
             message_id,
+            service_id,
             operation,
             ..
-        } => (message_id.clone(), operation.clone()),
-        _ => (uuid::Uuid::new_v4().to_string(), "unknown".into()),
+        } => (message_id.clone(), service_id.clone(), operation.clone()),
+        _ => (
+            uuid::Uuid::new_v4().to_string(),
+            NATIVE_SERVICE_ID.into(),
+            "unknown".into(),
+        ),
     };
     CultNetMessage::OperationResponse {
         message_id,
-        service_id: NATIVE_SERVICE_ID.into(),
+        service_id,
         operation,
         status: "denied".into(),
         payload_schema: "ghostlight.native_failure.v1".into(),

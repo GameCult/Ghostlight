@@ -200,7 +200,7 @@ async fn main() -> anyhow::Result<()> {
         (base_campaign, None)
     };
     let store = CampaignStore::open(root.join("campaign.cc"))?;
-    store.create_campaign(&campaign, &[], &[])?;
+    store.create_unadmitted_fixture_campaign(&campaign, &[], &[])?;
     let kernel = WorldKernel::start(store.clone());
     let model_calls = Arc::new(std::sync::Mutex::new(Vec::new()));
     let model: Arc<dyn ModelPort> = Arc::new(LiveFireModelRecorder {

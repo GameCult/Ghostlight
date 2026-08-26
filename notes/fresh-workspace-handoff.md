@@ -424,7 +424,13 @@ approved capability.
 
 ## Next action
 
-The immediate gate is a Delvehold external-world architecture and scale pass.
+The generic world-consumer boundary is implemented. Session Zero and external
+producers share one admitted `WorldSeed` transaction; externally authoritative
+institutions enter through revisioned WorldKernel snapshots; and strategic
+actions aimed at them persist typed proposals for consumer acknowledgement over
+the existing loopback CultNet RUDP operation server.
+
+The immediate gate is now the scale and emergence pass.
 Delvehold is a consumer of Ghostlight's generic authored-world API, not a
 Ghostlight-owned organ or special runtime. Ghostlight owns the world beyond the
 Greathold as a persistent multiresolution political simulation, while Delvehold
@@ -435,24 +441,20 @@ Do not begin by multiplying prompts or raising a constant; map resolution
 ownership, emergence triggers, causal propagation, folding, and provider-call
 amortization first.
 
-1. Map Delvehold's authored realm, institution, population, and person hierarchy
-   and identify the missing lore required for a whole-world seed.
-2. Specify a WorldKernel-owned offscreen individuation path that lets causal
+1. Specify a WorldKernel-owned offscreen individuation path that lets causal
    political pressure produce durable named figures without granting entity
    creation authority to a cell, arena, or model.
-3. Measure the existing parallel wave dispatcher at the current 128-cell ceiling
+2. Measure the existing parallel wave dispatcher at the current 128-cell ceiling
    and design the hundreds-cell budget around bounded provider concurrency,
    outcome resolution, atomic commit, fairness, and cost.
-4. Define and implement generic authored-seed, externally controlled subject,
-   inbound effect, outbound intent/news, and receipt operations in Ghostlight's
-   public API. Keep Delvehold projection and economy translation in a
-   Delvehold-owned adapter.
-5. Prove one Greathold effect crosses that public API, changes two foreign
+3. Have the game-side adapter lower its authored hierarchy into the published
+   generic schemas; keep projection and economy translation consumer-owned.
+4. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, and returns attributed news or intent without mutating
    Delvehold-owned truth.
-6. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+5. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-7. Keep `gamecult-ops` synchronized with every executable deployment and model
+6. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,
