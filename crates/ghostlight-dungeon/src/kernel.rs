@@ -3021,6 +3021,12 @@ fn strategic_activity_summary(
             .next()
             .map(|first| first.to_lowercase().chain(characters).collect::<String>())
             .unwrap_or_default();
+        if let Some(rest) = lowered.strip_prefix("attempt to ") {
+            return format!("{source_name} attempts to {rest}.");
+        }
+        if let Some(rest) = lowered.strip_prefix("attempt ") {
+            return format!("{source_name} attempts {rest}.");
+        }
         return format!("{source_name} attempts to {lowered}.");
     }
     let targets = target_names.join(", ");
@@ -4914,7 +4920,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(value.gestalts["refugees-east"].home_location_id, "docks");
-        assert_eq!(events.len(), 3);
+        assert_eq!(events.len(), 2);
         assert_eq!(events[1].kind, "gestalt_activity");
         assert_eq!(events[1].location_ids, vec!["camp"]);
         assert_eq!(
@@ -5069,7 +5075,7 @@ mod tests {
         )
         .unwrap();
         assert_only_strategic_obligations_advanced(&before, &value);
-        assert_eq!(events.len(), 2);
+        assert_eq!(events.len(), 1);
         assert_eq!(events[0].kind, "gestalt_activity");
         assert_eq!(
             events[0].summary,
@@ -5081,10 +5087,10 @@ mod tests {
         );
         assert!(events[0].actor_ids.is_empty());
         assert!(events[0].institution_ids.is_empty());
-        assert_eq!(events[1].kind, "strategic_activity_outcome");
-        assert_eq!(
-            events[1].summary,
-            "The attempt produces no durable material change."
+        assert!(
+            events
+                .iter()
+                .all(|event| event.kind != "strategic_activity_outcome")
         );
     }
 
@@ -5392,7 +5398,7 @@ mod tests {
         )
         .unwrap();
         assert_only_strategic_obligations_advanced(&before, &value);
-        assert_eq!(events.len(), 2);
+        assert_eq!(events.len(), 1);
         assert_eq!(
             events[0].summary,
             "South dock neighbors sends a communication to Mira Venn."
@@ -5484,7 +5490,7 @@ mod tests {
         )
         .unwrap();
         assert_only_strategic_obligations_advanced(&before, &value);
-        assert_eq!(events.len(), 2);
+        assert_eq!(events.len(), 1);
         assert_eq!(events[0].kind, "gestalt_member_activity");
         assert_eq!(
             events[0].summary,
@@ -6097,7 +6103,7 @@ mod tests {
             campaign
                 .events
                 .iter()
-                .any(|event| event.kind == "strategic_activity_outcome")
+                .all(|event| event.kind != "strategic_activity_outcome")
         );
 
         let origin_activity = crate::domain::CellActionProposal {
@@ -6154,24 +6160,22 @@ mod tests {
             .iter()
             .position(|event| event.id == "strategic:3:actor-activity:runner:prepare")
             .unwrap();
-        let outcome_suffix = action_digest
-            .strip_prefix("sha256:")
-            .unwrap()
-            .chars()
-            .take(16)
-            .collect::<String>();
-        let outcome_index = campaign
-            .events
-            .iter()
-            .position(|event| event.id == format!("strategic:3:activity-outcome:{outcome_suffix}"))
-            .unwrap();
         let movement_index = campaign
             .events
             .iter()
             .position(|event| event.id == "strategic:3:actor:runner")
             .unwrap();
-        assert!(activity_index < outcome_index);
-        assert!(outcome_index < movement_index);
+        assert_eq!(
+            campaign.events[activity_index].summary,
+            "Runner attempts the repair before leaving the yard."
+        );
+        assert!(
+            campaign
+                .events
+                .iter()
+                .all(|event| !event.id.starts_with("strategic:3:activity-outcome:"))
+        );
+        assert!(activity_index < movement_index);
     }
 
     #[tokio::test]

@@ -5142,6 +5142,7 @@ mod tests {
     fn cell_projection_cannot_erase_a_selected_member_exception() {
         let mut slice = fixture_cell_slice();
         slice.max_actions = 2;
+        slice.decision_owner_ids.insert("member:mira".into());
         slice.member_exceptions.push(CellMemberSlice {
             subject_id: "member:mira".into(),
             member_id: "mira".into(),
