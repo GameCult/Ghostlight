@@ -303,6 +303,31 @@ not: every parent resource must be assigned to exactly one child in the
 approved preview, so aggregation cannot mint a granary for every ideological
 subgroup.
 
+### Within-horizon course ordering
+
+A strategic choice is one atomic endpoint transaction, but its observable
+means may straddle one admitted relocation. `WorldKernel` derives the only
+within-horizon ordering from exact occupancy and effect locations:
+
+1. activities at the subject's snapshot location occur before relocation;
+2. the admitted relocation or population migration occurs next;
+3. activities at the exact admitted destination occur after arrival.
+
+Distinct activity kinds inside one location phase remain an unordered atomic
+set. Activities spanning several locations without one unambiguous phase also
+remain simultaneous at the strategic resolution of that subject. The model
+does not emit phase labels, sequence numbers, or prose-authored timing; effect
+array and object field order are not authority. An unrelated activity location
+still fails exact spatial validation.
+
+This derived order owns chronological event lowering only. The mutation batch
+still owns one indivisible final state, and every permit is compiled from the
+same pre-wave snapshot. A failed phase, outcome, or mutation therefore aborts
+the complete wave rather than leaving a subject halfway through its course.
+The old blanket assumption that every movement precedes every activity is not
+an owner and must not survive in Projector, Interpreter, verifier, or kernel
+guidance.
+
 Foreground assessment uses the same authority-shaped contract principle. Its
 model schema contains only mutation lanes available in the current snapshot:
 no route means no movement lane, no accessible undisclosed proposition means

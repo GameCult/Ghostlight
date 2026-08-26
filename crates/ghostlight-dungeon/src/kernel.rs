@@ -2148,6 +2148,57 @@ fn merge_strategic_outcome_event_context(
     Ok(())
 }
 
+fn strategic_activity_phase(
+    campaign: &Campaign,
+    prospective_actor_locations: &BTreeMap<String, String>,
+    prospective_gestalt_locations: &BTreeMap<String, String>,
+    prospective_member_locations: &BTreeMap<String, String>,
+    subject_id: &str,
+    location_ids: &[String],
+) -> Result<u8, KernelError> {
+    let (origin, destination) = if let Some(actor) = campaign.actors.get(subject_id) {
+        (
+            actor.location_id.as_str(),
+            prospective_actor_locations
+                .get(subject_id)
+                .map(String::as_str),
+        )
+    } else if let Some(gestalt) = campaign.gestalts.get(subject_id) {
+        (
+            gestalt.home_location_id.as_str(),
+            prospective_gestalt_locations
+                .get(subject_id)
+                .map(String::as_str),
+        )
+    } else if let Some(member_id) = subject_id.strip_prefix("member:") {
+        let origin = crate::resolution::dormant_member_location(campaign, member_id)
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+        return Ok(relative_activity_phase(
+            &origin,
+            prospective_member_locations
+                .get(member_id)
+                .map(String::as_str),
+            location_ids,
+        ));
+    } else {
+        return Ok(1);
+    };
+    Ok(relative_activity_phase(origin, destination, location_ids))
+}
+
+fn relative_activity_phase(origin: &str, destination: Option<&str>, location_ids: &[String]) -> u8 {
+    let Some(destination) = destination.filter(|destination| *destination != origin) else {
+        return 1;
+    };
+    if location_ids.is_empty() || location_ids.iter().all(|location| location == origin) {
+        0
+    } else if location_ids.iter().all(|location| location == destination) {
+        2
+    } else {
+        1
+    }
+}
+
 fn apply_strategic_tick_plan(
     campaign: &mut Campaign,
     plan: crate::domain::StrategicTickPlan,
@@ -2229,6 +2280,7 @@ fn apply_strategic_tick_plan(
     let revision = campaign.revision + 1;
     let at = campaign.world_time + Duration::hours(i64::from(campaign.tick_hours));
     let mut events = Vec::new();
+    let mut event_phases = BTreeMap::new();
     let mut seen_institutions = BTreeSet::new();
     for action in plan.institution_actions {
         if !seen_institutions.insert(action.institution_id.clone()) {
@@ -2449,7 +2501,15 @@ fn apply_strategic_tick_plan(
                 .filter(|target| campaign.gestalts.contains_key(*target))
                 .cloned(),
         );
-        events.push(crate::domain::Event {
+        let phase = strategic_activity_phase(
+            campaign,
+            &prospective_actor_locations,
+            &prospective_gestalt_locations,
+            &prospective_member_locations,
+            &action.gestalt_id,
+            &locations,
+        )?;
+        let event = crate::domain::Event {
             id: format!(
                 "strategic:{revision}:gestalt-activity:{}:{}",
                 action.gestalt_id,
@@ -2463,7 +2523,9 @@ fn apply_strategic_tick_plan(
             gestalt_ids,
             location_ids: locations,
             public_channels: action.public_channels,
-        });
+        };
+        event_phases.insert(event.id.clone(), phase);
+        events.push(event);
     }
 
     let mut legacy_seen_actors = BTreeSet::new();
@@ -2595,7 +2657,15 @@ fn apply_strategic_tick_plan(
             .collect::<Vec<_>>();
         gestalt_ids.sort();
         gestalt_ids.dedup();
-        events.push(Event {
+        let phase = strategic_activity_phase(
+            campaign,
+            &prospective_actor_locations,
+            &prospective_gestalt_locations,
+            &prospective_member_locations,
+            &action.actor_id,
+            &action.location_ids,
+        )?;
+        let event = Event {
             id: format!(
                 "strategic:{revision}:actor-activity:{}:{}",
                 action.actor_id,
@@ -2609,7 +2679,9 @@ fn apply_strategic_tick_plan(
             gestalt_ids,
             location_ids: action.location_ids,
             public_channels: action.public_channels,
-        });
+        };
+        event_phases.insert(event.id.clone(), phase);
+        events.push(event);
     }
 
     let mut legacy_seen_members = BTreeSet::new();
@@ -2695,7 +2767,15 @@ fn apply_strategic_tick_plan(
         );
         gestalt_ids.sort();
         gestalt_ids.dedup();
-        events.push(Event {
+        let phase = strategic_activity_phase(
+            campaign,
+            &prospective_actor_locations,
+            &prospective_gestalt_locations,
+            &prospective_member_locations,
+            &format!("member:{}", action.member_id),
+            &action.location_ids,
+        )?;
+        let event = Event {
             id: format!(
                 "strategic:{revision}:member-activity:{}:{}",
                 action.member_id,
@@ -2709,7 +2789,9 @@ fn apply_strategic_tick_plan(
             gestalt_ids,
             location_ids: action.location_ids,
             public_channels: action.public_channels,
-        });
+        };
+        event_phases.insert(event.id.clone(), phase);
+        events.push(event);
     }
     let mut seen_member_migrations = BTreeSet::new();
     for action in plan.member_migrations {
@@ -2807,7 +2889,15 @@ fn apply_strategic_tick_plan(
             .chars()
             .take(16)
             .collect::<String>();
-        events.push(Event {
+        let phase = strategic_activity_phase(
+            campaign,
+            &prospective_actor_locations,
+            &prospective_gestalt_locations,
+            &prospective_member_locations,
+            &source_subject_id,
+            &locations,
+        )?;
+        let event = Event {
             id: format!("strategic:{revision}:activity-outcome:{digest_suffix}"),
             at,
             kind: "strategic_activity_outcome".into(),
@@ -2817,8 +2907,11 @@ fn apply_strategic_tick_plan(
             gestalt_ids,
             location_ids: locations,
             public_channels,
-        });
+        };
+        event_phases.insert(event.id.clone(), phase);
+        events.push(event);
     }
+    events.sort_by_key(|event| event_phases.get(&event.id).copied().unwrap_or(1));
     *campaign = next;
     Ok(AppliedStrategicTickPlan { events, mutation })
 }
@@ -3537,6 +3630,23 @@ mod tests {
 
     fn test_action_digest(label: &str) -> String {
         format!("sha256:{:x}", Sha256::digest(label.as_bytes()))
+    }
+
+    #[test]
+    fn strategic_activity_phase_is_derived_from_exact_locations() {
+        assert_eq!(
+            relative_activity_phase("yard", Some("room"), &["yard".into()]),
+            0
+        );
+        assert_eq!(
+            relative_activity_phase("yard", Some("room"), &["room".into()]),
+            2
+        );
+        assert_eq!(
+            relative_activity_phase("yard", Some("room"), &["yard".into(), "room".into()]),
+            1
+        );
+        assert_eq!(relative_activity_phase("yard", None, &["yard".into()]), 1);
     }
 
     fn resolve_test_activities(mut plan: StrategicTickPlan) -> StrategicTickPlan {
@@ -5809,7 +5919,14 @@ mod tests {
                 id: "yard".into(),
                 name: "Yard".into(),
                 container_id: None,
-                routes: BTreeMap::new(),
+                routes: BTreeMap::from([(
+                    "back".into(),
+                    Route {
+                        destination_id: "room".into(),
+                        distance: "near".into(),
+                        travel_minutes: 20,
+                    },
+                )]),
                 persistent_features: vec![],
             },
         );
@@ -5924,6 +6041,79 @@ mod tests {
                 .iter()
                 .any(|event| event.kind == "strategic_activity_outcome")
         );
+
+        let origin_activity = crate::domain::CellActionProposal {
+            subject_id: "runner".into(),
+            intent: "Repair the yard marker, then return to the room.".into(),
+            intended_effect: "Attempt the repair before leaving the yard.".into(),
+            priority: 50,
+            state_references: vec![],
+            public_channels: vec![],
+            effects: vec![
+                crate::domain::StrategicCellEffect::ActorMove {
+                    actor_id: "runner".into(),
+                    destination_id: "room".into(),
+                },
+                crate::domain::StrategicCellEffect::ActorActivity {
+                    actor_id: "runner".into(),
+                    activity: StrategicActivityKind::Prepare,
+                    target_subject_ids: vec![],
+                    location_ids: vec!["yard".into()],
+                },
+            ],
+        };
+        let action_digest = crate::resolution::cell_action_digest(&origin_activity).unwrap();
+        let result = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: 2,
+                source: TickSource::Scheduler,
+                plan: Some(StrategicTickPlan {
+                    selected_actions: vec![origin_activity],
+                    activity_outcomes: vec![StrategicActivityOutcome {
+                        schema: "ghostlight.strategic_activity_outcome.v1".into(),
+                        action_digest: action_digest.clone(),
+                        source_subject_id: "runner".into(),
+                        band: StrategicOutcomeBand::Mixed,
+                        summary: "The yard repair remains provisional.".into(),
+                        supporting_state_references: vec![],
+                        effect: StrategicOutcomeEffect::NoMaterialChange {
+                            reason: "The repair did not establish a durable state change.".into(),
+                        },
+                    }],
+                    ..StrategicTickPlan::default()
+                }),
+                model_receipt_hash: Some(format!("sha256:{}", "d".repeat(64))),
+                resolution_wave: None,
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = result else {
+            panic!("expected commit")
+        };
+        assert_eq!(campaign.actors["runner"].location_id, "room");
+        let activity_index = campaign
+            .events
+            .iter()
+            .position(|event| event.id == "strategic:3:actor-activity:runner:prepare")
+            .unwrap();
+        let outcome_suffix = action_digest
+            .strip_prefix("sha256:")
+            .unwrap()
+            .chars()
+            .take(16)
+            .collect::<String>();
+        let outcome_index = campaign
+            .events
+            .iter()
+            .position(|event| event.id == format!("strategic:3:activity-outcome:{outcome_suffix}"))
+            .unwrap();
+        let movement_index = campaign
+            .events
+            .iter()
+            .position(|event| event.id == "strategic:3:actor:runner")
+            .unwrap();
+        assert!(activity_index < outcome_index);
+        assert!(outcome_index < movement_index);
     }
 
     #[tokio::test]
