@@ -541,7 +541,9 @@ impl StrategicActivityKind {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct CellActionProposal {
     pub subject_id: String,
+    #[schemars(length(min = 1, max = 460))]
     pub intent: String,
+    #[schemars(length(min = 1, max = 460))]
     pub intended_effect: String,
     pub priority: i16,
     pub state_references: Vec<String>,

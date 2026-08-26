@@ -975,6 +975,45 @@ pub fn lower_strategic_wave(
             label: None,
         });
     }
+    for action in &plan.selected_actions {
+        let subject = if campaign.actors.contains_key(&action.subject_id) {
+            Some(actor_subject(&action.subject_id))
+        } else if let Some(member_id) = action.subject_id.strip_prefix("member:")
+            && campaign.gestalt_members.contains_key(member_id)
+        {
+            Some(actor_subject(&action.subject_id))
+        } else {
+            None
+        };
+        let Some(subject) = subject else {
+            continue;
+        };
+        let action_digest = crate::resolution::cell_action_digest(action)?;
+        let summary = format!(
+            "I chose to {}. I intended to {}.",
+            action.intent.trim(),
+            action.intended_effect.trim()
+        );
+        if action.intent.trim().is_empty()
+            || action.intended_effect.trim().is_empty()
+            || summary.chars().count() > 1_000
+        {
+            return Err(anyhow!(
+                "strategic choice cannot be retained as bounded actor memory"
+            ));
+        }
+        mutations.push(WorldMutation::ChangeMemory {
+            subject,
+            operation: MemoryMutationOperation::Record,
+            memory_id: format!(
+                "memory:strategic-choice:{}:{}",
+                campaign.revision + 1,
+                short_digest(&action_digest)
+            ),
+            event_id: Some(action_digest),
+            summary: Some(summary),
+        });
+    }
     for action in &plan.institution_actions {
         mutations.push(WorldMutation::ChangePosture {
             subject: institution_subject(&action.institution_id),
@@ -2957,8 +2996,8 @@ mod tests {
     use super::*;
     use crate::domain::{
         ActorState, BranchOrigin, CommitmentDelta, ConditionDelta, GestaltMemberDelta,
-        InstitutionState, Location, ResolutionPolicy, Route, StrategicOutcomeBand, WorldClock,
-        WorldFact,
+        InstitutionState, Location, ResolutionPolicy, Route, StrategicCellEffect,
+        StrategicOutcomeBand, WorldClock, WorldFact,
     };
     use chrono::Duration;
     use uuid::Uuid;
@@ -3409,6 +3448,106 @@ mod tests {
             !campaign.actors["witness"]
                 .equipment
                 .contains("communication device")
+        );
+    }
+
+    #[test]
+    fn strategic_choices_survive_as_exact_actor_and_member_memory() {
+        let mut campaign = campaign();
+        campaign.gestalts.insert(
+            "refugees".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "refugees".into(),
+                name: "Refugees".into(),
+                version: 0,
+                home_location_id: "room".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        campaign.gestalt_members.insert(
+            "scout".into(),
+            GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "scout".into(),
+                gestalt_id: "refugees".into(),
+                version: 0,
+                name: "Refugee Scout".into(),
+                capability_additions: BTreeSet::new(),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::new(),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+                last_location_id: Some("room".into()),
+                materialized_actor_id: None,
+                last_relevant_revision: campaign.revision,
+                relevance_lease_until_revision: campaign.revision,
+            },
+        );
+        let actor_intent = "inspect the hall before anyone else enters";
+        let actor_effect = "identify immediate hazards without claiming the hall is safe";
+        let member_intent = "check the room's marked exits";
+        let member_effect = "report only routes personally inspected";
+        let selected_actions = vec![
+            crate::domain::CellActionProposal {
+                subject_id: "witness".into(),
+                intent: actor_intent.into(),
+                intended_effect: actor_effect.into(),
+                priority: 60,
+                state_references: vec![],
+                public_channels: vec![],
+                effects: vec![StrategicCellEffect::ActorMove {
+                    actor_id: "witness".into(),
+                    destination_id: "hall".into(),
+                }],
+            },
+            crate::domain::CellActionProposal {
+                subject_id: "member:scout".into(),
+                intent: member_intent.into(),
+                intended_effect: member_effect.into(),
+                priority: 50,
+                state_references: vec![],
+                public_channels: vec![],
+                effects: vec![StrategicCellEffect::MemberActivity {
+                    member_id: "scout".into(),
+                    activity: crate::domain::StrategicActivityKind::Investigate,
+                    target_subject_ids: vec![],
+                    location_ids: vec!["room".into()],
+                }],
+            },
+        ];
+        let plan =
+            crate::resolution::project_selected_actions(&campaign, selected_actions).unwrap();
+        let transition = lower_strategic_wave(
+            &campaign,
+            &plan,
+            "strategic:choice-memory",
+            Utc::now() + Duration::minutes(5),
+        )
+        .unwrap()
+        .unwrap();
+
+        apply_lowered_transition(&mut campaign, &transition, Utc::now()).unwrap();
+
+        assert_eq!(campaign.actors["witness"].location_id, "hall");
+        assert!(campaign.actors["witness"].memories.contains(&format!(
+            "I chose to {actor_intent}. I intended to {actor_effect}."
+        )));
+        assert!(
+            campaign.gestalt_members["scout"]
+                .memories
+                .contains(&format!(
+                    "I chose to {member_intent}. I intended to {member_effect}."
+                ))
         );
     }
 

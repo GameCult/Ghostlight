@@ -2161,7 +2161,9 @@ fn validate_cell_proposal(
 ) -> Result<()> {
     if is_human_controlled_actor(campaign, &proposal.subject_id)
         || proposal.intent.trim().is_empty()
+        || proposal.intent.chars().count() > 460
         || proposal.intended_effect.trim().is_empty()
+        || proposal.intended_effect.chars().count() > 460
         || !(0..=100).contains(&proposal.priority)
         || proposal.effects.is_empty()
         || proposal.effects.len() > 4
