@@ -16,7 +16,7 @@ use std::{
 };
 use tokio::{sync::Semaphore, task::JoinSet};
 
-const OUTCOME_PROPOSAL_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named outcomes—never action_resolutions, results, or resolutions. outcomes is an array with one item per supplied action_digest. Every item requires action_digest, band (success, mixed, or failure), effect_kind, and supporting_state_references. Fields are conditionally required, not optional suggestions: no_material_change requires reason; resource_created and resource_consumed require owner_subject_id and resource; resource_transferred requires owner_subject_id, other_subject_id, and resource; gestalt_pressure requires owner_subject_id plus both pressure arrays; agency_relation_shift requires relation_id and strength_delta; member_memory requires member_id and memory; member_obligation requires member_id and obligation; member_relationship requires member_id, other_subject_id, and relationship_description; knowledge_learned requires owner_subject_id and fact_id. Every scalar field not named for the chosen effect_kind is omitted or null; irrelevant pressure arrays are omitted or empty. A non-neutral irrelevant field is invalid. pressure_additions and pressure_resolutions are arrays of plain strings, never objects. no_material_change uses an empty supporting_state_references array; every material effect cites the smallest causally decisive set of one to eight values copied literally and only from that action's allowed_state_references. A source_subject_id, target_subject_id, target_state subject_id, member_state_owner_id, owner_subject_id, other_subject_id, member_id, relation_id, or fact_id is not a supporting state reference unless that exact string also appears in allowed_state_references. For member_relationship, other_subject_id already identifies the target; do not repeat it as provenance. Do not emit summary; Ghostlight derives it from the validated typed effect. When resource_created is admissible and concrete capability-backed making or repair establishes a durable source-owned result, the resource field names that resulting object, stock, repair, or usable arrangement. It never restates an action or an unnamed recipient's response. Example no-op shape: {"outcomes":[{"action_digest":"sha256:<copy an exact supplied digest>","band":"mixed","effect_kind":"no_material_change","supporting_state_references":[],"reason":"No durable state changed."}]}"#;
+const OUTCOME_PROPOSAL_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named outcomes—never action_resolutions, results, or resolutions. outcomes is an array with one item per supplied action_digest. Every item requires action_digest, band (success, mixed, or failure), effect_kind, and supporting_state_references. Fields are conditionally required, not optional suggestions: no_material_change requires reason; resource_created and resource_consumed require owner_subject_id and resource; resource_transferred requires owner_subject_id, other_subject_id, and resource; gestalt_pressure requires owner_subject_id plus both pressure arrays; agency_relation_shift requires relation_id and strength_delta; member_memory requires member_id and memory; member_obligation requires member_id and obligation; member_relationship requires member_id, other_subject_id, and relationship_description; knowledge_learned requires owner_subject_id and fact_id. Every scalar field not named for the chosen effect_kind is omitted or null; irrelevant pressure arrays are omitted, null, or empty and normalize to empty before semantic binding. A non-neutral irrelevant field is invalid. For gestalt_pressure, pressure_additions and pressure_resolutions must be arrays of plain strings, never null or objects. no_material_change uses an empty supporting_state_references array; every material effect cites the smallest causally decisive set of one to eight values copied literally and only from that action's allowed_state_references. A source_subject_id, target_subject_id, target_state subject_id, member_state_owner_id, owner_subject_id, other_subject_id, member_id, relation_id, or fact_id is not a supporting state reference unless that exact string also appears in allowed_state_references. For member_relationship, other_subject_id already identifies the target; do not repeat it as provenance. Do not emit summary; Ghostlight derives it from the validated typed effect. When resource_created is admissible and concrete capability-backed making or repair establishes a durable source-owned result, the resource field names that resulting object, stock, repair, or usable arrangement. It never restates an action or an unnamed recipient's response. Example no-op shape: {"outcomes":[{"action_digest":"sha256:<copy an exact supplied digest>","band":"mixed","effect_kind":"no_material_change","supporting_state_references":[],"reason":"No durable state changed."}]}"#;
 const OUTCOME_VERIFIER_OUTPUT_CONTRACT: &str = r#"The top-level object has exactly one field named verdicts—never verifications, outcomes, results, or resolutions. verdicts is an array with one item per supplied action_digest. Every item has exactly action_digest, result, and repair_guidance. Example: {"verdicts":[{"action_digest":"sha256:<copy exact supplied digest>","result":"match","repair_guidance":null}]}"#;
 
 #[derive(Clone, Debug, Serialize)]
@@ -93,9 +93,9 @@ struct OutcomeProposal {
     strength_delta: Option<i16>,
     #[serde(default)]
     resource: Option<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_empty_vec")]
     pressure_additions: Vec<String>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_as_empty_vec")]
     pressure_resolutions: Vec<String>,
     #[serde(default)]
     member_id: Option<String>,
@@ -109,6 +109,13 @@ struct OutcomeProposal {
     fact_id: Option<String>,
     #[serde(default)]
     reason: Option<String>,
+}
+
+fn null_as_empty_vec<'de, D>(deserializer: D) -> std::result::Result<Vec<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Ok(Option::<Vec<String>>::deserialize(deserializer)?.unwrap_or_default())
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -1674,6 +1681,12 @@ fn constrain_outcome_schema(
     let proposal = schema
         .pointer_mut("/$defs/OutcomeProposal")
         .ok_or_else(|| anyhow!("strategic outcome schema has no proposal definition"))?;
+    for field in ["pressure_additions", "pressure_resolutions"] {
+        let array_schema = proposal["properties"][field].take();
+        proposal["properties"][field] = serde_json::json!({
+            "anyOf":[array_schema,{"type":"null"}]
+        });
+    }
     proposal["required"] = serde_json::json!([
         "action_digest",
         "band",
@@ -1784,7 +1797,7 @@ fn outcome_effect_shape(
             if matches!(*field, "pressure_additions" | "pressure_resolutions") {
                 serde_json::json!({
                     "required":[field],
-                    "properties":{(*field):{"minItems":1}}
+                    "properties":{(*field):{"type":"array","minItems":1}}
                 })
             } else {
                 serde_json::json!({
@@ -1807,11 +1820,13 @@ fn outcome_effect_shape(
         },
         "required":required
     });
-    for field in required_effect_fields
-        .iter()
-        .filter(|field| !matches!(**field, "pressure_additions" | "pressure_resolutions"))
-    {
-        shape["properties"][*field] = serde_json::json!({"not":{"type":"null"}});
+    for field in required_effect_fields.iter() {
+        shape["properties"][*field] =
+            if matches!(*field, "pressure_additions" | "pressure_resolutions") {
+                serde_json::json!({"type":"array"})
+            } else {
+                serde_json::json!({"not":{"type":"null"}})
+            };
     }
     if !forbidden.is_empty() {
         shape["not"] = serde_json::json!({"anyOf":forbidden});
@@ -2713,6 +2728,22 @@ mod tests {
                 "reason":"No durable state changes."
             }]
         })));
+        let nullable_inactive_arrays = serde_json::json!({
+            "outcomes":[{
+                "action_digest":digest,
+                "band":"mixed",
+                "effect_kind":"no_material_change",
+                "supporting_state_references":[],
+                "pressure_additions":null,
+                "pressure_resolutions":null,
+                "reason":"No durable state changes."
+            }]
+        });
+        assert!(validator.is_valid(&nullable_inactive_arrays));
+        let normalized: OutcomeProposalBundle =
+            serde_json::from_value(nullable_inactive_arrays).unwrap();
+        assert!(normalized.outcomes[0].pressure_additions.is_empty());
+        assert!(normalized.outcomes[0].pressure_resolutions.is_empty());
         assert!(!validator.is_valid(&outcome(None, None)));
         assert!(!validator.is_valid(&outcome(Some("invented-owner"), None)));
         assert!(!validator.is_valid(&outcome(
@@ -2791,6 +2822,17 @@ mod tests {
         assert!(validator.is_valid(&pressure(vec!["crew exhaustion"], vec![])));
         assert!(validator.is_valid(&pressure(vec![], vec!["storm damage"])));
         assert!(!validator.is_valid(&pressure(vec![], vec![])));
+        assert!(!validator.is_valid(&serde_json::json!({
+            "outcomes":[{
+                "action_digest":context.action_digest,
+                "band":"mixed",
+                "effect_kind":"gestalt_pressure",
+                "supporting_state_references":["pressure:dockers:storm damage"],
+                "owner_subject_id":"dockers",
+                "pressure_additions":null,
+                "pressure_resolutions":["storm damage"]
+            }]
+        })));
         let repeated_pressure = pressure(vec!["storm damage"], vec![]);
         assert!(validator.is_valid(&repeated_pressure));
         let repeated_bundle: OutcomeProposalBundle =

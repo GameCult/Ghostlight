@@ -121,13 +121,33 @@ fn run_server(
     loop {
         while let Ok(completed) = completed_rx.try_recv() {
             in_flight.fetch_sub(1, Ordering::SeqCst);
-            if hub
-                .session(completed.session.remote_addr)
-                .is_some_and(|active| {
-                    active.session_generation == completed.session.session_generation
-                })
-            {
-                hub.send_schema_message(&completed.session, &completed.response)?;
+            let (message_id, payload_bytes) = response_diagnostics(&completed.response);
+            match hub.session(completed.session.remote_addr) {
+                Some(active)
+                    if active.session_generation == completed.session.session_generation =>
+                {
+                    tracing::info!(
+                        %message_id,
+                        payload_bytes,
+                        session_generation = completed.session.session_generation,
+                        remote_addr = %completed.session.remote_addr,
+                        "Ghostlight native boundary delivered completed operation response"
+                    );
+                    hub.send_schema_message(&completed.session, &completed.response)?;
+                }
+                Some(active) => tracing::warn!(
+                    %message_id,
+                    completed_session_generation = completed.session.session_generation,
+                    active_session_generation = active.session_generation,
+                    remote_addr = %completed.session.remote_addr,
+                    "Ghostlight native boundary fenced a completed response from a replaced session"
+                ),
+                None => tracing::warn!(
+                    %message_id,
+                    session_generation = completed.session.session_generation,
+                    remote_addr = %completed.session.remote_addr,
+                    "Ghostlight native boundary could not deliver a completed response because its session vanished"
+                ),
             }
         }
         if let Some(event) = hub.receive_event_once()? {
@@ -168,6 +188,17 @@ fn run_server(
         }
         hub.poll_resends()?;
         std::thread::sleep(Duration::from_millis(5));
+    }
+}
+
+fn response_diagnostics(response: &CultNetMessage) -> (String, usize) {
+    match response {
+        CultNetMessage::OperationResponse {
+            message_id,
+            payload,
+            ..
+        } => (message_id.clone(), payload.len()),
+        _ => ("non-operation-response".into(), 0),
     }
 }
 

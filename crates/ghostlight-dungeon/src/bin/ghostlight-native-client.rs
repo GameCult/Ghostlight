@@ -393,7 +393,15 @@ fn invoke<T: DeserializeOwned>(
         }
         transport.poll_resends()?;
     }
-    bail!("Ghostlight native operation timed out")
+    let stats = transport.stats();
+    bail!(
+        "Ghostlight native operation timed out while connected={}; transport sent {} bytes/{} frames and received {} bytes/{} frames",
+        transport.connected(),
+        stats.bytes_sent,
+        stats.frames_sent,
+        stats.bytes_received,
+        stats.frames_received,
+    )
 }
 
 fn operation_timeout(operation: &str) -> Duration {
