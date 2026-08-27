@@ -548,6 +548,10 @@ impl StrategicActivityKind {
             Self::Prepare | Self::Investigate | Self::Obstruct | Self::Communicate
         )
     }
+
+    pub fn requires_explicit_target_for_gestalt(&self) -> bool {
+        !self.allows_targetless_local_attempt() && !matches!(self, Self::Coordinate)
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]

@@ -2339,7 +2339,7 @@ fn validate_cell_proposal(
                 let allowed_targets = strategic_activity_targets(campaign, gestalt_id);
                 let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
                 let unique_locations = location_ids.iter().collect::<BTreeSet<_>>();
-                let needs_target = !activity.allows_targetless_local_attempt();
+                let needs_target = activity.requires_explicit_target_for_gestalt();
                 if gestalt_id != &proposal.subject_id
                     || !campaign.gestalts.contains_key(gestalt_id)
                     || target_subject_ids.len() > 4
@@ -4467,6 +4467,21 @@ pub(crate) mod tests {
         target_subject_ids.clear();
         assert!(select_resolution_wave(&value, &make_wave(local_member_communication)).is_ok());
 
+        let mut targetless_member_coordination = member_activity.clone();
+        let StrategicCellEffect::MemberActivity {
+            activity,
+            target_subject_ids,
+            ..
+        } = &mut targetless_member_coordination.effects[0]
+        else {
+            unreachable!()
+        };
+        *activity = StrategicActivityKind::Coordinate;
+        target_subject_ids.clear();
+        assert!(
+            select_resolution_wave(&value, &make_wave(targetless_member_coordination)).is_err()
+        );
+
         let same_member_wave = ResolutionWaveCommit {
             schema: "ghostlight.resolution_wave_commit.v1".into(),
             world_revision: value.revision,
@@ -4526,6 +4541,30 @@ pub(crate) mod tests {
                 .plan;
         assert_eq!(activity_plan.gestalt_activities.len(), 1);
         assert!(activity_plan.gestalt_actions.is_empty());
+
+        let internal_coordination = CellActionProposal {
+            subject_id: "refugees".into(),
+            intent: "coordinate the refugee households' own water watch".into(),
+            intended_effect: "attempt internal coordination without inventing an external target"
+                .into(),
+            priority: 80,
+            state_references: vec!["subject:refugees".into()],
+            public_channels: vec![],
+            effects: vec![StrategicCellEffect::GestaltActivity {
+                gestalt_id: "refugees".into(),
+                activity: StrategicActivityKind::Coordinate,
+                target_subject_ids: vec![],
+                location_ids: vec!["center".into()],
+            }],
+        };
+        let internal_plan =
+            select_resolution_wave(&value, &make_wave(internal_coordination))
+                .unwrap()
+                .plan;
+        assert_eq!(internal_plan.gestalt_activities.len(), 1);
+        assert!(internal_plan.gestalt_activities[0]
+            .target_subject_ids
+            .is_empty());
 
         let lower_priority_pressure = CellActionProposal {
             subject_id: "refugees".into(),

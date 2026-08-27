@@ -2433,7 +2433,7 @@ fn validate_constituent_effect(
         } => {
             let unique_targets = target_subject_ids.iter().collect::<BTreeSet<_>>();
             let unique_locations = location_ids.iter().collect::<BTreeSet<_>>();
-            let needs_target = !activity.allows_targetless_local_attempt();
+            let needs_target = activity.requires_explicit_target_for_gestalt();
             if needs_target && target_subject_ids.is_empty() {
                 return Err(anyhow!(
                     "gestalt {} activity {:?} requires one or more exact target IDs; no anonymous or unsupplied target can be encoded. Remove the action unless the Persona explicitly attempted one of {:?}",
@@ -4430,6 +4430,14 @@ mod tests {
         };
         validate_constituent_effect(subject, &valid, None).unwrap();
 
+        let internal_coordination = StrategicCellEffect::GestaltActivity {
+            gestalt_id: "refugees".into(),
+            activity: crate::domain::StrategicActivityKind::Coordinate,
+            target_subject_ids: vec![],
+            location_ids: vec!["forum".into()],
+        };
+        validate_constituent_effect(subject, &internal_coordination, None).unwrap();
+
         let invented_target = StrategicCellEffect::GestaltActivity {
             gestalt_id: "refugees".into(),
             activity: crate::domain::StrategicActivityKind::Coordinate,
@@ -4560,6 +4568,19 @@ mod tests {
         )
         .unwrap();
         validate_cell_appraisal(&slice, &appraisal).unwrap();
+
+        let mut targetless_coordination = appraisal.clone();
+        let StrategicCellEffect::MemberActivity {
+            activity,
+            target_subject_ids,
+            ..
+        } = &mut targetless_coordination.actions[0].effects[0]
+        else {
+            unreachable!()
+        };
+        *activity = crate::domain::StrategicActivityKind::Coordinate;
+        target_subject_ids.clear();
+        assert!(validate_cell_appraisal(&slice, &targetless_coordination).is_err());
 
         let mut stolen = appraisal;
         let StrategicCellEffect::MemberActivity { member_id, .. } =

@@ -2872,7 +2872,7 @@ fn apply_strategic_tick_plan(
             crate::resolution::strategic_activity_targets(campaign, &action.gestalt_id);
         let unique_targets = action.target_subject_ids.iter().collect::<BTreeSet<_>>();
         let unique_locations = action.location_ids.iter().collect::<BTreeSet<_>>();
-        let needs_target = !action.activity.allows_targetless_local_attempt();
+        let needs_target = action.activity.requires_explicit_target_for_gestalt();
         if action.target_subject_ids.len() > 4
             || unique_targets.len() != action.target_subject_ids.len()
             || action
@@ -3472,6 +3472,9 @@ fn strategic_activity_summary(
         }
         (StrategicActivityKind::Coordinate, false) => {
             format!("{source_name} attempts to coordinate with {targets}.")
+        }
+        (StrategicActivityKind::Coordinate, true) => {
+            format!("{source_name} attempts internal coordination.")
         }
         (StrategicActivityKind::Investigate, true) => {
             format!("{source_name} begins a local investigation.")
@@ -5746,6 +5749,72 @@ pub(crate) mod tests {
         assert_eq!(
             events[1].summary,
             "Camp neighbors sends a communication to Eastern transit refugees."
+        );
+    }
+
+    #[test]
+    fn cohesive_gestalt_internal_coordination_reaches_canonical_and_legacy_commit_paths() {
+        let action = CellActionProposal {
+            subject_id: "refugees-east".into(),
+            intent: "coordinate the households' own water watch".into(),
+            intended_effect: "coordinate internal water-watch shifts without naming an external party"
+                .into(),
+            priority: 80,
+            state_references: vec![],
+            public_channels: vec![],
+            effects: vec![StrategicCellEffect::GestaltActivity {
+                gestalt_id: "refugees-east".into(),
+                activity: StrategicActivityKind::Coordinate,
+                target_subject_ids: vec![],
+                location_ids: vec!["camp".into()],
+            }],
+        };
+        let action_digest = crate::resolution::cell_action_digest(&action).unwrap();
+        let mut canonical = hierarchical_refugee_campaign();
+        let canonical_events = apply_strategic_tick_plan(
+            &mut canonical,
+            StrategicTickPlan {
+                selected_actions: vec![action],
+                activity_outcomes: vec![StrategicActivityOutcome {
+                    schema: "ghostlight.strategic_activity_outcome.v1".into(),
+                    action_digest,
+                    source_subject_id: "refugees-east".into(),
+                    band: StrategicOutcomeBand::Mixed,
+                    summary: "The households arrange the watch; its efficacy remains unsettled."
+                        .into(),
+                    supporting_state_references: vec![],
+                    effect: StrategicOutcomeEffect::NoMaterialChange {
+                        reason: "No external response or durable result is established.".into(),
+                    },
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(canonical_events.len(), 1);
+        assert_eq!(canonical_events[0].kind, "gestalt_activity");
+        assert!(canonical_events[0].summary.contains("internal water-watch shifts"));
+
+        let mut legacy = hierarchical_refugee_campaign();
+        let legacy_events = apply_strategic_tick_plan(
+            &mut legacy,
+            resolve_test_activities(StrategicTickPlan {
+                gestalt_activities: vec![StrategicGestaltActivity {
+                    action_digest: test_action_digest("internal water-watch coordination"),
+                    gestalt_id: "refugees-east".into(),
+                    activity: StrategicActivityKind::Coordinate,
+                    target_subject_ids: vec![],
+                    location_ids: vec!["camp".into()],
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            }),
+        )
+        .unwrap();
+        assert_eq!(legacy_events.len(), 1);
+        assert_eq!(
+            legacy_events[0].summary,
+            "Eastern transit refugees attempts internal coordination."
         );
     }
 
