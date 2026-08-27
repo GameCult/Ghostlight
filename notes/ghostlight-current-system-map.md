@@ -919,14 +919,16 @@ typed civic manifest whose exact fact references are shared by each resident
 population. A separate model stage verifies their semantic legibility; it may
 reject but cannot rewrite or commit the proposal. One false verdict is
 independently rechecked against the same frozen candidate. A sustained rejection
-invokes one balanced reconciliation over a civic-only replacement schema:
+or a local structural-validation failure in the candidate's civic slice invokes
+one balanced reconciliation over a civic-only replacement schema:
 candidate-owned civic facts, resident civic fact references, candidate
 institutions, local political relations, and the civic manifest. Geography,
 routes, migration, population identity, non-civic facts, branch assumptions,
 gaps, civic version, and semantic receipt binding have no writable field in
-that pass. The merged candidate must survive the ordinary destination validators
-and a fresh independent verdict; the expensive `destination_compile` stage is
-not rerun. The kernel rebinds the accepted verdict to the exact candidate before
+that pass. A finding outside that writable slice can fail honestly but cannot
+induce a second expensive compilation. The merged candidate must survive the
+ordinary destination validators and a fresh independent verdict; the expensive
+`destination_compile` stage is not rerun. The kernel rebinds the accepted verdict to the exact candidate before
 mutation admission. Completed compiler, reconciliation, and verifier receipts
 survive terminal failure and are persisted by both the strategic harness and
 the Dungeon API. Accepted civic systems persist as versioned component state,

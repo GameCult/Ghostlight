@@ -41,6 +41,12 @@ The Rust runtime contains a Session Zero-owned world-compiler seam:
   authority boundary and explicit unknown geography, ideology, economic role,
   body, and information scope. Fine resources, channels, relations, and current
   posture compile only when causal relevance supplies evidence for them;
+- inhabited destination compilation freezes one capable-model world candidate.
+  A civic semantic rejection or local civic structural failure may invoke one
+  balanced-model reconciliation over civic facts, resident civic knowledge,
+  institutions, political relations, and the civic manifest. Geography, routes,
+  population identity, migration, non-civic facts, gaps, and branch assumptions
+  remain immutable; ordinary validators and a fresh verifier judge the repair;
 - deterministic seed validation rejects missing occupancy, dangling or
   zero-time routes, invalid containment, invalid clocks, and missing players;
 - unanimous current-digest approval plus explicit host publication atomically
