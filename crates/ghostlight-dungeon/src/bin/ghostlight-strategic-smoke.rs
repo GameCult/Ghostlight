@@ -71,15 +71,9 @@ async fn main() -> anyhow::Result<()> {
                     "updated_at":Utc::now(),
                 }))?,
             )?;
-            let (preview, receipts) = compile_strategic_campaign(
-                model.clone(),
-                &model_selection.fast_model,
-                &model_selection.capable_model,
-                description,
-                &pressure,
-                &public_channel,
-            )
-            .await?;
+            let (preview, receipts) =
+                compile_strategic_campaign(model.clone(), description, &pressure, &public_channel)
+                    .await?;
             std::fs::write(
                 root.join("compiler-preview.json"),
                 serde_json::to_vec_pretty(&serde_json::json!({
@@ -157,13 +151,8 @@ async fn main() -> anyhow::Result<()> {
     if let Some(description) = compiled.as_deref()
         && !initial_location_ids.is_empty()
     {
-        let compiler = strategic_world_compiler(
-            model.clone(),
-            &model_selection.fast_model,
-            &model_selection.capable_model,
-            description,
-            &strategic_world_when(),
-        );
+        let compiler =
+            strategic_world_compiler(model.clone(), description, &strategic_world_when());
         for (index, location_id) in initial_location_ids.iter().enumerate() {
             let location_name = campaign.locations[location_id].name.clone();
             std::fs::write(
@@ -649,8 +638,6 @@ async fn compose_persisted_newspaper(
 
 async fn compile_strategic_campaign(
     model: std::sync::Arc<dyn ghostlight_dungeon::model::ModelPort>,
-    retrieval_model: &str,
-    compiler_model: &str,
     description: &str,
     pressure: &str,
     public_channel: &str,
@@ -678,8 +665,7 @@ async fn compile_strategic_campaign(
     let goal = format!(
         "Observe without ruling while the autonomous world responds to this new external pressure from the Greathold: {pressure}"
     );
-    let compiler =
-        strategic_world_compiler(model, retrieval_model, compiler_model, description, &when);
+    let compiler = strategic_world_compiler(model, description, &when);
     let (mut preview, receipts) = compiler
         .compile_custom(CustomStart {
             campaign_name: world_name,
@@ -713,8 +699,6 @@ fn strategic_world_when() -> String {
 
 fn strategic_world_compiler(
     model: std::sync::Arc<dyn ghostlight_dungeon::model::ModelPort>,
-    retrieval_model: &str,
-    compiler_model: &str,
     description: &str,
     temporal_scope: &str,
 ) -> ghostlight_dungeon::compiler::WorldCompiler {
@@ -734,8 +718,8 @@ fn strategic_world_compiler(
             witnesses: vec![witness],
         }),
         model,
-        retrieval_model,
-        compiler_model,
+        ghostlight_dungeon::model::MODEL_FAST,
+        ghostlight_dungeon::model::MODEL_CAPABLE,
     )
 }
 
