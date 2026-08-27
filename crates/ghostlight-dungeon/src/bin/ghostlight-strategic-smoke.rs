@@ -17,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
         kernel::{CommandResult, WorldKernel},
         model_runtime::ModelRuntimeSelection,
         persistence::CampaignStore,
-        scheduler::propose_resolution_wave,
+        scheduler::{ResolutionWavePipelineFailure, propose_resolution_wave},
         turn::SnapshotPermit,
     };
     use std::{path::PathBuf, sync::Arc, time::Instant};
@@ -172,22 +172,48 @@ async fn main() -> anyhow::Result<()> {
             .await
             {
                 Ok(output) => break output,
-                Err(error) if rejected_pulses.len() < max_rejected_pulses_per_wave => {
+                Err(error) => {
                     let pulse = rejected_pulses.len() + 1;
+                    let rejected_stage_receipt_hashes = error
+                        .downcast_ref::<ResolutionWavePipelineFailure>()
+                        .map(|failure| {
+                            store.persist_model_stage_receipts(&failure.stage_receipts)?;
+                            Ok::<_, anyhow::Error>(
+                                failure
+                                    .stage_receipts
+                                    .iter()
+                                    .map(|receipt| receipt.storage_key().to_owned())
+                                    .collect::<Vec<_>>(),
+                            )
+                        })
+                        .transpose()?
+                        .unwrap_or_default();
                     std::fs::write(
                         root.join(format!(
                             "wave-{wave_index:02}-rejected-pulse-{pulse:02}.txt"
                         )),
                         error.to_string(),
                     )?;
-                    rejected_pulses.push(serde_json::json!({
+                    let rejected_pulse = serde_json::json!({
                         "pulse":pulse,
                         "world_revision":campaign.revision,
                         "resolution_epoch":campaign.resolution_policy.resolution_epoch,
                         "error":error.to_string(),
-                    }));
+                        "rejected_stage_receipt_hashes":rejected_stage_receipt_hashes,
+                    });
+                    if rejected_pulses.len() < max_rejected_pulses_per_wave {
+                        rejected_pulses.push(rejected_pulse);
+                    } else {
+                        std::fs::write(
+                            root.join(format!("wave-{wave_index:02}-terminal-failure.json")),
+                            serde_json::to_vec_pretty(&serde_json::json!({
+                                "rejected_pulses":rejected_pulses,
+                                "terminal_failure":rejected_pulse,
+                            }))?,
+                        )?;
+                        return Err(error);
+                    }
                 }
-                Err(error) => return Err(error),
             }
         };
         std::fs::write(
@@ -227,14 +253,13 @@ async fn main() -> anyhow::Result<()> {
                 "strategic wave {wave_index} resolved no material offscreen change: direct transitions were empty and every selected activity outcome was no_material_change"
             );
         }
-        for stage in &output.stages {
-            store.insert(
-                "persona_stage_receipt.v1",
-                "ghostlight.persona_stage_receipt.v1",
-                stage.receipt.storage_key(),
-                &stage.receipt,
-            )?;
-        }
+        store.persist_model_stage_receipts(
+            &output
+                .stages
+                .iter()
+                .map(|stage| stage.receipt.clone())
+                .collect::<Vec<_>>(),
+        )?;
         let committed = kernel
             .command(WorldCommand::AdvanceStrategicTick {
                 expected_revision: campaign.revision,

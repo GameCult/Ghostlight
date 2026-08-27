@@ -177,6 +177,35 @@ pub struct CellTerminalBundle {
     pub stage_receipts: Vec<crate::model::ModelStageReceipt>,
 }
 
+#[derive(Clone, Debug)]
+pub struct CellPipelineFailure {
+    pub diagnostic: String,
+    pub stage_receipts: Vec<crate::model::ModelStageReceipt>,
+}
+
+impl std::fmt::Display for CellPipelineFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(&self.diagnostic)
+    }
+}
+
+impl std::error::Error for CellPipelineFailure {}
+
+fn cell_pipeline_failure(
+    error: anyhow::Error,
+    mut prior_stage_receipts: Vec<crate::model::ModelStageReceipt>,
+) -> anyhow::Error {
+    if let Some(failure) = error.downcast_ref::<CellPipelineFailure>() {
+        prior_stage_receipts.extend(failure.stage_receipts.clone());
+    } else if let Some(omission) = error.downcast_ref::<MissingExplicitCellDecision>() {
+        prior_stage_receipts.extend(omission.stage_receipts.clone());
+    }
+    anyhow::Error::new(CellPipelineFailure {
+        diagnostic: format!("{error:#}").chars().take(4_000).collect(),
+        stage_receipts: prior_stage_receipts,
+    })
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 struct CellAppraisalProposal {
@@ -336,6 +365,30 @@ struct CellActionVerificationRun {
     action_index: usize,
     output: ModelStageOutput,
     verdict: CellActionEffectVerdict,
+}
+
+#[derive(Debug)]
+struct CellEffectVerifierWaveFailure {
+    diagnostics: Vec<String>,
+    completed_stage_receipts: Vec<crate::model::ModelStageReceipt>,
+}
+
+impl std::fmt::Display for CellEffectVerifierWaveFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            formatter,
+            "cell effect verifier wave failed: {}",
+            self.diagnostics.join("; ")
+        )
+    }
+}
+
+impl std::error::Error for CellEffectVerifierWaveFailure {}
+
+#[derive(Debug)]
+struct CellEffectVerifierTaskFailure {
+    diagnostic: String,
+    completed_stage_receipt: Option<crate::model::ModelStageReceipt>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -1190,12 +1243,20 @@ impl CellProjectionEngine {
             Ok(bundle) => Ok(bundle),
             Err(error) => {
                 let Some(omission) = error.downcast_ref::<MissingExplicitCellDecision>() else {
-                    return Err(error);
+                    return Err(cell_pipeline_failure(error, Vec::new()));
                 };
                 let mut prior_receipts = omission.stage_receipts.clone();
-                let mut bundle = self.execute_once(slice, true).await.context(
-                    "cell Persona supplied no explicit decision after one same-snapshot retry",
-                )?;
+                let mut bundle = match self.execute_once(slice, true).await {
+                    Ok(bundle) => bundle,
+                    Err(error) => {
+                        return Err(cell_pipeline_failure(
+                            error.context(
+                                "cell Persona supplied no explicit decision after one same-snapshot retry",
+                            ),
+                            prior_receipts,
+                        ));
+                    }
+                };
                 prior_receipts.append(&mut bundle.stage_receipts);
                 bundle.stage_receipts = prior_receipts;
                 Ok(bundle)
@@ -1263,9 +1324,13 @@ impl CellProjectionEngine {
         };
         let mut projector_receipts = Vec::new();
         let (projected_narrative, active_subject_ids, projector_receipt) = loop {
-            let mut projected = run_validated_stage(self.model.as_ref(), &projection_request)
+            let mut projected = match run_validated_stage(self.model.as_ref(), &projection_request)
                 .await
-                .context("cell projector model stage failed")?;
+                .context("cell projector model stage failed")
+            {
+                Ok(projected) => projected,
+                Err(error) => return Err(cell_pipeline_failure(error, projector_receipts)),
+            };
             let proposal = projected
                 .structured
                 .clone()
@@ -1287,8 +1352,15 @@ impl CellProjectionEngine {
                     ));
                 }
                 Err(error) => {
-                    return Err(anyhow!(
-                        "cell Projector failed perspective binding after one correction: {error}"
+                    projected.receipt.validation_result = "semantic_invalid".into();
+                    projected.receipt.local_validation_error =
+                        Some(error.to_string().chars().take(1_000).collect());
+                    projector_receipts.push(projected.receipt);
+                    return Err(cell_pipeline_failure(
+                        anyhow!(
+                            "cell Projector failed perspective binding after one correction: {error}"
+                        ),
+                        projector_receipts,
                     ));
                 }
             }
@@ -1304,7 +1376,8 @@ impl CellProjectionEngine {
         };
         self.permit
             .require(&slice.cell_id, &slice.snapshot_binding, "cell_persona")
-            .await?;
+            .await
+            .map_err(|error| cell_pipeline_failure(error, projector_receipts.clone()))?;
         let persona_domain_guidance = if require_explicit_decision {
             format!(
                 "{} Your previous response supplied no explicit strategic decision. Respond naturally again from this same lived moment, but make every voiced constituent end with either one concrete present-tense attempt or an explicit choice to hold or wait. Do not invent new perceptions, permissions, contacts, resources, or completed consequences.",
@@ -1313,7 +1386,7 @@ impl CellProjectionEngine {
         } else {
             cell_persona_mode_guidance(&slice.mode).to_owned()
         };
-        let persona = run_validated_stage(
+        let persona = match run_validated_stage(
             self.model.as_ref(),
             &ModelStageRequest {
                 stage: "cell_persona".into(),
@@ -1332,14 +1405,24 @@ impl CellProjectionEngine {
             },
         )
         .await
-        .context("cell Persona model stage failed")?;
+        .context("cell Persona model stage failed")
+        {
+            Ok(persona) => persona,
+            Err(error) => return Err(cell_pipeline_failure(error, projector_receipts)),
+        };
+        let mut stage_receipts = projector_receipts;
+        stage_receipts.push(persona.receipt.clone());
         self.permit
             .require(&slice.cell_id, &slice.snapshot_binding, "cell_interpreter")
-            .await?;
-        let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal))?;
-        constrain_cell_proposal_schema(&mut schema, &slice, &active_subject_ids)?;
+            .await
+            .map_err(|error| cell_pipeline_failure(error, stage_receipts.clone()))?;
+        let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal))
+            .map_err(|error| cell_pipeline_failure(error.into(), stage_receipts.clone()))?;
+        constrain_cell_proposal_schema(&mut schema, &slice, &active_subject_ids)
+            .map_err(|error| cell_pipeline_failure(error, stage_receipts.clone()))?;
         let interpreter_context =
-            serde_json::to_string(&cell_interpreter_context(&slice, &active_subject_ids))?;
+            serde_json::to_string(&cell_interpreter_context(&slice, &active_subject_ids))
+                .map_err(|error| cell_pipeline_failure(error.into(), stage_receipts.clone()))?;
         let permission_guidance = format!(
             concat!(
                 "Emit at most {} exact constituent- or named-member-attributed attempts. Priority is an urgency score from 0 to 100 where higher numbers resolve first. ",
@@ -1379,12 +1462,16 @@ impl CellProjectionEngine {
             temperature: Some(0.0),
             max_output_tokens: Some(1_600),
         };
-        let mut stage_receipts = projector_receipts;
-        stage_receipts.push(persona.receipt);
         for attempt in 0..3 {
-            let mut interpreted = run_validated_stage(self.model.as_ref(), &request)
+            let mut interpreted = match run_validated_stage(self.model.as_ref(), &request)
                 .await
-                .context("cell interpreter model stage failed")?;
+                .context("cell interpreter model stage failed")
+            {
+                Ok(interpreted) => interpreted,
+                Err(error) => {
+                    return Err(cell_pipeline_failure(error, stage_receipts));
+                }
+            };
             let proposal = interpreted
                 .structured
                 .clone()
@@ -1411,7 +1498,10 @@ impl CellProjectionEngine {
                                 &slice.snapshot_binding,
                                 "cell_effect_verifier",
                             )
-                            .await?;
+                            .await
+                            .map_err(|error| {
+                                cell_pipeline_failure(error, stage_receipts.clone())
+                            })?;
                         let mut verifications = run_cell_effect_verifier_wave(
                             self.model.clone(),
                             &self.interpreter_model,
@@ -1421,7 +1511,16 @@ impl CellProjectionEngine {
                             &campaign_policy,
                             &appraisal.actions,
                         )
-                        .await?;
+                        .await
+                        .map_err(|error| {
+                            let mut completed = stage_receipts.clone();
+                            if let Some(failure) =
+                                error.downcast_ref::<CellEffectVerifierWaveFailure>()
+                            {
+                                completed.extend(failure.completed_stage_receipts.clone());
+                            }
+                            cell_pipeline_failure(error, completed)
+                        })?;
                         let rejected_action_indices = verifications
                             .iter()
                             .filter_map(|verification| {
@@ -1504,14 +1603,18 @@ impl CellProjectionEngine {
                                 &appraisal.actions,
                                 &rejected_action_indices,
                             );
-                            return Err(anyhow!(
-                                "cell effect verifier rejected the appraisal after two corrections: {error}; rejected_actions={rejected_actions}"
+                            return Err(cell_pipeline_failure(
+                                anyhow!(
+                                    "cell effect verifier rejected the appraisal after two corrections: {error}; rejected_actions={rejected_actions}"
+                                ),
+                                stage_receipts,
                             ));
                         }
                     }
                     self.permit
                         .require(&slice.cell_id, &slice.snapshot_binding, "cell_terminal")
-                        .await?;
+                        .await
+                        .map_err(|error| cell_pipeline_failure(error, stage_receipts.clone()))?;
                     return Ok(CellTerminalBundle {
                         lived_stream: lived,
                         persona_output: persona.narrative,
@@ -1547,8 +1650,15 @@ impl CellProjectionEngine {
                     append_cell_correction(&mut request, &error, &rejected_appraisal);
                 }
                 Err(error) => {
-                    return Err(anyhow!(
-                        "cell interpreter failed semantic validation after two corrections: {error}"
+                    interpreted.receipt.validation_result = "semantic_invalid".into();
+                    interpreted.receipt.local_validation_error =
+                        Some(error.to_string().chars().take(1_000).collect());
+                    stage_receipts.push(interpreted.receipt);
+                    return Err(cell_pipeline_failure(
+                        anyhow!(
+                            "cell interpreter failed semantic validation after two corrections: {error}"
+                        ),
+                        stage_receipts,
                     ));
                 }
             }
@@ -1614,24 +1724,45 @@ async fn run_cell_effect_verifier_wave(
         };
         let model = model.clone();
         jobs.spawn(async move {
-            let output = run_validated_stage(model.as_ref(), &request)
-                .await
-                .map_err(|error| {
-                    anyhow!("cell effect verifier action {action_index} failed: {error}")
+            let output = match run_validated_stage(model.as_ref(), &request).await {
+                Ok(output) => output,
+                Err(error) => {
+                    return Err(CellEffectVerifierTaskFailure {
+                        diagnostic: format!(
+                            "cell effect verifier action {action_index} failed: {error}"
+                        ),
+                        completed_stage_receipt: None,
+                    });
+                }
+            };
+            let verification = output
+                .structured
+                .clone()
+                .ok_or_else(|| anyhow!("cell effect verifier produced no typed verdict"))
+                .and_then(|value| serde_json::from_value::<CellEffectVerification>(value).map_err(Into::into))
+                .and_then(|verification| {
+                    validate_effect_verification(&verification, 1)?;
+                    Ok(verification)
+                })
+                .map_err(|error: anyhow::Error| {
+                    let diagnostic = format!(
+                        "cell effect verifier action {action_index} failed local validation: {error}"
+                    );
+                    let mut receipt = output.receipt.clone();
+                    receipt.validation_result = "semantic_invalid".into();
+                    receipt.local_validation_error =
+                        Some(diagnostic.chars().take(1_000).collect());
+                    CellEffectVerifierTaskFailure {
+                        diagnostic,
+                        completed_stage_receipt: Some(receipt),
+                    }
                 })?;
-            let verification: CellEffectVerification = serde_json::from_value(
-                output
-                    .structured
-                    .clone()
-                    .ok_or_else(|| anyhow!("cell effect verifier produced no typed verdict"))?,
-            )?;
-            validate_effect_verification(&verification, 1)?;
             let verdict = verification
                 .verdicts
                 .into_iter()
                 .next()
                 .expect("one-action verifier schema and validator require one verdict");
-            Ok::<_, anyhow::Error>(CellActionVerificationRun {
+            Ok::<_, CellEffectVerifierTaskFailure>(CellActionVerificationRun {
                 action_index,
                 output,
                 verdict,
@@ -1640,9 +1771,27 @@ async fn run_cell_effect_verifier_wave(
     }
 
     let mut verified = Vec::with_capacity(actions.len());
+    let mut diagnostics = Vec::new();
+    let mut failed_stage_receipts = Vec::new();
     while let Some(result) = jobs.join_next().await {
-        verified
-            .push(result.map_err(|error| anyhow!("cell effect verifier task failed: {error}"))??);
+        match result {
+            Ok(Ok(verification)) => verified.push(verification),
+            Ok(Err(failure)) => {
+                diagnostics.push(failure.diagnostic);
+                failed_stage_receipts.extend(failure.completed_stage_receipt);
+            }
+            Err(error) => diagnostics.push(format!("cell effect verifier task failed: {error}")),
+        }
+    }
+    if !diagnostics.is_empty() {
+        return Err(anyhow::Error::new(CellEffectVerifierWaveFailure {
+            diagnostics,
+            completed_stage_receipts: verified
+                .into_iter()
+                .map(|verification| verification.output.receipt)
+                .chain(failed_stage_receipts)
+                .collect(),
+        }));
     }
     verified.sort_by_key(|verification| verification.action_index);
     Ok(verified)

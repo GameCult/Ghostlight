@@ -3,12 +3,15 @@ use crate::{
         AgencyAxis, AgencySubjectKind, Campaign, GestaltIndividuation, GestaltMemberDelta,
         ResolutionDemand, ResolutionWaveCommit, SimulationCell, StrategicGestaltIndividuation,
     },
-    model::{MODEL_FAST, ModelPort, ModelStageOutput, ModelStageRequest, run_validated_stage},
+    model::{
+        MODEL_FAST, ModelPort, ModelStageOutput, ModelStageReceipt, ModelStageRequest,
+        run_validated_stage,
+    },
     outcome::{activity_outcome_binding, resolve_activity_outcomes},
     persona::{
         CellActivityTargetSlice, CellConstituentSlice, CellMemberSlice,
-        CellMigrationDestinationSlice, CellPerceivedEventSlice, CellProjectionEngine,
-        ExecutionPermit, PermittedCellSlice,
+        CellMigrationDestinationSlice, CellPerceivedEventSlice, CellPipelineFailure,
+        CellProjectionEngine, ExecutionPermit, PermittedCellSlice,
     },
     resolution::{
         cell_action_digest, cell_action_limit, default_demand, plan_cover, plan_receipt,
@@ -91,9 +94,40 @@ pub struct StrategicResolutionOutput {
 #[derive(Clone, Debug, Serialize)]
 pub struct PrivateCellTrace {
     pub cell_id: String,
+    pub pipeline_attempts: usize,
+    pub rejected_pipeline_errors: Vec<String>,
+    pub rejected_pipeline_receipt_hashes: Vec<String>,
+    pub terminal_pipeline_receipt_hashes: Vec<String>,
     pub lived_stream: String,
     pub persona_output: String,
 }
+
+#[derive(Clone, Debug)]
+pub struct ResolutionWavePipelineFailure {
+    pub cell_errors: Vec<String>,
+    pub stage_receipts: Vec<ModelStageReceipt>,
+}
+
+impl std::fmt::Display for ResolutionWavePipelineFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            formatter,
+            "resolution wave rejected after {} cell pipeline failure(s): {}",
+            self.cell_errors.len(),
+            self.cell_errors.join("; ")
+        )
+    }
+}
+
+impl std::error::Error for ResolutionWavePipelineFailure {}
+
+#[derive(Debug)]
+struct CellPipelineExhaustion {
+    diagnostic: String,
+    stage_receipts: Vec<ModelStageReceipt>,
+}
+
+const MAX_CELL_PIPELINE_ATTEMPTS: usize = 3;
 
 pub async fn propose_resolution_wave(
     model: Arc<dyn ModelPort>,
@@ -141,40 +175,128 @@ pub async fn propose_resolution_wave_with_policy(
         jobs.spawn(async move {
             let cell_id = cell.id;
             let subject_ids = cell.subject_ids;
-            let _permit = semaphore
-                .acquire_owned()
-                .await
-                .map_err(|_| anyhow!("provider concurrency gate closed"))?;
-            let terminal = engine.execute(slice).await.with_context(|| {
-                format!(
-                    "simulation cell {cell_id} subjects {} pipeline failed",
-                    serde_json::to_string(&subject_ids).unwrap_or_else(|_| "[unavailable]".into())
-                )
-            })?;
-            Ok::<_, anyhow::Error>((cell_id, terminal))
+            let mut rejected_pipeline_errors = Vec::new();
+            let mut rejected_pipeline_receipts = Vec::new();
+            let terminal = loop {
+                let Ok(_provider_slot) = semaphore.clone().acquire_owned().await else {
+                    return Err(CellPipelineExhaustion {
+                        diagnostic: "provider concurrency gate closed".into(),
+                        stage_receipts: rejected_pipeline_receipts,
+                    });
+                };
+                match engine.execute(slice.clone()).await {
+                    Ok(terminal) => break terminal,
+                    Err(error)
+                        if rejected_pipeline_errors.len() + 1 < MAX_CELL_PIPELINE_ATTEMPTS =>
+                    {
+                        if let Some(failure) = error.downcast_ref::<CellPipelineFailure>() {
+                            rejected_pipeline_receipts.extend(failure.stage_receipts.clone());
+                        }
+                        rejected_pipeline_errors
+                            .push(format!("{error:#}").chars().take(1_000).collect());
+                    }
+                    Err(error) => {
+                        if let Some(failure) = error.downcast_ref::<CellPipelineFailure>() {
+                            rejected_pipeline_receipts.extend(failure.stage_receipts.clone());
+                        }
+                        rejected_pipeline_errors
+                            .push(format!("{error:#}").chars().take(1_000).collect());
+                        let terminal_error = rejected_pipeline_errors
+                            .last()
+                            .cloned()
+                            .unwrap_or_else(|| "unknown cell pipeline failure".into());
+                        return Err(CellPipelineExhaustion {
+                            diagnostic: format!(
+                                "simulation cell {cell_id} subjects {} pipeline failed after {} attempts: {terminal_error}",
+                                serde_json::to_string(&subject_ids)
+                                    .unwrap_or_else(|_| "[unavailable]".into()),
+                                MAX_CELL_PIPELINE_ATTEMPTS
+                            ),
+                            stage_receipts: rejected_pipeline_receipts,
+                        });
+                    }
+                }
+            };
+            Ok::<_, CellPipelineExhaustion>((
+                cell_id,
+                terminal,
+                rejected_pipeline_errors,
+                rejected_pipeline_receipts,
+            ))
         });
     }
     let mut terminals = Vec::new();
+    let mut cell_failures = Vec::new();
     while let Some(result) = jobs.join_next().await {
-        terminals.push(result.map_err(|error| anyhow!("cell Persona task failed: {error}"))??);
+        match result {
+            Ok(Ok(terminal)) => terminals.push(terminal),
+            Ok(Err(failure)) => cell_failures.push(failure),
+            Err(error) => cell_failures.push(CellPipelineExhaustion {
+                diagnostic: format!("cell Persona task failed: {error}"),
+                stage_receipts: Vec::new(),
+            }),
+        }
+    }
+    if !cell_failures.is_empty() {
+        let mut stage_receipts = stages
+            .iter()
+            .map(|stage| stage.receipt.clone())
+            .chain(
+                terminals
+                    .iter()
+                    .flat_map(|(_, terminal, _, rejected_receipts)| {
+                        rejected_receipts
+                            .iter()
+                            .chain(terminal.stage_receipts.iter())
+                            .cloned()
+                    }),
+            )
+            .collect::<Vec<_>>();
+        stage_receipts.extend(
+            cell_failures
+                .iter()
+                .flat_map(|failure| failure.stage_receipts.iter().cloned()),
+        );
+        return Err(anyhow::Error::new(ResolutionWavePipelineFailure {
+            cell_errors: cell_failures
+                .into_iter()
+                .map(|failure| failure.diagnostic)
+                .collect(),
+            stage_receipts,
+        }));
     }
     terminals.sort_by(|left, right| left.0.cmp(&right.0));
     let appraisals = terminals
         .iter()
-        .map(|(_, terminal)| terminal.appraisal.clone())
+        .map(|(_, terminal, _, _)| terminal.appraisal.clone())
         .collect();
     let private_cell_traces = terminals
         .iter()
-        .map(|(cell_id, terminal)| PrivateCellTrace {
-            cell_id: cell_id.clone(),
-            lived_stream: terminal.lived_stream.text.clone(),
-            persona_output: terminal.persona_output.clone(),
-        })
+        .map(
+            |(cell_id, terminal, rejected_pipeline_errors, rejected_pipeline_receipts)| {
+                PrivateCellTrace {
+                    cell_id: cell_id.clone(),
+                    pipeline_attempts: rejected_pipeline_errors.len() + 1,
+                    rejected_pipeline_errors: rejected_pipeline_errors.clone(),
+                    rejected_pipeline_receipt_hashes: rejected_pipeline_receipts
+                        .iter()
+                        .map(|receipt| receipt.storage_key().to_owned())
+                        .collect(),
+                    terminal_pipeline_receipt_hashes: terminal
+                        .stage_receipts
+                        .iter()
+                        .map(|receipt| receipt.storage_key().to_owned())
+                        .collect(),
+                    lived_stream: terminal.lived_stream.text.clone(),
+                    persona_output: terminal.persona_output.clone(),
+                }
+            },
+        )
         .collect();
-    for (_, terminal) in terminals {
+    let mut committed_stages = stages.clone();
+    for (_, terminal, _, rejected_pipeline_receipts) in terminals {
         stages.extend(
-            terminal
-                .stage_receipts
+            rejected_pipeline_receipts
                 .into_iter()
                 .map(|receipt| ModelStageOutput {
                     narrative: String::new(),
@@ -182,8 +304,19 @@ pub async fn propose_resolution_wave_with_policy(
                     receipt,
                 }),
         );
+        let terminal_stages = terminal
+            .stage_receipts
+            .into_iter()
+            .map(|receipt| ModelStageOutput {
+                narrative: String::new(),
+                structured: None,
+                receipt,
+            })
+            .collect::<Vec<_>>();
+        committed_stages.extend(terminal_stages.clone());
+        stages.extend(terminal_stages);
     }
-    let cell_model_receipt_hashes = distinct_model_receipt_hashes(&stages);
+    let cell_model_receipt_hashes = distinct_model_receipt_hashes(&committed_stages);
     let mut wave = ResolutionWaveCommit {
         schema: "ghostlight.resolution_wave_commit.v1".into(),
         world_revision: campaign.revision,
@@ -231,6 +364,7 @@ pub async fn propose_resolution_wave_with_policy(
             )
             .await?;
     }
+    committed_stages.extend(outcome_stages.clone());
     stages.extend(outcome_stages);
     wave.activity_outcomes = activity_outcomes;
     let individuation_candidate_digests =
@@ -267,9 +401,10 @@ pub async fn propose_resolution_wave_with_policy(
             )
             .await?;
     }
+    committed_stages.extend(individuation_stages.clone());
     stages.extend(individuation_stages);
     wave.strategic_individuations = strategic_individuations;
-    wave.model_receipt_hashes = distinct_model_receipt_hashes(&stages);
+    wave.model_receipt_hashes = distinct_model_receipt_hashes(&committed_stages);
     validate_and_resolve_wave(campaign, &wave)?;
     let aggregate_receipt_hash = format!(
         "sha256:{:x}",
@@ -1316,12 +1451,21 @@ mod tests {
     use crate::model::ModelPort;
     use crate::persona::AllowAllPermit;
     use async_trait::async_trait;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::{
+        Mutex,
+        atomic::{AtomicUsize, Ordering},
+    };
 
     struct CellFixtureModel {
         active: AtomicUsize,
         maximum: AtomicUsize,
         malformed_cell: bool,
+    }
+
+    struct TransientCellFixtureModel {
+        fixture: CellFixtureModel,
+        target_binding: Mutex<Option<String>>,
+        failures_remaining: AtomicUsize,
     }
 
     struct PersonFixtureModel;
@@ -1470,6 +1614,39 @@ mod tests {
                 }
                 stage => Err(anyhow!("unexpected fixture stage {stage}")),
             }
+        }
+
+        fn provider(&self) -> &'static str {
+            "fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for TransientCellFixtureModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            if request.stage == "cell_persona" {
+                let target_binding = {
+                    let mut target = self.target_binding.lock().unwrap();
+                    target
+                        .get_or_insert_with(|| request.snapshot_binding.clone())
+                        .clone()
+                };
+                if request.snapshot_binding == target_binding
+                    && self
+                        .failures_remaining
+                        .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |remaining| {
+                            if remaining > 0 {
+                                Some(remaining - 1)
+                            } else {
+                                None
+                            }
+                        })
+                        .is_ok()
+                {
+                    return Err(anyhow!("transient fixture cell failure"));
+                }
+            }
+            self.fixture.run(request).await
         }
 
         fn provider(&self) -> &'static str {
@@ -2050,6 +2227,78 @@ mod tests {
             output.wave.model_receipt_hashes
         );
         assert!(model.maximum.load(Ordering::SeqCst) <= 2);
+        assert!(
+            output
+                .private_cell_traces
+                .iter()
+                .all(|trace| trace.pipeline_attempts == 1
+                    && trace.rejected_pipeline_errors.is_empty())
+        );
+        validate_and_resolve_wave(&campaign, &output.wave).unwrap();
+    }
+
+    #[tokio::test]
+    async fn one_transient_cell_failure_retries_only_that_same_snapshot() {
+        let mut campaign = crate::resolution::tests::campaign(6, 2);
+        campaign.resolution_policy.provider_parallelism = 2;
+        let model = Arc::new(TransientCellFixtureModel {
+            fixture: CellFixtureModel {
+                active: AtomicUsize::new(0),
+                maximum: AtomicUsize::new(0),
+                malformed_cell: false,
+            },
+            target_binding: Mutex::new(None),
+            failures_remaining: AtomicUsize::new(2),
+        });
+
+        let output = propose_resolution_wave(model.clone(), Arc::new(AllowAllPermit), &campaign)
+            .await
+            .unwrap();
+
+        assert_eq!(output.wave.cover.cells.len(), 2);
+        let retried = output
+            .private_cell_traces
+            .iter()
+            .filter(|trace| trace.pipeline_attempts == 2)
+            .collect::<Vec<_>>();
+        assert_eq!(retried.len(), 1);
+        assert_eq!(retried[0].rejected_pipeline_errors.len(), 1);
+        assert_eq!(retried[0].rejected_pipeline_receipt_hashes.len(), 1);
+        assert!(retried[0].rejected_pipeline_errors[0].contains(
+            "cell Persona model stage failed: model stage cell_persona provider failed twice against the same snapshot"
+        ));
+        assert!(output.stages.iter().any(|stage| {
+            retried[0]
+                .rejected_pipeline_receipt_hashes
+                .contains(&stage.receipt.storage_key().to_owned())
+        }));
+        assert!(
+            retried[0]
+                .rejected_pipeline_receipt_hashes
+                .iter()
+                .filter(|hash| output.wave.model_receipt_hashes.contains(hash))
+                .all(|hash| retried[0].terminal_pipeline_receipt_hashes.contains(hash))
+        );
+        let dir = tempfile::tempdir().unwrap();
+        let store =
+            crate::persistence::CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let receipts = output
+            .stages
+            .iter()
+            .map(|stage| stage.receipt.clone())
+            .collect::<Vec<_>>();
+        store.persist_model_stage_receipts(&receipts).unwrap();
+        store.persist_model_stage_receipts(&receipts).unwrap();
+        assert_eq!(
+            store.keys("persona_stage_receipt.v1").unwrap().len(),
+            receipts
+                .iter()
+                .map(ModelStageReceipt::storage_key)
+                .collect::<BTreeSet<_>>()
+                .len()
+        );
+        assert_eq!(model.failures_remaining.load(Ordering::SeqCst), 0);
+        assert!(model.fixture.maximum.load(Ordering::SeqCst) <= 2);
         validate_and_resolve_wave(&campaign, &output.wave).unwrap();
     }
 
@@ -2161,10 +2410,35 @@ mod tests {
             maximum: AtomicUsize::new(0),
             malformed_cell: true,
         });
+        let error = match propose_resolution_wave(model, Arc::new(AllowAllPermit), &campaign).await
+        {
+            Ok(_) => panic!("permanently malformed cells must reject the wave"),
+            Err(error) => error,
+        };
+        let failure = error
+            .downcast_ref::<ResolutionWavePipelineFailure>()
+            .expect("exhausted cell retries must preserve wave failure evidence");
+        assert!(!failure.cell_errors.is_empty());
         assert!(
-            propose_resolution_wave(model, Arc::new(AllowAllPermit), &campaign)
-                .await
-                .is_err()
+            failure
+                .cell_errors
+                .iter()
+                .all(|error| error.contains("pipeline failed after 3 attempts"))
+        );
+        assert!(failure.stage_receipts.len() >= 7);
+        assert!(
+            failure
+                .stage_receipts
+                .iter()
+                .any(|receipt| receipt.stage == "resolution_demand")
+        );
+        assert!(
+            failure
+                .stage_receipts
+                .iter()
+                .filter(|receipt| receipt.stage == "cell_projector")
+                .count()
+                >= 3
         );
         assert_eq!(campaign, before);
     }
