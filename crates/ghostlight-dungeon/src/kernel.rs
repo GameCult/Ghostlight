@@ -5819,6 +5819,57 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn institution_posture_uses_the_canonical_character_bound_at_commit() {
+        let mut value = campaign();
+        value.institutions.insert(
+            "board".into(),
+            InstitutionState {
+                id: "board".into(),
+                name: "Board".into(),
+                resources: vec![],
+                goals: vec![],
+                posture: "watching".into(),
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut value);
+        apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                institution_actions: vec![StrategicInstitutionAction {
+                    institution_id: "board".into(),
+                    posture: "x".repeat(MAX_POSTURE_CHARS),
+                    location_ids: vec![],
+                    public_channels: vec![],
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            value.institutions["board"].posture.chars().count(),
+            MAX_POSTURE_CHARS
+        );
+
+        let before_oversized = value.clone();
+        assert!(
+            apply_strategic_tick_plan(
+                &mut value,
+                StrategicTickPlan {
+                    institution_actions: vec![StrategicInstitutionAction {
+                        institution_id: "board".into(),
+                        posture: "y".repeat(MAX_POSTURE_CHARS + 1),
+                        location_ids: vec![],
+                        public_channels: vec![],
+                    }],
+                    ..Default::default()
+                },
+            )
+            .is_err()
+        );
+        assert_eq!(value, before_oversized);
+    }
+
+    #[test]
     fn canonical_action_commits_distinct_scopes_of_one_activity_kind() {
         let mut value = hierarchical_refugee_campaign();
         let targeted = StrategicCellEffect::GestaltActivity {

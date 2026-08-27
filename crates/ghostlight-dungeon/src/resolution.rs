@@ -2475,9 +2475,7 @@ fn is_human_controlled_actor(campaign: &Campaign, subject_id: &str) -> bool {
 pub fn substantive_text_change(current: &str, candidate: &str) -> bool {
     let current = current.trim();
     let candidate = candidate.trim();
-    !candidate.is_empty()
-        && candidate.chars().count() <= 240
-        && !current.eq_ignore_ascii_case(candidate)
+    !candidate.is_empty() && !current.eq_ignore_ascii_case(candidate)
 }
 
 pub fn validate_gestalt_pressure_transition(
@@ -4007,16 +4005,9 @@ pub(crate) mod tests {
             "holding position",
             "releasing the reserve"
         ));
-        let schema_max_with_unicode = format!("{}’", "a".repeat(239));
-        assert_eq!(schema_max_with_unicode.chars().count(), 240);
-        assert!(schema_max_with_unicode.len() > 240);
         assert!(substantive_text_change(
             "holding position",
-            &schema_max_with_unicode
-        ));
-        assert!(!substantive_text_change(
-            "holding position",
-            &format!("{schema_max_with_unicode}a")
+            &"a".repeat(MAX_POSTURE_CHARS + 1)
         ));
     }
 
@@ -4279,6 +4270,23 @@ pub(crate) mod tests {
             reason: "The rival deliberately holds its separate position.".into(),
         }];
         validate_and_resolve_wave(&value, &mixed).unwrap();
+
+        let mut maximum_posture = valid_action.clone();
+        let StrategicCellEffect::Institution { posture, .. } =
+            &mut maximum_posture.effects[0]
+        else {
+            unreachable!()
+        };
+        *posture = "x".repeat(MAX_POSTURE_CHARS);
+        validate_and_resolve_wave(&value, &make_wave(maximum_posture.clone())).unwrap();
+
+        let StrategicCellEffect::Institution { posture, .. } =
+            &mut maximum_posture.effects[0]
+        else {
+            unreachable!()
+        };
+        posture.push('x');
+        assert!(validate_and_resolve_wave(&value, &make_wave(maximum_posture)).is_err());
 
         let mut omitted = mixed.clone();
         omitted.appraisals[0].inactions.clear();

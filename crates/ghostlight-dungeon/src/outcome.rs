@@ -2612,6 +2612,25 @@ mod tests {
     }
 
     #[test]
+    fn member_outcome_text_retains_its_field_specific_bound() {
+        let mut exact = BTreeSet::new();
+        validate_member_owner("member:mira", "mira", &"x".repeat(240), "memory", &mut exact)
+            .unwrap();
+
+        let mut oversized = BTreeSet::new();
+        assert!(
+            validate_member_owner(
+                "member:mira",
+                "mira",
+                &"x".repeat(241),
+                "memory",
+                &mut oversized,
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
     fn outcome_verifier_schema_makes_result_guidance_coherence_structural() {
         let digest = format!("sha256:{}", "a".repeat(64));
         let mut schema = serde_json::to_value(schema_for!(OutcomeVerifierBundle)).unwrap();
