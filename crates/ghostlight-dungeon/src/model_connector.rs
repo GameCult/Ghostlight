@@ -15,11 +15,13 @@ use tokio::sync::Semaphore;
 use zeroize::Zeroizing;
 
 use crate::model::{
-    MODEL_CAPABLE, ModelPort, ModelProviderOutput, ModelStageRequest, ModelTokenUsage,
+    MODEL_CAPABLE, MODEL_FAST, ModelPort, ModelProviderOutput, ModelStageRequest, ModelTokenUsage,
 };
 
 const MAX_FRAME_BYTES: usize = 1_052_672;
 const REQUEST_EXPIRY: Duration = Duration::from_secs(150);
+const FAST_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(120);
+const CAPABLE_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(300);
 
 #[derive(Clone)]
 pub struct CodexConnectorModelPort {
@@ -83,7 +85,7 @@ impl CodexConnectorModelPort {
     fn invoke(&self, request: &ModelStageRequest) -> Result<ModelProviderOutput> {
         let request_id = format!("ghostlight-model-{}", uuid::Uuid::new_v4());
         let resolved_model = match request.model.as_str() {
-            crate::model::MODEL_FAST => self.fast_model.clone(),
+            MODEL_FAST => self.fast_model.clone(),
             MODEL_CAPABLE => self.capable_model.clone(),
             explicit => explicit.to_string(),
         };
@@ -153,8 +155,12 @@ impl ModelPort for CodexConnectorModelPort {
         "codex-connector"
     }
 
-    fn attempt_timeout(&self, _request: &ModelStageRequest) -> Duration {
-        Duration::from_secs(120)
+    fn attempt_timeout(&self, request: &ModelStageRequest) -> Duration {
+        if request.model == MODEL_CAPABLE {
+            CAPABLE_ATTEMPT_TIMEOUT
+        } else {
+            FAST_ATTEMPT_TIMEOUT
+        }
     }
 }
 
@@ -693,6 +699,34 @@ mod tests {
             .unwrap_err()
             .to_string();
         assert!(error.contains("sibling keywords beside $ref"));
+    }
+
+    #[test]
+    fn attempt_deadline_tracks_the_logical_model_class_not_the_stage_name() -> Result<()> {
+        let port = CodexConnectorModelPort::new(
+            "127.0.0.1:4103".parse()?,
+            "bounded-test-key".to_string(),
+            "ghostlight-test",
+            "gpt-5.6-luna",
+            "gpt-5.6-sol",
+            1,
+        )?;
+        let mut request = ModelStageRequest {
+            stage: "world_compile".to_string(),
+            model: MODEL_CAPABLE.to_string(),
+            snapshot_binding: "revision:0".to_string(),
+            lived_stream: "fixture".to_string(),
+            output_schema: None,
+            source_receipt_ids: Vec::new(),
+            temperature: None,
+            max_output_tokens: None,
+        };
+        assert_eq!(port.attempt_timeout(&request), CAPABLE_ATTEMPT_TIMEOUT);
+
+        request.stage = "cell_interpreter".to_string();
+        request.model = MODEL_FAST.to_string();
+        assert_eq!(port.attempt_timeout(&request), FAST_ATTEMPT_TIMEOUT);
+        Ok(())
     }
 
     #[test]

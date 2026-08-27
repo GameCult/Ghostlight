@@ -7,10 +7,7 @@ use crate::{
         LocalityElaborationPreview, Location, MAX_POSTURE_CHARS, Route, VaultEvidenceReceipt,
         WorldClock, WorldCompilePreview, WorldFact,
     },
-    model::{
-        ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage,
-        run_validated_stage_with_timeout,
-    },
+    model::{ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage},
     session_zero::{
         ApprovedCampaignBrief, CampaignContract, MAX_SESSION_ZERO_MEMBERS, actor_from_character,
     },
@@ -2680,16 +2677,7 @@ impl WorldCompiler {
                 _ => 2_500,
             }),
         };
-        let out = if stage == "world_compile" {
-            run_validated_stage_with_timeout(
-                self.model.as_ref(),
-                &request,
-                std::time::Duration::from_secs(120),
-            )
-            .await?
-        } else {
-            run_validated_stage(self.model.as_ref(), &request).await?
-        };
+        let out = run_validated_stage(self.model.as_ref(), &request).await?;
         Ok((
             out.structured
                 .ok_or_else(|| anyhow!("compiler returned no structured output"))?,
