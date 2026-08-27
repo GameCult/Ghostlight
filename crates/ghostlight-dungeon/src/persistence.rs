@@ -7,6 +7,7 @@ use crate::domain::{
     ResolutionWaveCommit, StrategicTickReceipt, VaultEvidenceReceipt, VaultManifest,
     WorldCommitReceipt,
 };
+use crate::model::ModelStageReceipt;
 use crate::session_zero::{
     CellBudgetProposal, GroupTravelProposal, PublishedSessionZeroSeed, TimeAdvanceProposal,
 };
@@ -86,6 +87,37 @@ impl CampaignStore {
             return Err(anyhow!("row already exists: {kind}/{key}"));
         }
         Ok(row)
+    }
+
+    pub fn persist_model_stage_receipts(&self, receipts: &[ModelStageReceipt]) -> Result<()> {
+        for receipt in receipts {
+            if let Some((_, existing)) =
+                self.load::<ModelStageReceipt>("persona_stage_receipt.v1", receipt.storage_key())?
+            {
+                if existing.same_receipted_content(receipt) {
+                    continue;
+                }
+                return Err(anyhow!(
+                    "immutable model-stage receipt conflict: {}",
+                    receipt.storage_key()
+                ));
+            }
+            let inserted = self.insert(
+                "persona_stage_receipt.v1",
+                "ghostlight.persona_stage_receipt.v1",
+                receipt.storage_key(),
+                receipt,
+            );
+            if let Err(error) = inserted {
+                let repeated = self
+                    .load::<ModelStageReceipt>("persona_stage_receipt.v1", receipt.storage_key())?
+                    .is_some_and(|(_, existing)| existing.same_receipted_content(receipt));
+                if !repeated {
+                    return Err(error);
+                }
+            }
+        }
+        Ok(())
     }
 
     pub fn create_component_world_state(

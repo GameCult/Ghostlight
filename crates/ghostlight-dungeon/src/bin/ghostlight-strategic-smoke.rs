@@ -190,21 +190,56 @@ async fn main() -> anyhow::Result<()> {
             5,
             &store,
         )
-        .await?;
-        let issue_path = root.join(format!("newspaper-wave-{wave_index:02}.md"));
-        let issue_audit_path = root.join(format!("newspaper-wave-{wave_index:02}.audit.md"));
-        std::fs::write(
-            &issue_path,
-            ghostlight_dungeon::newspaper::render_world_newspaper_markdown(
-                &issue_composition.issue,
-            ),
-        )?;
-        std::fs::write(
-            &issue_audit_path,
-            ghostlight_dungeon::newspaper::render_world_newspaper_audit_markdown(
-                &issue_composition.issue,
-            ),
-        )?;
+        .await;
+        let (
+            issue,
+            newspaper_grounding,
+            newspaper_model_receipts,
+            issue_path,
+            issue_audit_path,
+            newspaper_error,
+        ) = match issue_composition {
+            Ok(composition) => {
+                let issue_path = root.join(format!("newspaper-wave-{wave_index:02}.md"));
+                let issue_audit_path =
+                    root.join(format!("newspaper-wave-{wave_index:02}.audit.md"));
+                std::fs::write(
+                    &issue_path,
+                    ghostlight_dungeon::newspaper::render_world_newspaper_markdown(
+                        &composition.issue,
+                    ),
+                )?;
+                std::fs::write(
+                    &issue_audit_path,
+                    ghostlight_dungeon::newspaper::render_world_newspaper_audit_markdown(
+                        &composition.issue,
+                    ),
+                )?;
+                (
+                    Some(composition.issue),
+                    Some(composition.grounding),
+                    composition.model_receipts,
+                    Some(issue_path),
+                    Some(issue_audit_path),
+                    None,
+                )
+            }
+            Err(error) => {
+                let Some(failure) = error.downcast_ref::<
+                    ghostlight_dungeon::newspaper::WorldNewspaperCompositionFailure,
+                >() else {
+                    return Err(error);
+                };
+                (
+                    None,
+                    None,
+                    failure.model_receipts.clone(),
+                    None::<std::path::PathBuf>,
+                    None::<std::path::PathBuf>,
+                    Some(error.to_string()),
+                )
+            }
+        };
         wave_reports.push(serde_json::json!({
             "wave_index":wave_index,
             "elapsed_seconds":started.elapsed().as_secs_f64(),
@@ -215,9 +250,10 @@ async fn main() -> anyhow::Result<()> {
             "rejected_pulses":rejected_pulses,
             "plan":plan,
             "commit":committed,
-            "issue":issue_composition.issue,
-            "newspaper_grounding":issue_composition.grounding,
-            "newspaper_model_receipts":issue_composition.model_receipts,
+            "issue":issue,
+            "newspaper_grounding":newspaper_grounding,
+            "newspaper_model_receipts":newspaper_model_receipts,
+            "newspaper_error":newspaper_error,
             "issue_path":issue_path,
             "issue_audit_path":issue_audit_path,
         }));
@@ -236,7 +272,20 @@ async fn main() -> anyhow::Result<()> {
             }))?,
         )?;
     }
-    let newspaper_composition = compose_persisted_newspaper(
+    let first_plan = wave_reports[0]["plan"].clone();
+    let first_commit = wave_reports[0]["commit"].clone();
+    let first_model_receipt_hash = wave_reports[0]["model_receipt_hash"].clone();
+    let model_stage_receipts = wave_reports
+        .iter()
+        .flat_map(|wave| {
+            wave["model_stage_receipts"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .cloned()
+        })
+        .collect::<Vec<_>>();
+    let newspaper_composition = match compose_persisted_newspaper(
         model.as_ref(),
         &campaign,
         &newspaper_title,
@@ -244,7 +293,55 @@ async fn main() -> anyhow::Result<()> {
         6,
         &store,
     )
-    .await?;
+    .await
+    {
+        Ok(composition) => composition,
+        Err(error) => {
+            let final_newspaper_model_receipts = error
+                .downcast_ref::<ghostlight_dungeon::newspaper::WorldNewspaperCompositionFailure>()
+                .map(|failure| failure.model_receipts.clone())
+                .unwrap_or_default();
+            let failed_result = serde_json::json!({
+                "schema":"ghostlight.live_strategic_smoke_failure.v1",
+                "scenario_id":scenario_id,
+                "pressure":pressure,
+                "wave_count":wave_count,
+                "campaign_id":campaign.id,
+                "elapsed_seconds":started.elapsed().as_secs_f64(),
+                "model_runtime":model_selection.status("configured"),
+                "model_receipt_hash":&first_model_receipt_hash,
+                "model_stage_receipts":&model_stage_receipts,
+                "plan":&first_plan,
+                "commit":&first_commit,
+                "waves":&wave_reports,
+                "event_count":campaign.events.len(),
+                "news_count":campaign.news.len(),
+                "final_newspaper_error":error.to_string(),
+                "final_newspaper_model_receipts":final_newspaper_model_receipts,
+                "player_location_unchanged":true,
+                "player_state_unchanged":true,
+                "store":root.join("campaign.cc")
+            });
+            let result_path = root.join("result.json");
+            std::fs::write(&result_path, serde_json::to_vec_pretty(&failed_result)?)?;
+            std::fs::write(
+                root.join("status.json"),
+                serde_json::to_vec_pretty(&serde_json::json!({
+                    "schema":"ghostlight.live_strategic_smoke_status.v1",
+                    "state":"failed",
+                    "waves_completed":wave_count,
+                    "waves_requested":wave_count,
+                    "world_revision":campaign.revision,
+                    "event_count":campaign.events.len(),
+                    "news_count":campaign.news.len(),
+                    "updated_at":Utc::now(),
+                    "result_path":result_path,
+                    "newspaper_error":error.to_string(),
+                }))?,
+            )?;
+            return Err(error);
+        }
+    };
     let newspaper_path = root.join("newspaper.md");
     let newspaper_audit_path = root.join("newspaper.audit.md");
     std::fs::write(
@@ -259,19 +356,6 @@ async fn main() -> anyhow::Result<()> {
             &newspaper_composition.issue,
         ),
     )?;
-    let first_plan = wave_reports[0]["plan"].clone();
-    let first_commit = wave_reports[0]["commit"].clone();
-    let first_model_receipt_hash = wave_reports[0]["model_receipt_hash"].clone();
-    let model_stage_receipts = wave_reports
-        .iter()
-        .flat_map(|wave| {
-            wave["model_stage_receipts"]
-                .as_array()
-                .into_iter()
-                .flatten()
-                .cloned()
-        })
-        .collect::<Vec<_>>();
     let result = serde_json::json!({
         "schema":"ghostlight.live_strategic_smoke.v3",
         "scenario_id":scenario_id,
@@ -342,13 +426,23 @@ async fn compose_persisted_newspaper(
             .map(|failure| failure.model_receipts.as_slice()),
     };
     if let Some(receipts) = receipts {
-        for receipt in receipts {
-            store.insert(
-                "persona_stage_receipt.v1",
-                "ghostlight.persona_stage_receipt.v1",
-                receipt.storage_key(),
-                receipt,
-            )?;
+        if let Err(persistence_error) = store.persist_model_stage_receipts(receipts) {
+            if let Err(error) = &result
+                && let Some(failure) = error.downcast_ref::<
+                    ghostlight_dungeon::newspaper::WorldNewspaperCompositionFailure,
+                >()
+            {
+                return Err(anyhow::Error::new(
+                    ghostlight_dungeon::newspaper::WorldNewspaperCompositionFailure {
+                        message: format!(
+                            "{}; model-receipt persistence failed: {persistence_error}",
+                            failure.message
+                        ),
+                        model_receipts: failure.model_receipts.clone(),
+                    },
+                ));
+            }
+            return Err(persistence_error);
         }
     }
     result

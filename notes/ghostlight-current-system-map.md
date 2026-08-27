@@ -948,11 +948,16 @@ issue time is derived from the latest cited publication record without exposing
 that clock to editorial inference. Terminally rejected attempts semantically
 rebind their otherwise immutable model receipts to a collision-free invalid
 disposition and return a typed failure carrying every completed receipt. The
-registry persists those receipts idempotently before returning the rejection.
-The reader renderer has no path to provenance fields and escapes all model- and
-consumer-supplied plain text before Markdown emission; the provenance renderer
-applies the same plain-text boundary to its audit data. Neither editor, copy
-desk, renderer, nor registry receipt persistence can write world state.
+campaign store owns idempotent model-receipt persistence; the registry and
+strategic acceptance smoke use that same primitive before returning a
+rejection. In the acceptance smoke, an interim edition rejection is local to
+the consumer and cannot stop later world waves. A rejected final combined
+edition remains a nonzero acceptance failure, but first writes the completed
+wave reports, rejection receipts, and failed status. The reader renderer has no
+path to provenance fields and escapes all model- and consumer-supplied plain
+text before Markdown emission; the provenance renderer applies the same
+plain-text boundary to its audit data. Neither editor, copy desk, renderer, nor
+receipt persistence can write world state.
 
 Session Zero compilation, expansion, and fission follow the same projection
 rule. Review projections expose topology, pressures, source-use coverage, gaps,

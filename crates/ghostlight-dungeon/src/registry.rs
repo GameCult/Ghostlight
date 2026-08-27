@@ -420,11 +420,24 @@ impl CampaignRegistry {
         if let Err(error) = &composition_result
             && let Some(failure) =
                 error.downcast_ref::<crate::newspaper::WorldNewspaperCompositionFailure>()
+            && let Err(persistence_error) = runtime
+                .store
+                .persist_model_stage_receipts(&failure.model_receipts)
         {
-            persist_newspaper_model_receipts(&runtime, &failure.model_receipts)?;
+            return Err(anyhow::Error::new(
+                crate::newspaper::WorldNewspaperCompositionFailure {
+                    message: format!(
+                        "{}; model-receipt persistence failed: {persistence_error}",
+                        failure.message
+                    ),
+                    model_receipts: failure.model_receipts.clone(),
+                },
+            ));
         }
         let composition = composition_result?;
-        persist_newspaper_model_receipts(&runtime, &composition.model_receipts)?;
+        runtime
+            .store
+            .persist_model_stage_receipts(&composition.model_receipts)?;
         Ok(composition.issue)
     }
 
@@ -653,42 +666,6 @@ impl CampaignRegistry {
         runtime.store.snapshot_to(&path)?;
         Ok(path)
     }
-}
-
-fn persist_newspaper_model_receipts(
-    runtime: &CampaignRuntime,
-    receipts: &[ModelStageReceipt],
-) -> Result<()> {
-    for receipt in receipts {
-        if let Some((_, existing)) = runtime
-            .store
-            .load::<ModelStageReceipt>("persona_stage_receipt.v1", receipt.storage_key())?
-        {
-            if existing.same_receipted_content(receipt) {
-                continue;
-            }
-            return Err(anyhow!(
-                "immutable newspaper model receipt conflict: {}",
-                receipt.storage_key()
-            ));
-        }
-        let inserted = runtime.store.insert(
-            "persona_stage_receipt.v1",
-            "ghostlight.persona_stage_receipt.v1",
-            receipt.storage_key(),
-            receipt,
-        );
-        if let Err(error) = inserted {
-            let repeated = runtime
-                .store
-                .load::<ModelStageReceipt>("persona_stage_receipt.v1", receipt.storage_key())?
-                .is_some_and(|(_, existing)| existing.same_receipted_content(receipt));
-            if !repeated {
-                return Err(error);
-            }
-        }
-    }
-    Ok(())
 }
 
 fn cleanup_staging_directory(root: &Path, staging: &Path) {
