@@ -1380,7 +1380,7 @@ impl CellProjectionEngine {
         };
         let mut stage_receipts = projector_receipts;
         stage_receipts.push(persona.receipt);
-        for attempt in 0..2 {
+        for attempt in 0..3 {
             let mut interpreted = run_validated_stage(self.model.as_ref(), &request)
                 .await
                 .context("cell interpreter model stage failed")?;
@@ -1489,7 +1489,7 @@ impl CellProjectionEngine {
                                     .into_iter()
                                     .map(|verification| verification.output.receipt),
                             );
-                            if attempt == 0 {
+                            if attempt < 2 {
                                 append_cell_correction(
                                     &mut request,
                                     &error,
@@ -1504,7 +1504,7 @@ impl CellProjectionEngine {
                                 &rejected_action_indices,
                             );
                             return Err(anyhow!(
-                                "cell effect verifier rejected the corrected appraisal: {error}; rejected_actions={rejected_actions}"
+                                "cell effect verifier rejected the appraisal after two corrections: {error}; rejected_actions={rejected_actions}"
                             ));
                         }
                     }
@@ -1532,7 +1532,7 @@ impl CellProjectionEngine {
                         stage_receipts,
                     }));
                 }
-                Err(error) if attempt == 0 => {
+                Err(error) if attempt < 2 => {
                     let rejected_appraisal = interpreted
                         .structured
                         .as_ref()
@@ -1547,7 +1547,7 @@ impl CellProjectionEngine {
                 }
                 Err(error) => {
                     return Err(anyhow!(
-                        "cell interpreter failed semantic validation after one correction: {error}"
+                        "cell interpreter failed semantic validation after two corrections: {error}"
                     ));
                 }
             }
@@ -1676,7 +1676,7 @@ fn append_cell_correction(
 ) {
     let repair_guidance = cell_correction_guidance(error);
     request.lived_stream.push_str(&format!(
-        "\n\nCORRECTION TASK—THE PREVIOUS APPRAISAL WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. The semantic verifier's concrete repair guidance in REJECTION names the exact mismatch and is the primary correction instruction. {repair_guidance} {CELL_ACTIVITY_CLASSIFICATION_GUIDANCE} Every retained action must still carry one to four non-null exact effects under the original contract. Preserve all distinct chosen means in one action; repeated activity kinds must use separate exact target and location scopes. With relocation, snapshot-location activities occur before departure and exact-destination activities occur after arrival; field order is not chronology. If an institution merely continues or restates already_committed_posture, move that exact voiced subject to inactions; it is holding steady. If the Persona chose travel but that subject has no exact permitted destination in reachable_destinations or migration_destinations, no movement transition is available: remove that action and record attributed inaction only when the Persona explicitly holds or waits without making another attempt. If an attempted preparation, investigation, request, or deliberation has no permitted typed consequence, remove it and record attributed inaction only when the Persona explicitly holds or waits without making another attempt; never emit an empty transition or upgrade consideration into a completed consequence. Never add inaction for an unvoiced subject. Keep each reason within 160 characters."
+        "\n\nCORRECTION TASK—THE PREVIOUS APPRAISAL WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. The semantic verifier's concrete repair guidance in REJECTION names the exact mismatch and is the primary correction instruction. {repair_guidance} When repairing bounded text, rewrite the whole field concisely: put every explicit act and addressee before supporting detail, remove recap and ornament, and end with a complete clause well below the character limit. Never append repair text to a field already at its limit. {CELL_ACTIVITY_CLASSIFICATION_GUIDANCE} Every retained action must still carry one to four non-null exact effects under the original contract. Preserve all distinct chosen means in one action; repeated activity kinds must use separate exact target and location scopes. With relocation, snapshot-location activities occur before departure and exact-destination activities occur after arrival; field order is not chronology. If an institution merely continues or restates already_committed_posture, move that exact voiced subject to inactions; it is holding steady. If the Persona chose travel but that subject has no exact permitted destination in reachable_destinations or migration_destinations, no movement transition is available: remove that action and record attributed inaction only when the Persona explicitly holds or waits without making another attempt. If an attempted preparation, investigation, request, or deliberation has no permitted typed consequence, remove it and record attributed inaction only when the Persona explicitly holds or waits without making another attempt; never emit an empty transition or upgrade consideration into a completed consequence. Never add inaction for an unvoiced subject. Keep each reason within 160 characters."
     ));
 }
 
@@ -3472,12 +3472,12 @@ mod tests {
                 })
                 .to_string()),
                 "cell_persona" => Ok(
-                    "We will withhold the reserve commitment until the public count is verified."
+                    "We will withhold the reserve commitment until the public count is verified, and notify the ward clerks of the delay."
                         .into(),
                 ),
                 "cell_interpreter" => {
-                    let correction = self.interpreter_calls.fetch_add(1, Ordering::SeqCst) > 0;
-                    if correction {
+                    let call = self.interpreter_calls.fetch_add(1, Ordering::SeqCst);
+                    if call > 0 {
                         self.saw_verifier_rejection.store(
                             request.lived_stream.contains("effect verifier rejected")
                                 && request.lived_stream.contains("releases the reserve"),
@@ -3489,17 +3489,28 @@ mod tests {
                         assert!(request
                             .lived_stream
                             .contains("no exact permitted destination"));
+                        assert!(request
+                            .lived_stream
+                            .contains("rewrite the whole field concisely"));
                     }
                     Ok(serde_json::json!({
                         "decisions":{"faction-06":{"action":{
                             "subject_id":"faction-06",
                             "intent":"state the reserve decision",
-                            "intended_effect":if correction {"withhold release pending a verified count"} else {"release the reserve immediately"},
+                            "intended_effect":match call {
+                                0 => "release the reserve immediately",
+                                1 => "withhold release pending a verified count",
+                                _ => "withhold release pending a verified count and notify the ward clerks",
+                            },
                             "priority":5,
                             "state_references":["institution:faction-06"],
                             "public_channels":["public bulletin"],
                             "effects":{"institution":{
-                                "posture":if correction {"withholding reserve commitment pending a verified public count"} else {"releases the reserve immediately"},
+                                "posture":match call {
+                                    0 => "releases the reserve immediately",
+                                    1 => "withholds the reserve pending a verified public count",
+                                    _ => "withhold reserve pending a verified public count; notify ward clerks of the delay",
+                                },
                                 "location_ids":["forum"]
                             }}
                         }}}
@@ -3519,18 +3530,22 @@ mod tests {
                         .lived_stream
                         .contains("empty target list is intentional"));
                     assert!(request.lived_stream.contains("At location forum"));
-                    let correction = self.verifier_calls.fetch_add(1, Ordering::SeqCst) > 0;
+                    let call = self.verifier_calls.fetch_add(1, Ordering::SeqCst);
                     Ok(serde_json::json!({
                         "verdicts":[{
                             "action_index":0,
-                            "result":if correction { "match" } else { "mismatch" },
-                            "mismatch_kind":if correction {
+                            "result":if call > 1 { "match" } else { "mismatch" },
+                            "mismatch_kind":if call > 1 {
                                 None::<&str>
+                            } else if call == 1 {
+                                Some("effect_omission")
                             } else {
                                 Some("effect_reversal")
                             },
-                            "repair_guidance":if correction {
+                            "repair_guidance":if call > 1 {
                                 None::<&str>
+                            } else if call == 1 {
+                                Some("Rewrite the posture compactly to include the explicit notice to ward clerks as well as the withholding decision.")
                             } else {
                                 Some("Preserve the Persona's exact withholding decision rather than reversing it into release.")
                             }
@@ -3548,7 +3563,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn effect_verifier_rejects_a_reversed_decision_before_terminal_output() {
+    async fn effect_verifier_supports_two_bounded_corrections_before_terminal_output() {
         let model = Arc::new(SemanticallyCorrectingCellModel {
             interpreter_calls: AtomicUsize::new(0),
             verifier_calls: AtomicUsize::new(0),
@@ -3567,10 +3582,17 @@ mod tests {
         .await
         .unwrap();
         assert!(model.saw_verifier_rejection.load(Ordering::SeqCst));
-        assert_eq!(output.stage_receipts.len(), 6);
+        assert_eq!(model.interpreter_calls.load(Ordering::SeqCst), 3);
+        assert_eq!(model.verifier_calls.load(Ordering::SeqCst), 3);
+        assert_eq!(output.stage_receipts.len(), 8);
         assert_eq!(output.stage_receipts[3].stage, "cell_effect_verifier");
         assert_eq!(
             output.stage_receipts[3].validation_result,
+            "semantic_invalid"
+        );
+        assert_eq!(output.stage_receipts[5].stage, "cell_effect_verifier");
+        assert_eq!(
+            output.stage_receipts[5].validation_result,
             "semantic_invalid"
         );
         let StrategicCellEffect::Institution { posture, .. } =
@@ -3578,7 +3600,7 @@ mod tests {
         else {
             panic!("corrected effect changed type")
         };
-        assert!(posture.contains("withholding reserve"));
+        assert!(posture.contains("notify ward clerks"));
     }
 
     #[test]
