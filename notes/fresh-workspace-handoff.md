@@ -486,44 +486,95 @@ world whose derived cover grew from four cells to six as named figures emerged;
 the 200-cell path remains a local scale proof and the
 Delvehold game-side adapter is not implemented here.
 
-The first newsroom projection cut was committed as `a585398` and exercised by
-a fresh isolated two-wave Codex Connector run with `gpt-5.6-luna`. The campaign
-advanced to revision 2 with 18 Events and 15 NewsIssues while player state and
-location remained unchanged. Both presentation gates failed: the blind editor
-returned FAIL at 99 percent confidence and the grounding auditor returned FAIL
-at 0.94 confidence. The untouched responses and their review hashes live at
-`F:\GameCult\GhostlightDungeon\acceptance\root-wire-frontpage-blind-a585398-1`.
-Public Event prose still exposed abstract posture and relation transitions; the
-newsroom promoted merely involved entity and location metadata into asserted
-names and a dateline; and the smoke result projected the wave-one commit at top
-level beside wave-two counts and head. The world run remains valid evidence of
-autonomous transition, not newspaper acceptance.
+Run 16 used exact source `6e9e7043d95d82ec694c45cdbfbc552a89e74ff7`
+at `/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-6e9e704-16`.
+The strict one-value civic discriminator worked: two locality elaborations
+committed before the third was correctly rejected because relation
+`rel_inquest_cohort_communication` was not an exact new local-subject edge.
+That run moved the blocker from schema constants to bounded civic repair.
 
-A second local cut changes institution and relation public phrasing, includes
-model-facing names only when the public account asserts them, suppresses
-ambiguous multi-place metadata, and projects final-wave commit data at the smoke
-result top level. All 393 library tests and every binary test pass, and the
-bounded Modeling final review is clear after correcting a name-boundary
-collision. The cut is not yet committed or run against the provider.
+Commit `4d96018` gives that repair one owner. Structural and semantic validation
+publish one pending finding; one candidate-acquisition boundary may ask Terra
+to repair the frozen Sol candidate's exact civic slice; the ordinary structural
+validator and a fresh semantic verdict still decide admission. Missing civic
+material remains terminal, and neither branch can independently invoke a
+second repair. Run 17 at exact source
+`4d960188cd6f5495ba808078d3d3b169f1b80790` exercised that path at
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-4d96018-17`.
+It stopped on `destination institution inst:verge-moot has a malformed agency
+profile`: the broad finding did not tell the bounded repair owner whether the
+location, six facets, or public channel was malformed. Commit `8ee836f` exposes
+those exact model-owned diagnostics at the existing validation boundary; it
+does not add another reconciliation attempt or owner.
 
-1. Commit and push the exact locally verified second cut.
-2. Run a fresh isolated exact-commit two-wave newspaper acceptance through
-   Codex Connector with `gpt-5.6-luna`, preserving world, issue, audit, receipt,
-   build, review, and hash witnesses without mutating the live daemon.
-3. Dispatch a fresh blind reviewer with only the strongest page and a neutral
-   editorial brief; preserve its untouched response.
-4. Independently audit that page against committed public events before
-   treating presentation quality as accepted.
-5. Have the game-side adapter lower its authored hierarchy into the published
+Fresh exact-source run 18 at
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-8ee836f-18`
+completed all four locality elaborations and five strategic waves. Revision 9
+contains 101 Events and 232 NewsIssues, and five unedited `The Canopy Ledger`
+issues were rendered. Wave 6 did not commit. Its terminal artifact records that
+the strategic outcome verifier rejected the corrected bundle identified by
+`sha256:534e9fe02556783a0cde2ce7d3cd22d734709e5eb6524c0255c6af09025a6c62`:
+the proposed material fact was not established by the witnessed grain sampling
+or concrete examination of the document. The result root has no completed
+`SHA256SUMS`. Run 18 proves the civic compiler and sustained-world path advanced
+well beyond runs 15-17, but it is not a completed acceptance witness. No blind
+editorial or grounding pass is claimed. Fantasy-newspaper presentation remains
+unaccepted.
+
+Commit `3bd1279e2ae557b17df1483de4f7842cd70866a3` is pushed and owns
+same-snapshot strategic outcome reconciliation without replaying an otherwise
+accepted wave. Run 19 used that exact source at
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-3bd1279-19`,
+but did not reach the run-18 outcome path. Two locality elaborations committed
+through revision 2. The third, Oldest Forest Margin, stopped after the one civic
+reconciliation response returned institutions that did not preserve the
+bounded unique new canonical subject set; local validation reported
+`destination institutions need at most twelve unique new canonical subject
+IDs`. No strategic wave or newspaper was produced, and the root has no
+completed `SHA256SUMS`. This leaves `3bd1279` pushed but not provider-accepted
+on its intended outcome path. Fantasy-newspaper presentation remains
+unaccepted.
+
+The run-19 diagnosis found that reconciliation still returned complete
+institution replacements, so Terra could discard or invent subjects while
+repairing civic operations. Commit
+`2875e45b3abd9c8c5e207d85444c797884c57136` freezes every Sol-authored
+institution ID, name, and goal. Terra receives an exact-length, exact-ID schema
+for civic-operational updates only; the existing merge and admission owner
+applies resources, posture, facets, locations, and public channels to the frozen
+institutions before ordinary validation. There is no second repair path. All
+408 library tests and the strategic smoke check pass, and the commit is pushed.
+
+Exact-source run 20 is active as
+`ghostlight-newspaper-2875e45-20.service`, targeting
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-2875e45-20`.
+The isolated release build has completed. `BUILD-WITNESS` binds exact source
+`2875e45b3abd9c8c5e207d85444c797884c57136`, binary SHA-256
+`f3015218baaa8f6d70596f5be8a793f7444ce47b93558a44c7958e2b58841c68`,
+and `live_service_mutated=false`. `status.json` remains at `compiling_world`,
+updated `2026-08-27T20:57:14.217251532Z`, while the service remains active. No
+provider result, elaboration, strategic wave, newspaper, or acceptance is
+claimed yet.
+
+1. Observe run 20 without changing its body. If it terminates, preserve its
+   exact build, status, terminal, receipt, and partial-world evidence before
+   diagnosing one owner.
+2. If all four locality elaborations and six strategic waves commit, preserve
+   and verify the immutable artifact manifest without mutating the live daemon
+   or any prior run root.
+3. Only after all six waves commit and an immutable manifest exists, dispatch a
+   fresh blind reviewer with only the strongest unedited page and a neutral
+   editorial brief, then independently audit it against committed public events.
+4. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-6. Prove one consumer-owned effect crosses that public API, changes two foreign
+5. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-7. Measure provider cost and continuity on the existing 200-cell authored-world
+6. Measure provider cost and continuity on the existing 200-cell authored-world
    path without coupling wave width to the provider concurrency ceiling.
-8. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+7. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-9. Keep `gamecult-ops` synchronized with every executable deployment and model
+8. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,
