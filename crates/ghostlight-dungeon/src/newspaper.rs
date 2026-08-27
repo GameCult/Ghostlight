@@ -241,7 +241,7 @@ pub async fn compose_world_newspaper(
             lived_stream: format!("{base_prompt}{correction}"),
             output_schema: Some(schema.clone()),
             source_receipt_ids: source_receipt_ids.clone(),
-            temperature: Some(0.65),
+            temperature: Some(if correction.is_empty() { 0.65 } else { 0.15 }),
             max_output_tokens: Some(4_500),
         };
         let editor_output = match run_validated_stage(model, &request).await {
@@ -407,7 +407,7 @@ async fn run_copy_desk(
         model: MODEL_CAPABLE.into(),
         snapshot_binding,
         lived_stream: format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAct as a strict copy desk, not a rewriting model. Compare every reader-facing factual claim in the proposed fantasy newspaper page with only the cited source_news_ids in the bounded public source desk. Reject invented or overconfident facts, quotations, identities, offices, places, numbers, motives, outcomes, chronology, or private knowledge. Reject source/action/debug language that would make the page read like a simulation ledger, and reject copy that merely recites state transitions instead of reporting news. Clearly marked editorial judgment and ordinary journalistic connective phrasing are allowed when they add no new world fact. `accepted` may be true only when findings is empty. Return findings only; never propose replacement copy.\n\nPUBLIC SOURCE DESK:\n{}\n\nPROPOSED PAGE:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAct as a strict copy desk, not a rewriting model. Compare every reader-facing factual claim in the proposed fantasy newspaper page with only the cited source_news_ids in the bounded public source desk. Reject invented or overconfident facts, quotations, identities, offices, places, numbers, motives, outcomes, chronology, or private knowledge. Reject source/action/debug language that would make the page read like a simulation ledger, and reject copy that merely recites state transitions instead of reporting news. The five allowed generic bylines are publication role labels supplied by the newspaper contract, not claims about new people, witnesses, or reporting acts; never reject an allowed byline for lacking source evidence. Metaphor, dry wit, rhetorical contrast, plainly signalled opinion, and political characterization are editorial language rather than world facts when they introduce no concrete entity, occurrence, status, motive, quotation, number, or private knowledge. Do not demand a source sentence for such language. Still reject a rhetorical phrase when it smuggles in a concrete outcome, such as treating a proposed kiln closure as completed, or turns source silence into proof that something did not happen. `accepted` may be true only when findings is empty. Return findings only; never propose replacement copy.\n\nPUBLIC SOURCE DESK:\n{}\n\nPROPOSED PAGE:\n{}",
             serde_json::to_string(&verifier_schema)?,
             source_json,
             serde_json::to_string_pretty(draft)?,
@@ -1053,19 +1053,26 @@ mod tests {
 
     struct ScriptedNewspaperModel {
         responses: Mutex<VecDeque<String>>,
+        requests: Mutex<Vec<ModelStageRequest>>,
     }
 
     impl ScriptedNewspaperModel {
         fn new(responses: impl IntoIterator<Item = &'static str>) -> Self {
             Self {
                 responses: Mutex::new(responses.into_iter().map(str::to_owned).collect()),
+                requests: Mutex::new(Vec::new()),
             }
+        }
+
+        fn requests(&self) -> Vec<ModelStageRequest> {
+            self.requests.lock().unwrap().clone()
         }
     }
 
     #[async_trait]
     impl ModelPort for ScriptedNewspaperModel {
-        async fn run(&self, _request: &ModelStageRequest) -> Result<String> {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            self.requests.lock().unwrap().push(request.clone());
             self.responses
                 .lock()
                 .unwrap()
@@ -1224,6 +1231,11 @@ mod tests {
                 .iter()
                 .any(|receipt| receipt.validation_result == "semantic_invalid")
         );
+        let requests = model.requests();
+        assert_eq!(requests[0].temperature, Some(0.65));
+        assert_eq!(requests[2].temperature, Some(0.15));
+        assert!(requests[1].lived_stream.contains("publication role labels"));
+        assert!(requests[1].lived_stream.contains("Metaphor, dry wit"));
         assert!(composition.grounding.accepted);
     }
 
