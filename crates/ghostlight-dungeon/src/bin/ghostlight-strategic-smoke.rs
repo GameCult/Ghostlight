@@ -45,30 +45,6 @@ async fn main() -> anyhow::Result<()> {
             ))
         });
     std::fs::create_dir_all(&root)?;
-    let mut campaign = strategic_campaign();
-    let pressure_event = ghostlight_dungeon::domain::Event {
-        id: format!("pressure-{}", uuid::Uuid::new_v4()),
-        at: campaign.world_time,
-        kind: "strategic_pressure".into(),
-        summary: pressure.clone(),
-        actor_ids: vec!["runner".into()],
-        institution_ids: vec!["board".into(), "synod".into()],
-        gestalt_ids: vec![],
-        location_ids: vec!["depot".into(), "yard".into()],
-        public_channels: vec!["root-wire broadsheet".into()],
-    };
-    campaign.news.push(ghostlight_dungeon::domain::NewsIssue {
-        id: format!("news:{}:root-wire-broadsheet", pressure_event.id),
-        at: pressure_event.at,
-        channel: "root-wire broadsheet".into(),
-        headline: ghostlight_dungeon::domain::committed_news_headline(&pressure_event.summary),
-        event_ids: vec![pressure_event.id.clone()],
-        reliability: "committed public channel".into(),
-    });
-    campaign.events.push(pressure_event);
-    let player_before = campaign.actors[&campaign.player_actor_id].clone();
-    let store = CampaignStore::open(root.join("campaign.cc"))?;
-    store.create_unadmitted_fixture_campaign(&campaign, &[], &[])?;
     let model = model_selection.open()?.ok_or_else(|| {
         anyhow::anyhow!(
             "{} credential is unavailable at {}",
@@ -76,6 +52,95 @@ async fn main() -> anyhow::Result<()> {
             model_selection.credential_path.display()
         )
     })?;
+    let public_channel = admitted_public_channel(
+        &std::env::var("GHOSTLIGHT_STRATEGIC_PUBLIC_CHANNEL")
+            .unwrap_or_else(|_| "root-wire broadsheet".into()),
+    )?;
+    let compiled = std::env::var("GHOSTLIGHT_WORLD_DESCRIPTION")
+        .ok()
+        .filter(|description| !description.trim().is_empty());
+    let (mut campaign, seed_evidence_receipts, seed_model_receipts, world_compile) =
+        if let Some(description) = compiled {
+            std::fs::write(
+                root.join("status.json"),
+                serde_json::to_vec_pretty(&serde_json::json!({
+                    "schema":"ghostlight.live_strategic_smoke_status.v1",
+                    "state":"compiling_world",
+                    "waves_completed":0,
+                    "waves_requested":wave_count,
+                    "updated_at":Utc::now(),
+                }))?,
+            )?;
+            let (preview, receipts) = compile_strategic_campaign(
+                model.clone(),
+                &model_selection.fast_model,
+                &model_selection.capable_model,
+                &description,
+                &pressure,
+                &public_channel,
+            )
+            .await?;
+            std::fs::write(
+                root.join("compiler-preview.json"),
+                serde_json::to_vec_pretty(&serde_json::json!({
+                    "description":description,
+                    "preview":&preview,
+                    "model_receipts":&receipts,
+                }))?,
+            )?;
+            let evidence = preview.evidence_receipts.clone();
+            let campaign = preview.campaign.clone();
+            (
+                campaign,
+                evidence,
+                receipts.clone(),
+                Some(serde_json::json!({
+                    "description":description,
+                    "preview":preview,
+                    "model_receipts":receipts,
+                    "preview_path":root.join("compiler-preview.json"),
+                })),
+            )
+        } else {
+            (strategic_campaign(), vec![], vec![], None)
+        };
+    ghostlight_dungeon::compiler::validate_campaign_seed(&campaign)?;
+    let pressure_event = ghostlight_dungeon::domain::Event {
+        id: format!("pressure-{}", uuid::Uuid::new_v4()),
+        at: campaign.world_time,
+        kind: "strategic_pressure".into(),
+        summary: pressure.clone(),
+        actor_ids: campaign
+            .actors
+            .keys()
+            .filter(|actor_id| **actor_id != campaign.player_actor_id)
+            .cloned()
+            .collect(),
+        institution_ids: campaign.institutions.keys().cloned().collect(),
+        gestalt_ids: campaign.gestalts.keys().cloned().collect(),
+        location_ids: campaign.locations.keys().cloned().collect(),
+        public_channels: vec![public_channel.clone()],
+    };
+    campaign.news.push(ghostlight_dungeon::domain::NewsIssue {
+        id: format!(
+            "news:{}:{}",
+            pressure_event.id,
+            public_channel.replace(' ', "-")
+        ),
+        at: pressure_event.at,
+        channel: public_channel,
+        headline: ghostlight_dungeon::domain::committed_news_headline(&pressure_event.summary),
+        event_ids: vec![pressure_event.id.clone()],
+        reliability: "committed public channel".into(),
+    });
+    campaign.events.push(pressure_event);
+    let player_before = campaign.actors[&campaign.player_actor_id].clone();
+    let store = CampaignStore::open(root.join("campaign.cc"))?;
+    store.create_unadmitted_fixture_campaign(
+        &campaign,
+        &seed_evidence_receipts,
+        &seed_model_receipts,
+    )?;
     let newspaper_title = std::env::var("GHOSTLIGHT_STRATEGIC_NEWSPAPER_TITLE")
         .unwrap_or_else(|_| "The Underdeep Clarion".into());
     let newspaper_voice = std::env::var("GHOSTLIGHT_STRATEGIC_NEWSPAPER_VOICE")
@@ -320,6 +385,7 @@ async fn main() -> anyhow::Result<()> {
                 "campaign_id":campaign.id,
                 "elapsed_seconds":started.elapsed().as_secs_f64(),
                 "model_runtime":model_selection.status("configured"),
+                "world_compile":&world_compile,
                 "model_receipt_hash":&final_model_receipt_hash,
                 "model_stage_receipts":&model_stage_receipts,
                 "plan":&final_plan,
@@ -375,6 +441,7 @@ async fn main() -> anyhow::Result<()> {
         "campaign_id":campaign.id,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
         "model_runtime":model_selection.status("configured"),
+        "world_compile":world_compile,
         "model_receipt_hash":final_model_receipt_hash,
         "model_stage_receipts":model_stage_receipts,
         "plan":final_plan,
@@ -459,6 +526,94 @@ async fn compose_persisted_newspaper(
     result
 }
 
+async fn compile_strategic_campaign(
+    model: std::sync::Arc<dyn ghostlight_dungeon::model::ModelPort>,
+    retrieval_model: &str,
+    compiler_model: &str,
+    description: &str,
+    pressure: &str,
+    public_channel: &str,
+) -> anyhow::Result<(
+    ghostlight_dungeon::domain::WorldCompilePreview,
+    Vec<ghostlight_dungeon::model::ModelStageReceipt>,
+)> {
+    use ghostlight_dungeon::{
+        compiler::{CustomStart, WorldCompiler, validate_campaign_seed},
+        domain::SourceWitness,
+        vault::FixtureVault,
+    };
+    use sha2::{Digest, Sha256};
+
+    let description = description.trim();
+    if description.chars().count() > 8_000 {
+        anyhow::bail!("GHOSTLIGHT_WORLD_DESCRIPTION accepts at most 8,000 characters")
+    }
+    let world_name = std::env::var("GHOSTLIGHT_WORLD_NAME")
+        .unwrap_or_else(|_| "The Elven Realms Beyond the Greathold".into());
+    let who = std::env::var("GHOSTLIGHT_WORLD_PLAYER").unwrap_or_else(|_| {
+        "The player-controlled Greathold, represented by a boundary observer; its sovereign choices remain external to the autonomous world simulation."
+            .into()
+    });
+    let where_ = std::env::var("GHOSTLIGHT_WORLD_WHERE").unwrap_or_else(|_| {
+        "the inhabited realms immediately beyond the Greathold boundary described by the supplied setting source"
+            .into()
+    });
+    let when = std::env::var("GHOSTLIGHT_WORLD_WHEN").unwrap_or_else(|_| {
+        "a strained late age before any single realm has secured hegemony".into()
+    });
+    let goal = format!(
+        "Observe without ruling while the autonomous world responds to this new external pressure from the Greathold: {pressure}"
+    );
+    let source_id = "consumer-setting-description";
+    let witness = SourceWitness {
+        source_id: source_id.into(),
+        exact_locator: "consumer://setting-description".into(),
+        content_hash: format!("sha256:{:x}", Sha256::digest(description.as_bytes())),
+        excerpt: description.into(),
+        authority_lane: "consumer.setting_description".into(),
+        temporal_scope: when.clone(),
+    };
+    let compiler = WorldCompiler::new(
+        std::sync::Arc::new(FixtureVault {
+            witnesses: vec![witness],
+        }),
+        model,
+        retrieval_model,
+        compiler_model,
+    );
+    let (mut preview, receipts) = compiler
+        .compile_custom(CustomStart {
+            campaign_name: world_name,
+            who,
+            where_,
+            when,
+            goal,
+        })
+        .await?;
+    let campaign = &mut preview.campaign;
+    campaign.resolution_policy.active_cell_budget = bounded_environment_usize(
+        "GHOSTLIGHT_STRATEGIC_CELL_BUDGET",
+        200,
+        ghostlight_dungeon::resolution::MIN_ACTIVE_CELL_BUDGET as usize,
+        ghostlight_dungeon::resolution::MAX_ACTIVE_CELL_BUDGET as usize,
+    )? as u8;
+    ghostlight_dungeon::resolution::ensure_agency_profiles(campaign);
+    for (subject_id, profile) in &mut campaign.agency_profiles {
+        profile.simulation_eligible = subject_id != &campaign.player_actor_id;
+        profile.information_channels.insert(public_channel.into());
+    }
+    validate_campaign_seed(campaign)?;
+    Ok((preview, receipts))
+}
+
+fn admitted_public_channel(value: &str) -> anyhow::Result<String> {
+    let channel = value.trim();
+    if !ghostlight_dungeon::resolution::information_channel_is_concrete(channel) {
+        anyhow::bail!("GHOSTLIGHT_STRATEGIC_PUBLIC_CHANNEL is not a concrete information route")
+    }
+    Ok(channel.into())
+}
+
 fn bounded_environment_usize(
     name: &str,
     default: usize,
@@ -509,13 +664,12 @@ fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
         }
     }
     let now = Utc::now();
-    let mut player = actor(
+    let player = actor(
         "player",
         "Deep-hold Envoy",
         "room",
         "observe without ruling",
     );
-    player.knowledge.insert("root-wire broadsheet".into());
     let mut campaign = Campaign {
         schema: "ghostlight.campaign.v1".into(),
         id: uuid::Uuid::new_v4(),
@@ -711,7 +865,7 @@ fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
 
 #[cfg(test)]
 mod tests {
-    use super::final_wave_field;
+    use super::{admitted_public_channel, final_wave_field, strategic_campaign};
 
     #[test]
     fn top_level_projection_uses_the_final_wave_head() {
@@ -722,5 +876,30 @@ mod tests {
 
         let commit = final_wave_field(&waves, "commit").unwrap();
         assert_eq!(commit["campaign"]["revision"], 2);
+    }
+
+    #[test]
+    fn public_channel_requires_one_concrete_information_route() {
+        assert_eq!(
+            admitted_public_channel("  root-wire broadsheet  ").unwrap(),
+            "root-wire broadsheet"
+        );
+        for invalid in ["", "   ", "unknown"] {
+            assert!(admitted_public_channel(invalid).is_err());
+        }
+        assert!(admitted_public_channel(&"x".repeat(161)).is_err());
+    }
+
+    #[test]
+    fn static_fixture_obeys_the_same_channel_and_knowledge_invariant() {
+        let campaign = strategic_campaign();
+        ghostlight_dungeon::compiler::validate_campaign_seed(&campaign).unwrap();
+        let player = &campaign.actors[&campaign.player_actor_id];
+        assert!(!player.knowledge.contains("root-wire broadsheet"));
+        assert!(
+            campaign.agency_profiles[&campaign.player_actor_id]
+                .information_channels
+                .contains("root-wire broadsheet")
+        );
     }
 }

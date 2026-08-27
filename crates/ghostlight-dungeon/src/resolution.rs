@@ -11,7 +11,9 @@ pub const MIN_ACTIVE_CELL_BUDGET: u8 = 1;
 pub const MAX_ACTIVE_CELL_BUDGET: u8 = 240;
 pub const MAX_PROVIDER_PARALLELISM: u8 = 32;
 
-pub(crate) fn information_channel_is_concrete(channel: &str) -> bool {
+/// True when a publication or reception route is concrete enough to enter an
+/// agency profile. Knowledge belongs to the subject state, never this lane.
+pub fn information_channel_is_concrete(channel: &str) -> bool {
     let channel = channel.trim();
     !channel.is_empty() && channel.len() <= 160 && !channel.eq_ignore_ascii_case("unknown")
 }

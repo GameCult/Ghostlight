@@ -5219,6 +5219,35 @@ fn validate_campaign(c: &Campaign, require_dematerialized_members: bool) -> Resu
                 "campaign agency profile does not match canonical subject {subject_id}"
             ));
         }
+        if let Some(channel) = profile
+            .information_channels
+            .iter()
+            .find(|channel| !crate::resolution::information_channel_is_concrete(channel))
+        {
+            return Err(anyhow!(
+                "campaign agency profile {subject_id} has an invalid information channel {channel:?}"
+            ));
+        }
+        let knowledge_overlap = match expected_kind {
+            AgencySubjectKind::Actor => c.actors.get(subject_id).and_then(|actor| {
+                profile
+                    .information_channels
+                    .intersection(&actor.knowledge)
+                    .next()
+            }),
+            AgencySubjectKind::Gestalt => c.gestalts.get(subject_id).and_then(|gestalt| {
+                profile
+                    .information_channels
+                    .intersection(&gestalt.shared_knowledge)
+                    .next()
+            }),
+            AgencySubjectKind::Institution => None,
+        };
+        if let Some(channel) = knowledge_overlap {
+            return Err(anyhow!(
+                "campaign agency profile {subject_id} cannot use factual knowledge {channel:?} as an information channel"
+            ));
+        }
     }
     if let Some(profile) = c.agency_profiles.values().find(|profile| {
         profile.active_leaf
@@ -6775,6 +6804,40 @@ mod tests {
 
         let error = validate_campaign_seed(&campaign).unwrap_err();
         assert!(error.to_string().contains("one to 460 characters"));
+    }
+
+    #[test]
+    fn campaign_seed_rejects_invalid_channels_and_knowledge_disguised_as_channels() {
+        let mut campaign = crate::resolution::tests::campaign(2, 1);
+        campaign
+            .agency_profiles
+            .get_mut("player")
+            .unwrap()
+            .information_channels
+            .insert("unknown".into());
+        let error = validate_campaign_seed(&campaign).unwrap_err();
+        assert!(error.to_string().contains("invalid information channel"));
+
+        campaign
+            .agency_profiles
+            .get_mut("player")
+            .unwrap()
+            .information_channels
+            .remove("unknown");
+        campaign
+            .agency_profiles
+            .get_mut("player")
+            .unwrap()
+            .information_channels
+            .insert("root-wire broadsheet".into());
+        campaign
+            .actors
+            .get_mut("player")
+            .unwrap()
+            .knowledge
+            .insert("root-wire broadsheet".into());
+        let error = validate_campaign_seed(&campaign).unwrap_err();
+        assert!(error.to_string().contains("cannot use factual knowledge"));
     }
 
     #[test]

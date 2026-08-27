@@ -2981,6 +2981,7 @@ fn apply_strategic_tick_plan(
                 activity_means
                     .get(&action.action_digest)
                     .map(String::as_str),
+                &action.public_channels,
             ),
             actor_ids,
             institution_ids,
@@ -3162,6 +3163,7 @@ fn apply_strategic_tick_plan(
                 activity_means
                     .get(&action.action_digest)
                     .map(String::as_str),
+                &action.public_channels,
             ),
             actor_ids,
             institution_ids,
@@ -3288,6 +3290,7 @@ fn apply_strategic_tick_plan(
                 activity_means
                     .get(&action.action_digest)
                     .map(String::as_str),
+                &action.public_channels,
             ),
             actor_ids,
             institution_ids,
@@ -3498,12 +3501,16 @@ fn strategic_activity_summary(
     activity: &StrategicActivityKind,
     target_names: &[String],
     admitted_means: Option<&str>,
+    public_channels: &[String],
 ) -> String {
     if let Some(means) = admitted_means
         .map(str::trim)
         .filter(|means| !means.is_empty())
     {
         let means = means.trim_end_matches(['.', '!', '?']);
+        if !public_channels.is_empty() {
+            return format!("Public statement from {source_name}: {means}.");
+        }
         let mut characters = means.chars();
         let lowered = characters
             .next()
@@ -6239,6 +6246,23 @@ pub(crate) mod tests {
                 .iter()
                 .all(|event| event.kind != "strategic_activity_outcome")
         );
+    }
+
+    #[test]
+    fn durable_publication_reports_the_published_course_not_an_unfinished_publication_attempt() {
+        let summary = strategic_activity_summary(
+            "Thornweald Charcoal Guilds",
+            &StrategicActivityKind::Communicate,
+            &["Copper Synod".into()],
+            Some("Publish the caravan evidence and call every forest kiln to readiness"),
+            &["root-wire broadsheet".into()],
+        );
+
+        assert_eq!(
+            summary,
+            "Public statement from Thornweald Charcoal Guilds: Publish the caravan evidence and call every forest kiln to readiness."
+        );
+        assert!(!summary.contains("attempt"));
     }
 
     #[test]
