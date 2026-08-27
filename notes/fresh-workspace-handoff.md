@@ -463,37 +463,29 @@ action-bound named person can emerge publicly, retain identity, enter the next
 resolution cover, and act from her own authority. The generated newspaper
 contains her public appointment but does not expose her later private movement.
 
-The completed Codex Connector-backed Rainless Marches witness used exact
-Ghostlight source `8940efca0ff669f4681c99a7ff371fa8f0b76516`, connector
-`2f29b90eebd8fc1bbdc07cdd22ac4883f16849a5`, `gpt-5.6-luna`, and admitted
-caller `ghostlight-dungeon-yggdrasil`. The 65.2456-second run selected four
-actions across four cell pipelines and 22 stages; one semantic-invalid verifier
-result corrected validly. It committed two institution actions, one actor
-communication, one Gestalt communication, two outcomes, six events, and five
-newspaper articles; `thornweald-assembly-convenor` emerged and materialized;
-the player remained unchanged. Local witnesses:
-`F:\GameCult\GhostlightDungeon\acceptance\rainless-codex-20260827\{result.json,newspaper.md,campaign.cc,SHA256SUMS}`.
-Remote witnesses:
-`/var/lib/gamecult/ghostlight-dungeon/acceptance/rainless-codex-20260827/`.
-SHA-256: result
-`964a306287da03c7c92f41eb025d8049c63673e2dd8e1bffdd29490fe61315c5`;
-newspaper
-`6577b4abea3cc5e9ddd625676c3b4728d1dd8b25e3974f2f5112dc4dafd076ca`;
-campaign
-`dd19ee14e2a014a02cf142ebcbde224e3034f2e11a4f34721ef00471005c6569`;
-binary
-`35e62eb71d0ead30e7e7aa860b04e7757e6f3d9f83b034f8fee6bc06cc38332f`.
-The earlier DeepSeek 402 remains historical route evidence, not a current
-blocker.
+The accepted one-revision Rainless Marches provider baseline is recorded in
+`state/evidence.jsonl` and
+`F:\GameCult\GhostlightDungeon\acceptance\rainless-codex-20260827\SHA256SUMS`.
+It proves provider routing, one valid semantic correction, atomic world commit,
+five provenance-bound articles, and one named emergence with player state
+unchanged. It does not prove sustained political evolution or editorially
+distinct prose: all five rendered articles repeat their headline as their body.
 
-1. Have the game-side adapter lower its authored hierarchy into the published
+1. Define and run a bounded multi-revision Codex-backed political acceptance
+   with recurring named figures, evolving institutional consequences, exact
+   public provenance, and player-owned truth unchanged.
+2. Independently review successive newspaper artifacts for political
+   continuity, useful distinction between developments, and editorial interest.
+   Newspaper presentation may interpret committed public evidence but may not
+   invent canonical facts.
+3. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-2. Prove one consumer-owned effect crosses that public API, changes two foreign
+4. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-3. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+5. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-4. Keep `gamecult-ops` synchronized with every executable deployment and model
+6. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,

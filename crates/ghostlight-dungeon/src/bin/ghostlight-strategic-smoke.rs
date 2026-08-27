@@ -21,6 +21,9 @@ async fn main() -> anyhow::Result<()> {
         "The sovereign deep-hold diverted the White Root aquifer. Two tithe caravans have vanished, the charcoal guilds threaten secession, and somebody pawned the regent's rain seal."
             .into()
     });
+    let wave_count = bounded_environment_usize("GHOSTLIGHT_STRATEGIC_WAVES", 1, 1, 8)?;
+    let max_rejected_pulses_per_wave =
+        bounded_environment_usize("GHOSTLIGHT_STRATEGIC_MAX_REJECTED_PULSES_PER_WAVE", 2, 0, 4)?;
     let root = std::env::var_os("GHOSTLIGHT_LIVE_FIRE_RESULT_ROOT")
         .map(PathBuf::from)
         .unwrap_or_else(|| {
@@ -43,9 +46,7 @@ async fn main() -> anyhow::Result<()> {
         location_ids: vec!["depot".into(), "yard".into()],
         public_channels: vec!["root-wire broadsheet".into()],
     });
-    let player_location = campaign.actors[&campaign.player_actor_id]
-        .location_id
-        .clone();
+    let player_before = campaign.actors[&campaign.player_actor_id].clone();
     let store = CampaignStore::open(root.join("campaign.cc"))?;
     store.create_unadmitted_fixture_campaign(&campaign, &[], &[])?;
     let model = model_selection.open()?.ok_or_else(|| {
@@ -55,105 +56,235 @@ async fn main() -> anyhow::Result<()> {
             model_selection.credential_path.display()
         )
     })?;
+    let newspaper_title = std::env::var("GHOSTLIGHT_STRATEGIC_NEWSPAPER_TITLE")
+        .unwrap_or_else(|_| "The Underdeep Clarion".into());
     let started = Instant::now();
-    let output = propose_resolution_wave(
-        model,
-        Arc::new(SnapshotPermit::new_resolution(
-            store.clone(),
-            campaign.id,
-            campaign.revision,
-            campaign.resolution_policy.resolution_epoch,
-        )),
-        &campaign,
-    )
-    .await?;
-    let plan = ghostlight_dungeon::resolution::validate_and_resolve_wave(&campaign, &output.wave)?;
-    let material_activity_outcomes = plan
-        .activity_outcomes
-        .iter()
-        .filter(|outcome| {
-            !matches!(
-                outcome.effect,
-                ghostlight_dungeon::domain::StrategicOutcomeEffect::NoMaterialChange { .. }
+    let kernel = WorldKernel::start(store.clone());
+    let mut wave_reports = Vec::with_capacity(wave_count);
+    for wave_index in 1..=wave_count {
+        let previous_news_count = campaign.news.len();
+        let mut rejected_pulses = Vec::new();
+        let output = loop {
+            match propose_resolution_wave(
+                model.clone(),
+                Arc::new(SnapshotPermit::new_resolution(
+                    store.clone(),
+                    campaign.id,
+                    campaign.revision,
+                    campaign.resolution_policy.resolution_epoch,
+                )),
+                &campaign,
             )
-        })
-        .count();
-    if plan.institution_actions.is_empty()
-        && plan.gestalt_actions.is_empty()
-        && plan.gestalt_migrations.is_empty()
-        && plan.actor_moves.is_empty()
-        && plan.member_migrations.is_empty()
-        && material_activity_outcomes == 0
-    {
-        anyhow::bail!(
-            "strategic model resolved no material offscreen change: direct transitions were empty and every selected activity outcome was no_material_change"
-        );
-    }
-    for stage in &output.stages {
-        store.insert(
-            "persona_stage_receipt.v1",
-            "ghostlight.persona_stage_receipt.v1",
-            stage.receipt.storage_key(),
-            &stage.receipt,
+            .await
+            {
+                Ok(output) => break output,
+                Err(error) if rejected_pulses.len() < max_rejected_pulses_per_wave => {
+                    let pulse = rejected_pulses.len() + 1;
+                    std::fs::write(
+                        root.join(format!(
+                            "wave-{wave_index:02}-rejected-pulse-{pulse:02}.txt"
+                        )),
+                        error.to_string(),
+                    )?;
+                    rejected_pulses.push(serde_json::json!({
+                        "pulse":pulse,
+                        "world_revision":campaign.revision,
+                        "resolution_epoch":campaign.resolution_policy.resolution_epoch,
+                        "error":error.to_string(),
+                    }));
+                }
+                Err(error) => return Err(error),
+            }
+        };
+        std::fs::write(
+            root.join(format!("wave-{wave_index:02}-preflight.json")),
+            serde_json::to_vec_pretty(&serde_json::json!({
+                "wave_index":wave_index,
+                "world_revision":campaign.revision,
+                "resolution_epoch":campaign.resolution_policy.resolution_epoch,
+                "cover":&output.wave.cover,
+                "appraisals":&output.wave.appraisals,
+                "activity_outcomes":&output.wave.activity_outcomes,
+                "private_cell_traces":&output.private_cell_traces,
+                "model_stage_receipts":output.stages.iter().map(|stage|&stage.receipt).collect::<Vec<_>>(),
+                "rejected_pulses":&rejected_pulses,
+            }))?,
+        )?;
+        let plan =
+            ghostlight_dungeon::resolution::validate_and_resolve_wave(&campaign, &output.wave)?;
+        let material_activity_outcomes = plan
+            .activity_outcomes
+            .iter()
+            .filter(|outcome| {
+                !matches!(
+                    outcome.effect,
+                    ghostlight_dungeon::domain::StrategicOutcomeEffect::NoMaterialChange { .. }
+                )
+            })
+            .count();
+        if plan.institution_actions.is_empty()
+            && plan.gestalt_actions.is_empty()
+            && plan.gestalt_migrations.is_empty()
+            && plan.actor_moves.is_empty()
+            && plan.member_migrations.is_empty()
+            && material_activity_outcomes == 0
+        {
+            anyhow::bail!(
+                "strategic wave {wave_index} resolved no material offscreen change: direct transitions were empty and every selected activity outcome was no_material_change"
+            );
+        }
+        for stage in &output.stages {
+            store.insert(
+                "persona_stage_receipt.v1",
+                "ghostlight.persona_stage_receipt.v1",
+                stage.receipt.storage_key(),
+                &stage.receipt,
+            )?;
+        }
+        let committed = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: campaign.revision,
+                source: TickSource::Scheduler,
+                plan: None,
+                model_receipt_hash: Some(output.aggregate_receipt_hash.clone()),
+                resolution_wave: Some(output.wave.clone()),
+            })
+            .await?;
+        let CommandResult::Committed {
+            campaign: advanced, ..
+        } = &committed
+        else {
+            anyhow::bail!("strategic wave {wave_index} did not commit")
+        };
+        if advanced.actors[&advanced.player_actor_id] != player_before {
+            anyhow::bail!("strategic wave {wave_index} puppeted the absent player")
+        }
+        let mut issue_campaign = advanced.clone();
+        issue_campaign.news = advanced.news[previous_news_count..].to_vec();
+        if issue_campaign.news.is_empty() {
+            anyhow::bail!("strategic wave {wave_index} produced no gated news")
+        }
+        let issue = ghostlight_dungeon::newspaper::compose_world_newspaper(
+            &issue_campaign,
+            format!("{newspaper_title} — Issue {wave_index}"),
+            24,
+        )?;
+        let issue_path = root.join(format!("newspaper-wave-{wave_index:02}.md"));
+        std::fs::write(
+            &issue_path,
+            ghostlight_dungeon::newspaper::render_world_newspaper_markdown(&issue),
+        )?;
+        wave_reports.push(serde_json::json!({
+            "wave_index":wave_index,
+            "elapsed_seconds":started.elapsed().as_secs_f64(),
+            "world_revision_before":campaign.revision,
+            "world_revision_after":advanced.revision,
+            "model_receipt_hash":output.aggregate_receipt_hash,
+            "model_stage_receipts":output.stages.iter().map(|stage|&stage.receipt).collect::<Vec<_>>(),
+            "rejected_pulses":rejected_pulses,
+            "plan":plan,
+            "commit":committed,
+            "issue":issue,
+            "issue_path":issue_path,
+        }));
+        campaign = advanced.clone();
+        std::fs::write(
+            root.join("status.json"),
+            serde_json::to_vec_pretty(&serde_json::json!({
+                "schema":"ghostlight.live_strategic_smoke_status.v1",
+                "state":"running",
+                "waves_completed":wave_index,
+                "waves_requested":wave_count,
+                "world_revision":campaign.revision,
+                "event_count":campaign.events.len(),
+                "news_count":campaign.news.len(),
+                "updated_at":Utc::now(),
+            }))?,
         )?;
     }
-    let kernel = WorldKernel::start(store.clone());
-    let committed = kernel
-        .command(WorldCommand::AdvanceStrategicTick {
-            expected_revision: 0,
-            source: TickSource::Scheduler,
-            plan: None,
-            model_receipt_hash: Some(output.aggregate_receipt_hash.clone()),
-            resolution_wave: Some(output.wave.clone()),
-        })
-        .await?;
-    let CommandResult::Committed {
-        campaign: advanced, ..
-    } = &committed
-    else {
-        anyhow::bail!("strategic command did not commit")
-    };
-    if advanced.actors[&advanced.player_actor_id].location_id != player_location {
-        anyhow::bail!("strategic tick puppeted the absent player")
-    }
-    if advanced.news.is_empty() {
-        anyhow::bail!("accessible offscreen events produced no gated news")
-    }
     let newspaper = ghostlight_dungeon::newspaper::compose_world_newspaper(
-        advanced,
-        std::env::var("GHOSTLIGHT_STRATEGIC_NEWSPAPER_TITLE")
-            .unwrap_or_else(|_| "The Underdeep Clarion".into()),
-        24,
+        &campaign,
+        &newspaper_title,
+        wave_count.saturating_mul(24),
     )?;
     let newspaper_path = root.join("newspaper.md");
     std::fs::write(
         &newspaper_path,
         ghostlight_dungeon::newspaper::render_world_newspaper_markdown(&newspaper),
     )?;
+    let first_plan = wave_reports[0]["plan"].clone();
+    let first_commit = wave_reports[0]["commit"].clone();
+    let first_model_receipt_hash = wave_reports[0]["model_receipt_hash"].clone();
+    let model_stage_receipts = wave_reports
+        .iter()
+        .flat_map(|wave| {
+            wave["model_stage_receipts"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .cloned()
+        })
+        .collect::<Vec<_>>();
     let result = serde_json::json!({
-        "schema":"ghostlight.live_strategic_smoke.v1",
+        "schema":"ghostlight.live_strategic_smoke.v2",
         "scenario_id":scenario_id,
         "pressure":pressure,
+        "wave_count":wave_count,
         "campaign_id":campaign.id,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
         "model_runtime":model_selection.status("configured"),
-        "model_receipt_hash":output.aggregate_receipt_hash,
-        "model_stage_receipts":output.stages.iter().map(|stage|&stage.receipt).collect::<Vec<_>>(),
-        "plan":plan,
-        "event_count":advanced.events.len(),
-        "news_count":advanced.news.len(),
+        "model_receipt_hash":first_model_receipt_hash,
+        "model_stage_receipts":model_stage_receipts,
+        "plan":first_plan,
+        "commit":first_commit,
+        "waves":wave_reports,
+        "event_count":campaign.events.len(),
+        "news_count":campaign.news.len(),
         "newspaper":newspaper,
         "newspaper_path":newspaper_path,
         "player_location_unchanged":true,
-        "commit":committed,
+        "player_state_unchanged":true,
         "store":root.join("campaign.cc")
     });
     std::fs::write(
         root.join("result.json"),
         serde_json::to_vec_pretty(&result)?,
     )?;
+    std::fs::write(
+        root.join("status.json"),
+        serde_json::to_vec_pretty(&serde_json::json!({
+            "schema":"ghostlight.live_strategic_smoke_status.v1",
+            "state":"complete",
+            "waves_completed":wave_count,
+            "waves_requested":wave_count,
+            "world_revision":campaign.revision,
+            "event_count":campaign.events.len(),
+            "news_count":campaign.news.len(),
+            "updated_at":Utc::now(),
+            "result_path":root.join("result.json"),
+            "newspaper_path":&newspaper_path,
+        }))?,
+    )?;
     println!("{}", serde_json::to_string_pretty(&result)?);
     Ok(())
+}
+
+fn bounded_environment_usize(
+    name: &str,
+    default: usize,
+    minimum: usize,
+    maximum: usize,
+) -> anyhow::Result<usize> {
+    let value = std::env::var(name)
+        .ok()
+        .map(|value| value.parse::<usize>())
+        .transpose()
+        .map_err(|error| anyhow::anyhow!("{name} is not an integer: {error}"))?
+        .unwrap_or(default);
+    if !(minimum..=maximum).contains(&value) {
+        anyhow::bail!("{name} must be between {minimum} and {maximum}")
+    }
+    Ok(value)
 }
 
 fn default_runtime_root() -> std::path::PathBuf {

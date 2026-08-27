@@ -1340,7 +1340,7 @@ fn execute(
                         id: format!("news:{}:{}", event.id, stable_channel_id(channel)),
                         at: campaign.world_time,
                         channel: channel.clone(),
-                        headline: event.summary.clone(),
+                        headline: crate::newspaper::committed_event_headline(&event.summary),
                         event_ids: vec![event.id.clone()],
                         reliability: "committed public channel".into(),
                     });

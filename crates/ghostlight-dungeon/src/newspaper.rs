@@ -28,6 +28,29 @@ pub struct WorldNewspaperArticle {
     pub event_ids: Vec<String>,
 }
 
+pub fn committed_event_headline(summary: &str) -> String {
+    const MAX_HEADLINE_CHARS: usize = 96;
+    let summary = summary.trim();
+    if summary.chars().count() <= MAX_HEADLINE_CHARS {
+        return summary.to_owned();
+    }
+    let mut headline = summary.chars().take(MAX_HEADLINE_CHARS).collect::<String>();
+    let semantic_cut = headline
+        .rfind(|character: char| matches!(character, ';' | ':' | ',' | '—'))
+        .filter(|cut| *cut >= MAX_HEADLINE_CHARS / 2);
+    let word_cut = headline
+        .rfind(char::is_whitespace)
+        .filter(|cut| *cut >= MAX_HEADLINE_CHARS / 2);
+    if let Some(cut) = semantic_cut.or(word_cut) {
+        headline.truncate(cut);
+    }
+    headline = headline
+        .trim_end_matches(|character: char| character.is_whitespace() || character == '.')
+        .to_owned();
+    headline.push('…');
+    headline
+}
+
 pub fn compose_world_newspaper(
     campaign: &Campaign,
     title: impl Into<String>,
@@ -217,5 +240,19 @@ mod tests {
         });
         let error = compose_world_newspaper(&campaign, "The Clarion", 8).unwrap_err();
         assert!(error.to_string().contains("unknown event"));
+    }
+
+    #[test]
+    fn committed_event_headline_is_a_bounded_prefix_not_a_second_story() {
+        let summary = "The Mossglass Regency opens the rain-seal reliquary before the full assembly, admits that the seal is missing, and accuses three caravan clerks who disappeared before dawn.";
+        let headline = committed_event_headline(summary);
+        assert!(summary.starts_with(headline.trim_end_matches('…')));
+        assert!(headline.ends_with('…'));
+        assert!(headline.chars().count() <= 97);
+        assert_ne!(headline, summary);
+        assert_eq!(
+            committed_event_headline("The seal is gone."),
+            "The seal is gone."
+        );
     }
 }
