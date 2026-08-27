@@ -733,10 +733,30 @@ enum CivicReconciliationOutcome {
         seed: CompiledExpansionSeed,
         receipt: ModelStageReceipt,
     },
+    Rejected {
+        message: String,
+        receipt: ModelStageReceipt,
+    },
     Failed {
         message: String,
         receipts: Vec<ModelStageReceipt>,
     },
+}
+
+const MAX_CIVIC_RECONCILIATION_ATTEMPTS: usize = 2;
+
+fn schedule_civic_reconciliation(
+    attempts: &mut usize,
+    pending: &mut Option<(CompiledExpansionSeed, String)>,
+    seed: CompiledExpansionSeed,
+    finding: String,
+) -> bool {
+    if *attempts >= MAX_CIVIC_RECONCILIATION_ATTEMPTS {
+        return false;
+    }
+    *attempts += 1;
+    *pending = Some((seed, finding));
+    true
 }
 
 fn destination_compilation_failure(
@@ -1984,7 +2004,7 @@ impl WorldCompiler {
         let mut compiler_receipts: Vec<ModelStageReceipt> = Vec::new();
         let mut correction = String::new();
         let mut local_corrections = 0;
-        let mut civic_corrections = 0;
+        let mut civic_reconciliation_attempts = 0;
         let mut pending_civic_finding: Option<(CompiledExpansionSeed, String)> = None;
         let (seed, expansion) = loop {
             let candidate_was_reconciled = pending_civic_finding.is_some();
@@ -2014,6 +2034,26 @@ impl WorldCompiler {
                     CivicReconciliationOutcome::Corrected { seed, receipt } => {
                         compiler_receipts.push(receipt);
                         seed
+                    }
+                    CivicReconciliationOutcome::Rejected { message, receipt } => {
+                        compiler_receipts.push(receipt);
+                        let finding = format!(
+                            "local admission rejected the previous civic reconciliation: {message}"
+                        );
+                        if schedule_civic_reconciliation(
+                            &mut civic_reconciliation_attempts,
+                            &mut pending_civic_finding,
+                            seed,
+                            finding,
+                        ) {
+                            continue;
+                        }
+                        return Err(destination_compilation_failure(
+                            format!(
+                                "destination civic reconciliation failed local admission after one correction: {message}"
+                            ),
+                            completed_model_receipts(&compiler_receipts),
+                        ));
                     }
                     CivicReconciliationOutcome::Failed { message, receipts } => {
                         compiler_receipts.extend(receipts);
@@ -2313,14 +2353,17 @@ impl WorldCompiler {
                                 "destination civic verifier rejected the candidate: {}",
                                 verdict.rationale.trim()
                             );
-                            if civic_corrections == 0 {
-                                civic_corrections += 1;
-                                pending_civic_finding = Some((seed, error.to_string()));
+                            if schedule_civic_reconciliation(
+                                &mut civic_reconciliation_attempts,
+                                &mut pending_civic_finding,
+                                seed,
+                                error.to_string(),
+                            ) {
                                 continue;
                             }
                             return Err(destination_compilation_failure(
                                 format!(
-                                    "destination civic verifier rejected the candidate after one balanced reconciliation: {error}"
+                                    "destination civic verifier rejected the candidate after one balanced reconciliation and one correction: {error}"
                                 ),
                                 completed_model_receipts(&compiler_receipts),
                             ));
@@ -2336,9 +2379,26 @@ impl WorldCompiler {
                 }
                 Err(error) => {
                     if candidate_was_reconciled {
+                        mark_semantic_invalid(
+                            compiler_receipts
+                                .last_mut()
+                                .expect("reconciliation receipt was just stored"),
+                            &error,
+                        );
+                        let finding = format!(
+                            "local structural validation rejected the previous civic reconciliation: {error}"
+                        );
+                        if schedule_civic_reconciliation(
+                            &mut civic_reconciliation_attempts,
+                            &mut pending_civic_finding,
+                            seed,
+                            finding,
+                        ) {
+                            continue;
+                        }
                         return Err(destination_candidate_failure(
                             format!(
-                                "destination civic reconciliation failed local validation: {error}"
+                                "destination civic reconciliation failed local validation after one correction: {error}"
                             ),
                             &identity_receipts,
                             &retrieval_receipt,
@@ -2351,13 +2411,25 @@ impl WorldCompiler {
                             .expect("receipt was just stored"),
                         &error,
                     );
-                    if seed.civic_system.is_some() && civic_corrections == 0 {
-                        civic_corrections += 1;
-                        let finding = format!(
-                            "local structural validation rejected the frozen civic candidate: {error}"
-                        );
-                        pending_civic_finding = Some((seed, finding));
-                        continue;
+                    if seed.civic_system.is_some() {
+                        if schedule_civic_reconciliation(
+                            &mut civic_reconciliation_attempts,
+                            &mut pending_civic_finding,
+                            seed,
+                            format!(
+                                "local structural validation rejected the frozen civic candidate: {error}"
+                            ),
+                        ) {
+                            continue;
+                        }
+                        return Err(destination_candidate_failure(
+                            format!(
+                                "destination civic candidate exhausted its reconciliation budget: {error}"
+                            ),
+                            &identity_receipts,
+                            &retrieval_receipt,
+                            &mut compiler_receipts,
+                        ));
                     }
                     if !seed.populations.is_empty() {
                         return Err(destination_candidate_failure(
@@ -3086,9 +3158,9 @@ impl WorldCompiler {
             Ok(reconciliation) => reconciliation,
             Err(error) => {
                 mark_semantic_invalid(&mut receipt, &error);
-                return CivicReconciliationOutcome::Failed {
+                return CivicReconciliationOutcome::Rejected {
                     message: error.to_string(),
-                    receipts: vec![receipt],
+                    receipt,
                 };
             }
         };
@@ -3096,9 +3168,9 @@ impl WorldCompiler {
             Ok(seed) => CivicReconciliationOutcome::Corrected { seed, receipt },
             Err(error) => {
                 mark_semantic_invalid(&mut receipt, &error);
-                CivicReconciliationOutcome::Failed {
-                    message: format!("destination civic reconciliation was invalid: {error}"),
-                    receipts: vec![receipt],
+                CivicReconciliationOutcome::Rejected {
+                    message: error.to_string(),
+                    receipt,
                 }
             }
         }
@@ -6684,6 +6756,12 @@ mod tests {
         reconciliation_steals_non_civic_fact: bool,
     }
 
+    struct CorrectingCivicReconciliationModel {
+        delegate: DestinationElaborationModel,
+        reconciliation_calls: AtomicUsize,
+        saw_reconciliation_correction: AtomicBool,
+    }
+
     struct OversizedQueryModel;
 
     struct CorrectionAwareCompilerModel {
@@ -7382,6 +7460,40 @@ mod tests {
 
         fn provider(&self) -> &'static str {
             "destination-elaboration-fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for CorrectingCivicReconciliationModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            let output = self.delegate.run(request).await?;
+            if request.stage != "destination_civic_reconciliation" {
+                return Ok(output);
+            }
+
+            let call = self.reconciliation_calls.fetch_add(1, Ordering::SeqCst);
+            let mut reconciliation: serde_json::Value = serde_json::from_str(&output)?;
+            if call == 0 {
+                let duplicate = reconciliation["civic_facts"][0]["statement"].clone();
+                reconciliation["civic_facts"][1]["statement"] = duplicate;
+            } else {
+                self.saw_reconciliation_correction.store(
+                    request.lived_stream.contains(
+                        "local structural validation rejected the previous civic reconciliation",
+                    ) && request
+                        .lived_stream
+                        .contains("facts must have new IDs and non-empty unique statements"),
+                    Ordering::SeqCst,
+                );
+                reconciliation["civic_facts"][1]["statement"] = serde_json::json!(
+                    "Wardens select two duty councillors by witnessed lot after each storm season."
+                );
+            }
+            Ok(reconciliation.to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            self.delegate.provider()
         }
     }
 
@@ -9098,6 +9210,82 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn verifier_and_structural_rejections_share_one_civic_correction_owner() {
+        let model = Arc::new(CorrectingCivicReconciliationModel {
+            delegate: DestinationElaborationModel {
+                saw_branch_assumption_boundary: AtomicBool::new(false),
+                saw_balanced_civic_reconciliation: AtomicBool::new(false),
+                civic_verification_calls: AtomicUsize::new(0),
+                civic_verification_rejections: 2,
+                reconciliation_steals_non_civic_fact: false,
+            },
+            reconciliation_calls: AtomicUsize::new(0),
+            saw_reconciliation_correction: AtomicBool::new(false),
+        });
+        let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
+        let mut seed = private_actor_test_seed();
+        seed.player.location_id = "convoy-staging".into();
+        seed.opening_narration = "The convoy waits in the rain.".into();
+        let campaign = seed_to_campaign(seed, &[]).unwrap();
+
+        let (_, receipts) = compiler
+            .compile_destination(
+                &campaign,
+                "convoy-staging",
+                "a playable storm refuge with ordinary repair and admission procedure",
+            )
+            .await
+            .unwrap();
+        let compile_receipts = receipts
+            .iter()
+            .filter(|receipt| receipt.stage == "destination_compile")
+            .collect::<Vec<_>>();
+        let reconciliation_receipts = receipts
+            .iter()
+            .filter(|receipt| receipt.stage == "destination_civic_reconciliation")
+            .collect::<Vec<_>>();
+        let verification_receipts = receipts
+            .iter()
+            .filter(|receipt| receipt.stage == "destination_civic_verification")
+            .collect::<Vec<_>>();
+
+        assert_eq!(model.reconciliation_calls.load(Ordering::SeqCst), 2);
+        assert!(model.saw_reconciliation_correction.load(Ordering::SeqCst));
+        assert_eq!(compile_receipts.len(), 1);
+        assert_eq!(reconciliation_receipts.len(), 2);
+        assert_eq!(
+            reconciliation_receipts[0].validation_result,
+            "semantic_invalid"
+        );
+        assert_eq!(reconciliation_receipts[1].validation_result, "valid");
+        assert!(
+            reconciliation_receipts[1]
+                .source_receipt_ids
+                .iter()
+                .any(|source| source == reconciliation_receipts[0].storage_key())
+        );
+        assert_eq!(verification_receipts.len(), 3);
+        assert!(
+            verification_receipts[..2]
+                .iter()
+                .all(|receipt| receipt.validation_result == "semantic_invalid")
+        );
+        assert_eq!(verification_receipts[2].validation_result, "valid");
+        assert!(verification_receipts[..2].iter().all(|receipt| {
+            reconciliation_receipts[0]
+                .source_receipt_ids
+                .iter()
+                .any(|source| source == receipt.storage_key())
+        }));
+        assert!(
+            verification_receipts[2]
+                .source_receipt_ids
+                .iter()
+                .any(|source| source == reconciliation_receipts[1].storage_key())
+        );
+    }
+
+    #[tokio::test]
     async fn inhabited_destination_missing_civic_manifest_never_recompiles() {
         let model = Arc::new(DestinationElaborationModel {
             saw_branch_assumption_boundary: AtomicBool::new(false),
@@ -9178,10 +9366,17 @@ mod tests {
         assert!(error.to_string().contains(
             "facts outside returned or committed civic authority: [\"fact:refuge_private_route\"]"
         ));
-        assert_eq!(reconciliation_receipts.len(), 1);
-        assert_eq!(
-            reconciliation_receipts[0].validation_result,
-            "semantic_invalid"
+        assert_eq!(reconciliation_receipts.len(), 2);
+        assert!(
+            reconciliation_receipts
+                .iter()
+                .all(|receipt| receipt.validation_result == "semantic_invalid")
+        );
+        assert!(
+            reconciliation_receipts[1]
+                .source_receipt_ids
+                .iter()
+                .any(|source| source == reconciliation_receipts[0].storage_key())
         );
         assert_eq!(model.civic_verification_calls.load(Ordering::SeqCst), 2);
     }
@@ -9234,14 +9429,20 @@ mod tests {
             .filter(|receipt| receipt.stage == "destination_civic_reconciliation")
             .collect::<Vec<_>>();
         assert_eq!(compile_receipts.len(), 1);
-        assert_eq!(reconciliation_receipts.len(), 1);
-        assert_eq!(civic_receipts.len(), 4);
+        assert_eq!(reconciliation_receipts.len(), 2);
+        assert_eq!(civic_receipts.len(), 6);
         assert!(
             civic_receipts
                 .iter()
                 .all(|receipt| receipt.validation_result == "semantic_invalid")
         );
-        assert_eq!(model.civic_verification_calls.load(Ordering::SeqCst), 4);
+        assert_eq!(model.civic_verification_calls.load(Ordering::SeqCst), 6);
+        assert!(
+            reconciliation_receipts[1]
+                .source_receipt_ids
+                .iter()
+                .any(|source| source == reconciliation_receipts[0].storage_key())
+        );
         assert!(
             model
                 .saw_balanced_civic_reconciliation

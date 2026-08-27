@@ -938,24 +938,32 @@ authority, selection or succession, public resources, and redress through a
 typed civic manifest whose exact fact references are shared by each resident
 population. A separate model stage verifies their semantic legibility; it may
 reject but cannot rewrite or commit the proposal. One false verdict is
-independently rechecked against the same frozen candidate. A sustained rejection
-or a local structural-validation failure in the candidate's civic slice invokes
-one balanced reconciliation over a civic-only schema. The Sol destination
-candidate remains the owner of every institution identity, name, and goal.
-Terra may replace candidate-owned civic facts, resident civic fact references,
-local political relations, and the civic manifest, and may propose operational
-updates for every exact frozen institution ID. The request schema fixes both
-the update count and the permitted ID set. `apply_civic_reconciliation` is the
-sole merge and admission owner: it rejects omitted, duplicate, substituted, or
-invented institution IDs and copies only resources, posture, location scope,
-facets, and information channels onto the frozen institutions. Geography,
-routes, migration, population identity, non-civic facts, institution identity,
-institution names, institution goals, branch assumptions, gaps, civic version,
-and semantic receipt binding have no writable field in that pass. A finding
-outside that writable slice can fail honestly but cannot induce a second
-expensive compilation. The merged candidate must survive the ordinary
-destination validators and a fresh independent verdict; the expensive
-`destination_compile` stage is not rerun. The kernel rebinds the accepted verdict to the exact candidate before
+independently rechecked against the same frozen candidate.
+
+Apply-time admission, ordinary structural validation, and the independent civic
+verifier publish findings into one pending civic-reconciliation lane. A single
+scheduler owns the shared budget: one balanced reconciliation plus at most one
+balanced correction of a rejected reconciliation. The failure sites do not own
+retry policy, and no path can return to the expensive `destination_compile`
+stage. Every later attempt cites the completed compiler, reconciliation, and
+verifier receipts that caused it; rejected reconciliation receipts remain
+`semantic_invalid` evidence.
+
+The Sol destination candidate remains the owner of every institution identity,
+name, and goal. Terra may replace candidate-owned civic facts, resident civic
+fact references, local political relations, and the civic manifest, and may
+propose operational updates for every exact frozen institution ID. The request
+schema fixes both the update count and the permitted ID set.
+`apply_civic_reconciliation` is the sole merge and admission owner: it rejects
+omitted, duplicate, substituted, or invented institution IDs and copies only
+resources, posture, location scope, facets, and information channels onto the
+frozen institutions. Geography, routes, migration, population identity,
+non-civic facts, institution identity, institution names, institution goals,
+branch assumptions, gaps, civic version, and semantic receipt binding have no
+writable field in that pass. A finding outside that writable slice can fail
+honestly but cannot induce a second expensive compilation. The merged candidate
+must survive the ordinary destination validators and a fresh independent
+verdict. The kernel rebinds the accepted verdict to the exact candidate before
 mutation admission. Completed compiler, reconciliation, and verifier receipts
 survive terminal failure and are persisted by both the strategic harness and
 the Dungeon API. Accepted civic systems persist as versioned component state,
