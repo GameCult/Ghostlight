@@ -565,15 +565,49 @@ rerun. Ordinary validation and a fresh semantic verdict remain admission
 owners. All 409 library tests and the strategic smoke check pass, and the commit
 is pushed.
 
-Exact-source run 21 is active as `ghostlight-newspaper-965c9fa-21.service`,
-targeting
-`/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-965c9fa-21`.
-No provider acceptance is claimed while it is active.
+Exact-source run 21 terminated during its second locality elaboration at
+`loc:pump_house`. It committed one elaboration and zero strategic waves before
+both bounded Terra reconciliation actions still returned destination facts
+rejected by ordinary namespace validation. No newspaper or completed
+result-root `SHA256SUMS` exists. The unchanged failure root is archived at
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-965c9fa-21.tar`,
+whose independently rechecked SHA-256 is
+`2f4d48d47acd3733c99ab8899427e1d33bd4b5cde93da52efa67a3baf98da8e3`.
+This falsifies the active-run steering claim and demonstrates that a fixed
+retry scheduler was not giving the reconciler an agentic observe-act loop with
+the exact rejected action and tool finding.
 
-1. Observe run 21 without changing its body. If it terminates, preserve its
-   exact build, status, terminal, receipt, and partial-world evidence before
-   diagnosing one owner.
-2. If all four locality elaborations and six strategic waves commit, preserve
+Commit `842e265f2969d7047e6b2a35fcca7cc371de5c6b` makes that ownership
+explicit. A generic, provider-neutral harness above `ModelPort` owns bounded
+semantic steps, causal receipt chaining, and rejected tool observations. The
+destination adapter owns typed candidate application, one canonical
+fact-namespace checker, ordinary lowering and validation, and a fresh one-shot
+civic-verifier call. The compiler performs one agent dispatch and WorldKernel
+admission remains final. This harness is hand-rolled over raw model calls rather
+than coupled to the Codex app server.
+
+The focused regression proves the complete repair path: the frozen Sol
+candidate collides with an exact existing fact; Terra's first action changes it
+to a different collision; the adapter returns that exact typed finding; Terra's
+second causally receipted action corrects it; ordinary validation and a fresh
+one-shot verifier accept it while institution ID, name, and goals remain
+frozen. All 411 library tests pass. A bounded Modeling re-audit passed the
+transport, harness, destination-adapter, and kernel authority boundaries. The
+local strategic smoke binary builds, but its runtime selected the workstation's
+stale DeepSeek route and received HTTP 402 because this machine has neither a
+Codex Connector service nor a usable key. That is not provider acceptance or a
+harness failure; the provider smoke belongs on Yggdrasil.
+
+Reconciliation is the harness's first executable proof. Patina remains the
+named next consumer: an agent whose bounded tools can introduce durable,
+locally grounded low-stakes texture which later events may organically
+appropriate, without granting the texture agent independent commit authority.
+No Patina implementation is claimed.
+
+1. Commit and push this phase-boundary Mind update with implementation commit
+   `842e265`.
+2. Dispatch exact source `842e265` on Yggdrasil through Codex Connector for a
+   fresh four-elaboration/six-wave provider run. If it completes, preserve
    and verify the immutable artifact manifest without mutating the live daemon
    or any prior run root.
 3. Only after all six waves commit and an immutable manifest exists, dispatch a
