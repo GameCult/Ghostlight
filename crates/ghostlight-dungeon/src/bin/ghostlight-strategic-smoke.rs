@@ -13,6 +13,7 @@ fn final_wave_field(
 async fn main() -> anyhow::Result<()> {
     use chrono::Utc;
     use ghostlight_dungeon::{
+        compiler::DestinationCompilationFailure,
         domain::{TickSource, WorldCommand},
         kernel::{CommandResult, WorldKernel},
         model_runtime::ModelRuntimeSelection,
@@ -170,9 +171,51 @@ async fn main() -> anyhow::Result<()> {
                 }))?,
             )?;
             let request = strategic_locality_request(&location_name, location_id, &pressure);
-            let (preview, receipts) = compiler
+            let compilation = compiler
                 .compile_destination(&campaign, location_id, &request)
-                .await?;
+                .await;
+            let (preview, receipts) = match compilation {
+                Ok(compilation) => compilation,
+                Err(error) => {
+                    let failure_receipts = error
+                        .downcast_ref::<DestinationCompilationFailure>()
+                        .map(|failure| failure.model_receipts.clone())
+                        .unwrap_or_default();
+                    let receipt_hashes = failure_receipts
+                        .iter()
+                        .map(|receipt| receipt.storage_key().to_owned())
+                        .collect::<Vec<_>>();
+                    let persistence_error = if failure_receipts.is_empty() {
+                        None
+                    } else {
+                        store
+                            .persist_model_stage_receipts(&failure_receipts)
+                            .err()
+                            .map(|error| error.to_string())
+                    };
+                    std::fs::write(
+                        root.join(format!(
+                            "elaboration-{:02}-terminal-failure.json",
+                            index + 1
+                        )),
+                        serde_json::to_vec_pretty(&serde_json::json!({
+                            "schema":"ghostlight.strategic_elaboration_failure.v1",
+                            "location_id":location_id,
+                            "location_name":location_name,
+                            "request":request,
+                            "error":error.to_string(),
+                            "model_receipt_hashes":receipt_hashes,
+                            "receipt_persistence_error":&persistence_error,
+                        }))?,
+                    )?;
+                    if let Some(persistence_error) = persistence_error {
+                        return Err(anyhow::anyhow!(
+                            "{error}; model-receipt persistence failed: {persistence_error}"
+                        ));
+                    }
+                    return Err(error);
+                }
+            };
             let command = match &preview {
                 ghostlight_dungeon::domain::DestinationCompilationPreview::LocalityElaboration(
                     preview,

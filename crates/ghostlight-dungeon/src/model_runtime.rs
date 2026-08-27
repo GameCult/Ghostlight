@@ -13,6 +13,7 @@ use std::{
 pub struct ModelRuntimeSelection {
     pub provider: String,
     pub fast_model: String,
+    pub balanced_model: String,
     pub capable_model: String,
     pub credential_path: PathBuf,
     pub connector_endpoint: SocketAddr,
@@ -25,17 +26,38 @@ impl ModelRuntimeSelection {
         let provider = std::env::var("GHOSTLIGHT_MODEL_PROVIDER")
             .unwrap_or_else(|_| "deepseek".into())
             .to_ascii_lowercase();
-        let (default_fast_model, default_capable_model, default_secret_name) =
-            match provider.as_str() {
-                "deepseek" => ("deepseek-v4-flash", "deepseek-v4-pro", "deepseek.dpapi"),
-                "openrouter" => ("stealth/ox-alpha", "stealth/ox-alpha", "openrouter.key"),
-                "codex-connector" => ("gpt-5.6-luna", "gpt-5.6-luna", "codex-connector.key"),
-                unsupported => bail!("unsupported model provider {unsupported}"),
-            };
+        let (
+            default_fast_model,
+            default_balanced_model,
+            default_capable_model,
+            default_secret_name,
+        ) = match provider.as_str() {
+            "deepseek" => (
+                "deepseek-v4-flash",
+                "deepseek-v4-pro",
+                "deepseek-v4-pro",
+                "deepseek.dpapi",
+            ),
+            "openrouter" => (
+                "stealth/ox-alpha",
+                "stealth/ox-alpha",
+                "stealth/ox-alpha",
+                "openrouter.key",
+            ),
+            "codex-connector" => (
+                "gpt-5.6-luna",
+                "gpt-5.6-terra",
+                "gpt-5.6-luna",
+                "codex-connector.key",
+            ),
+            unsupported => bail!("unsupported model provider {unsupported}"),
+        };
         Ok(Self {
             provider,
             fast_model: std::env::var("GHOSTLIGHT_MODEL_FAST")
                 .unwrap_or_else(|_| default_fast_model.into()),
+            balanced_model: std::env::var("GHOSTLIGHT_MODEL_BALANCED")
+                .unwrap_or_else(|_| default_balanced_model.into()),
             capable_model: std::env::var("GHOSTLIGHT_MODEL_CAPABLE")
                 .unwrap_or_else(|_| default_capable_model.into()),
             credential_path: std::env::var_os("GHOSTLIGHT_MODEL_CREDENTIAL")
@@ -65,6 +87,7 @@ impl ModelRuntimeSelection {
         ModelRuntimeStatus {
             provider: self.provider.clone(),
             fast_model: self.fast_model.clone(),
+            balanced_model: self.balanced_model.clone(),
             capable_model: self.capable_model.clone(),
             readiness: readiness.into(),
         }
@@ -90,6 +113,7 @@ impl ModelRuntimeSelection {
                 &self.credential_path,
                 self.runtime_id.clone(),
                 self.fast_model.clone(),
+                self.balanced_model.clone(),
                 self.capable_model.clone(),
                 self.connector_max_concurrent_requests,
             )?),

@@ -426,7 +426,8 @@ performs her own exact CAS.
 - **Model transport:** Ghostlight defines an async stage-runner port. Epiphany
   implements it with `EpiphanyModelRequest`, Codex/OpenAI-compatible auth,
   runtime jobs, and private model-event recovery. GhostlightDungeon implements
-  it with the selected provider port and logical fast/capable model classes.
+  it with the selected provider port and logical fast/balanced/capable model
+  classes.
 - **Receipts:** Ghostlight owns portable stage and terminal fields. Epiphany's
   adapter augments them with `EpiphanyReasoningBasis`, sealed decision contexts,
   brake evidence, and runtime-spine identities.
@@ -926,12 +927,15 @@ acceptance can reject stages that spend heavily while producing no meaningful
 appraisal, state proposal, or player-facing consequence.
 
 Model allocation is provider-neutral inside Ghostlight. Stages request the
-logical classes `ghostlight.fast.v1` or `ghostlight.capable.v1`; the selected
-provider port alone maps those classes to physical model IDs. Receipts record
-the resolved provider and physical model so a routing change cannot masquerade
-as the same inference.
+logical classes `ghostlight.fast.v1`, `ghostlight.balanced.v1`, or
+`ghostlight.capable.v1`; the selected provider port alone maps those classes to
+physical model IDs. The fast class owns high-volume work, the balanced class
+owns bounded reconciliation and routine elaboration, and the capable class owns
+frontier invention and editorial judgment. Receipts record the resolved
+provider and physical model so a routing change cannot masquerade as the same
+inference.
 
-The `epiphany-codex` profile maps both logical classes to an operator-admitted
+The `epiphany-codex` profile maps all three logical classes to operator-admitted
 Codex model through Epiphany's independently supervised model connector. The
 Ghostlight port constructs the native model request, exact output schema,
 reasoning-effort hint, maximum output budget, and a stable prompt-cache key;
@@ -944,15 +948,15 @@ receipts. It does not see campaign stores, run its Mind or swarm, interpret
 results, or admit world state. Ghostlight cannot read the Codex credential and
 the connector cannot commit a campaign mutation.
 
-OpenRouter remains a supported test profile. It can map both classes to
-`stealth/ox-alpha`, using low reasoning for fast stages and high reasoning for
-capable stages. OpenRouter is instructed to exclude reasoning from its
-response, and the decoder never reads or retains that field.
+OpenRouter remains a supported test profile. It maps the balanced class to its
+configured capable model, using low reasoning for fast stages and medium
+reasoning for balanced or capable stages. OpenRouter is instructed to exclude
+reasoning from its response, and the decoder never reads or retains that field.
 
 DeepSeek remains a supported provider profile: its flash model serves the fast
-class and its pro model serves the capable class with thinking disabled. A
-provider switch changes configuration and credentials, not compiler, Persona,
-Interpreter, scheduler, or kernel ownership.
+class and its pro model serves the balanced and capable classes with thinking
+disabled. A provider switch changes configuration and credentials, not
+compiler, Persona, Interpreter, scheduler, or kernel ownership.
 
 ## Hosting and security
 

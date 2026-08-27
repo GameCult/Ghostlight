@@ -7,6 +7,7 @@ use std::time::Instant;
 use zeroize::Zeroizing;
 
 pub const MODEL_FAST: &str = "ghostlight.fast.v1";
+pub const MODEL_BALANCED: &str = "ghostlight.balanced.v1";
 pub const MODEL_CAPABLE: &str = "ghostlight.capable.v1";
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -14,6 +15,7 @@ pub const MODEL_CAPABLE: &str = "ghostlight.capable.v1";
 pub struct ModelRuntimeStatus {
     pub provider: String,
     pub fast_model: String,
+    pub balanced_model: String,
     pub capable_model: String,
     pub readiness: String,
 }
@@ -1063,6 +1065,17 @@ mod tests {
             openrouter_request_body(&capable, "stealth/ox-alpha")["reasoning"]["effort"],
             "medium"
         );
+
+        let mut balanced = capable;
+        balanced.model = MODEL_BALANCED.into();
+        assert_eq!(
+            openrouter_request_body(&balanced, "stealth/ox-alpha")["reasoning"]["effort"],
+            "medium"
+        );
+        assert_eq!(
+            resolve_model(&balanced, "fixture-fast", "fixture-capable"),
+            "fixture-capable"
+        );
     }
 
     #[test]
@@ -1431,7 +1444,7 @@ fn openrouter_request_body(request: &ModelStageRequest, resolved_model: &str) ->
         "messages": [{"role": "user", "content": request.lived_stream}],
         "stream": false,
         "reasoning": {
-            "effort": if request.model == MODEL_CAPABLE { "medium" } else { "low" },
+            "effort": if matches!(request.model.as_str(), MODEL_BALANCED | MODEL_CAPABLE) { "medium" } else { "low" },
             "exclude": true
         }
     });
@@ -1470,6 +1483,7 @@ impl ModelPort for OpenRouterPort {
 fn resolve_model(request: &ModelStageRequest, fast_model: &str, capable_model: &str) -> String {
     match request.model.as_str() {
         MODEL_FAST => fast_model.to_owned(),
+        MODEL_BALANCED => capable_model.to_owned(),
         MODEL_CAPABLE => capable_model.to_owned(),
         explicit => explicit.to_owned(),
     }

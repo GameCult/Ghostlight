@@ -15,12 +15,14 @@ use tokio::sync::Semaphore;
 use zeroize::Zeroizing;
 
 use crate::model::{
-    MODEL_CAPABLE, MODEL_FAST, ModelPort, ModelProviderOutput, ModelStageRequest, ModelTokenUsage,
+    MODEL_BALANCED, MODEL_CAPABLE, MODEL_FAST, ModelPort, ModelProviderOutput, ModelStageRequest,
+    ModelTokenUsage,
 };
 
 const MAX_FRAME_BYTES: usize = 1_052_672;
 const REQUEST_EXPIRY: Duration = Duration::from_secs(150);
 const FAST_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(120);
+const BALANCED_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(180);
 const CAPABLE_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(300);
 
 #[derive(Clone)]
@@ -29,6 +31,7 @@ pub struct CodexConnectorModelPort {
     request_gate: std::sync::Arc<Semaphore>,
     caller_runtime_id: String,
     fast_model: String,
+    balanced_model: String,
     capable_model: String,
 }
 
@@ -38,6 +41,7 @@ impl CodexConnectorModelPort {
         connection_key: String,
         caller_runtime_id: impl Into<String>,
         fast_model: impl Into<String>,
+        balanced_model: impl Into<String>,
         capable_model: impl Into<String>,
         max_concurrent_requests: usize,
     ) -> Result<Self> {
@@ -54,6 +58,7 @@ impl CodexConnectorModelPort {
             request_gate: std::sync::Arc::new(Semaphore::new(max_concurrent_requests)),
             caller_runtime_id,
             fast_model: fast_model.into(),
+            balanced_model: balanced_model.into(),
             capable_model: capable_model.into(),
         })
     }
@@ -63,6 +68,7 @@ impl CodexConnectorModelPort {
         path: impl AsRef<Path>,
         caller_runtime_id: impl Into<String>,
         fast_model: impl Into<String>,
+        balanced_model: impl Into<String>,
         capable_model: impl Into<String>,
         max_concurrent_requests: usize,
     ) -> Result<Self> {
@@ -77,6 +83,7 @@ impl CodexConnectorModelPort {
             connection_key.to_owned(),
             caller_runtime_id,
             fast_model,
+            balanced_model,
             capable_model,
             max_concurrent_requests,
         )
@@ -86,6 +93,7 @@ impl CodexConnectorModelPort {
         let request_id = format!("ghostlight-model-{}", uuid::Uuid::new_v4());
         let resolved_model = match request.model.as_str() {
             MODEL_FAST => self.fast_model.clone(),
+            MODEL_BALANCED => self.balanced_model.clone(),
             MODEL_CAPABLE => self.capable_model.clone(),
             explicit => explicit.to_string(),
         };
@@ -99,7 +107,7 @@ impl CodexConnectorModelPort {
             text: request.lived_stream.clone(),
         }];
         provider_request.reasoning_effort = Some(
-            if request.model == MODEL_CAPABLE {
+            if matches!(request.model.as_str(), MODEL_BALANCED | MODEL_CAPABLE) {
                 "medium"
             } else {
                 "low"
@@ -156,10 +164,10 @@ impl ModelPort for CodexConnectorModelPort {
     }
 
     fn attempt_timeout(&self, request: &ModelStageRequest) -> Duration {
-        if request.model == MODEL_CAPABLE {
-            CAPABLE_ATTEMPT_TIMEOUT
-        } else {
-            FAST_ATTEMPT_TIMEOUT
+        match request.model.as_str() {
+            MODEL_BALANCED => BALANCED_ATTEMPT_TIMEOUT,
+            MODEL_CAPABLE => CAPABLE_ATTEMPT_TIMEOUT,
+            _ => FAST_ATTEMPT_TIMEOUT,
         }
     }
 }
@@ -618,6 +626,7 @@ mod tests {
             "connector-test-key".to_string(),
             "ghostlight-dungeon-yggdrasil",
             "gpt-5.6-luna",
+            "gpt-5.6-terra",
             "gpt-5.6-luna",
             1,
         )?;
@@ -625,7 +634,7 @@ mod tests {
         let output = port
             .run_observed(&ModelStageRequest {
                 stage: "test_interpreter".to_string(),
-                model: MODEL_CAPABLE.to_string(),
+                model: MODEL_BALANCED.to_string(),
                 snapshot_binding: "revision:7".to_string(),
                 lived_stream: "Return the typed answer.".to_string(),
                 output_schema: Some(serde_json::json!({
@@ -640,7 +649,7 @@ mod tests {
             })
             .await?;
         let invocation = server.join().expect("server thread")?;
-        assert_eq!(invocation.request.model, "gpt-5.6-luna");
+        assert_eq!(invocation.request.model, "gpt-5.6-terra");
         assert_eq!(invocation.request.max_output_tokens, Some(512));
         assert_eq!(
             invocation.request.output_format_name.as_deref(),
@@ -708,6 +717,7 @@ mod tests {
             "bounded-test-key".to_string(),
             "ghostlight-test",
             "gpt-5.6-luna",
+            "gpt-5.6-terra",
             "gpt-5.6-sol",
             1,
         )?;
@@ -722,6 +732,10 @@ mod tests {
             max_output_tokens: None,
         };
         assert_eq!(port.attempt_timeout(&request), CAPABLE_ATTEMPT_TIMEOUT);
+
+        request.stage = "destination_civic_reconciliation".to_string();
+        request.model = MODEL_BALANCED.to_string();
+        assert_eq!(port.attempt_timeout(&request), BALANCED_ATTEMPT_TIMEOUT);
 
         request.stage = "cell_interpreter".to_string();
         request.model = MODEL_FAST.to_string();

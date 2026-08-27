@@ -15,7 +15,10 @@ use chrono::{DateTime, Utc};
 use ghostlight_dungeon::domain::WorldCompilePreview;
 use ghostlight_dungeon::{
     assessor::ActionAssessor,
-    compiler::{GestaltFissionRequest, OpeningRequest, OpeningSuggestion, WorldCompiler},
+    compiler::{
+        DestinationCompilationFailure, GestaltFissionRequest, OpeningRequest, OpeningSuggestion,
+        WorldCompiler,
+    },
     domain::{
         ActionIntent, Campaign, DestinationCompilationPreview, GestaltFissionPreview,
         RejectedProposalReceipt, WorldCommand,
@@ -4023,7 +4026,23 @@ async fn compile_destination(
             }))
             .into_response()
         }
-        Err(error) => (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response(),
+        Err(error) => {
+            if let Some(failure) = error.downcast_ref::<DestinationCompilationFailure>()
+                && let Err(persistence_error) = runtime
+                    .store
+                    .persist_model_stage_receipts(&failure.model_receipts)
+            {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!(
+                        "{}; model-receipt persistence failed: {persistence_error}",
+                        failure.message
+                    ),
+                )
+                    .into_response();
+            }
+            (StatusCode::UNPROCESSABLE_ENTITY, error.to_string()).into_response()
+        }
     }
 }
 
@@ -6527,6 +6546,7 @@ mod tests {
             model_status: ModelRuntimeStatus {
                 provider: "fixture".into(),
                 fast_model: "fixture".into(),
+                balanced_model: "fixture".into(),
                 capable_model: "fixture".into(),
                 readiness: "ready".into(),
             },

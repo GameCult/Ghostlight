@@ -249,6 +249,13 @@ neither side. Yggdrasil runs CodexConnector as the independent
 systemd ordering edge to that daemon and cannot build, configure, restart,
 select, or roll it back.
 
+Ghostlight exposes three provider-neutral logical classes. `ghostlight.fast.v1`
+owns high-volume cells and retrieval, `ghostlight.balanced.v1` owns bounded
+reconciliation and routine elaboration, and `ghostlight.capable.v1` owns
+frontier invention and editorial judgment. Only the selected `ModelPort` maps
+those classes to physical models or assigns their attempt deadlines; compilers
+and harnesses never pass physical model IDs as logical stage authority.
+
 Vault availability is typed at the provider boundary. When the configured
 Vault cannot return evidence, SessionZeroKernel returns the exact draft to
 `drafting`, records one stable resolved material blocker, and publishes no
@@ -910,11 +917,22 @@ the office, procedure, or answer. Inhabited proposals must expose current
 authority, selection or succession, public resources, and redress through a
 typed civic manifest whose exact fact references are shared by each resident
 population. A separate model stage verifies their semantic legibility; it may
-reject but cannot rewrite or commit the proposal. The kernel rebinds that
-verdict to the exact candidate before mutation admission. Accepted civic
-systems persist as versioned component state, so a later pass receives the
-current institutions, populations, facts, and relations and must extend that
-apparatus instead of inventing a parallel government.
+reject but cannot rewrite or commit the proposal. One false verdict is
+independently rechecked against the same frozen candidate. A sustained rejection
+invokes one balanced reconciliation over a civic-only replacement schema:
+candidate-owned civic facts, resident civic fact references, candidate
+institutions, local political relations, and the civic manifest. Geography,
+routes, migration, population identity, non-civic facts, branch assumptions,
+gaps, civic version, and semantic receipt binding have no writable field in
+that pass. The merged candidate must survive the ordinary destination validators
+and a fresh independent verdict; the expensive `destination_compile` stage is
+not rerun. The kernel rebinds the accepted verdict to the exact candidate before
+mutation admission. Completed compiler, reconciliation, and verifier receipts
+survive terminal failure and are persisted by both the strategic harness and
+the Dungeon API. Accepted civic systems persist as versioned component state,
+so a later pass receives the current institutions, populations, facts, and
+relations and must extend that apparatus instead of inventing a parallel
+government.
 
 Both destination paths synthesize the smallest compatible branch-local routes,
 geometry, people, supplies, procedures, capacity, responsibility, and doctrine

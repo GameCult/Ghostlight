@@ -686,6 +686,7 @@ mod tests {
         ModelRuntimeStatus {
             provider: "fixture".into(),
             fast_model: "fixture-fast".into(),
+            balanced_model: "fixture-balanced".into(),
             capable_model: "fixture-capable".into(),
             readiness: "ready".into(),
         }
