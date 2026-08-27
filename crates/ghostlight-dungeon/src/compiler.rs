@@ -4774,6 +4774,44 @@ pub fn validate_region_expansion(
             .find(|profile| profile.subject_id == institution.id)
             .expect("institution profile coverage was checked above");
         let profile_axes = profile.facets.keys().cloned().collect::<BTreeSet<_>>();
+        let unknown_location_ids = profile
+            .location_ids
+            .iter()
+            .filter(|id| !known(id))
+            .cloned()
+            .collect::<Vec<_>>();
+        let invalid_information_channels = profile
+            .information_channels
+            .iter()
+            .filter(|channel| !crate::resolution::information_channel_is_concrete(channel))
+            .cloned()
+            .collect::<Vec<_>>();
+        if profile.location_ids.is_empty() {
+            return Err(anyhow!(
+                "destination institution {} agency profile has no location",
+                institution.id
+            ));
+        }
+        if !unknown_location_ids.is_empty() {
+            return Err(anyhow!(
+                "destination institution {} agency profile references unknown locations {:?}",
+                institution.id,
+                unknown_location_ids
+            ));
+        }
+        if profile_axes != axes {
+            return Err(anyhow!(
+                "destination institution {} agency profile must define exactly the six agency facets",
+                institution.id
+            ));
+        }
+        if !invalid_information_channels.is_empty() {
+            return Err(anyhow!(
+                "destination institution {} agency profile has non-concrete information channels {:?}",
+                institution.id,
+                invalid_information_channels
+            ));
+        }
         if profile.schema != "ghostlight.agency_profile.v1"
             || profile.id != format!("agency:{}", institution.id)
             || profile.subject_kind != AgencySubjectKind::Institution
@@ -4782,16 +4820,9 @@ pub fn validate_region_expansion(
             || profile.parent_subject_id.is_some()
             || !profile.active_leaf
             || !profile.simulation_eligible
-            || profile.location_ids.is_empty()
-            || profile.location_ids.iter().any(|id| !known(id))
-            || profile_axes != axes
-            || profile
-                .information_channels
-                .iter()
-                .any(|channel| !crate::resolution::information_channel_is_concrete(channel))
         {
             return Err(anyhow!(
-                "destination institution {} has a malformed agency profile",
+                "destination institution {} has a malformed compiler-owned agency profile",
                 institution.id
             ));
         }
@@ -7000,8 +7031,9 @@ mod tests {
                 })
                 .to_string()),
                 "destination_compile" => {
-                    let broken_civic_edge =
-                        request.lived_stream.contains("broken civic edge fixture");
+                    let malformed_civic_profile = request
+                        .lived_stream
+                        .contains("malformed civic profile fixture");
                     let civic_system = (!request
                         .lived_stream
                         .contains("missing civic manifest fixture"))
@@ -7122,7 +7154,7 @@ mod tests {
                                     "species_body":["mixed households"],
                                     "information":["public duty leaf"]
                                 },
-                                "information_channels":["public duty leaf"]
+                                "information_channels":if malformed_civic_profile { serde_json::json!(["unknown"]) } else { serde_json::json!(["public duty leaf"]) }
                             },
                             {
                                 "id":"refuge-stores-office",
@@ -7145,7 +7177,7 @@ mod tests {
                         "local_relations":[{
                             "id":"relation:refuge-council-stores",
                             "from_subject_id":"refuge-duty-council",
-                            "to_subject_id":if broken_civic_edge { "missing-local-subject" } else { "refuge-stores-office" },
+                            "to_subject_id":"refuge-stores-office",
                             "kind":"command",
                             "strength":60
                         }],
@@ -7190,10 +7222,14 @@ mod tests {
                             })
                             .collect::<Vec<_>>();
                     let mut civic_system = frozen_projection["civic_system"].clone();
-                    let mut local_relations = frozen_projection["local_relations"].clone();
-                    if local_relations[0]["to_subject_id"] == "missing-local-subject" {
-                        local_relations[0]["to_subject_id"] =
-                            serde_json::json!("refuge-stores-office");
+                    let mut institutions = frozen_projection["institutions"].clone();
+                    if institutions[0]["information_channels"] == serde_json::json!(["unknown"])
+                        && request
+                            .lived_stream
+                            .contains("non-concrete information channels [\"unknown\"]")
+                    {
+                        institutions[0]["information_channels"] =
+                            serde_json::json!(["public duty leaf"]);
                     }
                     civic_system["governing_institution_ids"] =
                         serde_json::json!(["refuge-duty-council", "refuge-stores-office"]);
@@ -7206,8 +7242,8 @@ mod tests {
                     Ok(serde_json::json!({
                         "civic_facts":frozen_projection["candidate_owned_civic_facts"],
                         "resident_civic_knowledge":resident_civic_knowledge,
-                        "institutions":frozen_projection["institutions"],
-                        "local_relations":local_relations,
+                        "institutions":institutions,
+                        "local_relations":frozen_projection["local_relations"],
                         "civic_system":civic_system,
                     })
                     .to_string())
@@ -8753,7 +8789,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn destination_local_civic_validation_uses_balanced_reconciliation_not_recompile() {
+    async fn destination_local_civic_profile_validation_uses_one_balanced_reconciliation() {
         let model = Arc::new(DestinationElaborationModel {
             saw_branch_assumption_boundary: AtomicBool::new(false),
             saw_balanced_civic_reconciliation: AtomicBool::new(false),
@@ -8771,7 +8807,7 @@ mod tests {
             .compile_destination(
                 &campaign,
                 "convoy-staging",
-                "a broken civic edge fixture requiring a bounded relation repair",
+                "a malformed civic profile fixture requiring a bounded channel repair",
             )
             .await
             .unwrap();
@@ -8814,10 +8850,15 @@ mod tests {
                 .iter()
                 .any(|source| source == reconciliation_receipts[0].storage_key())
         );
-        assert_eq!(preview.expansion.local_relations.len(), 1);
+        let duty_profile = preview
+            .expansion
+            .institution_profiles
+            .iter()
+            .find(|profile| profile.subject_id == "refuge-duty-council")
+            .expect("reconciled duty council keeps its agency profile");
         assert_eq!(
-            preview.expansion.local_relations[0].to_subject_id,
-            "refuge-stores-office"
+            duty_profile.information_channels,
+            BTreeSet::from(["public duty leaf".into()])
         );
     }
 
