@@ -739,7 +739,6 @@ mod tests {
             .and_then(serde_json::Value::as_str)
             .ok_or_else(|| anyhow!("newspaper fixture lost its source enum"))?;
         Ok(serde_json::json!({
-            "edition_label":"Court Edition",
             "articles":[{
                 "section":"Front Page",
                 "headline":"Court Auditors Face a Singular Accusation",

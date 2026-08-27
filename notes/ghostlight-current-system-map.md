@@ -932,22 +932,27 @@ commit primitive; that person enters later covers as the same canonical actor.
 Public action channels produce committed `NewsIssue` records. The world-
 consumer boundary admits an authority-gated editorial-voice request, then
 projects only those public issues and their cited committed events into a
-bounded newsroom source desk. A capable editor model owns selection, grouping,
-headline, deck, byline class, dateline, and article prose as a proposal. Local
-validation binds every article to exact source-news IDs, known places, the
-front-page budget, and reader-safe presentation labels. A separate copy-desk
-stage may reject unsupported facts, unearned attribution, procedural leakage,
-or mechanical state-ledger copy but cannot rewrite it. Two same-source editor
-corrections are allowed; persistent failure returns no edition. The typed issue
-retains exact event IDs, channels, reliability, source revision, and model
-receipts as audit data. Terminally rejected attempts semantically rebind their
-otherwise immutable model receipts to a collision-free invalid disposition and
-return a typed failure carrying every completed receipt. The registry persists
-those receipts idempotently before returning the rejection. The reader renderer
-has no path to provenance fields and escapes all model- and consumer-supplied
-plain text before Markdown emission; the provenance renderer applies the same
-plain-text boundary to its audit data. Neither editor, copy desk, renderer, nor
-registry receipt persistence can write world state.
+bounded newsroom source desk without source or event wall-clock timestamps. A
+capable editor model owns selection, grouping, headline, deck, byline class,
+dateline, and article prose as a proposal. Edition chrome is contract-derived,
+not model copy. Local validation binds every article to exact source-news IDs,
+places supplied by those cited sources, the front-page budget, and reader-safe
+presentation labels. A separate copy-desk stage may reject unsupported facts,
+unearned attribution, procedural leakage, or mechanical state-ledger copy but
+cannot rewrite it. Two same-source editor corrections are allowed. After both
+fail, the composition owner may remove every flagged article and must submit
+the surviving page to a fresh whole-page copy-desk review; an empty or rejected
+page returns no edition. The typed issue retains exact event IDs, channels,
+reliability, source revision, and model receipts as audit data. Its internal
+issue time is derived from the latest cited publication record without exposing
+that clock to editorial inference. Terminally rejected attempts semantically
+rebind their otherwise immutable model receipts to a collision-free invalid
+disposition and return a typed failure carrying every completed receipt. The
+registry persists those receipts idempotently before returning the rejection.
+The reader renderer has no path to provenance fields and escapes all model- and
+consumer-supplied plain text before Markdown emission; the provenance renderer
+applies the same plain-text boundary to its audit data. Neither editor, copy
+desk, renderer, nor registry receipt persistence can write world state.
 
 Session Zero compilation, expansion, and fission follow the same projection
 rule. Review projections expose topology, pressures, source-use coverage, gaps,
