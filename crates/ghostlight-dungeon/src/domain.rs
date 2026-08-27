@@ -750,6 +750,8 @@ pub struct GestaltReaction {
     pub deliberate_silence: bool,
 }
 
+pub const MAX_POSTURE_CHARS: usize = 460;
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct InstitutionState {
     pub id: String,

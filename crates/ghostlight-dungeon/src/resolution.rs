@@ -2298,7 +2298,7 @@ fn validate_cell_proposal(
                 if institution_id != &proposal.subject_id
                     || !campaign.institutions.contains_key(institution_id)
                     || posture.trim().is_empty()
-                    || posture.chars().count() > 240
+                    || posture.chars().count() > MAX_POSTURE_CHARS
                     || !substantive_text_change(
                         &campaign.institutions[institution_id].posture,
                         posture,

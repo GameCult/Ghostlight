@@ -4,8 +4,8 @@ use crate::{
         AgencySubjectKind, BranchOrigin, Campaign, CivicSystemManifest,
         DestinationCompilationPreview, EvidenceCoverage, EvidenceUseLane, FactScope,
         GestaltMemberDelta, GestaltPersonaState, InstitutionState, LocalityElaboration,
-        LocalityElaborationPreview, Location, Route, VaultEvidenceReceipt, WorldClock,
-        WorldCompilePreview, WorldFact,
+        LocalityElaborationPreview, Location, MAX_POSTURE_CHARS, Route, VaultEvidenceReceipt,
+        WorldClock, WorldCompilePreview, WorldFact,
     },
     model::{
         ModelPort, ModelStageReceipt, ModelStageRequest, run_validated_stage,
@@ -4020,6 +4020,7 @@ pub fn validate_region_expansion(
     for institution in &expansion.institutions {
         if institution.name.trim().is_empty()
             || institution.posture.trim().is_empty()
+            || institution.posture.chars().count() > MAX_POSTURE_CHARS
             || institution.goals.is_empty()
             || institution
                 .resources
@@ -5188,6 +5189,15 @@ fn validate_campaign(c: &Campaign, require_dematerialized_members: bool) -> Resu
     }
     crate::resolution::validate_policy(&c.resolution_policy)?;
     crate::resolution::validate_pins(c, &c.resolution_pins)?;
+    if let Some(institution) = c.institutions.values().find(|institution| {
+        institution.posture.trim().is_empty()
+            || institution.posture.chars().count() > MAX_POSTURE_CHARS
+    }) {
+        return Err(anyhow!(
+            "institution {} posture must contain one to {MAX_POSTURE_CHARS} characters",
+            institution.id
+        ));
+    }
     let canonical_subjects = c
         .actors
         .keys()
@@ -6755,6 +6765,16 @@ mod tests {
         let error = validate_campaign_seed(&campaign).unwrap_err().to_string();
         assert!(error.contains("player->Faction Zero"));
         assert!(error.contains("faction-0000"));
+    }
+
+    #[test]
+    fn campaign_seed_rejects_an_oversized_institution_posture() {
+        let mut campaign = crate::resolution::tests::campaign(2, 1);
+        let institution = campaign.institutions.values_mut().next().unwrap();
+        institution.posture = "x".repeat(MAX_POSTURE_CHARS + 1);
+
+        let error = validate_campaign_seed(&campaign).unwrap_err();
+        assert!(error.to_string().contains("one to 460 characters"));
     }
 
     #[test]

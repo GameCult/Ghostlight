@@ -2713,10 +2713,10 @@ fn apply_strategic_tick_plan(
                 "strategic institution posture is empty".into(),
             ));
         }
-        if action.posture.chars().count() > 240 {
-            return Err(KernelError::Invalid(
-                "strategic institution posture exceeds 240 characters".into(),
-            ));
+        if action.posture.chars().count() > MAX_POSTURE_CHARS {
+            return Err(KernelError::Invalid(format!(
+                "strategic institution posture exceeds {MAX_POSTURE_CHARS} characters"
+            )));
         }
         if action
             .location_ids

@@ -1,4 +1,6 @@
-use crate::domain::{CivicSystemManifest, FactScope, OutcomeBand, StrategicOutcomeBand};
+use crate::domain::{
+    CivicSystemManifest, FactScope, MAX_POSTURE_CHARS, OutcomeBand, StrategicOutcomeBand,
+};
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Utc};
 use schemars::{JsonSchema, schema_for};
@@ -4181,7 +4183,12 @@ impl WorldMutation {
                 _ => {}
             },
             ChangeMemory { memory_id, .. } => nonempty("memory id", memory_id)?,
-            ChangePosture { posture, .. } => nonempty("posture", posture)?,
+            ChangePosture { posture, .. } => {
+                nonempty("posture", posture)?;
+                if posture.chars().count() > MAX_POSTURE_CHARS {
+                    return Err(anyhow!("posture exceeds {MAX_POSTURE_CHARS} characters"));
+                }
+            }
             ChangePopulationMembership {
                 operation,
                 source_population,
@@ -4949,6 +4956,17 @@ mod tests {
                 .contains("civic resident lost a public proposition"),
             "{error}"
         );
+    }
+
+    #[test]
+    fn posture_mutation_rejects_an_oversized_canonical_value() {
+        let mutation = WorldMutation::ChangePosture {
+            subject: subject(SubjectKind::Institution, "institution:clinic"),
+            posture: "x".repeat(MAX_POSTURE_CHARS + 1),
+        };
+
+        let error = mutation.validate_local_shape().unwrap_err();
+        assert!(error.to_string().contains("exceeds 460 characters"));
     }
 
     fn permit(

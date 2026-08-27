@@ -1347,11 +1347,12 @@ impl CellProjectionEngine {
                 "Each action carries an effects object whose exact subject-specific lane keys are supplied by the schema. Across scalar effects and every expanded activity scope, an action has one to four exact effects total. Scalar lanes contain one typed effect. An activities lane is one object keyed by chosen activity kinds; each non-null kind contains an array of one to four separate exact target-and-location scopes. Preserve repeated uses of one activity kind as separate scopes when their targets or locations differ; never union scopes across distinct locations or audiences. Top-level lane names are stable across subjects: use null for a null-only unavailable lane and for any schema-required optional lane or activity key the subject does not use. A non-null lane or activity key absent from its exact schema is structurally unavailable: do not emit it and do not invent a destination. Pressure and migration lanes each have one slot. Preserve every means of one chosen course in one action. With relocation, activities at the exact snapshot location occur before departure and activities at the exact admitted destination occur after arrival; activity effects inside each location phase are an atomic set. Field and array order is not chronology. Never split one subject's single choice into multiple actions. ",
                 "Use gestalt_activities or member_activities for concrete attempts that do not themselves change pressure. A cohesive Gestalt coordinating its own unnamed internal members uses coordinate with an empty target_subject_ids list; do not invent its containing population, a distant population, or another canonical subject as the target of internal coordination. Cite the smallest exact set of state_references that materially supports each attempt; the permission list is an upper bound, not a checklist to echo. ",
                 "target_subject_ids and location_ids must come from that exact subject's permissions. activity_targets is the exact canonical target map: each key is the authoritative ID and each value supplies the target's name and current canonical locations. Use an ID only when the Persona addresses that named target, never merely because the ID is permitted. If an addressed person or role has no matching activity_targets entry, it is not a canonical target in this slice. reachable_destinations maps exact actor-movement destination IDs to names. migration_destinations maps exact population destination IDs to names and locations. When the Persona chooses to go to a canonical target, compare the target's current locations with the acting subject's current location and exact reachable destinations; never guess a destination from an opaque ID. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. When one utterance addresses canonical subjects and an unnamed public audience, emit one communicate activity with those exact target IDs and place its admitted public reach in public_channels; do not invent a second communicate lane. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
-                "Write intended_effect as the affirmative attempted acts, never the purpose, restraint, condition to preserve, hoped-for outcome, or target response. Keep purpose and restraint in intent. Respecting choice, declining coercion, leaving state unchanged, or waiting for another subject does not add a typed effect unless the Persona separately chooses an observable act. Merely waiting, watching, staying, holding position, or remaining ready is attributed inaction, not prepare. prepare requires concrete work on a bounded arrangement, repair, resource, or capability-backed readiness change. Institution posture must be a specific materially new commitment or withholding of at most 240 characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references. public_channels means durable publication of this attempt through exact allowed_persistent_publication_channels; it is not a perception method or ordinary local speech. Use [] when that exact list is empty. ",
+                "Write intended_effect as the affirmative attempted acts, never the purpose, restraint, condition to preserve, hoped-for outcome, or target response. Keep purpose and restraint in intent. Respecting choice, declining coercion, leaving state unchanged, or waiting for another subject does not add a typed effect unless the Persona separately chooses an observable act. Merely waiting, watching, staying, holding position, or remaining ready is attributed inaction, not prepare. prepare requires concrete work on a bounded arrangement, repair, resource, or capability-backed readiness change. Institution posture must be a specific materially new commitment or withholding of at most {} characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references. public_channels means durable publication of this attempt through exact allowed_persistent_publication_channels; it is not a perception method or ordinary local speech. Use [] when that exact list is empty. ",
                 "A population that chooses to board, depart, or relocate together to one supplied migration_destinations key emits gestalt_migration; do not reduce it to prepare. It relocates only that exact population leaf and never implies a named member traveled. A named member who chooses to board, depart, travel, or join a supplied destination emits member_migration; use prepare only while departure remains unchosen. ",
                 "A population or arena cannot migrate a person. Runtime binds identity and effect owner IDs from subject_id. Do not emit institution_id, gestalt_id, actor_id, or member_id inside effect. An inaction means that exact subject takes no strategic action in this horizon. Record only a subject that explicitly holds, waits without making another attempt, or merely continues already_committed_posture in the Persona turn as an inaction, using its exact subject_id and a concrete reason of at most 160 characters. Waiting for the result of an action, withholding a different possible action, or declining one option after choosing another does not make the chosen action an inaction. Never invent an inaction for an unvoiced subject or use absence of a Persona decision as a reason. Inactions share the same count limit stated for actions. A subject cannot appear in both actions and inactions. When nobody acts, actions is empty and inactions must still contain at least one exact attributed decision from the Persona turn."
             ),
-            slice.max_actions
+            slice.max_actions,
+            crate::domain::MAX_POSTURE_CHARS
         );
         let permission_guidance =
             format!("{permission_guidance} {CELL_ACTIVITY_CLASSIFICATION_GUIDANCE}");
@@ -2376,11 +2377,12 @@ fn validate_constituent_effect(
                     subject.subject_id
                 ));
             }
-            if posture.chars().count() > 240 {
+            if posture.chars().count() > crate::domain::MAX_POSTURE_CHARS {
                 return Err(anyhow!(
-                    "institution {} proposed a posture of {} characters; the exact maximum is 240",
+                    "institution {} proposed a posture of {} characters; the exact maximum is {}",
                     subject.subject_id,
-                    posture.chars().count()
+                    posture.chars().count(),
+                    crate::domain::MAX_POSTURE_CHARS
                 ));
             }
             if current.trim().eq_ignore_ascii_case(posture.trim()) {
@@ -2747,7 +2749,7 @@ fn exact_constituent_effect_bundle_schema(subject: &CellConstituentSlice) -> ser
                     "additionalProperties":false,
                     "required":["posture","location_ids"],
                     "properties":{
-                        "posture":{"type":"string","minLength":1,"maxLength":240},
+                        "posture":{"type":"string","minLength":1,"maxLength":crate::domain::MAX_POSTURE_CHARS},
                         "location_ids":exact_string_array_schema(&subject.location_ids, 0, 4)
                     }
                 })),
@@ -3739,6 +3741,11 @@ mod tests {
         assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"gestalt_id\""));
         assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"actor_id\""));
         assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"member_id\""));
+        assert_eq!(
+            exact_constituent_effect_bundle_schema(&fixture_cell_slice().constituents[0])
+                .pointer("/properties/institution/anyOf/0/properties/posture/maxLength"),
+            Some(&serde_json::json!(crate::domain::MAX_POSTURE_CHARS))
+        );
     }
 
     #[test]
@@ -4752,6 +4759,28 @@ mod tests {
             projector_context["constituents"][0]["pressures"][0],
             "the vote is near"
         );
+
+        validate_constituent_effect(
+            &slice.constituents[0],
+            &StrategicCellEffect::Institution {
+                institution_id: "faction-06".into(),
+                posture: "x".repeat(crate::domain::MAX_POSTURE_CHARS),
+                location_ids: vec!["forum".into()],
+            },
+            None,
+        )
+        .unwrap();
+        let error = validate_constituent_effect(
+            &slice.constituents[0],
+            &StrategicCellEffect::Institution {
+                institution_id: "faction-06".into(),
+                posture: "x".repeat(crate::domain::MAX_POSTURE_CHARS + 1),
+                location_ids: vec!["forum".into()],
+            },
+            None,
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("exact maximum is 460"));
     }
 
     #[tokio::test]

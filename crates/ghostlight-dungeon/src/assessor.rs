@@ -1,5 +1,8 @@
 use crate::{
-    domain::{ActionAssessment, ActionIntent, Campaign, ContextModifier, WorldEffectDelta},
+    domain::{
+        ActionAssessment, ActionIntent, Campaign, ContextModifier, MAX_POSTURE_CHARS,
+        WorldEffectDelta,
+    },
     model::{
         ModelPort, ModelProviderAttemptReceipt, ModelStageReceipt, ModelStageRequest,
         ModelTokenUsage, run_validated_stage,
@@ -1531,8 +1534,11 @@ fn constrain_effect_schema(
         .get_mut("institution_postures")
         .ok_or_else(|| anyhow!("assessment effect schema omitted institution_postures"))?;
     constrain_map_keys(institution_postures, &institution_ids)?;
-    institution_postures["additionalProperties"] =
-        serde_json::json!({"type":"string","minLength":1});
+    institution_postures["additionalProperties"] = serde_json::json!({
+        "type":"string",
+        "minLength":1,
+        "maxLength":MAX_POSTURE_CHARS
+    });
     let mut unavailable_lanes = Vec::new();
     if !knowledge_available {
         unavailable_lanes.push("actor_knowledge_additions");
@@ -1777,7 +1783,7 @@ fn project_effect_schema_to_mutation_entries(
                     "type":"object",
                     "properties":{
                         "institution_id":typed_string_enum(&institution_ids),
-                        "posture":{"type":"string","minLength":1}
+                        "posture":{"type":"string","minLength":1,"maxLength":MAX_POSTURE_CHARS}
                     },
                     "required":["institution_id","posture"],
                     "additionalProperties":false
@@ -2753,13 +2759,13 @@ pub(crate) fn validate_effect(
             "one outcome cannot both advance and reduce the same clock: {id}"
         ));
     }
-    if let Some((id, posture)) = effect
-        .institution_postures
-        .iter()
-        .find(|(id, posture)| !campaign.institutions.contains_key(*id) || posture.trim().is_empty())
-    {
+    if let Some((id, posture)) = effect.institution_postures.iter().find(|(id, posture)| {
+        !campaign.institutions.contains_key(*id)
+            || posture.trim().is_empty()
+            || posture.chars().count() > MAX_POSTURE_CHARS
+    }) {
         return Err(anyhow!(
-            "outcome institution posture must name an existing institution and a non-empty posture: {id}={posture:?}"
+            "outcome institution posture must name an existing institution and contain one to {MAX_POSTURE_CHARS} characters: {id}={posture:?}"
         ));
     }
     Ok(())
@@ -4010,6 +4016,10 @@ mod tests {
             1
         );
         assert_eq!(
+            effect["institution_postures"]["items"]["properties"]["posture"]["maxLength"],
+            MAX_POSTURE_CHARS
+        );
+        assert_eq!(
             effect["actor_relationship_updates"]["items"]["properties"]["relationship"]["minLength"],
             1
         );
@@ -4305,6 +4315,23 @@ mod tests {
             .to_string();
         assert!(error.contains("missing-clock=0"));
         assert!(error.contains("at least one"));
+    }
+
+    #[test]
+    fn assessment_effect_rejects_an_oversized_posture() {
+        let campaign = crate::resolution::tests::campaign(2, 1);
+        let acting = campaign.actors["player"].clone();
+        let institution_id = campaign.institutions.keys().next().unwrap().clone();
+        let effect = WorldEffectDelta {
+            institution_postures: std::collections::BTreeMap::from([(
+                institution_id,
+                "x".repeat(MAX_POSTURE_CHARS + 1),
+            )]),
+            ..WorldEffectDelta::default()
+        };
+
+        let error = validate_effect(&campaign, &acting, &effect, "nothing changes").unwrap_err();
+        assert!(error.to_string().contains("one to 460 characters"));
     }
 
     #[test]
