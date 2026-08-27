@@ -939,7 +939,11 @@ machinery never become the public account. The newsroom does not re-decide
 which committed public events count as truth. It merges identical fact bundles
 under one opaque per-request citation while retaining every backing news row,
 event, channel, and reliability record for later audit. The editor receives
-only those citations, human-readable accounts, and canonical names. News IDs,
+only those citations, human-readable accounts, and canonical names asserted by
+those accounts. Event membership metadata does not silently turn an involved
+actor, institution, population, or ambiguous multi-place scope into an asserted
+fact or dateline; a single event location may supply its canonical dateline,
+while a multi-place event must name the place in its public account. News IDs,
 event IDs and kinds, channels, reliability, source headlines, and wall-clock
 timestamps remain internal. A capable editor model owns selection,
 grouping, headline, deck, byline class, dateline, and article prose as a
@@ -963,7 +967,10 @@ strategic acceptance smoke use that same primitive before returning a
 rejection. In the acceptance smoke, an interim edition rejection is local to
 the consumer and cannot stop later world waves. A rejected final combined
 edition remains a nonzero acceptance failure, but first writes the completed
-wave reports, rejection receipts, and failed status. The reader renderer has no
+wave reports, rejection receipts, and failed status. Its top-level plan,
+receipt hash, and commit always project the final completed wave, matching the
+top-level counts and persisted campaign head; per-wave history remains under
+`waves`. The reader renderer has no
 path to provenance fields and escapes all model- and consumer-supplied plain
 text before Markdown emission; the provenance renderer applies the same
 plain-text boundary to its audit data. Neither editor, copy desk, renderer, nor

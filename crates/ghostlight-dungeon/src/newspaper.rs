@@ -659,39 +659,41 @@ fn newsroom_source(
                     issue.id
                 ));
             }
+            let summary = event.summary.trim().to_owned();
             Ok(NewsroomEvent {
                 event_ids: BTreeSet::from([event.id.clone()]),
-                summary: event.summary.trim().to_owned(),
                 actor_names: event
                     .actor_ids
                     .iter()
-                    .filter_map(|id| campaign.actors.get(id).map(|actor| actor.name.clone()))
+                    .filter_map(|id| campaign.actors.get(id))
+                    .filter(|actor| summary_mentions_name(&summary, &actor.name))
+                    .map(|actor| actor.name.clone())
                     .collect(),
                 institution_names: event
                     .institution_ids
                     .iter()
-                    .filter_map(|id| {
-                        campaign
-                            .institutions
-                            .get(id)
-                            .map(|institution| institution.name.clone())
-                    })
+                    .filter_map(|id| campaign.institutions.get(id))
+                    .filter(|institution| summary_mentions_name(&summary, &institution.name))
+                    .map(|institution| institution.name.clone())
                     .collect(),
                 population_names: event
                     .gestalt_ids
                     .iter()
-                    .filter_map(|id| {
-                        campaign
-                            .gestalts
-                            .get(id)
-                            .map(|gestalt| gestalt.name.clone())
-                    })
+                    .filter_map(|id| campaign.gestalts.get(id))
+                    .filter(|gestalt| summary_mentions_name(&summary, &gestalt.name))
+                    .map(|gestalt| gestalt.name.clone())
                     .collect(),
                 place_names: event
                     .location_ids
                     .iter()
-                    .filter_map(|id| campaign.locations.get(id).map(|place| place.name.clone()))
+                    .filter_map(|id| campaign.locations.get(id))
+                    .filter(|place| {
+                        event.location_ids.len() == 1
+                            || summary_mentions_name(&summary, &place.name)
+                    })
+                    .map(|place| place.name.clone())
                     .collect(),
+                summary,
             })
         })
         .collect::<Result<Vec<_>>>()?;
@@ -705,6 +707,20 @@ fn newsroom_source(
         channels: BTreeSet::from([issue.channel.clone()]),
         reliability: BTreeSet::from([issue.reliability.clone()]),
         events: source_events,
+    })
+}
+
+fn summary_mentions_name(summary: &str, name: &str) -> bool {
+    let summary = summary.to_lowercase();
+    let name = name.to_lowercase();
+    if name.is_empty() {
+        return false;
+    }
+    summary.match_indices(&name).any(|(start, matched)| {
+        let before = summary[..start].chars().next_back();
+        let after = summary[start + matched.len()..].chars().next();
+        before.is_none_or(|character| !character.is_alphanumeric())
+            && after.is_none_or(|character| !character.is_alphanumeric())
     })
 }
 
@@ -1426,6 +1442,53 @@ mod tests {
             issue.articles[0].event_ids,
             ["event:seal-scandal", "event:seal-scandal-duplicate"]
         );
+    }
+
+    #[test]
+    fn newsroom_does_not_promote_involved_metadata_to_asserted_names_or_datelines() {
+        let mut campaign = campaign_with_two_news();
+        let mut ann = campaign.actors["player"].clone();
+        ann.id = "ann".into();
+        ann.name = "Ann".into();
+        campaign.actors.insert(ann.id.clone(), ann);
+        campaign.locations.insert(
+            "hall".into(),
+            crate::domain::Location {
+                id: "hall".into(),
+                name: "Hall".into(),
+                container_id: None,
+                routes: BTreeMap::new(),
+                persistent_features: vec![],
+            },
+        );
+        campaign.institutions.insert(
+            "unmentioned-regency".into(),
+            crate::domain::InstitutionState {
+                id: "unmentioned-regency".into(),
+                name: "Mossglass Regency".into(),
+                resources: vec![],
+                goals: vec![],
+                posture: "watching".into(),
+            },
+        );
+        let event = campaign
+            .events
+            .iter_mut()
+            .find(|event| event.id == "event:seal-scandal")
+            .unwrap();
+        event.summary = "The Thorn Court announces that every officer shall answer.".into();
+        event.actor_ids = vec!["ann".into()];
+        event.institution_ids = vec!["unmentioned-regency".into()];
+        event.location_ids = vec!["hall".into(), "yard".into()];
+
+        let sources = newsroom_sources(&campaign).unwrap();
+        let source = sources
+            .iter()
+            .find(|source| source.news_ids.contains("news:seal-scandal"))
+            .unwrap();
+        assert!(source.events[0].actor_names.is_empty());
+        assert!(source.events[0].institution_names.is_empty());
+        assert!(source.events[0].place_names.is_empty());
     }
 
     #[tokio::test]

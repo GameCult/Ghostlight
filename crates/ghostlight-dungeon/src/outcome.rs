@@ -659,18 +659,19 @@ fn bind_outcomes(
 ) -> Result<Vec<StrategicActivityOutcome>> {
     let sources = proposals
         .iter()
-        .map(|proposal| Ok((cell_action_digest(proposal)?, proposal.subject_id.clone())))
+        .map(|proposal| Ok((cell_action_digest(proposal)?, proposal)))
         .collect::<Result<BTreeMap<_, _>>>()?;
     let outcomes = bundle
         .outcomes
         .into_iter()
         .map(|proposal| {
-            let source_subject_id = sources
+            let action = sources
                 .get(&proposal.action_digest)
-                .cloned()
+                .copied()
                 .ok_or_else(|| anyhow!("outcome used an unknown action digest"))?;
+            let source_subject_id = action.subject_id.clone();
             let effect = bind_effect(&proposal)?;
-            let summary = resolved_outcome_summary(campaign, &source_subject_id, &effect)?;
+            let summary = resolved_outcome_summary(campaign, action, &effect)?;
             Ok(StrategicActivityOutcome {
                 schema: "ghostlight.strategic_activity_outcome.v1".into(),
                 action_digest: proposal.action_digest,
@@ -795,9 +796,10 @@ fn bind_effect(proposal: &OutcomeProposal) -> Result<StrategicOutcomeEffect> {
 
 fn resolved_outcome_summary(
     campaign: &Campaign,
-    source_subject_id: &str,
+    action: &CellActionProposal,
     effect: &StrategicOutcomeEffect,
 ) -> Result<String> {
+    let source_subject_id = &action.subject_id;
     let source_name = subject_name(campaign, source_subject_id)?;
     let summary = match effect {
         StrategicOutcomeEffect::NoMaterialChange { .. } => {
@@ -849,13 +851,15 @@ fn resolved_outcome_summary(
                 .agency_relations
                 .get(relation_id)
                 .ok_or_else(|| anyhow!("relation outcome relation vanished"))?;
-            let direction = if *strength_delta > 0 {
-                "strengthens"
-            } else {
-                "strains"
+            let direction = match (&relation.kind, *strength_delta > 0) {
+                (crate::domain::AgencyRelationKind::Rivalry, true) => "deepens",
+                (crate::domain::AgencyRelationKind::Rivalry, false) => "eases",
+                (_, true) => "strengthens",
+                (_, false) => "weakens",
             };
+            let action = activity_label(action);
             format!(
-                "An action by {source_name} {direction} the {} tie between {} and {}.",
+                "{action} by {source_name} {direction} the {} relationship between {} and {}.",
                 agency_relation_label(&relation.kind),
                 subject_name(campaign, &relation.from_subject_id)?,
                 subject_name(campaign, &relation.to_subject_id)?,
@@ -929,6 +933,31 @@ fn resolved_outcome_summary(
         return Err(anyhow!("derived strategic outcome summary is empty"));
     }
     Ok(summary)
+}
+
+fn activity_label(action: &CellActionProposal) -> &'static str {
+    let mut activities = action.effects.iter().filter_map(|effect| match effect {
+        StrategicCellEffect::GestaltActivity { activity, .. }
+        | StrategicCellEffect::ActorActivity { activity, .. }
+        | StrategicCellEffect::MemberActivity { activity, .. } => Some(activity),
+        _ => None,
+    });
+    let Some(activity) = activities.next() else {
+        return "A concerted campaign";
+    };
+    if activities.any(|candidate| candidate != activity) {
+        return "A concerted campaign";
+    }
+    match activity {
+        StrategicActivityKind::Prepare => "Preparations",
+        StrategicActivityKind::Coordinate => "An organizing effort",
+        StrategicActivityKind::Investigate => "An inquiry",
+        StrategicActivityKind::Recruit => "A recruitment drive",
+        StrategicActivityKind::Obstruct => "An obstruction",
+        StrategicActivityKind::Trade => "A trade offer",
+        StrategicActivityKind::Communicate if action.public_channels.is_empty() => "A message",
+        StrategicActivityKind::Communicate => "A public appeal",
+    }
 }
 
 fn agency_relation_label(kind: &crate::domain::AgencyRelationKind) -> &'static str {
@@ -3462,9 +3491,14 @@ mod tests {
             },
         };
 
-        validate_activity_outcomes(&value, &[action], std::slice::from_ref(&outcome)).unwrap();
+        validate_activity_outcomes(
+            &value,
+            std::slice::from_ref(&action),
+            std::slice::from_ref(&outcome),
+        )
+        .unwrap();
         assert_eq!(
-            resolved_outcome_summary(&value, "dockers", &outcome.effect).unwrap(),
+            resolved_outcome_summary(&value, &action, &outcome.effect).unwrap(),
             "At Dock, Dockers establishes reinforced public hazard marker."
         );
     }
@@ -3486,9 +3520,18 @@ mod tests {
             },
         );
 
+        let mut action = proposal();
+        action.public_channels = vec!["dock broadsheet".into()];
+        action.effects = vec![StrategicCellEffect::GestaltActivity {
+            gestalt_id: "dockers".into(),
+            activity: StrategicActivityKind::Communicate,
+            target_subject_ids: vec!["player".into()],
+            location_ids: vec!["dock".into()],
+        }];
+
         let summary = resolved_outcome_summary(
             &value,
-            "dockers",
+            &action,
             &StrategicOutcomeEffect::AgencyRelationShift {
                 relation_id: "dock-command".into(),
                 strength_delta: -5,
@@ -3498,10 +3541,36 @@ mod tests {
 
         assert_eq!(
             summary,
-            "An action by Dockers strains the command tie between Dockers and Player."
+            "A public appeal by Dockers weakens the command relationship between Dockers and Player."
         );
         assert!(!summary.contains("dock-command"));
         assert!(!summary.contains("-5"));
+
+        value.agency_relations.insert(
+            "dock-rivalry".into(),
+            AgencyRelation {
+                schema: "ghostlight.agency_relation.v1".into(),
+                id: "dock-rivalry".into(),
+                from_subject_id: "dockers".into(),
+                to_subject_id: "player".into(),
+                kind: AgencyRelationKind::Rivalry,
+                strength: 50,
+                active: true,
+                evidence_receipt_ids: vec![],
+            },
+        );
+        assert_eq!(
+            resolved_outcome_summary(
+                &value,
+                &action,
+                &StrategicOutcomeEffect::AgencyRelationShift {
+                    relation_id: "dock-rivalry".into(),
+                    strength_delta: -5,
+                },
+            )
+            .unwrap(),
+            "A public appeal by Dockers eases the rivalry relationship between Dockers and Player."
+        );
     }
 
     #[tokio::test]

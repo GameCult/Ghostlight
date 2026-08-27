@@ -2753,7 +2753,10 @@ fn apply_strategic_tick_plan(
                 "strategic institution action would not change its posture".into(),
             ));
         }
-        let summary = format!("{} adopts posture: {}", institution.name, action.posture);
+        let summary = format!(
+            "{} announces a new course: {}",
+            institution.name, action.posture
+        );
         events.push(crate::domain::Event {
             id: format!("strategic:{revision}:institution:{}", institution.id),
             at,
@@ -5894,7 +5897,7 @@ pub(crate) mod tests {
             },
         );
         crate::resolution::ensure_agency_profiles(&mut value);
-        apply_strategic_tick_plan(
+        let events = apply_strategic_tick_plan(
             &mut value,
             StrategicTickPlan {
                 institution_actions: vec![StrategicInstitutionAction {
@@ -5907,6 +5910,13 @@ pub(crate) mod tests {
             },
         )
         .unwrap();
+        assert_eq!(events.len(), 1);
+        assert!(
+            events[0]
+                .summary
+                .starts_with("Board announces a new course: ")
+        );
+        assert!(!events[0].summary.contains("adopts posture"));
         assert_eq!(
             value.institutions["board"].posture.chars().count(),
             MAX_POSTURE_CHARS

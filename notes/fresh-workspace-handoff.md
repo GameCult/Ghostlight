@@ -486,31 +486,30 @@ world whose derived cover grew from four cells to six as named figures emerged;
 the 200-cell path remains a local scale proof and the
 Delvehold game-side adapter is not implemented here.
 
-An isolated two-wave connector run against Ghostlight source `2f7c090` advanced
-one fresh campaign from revision 0 to 2, committed 19 events and 14 news rows,
-and left player state and location unchanged. Its reader pages and separate
-provenance artifacts live at
-`F:\GameCult\GhostlightDungeon\acceptance\root-wire-frontpage-blind-2f7c090-1`.
-The wave-two page did not pass the blind journalistic gate. A fresh reviewer,
-shown only that page under a neutral brief, diagnosed procedural construction
-with 99 percent confidence because the copy exposed a canonical relation name,
-a numerical state delta, and source-record language. This does not weaken the
-world-simulation witness. It establishes that rendering and copy-desk gates
-cannot repair a newsroom packet that presents mechanical background records as
-editorial evidence.
+The first newsroom projection cut was committed as `a585398` and exercised by
+a fresh isolated two-wave Codex Connector run with `gpt-5.6-luna`. The campaign
+advanced to revision 2 with 18 Events and 15 NewsIssues while player state and
+location remained unchanged. Both presentation gates failed: the blind editor
+returned FAIL at 99 percent confidence and the grounding auditor returned FAIL
+at 0.94 confidence. The untouched responses and their review hashes live at
+`F:\GameCult\GhostlightDungeon\acceptance\root-wire-frontpage-blind-a585398-1`.
+Public Event prose still exposed abstract posture and relation transitions; the
+newsroom promoted merely involved entity and location metadata into asserted
+names and a dateline; and the smoke result projected the wave-one commit at top
+level beside wave-two counts and head. The world run remains valid evidence of
+autonomous transition, not newspaper acceptance.
 
-The current local source cut rewrites public strategic summaries into
-human-readable accounts at the event owner, gives the editor only opaque desk
-citations and named public facts, deduplicates identical fact packets, and maps
-accepted citations back to exact canonical `NewsIssue` and `Event` provenance.
-All 392 library tests and every binary test pass, and the bounded Modeling
-re-audit is clear. This is local verification only; no fresh provider page has
-passed blind or grounding review yet.
+A second local cut changes institution and relation public phrasing, includes
+model-facing names only when the public account asserts them, suppresses
+ambiguous multi-place metadata, and projects final-wave commit data at the smoke
+result top level. All 393 library tests and every binary test pass, and the
+bounded Modeling final review is clear after correcting a name-boundary
+collision. The cut is not yet committed or run against the provider.
 
-1. Commit and push the coherent newsroom and public-event cut.
+1. Commit and push the exact locally verified second cut.
 2. Run a fresh isolated exact-commit two-wave newspaper acceptance through
    Codex Connector with `gpt-5.6-luna`, preserving world, issue, audit, receipt,
-   build, and hash witnesses without mutating the live daemon.
+   build, review, and hash witnesses without mutating the live daemon.
 3. Dispatch a fresh blind reviewer with only the strongest page and a neutral
    editorial brief; preserve its untouched response.
 4. Independently audit that page against committed public events before

@@ -1,3 +1,14 @@
+fn final_wave_field(
+    wave_reports: &[serde_json::Value],
+    field: &str,
+) -> anyhow::Result<serde_json::Value> {
+    wave_reports
+        .last()
+        .and_then(|wave| wave.get(field))
+        .cloned()
+        .ok_or_else(|| anyhow::anyhow!("final strategic wave is missing {field}"))
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     use chrono::Utc;
@@ -272,9 +283,9 @@ async fn main() -> anyhow::Result<()> {
             }))?,
         )?;
     }
-    let first_plan = wave_reports[0]["plan"].clone();
-    let first_commit = wave_reports[0]["commit"].clone();
-    let first_model_receipt_hash = wave_reports[0]["model_receipt_hash"].clone();
+    let final_plan = final_wave_field(&wave_reports, "plan")?;
+    let final_commit = final_wave_field(&wave_reports, "commit")?;
+    let final_model_receipt_hash = final_wave_field(&wave_reports, "model_receipt_hash")?;
     let model_stage_receipts = wave_reports
         .iter()
         .flat_map(|wave| {
@@ -309,10 +320,10 @@ async fn main() -> anyhow::Result<()> {
                 "campaign_id":campaign.id,
                 "elapsed_seconds":started.elapsed().as_secs_f64(),
                 "model_runtime":model_selection.status("configured"),
-                "model_receipt_hash":&first_model_receipt_hash,
+                "model_receipt_hash":&final_model_receipt_hash,
                 "model_stage_receipts":&model_stage_receipts,
-                "plan":&first_plan,
-                "commit":&first_commit,
+                "plan":&final_plan,
+                "commit":&final_commit,
                 "waves":&wave_reports,
                 "event_count":campaign.events.len(),
                 "news_count":campaign.news.len(),
@@ -364,10 +375,10 @@ async fn main() -> anyhow::Result<()> {
         "campaign_id":campaign.id,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
         "model_runtime":model_selection.status("configured"),
-        "model_receipt_hash":first_model_receipt_hash,
+        "model_receipt_hash":final_model_receipt_hash,
         "model_stage_receipts":model_stage_receipts,
-        "plan":first_plan,
-        "commit":first_commit,
+        "plan":final_plan,
+        "commit":final_commit,
         "waves":wave_reports,
         "event_count":campaign.events.len(),
         "news_count":campaign.news.len(),
@@ -696,4 +707,20 @@ fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
             .extend(["depot".into(), "yard".into()]);
     }
     campaign
+}
+
+#[cfg(test)]
+mod tests {
+    use super::final_wave_field;
+
+    #[test]
+    fn top_level_projection_uses_the_final_wave_head() {
+        let waves = vec![
+            serde_json::json!({"commit":{"campaign":{"revision":1}}}),
+            serde_json::json!({"commit":{"campaign":{"revision":2}}}),
+        ];
+
+        let commit = final_wave_field(&waves, "commit").unwrap();
+        assert_eq!(commit["campaign"]["revision"], 2);
+    }
 }
