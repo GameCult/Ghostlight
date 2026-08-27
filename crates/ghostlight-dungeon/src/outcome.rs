@@ -3,7 +3,10 @@ use crate::{
         Campaign, CellActionProposal, StrategicActivityKind, StrategicActivityOutcome,
         StrategicCellEffect, StrategicOutcomeBand, StrategicOutcomeEffect, StrategicTickPlan,
     },
-    model::{MODEL_FAST, ModelPort, ModelStageOutput, ModelStageRequest, run_validated_stage},
+    model::{
+        MODEL_BALANCED, MODEL_FAST, ModelPort, ModelStageOutput, ModelStageReceipt,
+        ModelStageRequest, run_validated_stage,
+    },
     resolution::{cell_action_digest, effective_member_knowledge, subject_state_references},
 };
 use anyhow::{Result, anyhow};
@@ -152,6 +155,36 @@ struct OutcomeVerifierVerdict {
     repair_guidance: Option<String>,
 }
 
+#[derive(Clone, Debug)]
+pub struct StrategicOutcomeResolutionFailure {
+    pub action_errors: Vec<String>,
+    pub stage_receipts: Vec<ModelStageReceipt>,
+}
+
+impl std::fmt::Display for StrategicOutcomeResolutionFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            formatter,
+            "strategic outcome resolution rejected after {} action failure(s): {}",
+            self.action_errors.len(),
+            self.action_errors.join("; ")
+        )
+    }
+}
+
+impl std::error::Error for StrategicOutcomeResolutionFailure {}
+
+enum OutcomeCandidateEvaluation {
+    Accepted {
+        outcomes: Vec<StrategicActivityOutcome>,
+        verifier: Option<ModelStageOutput>,
+    },
+    Rejected {
+        finding: String,
+        verifier: Option<ModelStageOutput>,
+    },
+}
+
 pub async fn resolve_activity_outcomes(
     model: Arc<dyn ModelPort>,
     campaign: &Campaign,
@@ -178,14 +211,38 @@ pub async fn resolve_activity_outcomes(
         });
     }
     let mut ordered = BTreeMap::new();
+    let mut action_errors = Vec::new();
+    let mut rejected_stage_receipts = Vec::new();
     while let Some(task) = tasks.join_next().await {
-        let (index, resolved) =
-            task.map_err(|error| anyhow!("strategic outcome worker failed: {error}"))??;
-        if ordered.insert(index, resolved).is_some() {
-            return Err(anyhow!(
-                "strategic outcome worker returned a duplicate slot"
-            ));
+        match task {
+            Ok(Ok((index, resolved))) => {
+                if ordered.insert(index, resolved).is_some() {
+                    action_errors.push("strategic outcome worker returned a duplicate slot".into());
+                }
+            }
+            Ok(Err(error)) => {
+                if let Some(failure) = error.downcast_ref::<StrategicOutcomeResolutionFailure>() {
+                    action_errors.extend(failure.action_errors.clone());
+                    rejected_stage_receipts.extend(failure.stage_receipts.clone());
+                } else {
+                    action_errors.push(error.to_string());
+                }
+            }
+            Err(error) => {
+                action_errors.push(format!("strategic outcome worker failed: {error}"));
+            }
         }
+    }
+    if !action_errors.is_empty() {
+        rejected_stage_receipts.extend(
+            ordered
+                .values()
+                .flat_map(|(_, stages)| stages.iter().map(|stage| stage.receipt.clone())),
+        );
+        return Err(anyhow::Error::new(StrategicOutcomeResolutionFailure {
+            action_errors,
+            stage_receipts: rejected_stage_receipts,
+        }));
     }
     if ordered.len() != proposals.len() {
         return Err(anyhow!(
@@ -231,101 +288,243 @@ async fn resolve_activity_outcome(
     let static_contract = format!(
         "You are Ghostlight's private strategic outcome resolver. The Interpreter already established each exact constituent's selected attempt; you alone assess opposition and choose its bounded durable result. Resolve every supplied action_digest exactly once. Never add or remove an action. For each action, effect_kind must come from that action's admissible_effect_kinds; this is the runtime's exact projection of locally valid consequence handles. Use only IDs, resources, pressure resolutions, relations, facts, member owners, targets, and state references supplied for that same action. Never mutate the player. Never treat an arena as an actor or union constituents' private state. Prefer the most specific causally supported durable effect when the attempt and its band establish one. A mixed result should preserve bounded progress, cost, or a new unresolved pressure when a supplied handle supports it; do not collapse concrete partial work into no change merely because it is incomplete. Use no_material_change when none of the other supplied handles honestly represents a durable result; success or mixed success does not itself authorize inventing a response, fact, relationship, or resource. A failure may create a pressure or spend a committed resource when causally supported. Every material effect must actually change the supplied state; do not repeat an existing resource, pressure, memory, obligation, relationship description, or known fact. Choose exactly one effect_kind. Populate only its fields and omit every irrelevant optional field. no_material_change requires reason. resource_created creates one bounded branch-local resource and requires a capability reference. Its owner_subject_id must copy one exact resource_creation_owner_ids value: choose the source for portable stock or equipment it retains, or an exact activity location for a durable installed, placed, or repaired feature there. resource_consumed spends one exact existing source resource. resource_transferred gives one exact existing source resource to one recipient: copy one exact resource_recipient_ids value into the output field other_subject_id; it cannot take from a target. For resource_consumed and resource_transferred, owner_subject_id must copy that action's exact resource_owner_id, including any member: prefix. gestalt_pressure copies one exact pressure_owners.owner_subject_id value adjacent to that owner's current_pressures into owner_subject_id; resolutions must copy exact current pressure text. agency_relation_shift uses one supplied active relation and a nonzero delta from -10 through 10. Member memory, obligation, or relationship may change only the supplied member_state_owner_id; member_id omits the member: prefix. A relationship's other_subject_id must be one exact action target. knowledge_learned uses one supplied discoverable fact and teaches only the source. knowledge_communicated copies one communicable_facts fact_id and a nonempty subset of its exact recipient_subject_ids; owner_subject_id is the source speaker. Every material effect needs at least one supporting_state_reference copied literally and only from that action's allowed_state_references. IDs shown in source_state, target_state, target_subject_ids, or effect-specific owner and target fields are not provenance handles unless repeated in allowed_state_references. Return one JSON object and no prose outside JSON.\n\nOUTPUT CONTRACT:\n{OUTCOME_PROPOSAL_OUTPUT_CONTRACT}"
     );
-    let mut request = ModelStageRequest {
+    let request = ModelStageRequest {
         stage: "strategic_outcome_resolver".into(),
         model: MODEL_FAST.into(),
-        snapshot_binding: binding,
+        snapshot_binding: binding.clone(),
         lived_stream: format!(
             "{static_contract}\n\nOUTCOME_CONTEXT:\n{}",
             serde_json::to_string(&context)?
         ),
-        output_schema: Some(schema),
+        output_schema: Some(schema.clone()),
         source_receipt_ids: source_receipt_ids.clone(),
         temperature: Some(0.0),
         max_output_tokens: Some(2_400),
     };
     let mut stages = Vec::new();
-    for semantic_attempt in 0..2 {
-        let mut stage = run_validated_stage(model, &request).await?;
-        let proposal_bundle: OutcomeProposalBundle = serde_json::from_value(
-            stage
-                .structured
-                .clone()
-                .ok_or_else(|| anyhow!("strategic outcome resolver produced no typed output"))?,
-        )?;
-        match bind_outcomes(campaign, proposals, proposal_bundle) {
-            Ok(outcomes) => {
-                stages.push(stage);
-                let semantic_outcomes = outcomes
-                    .iter()
-                    .filter(|outcome| is_material_outcome(&outcome.effect))
-                    .cloned()
-                    .collect::<Vec<_>>();
-                if semantic_outcomes.is_empty() {
-                    return Ok((outcomes, stages));
-                }
-                let semantic_digests = semantic_outcomes
-                    .iter()
-                    .map(|outcome| outcome.action_digest.clone())
-                    .collect::<Vec<_>>();
-                let semantic_digest_set = semantic_digests.iter().cloned().collect::<BTreeSet<_>>();
-                let semantic_proposals = proposals
-                    .iter()
-                    .filter(|proposal| {
-                        cell_action_digest(proposal)
-                            .is_ok_and(|digest| semantic_digest_set.contains(&digest))
-                    })
-                    .cloned()
-                    .collect::<Vec<_>>();
-                let semantic_context = build_context(campaign, &semantic_proposals)?;
-                let (verifier, mismatches) = verify_outcomes(
-                    model,
-                    campaign,
-                    &semantic_context,
-                    &semantic_outcomes,
-                    &semantic_digests,
-                    &source_receipt_ids,
-                )
-                .await?;
-                stages.push(verifier);
-                if mismatches.is_empty() {
-                    return Ok((outcomes, stages));
-                }
-                if semantic_attempt == 0 {
-                    request.lived_stream.push_str(&format!(
-                        "\n\nCORRECTION TASK—THE INDEPENDENT OUTCOME VERIFIER REJECTED THE PREVIOUS BUNDLE.\nREPAIRS:\n{}\nPREVIOUS_REJECTED_OUTCOMES:\n{}\nReturn one complete corrected bundle against the exact same snapshot and action digests. Do not preserve a rejected effect_kind unless its repair explicitly says that kind remains valid. When no exact supplied handle can express the repair, use no_material_change with a concrete reason.",
-                        mismatches.join("\n"),
-                        serde_json::to_string(&outcomes)?
-                    ));
-                } else {
-                    return Err(anyhow!(
-                        "strategic outcome verifier rejected the corrected bundle: {}",
-                        mismatches.join("; ")
-                    ));
-                }
-            }
-            Err(error) if semantic_attempt == 0 => {
-                let rejected = stage.narrative.clone();
-                stage.receipt.validation_result = "semantic_invalid".into();
-                stage.receipt.local_validation_error =
-                    Some(error.to_string().chars().take(1_000).collect());
-                stages.push(stage);
-                request.lived_stream.push_str(&format!(
-                    "\n\nCORRECTION TASK—THE PREVIOUS OUTCOME BUNDLE WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_BUNDLE:\n{rejected}\nReturn one complete corrected bundle against the exact same snapshot and action digests. Do not preserve an effect that violates the stated handle set."
-                ));
-            }
+    let mut candidate_stage = run_validated_stage(model, &request).await?;
+    let mut candidate_bundle: OutcomeProposalBundle = serde_json::from_value(
+        candidate_stage
+            .structured
+            .clone()
+            .ok_or_else(|| anyhow!("strategic outcome resolver produced no typed output"))?,
+    )?;
+    let mut candidate_was_reconciled = false;
+    loop {
+        let candidate_sources = source_receipt_ids
+            .iter()
+            .cloned()
+            .chain(std::iter::once(
+                candidate_stage.receipt.storage_key().to_owned(),
+            ))
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+        let evaluation = evaluate_outcome_candidate(
+            model,
+            campaign,
+            proposals,
+            candidate_bundle.clone(),
+            &candidate_sources,
+        )
+        .await;
+        let evaluation = match evaluation {
+            Ok(evaluation) => evaluation,
             Err(error) => {
-                return Err(anyhow!(
-                    "strategic outcome resolver failed semantic validation after one correction: {error}"
-                ));
+                reject_candidate_stage(&mut candidate_stage, &error.to_string());
+                stages.push(candidate_stage);
+                return Err(outcome_failure(error.to_string(), &stages));
+            }
+        };
+        match evaluation {
+            OutcomeCandidateEvaluation::Accepted { outcomes, verifier } => {
+                stages.push(candidate_stage);
+                if let Some(verifier) = verifier {
+                    stages.push(verifier);
+                }
+                return Ok((outcomes, stages));
+            }
+            OutcomeCandidateEvaluation::Rejected { finding, verifier } => {
+                reject_candidate_stage(&mut candidate_stage, &finding);
+                stages.push(candidate_stage);
+                if let Some(verifier) = verifier {
+                    stages.push(verifier);
+                }
+                if candidate_was_reconciled {
+                    return Err(outcome_failure(
+                        format!(
+                            "strategic outcome reconciliation did not survive admission: {finding}"
+                        ),
+                        &stages,
+                    ));
+                }
+                let reconciliation_sources = source_receipt_ids
+                    .iter()
+                    .cloned()
+                    .chain(
+                        stages
+                            .iter()
+                            .map(|stage| stage.receipt.storage_key().to_owned()),
+                    )
+                    .collect::<BTreeSet<_>>()
+                    .into_iter()
+                    .collect::<Vec<_>>();
+                let reconciliation = reconcile_activity_outcome(
+                    model,
+                    &context,
+                    &candidate_bundle,
+                    &finding,
+                    &reconciliation_sources,
+                    &schema,
+                    &binding,
+                )
+                .await;
+                let (reconciled_bundle, reconciliation_stage) = match reconciliation {
+                    Ok(reconciliation) => reconciliation,
+                    Err(error) => {
+                        return Err(outcome_failure(error.to_string(), &stages));
+                    }
+                };
+                candidate_bundle = reconciled_bundle;
+                candidate_stage = reconciliation_stage;
+                candidate_was_reconciled = true;
             }
         }
     }
-    unreachable!()
+}
+
+async fn evaluate_outcome_candidate(
+    model: &dyn ModelPort,
+    campaign: &Campaign,
+    proposals: &[CellActionProposal],
+    proposal_bundle: OutcomeProposalBundle,
+    source_receipt_ids: &[String],
+) -> Result<OutcomeCandidateEvaluation> {
+    let outcomes = match bind_outcomes(campaign, proposals, proposal_bundle) {
+        Ok(outcomes) => outcomes,
+        Err(error) => {
+            return Ok(OutcomeCandidateEvaluation::Rejected {
+                finding: error.to_string(),
+                verifier: None,
+            });
+        }
+    };
+    let semantic_outcomes = outcomes
+        .iter()
+        .filter(|outcome| is_material_outcome(&outcome.effect))
+        .cloned()
+        .collect::<Vec<_>>();
+    if semantic_outcomes.is_empty() {
+        return Ok(OutcomeCandidateEvaluation::Accepted {
+            outcomes,
+            verifier: None,
+        });
+    }
+    let semantic_digests = semantic_outcomes
+        .iter()
+        .map(|outcome| outcome.action_digest.clone())
+        .collect::<Vec<_>>();
+    let semantic_digest_set = semantic_digests.iter().cloned().collect::<BTreeSet<_>>();
+    let semantic_proposals = proposals
+        .iter()
+        .filter(|proposal| {
+            cell_action_digest(proposal).is_ok_and(|digest| semantic_digest_set.contains(&digest))
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    let semantic_context = build_context(campaign, &semantic_proposals)?;
+    let (verifier, mismatches) = verify_outcomes(
+        model,
+        campaign,
+        &semantic_context,
+        &semantic_outcomes,
+        &semantic_digests,
+        source_receipt_ids,
+    )
+    .await?;
+    if mismatches.is_empty() {
+        Ok(OutcomeCandidateEvaluation::Accepted {
+            outcomes,
+            verifier: Some(verifier),
+        })
+    } else {
+        Ok(OutcomeCandidateEvaluation::Rejected {
+            finding: mismatches.join("; "),
+            verifier: Some(verifier),
+        })
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn reconcile_activity_outcome(
+    model: &dyn ModelPort,
+    context: &OutcomeContext,
+    rejected_bundle: &OutcomeProposalBundle,
+    finding: &str,
+    source_receipt_ids: &[String],
+    schema: &serde_json::Value,
+    binding: &str,
+) -> Result<(OutcomeProposalBundle, ModelStageOutput)> {
+    let request = ModelStageRequest {
+        // Reconciliation is a cheaper route to the same terminal authority,
+        // not a second kind of world decision. The model and causal sources
+        // retain how this candidate was produced.
+        stage: "strategic_outcome_resolver".into(),
+        model: MODEL_BALANCED.into(),
+        snapshot_binding: binding.into(),
+        lived_stream: format!(
+            "Repair one frozen strategic outcome bundle. The cell appraisal, selected attempt, action digest, snapshot, and admissible handles are immutable. Replace only the outcome bundle. Resolve the exact finding against the supplied action context. Preserve a material effect only when the attempt and an exact supplied handle causally establish it; otherwise use no_material_change with a concrete reason. Return one complete bundle and no prose.\n\nOUTPUT CONTRACT:\n{OUTCOME_PROPOSAL_OUTPUT_CONTRACT}\n\nACTION_CONTEXT:\n{}\n\nREPAIR FINDING:\n{}\n\nFROZEN REJECTED BUNDLE:\n{}",
+            serde_json::to_string(context)?,
+            finding,
+            serde_json::to_string(rejected_bundle)?,
+        ),
+        output_schema: Some(schema.clone()),
+        source_receipt_ids: source_receipt_ids.to_vec(),
+        temperature: Some(0.0),
+        max_output_tokens: Some(2_400),
+    };
+    let stage = run_validated_stage(model, &request).await?;
+    let bundle =
+        serde_json::from_value(stage.structured.clone().ok_or_else(|| {
+            anyhow!("strategic outcome reconciliation produced no typed output")
+        })?)?;
+    Ok((bundle, stage))
+}
+
+fn reject_candidate_stage(stage: &mut ModelStageOutput, finding: &str) {
+    stage.receipt.validation_result = "semantic_invalid".into();
+    stage.receipt.local_validation_error = Some(finding.chars().take(1_000).collect::<String>());
+}
+
+fn outcome_failure(diagnostic: String, stages: &[ModelStageOutput]) -> anyhow::Error {
+    anyhow::Error::new(StrategicOutcomeResolutionFailure {
+        action_errors: vec![diagnostic],
+        stage_receipts: stages.iter().map(|stage| stage.receipt.clone()).collect(),
+    })
 }
 
 fn is_material_outcome(effect: &StrategicOutcomeEffect) -> bool {
     !matches!(effect, StrategicOutcomeEffect::NoMaterialChange { .. })
+}
+
+pub fn activity_outcome_verification_binding(
+    campaign_id: uuid::Uuid,
+    world_revision: u64,
+    resolution_epoch: u64,
+    outcomes: &[StrategicActivityOutcome],
+) -> Result<String> {
+    let digests = outcomes
+        .iter()
+        .map(|outcome| outcome.action_digest.clone())
+        .collect::<Vec<_>>();
+    let outcome_hash = format!(
+        "sha256:{:x}",
+        Sha256::digest(rmp_serde::to_vec_named(outcomes)?)
+    );
+    Ok(format!(
+        "{}:verifier:{outcome_hash}",
+        activity_outcome_binding(campaign_id, world_revision, resolution_epoch, &digests,)
+    ))
 }
 
 async fn verify_outcomes(
@@ -338,22 +537,15 @@ async fn verify_outcomes(
 ) -> Result<(ModelStageOutput, Vec<String>)> {
     let mut schema = serde_json::to_value(schema_for!(OutcomeVerifierBundle))?;
     constrain_verifier_schema(&mut schema, digests)?;
-    let outcome_hash = format!(
-        "sha256:{:x}",
-        Sha256::digest(rmp_serde::to_vec_named(outcomes)?)
-    );
     let request = ModelStageRequest {
         stage: "strategic_outcome_verifier".into(),
         model: MODEL_FAST.into(),
-        snapshot_binding: format!(
-            "{}:verifier:{outcome_hash}",
-            activity_outcome_binding(
-                campaign.id,
-                campaign.revision,
-                campaign.resolution_policy.resolution_epoch,
-                digests,
-            )
-        ),
+        snapshot_binding: activity_outcome_verification_binding(
+            campaign.id,
+            campaign.revision,
+            campaign.resolution_policy.resolution_epoch,
+            outcomes,
+        )?,
         lived_stream: format!(
             "You are Ghostlight's independent semantic verifier for material strategic outcomes. The local validator has already proved IDs, custody, scope, and bounds. Judge only whether each proposed durable mutation is causally entailed by that exact subject's attempt and supplied state. Return one verdict per action_digest in supplied order. Resource creation requires concrete making, repair, or preparation that establishes the named durable result. Its custodian must match the result: portable stock or equipment stays with the source, while an installed, placed, or repaired feature belongs to the exact activity location where it was established. A resource_consumed must be an exact resource the attempt actually uses, spends, gives up, damages, or transforms; reject unrelated inventory charges. A resource_transferred requires the attempt to give that exact resource to that exact recipient. A pressure addition or resolution must follow from the attempted activity rather than merely naming a current pressure. A relation shift requires an interaction capable of changing that relationship, not merely a message, proximity, or unrelated work. Member memory, obligation, and relationship effects require an event in the attempt that could create that exact personal delta. Knowledge learned requires an investigation, observation, or communication that can actually teach the source that exact fact; the fact merely appearing in supplied state or references is not enough. Knowledge communicated requires the attempt to convey that exact source-known fact to those exact recipients; addressing them without stating the fact is insufficient. result is match or mismatch. match requires null repair_guidance; mismatch requires one concrete correction sentence of at most 240 characters. Return JSON only.\n\nOUTPUT CONTRACT:\n{OUTCOME_VERIFIER_OUTPUT_CONTRACT}\n\nACTION_CONTEXT:\n{}\n\nPROPOSED_OUTCOMES:\n{}",
             serde_json::to_string(context)?,
@@ -2436,6 +2628,11 @@ mod tests {
         requests: Mutex<Vec<ModelStageRequest>>,
     }
 
+    struct PersistentlyMismatchedOutcomeModel {
+        action_digest: String,
+        requests: Mutex<Vec<ModelStageRequest>>,
+    }
+
     struct IsolatingOutcomeModel {
         requests: Mutex<Vec<ModelStageRequest>>,
     }
@@ -2515,6 +2712,38 @@ mod tests {
     }
 
     #[async_trait::async_trait]
+    impl ModelPort for PersistentlyMismatchedOutcomeModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            self.requests.lock().unwrap().push(request.clone());
+            if request.stage == "strategic_outcome_verifier" {
+                return Ok(serde_json::json!({
+                    "verdicts":[{
+                        "action_digest":self.action_digest,
+                        "result":"mismatch",
+                        "repair_guidance":"The attempt does not establish this fact; use no_material_change."
+                    }]
+                })
+                .to_string());
+            }
+            Ok(serde_json::json!({
+                "outcomes":[{
+                    "action_digest":self.action_digest,
+                    "band":"mixed",
+                    "effect_kind":"knowledge_learned",
+                    "supporting_state_references":["fact:fact:safe-route"],
+                    "owner_subject_id":"dockers",
+                    "fact_id":"fact:safe-route"
+                }]
+            })
+            .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "persistently-mismatched-outcome-model"
+        }
+    }
+
+    #[async_trait::async_trait]
     impl ModelPort for CorrectingOutcomeModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             if request.stage == "strategic_outcome_verifier" {
@@ -2553,9 +2782,10 @@ mod tests {
                 "outcomes":[{
                     "action_digest":self.action_digest,
                     "band":"mixed",
-                    "effect_kind":"no_material_change",
-                    "supporting_state_references":[],
-                    "reason":"The inspection does not use or alter any durable resource."
+                    "effect_kind":"knowledge_learned",
+                    "supporting_state_references":["fact:fact:safe-route"],
+                    "owner_subject_id":"dockers",
+                    "fact_id":"fact:safe-route"
                 }]
             })
             .to_string())
@@ -3344,22 +3574,37 @@ mod tests {
         assert_eq!(stages[0].receipt.provider_attempts.len(), 1);
         assert_eq!(stages[0].receipt.validation_result, "semantic_invalid");
         assert_eq!(stages[1].receipt.provider_attempts.len(), 1);
+        assert_eq!(stages[0].receipt.stage, "strategic_outcome_resolver");
+        assert_eq!(stages[0].receipt.model, MODEL_FAST);
+        assert_eq!(stages[1].receipt.stage, "strategic_outcome_resolver");
+        assert_eq!(stages[1].receipt.model, MODEL_BALANCED);
+        assert_eq!(
+            stages[1].receipt.snapshot_binding,
+            stages[0].receipt.snapshot_binding
+        );
+        assert!(
+            stages[1]
+                .receipt
+                .source_receipt_ids
+                .contains(&stages[0].receipt.storage_key().to_owned())
+        );
         assert!(matches!(
             outcomes[0].effect,
             StrategicOutcomeEffect::NoMaterialChange { .. }
         ));
         let requests = model.requests.lock().unwrap();
         assert_eq!(requests.len(), 2);
+        assert_eq!(requests[0].stage, "strategic_outcome_resolver");
+        assert_eq!(requests[0].model, MODEL_FAST);
+        assert_eq!(requests[1].stage, "strategic_outcome_resolver");
+        assert_eq!(requests[1].model, MODEL_BALANCED);
+        assert_eq!(requests[1].snapshot_binding, requests[0].snapshot_binding);
         assert!(
             requests[1]
                 .lived_stream
                 .contains("gestalt pressure additions already exist: storm damage")
         );
-        assert!(
-            requests[1]
-                .lived_stream
-                .contains("PREVIOUS_REJECTED_BUNDLE")
-        );
+        assert!(requests[1].lived_stream.contains("FROZEN REJECTED BUNDLE"));
         assert!(requests[1].lived_stream.contains("pressure_additions"));
     }
 
@@ -3880,12 +4125,27 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(stages.len(), 3);
+        assert_eq!(stages.len(), 4);
         assert!(matches!(
             outcomes[0].effect,
-            StrategicOutcomeEffect::NoMaterialChange { .. }
+            StrategicOutcomeEffect::KnowledgeLearned { .. }
         ));
         assert_eq!(*model.resolver_calls.lock().unwrap(), 2);
+        assert_eq!(stages[0].receipt.stage, "strategic_outcome_resolver");
+        assert_eq!(stages[1].receipt.stage, "strategic_outcome_verifier");
+        assert_eq!(stages[2].receipt.stage, "strategic_outcome_resolver");
+        assert_eq!(stages[2].receipt.model, MODEL_BALANCED);
+        assert_eq!(
+            stages[2].receipt.snapshot_binding,
+            stages[0].receipt.snapshot_binding
+        );
+        assert_eq!(stages[3].receipt.stage, "strategic_outcome_verifier");
+        assert!(
+            stages[3]
+                .receipt
+                .source_receipt_ids
+                .contains(&stages[2].receipt.storage_key().to_owned())
+        );
     }
 
     #[tokio::test]
@@ -3921,10 +4181,71 @@ mod tests {
         assert_eq!(*model.resolver_calls.lock().unwrap(), 2);
         let requests = model.requests.lock().unwrap();
         assert_eq!(requests[1].stage, "strategic_outcome_verifier");
+        assert_eq!(requests[2].stage, "strategic_outcome_resolver");
+        assert_eq!(requests[2].model, MODEL_BALANCED);
+        assert_eq!(requests[2].snapshot_binding, requests[0].snapshot_binding);
         assert!(
             requests[2]
                 .lived_stream
                 .contains("does not observe, investigate, or communicate the proposed fact")
+        );
+    }
+
+    #[tokio::test]
+    async fn rejected_reconciliation_preserves_the_complete_outcome_receipt_chain() {
+        let value = campaign();
+        let action = proposal();
+        let digest = cell_action_digest(&action).unwrap();
+        let model = Arc::new(PersistentlyMismatchedOutcomeModel {
+            action_digest: digest,
+            requests: Mutex::new(Vec::new()),
+        });
+
+        let error = resolve_activity_outcomes(model.clone(), &value, &[action])
+            .await
+            .expect_err("a rejected reconciled outcome must fail closed");
+        let failure = error
+            .downcast_ref::<StrategicOutcomeResolutionFailure>()
+            .expect("terminal outcome failures must retain typed evidence");
+
+        assert_eq!(failure.action_errors.len(), 1);
+        assert!(failure.action_errors[0].contains("did not survive admission"));
+        assert_eq!(failure.stage_receipts.len(), 4);
+        assert_eq!(
+            failure
+                .stage_receipts
+                .iter()
+                .map(|receipt| receipt.stage.as_str())
+                .collect::<Vec<_>>(),
+            vec![
+                "strategic_outcome_resolver",
+                "strategic_outcome_verifier",
+                "strategic_outcome_resolver",
+                "strategic_outcome_verifier",
+            ]
+        );
+        assert_eq!(
+            failure.stage_receipts[0].validation_result,
+            "semantic_invalid"
+        );
+        assert_eq!(
+            failure.stage_receipts[2].validation_result,
+            "semantic_invalid"
+        );
+        assert_eq!(failure.stage_receipts[2].model, MODEL_BALANCED);
+        assert!(
+            failure.stage_receipts[3]
+                .source_receipt_ids
+                .contains(&failure.stage_receipts[2].storage_key().to_owned())
+        );
+        let requests = model.requests.lock().unwrap();
+        assert_eq!(requests.len(), 4);
+        assert_eq!(
+            requests
+                .iter()
+                .filter(|request| request.stage == "strategic_outcome_resolver")
+                .count(),
+            2
         );
     }
 }

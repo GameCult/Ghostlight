@@ -170,8 +170,10 @@ exact campaign revision
   -> model proposes exact constituent-attributed actions or explicit inaction
   -> independent effect verifier checks the typed action against the Persona choice
   -> runtime selects compatible attempts and content-addresses each activity
-  -> one batched outcome resolver chooses bounded typed consequences
-  -> selective outcome verifier checks high-risk custody and private-state effects
+  -> parallel per-activity fast outcome candidates choose bounded typed consequences
+  -> one local binder plus selective semantic verifier admit or reject each frozen candidate
+  -> at most one balanced reconciliation replaces only a rejected outcome bundle
+  -> direct and reconciled candidates publish the same terminal outcome-resolver authority
   -> runtime binds complete cell membership + world/resolution revisions
   -> WorldKernel validates cover, stage/outcome receipts, knowledge, scope, custody, topology, and bounds
   -> AdvanceStrategicTick through the campaign mailbox
@@ -350,8 +352,9 @@ change exact unresolved markers. `gestalt_activity` records an attributed
 preparation, coordination, investigation, recruitment, obstruction, trade, or
 communication attempt against subjects connected by an explicit agency
 relation or exact shared location without claiming the outcome. After
-selection, one wave-level Flash resolver receives only those attempts and
-precomputed legal consequence handles. It must return one digest-bound
+selection, the outcome organ launches one logical-fast candidate per selected
+activity under the configured provider parallelism. Each candidate receives
+only that attempt and its precomputed legal consequence handles. It must return one digest-bound
 `strategic_activity_outcome.v1` per activity; missing, duplicate, stale,
 player-mutating, or invented effects reject the entire wave. Accepted outcomes
 may change exact resources, population pressures, incident agency relations,
@@ -361,13 +364,30 @@ dormant member can be addressed by their durable ID; this does not union them
 into the source population. The kernel derives the event text and exact
 participant IDs; the arena and model prose own neither.
 
-The outcome resolver does not repair or reinterpret Persona intent. The
-Interpreter owns the attempt; the resolver owns opposition and result;
-WorldKernel alone owns mutation. Its stage receipt binds the sorted set of
-MessagePack proposal digests, and every outcome is stored independently in
-CultCache and projected on the operator Eve surface. All effects apply to the
-same private campaign copy as the rest of the strategic wave, so a late invalid
-outcome cannot leave an earlier action, clock, detail debt, or event committed.
+The outcome organ does not repair or reinterpret Persona intent. The
+Interpreter owns the attempt; the terminal outcome resolver owns opposition and
+result; WorldKernel alone owns mutation. Local binding failures and independent
+semantic-verifier mismatches are findings from the same admission boundary.
+Either finding may invoke one logical-balanced reconciliation that can replace
+only the frozen outcome bundle. Cell appraisals, selected attempts, action
+digests, campaign snapshot, and admissible handles are immutable inputs. A
+failed reconciliation closes the wave; it cannot call the logical-fast
+candidate again or return to Persona appraisal.
+
+Direct and reconciled outcomes publish the same terminal
+`strategic_outcome_resolver` stage authority at the exact activity binding. A
+reconciled receipt remains distinguishable by its logical-balanced model and
+causal source chain; the rejected logical-fast receipt remains
+`semantic_invalid` evidence and cannot satisfy kernel admission. The terminal
+verifier cites the admitted candidate receipt, and every material outcome must
+carry that exact outcome-bound valid verifier receipt through WorldKernel
+admission. Scheduler sequences the boundary, checks cancellation, and aggregates
+typed terminal failures and completed receipts for persistence; it owns no
+repair prompt or replacement decision.
+Every outcome is stored independently in CultCache and projected on the
+operator Eve surface. All effects apply to the same private campaign copy as
+the rest of the strategic wave, so a late invalid outcome cannot leave an
+earlier action, clock, detail debt, or event committed.
 
 Deterministic admissible-effect handles constrain every resolver decision.
 Actor possessions, member equipment, institution resources, and Gestalt
@@ -393,10 +413,10 @@ resolution must copy one of those strings; an addition must be new and cannot
 overlap a resolution or repeat current state. The runtime rejects the whole
 wave on a no-op, duplicate, or invented resolution before commit.
 These state-transition checks belong to the outcome semantic validator, not the
-generic JSON-shape retry. A well-shaped repeated pressure reaches the bounded
-outcome correction with the exact rejected bundle; the correction may propose
-a genuinely new pressure or `no_material_change`, while the kernel guard still
-makes the repeated transition uncommittable.
+generic JSON-shape retry. A well-shaped repeated pressure reaches the shared
+balanced reconciliation boundary with the exact rejected bundle; the
+replacement may propose a genuinely new pressure or `no_material_change`, while
+the kernel guard still makes the repeated transition uncommittable.
 
 Named-member private effects are action-relative too. An obligation is
 available only for social activity—communication, coordination, recruitment,

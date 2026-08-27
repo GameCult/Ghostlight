@@ -1242,6 +1242,26 @@ fn execute(
                         ));
                     }
                 }
+                for outcome in wave.activity_outcomes.iter().filter(|outcome| {
+                    !matches!(
+                        outcome.effect,
+                        StrategicOutcomeEffect::NoMaterialChange { .. }
+                    )
+                }) {
+                    let binding = crate::outcome::activity_outcome_verification_binding(
+                        campaign.id,
+                        campaign.revision,
+                        campaign.resolution_policy.resolution_epoch,
+                        std::slice::from_ref(outcome),
+                    )
+                    .map_err(|error| KernelError::Invalid(error.to_string()))?;
+                    if !stage_bindings.contains(&("strategic_outcome_verifier".into(), binding)) {
+                        return Err(KernelError::Invalid(
+                            "resolution wave lacks an outcome-bound strategic verifier receipt"
+                                .into(),
+                        ));
+                    }
+                }
                 if !wave.strategic_individuations.is_empty() {
                     let selected_actions = resolved_plan
                         .as_ref()
@@ -9565,31 +9585,64 @@ pub(crate) mod tests {
             wave.model_receipt_hashes
                 .push(receipt.storage_key().to_owned());
         }
-        let mut correct_wave = wave.clone();
-        let mut correct_outcome = resolution_stage(
-            &appraisal_cell_id,
-            &persisted,
-            "strategic_outcome_resolver",
-            '9',
-        );
-        correct_outcome.snapshot_binding = crate::outcome::activity_outcome_binding(
+        let outcome_binding = crate::outcome::activity_outcome_binding(
             persisted.id,
             persisted.revision,
             persisted.resolution_policy.resolution_epoch,
             &[action_digest],
         );
-        store
-            .insert(
-                "persona_stage_receipt.v1",
-                "ghostlight.persona_stage_receipt.v1",
-                correct_outcome.storage_key(),
-                &correct_outcome,
-            )
-            .unwrap();
-        correct_wave.model_receipt_hashes.pop();
+        let mut rejected_luna = resolution_stage(
+            &appraisal_cell_id,
+            &persisted,
+            "strategic_outcome_resolver",
+            '9',
+        );
+        rejected_luna.snapshot_binding = outcome_binding.clone();
+        rejected_luna.model = crate::model::MODEL_FAST.into();
+        rejected_luna.validation_result = "semantic_invalid".into();
+        rejected_luna.local_validation_error = Some("fixture semantic mismatch".into());
+        let mut admitted_terra = resolution_stage(
+            &appraisal_cell_id,
+            &persisted,
+            "strategic_outcome_resolver",
+            'a',
+        );
+        admitted_terra.snapshot_binding = outcome_binding;
+        admitted_terra.model = crate::model::MODEL_BALANCED.into();
+        admitted_terra.source_receipt_ids = vec![rejected_luna.storage_key().to_owned()];
+        let mut outcome_verifier = resolution_stage(
+            &appraisal_cell_id,
+            &persisted,
+            "strategic_outcome_verifier",
+            'b',
+        );
+        outcome_verifier.snapshot_binding = crate::outcome::activity_outcome_verification_binding(
+            persisted.id,
+            persisted.revision,
+            persisted.resolution_policy.resolution_epoch,
+            &wave.activity_outcomes,
+        )
+        .unwrap();
+        outcome_verifier.source_receipt_ids = vec![admitted_terra.storage_key().to_owned()];
+        for receipt in [&rejected_luna, &admitted_terra, &outcome_verifier] {
+            store
+                .insert(
+                    "persona_stage_receipt.v1",
+                    "ghostlight.persona_stage_receipt.v1",
+                    receipt.storage_key(),
+                    receipt,
+                )
+                .unwrap();
+        }
+        let mut missing_verifier_wave = wave.clone();
+        missing_verifier_wave.model_receipt_hashes.extend([
+            rejected_luna.storage_key().to_owned(),
+            admitted_terra.storage_key().to_owned(),
+        ]);
+        let mut correct_wave = missing_verifier_wave.clone();
         correct_wave
             .model_receipt_hashes
-            .push(correct_outcome.storage_key().to_owned());
+            .push(outcome_verifier.storage_key().to_owned());
 
         let error = kernel
             .command(WorldCommand::AdvanceStrategicTick {
@@ -9618,6 +9671,23 @@ pub(crate) mod tests {
             !stored.gestalts["refugees-east"]
                 .resources
                 .contains("storm lashings")
+        );
+
+        let error = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: 0,
+                source: TickSource::Scheduler,
+                plan: None,
+                model_receipt_hash: Some(format!("sha256:{}", "a".repeat(64))),
+                resolution_wave: Some(missing_verifier_wave),
+            })
+            .await
+            .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("lacks an outcome-bound strategic verifier receipt"),
+            "unexpected kernel rejection: {error}"
         );
 
         let result = kernel

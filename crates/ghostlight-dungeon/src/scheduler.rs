@@ -7,7 +7,9 @@ use crate::{
         MODEL_FAST, ModelPort, ModelStageOutput, ModelStageReceipt, ModelStageRequest,
         run_validated_stage,
     },
-    outcome::{activity_outcome_binding, resolve_activity_outcomes},
+    outcome::{
+        StrategicOutcomeResolutionFailure, activity_outcome_binding, resolve_activity_outcomes,
+    },
     persona::{
         CellActivityTargetSlice, CellConstituentSlice, CellMemberSlice,
         CellMigrationDestinationSlice, CellPerceivedEventSlice, CellPipelineFailure,
@@ -104,7 +106,7 @@ pub struct PrivateCellTrace {
 
 #[derive(Clone, Debug)]
 pub struct ResolutionWavePipelineFailure {
-    pub cell_errors: Vec<String>,
+    pub pipeline_errors: Vec<String>,
     pub stage_receipts: Vec<ModelStageReceipt>,
 }
 
@@ -112,9 +114,9 @@ impl std::fmt::Display for ResolutionWavePipelineFailure {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             formatter,
-            "resolution wave rejected after {} cell pipeline failure(s): {}",
-            self.cell_errors.len(),
-            self.cell_errors.join("; ")
+            "resolution wave rejected after {} pipeline failure(s): {}",
+            self.pipeline_errors.len(),
+            self.pipeline_errors.join("; ")
         )
     }
 }
@@ -258,7 +260,7 @@ pub async fn propose_resolution_wave_with_policy(
                 .flat_map(|failure| failure.stage_receipts.iter().cloned()),
         );
         return Err(anyhow::Error::new(ResolutionWavePipelineFailure {
-            cell_errors: cell_failures
+            pipeline_errors: cell_failures
                 .into_iter()
                 .map(|failure| failure.diagnostic)
                 .collect(),
@@ -349,12 +351,28 @@ pub async fn propose_resolution_wave_with_policy(
             )
             .await?;
     }
-    let (activity_outcomes, outcome_stages) = resolve_activity_outcomes(
+    let outcome_resolution = resolve_activity_outcomes(
         outcome_model.clone(),
         campaign,
         &selection.activity_proposals,
     )
-    .await?;
+    .await;
+    let (activity_outcomes, outcome_stages) = match outcome_resolution {
+        Ok(resolution) => resolution,
+        Err(error) => {
+            let mut stage_receipts = stages
+                .iter()
+                .map(|stage| stage.receipt.clone())
+                .collect::<Vec<_>>();
+            if let Some(failure) = error.downcast_ref::<StrategicOutcomeResolutionFailure>() {
+                stage_receipts.extend(failure.stage_receipts.clone());
+            }
+            return Err(anyhow::Error::new(ResolutionWavePipelineFailure {
+                pipeline_errors: vec![error.to_string()],
+                stage_receipts,
+            }));
+        }
+    };
     if !outcome_digests.is_empty() {
         outcome_permit
             .require(
@@ -2418,10 +2436,10 @@ mod tests {
         let failure = error
             .downcast_ref::<ResolutionWavePipelineFailure>()
             .expect("exhausted cell retries must preserve wave failure evidence");
-        assert!(!failure.cell_errors.is_empty());
+        assert!(!failure.pipeline_errors.is_empty());
         assert!(
             failure
-                .cell_errors
+                .pipeline_errors
                 .iter()
                 .all(|error| error.contains("pipeline failed after 3 attempts"))
         );
