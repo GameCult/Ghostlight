@@ -276,6 +276,9 @@ pub(crate) fn project_strict_responses_schema(schema: &mut serde_json::Value) ->
 fn responses_schema_is_strict(schema: &serde_json::Value) -> bool {
     match schema {
         serde_json::Value::Object(map) => {
+            if map.contains_key("$ref") && map.len() != 1 {
+                return false;
+            }
             if (map.contains_key("const") || map.contains_key("enum")) && !map.contains_key("type")
             {
                 return false;
@@ -309,6 +312,9 @@ fn responses_schema_is_strict(schema: &serde_json::Value) -> bool {
 fn require_closed_responses_objects(schema: &mut serde_json::Value, path: &str) -> Result<()> {
     match schema {
         serde_json::Value::Object(map) => {
+            if map.contains_key("$ref") && map.len() != 1 {
+                bail!("Responses schema {path} places sibling keywords beside $ref")
+            }
             let describes_object = schema_map_describes_object(map);
             if describes_object {
                 map.insert("type".to_string(), serde_json::json!("object"));
@@ -675,6 +681,18 @@ mod tests {
         assert!(schema["properties"]["note"]["anyOf"].is_array());
         assert!(responses_schema_is_strict(&schema));
         Ok(())
+    }
+
+    #[test]
+    fn strict_schema_projection_rejects_ref_siblings_before_provider_submission() {
+        let mut schema = serde_json::json!({
+            "$ref":"#/$defs/Answer",
+            "description":"provider-incompatible sibling"
+        });
+        let error = project_strict_responses_schema(&mut schema)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("sibling keywords beside $ref"));
     }
 
     #[test]

@@ -232,9 +232,6 @@ struct CompiledSeed {
     world_time: DateTime<Utc>,
     #[schemars(range(min = 1))]
     tick_hours: u32,
-    #[schemars(
-        description = "The single human-controlled player boundary. Never repeat this subject in actors or gestalt_members."
-    )]
     player: CompiledActorState,
     locations: Vec<CompiledLocation>,
     #[schemars(
@@ -5634,8 +5631,9 @@ mod tests {
         let serialized = serde_json::to_string(&schema).unwrap();
         assert!(serialized.contains("\"route_id\""));
         assert!(serialized.contains("\"subject_id\""));
-        assert!(serialized.contains("single human-controlled player boundary"));
         assert!(serialized.contains("Autonomous nonplayer actors only"));
+        assert_eq!(schema["properties"]["player"].as_object().unwrap().len(), 1);
+        assert!(schema["properties"]["player"].get("$ref").is_some());
 
         let mut agency = serde_json::to_value(schema_for!(CompiledAgencySkeleton)).unwrap();
         crate::model_connector::project_strict_responses_schema(&mut agency).unwrap();
