@@ -2009,58 +2009,73 @@ impl WorldCompiler {
             }
         };
         if let Some(civic_system) = &expansion.civic_system {
-            let verification_prompt = format!(
+            let base_verification_prompt = format!(
                 "Independently verify the admitted civic apparatus. Judge meaning, not JSON shape. The public facts must actually explain current authority, selection or succession, public resources or revenue, and redress or appeal. The institutions and political relations must form a coherent local apparatus, and every resident population's exact shared_fact_ids must ground an ordinary answer about local government. A question may select a civic domain but must not have forced its presupposed office, election, or answer into the candidate. Do not rewrite or complete the candidate; return verdicts only.\n\nREQUEST:\n{}\nEVIDENCE:\n{}\nCANDIDATE:\n{}",
                 destination_request,
                 evidence_text(&receipts),
                 serde_json::to_string(&serde_json::json!({
-                    "previous_civic_apparatus":&current_civic_context,
-                    "civic_system":civic_system,
-                    "new_facts":&seed.facts,
-                    "new_institutions":&seed.institutions,
-                    "new_local_relations":&seed.local_relations,
-                    "new_resident_populations":seed.populations.iter().map(|population| serde_json::json!({
-                        "id":population.id,
-                        "shared_fact_ids":population.shared_fact_ids,
-                    })).collect::<Vec<_>>(),
+                "previous_civic_apparatus":&current_civic_context,
+                "civic_system":civic_system,
+                "new_facts":&seed.facts,
+                "new_institutions":&seed.institutions,
+                "new_local_relations":&seed.local_relations,
+                "new_resident_populations":seed.populations.iter().map(|population| serde_json::json!({
+                    "id":population.id,
+                    "shared_fact_ids":population.shared_fact_ids,
+                })).collect::<Vec<_>>(),
                 }))?,
             );
-            let (value, mut verification_receipt) = self
-                .structured(
-                    "destination_civic_verification",
-                    &snapshot,
-                    &verification_prompt,
-                    serde_json::to_value(schema_for!(CivicSystemVerification))?,
-                    sources.clone(),
-                )
-                .await?;
-            let verdict = serde_json::from_value::<CivicSystemVerification>(value)?;
-            let rationale_chars = verdict.rationale.trim().chars().count();
-            if rationale_chars == 0
-                || rationale_chars > 1_000
-                || !verdict.authority_legible
-                || !verdict.selection_or_succession_legible
-                || !verdict.public_resources_legible
-                || !verdict.redress_legible
-                || !verdict.institutional_relations_coherent
-                || !verdict.resident_answer_grounded
-            {
+            let verification_schema = serde_json::to_value(schema_for!(CivicSystemVerification))?;
+            let mut correction = String::new();
+            for attempt in 0..2 {
+                let (value, mut verification_receipt) = self
+                    .structured(
+                        "destination_civic_verification",
+                        &snapshot,
+                        &format!("{base_verification_prompt}{correction}"),
+                        verification_schema.clone(),
+                        sources.clone(),
+                    )
+                    .await?;
+                let verdict = serde_json::from_value::<CivicSystemVerification>(value)?;
+                let rationale_chars = verdict.rationale.trim().chars().count();
+                let accepted = rationale_chars > 0
+                    && rationale_chars <= 1_000
+                    && verdict.authority_legible
+                    && verdict.selection_or_succession_legible
+                    && verdict.public_resources_legible
+                    && verdict.redress_legible
+                    && verdict.institutional_relations_coherent
+                    && verdict.resident_answer_grounded;
+                if accepted {
+                    let candidate_digest = civic_candidate_digest(&expansion)?;
+                    verification_receipt
+                        .rebind_snapshot(civic_verifier_binding(campaign, &candidate_digest));
+                    expansion
+                        .civic_system
+                        .as_mut()
+                        .expect("verified civic system remains present")
+                        .semantic_verification_receipt_id =
+                        verification_receipt.storage_key().to_owned();
+                    compiler_receipts.push(verification_receipt);
+                    break;
+                }
+
                 let error = anyhow!(
                     "destination civic verifier rejected the candidate: {}",
                     verdict.rationale.trim()
                 );
                 mark_semantic_invalid(&mut verification_receipt, &error);
+                compiler_receipts.push(verification_receipt);
+                if attempt == 0 {
+                    correction = format!(
+                        "\n\nTHE PREVIOUS VERDICT FAILED LOCAL ADMISSION BECAUSE ITS RATIONALE WAS EMPTY OR OVERSIZED, OR ONE OR MORE CIVIC VERDICTS WERE FALSE. Independently re-evaluate the same frozen candidate against every named invariant. Preserve every false verdict that identifies a real defect; do not turn a verdict true merely to satisfy admission. Correct only an accidental, unsupported, or internally inconsistent verdict. Return one complete verdict and no rewritten candidate.\nPREVIOUS_VERDICT:\n{}",
+                        serde_json::to_string(&verdict)?
+                    );
+                    continue;
+                }
                 return Err(error);
             }
-            let candidate_digest = civic_candidate_digest(&expansion)?;
-            verification_receipt
-                .rebind_snapshot(civic_verifier_binding(campaign, &candidate_digest));
-            expansion
-                .civic_system
-                .as_mut()
-                .expect("verified civic system remains present")
-                .semantic_verification_receipt_id = verification_receipt.storage_key().to_owned();
-            compiler_receipts.push(verification_receipt);
         }
         let evidence_ids = receipt_ids(&receipts);
         let affected_sources: Vec<String> = receipts
@@ -5818,7 +5833,8 @@ mod tests {
 
     struct DestinationElaborationModel {
         saw_branch_assumption_boundary: AtomicBool,
-        reject_civic_verification: bool,
+        civic_verification_calls: AtomicUsize,
+        civic_verification_rejections: usize,
     }
 
     struct OversizedQueryModel;
@@ -6386,7 +6402,8 @@ mod tests {
                     .to_string())
                 }
                 "destination_civic_verification" => {
-                    let accepted = !self.reject_civic_verification;
+                    let call = self.civic_verification_calls.fetch_add(1, Ordering::SeqCst);
+                    let accepted = call >= self.civic_verification_rejections;
                     Ok(serde_json::json!({
                         "authority_legible":accepted,
                         "selection_or_succession_legible":accepted,
@@ -7754,7 +7771,8 @@ mod tests {
     {
         let model = Arc::new(DestinationElaborationModel {
             saw_branch_assumption_boundary: AtomicBool::new(false),
-            reject_civic_verification: false,
+            civic_verification_calls: AtomicUsize::new(0),
+            civic_verification_rejections: 0,
         });
         let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
         let mut seed = private_actor_test_seed();
@@ -7798,12 +7816,61 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn destination_civic_verifier_rechecks_one_rejected_verdict_against_the_frozen_candidate()
+    {
+        let model = Arc::new(DestinationElaborationModel {
+            saw_branch_assumption_boundary: AtomicBool::new(false),
+            civic_verification_calls: AtomicUsize::new(0),
+            civic_verification_rejections: 1,
+        });
+        let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
+        let mut seed = private_actor_test_seed();
+        seed.player.location_id = "convoy-staging".into();
+        seed.opening_narration = "The convoy waits in the rain.".into();
+        let campaign = seed_to_campaign(seed, &[]).unwrap();
+
+        let (preview, receipts) = compiler
+            .compile_destination(
+                &campaign,
+                "convoy-staging",
+                "a playable storm refuge with ordinary repair and admission procedure",
+            )
+            .await
+            .unwrap();
+        let DestinationCompilationPreview::RegionExpansion(preview) = preview else {
+            panic!("new destination must produce a region expansion preview")
+        };
+        let verification_receipts = receipts
+            .iter()
+            .filter(|receipt| receipt.stage == "destination_civic_verification")
+            .collect::<Vec<_>>();
+
+        assert_eq!(model.civic_verification_calls.load(Ordering::SeqCst), 2);
+        assert_eq!(verification_receipts.len(), 2);
+        assert_eq!(
+            verification_receipts[0].validation_result,
+            "semantic_invalid"
+        );
+        assert_eq!(verification_receipts[1].validation_result, "valid");
+        assert_eq!(
+            preview
+                .expansion
+                .civic_system
+                .as_ref()
+                .unwrap()
+                .semantic_verification_receipt_id,
+            verification_receipts[1].storage_key()
+        );
+    }
+
+    #[tokio::test]
     async fn destination_compiler_rejects_semantically_empty_civic_machinery() {
         let model = Arc::new(DestinationElaborationModel {
             saw_branch_assumption_boundary: AtomicBool::new(false),
-            reject_civic_verification: true,
+            civic_verification_calls: AtomicUsize::new(0),
+            civic_verification_rejections: usize::MAX,
         });
-        let compiler = WorldCompiler::new(vault(), model, "flash", "pro");
+        let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
         let mut seed = private_actor_test_seed();
         seed.player.location_id = "convoy-staging".into();
         seed.opening_narration = "The convoy waits in the rain.".into();
@@ -7823,6 +7890,7 @@ mod tests {
                 .to_string()
                 .contains("destination civic verifier rejected the candidate")
         );
+        assert_eq!(model.civic_verification_calls.load(Ordering::SeqCst), 2);
     }
 
     fn harrow_campaign() -> Campaign {
