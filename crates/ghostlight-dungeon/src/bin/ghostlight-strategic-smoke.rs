@@ -182,22 +182,15 @@ async fn main() -> anyhow::Result<()> {
         if issue_campaign.news.is_empty() {
             anyhow::bail!("strategic wave {wave_index} produced no gated news")
         }
-        let issue_composition = ghostlight_dungeon::newspaper::compose_world_newspaper(
+        let issue_composition = compose_persisted_newspaper(
             model.as_ref(),
             &issue_campaign,
             format!("{newspaper_title} — Issue {wave_index}"),
             &newspaper_voice,
             5,
+            &store,
         )
         .await?;
-        for receipt in &issue_composition.model_receipts {
-            store.insert(
-                "persona_stage_receipt.v1",
-                "ghostlight.persona_stage_receipt.v1",
-                receipt.storage_key(),
-                receipt,
-            )?;
-        }
         let issue_path = root.join(format!("newspaper-wave-{wave_index:02}.md"));
         let issue_audit_path = root.join(format!("newspaper-wave-{wave_index:02}.audit.md"));
         std::fs::write(
@@ -243,22 +236,15 @@ async fn main() -> anyhow::Result<()> {
             }))?,
         )?;
     }
-    let newspaper_composition = ghostlight_dungeon::newspaper::compose_world_newspaper(
+    let newspaper_composition = compose_persisted_newspaper(
         model.as_ref(),
         &campaign,
         &newspaper_title,
         &newspaper_voice,
         6,
+        &store,
     )
     .await?;
-    for receipt in &newspaper_composition.model_receipts {
-        store.insert(
-            "persona_stage_receipt.v1",
-            "ghostlight.persona_stage_receipt.v1",
-            receipt.storage_key(),
-            receipt,
-        )?;
-    }
     let newspaper_path = root.join("newspaper.md");
     let newspaper_audit_path = root.join("newspaper.audit.md");
     std::fs::write(
@@ -331,6 +317,41 @@ async fn main() -> anyhow::Result<()> {
     )?;
     println!("{}", serde_json::to_string_pretty(&result)?);
     Ok(())
+}
+
+async fn compose_persisted_newspaper(
+    model: &dyn ghostlight_dungeon::model::ModelPort,
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    title: impl Into<String>,
+    editorial_voice: &str,
+    max_articles: usize,
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+) -> anyhow::Result<ghostlight_dungeon::newspaper::WorldNewspaperComposition> {
+    let result = ghostlight_dungeon::newspaper::compose_world_newspaper(
+        model,
+        campaign,
+        title,
+        editorial_voice,
+        max_articles,
+    )
+    .await;
+    let receipts = match &result {
+        Ok(composition) => Some(composition.model_receipts.as_slice()),
+        Err(error) => error
+            .downcast_ref::<ghostlight_dungeon::newspaper::WorldNewspaperCompositionFailure>()
+            .map(|failure| failure.model_receipts.as_slice()),
+    };
+    if let Some(receipts) = receipts {
+        for receipt in receipts {
+            store.insert(
+                "persona_stage_receipt.v1",
+                "ghostlight.persona_stage_receipt.v1",
+                receipt.storage_key(),
+                receipt,
+            )?;
+        }
+    }
+    result
 }
 
 fn bounded_environment_usize(

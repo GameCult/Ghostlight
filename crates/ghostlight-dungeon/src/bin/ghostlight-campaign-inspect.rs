@@ -120,6 +120,12 @@ fn main() -> Result<()> {
         })
         .collect::<Vec<_>>();
     recent_model_receipts.sort_by(|left, right| left.storage_key().cmp(right.storage_key()));
+    let mut newspaper_model_receipts = store
+        .load_all::<ModelStageReceipt>("persona_stage_receipt.v1")?
+        .into_iter()
+        .filter(|receipt| receipt.stage.starts_with("newspaper_"))
+        .collect::<Vec<_>>();
+    newspaper_model_receipts.sort_by(|left, right| left.storage_key().cmp(right.storage_key()));
     let assessment_mutation_scopes =
         store.load_all::<serde_json::Value>("assessment_mutation_scope_cache.v1")?;
     let mut roll_receipts = store.load_all::<RollReceipt>("roll_receipt.v1")?;
@@ -227,6 +233,7 @@ fn main() -> Result<()> {
             "recentWorldEvents": campaign.events.iter().rev().take(24).collect::<Vec<_>>(),
             "pendingWorldProposals": campaign.pending_world_proposals,
             "recentModelReceipts": recent_model_receipts,
+            "newspaperModelReceipts": newspaper_model_receipts,
             "assessmentMutationScopes": assessment_mutation_scopes,
             "recentRollReceipts": roll_receipts,
             "recentCommitReceipts": commit_receipts,
