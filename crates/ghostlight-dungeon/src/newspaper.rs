@@ -287,68 +287,27 @@ pub async fn compose_world_newspaper(
             ));
         }
 
-        let verifier_schema = serde_json::to_value(schema_for!(GroundingVerdictDraft))?;
-        let verifier_request = ModelStageRequest {
-            stage: "newspaper_copy_desk".into(),
-            model: MODEL_CAPABLE.into(),
-            snapshot_binding: format!(
-                "{binding}:draft:{}",
-                receipts[editor_receipt_index].output_hash
-            ),
-            lived_stream: format!(
-                "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAct as a strict copy desk, not a rewriting model. Compare every reader-facing factual claim in the proposed fantasy newspaper page with only the cited source_news_ids in the bounded public source desk. Reject invented or overconfident facts, quotations, identities, offices, places, numbers, motives, outcomes, chronology, or private knowledge. Reject source/action/debug language that would make the page read like a simulation ledger, and reject copy that merely recites state transitions instead of reporting news. Clearly marked editorial judgment and ordinary journalistic connective phrasing are allowed when they add no new world fact. `accepted` may be true only when findings is empty. Return findings only; never propose replacement copy.\n\nPUBLIC SOURCE DESK:\n{}\n\nPROPOSED PAGE:\n{}",
-                serde_json::to_string(&verifier_schema)?,
-                source_json,
-                serde_json::to_string_pretty(&draft)?,
-            ),
-            output_schema: Some(verifier_schema),
-            source_receipt_ids: source_receipt_ids
-                .iter()
-                .cloned()
-                .chain(std::iter::once(
-                    receipts[editor_receipt_index].storage_key().to_owned(),
-                ))
-                .collect(),
-            temperature: Some(0.0),
-            max_output_tokens: Some(1_500),
-        };
-        let verifier_output = match run_validated_stage(model, &verifier_request).await {
-            Ok(output) => output,
-            Err(error) => {
-                return Err(composition_failure(
-                    format!("newspaper copy-desk inference failed: {error}"),
-                    receipts,
-                ));
-            }
-        };
-        receipts.push(verifier_output.receipt.clone());
-        let verifier_receipt_index = receipts.len() - 1;
-        let verifier_structured = match verifier_output.structured {
-            Some(structured) => structured,
-            None => {
-                let error = anyhow!("newspaper copy desk returned no structured output");
-                mark_semantic_invalid(&mut receipts[verifier_receipt_index], &error);
-                return Err(composition_failure(error.to_string(), receipts));
-            }
-        };
-        let verdict_draft: GroundingVerdictDraft = match serde_json::from_value(verifier_structured)
+        let editor_receipt_id = receipts[editor_receipt_index].storage_key().to_owned();
+        let editor_output_hash = receipts[editor_receipt_index].output_hash.clone();
+        let verdict = match run_copy_desk(
+            model,
+            format!("{binding}:draft:{editor_output_hash}"),
+            &source_json,
+            &source_receipt_ids,
+            std::slice::from_ref(&editor_receipt_id),
+            &draft,
+            &mut receipts,
+        )
+        .await
         {
             Ok(verdict) => verdict,
-            Err(error) => {
-                let error = anyhow!("newspaper copy desk returned an invalid verdict: {error}");
-                mark_semantic_invalid(&mut receipts[verifier_receipt_index], &error);
-                return Err(composition_failure(error.to_string(), receipts));
-            }
+            Err(error) => return Err(composition_failure(error.to_string(), receipts)),
         };
-        if let Err(error) = validate_grounding_verdict(&draft, &verdict_draft) {
-            mark_semantic_invalid(&mut receipts[verifier_receipt_index], &error);
-            return Err(composition_failure(error.to_string(), receipts));
-        }
-        let verdict = WorldNewspaperGroundingVerdict {
-            accepted: verdict_draft.accepted,
-            assessment: verdict_draft.assessment,
-            findings: verdict_draft.findings,
-        };
+        let rejecting_copy_desk_receipt_id = receipts
+            .last()
+            .expect("copy desk verdict must carry its model receipt")
+            .storage_key()
+            .to_owned();
         if verdict.accepted {
             let issue = lower_editorial_page(campaign, title, &sources, draft, &receipts)?;
             return Ok(WorldNewspaperComposition {
@@ -365,6 +324,10 @@ pub async fn compose_world_newspaper(
             verdict.assessment
         );
         let mut rejected_page_receipt = receipts[editor_receipt_index].clone();
+        rejected_page_receipt.source_receipt_ids.extend([
+            editor_receipt_id.clone(),
+            rejecting_copy_desk_receipt_id.clone(),
+        ]);
         mark_semantic_invalid(&mut rejected_page_receipt, &error);
         receipts.push(rejected_page_receipt);
         if attempt + 1 < MAX_EDITORIAL_ATTEMPTS {
@@ -375,6 +338,49 @@ pub async fn compose_world_newspaper(
             );
             continue;
         }
+        if let Some(salvaged) = discard_rejected_articles(&draft, &verdict.findings) {
+            if let Err(error) = validate_editorial_draft(&sources, &salvaged, max_articles) {
+                return Err(composition_failure(
+                    format!("copy-desk article redaction failed local admission: {error}"),
+                    receipts,
+                ));
+            }
+            let redaction_digest = format!(
+                "sha256:{:x}",
+                Sha256::digest(rmp_serde::to_vec_named(&salvaged)?)
+            );
+            let editorial_sources = [editor_receipt_id, rejecting_copy_desk_receipt_id];
+            let salvage_verdict = match run_copy_desk(
+                model,
+                format!("{binding}:copy-desk-redaction:{redaction_digest}"),
+                &source_json,
+                &source_receipt_ids,
+                &editorial_sources,
+                &salvaged,
+                &mut receipts,
+            )
+            .await
+            {
+                Ok(verdict) => verdict,
+                Err(error) => return Err(composition_failure(error.to_string(), receipts)),
+            };
+            if salvage_verdict.accepted {
+                let issue = lower_editorial_page(campaign, title, &sources, salvaged, &receipts)?;
+                return Ok(WorldNewspaperComposition {
+                    schema: "ghostlight.world_newspaper_composition.v1".into(),
+                    issue,
+                    grounding: salvage_verdict,
+                    model_receipts: receipts,
+                });
+            }
+            return Err(composition_failure(
+                format!(
+                    "newspaper copy remained ungrounded or mechanical after copy-desk article redaction: {}",
+                    salvage_verdict.assessment
+                ),
+                receipts,
+            ));
+        }
         return Err(composition_failure(
             format!(
                 "newspaper copy remained ungrounded or mechanical after two corrections: {}",
@@ -384,6 +390,94 @@ pub async fn compose_world_newspaper(
         ));
     }
     unreachable!()
+}
+
+async fn run_copy_desk(
+    model: &dyn ModelPort,
+    snapshot_binding: String,
+    source_json: &str,
+    source_receipt_ids: &[String],
+    editorial_source_receipt_ids: &[String],
+    draft: &EditorialPageDraft,
+    receipts: &mut Vec<ModelStageReceipt>,
+) -> Result<WorldNewspaperGroundingVerdict> {
+    let verifier_schema = serde_json::to_value(schema_for!(GroundingVerdictDraft))?;
+    let verifier_request = ModelStageRequest {
+        stage: "newspaper_copy_desk".into(),
+        model: MODEL_CAPABLE.into(),
+        snapshot_binding,
+        lived_stream: format!(
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAct as a strict copy desk, not a rewriting model. Compare every reader-facing factual claim in the proposed fantasy newspaper page with only the cited source_news_ids in the bounded public source desk. Reject invented or overconfident facts, quotations, identities, offices, places, numbers, motives, outcomes, chronology, or private knowledge. Reject source/action/debug language that would make the page read like a simulation ledger, and reject copy that merely recites state transitions instead of reporting news. Clearly marked editorial judgment and ordinary journalistic connective phrasing are allowed when they add no new world fact. `accepted` may be true only when findings is empty. Return findings only; never propose replacement copy.\n\nPUBLIC SOURCE DESK:\n{}\n\nPROPOSED PAGE:\n{}",
+            serde_json::to_string(&verifier_schema)?,
+            source_json,
+            serde_json::to_string_pretty(draft)?,
+        ),
+        output_schema: Some(verifier_schema),
+        source_receipt_ids: source_receipt_ids
+            .iter()
+            .cloned()
+            .chain(editorial_source_receipt_ids.iter().cloned())
+            .collect(),
+        temperature: Some(0.0),
+        max_output_tokens: Some(1_500),
+    };
+    let verifier_output = run_validated_stage(model, &verifier_request)
+        .await
+        .map_err(|error| anyhow!("newspaper copy-desk inference failed: {error}"))?;
+    receipts.push(verifier_output.receipt);
+    let receipt_index = receipts.len() - 1;
+    let verifier_structured = verifier_output
+        .structured
+        .ok_or_else(|| anyhow!("newspaper copy desk returned no structured output"));
+    let verifier_structured = match verifier_structured {
+        Ok(structured) => structured,
+        Err(error) => {
+            mark_semantic_invalid(&mut receipts[receipt_index], &error);
+            return Err(error);
+        }
+    };
+    let verdict_draft: GroundingVerdictDraft = match serde_json::from_value(verifier_structured) {
+        Ok(verdict) => verdict,
+        Err(error) => {
+            let error = anyhow!("newspaper copy desk returned an invalid verdict: {error}");
+            mark_semantic_invalid(&mut receipts[receipt_index], &error);
+            return Err(error);
+        }
+    };
+    if let Err(error) = validate_grounding_verdict(draft, &verdict_draft) {
+        mark_semantic_invalid(&mut receipts[receipt_index], &error);
+        return Err(error);
+    }
+    Ok(WorldNewspaperGroundingVerdict {
+        accepted: verdict_draft.accepted,
+        assessment: verdict_draft.assessment,
+        findings: verdict_draft.findings,
+    })
+}
+
+fn discard_rejected_articles(
+    draft: &EditorialPageDraft,
+    findings: &[WorldNewspaperGroundingFinding],
+) -> Option<EditorialPageDraft> {
+    let rejected = findings
+        .iter()
+        .map(|finding| usize::from(finding.article_index))
+        .collect::<BTreeSet<_>>();
+    let mut articles = draft
+        .articles
+        .iter()
+        .enumerate()
+        .filter(|(index, _)| !rejected.contains(index))
+        .map(|(_, article)| article.clone())
+        .collect::<Vec<_>>();
+    if articles.is_empty() || articles.len() == draft.articles.len() {
+        return None;
+    }
+    articles[0].section = "Front Page".into();
+    Some(EditorialPageDraft {
+        edition_label: draft.edition_label.clone(),
+        articles,
+    })
 }
 
 pub fn render_world_newspaper_markdown(issue: &WorldNewspaperIssue) -> String {
@@ -929,9 +1023,13 @@ fn empty_issue_id(campaign: &Campaign, title: &str) -> Result<String> {
 fn mark_semantic_invalid(receipt: &mut ModelStageReceipt, error: &anyhow::Error) {
     let error: String = error.to_string().chars().take(1_000).collect();
     let original_binding = receipt.snapshot_binding.clone();
+    let source_chain_digest = Sha256::digest(
+        rmp_serde::to_vec_named(&receipt.source_receipt_ids)
+            .expect("model receipt source chains must be serializable"),
+    );
     receipt.rebind_snapshot(format!(
-        "{original_binding}:semantic-invalid:sha256:{:x}",
-        Sha256::digest(error.as_bytes())
+        "{original_binding}:semantic-invalid:sources:sha256:{source_chain_digest:x}:error:sha256:{:x}",
+        Sha256::digest(error.as_bytes()),
     ));
     receipt.validation_result = "semantic_invalid".into();
     receipt.local_validation_error = Some(error);
@@ -1006,7 +1104,33 @@ mod tests {
         campaign
     }
 
+    fn campaign_with_two_news() -> Campaign {
+        let mut campaign = campaign_with_news();
+        let summary = "The palace bell keeper announces that the west gate will close at moonrise while masons replace its cracked hinge.";
+        campaign.events.push(Event {
+            id: "event:west-gate".into(),
+            at: campaign.world_time,
+            kind: "institution_action".into(),
+            summary: summary.into(),
+            actor_ids: vec![],
+            institution_ids: vec![],
+            gestalt_ids: vec![],
+            location_ids: vec!["room".into()],
+            public_channels: vec!["court broadsheet".into()],
+        });
+        campaign.news.push(NewsIssue {
+            id: "news:west-gate".into(),
+            at: campaign.world_time,
+            channel: "court broadsheet".into(),
+            headline: crate::domain::committed_news_headline(summary),
+            event_ids: vec!["event:west-gate".into()],
+            reliability: "committed public channel".into(),
+        });
+        campaign
+    }
+
     const ACCEPTED_PAGE: &str = r#"{"edition_label":"Evening Edition","articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"","source_news_ids":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
+    const TWO_ARTICLE_PAGE: &str = r#"{"edition_label":"Evening Edition","articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"","source_news_ids":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]},{"section":"Dispatches","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","byline":"Staff report","dateline":"","source_news_ids":["news:west-gate"],"paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace the cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}]}"#;
     const ACCEPTING_COPY_DESK: &str = r#"{"accepted":true,"assessment":"The copy is fully supported by its cited public source and reads as attributed court reporting.","findings":[]}"#;
 
     #[test]
@@ -1100,6 +1224,81 @@ mod tests {
                 .iter()
                 .any(|receipt| receipt.validation_result == "semantic_invalid")
         );
+        assert!(composition.grounding.accepted);
+    }
+
+    #[tokio::test]
+    async fn final_copy_desk_may_kill_rejected_articles_but_must_recheck_survivors() {
+        const REJECTED_SECOND: &str = r#"{"accepted":false,"assessment":"The dispatch adds a claim absent from its source.","findings":[{"article_index":1,"category":"unsupported_fact","claim_or_phrase":"the west gate is unsafe","reason":"The cited source records a cracked hinge and closure, not a safety finding."}]}"#;
+        let campaign = campaign_with_two_news();
+        let model = ScriptedNewspaperModel::new([
+            TWO_ARTICLE_PAGE,
+            REJECTED_SECOND,
+            TWO_ARTICLE_PAGE,
+            REJECTED_SECOND,
+            TWO_ARTICLE_PAGE,
+            REJECTED_SECOND,
+            ACCEPTING_COPY_DESK,
+        ]);
+        let composition = compose_world_newspaper(
+            &model,
+            &campaign,
+            "The Underdeep Clarion",
+            "A skeptical court broadsheet with dry restraint.",
+            4,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(composition.issue.articles.len(), 1);
+        assert_eq!(
+            composition.issue.articles[0].headline,
+            "Court Sells the Crown's Seal, Then the Treasurer"
+        );
+        assert!(
+            !render_world_newspaper_markdown(&composition.issue).contains("west gate is unsafe")
+        );
+        assert_eq!(composition.model_receipts.len(), 10);
+        let final_copy_desk = composition.model_receipts.last().unwrap();
+        assert_eq!(final_copy_desk.stage, "newspaper_copy_desk");
+        assert!(
+            final_copy_desk
+                .snapshot_binding
+                .contains("copy-desk-redaction")
+        );
+        assert!(composition.model_receipts[..9].iter().any(|receipt| {
+            receipt.stage == "newspaper_copy_desk"
+                && final_copy_desk
+                    .source_receipt_ids
+                    .contains(&receipt.storage_key().to_owned())
+        }));
+        for disposition in composition
+            .model_receipts
+            .iter()
+            .filter(|receipt| receipt.validation_result == "semantic_invalid")
+        {
+            let original_editor = composition
+                .model_receipts
+                .iter()
+                .find(|receipt| {
+                    receipt.stage == "newspaper_editor"
+                        && receipt.request_hash == disposition.request_hash
+                        && receipt.validation_result == "valid"
+                })
+                .unwrap();
+            assert!(
+                disposition
+                    .source_receipt_ids
+                    .contains(&original_editor.storage_key().to_owned())
+            );
+            assert!(composition.model_receipts.iter().any(|receipt| {
+                receipt.stage == "newspaper_copy_desk"
+                    && disposition
+                        .source_receipt_ids
+                        .contains(&receipt.storage_key().to_owned())
+            }));
+            assert!(disposition.snapshot_binding.contains("sources:sha256:"));
+        }
         assert!(composition.grounding.accepted);
     }
 
