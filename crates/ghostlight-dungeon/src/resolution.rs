@@ -3191,16 +3191,14 @@ fn validate_strategic_effect_lanes(effects: &[StrategicCellEffect]) -> Result<()
             ));
         }
         let lane = match effect {
-            StrategicCellEffect::GestaltActivity { activity, .. }
-            | StrategicCellEffect::ActorActivity { activity, .. }
-            | StrategicCellEffect::MemberActivity { activity, .. } => {
-                format!("{}:{activity:?}", effect.lane())
-            }
-            _ => effect.lane().to_owned(),
+            StrategicCellEffect::GestaltActivity { .. }
+            | StrategicCellEffect::ActorActivity { .. }
+            | StrategicCellEffect::MemberActivity { .. } => None,
+            _ => Some(effect.lane()),
         };
-        if !lanes.insert(lane) {
+        if lane.is_some_and(|lane| !lanes.insert(lane)) {
             return Err(anyhow!(
-                "one strategic action may use each scalar lane and each distinct activity kind at most once"
+                "one strategic action may use each scalar effect lane at most once"
             ));
         }
     }

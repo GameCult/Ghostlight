@@ -2845,9 +2845,18 @@ fn apply_strategic_tick_plan(
 
     let mut seen_gestalt_activities = BTreeSet::new();
     for action in plan.gestalt_activities {
+        let gestalt = campaign
+            .gestalts
+            .get(&action.gestalt_id)
+            .ok_or_else(|| KernelError::Invalid("strategic plan invented a gestalt".into()))?;
+        let locations = if action.location_ids.is_empty() {
+            vec![gestalt.home_location_id.clone()]
+        } else {
+            action.location_ids.clone()
+        };
         if !seen_gestalt_activities.insert((
             action.gestalt_id.clone(),
-            strategic_activity_id(&action.activity),
+            strategic_activity_scope_key(&action.activity, &action.target_subject_ids, &locations),
         )) || (!canonical_composition && !legacy_seen_gestalts.insert(action.gestalt_id.clone()))
         {
             return Err(KernelError::Invalid(
@@ -2855,10 +2864,6 @@ fn apply_strategic_tick_plan(
             ));
         }
         validate_public_channels(&action.public_channels)?;
-        let gestalt = campaign
-            .gestalts
-            .get(&action.gestalt_id)
-            .ok_or_else(|| KernelError::Invalid("strategic plan invented a gestalt".into()))?;
         let profile = campaign
             .agency_profiles
             .get(&action.gestalt_id)
@@ -2891,11 +2896,6 @@ fn apply_strategic_tick_plan(
             .iter()
             .map(|target| agency_subject_name(campaign, target))
             .collect::<Result<Vec<_>, _>>()?;
-        let locations = if action.location_ids.is_empty() {
-            vec![gestalt.home_location_id.clone()]
-        } else {
-            action.location_ids
-        };
         let institution_ids = action
             .target_subject_ids
             .iter()
@@ -2929,9 +2929,14 @@ fn apply_strategic_tick_plan(
             &action.gestalt_id,
             &locations,
         )?;
+        let scope_digest = strategic_activity_scope_digest(
+            &action.activity,
+            &action.target_subject_ids,
+            &locations,
+        );
         let event = crate::domain::Event {
             id: format!(
-                "strategic:{revision}:gestalt-activity:{}:{}",
+                "strategic:{revision}:gestalt-activity:{}:{}:{scope_digest}",
                 action.gestalt_id,
                 strategic_activity_id(&action.activity),
             ),
@@ -3014,7 +3019,11 @@ fn apply_strategic_tick_plan(
     for action in plan.actor_activities {
         if !seen_actor_activities.insert((
             action.actor_id.clone(),
-            strategic_activity_id(&action.activity),
+            strategic_activity_scope_key(
+                &action.activity,
+                &action.target_subject_ids,
+                &action.location_ids,
+            ),
         )) || (!canonical_composition && !legacy_seen_actors.insert(action.actor_id.clone()))
         {
             return Err(KernelError::Invalid(
@@ -3092,9 +3101,14 @@ fn apply_strategic_tick_plan(
             &action.actor_id,
             &action.location_ids,
         )?;
+        let scope_digest = strategic_activity_scope_digest(
+            &action.activity,
+            &action.target_subject_ids,
+            &action.location_ids,
+        );
         let event = Event {
             id: format!(
-                "strategic:{revision}:actor-activity:{}:{}",
+                "strategic:{revision}:actor-activity:{}:{}:{scope_digest}",
                 action.actor_id,
                 strategic_activity_id(&action.activity),
             ),
@@ -3123,7 +3137,11 @@ fn apply_strategic_tick_plan(
     for action in plan.member_activities {
         if !seen_member_activities.insert((
             action.member_id.clone(),
-            strategic_activity_id(&action.activity),
+            strategic_activity_scope_key(
+                &action.activity,
+                &action.target_subject_ids,
+                &action.location_ids,
+            ),
         )) || (!canonical_composition && !legacy_seen_members.insert(action.member_id.clone()))
         {
             return Err(KernelError::Invalid(
@@ -3209,9 +3227,14 @@ fn apply_strategic_tick_plan(
             &crate::domain::gestalt_member_subject_id(&action.member_id),
             &action.location_ids,
         )?;
+        let scope_digest = strategic_activity_scope_digest(
+            &action.activity,
+            &action.target_subject_ids,
+            &action.location_ids,
+        );
         let event = Event {
             id: format!(
-                "strategic:{revision}:member-activity:{}:{}",
+                "strategic:{revision}:member-activity:{}:{}:{scope_digest}",
                 action.member_id,
                 strategic_activity_id(&action.activity),
             ),
@@ -3488,6 +3511,29 @@ fn strategic_activity_id(activity: &StrategicActivityKind) -> &'static str {
         StrategicActivityKind::Trade => "trade",
         StrategicActivityKind::Communicate => "communicate",
     }
+}
+
+fn strategic_activity_scope_key(
+    activity: &StrategicActivityKind,
+    target_subject_ids: &[String],
+    location_ids: &[String],
+) -> (&'static str, Vec<String>, Vec<String>) {
+    let mut targets = target_subject_ids.to_vec();
+    let mut locations = location_ids.to_vec();
+    targets.sort();
+    locations.sort();
+    (strategic_activity_id(activity), targets, locations)
+}
+
+fn strategic_activity_scope_digest(
+    activity: &StrategicActivityKind,
+    target_subject_ids: &[String],
+    location_ids: &[String],
+) -> String {
+    let scope = strategic_activity_scope_key(activity, target_subject_ids, location_ids);
+    let bytes = rmp_serde::to_vec_named(&scope)
+        .expect("serializing a strategic activity scope made only of strings cannot fail");
+    format!("{:x}", Sha256::digest(bytes))
 }
 
 fn agency_subject_name(campaign: &Campaign, subject_id: &str) -> Result<String, KernelError> {
@@ -5704,6 +5750,141 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn canonical_action_commits_distinct_scopes_of_one_activity_kind() {
+        let mut value = hierarchical_refugee_campaign();
+        let targeted = StrategicCellEffect::GestaltActivity {
+            gestalt_id: "refugees-east".into(),
+            activity: StrategicActivityKind::Communicate,
+            target_subject_ids: vec!["dock-neighbors".into()],
+            location_ids: vec!["camp".into()],
+        };
+        let local = StrategicCellEffect::GestaltActivity {
+            gestalt_id: "refugees-east".into(),
+            activity: StrategicActivityKind::Communicate,
+            target_subject_ids: vec![],
+            location_ids: vec!["camp".into()],
+        };
+        let action = CellActionProposal {
+            subject_id: "refugees-east".into(),
+            intent: "Warn the dock neighbors and the unnamed camp assembly.".into(),
+            intended_effect: "Send both warnings without merging their audiences.".into(),
+            priority: 80,
+            state_references: vec![],
+            public_channels: vec![],
+            effects: vec![targeted.clone(), local],
+        };
+        let action_digest = crate::resolution::cell_action_digest(&action).unwrap();
+        let events = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                selected_actions: vec![action],
+                activity_outcomes: vec![StrategicActivityOutcome {
+                    schema: "ghostlight.strategic_activity_outcome.v1".into(),
+                    action_digest,
+                    source_subject_id: "refugees-east".into(),
+                    band: StrategicOutcomeBand::Mixed,
+                    summary: "The warnings are sent; their reception remains unsettled.".into(),
+                    supporting_state_references: vec![],
+                    effect: StrategicOutcomeEffect::NoMaterialChange {
+                        reason: "No response is established in this test snapshot.".into(),
+                    },
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(events.len(), 2);
+        assert!(events.iter().all(|event| event.kind == "gestalt_activity"));
+        assert_eq!(
+            events
+                .iter()
+                .map(|event| event.id.as_str())
+                .collect::<BTreeSet<_>>()
+                .len(),
+            2
+        );
+
+        let before_duplicate = value.clone();
+        let duplicate = CellActionProposal {
+            subject_id: "refugees-east".into(),
+            intent: "Repeat one exact warning twice.".into(),
+            intended_effect: "Send the same warning twice.".into(),
+            priority: 80,
+            state_references: vec![],
+            public_channels: vec![],
+            effects: vec![targeted.clone(), targeted],
+        };
+        let duplicate_digest = crate::resolution::cell_action_digest(&duplicate).unwrap();
+        let error = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                selected_actions: vec![duplicate],
+                activity_outcomes: vec![StrategicActivityOutcome {
+                    schema: "ghostlight.strategic_activity_outcome.v1".into(),
+                    action_digest: duplicate_digest,
+                    source_subject_id: "refugees-east".into(),
+                    band: StrategicOutcomeBand::Mixed,
+                    summary: "The repeated warning has no separate durable result.".into(),
+                    supporting_state_references: vec![],
+                    effect: StrategicOutcomeEffect::NoMaterialChange {
+                        reason: "No distinct response is established.".into(),
+                    },
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("acts twice"), "{error}");
+        assert_eq!(value, before_duplicate);
+
+        let aliased = CellActionProposal {
+            subject_id: "refugees-east".into(),
+            intent: "Repeat one local warning through aliased location syntax.".into(),
+            intended_effect: "Send one local warning.".into(),
+            priority: 80,
+            state_references: vec![],
+            public_channels: vec![],
+            effects: vec![
+                StrategicCellEffect::GestaltActivity {
+                    gestalt_id: "refugees-east".into(),
+                    activity: StrategicActivityKind::Communicate,
+                    target_subject_ids: vec![],
+                    location_ids: vec![],
+                },
+                StrategicCellEffect::GestaltActivity {
+                    gestalt_id: "refugees-east".into(),
+                    activity: StrategicActivityKind::Communicate,
+                    target_subject_ids: vec![],
+                    location_ids: vec!["camp".into()],
+                },
+            ],
+        };
+        let aliased_digest = crate::resolution::cell_action_digest(&aliased).unwrap();
+        let error = apply_strategic_tick_plan(
+            &mut value,
+            StrategicTickPlan {
+                selected_actions: vec![aliased],
+                activity_outcomes: vec![StrategicActivityOutcome {
+                    schema: "ghostlight.strategic_activity_outcome.v1".into(),
+                    action_digest: aliased_digest,
+                    source_subject_id: "refugees-east".into(),
+                    band: StrategicOutcomeBand::Mixed,
+                    summary: "The local warning has no separate durable result.".into(),
+                    supporting_state_references: vec![],
+                    effect: StrategicOutcomeEffect::NoMaterialChange {
+                        reason: "No distinct response is established.".into(),
+                    },
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("acts twice"), "{error}");
+        assert_eq!(value, before_duplicate);
+    }
+
+    #[test]
     fn invalid_late_strategic_action_cannot_partially_apply_an_earlier_action() {
         let mut value = hierarchical_refugee_campaign();
         let before = value.clone();
@@ -6939,7 +7120,11 @@ pub(crate) mod tests {
         let activity_index = campaign
             .events
             .iter()
-            .position(|event| event.id == "strategic:3:actor-activity:runner:prepare")
+            .position(|event| {
+                event
+                    .id
+                    .starts_with("strategic:3:actor-activity:runner:prepare:")
+            })
             .unwrap();
         let movement_index = campaign
             .events

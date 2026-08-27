@@ -1739,12 +1739,9 @@ fn activity_parts(
             } => (activity, target_subject_ids, location_ids),
             _ => unreachable!("activity filter admitted a non-activity"),
         };
-        if activities.contains(activity) {
-            return Err(anyhow!(
-                "one strategic action cannot repeat an activity kind"
-            ));
+        if !activities.contains(activity) {
+            activities.push(activity.clone());
         }
-        activities.push(activity.clone());
         targets.extend(effect_targets.iter().cloned());
         locations.extend(effect_locations.iter().cloned());
     }
