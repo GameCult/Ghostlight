@@ -35,7 +35,7 @@ async fn main() -> anyhow::Result<()> {
         });
     std::fs::create_dir_all(&root)?;
     let mut campaign = strategic_campaign();
-    campaign.events.push(ghostlight_dungeon::domain::Event {
+    let pressure_event = ghostlight_dungeon::domain::Event {
         id: format!("pressure-{}", uuid::Uuid::new_v4()),
         at: campaign.world_time,
         kind: "strategic_pressure".into(),
@@ -45,7 +45,16 @@ async fn main() -> anyhow::Result<()> {
         gestalt_ids: vec![],
         location_ids: vec!["depot".into(), "yard".into()],
         public_channels: vec!["root-wire broadsheet".into()],
+    };
+    campaign.news.push(ghostlight_dungeon::domain::NewsIssue {
+        id: format!("news:{}:root-wire-broadsheet", pressure_event.id),
+        at: pressure_event.at,
+        channel: "root-wire broadsheet".into(),
+        headline: ghostlight_dungeon::domain::committed_news_headline(&pressure_event.summary),
+        event_ids: vec![pressure_event.id.clone()],
+        reliability: "committed public channel".into(),
     });
+    campaign.events.push(pressure_event);
     let player_before = campaign.actors[&campaign.player_actor_id].clone();
     let store = CampaignStore::open(root.join("campaign.cc"))?;
     store.create_unadmitted_fixture_campaign(&campaign, &[], &[])?;
@@ -62,7 +71,11 @@ async fn main() -> anyhow::Result<()> {
     let kernel = WorldKernel::start(store.clone());
     let mut wave_reports = Vec::with_capacity(wave_count);
     for wave_index in 1..=wave_count {
-        let previous_news_count = campaign.news.len();
+        let previous_news_count = if wave_index == 1 {
+            0
+        } else {
+            campaign.news.len()
+        };
         let mut rejected_pulses = Vec::new();
         let output = loop {
             match propose_resolution_wave(
