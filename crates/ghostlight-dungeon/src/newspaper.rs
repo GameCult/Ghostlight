@@ -62,9 +62,18 @@ pub struct WorldNewspaperArticle {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct WorldNewspaperGroundingFinding {
     pub article_index: u16,
-    pub category: String,
+    pub category: WorldNewspaperGroundingCategory,
     pub claim_or_phrase: String,
     pub reason: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum WorldNewspaperGroundingCategory {
+    UnsupportedFact,
+    UnearnedAttribution,
+    ProceduralLeakage,
+    MechanicalCopy,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -775,15 +784,7 @@ fn validate_grounding_verdict(
         ));
     }
     for finding in &verdict.findings {
-        if usize::from(finding.article_index) >= draft.articles.len()
-            || ![
-                "unsupported_fact",
-                "unearned_attribution",
-                "procedural_leakage",
-                "mechanical_copy",
-            ]
-            .contains(&finding.category.as_str())
-        {
+        if usize::from(finding.article_index) >= draft.articles.len() {
             return Err(anyhow!("copy desk returned an invalid finding"));
         }
         validate_single_line(&finding.claim_or_phrase, 500, "copy-desk claim")?;
@@ -1006,6 +1007,19 @@ mod tests {
 
     const ACCEPTED_PAGE: &str = r#"{"edition_label":"Evening Edition","articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"","source_news_ids":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
     const ACCEPTING_COPY_DESK: &str = r#"{"accepted":true,"assessment":"The copy is fully supported by its cited public source and reads as attributed court reporting.","findings":[]}"#;
+
+    #[test]
+    fn copy_desk_schema_owns_the_complete_finding_category_set() {
+        let schema = serde_json::to_string(&schema_for!(GroundingVerdictDraft)).unwrap();
+        for category in [
+            "unsupported_fact",
+            "unearned_attribution",
+            "procedural_leakage",
+            "mechanical_copy",
+        ] {
+            assert!(schema.contains(category));
+        }
+    }
 
     #[tokio::test]
     async fn newspaper_is_editorial_copy_with_separate_provenance() {
