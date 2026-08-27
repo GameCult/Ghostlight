@@ -545,18 +545,32 @@ applies resources, posture, facets, locations, and public channels to the frozen
 institutions before ordinary validation. There is no second repair path. All
 408 library tests and the strategic smoke check pass, and the commit is pushed.
 
-Exact-source run 20 is active as
-`ghostlight-newspaper-2875e45-20.service`, targeting
-`/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-2875e45-20`.
-The isolated release build has completed. `BUILD-WITNESS` binds exact source
-`2875e45b3abd9c8c5e207d85444c797884c57136`, binary SHA-256
-`f3015218baaa8f6d70596f5be8a793f7444ce47b93558a44c7958e2b58841c68`,
-and `live_service_mutated=false`. `status.json` remains at `compiling_world`,
-updated `2026-08-27T20:57:14.217251532Z`, while the service remains active. No
-provider result, elaboration, strategic wave, newspaper, or acceptance is
-claimed yet.
+Exact-source run 20 at
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-2875e45-20`
+committed its first locality elaboration through revision 1. During the second,
+at Downstream Grain-Pump Station, Terra's civic reconciliation returned
+expansion facts that failed ordinary validation: `destination expansion facts
+must have new IDs and non-empty unique statements`. No strategic wave or
+newspaper was produced, and the result root had no completed `SHA256SUMS`. The
+unchanged root is archived at
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-2875e45-20.tar`,
+whose SHA-256 is
+`6cc564ec70dd6e0279180fb547610d9355418ecdf1ff2cc4f083480ce7841b43`.
 
-1. Observe run 20 without changing its body. If it terminates, preserve its
+Commit `965c9faadcde9a8dced158b00e37d9491d589cde` centralizes one
+maximum-two Terra reconciliation budget across candidate application,
+structural validation, and civic-verifier findings. All findings return to the
+same frozen-candidate scheduler; no branch owns its own retry and Sol is never
+rerun. Ordinary validation and a fresh semantic verdict remain admission
+owners. All 409 library tests and the strategic smoke check pass, and the commit
+is pushed.
+
+Exact-source run 21 is active as `ghostlight-newspaper-965c9fa-21.service`,
+targeting
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-965c9fa-21`.
+No provider acceptance is claimed while it is active.
+
+1. Observe run 21 without changing its body. If it terminates, preserve its
    exact build, status, terminal, receipt, and partial-world evidence before
    diagnosing one owner.
 2. If all four locality elaborations and six strategic waves commit, preserve
