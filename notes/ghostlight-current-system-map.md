@@ -940,14 +940,21 @@ population. A separate model stage verifies their semantic legibility; it may
 reject but cannot rewrite or commit the proposal. One false verdict is
 independently rechecked against the same frozen candidate. A sustained rejection
 or a local structural-validation failure in the candidate's civic slice invokes
-one balanced reconciliation over a civic-only replacement schema:
-candidate-owned civic facts, resident civic fact references, candidate
-institutions, local political relations, and the civic manifest. Geography,
-routes, migration, population identity, non-civic facts, branch assumptions,
-gaps, civic version, and semantic receipt binding have no writable field in
-that pass. A finding outside that writable slice can fail honestly but cannot
-induce a second expensive compilation. The merged candidate must survive the
-ordinary destination validators and a fresh independent verdict; the expensive
+one balanced reconciliation over a civic-only schema. The Sol destination
+candidate remains the owner of every institution identity, name, and goal.
+Terra may replace candidate-owned civic facts, resident civic fact references,
+local political relations, and the civic manifest, and may propose operational
+updates for every exact frozen institution ID. The request schema fixes both
+the update count and the permitted ID set. `apply_civic_reconciliation` is the
+sole merge and admission owner: it rejects omitted, duplicate, substituted, or
+invented institution IDs and copies only resources, posture, location scope,
+facets, and information channels onto the frozen institutions. Geography,
+routes, migration, population identity, non-civic facts, institution identity,
+institution names, institution goals, branch assumptions, gaps, civic version,
+and semantic receipt binding have no writable field in that pass. A finding
+outside that writable slice can fail honestly but cannot induce a second
+expensive compilation. The merged candidate must survive the ordinary
+destination validators and a fresh independent verdict; the expensive
 `destination_compile` stage is not rerun. The kernel rebinds the accepted verdict to the exact candidate before
 mutation admission. Completed compiler, reconciliation, and verifier receipts
 survive terminal failure and are persisted by both the strategic harness and

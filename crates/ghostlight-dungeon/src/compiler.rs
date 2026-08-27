@@ -643,6 +643,16 @@ struct CompiledDestinationInstitution {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+struct CompiledCivicInstitutionUpdate {
+    institution_id: String,
+    resources: Vec<String>,
+    posture: String,
+    location_ids: BTreeSet<String>,
+    facets: CompiledAgencyFacets,
+    information_channels: BTreeSet<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct CivicSystemVerification {
     authority_legible: bool,
     selection_or_succession_legible: bool,
@@ -698,7 +708,7 @@ struct CompiledCivicReconciliation {
     #[schemars(length(max = 8))]
     resident_civic_knowledge: Vec<CompiledResidentCivicKnowledge>,
     #[schemars(length(max = 12))]
-    institutions: Vec<CompiledDestinationInstitution>,
+    institution_updates: Vec<CompiledCivicInstitutionUpdate>,
     #[schemars(length(max = 48))]
     local_relations: Vec<CompiledAgencyRelation>,
     civic_system: CompiledCivicSystemReconciliation,
@@ -3000,7 +3010,7 @@ impl WorldCompiler {
                 };
             }
         };
-        let schema = match serde_json::to_value(schema_for!(CompiledCivicReconciliation)) {
+        let mut schema = match serde_json::to_value(schema_for!(CompiledCivicReconciliation)) {
             Ok(schema) => schema,
             Err(error) => {
                 return CivicReconciliationOutcome::Failed {
@@ -3009,6 +3019,12 @@ impl WorldCompiler {
                 };
             }
         };
+        if let Err(error) = constrain_civic_reconciliation_schema(&mut schema, seed) {
+            return CivicReconciliationOutcome::Failed {
+                message: error.to_string(),
+                receipts: Vec::new(),
+            };
+        }
         let seed_bytes = match serde_json::to_vec(seed) {
             Ok(bytes) => bytes,
             Err(error) => {
@@ -3023,7 +3039,7 @@ impl WorldCompiler {
             Sha256::digest(seed_bytes)
         );
         let prompt = format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nRepair only the civic projection of one frozen destination candidate. The expensive world invention is complete and immutable. The output is a complete replacement for candidate-owned civic facts, each resident population's civic fact IDs, candidate institutions, candidate political relations, and the civic manifest. It has no authority to change populations, names, goals, geography, routes, migration, non-civic facts, branch assumptions, or gaps. Preserve exact population IDs and the jurisdiction. Preserve canonical facts and every previously committed apparatus item; reference them from the manifest and resident civic knowledge but do not copy or rewrite them in civic_facts. Candidate-owned civic facts may be replaced or added with stable non-colliding IDs. Resolve the repair finding across all affected civic fields. Do not merely rephrase the finding or create an unlisted office. Return the smallest coherent correction that will survive fresh structural validation and independent verification.\n\nREQUEST:\n{}\n\nREPAIR FINDING:\n{}\n\nFROZEN CIVIC PROJECTION:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nRepair only the civic projection of one frozen destination candidate. The expensive world invention is complete and immutable. The output is a complete replacement for candidate-owned civic facts, each resident population's civic fact IDs, civic-operational updates for every exact frozen institution, candidate political relations, and the civic manifest. It has no authority to change institution IDs, institution names, institution goals, populations, geography, routes, migration, non-civic facts, branch assumptions, or gaps. Every institution_update must use one exact schema-enumerated frozen institution_id exactly once; omitted, duplicate, substituted, or newly invented institutions are invalid. Preserve exact population IDs and the jurisdiction. Preserve canonical facts and every previously committed apparatus item; reference them from the manifest and resident civic knowledge but do not copy or rewrite them in civic_facts. Candidate-owned civic facts may be replaced or added with stable non-colliding IDs. Resolve the repair finding across all affected civic fields. Do not merely rephrase the finding or create an unlisted office. Return the smallest coherent correction that will survive fresh structural validation and independent verification.\n\nREQUEST:\n{}\n\nREPAIR FINDING:\n{}\n\nFROZEN CIVIC PROJECTION:\n{}",
             match serde_json::to_string(&schema) {
                 Ok(schema) => schema,
                 Err(error) => {
@@ -3323,6 +3339,24 @@ fn apply_civic_reconciliation(
         ));
     }
 
+    let institution_ids = seed
+        .institutions
+        .iter()
+        .map(|institution| institution.id.clone())
+        .collect::<BTreeSet<_>>();
+    let reconciled_institution_ids = reconciliation
+        .institution_updates
+        .iter()
+        .map(|update| update.institution_id.clone())
+        .collect::<BTreeSet<_>>();
+    if reconciliation.institution_updates.len() != reconciled_institution_ids.len()
+        || reconciled_institution_ids != institution_ids
+    {
+        return Err(anyhow!(
+            "civic reconciliation must update every frozen candidate institution exactly once"
+        ));
+    }
+
     let original_public_fact_ids = civic_public_fact_ids(original_civic_system);
     let protected_fact_ids = seed
         .facts
@@ -3424,7 +3458,21 @@ fn apply_civic_reconciliation(
                 .expect("reconciled population set was proven exact"),
         );
     }
-    corrected.institutions = reconciliation.institutions;
+    let mut institution_updates = reconciliation
+        .institution_updates
+        .into_iter()
+        .map(|update| (update.institution_id.clone(), update))
+        .collect::<BTreeMap<_, _>>();
+    for institution in &mut corrected.institutions {
+        let update = institution_updates
+            .remove(&institution.id)
+            .expect("reconciled institution set was proven exact");
+        institution.resources = update.resources;
+        institution.posture = update.posture;
+        institution.location_ids = update.location_ids;
+        institution.facets = update.facets;
+        institution.information_channels = update.information_channels;
+    }
     corrected.local_relations = reconciliation.local_relations;
     corrected.civic_system = Some(reconciliation.civic_system.into());
     Ok(corrected)
@@ -3876,6 +3924,32 @@ fn constrain_destination_expansion_schema(
         "type":"string",
         "enum":source_population_ids.iter().cloned().collect::<Vec<_>>()
     });
+    Ok(())
+}
+
+fn constrain_civic_reconciliation_schema(
+    schema: &mut serde_json::Value,
+    seed: &CompiledExpansionSeed,
+) -> Result<()> {
+    let institution_ids = seed
+        .institutions
+        .iter()
+        .map(|institution| institution.id.clone())
+        .collect::<Vec<_>>();
+    let updates = schema
+        .pointer_mut("/properties/institution_updates")
+        .ok_or_else(|| anyhow!("civic reconciliation schema has no institution_updates"))?;
+    updates["minItems"] = serde_json::json!(institution_ids.len());
+    updates["maxItems"] = serde_json::json!(institution_ids.len());
+    let update = schema
+        .pointer_mut("/$defs/CompiledCivicInstitutionUpdate")
+        .ok_or_else(|| anyhow!("civic reconciliation schema has no institution update"))?;
+    if !institution_ids.is_empty() {
+        update["properties"]["institution_id"] = serde_json::json!({
+            "type":"string",
+            "enum":institution_ids,
+        });
+    }
     Ok(())
 }
 
@@ -7191,6 +7265,27 @@ mod tests {
                     .to_string())
                 }
                 "destination_civic_reconciliation" => {
+                    let reconciliation_schema = request
+                        .output_schema
+                        .as_ref()
+                        .ok_or_else(|| anyhow!("civic reconciliation lost its schema"))?;
+                    assert_eq!(
+                        reconciliation_schema.pointer("/properties/institution_updates/minItems"),
+                        Some(&serde_json::json!(2))
+                    );
+                    assert_eq!(
+                        reconciliation_schema.pointer("/properties/institution_updates/maxItems"),
+                        Some(&serde_json::json!(2))
+                    );
+                    assert_eq!(
+                        reconciliation_schema.pointer(
+                            "/$defs/CompiledCivicInstitutionUpdate/properties/institution_id/enum"
+                        ),
+                        Some(&serde_json::json!([
+                            "refuge-duty-council",
+                            "refuge-stores-office"
+                        ]))
+                    );
                     self.saw_balanced_civic_reconciliation.store(
                         request.model == MODEL_BALANCED
                             && request
@@ -7222,13 +7317,28 @@ mod tests {
                             })
                             .collect::<Vec<_>>();
                     let mut civic_system = frozen_projection["civic_system"].clone();
-                    let mut institutions = frozen_projection["institutions"].clone();
-                    if institutions[0]["information_channels"] == serde_json::json!(["unknown"])
+                    let mut institution_updates = frozen_projection["institutions"]
+                        .as_array()
+                        .ok_or_else(|| anyhow!("frozen projection lost institutions"))?
+                        .iter()
+                        .map(|institution| {
+                            serde_json::json!({
+                                "institution_id":institution["id"],
+                                "resources":institution["resources"],
+                                "posture":institution["posture"],
+                                "location_ids":institution["location_ids"],
+                                "facets":institution["facets"],
+                                "information_channels":institution["information_channels"],
+                            })
+                        })
+                        .collect::<Vec<_>>();
+                    if institution_updates[0]["information_channels"]
+                        == serde_json::json!(["unknown"])
                         && request
                             .lived_stream
                             .contains("non-concrete information channels [\"unknown\"]")
                     {
-                        institutions[0]["information_channels"] =
+                        institution_updates[0]["information_channels"] =
                             serde_json::json!(["public duty leaf"]);
                     }
                     civic_system["governing_institution_ids"] =
@@ -7242,7 +7352,7 @@ mod tests {
                     Ok(serde_json::json!({
                         "civic_facts":frozen_projection["candidate_owned_civic_facts"],
                         "resident_civic_knowledge":resident_civic_knowledge,
-                        "institutions":institutions,
+                        "institution_updates":institution_updates,
                         "local_relations":frozen_projection["local_relations"],
                         "civic_system":civic_system,
                     })
@@ -8720,6 +8830,120 @@ mod tests {
         );
     }
 
+    fn civic_reconciliation_seed(
+        institutions: Vec<CompiledDestinationInstitution>,
+    ) -> CompiledExpansionSeed {
+        CompiledExpansionSeed {
+            origin_routes: vec![],
+            locations: vec![],
+            facts: vec![],
+            populations: vec![],
+            institutions,
+            local_relations: vec![],
+            civic_system: Some(CivicSystemManifest {
+                schema: "ghostlight.civic_system_manifest.v1".into(),
+                version: 0,
+                jurisdiction_location_id: "refuge".into(),
+                governing_institution_ids: BTreeSet::new(),
+                resident_population_ids: BTreeSet::new(),
+                public_authority_fact_ids: BTreeSet::new(),
+                public_selection_fact_ids: BTreeSet::new(),
+                public_resource_fact_ids: BTreeSet::new(),
+                public_redress_fact_ids: BTreeSet::new(),
+                political_relation_ids: BTreeSet::new(),
+                semantic_verification_receipt_id: String::new(),
+            }),
+            migration_relations: vec![],
+            branch_assumptions: vec![],
+            gaps: vec![],
+        }
+    }
+
+    fn empty_civic_reconciliation(
+        institution_updates: Vec<CompiledCivicInstitutionUpdate>,
+    ) -> CompiledCivicReconciliation {
+        CompiledCivicReconciliation {
+            civic_facts: vec![],
+            resident_civic_knowledge: vec![],
+            institution_updates,
+            local_relations: vec![],
+            civic_system: CompiledCivicSystemReconciliation {
+                schema: "ghostlight.civic_system_manifest.v1".into(),
+                jurisdiction_location_id: "refuge".into(),
+                governing_institution_ids: BTreeSet::new(),
+                resident_population_ids: BTreeSet::new(),
+                public_authority_fact_ids: BTreeSet::new(),
+                public_selection_fact_ids: BTreeSet::new(),
+                public_resource_fact_ids: BTreeSet::new(),
+                public_redress_fact_ids: BTreeSet::new(),
+                political_relation_ids: BTreeSet::new(),
+            },
+        }
+    }
+
+    #[test]
+    fn civic_reconciliation_cannot_substitute_a_frozen_institution() {
+        let campaign = seed_to_campaign(private_actor_test_seed(), &[]).unwrap();
+        let seed = civic_reconciliation_seed(vec![CompiledDestinationInstitution {
+            id: "refuge-duty-council".into(),
+            name: "Refuge Duty Council".into(),
+            resources: vec!["closure seal".into()],
+            goals: vec!["keep admissions within storm capacity".into()],
+            posture: "admit by witnessed capacity ruling".into(),
+            location_ids: BTreeSet::from(["refuge".into()]),
+            facets: CompiledAgencyFacets {
+                geography: BTreeSet::new(),
+                ideology: BTreeSet::new(),
+                authority: BTreeSet::new(),
+                economy_role: BTreeSet::new(),
+                species_body: BTreeSet::new(),
+                information: BTreeSet::new(),
+            },
+            information_channels: BTreeSet::new(),
+        }]);
+        let reconciliation = empty_civic_reconciliation(vec![CompiledCivicInstitutionUpdate {
+            institution_id: "invented-council".into(),
+            resources: vec![],
+            posture: "claims the refuge".into(),
+            location_ids: BTreeSet::from(["refuge".into()]),
+            facets: CompiledAgencyFacets {
+                geography: BTreeSet::new(),
+                ideology: BTreeSet::new(),
+                authority: BTreeSet::new(),
+                economy_role: BTreeSet::new(),
+                species_body: BTreeSet::new(),
+                information: BTreeSet::new(),
+            },
+            information_channels: BTreeSet::new(),
+        }]);
+
+        let error = apply_civic_reconciliation(&campaign, &seed, reconciliation).unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("must update every frozen candidate institution exactly once")
+        );
+    }
+
+    #[test]
+    fn civic_reconciliation_closes_an_empty_institution_update_lane() {
+        let campaign = seed_to_campaign(private_actor_test_seed(), &[]).unwrap();
+        let seed = civic_reconciliation_seed(vec![]);
+        let mut schema = serde_json::to_value(schema_for!(CompiledCivicReconciliation)).unwrap();
+
+        constrain_civic_reconciliation_schema(&mut schema, &seed).unwrap();
+
+        assert_eq!(schema["properties"]["institution_updates"]["minItems"], 0);
+        assert_eq!(schema["properties"]["institution_updates"]["maxItems"], 0);
+        assert!(schema["$defs"]["CompiledCivicInstitutionUpdate"]["properties"]
+            ["institution_id"]["enum"]
+            .is_null());
+        let corrected =
+            apply_civic_reconciliation(&campaign, &seed, empty_civic_reconciliation(vec![]))
+                .unwrap();
+        assert!(corrected.institutions.is_empty());
+    }
+
     #[tokio::test]
     async fn destination_civic_rejection_uses_one_balanced_reconciliation_pass() {
         let model = Arc::new(DestinationElaborationModel {
@@ -8859,6 +9083,17 @@ mod tests {
         assert_eq!(
             duty_profile.information_channels,
             BTreeSet::from(["public duty leaf".into()])
+        );
+        let duty = preview
+            .expansion
+            .institutions
+            .iter()
+            .find(|institution| institution.id == "refuge-duty-council")
+            .expect("reconciled duty council keeps its frozen identity");
+        assert_eq!(duty.name, "Refuge Duty Council");
+        assert_eq!(
+            duty.goals,
+            ["keep admissions within storm capacity".to_owned()]
         );
     }
 
