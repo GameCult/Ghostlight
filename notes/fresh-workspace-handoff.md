@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-08-25
+Updated: 2026-08-27
 
 This is the compact re-entry packet. It records current authority, deployed
 truth, proof, and the next decision. Git history owns chronology; the system map
@@ -486,22 +486,45 @@ world whose derived cover grew from four cells to six as named figures emerged;
 the 200-cell path remains a local scale proof and the
 Delvehold game-side adapter is not implemented here.
 
-1. Produce one reader-facing fantasy front page without runtime or debug framing
-   while retaining provenance separately.
-2. Dispatch a blind reviewer with only that page and a neutral editorial brief;
-   preserve its untouched response.
-3. Independently audit the accepted editorial copy against committed public
-   events before treating presentation quality as accepted.
-4. Have the game-side adapter lower its authored hierarchy into the published
+An isolated two-wave connector run against Ghostlight source `2f7c090` advanced
+one fresh campaign from revision 0 to 2, committed 19 events and 14 news rows,
+and left player state and location unchanged. Its reader pages and separate
+provenance artifacts live at
+`F:\GameCult\GhostlightDungeon\acceptance\root-wire-frontpage-blind-2f7c090-1`.
+The wave-two page did not pass the blind journalistic gate. A fresh reviewer,
+shown only that page under a neutral brief, diagnosed procedural construction
+with 99 percent confidence because the copy exposed a canonical relation name,
+a numerical state delta, and source-record language. This does not weaken the
+world-simulation witness. It establishes that rendering and copy-desk gates
+cannot repair a newsroom packet that presents mechanical background records as
+editorial evidence.
+
+The current local source cut rewrites public strategic summaries into
+human-readable accounts at the event owner, gives the editor only opaque desk
+citations and named public facts, deduplicates identical fact packets, and maps
+accepted citations back to exact canonical `NewsIssue` and `Event` provenance.
+All 392 library tests and every binary test pass, and the bounded Modeling
+re-audit is clear. This is local verification only; no fresh provider page has
+passed blind or grounding review yet.
+
+1. Commit and push the coherent newsroom and public-event cut.
+2. Run a fresh isolated exact-commit two-wave newspaper acceptance through
+   Codex Connector with `gpt-5.6-luna`, preserving world, issue, audit, receipt,
+   build, and hash witnesses without mutating the live daemon.
+3. Dispatch a fresh blind reviewer with only the strongest page and a neutral
+   editorial brief; preserve its untouched response.
+4. Independently audit that page against committed public events before
+   treating presentation quality as accepted.
+5. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-5. Prove one consumer-owned effect crosses that public API, changes two foreign
+6. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-6. Measure provider cost and continuity on the existing 200-cell authored-world
+7. Measure provider cost and continuity on the existing 200-cell authored-world
    path without coupling wave width to the provider concurrency ceiling.
-7. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+8. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-8. Keep `gamecult-ops` synchronized with every executable deployment and model
+9. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,

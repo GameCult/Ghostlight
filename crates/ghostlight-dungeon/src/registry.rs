@@ -706,15 +706,14 @@ mod tests {
     struct RejectingRegistryNewspaperModel;
 
     fn registry_newspaper_editor_response(request: &ModelStageRequest) -> Result<String> {
-        let source_id = request
+        let citation = request
             .output_schema
             .as_ref()
             .and_then(|schema| {
-                schema
-                    .pointer("/$defs/EditorialArticleDraft/properties/source_news_ids/items/enum/0")
+                schema.pointer("/$defs/EditorialArticleDraft/properties/citations/items/enum/0")
             })
             .and_then(serde_json::Value::as_str)
-            .ok_or_else(|| anyhow!("newspaper fixture lost its source enum"))?;
+            .ok_or_else(|| anyhow!("newspaper fixture lost its citation enum"))?;
         Ok(serde_json::json!({
             "articles":[{
                 "section":"Front Page",
@@ -722,7 +721,7 @@ mod tests {
                 "deck":"The inner court has turned a granary inquiry into a question of witchcraft and arithmetic.",
                 "byline":"By the political editor",
                 "dateline":"Room",
-                "source_news_ids":[source_id],
+                "citations":[citation],
                 "paragraphs":[
                     "The inner court has accused three granary auditors of being one witch in a long coat, placing the allegation into the public record.",
                     "The charge leaves the auditors answering a court that has made one person out of three, at least for purposes of blame."

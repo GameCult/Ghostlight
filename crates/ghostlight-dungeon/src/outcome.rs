@@ -834,9 +834,9 @@ fn resolved_outcome_summary(
         } => {
             let owner = subject_name(campaign, gestalt_id)?;
             if let Some(pressure) = pressure_additions.first() {
-                format!("{owner} acquires pressure: {pressure}.")
+                format!("New pressure on {owner}: {pressure}.")
             } else if let Some(pressure) = pressure_resolutions.first() {
-                format!("{owner} resolves pressure: {pressure}.")
+                format!("A live dispute involving {owner} is settled: {pressure}.")
             } else {
                 return Err(anyhow!("pressure outcome has no state transition"));
             }
@@ -845,7 +845,21 @@ fn resolved_outcome_summary(
             relation_id,
             strength_delta,
         } => {
-            format!("{source_name}'s attempt shifts relation {relation_id} by {strength_delta:+}.")
+            let relation = campaign
+                .agency_relations
+                .get(relation_id)
+                .ok_or_else(|| anyhow!("relation outcome relation vanished"))?;
+            let direction = if *strength_delta > 0 {
+                "strengthens"
+            } else {
+                "strains"
+            };
+            format!(
+                "An action by {source_name} {direction} the {} tie between {} and {}.",
+                agency_relation_label(&relation.kind),
+                subject_name(campaign, &relation.from_subject_id)?,
+                subject_name(campaign, &relation.to_subject_id)?,
+            )
         }
         StrategicOutcomeEffect::MemberMemory { member_id, memory } => format!(
             "{} retains a new memory: {memory}.",
@@ -915,6 +929,22 @@ fn resolved_outcome_summary(
         return Err(anyhow!("derived strategic outcome summary is empty"));
     }
     Ok(summary)
+}
+
+fn agency_relation_label(kind: &crate::domain::AgencyRelationKind) -> &'static str {
+    use crate::domain::AgencyRelationKind;
+    match kind {
+        AgencyRelationKind::Containment => "territorial",
+        AgencyRelationKind::Command => "command",
+        AgencyRelationKind::Membership => "membership",
+        AgencyRelationKind::Alliance => "alliance",
+        AgencyRelationKind::Rivalry => "rivalry",
+        AgencyRelationKind::Trade => "trade",
+        AgencyRelationKind::Migration => "migration",
+        AgencyRelationKind::Communication => "communication",
+        AgencyRelationKind::Coercion => "coercive",
+        AgencyRelationKind::SharedLocation => "local",
+    }
 }
 
 impl OutcomeProposal {
@@ -2343,8 +2373,8 @@ mod tests {
     use super::*;
     use crate::{
         domain::{
-            AgencyProfile, AgencySubjectKind, BranchOrigin, GestaltPersonaState, Location,
-            ResolutionPolicy, WorldFact,
+            AgencyProfile, AgencyRelation, AgencyRelationKind, AgencySubjectKind, BranchOrigin,
+            GestaltPersonaState, Location, ResolutionPolicy, WorldFact,
         },
         resolution::ensure_agency_profiles,
     };
@@ -2614,8 +2644,14 @@ mod tests {
     #[test]
     fn member_outcome_text_retains_its_field_specific_bound() {
         let mut exact = BTreeSet::new();
-        validate_member_owner("member:mira", "mira", &"x".repeat(240), "memory", &mut exact)
-            .unwrap();
+        validate_member_owner(
+            "member:mira",
+            "mira",
+            &"x".repeat(240),
+            "memory",
+            &mut exact,
+        )
+        .unwrap();
 
         let mut oversized = BTreeSet::new();
         assert!(
@@ -3431,6 +3467,41 @@ mod tests {
             resolved_outcome_summary(&value, "dockers", &outcome.effect).unwrap(),
             "At Dock, Dockers establishes reinforced public hazard marker."
         );
+    }
+
+    #[test]
+    fn relation_outcome_summary_names_people_and_consequence_without_state_coordinates() {
+        let mut value = campaign();
+        value.agency_relations.insert(
+            "dock-command".into(),
+            AgencyRelation {
+                schema: "ghostlight.agency_relation.v1".into(),
+                id: "dock-command".into(),
+                from_subject_id: "dockers".into(),
+                to_subject_id: "player".into(),
+                kind: AgencyRelationKind::Command,
+                strength: 50,
+                active: true,
+                evidence_receipt_ids: vec![],
+            },
+        );
+
+        let summary = resolved_outcome_summary(
+            &value,
+            "dockers",
+            &StrategicOutcomeEffect::AgencyRelationShift {
+                relation_id: "dock-command".into(),
+                strength_delta: -5,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            summary,
+            "An action by Dockers strains the command tie between Dockers and Player."
+        );
+        assert!(!summary.contains("dock-command"));
+        assert!(!summary.contains("-5"));
     }
 
     #[tokio::test]

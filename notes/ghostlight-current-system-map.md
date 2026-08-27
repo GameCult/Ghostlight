@@ -931,15 +931,25 @@ may create one consequential named person through the existing Gestalt member
 commit primitive; that person enters later covers as the same canonical actor.
 Public action channels produce committed `NewsIssue` records. The world-
 consumer boundary admits an authority-gated editorial-voice request, then
-projects only those public issues and their cited committed events into a
-bounded newsroom source desk without source or event wall-clock timestamps. A
-capable editor model owns selection, grouping, headline, deck, byline class,
-dateline, and article prose as a proposal. Edition chrome is contract-derived,
-not model copy. Local validation binds every article to exact source-news IDs,
-places supplied by those cited sources, the front-page budget, and reader-safe
-presentation labels. A separate copy-desk stage may reject unsupported facts,
+validates the exact `NewsIssue` to committed-`Event` public-channel chain. The
+public-event owner derives each committed event's human-readable account from
+its typed effect and canonical subject names; relation coordinates, numerical
+deltas, pressure-transition labels, action-selection rationale, and other state
+machinery never become the public account. The newsroom does not re-decide
+which committed public events count as truth. It merges identical fact bundles
+under one opaque per-request citation while retaining every backing news row,
+event, channel, and reliability record for later audit. The editor receives
+only those citations, human-readable accounts, and canonical names. News IDs,
+event IDs and kinds, channels, reliability, source headlines, and wall-clock
+timestamps remain internal. A capable editor model owns selection,
+grouping, headline, deck, byline class, dateline, and article prose as a
+proposal. Edition chrome is contract-derived, not model copy. Local validation
+binds every article to opaque citations, places supplied by those cited facts,
+the front-page budget, and reader-safe presentation labels. Accepted citations
+are then lowered back to exact canonical source-news and event IDs for the
+typed issue and audit. A separate copy-desk stage may reject unsupported facts,
 unearned attribution, procedural leakage, or mechanical state-ledger copy but
-cannot rewrite it. Two same-source editor corrections are allowed. After both
+cannot rewrite it. Two same-desk editor corrections are allowed. After both
 fail, the composition owner may remove every flagged article and must submit
 the surviving page to a fresh whole-page copy-desk review; an empty or rejected
 page returns no edition. The typed issue retains exact event IDs, channels,

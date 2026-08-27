@@ -1306,6 +1306,25 @@ fn execute(
             if let Some(wave) = &resolution_wave {
                 for proposal in &wave.strategic_individuations {
                     let member = &proposal.individuation.member;
+                    let gestalt_name = campaign
+                        .gestalts
+                        .get(&proposal.individuation.gestalt_id)
+                        .map(|gestalt| gestalt.name.as_str())
+                        .unwrap_or("their community");
+                    let undertaking = member
+                        .goals
+                        .first()
+                        .map(String::as_str)
+                        .or_else(|| member.obligations.iter().next().map(String::as_str));
+                    let summary = undertaking.map_or_else(
+                        || format!("{} steps forward within {gestalt_name}.", member.name),
+                        |undertaking| {
+                            format!(
+                                "{} steps forward within {gestalt_name} to {undertaking}.",
+                                member.name
+                            )
+                        },
+                    );
                     tick_events.push(crate::domain::Event {
                         id: format!(
                             "strategic:{}:individuation:{}",
@@ -1314,10 +1333,7 @@ fn execute(
                         ),
                         at: campaign.world_time,
                         kind: "gestalt_individuation".into(),
-                        summary: format!(
-                            "{} becomes a consequential named figure: {}",
-                            member.name, proposal.rationale
-                        ),
+                        summary: summary.chars().take(240).collect(),
                         actor_ids: vec![crate::domain::gestalt_member_subject_id(&member.id)],
                         institution_ids: vec![],
                         gestalt_ids: vec![proposal.individuation.gestalt_id.clone()],
@@ -2775,13 +2791,15 @@ fn apply_strategic_tick_plan(
         let mut summary_parts = Vec::new();
         if !action.pressure_resolutions.is_empty() {
             summary_parts.push(format!(
-                "resolves pressure: {}",
+                "A declaration from {} marks this matter settled: {}",
+                gestalt.name,
                 action.pressure_resolutions.join("; ")
             ));
         }
         if !action.pressure_additions.is_empty() {
             summary_parts.push(format!(
-                "takes on pressure: {}",
+                "New public demand from {}: {}",
+                gestalt.name,
                 action.pressure_additions.join("; ")
             ));
         }
@@ -2789,7 +2807,7 @@ fn apply_strategic_tick_plan(
             id: format!("strategic:{revision}:gestalt:{}", gestalt.id),
             at,
             kind: "gestalt_action".into(),
-            summary: format!("{} {}", gestalt.name, summary_parts.join("; ")),
+            summary: summary_parts.join("; "),
             actor_ids: vec![],
             institution_ids: vec![],
             gestalt_ids: vec![gestalt.id.clone()],
@@ -2820,7 +2838,19 @@ fn apply_strategic_tick_plan(
         let origin = campaign.gestalts[&action.gestalt_id]
             .home_location_id
             .clone();
+        let origin_name = campaign
+            .locations
+            .get(&origin)
+            .ok_or_else(|| KernelError::Invalid("gestalt migration origin is missing".into()))?
+            .name
+            .clone();
         let gestalt_name = campaign.gestalts[&action.gestalt_id].name.clone();
+        let destination_location_name = campaign
+            .locations
+            .get(&action.destination_location_id)
+            .ok_or_else(|| KernelError::Invalid("gestalt migration destination is missing".into()))?
+            .name
+            .clone();
         let destination_name = campaign.gestalts[&action.destination_gestalt_id]
             .name
             .clone();
@@ -2832,8 +2862,7 @@ fn apply_strategic_tick_plan(
             at,
             kind: "gestalt_migration".into(),
             summary: format!(
-                "{gestalt_name} moves from {origin} to {} near {destination_name}.",
-                action.destination_location_id
+                "{gestalt_name} relocates from {origin_name} to {destination_location_name} near {destination_name}."
             ),
             actor_ids: vec![],
             institution_ids: vec![],
@@ -2999,14 +3028,23 @@ fn apply_strategic_tick_plan(
         }
         let origin = actor.location_id.clone();
         let actor_name = actor.name.clone();
+        let origin_name = campaign
+            .locations
+            .get(&origin)
+            .ok_or_else(|| KernelError::Invalid("actor movement origin is missing".into()))?
+            .name
+            .clone();
+        let destination_name = campaign
+            .locations
+            .get(&action.destination_id)
+            .ok_or_else(|| KernelError::Invalid("actor movement destination is missing".into()))?
+            .name
+            .clone();
         events.push(crate::domain::Event {
             id: format!("strategic:{revision}:actor:{}", action.actor_id),
             at,
             kind: "actor_movement".into(),
-            summary: format!(
-                "{actor_name} moves from {origin} to {}.",
-                action.destination_id
-            ),
+            summary: format!("{actor_name} moves from {origin_name} to {destination_name}."),
             actor_ids: vec![action.actor_id],
             institution_ids: vec![],
             gestalt_ids: vec![],
@@ -3284,13 +3322,27 @@ fn apply_strategic_tick_plan(
                     .clone()
             });
         let member_name = campaign.gestalt_members[&action.member_id].name.clone();
+        let origin_name = campaign
+            .locations
+            .get(&origin)
+            .ok_or_else(|| KernelError::Invalid("member migration origin is missing".into()))?
+            .name
+            .clone();
+        let destination_location_name = campaign
+            .locations
+            .get(&action.destination_location_id)
+            .ok_or_else(|| KernelError::Invalid("member migration destination is missing".into()))?
+            .name
+            .clone();
+        let destination_gestalt_name = campaign.gestalts[&action.destination_gestalt_id]
+            .name
+            .clone();
         events.push(crate::domain::Event {
             id: format!("strategic:{revision}:member:{}", action.member_id),
             at,
             kind: "gestalt_member_migration".into(),
             summary: format!(
-                "{member_name} moves from {origin} to {} and joins {}.",
-                action.destination_location_id, action.destination_gestalt_id
+                "{member_name} moves from {origin_name} to {destination_location_name} and joins {destination_gestalt_name}."
             ),
             actor_ids: vec![crate::domain::gestalt_member_subject_id(&action.member_id)],
             institution_ids: vec![],
@@ -5344,7 +5396,7 @@ pub(crate) mod tests {
         assert_eq!(events[0].actor_ids, vec!["member:mira"]);
         assert_eq!(
             events[0].summary,
-            "Mira Venn moves from camp to docks and joins dock-neighbors."
+            "Mira Venn moves from Transit camp to South docks and joins South dock neighbors."
         );
 
         let actor = materialize_actor(
@@ -5693,6 +5745,12 @@ pub(crate) mod tests {
         assert_eq!(value.gestalts["dock-neighbors"], destination_before);
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].kind, "gestalt_migration");
+        assert_eq!(
+            events[0].summary,
+            "Eastern transit refugees relocates from Transit camp to South docks near South dock neighbors."
+        );
+        assert!(!events[0].summary.contains("refugees-east"));
+        assert!(!events[0].summary.contains("dock-neighbors"));
         assert_eq!(events[0].location_ids, vec!["camp", "docks"]);
         assert_eq!(
             events[0].gestalt_ids,
@@ -6130,7 +6188,7 @@ pub(crate) mod tests {
         assert_eq!(value.gestalts["refugees-east"].version, 1);
         assert_eq!(
             events[0].summary,
-            "Eastern transit refugees resolves pressure: the storm closes the camp; takes on pressure: shelter assignments remain unsettled"
+            "A declaration from Eastern transit refugees marks this matter settled: the storm closes the camp; New public demand from Eastern transit refugees: shelter assignments remain unsettled"
         );
     }
 
@@ -7144,6 +7202,12 @@ pub(crate) mod tests {
         assert_eq!(campaign.actors["runner"].location_id, "yard");
         assert_eq!(campaign.actors["player"].location_id, "room");
         assert_eq!(campaign.events[0].kind, "actor_movement");
+        assert_eq!(
+            campaign.events[0].summary,
+            "Runner moves from Room to Yard."
+        );
+        assert!(!campaign.events[0].summary.contains("room"));
+        assert!(!campaign.events[0].summary.contains("yard"));
         let ticks = store
             .load_all::<crate::domain::StrategicTickReceipt>("strategic_tick.v1")
             .unwrap();
@@ -9742,6 +9806,11 @@ pub(crate) mod tests {
             .iter()
             .find(|issue| issue.event_ids == [public_individuation.id.clone()])
             .unwrap();
+        assert_eq!(
+            public_individuation.summary,
+            "Veska Rill steps forward within Eastern transit refugees to secure the storm route."
+        );
+        assert!(!public_individuation.summary.contains("selected action"));
         assert_eq!(
             public_issue.headline,
             crate::domain::committed_news_headline(&public_individuation.summary)
