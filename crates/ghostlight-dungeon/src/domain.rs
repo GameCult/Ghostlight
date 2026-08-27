@@ -1213,8 +1213,16 @@ pub struct RegionExpansion {
     pub civic_system: Option<CivicSystemManifest>,
 }
 
+#[derive(JsonSchema)]
+#[allow(dead_code)]
+pub(crate) enum CivicSystemManifestSchemaV1 {
+    #[schemars(rename = "ghostlight.civic_system_manifest.v1")]
+    V1,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct CivicSystemManifest {
+    #[schemars(with = "CivicSystemManifestSchemaV1")]
     pub schema: String,
     #[serde(default)]
     pub version: u64,

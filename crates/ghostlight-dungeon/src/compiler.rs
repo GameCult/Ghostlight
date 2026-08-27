@@ -661,6 +661,7 @@ struct CompiledResidentCivicKnowledge {
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct CompiledCivicSystemReconciliation {
+    #[schemars(with = "crate::domain::CivicSystemManifestSchemaV1")]
     schema: String,
     jurisdiction_location_id: String,
     governing_institution_ids: BTreeSet<String>,
@@ -6362,6 +6363,17 @@ mod tests {
         crate::model_connector::project_strict_responses_schema(&mut expansion).unwrap();
         assert_eq!(expansion["properties"]["origin_routes"]["type"], "array");
         assert_eq!(expansion["properties"]["locations"]["type"], "array");
+        assert_eq!(
+            expansion["$defs"]["CivicSystemManifestSchemaV1"]["enum"],
+            serde_json::json!(["ghostlight.civic_system_manifest.v1"])
+        );
+        let mut civic_reconciliation =
+            serde_json::to_value(schema_for!(CompiledCivicReconciliation)).unwrap();
+        crate::model_connector::project_strict_responses_schema(&mut civic_reconciliation).unwrap();
+        assert_eq!(
+            civic_reconciliation["$defs"]["CivicSystemManifestSchemaV1"]["enum"],
+            serde_json::json!(["ghostlight.civic_system_manifest.v1"])
+        );
 
         let mut fission = serde_json::to_value(schema_for!(CompiledFissionSeed)).unwrap();
         crate::model_connector::project_strict_responses_schema(&mut fission).unwrap();
