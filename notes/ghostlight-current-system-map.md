@@ -937,8 +937,8 @@ headline, deck, byline class, dateline, and article prose as a proposal. Local
 validation binds every article to exact source-news IDs, known places, the
 front-page budget, and reader-safe presentation labels. A separate copy-desk
 stage may reject unsupported facts, unearned attribution, procedural leakage,
-or mechanical state-ledger copy but cannot rewrite it. One same-source editor
-correction is allowed; persistent failure returns no edition. The typed issue
+or mechanical state-ledger copy but cannot rewrite it. Two same-source editor
+corrections are allowed; persistent failure returns no edition. The typed issue
 retains exact event IDs, channels, reliability, source revision, and model
 receipts as audit data. Terminally rejected attempts semantically rebind their
 otherwise immutable model receipts to a collision-free invalid disposition and

@@ -15,6 +15,7 @@ use std::{
 
 const MAX_FRONT_PAGE_ARTICLES: usize = 6;
 const MAX_SOURCE_NEWS_ITEMS: usize = 32;
+const MAX_EDITORIAL_ATTEMPTS: usize = 3;
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
     "Realm Affairs",
@@ -232,7 +233,7 @@ pub async fn compose_world_newspaper(
     );
     let mut correction = String::new();
     let mut receipts = Vec::new();
-    for attempt in 0..2 {
+    for attempt in 0..MAX_EDITORIAL_ATTEMPTS {
         let request = ModelStageRequest {
             stage: "newspaper_editor".into(),
             model: MODEL_CAPABLE.into(),
@@ -273,7 +274,7 @@ pub async fn compose_world_newspaper(
         };
         if let Err(error) = validate_editorial_draft(&sources, &draft, max_articles) {
             mark_semantic_invalid(&mut receipts[editor_receipt_index], &error);
-            if attempt == 0 {
+            if attempt + 1 < MAX_EDITORIAL_ATTEMPTS {
                 correction = format!(
                     "\n\nLOCAL NEWSROOM VALIDATOR REJECTED THE PREVIOUS PAGE: {error}\nRewrite the complete page against the same source desk and contract. Do not mention this correction in the copy.\nPREVIOUS PAGE:\n{}",
                     serde_json::to_string(&draft)?
@@ -281,7 +282,7 @@ pub async fn compose_world_newspaper(
                 continue;
             }
             return Err(composition_failure(
-                format!("newspaper editor failed local admission after one correction: {error}"),
+                format!("newspaper editor failed local admission after two corrections: {error}"),
                 receipts,
             ));
         }
@@ -366,7 +367,7 @@ pub async fn compose_world_newspaper(
         let mut rejected_page_receipt = receipts[editor_receipt_index].clone();
         mark_semantic_invalid(&mut rejected_page_receipt, &error);
         receipts.push(rejected_page_receipt);
-        if attempt == 0 {
+        if attempt + 1 < MAX_EDITORIAL_ATTEMPTS {
             correction = format!(
                 "\n\nTHE COPY DESK REJECTED THE PREVIOUS PAGE. Rewrite the complete page against the same sources. Remove every unsupported claim and every trace of runtime or state-ledger language while preserving the strongest grounded story. Do not mention the correction.\nCOPY DESK FINDINGS:\n{}\nPREVIOUS PAGE:\n{}",
                 serde_json::to_string_pretty(&verdict)?,
@@ -376,7 +377,7 @@ pub async fn compose_world_newspaper(
         }
         return Err(composition_failure(
             format!(
-                "newspaper copy remained ungrounded or mechanical after one correction: {}",
+                "newspaper copy remained ungrounded or mechanical after two corrections: {}",
                 verdict.assessment
             ),
             receipts,
@@ -1106,7 +1107,14 @@ mod tests {
     async fn terminal_copy_desk_rejection_carries_every_completed_receipt() {
         const REJECTED: &str = r#"{"accepted":false,"assessment":"The deck invents a riot absent from the source.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"riots below the palace","reason":"No cited source records a riot."}]}"#;
         let campaign = campaign_with_news();
-        let model = ScriptedNewspaperModel::new([ACCEPTED_PAGE, REJECTED, ACCEPTED_PAGE, REJECTED]);
+        let model = ScriptedNewspaperModel::new([
+            ACCEPTED_PAGE,
+            REJECTED,
+            ACCEPTED_PAGE,
+            REJECTED,
+            ACCEPTED_PAGE,
+            REJECTED,
+        ]);
         let error = compose_world_newspaper(
             &model,
             &campaign,
@@ -1120,14 +1128,14 @@ mod tests {
             .downcast_ref::<WorldNewspaperCompositionFailure>()
             .expect("terminal editorial rejection must retain its receipts");
 
-        assert_eq!(failure.model_receipts.len(), 6);
+        assert_eq!(failure.model_receipts.len(), 9);
         assert_eq!(
             failure
                 .model_receipts
                 .iter()
                 .filter(|receipt| receipt.validation_result == "semantic_invalid")
                 .count(),
-            2
+            3
         );
         for rejected in failure
             .model_receipts
@@ -1178,7 +1186,7 @@ mod tests {
     async fn edition_label_cannot_leak_newsroom_plumbing() {
         const LEAKING_PAGE: &str = r#"{"edition_label":"World Revision Evening","articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"","source_news_ids":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
         let campaign = campaign_with_news();
-        let model = ScriptedNewspaperModel::new([LEAKING_PAGE, LEAKING_PAGE]);
+        let model = ScriptedNewspaperModel::new([LEAKING_PAGE, LEAKING_PAGE, LEAKING_PAGE]);
         let error = compose_world_newspaper(
             &model,
             &campaign,
