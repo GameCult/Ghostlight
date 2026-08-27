@@ -4154,52 +4154,125 @@ pub fn validate_region_expansion(
                     .cloned()
             }))
             .collect::<BTreeSet<_>>();
-        if civic.schema != "ghostlight.civic_system_manifest.v1"
-            || civic.version != expected_version
-            || !known(&civic.jurisdiction_location_id)
-            || allowed_institution_ids.len() < 2
-            || expected_resident_ids.is_empty()
-            || civic.governing_institution_ids.is_empty()
-            || civic
-                .governing_institution_ids
-                .iter()
-                .any(|id| !allowed_institution_ids.contains(id))
-            || previous_institution_ids
-                .iter()
-                .any(|id| !civic.governing_institution_ids.contains(*id))
-            || civic.resident_population_ids != expected_resident_ids
-            || civic.public_authority_fact_ids.is_empty()
-            || civic.public_selection_fact_ids.is_empty()
-            || civic.public_resource_fact_ids.is_empty()
-            || civic.public_redress_fact_ids.is_empty()
-            || civic_fact_ids
-                .iter()
-                .any(|id| !allowed_fact_ids.contains(*id))
-            || civic.political_relation_ids.is_empty()
-            || civic
-                .political_relation_ids
-                .iter()
-                .any(|id| !allowed_relation_ids.contains(id))
-            || previous_relation_ids
-                .iter()
-                .any(|id| !civic.political_relation_ids.contains(*id))
-            || previous.is_some_and(|previous| {
-                !previous
-                    .public_authority_fact_ids
-                    .is_subset(&civic.public_authority_fact_ids)
-                    || !previous
-                        .public_selection_fact_ids
-                        .is_subset(&civic.public_selection_fact_ids)
-                    || !previous
-                        .public_resource_fact_ids
-                        .is_subset(&civic.public_resource_fact_ids)
-                    || !previous
-                        .public_redress_fact_ids
-                        .is_subset(&civic.public_redress_fact_ids)
-            })
-        {
+        let mut closure_failures = Vec::new();
+        if civic.schema != "ghostlight.civic_system_manifest.v1" {
+            closure_failures.push("schema must be ghostlight.civic_system_manifest.v1".into());
+        }
+        if civic.version != expected_version {
+            closure_failures.push(format!("version must be {expected_version}"));
+        }
+        if !known(&civic.jurisdiction_location_id) {
+            closure_failures.push("jurisdiction_location_id must name a known location".into());
+        }
+        if allowed_institution_ids.len() < 2 {
+            closure_failures.push("candidate needs at least two governing institutions".into());
+        }
+        if expected_resident_ids.is_empty() {
+            closure_failures.push("candidate needs at least one resident population".into());
+        }
+        if civic.governing_institution_ids.is_empty() {
+            closure_failures.push("governing_institution_ids must not be empty".into());
+        }
+        let unknown_institution_ids = civic
+            .governing_institution_ids
+            .difference(&allowed_institution_ids)
+            .cloned()
+            .collect::<Vec<_>>();
+        if !unknown_institution_ids.is_empty() {
+            closure_failures.push(format!(
+                "governing_institution_ids contain unknown IDs {unknown_institution_ids:?}"
+            ));
+        }
+        let omitted_previous_institution_ids = previous_institution_ids
+            .iter()
+            .filter(|id| !civic.governing_institution_ids.contains(**id))
+            .map(|id| (*id).clone())
+            .collect::<Vec<_>>();
+        if !omitted_previous_institution_ids.is_empty() {
+            closure_failures.push(format!(
+                "governing_institution_ids omitted existing IDs {omitted_previous_institution_ids:?}"
+            ));
+        }
+        if civic.resident_population_ids != expected_resident_ids {
+            closure_failures.push(format!(
+                "resident_population_ids must equal {expected_resident_ids:?}"
+            ));
+        }
+        if civic.public_authority_fact_ids.is_empty() {
+            closure_failures.push("public_authority_fact_ids must not be empty".into());
+        }
+        if civic.public_selection_fact_ids.is_empty() {
+            closure_failures.push("public_selection_fact_ids must not be empty".into());
+        }
+        if civic.public_resource_fact_ids.is_empty() {
+            closure_failures.push("public_resource_fact_ids must not be empty".into());
+        }
+        if civic.public_redress_fact_ids.is_empty() {
+            closure_failures.push("public_redress_fact_ids must not be empty".into());
+        }
+        let unknown_fact_ids = civic_fact_ids
+            .iter()
+            .filter(|id| !allowed_fact_ids.contains(**id))
+            .map(|id| (*id).clone())
+            .collect::<Vec<_>>();
+        if !unknown_fact_ids.is_empty() {
+            closure_failures.push(format!(
+                "public civic fact groups contain unknown IDs {unknown_fact_ids:?}"
+            ));
+        }
+        if civic.political_relation_ids.is_empty() {
+            closure_failures.push("political_relation_ids must not be empty".into());
+        }
+        let unknown_relation_ids = civic
+            .political_relation_ids
+            .difference(&allowed_relation_ids)
+            .cloned()
+            .collect::<Vec<_>>();
+        if !unknown_relation_ids.is_empty() {
+            closure_failures.push(format!(
+                "political_relation_ids contain unknown IDs {unknown_relation_ids:?}"
+            ));
+        }
+        let omitted_previous_relation_ids = previous_relation_ids
+            .iter()
+            .filter(|id| !civic.political_relation_ids.contains(**id))
+            .map(|id| (*id).clone())
+            .collect::<Vec<_>>();
+        if !omitted_previous_relation_ids.is_empty() {
+            closure_failures.push(format!(
+                "political_relation_ids omitted existing IDs {omitted_previous_relation_ids:?}"
+            ));
+        }
+        if let Some(previous) = previous {
+            if !previous
+                .public_authority_fact_ids
+                .is_subset(&civic.public_authority_fact_ids)
+            {
+                closure_failures.push("public_authority_fact_ids omitted existing facts".into());
+            }
+            if !previous
+                .public_selection_fact_ids
+                .is_subset(&civic.public_selection_fact_ids)
+            {
+                closure_failures.push("public_selection_fact_ids omitted existing facts".into());
+            }
+            if !previous
+                .public_resource_fact_ids
+                .is_subset(&civic.public_resource_fact_ids)
+            {
+                closure_failures.push("public_resource_fact_ids omitted existing facts".into());
+            }
+            if !previous
+                .public_redress_fact_ids
+                .is_subset(&civic.public_redress_fact_ids)
+            {
+                closure_failures.push("public_redress_fact_ids omitted existing facts".into());
+            }
+        }
+        if !closure_failures.is_empty() {
             return Err(anyhow!(
-                "inhabited destination civic manifest does not close authority, selection, resources, redress, populations, and political relations"
+                "inhabited destination civic manifest closure failures: {}",
+                closure_failures.join("; ")
             ));
         }
         let public_statements = civic_fact_ids
@@ -8616,6 +8689,40 @@ mod tests {
             local_relations: vec![],
             civic_system: None,
         }
+    }
+
+    #[test]
+    fn civic_closure_correction_names_every_structural_defect() {
+        let campaign = crate::resolution::tests::campaign(0, 1);
+        let mut expansion = valid_region_expansion();
+        expansion.civic_system = Some(CivicSystemManifest {
+            schema: "wrong.civic.schema".into(),
+            version: 7,
+            jurisdiction_location_id: "missing-jurisdiction".into(),
+            governing_institution_ids: BTreeSet::new(),
+            resident_population_ids: BTreeSet::new(),
+            public_authority_fact_ids: BTreeSet::new(),
+            public_selection_fact_ids: BTreeSet::new(),
+            public_resource_fact_ids: BTreeSet::new(),
+            public_redress_fact_ids: BTreeSet::new(),
+            political_relation_ids: BTreeSet::new(),
+            semantic_verification_receipt_id: String::new(),
+        });
+
+        let error = validate_region_expansion(&campaign, &expansion)
+            .unwrap_err()
+            .to_string();
+
+        assert!(error.contains("schema must be ghostlight.civic_system_manifest.v1"));
+        assert!(error.contains("version must be 0"));
+        assert!(error.contains("jurisdiction_location_id must name a known location"));
+        assert!(error.contains("candidate needs at least two governing institutions"));
+        assert!(error.contains("candidate needs at least one resident population"));
+        assert!(error.contains("public_authority_fact_ids must not be empty"));
+        assert!(error.contains("public_selection_fact_ids must not be empty"));
+        assert!(error.contains("public_resource_fact_ids must not be empty"));
+        assert!(error.contains("public_redress_fact_ids must not be empty"));
+        assert!(error.contains("political_relation_ids must not be empty"));
     }
 
     #[test]
