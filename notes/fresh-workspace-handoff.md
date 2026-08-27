@@ -463,29 +463,35 @@ action-bound named person can emerge publicly, retain identity, enter the next
 resolution cover, and act from her own authority. The generated newspaper
 contains her public appointment but does not expose her later private movement.
 
-The accepted one-revision Rainless Marches provider baseline is recorded in
+The accepted four-revision Rainless Marches provider witness is recorded in
 `state/evidence.jsonl` and
-`F:\GameCult\GhostlightDungeon\acceptance\rainless-codex-20260827\SHA256SUMS`.
-It proves provider routing, one valid semantic correction, atomic world commit,
-five provenance-bound articles, and one named emergence with player state
-unchanged. It does not prove sustained political evolution or editorially
-distinct prose: all five rendered articles repeat their headline as their body.
+`F:\GameCult\GhostlightDungeon\acceptance\rainless-spicy-20260827-sustained-5\SHA256SUMS`.
+Exact Ghostlight source `5e00a7bbc3f540ef35d18abe89f84687b5004664`
+ran through Codex Connector
+`2f29b90eebd8fc1bbdc07cdd22ac4883f16849a5`, model `gpt-5.6-luna`,
+and admitted caller `ghostlight-dungeon-yggdrasil`. Four sequential atomic waves
+advanced one campaign from revision 0 through 4, committed 41 unique events and
+28 unique news rows, and
+rendered 23 distinct provenance-bound articles across four independently
+reviewed issues. Ilyra Quill appears in every issue; Mara's testimony persists
+into later institutional postures; Tavia and Mara Venn emerge as accountable
+organizers. One rejected wave-one pulse did not mutate the world. Player state
+and location are unchanged, stderr is empty, and every copied artifact matches
+the remote SHA-256 manifest. This proves sustained politics in a sparse provider
+world whose derived cover grew from four cells to six as named figures emerged;
+the 200-cell path remains a local scale proof and the
+Delvehold game-side adapter is not implemented here.
 
-1. Define and run a bounded multi-revision Codex-backed political acceptance
-   with recurring named figures, evolving institutional consequences, exact
-   public provenance, and player-owned truth unchanged.
-2. Independently review successive newspaper artifacts for political
-   continuity, useful distinction between developments, and editorial interest.
-   Newspaper presentation may interpret committed public evidence but may not
-   invent canonical facts.
-3. Have the game-side adapter lower its authored hierarchy into the published
+1. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-4. Prove one consumer-owned effect crosses that public API, changes two foreign
+2. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-5. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+3. Measure provider cost and continuity on the existing 200-cell authored-world
+   path without coupling wave width to the provider concurrency ceiling.
+4. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-6. Keep `gamecult-ops` synchronized with every executable deployment and model
+5. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,
