@@ -1,6 +1,7 @@
 #![recursion_limit = "256"]
 
 pub mod agency_corpus;
+pub mod agent;
 pub mod assessor;
 pub mod compiler;
 pub mod consumer;

@@ -130,6 +130,14 @@ impl ModelStageReceipt {
     }
 }
 
+pub(crate) fn mark_model_receipt_semantic_invalid(
+    receipt: &mut ModelStageReceipt,
+    finding: &impl std::fmt::Display,
+) {
+    receipt.validation_result = "semantic_invalid".into();
+    receipt.local_validation_error = Some(finding.to_string().chars().take(1_000).collect());
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct ModelStageOutput {
     pub narrative: String,

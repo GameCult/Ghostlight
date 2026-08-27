@@ -937,38 +937,66 @@ the office, procedure, or answer. Inhabited proposals must expose current
 authority, selection or succession, public resources, and redress through a
 typed civic manifest whose exact fact references are shared by each resident
 population. A separate model stage verifies their semantic legibility; it may
-reject but cannot rewrite or commit the proposal. One false verdict is
-independently rechecked against the same frozen candidate.
+reject but cannot rewrite or commit the proposal.
 
-Apply-time admission, ordinary structural validation, and the independent civic
-verifier publish findings into one pending civic-reconciliation lane. A single
-scheduler owns the shared budget: one balanced reconciliation plus at most one
-balanced correction of a rejected reconciliation. The failure sites do not own
-retry policy, and no path can return to the expensive `destination_compile`
-stage. Every later attempt cites the completed compiler, reconciliation, and
-verifier receipts that caused it; rejected reconciliation receipts remain
-`semantic_invalid` evidence.
+Destination repair is the first consumer of the generic model-agent harness.
+The harness owner is `run_model_agent`, operating only over `ModelPort`, a
+`ModelAgentSpec`, and a consumer-owned `ModelAgentTool`. Its inputs are a stage,
+logical model class, frozen snapshot binding, instructions, action schema,
+causal receipt IDs, per-call settings, and a semantic step limit. Its outputs
+are one accepted consumer-owned value plus the complete receipt chain, or one
+terminal failure plus the receipts completed before failure. Step transcript,
+tool observations, causal source-ID accumulation, and `semantic_invalid`
+marking are derived run state. The harness has no campaign, fact, institution,
+civic, kernel, or persistence type and cannot validate or mutate world state.
+Patina or another consumer may supply a different action and tool without
+moving that consumer's state authority into the harness.
 
-The Sol destination candidate remains the owner of every institution identity,
-name, and goal. Terra may replace candidate-owned civic facts, resident civic
-fact references, local political relations, and the civic manifest, and may
-propose operational updates for every exact frozen institution ID. The request
-schema fixes both the update count and the permitted ID set.
-`apply_civic_reconciliation` is the sole merge and admission owner: it rejects
-omitted, duplicate, substituted, or invented institution IDs and copies only
-resources, posture, location scope, facets, and information channels onto the
-frozen institutions. Geography, routes, migration, population identity,
-non-civic facts, institution identity, institution names, institution goals,
-branch assumptions, gaps, civic version, and semantic receipt binding have no
-writable field in that pass. A finding outside that writable slice can fail
-honestly but cannot induce a second expensive compilation. The merged candidate
-must survive the ordinary destination validators and a fresh independent
-verdict. The kernel rebinds the accepted verdict to the exact candidate before
-mutation admission. Completed compiler, reconciliation, and verifier receipts
-survive terminal failure and are persisted by both the strategic harness and
-the Dungeon API. Accepted civic systems persist as versioned component state,
-so a later pass receives the current institutions, populations, facts, and
-relations and must extend that apparatus instead of inventing a parallel
+Once the destination compiler has produced a repairable frozen civic candidate,
+that exact seed is the agent's immutable base. Candidate lowering, fact-namespace
+admission, ordinary structural validation, and the independent civic verdict
+all feed one `DestinationReconciliationAgentTool`. The balanced-model agent may
+submit at most four complete `validate_candidate` actions. Every rejected
+action receives the exact tool finding and the next action cites all prior
+compiler, action, and verifier receipts. Rejected action and verifier receipts
+remain `semantic_invalid`. The removed civic scheduler, pending candidate, and
+manual reconciliation-attempt state are not writers; after the agent starts,
+no path returns to `destination_compile`.
+
+The consumer-owned tool is the validation and merge boundary. Sol's frozen
+seed owns geography, routes, migration, population identity and ordinary state,
+institution identity/name/goals, branch assumptions, and gaps. Terra may replace
+the complete candidate fact set while preserving its count, every exact resident
+population's fact-ID set, local political relations, the civic manifest, and
+operational fields for every exact frozen institution ID. The schema fixes fact,
+population, and institution entry counts and enumerates the permitted population
+and institution IDs. `destination_fact_findings` is the sole candidate-fact
+namespace owner and runs before merge; the ordinary destination validator reuses
+that same function at its admission boundary. `apply_civic_reconciliation` owns
+the frozen jurisdiction, exact population and institution update sets, candidate
+fact count, fact-reference authority, and writable-field merge. It copies only
+the admitted fields onto a clone of the frozen seed. Lowering and the ordinary
+destination validator remain domain owners. An accepted candidate is still only
+a compilation preview; `WorldKernel` and the mutation reducer remain the sole
+world-state admission and commit authorities.
+
+`ModelAgentTool` has associated typed `Action`, `Finding`, and `Output` contracts.
+The harness serializes a consumer's finding only when constructing the next
+model observation; it cannot invent or interpret a domain finding. The civic
+verifier performs one inference for each exact candidate and returns its typed
+verdict and receipt to the tool. Only `run_model_agent` owns semantic candidate
+retry and its four-step budget. The initial candidate plus four rejected agent
+actions can therefore produce at most five civic-verifier receipts. Provider
+transport and schema retries remain the separately named lower-level authority
+of `run_validated_stage`; they do not select or repair a civic candidate.
+Accepted verifier receipts are rebound to the exact candidate before preview
+admission. Completed compiler, action, tool, and verifier receipts survive
+terminal failure and are persisted by both the strategic harness and the
+Dungeon API. Generic harness tests prove that a later action cites both the
+rejected action and tool receipts, and that exhaustion returns every completed
+action and tool receipt. Accepted civic systems persist as versioned component
+state, so a later pass receives the current institutions, populations, facts,
+and relations and must extend that apparatus instead of inventing a parallel
 government.
 
 Both destination paths synthesize the smallest compatible branch-local routes,
