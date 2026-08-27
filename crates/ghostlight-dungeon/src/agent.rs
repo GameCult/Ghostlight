@@ -39,6 +39,9 @@ impl std::fmt::Display for ModelAgentFailure {
 impl std::error::Error for ModelAgentFailure {}
 
 pub struct ModelAgentToolContext {
+    /// Causal model/tool receipt ancestry for this action. These IDs prove how
+    /// the action was produced; they are not source evidence for canonical
+    /// world facts or profiles.
     pub source_receipt_ids: Vec<String>,
 }
 

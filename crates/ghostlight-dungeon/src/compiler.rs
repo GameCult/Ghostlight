@@ -789,6 +789,7 @@ struct DestinationReconciliationAgentTool<'a> {
     expansion_origin_location_id: &'a str,
     existing_destination_id: Option<&'a str>,
     snapshot: &'a str,
+    admission_evidence_receipt_ids: &'a [String],
 }
 
 enum CivicSystemVerificationOutcome {
@@ -2048,7 +2049,15 @@ impl WorldCompiler {
         constrain_destination_expansion_schema(&mut schema, &source_population_ids).map_err(
             |error| destination_compilation_failure(error, completed_model_receipts(&[])),
         )?;
-        let sources = receipt_ids(&receipts);
+        let admission_evidence_receipt_ids = receipt_ids(&receipts);
+        let model_causal_source_receipt_ids = identity_receipts
+            .iter()
+            .chain(std::iter::once(&retrieval_receipt))
+            .map(|receipt| receipt.storage_key().to_owned())
+            .chain(admission_evidence_receipt_ids.iter().cloned())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
         let destination_evidence = evidence_text(&receipts);
         let mut compiler_receipts: Vec<ModelStageReceipt> = Vec::new();
         let mut correction = String::new();
@@ -2060,7 +2069,7 @@ impl WorldCompiler {
                     &snapshot,
                     &format!("{base_prompt}{correction}"),
                     schema.clone(),
-                    sources.clone(),
+                    model_causal_source_receipt_ids.clone(),
                 )
                 .await
                 .map_err(|error| {
@@ -2108,7 +2117,7 @@ impl WorldCompiler {
             let mut expansion = match lower_compiled_destination(
                 campaign,
                 &seed,
-                &sources,
+                &admission_evidence_receipt_ids,
                 expansion_origin_location_id,
             ) {
                 Ok(expansion) => Some(expansion),
@@ -2160,7 +2169,7 @@ impl WorldCompiler {
                         );
                     }
                     Ok(()) => {
-                        let verification_sources = sources
+                        let verification_sources = model_causal_source_receipt_ids
                             .iter()
                             .cloned()
                             .chain(
@@ -2249,7 +2258,7 @@ impl WorldCompiler {
                 }
             }
             let finding = repair_finding.expect("repairable civic candidate has one finding");
-            let reconciliation_sources = sources
+            let reconciliation_sources = model_causal_source_receipt_ids
                 .iter()
                 .cloned()
                 .chain(
@@ -2271,6 +2280,7 @@ impl WorldCompiler {
                     expansion_origin_location_id,
                     existing_destination_id.as_deref(),
                     &snapshot,
+                    &admission_evidence_receipt_ids,
                     &reconciliation_sources,
                 )
                 .await
@@ -2288,7 +2298,7 @@ impl WorldCompiler {
                 }
             }
         };
-        let evidence_ids = receipt_ids(&receipts);
+        let evidence_ids = admission_evidence_receipt_ids;
         let affected_sources: Vec<String> = receipts
             .iter()
             .flat_map(|r| r.witnesses.iter().map(|w| w.source_id.clone()))
@@ -2877,7 +2887,8 @@ impl WorldCompiler {
         expansion_origin_location_id: &str,
         existing_destination_id: Option<&str>,
         snapshot: &str,
-        sources: &[String],
+        admission_evidence_receipt_ids: &[String],
+        causal_source_receipt_ids: &[String],
     ) -> std::result::Result<
         crate::agent::ModelAgentRun<AcceptedDestinationReconciliation>,
         crate::agent::ModelAgentFailure,
@@ -2951,7 +2962,7 @@ impl WorldCompiler {
             snapshot_binding: binding,
             instructions,
             action_schema: schema,
-            source_receipt_ids: sources.to_vec(),
+            source_receipt_ids: causal_source_receipt_ids.to_vec(),
             temperature: Some(0.0),
             max_output_tokens: Some(3_500),
             max_steps: MAX_DESTINATION_RECONCILIATION_AGENT_STEPS,
@@ -2966,6 +2977,7 @@ impl WorldCompiler {
             expansion_origin_location_id,
             existing_destination_id,
             snapshot,
+            admission_evidence_receipt_ids,
         };
         run_model_agent(self.model.as_ref(), &spec, &mut tool).await
     }
@@ -3163,7 +3175,7 @@ impl ModelAgentTool for DestinationReconciliationAgentTool<'_> {
         let mut expansion = match lower_compiled_destination(
             self.campaign,
             &corrected,
-            &context.source_receipt_ids,
+            self.admission_evidence_receipt_ids,
             self.expansion_origin_location_id,
         ) {
             Ok(expansion) => expansion,
@@ -9415,11 +9427,34 @@ mod tests {
             .iter()
             .filter(|receipt| receipt.stage == "destination_civic_verification")
             .collect::<Vec<_>>();
+        let preparation_receipt_ids = receipts
+            .iter()
+            .filter(|receipt| {
+                matches!(
+                    receipt.stage.as_str(),
+                    "destination_identity_resolution" | "destination_retrieval_plan"
+                )
+            })
+            .map(|receipt| receipt.storage_key())
+            .collect::<BTreeSet<_>>();
 
         assert_eq!(model.reconciliation_calls.load(Ordering::SeqCst), 2);
         assert!(model.saw_reconciliation_correction.load(Ordering::SeqCst));
+        assert_eq!(preparation_receipt_ids.len(), 2);
         assert_eq!(compile_receipts.len(), 1);
+        assert!(preparation_receipt_ids.iter().all(|receipt_id| {
+            compile_receipts[0]
+                .source_receipt_ids
+                .iter()
+                .any(|source| source == *receipt_id)
+        }));
         assert_eq!(reconciliation_receipts.len(), 2);
+        assert!(preparation_receipt_ids.iter().all(|receipt_id| {
+            reconciliation_receipts[0]
+                .source_receipt_ids
+                .iter()
+                .any(|source| source == *receipt_id)
+        }));
         assert_eq!(
             reconciliation_receipts[0].validation_result,
             "semantic_invalid"
@@ -9442,6 +9477,34 @@ mod tests {
         let DestinationCompilationPreview::RegionExpansion(preview) = preview else {
             panic!("new destination must produce a region expansion preview")
         };
+        let admission_evidence_ids = preview
+            .evidence_receipts
+            .iter()
+            .map(|receipt| receipt.id.as_str())
+            .collect::<BTreeSet<_>>();
+        assert!(!admission_evidence_ids.is_empty());
+        let reconciliation_receipt_ids = reconciliation_receipts
+            .iter()
+            .map(|receipt| receipt.storage_key())
+            .collect::<BTreeSet<_>>();
+        for evidence_receipt_id in preview
+            .expansion
+            .population_profiles
+            .iter()
+            .chain(preview.expansion.institution_profiles.iter())
+            .flat_map(|profile| profile.evidence_receipt_ids.iter())
+            .chain(
+                preview
+                    .expansion
+                    .migration_relations
+                    .iter()
+                    .chain(preview.expansion.local_relations.iter())
+                    .flat_map(|relation| relation.evidence_receipt_ids.iter()),
+            )
+        {
+            assert!(admission_evidence_ids.contains(evidence_receipt_id.as_str()));
+            assert!(!reconciliation_receipt_ids.contains(evidence_receipt_id.as_str()));
+        }
         let duty = preview
             .expansion
             .institutions
