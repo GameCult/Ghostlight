@@ -46,6 +46,8 @@ struct StrategicPersonDraft {
     action_digest: String,
     gestalt_id: String,
     member_id: String,
+    /// Stable personal self-identifier suitable to the setting, never a role,
+    /// office, condition, manifest category, or descriptive placeholder.
     name: String,
     goals: Vec<String>,
     obligations: BTreeSet<String>,
@@ -394,7 +396,7 @@ async fn propose_strategic_individuation(
         model: MODEL_FAST.into(),
         snapshot_binding: strategic_individuation_binding(campaign, &digests, None),
         lived_stream: format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nReturn zero or one proposal. Choose one person only when a selected Gestalt action has created concrete political work that cannot remain anonymous: an envoy, organizer, claimant, conspirator, commander, broker, or dissident. Identity content is a proposal only. Use a short stable lowercase member_id without a member: prefix. Do not invent authority, location, or state beyond the supplied Gestalt. Return an empty proposals list when nobody needs to emerge.\nCANDIDATES:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nReturn zero or one proposal. Choose one person only when a selected Gestalt action has created concrete political work that cannot remain anonymous: an envoy, organizer, claimant, conspirator, commander, broker, or dissident. Identity content is a proposal only. Give that person a stable personal self-identifier suitable to the setting; name must never be a role, office, condition, manifest category, or descriptive placeholder. Use a short stable lowercase member_id derived from that personal name without a member: prefix. Do not invent authority, location, or state beyond the supplied Gestalt. Return an empty proposals list when nobody needs to emerge.\nCANDIDATES:\n{}",
             serde_json::to_string(&schema).unwrap_or_default(),
             serde_json::to_string(&context).unwrap_or_default(),
         ),

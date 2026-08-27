@@ -48,8 +48,9 @@ pub fn compose_world_newspaper(
     let mut news = campaign.news.iter().collect::<Vec<_>>();
     news.sort_by(|left, right| right.at.cmp(&left.at).then_with(|| left.id.cmp(&right.id)));
 
-    let mut articles = Vec::new();
-    for issue in news.into_iter().take(max_articles) {
+    let mut articles: Vec<WorldNewspaperArticle> = Vec::new();
+    let mut last_article_at = None;
+    for issue in news {
         if issue.event_ids.is_empty() {
             return Err(anyhow!("news item {} has no committed event", issue.id));
         }
@@ -79,7 +80,7 @@ pub fn compose_world_newspaper(
         if body.is_empty() {
             return Err(anyhow!("news item {} cites an empty event", issue.id));
         }
-        articles.push(WorldNewspaperArticle {
+        let article = WorldNewspaperArticle {
             id: format!("article:{}", issue.id),
             section: section_for(primary).into(),
             headline: issue.headline.clone(),
@@ -88,7 +89,30 @@ pub fn compose_world_newspaper(
             channel: issue.channel.clone(),
             reliability: issue.reliability.clone(),
             event_ids: issue.event_ids.clone(),
-        });
+        };
+        if last_article_at == Some(primary.at)
+            && articles.last().is_some_and(|previous| {
+                previous.section == article.section
+                    && previous.headline == article.headline
+                    && previous.dateline == article.dateline
+                    && previous.body == article.body
+                    && previous.channel == article.channel
+                    && previous.reliability == article.reliability
+            })
+        {
+            let previous = articles.last_mut().expect("matching article exists");
+            for event_id in article.event_ids {
+                if !previous.event_ids.contains(&event_id) {
+                    previous.event_ids.push(event_id);
+                }
+            }
+            continue;
+        }
+        if articles.len() == max_articles {
+            break;
+        }
+        last_article_at = Some(primary.at);
+        articles.push(article);
     }
     let at = articles
         .first()
@@ -159,8 +183,11 @@ fn section_for(event: &Event) -> &'static str {
     match event.kind.as_str() {
         "institution_action" => "Courts & Councils",
         "gestalt_individuation" => "Names to Know",
-        "strategic_activity_outcome" => "Dispatches",
+        "strategic_activity_outcome" => "Consequences",
         "gestalt_action" | "gestalt_activity" | "gestalt_migration" => "Realms",
+        "actor_activity" | "actor_move" | "member_activity" | "member_migration" => {
+            "People & Plots"
+        }
         _ => "World",
     }
 }
@@ -222,5 +249,42 @@ mod tests {
         });
         let error = compose_world_newspaper(&campaign, "The Clarion", 8).unwrap_err();
         assert!(error.to_string().contains("unknown event"));
+    }
+
+    #[test]
+    fn newspaper_collapses_one_public_attempt_with_multiple_typed_effect_events() {
+        let mut campaign = crate::kernel::tests::campaign();
+        let summary = "Veska Rill sends the kiln ledgers to every guild and seals the originals.";
+        for (suffix, kind) in [
+            ("communicate", "actor_activity"),
+            ("seal", "actor_activity"),
+        ] {
+            let event_id = format!("event:{suffix}");
+            campaign.events.push(Event {
+                id: event_id.clone(),
+                at: campaign.world_time,
+                kind: kind.into(),
+                summary: summary.into(),
+                actor_ids: vec!["player".into()],
+                institution_ids: vec![],
+                gestalt_ids: vec![],
+                location_ids: vec!["room".into()],
+                public_channels: vec!["court broadsheet".into()],
+            });
+            campaign.news.push(NewsIssue {
+                id: format!("news:{suffix}"),
+                at: campaign.world_time,
+                channel: "court broadsheet".into(),
+                headline: crate::domain::committed_news_headline(summary),
+                event_ids: vec![event_id],
+                reliability: "committed public channel".into(),
+            });
+        }
+
+        let issue = compose_world_newspaper(&campaign, "The Underdeep Clarion", 8).unwrap();
+        assert_eq!(issue.articles.len(), 1);
+        assert_eq!(issue.articles[0].event_ids.len(), 2);
+        assert_eq!(issue.articles[0].section, "People & Plots");
+        assert_eq!(issue.articles[0].body, summary);
     }
 }
