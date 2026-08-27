@@ -59,8 +59,8 @@ async fn main() -> anyhow::Result<()> {
     let compiled = std::env::var("GHOSTLIGHT_WORLD_DESCRIPTION")
         .ok()
         .filter(|description| !description.trim().is_empty());
-    let (mut campaign, seed_evidence_receipts, seed_model_receipts, world_compile) =
-        if let Some(description) = compiled {
+    let (mut campaign, seed_evidence_receipts, seed_model_receipts, mut world_compile) =
+        if let Some(description) = compiled.as_deref() {
             std::fs::write(
                 root.join("status.json"),
                 serde_json::to_vec_pretty(&serde_json::json!({
@@ -75,7 +75,7 @@ async fn main() -> anyhow::Result<()> {
                 model.clone(),
                 &model_selection.fast_model,
                 &model_selection.capable_model,
-                &description,
+                description,
                 &pressure,
                 &public_channel,
             )
@@ -128,7 +128,7 @@ async fn main() -> anyhow::Result<()> {
             public_channel.replace(' ', "-")
         ),
         at: pressure_event.at,
-        channel: public_channel,
+        channel: public_channel.clone(),
         headline: ghostlight_dungeon::domain::committed_news_headline(&pressure_event.summary),
         event_ids: vec![pressure_event.id.clone()],
         reliability: "committed public channel".into(),
@@ -141,6 +141,103 @@ async fn main() -> anyhow::Result<()> {
         &seed_evidence_receipts,
         &seed_model_receipts,
     )?;
+    let kernel = WorldKernel::start(store.clone());
+    let elaboration_passes = if compiled.is_some() {
+        bounded_environment_usize("GHOSTLIGHT_WORLD_ELABORATION_PASSES", 0, 0, 8)?
+    } else {
+        0
+    };
+    let initial_location_ids = campaign
+        .locations
+        .keys()
+        .take(elaboration_passes)
+        .cloned()
+        .collect::<Vec<_>>();
+    let mut elaboration_reports = Vec::with_capacity(initial_location_ids.len());
+    if let Some(description) = compiled.as_deref()
+        && !initial_location_ids.is_empty()
+    {
+        let compiler = strategic_world_compiler(
+            model.clone(),
+            &model_selection.fast_model,
+            &model_selection.capable_model,
+            description,
+            &strategic_world_when(),
+        );
+        for (index, location_id) in initial_location_ids.iter().enumerate() {
+            let location_name = campaign.locations[location_id].name.clone();
+            std::fs::write(
+                root.join("status.json"),
+                serde_json::to_vec_pretty(&serde_json::json!({
+                    "schema":"ghostlight.live_strategic_smoke_status.v1",
+                    "state":"elaborating_world",
+                    "elaborations_completed":index,
+                    "elaborations_requested":initial_location_ids.len(),
+                    "current_location_id":location_id,
+                    "waves_completed":0,
+                    "waves_requested":wave_count,
+                    "world_revision":campaign.revision,
+                    "updated_at":Utc::now(),
+                }))?,
+            )?;
+            let request = strategic_locality_request(&location_name, location_id, &pressure);
+            let (preview, receipts) = compiler
+                .compile_destination(&campaign, location_id, &request)
+                .await?;
+            let command = match &preview {
+                ghostlight_dungeon::domain::DestinationCompilationPreview::LocalityElaboration(
+                    preview,
+                ) => WorldCommand::ElaborateLocality {
+                    expected_revision: preview.expected_revision,
+                    elaboration: preview.elaboration.clone(),
+                    evidence_receipts: preview.evidence_receipts.clone(),
+                    canon_candidates: preview.canon_candidates.clone(),
+                    model_stage_receipts: receipts.clone(),
+                },
+                ghostlight_dungeon::domain::DestinationCompilationPreview::RegionExpansion(_) => {
+                    anyhow::bail!(
+                        "strategic elaboration resolved existing location {location_id} as a new destination"
+                    )
+                }
+            };
+            let preview_path = root.join(format!("elaboration-{:02}-preview.json", index + 1));
+            std::fs::write(
+                &preview_path,
+                serde_json::to_vec_pretty(&serde_json::json!({
+                    "location_id":location_id,
+                    "location_name":location_name,
+                    "request":request,
+                    "preview":&preview,
+                    "model_receipts":&receipts,
+                }))?,
+            )?;
+            let committed = kernel.command(command).await?;
+            let CommandResult::Committed {
+                campaign: elaborated,
+                ..
+            } = committed
+            else {
+                anyhow::bail!("strategic locality elaboration did not commit")
+            };
+            campaign = elaborated;
+            elaboration_reports.push(serde_json::json!({
+                "location_id":location_id,
+                "location_name":location_name,
+                "world_revision":campaign.revision,
+                "preview_path":preview_path,
+                "model_receipts":receipts,
+            }));
+        }
+    }
+    if let Some(metadata) = world_compile
+        .as_mut()
+        .and_then(serde_json::Value::as_object_mut)
+    {
+        metadata.insert(
+            "elaborations".into(),
+            serde_json::Value::Array(elaboration_reports),
+        );
+    }
     let newspaper_title = std::env::var("GHOSTLIGHT_STRATEGIC_NEWSPAPER_TITLE")
         .unwrap_or_else(|_| "The Underdeep Clarion".into());
     let newspaper_voice = std::env::var("GHOSTLIGHT_STRATEGIC_NEWSPAPER_VOICE")
@@ -149,7 +246,6 @@ async fn main() -> anyhow::Result<()> {
                 .into()
         });
     let started = Instant::now();
-    let kernel = WorldKernel::start(store.clone());
     let mut wave_reports = Vec::with_capacity(wave_count);
     for wave_index in 1..=wave_count {
         let previous_news_count = if wave_index == 1 {
@@ -562,12 +658,7 @@ async fn compile_strategic_campaign(
     ghostlight_dungeon::domain::WorldCompilePreview,
     Vec<ghostlight_dungeon::model::ModelStageReceipt>,
 )> {
-    use ghostlight_dungeon::{
-        compiler::{CustomStart, WorldCompiler, validate_campaign_seed},
-        domain::SourceWitness,
-        vault::FixtureVault,
-    };
-    use sha2::{Digest, Sha256};
+    use ghostlight_dungeon::compiler::{CustomStart, validate_campaign_seed};
 
     let description = description.trim();
     if description.chars().count() > 8_000 {
@@ -583,29 +674,12 @@ async fn compile_strategic_campaign(
         "the inhabited realms immediately beyond the Greathold boundary described by the supplied setting source"
             .into()
     });
-    let when = std::env::var("GHOSTLIGHT_WORLD_WHEN").unwrap_or_else(|_| {
-        "a strained late age before any single realm has secured hegemony".into()
-    });
+    let when = strategic_world_when();
     let goal = format!(
         "Observe without ruling while the autonomous world responds to this new external pressure from the Greathold: {pressure}"
     );
-    let source_id = "consumer-setting-description";
-    let witness = SourceWitness {
-        source_id: source_id.into(),
-        exact_locator: "consumer://setting-description".into(),
-        content_hash: format!("sha256:{:x}", Sha256::digest(description.as_bytes())),
-        excerpt: description.into(),
-        authority_lane: "consumer.setting_description".into(),
-        temporal_scope: when.clone(),
-    };
-    let compiler = WorldCompiler::new(
-        std::sync::Arc::new(FixtureVault {
-            witnesses: vec![witness],
-        }),
-        model,
-        retrieval_model,
-        compiler_model,
-    );
+    let compiler =
+        strategic_world_compiler(model, retrieval_model, compiler_model, description, &when);
     let (mut preview, receipts) = compiler
         .compile_custom(CustomStart {
             campaign_name: world_name,
@@ -629,6 +703,48 @@ async fn compile_strategic_campaign(
     }
     validate_campaign_seed(campaign)?;
     Ok((preview, receipts))
+}
+
+fn strategic_world_when() -> String {
+    std::env::var("GHOSTLIGHT_WORLD_WHEN").unwrap_or_else(|_| {
+        "a strained late age before any single realm has secured hegemony".into()
+    })
+}
+
+fn strategic_world_compiler(
+    model: std::sync::Arc<dyn ghostlight_dungeon::model::ModelPort>,
+    retrieval_model: &str,
+    compiler_model: &str,
+    description: &str,
+    temporal_scope: &str,
+) -> ghostlight_dungeon::compiler::WorldCompiler {
+    use ghostlight_dungeon::{domain::SourceWitness, vault::FixtureVault};
+    use sha2::{Digest, Sha256};
+
+    let witness = SourceWitness {
+        source_id: "consumer-setting-description".into(),
+        exact_locator: "consumer://setting-description".into(),
+        content_hash: format!("sha256:{:x}", Sha256::digest(description.as_bytes())),
+        excerpt: description.into(),
+        authority_lane: "consumer.setting_description".into(),
+        temporal_scope: temporal_scope.into(),
+    };
+    ghostlight_dungeon::compiler::WorldCompiler::new(
+        std::sync::Arc::new(FixtureVault {
+            witnesses: vec![witness],
+        }),
+        model,
+        retrieval_model,
+        compiler_model,
+    )
+}
+
+fn strategic_locality_request(location_name: &str, location_id: &str, pressure: &str) -> String {
+    let pressure = pressure.chars().take(140).collect::<String>();
+    let request = format!(
+        "Elaborate the existing canonical locality {location_name:?} (exact ID {location_id}) as a politically inhabited jurisdiction under this current crisis: {pressure}. Invent branch-local rival institutions and resident groups with authority, succession, revenue, redress, and concrete leverage. Give each a concrete public notice or report channel and enough opposed interests for autonomous conflict."
+    );
+    request.chars().take(500).collect()
 }
 
 fn admitted_public_channel(value: &str) -> anyhow::Result<String> {
@@ -890,7 +1006,9 @@ fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
 
 #[cfg(test)]
 mod tests {
-    use super::{admitted_public_channel, final_wave_field, strategic_campaign};
+    use super::{
+        admitted_public_channel, final_wave_field, strategic_campaign, strategic_locality_request,
+    };
 
     #[test]
     fn top_level_projection_uses_the_final_wave_head() {
@@ -913,6 +1031,21 @@ mod tests {
             assert!(admitted_public_channel(invalid).is_err());
         }
         assert!(admitted_public_channel(&"x".repeat(161)).is_err());
+    }
+
+    #[test]
+    fn locality_elaboration_request_names_the_existing_place_and_stays_bounded() {
+        let request = strategic_locality_request(
+            "Seed Vault",
+            "loc-seed-vault",
+            &"an intricately witnessed constitutional crisis ".repeat(40),
+        );
+
+        assert!(request.contains("Seed Vault"));
+        assert!(request.contains("loc-seed-vault"));
+        assert!(request.contains("authority, succession, revenue, redress"));
+        assert!(request.contains("public notice or report channel"));
+        assert!(request.chars().count() <= 500);
     }
 
     #[test]

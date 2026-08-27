@@ -24,7 +24,6 @@ fn main() -> Result<()> {
     let (_, campaign) = store
         .load::<Campaign>("campaign.v1", &campaign_key)?
         .context("campaign.v1 row disappeared during inspection")?;
-
     let mut ticks = store.load_all::<StrategicTickReceipt>("strategic_tick.v1")?;
     ticks.sort_by_key(|tick| tick.revision);
     let latest_tick = ticks.last();
@@ -153,6 +152,7 @@ fn main() -> Result<()> {
                 "obligations": actor.obligations,
                 "relationships": actor.relationships,
                 "memories": actor.memories,
+                "knowledge": actor.knowledge,
             }),
         );
     }
@@ -170,6 +170,7 @@ fn main() -> Result<()> {
                 "name": gestalt.name,
                 "goals": gestalt.goals,
                 "pressures": gestalt.pressures,
+                "knowledge": gestalt.shared_knowledge,
             }),
         );
     }
@@ -184,6 +185,10 @@ fn main() -> Result<()> {
                 "obligations": member.obligations,
                 "relationships": member.relationships,
                 "memories": member.memories,
+                "knowledge": ghostlight_dungeon::resolution::effective_member_knowledge(
+                    &campaign,
+                    &member.id,
+                )?,
             }),
         );
     }

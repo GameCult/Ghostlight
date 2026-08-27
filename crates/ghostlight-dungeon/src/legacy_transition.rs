@@ -2541,6 +2541,27 @@ fn project_mutated_components(
                                 .get_mut(&subject.id)
                                 .ok_or_else(|| anyhow!("accepted knowledge gestalt vanished"))?;
                             gestalt.shared_knowledge.insert(statement.clone());
+                            let materialized_actor_ids = campaign
+                                .gestalt_members
+                                .values()
+                                .filter(|member| {
+                                    member.gestalt_id == subject.id
+                                        && !member.knowledge_removals.contains(&statement)
+                                })
+                                .filter_map(|member| member.materialized_actor_id.clone())
+                                .collect::<Vec<_>>();
+                            for actor_id in materialized_actor_ids {
+                                campaign
+                                    .actors
+                                    .get_mut(&actor_id)
+                                    .ok_or_else(|| {
+                                        anyhow!(
+                                            "accepted shared knowledge materialized actor vanished"
+                                        )
+                                    })?
+                                    .knowledge
+                                    .insert(statement.clone());
+                            }
                             touched_gestalts.insert(subject.id.clone());
                         }
                         _ => {
@@ -3452,6 +3473,112 @@ mod tests {
                 .unwrap()
                 .knowledge
                 .contains_key(&key)
+        );
+    }
+
+    #[test]
+    fn shared_learning_updates_the_materialized_member_projection() {
+        let mut campaign = campaign();
+        let statement = campaign.facts["fact:route"].statement.clone();
+        campaign.gestalts.insert(
+            "refugees".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "refugees".into(),
+                name: "Refugees".into(),
+                version: 0,
+                home_location_id: "room".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        campaign.gestalt_members.insert(
+            "messenger".into(),
+            GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "messenger".into(),
+                gestalt_id: "refugees".into(),
+                version: 0,
+                name: "Messenger".into(),
+                capability_additions: BTreeSet::new(),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::new(),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                obligations: BTreeSet::new(),
+                memories: vec![],
+                last_location_id: Some("room".into()),
+                materialized_actor_id: Some("member:messenger".into()),
+                last_relevant_revision: 4,
+                relevance_lease_until_revision: 9,
+            },
+        );
+        campaign.actors.insert(
+            "member:messenger".into(),
+            ActorState {
+                id: "member:messenger".into(),
+                name: "Messenger".into(),
+                location_id: "room".into(),
+                capabilities: BTreeSet::new(),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+            },
+        );
+        let plan = StrategicTickPlan {
+            activity_outcomes: vec![StrategicActivityOutcome {
+                schema: "ghostlight.strategic_activity_outcome.v1".into(),
+                action_digest: "sha256:shared-learning".into(),
+                source_subject_id: "refugees".into(),
+                band: StrategicOutcomeBand::Success,
+                summary: "The refugees learn the west-stair route.".into(),
+                supporting_state_references: vec!["fact:fact:route".into()],
+                effect: StrategicOutcomeEffect::KnowledgeLearned {
+                    owner_subject_id: "refugees".into(),
+                    fact_id: "fact:route".into(),
+                },
+            }],
+            ..StrategicTickPlan::default()
+        };
+        let transition = lower_strategic_wave(
+            &campaign,
+            &plan,
+            "strategic:test",
+            Utc::now() + Duration::minutes(5),
+        )
+        .unwrap()
+        .unwrap();
+
+        apply_lowered_transition(&mut campaign, &transition, Utc::now()).unwrap();
+
+        assert!(
+            campaign.gestalts["refugees"]
+                .shared_knowledge
+                .contains(&statement)
+        );
+        assert!(
+            campaign.actors["member:messenger"]
+                .knowledge
+                .contains(&statement)
+        );
+        assert!(
+            component_snapshot(&campaign)
+                .unwrap()
+                .knowledge
+                .contains_key(&KnowledgeKey {
+                    knower: actor_subject("member:messenger"),
+                    proposition: proposition_subject("fact:route"),
+                })
         );
     }
 
