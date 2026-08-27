@@ -8,7 +8,7 @@ use crate::{
     },
     domain::{Campaign, CampaignLifecycleReceipt, VaultEvidenceReceipt},
     kernel::WorldKernel,
-    model::ModelStageReceipt,
+    model::{ModelPort, ModelStageReceipt},
     persistence::CampaignStore,
     session_zero::PublishedSessionZeroSeed,
 };
@@ -379,10 +379,14 @@ impl CampaignRegistry {
     pub async fn compose_world_newspaper(
         &self,
         request: WorldNewspaperRequest,
+        model: &dyn ModelPort,
     ) -> Result<crate::newspaper::WorldNewspaperIssue> {
-        if request.schema != "ghostlight.world_newspaper_request.v1"
+        if request.schema != "ghostlight.world_newspaper_request.v2"
             || request.max_articles == 0
-            || request.max_articles > 64
+            || request.max_articles > 6
+            || request.editorial_voice.trim().is_empty()
+            || request.editorial_voice.trim() != request.editorial_voice
+            || request.editorial_voice.chars().count() > 600
         {
             return Err(anyhow!("world newspaper request is invalid"));
         }
@@ -405,11 +409,23 @@ impl CampaignRegistry {
             .load::<Campaign>("campaign.v1", &request.campaign_id.to_string())?
             .ok_or_else(|| anyhow!("campaign is missing"))?
             .1;
-        crate::newspaper::compose_world_newspaper(
+        let composition_result = crate::newspaper::compose_world_newspaper(
+            model,
             &campaign,
             request.title,
+            request.editorial_voice,
             usize::from(request.max_articles),
         )
+        .await;
+        if let Err(error) = &composition_result
+            && let Some(failure) =
+                error.downcast_ref::<crate::newspaper::WorldNewspaperCompositionFailure>()
+        {
+            persist_newspaper_model_receipts(&runtime, &failure.model_receipts)?;
+        }
+        let composition = composition_result?;
+        persist_newspaper_model_receipts(&runtime, &composition.model_receipts)?;
+        Ok(composition.issue)
     }
 
     pub async fn acknowledge_external_proposal(
@@ -639,6 +655,42 @@ impl CampaignRegistry {
     }
 }
 
+fn persist_newspaper_model_receipts(
+    runtime: &CampaignRuntime,
+    receipts: &[ModelStageReceipt],
+) -> Result<()> {
+    for receipt in receipts {
+        if let Some((_, existing)) = runtime
+            .store
+            .load::<ModelStageReceipt>("persona_stage_receipt.v1", receipt.storage_key())?
+        {
+            if existing.same_receipted_content(receipt) {
+                continue;
+            }
+            return Err(anyhow!(
+                "immutable newspaper model receipt conflict: {}",
+                receipt.storage_key()
+            ));
+        }
+        let inserted = runtime.store.insert(
+            "persona_stage_receipt.v1",
+            "ghostlight.persona_stage_receipt.v1",
+            receipt.storage_key(),
+            receipt,
+        );
+        if let Err(error) = inserted {
+            let repeated = runtime
+                .store
+                .load::<ModelStageReceipt>("persona_stage_receipt.v1", receipt.storage_key())?
+                .is_some_and(|(_, existing)| existing.same_receipted_content(receipt));
+            if !repeated {
+                return Err(error);
+            }
+        }
+    }
+    Ok(())
+}
+
 fn cleanup_staging_directory(root: &Path, staging: &Path) {
     let safe = staging.parent() == Some(root)
         && staging
@@ -664,11 +716,88 @@ fn validated_branch_name(name: String) -> Result<String> {
 mod tests {
     use super::*;
     use crate::domain::{ActorState, BranchOrigin, Location, WorldCommitReceipt};
+    use crate::model::ModelStageRequest;
     use crate::session_zero::{
         ApprovedCampaignBrief, CampaignContract, CampaignDmPersona, CampaignGovernance,
         CampaignMember, CampaignMembership, CharacterDraft,
     };
+    use async_trait::async_trait;
     use std::collections::{BTreeMap, BTreeSet};
+
+    struct RegistryNewspaperModel;
+
+    struct RejectingRegistryNewspaperModel;
+
+    fn registry_newspaper_editor_response(request: &ModelStageRequest) -> Result<String> {
+        let source_id = request
+            .output_schema
+            .as_ref()
+            .and_then(|schema| {
+                schema
+                    .pointer("/$defs/EditorialArticleDraft/properties/source_news_ids/items/enum/0")
+            })
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| anyhow!("newspaper fixture lost its source enum"))?;
+        Ok(serde_json::json!({
+            "edition_label":"Court Edition",
+            "articles":[{
+                "section":"Front Page",
+                "headline":"Court Auditors Face a Singular Accusation",
+                "deck":"The inner court has turned a granary inquiry into a question of witchcraft and arithmetic.",
+                "byline":"By the political editor",
+                "dateline":"Room",
+                "source_news_ids":[source_id],
+                "paragraphs":[
+                    "The inner court has accused three granary auditors of being one witch in a long coat, placing the allegation into the public record.",
+                    "The charge leaves the auditors answering a court that has made one person out of three, at least for purposes of blame."
+                ]
+            }]
+        })
+        .to_string())
+    }
+
+    #[async_trait]
+    impl ModelPort for RegistryNewspaperModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            if request.stage == "newspaper_copy_desk" {
+                return Ok(serde_json::json!({
+                    "accepted":true,
+                    "assessment":"The page is grounded in its cited public report.",
+                    "findings":[]
+                })
+                .to_string());
+            }
+            registry_newspaper_editor_response(request)
+        }
+
+        fn provider(&self) -> &'static str {
+            "registry-newspaper-fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for RejectingRegistryNewspaperModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            if request.stage == "newspaper_copy_desk" {
+                return Ok(serde_json::json!({
+                    "accepted":false,
+                    "assessment":"The article states an outcome that its source does not support.",
+                    "findings":[{
+                        "article_index":0,
+                        "category":"unsupported_fact",
+                        "claim_or_phrase":"the allegation is proven",
+                        "reason":"The cited report records only an accusation."
+                    }]
+                })
+                .to_string());
+            }
+            registry_newspaper_editor_response(request)
+        }
+
+        fn provider(&self) -> &'static str {
+            "registry-newspaper-fixture"
+        }
+    }
 
     fn seed(name: &str) -> Campaign {
         let actor = ActorState {
@@ -1266,24 +1395,25 @@ mod tests {
         let (_, repeated) = registry.admit_world_seed(request).await.unwrap();
         assert_eq!(repeated.seed_digest, receipt.seed_digest);
         let newspaper_request = crate::consumer::WorldNewspaperRequest {
-            schema: "ghostlight.world_newspaper_request.v1".into(),
+            schema: "ghostlight.world_newspaper_request.v2".into(),
             campaign_id: campaign.id,
             authority_id: "authority:external-hold".into(),
             owner_id: "fixture-consumer".into(),
             authority_key: authority_key.into(),
             title: "The Consumer Gazette".into(),
-            max_articles: 12,
+            editorial_voice: "A skeptical regional court broadsheet.".into(),
+            max_articles: 4,
         };
         let mut denied_newspaper = newspaper_request.clone();
         denied_newspaper.authority_key = "wrong-key".into();
         assert!(
             registry
-                .compose_world_newspaper(denied_newspaper)
+                .compose_world_newspaper(denied_newspaper, &RegistryNewspaperModel)
                 .await
                 .is_err()
         );
         let newspaper = registry
-            .compose_world_newspaper(newspaper_request.clone())
+            .compose_world_newspaper(newspaper_request.clone(), &RegistryNewspaperModel)
             .await
             .unwrap();
         assert_eq!(newspaper.source_world_revision, 0);
@@ -1500,7 +1630,7 @@ mod tests {
             .await
             .unwrap();
         let newspaper = registry
-            .compose_world_newspaper(newspaper_request)
+            .compose_world_newspaper(newspaper_request.clone(), &RegistryNewspaperModel)
             .await
             .unwrap();
         assert_eq!(newspaper.source_world_revision, 3);
@@ -1511,8 +1641,56 @@ mod tests {
         );
         assert!(
             newspaper.articles[0]
-                .body
+                .paragraphs
+                .join(" ")
                 .contains("one witch in a long coat")
+        );
+        let successful_receipts = runtime.store.keys("persona_stage_receipt.v1").unwrap();
+        assert!(
+            newspaper
+                .editorial_receipt_ids
+                .iter()
+                .all(|receipt_id| successful_receipts.contains(receipt_id))
+        );
+
+        let repeated_newspaper = registry
+            .compose_world_newspaper(newspaper_request.clone(), &RegistryNewspaperModel)
+            .await
+            .unwrap();
+        assert_eq!(repeated_newspaper.id, newspaper.id);
+        assert_eq!(
+            runtime
+                .store
+                .keys("persona_stage_receipt.v1")
+                .unwrap()
+                .len(),
+            successful_receipts.len()
+        );
+
+        let receipt_count_before_rejection = successful_receipts.len();
+        let error = registry
+            .compose_world_newspaper(newspaper_request, &RejectingRegistryNewspaperModel)
+            .await
+            .unwrap_err();
+        let failure = error
+            .downcast_ref::<crate::newspaper::WorldNewspaperCompositionFailure>()
+            .expect("registry must preserve the typed terminal editorial failure");
+        assert_eq!(failure.model_receipts.len(), 6);
+        let stored_after_rejection = runtime.store.keys("persona_stage_receipt.v1").unwrap();
+        let newly_observed_failure_receipts = failure
+            .model_receipts
+            .iter()
+            .map(|receipt| receipt.storage_key().to_owned())
+            .filter(|receipt_id| !successful_receipts.contains(receipt_id))
+            .collect::<BTreeSet<_>>();
+        assert_eq!(
+            stored_after_rejection.len(),
+            receipt_count_before_rejection + newly_observed_failure_receipts.len()
+        );
+        assert!(
+            failure.model_receipts.iter().all(|receipt| {
+                stored_after_rejection.contains(&receipt.storage_key().to_owned())
+            })
         );
         let proposal = ExternalWorldProposal {
             schema: "ghostlight.external_world_proposal.v1".into(),

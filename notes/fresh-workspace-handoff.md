@@ -434,11 +434,14 @@ producers share one admitted `WorldSeed` transaction; externally authoritative
 institutions or Gestalts enter through revisioned WorldKernel snapshots; and strategic
 actions aimed at them persist typed proposals for consumer acknowledgement over
 the existing loopback CultNet RUDP operation server. Consumers can request an
-  authority-gated `ghostlight.world.newspaper.compose` projection. It renders
-  committed `NewsIssue` rows only when every cited committed `Event` exposes the
-  same public channel. Headline, channel, and reliability remain news-owned;
-  body, dateline, event IDs, and source revision remain event-grounded
-  provenance.
+authority-gated `ghostlight.world.newspaper.compose` projection. It admits only
+committed `NewsIssue` rows whose cited committed `Event` rows expose the same
+public channel, then gives selection, grouping, tone, and copy to a bounded
+editor model. A local validator and separate grounding copy desk gate the
+proposal. Successful and identity-bound terminally rejected attempts persist
+their model receipts idempotently. Reader Markdown escapes every plain-text field and omits source IDs,
+channels, reliability, revision, and receipt IDs; a separate audit projection
+retains that provenance. No editorial organ can write world state.
 
 The scale and emergence gate is implemented and locally proven.
 Delvehold is a consumer of Ghostlight's generic authored-world API, not a
@@ -472,8 +475,9 @@ ran through Codex Connector
 and admitted caller `ghostlight-dungeon-yggdrasil`. Four sequential atomic waves
 advanced one campaign from revision 0 through 4, committed 41 unique events and
 28 unique news rows, and
-rendered 23 distinct provenance-bound articles across four independently
-reviewed issues. Ilyra Quill appears in every issue; Mara's testimony persists
+rendered 23 distinct provenance-bound articles across four issues reviewed for
+political continuity and exact ID provenance; this was not a blind journalistic
+review. Ilyra Quill appears in every issue; Mara's testimony persists
 into later institutional postures; Tavia and Mara Venn emerge as accountable
 organizers. One rejected wave-one pulse did not mutate the world. Player state
 and location are unchanged, stderr is empty, and every copied artifact matches
@@ -482,16 +486,22 @@ world whose derived cover grew from four cells to six as named figures emerged;
 the 200-cell path remains a local scale proof and the
 Delvehold game-side adapter is not implemented here.
 
-1. Have the game-side adapter lower its authored hierarchy into the published
+1. Produce one reader-facing fantasy front page without runtime or debug framing
+   while retaining provenance separately.
+2. Dispatch a blind reviewer with only that page and a neutral editorial brief;
+   preserve its untouched response.
+3. Independently audit the accepted editorial copy against committed public
+   events before treating presentation quality as accepted.
+4. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-2. Prove one consumer-owned effect crosses that public API, changes two foreign
+5. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-3. Measure provider cost and continuity on the existing 200-cell authored-world
+6. Measure provider cost and continuity on the existing 200-cell authored-world
    path without coupling wave width to the provider concurrency ceiling.
-4. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+7. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-5. Keep `gamecult-ops` synchronized with every executable deployment and model
+8. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,

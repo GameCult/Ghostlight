@@ -5757,8 +5757,8 @@ pub(crate) mod tests {
         let action = CellActionProposal {
             subject_id: "refugees-east".into(),
             intent: "coordinate the households' own water watch".into(),
-            intended_effect: "coordinate internal water-watch shifts without naming an external party"
-                .into(),
+            intended_effect:
+                "coordinate internal water-watch shifts without naming an external party".into(),
             priority: 80,
             state_references: vec![],
             public_channels: vec![],
@@ -5793,7 +5793,11 @@ pub(crate) mod tests {
         .unwrap();
         assert_eq!(canonical_events.len(), 1);
         assert_eq!(canonical_events[0].kind, "gestalt_activity");
-        assert!(canonical_events[0].summary.contains("internal water-watch shifts"));
+        assert!(
+            canonical_events[0]
+                .summary
+                .contains("internal water-watch shifts")
+        );
 
         let mut legacy = hierarchical_refugee_campaign();
         let legacy_events = apply_strategic_tick_plan(
@@ -9743,16 +9747,6 @@ pub(crate) mod tests {
             crate::domain::committed_news_headline(&public_individuation.summary)
         );
         assert!(public_issue.headline.contains("Veska Rill"));
-        let newspaper =
-            crate::newspaper::compose_world_newspaper(&campaign, "The Underdeep Clarion", 8)
-                .unwrap();
-        let rendered = crate::newspaper::render_world_newspaper_markdown(&newspaper);
-        assert!(rendered.contains("Names to Know"));
-        assert!(rendered.contains("Veska Rill"));
-        assert!(
-            rendered.contains("selling the broken lower road twice"),
-            "{rendered}"
-        );
         let proposals = store
             .load_all::<StrategicGestaltIndividuation>("strategic_gestalt_individuation.v1")
             .unwrap();

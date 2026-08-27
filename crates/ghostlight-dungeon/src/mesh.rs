@@ -594,8 +594,8 @@ fn schema_catalog() -> Value {
         "ghostlight.external_proposal_list.v1": schemars::schema_for!(crate::consumer::ExternalProposalList),
         "ghostlight.external_proposal_acknowledgement.v1": schemars::schema_for!(crate::consumer::ExternalProposalAcknowledgement),
         "ghostlight.external_proposal_receipt.v1": schemars::schema_for!(crate::consumer::ExternalProposalReceipt),
-        "ghostlight.world_newspaper_request.v1": schemars::schema_for!(crate::consumer::WorldNewspaperRequest),
-        "ghostlight.world_newspaper_issue.v1": schemars::schema_for!(crate::newspaper::WorldNewspaperIssue)
+        "ghostlight.world_newspaper_request.v2": schemars::schema_for!(crate::consumer::WorldNewspaperRequest),
+        "ghostlight.world_newspaper_issue.v2": schemars::schema_for!(crate::newspaper::WorldNewspaperIssue)
     })
 }
 
@@ -627,8 +627,8 @@ mod tests {
         assert!(schemas["ghostlight.campaign.v1"]["$schema"].is_string());
         assert!(schemas["ghostlight.session_zero.v1"]["$schema"].is_string());
         assert!(schemas["ghostlight.vault_source_manifest.v1"]["$schema"].is_string());
-        assert!(schemas["ghostlight.world_newspaper_request.v1"]["$schema"].is_string());
-        assert!(schemas["ghostlight.world_newspaper_issue.v1"]["$schema"].is_string());
+        assert!(schemas["ghostlight.world_newspaper_request.v2"]["$schema"].is_string());
+        assert!(schemas["ghostlight.world_newspaper_issue.v2"]["$schema"].is_string());
         assert!(!schemas.contains_key("ghostlight.persona_stage_receipt.v1"));
         assert!(!schemas.contains_key("ghostlight.world_mutation.v1"));
         drop(catalog);

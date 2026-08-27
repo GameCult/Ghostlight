@@ -320,7 +320,9 @@ pub struct WorldNewspaperRequest {
     pub owner_id: String,
     pub authority_key: String,
     pub title: String,
-    #[schemars(range(min = 1, max = 64))]
+    #[schemars(length(min = 1, max = 600))]
+    pub editorial_voice: String,
+    #[schemars(range(min = 1, max = 6))]
     pub max_articles: u16,
 }
 

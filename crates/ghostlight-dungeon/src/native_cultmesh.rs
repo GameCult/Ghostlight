@@ -304,12 +304,19 @@ async fn handle_operation_inner(
                 success_response(request, "ghostlight.external_proposal_receipt.v1", &receipt)
             }
             ghostlight_dungeon::consumer::COMPOSE_NEWSPAPER_OPERATION => {
-                require_schema(payload_schema, "ghostlight.world_newspaper_request.v1")?;
+                require_schema(payload_schema, "ghostlight.world_newspaper_request.v2")?;
                 let command: ghostlight_dungeon::consumer::WorldNewspaperRequest =
                     decode_request(request)?;
-                require_schema(&command.schema, "ghostlight.world_newspaper_request.v1")?;
-                let issue = state.registry.compose_world_newspaper(command).await?;
-                success_response(request, "ghostlight.world_newspaper_issue.v1", &issue)
+                require_schema(&command.schema, "ghostlight.world_newspaper_request.v2")?;
+                let model = state
+                    .model
+                    .as_deref()
+                    .ok_or_else(|| anyhow::anyhow!("newspaper editor is unavailable"))?;
+                let issue = state
+                    .registry
+                    .compose_world_newspaper(command, model)
+                    .await?;
+                success_response(request, "ghostlight.world_newspaper_issue.v2", &issue)
             }
             _ => bail!("world consumer operation is not advertised by Ghostlight"),
         };
@@ -511,6 +518,24 @@ mod tests {
         assert!(super::super::contains_authority_field(
             &command.invocation["payload"]
         ));
+    }
+
+    #[test]
+    fn native_newspaper_operation_rejects_the_retired_v1_schema() {
+        assert!(
+            require_schema(
+                "ghostlight.world_newspaper_request.v1",
+                "ghostlight.world_newspaper_request.v2"
+            )
+            .is_err()
+        );
+        assert!(
+            require_schema(
+                "ghostlight.world_newspaper_request.v2",
+                "ghostlight.world_newspaper_request.v2"
+            )
+            .is_ok()
+        );
     }
 
     #[test]

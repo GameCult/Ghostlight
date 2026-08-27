@@ -67,6 +67,11 @@ async fn main() -> anyhow::Result<()> {
     })?;
     let newspaper_title = std::env::var("GHOSTLIGHT_STRATEGIC_NEWSPAPER_TITLE")
         .unwrap_or_else(|_| "The Underdeep Clarion".into());
+    let newspaper_voice = std::env::var("GHOSTLIGHT_STRATEGIC_NEWSPAPER_VOICE")
+        .unwrap_or_else(|_| {
+            "A sharp regional broadsheet for readers who already understand guild politics: skeptical of every throne, attentive to labor and material consequences, formally reported, and capable of one dry local barb without becoming satire."
+                .into()
+        });
     let started = Instant::now();
     let kernel = WorldKernel::start(store.clone());
     let mut wave_reports = Vec::with_capacity(wave_count);
@@ -177,15 +182,35 @@ async fn main() -> anyhow::Result<()> {
         if issue_campaign.news.is_empty() {
             anyhow::bail!("strategic wave {wave_index} produced no gated news")
         }
-        let issue = ghostlight_dungeon::newspaper::compose_world_newspaper(
+        let issue_composition = ghostlight_dungeon::newspaper::compose_world_newspaper(
+            model.as_ref(),
             &issue_campaign,
             format!("{newspaper_title} — Issue {wave_index}"),
-            24,
-        )?;
+            &newspaper_voice,
+            5,
+        )
+        .await?;
+        for receipt in &issue_composition.model_receipts {
+            store.insert(
+                "persona_stage_receipt.v1",
+                "ghostlight.persona_stage_receipt.v1",
+                receipt.storage_key(),
+                receipt,
+            )?;
+        }
         let issue_path = root.join(format!("newspaper-wave-{wave_index:02}.md"));
+        let issue_audit_path = root.join(format!("newspaper-wave-{wave_index:02}.audit.md"));
         std::fs::write(
             &issue_path,
-            ghostlight_dungeon::newspaper::render_world_newspaper_markdown(&issue),
+            ghostlight_dungeon::newspaper::render_world_newspaper_markdown(
+                &issue_composition.issue,
+            ),
+        )?;
+        std::fs::write(
+            &issue_audit_path,
+            ghostlight_dungeon::newspaper::render_world_newspaper_audit_markdown(
+                &issue_composition.issue,
+            ),
         )?;
         wave_reports.push(serde_json::json!({
             "wave_index":wave_index,
@@ -197,8 +222,11 @@ async fn main() -> anyhow::Result<()> {
             "rejected_pulses":rejected_pulses,
             "plan":plan,
             "commit":committed,
-            "issue":issue,
+            "issue":issue_composition.issue,
+            "newspaper_grounding":issue_composition.grounding,
+            "newspaper_model_receipts":issue_composition.model_receipts,
             "issue_path":issue_path,
+            "issue_audit_path":issue_audit_path,
         }));
         campaign = advanced.clone();
         std::fs::write(
@@ -215,15 +243,35 @@ async fn main() -> anyhow::Result<()> {
             }))?,
         )?;
     }
-    let newspaper = ghostlight_dungeon::newspaper::compose_world_newspaper(
+    let newspaper_composition = ghostlight_dungeon::newspaper::compose_world_newspaper(
+        model.as_ref(),
         &campaign,
         &newspaper_title,
-        wave_count.saturating_mul(24),
-    )?;
+        &newspaper_voice,
+        6,
+    )
+    .await?;
+    for receipt in &newspaper_composition.model_receipts {
+        store.insert(
+            "persona_stage_receipt.v1",
+            "ghostlight.persona_stage_receipt.v1",
+            receipt.storage_key(),
+            receipt,
+        )?;
+    }
     let newspaper_path = root.join("newspaper.md");
+    let newspaper_audit_path = root.join("newspaper.audit.md");
     std::fs::write(
         &newspaper_path,
-        ghostlight_dungeon::newspaper::render_world_newspaper_markdown(&newspaper),
+        ghostlight_dungeon::newspaper::render_world_newspaper_markdown(
+            &newspaper_composition.issue,
+        ),
+    )?;
+    std::fs::write(
+        &newspaper_audit_path,
+        ghostlight_dungeon::newspaper::render_world_newspaper_audit_markdown(
+            &newspaper_composition.issue,
+        ),
     )?;
     let first_plan = wave_reports[0]["plan"].clone();
     let first_commit = wave_reports[0]["commit"].clone();
@@ -239,7 +287,7 @@ async fn main() -> anyhow::Result<()> {
         })
         .collect::<Vec<_>>();
     let result = serde_json::json!({
-        "schema":"ghostlight.live_strategic_smoke.v2",
+        "schema":"ghostlight.live_strategic_smoke.v3",
         "scenario_id":scenario_id,
         "pressure":pressure,
         "wave_count":wave_count,
@@ -253,8 +301,11 @@ async fn main() -> anyhow::Result<()> {
         "waves":wave_reports,
         "event_count":campaign.events.len(),
         "news_count":campaign.news.len(),
-        "newspaper":newspaper,
+        "newspaper":newspaper_composition.issue,
+        "newspaper_grounding":newspaper_composition.grounding,
+        "newspaper_model_receipts":newspaper_composition.model_receipts,
         "newspaper_path":newspaper_path,
+        "newspaper_audit_path":newspaper_audit_path,
         "player_location_unchanged":true,
         "player_state_unchanged":true,
         "store":root.join("campaign.cc")
