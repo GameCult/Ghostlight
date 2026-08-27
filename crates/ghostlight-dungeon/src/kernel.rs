@@ -1340,7 +1340,7 @@ fn execute(
                         id: format!("news:{}:{}", event.id, stable_channel_id(channel)),
                         at: campaign.world_time,
                         channel: channel.clone(),
-                        headline: crate::newspaper::committed_event_headline(&event.summary),
+                        headline: crate::domain::committed_news_headline(&event.summary),
                         event_ids: vec![event.id.clone()],
                         reliability: "committed public channel".into(),
                     });
@@ -9417,9 +9417,27 @@ pub(crate) mod tests {
                 .iter()
                 .any(|event| event.kind == "gestalt_individuation")
         );
-        assert!(campaign.news.iter().any(|issue| {
-            issue.channel == "storm-camp broadsheet" && issue.headline.contains("Veska Rill")
-        }));
+        let public_individuation = campaign
+            .events
+            .iter()
+            .find(|event| {
+                event.kind == "gestalt_individuation"
+                    && event
+                        .public_channels
+                        .iter()
+                        .any(|channel| channel == "storm-camp broadsheet")
+            })
+            .unwrap();
+        let public_issue = campaign
+            .news
+            .iter()
+            .find(|issue| issue.event_ids == [public_individuation.id.clone()])
+            .unwrap();
+        assert_eq!(
+            public_issue.headline,
+            crate::domain::committed_news_headline(&public_individuation.summary)
+        );
+        assert!(public_issue.headline.contains("Veska Rill"));
         let newspaper =
             crate::newspaper::compose_world_newspaper(&campaign, "The Underdeep Clarion", 8)
                 .unwrap();

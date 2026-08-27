@@ -806,6 +806,29 @@ pub struct NewsIssue {
     pub reliability: String,
 }
 
+pub fn committed_news_headline(summary: &str) -> String {
+    const MAX_HEADLINE_CHARS: usize = 96;
+    let summary = summary.trim();
+    if summary.chars().count() <= MAX_HEADLINE_CHARS {
+        return summary.to_owned();
+    }
+    let mut headline = summary.chars().take(MAX_HEADLINE_CHARS).collect::<String>();
+    let semantic_cut = headline
+        .rfind(|character: char| matches!(character, ';' | ':' | ',' | '—'))
+        .filter(|cut| *cut >= MAX_HEADLINE_CHARS / 2);
+    let word_cut = headline
+        .rfind(char::is_whitespace)
+        .filter(|cut| *cut >= MAX_HEADLINE_CHARS / 2);
+    if let Some(cut) = semantic_cut.or(word_cut) {
+        headline.truncate(cut);
+    }
+    headline = headline
+        .trim_end_matches(|character: char| character.is_whitespace() || character == '.')
+        .to_owned();
+    headline.push('…');
+    headline
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
 pub struct StrategicTickPlan {
     /// Canonical admitted strategic choices. The action arrays below are
