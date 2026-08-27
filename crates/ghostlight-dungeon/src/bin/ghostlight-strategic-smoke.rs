@@ -740,9 +740,9 @@ fn strategic_world_compiler(
 }
 
 fn strategic_locality_request(location_name: &str, location_id: &str, pressure: &str) -> String {
-    let pressure = pressure.chars().take(140).collect::<String>();
+    let pressure = pressure.chars().take(60).collect::<String>();
     let request = format!(
-        "Elaborate the existing canonical locality {location_name:?} (exact ID {location_id}) as a politically inhabited jurisdiction under this current crisis: {pressure}. Invent branch-local rival institutions and resident groups with authority, succession, revenue, redress, and concrete leverage. Give each a concrete public notice or report channel and enough opposed interests for autonomous conflict."
+        "Elaborate canonical locality {location_name:?} (ID {location_id}) as a politically inhabited jurisdiction. Crisis: {pressure}. Add exactly four non-overlapping resident population leaves and exactly six distinct institutions, never more. Invent authority, succession, revenue, redress, leverage, and opposed interests. Give every new subject a concrete public notice or report channel."
     );
     request.chars().take(500).collect()
 }
@@ -1043,6 +1043,8 @@ mod tests {
 
         assert!(request.contains("Seed Vault"));
         assert!(request.contains("loc-seed-vault"));
+        assert!(request.contains("exactly four non-overlapping resident population leaves"));
+        assert!(request.contains("exactly six distinct institutions"));
         assert!(request.contains("authority, succession, revenue, redress"));
         assert!(request.contains("public notice or report channel"));
         assert!(request.chars().count() <= 500);
