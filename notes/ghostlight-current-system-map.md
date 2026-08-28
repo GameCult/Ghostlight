@@ -167,8 +167,10 @@ exact campaign revision
   -> connected agency graph + budget/pins/leases/detail debt
   -> cohesive or arena simulation-cell cover
   -> one private Projector/Persona/Interpreter membrane per cell
-  -> model proposes exact constituent-attributed actions or explicit inaction
-  -> independent effect verifier checks the typed action against the Persona choice
+  -> Interpreter agent submits or incrementally edits one private exact-decision draft
+  -> deterministic draft compiler checks exact ownership, permissions, topology, and bounds
+  -> independent per-action effect verifier checks the typed action against the Persona choice
+  -> accepted unchanged actions retain their exact verifier binding across local draft repair
   -> runtime selects compatible attempts and content-addresses each activity
   -> parallel per-activity fast outcome candidates choose bounded typed consequences
   -> one local binder plus selective semantic verifier admit or reject each frozen candidate
@@ -192,14 +194,28 @@ code bounds it before correction and never publishes private cell choices to a
 player error surface. A rejected wave returns one spoiler-free message while
 its exact diagnostic remains operator-only.
 
-On the one same-snapshot Interpreter correction, Ghostlight also removes each
-exact subject/effect pair rejected by either per-action local validation or the
-independent effect verifier from the output schema. Neither validator chooses
-the replacement or gains commit authority; the correction constraint only
-makes an already-known-invalid mapping impossible to repeat. The Interpreter
-must use another permitted typed lane, omit the action, or fail the whole wave
-without mutation. Cross-action failures do not guess at an offender and remain
-ordinary semantic corrections.
+The Interpreter is a bounded model agent over a private workbench. Its efficient
+first action may submit the complete exact decision map only while the draft is
+empty. A rejected draft stays in the tool; later actions may upsert or remove
+only the exact decisions named as missing or rejected, or inspect the draft.
+The tool structurally rejects whole-draft replacement and edits to unrelated
+accepted decisions. Local validation returns a typed `local_validation`
+finding and the semantic verifier returns exact subject-scoped mismatch
+findings. Neither validator chooses the replacement or gains commit authority.
+Verifier matches are cached by the exact snapshot-and-action binding, so
+repairing one action does not repay inference for unchanged accepted actions.
+An `undecided` result returns to the Persona owner instead of letting the
+Interpreter invent a choice.
+
+The strategic scheduler dispatches every simulation cell membrane once and
+owns no cell retry. The cell engine projects one exact lived moment. If the
+Persona supplies no explicit decision, the engine retries only Persona and
+Interpreter against that same projected stream; Projector does not rerun. The
+second Persona cites the first Persona and Interpreter attempt as causal
+ancestry. Provider transport retains its separately bounded same-request retry,
+and Interpreter draft repair remains workbench-local. Actor and cell membranes
+share one causal-source derivation primitive for Projector to Persona to
+Interpreter, while canonical evidence remains a separate namespace.
 
 The effect verifier receives the same exact typed permission slice used by the
 Interpreter. That slice is its sole map of canonical locations, reachable actor
@@ -673,8 +689,8 @@ Ghostlight owns exact verdict coverage and derives the aggregate rejected set;
 the model cannot reject one arena constituent merely because another
 constituent's mapping failed, omit a candidate, duplicate an index, or publish
 a global decision that contradicts its per-action rationale. Rejected actions
-receive one same-snapshot Interpreter correction and may not be returned
-unchanged.
+return to the same private Interpreter draft as exact subject-scoped findings;
+unchanged accepted actions retain their verifier binding.
 
 Population scale uses reversible individuation:
 
@@ -994,10 +1010,32 @@ admission. Completed compiler, action, tool, and verifier receipts survive
 terminal failure and are persisted by both the strategic harness and the
 Dungeon API. Generic harness tests prove that a later action cites both the
 rejected action and tool receipts, and that exhaustion returns every completed
-action and tool receipt. Accepted civic systems persist as versioned component
+action and tool receipt. A tool may also return `Continue`: the valid action
+updates only consumer-owned private draft state, its receipt remains valid, and
+the typed observation requests the next step without pretending the task was
+rejected or complete. Accepted civic systems persist as versioned component
 state, so a later pass receives the current institutions, populations, facts,
 and relations and must extend that apparatus instead of inventing a parallel
 government.
+
+World-elaboration tone has one typed catalog of titled workers. `Patina` owns
+reusable low-stakes local texture; `Charter` civic institutions and procedure;
+`Ledger` material economy; `Hearth` ordinary relationships and belonging;
+`Tangle` factions and political leverage; `Veil` uneven knowledge; `Ember`
+active pressure; and `Numen` ritual, magic, and wonder. Each user slider is a
+zero-to-one-hundred relative dispatch weight, not prompt decoration. The
+deterministic smooth weighted scheduler apportions every invocation-budget slot
+against the complete enabled profile. It records requested share, actual
+dispatch count, and per-title unused allocations; when a selected title is
+blocked, that slot remains unused instead of increasing another title's
+frequency or creating catch-up debt. A bounded wave invokes the scheduled
+sub-agents in parallel. One typed wave binding names the immutable snapshot and
+is passed to every invocation and returned with every proposal. Successful
+proposals return in deterministic ordinal order. A failed wave returns the
+consumed schedule, every completed proposal, and the exact failed dispatches,
+so persisted fairness state cannot advance without an explanatory receipt.
+Those proposals are not canonical mutations; a later admission and conflict
+owner must compile and atomically commit them through `WorldKernel`.
 
 Both destination paths synthesize the smallest compatible branch-local routes,
 geometry, people, supplies, procedures, capacity, responsibility, and doctrine

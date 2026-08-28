@@ -598,31 +598,83 @@ stale DeepSeek route and received HTTP 402 because this machine has neither a
 Codex Connector service nor a usable key. That is not provider acceptance or a
 harness failure; the provider smoke belongs on Yggdrasil.
 
-Reconciliation is the harness's first executable proof. Patina remains the
-named next consumer: an agent whose bounded tools can introduce durable,
-locally grounded low-stakes texture which later events may organically
-appropriate, without granting the texture agent independent commit authority.
-No Patina implementation is claimed.
+Exact-source run 22 exercised commit `842e265` through Codex Connector. The
+world compiled and locality 1 committed. At locality 2 the Sol destination
+compile, Terra reconciliation action, and fresh Sol civic verifier all
+accepted; WorldKernel then rejected admission with `region admission evidence
+receipts were not supplied`. The run ended at one of four elaborations and zero
+of six strategic waves, so it produced no newspaper. The unchanged root is
+archived at
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-842e265-22.tar`,
+whose SHA-256 is
+`90972df1c90eaff699469357ff5de026838940ac07ec5f5faefbaf5d1d266ed9`.
+This retires run 21 as the current blocker while preserving it as prior failure
+history. Run 22 proves the provider-backed agentic reconciliation path reached
+fresh semantic acceptance; the remaining rejection came from mixing causal
+ModelAgent receipt IDs into canonical profile and relation evidence fields.
+Commit `c757e5a09d884d263ae3533f537a71ce69010e94` owns the focused
+namespace split and is pushed: model-causal ancestry remains available to
+the harness and verifier receipts, while profiles and relations lower only the
+canonical admission-evidence receipt IDs. Provider verification remains
+pending.
 
-1. Commit and push this phase-boundary Mind update with implementation commit
-   `842e265`.
-2. Dispatch exact source `842e265` on Yggdrasil through Codex Connector for a
-   fresh four-elaboration/six-wave provider run. If it completes, preserve
-   and verify the immutable artifact manifest without mutating the live daemon
-   or any prior run root.
-3. Only after all six waves commit and an immutable manifest exists, dispatch a
+The current verified working tree makes the strategic Interpreter another
+consumer of the same generic harness. Shared `causal_source_ids` bind both actor
+and cell Projector-to-Persona-to-Interpreter chains. One agent incrementally
+edits a private draft against the frozen Persona decision. The deterministic
+draft compiler owns exact structure, permissions, topology, and bounds; the
+independent semantic verifier returns subject-scoped findings; unchanged
+accepted actions retain their exact verifier binding. Missing cell decisions
+reuse one exact `CellProjectedMoment`: one Projector call feeds two Persona and
+two Interpreter attempts, and the second attempts cite the first. Draft
+admission rejects whole resubmission and edits to unrelated decisions. The
+former bespoke correction prompt, whole-cell retry ownership, and dead retry
+trace fields are retired. All 419 library tests pass, and the second bounded
+Modeling audit found no P1 or P2 issue.
+
+World elaboration now has a typed catalog of eight named workers: Patina,
+Charter, Ledger, Hearth, Tangle, Veil, Ember, and Numen. Persisted semantic
+profile weights allocate against the complete enabled profile and control actual
+invocation frequency through a deterministic smooth weighted scheduler. An
+ineligible or blocked title keeps its scheduled share visibly unused; the
+scheduler does not redistribute those slots among eligible titles or accrue
+catch-up debt. With Patina 20 and blocked Tangle 80, a 100-slot window therefore
+invokes Patina 20 times and reports 80 unused slots. A bounded invocation port
+runs scheduled sub-agents in parallel against one frozen snapshot and restores
+deterministic ordinal order. Every invocation and proposal carries an exact
+`ElaborationWaveBinding`. Typed failures retain the consumed schedule,
+completed invocations, and exact failed dispatch for ordinary worker errors and
+task panic or cancellation; task-ID mapping preserves dispatch identity even
+when the task produces no normal payload.
+This is not yet an end-to-end elaboration path. World-domain proposal types,
+admission and conflict/merge ownership, and canonical WorldKernel integration
+remain unimplemented. Patina is therefore a real named control and schedulable
+title, but not a canonical writer. Provider run 23 remains stopped and no new
+newspaper acceptance is claimed.
+
+1. Commit and push the verified agentic Interpreter plus elaboration scheduling
+   cut.
+2. Map and implement the missing world-domain elaboration proposal,
+   deterministic admission/conflict/merge boundary, and canonical WorldKernel
+   integration without granting any titled worker commit authority.
+3. Keep provider run 23 stopped until that domain path is verified. Then dispatch
+   the resulting exact source on Yggdrasil through Codex Connector for
+   a fresh four-elaboration/six-wave provider run. If it completes, preserve and
+   verify the immutable artifact manifest without mutating the live daemon or
+   any prior run root.
+4. Only after all six waves commit and an immutable manifest exists, dispatch a
    fresh blind reviewer with only the strongest unedited page and a neutral
    editorial brief, then independently audit it against committed public events.
-4. Have the game-side adapter lower its authored hierarchy into the published
+5. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-5. Prove one consumer-owned effect crosses that public API, changes two foreign
+6. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-6. Measure provider cost and continuity on the existing 200-cell authored-world
+7. Measure provider cost and continuity on the existing 200-cell authored-world
    path without coupling wave width to the provider concurrency ceiling.
-7. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+8. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-8. Keep `gamecult-ops` synchronized with every executable deployment and model
+9. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,

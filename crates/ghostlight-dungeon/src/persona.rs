@@ -1,3 +1,7 @@
+use crate::agent::{
+    ModelAgentFailure, ModelAgentSpec, ModelAgentTool, ModelAgentToolContext,
+    ModelAgentToolOutcome, causal_source_ids, run_model_agent,
+};
 use crate::model::{ModelPort, ModelStageOutput, ModelStageRequest, run_validated_stage};
 use crate::session_zero::{AggregatedBoundary, CampaignContract};
 use anyhow::{Context, Result, anyhow};
@@ -202,8 +206,18 @@ fn cell_pipeline_failure(
     }
     anyhow::Error::new(CellPipelineFailure {
         diagnostic: format!("{error:#}").chars().take(4_000).collect(),
-        stage_receipts: prior_stage_receipts,
+        stage_receipts: distinct_stage_receipts(prior_stage_receipts),
     })
+}
+
+fn distinct_stage_receipts(
+    receipts: Vec<crate::model::ModelStageReceipt>,
+) -> Vec<crate::model::ModelStageReceipt> {
+    let mut seen = BTreeSet::new();
+    receipts
+        .into_iter()
+        .filter(|receipt| seen.insert(receipt.storage_key().to_owned()))
+        .collect()
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -213,10 +227,73 @@ struct CellAppraisalProposal {
     inactions: Vec<crate::domain::CellInaction>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+enum CellInterpreterAgentAction {
+    /// Efficient first attempt: publish one complete private draft for
+    /// deterministic compilation and semantic verification.
+    Submit {
+        decisions: BTreeMap<String, serde_json::Value>,
+    },
+    /// Replace exactly one decision while preserving every other draft entry.
+    UpsertDecision {
+        subject_id: String,
+        decision: serde_json::Value,
+    },
+    RemoveDecision {
+        subject_id: String,
+    },
+    InspectDraft,
+}
+
+#[derive(Debug)]
+enum CellInterpreterAgentOutput {
+    Appraisal(crate::domain::CellAppraisal),
+    MissingPersonaDecision { subject_ids: Vec<String> },
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+enum CellInterpreterFinding {
+    DraftProgress {
+        decision_subject_ids: Vec<String>,
+        missing_subject_ids: Vec<String>,
+    },
+    DraftRequired,
+    UnknownDecisionOwner {
+        subject_id: String,
+        allowed_subject_ids: Vec<String>,
+    },
+    SubmitRequiresEmptyDraft {
+        repair_subject_ids: Vec<String>,
+    },
+    DecisionNotRepairable {
+        subject_id: String,
+        repair_subject_ids: Vec<String>,
+    },
+    LocalValidation {
+        diagnostic: String,
+        decision_subject_ids: Vec<String>,
+    },
+    EffectMismatch {
+        rejected: Vec<CellInterpreterEffectFinding>,
+    },
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct CellInterpreterEffectFinding {
+    subject_id: String,
+    mismatch_kind: CellEffectMismatchKind,
+    repair_guidance: String,
+}
+
 #[derive(Debug)]
 struct MissingExplicitCellDecision {
     cell_id: String,
     stage_receipts: Vec<crate::model::ModelStageReceipt>,
+    lived_stream: LivedNarrativeStream,
+    active_subject_ids: BTreeSet<String>,
+    projector_receipts: Vec<crate::model::ModelStageReceipt>,
 }
 
 impl std::fmt::Display for MissingExplicitCellDecision {
@@ -428,16 +505,11 @@ const CELL_PROJECTION_OUTPUT_CONTRACT: &str = r#"{
   ]
 }"#;
 
-const CELL_APPRAISAL_OUTPUT_CONTRACT: &str = r#"{
-  "type":"object",
-  "required":["decisions"],
-  "properties":{
-    "decisions":{"type":"object","description":"The supplied schema creates exactly one canonical subject-ID key per projected perspective. Never add, remove, or duplicate a subject key.","additionalProperties":{"oneOf":[
-      {"type":"object","required":["action"],"properties":{"action":{"type":"object","required":["subject_id","intent","intended_effect","priority","state_references","public_channels","effects"],"properties":{"subject_id":{"type":"string"},"intent":{"type":"string"},"intended_effect":{"type":"string"},"priority":{"type":"integer"},"state_references":{"type":"array","items":{"type":"string"}},"public_channels":{"type":"array","items":{"type":"string"}},"effects":{"type":"object"}}}}},
-      {"type":"object","required":["inaction"],"properties":{"inaction":{"type":"object","required":["subject_id","reason"],"properties":{"subject_id":{"type":"string"},"reason":{"type":"string","minLength":1,"maxLength":240}}}}},
-      {"type":"object","required":["undecided"],"properties":{"undecided":{"type":"object","required":["reason"],"properties":{"reason":{"type":"string","minLength":1,"maxLength":240}}}}}
-    ]}}
-  }
+const CELL_INTERPRETER_AGENT_OUTPUT_CONTRACT: &str = r#"{
+  "kind":"submit | upsert_decision | remove_decision | inspect_draft",
+  "decisions":"required only for submit; the exact complete decision map",
+  "subject_id":"required for one-decision operations",
+  "decision":"required only for upsert_decision; one exact action, inaction, or undecided value"
 }"#;
 
 const CELL_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between an Interpreter and the world kernel. Judge this one candidate action's typed effects as one composition against the exact attributed subject's choice in the Persona turn. Structural permissions were already checked. Use exact_subject_permission as the sole map of canonical subjects, locations, and destinations for this actor. canonical_locations is sibling identity context: compare it with exact_subject_permission.location_ids, and never treat a name as granting locality, co-presence, reach, publication, movement, target, effect, or mutation authority. A matching current-location name denotes that place or its unnamed local public, not an omitted canonical subject. activity_targets supplies each canonical target's exact name and current locations; reachable_destinations supplies exact actor-movement destination IDs and names; migration_destinations supplies exact population names and locations. Preserve every distinct affirmative means the subject actually chooses. Do not invent another means from a purpose, refusal, restraint, condition to preserve, desired social norm, or hoped-for state. Keeping someone's choice open, declining to coerce them, leaving state unchanged, respecting autonomy, or waiting for another subject's decision requires no additional typed effect unless the Persona separately chooses an observable act to do it. Communication can therefore be faithfully combined with restraint without implying coordinate, recruit, posture, or pressure effects. Reject effect omission only when the Persona explicitly undertakes another observable act. When one choice contains relocation, an activity at the subject's exact snapshot location occurs before relocation and an activity at the exact admitted destination occurs after arrival; activities within one location phase are an unordered atomic set. Array and object field order are not chronology. When the Persona chooses to go to a canonical target, actor_move must use that target's actual different reachable location. If actor and target are already co-located, reject movement to some other place; a local communicate, coordinate, or prepare may encode the stated attempt instead. A place named only in prose and absent from reachable_destinations and migration_destinations is local texture inside the supplied activity location; walking to it cannot justify rejecting a concrete local prepare or repair as omitted travel. Return exactly one verdict with action_index 0. A gestalt_migration means that exact population leaf chooses to travel together to the supplied destination within the strategic horizon; loading, waiting, giving away passage, sending only some other subject, or merely considering travel does not entail it. Conversely, when the population chooses to board, depart, or relocate together, reject gestalt_activity prepare that erases the chosen journey. Gestalt migration never entails that a named member moved. A member_migration means that named member personally chooses to travel to the destination. Boarding a transport whose supplied destination is unambiguous in the lived stream is a chosen journey; the Persona need not repeat the place name. Giving away a berth, sending somebody else, waiting, or merely considering travel does not entail migration. Conversely, when the member chooses to board, depart, travel, or join the supplied destination, reject member_activity that reduces that commitment to preparing, queuing, or approaching. A member_activity belongs only to that exact named person's stated attempt; it cannot be reassigned to their population. Communication targets must be the exact canonical subjects actually addressed in the Persona turn. An exact activity_targets entry is sufficient authority to attempt direct communication with that named subject; allowed_persistent_publication_channels governs only durable public publication and is never an additional requirement for direct contact. One communicate activity is also the complete supported composition when the same utterance addresses exact canonical targets and an unnamed public audience: target_subject_ids names the canonical addressees and candidate_action.public_channels names the simultaneous public reach. A call to unnamed people at a canonical location is such public or local audience, not a missing activity target. Do not demand a second targetless communicate for that same utterance. Use a targetless communicate only when the communication has no exact canonical addressee. Internal-population coordination is owner-specific: apply only coordination_target_contract.rule for this exact attributed subject, never a rule belonging to another subject kind. If the Persona addresses an unnamed clerk, dock master, passerby, or local environment, reject any effect that substitutes a containing population, related institution, or merely permitted ID. A targetless local investigate at the subject's exact current or paired movement destination is the faithful supported shape for seeking information from an unnamed role or the environment; its empty target list is intentional and must not itself be grounds for rejection. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. An activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, acceptance, or target response. Reject omissions, reversals, subject swaps, wrong destinations, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object. A faithful verdict uses result \"match\", null mismatch_kind, and null repair_guidance. Otherwise use result \"mismatch\", exactly one mismatch_kind (\"subject_swap\", \"effect_omission\", \"effect_reversal\", \"target_substitution\", \"invented_outcome\", or \"wrong_effect_kind\"), and one concrete repair_guidance sentence of at most 240 characters. Name the exact omitted choice, substituted target, or wrong destination. When no supplied typed effect composition can faithfully encode the choice, explicitly say to remove the action rather than downgrade or redirect it. Shape: {\"verdicts\":[{\"action_index\":0,\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}]}";
@@ -521,7 +593,10 @@ impl PersonaProjectionEngine {
                     word_budget: 160,
                 }),
                 output_schema: None,
-                source_receipt_ids: vec![],
+                source_receipt_ids: causal_source_ids(
+                    &slice.source_receipt_ids,
+                    std::slice::from_ref(&projected.receipt),
+                ),
                 temperature: Some(0.7),
                 max_output_tokens: Some(256),
             },
@@ -548,7 +623,10 @@ impl PersonaProjectionEngine {
                 domain_guidance: &permission_guidance,
             }),
             output_schema: Some(schema),
-            source_receipt_ids: slice.source_receipt_ids.clone(),
+            source_receipt_ids: causal_source_ids(
+                &slice.source_receipt_ids,
+                &[projected.receipt.clone(), persona.receipt.clone()],
+            ),
             temperature: Some(0.0),
             max_output_tokens: Some(768),
         };
@@ -1194,6 +1272,298 @@ fn agency_footing(
     format!("{subject_name}'s grounded agency: {destinations} {targets} {channels}")
 }
 
+struct CellInterpreterWorkbench {
+    model: Arc<dyn ModelPort>,
+    permit: Arc<dyn ExecutionPermit>,
+    interpreter_model: String,
+    slice: PermittedCellSlice,
+    active_subject_ids: BTreeSet<String>,
+    lived_stream: String,
+    persona_turn: String,
+    campaign_policy: String,
+    draft: BTreeMap<String, serde_json::Value>,
+    repair_subject_ids: BTreeSet<String>,
+    accepted_verifier_bindings: BTreeSet<String>,
+}
+
+impl CellInterpreterWorkbench {
+    fn progress(&self) -> CellInterpreterFinding {
+        let decision_subject_ids = self.draft.keys().cloned().collect::<Vec<_>>();
+        let decided = decision_subject_ids
+            .iter()
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        CellInterpreterFinding::DraftProgress {
+            decision_subject_ids,
+            missing_subject_ids: self
+                .active_subject_ids
+                .difference(&decided)
+                .cloned()
+                .collect(),
+        }
+    }
+
+    async fn compile_draft(
+        &mut self,
+        source_receipt_ids: &[String],
+    ) -> ModelAgentToolOutcome<CellInterpreterAgentOutput, CellInterpreterFinding> {
+        let undecided_subject_ids = self
+            .draft
+            .iter()
+            .filter_map(|(subject_id, decision)| {
+                decision
+                    .get("undecided")
+                    .is_some()
+                    .then_some(subject_id.clone())
+            })
+            .collect::<Vec<_>>();
+        if !undecided_subject_ids.is_empty() {
+            return ModelAgentToolOutcome::Accepted {
+                output: CellInterpreterAgentOutput::MissingPersonaDecision {
+                    subject_ids: undecided_subject_ids,
+                },
+                receipts: Vec::new(),
+            };
+        }
+        if !self
+            .active_subject_ids
+            .iter()
+            .all(|subject_id| self.draft.contains_key(subject_id))
+        {
+            self.repair_subject_ids = self
+                .active_subject_ids
+                .iter()
+                .filter(|subject_id| !self.draft.contains_key(*subject_id))
+                .cloned()
+                .collect();
+            return ModelAgentToolOutcome::Continue {
+                observation: self.progress(),
+                receipts: Vec::new(),
+            };
+        }
+
+        let value = serde_json::json!({"decisions":self.draft});
+        let appraisal =
+            decode_cell_appraisal_proposal(&self.slice.cell_id, value).and_then(|proposal| {
+                let appraisal =
+                    bind_cell_appraisal(&self.slice, &self.active_subject_ids, proposal)?;
+                validate_cell_appraisal(&self.slice, &appraisal)?;
+                validate_active_decision_owners(&self.active_subject_ids, &appraisal)?;
+                Ok(appraisal)
+            });
+        let appraisal = match appraisal {
+            Ok(appraisal) => appraisal,
+            Err(error) => {
+                if self.repair_subject_ids.is_empty() {
+                    self.repair_subject_ids = self.active_subject_ids.clone();
+                }
+                return ModelAgentToolOutcome::Rejected {
+                    finding: CellInterpreterFinding::LocalValidation {
+                        diagnostic: error.to_string().chars().take(1_000).collect(),
+                        decision_subject_ids: self.repair_subject_ids.iter().cloned().collect(),
+                    },
+                    receipts: Vec::new(),
+                };
+            }
+        };
+
+        let mut pending_actions = Vec::new();
+        for action in &appraisal.actions {
+            let binding = match cell_effect_verification_binding(
+                &self.slice.snapshot_binding,
+                std::slice::from_ref(action),
+            ) {
+                Ok(binding) => binding,
+                Err(error) => {
+                    return ModelAgentToolOutcome::Failed {
+                        message: error.to_string(),
+                        receipts: Vec::new(),
+                    };
+                }
+            };
+            if !self.accepted_verifier_bindings.contains(&binding) {
+                pending_actions.push(action.clone());
+            }
+        }
+        if pending_actions.is_empty() {
+            self.repair_subject_ids.clear();
+            return ModelAgentToolOutcome::Accepted {
+                output: CellInterpreterAgentOutput::Appraisal(appraisal),
+                receipts: Vec::new(),
+            };
+        }
+
+        if let Err(error) = self
+            .permit
+            .require(
+                &self.slice.cell_id,
+                &self.slice.snapshot_binding,
+                "cell_effect_verifier",
+            )
+            .await
+        {
+            return ModelAgentToolOutcome::Failed {
+                message: error.to_string(),
+                receipts: Vec::new(),
+            };
+        }
+        let mut verifications = match run_cell_effect_verifier_wave(
+            self.model.clone(),
+            &self.interpreter_model,
+            &self.slice,
+            &self.lived_stream,
+            &self.persona_turn,
+            &self.campaign_policy,
+            &pending_actions,
+            source_receipt_ids,
+        )
+        .await
+        {
+            Ok(verifications) => verifications,
+            Err(error) => {
+                let receipts = error
+                    .downcast_ref::<CellEffectVerifierWaveFailure>()
+                    .map(|failure| failure.completed_stage_receipts.clone())
+                    .unwrap_or_default();
+                return ModelAgentToolOutcome::Failed {
+                    message: error.to_string(),
+                    receipts,
+                };
+            }
+        };
+        let mut rejected = Vec::new();
+        let mut receipts = Vec::with_capacity(verifications.len());
+        for verification in &mut verifications {
+            let action = &pending_actions[verification.action_index];
+            let binding = cell_effect_verification_binding(
+                &self.slice.snapshot_binding,
+                std::slice::from_ref(action),
+            )
+            .expect("pending action binding was already computed");
+            if matches!(verification.verdict.result, CellEffectMatchResult::Match) {
+                self.accepted_verifier_bindings.insert(binding);
+            } else {
+                let mismatch_kind = verification
+                    .verdict
+                    .mismatch_kind
+                    .clone()
+                    .expect("validated mismatch requires a kind");
+                let repair_guidance = verification
+                    .verdict
+                    .repair_guidance
+                    .clone()
+                    .expect("validated mismatch requires repair guidance");
+                verification.output.receipt.validation_result = "semantic_invalid".into();
+                verification.output.receipt.local_validation_error =
+                    Some(repair_guidance.chars().take(1_000).collect());
+                rejected.push(CellInterpreterEffectFinding {
+                    subject_id: action.subject_id.clone(),
+                    mismatch_kind,
+                    repair_guidance,
+                });
+            }
+            receipts.push(verification.output.receipt.clone());
+        }
+        if rejected.is_empty() {
+            self.repair_subject_ids.clear();
+            ModelAgentToolOutcome::Accepted {
+                output: CellInterpreterAgentOutput::Appraisal(appraisal),
+                receipts,
+            }
+        } else {
+            self.repair_subject_ids = rejected
+                .iter()
+                .map(|finding| finding.subject_id.clone())
+                .collect();
+            ModelAgentToolOutcome::Rejected {
+                finding: CellInterpreterFinding::EffectMismatch { rejected },
+                receipts,
+            }
+        }
+    }
+}
+
+#[async_trait]
+impl ModelAgentTool for CellInterpreterWorkbench {
+    type Action = CellInterpreterAgentAction;
+    type Output = CellInterpreterAgentOutput;
+    type Finding = CellInterpreterFinding;
+
+    async fn invoke(
+        &mut self,
+        action: Self::Action,
+        context: &ModelAgentToolContext,
+    ) -> ModelAgentToolOutcome<Self::Output, Self::Finding> {
+        match action {
+            CellInterpreterAgentAction::Submit { decisions } => {
+                if !self.draft.is_empty() {
+                    return ModelAgentToolOutcome::Rejected {
+                        finding: CellInterpreterFinding::SubmitRequiresEmptyDraft {
+                            repair_subject_ids: self.repair_subject_ids.iter().cloned().collect(),
+                        },
+                        receipts: Vec::new(),
+                    };
+                }
+                self.repair_subject_ids = decisions.keys().cloned().collect();
+                self.draft = decisions;
+                self.compile_draft(&context.source_receipt_ids).await
+            }
+            CellInterpreterAgentAction::UpsertDecision {
+                subject_id,
+                decision,
+            } => {
+                if !self.active_subject_ids.contains(&subject_id) {
+                    return ModelAgentToolOutcome::Rejected {
+                        finding: CellInterpreterFinding::UnknownDecisionOwner {
+                            subject_id,
+                            allowed_subject_ids: self.active_subject_ids.iter().cloned().collect(),
+                        },
+                        receipts: Vec::new(),
+                    };
+                }
+                if self.draft.contains_key(&subject_id)
+                    && !self.repair_subject_ids.contains(&subject_id)
+                {
+                    return ModelAgentToolOutcome::Rejected {
+                        finding: CellInterpreterFinding::DecisionNotRepairable {
+                            subject_id,
+                            repair_subject_ids: self.repair_subject_ids.iter().cloned().collect(),
+                        },
+                        receipts: Vec::new(),
+                    };
+                }
+                self.repair_subject_ids = BTreeSet::from([subject_id.clone()]);
+                self.draft.insert(subject_id, decision);
+                self.compile_draft(&context.source_receipt_ids).await
+            }
+            CellInterpreterAgentAction::RemoveDecision { subject_id } => {
+                if self.draft.is_empty() {
+                    return ModelAgentToolOutcome::Rejected {
+                        finding: CellInterpreterFinding::DraftRequired,
+                        receipts: Vec::new(),
+                    };
+                }
+                if !self.repair_subject_ids.contains(&subject_id) {
+                    return ModelAgentToolOutcome::Rejected {
+                        finding: CellInterpreterFinding::DecisionNotRepairable {
+                            subject_id,
+                            repair_subject_ids: self.repair_subject_ids.iter().cloned().collect(),
+                        },
+                        receipts: Vec::new(),
+                    };
+                }
+                self.repair_subject_ids = BTreeSet::from([subject_id.clone()]);
+                self.draft.remove(&subject_id);
+                self.compile_draft(&context.source_receipt_ids).await
+            }
+            CellInterpreterAgentAction::InspectDraft => ModelAgentToolOutcome::Continue {
+                observation: self.progress(),
+                receipts: Vec::new(),
+            },
+        }
+    }
+}
+
 fn required_projection_subject_ids(slice: &PermittedCellSlice) -> BTreeSet<String> {
     slice.decision_owner_ids.clone()
 }
@@ -1237,16 +1607,31 @@ pub struct CellProjectionEngine {
     pub aggregate_boundaries: Vec<AggregatedBoundary>,
 }
 
+#[derive(Clone)]
+struct CellProjectedMoment {
+    lived_stream: LivedNarrativeStream,
+    active_subject_ids: BTreeSet<String>,
+    projector_receipts: Vec<crate::model::ModelStageReceipt>,
+    causal_receipts: Vec<crate::model::ModelStageReceipt>,
+}
+
 impl CellProjectionEngine {
     pub async fn execute(&self, slice: PermittedCellSlice) -> Result<CellTerminalBundle> {
-        match self.execute_once(slice.clone(), false).await {
+        match self.execute_once(slice.clone(), false, None).await {
             Ok(bundle) => Ok(bundle),
             Err(error) => {
                 let Some(omission) = error.downcast_ref::<MissingExplicitCellDecision>() else {
                     return Err(cell_pipeline_failure(error, Vec::new()));
                 };
                 let mut prior_receipts = omission.stage_receipts.clone();
-                let mut bundle = match self.execute_once(slice, true).await {
+                let retry_projection = CellProjectedMoment {
+                    lived_stream: omission.lived_stream.clone(),
+                    active_subject_ids: omission.active_subject_ids.clone(),
+                    projector_receipts: omission.projector_receipts.clone(),
+                    causal_receipts: omission.stage_receipts.clone(),
+                };
+                let mut bundle = match self.execute_once(slice, true, Some(retry_projection)).await
+                {
                     Ok(bundle) => bundle,
                     Err(error) => {
                         return Err(cell_pipeline_failure(
@@ -1258,7 +1643,7 @@ impl CellProjectionEngine {
                     }
                 };
                 prior_receipts.append(&mut bundle.stage_receipts);
-                bundle.stage_receipts = prior_receipts;
+                bundle.stage_receipts = distinct_stage_receipts(prior_receipts);
                 Ok(bundle)
             }
         }
@@ -1268,111 +1653,128 @@ impl CellProjectionEngine {
         &self,
         slice: PermittedCellSlice,
         require_explicit_decision: bool,
+        projection: Option<CellProjectedMoment>,
     ) -> Result<CellTerminalBundle> {
-        self.permit
-            .require(&slice.cell_id, &slice.snapshot_binding, "cell_projector")
-            .await?;
-        let projector_context = serde_json::to_string(&cell_projector_context(&slice))?;
         let campaign_policy = serde_json::to_string(&serde_json::json!({
             "campaign_contract":self.campaign_contract,
             "aggregate_content_boundaries":self.aggregate_boundaries,
         }))?;
-        let visible_stimulus = slice
-            .perceived_events
-            .iter()
-            .map(|event| {
-                format!(
-                    "Perceived by [{}]: {}",
-                    event
-                        .perceived_by_subject_ids
-                        .iter()
-                        .cloned()
-                        .collect::<Vec<_>>()
-                        .join(", "),
-                    event.summary
-                )
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
-        let mode_guidance = cell_projector_mode_guidance(&slice.mode);
-        let mode_guidance = format!(
-            "{mode_guidance} Treat already_committed_posture as an institutional course already in force, not a pressure, option, or fresh decision. Continuing it is holding steady; only a materially different commitment is a new posture choice. Each perceived event names the exact constituents that can perceive it; do not teach it to anyone else. Only supplied constituents and member_exceptions may own an internal perspective or choice. A person merely mentioned in an event is external observation when absent from those lists: never voice them. Every supplied member_exception was selected because that person has an actionable decision in this horizon. Render each selected person explicitly by name, with only their own footing and choices."
-        );
-        let required_projection_subject_ids = required_projection_subject_ids(&slice);
-        let word_budget =
-            (120 + 45 * (slice.constituents.len() + slice.member_exceptions.len())).min(360);
-        let perspective_limit = slice
-            .max_actions
-            .max(required_projection_subject_ids.len())
-            .max(1);
-        let mut projection_schema = serde_json::to_value(schema_for!(CellProjectionProposal))?;
-        constrain_cell_projection_schema(&mut projection_schema, &slice)?;
-        let mut projection_request = ModelStageRequest {
-            stage: "cell_projector".into(),
-            model: self.projector_model.clone(),
-            snapshot_binding: slice.snapshot_binding.clone(),
-            lived_stream: format!(
-                "<!-- membrane:{MEMBRANE_SCHEMA}:cell-projector -->\nYou are a private cell Projector. Convert only the permitted typed context and visible stimulus into compact lived narrative segments. Each segment belongs to exactly one supplied subject_id and contains only that subject's perceptions, memories, wants, fears, knowledge, and explicit uncertainty. Mentioned outsiders remain external observations: never give them an internal viewpoint. Campaign policy constrains what may become simulation content, but is never actor knowledge: omit line topics, keep veil topics off-screen, and introduce no ask_first topic. Do not narrativize or reveal the policy itself. Do not choose actions or claim world effects. Omit decorative recap. Return between {} and {perspective_limit} unique segments; do not narrate every ordinary constituent. Include every exact subject ID in REQUIRED PERSPECTIVE OWNERS, because each named member exception or debt focus has an actionable decision that must not disappear inside the aggregate. Put detail_focus_subject_id first when present. Spend any remaining slots only on subjects facing a materially different decision in this horizon.\n\nREQUIRED PERSPECTIVE OWNERS:\n{}\n\nReturn exactly one JSON object matching this stable shape:\n{CELL_PROJECTION_OUTPUT_CONTRACT}\n\nCAMPAIGN POLICY:\n{campaign_policy}\n\nDomain guidance:\n{mode_guidance}\n\nIdentity:\n{}\n\nPermitted typed context:\n{projector_context}\n\nVisible stimulus:\n{visible_stimulus}\n\nUse no more than {word_budget} narrative words across all segments.",
-                required_projection_subject_ids.len().max(1),
-                serde_json::to_string(&required_projection_subject_ids)?,
-                slice.cell_id
-            ),
-            output_schema: Some(projection_schema),
-            source_receipt_ids: slice.source_receipt_ids.clone(),
-            temperature: Some(0.0),
-            max_output_tokens: Some(768),
-        };
-        let mut projector_receipts = Vec::new();
-        let (projected_narrative, active_subject_ids, projector_receipt) = loop {
-            let mut projected = match run_validated_stage(self.model.as_ref(), &projection_request)
-                .await
-                .context("cell projector model stage failed")
-            {
-                Ok(projected) => projected,
-                Err(error) => return Err(cell_pipeline_failure(error, projector_receipts)),
+        let CellProjectedMoment {
+            lived_stream: lived,
+            active_subject_ids,
+            projector_receipts,
+            causal_receipts,
+        } = if let Some(projection) = projection {
+            projection
+        } else {
+            self.permit
+                .require(&slice.cell_id, &slice.snapshot_binding, "cell_projector")
+                .await?;
+            let projector_context = serde_json::to_string(&cell_projector_context(&slice))?;
+            let visible_stimulus = slice
+                .perceived_events
+                .iter()
+                .map(|event| {
+                    format!(
+                        "Perceived by [{}]: {}",
+                        event
+                            .perceived_by_subject_ids
+                            .iter()
+                            .cloned()
+                            .collect::<Vec<_>>()
+                            .join(", "),
+                        event.summary
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+            let mode_guidance = cell_projector_mode_guidance(&slice.mode);
+            let mode_guidance = format!(
+                "{mode_guidance} Treat already_committed_posture as an institutional course already in force, not a pressure, option, or fresh decision. Continuing it is holding steady; only a materially different commitment is a new posture choice. Each perceived event names the exact constituents that can perceive it; do not teach it to anyone else. Only supplied constituents and member_exceptions may own an internal perspective or choice. A person merely mentioned in an event is external observation when absent from those lists: never voice them. Every supplied member_exception was selected because that person has an actionable decision in this horizon. Render each selected person explicitly by name, with only their own footing and choices."
+            );
+            let required_projection_subject_ids = required_projection_subject_ids(&slice);
+            let word_budget =
+                (120 + 45 * (slice.constituents.len() + slice.member_exceptions.len())).min(360);
+            let perspective_limit = slice
+                .max_actions
+                .max(required_projection_subject_ids.len())
+                .max(1);
+            let mut projection_schema = serde_json::to_value(schema_for!(CellProjectionProposal))?;
+            constrain_cell_projection_schema(&mut projection_schema, &slice)?;
+            let mut projection_request = ModelStageRequest {
+                stage: "cell_projector".into(),
+                model: self.projector_model.clone(),
+                snapshot_binding: slice.snapshot_binding.clone(),
+                lived_stream: format!(
+                    "<!-- membrane:{MEMBRANE_SCHEMA}:cell-projector -->\nYou are a private cell Projector. Convert only the permitted typed context and visible stimulus into compact lived narrative segments. Each segment belongs to exactly one supplied subject_id and contains only that subject's perceptions, memories, wants, fears, knowledge, and explicit uncertainty. Mentioned outsiders remain external observations: never give them an internal viewpoint. Campaign policy constrains what may become simulation content, but is never actor knowledge: omit line topics, keep veil topics off-screen, and introduce no ask_first topic. Do not narrativize or reveal the policy itself. Do not choose actions or claim world effects. Omit decorative recap. Return between {} and {perspective_limit} unique segments; do not narrate every ordinary constituent. Include every exact subject ID in REQUIRED PERSPECTIVE OWNERS, because each named member exception or debt focus has an actionable decision that must not disappear inside the aggregate. Put detail_focus_subject_id first when present. Spend any remaining slots only on subjects facing a materially different decision in this horizon.\n\nREQUIRED PERSPECTIVE OWNERS:\n{}\n\nReturn exactly one JSON object matching this stable shape:\n{CELL_PROJECTION_OUTPUT_CONTRACT}\n\nCAMPAIGN POLICY:\n{campaign_policy}\n\nDomain guidance:\n{mode_guidance}\n\nIdentity:\n{}\n\nPermitted typed context:\n{projector_context}\n\nVisible stimulus:\n{visible_stimulus}\n\nUse no more than {word_budget} narrative words across all segments.",
+                    required_projection_subject_ids.len().max(1),
+                    serde_json::to_string(&required_projection_subject_ids)?,
+                    slice.cell_id
+                ),
+                output_schema: Some(projection_schema),
+                source_receipt_ids: slice.source_receipt_ids.clone(),
+                temperature: Some(0.0),
+                max_output_tokens: Some(768),
             };
-            let proposal = projected
-                .structured
-                .clone()
-                .ok_or_else(|| anyhow!("cell Projector produced no typed segments"))
-                .and_then(|value| serde_json::from_value(value).map_err(Into::into));
-            match proposal.and_then(|proposal| bind_cell_projection(&slice, proposal)) {
-                Ok((narrative, active_subject_ids)) => {
-                    let receipt = projected.receipt.clone();
-                    projector_receipts.push(projected.receipt);
-                    break (narrative, active_subject_ids, receipt);
-                }
-                Err(error) if projector_receipts.is_empty() => {
-                    projected.receipt.validation_result = "semantic_invalid".into();
-                    projected.receipt.local_validation_error =
-                        Some(error.to_string().chars().take(1_000).collect());
-                    projector_receipts.push(projected.receipt);
-                    projection_request.lived_stream.push_str(&format!(
+            let mut projector_receipts = Vec::new();
+            let (projected_narrative, active_subject_ids, projector_receipt) = loop {
+                let mut projected =
+                    match run_validated_stage(self.model.as_ref(), &projection_request)
+                        .await
+                        .context("cell projector model stage failed")
+                    {
+                        Ok(projected) => projected,
+                        Err(error) => return Err(cell_pipeline_failure(error, projector_receipts)),
+                    };
+                let proposal = projected
+                    .structured
+                    .clone()
+                    .ok_or_else(|| anyhow!("cell Projector produced no typed segments"))
+                    .and_then(|value| serde_json::from_value(value).map_err(Into::into));
+                match proposal.and_then(|proposal| bind_cell_projection(&slice, proposal)) {
+                    Ok((narrative, active_subject_ids)) => {
+                        let receipt = projected.receipt.clone();
+                        projector_receipts.push(projected.receipt);
+                        break (narrative, active_subject_ids, receipt);
+                    }
+                    Err(error) if projector_receipts.is_empty() => {
+                        projected.receipt.validation_result = "semantic_invalid".into();
+                        projected.receipt.local_validation_error =
+                            Some(error.to_string().chars().take(1_000).collect());
+                        projector_receipts.push(projected.receipt);
+                        projection_request.lived_stream.push_str(&format!(
                         "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS SEGMENTS: {error}\nReturn one corrected complete JSON object against the same snapshot and contract."
                     ));
+                    }
+                    Err(error) => {
+                        projected.receipt.validation_result = "semantic_invalid".into();
+                        projected.receipt.local_validation_error =
+                            Some(error.to_string().chars().take(1_000).collect());
+                        projector_receipts.push(projected.receipt);
+                        return Err(cell_pipeline_failure(
+                            anyhow!(
+                                "cell Projector failed perspective binding after one correction: {error}"
+                            ),
+                            projector_receipts,
+                        ));
+                    }
                 }
-                Err(error) => {
-                    projected.receipt.validation_result = "semantic_invalid".into();
-                    projected.receipt.local_validation_error =
-                        Some(error.to_string().chars().take(1_000).collect());
-                    projector_receipts.push(projected.receipt);
-                    return Err(cell_pipeline_failure(
-                        anyhow!(
-                            "cell Projector failed perspective binding after one correction: {error}"
-                        ),
-                        projector_receipts,
-                    ));
-                }
+            };
+            let lived_stream = LivedNarrativeStream {
+                text: format!(
+                    "{}\n\n{}",
+                    cell_scene_boundaries(&slice, &active_subject_ids),
+                    projected_narrative
+                ),
+                snapshot_binding: slice.snapshot_binding.clone(),
+                projector_receipt,
+            };
+            CellProjectedMoment {
+                lived_stream,
+                active_subject_ids,
+                causal_receipts: projector_receipts.clone(),
+                projector_receipts,
             }
-        };
-        let lived = LivedNarrativeStream {
-            text: format!(
-                "{}\n\n{}",
-                cell_scene_boundaries(&slice, &active_subject_ids),
-                projected_narrative
-            ),
-            snapshot_binding: slice.snapshot_binding.clone(),
-            projector_receipt,
         };
         self.permit
             .require(&slice.cell_id, &slice.snapshot_binding, "cell_persona")
@@ -1399,7 +1801,7 @@ impl CellProjectionEngine {
                     word_budget: (160 + 30 * slice.constituents.len()).min(320),
                 }),
                 output_schema: None,
-                source_receipt_ids: vec![],
+                source_receipt_ids: causal_source_ids(&slice.source_receipt_ids, &causal_receipts),
                 temperature: Some(0.7),
                 max_output_tokens: Some(512),
             },
@@ -1410,7 +1812,7 @@ impl CellProjectionEngine {
             Ok(persona) => persona,
             Err(error) => return Err(cell_pipeline_failure(error, projector_receipts)),
         };
-        let mut stage_receipts = projector_receipts;
+        let mut stage_receipts = projector_receipts.clone();
         stage_receipts.push(persona.receipt.clone());
         self.permit
             .require(&slice.cell_id, &slice.snapshot_binding, "cell_interpreter")
@@ -1445,225 +1847,79 @@ impl CellProjectionEngine {
         let permission_guidance = format!(
             "{permission_guidance} Campaign policy is a hard output boundary, not actor knowledge. Emit no action, inaction rationale, pressure, migration, posture, or activity that introduces a line topic, depicts a veil topic on-screen, or introduces an ask_first topic. Never reveal boundary attribution. CAMPAIGN POLICY: {campaign_policy}"
         );
-        let mut request = ModelStageRequest {
+        let action_schema = cell_interpreter_agent_schema(&schema)
+            .map_err(|error| cell_pipeline_failure(error, stage_receipts.clone()))?;
+        let instructions = build_interpreter_prompt(&InterpreterPrompt {
+            identity: &slice.cell_id,
+            typed_context: &interpreter_context,
+            lived_stream: &lived.text,
+            persona_output: &persona.narrative,
+            output_schema: CELL_INTERPRETER_AGENT_OUTPUT_CONTRACT,
+            domain_guidance: &format!(
+                "{permission_guidance} Operate the private Interpreter workbench. Prefer one submit action containing the complete exact decision map on the first step. A rejected submit preserves its draft. Repair only named decisions with upsert_decision; inspect_draft and remove_decision are nonterminal. Only the deterministic workbench can accept the appraisal."
+            ),
+        });
+        let mut interpreter_causal_receipts = causal_receipts;
+        interpreter_causal_receipts.push(persona.receipt.clone());
+        let source_receipt_ids =
+            causal_source_ids(&slice.source_receipt_ids, &interpreter_causal_receipts);
+        let spec = ModelAgentSpec {
             stage: "cell_interpreter".into(),
             model: self.interpreter_model.clone(),
             snapshot_binding: slice.snapshot_binding.clone(),
-            lived_stream: build_interpreter_prompt(&InterpreterPrompt {
-                identity: &slice.cell_id,
-                typed_context: &interpreter_context,
-                lived_stream: &lived.text,
-                persona_output: &persona.narrative,
-                output_schema: CELL_APPRAISAL_OUTPUT_CONTRACT,
-                domain_guidance: &permission_guidance,
-            }),
-            output_schema: Some(schema),
-            source_receipt_ids: slice.source_receipt_ids.clone(),
+            instructions,
+            action_schema,
+            source_receipt_ids,
             temperature: Some(0.0),
             max_output_tokens: Some(1_600),
+            max_steps: active_subject_ids.len().saturating_add(4).clamp(4, 8),
         };
-        for attempt in 0..3 {
-            let mut interpreted = match run_validated_stage(self.model.as_ref(), &request)
-                .await
-                .context("cell interpreter model stage failed")
-            {
-                Ok(interpreted) => interpreted,
-                Err(error) => {
-                    return Err(cell_pipeline_failure(error, stage_receipts));
-                }
-            };
-            let proposal = interpreted
-                .structured
-                .clone()
-                .ok_or_else(|| anyhow!("cell interpreter produced no typed proposal"))
-                .and_then(|value| decode_cell_appraisal_proposal(&slice.cell_id, value));
-            match proposal.and_then(|proposal: CellAppraisalProposal| {
-                if proposal.actions.is_empty() && proposal.inactions.is_empty() {
-                    return Err(anyhow::Error::new(MissingExplicitCellDecision {
-                        cell_id: slice.cell_id.clone(),
-                        stage_receipts: Vec::new(),
-                    }));
-                }
-                let appraisal = bind_cell_appraisal(&slice, &active_subject_ids, proposal)?;
-                validate_cell_appraisal(&slice, &appraisal)?;
-                validate_active_decision_owners(&active_subject_ids, &appraisal)?;
-                Ok(appraisal)
-            }) {
-                Ok(appraisal) => {
-                    stage_receipts.push(interpreted.receipt);
-                    if !appraisal.actions.is_empty() {
-                        self.permit
-                            .require(
-                                &slice.cell_id,
-                                &slice.snapshot_binding,
-                                "cell_effect_verifier",
-                            )
-                            .await
-                            .map_err(|error| {
-                                cell_pipeline_failure(error, stage_receipts.clone())
-                            })?;
-                        let mut verifications = run_cell_effect_verifier_wave(
-                            self.model.clone(),
-                            &self.interpreter_model,
-                            &slice,
-                            &lived.text,
-                            &persona.narrative,
-                            &campaign_policy,
-                            &appraisal.actions,
-                        )
-                        .await
-                        .map_err(|error| {
-                            let mut completed = stage_receipts.clone();
-                            if let Some(failure) =
-                                error.downcast_ref::<CellEffectVerifierWaveFailure>()
-                            {
-                                completed.extend(failure.completed_stage_receipts.clone());
-                            }
-                            cell_pipeline_failure(error, completed)
-                        })?;
-                        let rejected_action_indices = verifications
-                            .iter()
-                            .filter_map(|verification| {
-                                matches!(
-                                    verification.verdict.result,
-                                    CellEffectMatchResult::Mismatch
-                                )
-                                .then_some(verification.action_index)
-                            })
-                            .collect::<Vec<_>>();
-                        if rejected_action_indices.is_empty() {
-                            stage_receipts.extend(
-                                verifications
-                                    .into_iter()
-                                    .map(|verification| verification.output.receipt),
-                            );
-                        } else {
-                            let rejection_rationale = verifications
-                                .iter()
-                                .filter_map(|verification| {
-                                    let CellEffectMatchResult::Mismatch =
-                                        verification.verdict.result
-                                    else {
-                                        return None;
-                                    };
-                                    let mismatch_kind = verification
-                                        .verdict
-                                        .mismatch_kind
-                                        .as_ref()
-                                        .expect("validated mismatch kind");
-                                    format!(
-                                        "action {}: {:?} — {}",
-                                        verification.action_index,
-                                        mismatch_kind,
-                                        verification
-                                            .verdict
-                                            .repair_guidance
-                                            .as_deref()
-                                            .expect("validated mismatch guidance")
-                                            .chars()
-                                            .take(240)
-                                            .collect::<String>()
-                                    )
-                                    .into()
-                                })
-                                .collect::<Vec<_>>()
-                                .join("; ");
-                            let error = anyhow!(
-                                "effect verifier rejected action indices {:?}: {}",
-                                rejected_action_indices,
-                                rejection_rationale
-                            );
-                            for verification in &mut verifications {
-                                if matches!(
-                                    verification.verdict.result,
-                                    CellEffectMatchResult::Mismatch
-                                ) {
-                                    verification.output.receipt.validation_result =
-                                        "semantic_invalid".into();
-                                    verification.output.receipt.local_validation_error =
-                                        Some(error.to_string().chars().take(1_000).collect());
-                                }
-                            }
-                            stage_receipts.extend(
-                                verifications
-                                    .into_iter()
-                                    .map(|verification| verification.output.receipt),
-                            );
-                            if attempt < 2 {
-                                append_cell_correction(
-                                    &mut request,
-                                    &error,
-                                    &serde_json::to_string(&encode_cell_appraisal_decisions(
-                                        &appraisal,
-                                    ))?,
-                                );
-                                continue;
-                            }
-                            let rejected_actions = rejected_action_diagnostic(
-                                &appraisal.actions,
-                                &rejected_action_indices,
-                            );
-                            return Err(cell_pipeline_failure(
-                                anyhow!(
-                                    "cell effect verifier rejected the appraisal after two corrections: {error}; rejected_actions={rejected_actions}"
-                                ),
-                                stage_receipts,
-                            ));
-                        }
-                    }
-                    self.permit
-                        .require(&slice.cell_id, &slice.snapshot_binding, "cell_terminal")
-                        .await
-                        .map_err(|error| cell_pipeline_failure(error, stage_receipts.clone()))?;
-                    return Ok(CellTerminalBundle {
-                        lived_stream: lived,
-                        persona_output: persona.narrative,
-                        appraisal,
-                        stage_receipts,
-                    });
-                }
-                Err(error)
-                    if error
-                        .downcast_ref::<MissingExplicitCellDecision>()
-                        .is_some() =>
-                {
-                    interpreted.receipt.validation_result = "semantic_invalid".into();
-                    interpreted.receipt.local_validation_error =
-                        Some(error.to_string().chars().take(1_000).collect());
-                    stage_receipts.push(interpreted.receipt);
-                    return Err(anyhow::Error::new(MissingExplicitCellDecision {
-                        cell_id: slice.cell_id.clone(),
-                        stage_receipts,
-                    }));
-                }
-                Err(error) if attempt < 2 => {
-                    let rejected_appraisal = interpreted
-                        .structured
-                        .as_ref()
-                        .map(serde_json::to_string)
-                        .transpose()?
-                        .unwrap_or_else(|| "null".into());
-                    interpreted.receipt.validation_result = "semantic_invalid".into();
-                    interpreted.receipt.local_validation_error =
-                        Some(error.to_string().chars().take(1_000).collect());
-                    stage_receipts.push(interpreted.receipt);
-                    append_cell_correction(&mut request, &error, &rejected_appraisal);
-                }
-                Err(error) => {
-                    interpreted.receipt.validation_result = "semantic_invalid".into();
-                    interpreted.receipt.local_validation_error =
-                        Some(error.to_string().chars().take(1_000).collect());
-                    stage_receipts.push(interpreted.receipt);
-                    return Err(cell_pipeline_failure(
-                        anyhow!(
-                            "cell interpreter failed semantic validation after two corrections: {error}"
-                        ),
-                        stage_receipts,
-                    ));
-                }
+        let mut workbench = CellInterpreterWorkbench {
+            model: self.model.clone(),
+            permit: self.permit.clone(),
+            interpreter_model: self.interpreter_model.clone(),
+            slice: slice.clone(),
+            active_subject_ids: active_subject_ids.clone(),
+            lived_stream: lived.text.clone(),
+            persona_turn: persona.narrative.clone(),
+            campaign_policy: campaign_policy.clone(),
+            draft: BTreeMap::new(),
+            repair_subject_ids: BTreeSet::new(),
+            accepted_verifier_bindings: BTreeSet::new(),
+        };
+        let run = match run_model_agent(self.model.as_ref(), &spec, &mut workbench).await {
+            Ok(run) => run,
+            Err(ModelAgentFailure { message, receipts }) => {
+                stage_receipts.extend(receipts);
+                return Err(cell_pipeline_failure(
+                    anyhow!("cell Interpreter agent failed: {message}"),
+                    stage_receipts,
+                ));
             }
-        }
-        unreachable!()
+        };
+        stage_receipts.extend(run.receipts);
+        let appraisal = match run.output {
+            CellInterpreterAgentOutput::Appraisal(appraisal) => appraisal,
+            CellInterpreterAgentOutput::MissingPersonaDecision { subject_ids } => {
+                return Err(anyhow::Error::new(MissingExplicitCellDecision {
+                    cell_id: format!("{} ({})", slice.cell_id, subject_ids.join(", ")),
+                    stage_receipts: distinct_stage_receipts(stage_receipts),
+                    lived_stream: lived,
+                    active_subject_ids,
+                    projector_receipts,
+                }));
+            }
+        };
+        self.permit
+            .require(&slice.cell_id, &slice.snapshot_binding, "cell_terminal")
+            .await
+            .map_err(|error| cell_pipeline_failure(error, stage_receipts.clone()))?;
+        return Ok(CellTerminalBundle {
+            lived_stream: lived,
+            persona_output: persona.narrative,
+            appraisal,
+            stage_receipts,
+        });
     }
 }
 
@@ -1675,6 +1931,7 @@ async fn run_cell_effect_verifier_wave(
     persona_turn: &str,
     campaign_policy: &str,
     actions: &[crate::domain::CellActionProposal],
+    source_receipt_ids: &[String],
 ) -> Result<Vec<CellActionVerificationRun>> {
     let campaign_policy = serde_json::from_str::<serde_json::Value>(campaign_policy)?;
     let verifier_schema = cell_effect_verifier_schema(1)?;
@@ -1718,7 +1975,7 @@ async fn run_cell_effect_verifier_wave(
                 serde_json::to_string(&verifier_context)?
             ),
             output_schema: Some(verifier_schema.clone()),
-            source_receipt_ids: slice.source_receipt_ids.clone(),
+            source_receipt_ids: source_receipt_ids.to_vec(),
             temperature: Some(0.0),
             max_output_tokens: Some(192),
         };
@@ -1816,63 +2073,6 @@ fn cell_persona_mode_guidance(mode: &crate::domain::SimulationCellMode) -> &'sta
         crate::domain::SimulationCellMode::Arena => {
             "Appraise the strategic horizon polyphonically. Name the constituent responsible for every perspective and decision; never speak as the arena or use an unmarked first-person voice. Only subjects already given an attributed internal perspective in the lived stream may choose; people merely observed or mentioned remain external. The lived stream may contain simultaneous remote scenes: preserve every stated location boundary, and never make one constituent see, hear, address, or answer another unless the stream explicitly establishes co-presence or a communication channel. Do not invent an available person, office, route, resource, or response absent from the lived stream. A constituent may choose to seek something unknown, but cannot claim contact with it. For each voiced constituent, end with a present-tense choice: a concrete attempt now, or an explicit choice to hold or wait. An institution continuing its already committed posture is holding steady, not choosing that posture again. Deliberating, asking for a future decision, considering an option, or saying what could be done is inaction unless that constituent actually chooses to act."
         }
-    }
-}
-
-fn append_cell_correction(
-    request: &mut ModelStageRequest,
-    error: &anyhow::Error,
-    rejected_appraisal: &str,
-) {
-    let repair_guidance = cell_correction_guidance(error);
-    request.lived_stream.push_str(&format!(
-        "\n\nCORRECTION TASK—THE PREVIOUS APPRAISAL WAS REJECTED.\nREJECTION: {error}\nPREVIOUS_REJECTED_APPRAISAL:\n{rejected_appraisal}\nReturn one corrected complete appraisal against the same snapshot, lived stream, Persona turn, and exact permission context. The semantic verifier's concrete repair guidance in REJECTION names the exact mismatch and is the primary correction instruction. {repair_guidance} When repairing bounded text, rewrite the whole field concisely: put every explicit act and addressee before supporting detail, remove recap and ornament, and end with a complete clause well below the character limit. Never append repair text to a field already at its limit. {CELL_ACTIVITY_CLASSIFICATION_GUIDANCE} Every retained action must still carry one to four non-null exact effects under the original contract. Preserve all distinct chosen means in one action; repeated activity kinds must use separate exact target and location scopes. With relocation, snapshot-location activities occur before departure and exact-destination activities occur after arrival; field order is not chronology. If an institution merely continues or restates already_committed_posture, move that exact voiced subject to inactions; it is holding steady. If the Persona chose travel but that subject has no exact permitted destination in reachable_destinations or migration_destinations, no movement transition is available: remove that action and record attributed inaction only when the Persona explicitly holds or waits without making another attempt. If an attempted preparation, investigation, request, or deliberation has no permitted typed consequence, remove it and record attributed inaction only when the Persona explicitly holds or waits without making another attempt; never emit an empty transition or upgrade consideration into a completed consequence. Never add inaction for an unvoiced subject. Keep each reason within 160 characters."
-    ));
-}
-
-fn rejected_action_diagnostic(
-    actions: &[crate::domain::CellActionProposal],
-    rejected_action_indices: &[usize],
-) -> String {
-    serde_json::to_string(
-        &rejected_action_indices
-            .iter()
-            .filter_map(|index| {
-                actions.get(*index).map(|action| {
-                    serde_json::json!({
-                        "action_index": index,
-                        "subject_id": action.subject_id,
-                        "intent": action.intent,
-                        "intended_effect": action.intended_effect,
-                        "state_references": action.state_references,
-                        "public_channels": action.public_channels,
-                        "typed_effects": action.effects,
-                    })
-                })
-            })
-            .collect::<Vec<_>>(),
-    )
-    .unwrap_or_else(|_| "[]".into())
-    .chars()
-    .take(2_000)
-    .collect()
-}
-
-fn cell_correction_guidance(error: &anyhow::Error) -> &'static str {
-    if error
-        .to_string()
-        .contains("appears in both actions and inactions")
-    {
-        "The named subject already has a concrete chosen attempt in actions. Remove its inaction entry. Waiting for that attempt's result or declining some other option is not inaction. Do not change a faithful permitted action merely to preserve the duplicate inaction."
-    } else if error.to_string().contains("duplicate strategic actions") {
-        "The named subject may own exactly one strategic choice in this horizon. Merge all faithful chosen means into one action and use its exact effects together; remove any separate alternative, deliberation, or unreachable choice rather than emitting a second action."
-    } else if error
-        .to_string()
-        .contains("omitted explicit strategic decisions")
-    {
-        "Every projected perspective must end in exactly one attributed decision. Preserve existing valid decisions and add an action only when the Persona explicitly chose a concrete attempt; otherwise add that voiced subject's explicit hold or wait as an inaction. Never invent a decision for an unprojected subject."
-    } else {
-        "Repair the semantic mismatch named by the verifier while preserving every unaffected faithful effect. A correction may retain exact unaffected values; do not alter text merely to make it bytewise different. Compress bounded text into complete clauses rather than truncating its meaning."
     }
 }
 
@@ -2159,10 +2359,9 @@ fn decode_cell_appraisal_proposal(
                 inactions.push(inaction);
             }
             (None, None, Some(_)) => {
-                return Err(anyhow::Error::new(MissingExplicitCellDecision {
-                    cell_id: cell_id.into(),
-                    stage_receipts: Vec::new(),
-                }));
+                return Err(anyhow!(
+                    "cell {cell_id} decision for subject {subject_id} remained undecided"
+                ));
             }
             _ => {
                 return Err(anyhow!(
@@ -2172,23 +2371,6 @@ fn decode_cell_appraisal_proposal(
         }
     }
     Ok(CellAppraisalProposal { actions, inactions })
-}
-
-fn encode_cell_appraisal_decisions(appraisal: &crate::domain::CellAppraisal) -> serde_json::Value {
-    let mut decisions = serde_json::Map::new();
-    for action in &appraisal.actions {
-        decisions.insert(
-            action.subject_id.clone(),
-            serde_json::json!({"action":action}),
-        );
-    }
-    for inaction in &appraisal.inactions {
-        decisions.insert(
-            inaction.subject_id.clone(),
-            serde_json::json!({"inaction":inaction}),
-        );
-    }
-    serde_json::json!({"decisions":decisions})
 }
 
 fn validate_cell_appraisal(
@@ -2835,6 +3017,64 @@ fn constrain_cell_proposal_schema(
     Ok(())
 }
 
+fn cell_interpreter_agent_schema(
+    appraisal_schema: &serde_json::Value,
+) -> Result<serde_json::Value> {
+    let decisions_schema = appraisal_schema
+        .pointer("/properties/decisions")
+        .cloned()
+        .ok_or_else(|| anyhow!("cell appraisal schema has no exact decisions map"))?;
+    let decision_properties = decisions_schema
+        .get("properties")
+        .and_then(serde_json::Value::as_object)
+        .ok_or_else(|| anyhow!("cell appraisal schema has no exact decision owners"))?;
+    let allowed_subject_ids = decision_properties.keys().cloned().collect::<Vec<_>>();
+    let mut commands = vec![serde_json::json!({
+        "type":"object",
+        "additionalProperties":false,
+        "required":["kind","decisions"],
+        "properties":{
+            "kind":{"const":"submit"},
+            "decisions":decisions_schema
+        }
+    })];
+    commands.extend(
+        decision_properties
+            .iter()
+            .map(|(subject_id, decision_schema)| {
+                serde_json::json!({
+                    "type":"object",
+                    "additionalProperties":false,
+                    "required":["kind","subject_id","decision"],
+                    "properties":{
+                        "kind":{"const":"upsert_decision"},
+                        "subject_id":{"const":subject_id},
+                        "decision":decision_schema
+                    }
+                })
+            }),
+    );
+    commands.push(serde_json::json!({
+        "type":"object",
+        "additionalProperties":false,
+        "required":["kind","subject_id"],
+        "properties":{
+            "kind":{"const":"remove_decision"},
+            "subject_id":{"type":"string","enum":allowed_subject_ids}
+        }
+    }));
+    commands.push(serde_json::json!({
+        "type":"object",
+        "additionalProperties":false,
+        "required":["kind"],
+        "properties":{"kind":{"const":"inspect_draft"}}
+    }));
+    Ok(serde_json::json!({
+        "$schema":"https://json-schema.org/draft/2020-12/schema",
+        "oneOf":commands
+    }))
+}
+
 fn exact_cell_action_schema(
     mut action_schema: serde_json::Value,
     subject_id: &str,
@@ -3347,6 +3587,7 @@ mod tests {
                     assert!(request.lived_stream.contains("is investigate, not prepare"));
                     if call == 0 {
                         return Ok(serde_json::json!({
+                            "kind":"submit",
                             "decisions":{"faction-06":{"action":{
                                 "subject_id":"faction-06",
                                 "intent":"continue weighing the position",
@@ -3360,7 +3601,9 @@ mod tests {
                         .to_string());
                     }
                     let repeated = serde_json::json!({
-                        "decisions":{"faction-06":{"action":{
+                        "kind":"upsert_decision",
+                        "subject_id":"faction-06",
+                        "decision":{"action":{
                             "subject_id":"faction-06",
                             "intent":"continue weighing the position",
                             "intended_effect":"retain the posture already in force",
@@ -3371,7 +3614,7 @@ mod tests {
                                 "posture":"weighing whether to publish a position",
                                 "location_ids":["forum"]
                             }}
-                        }}}
+                        }}
                     });
                     assert!(
                         jsonschema::validator_for(
@@ -3385,7 +3628,7 @@ mod tests {
                         "the correction schema must keep describing the same semantic action space; the verifier owns semantic rejection"
                     );
                     self.saw_rejected_appraisal.store(
-                        request.lived_stream.contains("PREVIOUS_REJECTED_APPRAISAL")
+                        request.lived_stream.contains("local_validation")
                             && request
                                 .lived_stream
                                 .contains("weighing whether to publish a position")
@@ -3393,7 +3636,9 @@ mod tests {
                         Ordering::SeqCst,
                     );
                     Ok(serde_json::json!({
-                        "decisions":{"faction-06":{"action":{
+                        "kind":"upsert_decision",
+                        "subject_id":"faction-06",
+                        "decision":{"action":{
                             "subject_id":"faction-06",
                             "intent":"publish a position",
                             "intended_effect":"state its bounded institutional posture",
@@ -3401,7 +3646,7 @@ mod tests {
                             "state_references":["institution:faction-06"],
                             "public_channels":["public bulletin"],
                             "effects":{"institution":{"posture":"published a bounded position","location_ids":["forum"]}}
-                        }}}
+                        }}
                     }).to_string())
                 }
                 "cell_effect_verifier" => {
@@ -3487,26 +3732,37 @@ mod tests {
     }
 
     struct MissingDecisionRetryModel {
+        projector_calls: AtomicUsize,
         persona_calls: AtomicUsize,
         interpreter_calls: AtomicUsize,
         saw_retry_guidance: AtomicBool,
+        request_sources: Mutex<Vec<(String, Vec<String>)>>,
     }
 
     #[async_trait]
     impl ModelPort for MissingDecisionRetryModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            self.request_sources
+                .lock()
+                .unwrap()
+                .push((request.stage.clone(), request.source_receipt_ids.clone()));
             match request.stage.as_str() {
-                "cell_projector" => Ok(serde_json::json!({
-                    "segments":[{
-                        "subject_id":"faction-06",
-                        "narrative":"The deadline is visible, but the institution has not yet chosen a new course."
-                    }]
-                })
-                .to_string()),
+                "cell_projector" => {
+                    self.projector_calls.fetch_add(1, Ordering::SeqCst);
+                    Ok(serde_json::json!({
+                        "segments":[{
+                            "subject_id":"faction-06",
+                            "narrative":"The deadline is visible, but the institution has not yet chosen a new course."
+                        }]
+                    })
+                    .to_string())
+                }
                 "cell_persona" => {
                     let call = self.persona_calls.fetch_add(1, Ordering::SeqCst);
                     if call == 0 {
-                        return Ok("Faction Six weighs the deadline and its existing posture.".into());
+                        return Ok(
+                            "Faction Six weighs the deadline and its existing posture.".into()
+                        );
                     }
                     self.saw_retry_guidance.store(
                         request
@@ -3520,6 +3776,7 @@ mod tests {
                     let call = self.interpreter_calls.fetch_add(1, Ordering::SeqCst);
                     if call == 0 {
                         return Ok(serde_json::json!({
+                            "kind":"submit",
                             "decisions":{"faction-06":{"undecided":{
                                 "reason":"The Persona supplied no explicit action or hold."
                             }}}
@@ -3527,6 +3784,7 @@ mod tests {
                         .to_string());
                     }
                     Ok(serde_json::json!({
+                        "kind":"submit",
                         "decisions":{"faction-06":{"inaction":{
                             "subject_id":"faction-06",
                             "reason":"Faction Six explicitly holds its existing posture for this horizon."
@@ -3546,9 +3804,11 @@ mod tests {
     #[tokio::test]
     async fn missing_persona_decision_retries_the_lived_turn_not_the_interpreter_invention() {
         let model = Arc::new(MissingDecisionRetryModel {
+            projector_calls: AtomicUsize::new(0),
             persona_calls: AtomicUsize::new(0),
             interpreter_calls: AtomicUsize::new(0),
             saw_retry_guidance: AtomicBool::new(false),
+            request_sources: Mutex::new(Vec::new()),
         });
         let engine = CellProjectionEngine {
             model: model.clone(),
@@ -3562,19 +3822,43 @@ mod tests {
 
         let output = engine.execute(fixture_cell_slice()).await.unwrap();
 
+        assert_eq!(model.projector_calls.load(Ordering::SeqCst), 1);
         assert_eq!(model.persona_calls.load(Ordering::SeqCst), 2);
         assert_eq!(model.interpreter_calls.load(Ordering::SeqCst), 2);
         assert!(model.saw_retry_guidance.load(Ordering::SeqCst));
         assert!(output.appraisal.actions.is_empty());
         assert_eq!(output.appraisal.inactions.len(), 1);
         assert_eq!(output.appraisal.inactions[0].subject_id, "faction-06");
-        assert_eq!(output.stage_receipts.len(), 6);
+        assert_eq!(output.stage_receipts.len(), 5);
         assert!(
             output
                 .stage_receipts
                 .iter()
-                .any(|receipt| receipt.validation_result == "semantic_invalid")
+                .all(|receipt| receipt.validation_result == "valid")
         );
+        let receipt_ids = output
+            .stage_receipts
+            .iter()
+            .map(|receipt| receipt.storage_key().to_owned())
+            .collect::<Vec<_>>();
+        let request_sources = model.request_sources.lock().unwrap();
+        let persona_sources = request_sources
+            .iter()
+            .filter(|(stage, _)| stage == "cell_persona")
+            .map(|(_, sources)| sources)
+            .collect::<Vec<_>>();
+        let interpreter_sources = request_sources
+            .iter()
+            .filter(|(stage, _)| stage == "cell_interpreter")
+            .map(|(_, sources)| sources)
+            .collect::<Vec<_>>();
+        assert!(persona_sources[0].contains(&receipt_ids[0]));
+        assert!(interpreter_sources[0].contains(&receipt_ids[0]));
+        assert!(interpreter_sources[0].contains(&receipt_ids[1]));
+        assert!(persona_sources[1].contains(&receipt_ids[0]));
+        assert!(persona_sources[1].contains(&receipt_ids[1]));
+        assert!(persona_sources[1].contains(&receipt_ids[2]));
+        assert!(interpreter_sources[1].contains(&receipt_ids[3]));
     }
 
     #[tokio::test]
@@ -3630,22 +3914,15 @@ mod tests {
                     let call = self.interpreter_calls.fetch_add(1, Ordering::SeqCst);
                     if call > 0 {
                         self.saw_verifier_rejection.store(
-                            request.lived_stream.contains("effect verifier rejected")
+                            request.lived_stream.contains("effect_mismatch")
                                 && request.lived_stream.contains("releases the reserve"),
                             Ordering::SeqCst,
                         );
                         assert!(request
                             .lived_stream
-                            .contains("do not alter text merely to make it bytewise different"));
-                        assert!(request
-                            .lived_stream
-                            .contains("no exact permitted destination"));
-                        assert!(request
-                            .lived_stream
-                            .contains("rewrite the whole field concisely"));
+                            .contains("Preserve the Persona's exact withholding decision"));
                     }
-                    Ok(serde_json::json!({
-                        "decisions":{"faction-06":{"action":{
+                    let decision = serde_json::json!({"action":{
                             "subject_id":"faction-06",
                             "intent":"state the reserve decision",
                             "intended_effect":match call {
@@ -3664,8 +3941,19 @@ mod tests {
                                 },
                                 "location_ids":["forum"]
                             }}
-                        }}}
-                    }).to_string())
+                        }});
+                    Ok(if call == 0 {
+                        serde_json::json!({
+                            "kind":"submit",
+                            "decisions":{"faction-06":decision}
+                        })
+                    } else {
+                        serde_json::json!({
+                            "kind":"upsert_decision",
+                            "subject_id":"faction-06",
+                            "decision":decision
+                        })
+                    }.to_string())
                 }
                 "cell_effect_verifier" => {
                     assert!(
@@ -3754,6 +4042,193 @@ mod tests {
         assert!(posture.contains("notify ward clerks"));
     }
 
+    struct CachingVerifierModel {
+        calls: AtomicUsize,
+        faction_seven_calls: AtomicUsize,
+    }
+
+    #[async_trait]
+    impl ModelPort for CachingVerifierModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            assert_eq!(request.stage, "cell_effect_verifier");
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            if request.lived_stream.contains("steady-seven") {
+                self.faction_seven_calls.fetch_add(1, Ordering::SeqCst);
+            }
+            let mismatch = request.lived_stream.contains("reverse-six");
+            Ok(serde_json::json!({
+                "verdicts":[{
+                    "action_index":0,
+                    "result":if mismatch { "mismatch" } else { "match" },
+                    "mismatch_kind":if mismatch { Some("effect_reversal") } else { None },
+                    "repair_guidance":if mismatch {
+                        Some("Preserve Faction Six's stated withholding rather than reversing it.")
+                    } else {
+                        None
+                    }
+                }]
+            })
+            .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "caching-verifier-fixture"
+        }
+    }
+
+    fn institution_decision(
+        subject_id: &str,
+        intended_effect: &str,
+        posture: &str,
+        state_reference: &str,
+    ) -> serde_json::Value {
+        serde_json::json!({"action":{
+            "subject_id":subject_id,
+            "intent":"state a bounded institutional course",
+            "intended_effect":intended_effect,
+            "priority":50,
+            "state_references":[state_reference],
+            "public_channels":["public bulletin"],
+            "effects":{"institution":{"posture":posture,"location_ids":["forum"]}}
+        }})
+    }
+
+    #[tokio::test]
+    async fn interpreter_workbench_reuses_unchanged_valid_effect_verification() {
+        let mut slice = fixture_cell_slice();
+        let mut second = slice.constituents[0].clone();
+        second.subject_id = "faction-07".into();
+        second.name = "Faction Seven".into();
+        second.permitted_state_references = BTreeSet::from(["institution:faction-07".into()]);
+        second.current_posture = Some("observing the count".into());
+        slice.constituents.push(second);
+        slice.decision_owner_ids.insert("faction-07".into());
+        slice.max_actions = 2;
+        let active_subject_ids = slice.decision_owner_ids.clone();
+        let model = Arc::new(CachingVerifierModel {
+            calls: AtomicUsize::new(0),
+            faction_seven_calls: AtomicUsize::new(0),
+        });
+        let mut workbench = CellInterpreterWorkbench {
+            model: model.clone(),
+            permit: Arc::new(AllowAllPermit),
+            interpreter_model: "flash".into(),
+            slice,
+            active_subject_ids,
+            lived_stream: "At location forum: Faction Six and Faction Seven.".into(),
+            persona_turn: "Faction Six withholds; Faction Seven publishes.".into(),
+            campaign_policy: "{}".into(),
+            draft: BTreeMap::new(),
+            repair_subject_ids: BTreeSet::new(),
+            accepted_verifier_bindings: BTreeSet::new(),
+        };
+        let context = ModelAgentToolContext {
+            source_receipt_ids: vec!["persona:one".into()],
+        };
+        let first = workbench
+            .invoke(
+                CellInterpreterAgentAction::Submit {
+                    decisions: BTreeMap::from([
+                        (
+                            "faction-06".into(),
+                            institution_decision(
+                                "faction-06",
+                                "reverse-six",
+                                "release immediately",
+                                "institution:faction-06",
+                            ),
+                        ),
+                        (
+                            "faction-07".into(),
+                            institution_decision(
+                                "faction-07",
+                                "steady-seven",
+                                "publish the verified count",
+                                "institution:faction-07",
+                            ),
+                        ),
+                    ]),
+                },
+                &context,
+            )
+            .await;
+        assert!(matches!(
+            first,
+            ModelAgentToolOutcome::Rejected {
+                finding: CellInterpreterFinding::EffectMismatch { .. },
+                ..
+            }
+        ));
+        assert_eq!(model.calls.load(Ordering::SeqCst), 2);
+        assert_eq!(model.faction_seven_calls.load(Ordering::SeqCst), 1);
+
+        let wholesale_resubmit = workbench
+            .invoke(
+                CellInterpreterAgentAction::Submit {
+                    decisions: BTreeMap::new(),
+                },
+                &context,
+            )
+            .await;
+        assert!(matches!(
+            wholesale_resubmit,
+            ModelAgentToolOutcome::Rejected {
+                finding: CellInterpreterFinding::SubmitRequiresEmptyDraft { .. },
+                ..
+            }
+        ));
+        let unrelated_repair = workbench
+            .invoke(
+                CellInterpreterAgentAction::UpsertDecision {
+                    subject_id: "faction-07".into(),
+                    decision: institution_decision(
+                        "faction-07",
+                        "rewrite-seven",
+                        "replace the already accepted course",
+                        "institution:faction-07",
+                    ),
+                },
+                &context,
+            )
+            .await;
+        assert!(matches!(
+            unrelated_repair,
+            ModelAgentToolOutcome::Rejected {
+                finding: CellInterpreterFinding::DecisionNotRepairable { .. },
+                ..
+            }
+        ));
+        assert_eq!(model.calls.load(Ordering::SeqCst), 2);
+
+        let second = workbench
+            .invoke(
+                CellInterpreterAgentAction::UpsertDecision {
+                    subject_id: "faction-06".into(),
+                    decision: institution_decision(
+                        "faction-06",
+                        "withhold-six",
+                        "withhold pending the verified count",
+                        "institution:faction-06",
+                    ),
+                },
+                &context,
+            )
+            .await;
+        assert!(matches!(
+            second,
+            ModelAgentToolOutcome::Accepted {
+                output: CellInterpreterAgentOutput::Appraisal(_),
+                ..
+            }
+        ));
+        assert_eq!(model.calls.load(Ordering::SeqCst), 3);
+        assert_eq!(
+            model.faction_seven_calls.load(Ordering::SeqCst),
+            1,
+            "the unchanged accepted action must not repay its semantic verifier"
+        );
+    }
+
     #[test]
     fn empty_cell_appraisal_requires_exact_attributed_inaction() {
         let mut slice = fixture_cell_slice();
@@ -3835,7 +4310,6 @@ mod tests {
 
         let error = validate_cell_appraisal(&slice, &appraisal).unwrap_err();
         assert!(error.to_string().contains("faction-07"));
-        assert!(cell_correction_guidance(&error).contains("Every projected perspective must end"));
 
         appraisal.inactions.push(crate::domain::CellInaction {
             subject_id: "faction-07".into(),
@@ -3846,32 +4320,8 @@ mod tests {
     }
 
     #[test]
-    fn duplicate_action_inaction_correction_preserves_the_chosen_attempt() {
-        let guidance = cell_correction_guidance(&anyhow!(
-            "subject refugees-east appears in both actions and inactions; retain exactly one of those decisions"
-        ));
-        assert!(guidance.contains("Remove its inaction entry"));
-        assert!(guidance.contains("Waiting for that attempt's result"));
-        assert!(!guidance.contains("rejected action is forbidden"));
-
-        let duplicate_action_guidance = cell_correction_guidance(&anyhow!(
-            "subject refugees-east has duplicate strategic actions; combine every chosen movement and activity means into one composed action"
-        ));
-        assert!(duplicate_action_guidance.contains("exactly one strategic choice"));
-        assert!(duplicate_action_guidance.contains("exact effects together"));
-
-        let semantic_guidance = cell_correction_guidance(&anyhow!(
-            "effect verifier rejected action 0 because its bounded posture ended mid-clause"
-        ));
-        assert!(semantic_guidance.contains("preserving every unaffected faithful effect"));
-        assert!(semantic_guidance.contains("complete clauses"));
-        assert!(!semantic_guidance.contains("forbidden unchanged"));
-    }
-
-    #[test]
     fn compact_cell_prompt_contract_is_valid_json() {
-        serde_json::from_str::<serde_json::Value>(CELL_APPRAISAL_OUTPUT_CONTRACT).unwrap();
-        assert!(CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"maxLength\":240"));
+        serde_json::from_str::<serde_json::Value>(CELL_INTERPRETER_AGENT_OUTPUT_CONTRACT).unwrap();
         let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
         constrain_cell_proposal_schema(
             &mut schema,
@@ -3886,10 +4336,16 @@ mod tests {
         assert!(schema.pointer("/properties/decisions").is_some());
         assert!(schema.pointer("/properties/actions").is_none());
         assert!(schema.pointer("/properties/inactions").is_none());
-        assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"institution_id\""));
-        assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"gestalt_id\""));
-        assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"actor_id\""));
-        assert!(!CELL_APPRAISAL_OUTPUT_CONTRACT.contains("\"member_id\""));
+        let agent_schema = cell_interpreter_agent_schema(&schema).unwrap();
+        let agent_schema_text = serde_json::to_string(&agent_schema).unwrap();
+        assert!(agent_schema_text.contains("upsert_decision"));
+        assert!(agent_schema_text.contains("inspect_draft"));
+        assert!(agent_schema_text.contains("\"maxLength\":240"));
+        assert!(
+            jsonschema::validator_for(&agent_schema)
+                .unwrap()
+                .is_valid(&serde_json::json!({"kind":"inspect_draft"}))
+        );
         assert_eq!(
             exact_constituent_effect_bundle_schema(&fixture_cell_slice().constituents[0])
                 .pointer("/properties/institution/anyOf/0/properties/posture/maxLength"),
@@ -4180,26 +4636,6 @@ mod tests {
     }
 
     #[test]
-    fn rejected_action_diagnostic_contains_only_the_selected_typed_candidates() {
-        let action = crate::domain::CellActionProposal {
-            subject_id: "member:reed".into(),
-            intent: "offer terms through Mira".into(),
-            intended_effect: "make the offer without leaving".into(),
-            priority: 80,
-            state_references: vec!["member:reed".into()],
-            public_channels: vec![],
-            effects: vec![StrategicCellEffect::MemberMigration {
-                destination_gestalt_id: "refugee-encampment".into(),
-            }],
-        };
-        let diagnostic = rejected_action_diagnostic(&[action], &[0]);
-        assert!(diagnostic.contains("member:reed"));
-        assert!(diagnostic.contains("member_migration"));
-        assert!(diagnostic.contains("refugee-encampment"));
-        assert_eq!(rejected_action_diagnostic(&[], &[4]), "[]");
-    }
-
-    #[test]
     fn effect_verifier_separates_direct_contact_from_publication_authority() {
         assert!(CELL_EFFECT_VERIFIER_INSTRUCTIONS.contains(
             "An exact activity_targets entry is sufficient authority to attempt direct communication"
@@ -4456,6 +4892,7 @@ mod tests {
                 "Each institution chooses its own public statement.",
                 "{}",
                 &actions,
+                &[],
             ),
         )
         .await
@@ -4953,10 +5390,32 @@ mod tests {
         assert!(error.to_string().contains("exact maximum is 460"));
     }
 
+    struct CausalFixtureModel {
+        request_sources: Mutex<Vec<(String, Vec<String>)>>,
+    }
+
+    #[async_trait]
+    impl ModelPort for CausalFixtureModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            self.request_sources
+                .lock()
+                .unwrap()
+                .push((request.stage.clone(), request.source_receipt_ids.clone()));
+            FixtureModel.run(request).await
+        }
+
+        fn provider(&self) -> &'static str {
+            "causal-fixture"
+        }
+    }
+
     #[tokio::test]
     async fn persona_receives_only_projected_stream() {
+        let model = Arc::new(CausalFixtureModel {
+            request_sources: Mutex::new(Vec::new()),
+        });
         let engine = PersonaProjectionEngine {
-            model: Arc::new(FixtureModel),
+            model: model.clone(),
             permit: Arc::new(AllowAllPermit),
             projector_model: "flash".into(),
             persona_model: "pro".into(),
@@ -5000,6 +5459,25 @@ mod tests {
         let result = engine.execute(slice).await.unwrap();
         assert_eq!(result.stage_receipts.len(), 3);
         assert_eq!(result.proposals.reaction_priority, 0);
+        let receipt_ids = result
+            .stage_receipts
+            .iter()
+            .map(|receipt| receipt.storage_key().to_owned())
+            .collect::<Vec<_>>();
+        let request_sources = model.request_sources.lock().unwrap();
+        let persona_sources = request_sources
+            .iter()
+            .find(|(stage, _)| stage == "persona")
+            .map(|(_, sources)| sources)
+            .unwrap();
+        let interpreter_sources = request_sources
+            .iter()
+            .find(|(stage, _)| stage == "interpreter")
+            .map(|(_, sources)| sources)
+            .unwrap();
+        assert!(persona_sources.contains(&receipt_ids[0]));
+        assert!(interpreter_sources.contains(&receipt_ids[0]));
+        assert!(interpreter_sources.contains(&receipt_ids[1]));
     }
 
     #[test]
@@ -5181,37 +5659,6 @@ mod tests {
             output.proposals.private_delta.identity_adoption.as_deref(),
             Some("Taren")
         );
-    }
-
-    #[test]
-    fn semantic_correction_restates_non_empty_effect_contract() {
-        let mut request = ModelStageRequest {
-            stage: "cell_interpreter".into(),
-            model: "flash".into(),
-            snapshot_binding: "campaign:one:revision:2".into(),
-            lived_stream: "original contract".into(),
-            output_schema: None,
-            source_receipt_ids: vec![],
-            temperature: Some(0.0),
-            max_output_tokens: Some(100),
-        };
-        append_cell_correction(
-            &mut request,
-            &anyhow::anyhow!("the typed effect was unsupported"),
-            r#"{"decisions":{"crowd":{"action":{"effects":{"gestalt_pressure":{"pressure_additions":[],"pressure_resolutions":[]}}}}}}"#,
-        );
-        assert!(
-            request
-                .lived_stream
-                .contains("one to four non-null exact effects")
-        );
-        assert!(
-            request
-                .lived_stream
-                .contains("preparation, investigation, request, or deliberation")
-        );
-        assert!(request.lived_stream.contains("is investigate, not prepare"));
-        assert!(request.lived_stream.contains("record attributed inaction"));
     }
 
     #[test]

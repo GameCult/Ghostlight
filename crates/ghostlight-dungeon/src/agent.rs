@@ -46,6 +46,13 @@ pub struct ModelAgentToolContext {
 }
 
 pub enum ModelAgentToolOutcome<Output, Finding> {
+    /// The typed action was applied to the tool's private workbench, but the
+    /// agent has not yet produced a terminal result. Canonical state remains
+    /// untouched; the observation describes the updated draft or next need.
+    Continue {
+        observation: Finding,
+        receipts: Vec<ModelStageReceipt>,
+    },
     Accepted {
         output: Output,
         receipts: Vec<ModelStageReceipt>,
@@ -87,7 +94,7 @@ pub async fn run_model_agent<Tool: ModelAgentTool>(
 
     let mut receipts = Vec::new();
     let mut transcript = String::new();
-    let mut last_finding = None;
+    let mut last_observation = None;
     for step in 0..spec.max_steps {
         let source_receipt_ids = causal_source_ids(&spec.source_receipt_ids, &receipts);
         let request = ModelStageRequest {
@@ -126,8 +133,13 @@ pub async fn run_model_agent<Tool: ModelAgentTool>(
                     "message":"agent returned no typed action",
                 });
                 mark_model_receipt_semantic_invalid(&mut stage.receipt, &finding);
-                transcript.push_str(&tool_observation(step, &serde_json::Value::Null, &finding));
-                last_finding = Some(finding);
+                transcript.push_str(&tool_observation(
+                    step,
+                    "rejected",
+                    &serde_json::Value::Null,
+                    &finding,
+                ));
+                last_observation = Some(finding);
                 receipts.push(stage.receipt);
                 continue;
             }
@@ -140,8 +152,8 @@ pub async fn run_model_agent<Tool: ModelAgentTool>(
                     "message":error.to_string(),
                 });
                 mark_model_receipt_semantic_invalid(&mut stage.receipt, &finding);
-                transcript.push_str(&tool_observation(step, &action_value, &finding));
-                last_finding = Some(finding);
+                transcript.push_str(&tool_observation(step, "rejected", &action_value, &finding));
+                last_observation = Some(finding);
                 receipts.push(stage.receipt);
                 continue;
             }
@@ -157,6 +169,33 @@ pub async fn run_model_agent<Tool: ModelAgentTool>(
             ),
         };
         match tool.invoke(action, &tool_context).await {
+            ModelAgentToolOutcome::Continue {
+                observation,
+                receipts: tool_receipts,
+            } => {
+                let observation = match serde_json::to_value(observation) {
+                    Ok(observation) => observation,
+                    Err(error) => {
+                        let message = format!(
+                            "model agent {} could not serialize its typed tool observation: {error}",
+                            spec.stage
+                        );
+                        mark_model_receipt_semantic_invalid(&mut stage.receipt, &message);
+                        receipts.push(stage.receipt);
+                        receipts.extend(tool_receipts);
+                        return Err(ModelAgentFailure { message, receipts });
+                    }
+                };
+                transcript.push_str(&tool_observation(
+                    step,
+                    "continued",
+                    &action_value,
+                    &observation,
+                ));
+                last_observation = Some(observation);
+                receipts.push(stage.receipt);
+                receipts.extend(tool_receipts);
+            }
             ModelAgentToolOutcome::Accepted {
                 output,
                 receipts: tool_receipts,
@@ -183,8 +222,8 @@ pub async fn run_model_agent<Tool: ModelAgentTool>(
                     }
                 };
                 mark_model_receipt_semantic_invalid(&mut stage.receipt, &finding);
-                transcript.push_str(&tool_observation(step, &action_value, &finding));
-                last_finding = Some(finding);
+                transcript.push_str(&tool_observation(step, "rejected", &action_value, &finding));
+                last_observation = Some(finding);
                 receipts.push(stage.receipt);
                 receipts.extend(tool_receipts);
             }
@@ -202,18 +241,21 @@ pub async fn run_model_agent<Tool: ModelAgentTool>(
 
     Err(ModelAgentFailure {
         message: format!(
-            "model agent {} exhausted {} semantic steps; final tool finding: {}",
+            "model agent {} exhausted {} semantic steps; final tool observation: {}",
             spec.stage,
             spec.max_steps,
-            last_finding
-                .map(|finding| finding.to_string())
+            last_observation
+                .map(|observation| observation.to_string())
                 .unwrap_or_else(|| "none".into()),
         ),
         receipts,
     })
 }
 
-fn causal_source_ids(base: &[String], receipts: &[ModelStageReceipt]) -> Vec<String> {
+/// Builds one deterministic causal ancestry set for every model stage. This is
+/// model/tool provenance only; callers must not reuse it as canonical world
+/// evidence.
+pub(crate) fn causal_source_ids(base: &[String], receipts: &[ModelStageReceipt]) -> Vec<String> {
     base.iter()
         .cloned()
         .chain(
@@ -228,14 +270,15 @@ fn causal_source_ids(base: &[String], receipts: &[ModelStageReceipt]) -> Vec<Str
 
 fn tool_observation(
     step: usize,
-    rejected_action: &serde_json::Value,
-    finding: &serde_json::Value,
+    status: &str,
+    action: &serde_json::Value,
+    observation: &serde_json::Value,
 ) -> String {
     format!(
-        "\n\nTOOL OBSERVATION AFTER AGENT STEP {}:\n{}\nPREVIOUS REJECTED ACTION:\n{}\nReturn the next complete typed tool action. Preserve frozen identity and useful valid work; change what the finding actually rejects.",
+        "\n\nTOOL OBSERVATION AFTER AGENT STEP {} ({status}):\n{}\nPREVIOUS TOOL ACTION:\n{}\nReturn the next complete typed tool action. Preserve frozen identity and useful valid draft work; change only what the observation actually rejects or requests.",
         step + 1,
-        serde_json::to_string(finding).unwrap_or_else(|_| "null".into()),
-        serde_json::to_string(rejected_action).unwrap_or_else(|_| "null".into()),
+        serde_json::to_string(observation).unwrap_or_else(|_| "null".into()),
+        serde_json::to_string(action).unwrap_or_else(|_| "null".into()),
     )
 }
 
@@ -257,6 +300,7 @@ mod tests {
     #[derive(Clone, Debug, Serialize)]
     #[serde(tag = "kind", rename_all = "snake_case")]
     enum ExactFinding {
+        DraftStored { value: String },
         WrongValue { received: String },
     }
 
@@ -301,6 +345,13 @@ mod tests {
             if action.value == "accepted" {
                 ModelAgentToolOutcome::Accepted {
                     output: action.value,
+                    receipts: Vec::new(),
+                }
+            } else if action.value == "drafted" {
+                ModelAgentToolOutcome::Continue {
+                    observation: ExactFinding::DraftStored {
+                        value: action.value,
+                    },
                     receipts: Vec::new(),
                 }
             } else {
@@ -376,10 +427,45 @@ mod tests {
         );
         let requests = model.requests.lock().unwrap();
         assert!(requests[1].lived_stream.contains("wrong_value"));
+        assert!(requests[1].lived_stream.contains("PREVIOUS TOOL ACTION"));
+    }
+
+    #[tokio::test]
+    async fn successful_nonterminal_tool_action_preserves_draft_progress() {
+        let model = ScriptedModel {
+            outputs: Mutex::new(vec![
+                r#"{"value":"drafted"}"#.into(),
+                r#"{"value":"accepted"}"#.into(),
+            ]),
+            requests: Mutex::new(Vec::new()),
+        };
+        let spec = ModelAgentSpec {
+            stage: "fixture_agent".into(),
+            model: MODEL_BALANCED.into(),
+            snapshot_binding: "snapshot:1".into(),
+            instructions: "Use the tool.".into(),
+            action_schema: serde_json::to_value(schema_for!(CandidateAction)).unwrap(),
+            source_receipt_ids: vec!["source:one".into()],
+            temperature: Some(0.0),
+            max_output_tokens: Some(128),
+            max_steps: 2,
+        };
+
+        let run = run_model_agent(&model, &spec, &mut ExactTool)
+            .await
+            .unwrap();
+
+        assert_eq!(run.output, "accepted");
+        assert_eq!(run.receipts.len(), 2);
+        assert_eq!(run.receipts[0].validation_result, "valid");
+        assert_eq!(run.receipts[1].validation_result, "valid");
+        let requests = model.requests.lock().unwrap();
+        assert!(requests[1].lived_stream.contains("continued"));
+        assert!(requests[1].lived_stream.contains("draft_stored"));
         assert!(
             requests[1]
-                .lived_stream
-                .contains("PREVIOUS REJECTED ACTION")
+                .source_receipt_ids
+                .contains(&run.receipts[0].storage_key().to_owned())
         );
     }
 
