@@ -4654,6 +4654,36 @@ pub(crate) fn civic_verifier_binding(campaign: &Campaign, candidate_digest: &str
     )
 }
 
+pub(crate) fn validate_civic_admission_receipts(
+    campaign: &Campaign,
+    expansion: &crate::domain::RegionExpansion,
+    model_stage_receipts: &[crate::model::ModelStageReceipt],
+) -> Result<()> {
+    let Some(system) = &expansion.civic_system else {
+        return Ok(());
+    };
+    let candidate_digest = civic_candidate_digest(expansion)?;
+    let expected_binding = civic_verifier_binding(campaign, &candidate_digest);
+    let receipt = model_stage_receipts
+        .iter()
+        .find(|receipt| receipt.storage_key() == system.semantic_verification_receipt_id)
+        .ok_or_else(|| anyhow!("civic admission lacks its exact semantic verifier receipt"))?;
+    let mut rebound = receipt.clone();
+    rebound.rebind_snapshot(receipt.snapshot_binding.clone());
+    if receipt.schema != "ghostlight.persona_stage_receipt.v1"
+        || receipt.stage != "destination_civic_verification"
+        || receipt.validation_result != "valid"
+        || receipt.local_validation_error.is_some()
+        || receipt.snapshot_binding != expected_binding
+        || rebound.storage_key() != receipt.storage_key()
+    {
+        return Err(anyhow!(
+            "civic admission semantic verifier receipt is invalid or candidate-mismatched"
+        ));
+    }
+    Ok(())
+}
+
 fn destination_fact_findings(
     campaign: &Campaign,
     facts: &[WorldFact],

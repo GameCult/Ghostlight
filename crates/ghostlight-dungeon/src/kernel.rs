@@ -75,6 +75,11 @@ pub enum CommandResult {
 
 enum KernelInput {
     World(WorldCommand),
+    Elaboration {
+        finalized: crate::elaboration::FinalizedWorldElaboration,
+        evidence_receipts: Vec<VaultEvidenceReceipt>,
+        canon_candidates: Vec<CanonCandidate>,
+    },
     Mutation {
         authority: crate::transition::MutationAuthorityEnvelope,
         batch: crate::transition::WorldMutationBatch,
@@ -111,6 +116,17 @@ impl WorldKernel {
             while let Some(request) = rx.recv().await {
                 let result = match request.input {
                     KernelInput::World(command) => execute(&store, &mut assessments, command),
+                    KernelInput::Elaboration {
+                        finalized,
+                        evidence_receipts,
+                        canon_candidates,
+                    } => execute_finalized_elaboration(
+                        &store,
+                        &mut assessments,
+                        finalized,
+                        evidence_receipts,
+                        canon_candidates,
+                    ),
                     KernelInput::Mutation { authority, batch } => {
                         execute_mutation_batch(&store, authority, batch)
                     }
@@ -151,6 +167,57 @@ impl WorldKernel {
             .await
             .map_err(|_| KernelError::Invalid("kernel stopped".into()))?
     }
+
+    pub async fn commit_elaboration(
+        &self,
+        finalized: crate::elaboration::FinalizedWorldElaboration,
+        evidence_receipts: Vec<VaultEvidenceReceipt>,
+        canon_candidates: Vec<CanonCandidate>,
+    ) -> Result<CommandResult, KernelError> {
+        let (reply, receive) = oneshot::channel();
+        self.tx
+            .send(Request {
+                input: KernelInput::Elaboration {
+                    finalized,
+                    evidence_receipts,
+                    canon_candidates,
+                },
+                reply,
+            })
+            .await
+            .map_err(|_| KernelError::Invalid("kernel stopped".into()))?;
+        receive
+            .await
+            .map_err(|_| KernelError::Invalid("kernel stopped".into()))?
+    }
+}
+
+fn execute_finalized_elaboration(
+    store: &CampaignStore,
+    assessments: &mut BTreeMap<String, ActionAssessment>,
+    finalized: crate::elaboration::FinalizedWorldElaboration,
+    evidence_receipts: Vec<VaultEvidenceReceipt>,
+    canon_candidates: Vec<CanonCandidate>,
+) -> Result<CommandResult, KernelError> {
+    let campaign_id = single_campaign_id(store)?;
+    let (_, campaign): (_, Campaign) = store
+        .load("campaign.v1", &campaign_id)
+        .map_err(persist)?
+        .ok_or(KernelError::NotFound)?;
+    let (expected_revision, elaboration, semantic_verifier_receipt) = finalized
+        .into_kernel_parts(&campaign)
+        .map_err(|error| KernelError::Invalid(error.to_string()))?;
+    execute(
+        store,
+        assessments,
+        WorldCommand::ElaborateLocality {
+            expected_revision,
+            elaboration,
+            evidence_receipts,
+            canon_candidates,
+            model_stage_receipts: vec![semantic_verifier_receipt],
+        },
+    )
 }
 
 fn execute_mutation_batch(
@@ -1415,7 +1482,12 @@ fn execute(
             validate_region_admission_evidence(&expansion, &evidence_receipts, &canon_candidates)?;
             crate::compiler::validate_new_destination_expansion(&campaign, &expansion)
                 .map_err(|error| KernelError::Invalid(error.to_string()))?;
-            validate_civic_admission_receipt(&campaign, &expansion, &model_stage_receipts)?;
+            crate::compiler::validate_civic_admission_receipts(
+                &campaign,
+                &expansion,
+                &model_stage_receipts,
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
             let transition = crate::legacy_transition::lower_region_expansion(
                 &campaign,
                 &expansion,
@@ -1460,11 +1532,12 @@ fn execute(
             )?;
             crate::compiler::validate_locality_elaboration(&campaign, &elaboration)
                 .map_err(|error| KernelError::Invalid(error.to_string()))?;
-            validate_civic_admission_receipt(
+            crate::compiler::validate_civic_admission_receipts(
                 &campaign,
                 &elaboration.expansion,
                 &model_stage_receipts,
-            )?;
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
             let transition = crate::legacy_transition::lower_region_expansion(
                 &campaign,
                 &elaboration.expansion,
@@ -2451,39 +2524,6 @@ fn validate_region_admission_evidence(
     {
         return Err(KernelError::Invalid(
             "region admission evidence receipts were not supplied".into(),
-        ));
-    }
-    Ok(())
-}
-
-fn validate_civic_admission_receipt(
-    campaign: &Campaign,
-    expansion: &RegionExpansion,
-    model_stage_receipts: &[crate::model::ModelStageReceipt],
-) -> Result<(), KernelError> {
-    let Some(system) = &expansion.civic_system else {
-        return Ok(());
-    };
-    let candidate_digest = crate::compiler::civic_candidate_digest(expansion)
-        .map_err(|error| KernelError::Invalid(error.to_string()))?;
-    let expected_binding = crate::compiler::civic_verifier_binding(campaign, &candidate_digest);
-    let receipt = model_stage_receipts
-        .iter()
-        .find(|receipt| receipt.storage_key() == system.semantic_verification_receipt_id)
-        .ok_or_else(|| {
-            KernelError::Invalid("civic admission lacks its exact semantic verifier receipt".into())
-        })?;
-    let mut rebound = receipt.clone();
-    rebound.rebind_snapshot(receipt.snapshot_binding.clone());
-    if receipt.schema != "ghostlight.persona_stage_receipt.v1"
-        || receipt.stage != "destination_civic_verification"
-        || receipt.validation_result != "valid"
-        || receipt.local_validation_error.is_some()
-        || receipt.snapshot_binding != expected_binding
-        || rebound.storage_key() != receipt.storage_key()
-    {
-        return Err(KernelError::Invalid(
-            "civic admission semantic verifier receipt is invalid or candidate-mismatched".into(),
         ));
     }
     Ok(())
@@ -4721,6 +4761,179 @@ pub(crate) mod tests {
             .unwrap()
             .semantic_verification_receipt_id = receipt.storage_key().to_owned();
         receipt
+    }
+
+    fn titled_operations_for(
+        elaboration: &LocalityElaboration,
+    ) -> Vec<(
+        crate::elaboration::ElaboratorTitle,
+        crate::elaboration::WorldElaborationOperation,
+    )> {
+        use crate::elaboration::{ElaboratorTitle::*, WorldElaborationOperation::*};
+        let expansion = &elaboration.expansion;
+        let mut operations = Vec::new();
+        for location in &expansion.locations {
+            operations.push((
+                Patina,
+                AddPlace {
+                    id: location.id.clone(),
+                    name: location.name.clone(),
+                    container_id: location.container_id.clone(),
+                    persistent_features: location.persistent_features.clone(),
+                },
+            ));
+            operations.extend(location.routes.iter().map(|(route_id, route)| {
+                (
+                    Ledger,
+                    AddRoute {
+                        origin_location_id: location.id.clone(),
+                        route_id: route_id.clone(),
+                        route: route.clone(),
+                    },
+                )
+            }));
+        }
+        operations.extend(expansion.origin_routes.iter().map(|(route_id, route)| {
+            (
+                Ledger,
+                AddRoute {
+                    origin_location_id: expansion.origin_location_id.clone(),
+                    route_id: route_id.clone(),
+                    route: route.clone(),
+                },
+            )
+        }));
+        operations.extend(
+            expansion
+                .facts
+                .iter()
+                .cloned()
+                .map(|fact| (Charter, AddFact { fact })),
+        );
+        operations.extend(
+            expansion
+                .populations
+                .iter()
+                .cloned()
+                .zip(expansion.population_profiles.iter().cloned())
+                .map(|(population, profile)| {
+                    (
+                        Hearth,
+                        AddPopulation {
+                            population,
+                            profile,
+                        },
+                    )
+                }),
+        );
+        operations.extend(
+            expansion
+                .institutions
+                .iter()
+                .cloned()
+                .zip(expansion.institution_profiles.iter().cloned())
+                .map(|(institution, profile)| {
+                    (
+                        Charter,
+                        AddInstitution {
+                            institution,
+                            profile,
+                        },
+                    )
+                }),
+        );
+        operations.extend(
+            expansion
+                .migration_relations
+                .iter()
+                .cloned()
+                .map(|relation| (Hearth, AddMigrationRelation { relation })),
+        );
+        operations.extend(
+            expansion
+                .local_relations
+                .iter()
+                .cloned()
+                .map(|relation| (Tangle, AddLocalRelation { relation })),
+        );
+        if let Some(system) = &expansion.civic_system {
+            operations.push((
+                Charter,
+                SetCivicSystem {
+                    system: system.clone(),
+                },
+            ));
+        }
+        operations
+    }
+
+    struct FixtureWorldElaborationSubAgent {
+        operations: BTreeMap<
+            crate::elaboration::ElaboratorTitle,
+            Vec<crate::elaboration::WorldElaborationOperation>,
+        >,
+    }
+
+    #[async_trait::async_trait]
+    impl crate::elaboration::ElaborationSubAgentPort<crate::elaboration::WorldElaborationProposal>
+        for FixtureWorldElaborationSubAgent
+    {
+        async fn invoke(
+            &self,
+            invocation: crate::elaboration::ElaborationSubAgentInvocation,
+        ) -> anyhow::Result<crate::elaboration::WorldElaborationProposal> {
+            let index = invocation.dispatch.title_dispatch_count as usize - 1;
+            let operation = self
+                .operations
+                .get(&invocation.dispatch.title)
+                .and_then(|operations| operations.get(index))
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("fixture elaborator received an extra dispatch"))?;
+            Ok(crate::elaboration::WorldElaborationProposal {
+                schema: "ghostlight.world_elaboration_proposal.v1".into(),
+                operation,
+            })
+        }
+    }
+
+    async fn dispatch_titled_operations(
+        campaign: &Campaign,
+        target_location_id: &str,
+        operations: Vec<(
+            crate::elaboration::ElaboratorTitle,
+            crate::elaboration::WorldElaborationOperation,
+        )>,
+    ) -> crate::elaboration::ElaborationWaveRun<crate::elaboration::WorldElaborationProposal> {
+        use crate::elaboration::*;
+        let mut by_title = BTreeMap::<ElaboratorTitle, Vec<WorldElaborationOperation>>::new();
+        for (title, operation) in operations {
+            by_title.entry(title).or_default().push(operation);
+        }
+        let profile = WorldElaborationProfile {
+            schema: "ghostlight.world_elaboration_profile.v1".into(),
+            controls: by_title
+                .iter()
+                .map(|(title, operations)| ElaboratorControl {
+                    title: *title,
+                    weight: operations.len() as u16,
+                })
+                .collect(),
+        };
+        let invocation_budget = by_title.values().map(Vec::len).sum::<usize>() as u32;
+        let eligible_titles = by_title.keys().copied().collect::<BTreeSet<_>>();
+        let mut scheduler = ElaborationScheduler::new(&profile).unwrap();
+        dispatch_elaboration_wave(
+            &mut scheduler,
+            world_elaboration_wave_binding(campaign, target_location_id).unwrap(),
+            &eligible_titles,
+            invocation_budget,
+            4,
+            std::sync::Arc::new(FixtureWorldElaborationSubAgent {
+                operations: by_title,
+            }),
+        )
+        .await
+        .unwrap()
     }
 
     #[tokio::test]
@@ -7812,6 +8025,166 @@ pub(crate) mod tests {
         let resident = &individuated.actors["member:iren-vale"];
         assert!(resident.knowledge.contains(&selection));
         assert!(resident.memories[0].contains("Oren Vale"));
+    }
+
+    #[tokio::test]
+    async fn elaboration_admission_keeps_the_first_writer_and_exposes_the_conflict() {
+        use crate::elaboration::{
+            ElaboratorTitle, WorldElaborationOperation, admit_world_elaboration_wave,
+        };
+        let seed = campaign();
+        let first = WorldElaborationOperation::AddPlace {
+            id: "north-gate".into(),
+            name: "Northern Gate".into(),
+            container_id: Some("room".into()),
+            persistent_features: vec!["A duck statue locals call Harold".into()],
+        };
+        let second = WorldElaborationOperation::AddPlace {
+            id: "north-gate".into(),
+            name: "North Tollhouse".into(),
+            container_id: Some("room".into()),
+            persistent_features: vec!["A toll bell".into()],
+        };
+        let run = dispatch_titled_operations(
+            &seed,
+            "room",
+            vec![
+                (ElaboratorTitle::Patina, first),
+                (ElaboratorTitle::Ledger, second),
+            ],
+        )
+        .await;
+
+        let admission = admit_world_elaboration_wave(&seed, "room", run).unwrap();
+
+        assert_eq!(admission.accepted_operations().len(), 1);
+        assert_eq!(admission.rejections().len(), 1);
+        assert_eq!(
+            admission.rejections()[0].kind,
+            crate::elaboration::WorldElaborationRejectionKind::WriteConflict
+        );
+        assert_eq!(
+            admission.rejections()[0].conflicting_dispatch_ordinal,
+            Some(1)
+        );
+        assert!(admission.candidate_diagnostic().is_some());
+    }
+
+    #[tokio::test]
+    async fn titled_patina_detail_reaches_canonical_state_only_through_kernel_lowering() {
+        use crate::elaboration::{admit_world_elaboration_wave, finalize_world_elaboration};
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let seed = campaign();
+        let mut expected = civic_locality_elaboration();
+        expected.expansion.locations[0]
+            .persistent_features
+            .push("A weathered bronze duck statue locals call Harold".into());
+        let run = dispatch_titled_operations(&seed, "room", titled_operations_for(&expected)).await;
+        let admission = admit_world_elaboration_wave(&seed, "room", run).unwrap();
+        assert!(admission.rejections().is_empty());
+        assert_eq!(admission.candidate(), Some(&expected));
+        assert!(admission.accepted_operations().iter().any(|accepted| {
+            accepted.dispatch.title == crate::elaboration::ElaboratorTitle::Patina
+                && matches!(
+                    &accepted.operation,
+                    crate::elaboration::WorldElaborationOperation::AddPlace {
+                        persistent_features,
+                        ..
+                    } if persistent_features.iter().any(|feature| feature.contains("Harold"))
+                )
+        }));
+        let mut verifier_candidate = expected.expansion.clone();
+        let verifier_receipt = civic_verifier_receipt(&seed, &mut verifier_candidate);
+        let finalized = finalize_world_elaboration(&seed, admission, verifier_receipt).unwrap();
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed,
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+
+        let result = kernel
+            .commit_elaboration(finalized, vec![], vec![])
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, receipt } = result else {
+            panic!("expected committed titled elaboration")
+        };
+
+        assert_eq!(receipt.command_kind, "elaborate_locality");
+        assert!(
+            campaign.locations["civic-quarter"]
+                .persistent_features
+                .iter()
+                .any(|feature| feature.contains("Harold"))
+        );
+        assert_eq!(store.keys("world_mutation_batch.v1").unwrap().len(), 1);
+        let batch = store
+            .load_all::<crate::transition::WorldMutationBatch>("world_mutation_batch.v1")
+            .unwrap()
+            .pop()
+            .unwrap();
+        assert!(batch.mutations.iter().any(|permitted| {
+            matches!(
+                &permitted.mutation,
+                crate::transition::WorldMutation::AdmitEntity {
+                    initial_profile: Some(crate::transition::AdmittedEntityProfile::Place {
+                        persistent_features,
+                        ..
+                    }),
+                    ..
+                } if persistent_features.iter().any(|feature| feature.contains("Harold"))
+            )
+        }));
+    }
+
+    #[tokio::test]
+    async fn stale_finalized_elaboration_cannot_reach_the_kernel_writer() {
+        use crate::elaboration::{admit_world_elaboration_wave, finalize_world_elaboration};
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let seed = campaign();
+        let expected = civic_locality_elaboration();
+        let run = dispatch_titled_operations(&seed, "room", titled_operations_for(&expected)).await;
+        let admission = admit_world_elaboration_wave(&seed, "room", run).unwrap();
+        let mut verifier_candidate = expected.expansion.clone();
+        let verifier_receipt = civic_verifier_receipt(&seed, &mut verifier_candidate);
+        let finalized = finalize_world_elaboration(&seed, admission, verifier_receipt).unwrap();
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        kernel
+            .command(WorldCommand::Wait {
+                expected_revision: 0,
+                minutes: 1,
+            })
+            .await
+            .unwrap();
+
+        let error = kernel
+            .commit_elaboration(finalized, vec![], vec![])
+            .await
+            .unwrap_err();
+
+        assert!(error.to_string().contains("stale"));
+        let stored = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(stored.revision, 1);
+        assert_eq!(stored.locations.len(), 1);
+        assert_eq!(store.keys("world_mutation_batch.v1").unwrap().len(), 1);
     }
 
     #[tokio::test]

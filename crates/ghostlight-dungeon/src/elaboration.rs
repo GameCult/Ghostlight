@@ -4,6 +4,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
+use uuid::Uuid;
 
 pub const MAX_ELABORATOR_WEIGHT: u16 = 100;
 
@@ -259,9 +260,23 @@ pub struct ElaborationInvocation<Proposal> {
 
 #[derive(Debug)]
 pub struct ElaborationWaveRun<Proposal> {
-    pub wave: ElaborationWaveBinding,
-    pub schedule: ElaborationScheduleReceipt,
-    pub invocations: Vec<ElaborationInvocation<Proposal>>,
+    wave: ElaborationWaveBinding,
+    schedule: ElaborationScheduleReceipt,
+    invocations: Vec<ElaborationInvocation<Proposal>>,
+}
+
+impl<Proposal> ElaborationWaveRun<Proposal> {
+    pub fn wave(&self) -> &ElaborationWaveBinding {
+        &self.wave
+    }
+
+    pub fn schedule(&self) -> &ElaborationScheduleReceipt {
+        &self.schedule
+    }
+
+    pub fn invocations(&self) -> &[ElaborationInvocation<Proposal>] {
+        &self.invocations
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -527,6 +542,723 @@ where
         schedule,
         invocations,
     })
+}
+
+/// One additive world operation proposed by one titled elaborator. These are
+/// deliberately compiler inputs, not kernel commands or mutation permits.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum WorldElaborationOperation {
+    AddPlace {
+        id: String,
+        name: String,
+        container_id: Option<String>,
+        #[serde(default)]
+        persistent_features: Vec<String>,
+    },
+    AddRoute {
+        origin_location_id: String,
+        route_id: String,
+        route: crate::domain::Route,
+    },
+    AddFact {
+        fact: crate::domain::WorldFact,
+    },
+    AddPopulation {
+        population: crate::domain::GestaltPersonaState,
+        profile: crate::domain::AgencyProfile,
+    },
+    AddInstitution {
+        institution: crate::domain::InstitutionState,
+        profile: crate::domain::AgencyProfile,
+    },
+    AddLocalRelation {
+        relation: crate::domain::AgencyRelation,
+    },
+    AddMigrationRelation {
+        relation: crate::domain::AgencyRelation,
+    },
+    SetCivicSystem {
+        system: crate::domain::CivicSystemManifest,
+    },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct WorldElaborationProposal {
+    pub schema: String,
+    pub operation: WorldElaborationOperation,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct AdmittedWorldElaborationOperation {
+    pub dispatch: ElaborationDispatch,
+    pub operation: WorldElaborationOperation,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum WorldElaborationRejectionKind {
+    InvalidProposal,
+    WriteConflict,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct WorldElaborationRejection {
+    pub dispatch: ElaborationDispatch,
+    pub proposal: WorldElaborationProposal,
+    pub kind: WorldElaborationRejectionKind,
+    pub conflicting_dispatch_ordinal: Option<u64>,
+    pub diagnostic: String,
+}
+
+/// Deterministic result of admitting one successful parallel elaboration wave.
+/// The candidate remains non-canonical and carries an empty civic verifier
+/// binding until an independent semantic verifier finalizes it.
+#[derive(Clone, Debug, Serialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct WorldElaborationAdmission {
+    schema: String,
+    wave: ElaborationWaveBinding,
+    campaign_id: Uuid,
+    expected_revision: u64,
+    target_location_id: String,
+    schedule: ElaborationScheduleReceipt,
+    accepted_operations: Vec<AdmittedWorldElaborationOperation>,
+    rejections: Vec<WorldElaborationRejection>,
+    candidate: Option<crate::domain::LocalityElaboration>,
+    candidate_diagnostic: Option<String>,
+    digest: String,
+}
+
+/// The only elaboration value accepted by `WorldKernel::commit_elaboration`.
+/// It binds the immutable admission result to an independently generated
+/// semantic-verifier receipt without letting that verifier rewrite the draft.
+#[derive(Clone, Debug, Serialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct FinalizedWorldElaboration {
+    schema: String,
+    admission: WorldElaborationAdmission,
+    semantic_verifier_receipt: crate::model::ModelStageReceipt,
+    digest: String,
+}
+
+pub fn world_elaboration_wave_binding(
+    campaign: &crate::domain::Campaign,
+    target_location_id: &str,
+) -> Result<ElaborationWaveBinding> {
+    if !campaign.locations.contains_key(target_location_id) {
+        return Err(anyhow!("world elaboration target location is unknown"));
+    }
+    Ok(ElaborationWaveBinding {
+        schema: "ghostlight.elaboration_wave_binding.v1".into(),
+        snapshot_binding: crate::legacy_transition::digest_serializable(&(
+            "ghostlight.world_elaboration_snapshot.v1",
+            campaign.id,
+            campaign.revision,
+            target_location_id,
+        ))?,
+    })
+}
+
+/// Deterministically validates, conflict-selects, and merges every proposal in
+/// a successful wave. First writer in scheduler dispatch order owns a write
+/// claim; later colliding proposals are retained as exact rejections.
+pub fn admit_world_elaboration_wave(
+    campaign: &crate::domain::Campaign,
+    target_location_id: &str,
+    run: ElaborationWaveRun<WorldElaborationProposal>,
+) -> Result<WorldElaborationAdmission> {
+    let expected_wave = world_elaboration_wave_binding(campaign, target_location_id)?;
+    if run.wave != expected_wave {
+        return Err(anyhow!(
+            "world elaboration wave does not bind the current target snapshot"
+        ));
+    }
+    validate_successful_wave_run(&run)?;
+    let mut invocations = run.invocations;
+    invocations.sort_by_key(|invocation| invocation.dispatch.ordinal);
+    if invocations
+        .iter()
+        .zip(run.schedule.dispatches.iter())
+        .any(|(invocation, dispatch)| {
+            invocation.wave != run.wave || invocation.dispatch != *dispatch
+        })
+    {
+        return Err(anyhow!(
+            "world elaboration invocation provenance does not match its schedule"
+        ));
+    }
+
+    let mut claim_owners = BTreeMap::<String, u64>::new();
+    let mut accepted_operations = Vec::new();
+    let mut rejections = Vec::new();
+    for invocation in invocations {
+        let proposal = invocation.proposal;
+        let claims = if proposal.schema == "ghostlight.world_elaboration_proposal.v1" {
+            operation_claims(&proposal.operation)
+        } else {
+            Err(anyhow!("world elaboration proposal schema is unsupported"))
+        };
+        let claims = match claims {
+            Ok(claims) => claims,
+            Err(error) => {
+                rejections.push(WorldElaborationRejection {
+                    dispatch: invocation.dispatch,
+                    proposal,
+                    kind: WorldElaborationRejectionKind::InvalidProposal,
+                    conflicting_dispatch_ordinal: None,
+                    diagnostic: bounded_diagnostic(error.to_string()),
+                });
+                continue;
+            }
+        };
+        if let Some(conflicting_dispatch_ordinal) = claims
+            .iter()
+            .filter_map(|claim| claim_owners.get(claim).copied())
+            .min()
+        {
+            rejections.push(WorldElaborationRejection {
+                dispatch: invocation.dispatch,
+                proposal,
+                kind: WorldElaborationRejectionKind::WriteConflict,
+                conflicting_dispatch_ordinal: Some(conflicting_dispatch_ordinal),
+                diagnostic: format!(
+                    "world elaboration write conflicts with dispatch {conflicting_dispatch_ordinal}"
+                ),
+            });
+            continue;
+        }
+        for claim in claims {
+            claim_owners.insert(claim, invocation.dispatch.ordinal);
+        }
+        accepted_operations.push(AdmittedWorldElaborationOperation {
+            dispatch: invocation.dispatch,
+            operation: proposal.operation,
+        });
+    }
+
+    let (candidate, candidate_diagnostic) =
+        candidate_from_operations(campaign, target_location_id, &accepted_operations);
+    let mut admission = WorldElaborationAdmission {
+        schema: "ghostlight.world_elaboration_admission.v1".into(),
+        wave: run.wave,
+        campaign_id: campaign.id,
+        expected_revision: campaign.revision,
+        target_location_id: target_location_id.into(),
+        schedule: run.schedule,
+        accepted_operations,
+        rejections,
+        candidate,
+        candidate_diagnostic,
+        digest: String::new(),
+    };
+    admission.digest = world_elaboration_admission_digest(&admission)?;
+    Ok(admission)
+}
+
+fn validate_successful_wave_run<Proposal>(run: &ElaborationWaveRun<Proposal>) -> Result<()> {
+    let schedule = &run.schedule;
+    let recomputed_dispatch_counts = schedule.dispatches.iter().fold(
+        BTreeMap::<ElaboratorTitle, u32>::new(),
+        |mut counts, dispatch| {
+            *counts.entry(dispatch.title).or_default() += 1;
+            counts
+        },
+    );
+    if schedule.schema != "ghostlight.elaboration_schedule_receipt.v1"
+        || schedule.final_state.schema != "ghostlight.elaboration_dispatch_state.v1"
+        || schedule.final_state.profile_digest.trim().is_empty()
+        || run.invocations.len() != schedule.dispatches.len()
+        || schedule.requested_invocations
+            != schedule.dispatches.len() as u32 + schedule.unused_invocations
+        || schedule.unused_invocations != schedule.unused_counts.values().copied().sum::<u32>()
+        || schedule.dispatch_counts != recomputed_dispatch_counts
+        || schedule
+            .dispatches
+            .iter()
+            .any(|dispatch| !schedule.eligible_titles.contains(&dispatch.title))
+    {
+        return Err(anyhow!(
+            "world elaboration schedule receipt is not internally coherent"
+        ));
+    }
+    let initial_budget_slots = schedule
+        .final_state
+        .total_budget_slots
+        .checked_sub(u64::from(schedule.requested_invocations))
+        .ok_or_else(|| anyhow!("world elaboration schedule budget regressed"))?;
+    let initial_dispatches = schedule
+        .final_state
+        .total_dispatches
+        .checked_sub(schedule.dispatches.len() as u64)
+        .ok_or_else(|| anyhow!("world elaboration dispatch count regressed"))?;
+    let mut seen_budget_ordinals = BTreeSet::new();
+    let mut next_title_counts = BTreeMap::new();
+    for (index, dispatch) in schedule.dispatches.iter().enumerate() {
+        let expected_ordinal = initial_dispatches + index as u64 + 1;
+        let final_title_count = schedule
+            .final_state
+            .dispatch_counts
+            .get(&dispatch.title)
+            .copied()
+            .unwrap_or_default();
+        let wave_title_count = u64::from(
+            schedule
+                .dispatch_counts
+                .get(&dispatch.title)
+                .copied()
+                .unwrap_or_default(),
+        );
+        let initial_title_count = final_title_count
+            .checked_sub(wave_title_count)
+            .ok_or_else(|| anyhow!("world elaboration title dispatch count regressed"))?;
+        let expected_title_count = next_title_counts
+            .entry(dispatch.title)
+            .and_modify(|count| *count += 1)
+            .or_insert(initial_title_count + 1);
+        if dispatch.schema != "ghostlight.elaboration_dispatch.v1"
+            || dispatch.ordinal != expected_ordinal
+            || dispatch.title_dispatch_count != *expected_title_count
+            || dispatch.title_weight == 0
+            || dispatch.total_enabled_weight == 0
+            || dispatch.budget_ordinal <= initial_budget_slots
+            || dispatch.budget_ordinal > schedule.final_state.total_budget_slots
+            || !seen_budget_ordinals.insert(dispatch.budget_ordinal)
+        {
+            return Err(anyhow!(
+                "world elaboration dispatch provenance is not derived from its final scheduler state"
+            ));
+        }
+        let expected_share = u32::from(dispatch.title_weight).saturating_mul(1_000_000)
+            / dispatch.total_enabled_weight;
+        if dispatch.requested_share_millionths != expected_share {
+            return Err(anyhow!(
+                "world elaboration dispatch share is not derived from its configured weight"
+            ));
+        }
+    }
+    if next_title_counts.into_iter().any(|(title, count)| {
+        schedule.final_state.dispatch_counts.get(&title).copied() != Some(count)
+    }) {
+        return Err(anyhow!(
+            "world elaboration title dispatch totals do not reach final scheduler state"
+        ));
+    }
+    Ok(())
+}
+
+pub fn finalize_world_elaboration(
+    campaign: &crate::domain::Campaign,
+    admission: WorldElaborationAdmission,
+    semantic_verifier_receipt: crate::model::ModelStageReceipt,
+) -> Result<FinalizedWorldElaboration> {
+    let mut elaboration = admission.valid_candidate(campaign)?;
+    elaboration
+        .expansion
+        .civic_system
+        .as_mut()
+        .expect("valid locality elaboration has a civic system")
+        .semantic_verification_receipt_id = semantic_verifier_receipt.storage_key().into();
+    crate::compiler::validate_civic_admission_receipts(
+        campaign,
+        &elaboration.expansion,
+        std::slice::from_ref(&semantic_verifier_receipt),
+    )?;
+    let mut finalized = FinalizedWorldElaboration {
+        schema: "ghostlight.finalized_world_elaboration.v1".into(),
+        admission,
+        semantic_verifier_receipt,
+        digest: String::new(),
+    };
+    finalized.digest = finalized_world_elaboration_digest(&finalized)?;
+    Ok(finalized)
+}
+
+impl WorldElaborationAdmission {
+    pub fn wave(&self) -> &ElaborationWaveBinding {
+        &self.wave
+    }
+
+    pub fn schedule(&self) -> &ElaborationScheduleReceipt {
+        &self.schedule
+    }
+
+    pub fn accepted_operations(&self) -> &[AdmittedWorldElaborationOperation] {
+        &self.accepted_operations
+    }
+
+    pub fn rejections(&self) -> &[WorldElaborationRejection] {
+        &self.rejections
+    }
+
+    pub fn candidate(&self) -> Option<&crate::domain::LocalityElaboration> {
+        self.candidate.as_ref()
+    }
+
+    pub fn candidate_diagnostic(&self) -> Option<&str> {
+        self.candidate_diagnostic.as_deref()
+    }
+
+    pub fn digest(&self) -> &str {
+        &self.digest
+    }
+
+    fn valid_candidate(
+        &self,
+        campaign: &crate::domain::Campaign,
+    ) -> Result<crate::domain::LocalityElaboration> {
+        if self.schema != "ghostlight.world_elaboration_admission.v1"
+            || self.campaign_id != campaign.id
+            || self.expected_revision != campaign.revision
+            || self.wave != world_elaboration_wave_binding(campaign, &self.target_location_id)?
+            || self.digest != world_elaboration_admission_digest(self)?
+        {
+            return Err(anyhow!(
+                "world elaboration admission is stale, malformed, or tampered"
+            ));
+        }
+        validate_admission_dispatch_partition(self)?;
+        let (candidate, candidate_diagnostic) = candidate_from_operations(
+            campaign,
+            &self.target_location_id,
+            &self.accepted_operations,
+        );
+        if candidate != self.candidate || candidate_diagnostic != self.candidate_diagnostic {
+            return Err(anyhow!(
+                "world elaboration admission candidate is not derived from its accepted operations"
+            ));
+        }
+        if let Some(diagnostic) = &self.candidate_diagnostic {
+            return Err(anyhow!(
+                "world elaboration candidate requires reconciliation: {diagnostic}"
+            ));
+        }
+        let candidate = self
+            .candidate
+            .clone()
+            .ok_or_else(|| anyhow!("world elaboration admission has no candidate"))?;
+        let system = candidate
+            .expansion
+            .civic_system
+            .as_ref()
+            .ok_or_else(|| anyhow!("world elaboration candidate has no civic system"))?;
+        if !system.semantic_verification_receipt_id.is_empty() {
+            return Err(anyhow!(
+                "titled elaborators cannot supply the civic semantic-verifier receipt"
+            ));
+        }
+        Ok(candidate)
+    }
+}
+
+impl FinalizedWorldElaboration {
+    pub fn admission(&self) -> &WorldElaborationAdmission {
+        &self.admission
+    }
+
+    pub fn digest(&self) -> &str {
+        &self.digest
+    }
+
+    pub(crate) fn into_kernel_parts(
+        self,
+        campaign: &crate::domain::Campaign,
+    ) -> Result<(
+        u64,
+        crate::domain::LocalityElaboration,
+        crate::model::ModelStageReceipt,
+    )> {
+        if self.schema != "ghostlight.finalized_world_elaboration.v1"
+            || self.digest != finalized_world_elaboration_digest(&self)?
+        {
+            return Err(anyhow!(
+                "finalized world elaboration is malformed or tampered"
+            ));
+        }
+        let mut elaboration = self.admission.valid_candidate(campaign)?;
+        elaboration
+            .expansion
+            .civic_system
+            .as_mut()
+            .expect("valid locality elaboration has a civic system")
+            .semantic_verification_receipt_id = self.semantic_verifier_receipt.storage_key().into();
+        crate::compiler::validate_civic_admission_receipts(
+            campaign,
+            &elaboration.expansion,
+            std::slice::from_ref(&self.semantic_verifier_receipt),
+        )?;
+        Ok((
+            self.admission.expected_revision,
+            elaboration,
+            self.semantic_verifier_receipt,
+        ))
+    }
+}
+
+fn operation_claims(operation: &WorldElaborationOperation) -> Result<Vec<String>> {
+    use WorldElaborationOperation::*;
+    let nonempty = |value: &str, field: &str| {
+        if value.trim().is_empty() {
+            Err(anyhow!("world elaboration {field} cannot be empty"))
+        } else {
+            Ok(())
+        }
+    };
+    match operation {
+        AddPlace {
+            id,
+            name,
+            persistent_features,
+            ..
+        } => {
+            nonempty(id, "place id")?;
+            nonempty(name, "place name")?;
+            if persistent_features
+                .iter()
+                .any(|value| value.trim().is_empty())
+                || persistent_features.iter().collect::<BTreeSet<_>>().len()
+                    != persistent_features.len()
+            {
+                return Err(anyhow!("world elaboration place features are malformed"));
+            }
+            Ok(vec![format!("subject:{id}")])
+        }
+        AddRoute {
+            origin_location_id,
+            route_id,
+            route,
+        } => {
+            nonempty(origin_location_id, "route origin")?;
+            nonempty(route_id, "route id")?;
+            nonempty(&route.destination_id, "route destination")?;
+            nonempty(&route.distance, "route distance")?;
+            if route.travel_minutes == 0 || route.destination_id == *origin_location_id {
+                return Err(anyhow!("world elaboration route is malformed"));
+            }
+            Ok(vec![format!("route:{origin_location_id}:{route_id}")])
+        }
+        AddFact { fact } => {
+            nonempty(&fact.id, "fact id")?;
+            nonempty(&fact.statement, "fact statement")?;
+            if fact.scope == crate::domain::FactScope::CanonBaseline {
+                return Err(anyhow!(
+                    "titled elaborators cannot assert canon-baseline facts"
+                ));
+            }
+            Ok(vec![format!("fact:{}", fact.id)])
+        }
+        AddPopulation {
+            population,
+            profile,
+        } => {
+            nonempty(&population.id, "population id")?;
+            if profile.subject_id != population.id
+                || profile.subject_kind != crate::domain::AgencySubjectKind::Gestalt
+            {
+                return Err(anyhow!(
+                    "world elaboration population profile does not bind its population"
+                ));
+            }
+            Ok(vec![
+                format!("subject:{}", population.id),
+                format!("agency_profile:{}", population.id),
+            ])
+        }
+        AddInstitution {
+            institution,
+            profile,
+        } => {
+            nonempty(&institution.id, "institution id")?;
+            if profile.subject_id != institution.id
+                || profile.subject_kind != crate::domain::AgencySubjectKind::Institution
+            {
+                return Err(anyhow!(
+                    "world elaboration institution profile does not bind its institution"
+                ));
+            }
+            Ok(vec![
+                format!("subject:{}", institution.id),
+                format!("agency_profile:{}", institution.id),
+            ])
+        }
+        AddLocalRelation { relation } | AddMigrationRelation { relation } => {
+            nonempty(&relation.id, "relation id")?;
+            Ok(vec![format!("relation:{}", relation.id)])
+        }
+        SetCivicSystem { system } => {
+            nonempty(&system.jurisdiction_location_id, "civic jurisdiction")?;
+            if !system.semantic_verification_receipt_id.is_empty() {
+                return Err(anyhow!(
+                    "titled elaborators cannot supply the civic semantic-verifier receipt"
+                ));
+            }
+            Ok(vec!["civic_system".into()])
+        }
+    }
+}
+
+fn candidate_from_operations(
+    campaign: &crate::domain::Campaign,
+    target_location_id: &str,
+    accepted: &[AdmittedWorldElaborationOperation],
+) -> (Option<crate::domain::LocalityElaboration>, Option<String>) {
+    match build_candidate(target_location_id, accepted).and_then(|candidate| {
+        crate::compiler::validate_locality_elaboration(campaign, &candidate)?;
+        Ok(candidate)
+    }) {
+        Ok(candidate) => (Some(candidate), None),
+        Err(error) => {
+            let candidate = build_candidate(target_location_id, accepted).ok();
+            (candidate, Some(bounded_diagnostic(error.to_string())))
+        }
+    }
+}
+
+fn build_candidate(
+    target_location_id: &str,
+    accepted: &[AdmittedWorldElaborationOperation],
+) -> Result<crate::domain::LocalityElaboration> {
+    use WorldElaborationOperation::*;
+    let mut expansion = crate::domain::RegionExpansion {
+        origin_location_id: target_location_id.into(),
+        origin_routes: BTreeMap::new(),
+        locations: Vec::new(),
+        facts: Vec::new(),
+        populations: Vec::new(),
+        population_profiles: Vec::new(),
+        migration_relations: Vec::new(),
+        institutions: Vec::new(),
+        institution_profiles: Vec::new(),
+        local_relations: Vec::new(),
+        civic_system: None,
+    };
+    for accepted in accepted {
+        match &accepted.operation {
+            AddPlace {
+                id,
+                name,
+                container_id,
+                persistent_features,
+            } => expansion.locations.push(crate::domain::Location {
+                id: id.clone(),
+                name: name.clone(),
+                container_id: container_id.clone(),
+                routes: BTreeMap::new(),
+                persistent_features: persistent_features.clone(),
+            }),
+            AddFact { fact } => expansion.facts.push(fact.clone()),
+            AddPopulation {
+                population,
+                profile,
+            } => {
+                expansion.populations.push(population.clone());
+                expansion.population_profiles.push(profile.clone());
+            }
+            AddInstitution {
+                institution,
+                profile,
+            } => {
+                expansion.institutions.push(institution.clone());
+                expansion.institution_profiles.push(profile.clone());
+            }
+            AddLocalRelation { relation } => expansion.local_relations.push(relation.clone()),
+            AddMigrationRelation { relation } => {
+                expansion.migration_relations.push(relation.clone())
+            }
+            SetCivicSystem { system } => expansion.civic_system = Some(system.clone()),
+            AddRoute { .. } => {}
+        }
+    }
+    for accepted in accepted {
+        let AddRoute {
+            origin_location_id,
+            route_id,
+            route,
+        } = &accepted.operation
+        else {
+            continue;
+        };
+        if origin_location_id == target_location_id {
+            expansion
+                .origin_routes
+                .insert(route_id.clone(), route.clone());
+        } else {
+            let location = expansion
+                .locations
+                .iter_mut()
+                .find(|location| location.id == *origin_location_id)
+                .ok_or_else(|| {
+                    anyhow!(
+                        "world elaboration route origin {} was not proposed",
+                        origin_location_id
+                    )
+                })?;
+            location.routes.insert(route_id.clone(), route.clone());
+        }
+    }
+    Ok(crate::domain::LocalityElaboration {
+        target_location_id: target_location_id.into(),
+        expansion,
+    })
+}
+
+fn validate_admission_dispatch_partition(admission: &WorldElaborationAdmission) -> Result<()> {
+    let scheduled = admission
+        .schedule
+        .dispatches
+        .iter()
+        .map(|dispatch| (dispatch.ordinal, dispatch))
+        .collect::<BTreeMap<_, _>>();
+    let admitted = admission
+        .accepted_operations
+        .iter()
+        .map(|accepted| (accepted.dispatch.ordinal, &accepted.dispatch))
+        .chain(
+            admission
+                .rejections
+                .iter()
+                .map(|rejection| (rejection.dispatch.ordinal, &rejection.dispatch)),
+        )
+        .collect::<BTreeMap<_, _>>();
+    if scheduled.len() != admission.schedule.dispatches.len()
+        || admitted.len() != admission.accepted_operations.len() + admission.rejections.len()
+        || scheduled != admitted
+    {
+        return Err(anyhow!(
+            "world elaboration admission does not partition its exact schedule"
+        ));
+    }
+    Ok(())
+}
+
+fn world_elaboration_admission_digest(admission: &WorldElaborationAdmission) -> Result<String> {
+    crate::legacy_transition::digest_serializable(&(
+        "ghostlight.world_elaboration_admission.v1",
+        &admission.wave,
+        admission.campaign_id,
+        admission.expected_revision,
+        &admission.target_location_id,
+        &admission.schedule,
+        &admission.accepted_operations,
+        &admission.rejections,
+        &admission.candidate,
+        &admission.candidate_diagnostic,
+    ))
+}
+
+fn finalized_world_elaboration_digest(finalized: &FinalizedWorldElaboration) -> Result<String> {
+    crate::legacy_transition::digest_serializable(&(
+        "ghostlight.finalized_world_elaboration.v1",
+        &finalized.admission.digest,
+        &finalized.semantic_verifier_receipt,
+    ))
+}
+
+fn bounded_diagnostic(diagnostic: String) -> String {
+    diagnostic.chars().take(2_000).collect()
 }
 
 #[cfg(test)]

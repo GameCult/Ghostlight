@@ -1034,8 +1034,37 @@ is passed to every invocation and returned with every proposal. Successful
 proposals return in deterministic ordinal order. A failed wave returns the
 consumed schedule, every completed proposal, and the exact failed dispatches,
 so persisted fairness state cannot advance without an explanatory receipt.
-Those proposals are not canonical mutations; a later admission and conflict
-owner must compile and atomically commit them through `WorldKernel`.
+Successful wave construction is opaque outside the dispatcher. The admission
+boundary rechecks requested and unused slots, per-title and total dispatch
+counts, eligible titles, ordinal windows, weights, requested shares, final
+scheduler state, and the exact invocation partition before dispatch order may
+decide a conflict.
+
+Those proposals are not canonical mutations. Each invocation may return one
+additive `WorldElaborationOperation`: place, route, branch-local fact,
+population/profile pair, institution/profile pair, local or migration relation,
+or civic manifest. `admit_world_elaboration_wave` rechecks the revision-bound
+wave, rejects malformed operations, gives a colliding write claim to the first
+authentic scheduler dispatch, and retains every later conflict with the exact
+prior dispatch ordinal. It merges accepted operations into one non-canonical
+`LocalityElaboration`; ordinary locality validation owns the resulting
+structural diagnostic.
+
+A titled worker must leave the civic semantic-verifier receipt empty.
+`finalize_world_elaboration` binds the immutable admitted candidate to one
+independent verifier receipt that may accept or reject but cannot rewrite it.
+Admission and finalization values are opaque, serialize-only capability
+receipts; callers cannot deserialize or reconstruct them as commit authority.
+`WorldKernel::commit_elaboration` consumes that final value, revalidates the
+admission digest, campaign revision, candidate derivation, and verifier binding
+inside its mailbox, then uses the existing `ElaborateLocality` path. That shared
+path lowers the complete candidate into exact permitted `WorldMutation`
+operations, applies the closed reducer, projects the accepted result, and
+persists the aggregate campaign, authority, batch, and mutation receipt
+atomically. Titled workers never receive a `WorldCommand`, permit, mutation
+batch, store, or kernel write handle. The current proposal algebra is additive
+locality elaboration; replacement of existing canonical subjects remains
+outside this authority.
 
 Both destination paths synthesize the smallest compatible branch-local routes,
 geometry, people, supplies, procedures, capacity, responsibility, and doctrine
