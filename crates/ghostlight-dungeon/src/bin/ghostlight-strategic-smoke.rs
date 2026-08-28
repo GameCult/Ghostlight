@@ -113,6 +113,25 @@ fn read_checkpoint<T: serde::de::DeserializeOwned>(path: &std::path::Path) -> an
         .map_err(|error| anyhow::anyhow!("cannot decode checkpoint {}: {error}", path.display()))
 }
 
+fn latest_partial_wave_checkpoint<T: serde::de::DeserializeOwned>(
+    root: &std::path::Path,
+    wave_index: usize,
+    maximum_generation: usize,
+) -> anyhow::Result<(usize, Option<T>)> {
+    let mut latest_generation = 0;
+    let mut latest = None;
+    for generation in 1..=maximum_generation {
+        let path = root.join(format!(
+            "wave-{wave_index:02}-partial-pulse-{generation:02}.json"
+        ));
+        if path.is_file() {
+            latest = Some(read_checkpoint(&path)?);
+            latest_generation = generation;
+        }
+    }
+    Ok((latest_generation, latest))
+}
+
 fn publish_immutable_checkpoint(
     path: &std::path::Path,
     value: &impl serde::Serialize,
@@ -432,7 +451,10 @@ async fn main() -> anyhow::Result<()> {
         kernel::{CommandResult, WorldKernel},
         model_runtime::ModelRuntimeSelection,
         persistence::CampaignStore,
-        scheduler::{ResolutionWavePipelineFailure, propose_resolution_wave},
+        scheduler::{
+            ResolutionWaveCheckpoint, ResolutionWavePipelineFailure, propose_resolution_wave,
+            resume_resolution_wave,
+        },
         turn::SnapshotPermit,
     };
     use std::{path::PathBuf, sync::Arc, time::Instant};
@@ -1205,26 +1227,64 @@ async fn main() -> anyhow::Result<()> {
             campaign.news.len()
         };
         let mut rejected_pulses = Vec::new();
+        let mut rejected_pulse_count = 0;
+        for pulse in 1..=max_rejected_pulses_per_wave + 1 {
+            let path = root.join(format!(
+                "wave-{wave_index:02}-rejected-pulse-{pulse:02}.json"
+            ));
+            if !path.is_file() {
+                continue;
+            }
+            rejected_pulses.push(read_checkpoint::<serde_json::Value>(&path)?);
+            rejected_pulse_count = pulse;
+        }
+        let terminal_cell_checkpoint_path = root.join(format!(
+            "wave-{wave_index:02}-cell-terminal-checkpoint.json"
+        ));
+        let mut partial_checkpoint = if terminal_cell_checkpoint_path.is_file() {
+            Some(read_checkpoint::<ResolutionWaveCheckpoint>(
+                &terminal_cell_checkpoint_path,
+            )?)
+        } else {
+            let (latest_generation, latest) =
+                latest_partial_wave_checkpoint::<ResolutionWaveCheckpoint>(
+                    &root,
+                    wave_index,
+                    max_rejected_pulses_per_wave + 1,
+                )?;
+            rejected_pulse_count = rejected_pulse_count.max(latest_generation);
+            latest
+        };
         let output = loop {
-            match propose_resolution_wave(
-                model.clone(),
-                Arc::new(SnapshotPermit::new_resolution(
-                    store.clone(),
-                    campaign.id,
-                    campaign.revision,
-                    campaign.resolution_policy.resolution_epoch,
-                )),
-                &campaign,
-            )
-            .await
-            {
+            let permit = Arc::new(SnapshotPermit::new_resolution(
+                store.clone(),
+                campaign.id,
+                campaign.revision,
+                campaign.resolution_policy.resolution_epoch,
+            ));
+            let attempt = match partial_checkpoint.clone() {
+                Some(checkpoint) => {
+                    resume_resolution_wave(model.clone(), permit, &campaign, checkpoint).await
+                }
+                None => propose_resolution_wave(model.clone(), permit, &campaign).await,
+            };
+            match attempt {
                 Ok(output) => break output,
                 Err(error) => {
-                    let pulse = rejected_pulses.len() + 1;
+                    let pulse = rejected_pulse_count + 1;
+                    let mut resume_checkpoint_path = None;
                     let rejected_stage_receipt_hashes = error
                         .downcast_ref::<ResolutionWavePipelineFailure>()
                         .map(|failure| {
                             store.persist_model_stage_receipts(&failure.stage_receipts)?;
+                            if let Some(checkpoint) = &failure.checkpoint {
+                                let path = root.join(format!(
+                                    "wave-{wave_index:02}-partial-pulse-{pulse:02}.json"
+                                ));
+                                publish_immutable_checkpoint(&path, checkpoint)?;
+                                partial_checkpoint = Some(checkpoint.clone());
+                                resume_checkpoint_path = Some(path);
+                            }
                             Ok::<_, anyhow::Error>(
                                 failure
                                     .stage_receipts
@@ -1247,9 +1307,17 @@ async fn main() -> anyhow::Result<()> {
                         "resolution_epoch":campaign.resolution_policy.resolution_epoch,
                         "error":error.to_string(),
                         "rejected_stage_receipt_hashes":rejected_stage_receipt_hashes,
+                        "resume_checkpoint":resume_checkpoint_path,
                     });
-                    if rejected_pulses.len() < max_rejected_pulses_per_wave {
+                    publish_immutable_checkpoint(
+                        &root.join(format!(
+                            "wave-{wave_index:02}-rejected-pulse-{pulse:02}.json"
+                        )),
+                        &rejected_pulse,
+                    )?;
+                    if rejected_pulse_count < max_rejected_pulses_per_wave {
                         rejected_pulses.push(rejected_pulse);
+                        rejected_pulse_count = pulse;
                     } else {
                         std::fs::write(
                             root.join(format!("wave-{wave_index:02}-terminal-failure.json")),
@@ -1263,6 +1331,16 @@ async fn main() -> anyhow::Result<()> {
                 }
             }
         };
+        if terminal_cell_checkpoint_path.is_file() {
+            let persisted: serde_json::Value = read_checkpoint(&terminal_cell_checkpoint_path)?;
+            if persisted != serde_json::to_value(&output.checkpoint)? {
+                anyhow::bail!(
+                    "persisted terminal cell checkpoint disagrees with resumed scheduler output"
+                )
+            }
+        } else {
+            publish_immutable_checkpoint(&terminal_cell_checkpoint_path, &output.checkpoint)?;
+        }
         std::fs::write(
             root.join(format!("wave-{wave_index:02}-preflight.json")),
             serde_json::to_vec_pretty(&serde_json::json!({
@@ -1995,9 +2073,9 @@ fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
 mod tests {
     use super::{
         admitted_public_channel, civic_manifest_is_committed_candidate,
-        committed_elaboration_mutation_proof, final_wave_field, publish_immutable_checkpoint,
-        strategic_campaign, strategic_locality_request, strategic_titled_locality_request,
-        titled_failure_checkpoint_paths,
+        committed_elaboration_mutation_proof, final_wave_field, latest_partial_wave_checkpoint,
+        publish_immutable_checkpoint, strategic_campaign, strategic_locality_request,
+        strategic_titled_locality_request, titled_failure_checkpoint_paths,
     };
 
     fn civic_manifest(
@@ -2253,6 +2331,31 @@ mod tests {
         assert_eq!(
             serde_json::from_slice::<serde_json::Value>(&std::fs::read(resume).unwrap()).unwrap(),
             serde_json::json!({"generation":1})
+        );
+    }
+
+    #[test]
+    fn orphan_partial_wave_checkpoint_survives_missing_rejection_summary() {
+        let directory = tempfile::tempdir().unwrap();
+        let partial = directory.path().join("wave-01-partial-pulse-01.json");
+        publish_immutable_checkpoint(
+            &partial,
+            &serde_json::json!({"typed_cell_terminals":["cell-accepted"]}),
+        )
+        .unwrap();
+        assert!(
+            !directory
+                .path()
+                .join("wave-01-rejected-pulse-01.json")
+                .exists()
+        );
+
+        let (generation, checkpoint) =
+            latest_partial_wave_checkpoint::<serde_json::Value>(directory.path(), 1, 3).unwrap();
+        assert_eq!(generation, 1);
+        assert_eq!(
+            checkpoint.unwrap()["typed_cell_terminals"][0],
+            "cell-accepted"
         );
     }
 }

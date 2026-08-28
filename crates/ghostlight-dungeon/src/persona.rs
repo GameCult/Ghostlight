@@ -173,7 +173,7 @@ pub struct PermittedCellSlice {
     pub source_receipt_ids: Vec<String>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CellTerminalBundle {
     pub lived_stream: LivedNarrativeStream,
     pub persona_output: String,

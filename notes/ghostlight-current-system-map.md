@@ -211,8 +211,15 @@ repairing one action does not repay inference for unchanged accepted actions.
 An `undecided` result returns to the Persona owner instead of letting the
 Interpreter invent a choice.
 
-The strategic scheduler dispatches every simulation cell membrane once and
-owns no cell retry. The cell engine projects one exact lived moment. If the
+The strategic scheduler owns partial-wave recovery. Its typed checkpoint binds
+the exact campaign revision, resolution epoch, deterministic cover and plan,
+effective campaign contract and aggregate boundaries, planning receipts,
+successful cell terminal bundles, and exact failed-cell set. A retry validates
+that complete partition, policy, and causal receipt chain before dispatching
+only failed cells. The checkpoint is opaque outside the scheduler. The smoke
+runner may persist whole checkpoint generations but cannot merge or edit cell
+output; it durably publishes the complete cell checkpoint before wave commit.
+Within a cell, the engine projects one exact lived moment. If the
 Persona supplies no explicit decision, the engine retries only Persona and
 Interpreter against that same projected stream; Projector does not rerun. The
 second Persona cites the first Persona and Interpreter attempt as causal

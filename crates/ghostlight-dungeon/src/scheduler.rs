@@ -17,7 +17,7 @@ use crate::{
     },
     resolution::{
         cell_action_digest, cell_action_limit, default_demand, plan_cover, plan_receipt,
-        select_resolution_wave, validate_and_resolve_wave, validate_demand,
+        select_resolution_wave, validate_and_resolve_wave, validate_cover, validate_demand,
     },
     session_zero::{AggregatedBoundary, CampaignContract},
 };
@@ -91,6 +91,7 @@ pub struct StrategicResolutionOutput {
     pub stages: Vec<ModelStageOutput>,
     pub private_cell_traces: Vec<PrivateCellTrace>,
     pub aggregate_receipt_hash: String,
+    pub checkpoint: ResolutionWaveCheckpoint,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -101,10 +102,40 @@ pub struct PrivateCellTrace {
     pub persona_output: String,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ResolutionCellTerminalCheckpoint {
+    cell_id: String,
+    terminal: crate::persona::CellTerminalBundle,
+}
+
+/// Durable, non-canonical progress for one immutable strategic wave.
+///
+/// The scheduler owns this shape because only it can prove that a completed
+/// cell terminal belongs to the exact cover and campaign snapshot. Consumers
+/// may persist it, but may not merge, edit, or reinterpret its cell outputs.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ResolutionWaveCheckpoint {
+    schema: String,
+    campaign_id: uuid::Uuid,
+    world_revision: u64,
+    resolution_epoch: u64,
+    cover: crate::domain::ResolutionCover,
+    plan_receipt: crate::domain::ResolutionPlanReceipt,
+    planning_stage_receipts: Vec<ModelStageReceipt>,
+    campaign_contract: Option<CampaignContract>,
+    aggregate_boundaries: Vec<AggregatedBoundary>,
+    completed_cells: Vec<ResolutionCellTerminalCheckpoint>,
+    failed_cell_ids: BTreeSet<String>,
+    digest: String,
+}
+
 #[derive(Clone, Debug)]
 pub struct ResolutionWavePipelineFailure {
     pub pipeline_errors: Vec<String>,
     pub stage_receipts: Vec<ModelStageReceipt>,
+    pub checkpoint: Option<ResolutionWaveCheckpoint>,
 }
 
 impl std::fmt::Display for ResolutionWavePipelineFailure {
@@ -122,6 +153,7 @@ impl std::error::Error for ResolutionWavePipelineFailure {}
 
 #[derive(Debug)]
 struct CellPipelineExhaustion {
+    cell_id: Option<String>,
     diagnostic: String,
     stage_receipts: Vec<ModelStageReceipt>,
 }
@@ -141,7 +173,7 @@ pub async fn propose_resolution_wave_with_policy(
     campaign_contract: Option<&CampaignContract>,
     aggregate_boundaries: &[AggregatedBoundary],
 ) -> Result<StrategicResolutionOutput> {
-    let (demand, mut stages) = project_resolution_demand(
+    let (demand, stages) = project_resolution_demand(
         model.as_ref(),
         campaign,
         campaign_contract,
@@ -149,7 +181,53 @@ pub async fn propose_resolution_wave_with_policy(
     )
     .await;
     let cover = plan_cover(campaign, demand)?;
-    let receipt = plan_receipt(campaign, &cover);
+    let checkpoint = seal_resolution_wave_checkpoint(ResolutionWaveCheckpoint {
+        schema: "ghostlight.resolution_wave_checkpoint.v1".into(),
+        campaign_id: campaign.id,
+        world_revision: campaign.revision,
+        resolution_epoch: campaign.resolution_policy.resolution_epoch,
+        plan_receipt: plan_receipt(campaign, &cover),
+        failed_cell_ids: cover.cells.iter().map(|cell| cell.id.clone()).collect(),
+        cover,
+        planning_stage_receipts: stages.into_iter().map(|stage| stage.receipt).collect(),
+        campaign_contract: campaign_contract.cloned(),
+        aggregate_boundaries: aggregate_boundaries.to_vec(),
+        completed_cells: Vec::new(),
+        digest: String::new(),
+    })?;
+    resume_resolution_wave_from_checkpoint(model, permit, campaign, checkpoint).await
+}
+
+/// Resume one exact strategic wave from scheduler-owned typed cell terminals.
+/// Only cells still named in `failed_cell_ids` may invoke the model again.
+pub async fn resume_resolution_wave(
+    model: Arc<dyn ModelPort>,
+    permit: Arc<dyn ExecutionPermit>,
+    campaign: &Campaign,
+    checkpoint: ResolutionWaveCheckpoint,
+) -> Result<StrategicResolutionOutput> {
+    resume_resolution_wave_from_checkpoint(model, permit, campaign, checkpoint).await
+}
+
+async fn resume_resolution_wave_from_checkpoint(
+    model: Arc<dyn ModelPort>,
+    permit: Arc<dyn ExecutionPermit>,
+    campaign: &Campaign,
+    mut checkpoint: ResolutionWaveCheckpoint,
+) -> Result<StrategicResolutionOutput> {
+    validate_resolution_wave_checkpoint(campaign, &checkpoint)?;
+    let cover = checkpoint.cover.clone();
+    let receipt = checkpoint.plan_receipt.clone();
+    let mut stages = checkpoint
+        .planning_stage_receipts
+        .iter()
+        .cloned()
+        .map(|receipt| ModelStageOutput {
+            narrative: String::new(),
+            structured: None,
+            receipt,
+        })
+        .collect::<Vec<_>>();
     let outcome_model = model.clone();
     let outcome_permit = permit.clone();
     let engine = CellProjectionEngine {
@@ -158,14 +236,19 @@ pub async fn propose_resolution_wave_with_policy(
         projector_model: MODEL_FAST.into(),
         persona_model: MODEL_FAST.into(),
         interpreter_model: MODEL_FAST.into(),
-        campaign_contract: campaign_contract.cloned(),
-        aggregate_boundaries: aggregate_boundaries.to_vec(),
+        campaign_contract: checkpoint.campaign_contract.clone(),
+        aggregate_boundaries: checkpoint.aggregate_boundaries.clone(),
     };
     let semaphore = Arc::new(tokio::sync::Semaphore::new(usize::from(
         campaign.resolution_policy.provider_parallelism.max(1),
     )));
     let mut jobs = tokio::task::JoinSet::new();
-    for cell in cover.cells.clone() {
+    for cell in cover
+        .cells
+        .iter()
+        .filter(|cell| checkpoint.failed_cell_ids.contains(&cell.id))
+        .cloned()
+    {
         let engine = engine.clone();
         let semaphore = semaphore.clone();
         let slice = cell_slice(campaign, &cell)?;
@@ -174,6 +257,7 @@ pub async fn propose_resolution_wave_with_policy(
             let subject_ids = cell.subject_ids;
             let Ok(_provider_slot) = semaphore.acquire_owned().await else {
                 return Err(CellPipelineExhaustion {
+                    cell_id: Some(cell_id),
                     diagnostic: "provider concurrency gate closed".into(),
                     stage_receipts: Vec::new(),
                 });
@@ -189,19 +273,26 @@ pub async fn propose_resolution_wave_with_policy(
                         serde_json::to_string(&subject_ids)
                             .unwrap_or_else(|_| "[unavailable]".into())
                     ),
+                    cell_id: Some(cell_id.clone()),
                     stage_receipts,
                 }
             })?;
             Ok::<_, CellPipelineExhaustion>((cell_id, terminal))
         });
     }
-    let mut terminals = Vec::new();
+    let mut terminals = checkpoint
+        .completed_cells
+        .iter()
+        .cloned()
+        .map(|completed| (completed.cell_id, completed.terminal))
+        .collect::<Vec<_>>();
     let mut cell_failures = Vec::new();
     while let Some(result) = jobs.join_next().await {
         match result {
             Ok(Ok(terminal)) => terminals.push(terminal),
             Ok(Err(failure)) => cell_failures.push(failure),
             Err(error) => cell_failures.push(CellPipelineExhaustion {
+                cell_id: None,
                 diagnostic: format!("cell Persona task failed: {error}"),
                 stage_receipts: Vec::new(),
             }),
@@ -222,15 +313,40 @@ pub async fn propose_resolution_wave_with_policy(
                 .iter()
                 .flat_map(|failure| failure.stage_receipts.iter().cloned()),
         );
-        return Err(anyhow::Error::new(ResolutionWavePipelineFailure {
-            pipeline_errors: cell_failures
+        let pipeline_errors = cell_failures
+            .iter()
+            .map(|failure| failure.diagnostic.clone())
+            .collect();
+        let failed_cell_ids = cell_failures
+            .iter()
+            .filter_map(|failure| failure.cell_id.clone())
+            .collect::<BTreeSet<_>>();
+        terminals.sort_by(|left, right| left.0.cmp(&right.0));
+        let resumable_checkpoint = if failed_cell_ids.len() == cell_failures.len() {
+            checkpoint.completed_cells = terminals
                 .into_iter()
-                .map(|failure| failure.diagnostic)
-                .collect(),
+                .map(|(cell_id, terminal)| ResolutionCellTerminalCheckpoint { cell_id, terminal })
+                .collect();
+            checkpoint.failed_cell_ids = failed_cell_ids;
+            Some(seal_resolution_wave_checkpoint(checkpoint)?)
+        } else {
+            None
+        };
+        return Err(anyhow::Error::new(ResolutionWavePipelineFailure {
+            pipeline_errors,
             stage_receipts,
+            checkpoint: resumable_checkpoint,
         }));
     }
     terminals.sort_by(|left, right| left.0.cmp(&right.0));
+    checkpoint.completed_cells = terminals
+        .iter()
+        .cloned()
+        .map(|(cell_id, terminal)| ResolutionCellTerminalCheckpoint { cell_id, terminal })
+        .collect();
+    checkpoint.failed_cell_ids.clear();
+    checkpoint = seal_resolution_wave_checkpoint(checkpoint)?;
+    validate_resolution_wave_checkpoint(campaign, &checkpoint)?;
     let appraisals = terminals
         .iter()
         .map(|(_, terminal)| terminal.appraisal.clone())
@@ -314,6 +430,7 @@ pub async fn propose_resolution_wave_with_policy(
             return Err(anyhow::Error::new(ResolutionWavePipelineFailure {
                 pipeline_errors: vec![error.to_string()],
                 stage_receipts,
+                checkpoint: Some(checkpoint),
             }));
         }
     };
@@ -377,7 +494,274 @@ pub async fn propose_resolution_wave_with_policy(
         stages,
         private_cell_traces,
         aggregate_receipt_hash,
+        checkpoint,
     })
+}
+
+fn validate_resolution_wave_checkpoint(
+    campaign: &Campaign,
+    checkpoint: &ResolutionWaveCheckpoint,
+) -> Result<()> {
+    if checkpoint.digest != resolution_wave_checkpoint_digest(checkpoint)? {
+        return Err(anyhow!(
+            "strategic wave checkpoint digest does not bind its complete typed state"
+        ));
+    }
+    if checkpoint.schema != "ghostlight.resolution_wave_checkpoint.v1"
+        || checkpoint.campaign_id != campaign.id
+        || checkpoint.world_revision != campaign.revision
+        || checkpoint.resolution_epoch != campaign.resolution_policy.resolution_epoch
+        || checkpoint.cover.campaign_id != campaign.id
+        || checkpoint.cover.world_revision != campaign.revision
+        || checkpoint.cover.resolution_epoch != campaign.resolution_policy.resolution_epoch
+    {
+        return Err(anyhow!(
+            "strategic wave checkpoint belongs to a different campaign snapshot"
+        ));
+    }
+    validate_demand(campaign, &checkpoint.cover.demand)?;
+    validate_cover(campaign, &checkpoint.cover.demand, &checkpoint.cover.cells)?;
+    let planning_binding = format!(
+        "campaign:{}:revision:{}:resolution:{}",
+        campaign.id, campaign.revision, campaign.resolution_policy.resolution_epoch
+    );
+    let planning_sources = campaign
+        .branch_origin
+        .evidence_receipt_ids
+        .iter()
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let mut planning_receipt_keys = BTreeSet::new();
+    for receipt in &checkpoint.planning_stage_receipts {
+        if receipt.schema != "ghostlight.persona_stage_receipt.v1"
+            || receipt.stage != "resolution_demand"
+            || receipt.snapshot_binding != planning_binding
+            || !model_receipt_hashes_are_well_formed(receipt)
+            || !planning_receipt_keys.insert(receipt.storage_key())
+            || receipt
+                .source_receipt_ids
+                .iter()
+                .cloned()
+                .collect::<BTreeSet<_>>()
+                != planning_sources
+        {
+            return Err(anyhow!(
+                "strategic wave checkpoint contains invalid planning receipt provenance"
+            ));
+        }
+    }
+    let expected_plan = plan_receipt(campaign, &checkpoint.cover);
+    if checkpoint.plan_receipt.campaign_id != expected_plan.campaign_id
+        || checkpoint.plan_receipt.world_revision != expected_plan.world_revision
+        || checkpoint.plan_receipt.resolution_epoch != expected_plan.resolution_epoch
+        || checkpoint.plan_receipt.configured_budget != expected_plan.configured_budget
+        || checkpoint.plan_receipt.effective_budget != expected_plan.effective_budget
+        || checkpoint.plan_receipt.cell_ids != expected_plan.cell_ids
+        || checkpoint.plan_receipt.mandatory_overage != expected_plan.mandatory_overage
+        || checkpoint.plan_receipt.preserved_cell_ids != expected_plan.preserved_cell_ids
+        || checkpoint.plan_receipt.collapsed_boundaries != expected_plan.collapsed_boundaries
+        || checkpoint.plan_receipt.merge_losses != expected_plan.merge_losses
+        || checkpoint.plan_receipt.rationale != expected_plan.rationale
+    {
+        return Err(anyhow!(
+            "strategic wave checkpoint plan does not bind its exact cover"
+        ));
+    }
+    let cells = checkpoint
+        .cover
+        .cells
+        .iter()
+        .map(|cell| (cell.id.as_str(), cell))
+        .collect::<BTreeMap<_, _>>();
+    let mut completed_ids = BTreeSet::new();
+    for completed in &checkpoint.completed_cells {
+        let cell = cells.get(completed.cell_id.as_str()).ok_or_else(|| {
+            anyhow!("strategic wave checkpoint contains a terminal for an unknown cell")
+        })?;
+        if !completed_ids.insert(completed.cell_id.as_str()) {
+            return Err(anyhow!(
+                "strategic wave checkpoint contains duplicate completed cell authority"
+            ));
+        }
+        validate_resolution_cell_terminal(campaign, cell, completed)?;
+    }
+    if checkpoint.failed_cell_ids.iter().any(|cell_id| {
+        !cells.contains_key(cell_id.as_str()) || completed_ids.contains(cell_id.as_str())
+    }) {
+        return Err(anyhow!(
+            "strategic wave checkpoint has overlapping or unknown failed cell authority"
+        ));
+    }
+    let accounted = completed_ids.len() + checkpoint.failed_cell_ids.len();
+    if accounted != cells.len() {
+        return Err(anyhow!(
+            "strategic wave checkpoint does not account for every exact cover cell"
+        ));
+    }
+    Ok(())
+}
+
+fn validate_resolution_cell_terminal(
+    campaign: &Campaign,
+    cell: &crate::domain::SimulationCell,
+    completed: &ResolutionCellTerminalCheckpoint,
+) -> Result<()> {
+    let slice = cell_slice(campaign, cell)?;
+    let terminal = &completed.terminal;
+    if terminal.appraisal.cell_id != completed.cell_id
+        || terminal.appraisal.world_revision != campaign.revision
+        || terminal.appraisal.resolution_epoch != campaign.resolution_policy.resolution_epoch
+        || terminal.lived_stream.snapshot_binding != slice.snapshot_binding
+        || terminal.lived_stream.projector_receipt.snapshot_binding != slice.snapshot_binding
+        || terminal.lived_stream.projector_receipt.stage != "cell_projector"
+    {
+        return Err(anyhow!(
+            "strategic wave checkpoint contains a stale or misbound cell terminal"
+        ));
+    }
+    let base_sources = slice
+        .source_receipt_ids
+        .iter()
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let all_receipt_keys = terminal
+        .stage_receipts
+        .iter()
+        .map(|receipt| receipt.storage_key().to_owned())
+        .collect::<BTreeSet<_>>();
+    if all_receipt_keys.len() != terminal.stage_receipts.len() {
+        return Err(anyhow!(
+            "strategic wave checkpoint contains duplicate cell receipt authority"
+        ));
+    }
+    let mut seen_receipt_keys = BTreeSet::new();
+    let mut projector_receipt_keys = BTreeSet::new();
+    let mut persona_receipt_keys = BTreeSet::new();
+    let mut interpreter_receipt_keys = BTreeSet::new();
+    let mut verifier_receipts = Vec::new();
+    let mut persona_output_is_bound = false;
+    let persona_output_hash = format!(
+        "sha256:{:x}",
+        Sha256::digest(terminal.persona_output.as_bytes())
+    );
+    for receipt in &terminal.stage_receipts {
+        if receipt.schema != "ghostlight.persona_stage_receipt.v1"
+            || !model_receipt_hashes_are_well_formed(receipt)
+            || receipt
+                .source_receipt_ids
+                .iter()
+                .any(|source| !base_sources.contains(source) && !seen_receipt_keys.contains(source))
+        {
+            return Err(anyhow!(
+                "strategic wave checkpoint contains invalid or noncausal cell receipts"
+            ));
+        }
+        let source_ids = receipt
+            .source_receipt_ids
+            .iter()
+            .map(String::as_str)
+            .collect::<BTreeSet<_>>();
+        let cites_any =
+            |keys: &BTreeSet<String>| keys.iter().any(|key| source_ids.contains(key.as_str()));
+        match receipt.stage.as_str() {
+            "cell_projector" if receipt.snapshot_binding == slice.snapshot_binding => {
+                projector_receipt_keys.insert(receipt.storage_key().to_owned());
+            }
+            "cell_persona"
+                if receipt.snapshot_binding == slice.snapshot_binding
+                    && cites_any(&projector_receipt_keys) =>
+            {
+                if receipt.validation_result == "valid"
+                    && receipt.output_hash == persona_output_hash
+                {
+                    persona_output_is_bound = true;
+                }
+                persona_receipt_keys.insert(receipt.storage_key().to_owned());
+            }
+            "cell_interpreter"
+                if receipt.snapshot_binding == slice.snapshot_binding
+                    && cites_any(&projector_receipt_keys)
+                    && cites_any(&persona_receipt_keys) =>
+            {
+                interpreter_receipt_keys.insert(receipt.storage_key().to_owned());
+            }
+            "cell_effect_verifier"
+                if receipt
+                    .snapshot_binding
+                    .starts_with(&format!("{}:effects:sha256:", slice.snapshot_binding))
+                    && cites_any(&projector_receipt_keys)
+                    && cites_any(&persona_receipt_keys)
+                    && cites_any(&interpreter_receipt_keys) =>
+            {
+                verifier_receipts.push(receipt);
+            }
+            _ => {
+                return Err(anyhow!(
+                    "strategic wave checkpoint contains an invalid cell receipt stage or binding"
+                ));
+            }
+        }
+        seen_receipt_keys.insert(receipt.storage_key().to_owned());
+    }
+    if projector_receipt_keys.is_empty()
+        || persona_receipt_keys.is_empty()
+        || interpreter_receipt_keys.is_empty()
+        || !persona_output_is_bound
+        || !terminal
+            .stage_receipts
+            .iter()
+            .any(|receipt| receipt.same_receipted_content(&terminal.lived_stream.projector_receipt))
+    {
+        return Err(anyhow!(
+            "strategic wave checkpoint cell terminal lacks its exact membrane receipts"
+        ));
+    }
+    for action in &terminal.appraisal.actions {
+        let binding = crate::persona::cell_effect_verification_binding(
+            &slice.snapshot_binding,
+            std::slice::from_ref(action),
+        )?;
+        if !verifier_receipts.iter().any(|receipt| {
+            receipt.snapshot_binding == binding
+                && receipt.validation_result == "valid"
+                && receipt.local_validation_error.is_none()
+        }) {
+            return Err(anyhow!(
+                "strategic wave checkpoint action lacks an accepted exact verifier receipt"
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn model_receipt_hashes_are_well_formed(receipt: &ModelStageReceipt) -> bool {
+    [
+        receipt.storage_key(),
+        receipt.request_hash.as_str(),
+        receipt.output_hash.as_str(),
+    ]
+    .into_iter()
+    .all(|value| {
+        value.strip_prefix("sha256:").is_some_and(|digest| {
+            digest.len() == 64 && digest.bytes().all(|byte| byte.is_ascii_hexdigit())
+        })
+    })
+}
+
+fn seal_resolution_wave_checkpoint(
+    mut checkpoint: ResolutionWaveCheckpoint,
+) -> Result<ResolutionWaveCheckpoint> {
+    checkpoint.digest = resolution_wave_checkpoint_digest(&checkpoint)?;
+    Ok(checkpoint)
+}
+
+fn resolution_wave_checkpoint_digest(checkpoint: &ResolutionWaveCheckpoint) -> Result<String> {
+    let mut unsigned = checkpoint.clone();
+    unsigned.digest.clear();
+    crate::legacy_transition::digest_serializable(&(
+        "ghostlight.resolution_wave_checkpoint.v1",
+        unsigned,
+    ))
 }
 
 pub fn strategic_individuation_binding(
@@ -1428,6 +1812,14 @@ mod tests {
         fixture: CellFixtureModel,
         target_binding: Mutex<Option<String>>,
         failures_remaining: AtomicUsize,
+        calls: Mutex<Vec<(String, String)>>,
+        projector_prompts: Mutex<Vec<String>>,
+    }
+
+    struct TransientOutcomeFixtureModel {
+        fixture: CellFixtureModel,
+        failures_remaining: AtomicUsize,
+        calls: Mutex<Vec<String>>,
     }
 
     struct PersonFixtureModel;
@@ -1499,6 +1891,70 @@ mod tests {
         }
     }
 
+    fn fixture_interpreter_subject_ids(request: &ModelStageRequest) -> Result<Vec<String>> {
+        request
+            .output_schema
+            .as_ref()
+            .and_then(|schema| {
+                schema
+                    .pointer("/properties/command/oneOf/0/properties/decisions/properties")
+                    .and_then(serde_json::Value::as_object)
+            })
+            .map(|properties| properties.keys().cloned().collect::<Vec<_>>())
+            .filter(|subject_ids| !subject_ids.is_empty())
+            .ok_or_else(|| anyhow!("fixture Interpreter lacks a bound subject"))
+    }
+
+    fn fixture_interpreter_response(request: &ModelStageRequest) -> Result<String> {
+        let decisions = fixture_interpreter_subject_ids(request)?
+            .into_iter()
+            .map(|subject_id| {
+                let decision = serde_json::json!({"inaction":{
+                    "subject_id":subject_id.clone(),
+                    "reason":"No justified move this horizon."
+                }});
+                (subject_id, decision)
+            })
+            .collect::<serde_json::Map<_, _>>();
+        Ok(serde_json::json!({
+            "command":{
+                "kind":"submit",
+                "decisions":decisions
+            }
+        })
+        .to_string())
+    }
+
+    fn fixture_actor_interpreter_response(request: &ModelStageRequest) -> Result<String> {
+        let decisions = fixture_interpreter_subject_ids(request)?
+            .into_iter()
+            .map(|subject_id| {
+                (
+                    subject_id.clone(),
+                    serde_json::json!({"action":{
+                        "subject_id":subject_id,
+                        "intent":"build a public ration board at the current location",
+                        "intended_effect":"prepare the ration board locally",
+                        "priority":50,
+                        "state_references":[],
+                        "public_channels":[],
+                        "effects":{"actor_activities":{"prepare":[{
+                            "target_subject_ids":[],
+                            "location_ids":["center"]
+                        }]}}
+                    }}),
+                )
+            })
+            .collect::<serde_json::Map<_, _>>();
+        Ok(serde_json::json!({
+            "command":{
+                "kind":"submit",
+                "decisions":decisions
+            }
+        })
+        .to_string())
+    }
+
     #[async_trait]
     impl ModelPort for CellFixtureModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
@@ -1545,40 +2001,7 @@ mod tests {
                 }
                 "cell_persona" => Ok("Each constituent watches and deliberately holds.".into()),
                 "cell_interpreter" if self.malformed_cell => Ok("not-json".into()),
-                "cell_interpreter" => {
-                    let subject_ids = request
-                        .output_schema
-                        .as_ref()
-                        .and_then(|schema| {
-                            schema
-                                .pointer(
-                                    "/properties/command/oneOf/0/properties/decisions/properties",
-                                )
-                                .and_then(serde_json::Value::as_object)
-                        })
-                        .map(|properties| properties.keys().cloned().collect::<Vec<_>>())
-                        .filter(|subject_ids| !subject_ids.is_empty())
-                        .ok_or_else(|| anyhow!("fixture Interpreter lacks a bound subject"))?;
-                    let decisions = subject_ids
-                        .into_iter()
-                        .map(|subject_id| {
-                            (
-                                subject_id.clone(),
-                                serde_json::json!({"inaction":{
-                                    "subject_id":subject_id,
-                                    "reason":"No justified move this horizon."
-                                }}),
-                            )
-                        })
-                        .collect::<serde_json::Map<_, _>>();
-                    Ok(serde_json::json!({
-                        "command":{
-                            "kind":"submit",
-                            "decisions":decisions
-                        }
-                    })
-                    .to_string())
-                }
+                "cell_interpreter" => fixture_interpreter_response(request),
                 stage => Err(anyhow!("unexpected fixture stage {stage}")),
             }
         }
@@ -1591,6 +2014,16 @@ mod tests {
     #[async_trait]
     impl ModelPort for TransientCellFixtureModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push((request.stage.clone(), request.snapshot_binding.clone()));
+            if request.stage == "cell_projector" {
+                self.projector_prompts
+                    .lock()
+                    .unwrap()
+                    .push(request.lived_stream.clone());
+            }
             if request.stage == "cell_persona" {
                 let target_binding = {
                     let mut target = self.target_binding.lock().unwrap();
@@ -1614,6 +2047,62 @@ mod tests {
                 }
             }
             self.fixture.run(request).await
+        }
+
+        fn provider(&self) -> &'static str {
+            "fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for TransientOutcomeFixtureModel {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            self.calls.lock().unwrap().push(request.stage.clone());
+            match request.stage.as_str() {
+                "cell_persona" => {
+                    Ok("The worker now builds a public ration board at this location.".into())
+                }
+                "cell_interpreter" => fixture_actor_interpreter_response(request),
+                "cell_effect_verifier" => Ok(serde_json::json!({
+                    "verdicts":[{
+                        "action_index":0,
+                        "result":"match",
+                        "mismatch_kind":null,
+                        "repair_guidance":null
+                    }]
+                })
+                .to_string()),
+                "strategic_outcome_resolver" => {
+                    if self
+                        .failures_remaining
+                        .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |remaining| {
+                            (remaining > 0).then_some(remaining.saturating_sub(1))
+                        })
+                        .is_ok()
+                    {
+                        return Err(anyhow!("transient fixture outcome failure"));
+                    }
+                    let (_, payload) = request
+                        .lived_stream
+                        .rsplit_once("OUTCOME_CONTEXT:\n")
+                        .ok_or_else(|| anyhow!("fixture request omitted outcome context"))?;
+                    let context: serde_json::Value = serde_json::from_str(payload)?;
+                    let digest = context["actions"][0]["action_digest"]
+                        .as_str()
+                        .ok_or_else(|| anyhow!("fixture outcome context omitted action digest"))?;
+                    Ok(serde_json::json!({
+                        "outcomes":[{
+                            "action_digest":digest,
+                            "band":"mixed",
+                            "effect_kind":"no_material_change",
+                            "supporting_state_references":[],
+                            "reason":"The publication attempt establishes no further durable state."
+                        }]
+                    })
+                    .to_string())
+                }
+                _ => self.fixture.run(request).await,
+            }
         }
 
         fn provider(&self) -> &'static str {
@@ -2215,6 +2704,8 @@ mod tests {
             },
             target_binding: Mutex::new(None),
             failures_remaining: AtomicUsize::new(4),
+            calls: Mutex::new(Vec::new()),
+            projector_prompts: Mutex::new(Vec::new()),
         });
 
         let error =
@@ -2238,6 +2729,230 @@ mod tests {
         );
         assert!(model.fixture.maximum.load(Ordering::SeqCst) <= 2);
     }
+
+    #[tokio::test]
+    async fn partial_wave_checkpoint_resumes_only_failed_cells() {
+        let mut campaign = crate::resolution::tests::campaign(6, 2);
+        campaign.resolution_policy.provider_parallelism = 2;
+        let model = Arc::new(TransientCellFixtureModel {
+            fixture: CellFixtureModel {
+                active: AtomicUsize::new(0),
+                maximum: AtomicUsize::new(0),
+                malformed_cell: false,
+            },
+            target_binding: Mutex::new(None),
+            failures_remaining: AtomicUsize::new(2),
+            calls: Mutex::new(Vec::new()),
+            projector_prompts: Mutex::new(Vec::new()),
+        });
+        let contract = CampaignContract {
+            campaign_name: "POLICY-SIGNAL-EMBER".into(),
+            ..Default::default()
+        };
+        let boundaries = vec![AggregatedBoundary {
+            normalized_topic: "policy-signal-ash".into(),
+            display_topic: "POLICY-SIGNAL-ASH".into(),
+            level: crate::session_zero::BoundaryLevel::Veil,
+        }];
+
+        let error = match propose_resolution_wave_with_policy(
+            model.clone(),
+            Arc::new(AllowAllPermit),
+            &campaign,
+            Some(&contract),
+            &boundaries,
+        )
+        .await
+        {
+            Ok(_) => panic!("one exact cell must exhaust its bounded transport attempts"),
+            Err(error) => error,
+        };
+        let failure = error
+            .downcast_ref::<ResolutionWavePipelineFailure>()
+            .expect("cell failure must publish a resumable wave checkpoint");
+        let checkpoint = failure.checkpoint.clone().expect("checkpoint");
+        assert_eq!(checkpoint.completed_cells.len(), 1);
+        assert_eq!(checkpoint.failed_cell_ids.len(), 1);
+        let mut overlapping = checkpoint.clone();
+        overlapping
+            .failed_cell_ids
+            .insert(overlapping.completed_cells[0].cell_id.clone());
+        let overlapping = seal_resolution_wave_checkpoint(overlapping).unwrap();
+        let calls_before_rejection = model.calls.lock().unwrap().len();
+        let overlap_error = match resume_resolution_wave(
+            model.clone(),
+            Arc::new(AllowAllPermit),
+            &campaign,
+            overlapping,
+        )
+        .await
+        {
+            Ok(_) => panic!("overlapping checkpoint authority must fail closed"),
+            Err(error) => error,
+        };
+        assert!(overlap_error.to_string().contains("overlapping"));
+        assert_eq!(model.calls.lock().unwrap().len(), calls_before_rejection);
+        let preserved_receipts = checkpoint.completed_cells[0]
+            .terminal
+            .stage_receipts
+            .iter()
+            .map(|receipt| receipt.storage_key().to_owned())
+            .collect::<BTreeSet<_>>();
+        let checkpoint: ResolutionWaveCheckpoint =
+            serde_json::from_slice(&serde_json::to_vec(&checkpoint).unwrap()).unwrap();
+
+        let output = resume_resolution_wave(
+            model.clone(),
+            Arc::new(AllowAllPermit),
+            &campaign,
+            checkpoint,
+        )
+        .await
+        .unwrap();
+        assert_eq!(output.wave.appraisals.len(), 2);
+        assert!(
+            preserved_receipts
+                .is_subset(&output.wave.model_receipt_hashes.iter().cloned().collect())
+        );
+        let calls = model.calls.lock().unwrap();
+        let count = |stage: &str| calls.iter().filter(|(called, _)| called == stage).count();
+        assert_eq!(count("resolution_demand"), 1, "resume replanned the wave");
+        assert_eq!(
+            count("cell_projector"),
+            3,
+            "resume replayed a successful cell"
+        );
+        assert_eq!(
+            count("cell_persona"),
+            4,
+            "resume replayed a successful cell"
+        );
+        assert_eq!(
+            count("cell_interpreter"),
+            2,
+            "resume replayed a successful cell"
+        );
+        assert!(
+            model
+                .projector_prompts
+                .lock()
+                .unwrap()
+                .iter()
+                .all(|prompt| {
+                    prompt.contains("POLICY-SIGNAL-EMBER") && prompt.contains("POLICY-SIGNAL-ASH")
+                })
+        );
+        validate_and_resolve_wave(&campaign, &output.wave).unwrap();
+    }
+
+    #[tokio::test]
+    async fn outcome_failure_resume_reuses_every_completed_cell_terminal() {
+        use crate::domain::{ActorState, AgencySubjectKind};
+        let mut campaign = crate::resolution::tests::campaign(1, 1);
+        campaign.resolution_policy.provider_parallelism = 1;
+        let mut worker_profile = campaign.agency_profiles["faction-0000"].clone();
+        campaign
+            .agency_profiles
+            .get_mut("faction-0000")
+            .unwrap()
+            .simulation_eligible = false;
+        worker_profile.subject_id = "fixture-worker".into();
+        worker_profile.subject_kind = AgencySubjectKind::Actor;
+        worker_profile.location_ids = BTreeSet::from(["center".into()]);
+        worker_profile.active_leaf = true;
+        worker_profile.simulation_eligible = true;
+        campaign
+            .agency_profiles
+            .insert(worker_profile.subject_id.clone(), worker_profile);
+        campaign.actors.insert(
+            "fixture-worker".into(),
+            ActorState {
+                id: "fixture-worker".into(),
+                name: "Fixture Worker".into(),
+                location_id: "center".into(),
+                capabilities: BTreeSet::from(["carpentry".into()]),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec!["make rationing legible".into()],
+                memories: Vec::new(),
+            },
+        );
+        let model = Arc::new(TransientOutcomeFixtureModel {
+            fixture: CellFixtureModel {
+                active: AtomicUsize::new(0),
+                maximum: AtomicUsize::new(0),
+                malformed_cell: false,
+            },
+            failures_remaining: AtomicUsize::new(2),
+            calls: Mutex::new(Vec::new()),
+        });
+
+        let error = match propose_resolution_wave(
+            model.clone(),
+            Arc::new(AllowAllPermit),
+            &campaign,
+        )
+        .await
+        {
+            Ok(output) => panic!(
+                "the first downstream outcome request must exhaust transport; calls={:?}; appraisals={:?}",
+                model.calls.lock().unwrap(),
+                output.wave.appraisals
+            ),
+            Err(error) => error,
+        };
+        let checkpoint = error
+            .downcast_ref::<ResolutionWavePipelineFailure>()
+            .and_then(|failure| failure.checkpoint.clone())
+            .expect("downstream failure must preserve a complete cell checkpoint");
+        assert!(checkpoint.failed_cell_ids.is_empty());
+        assert_eq!(checkpoint.completed_cells.len(), 1);
+        let terminal_receipts = checkpoint.completed_cells[0]
+            .terminal
+            .stage_receipts
+            .iter()
+            .map(|receipt| receipt.storage_key().to_owned())
+            .collect::<BTreeSet<_>>();
+        let calls_before_resume = model.calls.lock().unwrap().clone();
+
+        let output = resume_resolution_wave(
+            model.clone(),
+            Arc::new(AllowAllPermit),
+            &campaign,
+            checkpoint,
+        )
+        .await
+        .unwrap();
+        let calls_after_resume = model.calls.lock().unwrap().clone();
+        for stage in [
+            "resolution_demand",
+            "cell_projector",
+            "cell_persona",
+            "cell_interpreter",
+            "cell_effect_verifier",
+        ] {
+            assert_eq!(
+                calls_before_resume
+                    .iter()
+                    .filter(|called| called.as_str() == stage)
+                    .count(),
+                calls_after_resume
+                    .iter()
+                    .filter(|called| called.as_str() == stage)
+                    .count(),
+                "downstream resume replayed {stage}"
+            );
+        }
+        assert!(
+            terminal_receipts
+                .is_subset(&output.wave.model_receipt_hashes.iter().cloned().collect())
+        );
+        validate_and_resolve_wave(&campaign, &output.wave).unwrap();
+    }
+
     #[tokio::test]
     async fn two_hundred_cell_wave_dispatches_in_parallel_under_one_provider_gate() {
         let mut campaign = crate::resolution::tests::campaign(1_000, 200);
