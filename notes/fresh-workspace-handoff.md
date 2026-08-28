@@ -835,24 +835,134 @@ focused elaboration tests, five strategic-smoke tests, the locked target check,
 diff check, and bounded Modeling/Soul audit pass. The generic ModelAgent harness
 remains consumer-neutral correction transport. Provider verification is pending.
 
-1. Monitor active exact-source run 30 under
-   `ghostlight-newspaper-007e63b-30.service`, invocation
-   `86a478fe503f4237af076dc12c386914`; its status owner is
-   `/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-007e63b-30/status.json`.
-   Do not rerun or mutate failed runs 24 through 29 or the live daemon.
-2. Only after all six waves commit and an immutable manifest exists, dispatch a
+Exact-source run 30 used
+`007e63b33768224864c3d32892fa5c8e1f76954b` but failed before its first
+locality commit. The foundation compiled and its civic verifier returned
+semantic-invalid. `destination_reconciliation_agent_action` then returned
+malformed JSON twice with `trailing characters at line 1 column 14903`.
+`status.json` records zero of four elaborations, world revision zero, and zero
+of six strategic waves; no newspaper was produced and the live daemon was
+untouched. The terminal failure artifact preserves four completed model receipt
+hashes. The unchanged archive is
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-007e63b-30.tar`,
+independently matching local and remote SHA-256
+`6B06BA76E06B11E423D79A37A4B4301EB4B32CDAC4D9C3F8578FAD7B1FB0AAF5`.
+Run 29's assignment-schema diagnosis and the local verification of `007e63b`
+remain valid; run 30 did not reach the titled swarm and therefore did not
+provider-verify that cut.
+
+Pushed executable commit
+`49a0292464488e1c2f4361042092058baac92dcd` confirms the run-30 ownership
+diagnosis and makes reconciliation incremental. The worker receives the exact
+typed initial finding and operates a private transactional draft through only
+`validate_current` or a bounded `revise_and_validate` edit batch. The action
+schema cannot expose the complete candidate. Every action runs the actual fact
+namespace, lowering, structural, and independent civic validators; the civic
+verifier rationale is structurally bounded to 1..1000 characters. All 438
+library tests, 16 focused elaboration tests, five strategic-smoke tests, the
+locked target check, and bounded Modeling/Soul audit pass. Provider verification
+and newspaper acceptance remain pending.
+
+Exact-source run 31 used
+`49a0292464488e1c2f4361042092058baac92dcd`. Its Sol foundation completed and
+the run entered titled elaboration wave one. Patina's three weighted dispatches
+succeeded. The other fourteen dispatches were rejected by the Codex/OpenAI
+provider before model invocation because their strict response schemas used
+compound array-valued `const` values, including exact civic-ID arrays and empty
+evidence arrays. The titled wave did not commit. Run 30's frozen archive and
+hash remain unchanged provenance; provider and newspaper acceptance remain
+pending.
+
+Pushed executable commit
+`ec153a9e8733b07a5b0827f6519b518a971f8779` lowers compound literals once at
+the shared `model_connector` Responses-schema boundary. Exact-source run 32
+proved that cut on the real provider path. Canopy Verge completed its civic
+foundation and all seventeen titled agents with zero rejections, then committed
+world revision 2. Its weighted dispatch was three Patina calls and two calls for
+each other title. Grain Pumps completed its civic foundation and sixteen of
+seventeen titled calls. Numen ordinal 25 timed out after 300 seconds on 38,339
+input characters, so the titled wave did not commit. The unchanged local and
+remote archive is
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-ec153a9-32.tar`,
+independently matching SHA-256
+`484EE490F9054055539B1A65534A714057D06AB27F64B5E5A5DE91844AE3CAEB`.
+Run 30's archive remains unchanged provenance. Provider and newspaper
+acceptance remain pending.
+
+Grain Pumps' civic foundation is committed. The sixteen successful titled
+proposals and their receipts are completed work; only Numen ordinal 25 is
+missing. The operator explicitly rejects replaying run 32 from the beginning.
+Run 32 established the no-replay checkpoint rule; the later pushed resume chain
+consumed that checkpoint rather than replacing it with a fresh invocation.
+
+The pushed resume chain advanced beyond that checkpoint. Exact-source run 36
+used `2260665984332bee29bd0a722bb41a149d78c743`, resumed from
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-c581893-35`,
+and reached world revision 8 with all four locality elaborations committed. It
+then failed atomically in strategic wave one at resolution epoch 4. Nineteen
+cell Interpreter pipelines exhausted five semantic steps: ten ended on
+`invalid_action_shape`, five on `effect_mismatch`, two on
+`submit_requires_empty_draft`, one on `local_validation`, and one on
+`draft_progress`. The wave terminal artifact records 333 model receipt hashes,
+zero accepted rejected-pulse retries, zero committed strategic waves, and no
+newspaper. `BUILD-WITNESS` records `live_service_mutated=false`. The exact remote
+artifact root is
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-2260665-36`.
+No immutable run-36 tar/hash is recorded locally. `status.json` remains a stale
+three-elaboration progress projection; the four titled commit files and the
+revision-bound wave terminal artifact are the later evidence.
+
+That tagged-command cut was pushed as
+`acd544bae6932aa86aca85285a291a342da697a9`. Exact-source run 37 resumed the
+run-36 world at revision 8 without replaying any of the four committed locality
+elaborations. Strategic-wave pulses one and two each completed zero of 52 cells
+and failed all 52 after Interpreter pipelines exhausted five semantic steps
+with `draft_progress`/`draft_required`. The unit was stopped before pulse three.
+No strategic mutation committed and no newspaper was produced. The preserved
+remote root is
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-acd544b-37`;
+its `BUILD-WITNESS` records the run-36 resume source and
+`live_service_mutated=false`.
+
+Run 37 falsifies static tagged variants as a sufficient repair. The advertised
+schema exposed inspect, remove, upsert, and submit together while the prompt
+described a state-dependent hybrid, so the workbench did not own the currently
+legal transition. Commit `deaa37eee347d0b6f5d6817c20368ba187fb2d05` moves that authority into each
+`ModelAgentTool`'s per-step schema. Interpreter initially exposes only a
+complete submit; after rejection it exposes only exact rejected-owner upserts.
+Inspect, remove, and the pseudo-schema are deleted. Upsert preserves the full
+admitted multi-owner repair set until `compile_draft` derives the next state; a
+two-owner regression proves B remains repairable after A changes and submit
+stays unavailable. Independent Modeling re-audit is clear after its P2
+correction. Final verification is 448 library tests, nine strategic-smoke
+tests, two projection tests, the locked strategic target check, rustfmt, and
+diff checks. Push and provider proof remain pending.
+
+Pushed `af749de` routes a provider timeout through the shared model transport's
+existing one same-request retry and records attempt telemetry. Run 36 crossed
+that boundary; timeout retry is not its active blocker.
+
+1. Push the verified tool-owned per-step schema cut and this checkpoint.
+2. Launch exact-source run 38 as a provider-backed strategic resume from run
+   37's world revision 8 and existing pulse/checkpoint lineage. Never replay
+   world compilation or any committed locality elaboration. Run 38's first
+   checkpoint may directly prove the dynamic initial-submit and rejected-owner
+   repair schemas; no separate preliminary provider run is required. Preserve
+   stopped run 23, all artifacts, exact acceptance conditions, and the live
+   daemon.
+3. Only after all six waves commit and an immutable manifest exists, dispatch a
    fresh blind reviewer with only the strongest unedited page and a neutral
    editorial brief, then independently audit it against committed public events.
-3. Have the game-side adapter lower its authored hierarchy into the published
+4. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-4. Prove one consumer-owned effect crosses that public API, changes two foreign
+5. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-5. Measure provider cost and continuity on the existing 200-cell authored-world
+6. Measure provider cost and continuity on the existing 200-cell authored-world
    path without coupling wave width to the provider concurrency ceiling.
-6. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+7. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-7. Keep `gamecult-ops` synchronized with every executable deployment and model
+8. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,
