@@ -202,38 +202,42 @@ pub async fn run_validated_stage_with_timeout(
             let mut transport_attempt = 0;
             loop {
                 let started = Instant::now();
-                match tokio::time::timeout(timeout, port.run_observed(&attempt_request)).await {
+                let (failure_kind, diagnostic) = match tokio::time::timeout(
+                    timeout,
+                    port.run_observed(&attempt_request),
+                )
+                .await
+                {
                     Ok(Ok(output)) => break (output, started.elapsed().as_millis() as u64),
-                    Ok(Err(error)) => {
-                        let diagnostic = bounded_validation_error(&error);
-                        provider_attempts.push(ModelProviderAttemptReceipt {
-                            provider_request_id: None,
-                            system_fingerprint: None,
-                            finish_reason: Some("provider_error".into()),
-                            latency_ms: started.elapsed().as_millis() as u64,
-                            token_usage: None,
-                            transport_features: Vec::new(),
-                            local_validation_result: "provider_error".into(),
-                            local_validation_error: Some(diagnostic.clone()),
-                        });
-                        if transport_attempt == 0 {
-                            transport_attempt += 1;
-                            continue;
-                        }
-                        return Err(anyhow!(
-                            "model stage {} provider failed twice against the same snapshot: {diagnostic}",
-                            request.stage
-                        ));
-                    }
-                    Err(_) => {
-                        return Err(anyhow!(
+                    Ok(Err(error)) => ("provider_error", bounded_validation_error(&error)),
+                    Err(_) => (
+                        "timeout",
+                        format!(
                             "model stage {} timed out after {} seconds with {} input characters",
                             request.stage,
                             timeout.as_secs(),
                             attempt_request.lived_stream.chars().count()
-                        ));
-                    }
+                        ),
+                    ),
+                };
+                provider_attempts.push(ModelProviderAttemptReceipt {
+                    provider_request_id: None,
+                    system_fingerprint: None,
+                    finish_reason: Some(failure_kind.into()),
+                    latency_ms: started.elapsed().as_millis() as u64,
+                    token_usage: None,
+                    transport_features: Vec::new(),
+                    local_validation_result: failure_kind.into(),
+                    local_validation_error: Some(diagnostic.clone()),
+                });
+                if transport_attempt == 0 {
+                    transport_attempt += 1;
+                    continue;
                 }
+                return Err(anyhow!(
+                    "model stage {} transport failed on both permitted attempts against the same snapshot; latest failure ({failure_kind}): {diagnostic}",
+                    request.stage
+                ));
             }
         };
         let ModelProviderOutput {
@@ -510,7 +514,10 @@ fn nearest_rejected_object<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::{
+        Mutex,
+        atomic::{AtomicUsize, Ordering},
+    };
 
     fn receipt_fixture() -> ModelStageReceipt {
         ModelStageReceipt {
@@ -568,6 +575,14 @@ mod tests {
     }
     struct TransportFailureThenValid {
         calls: AtomicUsize,
+    }
+    struct TimeoutThenValid {
+        calls: AtomicUsize,
+        requests: Mutex<Vec<ModelStageRequest>>,
+    }
+    struct MixedTransportFailures {
+        calls: AtomicUsize,
+        timeout_first: bool,
     }
     struct PhysicallyRoutedModel;
 
@@ -657,6 +672,38 @@ mod tests {
 
         fn provider(&self) -> &'static str {
             "transient-fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for TimeoutThenValid {
+        async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            self.requests.lock().unwrap().push(request.clone());
+            if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
+                std::future::pending().await
+            } else {
+                Ok(r#"{"answer":"ready"}"#.into())
+            }
+        }
+
+        fn provider(&self) -> &'static str {
+            "transient-timeout-fixture"
+        }
+    }
+
+    #[async_trait]
+    impl ModelPort for MixedTransportFailures {
+        async fn run(&self, _: &ModelStageRequest) -> Result<String> {
+            let first_attempt = self.calls.fetch_add(1, Ordering::SeqCst) == 0;
+            if first_attempt == self.timeout_first {
+                std::future::pending().await
+            } else {
+                Err(anyhow!("connection reset by fixture peer"))
+            }
+        }
+
+        fn provider(&self) -> &'static str {
+            "mixed-transport-fixture"
         }
     }
 
@@ -772,6 +819,86 @@ mod tests {
             output.receipt.provider_attempts[1].local_validation_result,
             "valid"
         );
+    }
+
+    #[tokio::test]
+    async fn transient_timeout_retries_the_exact_request_and_receipts_both_attempts() {
+        let port = TimeoutThenValid {
+            calls: AtomicUsize::new(0),
+            requests: Mutex::new(Vec::new()),
+        };
+        let request = ModelStageRequest {
+            stage: "typed-stage".into(),
+            model: "fixture".into(),
+            snapshot_binding: "campaign:one:revision:4".into(),
+            lived_stream: "fixture".into(),
+            output_schema: Some(serde_json::json!({
+                "type":"object",
+                "additionalProperties":false,
+                "required":["answer"],
+                "properties":{"answer":{"type":"string"}}
+            })),
+            source_receipt_ids: vec![],
+            temperature: None,
+            max_output_tokens: None,
+        };
+
+        let output =
+            run_validated_stage_with_timeout(&port, &request, std::time::Duration::from_millis(5))
+                .await
+                .unwrap();
+
+        assert_eq!(port.calls.load(Ordering::SeqCst), 2);
+        let requests = port.requests.lock().unwrap();
+        assert_eq!(
+            serde_json::to_value(&requests[0]).unwrap(),
+            serde_json::to_value(&requests[1]).unwrap()
+        );
+        assert_eq!(output.structured.unwrap()["answer"], "ready");
+        assert_eq!(output.receipt.snapshot_binding, request.snapshot_binding);
+        assert_eq!(output.receipt.provider_attempts.len(), 2);
+        assert_eq!(
+            output.receipt.provider_attempts[0].local_validation_result,
+            "timeout"
+        );
+        assert_eq!(
+            output.receipt.provider_attempts[1].local_validation_result,
+            "valid"
+        );
+    }
+
+    #[tokio::test]
+    async fn mixed_transport_failures_report_the_latest_kind_without_rewriting_history() {
+        let request = ModelStageRequest {
+            stage: "typed-stage".into(),
+            model: "fixture".into(),
+            snapshot_binding: "campaign:one:revision:4".into(),
+            lived_stream: "fixture".into(),
+            output_schema: None,
+            source_receipt_ids: vec![],
+            temperature: None,
+            max_output_tokens: None,
+        };
+        for (timeout_first, latest_kind) in [(false, "timeout"), (true, "provider_error")] {
+            let port = MixedTransportFailures {
+                calls: AtomicUsize::new(0),
+                timeout_first,
+            };
+            let error = run_validated_stage_with_timeout(
+                &port,
+                &request,
+                std::time::Duration::from_millis(5),
+            )
+            .await
+            .unwrap_err()
+            .to_string();
+
+            assert_eq!(port.calls.load(Ordering::SeqCst), 2);
+            assert!(error.contains("transport failed on both permitted attempts"));
+            assert!(error.contains(&format!("latest failure ({latest_kind})")));
+            assert!(!error.contains("failed twice"));
+            assert!(!error.contains("timed out twice"));
+        }
     }
 
     #[tokio::test]

@@ -212,8 +212,10 @@ owns no cell retry. The cell engine projects one exact lived moment. If the
 Persona supplies no explicit decision, the engine retries only Persona and
 Interpreter against that same projected stream; Projector does not rerun. The
 second Persona cites the first Persona and Interpreter attempt as causal
-ancestry. Provider transport retains its separately bounded same-request retry,
-and Interpreter draft repair remains workbench-local. Actor and cell membranes
+ancestry. Provider transport gives both connection failures and attempt
+timeouts one separately bounded retry of the exact same request and snapshot;
+a later successful receipt preserves the failed attempt's diagnostic.
+Interpreter draft repair remains workbench-local. Actor and cell membranes
 share one causal-source derivation primitive for Projector to Persona to
 Interpreter, while canonical evidence remains a separate namespace.
 

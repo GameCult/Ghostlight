@@ -2225,7 +2225,7 @@ mod tests {
 
         assert_eq!(failure.pipeline_errors.len(), 1);
         assert!(failure.pipeline_errors[0].contains(
-            "cell Persona model stage failed: model stage cell_persona provider failed twice against the same snapshot"
+            "cell Persona model stage failed: model stage cell_persona transport failed on both permitted attempts against the same snapshot"
         ));
         assert_eq!(
             model.failures_remaining.load(Ordering::SeqCst),
