@@ -76,6 +76,18 @@ struct TitledPreviewCheckpoint {
     retried_dispatch_ordinals: Vec<u64>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TitledMutationProof {
+    schema: String,
+    authority_id: String,
+    authority_digest: String,
+    batch_id: String,
+    batch_digest: String,
+    mutation_receipt_id: String,
+    intended_effect_digest: String,
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct TitledCommitCheckpoint {
@@ -90,6 +102,7 @@ struct TitledCommitCheckpoint {
     verifier_receipt_hash: String,
     model_receipt_hashes: Vec<String>,
     commit_receipt: ghostlight_dungeon::domain::WorldCommitReceipt,
+    mutation_proof: TitledMutationProof,
     legacy_inferred: bool,
 }
 
@@ -276,57 +289,133 @@ fn civic_manifest_is_committed_candidate(
     !current.semantic_verification_receipt_id.is_empty() && current == &expected
 }
 
-fn locality_elaboration_is_committed(
-    campaign: &ghostlight_dungeon::domain::Campaign,
+fn finalized_titled_expansion(
     candidate: &ghostlight_dungeon::domain::LocalityElaboration,
-) -> bool {
-    let expansion = &candidate.expansion;
-    let origin_routes_match = campaign
-        .locations
-        .get(&expansion.origin_location_id)
-        .is_some_and(|origin| {
-            expansion
-                .origin_routes
-                .iter()
-                .all(|(id, route)| origin.routes.get(id) == Some(route))
-        });
-    let civic_matches = expansion.civic_system.as_ref().is_none_or(|candidate| {
-        campaign
-            .civic_systems
-            .get(&candidate.jurisdiction_location_id)
-            .is_some_and(|current| civic_manifest_is_committed_candidate(current, candidate))
-    });
-    origin_routes_match
-        && civic_matches
-        && expansion
-            .locations
-            .iter()
-            .all(|value| campaign.locations.get(&value.id) == Some(value))
-        && expansion
-            .facts
-            .iter()
-            .all(|value| campaign.facts.get(&value.id) == Some(value))
-        && expansion
-            .populations
-            .iter()
-            .all(|value| campaign.gestalts.get(&value.id) == Some(value))
-        && expansion
-            .population_profiles
-            .iter()
-            .all(|value| campaign.agency_profiles.get(&value.subject_id) == Some(value))
-        && expansion
-            .institutions
-            .iter()
-            .all(|value| campaign.institutions.get(&value.id) == Some(value))
-        && expansion
-            .institution_profiles
-            .iter()
-            .all(|value| campaign.agency_profiles.get(&value.subject_id) == Some(value))
-        && expansion
-            .local_relations
-            .iter()
-            .chain(expansion.migration_relations.iter())
-            .all(|value| campaign.agency_relations.get(&value.id) == Some(value))
+    verifier_receipt_hash: &str,
+) -> anyhow::Result<ghostlight_dungeon::domain::RegionExpansion> {
+    if verifier_receipt_hash.trim().is_empty() {
+        anyhow::bail!("titled elaboration verifier receipt hash is empty")
+    }
+    let mut expansion = candidate.expansion.clone();
+    let civic = expansion
+        .civic_system
+        .as_mut()
+        .ok_or_else(|| anyhow::anyhow!("titled elaboration candidate has no civic system"))?;
+    if !civic.semantic_verification_receipt_id.is_empty() {
+        anyhow::bail!("titled elaboration candidate already claims verifier authority")
+    }
+    civic.semantic_verification_receipt_id = verifier_receipt_hash.into();
+    Ok(expansion)
+}
+
+fn committed_elaboration_mutation_proof(
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+    world_receipt: &ghostlight_dungeon::domain::WorldCommitReceipt,
+    expansion: &ghostlight_dungeon::domain::RegionExpansion,
+) -> anyhow::Result<TitledMutationProof> {
+    use ghostlight_dungeon::transition::{
+        MutationAuthorityEnvelope, WorldMutationBatch, WorldMutationReceipt, mutation_digest,
+        validate_batch_structure,
+    };
+
+    let intended_effect_digest =
+        ghostlight_dungeon::legacy_transition::digest_serializable(expansion)?;
+    let mut batches = store
+        .load_all::<WorldMutationBatch>("world_mutation_batch.v1")?
+        .into_iter()
+        .filter(|batch| {
+            batch.campaign_id == world_receipt.campaign_id
+                && batch.expected_world_revision == world_receipt.previous_revision
+                && batch.intended_effect_digest.as_deref() == Some(&intended_effect_digest)
+        })
+        .collect::<Vec<_>>();
+    if batches.len() != 1 {
+        anyhow::bail!(
+            "titled world commit has {} exact candidate mutation batches",
+            batches.len()
+        )
+    }
+    let batch = batches.pop().expect("one exact batch was required");
+    let mut authorities = store
+        .load_all::<MutationAuthorityEnvelope>("mutation_authority_envelope.v1")?
+        .into_iter()
+        .filter(|authority| {
+            authority.campaign_id == world_receipt.campaign_id
+                && authority.world_revision == world_receipt.previous_revision
+                && authority.digest == batch.authority_envelope_digest
+        })
+        .collect::<Vec<_>>();
+    if authorities.len() != 1 {
+        anyhow::bail!(
+            "titled world commit has {} exact mutation authorities",
+            authorities.len()
+        )
+    }
+    let authority = authorities
+        .pop()
+        .expect("one exact mutation authority was required");
+    validate_batch_structure(&authority, &batch, world_receipt.committed_at)?;
+
+    let mut mutation_receipts = store
+        .load_all::<WorldMutationReceipt>("world_mutation_receipt.v1")?
+        .into_iter()
+        .filter(|receipt| {
+            receipt.campaign_id == world_receipt.campaign_id
+                && receipt.previous_world_revision == world_receipt.previous_revision
+                && receipt.world_revision == world_receipt.revision
+                && receipt.batch_digest == batch.digest
+                && receipt.authority_envelope_digest == authority.digest
+        })
+        .collect::<Vec<_>>();
+    if mutation_receipts.len() != 1 {
+        anyhow::bail!(
+            "titled world commit has {} exact mutation receipts",
+            mutation_receipts.len()
+        )
+    }
+    let mutation_receipt = mutation_receipts
+        .pop()
+        .expect("one exact mutation receipt was required");
+    let expected_mutation_digests = batch
+        .mutations
+        .iter()
+        .map(mutation_digest)
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    let expected_source_receipt_id = format!(
+        "region-expansion:{}",
+        intended_effect_digest.trim_start_matches("sha256:")
+    );
+    if world_receipt.schema != "ghostlight.world_commit_receipt.v1"
+        || world_receipt.command_kind != "elaborate_locality"
+        || world_receipt.previous_revision.saturating_add(1) != world_receipt.revision
+        || batch.schema != "ghostlight.world_mutation_batch.v1"
+        || batch.source_receipt_id != expected_source_receipt_id
+        || batch.expected_resolution_epoch.is_some()
+        || batch.mutations.is_empty()
+        || authority.schema != "ghostlight.mutation_authority_envelope.v1"
+        || authority.resolution_epoch.is_some()
+        || authority.source_subject.is_some()
+        || authority.procedure
+            != ghostlight_dungeon::transition::MutationProcedure::CompilerAdmission
+        || authority.outcome
+            != ghostlight_dungeon::transition::MutationOutcomeBinding::Deterministic
+        || mutation_receipt.schema != "ghostlight.world_mutation_receipt.v1"
+        || mutation_receipt.id != format!("mutation:{}", batch.id)
+        || mutation_receipt.committed_at != world_receipt.committed_at
+        || mutation_receipt.mutation_digests != expected_mutation_digests
+    {
+        anyhow::bail!("titled mutation proof does not bind one compiler admission commit")
+    }
+
+    Ok(TitledMutationProof {
+        schema: "ghostlight.titled_elaboration_mutation_proof.v1".into(),
+        authority_id: authority.id,
+        authority_digest: authority.digest,
+        batch_id: batch.id,
+        batch_digest: batch.digest,
+        mutation_receipt_id: mutation_receipt.id,
+        intended_effect_digest,
+    })
 }
 
 #[tokio::main]
@@ -720,9 +809,7 @@ async fn main() -> anyhow::Result<()> {
                 let civic = campaign.civic_systems.get(location_id).ok_or_else(|| {
                     anyhow::anyhow!("resumed campaign lacks civic system for {location_id}")
                 })?;
-                if !civic_manifest_is_committed_candidate(civic, candidate_civic)
-                    || !locality_elaboration_is_committed(&campaign, candidate)
-                {
+                if !civic_manifest_is_committed_candidate(civic, candidate_civic) {
                     anyhow::bail!(
                         "titled preview for {location_id} is not the civic system committed in CultCache"
                     )
@@ -763,6 +850,13 @@ async fn main() -> anyhow::Result<()> {
                             "titled world commit receipt is missing for {location_id} revision {world_revision_after}"
                         )
                     })?;
+                let finalized_expansion =
+                    finalized_titled_expansion(candidate, verifier_receipt.storage_key())?;
+                let mutation_proof = committed_elaboration_mutation_proof(
+                    &store,
+                    &persisted_commit_receipt,
+                    &finalized_expansion,
+                )?;
                 let commit_checkpoint = if titled_commit_path.is_file() {
                     read_checkpoint::<TitledCommitCheckpoint>(&titled_commit_path)?
                 } else {
@@ -778,6 +872,7 @@ async fn main() -> anyhow::Result<()> {
                         verifier_receipt_hash: verifier_receipt.storage_key().into(),
                         model_receipt_hashes: titled.model_receipt_hashes.clone(),
                         commit_receipt: persisted_commit_receipt.clone(),
+                        mutation_proof: mutation_proof.clone(),
                         legacy_inferred: true,
                     };
                     publish_immutable_checkpoint(&titled_commit_path, &checkpoint)?;
@@ -793,6 +888,7 @@ async fn main() -> anyhow::Result<()> {
                     || commit_checkpoint.verifier_receipt_hash != verifier_receipt.storage_key()
                     || commit_checkpoint.model_receipt_hashes != titled.model_receipt_hashes
                     || commit_checkpoint.commit_receipt != persisted_commit_receipt
+                    || commit_checkpoint.mutation_proof != mutation_proof
                     || commit_checkpoint.commit_receipt.command_kind != "elaborate_locality"
                     || (!commit_checkpoint.legacy_inferred
                         && commit_checkpoint
@@ -975,7 +1071,7 @@ async fn main() -> anyhow::Result<()> {
                     "retried_dispatch_ordinals":retried_dispatch_ordinals,
                 }))?,
             )?;
-            let candidate = admission.candidate().ok_or_else(|| {
+            let candidate = admission.candidate().cloned().ok_or_else(|| {
                 anyhow::anyhow!(
                     "titled elaboration produced no candidate: {}",
                     admission.candidate_diagnostic().unwrap_or("no diagnostic")
@@ -1002,7 +1098,7 @@ async fn main() -> anyhow::Result<()> {
                     &campaign,
                     titled_worker.task_request(),
                     description,
-                    candidate,
+                    &candidate,
                     &causal_receipt_ids,
                 )
                 .await
@@ -1018,6 +1114,8 @@ async fn main() -> anyhow::Result<()> {
                 }
             };
             store.persist_model_stage_receipts(std::slice::from_ref(&verifier_receipt))?;
+            let finalized_expansion =
+                finalized_titled_expansion(&candidate, verifier_receipt.storage_key())?;
             let finalized =
                 finalize_world_elaboration(&campaign, admission, verifier_receipt.clone())?;
             let CommandResult::Committed {
@@ -1030,6 +1128,11 @@ async fn main() -> anyhow::Result<()> {
             else {
                 anyhow::bail!("titled locality elaboration did not commit")
             };
+            let mutation_proof = committed_elaboration_mutation_proof(
+                &store,
+                &titled_commit_receipt,
+                &finalized_expansion,
+            )?;
             let titled_commit_checkpoint = TitledCommitCheckpoint {
                 schema: "ghostlight.titled_elaboration_commit.v1".into(),
                 location_id: location_id.clone(),
@@ -1042,6 +1145,7 @@ async fn main() -> anyhow::Result<()> {
                 verifier_receipt_hash: verifier_receipt.storage_key().into(),
                 model_receipt_hashes: admitted_model_receipt_hashes,
                 commit_receipt: titled_commit_receipt,
+                mutation_proof,
                 legacy_inferred: false,
             };
             publish_immutable_checkpoint(&titled_commit_path, &titled_commit_checkpoint)?;
@@ -1890,9 +1994,9 @@ fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
 #[cfg(test)]
 mod tests {
     use super::{
-        admitted_public_channel, civic_manifest_is_committed_candidate, final_wave_field,
-        locality_elaboration_is_committed, publish_immutable_checkpoint, strategic_campaign,
-        strategic_locality_request, strategic_titled_locality_request,
+        admitted_public_channel, civic_manifest_is_committed_candidate,
+        committed_elaboration_mutation_proof, final_wave_field, publish_immutable_checkpoint,
+        strategic_campaign, strategic_locality_request, strategic_titled_locality_request,
         titled_failure_checkpoint_paths,
     };
 
@@ -2004,35 +2108,121 @@ mod tests {
     }
 
     #[test]
-    fn legacy_completion_inference_requires_every_non_civic_operation() {
-        let mut campaign = strategic_campaign();
+    fn legacy_completion_inference_uses_the_kernel_mutation_proof() {
+        use ghostlight_dungeon::domain::{Location, RegionExpansion, Route, WorldCommitReceipt};
+        use std::collections::BTreeMap;
+
+        let campaign = strategic_campaign();
         let child = ghostlight_dungeon::domain::Location {
             id: "patina-child".into(),
             name: "The Duck Gate".into(),
             container_id: Some("room".into()),
-            routes: Default::default(),
-            persistent_features: vec!["A bronze duck called Harold.".into()],
+            routes: BTreeMap::from([(
+                "back".into(),
+                Route {
+                    destination_id: "room".into(),
+                    distance: "a short path".into(),
+                    travel_minutes: 3,
+                },
+            )]),
+            persistent_features: vec![
+                "Three petition ribbons tied around its neck.".into(),
+                "A bronze duck called Harold.".into(),
+            ],
         };
-        let candidate = ghostlight_dungeon::domain::LocalityElaboration {
-            target_location_id: "room".into(),
-            expansion: ghostlight_dungeon::domain::RegionExpansion {
-                origin_location_id: "room".into(),
-                origin_routes: Default::default(),
-                locations: vec![child.clone()],
-                facts: Vec::new(),
-                populations: Vec::new(),
-                population_profiles: Vec::new(),
-                migration_relations: Vec::new(),
-                institutions: Vec::new(),
-                institution_profiles: Vec::new(),
-                local_relations: Vec::new(),
-                civic_system: None,
-            },
+        let expansion = RegionExpansion {
+            origin_location_id: "room".into(),
+            origin_routes: BTreeMap::from([(
+                "to-duck-gate".into(),
+                Route {
+                    destination_id: child.id.clone(),
+                    distance: "a short path".into(),
+                    travel_minutes: 3,
+                },
+            )]),
+            locations: vec![child.clone()],
+            facts: Vec::new(),
+            populations: Vec::new(),
+            population_profiles: Vec::new(),
+            migration_relations: Vec::new(),
+            institutions: Vec::new(),
+            institution_profiles: Vec::new(),
+            local_relations: Vec::new(),
+            civic_system: None,
         };
+        let committed_at = chrono::Utc::now();
+        let transition = ghostlight_dungeon::legacy_transition::lower_region_expansion(
+            &campaign,
+            &expansion,
+            committed_at + chrono::Duration::minutes(5),
+        )
+        .unwrap();
+        let mut projected = campaign.clone();
+        let mutation_receipt =
+            ghostlight_dungeon::legacy_transition::apply_lowered_region_expansion(
+                &mut projected,
+                &expansion,
+                &transition,
+                committed_at,
+            )
+            .unwrap();
+        assert_ne!(projected.locations[&child.id], child);
 
-        assert!(!locality_elaboration_is_committed(&campaign, &candidate));
-        campaign.locations.insert(child.id.clone(), child);
-        assert!(locality_elaboration_is_committed(&campaign, &candidate));
+        let world_receipt = WorldCommitReceipt {
+            schema: "ghostlight.world_commit_receipt.v1".into(),
+            campaign_id: campaign.id,
+            previous_revision: campaign.revision,
+            revision: campaign.revision + 1,
+            command_kind: "elaborate_locality".into(),
+            committed_at,
+            roll: None,
+        };
+        let directory = tempfile::tempdir().unwrap();
+        let store = ghostlight_dungeon::persistence::CampaignStore::open(
+            directory.path().join("campaign.cc"),
+        )
+        .unwrap();
+        store
+            .insert(
+                "mutation_authority_envelope.v1",
+                "ghostlight.mutation_authority_envelope.v1",
+                &transition.authority.id,
+                &transition.authority,
+            )
+            .unwrap();
+        store
+            .insert(
+                "world_mutation_batch.v1",
+                "ghostlight.world_mutation_batch.v1",
+                &transition.batch.id,
+                &transition.batch,
+            )
+            .unwrap();
+        store
+            .insert(
+                "world_mutation_receipt.v1",
+                "ghostlight.world_mutation_receipt.v1",
+                &mutation_receipt.id,
+                &mutation_receipt,
+            )
+            .unwrap();
+
+        let proof = committed_elaboration_mutation_proof(&store, &world_receipt, &expansion)
+            .expect("the persisted mutation bundle owns historical completion");
+        assert_eq!(proof.batch_id, transition.batch.id);
+        assert_eq!(proof.mutation_receipt_id, mutation_receipt.id);
+
+        let mut uncommitted = expansion.clone();
+        uncommitted.locations.push(Location {
+            id: "uncommitted-place".into(),
+            name: "The Imaginary Annex".into(),
+            container_id: Some("room".into()),
+            routes: Default::default(),
+            persistent_features: Vec::new(),
+        });
+        assert!(
+            committed_elaboration_mutation_proof(&store, &world_receipt, &uncommitted).is_err()
+        );
     }
 
     #[test]

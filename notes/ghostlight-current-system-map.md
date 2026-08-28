@@ -1131,10 +1131,13 @@ and continues at the first incomplete authority boundary. A committed
 foundation is checked against its preserved civic apparatus. A titled preview
 is not completion authority: only a post-kernel completion checkpoint bound to
 the before/after revisions, admission digest, semantic verifier, model receipts,
-and exact `WorldCommitReceipt` may skip that commit. Run-32's older committed
-Canopy pass can be admitted once through an explicit legacy inference that
-matches its complete civic candidate and persisted world receipt, then gains
-the same durable completion checkpoint. A partial titled wave routes through
+exact `WorldCommitReceipt`, and the kernel-owned mutation authority, batch, and
+receipt may skip that commit. The batch's `intended_effect_digest` binds the
+complete finalized candidate before deterministic aggregate projection, so the
+resume verifier does not duplicate the reducer's set and ordering rules.
+Run-32's older committed Canopy pass can be admitted once through that persisted
+mutation proof plus its complete civic candidate, then gains the same durable
+completion checkpoint. A partial titled wave routes through
 `resume_elaboration_wave`. Each later terminal partial result is published as a
 new immutable generation by same-directory atomic rename, preserving the prior
 valid generation. A committed strategic tick without its matching durable wave
