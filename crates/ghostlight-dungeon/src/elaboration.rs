@@ -2945,6 +2945,7 @@ mod tests {
         };
         let context = crate::agent::ModelAgentToolContext {
             source_receipt_ids: Vec::new(),
+            current_model_receipt: None,
         };
 
         let rejected = crate::agent::ModelAgentTool::invoke(&mut tool, wrong, &context).await;

@@ -609,6 +609,7 @@ mod tests {
                 progress: 3,
                 threshold: 4,
                 consequence: "SECRET_ARREST_PLAN".into(),
+                consequence_scope: Default::default(),
             },
         );
         campaign.news.push(crate::domain::NewsIssue {

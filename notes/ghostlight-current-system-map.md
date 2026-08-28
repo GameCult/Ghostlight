@@ -114,6 +114,13 @@ Such actions persist as attributed proposals in the same strategic-wave commit
 and return for consumer admission, not direct mutation. Compiler and consumer
 producers share one `WorldSeed` admission transaction.
 
+Clock consequences cannot use an externally controlled subject as their
+affected or responsible scope. They may still reach that subject through an
+exact place or public channel, but only the consumer may decide what happens
+inside its sovereign state. Temporary materialized-member actor projections
+are also ineligible clock anchors; consequences bind stable simulated people,
+institutions, or populations.
+
 The Delvehold adapter remains Delvehold-owned. It lowers committed Greathold
 projections and realized effects into generic Ghostlight operations, then raises
 attributed Ghostlight intents, news, projections, and receipts into Delvehold's
@@ -229,6 +236,20 @@ a later successful receipt preserves the failed attempt's diagnostic.
 Interpreter draft repair remains workbench-local. Actor and cell membranes
 share one causal-source derivation primitive for Projector to Persona to
 Interpreter, while canonical evidence remains a separate namespace.
+
+World clocks own declared consequence text and exact observable scope. New
+seeds must supply that scope and begin below threshold. A persisted legacy
+clock without scope enters one balanced-model binding agent over a frozen
+campaign revision. The agent proposes the smallest causally sufficient stable,
+simulation-eligible scope; its accepted action is rebound to the exact batch
+digest. `WorldKernel` alone admits the proposal. The common mutation application
+path detects threshold crossing and derives one stable
+`clock-consequence:<clock-id>` event, then the shared event publisher derives
+the exact rows for every admitted public channel. The event IDs enter mutation
+and strategic-tick receipts. Binding scope, exact model receipt ancestry,
+emitted event and news IDs, and the next newspaper boundary commit atomically
+with the campaign in CultCache. Runner proposal and completion checkpoints are
+recoverable projections; neither owns the event nor the newspaper slice.
 
 The effect verifier receives the same exact typed permission slice used by the
 Interpreter. That slice is its sole map of canonical locations, reachable actor

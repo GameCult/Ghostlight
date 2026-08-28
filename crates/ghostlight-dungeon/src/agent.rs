@@ -42,6 +42,10 @@ pub struct ModelAgentToolContext {
     /// the action was produced; they are not source evidence for canonical
     /// world facts or profiles.
     pub source_receipt_ids: Vec<String>,
+    /// The receipt for the model action currently being executed. Tools that
+    /// admit a narrower semantic object may rebind this receipt to that exact
+    /// object and return the rebound receipt with their accepted output.
+    pub current_model_receipt: Option<ModelStageReceipt>,
 }
 
 pub enum ModelAgentToolOutcome<Output, Finding> {
@@ -196,6 +200,7 @@ pub async fn run_model_agent<Tool: ModelAgentTool>(
                     .chain(std::iter::once(stage.receipt.clone()))
                     .collect::<Vec<_>>(),
             ),
+            current_model_receipt: Some(stage.receipt.clone()),
         };
         match tool.invoke(action, &tool_context).await {
             ModelAgentToolOutcome::Continue {

@@ -259,6 +259,13 @@ fn scale_campaign(
                 progress: 5,
                 threshold: 6,
                 consequence: "the governing coalition is chosen".into(),
+                consequence_scope: WorldEventScope {
+                    actor_ids: Vec::new(),
+                    institution_ids: (0..8).map(|index| format!("faction-{index:02}")).collect(),
+                    gestalt_ids: Vec::new(),
+                    location_ids: vec!["forum".into()],
+                    public_channels: vec!["public bulletin".into()],
+                },
             },
         )]),
         facts: BTreeMap::new(),

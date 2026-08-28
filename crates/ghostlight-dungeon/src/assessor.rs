@@ -3891,6 +3891,7 @@ mod tests {
                 progress: 1,
                 threshold: 4,
                 consequence: "The clinic fails.".into(),
+                consequence_scope: Default::default(),
             },
         );
         campaign.institutions.insert(
@@ -4345,6 +4346,7 @@ mod tests {
                 progress: 3,
                 threshold: 4,
                 consequence: "The regulator fails.".into(),
+                consequence_scope: Default::default(),
             },
         );
         let acting = campaign.actors["player"].clone();

@@ -395,6 +395,7 @@ pub fn validate_seed_admission(
         }
         profile.simulation_eligible = false;
     }
+    crate::compiler::validate_campaign_seed(&campaign)?;
     let primary = &campaign.player_actor_id;
     if !campaign.actors.contains_key(primary)
         && !campaign.institutions.contains_key(primary)

@@ -163,7 +163,7 @@ async fn main() -> anyhow::Result<()> {
 fn action_campaign() -> ghostlight_dungeon::domain::Campaign {
     use chrono::Utc;
     use ghostlight_dungeon::domain::{
-        ActorState, BranchOrigin, Campaign, InstitutionState, Location, WorldClock,
+        ActorState, BranchOrigin, Campaign, InstitutionState, Location, WorldClock, WorldEventScope,
     };
     use std::collections::{BTreeMap, BTreeSet};
 
@@ -245,6 +245,13 @@ fn action_campaign() -> ghostlight_dungeon::domain::Campaign {
                 progress: 2,
                 threshold: 5,
                 consequence: "the coolant loop trips offline".into(),
+                consequence_scope: WorldEventScope {
+                    actor_ids: vec!["foreman".into()],
+                    institution_ids: vec!["station-operations".into()],
+                    gestalt_ids: Vec::new(),
+                    location_ids: vec!["maintenance-bay".into()],
+                    public_channels: Vec::new(),
+                },
             },
         )]),
         facts: BTreeMap::new(),

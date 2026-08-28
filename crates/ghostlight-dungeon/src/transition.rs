@@ -642,6 +642,8 @@ pub struct WorldMutationReceipt {
     pub world_revision: u64,
     pub mutation_digests: Vec<String>,
     pub component_versions: Vec<ComponentVersionChange>,
+    #[serde(default)]
+    pub derived_event_ids: Vec<String>,
     pub committed_at: DateTime<Utc>,
 }
 
@@ -985,6 +987,7 @@ pub fn apply_component_world_batch(
             world_revision: previous_revision.saturating_add(1),
             mutation_digests,
             component_versions,
+            derived_event_ids: Vec::new(),
             committed_at: now,
         },
     })

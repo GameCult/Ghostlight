@@ -3,6 +3,7 @@
 pub mod agency_corpus;
 pub mod agent;
 pub mod assessor;
+pub mod clock;
 pub mod compiler;
 pub mod consumer;
 pub mod d20;

@@ -1864,6 +1864,7 @@ mod tests {
             progress: 3,
             threshold: 4,
             consequence: "the camp is cut off by the storm".into(),
+            consequence_scope: Default::default(),
         };
         assert_eq!(
             project_world_clock_pressure(&clock),

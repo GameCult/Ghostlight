@@ -1,3 +1,4 @@
+use crate::clock::ClockConsequenceBindingReceipt;
 use crate::consumer::{
     ExternalProposalReceipt, ExternalSnapshotReceipt, ExternalSubjectAuthority,
     ExternalWorldProposal, WorldSeedAdmission, WorldSeedAdmissionReceipt,
@@ -843,6 +844,7 @@ impl CampaignStore {
         evidence: &[VaultEvidenceReceipt],
         candidates: &[crate::domain::CanonCandidate],
         model_receipts: &[crate::model::ModelStageReceipt],
+        clock_binding_receipt: Option<&ClockConsequenceBindingReceipt>,
         mutation: Option<(
             &MutationAuthorityEnvelope,
             &WorldMutationBatch,
@@ -926,6 +928,40 @@ impl CampaignStore {
                     item,
                 )?);
             }
+        }
+        if let Some(binding) = clock_binding_receipt {
+            let supplied_model_receipt_ids = model_receipts
+                .iter()
+                .map(|receipt| receipt.storage_key().to_owned())
+                .collect::<BTreeSet<_>>();
+            if receipt.command_kind != "bind_clock_consequences"
+                || binding.campaign_id != receipt.campaign_id
+                || binding.previous_revision != receipt.previous_revision
+                || binding.revision != receipt.revision
+                || binding.committed_at != receipt.committed_at
+                || !supplied_model_receipt_ids.contains(&binding.accepted_model_receipt_id)
+                || binding.model_receipt_ids.len() != supplied_model_receipt_ids.len()
+                || binding
+                    .model_receipt_ids
+                    .iter()
+                    .cloned()
+                    .collect::<BTreeSet<_>>()
+                    != supplied_model_receipt_ids
+            {
+                return Err(anyhow!(
+                    "clock consequence binding receipt contradicts its world commit bundle"
+                ));
+            }
+            self.append_idempotent_companion(
+                &mut expected_rows,
+                &mut rows,
+                envelope(
+                    "clock_consequence_binding_receipt.v1",
+                    "ghostlight.clock_consequence_binding_receipt.v1",
+                    &format!("{}-{}", binding.campaign_id, binding.revision),
+                    binding,
+                )?,
+            )?;
         }
         if let Some(mutation) = mutation {
             append_mutation_proof(&mut rows, receipt, mutation)?;
@@ -1339,6 +1375,7 @@ mod tests {
                 &[],
                 std::slice::from_ref(&repeated_receipt),
                 None,
+                None,
             )
             .unwrap();
 
@@ -1395,6 +1432,7 @@ mod tests {
                 &[],
                 &[],
                 std::slice::from_ref(&collision),
+                None,
                 None,
             )
             .unwrap_err();

@@ -998,9 +998,11 @@ pub fn apply_lowered_transition(
     now: DateTime<Utc>,
 ) -> Result<WorldMutationReceipt> {
     let snapshot = component_snapshot(campaign)?;
-    let application =
+    let mut application =
         apply_component_world_batch(&snapshot, &transition.authority, &transition.batch, now)?;
     project_mutated_components(campaign, &application.state, &transition.batch)?;
+    application.receipt.derived_event_ids =
+        crate::clock::materialize_due_clock_consequences(campaign)?;
     Ok(application.receipt)
 }
 
@@ -3378,6 +3380,7 @@ mod tests {
                     progress: 2,
                     threshold: 6,
                     consequence: "The doors lock.".into(),
+                    consequence_scope: Default::default(),
                 },
             )]),
             facts: BTreeMap::from([(

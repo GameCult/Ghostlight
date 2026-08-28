@@ -27,6 +27,22 @@ struct FoundationCheckpoint {
     model_receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt>,
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ClockBindingProposalCheckpoint {
+    schema: String,
+    admission: ghostlight_dungeon::clock::ClockConsequenceBindingAdmission,
+    model_receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ClockBindingCheckpoint {
+    schema: String,
+    binding_receipt: ghostlight_dungeon::clock::ClockConsequenceBindingReceipt,
+    commit_receipt: ghostlight_dungeon::domain::WorldCommitReceipt,
+}
+
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct CompletedInvocationCheckpoint {
@@ -213,6 +229,85 @@ fn load_checkpoint_receipts(
                 .ok_or_else(|| anyhow::anyhow!("checkpoint model receipt is missing: {hash}"))
         })
         .collect()
+}
+
+fn latest_clock_binding_receipt(
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+    campaign_id: uuid::Uuid,
+) -> anyhow::Result<Option<ghostlight_dungeon::clock::ClockConsequenceBindingReceipt>> {
+    Ok(store
+        .load_all::<ghostlight_dungeon::clock::ClockConsequenceBindingReceipt>(
+            "clock_consequence_binding_receipt.v1",
+        )?
+        .into_iter()
+        .filter(|receipt| receipt.campaign_id == campaign_id)
+        .max_by_key(|receipt| receipt.revision))
+}
+
+fn validate_clock_binding_receipt_projection(
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    receipt: &ghostlight_dungeon::clock::ClockConsequenceBindingReceipt,
+) -> anyhow::Result<()> {
+    if receipt.schema != "ghostlight.clock_consequence_binding_receipt.v1"
+        || receipt.campaign_id != campaign.id
+        || receipt.previous_revision.saturating_add(1) != receipt.revision
+        || receipt.revision > campaign.revision
+        || receipt.bindings.iter().any(|binding| {
+            campaign
+                .clocks
+                .get(&binding.clock_id)
+                .is_none_or(|clock| clock.consequence_scope != binding.scope)
+        })
+        || receipt
+            .emitted_event_ids
+            .iter()
+            .any(|id| !campaign.events.iter().any(|event| &event.id == id))
+        || receipt
+            .emitted_news_ids
+            .iter()
+            .any(|id| !campaign.news.iter().any(|news| &news.id == id))
+    {
+        anyhow::bail!("canonical clock consequence binding receipt does not match the campaign")
+    }
+    Ok(())
+}
+
+fn recover_committed_clock_binding(
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    checkpoint_path: &std::path::Path,
+) -> anyhow::Result<Option<ghostlight_dungeon::clock::ClockConsequenceBindingReceipt>> {
+    let Some(binding_receipt) = latest_clock_binding_receipt(store, campaign.id)? else {
+        if checkpoint_path.is_file() {
+            anyhow::bail!("clock binding checkpoint has no canonical CultCache receipt")
+        }
+        return Ok(None);
+    };
+    validate_clock_binding_receipt_projection(campaign, &binding_receipt)?;
+    let commit_receipt = store
+        .load::<ghostlight_dungeon::domain::WorldCommitReceipt>(
+            "world_commit_receipt.v1",
+            &format!("{}-{}", campaign.id, binding_receipt.revision),
+        )?
+        .map(|(_, receipt)| receipt)
+        .ok_or_else(|| anyhow::anyhow!("clock binding world commit receipt is missing"))?;
+    let checkpoint = ClockBindingCheckpoint {
+        schema: "ghostlight.clock_consequence_binding_checkpoint.v2".into(),
+        binding_receipt: binding_receipt.clone(),
+        commit_receipt,
+    };
+    if checkpoint_path.is_file() {
+        let persisted: ClockBindingCheckpoint = read_checkpoint(checkpoint_path)?;
+        if persisted.schema != checkpoint.schema
+            || persisted.binding_receipt != checkpoint.binding_receipt
+            || persisted.commit_receipt != checkpoint.commit_receipt
+        {
+            anyhow::bail!("clock binding checkpoint disagrees with canonical CultCache state")
+        }
+    } else {
+        publish_immutable_checkpoint(checkpoint_path, &checkpoint)?;
+    }
+    Ok(Some(binding_receipt))
 }
 
 fn rehydrate_titled_failure(
@@ -469,7 +564,7 @@ async fn main() -> anyhow::Result<()> {
         "The sovereign deep-hold diverted the White Root aquifer. Two tithe caravans have vanished, the charcoal guilds threaten secession, and somebody pawned the regent's rain seal."
             .into()
     });
-    let wave_count = bounded_environment_usize("GHOSTLIGHT_STRATEGIC_WAVES", 1, 1, 8)?;
+    let wave_count = bounded_environment_usize("GHOSTLIGHT_STRATEGIC_WAVES", 1, 1, 16)?;
     let max_rejected_pulses_per_wave =
         bounded_environment_usize("GHOSTLIGHT_STRATEGIC_MAX_REJECTED_PULSES_PER_WAVE", 2, 0, 4)?;
     let root = std::env::var_os("GHOSTLIGHT_LIVE_FIRE_RESULT_ROOT")
@@ -596,7 +691,11 @@ async fn main() -> anyhow::Result<()> {
         let initial_location_ids = campaign.locations.keys().cloned().collect::<Vec<_>>();
         (campaign, vec![], vec![], None, initial_location_ids)
     };
-    ghostlight_dungeon::compiler::validate_campaign_seed(&campaign)?;
+    if resume {
+        ghostlight_dungeon::compiler::validate_campaign_runtime(&campaign)?;
+    } else {
+        ghostlight_dungeon::compiler::validate_campaign_seed(&campaign)?;
+    }
     if !resume {
         let pressure_event = ghostlight_dungeon::domain::Event {
             id: format!("pressure-{}", uuid::Uuid::new_v4()),
@@ -614,19 +713,7 @@ async fn main() -> anyhow::Result<()> {
             location_ids: campaign.locations.keys().cloned().collect(),
             public_channels: vec![public_channel.clone()],
         };
-        campaign.news.push(ghostlight_dungeon::domain::NewsIssue {
-            id: format!(
-                "news:{}:{}",
-                pressure_event.id,
-                public_channel.replace(' ', "-")
-            ),
-            at: pressure_event.at,
-            channel: public_channel.clone(),
-            headline: ghostlight_dungeon::domain::committed_news_headline(&pressure_event.summary),
-            event_ids: vec![pressure_event.id.clone()],
-            reliability: "committed public channel".into(),
-        });
-        campaign.events.push(pressure_event);
+        ghostlight_dungeon::domain::append_event_with_publications(&mut campaign, pressure_event);
         store.create_unadmitted_fixture_campaign(
             &campaign,
             &seed_evidence_receipts,
@@ -635,6 +722,103 @@ async fn main() -> anyhow::Result<()> {
     }
     let player_before = campaign.actors[&campaign.player_actor_id].clone();
     let kernel = WorldKernel::start(store.clone());
+    let clock_binding_path = root.join("clock-consequence-binding.json");
+    let clock_binding_proposal_path = root.join("clock-consequence-binding-proposal.json");
+    let mut pending_clock_news_start = None;
+    if resume
+        && campaign
+            .clocks
+            .values()
+            .any(|clock| clock.consequence_scope.is_unbound())
+    {
+        if clock_binding_path.is_file() {
+            anyhow::bail!(
+                "clock consequence binding checkpoint exists but the persisted campaign is still unbound"
+            )
+        }
+        std::fs::write(
+            root.join("status.json"),
+            serde_json::to_vec_pretty(&serde_json::json!({
+                "schema":"ghostlight.live_strategic_smoke_status.v1",
+                "state":"binding_clock_consequences",
+                "waves_completed":campaign.strategic_tick_count,
+                "waves_requested":wave_count,
+                "world_revision":campaign.revision,
+                "updated_at":Utc::now(),
+            }))?,
+        )?;
+        let proposal = if clock_binding_proposal_path.is_file() {
+            read_checkpoint::<ClockBindingProposalCheckpoint>(&clock_binding_proposal_path)?
+        } else {
+            let binding_run = ghostlight_dungeon::clock::propose_clock_consequence_bindings(
+                model.as_ref(),
+                &campaign,
+            )
+            .await
+            .map_err(anyhow::Error::new)?;
+            let proposal = ClockBindingProposalCheckpoint {
+                schema: "ghostlight.clock_consequence_binding_proposal_checkpoint.v1".into(),
+                admission: binding_run.output,
+                model_receipts: binding_run.receipts,
+            };
+            publish_immutable_checkpoint(&clock_binding_proposal_path, &proposal)?;
+            proposal
+        };
+        if proposal.schema != "ghostlight.clock_consequence_binding_proposal_checkpoint.v1" {
+            anyhow::bail!("clock consequence binding proposal checkpoint is unsupported")
+        }
+        ghostlight_dungeon::clock::validate_binding_receipts(
+            &campaign,
+            &proposal.admission,
+            &proposal.model_receipts,
+        )?;
+        let CommandResult::Committed {
+            campaign: bound_campaign,
+            receipt,
+        } = kernel
+            .command(WorldCommand::BindClockConsequences {
+                expected_revision: campaign.revision,
+                admission: proposal.admission,
+                model_stage_receipts: proposal.model_receipts,
+            })
+            .await?
+        else {
+            anyhow::bail!("clock consequence binding did not commit")
+        };
+        let binding_receipt = store
+            .load::<ghostlight_dungeon::clock::ClockConsequenceBindingReceipt>(
+                "clock_consequence_binding_receipt.v1",
+                &format!("{}-{}", bound_campaign.id, bound_campaign.revision),
+            )?
+            .map(|(_, receipt)| receipt)
+            .ok_or_else(|| anyhow::anyhow!("clock binding commit lacks its canonical receipt"))?;
+        validate_clock_binding_receipt_projection(&bound_campaign, &binding_receipt)?;
+        publish_immutable_checkpoint(
+            &clock_binding_path,
+            &ClockBindingCheckpoint {
+                schema: "ghostlight.clock_consequence_binding_checkpoint.v2".into(),
+                binding_receipt: binding_receipt.clone(),
+                commit_receipt: receipt,
+            },
+        )?;
+        pending_clock_news_start = Some((
+            binding_receipt.next_wave_index,
+            binding_receipt.news_count_before,
+        ));
+        campaign = bound_campaign;
+    } else if resume
+        && let Some(binding_receipt) =
+            recover_committed_clock_binding(&store, &campaign, &clock_binding_path)?
+    {
+        if campaign.strategic_tick_count.saturating_add(1) as usize
+            == binding_receipt.next_wave_index
+        {
+            pending_clock_news_start = Some((
+                binding_receipt.next_wave_index,
+                binding_receipt.news_count_before,
+            ));
+        }
+    }
     let elaboration_passes = if compiled.is_some() {
         bounded_environment_usize("GHOSTLIGHT_WORLD_ELABORATION_PASSES", 0, 0, 8)?
     } else {
@@ -1221,11 +1405,16 @@ async fn main() -> anyhow::Result<()> {
     }
     let completed_wave_count = wave_reports.len();
     for wave_index in completed_wave_count + 1..=wave_count {
-        let previous_news_count = if wave_index == 1 {
-            0
-        } else {
-            campaign.news.len()
-        };
+        let previous_news_count = pending_clock_news_start
+            .filter(|(next_wave_index, _)| *next_wave_index == wave_index)
+            .map(|(_, news_count)| news_count)
+            .unwrap_or_else(|| {
+                if wave_index == 1 {
+                    0
+                } else {
+                    campaign.news.len()
+                }
+            });
         let mut rejected_pulses = Vec::new();
         let mut rejected_pulse_count = 0;
         for pulse in 1..=max_rejected_pulses_per_wave + 1 {
@@ -1732,6 +1921,14 @@ async fn compile_strategic_campaign(
         profile.simulation_eligible = subject_id != &campaign.player_actor_id;
         profile.information_channels.insert(public_channel.into());
     }
+    for clock in campaign.clocks.values_mut() {
+        if clock.consequence_scope.public_channels.is_empty() {
+            clock
+                .consequence_scope
+                .public_channels
+                .push(public_channel.into());
+        }
+    }
     validate_campaign_seed(campaign)?;
     Ok((preview, receipts))
 }
@@ -1982,6 +2179,13 @@ fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
                 progress: 1,
                 threshold: 4,
                 consequence: "the charcoal guilds declare the regent ritually rainless".into(),
+                consequence_scope: WorldEventScope {
+                    actor_ids: Vec::new(),
+                    institution_ids: vec!["board".into(), "synod".into()],
+                    gestalt_ids: vec!["workers".into()],
+                    location_ids: vec!["yard".into()],
+                    public_channels: Vec::new(),
+                },
             },
         )]),
         facts: BTreeMap::new(),
@@ -2074,8 +2278,9 @@ mod tests {
     use super::{
         admitted_public_channel, civic_manifest_is_committed_candidate,
         committed_elaboration_mutation_proof, final_wave_field, latest_partial_wave_checkpoint,
-        publish_immutable_checkpoint, strategic_campaign, strategic_locality_request,
-        strategic_titled_locality_request, titled_failure_checkpoint_paths,
+        publish_immutable_checkpoint, recover_committed_clock_binding, strategic_campaign,
+        strategic_locality_request, strategic_titled_locality_request,
+        titled_failure_checkpoint_paths,
     };
 
     fn civic_manifest(
@@ -2120,6 +2325,101 @@ mod tests {
             assert!(admitted_public_channel(invalid).is_err());
         }
         assert!(admitted_public_channel(&"x".repeat(161)).is_err());
+    }
+
+    #[test]
+    fn missing_post_commit_checkpoint_is_rebuilt_from_cultcache() {
+        let directory = tempfile::tempdir().unwrap();
+        let store = ghostlight_dungeon::persistence::CampaignStore::open(
+            directory.path().join("campaign.cc"),
+        )
+        .unwrap();
+        let mut campaign = strategic_campaign();
+        campaign.revision = 15;
+        campaign.strategic_tick_count = 6;
+        campaign
+            .clocks
+            .get_mut("shortage")
+            .unwrap()
+            .consequence_scope
+            .public_channels = vec!["root-wire broadsheet".into()];
+        let event = ghostlight_dungeon::domain::Event {
+            id: "clock-consequence:shortage".into(),
+            at: campaign.world_time,
+            kind: "clock_consequence".into(),
+            summary: campaign.clocks["shortage"].consequence.clone(),
+            actor_ids: Vec::new(),
+            institution_ids: vec!["board".into(), "synod".into()],
+            gestalt_ids: vec!["workers".into()],
+            location_ids: vec!["yard".into()],
+            public_channels: vec!["root-wire broadsheet".into()],
+        };
+        ghostlight_dungeon::domain::append_event_with_publications(&mut campaign, event);
+        let committed_at = chrono::Utc::now();
+        let binding_receipt = ghostlight_dungeon::clock::ClockConsequenceBindingReceipt {
+            schema: "ghostlight.clock_consequence_binding_receipt.v1".into(),
+            campaign_id: campaign.id,
+            previous_revision: 14,
+            revision: 15,
+            snapshot_binding: "fixture-snapshot".into(),
+            binding_batch_digest: "sha256:fixture-batch".into(),
+            bindings: vec![ghostlight_dungeon::clock::ClockConsequenceBinding {
+                clock_id: "shortage".into(),
+                scope: campaign.clocks["shortage"].consequence_scope.clone(),
+            }],
+            model_receipt_ids: vec!["sha256:fixture-model".into()],
+            accepted_model_receipt_id: "sha256:fixture-model".into(),
+            emitted_event_ids: vec!["clock-consequence:shortage".into()],
+            emitted_news_ids: vec![ghostlight_dungeon::domain::event_publication_id(
+                "clock-consequence:shortage",
+                "root-wire broadsheet",
+            )],
+            news_count_before: 0,
+            next_wave_index: 7,
+            committed_at,
+        };
+        let world_receipt = ghostlight_dungeon::domain::WorldCommitReceipt {
+            schema: "ghostlight.world_commit_receipt.v1".into(),
+            campaign_id: campaign.id,
+            previous_revision: 14,
+            revision: 15,
+            command_kind: "bind_clock_consequences".into(),
+            committed_at,
+            roll: None,
+        };
+        let key = format!("{}-15", campaign.id);
+        store
+            .insert(
+                "clock_consequence_binding_receipt.v1",
+                "ghostlight.clock_consequence_binding_receipt.v1",
+                &key,
+                &binding_receipt,
+            )
+            .unwrap();
+        store
+            .insert(
+                "world_commit_receipt.v1",
+                "ghostlight.world_commit_receipt.v1",
+                &key,
+                &world_receipt,
+            )
+            .unwrap();
+        let checkpoint_path = directory.path().join("clock-consequence-binding.json");
+
+        let recovered = recover_committed_clock_binding(&store, &campaign, &checkpoint_path)
+            .unwrap()
+            .unwrap();
+
+        assert!(checkpoint_path.is_file());
+        assert_eq!(recovered.next_wave_index, 7);
+        assert_eq!(recovered.news_count_before, 0);
+        assert_eq!(
+            recovered.emitted_news_ids,
+            [ghostlight_dungeon::domain::event_publication_id(
+                "clock-consequence:shortage",
+                "root-wire broadsheet"
+            )]
+        );
     }
 
     #[test]

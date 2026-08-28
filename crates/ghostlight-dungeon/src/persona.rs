@@ -4128,6 +4128,7 @@ mod tests {
         };
         let context = ModelAgentToolContext {
             source_receipt_ids: vec!["persona:one".into()],
+            current_model_receipt: None,
         };
         let initial_schema = workbench.action_schema().unwrap();
         let initial_schema_text = serde_json::to_string(&initial_schema).unwrap();
@@ -4312,6 +4313,7 @@ mod tests {
                 },
                 &ModelAgentToolContext {
                     source_receipt_ids: vec!["persona:one".into()],
+                    current_model_receipt: None,
                 },
             )
             .await;

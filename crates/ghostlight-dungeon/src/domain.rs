@@ -770,6 +770,39 @@ pub struct InstitutionState {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(default)]
+#[schemars(inline)]
+pub struct WorldEventScope {
+    pub actor_ids: Vec<String>,
+    pub institution_ids: Vec<String>,
+    pub gestalt_ids: Vec<String>,
+    pub location_ids: Vec<String>,
+    pub public_channels: Vec<String>,
+}
+
+impl Default for WorldEventScope {
+    fn default() -> Self {
+        Self {
+            actor_ids: Vec::new(),
+            institution_ids: Vec::new(),
+            gestalt_ids: Vec::new(),
+            location_ids: Vec::new(),
+            public_channels: Vec::new(),
+        }
+    }
+}
+
+impl WorldEventScope {
+    pub fn is_unbound(&self) -> bool {
+        self.actor_ids.is_empty()
+            && self.institution_ids.is_empty()
+            && self.gestalt_ids.is_empty()
+            && self.location_ids.is_empty()
+            && self.public_channels.is_empty()
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct WorldClock {
     pub id: String,
     pub label: String,
@@ -777,6 +810,11 @@ pub struct WorldClock {
     #[schemars(range(min = 1))]
     pub threshold: u8,
     pub consequence: String,
+    /// Exact subjects, places, and information routes affected when this clock
+    /// first reaches its threshold. Legacy snapshots may be unbound until an
+    /// admitted reconciliation pass supplies this scope.
+    #[serde(default)]
+    pub consequence_scope: WorldEventScope,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -837,6 +875,27 @@ pub fn committed_news_headline(summary: &str) -> String {
         .to_owned();
     headline.push('…');
     headline
+}
+
+pub fn append_event_with_publications(campaign: &mut Campaign, event: Event) {
+    for channel in &event.public_channels {
+        campaign.news.push(NewsIssue {
+            id: event_publication_id(&event.id, channel),
+            at: event.at,
+            channel: channel.clone(),
+            headline: committed_news_headline(&event.summary),
+            event_ids: vec![event.id.clone()],
+            reliability: "committed public channel".into(),
+        });
+    }
+    campaign.events.push(event);
+}
+
+pub fn event_publication_id(event_id: &str, channel: &str) -> String {
+    use sha2::{Digest, Sha256};
+
+    let channel_id = format!("{:x}", Sha256::digest(channel.as_bytes()))[..12].to_owned();
+    format!("news:{event_id}:{channel_id}")
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Default)]
@@ -1164,6 +1223,11 @@ pub enum WorldCommand {
         expected_revision: u64,
         proposal: WorldActionProposal,
         assessment: ActionAssessment,
+    },
+    BindClockConsequences {
+        expected_revision: u64,
+        admission: crate::clock::ClockConsequenceBindingAdmission,
+        model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
     },
 }
 

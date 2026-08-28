@@ -1232,7 +1232,7 @@ impl WorldCompiler {
             .transpose()?
             .unwrap_or_default();
         let base_prompt = format!(
-            "{shared_prefix}{approved_contract_context}{player_identity_context}{operational_playability_context}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. Use evidence as canon constraints, not as an exhaustive game map. A source marked with a `.gm_canon` authority lane may constrain hidden canonical state, but it must not be quoted or paraphrased into opening narration or granted as player or NPC knowledge merely because this compiler received it. When the Vault omits game-scale geometry, routes, local people, procedures, or daily texture, invent the smallest coherent playable elaboration, mark facts branch_local or provisional_local, and disclose consequential choices in branch_assumptions. An unevidenced route needed to connect the bounded region is branch-local geometry, not an evidence gap. Intentionally unresolved identities or population detail remain unresolved branch assumptions, not material gaps. Safely omitted remote candidates are global coverage limits, not material gaps. The `gaps` array is legal only when no compatible elaboration can preserve an exact approved premise clause without choosing between contradictory canon baselines, inventing an unanchored baseline explicitly required by the premise, or exceeding an approved capability. Every gap must name that exact premise clause and the exact choice requiring table approval. `The Vault does not specify X` is never sufficient. Use an empty gaps array when branch-local invention preserves the premise. Never borrow a nearby story to fill a gap. Do not eagerly materialize remote settlements or people outside the bounded playable region. Private character history, secrets, relationships, and relationship subjects are deliberately absent and compile in a separate private stage; do not assume or reconstruct them. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The singular player object is the sole human-controlled subject projection. Never repeat its id, name, role, representative, or proxy in actors or gestalt_members; actors contains autonomous nonplayer individuals only. The player location and every actor location must exist. Containment describes nested geometry; it never creates implicit movement. Every supplied location is a playable occupancy node. When the region contains more than one location, explicit route chains must let the player reach every supplied location from the starting location and return. Model inaccessible scenery as a persistent feature instead of an unreachable location. Every route record needs a stable route_id within its origin, an exact supplied destination_id, a distance, and positive travel_minutes. Every fact discovery location must exist, clocks need positive thresholds, and the player id must be unique. Actor relationship records must use subject_id values copied from exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
+            "{shared_prefix}{approved_contract_context}{player_identity_context}{operational_playability_context}Compile a bounded playable region with stable topology, local actors, populations, clocks, and only those remote institutions that have a direct causal relationship to this requested start. SCOPED EVIDENCE contains direct_seed witnesses only. Setting-background and excluded witnesses remain visible in the approval coverage but are deliberately absent here: they cannot donate cast, incidents, clocks, location state, goals, or institutional posture to this branch. Use evidence as canon constraints, not as an exhaustive game map. A source marked with a `.gm_canon` authority lane may constrain hidden canonical state, but it must not be quoted or paraphrased into opening narration or granted as player or NPC knowledge merely because this compiler received it. When the Vault omits game-scale geometry, routes, local people, procedures, or daily texture, invent the smallest coherent playable elaboration, mark facts branch_local or provisional_local, and disclose consequential choices in branch_assumptions. An unevidenced route needed to connect the bounded region is branch-local geometry, not an evidence gap. Intentionally unresolved identities or population detail remain unresolved branch assumptions, not material gaps. Safely omitted remote candidates are global coverage limits, not material gaps. The `gaps` array is legal only when no compatible elaboration can preserve an exact approved premise clause without choosing between contradictory canon baselines, inventing an unanchored baseline explicitly required by the premise, or exceeding an approved capability. Every gap must name that exact premise clause and the exact choice requiring table approval. `The Vault does not specify X` is never sufficient. Use an empty gaps array when branch-local invention preserves the premise. Never borrow a nearby story to fill a gap. Do not eagerly materialize remote settlements or people outside the bounded playable region. Private character history, secrets, relationships, and relationship subjects are deliberately absent and compile in a separate private stage; do not assume or reconstruct them. Emit only supported canon facts. A canon_baseline fact must cite one or more exact receipt_id values printed in SCOPED EVIDENCE whose witnesses directly support the whole statement. Never label an invented proper noun canon. Facts that an actor can uncover through an admitted local observation must exist before play and list the exact discoverable_at_location_ids where that observation is possible. Seed enough branch_local or provisional_local discoverable facts to make the requested opening pressure and immediate goal actionable; at least one such non-canon fact must be discoverable at the player's exact starting location. The later action assessor can reveal an existing fact but cannot invent one. Facts that are private history or not directly observable have an empty discovery-location set. The singular player object is the sole human-controlled subject projection. Never repeat its id, name, role, representative, or proxy in actors or gestalt_members; actors contains autonomous nonplayer individuals only. The player location and every actor location must exist. Containment describes nested geometry; it never creates implicit movement. Every supplied location is a playable occupancy node. When the region contains more than one location, explicit route chains must let the player reach every supplied location from the starting location and return. Model inaccessible scenery as a persistent feature instead of an unreachable location. Every route record needs a stable route_id within its origin, an exact supplied destination_id, a distance, and positive travel_minutes. Every fact discovery location must exist, clocks need positive thresholds, and the player id must be unique. Every clock consequence_scope must name the smallest exact non-player actors, institutions, populations, and locations that experience its declared consequence; it must include at least one supplied location and one supplied autonomous subject. Leave public_channels empty during compilation unless an exact admitted route is supplied later by the consumer. Actor relationship records must use subject_id values copied from exact actor, institution, gestalt, or named-member subject IDs declared in this candidate, never display names, roles, undeclared groups, or location IDs. A relationship to a collective population names its exact gestalt; it does not union that population's knowledge or turn the actor into its authority. Represent populations that can act collectively (villages, crews, crowds, departments, corporations) as gestalt Personas. Seed a small roster of plausible durable member identities for people the player may encounter; member deltas contain only departures from their gestalt baseline and begin dematerialized. Do not duplicate a gestalt member in actors. Keep named plot-critical people as ordinary actors. Every gestalt home location and member gestalt reference must exist. Do not emit agency profiles or relations; those are compiled from the exact validated subject roster in the next stage."
         );
         let schema = serde_json::to_value(schema_for!(CompiledSeed))?;
         let sources = receipt_ids_for_coverage(&receipts, &evidence_coverage);
@@ -6588,6 +6588,7 @@ fn compiled_seed_structure(seed: &CompiledSeed) -> serde_json::Value {
             "id": clock.id,
             "progress": clock.progress,
             "threshold": clock.threshold,
+            "consequence_scope": clock.consequence_scope,
         })).collect::<Vec<_>>(),
         "fact_ids": seed.facts.iter().map(|fact| fact.id.as_str()).collect::<Vec<_>>(),
     })
@@ -6823,11 +6824,11 @@ pub fn validate_campaign_seed(c: &Campaign) -> Result<()> {
     validate_campaign(c, true)
 }
 
-pub(crate) fn validate_campaign_runtime(c: &Campaign) -> Result<()> {
+pub fn validate_campaign_runtime(c: &Campaign) -> Result<()> {
     validate_campaign(c, false)
 }
 
-fn validate_campaign(c: &Campaign, require_dematerialized_members: bool) -> Result<()> {
+fn validate_campaign(c: &Campaign, fresh_seed: bool) -> Result<()> {
     if c.tick_hours == 0 {
         return Err(anyhow!("strategic tick duration must be positive"));
     }
@@ -6960,7 +6961,7 @@ fn validate_campaign(c: &Campaign, require_dematerialized_members: bool) -> Resu
                 member.gestalt_id
             ));
         }
-        if require_dematerialized_members && member.materialized_actor_id.is_some() {
+        if fresh_seed && member.materialized_actor_id.is_some() {
             return Err(anyhow!(
                 "compiled gestalt member {} must begin dematerialized",
                 member.id
@@ -7021,8 +7022,18 @@ fn validate_campaign(c: &Campaign, require_dematerialized_members: bool) -> Resu
         }
     }
     for clock in c.clocks.values() {
-        if clock.threshold == 0 || clock.progress > clock.threshold {
+        if clock.threshold == 0
+            || clock.progress > clock.threshold
+            || (fresh_seed && clock.progress >= clock.threshold)
+        {
             return Err(anyhow!("clock {} is invalid", clock.id));
+        }
+        if clock.consequence_scope.is_unbound() {
+            if fresh_seed {
+                return Err(anyhow!("new clock {} has no consequence scope", clock.id));
+            }
+        } else {
+            crate::clock::validate_clock_consequence_scope(c, &clock.consequence_scope)?;
         }
     }
     validate_campaign_civic_systems(c)?;
@@ -8656,7 +8667,7 @@ mod tests {
                         "actors":[],
                         "gestalts":[{"schema":"ghostlight.gestalt_persona_state.v1","id":"yard-workers","name":"Yard workers","version":0,"home_location_id":"yard","shared_capabilities":["maintain machinery"],"shared_knowledge":["yard routines"],"resources":["tool shed"],"goals":["finish the shift"],"pressures":["the gate is failing"]}],
                         "gestalt_members":[{"schema":"ghostlight.gestalt_member_delta.v1","id":"member:john","gestalt_id":"yard-workers","version":0,"name":"John the smith","capability_additions":["forge hinges"],"capability_removals":[],"knowledge_additions":[],"knowledge_removals":[],"equipment":["hammer"],"conditions":[],"obligations":[],"relationships":[],"goals":[],"memories":[],"last_location_id":"yard","materialized_actor_id":null}],
-                        "institutions":[],"clocks":[{"id":"shift","label":"Shift ends","progress":0,"threshold":4,"consequence":"night"}],
+                        "institutions":[],"clocks":[{"id":"shift","label":"Shift ends","progress":0,"threshold":4,"consequence":"night","consequence_scope":{"actor_ids":[],"institution_ids":[],"gestalt_ids":["yard-workers"],"location_ids":["yard"],"public_channels":[]}}],
                         "facts":[
                             {"id":"f","statement":"A witnessed fact","scope":"canon_baseline","evidence_receipt_ids":["fixture"]},
                             {"id":"local","statement":"The outer gate indicator is dark.","scope":"branch_local","evidence_receipt_ids":[],"discoverable_at_location_ids":["yard"]}
@@ -8795,6 +8806,31 @@ mod tests {
 
         let error = validate_campaign_seed(&campaign).unwrap_err();
         assert!(error.to_string().contains("one to 460 characters"));
+    }
+
+    #[test]
+    fn fresh_seed_rejects_due_clock_while_runtime_accepts_legacy_checkpoint() {
+        let mut campaign = crate::resolution::tests::campaign(2, 1);
+        campaign.clocks.insert(
+            "due".into(),
+            WorldClock {
+                id: "due".into(),
+                label: "Due".into(),
+                progress: 1,
+                threshold: 1,
+                consequence: "Faction Zero occupies the counting hall.".into(),
+                consequence_scope: crate::domain::WorldEventScope {
+                    actor_ids: Vec::new(),
+                    institution_ids: vec!["faction-0000".into()],
+                    gestalt_ids: Vec::new(),
+                    location_ids: vec!["center".into()],
+                    public_channels: Vec::new(),
+                },
+            },
+        );
+
+        assert!(validate_campaign_seed(&campaign).is_err());
+        validate_campaign_runtime(&campaign).unwrap();
     }
 
     #[test]

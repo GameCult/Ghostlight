@@ -1085,6 +1085,13 @@ fn dynamics_campaign() -> ghostlight_dungeon::domain::Campaign {
                 progress: 3,
                 threshold: 4,
                 consequence: "the camp is cut off by the storm".into(),
+                consequence_scope: WorldEventScope {
+                    actor_ids: Vec::new(),
+                    institution_ids: vec!["port-authority".into(), "relief-union".into()],
+                    gestalt_ids: vec!["refugees-east".into(), "relief-crews".into()],
+                    location_ids: vec!["transit-camp".into(), "south-harbor".into()],
+                    public_channels: vec!["public harbor bulletin".into()],
+                },
             },
         )]),
         facts: BTreeMap::new(),

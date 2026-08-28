@@ -1140,6 +1140,7 @@ fn execute(
                 evidence_receipts,
                 preview.canon_candidates,
                 model_stage_receipts,
+                None,
                 Some((transition, mutation_receipt)),
             )
         }
@@ -1417,20 +1418,15 @@ fn execute(
                 campaign.resolution_cover = Some(wave.cover.clone());
             }
             campaign.strategic_tick_count = campaign.strategic_tick_count.saturating_add(1);
-            for event in &tick_events {
-                for channel in &event.public_channels {
-                    campaign.news.push(crate::domain::NewsIssue {
-                        id: format!("news:{}:{}", event.id, stable_channel_id(channel)),
-                        at: campaign.world_time,
-                        channel: channel.clone(),
-                        headline: crate::domain::committed_news_headline(&event.summary),
-                        event_ids: vec![event.id.clone()],
-                        reliability: "committed public channel".into(),
-                    });
-                }
+            let event_ids = mutation
+                .as_ref()
+                .into_iter()
+                .flat_map(|(_, receipt)| receipt.derived_event_ids.iter().cloned())
+                .chain(tick_events.iter().map(|event| event.id.clone()))
+                .collect();
+            for event in tick_events {
+                crate::domain::append_event_with_publications(&mut campaign, event);
             }
-            let event_ids = tick_events.iter().map(|event| event.id.clone()).collect();
-            campaign.events.extend(tick_events);
             if source == TickSource::PlayerWait {
                 campaign.last_player_activity = Utc::now();
                 campaign.away_ticks_processed = 0;
@@ -1494,6 +1490,7 @@ fn execute(
                 evidence_receipts,
                 canon_candidates,
                 model_stage_receipts,
+                None,
                 Some((transition, mutation_receipt)),
             )
         }
@@ -1544,6 +1541,7 @@ fn execute(
                 evidence_receipts,
                 canon_candidates,
                 model_stage_receipts,
+                None,
                 Some((transition, mutation_receipt)),
             )
         }
@@ -2008,6 +2006,36 @@ fn execute(
             } else {
                 commit(store, row, campaign, "resolve_npc_action", None)
             }
+        }
+        WorldCommand::BindClockConsequences {
+            expected_revision,
+            admission,
+            model_stage_receipts,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            crate::clock::validate_binding_receipts(&campaign, &admission, &model_stage_receipts)
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let news_count_before = campaign.news.len();
+            let next_wave_index = campaign.strategic_tick_count.saturating_add(1) as usize;
+            let emitted_event_ids =
+                crate::clock::apply_clock_consequence_bindings(&mut campaign, &admission.bindings)
+                    .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            commit_with_records(
+                store,
+                row,
+                campaign,
+                "bind_clock_consequences",
+                Vec::new(),
+                Vec::new(),
+                model_stage_receipts,
+                Some(ClockBindingCommitData {
+                    admission,
+                    emitted_event_ids,
+                    news_count_before,
+                    next_wave_index,
+                }),
+                None,
+            )
         }
         WorldCommand::CreateCampaign { .. } => unreachable!(),
     }
@@ -4081,10 +4109,6 @@ fn validate_bounded_coop_effect(
     Ok(())
 }
 
-fn stable_channel_id(channel: &str) -> String {
-    format!("{:x}", Sha256::digest(channel.as_bytes()))[..12].to_string()
-}
-
 fn require_active_member<'a>(
     membership: &'a CampaignMembership,
     member_id: &str,
@@ -4324,6 +4348,13 @@ fn commit_governed_cell_budget(
     Ok(CommandResult::ResolutionUpdated { campaign, receipt })
 }
 
+struct ClockBindingCommitData {
+    admission: crate::clock::ClockConsequenceBindingAdmission,
+    emitted_event_ids: Vec<String>,
+    news_count_before: usize,
+    next_wave_index: usize,
+}
+
 fn commit_with_records(
     store: &CampaignStore,
     row: cultcache_legacy::CultCacheEnvelope,
@@ -4332,6 +4363,7 @@ fn commit_with_records(
     evidence: Vec<VaultEvidenceReceipt>,
     candidates: Vec<CanonCandidate>,
     model_receipts: Vec<crate::model::ModelStageReceipt>,
+    clock_binding: Option<ClockBindingCommitData>,
     mutation: Option<(
         crate::legacy_transition::LoweredLegacyTransition,
         crate::transition::WorldMutationReceipt,
@@ -4348,17 +4380,70 @@ fn commit_with_records(
             "mutation receipt does not bind the recorded world commit".into(),
         ));
     }
+    let committed_at = mutation
+        .as_ref()
+        .map(|(_, receipt)| receipt.committed_at)
+        .unwrap_or_else(Utc::now);
     let receipt = WorldCommitReceipt {
         schema: "ghostlight.world_commit_receipt.v1".into(),
         campaign_id: campaign.id,
         previous_revision,
         revision: campaign.revision,
         command_kind: kind.into(),
-        committed_at: mutation
-            .as_ref()
-            .map(|(_, receipt)| receipt.committed_at)
-            .unwrap_or_else(Utc::now),
+        committed_at,
         roll: None,
+    };
+    let clock_binding_receipt = if let Some(binding) = clock_binding {
+        let emitted_events = binding.emitted_event_ids.iter().collect::<BTreeSet<_>>();
+        let emitted_news_ids = campaign
+            .news
+            .iter()
+            .skip(binding.news_count_before)
+            .filter(|news| news.event_ids.iter().any(|id| emitted_events.contains(id)))
+            .map(|news| news.id.clone())
+            .collect::<Vec<_>>();
+        let expected_news_ids = campaign
+            .events
+            .iter()
+            .filter(|event| emitted_events.contains(&event.id))
+            .flat_map(|event| {
+                event
+                    .public_channels
+                    .iter()
+                    .map(|channel| crate::domain::event_publication_id(&event.id, channel))
+            })
+            .collect::<BTreeSet<_>>();
+        if emitted_news_ids.iter().collect::<BTreeSet<_>>()
+            != expected_news_ids.iter().collect::<BTreeSet<_>>()
+        {
+            return Err(KernelError::Invalid(
+                "clock consequence binding did not publish the exact admitted event channels"
+                    .into(),
+            ));
+        }
+        Some(crate::clock::ClockConsequenceBindingReceipt {
+            schema: "ghostlight.clock_consequence_binding_receipt.v1".into(),
+            campaign_id: campaign.id,
+            previous_revision,
+            revision: campaign.revision,
+            snapshot_binding: binding.admission.snapshot_binding,
+            binding_batch_digest: binding.admission.binding_batch_digest,
+            bindings: binding.admission.bindings,
+            model_receipt_ids: model_receipts
+                .iter()
+                .map(|receipt| receipt.storage_key().to_owned())
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect(),
+            accepted_model_receipt_id: binding.admission.accepted_model_receipt_id,
+            emitted_event_ids: binding.emitted_event_ids,
+            emitted_news_ids,
+            news_count_before: binding.news_count_before,
+            next_wave_index: binding.next_wave_index,
+            committed_at,
+        })
+    } else {
+        None
     };
     store
         .append_world_commit(
@@ -4369,6 +4454,7 @@ fn commit_with_records(
             &evidence,
             &candidates,
             &model_receipts,
+            clock_binding_receipt.as_ref(),
             mutation
                 .as_ref()
                 .map(|(transition, receipt)| (&transition.authority, &transition.batch, receipt)),
@@ -6936,6 +7022,143 @@ pub(crate) mod tests {
     }
 
     #[tokio::test]
+    async fn clock_binding_commit_is_payload_bound_atomic_and_preserves_player() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let mut seed = campaign();
+        seed.revision = 14;
+        seed.institutions.insert(
+            "court".into(),
+            InstitutionState {
+                id: "court".into(),
+                name: "Court".into(),
+                resources: Vec::new(),
+                goals: Vec::new(),
+                posture: "counting knives".into(),
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut seed);
+        seed.agency_profiles
+            .get_mut("court")
+            .unwrap()
+            .information_channels
+            .extend(["court broadsheet".into(), "palace wire".into()]);
+        seed.clocks.insert(
+            "coup".into(),
+            WorldClock {
+                id: "coup".into(),
+                label: "Coup".into(),
+                progress: 3,
+                threshold: 3,
+                consequence: "The palace guard arrests the regent at breakfast.".into(),
+                consequence_scope: WorldEventScope::default(),
+            },
+        );
+        seed.clocks.insert(
+            "blackout".into(),
+            WorldClock {
+                id: "blackout".into(),
+                label: "Blackout".into(),
+                progress: 2,
+                threshold: 2,
+                consequence: "The archive lamps go dark and the sealed rolls vanish.".into(),
+                consequence_scope: WorldEventScope::default(),
+            },
+        );
+        store
+            .create_unadmitted_fixture_campaign(&seed, &[], &[])
+            .unwrap();
+        let player_before = rmp_serde::to_vec_named(&seed.actors["player"]).unwrap();
+        let bindings = vec![
+            crate::clock::ClockConsequenceBinding {
+                clock_id: "blackout".into(),
+                scope: WorldEventScope {
+                    actor_ids: Vec::new(),
+                    institution_ids: vec!["court".into()],
+                    gestalt_ids: Vec::new(),
+                    location_ids: vec!["room".into()],
+                    public_channels: Vec::new(),
+                },
+            },
+            crate::clock::ClockConsequenceBinding {
+                clock_id: "coup".into(),
+                scope: WorldEventScope {
+                    actor_ids: Vec::new(),
+                    institution_ids: vec!["court".into()],
+                    gestalt_ids: Vec::new(),
+                    location_ids: vec!["room".into()],
+                    public_channels: vec!["court broadsheet".into(), "palace wire".into()],
+                },
+            },
+        ];
+        let snapshot_binding = crate::clock::clock_consequence_binding_snapshot(&seed).unwrap();
+        let binding_batch_digest =
+            crate::clock::clock_consequence_binding_batch_digest(&seed, &bindings).unwrap();
+        let mut accepted_receipt = crate::model::ModelStageReceipt {
+            schema: "ghostlight.persona_stage_receipt.v1".into(),
+            receipt_hash: String::new(),
+            provider: "fixture".into(),
+            model: "fixture-terra".into(),
+            stage: crate::clock::CLOCK_CONSEQUENCE_BINDING_STAGE.into(),
+            snapshot_binding: String::new(),
+            request_hash: test_action_digest("clock-binding-request"),
+            output_hash: test_action_digest("clock-binding-output"),
+            source_receipt_ids: Vec::new(),
+            latency_ms: 1,
+            validation_result: "valid".into(),
+            local_validation_error: None,
+            input_chars: 1,
+            output_chars: 1,
+            provider_attempts: Vec::new(),
+        };
+        accepted_receipt.rebind_snapshot(crate::clock::clock_consequence_admission_binding(
+            &snapshot_binding,
+            &binding_batch_digest,
+        ));
+        let admission = crate::clock::ClockConsequenceBindingAdmission {
+            schema: "ghostlight.clock_consequence_binding_admission.v1".into(),
+            campaign_id: seed.id,
+            expected_revision: seed.revision,
+            snapshot_binding,
+            binding_batch_digest,
+            bindings: bindings.clone(),
+            accepted_model_receipt_id: accepted_receipt.storage_key().to_owned(),
+        };
+        let kernel = WorldKernel::start(store.clone());
+        let CommandResult::Committed { campaign, .. } = kernel
+            .command(WorldCommand::BindClockConsequences {
+                expected_revision: seed.revision,
+                admission,
+                model_stage_receipts: vec![accepted_receipt],
+            })
+            .await
+            .unwrap()
+        else {
+            panic!("clock binding did not commit")
+        };
+
+        assert_eq!(
+            rmp_serde::to_vec_named(&campaign.actors["player"]).unwrap(),
+            player_before
+        );
+        let (_, receipt) = store
+            .load::<crate::clock::ClockConsequenceBindingReceipt>(
+                "clock_consequence_binding_receipt.v1",
+                &format!("{}-{}", campaign.id, campaign.revision),
+            )
+            .unwrap()
+            .unwrap();
+        assert_eq!(receipt.bindings, bindings);
+        assert_eq!(
+            receipt.emitted_event_ids,
+            ["clock-consequence:blackout", "clock-consequence:coup"]
+        );
+        assert_eq!(receipt.emitted_news_ids.len(), 2);
+        assert_eq!(receipt.news_count_before, 0);
+        assert_eq!(receipt.next_wave_index, 1);
+    }
+
+    #[tokio::test]
     async fn stale_command_cannot_mutate_campaign() {
         let dir = tempfile::tempdir().unwrap();
         let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
@@ -7235,6 +7458,16 @@ pub(crate) mod tests {
         let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
         let kernel = WorldKernel::start(store.clone());
         let mut seed = campaign();
+        seed.institutions.insert(
+            "clinic".into(),
+            InstitutionState {
+                id: "clinic".into(),
+                name: "Clinic".into(),
+                resources: Vec::new(),
+                goals: Vec::new(),
+                posture: "repairing the regulator".into(),
+            },
+        );
         seed.clocks.insert(
             "clinic-failure".into(),
             WorldClock {
@@ -7243,6 +7476,13 @@ pub(crate) mod tests {
                 progress: 3,
                 threshold: 4,
                 consequence: "The regulator fails.".into(),
+                consequence_scope: WorldEventScope {
+                    actor_ids: Vec::new(),
+                    institution_ids: vec!["clinic".into()],
+                    gestalt_ids: Vec::new(),
+                    location_ids: vec!["room".into()],
+                    public_channels: Vec::new(),
+                },
             },
         );
         kernel
@@ -7403,6 +7643,85 @@ pub(crate) mod tests {
         assert!(ticks[0].event_ids.is_empty());
         assert!(ticks[0].model_receipt_hash.is_none());
         assert_eq!(store.keys("world_mutation_receipt.v1").unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn strategic_tick_receipt_includes_derived_clock_consequence() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let mut seed = campaign();
+        seed.institutions.insert(
+            "court".into(),
+            InstitutionState {
+                id: "court".into(),
+                name: "Court".into(),
+                resources: Vec::new(),
+                goals: Vec::new(),
+                posture: "waiting for the bell".into(),
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut seed);
+        seed.agency_profiles
+            .get_mut("court")
+            .unwrap()
+            .information_channels
+            .insert("court broadsheet".into());
+        seed.clocks.insert(
+            "coup".into(),
+            WorldClock {
+                id: "coup".into(),
+                label: "Coup".into(),
+                progress: 0,
+                threshold: 1,
+                consequence: "The palace guard arrests the regent at breakfast.".into(),
+                consequence_scope: WorldEventScope {
+                    actor_ids: Vec::new(),
+                    institution_ids: vec!["court".into()],
+                    gestalt_ids: Vec::new(),
+                    location_ids: vec!["room".into()],
+                    public_channels: vec!["court broadsheet".into()],
+                },
+            },
+        );
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed,
+                evidence_receipts: Vec::new(),
+                model_stage_receipts: Vec::new(),
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: 0,
+                source: TickSource::Scheduler,
+                plan: None,
+                model_receipt_hash: None,
+                resolution_wave: None,
+            })
+            .await
+            .unwrap()
+        else {
+            panic!("expected strategic tick commit")
+        };
+        let ticks = store
+            .load_all::<crate::domain::StrategicTickReceipt>("strategic_tick.v1")
+            .unwrap();
+
+        assert_eq!(ticks[0].event_ids, ["clock-consequence:coup"]);
+        assert!(
+            campaign
+                .events
+                .iter()
+                .any(|event| event.id == "clock-consequence:coup")
+        );
+        assert!(
+            campaign
+                .news
+                .iter()
+                .any(|news| news.event_ids == ["clock-consequence:coup"])
+        );
     }
 
     #[tokio::test]
