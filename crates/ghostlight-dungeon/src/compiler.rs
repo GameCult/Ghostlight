@@ -2993,16 +2993,34 @@ impl WorldCompiler {
             .civic_system
             .as_ref()
             .expect("civic verification is called only for an inhabited apparatus");
+        let previous_resident_fact_knowledge = campaign
+            .civic_systems
+            .get(&civic_system.jurisdiction_location_id)
+            .into_iter()
+            .flat_map(|system| system.resident_population_ids.iter())
+            .filter_map(|id| campaign.gestalts.get(id))
+            .map(|population| {
+                Self::civic_resident_fact_projection(population, campaign.facts.values())
+            })
+            .collect::<Vec<_>>();
+        let new_resident_fact_knowledge = expansion
+            .populations
+            .iter()
+            .map(|population| {
+                Self::civic_resident_fact_projection(
+                    population,
+                    campaign.facts.values().chain(expansion.facts.iter()),
+                )
+            })
+            .collect::<Vec<_>>();
         let candidate = match serde_json::to_string(&serde_json::json!({
             "previous_civic_apparatus":current_civic_context,
+            "previous_resident_fact_knowledge":previous_resident_fact_knowledge,
             "civic_system":civic_system,
             "new_facts":&expansion.facts,
             "new_institutions":&expansion.institutions,
             "new_local_relations":&expansion.local_relations,
-            "new_resident_populations":expansion.populations.iter().map(|population| serde_json::json!({
-                "id":population.id,
-                "shared_knowledge":population.shared_knowledge,
-            })).collect::<Vec<_>>(),
+            "new_resident_populations":new_resident_fact_knowledge,
         })) {
             Ok(candidate) => candidate,
             Err(error) => {
@@ -3013,7 +3031,7 @@ impl WorldCompiler {
             }
         };
         let base_prompt = format!(
-            "Independently verify the admitted civic apparatus. Judge meaning, not JSON shape. The public facts must actually explain current authority, selection or succession, public resources or revenue, and redress or appeal. The institutions and political relations must form a coherent local apparatus, and every resident population's exact shared_fact_ids must ground an ordinary answer about local government. A question may select a civic domain but must not have forced its presupposed office, election, or answer into the candidate. Do not rewrite or complete the candidate; return verdicts only.\n\nREQUEST:\n{}\nEVIDENCE:\n{}\nCANDIDATE:\n{}",
+            "Independently verify the admitted civic apparatus. Judge meaning, not JSON shape. The public facts must actually explain current authority, selection or succession, public resources or revenue, and redress or appeal. The institutions and political relations must form a coherent local apparatus. Use previous_resident_fact_knowledge and each new resident population's exact shared_fact_ids as the authoritative identity projection for deciding whether every resident can ground an ordinary answer about local government; raw shared_knowledge elsewhere is canonical statement text, not a missing ID field. A question may select a civic domain but must not have forced its presupposed office, election, or answer into the candidate. Do not rewrite or complete the candidate; return verdicts only.\n\nREQUEST:\n{}\nEVIDENCE:\n{}\nCANDIDATE:\n{}",
             destination_request, evidence, candidate,
         );
         let schema = match serde_json::to_value(schema_for!(CivicSystemVerification)) {
@@ -3092,6 +3110,21 @@ impl WorldCompiler {
         CivicSystemVerificationOutcome::Accepted {
             receipts: vec![receipt],
         }
+    }
+
+    fn civic_resident_fact_projection<'a>(
+        population: &crate::domain::GestaltPersonaState,
+        facts: impl Iterator<Item = &'a crate::domain::WorldFact>,
+    ) -> serde_json::Value {
+        let shared_fact_ids = facts
+            .filter(|fact| population.shared_knowledge.contains(&fact.statement))
+            .map(|fact| fact.id.clone())
+            .collect::<BTreeSet<_>>();
+        serde_json::json!({
+            "id":population.id,
+            "name":population.name,
+            "shared_fact_ids":shared_fact_ids,
+        })
     }
 
     /// Independently verifies a complete titled-elaboration candidate without
@@ -6736,6 +6769,56 @@ fn validate_opening_topology(campaign: &Campaign) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn civic_verifier_projects_exact_fact_ids_from_canonical_gestalt_knowledge() {
+        let population = crate::domain::GestaltPersonaState {
+            schema: "ghostlight.gestalt_persona_state.v1".into(),
+            id: "verge-residents".into(),
+            name: "Verge residents".into(),
+            version: 0,
+            home_location_id: "verge".into(),
+            shared_capabilities: BTreeSet::new(),
+            shared_knowledge: BTreeSet::from([
+                "The Verge Moot holds current authority.".into(),
+                "Petitions receive a witnessed hearing.".into(),
+            ]),
+            resources: BTreeSet::new(),
+            goals: vec!["keep civic answers public".into()],
+            pressures: vec![],
+        };
+        let facts = [
+            crate::domain::WorldFact {
+                id: "fact:authority".into(),
+                statement: "The Verge Moot holds current authority.".into(),
+                scope: FactScope::BranchLocal,
+                evidence_receipt_ids: vec![],
+                discoverable_at_location_ids: BTreeSet::from(["verge".into()]),
+            },
+            crate::domain::WorldFact {
+                id: "fact:redress".into(),
+                statement: "Petitions receive a witnessed hearing.".into(),
+                scope: FactScope::BranchLocal,
+                evidence_receipt_ids: vec![],
+                discoverable_at_location_ids: BTreeSet::from(["verge".into()]),
+            },
+            crate::domain::WorldFact {
+                id: "fact:private".into(),
+                statement: "The clerk hides a second ledger.".into(),
+                scope: FactScope::BranchLocal,
+                evidence_receipt_ids: vec![],
+                discoverable_at_location_ids: BTreeSet::from(["verge".into()]),
+            },
+        ];
+
+        let projection = WorldCompiler::civic_resident_fact_projection(&population, facts.iter());
+
+        assert_eq!(
+            projection["shared_fact_ids"],
+            serde_json::json!(["fact:authority", "fact:redress"])
+        );
+        assert!(projection.get("shared_knowledge").is_none());
+    }
 
     #[test]
     fn compiler_responses_schemas_preserve_dynamic_semantics_as_records() {

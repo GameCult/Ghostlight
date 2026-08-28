@@ -1069,7 +1069,11 @@ A titled worker must leave the civic semantic-verifier receipt empty.
 `finalize_world_elaboration` binds the immutable admitted candidate to one
 independent verifier receipt that may accept or reject but cannot rewrite it.
 Its ancestry must equal the complete admitted worker-receipt set, without
-omissions, additions, or duplicates.
+omissions, additions, or duplicates. Canonical Gestalt state stores shared
+knowledge as fact statements; the civic verifier receives a derived exact-ID
+view reconstructed from those statements and the admitted fact namespace, so
+its identity-grounding judgment does not mistake the storage projection for a
+missing compiler field.
 Admission and finalization values are opaque, serialize-only capability
 receipts; callers cannot deserialize or reconstruct them as commit authority.
 `WorldKernel::commit_elaboration` consumes that final value, revalidates the
