@@ -665,11 +665,11 @@ struct CompiledDestinationInstitution {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
 struct CompiledCivicInstitutionUpdate {
     institution_id: String,
     resources: Vec<String>,
     posture: String,
-    location_ids: BTreeSet<String>,
     facets: CompiledAgencyFacets,
     information_channels: BTreeSet<String>,
 }
@@ -682,18 +682,18 @@ struct CivicSystemVerification {
     redress_legible: bool,
     institutional_relations_coherent: bool,
     resident_answer_grounded: bool,
+    #[schemars(length(min = 1, max = 1_000))]
     rationale: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[derive(Clone, Debug, Serialize, PartialEq)]
 struct CompiledResidentFactKnowledge {
     population_id: String,
     fact_ids: BTreeSet<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[derive(Clone, Debug, Serialize, PartialEq)]
 struct CompiledCivicSystemReconciliation {
-    #[schemars(with = "crate::domain::CivicSystemManifestSchemaV1")]
     schema: String,
     jurisdiction_location_id: String,
     governing_institution_ids: BTreeSet<String>,
@@ -723,29 +723,67 @@ impl From<CompiledCivicSystemReconciliation> for CivicSystemManifest {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[derive(Clone, Debug, Serialize, PartialEq)]
 struct CompiledDestinationReconciliation {
-    #[schemars(length(max = 32))]
     facts: Vec<WorldFact>,
-    #[schemars(length(max = 8))]
     resident_fact_knowledge: Vec<CompiledResidentFactKnowledge>,
-    #[schemars(length(max = 12))]
     institution_updates: Vec<CompiledCivicInstitutionUpdate>,
-    #[schemars(length(max = 48))]
     local_relations: Vec<CompiledAgencyRelation>,
     civic_system: CompiledCivicSystemReconciliation,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-enum DestinationReconciliationToolName {
-    ValidateCandidate,
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct CompiledCivicSystemLanesUpdate {
+    governing_institution_ids: BTreeSet<String>,
+    resident_population_ids: BTreeSet<String>,
+    public_authority_fact_ids: BTreeSet<String>,
+    public_selection_fact_ids: BTreeSet<String>,
+    public_resource_fact_ids: BTreeSet<String>,
+    public_redress_fact_ids: BTreeSet<String>,
+    political_relation_ids: BTreeSet<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
-struct DestinationReconciliationToolAction {
-    tool: DestinationReconciliationToolName,
-    candidate: CompiledDestinationReconciliation,
+#[serde(tag = "edit", rename_all = "snake_case", deny_unknown_fields)]
+enum DestinationReconciliationEdit {
+    ReplaceFact {
+        #[schemars(range(max = 31))]
+        fact_index: usize,
+        fact: WorldFact,
+    },
+    SetResidentFactKnowledge {
+        population_id: String,
+        fact_ids: BTreeSet<String>,
+    },
+    UpdateInstitution {
+        update: CompiledCivicInstitutionUpdate,
+    },
+    AddLocalRelation {
+        relation: CompiledAgencyRelation,
+    },
+    ReplaceLocalRelation {
+        #[schemars(range(max = 47))]
+        relation_index: usize,
+        relation: CompiledAgencyRelation,
+    },
+    RemoveLocalRelation {
+        #[schemars(range(max = 47))]
+        relation_index: usize,
+    },
+    UpdateCivicSystemLanes {
+        civic_system: CompiledCivicSystemLanesUpdate,
+    },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(tag = "tool", rename_all = "snake_case", deny_unknown_fields)]
+enum DestinationReconciliationToolAction {
+    ValidateCurrent,
+    ReviseAndValidate {
+        #[schemars(length(min = 1, max = 12))]
+        edits: Vec<DestinationReconciliationEdit>,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -771,21 +809,27 @@ struct DestinationFactFinding {
 #[derive(Clone, Debug, Serialize, PartialEq)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum DestinationReconciliationFinding {
-    CandidateApplyRejection {
-        message: String,
-    },
-    FactNamespaceRejection {
+    #[serde(rename = "edit_rejection")]
+    Edit { message: String },
+    #[serde(rename = "candidate_apply_rejection")]
+    CandidateApply { message: String },
+    #[serde(rename = "fact_namespace_rejection")]
+    FactNamespace {
         findings: Vec<DestinationFactFinding>,
     },
-    CandidateLoweringRejection {
-        message: String,
-    },
-    StructuralValidationRejection {
-        message: String,
-    },
-    CivicVerifierRejection {
-        verdict: CivicSystemVerification,
-    },
+    #[serde(rename = "candidate_lowering_rejection")]
+    CandidateLowering { message: String },
+    #[serde(rename = "structural_validation_rejection")]
+    StructuralValidation { message: String },
+    #[serde(rename = "civic_verifier_rejection")]
+    CivicVerifier { verdict: CivicSystemVerification },
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq)]
+struct DestinationReconciliationObservation {
+    draft_digest: String,
+    applied_edits: Vec<String>,
+    finding: DestinationReconciliationFinding,
 }
 
 struct AcceptedDestinationReconciliation {
@@ -800,6 +844,7 @@ struct DestinationReconciliationAgentTool<'a> {
     evidence: &'a str,
     current_civic_context: &'a Option<serde_json::Value>,
     frozen_seed: &'a CompiledExpansionSeed,
+    draft: CompiledDestinationReconciliation,
     expansion_origin_location_id: &'a str,
     existing_destination_id: Option<&'a str>,
     snapshot: &'a str,
@@ -2126,9 +2171,10 @@ impl WorldCompiler {
                         &error,
                     );
                     if seed.civic_system.is_some() {
-                        repair_finding = Some(format!(
-                            "candidate lowering rejected the frozen destination: {error}"
-                        ));
+                        repair_finding =
+                            Some(DestinationReconciliationFinding::CandidateLowering {
+                                message: error.to_string(),
+                            });
                         None
                     } else if local_corrections == 0 {
                         local_corrections += 1;
@@ -2200,10 +2246,10 @@ impl WorldCompiler {
                             }
                             CivicSystemVerificationOutcome::Rejected { verdict, receipts } => {
                                 compiler_receipts.extend(receipts);
-                                repair_finding = Some(format!(
-                                    "destination civic verifier rejected the candidate: {}",
-                                    verdict.rationale.trim()
-                                ));
+                                repair_finding =
+                                    Some(DestinationReconciliationFinding::CivicVerifier {
+                                        verdict,
+                                    });
                             }
                             CivicSystemVerificationOutcome::Failed { message, receipts } => {
                                 compiler_receipts.extend(receipts);
@@ -2222,9 +2268,10 @@ impl WorldCompiler {
                             &error,
                         );
                         if seed.civic_system.is_some() {
-                            repair_finding = Some(format!(
-                                "local structural validation rejected the frozen destination candidate: {error}"
-                            ));
+                            repair_finding =
+                                Some(DestinationReconciliationFinding::StructuralValidation {
+                                    message: error.to_string(),
+                                });
                         } else if !seed.populations.is_empty() {
                             return Err(destination_candidate_failure(
                                 format!(
@@ -2877,7 +2924,7 @@ impl WorldCompiler {
         campaign: &Campaign,
         destination_request: &str,
         seed: &CompiledExpansionSeed,
-        finding: &str,
+        finding: &DestinationReconciliationFinding,
         evidence: &str,
         current_civic_context: &Option<serde_json::Value>,
         expansion_origin_location_id: &str,
@@ -2931,12 +2978,22 @@ impl WorldCompiler {
                 message: error.to_string(),
                 receipts: Vec::new(),
             })?;
-        constrain_civic_reconciliation_schema(&mut schema, seed).map_err(|error| {
+        constrain_civic_reconciliation_action_schema(&mut schema, seed).map_err(|error| {
             crate::agent::ModelAgentFailure {
                 message: error.to_string(),
                 receipts: Vec::new(),
             }
         })?;
+        let initial_finding =
+            serde_json::to_string(finding).map_err(|error| crate::agent::ModelAgentFailure {
+                message: error.to_string(),
+                receipts: Vec::new(),
+            })?;
+        let draft =
+            civic_reconciliation_draft(seed).map_err(|error| crate::agent::ModelAgentFailure {
+                message: error.to_string(),
+                receipts: Vec::new(),
+            })?;
         let seed_bytes =
             serde_json::to_vec(seed).map_err(|error| crate::agent::ModelAgentFailure {
                 message: error.to_string(),
@@ -2947,10 +3004,8 @@ impl WorldCompiler {
             Sha256::digest(seed_bytes)
         );
         let instructions = format!(
-            "You are the autonomous destination reconciliation worker. World invention has already happened. Use validate_candidate to submit one complete corrected candidate; the harness will apply it to the frozen seed, run the actual structural validators, and obtain an independent civic verdict. If rejected, inspect the exact tool observation and act again within budget.\n\nYour writable authority is deliberately narrow: replace the complete candidate fact set, every exact resident population's complete fact-ID knowledge set, operational fields for every exact frozen institution, candidate political relations, and the civic manifest. You may repair fact IDs, statements, discovery locations, evidence bindings, and their references. You may not change institution IDs, names, or goals; population IDs, names, homes, goals, or pressures; jurisdiction; geography; routes; migration; branch assumptions; or gaps. Every institution_update and resident_fact_knowledge entry must use each exact frozen ID exactly once. Return all frozen candidate facts exactly once, retaining useful texture and meaning while correcting rejected collisions or contradictions. Never copy a campaign fact into candidate facts under the same or a new ID; reference exact campaign IDs where the civic manifest or resident knowledge legitimately uses already committed facts. Only the tool can declare success.\n\nREQUEST:\n{}\n\nINITIAL FINDING:\n{}\n\nFROZEN DESTINATION PROJECTION AND READ-ONLY NAMESPACE:\n{}",
-            destination_request,
-            finding.trim(),
-            frozen_projection,
+            "You are the autonomous destination reconciliation worker. World invention has already happened. You operate a private candidate workbench through small typed actions. Use validate_current when the typed finding may be a false negative or a fresh independent verdict is sufficient. Use revise_and_validate for a bounded transactional batch of only the edits needed to answer the finding. The tool preserves valid draft edits between steps, runs the actual fact, lowering, structural, and independent civic validators after every action, and returns exact observations.\n\nYour writable authority is deliberately narrow: replace a fact at its stable frozen slot; set one exact resident population's complete fact-ID knowledge; update operational resources, posture, facets, and information channels for one exact frozen institution; add, replace, or remove local political relations; and update civic-manifest membership and fact lanes. A single batch may atomically repair a fact ID and every reference to it. You cannot change institution IDs, names, goals, or locations; population IDs, names, homes, goals, pressures, or capabilities; jurisdiction; geography; routes; migration; branch assumptions; or gaps. Never copy a campaign fact into candidate facts under the same or a new ID; reference exact campaign IDs only where resident knowledge legitimately uses already committed facts. Do not resubmit the complete candidate. Only the tool can declare success.\n\nREQUEST:\n{}\n\nINITIAL TYPED FINDING:\n{}\n\nFROZEN DESTINATION PROJECTION AND READ-ONLY NAMESPACE:\n{}",
+            destination_request, initial_finding, frozen_projection,
         );
         let spec = ModelAgentSpec {
             stage: "destination_reconciliation_agent_action".into(),
@@ -2960,7 +3015,7 @@ impl WorldCompiler {
             action_schema: schema,
             source_receipt_ids: causal_source_receipt_ids.to_vec(),
             temperature: Some(0.0),
-            max_output_tokens: Some(3_500),
+            max_output_tokens: Some(2_500),
             max_steps: MAX_DESTINATION_RECONCILIATION_AGENT_STEPS,
         };
         let mut tool = DestinationReconciliationAgentTool {
@@ -2970,6 +3025,7 @@ impl WorldCompiler {
             evidence,
             current_civic_context,
             frozen_seed: seed,
+            draft,
             expansion_origin_location_id,
             existing_destination_id,
             snapshot,
@@ -3219,35 +3275,52 @@ impl WorldCompiler {
     }
 }
 
-#[async_trait]
-impl ModelAgentTool for DestinationReconciliationAgentTool<'_> {
-    type Action = DestinationReconciliationToolAction;
-    type Output = AcceptedDestinationReconciliation;
-    type Finding = DestinationReconciliationFinding;
+impl DestinationReconciliationAgentTool<'_> {
+    fn observation(
+        &self,
+        applied_edits: Vec<String>,
+        finding: DestinationReconciliationFinding,
+    ) -> DestinationReconciliationObservation {
+        let bytes = serde_json::to_vec(&self.draft)
+            .expect("the typed destination reconciliation draft serializes");
+        DestinationReconciliationObservation {
+            draft_digest: format!("sha256:{:x}", Sha256::digest(bytes)),
+            applied_edits,
+            finding,
+        }
+    }
 
-    async fn invoke(
+    async fn validate_current(
         &mut self,
-        action: Self::Action,
         context: &ModelAgentToolContext,
-    ) -> ModelAgentToolOutcome<Self::Output, Self::Finding> {
-        let DestinationReconciliationToolName::ValidateCandidate = action.tool;
-        let fact_findings = destination_fact_findings(self.campaign, &action.candidate.facts);
+        applied_edits: Vec<String>,
+    ) -> ModelAgentToolOutcome<
+        AcceptedDestinationReconciliation,
+        DestinationReconciliationObservation,
+    > {
+        let fact_findings = destination_fact_findings(self.campaign, &self.draft.facts);
         if !fact_findings.is_empty() {
-            return ModelAgentToolOutcome::Rejected {
-                finding: DestinationReconciliationFinding::FactNamespaceRejection {
-                    findings: fact_findings,
-                },
+            return ModelAgentToolOutcome::Continue {
+                observation: self.observation(
+                    applied_edits,
+                    DestinationReconciliationFinding::FactNamespace {
+                        findings: fact_findings,
+                    },
+                ),
                 receipts: Vec::new(),
             };
         }
         let corrected =
-            match apply_civic_reconciliation(self.campaign, self.frozen_seed, action.candidate) {
+            match apply_civic_reconciliation(self.campaign, self.frozen_seed, self.draft.clone()) {
                 Ok(corrected) => corrected,
                 Err(error) => {
-                    return ModelAgentToolOutcome::Rejected {
-                        finding: DestinationReconciliationFinding::CandidateApplyRejection {
-                            message: error.to_string(),
-                        },
+                    return ModelAgentToolOutcome::Continue {
+                        observation: self.observation(
+                            applied_edits,
+                            DestinationReconciliationFinding::CandidateApply {
+                                message: error.to_string(),
+                            },
+                        ),
                         receipts: Vec::new(),
                     };
                 }
@@ -3260,10 +3333,13 @@ impl ModelAgentTool for DestinationReconciliationAgentTool<'_> {
         ) {
             Ok(expansion) => expansion,
             Err(error) => {
-                return ModelAgentToolOutcome::Rejected {
-                    finding: DestinationReconciliationFinding::CandidateLoweringRejection {
-                        message: error.to_string(),
-                    },
+                return ModelAgentToolOutcome::Continue {
+                    observation: self.observation(
+                        applied_edits,
+                        DestinationReconciliationFinding::CandidateLowering {
+                            message: error.to_string(),
+                        },
+                    ),
                     receipts: Vec::new(),
                 };
             }
@@ -3271,10 +3347,13 @@ impl ModelAgentTool for DestinationReconciliationAgentTool<'_> {
         if let Err(error) =
             validate_compiled_destination(self.campaign, &expansion, self.existing_destination_id)
         {
-            return ModelAgentToolOutcome::Rejected {
-                finding: DestinationReconciliationFinding::StructuralValidationRejection {
-                    message: error.to_string(),
-                },
+            return ModelAgentToolOutcome::Continue {
+                observation: self.observation(
+                    applied_edits,
+                    DestinationReconciliationFinding::StructuralValidation {
+                        message: error.to_string(),
+                    },
+                ),
                 receipts: Vec::new(),
             };
         }
@@ -3301,8 +3380,11 @@ impl ModelAgentTool for DestinationReconciliationAgentTool<'_> {
                 }
             }
             CivicSystemVerificationOutcome::Rejected { verdict, receipts } => {
-                ModelAgentToolOutcome::Rejected {
-                    finding: DestinationReconciliationFinding::CivicVerifierRejection { verdict },
+                ModelAgentToolOutcome::Continue {
+                    observation: self.observation(
+                        applied_edits,
+                        DestinationReconciliationFinding::CivicVerifier { verdict },
+                    ),
                     receipts,
                 }
             }
@@ -3311,6 +3393,241 @@ impl ModelAgentTool for DestinationReconciliationAgentTool<'_> {
             }
         }
     }
+}
+
+#[async_trait]
+impl ModelAgentTool for DestinationReconciliationAgentTool<'_> {
+    type Action = DestinationReconciliationToolAction;
+    type Output = AcceptedDestinationReconciliation;
+    type Finding = DestinationReconciliationObservation;
+
+    async fn invoke(
+        &mut self,
+        action: Self::Action,
+        context: &ModelAgentToolContext,
+    ) -> ModelAgentToolOutcome<Self::Output, Self::Finding> {
+        match action {
+            DestinationReconciliationToolAction::ValidateCurrent => {
+                self.validate_current(context, Vec::new()).await
+            }
+            DestinationReconciliationToolAction::ReviseAndValidate { edits } => {
+                let applied_edits =
+                    match apply_destination_reconciliation_edits(&mut self.draft, edits) {
+                        Ok(applied_edits) => applied_edits,
+                        Err(error) => {
+                            return ModelAgentToolOutcome::Rejected {
+                                finding: self.observation(
+                                    Vec::new(),
+                                    DestinationReconciliationFinding::Edit {
+                                        message: error.to_string(),
+                                    },
+                                ),
+                                receipts: Vec::new(),
+                            };
+                        }
+                    };
+                self.validate_current(context, applied_edits).await
+            }
+        }
+    }
+}
+
+fn civic_reconciliation_draft(
+    seed: &CompiledExpansionSeed,
+) -> Result<CompiledDestinationReconciliation> {
+    let civic_system = seed
+        .civic_system
+        .as_ref()
+        .ok_or_else(|| anyhow!("civic reconciliation requires an existing civic manifest"))?;
+    Ok(CompiledDestinationReconciliation {
+        facts: seed.facts.clone(),
+        resident_fact_knowledge: seed
+            .populations
+            .iter()
+            .map(|population| CompiledResidentFactKnowledge {
+                population_id: population.id.clone(),
+                fact_ids: population.shared_fact_ids.clone(),
+            })
+            .collect(),
+        institution_updates: seed
+            .institutions
+            .iter()
+            .map(|institution| CompiledCivicInstitutionUpdate {
+                institution_id: institution.id.clone(),
+                resources: institution.resources.clone(),
+                posture: institution.posture.clone(),
+                facets: institution.facets.clone(),
+                information_channels: institution.information_channels.clone(),
+            })
+            .collect(),
+        local_relations: seed.local_relations.clone(),
+        civic_system: CompiledCivicSystemReconciliation {
+            schema: civic_system.schema.clone(),
+            jurisdiction_location_id: civic_system.jurisdiction_location_id.clone(),
+            governing_institution_ids: civic_system.governing_institution_ids.clone(),
+            resident_population_ids: civic_system.resident_population_ids.clone(),
+            public_authority_fact_ids: civic_system.public_authority_fact_ids.clone(),
+            public_selection_fact_ids: civic_system.public_selection_fact_ids.clone(),
+            public_resource_fact_ids: civic_system.public_resource_fact_ids.clone(),
+            public_redress_fact_ids: civic_system.public_redress_fact_ids.clone(),
+            political_relation_ids: civic_system.political_relation_ids.clone(),
+        },
+    })
+}
+
+fn reserve_reconciliation_edit_slot(slots: &mut BTreeSet<String>, slot: String) -> Result<String> {
+    if !slots.insert(slot.clone()) {
+        return Err(anyhow!(
+            "destination reconciliation edit batch targets {slot} more than once"
+        ));
+    }
+    Ok(slot)
+}
+
+fn apply_destination_reconciliation_edits(
+    draft: &mut CompiledDestinationReconciliation,
+    edits: Vec<DestinationReconciliationEdit>,
+) -> Result<Vec<String>> {
+    if edits.is_empty() || edits.len() > 12 {
+        return Err(anyhow!(
+            "destination reconciliation edit batch must contain between 1 and 12 edits"
+        ));
+    }
+    let mut revised = draft.clone();
+    let mut slots = BTreeSet::new();
+    let mut changed_slots = Vec::with_capacity(edits.len());
+    let mut relation_replacements = BTreeMap::new();
+    let mut relation_removals = BTreeSet::new();
+    let mut relation_additions = Vec::new();
+
+    for edit in edits {
+        match edit {
+            DestinationReconciliationEdit::ReplaceFact { fact_index, fact } => {
+                let slot = reserve_reconciliation_edit_slot(
+                    &mut slots,
+                    format!("fact_index:{fact_index}"),
+                )?;
+                let fact_count = revised.facts.len();
+                let current = revised.facts.get_mut(fact_index).ok_or_else(|| {
+                    anyhow!(
+                        "destination reconciliation fact index {fact_index} is outside the frozen {}-fact workbench",
+                        fact_count
+                    )
+                })?;
+                *current = fact;
+                changed_slots.push(slot);
+            }
+            DestinationReconciliationEdit::SetResidentFactKnowledge {
+                population_id,
+                fact_ids,
+            } => {
+                let slot = reserve_reconciliation_edit_slot(
+                    &mut slots,
+                    format!("resident_fact_knowledge:{population_id}"),
+                )?;
+                let knowledge = revised
+                    .resident_fact_knowledge
+                    .iter_mut()
+                    .find(|knowledge| knowledge.population_id == population_id)
+                    .ok_or_else(|| {
+                        anyhow!(
+                            "destination reconciliation cannot edit unknown frozen population {population_id}"
+                        )
+                    })?;
+                knowledge.fact_ids = fact_ids;
+                changed_slots.push(slot);
+            }
+            DestinationReconciliationEdit::UpdateInstitution { update } => {
+                let slot = reserve_reconciliation_edit_slot(
+                    &mut slots,
+                    format!("institution: {}", update.institution_id),
+                )?;
+                let current = revised
+                    .institution_updates
+                    .iter_mut()
+                    .find(|current| current.institution_id == update.institution_id)
+                    .ok_or_else(|| {
+                        anyhow!(
+                            "destination reconciliation cannot edit unknown frozen institution {}",
+                            update.institution_id
+                        )
+                    })?;
+                *current = update;
+                changed_slots.push(slot);
+            }
+            DestinationReconciliationEdit::AddLocalRelation { relation } => {
+                let slot = reserve_reconciliation_edit_slot(
+                    &mut slots,
+                    format!("local_relation_add:{}", relation.id),
+                )?;
+                relation_additions.push(relation);
+                changed_slots.push(slot);
+            }
+            DestinationReconciliationEdit::ReplaceLocalRelation {
+                relation_index,
+                relation,
+            } => {
+                let slot = reserve_reconciliation_edit_slot(
+                    &mut slots,
+                    format!("local_relation_index:{relation_index}"),
+                )?;
+                if relation_index >= revised.local_relations.len() {
+                    return Err(anyhow!(
+                        "destination reconciliation relation index {relation_index} is outside the current {}-relation workbench",
+                        revised.local_relations.len()
+                    ));
+                }
+                relation_replacements.insert(relation_index, relation);
+                changed_slots.push(slot);
+            }
+            DestinationReconciliationEdit::RemoveLocalRelation { relation_index } => {
+                let slot = reserve_reconciliation_edit_slot(
+                    &mut slots,
+                    format!("local_relation_index:{relation_index}"),
+                )?;
+                if relation_index >= revised.local_relations.len() {
+                    return Err(anyhow!(
+                        "destination reconciliation relation index {relation_index} is outside the current {}-relation workbench",
+                        revised.local_relations.len()
+                    ));
+                }
+                relation_removals.insert(relation_index);
+                changed_slots.push(slot);
+            }
+            DestinationReconciliationEdit::UpdateCivicSystemLanes { civic_system } => {
+                let slot =
+                    reserve_reconciliation_edit_slot(&mut slots, "civic_system_lanes".into())?;
+                revised.civic_system.governing_institution_ids =
+                    civic_system.governing_institution_ids;
+                revised.civic_system.resident_population_ids = civic_system.resident_population_ids;
+                revised.civic_system.public_authority_fact_ids =
+                    civic_system.public_authority_fact_ids;
+                revised.civic_system.public_selection_fact_ids =
+                    civic_system.public_selection_fact_ids;
+                revised.civic_system.public_resource_fact_ids =
+                    civic_system.public_resource_fact_ids;
+                revised.civic_system.public_redress_fact_ids = civic_system.public_redress_fact_ids;
+                revised.civic_system.political_relation_ids = civic_system.political_relation_ids;
+                changed_slots.push(slot);
+            }
+        }
+    }
+
+    for (relation_index, relation) in relation_replacements {
+        revised.local_relations[relation_index] = relation;
+    }
+    for relation_index in relation_removals.into_iter().rev() {
+        revised.local_relations.remove(relation_index);
+    }
+    revised.local_relations.extend(relation_additions);
+    if revised.local_relations.len() > 48 {
+        return Err(anyhow!(
+            "destination reconciliation workbench exceeds the 48-relation bound"
+        ));
+    }
+
+    *draft = revised;
+    Ok(changed_slots)
 }
 
 fn civic_public_fact_ids(civic_system: &CivicSystemManifest) -> BTreeSet<String> {
@@ -3463,7 +3780,6 @@ fn apply_civic_reconciliation(
             .expect("reconciled institution set was proven exact");
         institution.resources = update.resources;
         institution.posture = update.posture;
-        institution.location_ids = update.location_ids;
         institution.facets = update.facets;
         institution.information_channels = update.information_channels;
     }
@@ -4102,56 +4418,91 @@ fn constrain_destination_expansion_schema(
     Ok(())
 }
 
-fn constrain_civic_reconciliation_schema(
+fn constrain_civic_reconciliation_action_schema(
     schema: &mut serde_json::Value,
     seed: &CompiledExpansionSeed,
 ) -> Result<()> {
-    let facts = schema
-        .pointer_mut("/$defs/CompiledDestinationReconciliation/properties/facts")
-        .ok_or_else(|| anyhow!("destination reconciliation schema has no facts"))?;
-    facts["minItems"] = serde_json::json!(seed.facts.len());
-    facts["maxItems"] = serde_json::json!(seed.facts.len());
+    if serde_json::to_string(schema)?.contains("CompiledDestinationReconciliation") {
+        return Err(anyhow!(
+            "destination reconciliation action schema exposed the complete workbench candidate"
+        ));
+    }
+    let fact_indices = (0..seed.facts.len()).collect::<Vec<_>>();
     let population_ids = seed
         .populations
         .iter()
         .map(|population| population.id.clone())
         .collect::<Vec<_>>();
-    let knowledge = schema
-        .pointer_mut("/$defs/CompiledDestinationReconciliation/properties/resident_fact_knowledge")
-        .ok_or_else(|| anyhow!("destination reconciliation schema has no resident knowledge"))?;
-    knowledge["minItems"] = serde_json::json!(population_ids.len());
-    knowledge["maxItems"] = serde_json::json!(population_ids.len());
-    let knowledge_entry = schema
-        .pointer_mut("/$defs/CompiledResidentFactKnowledge")
-        .ok_or_else(|| {
-            anyhow!("destination reconciliation schema has no resident knowledge entry")
-        })?;
-    if !population_ids.is_empty() {
-        knowledge_entry["properties"]["population_id"] = serde_json::json!({
-            "type":"string",
-            "enum":population_ids,
-        });
-    }
     let institution_ids = seed
         .institutions
         .iter()
         .map(|institution| institution.id.clone())
         .collect::<Vec<_>>();
-    let updates = schema
-        .pointer_mut("/$defs/CompiledDestinationReconciliation/properties/institution_updates")
-        .ok_or_else(|| anyhow!("civic reconciliation schema has no institution_updates"))?;
-    updates["minItems"] = serde_json::json!(institution_ids.len());
-    updates["maxItems"] = serde_json::json!(institution_ids.len());
-    let update = schema
-        .pointer_mut("/$defs/CompiledCivicInstitutionUpdate")
-        .ok_or_else(|| anyhow!("civic reconciliation schema has no institution update"))?;
-    if !institution_ids.is_empty() {
-        update["properties"]["institution_id"] = serde_json::json!({
-            "type":"string",
-            "enum":institution_ids,
-        });
-    }
+
+    constrain_reconciliation_action_properties(
+        schema,
+        &fact_indices,
+        &population_ids,
+        &institution_ids,
+    );
     Ok(())
+}
+
+fn constrain_reconciliation_action_properties(
+    value: &mut serde_json::Value,
+    fact_indices: &[usize],
+    population_ids: &[String],
+    institution_ids: &[String],
+) {
+    match value {
+        serde_json::Value::Array(values) => {
+            for value in values {
+                constrain_reconciliation_action_properties(
+                    value,
+                    fact_indices,
+                    population_ids,
+                    institution_ids,
+                );
+            }
+        }
+        serde_json::Value::Object(object) => {
+            if let Some(serde_json::Value::Object(properties)) = object.get_mut("properties") {
+                if !fact_indices.is_empty()
+                    && let Some(property) = properties.get_mut("fact_index")
+                {
+                    *property = serde_json::json!({
+                        "type":"integer",
+                        "enum":fact_indices,
+                    });
+                }
+                if !population_ids.is_empty()
+                    && let Some(property) = properties.get_mut("population_id")
+                {
+                    *property = serde_json::json!({
+                        "type":"string",
+                        "enum":population_ids,
+                    });
+                }
+                if !institution_ids.is_empty()
+                    && let Some(property) = properties.get_mut("institution_id")
+                {
+                    *property = serde_json::json!({
+                        "type":"string",
+                        "enum":institution_ids,
+                    });
+                }
+            }
+            for child in object.values_mut() {
+                constrain_reconciliation_action_properties(
+                    child,
+                    fact_indices,
+                    population_ids,
+                    institution_ids,
+                );
+            }
+        }
+        _ => {}
+    }
 }
 
 fn validate_required_relationship_actors(
@@ -6959,10 +7310,10 @@ mod tests {
         let mut civic_reconciliation =
             serde_json::to_value(schema_for!(DestinationReconciliationToolAction)).unwrap();
         crate::model_connector::project_strict_responses_schema(&mut civic_reconciliation).unwrap();
-        assert_eq!(
-            civic_reconciliation["$defs"]["CivicSystemManifestSchemaV1"]["enum"],
-            serde_json::json!(["ghostlight.civic_system_manifest.v1"])
-        );
+        let civic_reconciliation_schema = serde_json::to_string(&civic_reconciliation).unwrap();
+        assert!(civic_reconciliation_schema.contains("validate_current"));
+        assert!(civic_reconciliation_schema.contains("revise_and_validate"));
+        assert!(!civic_reconciliation_schema.contains("CompiledDestinationReconciliation"));
 
         let mut fission = serde_json::to_value(schema_for!(CompiledFissionSeed)).unwrap();
         crate::model_connector::project_strict_responses_schema(&mut fission).unwrap();
@@ -7750,30 +8101,41 @@ mod tests {
                         .output_schema
                         .as_ref()
                         .ok_or_else(|| anyhow!("civic reconciliation lost its schema"))?;
-                    assert_eq!(
-                        reconciliation_schema.pointer("/$defs/CompiledDestinationReconciliation/properties/institution_updates/minItems"),
-                        Some(&serde_json::json!(2))
+                    let reconciliation_schema_text = serde_json::to_string(reconciliation_schema)?;
+                    assert!(
+                        !reconciliation_schema_text.contains("CompiledDestinationReconciliation")
                     );
-                    assert_eq!(
-                        reconciliation_schema.pointer("/$defs/CompiledDestinationReconciliation/properties/institution_updates/maxItems"),
-                        Some(&serde_json::json!(2))
-                    );
-                    assert_eq!(
-                        reconciliation_schema.pointer(
-                            "/$defs/CompiledCivicInstitutionUpdate/properties/institution_id/enum"
-                        ),
-                        Some(&serde_json::json!([
-                            "refuge-duty-council",
-                            "refuge-stores-office"
-                        ]))
-                    );
+                    assert!(reconciliation_schema_text.contains("validate_current"));
+                    assert!(reconciliation_schema_text.contains("revise_and_validate"));
+                    assert!(reconciliation_schema_text.contains("refuge-duty-council"));
+                    assert!(reconciliation_schema_text.contains("refuge-stores-office"));
+                    if request
+                        .lived_stream
+                        .contains("\"kind\":\"civic_verifier_rejection\"")
+                    {
+                        assert!(request.lived_stream.contains("authority_legible"));
+                        assert!(
+                            request
+                                .lived_stream
+                                .contains("selection_or_succession_legible")
+                        );
+                        assert!(request.lived_stream.contains("public_resources_legible"));
+                        assert!(request.lived_stream.contains("redress_legible"));
+                        assert!(
+                            request
+                                .lived_stream
+                                .contains("institutional_relations_coherent")
+                        );
+                        assert!(request.lived_stream.contains("resident_answer_grounded"));
+                    }
                     self.saw_balanced_civic_reconciliation.store(
                         request.model == MODEL_BALANCED
                             && request
                                 .lived_stream
                                 .contains("World invention has already happened")
+                            && request.lived_stream.contains("private candidate workbench")
                             && request.lived_stream.contains("refuge-duty-council")
-                            && request.lived_stream.contains("INITIAL FINDING"),
+                            && request.lived_stream.contains("INITIAL TYPED FINDING"),
                         Ordering::SeqCst,
                     );
                     let frozen_projection_tail = request
@@ -7790,60 +8152,58 @@ mod tests {
                     let frozen_projection_text = &frozen_projection_tail[..frozen_projection_end];
                     let frozen_projection: serde_json::Value =
                         serde_json::from_str(frozen_projection_text)?;
-                    let resident_fact_knowledge = frozen_projection["resident_fact_knowledge"]
-                        .as_array()
-                        .ok_or_else(|| anyhow!("frozen projection lost resident knowledge"))?
-                        .iter()
-                        .map(|knowledge| {
-                            serde_json::json!({
-                                "population_id":knowledge["population_id"],
-                                "fact_ids":knowledge["fact_ids"],
-                            })
-                        })
-                        .collect::<Vec<_>>();
-                    let mut civic_system = frozen_projection["civic_system"].clone();
-                    let mut candidate_facts = frozen_projection["candidate_facts"].clone();
-                    let mut institution_updates = frozen_projection["institutions"]
-                        .as_array()
-                        .ok_or_else(|| anyhow!("frozen projection lost institutions"))?
-                        .iter()
-                        .map(|institution| {
-                            serde_json::json!({
-                                "institution_id":institution["id"],
-                                "resources":institution["resources"],
-                                "posture":institution["posture"],
-                                "location_ids":institution["location_ids"],
-                                "facets":institution["facets"],
-                                "information_channels":institution["information_channels"],
-                            })
-                        })
-                        .collect::<Vec<_>>();
-                    if institution_updates[0]["information_channels"]
-                        == serde_json::json!(["unknown"])
-                        && request
-                            .lived_stream
-                            .contains("non-concrete information channels [\"unknown\"]")
-                    {
-                        institution_updates[0]["information_channels"] =
-                            serde_json::json!(["public duty leaf"]);
-                    }
-                    civic_system["governing_institution_ids"] =
-                        serde_json::json!(["refuge-duty-council", "refuge-stores-office"]);
                     if self.reconciliation_steals_non_civic_fact {
-                        candidate_facts[0]["id"] =
-                            frozen_projection["campaign_fact_namespace"][0]["id"].clone();
+                        let mut fact = frozen_projection["candidate_facts"][0].clone();
+                        fact["id"] = frozen_projection["campaign_fact_namespace"][0]["id"].clone();
+                        return Ok(serde_json::json!({
+                            "tool":"revise_and_validate",
+                            "edits":[{
+                                "edit":"replace_fact",
+                                "fact_index":0,
+                                "fact":fact,
+                            }]
+                        })
+                        .to_string());
                     }
-                    Ok(serde_json::json!({
-                        "tool":"validate_candidate",
-                        "candidate":{
-                            "facts":candidate_facts,
-                            "resident_fact_knowledge":resident_fact_knowledge,
-                            "institution_updates":institution_updates,
-                            "local_relations":frozen_projection["local_relations"],
-                            "civic_system":civic_system,
-                        }
-                    })
-                    .to_string())
+                    if request
+                        .lived_stream
+                        .contains("non-concrete information channels")
+                        && request.lived_stream.contains("unknown")
+                    {
+                        let institution = &frozen_projection["institutions"][0];
+                        return Ok(serde_json::json!({
+                            "tool":"revise_and_validate",
+                            "edits":[{
+                                "edit":"update_institution",
+                                "update":{
+                                    "institution_id":institution["id"],
+                                    "resources":institution["resources"],
+                                    "posture":institution["posture"],
+                                    "facets":institution["facets"],
+                                    "information_channels":["public duty leaf"],
+                                }
+                            }]
+                        })
+                        .to_string());
+                    }
+                    if request.lived_stream.contains("duplicate statement")
+                        || request.lived_stream.contains("duplicate_statement")
+                    {
+                        let mut fact = frozen_projection["candidate_facts"][1].clone();
+                        fact["statement"] = serde_json::json!(
+                            "Wardens select two duty councillors by witnessed lot after each storm season."
+                        );
+                        return Ok(serde_json::json!({
+                            "tool":"revise_and_validate",
+                            "edits":[{
+                                "edit":"replace_fact",
+                                "fact_index":1,
+                                "fact":fact,
+                            }]
+                        })
+                        .to_string());
+                    }
+                    Ok(serde_json::json!({"tool":"validate_current"}).to_string())
                 }
                 "destination_civic_verification" => {
                     let call = self.civic_verification_calls.fetch_add(1, Ordering::SeqCst);
@@ -7881,13 +8241,31 @@ mod tests {
             }
 
             let call = self.reconciliation_calls.fetch_add(1, Ordering::SeqCst);
-            let mut reconciliation: serde_json::Value = serde_json::from_str(&output)?;
+            let frozen_projection_tail = request
+                .lived_stream
+                .split_once("FROZEN DESTINATION PROJECTION AND READ-ONLY NAMESPACE:\n")
+                .map(|(_, projection)| projection)
+                .ok_or_else(|| anyhow!("civic reconciliation lost its frozen projection"))?;
+            let frozen_projection_end = frozen_projection_tail
+                .find("\n\nTOOL OBSERVATION")
+                .or_else(|| frozen_projection_tail.find("\n\nAGENT STEP:"))
+                .ok_or_else(|| anyhow!("civic reconciliation lost its agent step"))?;
+            let frozen_projection: serde_json::Value =
+                serde_json::from_str(&frozen_projection_tail[..frozen_projection_end])?;
             if call == 0 {
-                reconciliation["candidate"]["facts"][1]["statement"] = serde_json::json!(
-                    "Wardens select two duty councillors by witnessed lot after each storm season."
-                );
-                let duplicate = reconciliation["candidate"]["facts"][0]["statement"].clone();
-                reconciliation["candidate"]["facts"][2]["statement"] = duplicate;
+                let mut reconciliation: serde_json::Value = serde_json::from_str(&output)?;
+                let mut second_collision = frozen_projection["candidate_facts"][2].clone();
+                second_collision["statement"] =
+                    frozen_projection["candidate_facts"][0]["statement"].clone();
+                reconciliation["edits"]
+                    .as_array_mut()
+                    .ok_or_else(|| anyhow!("first reconciliation action lost its edit batch"))?
+                    .push(serde_json::json!({
+                        "edit":"replace_fact",
+                        "fact_index":2,
+                        "fact":second_collision,
+                    }));
+                Ok(reconciliation.to_string())
             } else {
                 self.saw_reconciliation_correction.store(
                     request.lived_stream.contains("fact_namespace_rejection")
@@ -7897,11 +8275,16 @@ mod tests {
                         && request.lived_stream.contains("PREVIOUS TOOL ACTION"),
                     Ordering::SeqCst,
                 );
-                reconciliation["candidate"]["facts"][1]["statement"] = serde_json::json!(
-                    "Wardens select two duty councillors by witnessed lot after each storm season."
-                );
+                Ok(serde_json::json!({
+                    "tool":"revise_and_validate",
+                    "edits":[{
+                        "edit":"replace_fact",
+                        "fact_index":2,
+                        "fact":frozen_projection["candidate_facts"][2],
+                    }]
+                })
+                .to_string())
             }
-            Ok(reconciliation.to_string())
         }
 
         fn provider(&self) -> &'static str {
@@ -9416,6 +9799,121 @@ mod tests {
     }
 
     #[test]
+    fn civic_verifier_schema_declares_its_deterministic_rationale_bounds() {
+        let schema = serde_json::to_value(schema_for!(CivicSystemVerification)).unwrap();
+        let rationale = &schema["properties"]["rationale"];
+
+        assert_eq!(rationale["minLength"], 1);
+        assert_eq!(rationale["maxLength"], 1_000);
+    }
+
+    #[test]
+    fn destination_reconciliation_edit_batch_is_transactional() {
+        let mut seed = civic_reconciliation_seed(vec![]);
+        seed.facts.push(WorldFact {
+            id: "fact:original".into(),
+            statement: "The original fact remains intact.".into(),
+            scope: FactScope::BranchLocal,
+            evidence_receipt_ids: vec![],
+            discoverable_at_location_ids: BTreeSet::from(["refuge".into()]),
+        });
+        let mut draft = civic_reconciliation_draft(&seed).unwrap();
+        let original = draft.clone();
+        let error = apply_destination_reconciliation_edits(
+            &mut draft,
+            vec![
+                DestinationReconciliationEdit::ReplaceFact {
+                    fact_index: 0,
+                    fact: WorldFact {
+                        id: "fact:changed".into(),
+                        statement: "This edit must roll back with its batch.".into(),
+                        scope: FactScope::BranchLocal,
+                        evidence_receipt_ids: vec![],
+                        discoverable_at_location_ids: BTreeSet::from(["refuge".into()]),
+                    },
+                },
+                DestinationReconciliationEdit::SetResidentFactKnowledge {
+                    population_id: "invented-population".into(),
+                    fact_ids: BTreeSet::new(),
+                },
+            ],
+        )
+        .unwrap_err();
+
+        assert!(error.to_string().contains("unknown frozen population"));
+        assert_eq!(draft, original);
+    }
+
+    #[test]
+    fn destination_reconciliation_action_cannot_smuggle_frozen_location_edits() {
+        let error =
+            serde_json::from_value::<DestinationReconciliationToolAction>(serde_json::json!({
+                "tool":"revise_and_validate",
+                "edits":[{
+                    "edit":"update_institution",
+                    "update":{
+                        "institution_id":"refuge-duty-council",
+                        "resources":[],
+                        "posture":"wait",
+                        "location_ids":["elsewhere"],
+                        "facets":{
+                            "geography":[],
+                            "ideology":[],
+                            "authority":[],
+                            "economy_role":[],
+                            "species_body":[],
+                            "information":[]
+                        },
+                        "information_channels":[]
+                    }
+                }]
+            }))
+            .unwrap_err();
+
+        assert!(error.to_string().contains("unknown field `location_ids`"));
+    }
+
+    #[test]
+    fn one_reconciliation_edit_stays_small_against_a_large_private_workbench() {
+        let mut seed = civic_reconciliation_seed(vec![]);
+        seed.facts = (0..32)
+            .map(|index| WorldFact {
+                id: format!("fact:large:{index}"),
+                statement: format!("Fact {index}: {}", "weathered civic texture ".repeat(20)),
+                scope: FactScope::BranchLocal,
+                evidence_receipt_ids: vec![],
+                discoverable_at_location_ids: BTreeSet::from(["refuge".into()]),
+            })
+            .collect();
+        let draft = civic_reconciliation_draft(&seed).unwrap();
+        let action = DestinationReconciliationToolAction::ReviseAndValidate {
+            edits: vec![DestinationReconciliationEdit::ReplaceFact {
+                fact_index: 31,
+                fact: WorldFact {
+                    id: "fact:large:31".into(),
+                    statement: "A corrected compact fact.".into(),
+                    scope: FactScope::BranchLocal,
+                    evidence_receipt_ids: vec![],
+                    discoverable_at_location_ids: BTreeSet::from(["refuge".into()]),
+                },
+            }],
+        };
+        let draft_bytes = serde_json::to_vec(&draft).unwrap();
+        let action_bytes = serde_json::to_vec(&action).unwrap();
+        let mut schema =
+            serde_json::to_value(schema_for!(DestinationReconciliationToolAction)).unwrap();
+        constrain_civic_reconciliation_action_schema(&mut schema, &seed).unwrap();
+
+        assert!(draft_bytes.len() > 15_000);
+        assert!(action_bytes.len() * 10 < draft_bytes.len());
+        assert!(
+            !serde_json::to_string(&schema)
+                .unwrap()
+                .contains("CompiledDestinationReconciliation")
+        );
+    }
+
+    #[test]
     fn civic_reconciliation_cannot_substitute_a_frozen_institution() {
         let campaign = seed_to_campaign(private_actor_test_seed(), &[]).unwrap();
         let seed = civic_reconciliation_seed(vec![CompiledDestinationInstitution {
@@ -9439,7 +9937,6 @@ mod tests {
             institution_id: "invented-council".into(),
             resources: vec![],
             posture: "claims the refuge".into(),
-            location_ids: BTreeSet::from(["refuge".into()]),
             facets: CompiledAgencyFacets {
                 geography: BTreeSet::new(),
                 ideology: BTreeSet::new(),
@@ -9460,24 +9957,19 @@ mod tests {
     }
 
     #[test]
-    fn civic_reconciliation_closes_an_empty_institution_update_lane() {
+    fn civic_reconciliation_action_schema_never_exposes_the_complete_workbench() {
         let campaign = seed_to_campaign(private_actor_test_seed(), &[]).unwrap();
         let seed = civic_reconciliation_seed(vec![]);
         let mut schema =
             serde_json::to_value(schema_for!(DestinationReconciliationToolAction)).unwrap();
 
-        constrain_civic_reconciliation_schema(&mut schema, &seed).unwrap();
+        constrain_civic_reconciliation_action_schema(&mut schema, &seed).unwrap();
+        crate::model_connector::project_strict_responses_schema(&mut schema).unwrap();
 
-        assert_eq!(
-            schema["$defs"]["CompiledDestinationReconciliation"]["properties"]["institution_updates"]
-                ["minItems"],
-            0
-        );
-        assert_eq!(
-            schema["$defs"]["CompiledDestinationReconciliation"]["properties"]["institution_updates"]
-                ["maxItems"],
-            0
-        );
+        let schema_text = serde_json::to_string(&schema).unwrap();
+        assert!(!schema_text.contains("CompiledDestinationReconciliation"));
+        assert!(schema_text.contains("validate_current"));
+        assert!(schema_text.contains("revise_and_validate"));
         assert!(schema["$defs"]["CompiledCivicInstitutionUpdate"]["properties"]
             ["institution_id"]["enum"]
             .is_null());
@@ -9569,10 +10061,7 @@ mod tests {
         assert_eq!(civic_receipts[0].validation_result, "semantic_invalid");
         assert_eq!(civic_receipts[1].validation_result, "semantic_invalid");
         assert_eq!(civic_receipts[2].validation_result, "valid");
-        assert_eq!(
-            reconciliation_receipts[0].validation_result,
-            "semantic_invalid"
-        );
+        assert_eq!(reconciliation_receipts[0].validation_result, "valid");
         assert_eq!(reconciliation_receipts[1].validation_result, "valid");
     }
 
@@ -9659,6 +10148,16 @@ mod tests {
             duty.goals,
             ["keep admissions within storm capacity".to_owned()]
         );
+        assert!(preview.expansion.facts.iter().any(|fact| {
+            fact.id == "fact:refuge_selection"
+                && fact.statement
+                    == "Wardens select two duty councillors by witnessed lot after each storm season."
+        }));
+        assert!(preview.expansion.facts.iter().any(|fact| {
+            fact.id == "fact:refuge_resources"
+                && fact.statement
+                    == "The stores office receives repair boards through disclosed convoy levies."
+        }));
     }
 
     #[tokio::test]
@@ -9728,10 +10227,7 @@ mod tests {
                 .iter()
                 .any(|source| source == *receipt_id)
         }));
-        assert_eq!(
-            reconciliation_receipts[0].validation_result,
-            "semantic_invalid"
-        );
+        assert_eq!(reconciliation_receipts[0].validation_result, "valid");
         assert_eq!(reconciliation_receipts[1].validation_result, "valid");
         assert!(reconciliation_receipts.windows(2).all(|pair| {
             pair[1]
@@ -9892,7 +10388,7 @@ mod tests {
         assert!(
             reconciliation_receipts
                 .iter()
-                .all(|receipt| receipt.validation_result == "semantic_invalid")
+                .all(|receipt| receipt.validation_result == "valid")
         );
         assert!(reconciliation_receipts.windows(2).all(|pair| {
             pair[1]

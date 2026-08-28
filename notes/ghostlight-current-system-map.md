@@ -969,40 +969,40 @@ Patina or another consumer may supply a different action and tool without
 moving that consumer's state authority into the harness.
 
 Once the destination compiler has produced a repairable frozen civic candidate,
-that exact seed is the agent's immutable base. Candidate lowering, fact-namespace
-admission, ordinary structural validation, and the independent civic verdict
-all feed one `DestinationReconciliationAgentTool`. The balanced-model agent may
-submit at most four complete `validate_candidate` actions. Every rejected
-action receives the exact tool finding and the next action cites all prior
-compiler, action, and verifier receipts. Rejected action and verifier receipts
-remain `semantic_invalid`. The removed civic scheduler, pending candidate, and
-manual reconciliation-attempt state are not writers; after the agent starts,
-no path returns to `destination_compile`.
+that exact seed initializes one private workbench owned by
+`DestinationReconciliationAgentTool`. The balanced-model agent may take at most
+four small typed actions: `validate_current`, or `revise_and_validate` with a
+bounded transactional edit batch. The edit algebra replaces one stable fact
+slot, one resident fact-ID set, one frozen institution's operational fields,
+individual local relations, or the civic-manifest membership and fact lanes.
+The action schema contains no complete-candidate type. A failed edit batch
+changes nothing. An admitted edit persists only in the private workbench and
+returns `Continue` when the resulting draft still fails validation; its digest,
+changed slots, and exact typed finding become the next observation without
+reprojecting the whole draft.
 
-The consumer-owned tool is the validation and merge boundary. Sol's frozen
-seed owns geography, routes, migration, population identity and ordinary state,
-institution identity/name/goals, branch assumptions, and gaps. Terra may replace
-the complete candidate fact set while preserving its count, every exact resident
-population's fact-ID set, local political relations, the civic manifest, and
-operational fields for every exact frozen institution ID. The schema fixes fact,
-population, and institution entry counts and enumerates the permitted population
-and institution IDs. `destination_fact_findings` is the sole candidate-fact
-namespace owner and runs before merge; the ordinary destination validator reuses
-that same function at its admission boundary. `apply_civic_reconciliation` owns
-the frozen jurisdiction, exact population and institution update sets, candidate
-fact count, fact-reference authority, and writable-field merge. It copies only
-the admitted fields onto a clone of the frozen seed. Lowering and the ordinary
-destination validator remain domain owners. An accepted candidate is still only
-a compilation preview; `WorldKernel` and the mutation reducer remain the sole
-world-state admission and commit authorities.
+Sol's seed remains the immutable owner of geography, routes, migration,
+population identity and ordinary state, institution identity/name/goals and
+locations, civic jurisdiction, branch assumptions, and gaps. The initial
+compiler finding and every later tool finding use the same typed
+`DestinationReconciliationFinding`; civic verdict booleans are not collapsed
+into rationale-only text. `destination_fact_findings` remains the sole
+candidate-fact namespace owner. Every current or edited draft traverses that
+checker, `apply_civic_reconciliation`, ordinary lowering and structural
+validation, and a fresh independent civic verdict. The verifier's structured
+schema declares the same one-to-1,000-character rationale bound enforced by its
+deterministic gate. It may return a verdict and receipt but cannot edit the
+workbench. An accepted candidate remains only a compilation preview;
+`WorldKernel` and the mutation reducer are the sole world-state admission and
+commit authorities.
 
 `ModelAgentTool` has associated typed `Action`, `Finding`, and `Output` contracts.
 The harness serializes a consumer's finding only when constructing the next
 model observation; it cannot invent or interpret a domain finding. The civic
 verifier performs one inference for each exact candidate and returns its typed
-verdict and receipt to the tool. Only `run_model_agent` owns semantic candidate
-retry and its four-step budget. The initial candidate plus four rejected agent
-actions can therefore produce at most five civic-verifier receipts. Provider
+verdict and receipt to the tool. Only `run_model_agent` owns semantic action
+iteration and its four-step budget. The initial candidate plus four validating
+agent actions can therefore produce at most five civic-verifier receipts. Provider
 transport and schema retries remain the separately named lower-level authority
 of `run_validated_stage`; they do not select or repair a civic candidate.
 Accepted verifier receipts are rebound to the exact candidate before preview
