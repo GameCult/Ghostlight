@@ -1058,6 +1058,12 @@ Numen uses capable. The worker returns the complete action/tool receipt chain
 with its proposal. A failed wave returns the consumed schedule, every completed
 proposal, each failed dispatch, and all available worker receipts, so fairness
 state cannot advance without an explanatory receipt.
+`resume_elaboration_wave` is the sole partial-wave recovery owner. It accepts
+that exact failure partition, validates it against the original immutable wave
+and complete consumed schedule, retains every completed proposal and receipt,
+and invokes only the failed original dispatches. It does not schedule new work
+or advance fairness state. A duplicate, missing, unbound, or drifted dispatch
+closes the resume seam before any worker call.
 Successful wave construction is opaque outside the dispatcher. The admission
 boundary rechecks requested and unused slots, per-title and total dispatch
 counts, eligible titles, ordinal windows, weights, requested shares, final
@@ -1117,6 +1123,22 @@ each other title per locality; a seventeen-slot pass therefore invokes workers
 in exact configured proportion under bounded parallelism. This proves the
 titled path against a real provider without claiming that the older civic
 foundation compiler has already been replaced by the swarm.
+The strategic acceptance harness persists compiler, foundation, titled-wave,
+and completed strategic-wave checkpoints beside the CultCache campaign. On an
+explicit resume it loads canonical world state from CultCache, rehydrates model
+receipts by content hash, restores scheduler state from the consumed schedule,
+and continues at the first incomplete authority boundary. A committed
+foundation is checked against its preserved civic apparatus. A titled preview
+is not completion authority: only a post-kernel completion checkpoint bound to
+the before/after revisions, admission digest, semantic verifier, model receipts,
+and exact `WorldCommitReceipt` may skip that commit. Run-32's older committed
+Canopy pass can be admitted once through an explicit legacy inference that
+matches its complete civic candidate and persisted world receipt, then gains
+the same durable completion checkpoint. A partial titled wave routes through
+`resume_elaboration_wave`. Each later terminal partial result is published as a
+new immutable generation by same-directory atomic rename, preserving the prior
+valid generation. A committed strategic tick without its matching durable wave
+checkpoint is refused rather than guessed or replayed.
 
 Both destination paths synthesize the smallest compatible branch-local routes,
 geometry, people, supplies, procedures, capacity, responsibility, and doctrine

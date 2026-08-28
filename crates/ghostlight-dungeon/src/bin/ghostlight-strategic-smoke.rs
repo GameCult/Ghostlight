@@ -9,6 +9,326 @@ fn final_wave_field(
         .ok_or_else(|| anyhow::anyhow!("final strategic wave is missing {field}"))
 }
 
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CompilerCheckpoint {
+    description: String,
+    preview: ghostlight_dungeon::domain::WorldCompilePreview,
+    model_receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FoundationCheckpoint {
+    location_id: String,
+    location_name: String,
+    request: String,
+    preview: ghostlight_dungeon::domain::DestinationCompilationPreview,
+    model_receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CompletedInvocationCheckpoint {
+    dispatch: ghostlight_dungeon::elaboration::ElaborationDispatch,
+    proposal: ghostlight_dungeon::elaboration::WorldElaborationProposal,
+    model_receipt_hashes: Vec<String>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FailedInvocationCheckpoint {
+    dispatch: Option<ghostlight_dungeon::elaboration::ElaborationDispatch>,
+    diagnostic: String,
+    model_receipt_hashes: Vec<String>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TitledFailureCheckpoint {
+    schema: String,
+    location_id: String,
+    location_name: String,
+    request: String,
+    wave: Option<ghostlight_dungeon::elaboration::ElaborationWaveBinding>,
+    schedule: Option<ghostlight_dungeon::elaboration::ElaborationScheduleReceipt>,
+    completed_invocations: Vec<CompletedInvocationCheckpoint>,
+    invocation_failures: Vec<FailedInvocationCheckpoint>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TitledPreviewCheckpoint {
+    schema: String,
+    location_id: String,
+    location_name: String,
+    request: String,
+    wave: ghostlight_dungeon::elaboration::ElaborationWaveBinding,
+    schedule: ghostlight_dungeon::elaboration::ElaborationScheduleReceipt,
+    accepted_operations: Vec<ghostlight_dungeon::elaboration::AdmittedWorldElaborationOperation>,
+    rejections: Vec<ghostlight_dungeon::elaboration::WorldElaborationRejection>,
+    candidate: Option<ghostlight_dungeon::domain::LocalityElaboration>,
+    candidate_diagnostic: Option<String>,
+    model_receipt_hashes: Vec<String>,
+    #[serde(default)]
+    resumed_from: Option<std::path::PathBuf>,
+    #[serde(default)]
+    retried_dispatch_ordinals: Vec<u64>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TitledCommitCheckpoint {
+    schema: String,
+    location_id: String,
+    location_name: String,
+    world_revision_before: u64,
+    world_revision_after: u64,
+    wave: ghostlight_dungeon::elaboration::ElaborationWaveBinding,
+    schedule: ghostlight_dungeon::elaboration::ElaborationScheduleReceipt,
+    admission_digest: Option<String>,
+    verifier_receipt_hash: String,
+    model_receipt_hashes: Vec<String>,
+    commit_receipt: ghostlight_dungeon::domain::WorldCommitReceipt,
+    legacy_inferred: bool,
+}
+
+fn read_checkpoint<T: serde::de::DeserializeOwned>(path: &std::path::Path) -> anyhow::Result<T> {
+    let bytes = std::fs::read(path)
+        .map_err(|error| anyhow::anyhow!("cannot read checkpoint {}: {error}", path.display()))?;
+    serde_json::from_slice(&bytes)
+        .map_err(|error| anyhow::anyhow!("cannot decode checkpoint {}: {error}", path.display()))
+}
+
+fn publish_immutable_checkpoint(
+    path: &std::path::Path,
+    value: &impl serde::Serialize,
+) -> anyhow::Result<()> {
+    use std::io::Write;
+
+    if path.exists() {
+        anyhow::bail!("immutable checkpoint already exists: {}", path.display())
+    }
+    let file_name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| anyhow::anyhow!("checkpoint path has no UTF-8 file name"))?;
+    let temporary_path = path.with_file_name(format!(".{file_name}.{}.tmp", uuid::Uuid::new_v4()));
+    let result = (|| -> anyhow::Result<()> {
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary_path)?;
+        file.write_all(&serde_json::to_vec_pretty(value)?)?;
+        file.sync_all()?;
+        std::fs::rename(&temporary_path, path)?;
+        #[cfg(unix)]
+        std::fs::File::open(
+            path.parent()
+                .ok_or_else(|| anyhow::anyhow!("checkpoint path has no parent"))?,
+        )?
+        .sync_all()?;
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_file(&temporary_path);
+    }
+    result
+}
+
+fn titled_failure_checkpoint_paths(
+    root: &std::path::Path,
+    index: usize,
+) -> anyhow::Result<Vec<std::path::PathBuf>> {
+    let original_name = format!("titled-elaboration-{index:02}-terminal-failure.json");
+    let resume_prefix = format!("titled-elaboration-{index:02}-resume-");
+    let mut paths = Vec::new();
+    let original = root.join(original_name);
+    if original.is_file() {
+        paths.push(original);
+    }
+    let mut generations = std::fs::read_dir(root)?
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| {
+            let name = entry.file_name();
+            let name = name.to_str()?;
+            let generation = name
+                .strip_prefix(&resume_prefix)?
+                .strip_suffix("-terminal-failure.json")?
+                .parse::<u32>()
+                .ok()?;
+            Some((generation, entry.path()))
+        })
+        .collect::<Vec<_>>();
+    generations.sort_by_key(|(generation, _)| *generation);
+    paths.extend(generations.into_iter().map(|(_, path)| path));
+    Ok(paths)
+}
+
+fn load_checkpoint_receipts(
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+    hashes: &[String],
+) -> anyhow::Result<Vec<ghostlight_dungeon::model::ModelStageReceipt>> {
+    hashes
+        .iter()
+        .map(|hash| {
+            store
+                .load::<ghostlight_dungeon::model::ModelStageReceipt>(
+                    "persona_stage_receipt.v1",
+                    hash,
+                )?
+                .map(|(_, receipt)| receipt)
+                .ok_or_else(|| anyhow::anyhow!("checkpoint model receipt is missing: {hash}"))
+        })
+        .collect()
+}
+
+fn rehydrate_titled_failure(
+    checkpoint: TitledFailureCheckpoint,
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+) -> anyhow::Result<
+    ghostlight_dungeon::elaboration::ElaborationWaveFailure<
+        ghostlight_dungeon::elaboration::WorldElaborationProposal,
+    >,
+> {
+    if checkpoint.schema != "ghostlight.titled_elaboration_failure.v1" {
+        anyhow::bail!("titled elaboration checkpoint schema is unsupported")
+    }
+    let completed_invocations = checkpoint
+        .completed_invocations
+        .into_iter()
+        .map(|invocation| {
+            Ok(ghostlight_dungeon::elaboration::ElaborationInvocation {
+                wave: checkpoint
+                    .wave
+                    .clone()
+                    .ok_or_else(|| anyhow::anyhow!("checkpoint has no wave binding"))?,
+                dispatch: invocation.dispatch,
+                proposal: invocation.proposal,
+                model_stage_receipts: load_checkpoint_receipts(
+                    store,
+                    &invocation.model_receipt_hashes,
+                )?,
+            })
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    let invocation_failures = checkpoint
+        .invocation_failures
+        .into_iter()
+        .map(|failure| {
+            Ok(
+                ghostlight_dungeon::elaboration::ElaborationInvocationFailure {
+                    dispatch: failure.dispatch,
+                    diagnostic: failure.diagnostic,
+                    model_stage_receipts: load_checkpoint_receipts(
+                        store,
+                        &failure.model_receipt_hashes,
+                    )?,
+                },
+            )
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    Ok(ghostlight_dungeon::elaboration::ElaborationWaveFailure {
+        wave: checkpoint.wave,
+        schedule: checkpoint.schedule,
+        completed_invocations,
+        invocation_failures,
+    })
+}
+
+fn civic_manifest_preserves(
+    current: &ghostlight_dungeon::domain::CivicSystemManifest,
+    checkpoint: &ghostlight_dungeon::domain::CivicSystemManifest,
+) -> bool {
+    current.schema == checkpoint.schema
+        && current.jurisdiction_location_id == checkpoint.jurisdiction_location_id
+        && current.version >= checkpoint.version
+        && current
+            .governing_institution_ids
+            .is_superset(&checkpoint.governing_institution_ids)
+        && current
+            .resident_population_ids
+            .is_superset(&checkpoint.resident_population_ids)
+        && current
+            .public_authority_fact_ids
+            .is_superset(&checkpoint.public_authority_fact_ids)
+        && current
+            .public_selection_fact_ids
+            .is_superset(&checkpoint.public_selection_fact_ids)
+        && current
+            .public_resource_fact_ids
+            .is_superset(&checkpoint.public_resource_fact_ids)
+        && current
+            .public_redress_fact_ids
+            .is_superset(&checkpoint.public_redress_fact_ids)
+        && current
+            .political_relation_ids
+            .is_superset(&checkpoint.political_relation_ids)
+        && !current.semantic_verification_receipt_id.is_empty()
+}
+
+fn civic_manifest_is_committed_candidate(
+    current: &ghostlight_dungeon::domain::CivicSystemManifest,
+    candidate: &ghostlight_dungeon::domain::CivicSystemManifest,
+) -> bool {
+    let mut expected = candidate.clone();
+    expected.semantic_verification_receipt_id = current.semantic_verification_receipt_id.clone();
+    !current.semantic_verification_receipt_id.is_empty() && current == &expected
+}
+
+fn locality_elaboration_is_committed(
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    candidate: &ghostlight_dungeon::domain::LocalityElaboration,
+) -> bool {
+    let expansion = &candidate.expansion;
+    let origin_routes_match = campaign
+        .locations
+        .get(&expansion.origin_location_id)
+        .is_some_and(|origin| {
+            expansion
+                .origin_routes
+                .iter()
+                .all(|(id, route)| origin.routes.get(id) == Some(route))
+        });
+    let civic_matches = expansion.civic_system.as_ref().is_none_or(|candidate| {
+        campaign
+            .civic_systems
+            .get(&candidate.jurisdiction_location_id)
+            .is_some_and(|current| civic_manifest_is_committed_candidate(current, candidate))
+    });
+    origin_routes_match
+        && civic_matches
+        && expansion
+            .locations
+            .iter()
+            .all(|value| campaign.locations.get(&value.id) == Some(value))
+        && expansion
+            .facts
+            .iter()
+            .all(|value| campaign.facts.get(&value.id) == Some(value))
+        && expansion
+            .populations
+            .iter()
+            .all(|value| campaign.gestalts.get(&value.id) == Some(value))
+        && expansion
+            .population_profiles
+            .iter()
+            .all(|value| campaign.agency_profiles.get(&value.subject_id) == Some(value))
+        && expansion
+            .institutions
+            .iter()
+            .all(|value| campaign.institutions.get(&value.id) == Some(value))
+        && expansion
+            .institution_profiles
+            .iter()
+            .all(|value| campaign.agency_profiles.get(&value.subject_id) == Some(value))
+        && expansion
+            .local_relations
+            .iter()
+            .chain(expansion.migration_relations.iter())
+            .all(|value| campaign.agency_relations.get(&value.id) == Some(value))
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     use chrono::Utc;
@@ -18,7 +338,7 @@ async fn main() -> anyhow::Result<()> {
         elaboration::{
             ElaborationScheduler, ElaboratorTitle, ModelWorldElaborationWorker,
             admit_world_elaboration_wave, dispatch_elaboration_wave, finalize_world_elaboration,
-            world_elaboration_wave_binding,
+            resume_elaboration_wave, world_elaboration_wave_binding,
         },
         kernel::{CommandResult, WorldKernel},
         model_runtime::ModelRuntimeSelection,
@@ -51,6 +371,11 @@ async fn main() -> anyhow::Result<()> {
             ))
         });
     std::fs::create_dir_all(&root)?;
+    let resume = matches!(
+        std::env::var("GHOSTLIGHT_LIVE_FIRE_RESUME").ok().as_deref(),
+        Some("1" | "true")
+    );
+    let store = CampaignStore::open(root.join("campaign.cc"))?;
     let model = model_selection.open()?.ok_or_else(|| {
         anyhow::anyhow!(
             "{} credential is unavailable at {}",
@@ -65,93 +390,148 @@ async fn main() -> anyhow::Result<()> {
     let compiled = std::env::var("GHOSTLIGHT_WORLD_DESCRIPTION")
         .ok()
         .filter(|description| !description.trim().is_empty());
-    let (mut campaign, seed_evidence_receipts, seed_model_receipts, mut world_compile) =
-        if let Some(description) = compiled.as_deref() {
-            std::fs::write(
-                root.join("status.json"),
-                serde_json::to_vec_pretty(&serde_json::json!({
-                    "schema":"ghostlight.live_strategic_smoke_status.v1",
-                    "state":"compiling_world",
-                    "waves_completed":0,
-                    "waves_requested":wave_count,
-                    "updated_at":Utc::now(),
-                }))?,
-            )?;
-            let (preview, receipts) =
-                compile_strategic_campaign(model.clone(), description, &pressure, &public_channel)
-                    .await?;
-            std::fs::write(
-                root.join("compiler-preview.json"),
-                serde_json::to_vec_pretty(&serde_json::json!({
-                    "description":description,
-                    "preview":&preview,
-                    "model_receipts":&receipts,
-                }))?,
-            )?;
-            let evidence = preview.evidence_receipts.clone();
-            let campaign = preview.campaign.clone();
-            (
-                campaign,
-                evidence,
-                receipts.clone(),
-                Some(serde_json::json!({
-                    "description":description,
-                    "preview":preview,
-                    "model_receipts":receipts,
-                    "preview_path":root.join("compiler-preview.json"),
-                })),
-            )
-        } else {
-            (strategic_campaign(), vec![], vec![], None)
-        };
-    ghostlight_dungeon::compiler::validate_campaign_seed(&campaign)?;
-    let pressure_event = ghostlight_dungeon::domain::Event {
-        id: format!("pressure-{}", uuid::Uuid::new_v4()),
-        at: campaign.world_time,
-        kind: "strategic_pressure".into(),
-        summary: pressure.clone(),
-        actor_ids: campaign
-            .actors
+    let (
+        mut campaign,
+        seed_evidence_receipts,
+        seed_model_receipts,
+        mut world_compile,
+        initial_seed_location_ids,
+    ) = if resume {
+        let checkpoint: CompilerCheckpoint = read_checkpoint(&root.join("compiler-preview.json"))?;
+        let description = compiled
+            .as_deref()
+            .ok_or_else(|| anyhow::anyhow!("resume requires GHOSTLIGHT_WORLD_DESCRIPTION"))?;
+        if description != checkpoint.description {
+            anyhow::bail!("resume world description differs from its compiler checkpoint")
+        }
+        let campaign_keys = store.keys("campaign.v1")?;
+        if campaign_keys.len() != 1 {
+            anyhow::bail!("resume requires exactly one persisted campaign")
+        }
+        let campaign = store
+            .load::<ghostlight_dungeon::domain::Campaign>("campaign.v1", &campaign_keys[0])?
+            .map(|(_, campaign)| campaign)
+            .ok_or_else(|| anyhow::anyhow!("resume campaign checkpoint is missing"))?;
+        let initial_location_ids = checkpoint
+            .preview
+            .campaign
+            .locations
             .keys()
-            .filter(|actor_id| **actor_id != campaign.player_actor_id)
             .cloned()
-            .collect(),
-        institution_ids: campaign.institutions.keys().cloned().collect(),
-        gestalt_ids: campaign.gestalts.keys().cloned().collect(),
-        location_ids: campaign.locations.keys().cloned().collect(),
-        public_channels: vec![public_channel.clone()],
+            .collect::<Vec<_>>();
+        let pressure_matches = campaign
+            .events
+            .iter()
+            .any(|event| event.kind == "strategic_pressure" && event.summary == pressure);
+        let channel_matches = campaign
+            .news
+            .iter()
+            .any(|issue| issue.channel == public_channel);
+        if !pressure_matches || !channel_matches {
+            anyhow::bail!("resume pressure or public channel differs from persisted world state")
+        }
+        (
+            campaign,
+            Vec::new(),
+            Vec::new(),
+            Some(serde_json::json!({
+                "description":checkpoint.description,
+                "preview":checkpoint.preview,
+                "model_receipts":checkpoint.model_receipts,
+                "preview_path":root.join("compiler-preview.json"),
+                "resumed":true,
+            })),
+            initial_location_ids,
+        )
+    } else if let Some(description) = compiled.as_deref() {
+        std::fs::write(
+            root.join("status.json"),
+            serde_json::to_vec_pretty(&serde_json::json!({
+                "schema":"ghostlight.live_strategic_smoke_status.v1",
+                "state":"compiling_world",
+                "waves_completed":0,
+                "waves_requested":wave_count,
+                "updated_at":Utc::now(),
+            }))?,
+        )?;
+        let (preview, receipts) =
+            compile_strategic_campaign(model.clone(), description, &pressure, &public_channel)
+                .await?;
+        std::fs::write(
+            root.join("compiler-preview.json"),
+            serde_json::to_vec_pretty(&serde_json::json!({
+                "description":description,
+                "preview":&preview,
+                "model_receipts":&receipts,
+            }))?,
+        )?;
+        let evidence = preview.evidence_receipts.clone();
+        let campaign = preview.campaign.clone();
+        let initial_location_ids = campaign.locations.keys().cloned().collect::<Vec<_>>();
+        (
+            campaign,
+            evidence,
+            receipts.clone(),
+            Some(serde_json::json!({
+                "description":description,
+                "preview":preview,
+                "model_receipts":receipts,
+                "preview_path":root.join("compiler-preview.json"),
+            })),
+            initial_location_ids,
+        )
+    } else {
+        let campaign = strategic_campaign();
+        let initial_location_ids = campaign.locations.keys().cloned().collect::<Vec<_>>();
+        (campaign, vec![], vec![], None, initial_location_ids)
     };
-    campaign.news.push(ghostlight_dungeon::domain::NewsIssue {
-        id: format!(
-            "news:{}:{}",
-            pressure_event.id,
-            public_channel.replace(' ', "-")
-        ),
-        at: pressure_event.at,
-        channel: public_channel.clone(),
-        headline: ghostlight_dungeon::domain::committed_news_headline(&pressure_event.summary),
-        event_ids: vec![pressure_event.id.clone()],
-        reliability: "committed public channel".into(),
-    });
-    campaign.events.push(pressure_event);
+    ghostlight_dungeon::compiler::validate_campaign_seed(&campaign)?;
+    if !resume {
+        let pressure_event = ghostlight_dungeon::domain::Event {
+            id: format!("pressure-{}", uuid::Uuid::new_v4()),
+            at: campaign.world_time,
+            kind: "strategic_pressure".into(),
+            summary: pressure.clone(),
+            actor_ids: campaign
+                .actors
+                .keys()
+                .filter(|actor_id| **actor_id != campaign.player_actor_id)
+                .cloned()
+                .collect(),
+            institution_ids: campaign.institutions.keys().cloned().collect(),
+            gestalt_ids: campaign.gestalts.keys().cloned().collect(),
+            location_ids: campaign.locations.keys().cloned().collect(),
+            public_channels: vec![public_channel.clone()],
+        };
+        campaign.news.push(ghostlight_dungeon::domain::NewsIssue {
+            id: format!(
+                "news:{}:{}",
+                pressure_event.id,
+                public_channel.replace(' ', "-")
+            ),
+            at: pressure_event.at,
+            channel: public_channel.clone(),
+            headline: ghostlight_dungeon::domain::committed_news_headline(&pressure_event.summary),
+            event_ids: vec![pressure_event.id.clone()],
+            reliability: "committed public channel".into(),
+        });
+        campaign.events.push(pressure_event);
+        store.create_unadmitted_fixture_campaign(
+            &campaign,
+            &seed_evidence_receipts,
+            &seed_model_receipts,
+        )?;
+    }
     let player_before = campaign.actors[&campaign.player_actor_id].clone();
-    let store = CampaignStore::open(root.join("campaign.cc"))?;
-    store.create_unadmitted_fixture_campaign(
-        &campaign,
-        &seed_evidence_receipts,
-        &seed_model_receipts,
-    )?;
     let kernel = WorldKernel::start(store.clone());
     let elaboration_passes = if compiled.is_some() {
         bounded_environment_usize("GHOSTLIGHT_WORLD_ELABORATION_PASSES", 0, 0, 8)?
     } else {
         0
     };
-    let initial_location_ids = campaign
-        .locations
-        .keys()
+    let initial_location_ids = initial_seed_location_ids
+        .into_iter()
         .take(elaboration_passes)
-        .cloned()
         .collect::<Vec<_>>();
     let mut elaboration_reports = Vec::with_capacity(initial_location_ids.len());
     if let Some(description) = compiled.as_deref()
@@ -185,9 +565,49 @@ async fn main() -> anyhow::Result<()> {
                     "updated_at":Utc::now(),
                 }))?,
             )?;
-            let (elaborated, preview_path, receipts) = {
-                let foundation_request =
-                    strategic_locality_request(&location_name, location_id, &pressure);
+            let foundation_request =
+                strategic_locality_request(&location_name, location_id, &pressure);
+            let preview_path = root.join(format!("elaboration-{:02}-preview.json", index + 1));
+            let (elaborated, receipts) = if resume && preview_path.is_file() {
+                let checkpoint: FoundationCheckpoint = read_checkpoint(&preview_path)?;
+                let (expected_revision, expected_civic) = match &checkpoint.preview {
+                    ghostlight_dungeon::domain::DestinationCompilationPreview::LocalityElaboration(
+                        preview,
+                    ) if preview.elaboration.target_location_id == *location_id => {
+                        (
+                            preview.expected_revision,
+                            preview
+                                .elaboration
+                                .expansion
+                                .civic_system
+                                .as_ref()
+                                .ok_or_else(|| {
+                                    anyhow::anyhow!(
+                                        "foundation checkpoint has no civic system for {location_id}"
+                                    )
+                                })?
+                                .clone(),
+                        )
+                    }
+                    _ => anyhow::bail!(
+                        "foundation checkpoint does not target {location_id} as a locality"
+                    ),
+                };
+                if checkpoint.location_id != *location_id
+                    || checkpoint.location_name != location_name
+                    || checkpoint.request != foundation_request
+                    || campaign.revision <= expected_revision
+                    || campaign
+                        .civic_systems
+                        .get(location_id)
+                        .is_none_or(|current| !civic_manifest_preserves(current, &expected_civic))
+                {
+                    anyhow::bail!(
+                        "foundation checkpoint for {location_id} is not committed in the resumed campaign"
+                    )
+                }
+                (campaign.clone(), checkpoint.model_receipts)
+            } else {
                 let compilation = compiler
                     .compile_destination(&campaign, location_id, &foundation_request)
                     .await;
@@ -249,7 +669,6 @@ async fn main() -> anyhow::Result<()> {
                     )
                 }
             };
-                let preview_path = root.join(format!("elaboration-{:02}-preview.json", index + 1));
                 std::fs::write(
                     &preview_path,
                     serde_json::to_vec_pretty(&serde_json::json!({
@@ -268,9 +687,144 @@ async fn main() -> anyhow::Result<()> {
                 else {
                     anyhow::bail!("strategic locality elaboration did not commit")
                 };
-                (elaborated, preview_path, receipts)
+                (elaborated, receipts)
             };
             campaign = elaborated;
+            let titled_preview_path =
+                root.join(format!("titled-elaboration-{:02}-preview.json", index + 1));
+            let titled_commit_path =
+                root.join(format!("titled-elaboration-{:02}-commit.json", index + 1));
+            if resume && titled_preview_path.is_file() {
+                let titled: TitledPreviewCheckpoint = read_checkpoint(&titled_preview_path)?;
+                let candidate = titled.candidate.as_ref().ok_or_else(|| {
+                    anyhow::anyhow!("committed titled checkpoint has no candidate")
+                })?;
+                let candidate_civic =
+                    candidate.expansion.civic_system.as_ref().ok_or_else(|| {
+                        anyhow::anyhow!("committed titled checkpoint has no civic candidate")
+                    })?;
+                if titled.schema != "ghostlight.titled_elaboration_preview.v1"
+                    || titled.location_id != *location_id
+                    || titled.location_name != location_name
+                    || titled.request
+                        != strategic_titled_locality_request(&location_name, location_id, &pressure)
+                    || candidate.target_location_id != *location_id
+                    || titled.candidate_diagnostic.is_some()
+                    || !titled.rejections.is_empty()
+                    || titled.accepted_operations.len() != titled.schedule.dispatches.len()
+                {
+                    anyhow::bail!(
+                        "committed titled checkpoint for {location_id} is internally inconsistent"
+                    )
+                }
+                let civic = campaign.civic_systems.get(location_id).ok_or_else(|| {
+                    anyhow::anyhow!("resumed campaign lacks civic system for {location_id}")
+                })?;
+                if !civic_manifest_is_committed_candidate(civic, candidate_civic)
+                    || !locality_elaboration_is_committed(&campaign, candidate)
+                {
+                    anyhow::bail!(
+                        "titled preview for {location_id} is not the civic system committed in CultCache"
+                    )
+                }
+                let verifier_receipt = store
+                    .load::<ghostlight_dungeon::model::ModelStageReceipt>(
+                        "persona_stage_receipt.v1",
+                        &civic.semantic_verification_receipt_id,
+                    )?
+                    .map(|(_, receipt)| receipt)
+                    .ok_or_else(|| {
+                        anyhow::anyhow!(
+                            "committed titled verifier receipt is missing for {location_id}"
+                        )
+                    })?;
+                let proposal_receipts =
+                    load_checkpoint_receipts(&store, &titled.model_receipt_hashes)?;
+                let expected_foundation_revision = match &read_checkpoint::<FoundationCheckpoint>(
+                    &preview_path,
+                )?
+                .preview
+                {
+                    ghostlight_dungeon::domain::DestinationCompilationPreview::LocalityElaboration(
+                        preview,
+                    ) => preview.expected_revision,
+                    _ => unreachable!("foundation checkpoint was validated above"),
+                };
+                let world_revision_before = expected_foundation_revision.saturating_add(1);
+                let world_revision_after = expected_foundation_revision.saturating_add(2);
+                let persisted_commit_receipt = store
+                    .load::<ghostlight_dungeon::domain::WorldCommitReceipt>(
+                        "world_commit_receipt.v1",
+                        &format!("{}-{world_revision_after}", campaign.id),
+                    )?
+                    .map(|(_, receipt)| receipt)
+                    .ok_or_else(|| {
+                        anyhow::anyhow!(
+                            "titled world commit receipt is missing for {location_id} revision {world_revision_after}"
+                        )
+                    })?;
+                let commit_checkpoint = if titled_commit_path.is_file() {
+                    read_checkpoint::<TitledCommitCheckpoint>(&titled_commit_path)?
+                } else {
+                    let checkpoint = TitledCommitCheckpoint {
+                        schema: "ghostlight.titled_elaboration_commit.v1".into(),
+                        location_id: location_id.clone(),
+                        location_name: location_name.clone(),
+                        world_revision_before,
+                        world_revision_after,
+                        wave: titled.wave.clone(),
+                        schedule: titled.schedule.clone(),
+                        admission_digest: None,
+                        verifier_receipt_hash: verifier_receipt.storage_key().into(),
+                        model_receipt_hashes: titled.model_receipt_hashes.clone(),
+                        commit_receipt: persisted_commit_receipt.clone(),
+                        legacy_inferred: true,
+                    };
+                    publish_immutable_checkpoint(&titled_commit_path, &checkpoint)?;
+                    checkpoint
+                };
+                if commit_checkpoint.schema != "ghostlight.titled_elaboration_commit.v1"
+                    || commit_checkpoint.location_id != *location_id
+                    || commit_checkpoint.location_name != location_name
+                    || commit_checkpoint.world_revision_before != world_revision_before
+                    || commit_checkpoint.world_revision_after != world_revision_after
+                    || commit_checkpoint.wave != titled.wave
+                    || commit_checkpoint.schedule != titled.schedule
+                    || commit_checkpoint.verifier_receipt_hash != verifier_receipt.storage_key()
+                    || commit_checkpoint.model_receipt_hashes != titled.model_receipt_hashes
+                    || commit_checkpoint.commit_receipt != persisted_commit_receipt
+                    || commit_checkpoint.commit_receipt.command_kind != "elaborate_locality"
+                    || (!commit_checkpoint.legacy_inferred
+                        && commit_checkpoint
+                            .admission_digest
+                            .as_deref()
+                            .is_none_or(str::is_empty))
+                {
+                    anyhow::bail!(
+                        "titled completion checkpoint for {location_id} is not bound to its canonical commit"
+                    )
+                }
+                titled_scheduler = ElaborationScheduler::from_state(
+                    &titled_profile,
+                    titled.schedule.final_state.clone(),
+                )?;
+                elaboration_reports.push(serde_json::json!({
+                    "location_id":location_id,
+                    "location_name":location_name,
+                    "world_revision":world_revision_after,
+                    "preview_path":preview_path,
+                    "titled_preview_path":titled_preview_path,
+                    "titled_commit_path":titled_commit_path,
+                    "titled_model_receipts":proposal_receipts,
+                    "titled_semantic_verifier_receipt":verifier_receipt,
+                    "model_receipts":receipts,
+                    "resumed_committed_checkpoint":true,
+                    "original_wave":titled.wave,
+                    "original_resume_source":titled.resumed_from,
+                    "original_retried_dispatch_ordinals":titled.retried_dispatch_ordinals,
+                }));
+                continue;
+            }
             let titled_wave = world_elaboration_wave_binding(&campaign, location_id)?;
             let titled_worker = Arc::new(ModelWorldElaborationWorker::new(
                 model.clone(),
@@ -278,16 +832,78 @@ async fn main() -> anyhow::Result<()> {
                 location_id.clone(),
                 strategic_titled_locality_request(&location_name, location_id, &pressure),
             )?);
-            let titled_run = match dispatch_elaboration_wave(
-                &mut titled_scheduler,
-                titled_wave,
-                &titled_eligible,
-                titled_invocation_budget,
-                titled_parallelism,
-                titled_worker.clone(),
-            )
-            .await
-            {
+            let original_failure_path = root.join(format!(
+                "titled-elaboration-{:02}-terminal-failure.json",
+                index + 1
+            ));
+            let failure_checkpoint_paths = titled_failure_checkpoint_paths(&root, index + 1)?;
+            let checkpoint_path = failure_checkpoint_paths.last().cloned();
+            let next_failure_path = if checkpoint_path.is_some() {
+                root.join(format!(
+                    "titled-elaboration-{:02}-resume-{:02}-terminal-failure.json",
+                    index + 1,
+                    failure_checkpoint_paths.len()
+                ))
+            } else {
+                original_failure_path
+            };
+            let mut retried_dispatch_ordinals = Vec::new();
+            let titled_result = if resume {
+                if let Some(checkpoint_path) = checkpoint_path.as_ref() {
+                    let checkpoint: TitledFailureCheckpoint = read_checkpoint(checkpoint_path)?;
+                    if checkpoint.location_id != *location_id
+                        || checkpoint.location_name != location_name
+                        || checkpoint.request != titled_worker.task_request()
+                        || checkpoint.wave.as_ref() != Some(&titled_wave)
+                    {
+                        anyhow::bail!(
+                            "titled failure checkpoint for {location_id} does not bind the current frozen wave"
+                        )
+                    }
+                    retried_dispatch_ordinals = checkpoint
+                        .invocation_failures
+                        .iter()
+                        .filter_map(|failure| {
+                            failure.dispatch.as_ref().map(|dispatch| dispatch.ordinal)
+                        })
+                        .collect();
+                    let scheduler_state = checkpoint
+                        .schedule
+                        .as_ref()
+                        .ok_or_else(|| anyhow::anyhow!("resume checkpoint has no schedule"))?
+                        .final_state
+                        .clone();
+                    titled_scheduler =
+                        ElaborationScheduler::from_state(&titled_profile, scheduler_state)?;
+                    resume_elaboration_wave(
+                        rehydrate_titled_failure(checkpoint, &store)?,
+                        titled_parallelism,
+                        titled_worker.clone(),
+                    )
+                    .await
+                } else {
+                    dispatch_elaboration_wave(
+                        &mut titled_scheduler,
+                        titled_wave,
+                        &titled_eligible,
+                        titled_invocation_budget,
+                        titled_parallelism,
+                        titled_worker.clone(),
+                    )
+                    .await
+                }
+            } else {
+                dispatch_elaboration_wave(
+                    &mut titled_scheduler,
+                    titled_wave,
+                    &titled_eligible,
+                    titled_invocation_budget,
+                    titled_parallelism,
+                    titled_worker.clone(),
+                )
+                .await
+            };
+            let titled_run = match titled_result {
                 Ok(run) => run,
                 Err(failure) => {
                     let receipts = failure
@@ -305,13 +921,10 @@ async fn main() -> anyhow::Result<()> {
                     if !receipts.is_empty() {
                         store.persist_model_stage_receipts(&receipts)?;
                     }
-                    let failure_path = root.join(format!(
-                        "titled-elaboration-{:02}-terminal-failure.json",
-                        index + 1
-                    ));
-                    std::fs::write(
+                    let failure_path = next_failure_path;
+                    publish_immutable_checkpoint(
                         &failure_path,
-                        serde_json::to_vec_pretty(&serde_json::json!({
+                        &serde_json::json!({
                             "schema":"ghostlight.titled_elaboration_failure.v1",
                             "location_id":location_id,
                             "location_name":location_name,
@@ -328,7 +941,7 @@ async fn main() -> anyhow::Result<()> {
                                 "diagnostic":failure.diagnostic,
                                 "model_receipt_hashes":failure.model_stage_receipts.iter().map(|receipt|receipt.storage_key()).collect::<Vec<_>>(),
                             })).collect::<Vec<_>>(),
-                        }))?,
+                        }),
                     )?;
                     anyhow::bail!(
                         "titled elaboration wave failed for {location_id}; exact receipt at {}",
@@ -344,8 +957,6 @@ async fn main() -> anyhow::Result<()> {
                 .collect::<Vec<_>>();
             store.persist_model_stage_receipts(&proposal_receipts)?;
             let admission = admit_world_elaboration_wave(&campaign, location_id, titled_run)?;
-            let titled_preview_path =
-                root.join(format!("titled-elaboration-{:02}-preview.json", index + 1));
             std::fs::write(
                 &titled_preview_path,
                 serde_json::to_vec_pretty(&serde_json::json!({
@@ -360,6 +971,8 @@ async fn main() -> anyhow::Result<()> {
                     "candidate":admission.candidate(),
                     "candidate_diagnostic":admission.candidate_diagnostic(),
                     "model_receipt_hashes":admission.model_stage_receipts().iter().map(|receipt|receipt.storage_key()).collect::<Vec<_>>(),
+                    "resumed_from":checkpoint_path,
+                    "retried_dispatch_ordinals":retried_dispatch_ordinals,
                 }))?,
             )?;
             let candidate = admission.candidate().ok_or_else(|| {
@@ -371,6 +984,14 @@ async fn main() -> anyhow::Result<()> {
             if let Some(diagnostic) = admission.candidate_diagnostic() {
                 anyhow::bail!("titled elaboration candidate requires reconciliation: {diagnostic}");
             }
+            let admission_digest = admission.digest().to_owned();
+            let admitted_wave = admission.wave().clone();
+            let admitted_schedule = admission.schedule().clone();
+            let admitted_model_receipt_hashes = admission
+                .model_stage_receipts()
+                .iter()
+                .map(|receipt| receipt.storage_key().to_owned())
+                .collect::<Vec<_>>();
             let causal_receipt_ids = admission
                 .model_stage_receipts()
                 .iter()
@@ -401,7 +1022,7 @@ async fn main() -> anyhow::Result<()> {
                 finalize_world_elaboration(&campaign, admission, verifier_receipt.clone())?;
             let CommandResult::Committed {
                 campaign: titled_elaborated,
-                ..
+                receipt: titled_commit_receipt,
             } = kernel
                 .commit_elaboration(finalized)
                 .await
@@ -409,6 +1030,21 @@ async fn main() -> anyhow::Result<()> {
             else {
                 anyhow::bail!("titled locality elaboration did not commit")
             };
+            let titled_commit_checkpoint = TitledCommitCheckpoint {
+                schema: "ghostlight.titled_elaboration_commit.v1".into(),
+                location_id: location_id.clone(),
+                location_name: location_name.clone(),
+                world_revision_before: campaign.revision,
+                world_revision_after: titled_elaborated.revision,
+                wave: admitted_wave,
+                schedule: admitted_schedule,
+                admission_digest: Some(admission_digest),
+                verifier_receipt_hash: verifier_receipt.storage_key().into(),
+                model_receipt_hashes: admitted_model_receipt_hashes,
+                commit_receipt: titled_commit_receipt,
+                legacy_inferred: false,
+            };
+            publish_immutable_checkpoint(&titled_commit_path, &titled_commit_checkpoint)?;
             campaign = titled_elaborated;
             elaboration_reports.push(serde_json::json!({
                 "location_id":location_id,
@@ -416,6 +1052,7 @@ async fn main() -> anyhow::Result<()> {
                 "world_revision":campaign.revision,
                 "preview_path":preview_path,
                 "titled_preview_path":titled_preview_path,
+                "titled_commit_path":titled_commit_path,
                 "titled_model_receipts":proposal_receipts,
                 "titled_semantic_verifier_receipt":verifier_receipt,
                 "model_receipts":receipts,
@@ -440,7 +1077,24 @@ async fn main() -> anyhow::Result<()> {
         });
     let started = Instant::now();
     let mut wave_reports = Vec::with_capacity(wave_count);
-    for wave_index in 1..=wave_count {
+    if resume {
+        for wave_index in 1..=wave_count {
+            let checkpoint_path = root.join(format!("wave-{wave_index:02}-checkpoint.json"));
+            if !checkpoint_path.is_file() {
+                break;
+            }
+            wave_reports.push(read_checkpoint::<serde_json::Value>(&checkpoint_path)?);
+        }
+        if campaign.strategic_tick_count != wave_reports.len() as u64 {
+            anyhow::bail!(
+                "persisted strategic tick count {} does not match {} durable wave checkpoints; refusing to replay a committed wave",
+                campaign.strategic_tick_count,
+                wave_reports.len()
+            )
+        }
+    }
+    let completed_wave_count = wave_reports.len();
+    for wave_index in completed_wave_count + 1..=wave_count {
         let previous_news_count = if wave_index == 1 {
             0
         } else {
@@ -630,7 +1284,7 @@ async fn main() -> anyhow::Result<()> {
                 )
             }
         };
-        wave_reports.push(serde_json::json!({
+        let wave_report = serde_json::json!({
             "wave_index":wave_index,
             "elapsed_seconds":started.elapsed().as_secs_f64(),
             "world_revision_before":campaign.revision,
@@ -646,7 +1300,12 @@ async fn main() -> anyhow::Result<()> {
             "newspaper_error":newspaper_error,
             "issue_path":issue_path,
             "issue_audit_path":issue_audit_path,
-        }));
+        });
+        publish_immutable_checkpoint(
+            &root.join(format!("wave-{wave_index:02}-checkpoint.json")),
+            &wave_report,
+        )?;
+        wave_reports.push(wave_report);
         campaign = advanced.clone();
         std::fs::write(
             root.join("status.json"),
@@ -1231,9 +1890,32 @@ fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
 #[cfg(test)]
 mod tests {
     use super::{
-        admitted_public_channel, final_wave_field, strategic_campaign, strategic_locality_request,
-        strategic_titled_locality_request,
+        admitted_public_channel, civic_manifest_is_committed_candidate, final_wave_field,
+        locality_elaboration_is_committed, publish_immutable_checkpoint, strategic_campaign,
+        strategic_locality_request, strategic_titled_locality_request,
+        titled_failure_checkpoint_paths,
     };
+
+    fn civic_manifest(
+        version: u64,
+        verifier: &str,
+    ) -> ghostlight_dungeon::domain::CivicSystemManifest {
+        use std::collections::BTreeSet;
+
+        ghostlight_dungeon::domain::CivicSystemManifest {
+            schema: "ghostlight.civic_system_manifest.v1".into(),
+            version,
+            jurisdiction_location_id: "room".into(),
+            governing_institution_ids: BTreeSet::from(["council".into()]),
+            resident_population_ids: BTreeSet::from(["residents".into()]),
+            public_authority_fact_ids: BTreeSet::from(["authority".into()]),
+            public_selection_fact_ids: BTreeSet::from(["selection".into()]),
+            public_resource_fact_ids: BTreeSet::from(["resources".into()]),
+            public_redress_fact_ids: BTreeSet::from(["redress".into()]),
+            political_relation_ids: BTreeSet::from(["relation".into()]),
+            semantic_verification_receipt_id: verifier.into(),
+        }
+    }
 
     #[test]
     fn top_level_projection_uses_the_final_wave_head() {
@@ -1302,6 +1984,85 @@ mod tests {
             campaign.agency_profiles[&campaign.player_actor_id]
                 .information_channels
                 .contains("root-wire broadsheet")
+        );
+    }
+
+    #[test]
+    fn a_precommit_titled_preview_cannot_masquerade_as_a_committed_candidate() {
+        let foundation_only = civic_manifest(1, "foundation-verifier");
+        let titled_candidate = civic_manifest(2, "");
+        let committed_titled = civic_manifest(2, "titled-verifier");
+
+        assert!(!civic_manifest_is_committed_candidate(
+            &foundation_only,
+            &titled_candidate
+        ));
+        assert!(civic_manifest_is_committed_candidate(
+            &committed_titled,
+            &titled_candidate
+        ));
+    }
+
+    #[test]
+    fn legacy_completion_inference_requires_every_non_civic_operation() {
+        let mut campaign = strategic_campaign();
+        let child = ghostlight_dungeon::domain::Location {
+            id: "patina-child".into(),
+            name: "The Duck Gate".into(),
+            container_id: Some("room".into()),
+            routes: Default::default(),
+            persistent_features: vec!["A bronze duck called Harold.".into()],
+        };
+        let candidate = ghostlight_dungeon::domain::LocalityElaboration {
+            target_location_id: "room".into(),
+            expansion: ghostlight_dungeon::domain::RegionExpansion {
+                origin_location_id: "room".into(),
+                origin_routes: Default::default(),
+                locations: vec![child.clone()],
+                facts: Vec::new(),
+                populations: Vec::new(),
+                population_profiles: Vec::new(),
+                migration_relations: Vec::new(),
+                institutions: Vec::new(),
+                institution_profiles: Vec::new(),
+                local_relations: Vec::new(),
+                civic_system: None,
+            },
+        };
+
+        assert!(!locality_elaboration_is_committed(&campaign, &candidate));
+        campaign.locations.insert(child.id.clone(), child);
+        assert!(locality_elaboration_is_committed(&campaign, &candidate));
+    }
+
+    #[test]
+    fn checkpoint_publication_is_immutable_and_ignores_unpublished_temporary_files() {
+        let directory = tempfile::tempdir().unwrap();
+        let original = directory
+            .path()
+            .join("titled-elaboration-02-terminal-failure.json");
+        let resume = directory
+            .path()
+            .join("titled-elaboration-02-resume-01-terminal-failure.json");
+        publish_immutable_checkpoint(&original, &serde_json::json!({"generation":0})).unwrap();
+        publish_immutable_checkpoint(&resume, &serde_json::json!({"generation":1})).unwrap();
+        std::fs::write(
+            directory
+                .path()
+                .join(".titled-elaboration-02-resume-02-terminal-failure.json.dead.tmp"),
+            b"truncated",
+        )
+        .unwrap();
+
+        let paths = titled_failure_checkpoint_paths(directory.path(), 2).unwrap();
+
+        assert_eq!(paths, vec![original.clone(), resume.clone()]);
+        assert!(
+            publish_immutable_checkpoint(&resume, &serde_json::json!({"generation":2})).is_err()
+        );
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&std::fs::read(resume).unwrap()).unwrap(),
+            serde_json::json!({"generation":1})
         );
     }
 }

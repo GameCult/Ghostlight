@@ -503,10 +503,140 @@ where
         });
     }
     let schedule = scheduler.schedule(eligible_titles, invocation_budget);
+    let (invocations, invocation_failures) = invoke_elaboration_dispatches(
+        wave.clone(),
+        schedule.dispatches.iter().cloned().collect(),
+        parallelism,
+        worker,
+    )
+    .await;
+    if !invocation_failures.is_empty() {
+        return Err(ElaborationWaveFailure {
+            wave: Some(wave),
+            schedule: Some(schedule),
+            completed_invocations: invocations,
+            invocation_failures,
+        });
+    }
+    Ok(ElaborationWaveRun {
+        wave,
+        schedule,
+        invocations,
+    })
+}
+
+/// Resumes only the failed dispatches from one complete, immutable wave
+/// checkpoint. The original schedule remains authoritative: successful
+/// invocations are retained, scheduler state is not advanced, and every retry
+/// keeps its exact title, ordinal, and frozen snapshot binding.
+pub async fn resume_elaboration_wave<Worker, Proposal>(
+    failure: ElaborationWaveFailure<Proposal>,
+    parallelism: usize,
+    worker: Arc<Worker>,
+) -> std::result::Result<ElaborationWaveRun<Proposal>, ElaborationWaveFailure<Proposal>>
+where
+    Worker: ElaborationSubAgentPort<Proposal> + 'static,
+    Proposal: Send + 'static,
+{
+    let ElaborationWaveFailure {
+        wave,
+        schedule,
+        mut completed_invocations,
+        invocation_failures,
+    } = failure;
+    let Some(wave) = wave else {
+        return Err(ElaborationWaveFailure {
+            wave: None,
+            schedule,
+            completed_invocations,
+            invocation_failures,
+        });
+    };
+    let Some(schedule) = schedule else {
+        return Err(ElaborationWaveFailure {
+            wave: Some(wave),
+            schedule: None,
+            completed_invocations,
+            invocation_failures,
+        });
+    };
+    let checkpoint_error = validate_partial_wave_checkpoint(
+        &wave,
+        &schedule,
+        &completed_invocations,
+        &invocation_failures,
+    )
+    .err()
+    .map(|error| error.to_string())
+    .or_else(|| {
+        (parallelism == 0).then(|| "elaboration wave parallelism must be greater than zero".into())
+    });
+    if let Some(diagnostic) = checkpoint_error {
+        return Err(ElaborationWaveFailure {
+            wave: Some(wave),
+            schedule: Some(schedule),
+            completed_invocations,
+            invocation_failures: vec![ElaborationInvocationFailure {
+                dispatch: None,
+                diagnostic,
+                model_stage_receipts: Vec::new(),
+            }],
+        });
+    }
+    let failed_dispatches = invocation_failures
+        .into_iter()
+        .map(|failure| failure.dispatch.expect("validated checkpoint dispatch"))
+        .collect::<Vec<_>>();
+    let (mut resumed_invocations, invocation_failures) =
+        invoke_elaboration_dispatches(wave.clone(), failed_dispatches, parallelism, worker).await;
+    completed_invocations.append(&mut resumed_invocations);
+    completed_invocations.sort_by_key(|invocation| invocation.dispatch.ordinal);
+    if !invocation_failures.is_empty() {
+        return Err(ElaborationWaveFailure {
+            wave: Some(wave),
+            schedule: Some(schedule),
+            completed_invocations,
+            invocation_failures,
+        });
+    }
+    let run = ElaborationWaveRun {
+        wave,
+        schedule,
+        invocations: completed_invocations,
+    };
+    if let Err(error) = validate_successful_wave_run(&run) {
+        return Err(ElaborationWaveFailure {
+            wave: Some(run.wave),
+            schedule: Some(run.schedule),
+            completed_invocations: run.invocations,
+            invocation_failures: vec![ElaborationInvocationFailure {
+                dispatch: None,
+                diagnostic: error.to_string(),
+                model_stage_receipts: Vec::new(),
+            }],
+        });
+    }
+    Ok(run)
+}
+
+async fn invoke_elaboration_dispatches<Worker, Proposal>(
+    wave: ElaborationWaveBinding,
+    dispatches: Vec<ElaborationDispatch>,
+    parallelism: usize,
+    worker: Arc<Worker>,
+) -> (
+    Vec<ElaborationInvocation<Proposal>>,
+    Vec<ElaborationInvocationFailure>,
+)
+where
+    Worker: ElaborationSubAgentPort<Proposal> + 'static,
+    Proposal: Send + 'static,
+{
+    let invocation_count = dispatches.len();
     let semaphore = Arc::new(tokio::sync::Semaphore::new(parallelism));
     let mut jobs = tokio::task::JoinSet::new();
     let mut task_dispatches = HashMap::new();
-    for dispatch in schedule.dispatches.iter().cloned() {
+    for dispatch in dispatches {
         let worker = worker.clone();
         let semaphore = semaphore.clone();
         let wave = wave.clone();
@@ -544,7 +674,7 @@ where
         task_dispatches.insert(task.id(), task_dispatch);
     }
 
-    let mut invocations = Vec::with_capacity(schedule.dispatches.len());
+    let mut invocations = Vec::with_capacity(invocation_count);
     let mut invocation_failures = Vec::new();
     while let Some(result) = jobs.join_next_with_id().await {
         match result {
@@ -571,19 +701,7 @@ where
             .map(|dispatch| dispatch.ordinal)
             .unwrap_or(u64::MAX)
     });
-    if !invocation_failures.is_empty() {
-        return Err(ElaborationWaveFailure {
-            wave: Some(wave),
-            schedule: Some(schedule),
-            completed_invocations: invocations,
-            invocation_failures,
-        });
-    }
-    Ok(ElaborationWaveRun {
-        wave,
-        schedule,
-        invocations,
-    })
+    (invocations, invocation_failures)
 }
 
 /// Provider-backed titled worker for one additive locality operation. The
@@ -1443,6 +1561,16 @@ pub fn admit_world_elaboration_wave(
 
 fn validate_successful_wave_run<Proposal>(run: &ElaborationWaveRun<Proposal>) -> Result<()> {
     let schedule = &run.schedule;
+    validate_elaboration_schedule(schedule)?;
+    if run.invocations.len() != schedule.dispatches.len() {
+        return Err(anyhow!(
+            "world elaboration schedule receipt is not internally coherent"
+        ));
+    }
+    Ok(())
+}
+
+fn validate_elaboration_schedule(schedule: &ElaborationScheduleReceipt) -> Result<()> {
     let recomputed_dispatch_counts = schedule.dispatches.iter().fold(
         BTreeMap::<ElaboratorTitle, u32>::new(),
         |mut counts, dispatch| {
@@ -1453,7 +1581,6 @@ fn validate_successful_wave_run<Proposal>(run: &ElaborationWaveRun<Proposal>) ->
     if schedule.schema != "ghostlight.elaboration_schedule_receipt.v1"
         || schedule.final_state.schema != "ghostlight.elaboration_dispatch_state.v1"
         || schedule.final_state.profile_digest.trim().is_empty()
-        || run.invocations.len() != schedule.dispatches.len()
         || schedule.requested_invocations
             != schedule.dispatches.len() as u32 + schedule.unused_invocations
         || schedule.unused_invocations != schedule.unused_counts.values().copied().sum::<u32>()
@@ -1527,6 +1654,57 @@ fn validate_successful_wave_run<Proposal>(run: &ElaborationWaveRun<Proposal>) ->
     }) {
         return Err(anyhow!(
             "world elaboration title dispatch totals do not reach final scheduler state"
+        ));
+    }
+    Ok(())
+}
+
+fn validate_partial_wave_checkpoint<Proposal>(
+    wave: &ElaborationWaveBinding,
+    schedule: &ElaborationScheduleReceipt,
+    completed_invocations: &[ElaborationInvocation<Proposal>],
+    invocation_failures: &[ElaborationInvocationFailure],
+) -> Result<()> {
+    wave.validate()?;
+    validate_elaboration_schedule(schedule)?;
+    if invocation_failures.is_empty() {
+        return Err(anyhow!(
+            "elaboration resume checkpoint contains no failed dispatch"
+        ));
+    }
+    let scheduled = schedule
+        .dispatches
+        .iter()
+        .map(|dispatch| (dispatch.ordinal, dispatch))
+        .collect::<BTreeMap<_, _>>();
+    let mut partition = BTreeSet::new();
+    for invocation in completed_invocations {
+        if &invocation.wave != wave
+            || scheduled.get(&invocation.dispatch.ordinal).copied() != Some(&invocation.dispatch)
+            || !partition.insert(invocation.dispatch.ordinal)
+        {
+            return Err(anyhow!(
+                "elaboration resume checkpoint completed work does not match its exact schedule"
+            ));
+        }
+    }
+    for failure in invocation_failures {
+        let Some(dispatch) = failure.dispatch.as_ref() else {
+            return Err(anyhow!(
+                "elaboration resume checkpoint has an unbound failed dispatch"
+            ));
+        };
+        if scheduled.get(&dispatch.ordinal).copied() != Some(dispatch)
+            || !partition.insert(dispatch.ordinal)
+        {
+            return Err(anyhow!(
+                "elaboration resume checkpoint failed work does not match its exact schedule"
+            ));
+        }
+    }
+    if partition.len() != scheduled.len() {
+        return Err(anyhow!(
+            "elaboration resume checkpoint does not partition its exact schedule"
         ));
     }
     Ok(())
@@ -2117,6 +2295,10 @@ mod tests {
 
     struct PartiallyFailingSubAgent;
 
+    struct RecordingResumeSubAgent {
+        ordinals: std::sync::Mutex<Vec<u64>>,
+    }
+
     #[async_trait]
     impl ElaborationSubAgentPort<String> for PartiallyFailingSubAgent {
         async fn invoke(
@@ -2135,6 +2317,24 @@ mod tests {
             }
             Ok(ElaborationSubAgentOutput::deterministic(format!(
                 "proposal:{}",
+                invocation.dispatch.ordinal
+            )))
+        }
+    }
+
+    #[async_trait]
+    impl ElaborationSubAgentPort<String> for RecordingResumeSubAgent {
+        async fn invoke(
+            &self,
+            invocation: ElaborationSubAgentInvocation,
+        ) -> std::result::Result<ElaborationSubAgentOutput<String>, ElaborationSubAgentFailure>
+        {
+            self.ordinals
+                .lock()
+                .unwrap()
+                .push(invocation.dispatch.ordinal);
+            Ok(ElaborationSubAgentOutput::deterministic(format!(
+                "resumed:{}",
                 invocation.dispatch.ordinal
             )))
         }
@@ -2247,6 +2447,78 @@ mod tests {
         assert!(failure.completed_invocations.iter().all(|invocation| {
             invocation.wave == wave_binding() && invocation.dispatch.ordinal != 3
         }));
+    }
+
+    #[tokio::test]
+    async fn partial_wave_resume_invokes_only_failed_original_dispatches() {
+        let profile = profile(&[(ElaboratorTitle::Patina, 100)]);
+        let mut scheduler = ElaborationScheduler::new(&profile).unwrap();
+        let failure = dispatch_elaboration_wave(
+            &mut scheduler,
+            wave_binding(),
+            &BTreeSet::from([ElaboratorTitle::Patina]),
+            4,
+            2,
+            Arc::new(PartiallyFailingSubAgent),
+        )
+        .await
+        .unwrap_err();
+        let original_schedule = failure.schedule.clone().unwrap();
+        let completed_before = failure
+            .completed_invocations
+            .iter()
+            .map(|invocation| invocation.dispatch.ordinal)
+            .collect::<Vec<_>>();
+        let worker = Arc::new(RecordingResumeSubAgent {
+            ordinals: std::sync::Mutex::new(Vec::new()),
+        });
+
+        let run = resume_elaboration_wave(failure, 2, worker.clone())
+            .await
+            .unwrap();
+
+        assert_eq!(worker.ordinals.lock().unwrap().as_slice(), &[3, 4]);
+        assert_eq!(completed_before, vec![1, 2]);
+        assert_eq!(run.schedule, original_schedule);
+        assert_eq!(
+            run.invocations
+                .iter()
+                .map(|invocation| invocation.dispatch.ordinal)
+                .collect::<Vec<_>>(),
+            vec![1, 2, 3, 4]
+        );
+        assert_eq!(scheduler.state().total_dispatches, 4);
+    }
+
+    #[tokio::test]
+    async fn partial_wave_resume_refuses_a_checkpoint_with_duplicate_authority() {
+        let profile = profile(&[(ElaboratorTitle::Patina, 100)]);
+        let mut scheduler = ElaborationScheduler::new(&profile).unwrap();
+        let mut failure = dispatch_elaboration_wave(
+            &mut scheduler,
+            wave_binding(),
+            &BTreeSet::from([ElaboratorTitle::Patina]),
+            4,
+            2,
+            Arc::new(PartiallyFailingSubAgent),
+        )
+        .await
+        .unwrap_err();
+        failure.invocation_failures[0].dispatch =
+            Some(failure.completed_invocations[0].dispatch.clone());
+        let worker = Arc::new(RecordingResumeSubAgent {
+            ordinals: std::sync::Mutex::new(Vec::new()),
+        });
+
+        let resumed = resume_elaboration_wave(failure, 2, worker.clone()).await;
+
+        assert!(resumed.is_err());
+        assert!(worker.ordinals.lock().unwrap().is_empty());
+        assert!(
+            resumed.unwrap_err().invocation_failures[0]
+                .diagnostic
+                .contains("does not match its exact schedule")
+        );
     }
 
     #[test]
