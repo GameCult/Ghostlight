@@ -777,9 +777,34 @@ library tests, all five strategic-smoke tests, and the locked strategic target
 check pass; bounded Modeling/Soul review is clear. Provider verification
 remains pending.
 
-1. Re-witness Yggdrasil's independently owned Codex Connector, then launch
-   exact pushed source `d6cfda23855414d1297b47d6d476a82df98ee43f` in a fresh
-   run 28. Do not rerun or mutate failed runs 24 through 27 or the live daemon.
+Exact-source run 28 used
+`d6cfda23855414d1297b47d6d476a82df98ee43f`. Its first civic foundation and
+titled elaboration committed at world revision 2. The second foundation and
+all seventeen titled operations completed, proving the run-27 exact-assignment
+finding. Before titled semantic verification or commit, deterministic candidate
+closure rejected with `candidate needs at least two governing institutions`.
+The admitted civic manifest actually declared one governing institution while
+six institutions were available at the locality; the validator had counted the
+available set instead of the declared governing set. Status remained at one of
+four elaborations and zero of six strategic waves; no newspaper was produced
+and `BUILD-WITNESS` records `live_service_mutated=false`. The unchanged root is
+archived at
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-d6cfda2-28.tar`,
+independently matching SHA-256
+`E216E2FE387F4EB0BC1E984EC63E963DA001B4E764BA0EE35B92275356523499`.
+This retires generic titled assignment correction as the current blocker.
+
+Pushed executable commit
+`d71d35bb897db3487ac61ade97160292040bf6d7` keeps civic closure at its existing
+deterministic owner but counts `civic.governing_institution_ids` rather than
+the available institution namespace. It also corrects the shared valid fixture
+and adds a focused regression. All 431 library tests, all five strategic-smoke
+tests, and the locked target check pass. Bounded Modeling/Soul audit is clear.
+
+1. Monitor detached exact-source run 29 under
+   `ghostlight-newspaper-d71d35b-29.service`; its status owner is
+   `/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-d71d35b-29/status.json`.
+   Do not rerun or mutate failed runs 24 through 28 or the live daemon.
 2. Only after all six waves commit and an immutable manifest exists, dispatch a
    fresh blind reviewer with only the strongest unedited page and a neutral
    editorial brief, then independently audit it against committed public events.
