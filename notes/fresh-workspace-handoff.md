@@ -110,11 +110,12 @@ Do not start both writers.
 - Vault retrieval: local VoidBot at `127.0.0.1:17875/mcp`
 - Stored state at the last witness: twelve campaigns and six Session Zero drafts
 - Model connector release:
-  `2f29b90eebd8fc1bbdc07cdd22ac4883f16849a5`; binary SHA-256
-  `5db04f9132152bb75be6d5a40826302284b0a4e08fcd13bf49bbfab6f6937698`;
-  provider `codex-connector`,
-  physical fast/capable model `gpt-5.6-luna`. This is the independent
-  `codex-connector.service`; Epiphany is only another consumer.
+  `b2e76841bfd43afcd0d92546e1cf6dd822129ef1`; binary SHA-256
+  `97b690d9f010ea4b70490ca1e4cb09c727cc65499a8ddbe234ceab9f117c50c6`;
+  provider `codex-connector`. The Ghostlight caller admission permits
+  `gpt-5.6-luna`, `gpt-5.6-terra`, and `gpt-5.6-sol`; the live Dungeon unit
+  still routes its logical fast and capable classes to `gpt-5.6-luna`. This is
+  the independent `codex-connector.service`; Epiphany is only another consumer.
 - Access witness: anonymous Eve gate 200; canonical `heimdall.auth.begin`
   accepted through Odin-discovered Heimdall; no actor or campaign state in the
   anonymous surface. A retained Heimdall grant completed fresh authentication,
@@ -647,7 +648,17 @@ deterministic ordinal order. Every invocation and proposal carries an exact
 completed invocations, and exact failed dispatch for ordinary worker errors and
 task panic or cancellation; task-ID mapping preserves dispatch identity even
 when the task produces no normal payload.
-Pushed implementation commit `1c0058c` completes the local world-domain path.
+Pushed implementation commit `0654ba9` makes the local world-domain path an
+actual provider-backed titled swarm. Each scheduled title runs through the
+generic agent harness against its dispatch-bound frozen projection: Patina,
+Ledger, Hearth, Veil, and Ember use the fast class; Charter and Tangle use
+balanced; Numen uses capable. Each invocation may submit one assigned typed
+operation to a deterministic tool, while retaining the full model/tool receipt
+chain. The strategic acceptance runner now schedules seventeen titled calls per
+locality after the existing civic-foundation compiler: three Patina calls and
+two for every other title under bounded parallelism. This is a hybrid proof of
+the new path, not a replacement of the old foundation compiler.
+
 Titled workers emit a closed additive `WorldElaborationOperation` algebra;
 deterministic admission verifies the authentic frozen schedule before assigning
 first-dispatch write claims, reports exact later conflicts, and merges accepted
@@ -658,16 +669,32 @@ fabricating a convenient schedule or canonical candidate. `WorldKernel` then
 revalidates and delegates through the existing `ElaborateLocality` lowering,
 mutation reducer, aggregate projection, and atomic CultCache persistence path.
 Titled workers never receive a world command, permit, mutation batch, store, or
-kernel handle. The algebra currently elaborates additive locality state only;
-it does not replace existing canonical subjects. All 422 library tests pass.
+kernel handle. A worker built against a stale campaign rejects a newer wave
+before inference. World admission rejects receiptless successful proposals, and
+the semantic verifier must cite exactly the admitted worker-receipt set. Titled
+operations cannot mint source-evidence authority. The runner takes custody of
+worker receipts once before admission and of the verifier receipt immediately
+after inference. The algebra currently elaborates additive locality state only;
+it does not replace existing canonical subjects. All 425 library tests pass.
 The exact end-to-end regression commits Patina's weathered bronze duck statue,
 locally called Harold, through a real parallel dispatch and the persisted exact
-mutation batch. A bounded Modeling/Soul audit found no remaining P1 or P2 issue
-after successful run construction and admission capabilities were made opaque.
+mutation batch. A bounded Modeling/Soul audit of the provider-backed path found
+no remaining P1 or P2 issue.
 Provider run 23 remains stopped and no new newspaper acceptance is claimed.
 
-1. Dispatch the resulting exact source on Yggdrasil through Codex Connector for
-   a fresh four-elaboration/six-wave provider run. If it completes, preserve and
+Executable source `0654ba90702be4de128cfa01a3f064737ec35244` is pushed and is
+the exact body for the next acceptance build. The current `gamecult-ops` owner at commit
+`d59a23837e58ff74a352db4e3223ff5e1abe026b` records the connector release and
+three-model Ghostlight allowlist above. Recheck service state, loopback `4103`,
+the deployment receipt, and caller admission on Yggdrasil immediately before
+dispatch; the ops ledger is not a substitute for a live health witness.
+
+1. Preflight Yggdrasil's independently owned Codex Connector service, loopback
+   listener, exact deployment receipt, and Ghostlight caller model admission;
+   then dispatch executable source
+   `0654ba90702be4de128cfa01a3f064737ec35244` through Codex Connector in a fresh
+   four-foundation/four-titled-elaboration/six-wave provider root. If it
+   completes, preserve and
    verify the immutable artifact manifest without mutating the live daemon or
    any prior run root.
 2. Only after all six waves commit and an immutable manifest exists, dispatch a
