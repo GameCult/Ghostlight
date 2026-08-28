@@ -801,10 +801,45 @@ the available institution namespace. It also corrects the shared valid fixture
 and adds a focused regression. All 431 library tests, all five strategic-smoke
 tests, and the locked target check pass. Bounded Modeling/Soul audit is clear.
 
-1. Monitor detached exact-source run 29 under
-   `ghostlight-newspaper-d71d35b-29.service`; its status owner is
-   `/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-d71d35b-29/status.json`.
-   Do not rerun or mutate failed runs 24 through 28 or the live daemon.
+Exact-source run 29 used
+`d71d35bb897db3487ac61ade97160292040bf6d7`. Its first civic foundation and
+titled elaboration committed at world revision 2. The second foundation
+reconciled and emitted `elaboration-02-preview.json`, proving the run-28 civic
+closure repair. Sixteen of seventeen titled invocations completed. Charter
+dispatch ordinal 27, title count 4 exhausted two semantic steps even though
+its final tool observation specified the exact required `add_fact` ID
+`elab:loc_grain_pumps:charter-fact:4`, branch-local scope, empty evidence,
+exact discoverability, and content bounds. Status remained at one of four
+elaborations and zero of six strategic waves; no newspaper was produced and
+`BUILD-WITNESS` records `live_service_mutated=false`. The unchanged root is
+archived at
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-d71d35b-29.tar`,
+independently matching SHA-256
+`4A3855314B02CEEDFCBE6345B0DE80DB03D9F97421D0716BB6AF0382D60ACE8D`.
+This retires civic closure as the current blocker.
+
+Fresh source inspection falsified generic ModelAgent correction handling as the
+run-29 owner. The harness correctly appended the rejected action and exact
+finding. `WorldElaborationAssignment` described one assigned operation in its
+instruction and frozen validator but gave the model the full eight-variant
+`WorldElaborationOperation` union, so the model could keep selecting a
+structurally legal operation that could never satisfy this assignment.
+
+Pushed executable commit
+`007e63b33768224864c3d32892fa5c8e1f76954b` makes each assignment own its
+instruction, generated exact one-branch action schema, and frozen validator.
+The schema fixes exact operation identity and every deterministic field before
+inference while leaving genuinely authored content open. `AgencyRelation::SCHEMA`
+is the sole production relation-schema literal. All 434 library tests, 16
+focused elaboration tests, five strategic-smoke tests, the locked target check,
+diff check, and bounded Modeling/Soul audit pass. The generic ModelAgent harness
+remains consumer-neutral correction transport. Provider verification is pending.
+
+1. Monitor active exact-source run 30 under
+   `ghostlight-newspaper-007e63b-30.service`, invocation
+   `86a478fe503f4237af076dc12c386914`; its status owner is
+   `/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-007e63b-30/status.json`.
+   Do not rerun or mutate failed runs 24 through 29 or the live daemon.
 2. Only after all six waves commit and an immutable manifest exists, dispatch a
    fresh blind reviewer with only the strongest unedited page and a neutral
    editorial brief, then independently audit it against committed public events.
