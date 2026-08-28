@@ -873,7 +873,8 @@ impl WorldElaborationAssignment {
                 && relation.evidence_receipt_ids.is_empty() => {}
             _ => {
                 return Err(anyhow!(
-                    "proposal does not satisfy the exact titled elaboration task assignment"
+                    "proposal does not satisfy the exact titled elaboration task assignment; correct it against this exact contract: {}",
+                    self.instruction(target_location_id)?
                 ));
             }
         }
@@ -1847,6 +1848,27 @@ fn bounded_diagnostic(diagnostic: String) -> String {
 mod tests {
     use super::*;
 
+    fn campaign_with_civic_room() -> crate::domain::Campaign {
+        let mut campaign = crate::kernel::tests::campaign();
+        campaign.civic_systems.insert(
+            "room".into(),
+            crate::domain::CivicSystemManifest {
+                schema: "ghostlight.civic_system_manifest.v1".into(),
+                version: 0,
+                jurisdiction_location_id: "room".into(),
+                governing_institution_ids: BTreeSet::new(),
+                resident_population_ids: BTreeSet::new(),
+                public_authority_fact_ids: BTreeSet::new(),
+                public_selection_fact_ids: BTreeSet::new(),
+                public_resource_fact_ids: BTreeSet::new(),
+                public_redress_fact_ids: BTreeSet::new(),
+                political_relation_ids: BTreeSet::new(),
+                semantic_verification_receipt_id: String::new(),
+            },
+        );
+        campaign
+    }
+
     fn profile(weights: &[(ElaboratorTitle, u16)]) -> WorldElaborationProfile {
         WorldElaborationProfile {
             schema: "ghostlight.world_elaboration_profile.v1".into(),
@@ -2188,23 +2210,7 @@ mod tests {
 
     #[tokio::test]
     async fn provider_worker_rejects_a_wave_from_a_newer_world_before_model_inference() {
-        let mut frozen = crate::kernel::tests::campaign();
-        frozen.civic_systems.insert(
-            "room".into(),
-            crate::domain::CivicSystemManifest {
-                schema: "ghostlight.civic_system_manifest.v1".into(),
-                version: 0,
-                jurisdiction_location_id: "room".into(),
-                governing_institution_ids: BTreeSet::new(),
-                resident_population_ids: BTreeSet::new(),
-                public_authority_fact_ids: BTreeSet::new(),
-                public_selection_fact_ids: BTreeSet::new(),
-                public_resource_fact_ids: BTreeSet::new(),
-                public_redress_fact_ids: BTreeSet::new(),
-                political_relation_ids: BTreeSet::new(),
-                semantic_verification_receipt_id: String::new(),
-            },
-        );
+        let frozen = campaign_with_civic_room();
         let worker = ModelWorldElaborationWorker::new(
             Arc::new(PanicIfInvokedModel),
             Arc::new(frozen.clone()),
@@ -2233,6 +2239,48 @@ mod tests {
 
         assert!(error.diagnostic.contains("frozen campaign"));
         assert!(error.model_stage_receipts.is_empty());
+    }
+
+    #[test]
+    fn assignment_rejection_returns_the_exact_correction_contract() {
+        let campaign = campaign_with_civic_room();
+        let assignment = WorldElaborationAssignment::for_dispatch(
+            &campaign,
+            "room",
+            &ElaborationDispatch {
+                schema: "ghostlight.elaboration_dispatch.v1".into(),
+                budget_ordinal: 2,
+                ordinal: 2,
+                title: ElaboratorTitle::Charter,
+                title_weight: 1,
+                total_enabled_weight: 1,
+                requested_share_millionths: 1_000_000,
+                title_dispatch_count: 2,
+            },
+        )
+        .unwrap();
+        let wrong = WorldElaborationProposal {
+            schema: "ghostlight.world_elaboration_proposal.v1".into(),
+            operation: WorldElaborationOperation::AddFact {
+                fact: crate::domain::WorldFact {
+                    id: "wrong-id".into(),
+                    statement: "A valid-shaped fact with the wrong assignment identity.".into(),
+                    scope: crate::domain::FactScope::BranchLocal,
+                    evidence_receipt_ids: vec![],
+                    discoverable_at_location_ids: BTreeSet::from(["room".into()]),
+                },
+            },
+        };
+
+        let error = assignment.validate(&campaign, "room", &wrong).unwrap_err();
+
+        assert!(
+            error
+                .to_string()
+                .contains("correct it against this exact contract")
+        );
+        assert!(error.to_string().contains("elab:room:charter-fact:2"));
+        assert!(error.to_string().contains("exactly one add_fact"));
     }
 
     #[tokio::test]
