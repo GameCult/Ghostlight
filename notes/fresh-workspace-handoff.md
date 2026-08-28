@@ -618,8 +618,9 @@ the harness and verifier receipts, while profiles and relations lower only the
 canonical admission-evidence receipt IDs. Provider verification remains
 pending.
 
-The current verified working tree makes the strategic Interpreter another
-consumer of the same generic harness. Shared `causal_source_ids` bind both actor
+Verified pushed commit `71c274b0b8819b52cddb1fadbefbf9c634d1f0b2`
+makes the strategic Interpreter another consumer of the same generic harness.
+Shared `causal_source_ids` bind both actor
 and cell Projector-to-Persona-to-Interpreter chains. One agent incrementally
 edits a private draft against the frozen Persona decision. The deterministic
 draft compiler owns exact structure, permissions, topology, and bounds; the
@@ -652,29 +653,27 @@ remain unimplemented. Patina is therefore a real named control and schedulable
 title, but not a canonical writer. Provider run 23 remains stopped and no new
 newspaper acceptance is claimed.
 
-1. Commit and push the verified agentic Interpreter plus elaboration scheduling
-   cut.
-2. Map and implement the missing world-domain elaboration proposal,
+1. Map and implement the missing world-domain elaboration proposal,
    deterministic admission/conflict/merge boundary, and canonical WorldKernel
    integration without granting any titled worker commit authority.
-3. Keep provider run 23 stopped until that domain path is verified. Then dispatch
+2. Keep provider run 23 stopped until that domain path is verified. Then dispatch
    the resulting exact source on Yggdrasil through Codex Connector for
    a fresh four-elaboration/six-wave provider run. If it completes, preserve and
    verify the immutable artifact manifest without mutating the live daemon or
    any prior run root.
-4. Only after all six waves commit and an immutable manifest exists, dispatch a
+3. Only after all six waves commit and an immutable manifest exists, dispatch a
    fresh blind reviewer with only the strongest unedited page and a neutral
    editorial brief, then independently audit it against committed public events.
-5. Have the game-side adapter lower its authored hierarchy into the published
+4. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-6. Prove one consumer-owned effect crosses that public API, changes two foreign
+5. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-7. Measure provider cost and continuity on the existing 200-cell authored-world
+6. Measure provider cost and continuity on the existing 200-cell authored-world
    path without coupling wave width to the provider concurrency ceiling.
-8. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+7. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-9. Keep `gamecult-ops` synchronized with every executable deployment and model
+8. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,
