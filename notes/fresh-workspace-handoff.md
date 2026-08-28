@@ -696,8 +696,28 @@ repairs that projection seam. Reconciliation still owns compiled resident fact
 IDs; lowering still owns canonical statement knowledge; the verifier now
 receives an exact derived ID view from the admitted fact namespace and cannot
 mistake storage shape for a repairable omission. A bounded Modeling/Soul audit
-found no remaining P1 or P2 issue. This commit is the exact body for the next
-acceptance build. The current `gamecult-ops` owner at commit
+found no remaining P1 or P2 issue.
+
+Exact-source run 25 used that commit and advanced through its first civic
+foundation plus all seventeen provider-backed titled calls without rejecting an
+operation. It then stopped at titled civic verification. The runner had supplied
+the original foundation count request to an additive titled candidate, while
+`civic_context` projected five governing institutions but omitted the admitted
+non-governing Gauge and Root Commission referenced by a retained political
+relation. No strategic wave or newspaper was produced. The unchanged root is
+archived at
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-5f559a6-25.tar`,
+independently matching SHA-256
+`A4B4E8A0D83E1D4AAEDB0F2E542E9E8A0D2F63026B2D58AAB2C7DBB4AAB2FBC2`.
+
+Pushed executable commit `975ee46` makes the prepared worker the sole titled
+task-string owner used by inference, artifacts, and semantic verification; the
+foundation request is out of scope before the titled pass. Civic context keeps
+governing institutions exact while separately projecting relation-linked
+institutions, populations, and named people. All 427 library tests, all five
+strategic-smoke tests, and the locked smoke check pass. Bounded Modeling review
+found no P1 or P2 issue. This is the exact executable body for run 26. The
+current `gamecult-ops` owner at commit
 `d59a23837e58ff74a352db4e3223ff5e1abe026b` records the connector release and
 three-model Ghostlight allowlist above. Recheck service state, loopback `4103`,
 the deployment receipt, and caller admission on Yggdrasil immediately before
@@ -705,8 +725,7 @@ dispatch; the ops ledger is not a substitute for a live health witness.
 
 1. Preflight Yggdrasil's independently owned Codex Connector service, loopback
    listener, exact deployment receipt, and Ghostlight caller model admission;
-   then dispatch executable source
-   `5f559a6e67bf601f3ab2dabc88b40379c23db954` through Codex Connector in a fresh
+   then dispatch executable source `975ee46` through Codex Connector in a fresh
    four-foundation/four-titled-elaboration/six-wave provider root. If it
    completes, preserve and
    verify the immutable artifact manifest without mutating the live daemon or
