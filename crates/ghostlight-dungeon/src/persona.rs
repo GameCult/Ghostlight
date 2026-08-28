@@ -228,24 +228,25 @@ struct CellAppraisalProposal {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "snake_case")]
-enum CellInterpreterAgentTool {
-    Submit,
-    UpsertDecision,
-    RemoveDecision,
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+enum CellInterpreterAgentCommand {
+    Submit {
+        decisions: BTreeMap<String, serde_json::Value>,
+    },
+    UpsertDecision {
+        subject_id: String,
+        decision: serde_json::Value,
+    },
+    RemoveDecision {
+        subject_id: String,
+    },
     InspectDraft,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 struct CellInterpreterAgentAction {
-    kind: CellInterpreterAgentTool,
-    /// Efficient first attempt: publish one complete private draft for
-    /// deterministic compilation and semantic verification.
-    decisions: Option<BTreeMap<String, serde_json::Value>>,
-    /// Replace exactly one decision while preserving every other draft entry.
-    subject_id: Option<String>,
-    decision: Option<serde_json::Value>,
+    command: CellInterpreterAgentCommand,
 }
 
 #[derive(Debug)]
@@ -257,12 +258,6 @@ enum CellInterpreterAgentOutput {
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum CellInterpreterFinding {
-    InvalidActionShape {
-        requested_tool: CellInterpreterAgentTool,
-        decisions_present: bool,
-        subject_id_present: bool,
-        decision_present: bool,
-    },
     DraftProgress {
         decision_subject_ids: Vec<String>,
         missing_subject_ids: Vec<String>,
@@ -514,10 +509,12 @@ const CELL_PROJECTION_OUTPUT_CONTRACT: &str = r#"{
 }"#;
 
 const CELL_INTERPRETER_AGENT_OUTPUT_CONTRACT: &str = r#"{
-  "kind":"submit | upsert_decision | remove_decision | inspect_draft",
-  "decisions":"the exact complete decision map for submit; null otherwise",
-  "subject_id":"one exact decision owner for upsert_decision or remove_decision; null otherwise",
-  "decision":"one exact action, inaction, or undecided value for upsert_decision; null otherwise"
+  "command":{
+    "kind":"submit | upsert_decision | remove_decision | inspect_draft",
+    "decisions":"present only for submit; the exact complete decision map",
+    "subject_id":"present only for upsert_decision or remove_decision",
+    "decision":"present only for upsert_decision; one exact action, inaction, or undecided value"
+  }
 }"#;
 
 const CELL_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between an Interpreter and the world kernel. Judge this one candidate action's typed effects as one composition against the exact attributed subject's choice in the Persona turn. Structural permissions were already checked. Use exact_subject_permission as the sole map of canonical subjects, locations, and destinations for this actor. canonical_locations is sibling identity context: compare it with exact_subject_permission.location_ids, and never treat a name as granting locality, co-presence, reach, publication, movement, target, effect, or mutation authority. A matching current-location name denotes that place or its unnamed local public, not an omitted canonical subject. activity_targets supplies each canonical target's exact name and current locations; reachable_destinations supplies exact actor-movement destination IDs and names; migration_destinations supplies exact population names and locations. Preserve every distinct affirmative means the subject actually chooses. Do not invent another means from a purpose, refusal, restraint, condition to preserve, desired social norm, or hoped-for state. Keeping someone's choice open, declining to coerce them, leaving state unchanged, respecting autonomy, or waiting for another subject's decision requires no additional typed effect unless the Persona separately chooses an observable act to do it. Communication can therefore be faithfully combined with restraint without implying coordinate, recruit, posture, or pressure effects. Reject effect omission only when the Persona explicitly undertakes another observable act. When one choice contains relocation, an activity at the subject's exact snapshot location occurs before relocation and an activity at the exact admitted destination occurs after arrival; activities within one location phase are an unordered atomic set. Array and object field order are not chronology. When the Persona chooses to go to a canonical target, actor_move must use that target's actual different reachable location. If actor and target are already co-located, reject movement to some other place; a local communicate, coordinate, or prepare may encode the stated attempt instead. A place named only in prose and absent from reachable_destinations and migration_destinations is local texture inside the supplied activity location; walking to it cannot justify rejecting a concrete local prepare or repair as omitted travel. Return exactly one verdict with action_index 0. A gestalt_migration means that exact population leaf chooses to travel together to the supplied destination within the strategic horizon; loading, waiting, giving away passage, sending only some other subject, or merely considering travel does not entail it. Conversely, when the population chooses to board, depart, or relocate together, reject gestalt_activity prepare that erases the chosen journey. Gestalt migration never entails that a named member moved. A member_migration means that named member personally chooses to travel to the destination. Boarding a transport whose supplied destination is unambiguous in the lived stream is a chosen journey; the Persona need not repeat the place name. Giving away a berth, sending somebody else, waiting, or merely considering travel does not entail migration. Conversely, when the member chooses to board, depart, travel, or join the supplied destination, reject member_activity that reduces that commitment to preparing, queuing, or approaching. A member_activity belongs only to that exact named person's stated attempt; it cannot be reassigned to their population. Communication targets must be the exact canonical subjects actually addressed in the Persona turn. An exact activity_targets entry is sufficient authority to attempt direct communication with that named subject; allowed_persistent_publication_channels governs only durable public publication and is never an additional requirement for direct contact. One communicate activity is also the complete supported composition when the same utterance addresses exact canonical targets and an unnamed public audience: target_subject_ids names the canonical addressees and candidate_action.public_channels names the simultaneous public reach. A call to unnamed people at a canonical location is such public or local audience, not a missing activity target. Do not demand a second targetless communicate for that same utterance. Use a targetless communicate only when the communication has no exact canonical addressee. Internal-population coordination is owner-specific: apply only coordination_target_contract.rule for this exact attributed subject, never a rule belonging to another subject kind. If the Persona addresses an unnamed clerk, dock master, passerby, or local environment, reject any effect that substitutes a containing population, related institution, or merely permitted ID. A targetless local investigate at the subject's exact current or paired movement destination is the faithful supported shape for seeking information from an unnamed role or the environment; its empty target list is intentional and must not itself be grounds for rejection. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. An activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, acceptance, or target response. Reject omissions, reversals, subject swaps, wrong destinations, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object. A faithful verdict uses result \"match\", null mismatch_kind, and null repair_guidance. Otherwise use result \"mismatch\", exactly one mismatch_kind (\"subject_swap\", \"effect_omission\", \"effect_reversal\", \"target_substitution\", \"invented_outcome\", or \"wrong_effect_kind\"), and one concrete repair_guidance sentence of at most 240 characters. Name the exact omitted choice, substituted target, or wrong destination. When no supplied typed effect composition can faithfully encode the choice, explicitly say to remove the action rather than downgrade or redirect it. Shape: {\"verdicts\":[{\"action_index\":0,\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}]}";
@@ -1502,13 +1499,8 @@ impl ModelAgentTool for CellInterpreterWorkbench {
         action: Self::Action,
         context: &ModelAgentToolContext,
     ) -> ModelAgentToolOutcome<Self::Output, Self::Finding> {
-        match (
-            action.kind,
-            action.decisions,
-            action.subject_id,
-            action.decision,
-        ) {
-            (CellInterpreterAgentTool::Submit, Some(decisions), None, None) => {
+        match action.command {
+            CellInterpreterAgentCommand::Submit { decisions } => {
                 if !self.draft.is_empty() {
                     return ModelAgentToolOutcome::Rejected {
                         finding: CellInterpreterFinding::SubmitRequiresEmptyDraft {
@@ -1521,7 +1513,10 @@ impl ModelAgentTool for CellInterpreterWorkbench {
                 self.draft = decisions;
                 self.compile_draft(&context.source_receipt_ids).await
             }
-            (CellInterpreterAgentTool::UpsertDecision, None, Some(subject_id), Some(decision)) => {
+            CellInterpreterAgentCommand::UpsertDecision {
+                subject_id,
+                decision,
+            } => {
                 if !self.active_subject_ids.contains(&subject_id) {
                     return ModelAgentToolOutcome::Rejected {
                         finding: CellInterpreterFinding::UnknownDecisionOwner {
@@ -1546,7 +1541,7 @@ impl ModelAgentTool for CellInterpreterWorkbench {
                 self.draft.insert(subject_id, decision);
                 self.compile_draft(&context.source_receipt_ids).await
             }
-            (CellInterpreterAgentTool::RemoveDecision, None, Some(subject_id), None) => {
+            CellInterpreterAgentCommand::RemoveDecision { subject_id } => {
                 if self.draft.is_empty() {
                     return ModelAgentToolOutcome::Rejected {
                         finding: CellInterpreterFinding::DraftRequired,
@@ -1566,19 +1561,8 @@ impl ModelAgentTool for CellInterpreterWorkbench {
                 self.draft.remove(&subject_id);
                 self.compile_draft(&context.source_receipt_ids).await
             }
-            (CellInterpreterAgentTool::InspectDraft, None, None, None) => {
-                ModelAgentToolOutcome::Continue {
-                    observation: self.progress(),
-                    receipts: Vec::new(),
-                }
-            }
-            (kind, decisions, subject_id, decision) => ModelAgentToolOutcome::Rejected {
-                finding: CellInterpreterFinding::InvalidActionShape {
-                    requested_tool: kind,
-                    decisions_present: decisions.is_some(),
-                    subject_id_present: subject_id.is_some(),
-                    decision_present: decision.is_some(),
-                },
+            CellInterpreterAgentCommand::InspectDraft => ModelAgentToolOutcome::Continue {
+                observation: self.progress(),
                 receipts: Vec::new(),
             },
         }
@@ -3050,24 +3034,53 @@ fn cell_interpreter_agent_schema(
         .and_then(serde_json::Value::as_object)
         .ok_or_else(|| anyhow!("cell appraisal schema has no exact decision owners"))?;
     let allowed_subject_ids = decision_properties.keys().cloned().collect::<Vec<_>>();
-    let mut decision_alternatives = decision_properties.values().cloned().collect::<Vec<_>>();
-    decision_alternatives.push(serde_json::json!({"type":"null"}));
+    let mut commands = vec![serde_json::json!({
+        "type":"object",
+        "additionalProperties":false,
+        "required":["kind","decisions"],
+        "properties":{
+            "kind":{"const":"submit"},
+            "decisions":decisions_schema
+        }
+    })];
+    commands.extend(
+        decision_properties
+            .iter()
+            .map(|(subject_id, decision_schema)| {
+                serde_json::json!({
+                    "type":"object",
+                    "additionalProperties":false,
+                    "required":["kind","subject_id","decision"],
+                    "properties":{
+                        "kind":{"const":"upsert_decision"},
+                        "subject_id":{"const":subject_id},
+                        "decision":decision_schema
+                    }
+                })
+            }),
+    );
+    commands.push(serde_json::json!({
+        "type":"object",
+        "additionalProperties":false,
+        "required":["kind","subject_id"],
+        "properties":{
+            "kind":{"const":"remove_decision"},
+            "subject_id":{"type":"string","enum":allowed_subject_ids}
+        }
+    }));
+    commands.push(serde_json::json!({
+        "type":"object",
+        "additionalProperties":false,
+        "required":["kind"],
+        "properties":{"kind":{"const":"inspect_draft"}}
+    }));
     Ok(serde_json::json!({
         "$schema":"https://json-schema.org/draft/2020-12/schema",
         "type":"object",
         "additionalProperties":false,
-        "required":["kind"],
+        "required":["command"],
         "properties":{
-            "kind":{
-                "type":"string",
-                "enum":["submit","upsert_decision","remove_decision","inspect_draft"]
-            },
-            "decisions":{"anyOf":[decisions_schema,{"type":"null"}]},
-            "subject_id":{"anyOf":[
-                {"type":"string","enum":allowed_subject_ids},
-                {"type":"null"}
-            ]},
-            "decision":{"anyOf":decision_alternatives}
+            "command":{"oneOf":commands}
         }
     }))
 }
@@ -3584,34 +3597,38 @@ mod tests {
                     assert!(request.lived_stream.contains("is investigate, not prepare"));
                     if call == 0 {
                         return Ok(serde_json::json!({
-                            "kind":"submit",
-                            "decisions":{"faction-06":{"action":{
+                            "command":{
+                                "kind":"submit",
+                                "decisions":{"faction-06":{"action":{
+                                    "subject_id":"faction-06",
+                                    "intent":"continue weighing the position",
+                                    "intended_effect":"retain the posture already in force",
+                                    "priority":5,
+                                    "state_references":["institution:faction-06"],
+                                    "public_channels":["public bulletin"],
+                                    "effects":{"institution":{"posture":"weighing whether to publish a position","location_ids":["forum"]}}
+                                }}}
+                            }
+                        })
+                        .to_string());
+                    }
+                    let repeated = serde_json::json!({
+                        "command":{
+                            "kind":"upsert_decision",
+                            "subject_id":"faction-06",
+                            "decision":{"action":{
                                 "subject_id":"faction-06",
                                 "intent":"continue weighing the position",
                                 "intended_effect":"retain the posture already in force",
                                 "priority":5,
                                 "state_references":["institution:faction-06"],
                                 "public_channels":["public bulletin"],
-                                "effects":{"institution":{"posture":"weighing whether to publish a position","location_ids":["forum"]}}
-                            }}}
-                        })
-                        .to_string());
-                    }
-                    let repeated = serde_json::json!({
-                        "kind":"upsert_decision",
-                        "subject_id":"faction-06",
-                        "decision":{"action":{
-                            "subject_id":"faction-06",
-                            "intent":"continue weighing the position",
-                            "intended_effect":"retain the posture already in force",
-                            "priority":5,
-                            "state_references":["institution:faction-06"],
-                            "public_channels":["public bulletin"],
-                            "effects":{"institution":{
-                                "posture":"weighing whether to publish a position",
-                                "location_ids":["forum"]
+                                "effects":{"institution":{
+                                    "posture":"weighing whether to publish a position",
+                                    "location_ids":["forum"]
+                                }}
                             }}
-                        }}
+                        }
                     });
                     assert!(
                         jsonschema::validator_for(
@@ -3633,17 +3650,19 @@ mod tests {
                         Ordering::SeqCst,
                     );
                     Ok(serde_json::json!({
-                        "kind":"upsert_decision",
-                        "subject_id":"faction-06",
-                        "decision":{"action":{
+                        "command":{
+                            "kind":"upsert_decision",
                             "subject_id":"faction-06",
-                            "intent":"publish a position",
-                            "intended_effect":"state its bounded institutional posture",
-                            "priority":5,
-                            "state_references":["institution:faction-06"],
-                            "public_channels":["public bulletin"],
-                            "effects":{"institution":{"posture":"published a bounded position","location_ids":["forum"]}}
-                        }}
+                            "decision":{"action":{
+                                "subject_id":"faction-06",
+                                "intent":"publish a position",
+                                "intended_effect":"state its bounded institutional posture",
+                                "priority":5,
+                                "state_references":["institution:faction-06"],
+                                "public_channels":["public bulletin"],
+                                "effects":{"institution":{"posture":"published a bounded position","location_ids":["forum"]}}
+                            }}
+                        }
                     }).to_string())
                 }
                 "cell_effect_verifier" => {
@@ -3773,19 +3792,23 @@ mod tests {
                     let call = self.interpreter_calls.fetch_add(1, Ordering::SeqCst);
                     if call == 0 {
                         return Ok(serde_json::json!({
-                            "kind":"submit",
-                            "decisions":{"faction-06":{"undecided":{
-                                "reason":"The Persona supplied no explicit action or hold."
-                            }}}
+                            "command":{
+                                "kind":"submit",
+                                "decisions":{"faction-06":{"undecided":{
+                                    "reason":"The Persona supplied no explicit action or hold."
+                                }}}
+                            }
                         })
                         .to_string());
                     }
                     Ok(serde_json::json!({
-                        "kind":"submit",
-                        "decisions":{"faction-06":{"inaction":{
-                            "subject_id":"faction-06",
-                            "reason":"Faction Six explicitly holds its existing posture for this horizon."
-                        }}}
+                        "command":{
+                            "kind":"submit",
+                            "decisions":{"faction-06":{"inaction":{
+                                "subject_id":"faction-06",
+                                "reason":"Faction Six explicitly holds its existing posture for this horizon."
+                            }}}
+                        }
                     })
                     .to_string())
                 }
@@ -3941,14 +3964,18 @@ mod tests {
                         }});
                     Ok(if call == 0 {
                         serde_json::json!({
-                            "kind":"submit",
-                            "decisions":{"faction-06":decision}
+                            "command":{
+                                "kind":"submit",
+                                "decisions":{"faction-06":decision}
+                            }
                         })
                     } else {
                         serde_json::json!({
-                            "kind":"upsert_decision",
-                            "subject_id":"faction-06",
-                            "decision":decision
+                            "command":{
+                                "kind":"upsert_decision",
+                                "subject_id":"faction-06",
+                                "decision":decision
+                            }
                         })
                     }.to_string())
                 }
@@ -4125,29 +4152,28 @@ mod tests {
         let first = workbench
             .invoke(
                 CellInterpreterAgentAction {
-                    kind: CellInterpreterAgentTool::Submit,
-                    decisions: Some(BTreeMap::from([
-                        (
-                            "faction-06".into(),
-                            institution_decision(
-                                "faction-06",
-                                "reverse-six",
-                                "release immediately",
-                                "institution:faction-06",
+                    command: CellInterpreterAgentCommand::Submit {
+                        decisions: BTreeMap::from([
+                            (
+                                "faction-06".into(),
+                                institution_decision(
+                                    "faction-06",
+                                    "reverse-six",
+                                    "release immediately",
+                                    "institution:faction-06",
+                                ),
                             ),
-                        ),
-                        (
-                            "faction-07".into(),
-                            institution_decision(
-                                "faction-07",
-                                "steady-seven",
-                                "publish the verified count",
-                                "institution:faction-07",
+                            (
+                                "faction-07".into(),
+                                institution_decision(
+                                    "faction-07",
+                                    "steady-seven",
+                                    "publish the verified count",
+                                    "institution:faction-07",
+                                ),
                             ),
-                        ),
-                    ])),
-                    subject_id: None,
-                    decision: None,
+                        ]),
+                    },
                 },
                 &context,
             )
@@ -4165,10 +4191,9 @@ mod tests {
         let wholesale_resubmit = workbench
             .invoke(
                 CellInterpreterAgentAction {
-                    kind: CellInterpreterAgentTool::Submit,
-                    decisions: Some(BTreeMap::new()),
-                    subject_id: None,
-                    decision: None,
+                    command: CellInterpreterAgentCommand::Submit {
+                        decisions: BTreeMap::new(),
+                    },
                 },
                 &context,
             )
@@ -4183,15 +4208,15 @@ mod tests {
         let unrelated_repair = workbench
             .invoke(
                 CellInterpreterAgentAction {
-                    kind: CellInterpreterAgentTool::UpsertDecision,
-                    decisions: None,
-                    subject_id: Some("faction-07".into()),
-                    decision: Some(institution_decision(
-                        "faction-07",
-                        "rewrite-seven",
-                        "replace the already accepted course",
-                        "institution:faction-07",
-                    )),
+                    command: CellInterpreterAgentCommand::UpsertDecision {
+                        subject_id: "faction-07".into(),
+                        decision: institution_decision(
+                            "faction-07",
+                            "rewrite-seven",
+                            "replace the already accepted course",
+                            "institution:faction-07",
+                        ),
+                    },
                 },
                 &context,
             )
@@ -4208,15 +4233,15 @@ mod tests {
         let second = workbench
             .invoke(
                 CellInterpreterAgentAction {
-                    kind: CellInterpreterAgentTool::UpsertDecision,
-                    decisions: None,
-                    subject_id: Some("faction-06".into()),
-                    decision: Some(institution_decision(
-                        "faction-06",
-                        "withhold-six",
-                        "withhold pending the verified count",
-                        "institution:faction-06",
-                    )),
+                    command: CellInterpreterAgentCommand::UpsertDecision {
+                        subject_id: "faction-06".into(),
+                        decision: institution_decision(
+                            "faction-06",
+                            "withhold-six",
+                            "withhold pending the verified count",
+                            "institution:faction-06",
+                        ),
+                    },
                 },
                 &context,
             )
@@ -4234,25 +4259,6 @@ mod tests {
             1,
             "the unchanged accepted action must not repay its semantic verifier"
         );
-
-        let invalid_shape = workbench
-            .invoke(
-                CellInterpreterAgentAction {
-                    kind: CellInterpreterAgentTool::InspectDraft,
-                    decisions: Some(BTreeMap::new()),
-                    subject_id: None,
-                    decision: None,
-                },
-                &context,
-            )
-            .await;
-        assert!(matches!(
-            invalid_shape,
-            ModelAgentToolOutcome::Rejected {
-                finding: CellInterpreterFinding::InvalidActionShape { .. },
-                ..
-            }
-        ));
     }
 
     #[test]
@@ -4366,25 +4372,41 @@ mod tests {
         let agent_schema_text = serde_json::to_string(&agent_schema).unwrap();
         assert_eq!(agent_schema["type"], "object");
         assert!(agent_schema.get("oneOf").is_none());
+        assert!(agent_schema.pointer("/properties/command/oneOf").is_some());
         assert!(agent_schema_text.contains("upsert_decision"));
         assert!(agent_schema_text.contains("inspect_draft"));
         assert!(agent_schema_text.contains("\"maxLength\":240"));
         assert!(
             jsonschema::validator_for(&agent_schema)
                 .unwrap()
-                .is_valid(&serde_json::json!({"kind":"inspect_draft"}))
+                .is_valid(&serde_json::json!({
+                    "command":{"kind":"inspect_draft"}
+                }))
+        );
+        assert!(
+            !jsonschema::validator_for(&agent_schema)
+                .unwrap()
+                .is_valid(&serde_json::json!({
+                    "command":{
+                        "kind":"submit",
+                        "decisions":{},
+                        "decision":{"inaction":{"reason":"illegal mixed payload"}}
+                    }
+                }))
         );
         let mut provider_schema = agent_schema;
         crate::model_connector::project_strict_responses_schema(&mut provider_schema).unwrap();
         assert_eq!(provider_schema["type"], "object");
         assert!(
+            provider_schema
+                .pointer("/properties/command/anyOf")
+                .is_some()
+        );
+        assert!(
             jsonschema::validator_for(&provider_schema)
                 .unwrap()
                 .is_valid(&serde_json::json!({
-                    "kind":"inspect_draft",
-                    "decisions":null,
-                    "subject_id":null,
-                    "decision":null
+                    "command":{"kind":"inspect_draft"}
                 }))
         );
         assert_eq!(

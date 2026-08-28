@@ -198,9 +198,10 @@ The Interpreter is a bounded model agent over a private workbench. Its efficient
 first action may submit the complete exact decision map only while the draft is
 empty. A rejected draft stays in the tool; later actions may upsert or remove
 only the exact decisions named as missing or rejected, or inspect the draft.
-Its action wire is one strict root object with a typed `kind` discriminant and
-nullable payload slots. The workbench owns the legal tool/payload combinations;
-an invalid combination becomes a typed agent finding and cannot touch the draft.
+Its action wire is one strict root object containing one exact typed command.
+The nested command union binds each `kind` to only its own payload, so a model
+cannot emit a submit mixed with incremental-edit fields. The workbench remains
+the only owner allowed to apply that structurally legal command to the draft.
 The tool structurally rejects whole-draft replacement and edits to unrelated
 accepted decisions. Local validation returns a typed `local_validation`
 finding and the semantic verifier returns exact subject-scoped mismatch

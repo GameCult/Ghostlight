@@ -1551,7 +1551,9 @@ mod tests {
                         .as_ref()
                         .and_then(|schema| {
                             schema
-                                .pointer("/properties/decisions/anyOf/0/properties")
+                                .pointer(
+                                    "/properties/command/oneOf/0/properties/decisions/properties",
+                                )
                                 .and_then(serde_json::Value::as_object)
                         })
                         .map(|properties| properties.keys().cloned().collect::<Vec<_>>())
@@ -1570,8 +1572,10 @@ mod tests {
                         })
                         .collect::<serde_json::Map<_, _>>();
                     Ok(serde_json::json!({
-                        "kind":"submit",
-                        "decisions":decisions
+                        "command":{
+                            "kind":"submit",
+                            "decisions":decisions
+                        }
                     })
                     .to_string())
                 }
