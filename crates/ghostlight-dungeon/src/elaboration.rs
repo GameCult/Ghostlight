@@ -621,6 +621,13 @@ impl ModelWorldElaborationWorker {
         })
     }
 
+    /// The exact semantic task shared by the worker wave, its artifacts, and
+    /// the independent verifier. Callers should read this value from the
+    /// prepared worker instead of retaining a second request owner.
+    pub fn task_request(&self) -> &str {
+        &self.request
+    }
+
     fn projection(&self) -> Result<String> {
         let civic = &self.campaign.civic_systems[&self.target_location_id];
         let subject_ids = civic
@@ -2205,6 +2212,7 @@ mod tests {
             "add texture",
         )
         .unwrap();
+        assert_eq!(worker.task_request(), "add texture");
         let mut current = frozen;
         current.revision = 1;
         let invocation = ElaborationSubAgentInvocation {

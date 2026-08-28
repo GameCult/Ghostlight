@@ -4717,18 +4717,39 @@ fn normalized_contains(document: &str, excerpt: &str) -> bool {
 
 fn civic_context(campaign: &Campaign, location_id: &str) -> Option<serde_json::Value> {
     campaign.civic_systems.get(location_id).map(|system| {
+        let political_relations = system.political_relation_ids.iter()
+            .filter_map(|id|campaign.agency_relations.get(id))
+            .collect::<Vec<_>>();
+        let relation_subject_ids = political_relations.iter()
+            .flat_map(|relation| [&relation.from_subject_id, &relation.to_subject_id])
+            .collect::<BTreeSet<_>>();
+        let related_institution_ids = relation_subject_ids.iter().copied()
+            .filter(|id|campaign.institutions.contains_key(*id) && !system.governing_institution_ids.contains(*id))
+            .collect::<BTreeSet<_>>();
+        let related_population_ids = relation_subject_ids.iter().copied()
+            .filter(|id|campaign.gestalts.contains_key(*id) && !system.resident_population_ids.contains(*id))
+            .collect::<BTreeSet<_>>();
+        let actor_ids = relation_subject_ids.iter().copied()
+            .filter(|id|campaign.actors.contains_key(*id))
+            .collect::<BTreeSet<_>>();
         serde_json::json!({
             "manifest":system,
             "institutions":system.governing_institution_ids.iter().filter_map(|id|campaign.institutions.get(id)).collect::<Vec<_>>(),
             "institution_profiles":system.governing_institution_ids.iter().filter_map(|id|campaign.agency_profiles.get(id)).collect::<Vec<_>>(),
+            "related_institutions":related_institution_ids.iter().filter_map(|id|campaign.institutions.get(*id)).collect::<Vec<_>>(),
+            "related_institution_profiles":related_institution_ids.iter().filter_map(|id|campaign.agency_profiles.get(*id)).collect::<Vec<_>>(),
             "residents":system.resident_population_ids.iter().filter_map(|id|campaign.gestalts.get(id)).collect::<Vec<_>>(),
             "resident_profiles":system.resident_population_ids.iter().filter_map(|id|campaign.agency_profiles.get(id)).collect::<Vec<_>>(),
+            "related_populations":related_population_ids.iter().filter_map(|id|campaign.gestalts.get(*id)).collect::<Vec<_>>(),
+            "related_population_profiles":related_population_ids.iter().filter_map(|id|campaign.agency_profiles.get(*id)).collect::<Vec<_>>(),
+            "named_people":actor_ids.iter().filter_map(|id|campaign.actors.get(*id)).collect::<Vec<_>>(),
+            "named_person_profiles":actor_ids.iter().filter_map(|id|campaign.agency_profiles.get(*id)).collect::<Vec<_>>(),
             "public_facts":system.public_authority_fact_ids.iter()
                 .chain(system.public_selection_fact_ids.iter())
                 .chain(system.public_resource_fact_ids.iter())
                 .chain(system.public_redress_fact_ids.iter())
                 .filter_map(|id|campaign.facts.get(id)).collect::<Vec<_>>(),
-            "political_relations":system.political_relation_ids.iter().filter_map(|id|campaign.agency_relations.get(id)).collect::<Vec<_>>(),
+            "political_relations":political_relations,
         })
     })
 }
@@ -6818,6 +6839,78 @@ mod tests {
             serde_json::json!(["fact:authority", "fact:redress"])
         );
         assert!(projection.get("shared_knowledge").is_none());
+    }
+
+    #[test]
+    fn civic_context_includes_non_governing_institution_relation_endpoints() {
+        let mut campaign = harrow_campaign();
+        for (id, name) in [
+            ("harrow-assembly", "Harrow Assembly"),
+            ("harrow-gauge-commission", "Harrow Gauge Commission"),
+        ] {
+            campaign.institutions.insert(
+                id.into(),
+                crate::domain::InstitutionState {
+                    id: id.into(),
+                    name: name.into(),
+                    resources: vec!["public records".into()],
+                    goals: vec!["govern the station".into()],
+                    posture: "openly disputing the current works schedule".into(),
+                },
+            );
+        }
+        campaign.agency_relations.insert(
+            "relation:commission-assembly".into(),
+            crate::domain::AgencyRelation {
+                schema: "ghostlight.agency_relation.v1".into(),
+                id: "relation:commission-assembly".into(),
+                from_subject_id: "harrow-gauge-commission".into(),
+                to_subject_id: "harrow-assembly".into(),
+                kind: AgencyRelationKind::Rivalry,
+                strength: 72,
+                active: true,
+                evidence_receipt_ids: vec![],
+            },
+        );
+        campaign.civic_systems.insert(
+            "loc:harrow_station".into(),
+            CivicSystemManifest {
+                schema: "ghostlight.civic_system_manifest.v1".into(),
+                version: 0,
+                jurisdiction_location_id: "loc:harrow_station".into(),
+                governing_institution_ids: BTreeSet::from(["harrow-assembly".into()]),
+                resident_population_ids: BTreeSet::new(),
+                public_authority_fact_ids: BTreeSet::new(),
+                public_selection_fact_ids: BTreeSet::new(),
+                public_resource_fact_ids: BTreeSet::new(),
+                public_redress_fact_ids: BTreeSet::new(),
+                political_relation_ids: BTreeSet::from(["relation:commission-assembly".into()]),
+                semantic_verification_receipt_id: "receipt:test".into(),
+            },
+        );
+
+        let context = civic_context(&campaign, "loc:harrow_station").unwrap();
+        let governing_institution_ids = context["institutions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|institution| institution["id"].as_str().unwrap())
+            .collect::<BTreeSet<_>>();
+        let related_institution_ids = context["related_institutions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|institution| institution["id"].as_str().unwrap())
+            .collect::<BTreeSet<_>>();
+
+        assert_eq!(
+            governing_institution_ids,
+            BTreeSet::from(["harrow-assembly"])
+        );
+        assert_eq!(
+            related_institution_ids,
+            BTreeSet::from(["harrow-gauge-commission"])
+        );
     }
 
     #[test]

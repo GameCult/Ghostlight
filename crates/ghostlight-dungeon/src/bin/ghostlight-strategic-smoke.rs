@@ -185,53 +185,55 @@ async fn main() -> anyhow::Result<()> {
                     "updated_at":Utc::now(),
                 }))?,
             )?;
-            let request = strategic_locality_request(&location_name, location_id, &pressure);
-            let compilation = compiler
-                .compile_destination(&campaign, location_id, &request)
-                .await;
-            let (preview, receipts) = match compilation {
-                Ok(compilation) => compilation,
-                Err(error) => {
-                    let failure_receipts = error
-                        .downcast_ref::<DestinationCompilationFailure>()
-                        .map(|failure| failure.model_receipts.clone())
-                        .unwrap_or_default();
-                    let receipt_hashes = failure_receipts
-                        .iter()
-                        .map(|receipt| receipt.storage_key().to_owned())
-                        .collect::<Vec<_>>();
-                    let persistence_error = if failure_receipts.is_empty() {
-                        None
-                    } else {
-                        store
-                            .persist_model_stage_receipts(&failure_receipts)
-                            .err()
-                            .map(|error| error.to_string())
-                    };
-                    std::fs::write(
-                        root.join(format!(
-                            "elaboration-{:02}-terminal-failure.json",
-                            index + 1
-                        )),
-                        serde_json::to_vec_pretty(&serde_json::json!({
-                            "schema":"ghostlight.strategic_elaboration_failure.v1",
-                            "location_id":location_id,
-                            "location_name":location_name,
-                            "request":request,
-                            "error":error.to_string(),
-                            "model_receipt_hashes":receipt_hashes,
-                            "receipt_persistence_error":&persistence_error,
-                        }))?,
-                    )?;
-                    if let Some(persistence_error) = persistence_error {
-                        return Err(anyhow::anyhow!(
-                            "{error}; model-receipt persistence failed: {persistence_error}"
-                        ));
+            let (elaborated, preview_path, receipts) = {
+                let foundation_request =
+                    strategic_locality_request(&location_name, location_id, &pressure);
+                let compilation = compiler
+                    .compile_destination(&campaign, location_id, &foundation_request)
+                    .await;
+                let (preview, receipts) = match compilation {
+                    Ok(compilation) => compilation,
+                    Err(error) => {
+                        let failure_receipts = error
+                            .downcast_ref::<DestinationCompilationFailure>()
+                            .map(|failure| failure.model_receipts.clone())
+                            .unwrap_or_default();
+                        let receipt_hashes = failure_receipts
+                            .iter()
+                            .map(|receipt| receipt.storage_key().to_owned())
+                            .collect::<Vec<_>>();
+                        let persistence_error = if failure_receipts.is_empty() {
+                            None
+                        } else {
+                            store
+                                .persist_model_stage_receipts(&failure_receipts)
+                                .err()
+                                .map(|error| error.to_string())
+                        };
+                        std::fs::write(
+                            root.join(format!(
+                                "elaboration-{:02}-terminal-failure.json",
+                                index + 1
+                            )),
+                            serde_json::to_vec_pretty(&serde_json::json!({
+                                "schema":"ghostlight.strategic_elaboration_failure.v1",
+                                "location_id":location_id,
+                                "location_name":location_name,
+                                "request":foundation_request,
+                                "error":error.to_string(),
+                                "model_receipt_hashes":receipt_hashes,
+                                "receipt_persistence_error":&persistence_error,
+                            }))?,
+                        )?;
+                        if let Some(persistence_error) = persistence_error {
+                            return Err(anyhow::anyhow!(
+                                "{error}; model-receipt persistence failed: {persistence_error}"
+                            ));
+                        }
+                        return Err(error);
                     }
-                    return Err(error);
-                }
-            };
-            let command = match &preview {
+                };
+                let command = match &preview {
                 ghostlight_dungeon::domain::DestinationCompilationPreview::LocalityElaboration(
                     preview,
                 ) => WorldCommand::ElaborateLocality {
@@ -247,24 +249,26 @@ async fn main() -> anyhow::Result<()> {
                     )
                 }
             };
-            let preview_path = root.join(format!("elaboration-{:02}-preview.json", index + 1));
-            std::fs::write(
-                &preview_path,
-                serde_json::to_vec_pretty(&serde_json::json!({
-                    "location_id":location_id,
-                    "location_name":location_name,
-                    "request":request,
-                    "preview":&preview,
-                    "model_receipts":&receipts,
-                }))?,
-            )?;
-            let committed = kernel.command(command).await?;
-            let CommandResult::Committed {
-                campaign: elaborated,
-                ..
-            } = committed
-            else {
-                anyhow::bail!("strategic locality elaboration did not commit")
+                let preview_path = root.join(format!("elaboration-{:02}-preview.json", index + 1));
+                std::fs::write(
+                    &preview_path,
+                    serde_json::to_vec_pretty(&serde_json::json!({
+                        "location_id":location_id,
+                        "location_name":location_name,
+                        "request":foundation_request,
+                        "preview":&preview,
+                        "model_receipts":&receipts,
+                    }))?,
+                )?;
+                let committed = kernel.command(command).await?;
+                let CommandResult::Committed {
+                    campaign: elaborated,
+                    ..
+                } = committed
+                else {
+                    anyhow::bail!("strategic locality elaboration did not commit")
+                };
+                (elaborated, preview_path, receipts)
             };
             campaign = elaborated;
             let titled_wave = world_elaboration_wave_binding(&campaign, location_id)?;
@@ -272,9 +276,7 @@ async fn main() -> anyhow::Result<()> {
                 model.clone(),
                 Arc::new(campaign.clone()),
                 location_id.clone(),
-                format!(
-                    "{request}\nAfter the civic foundation, add independently authored texture, material pressure, ordinary life, political leverage, secrets, active instability, and numinous meaning without rewriting the admitted apparatus."
-                ),
+                strategic_titled_locality_request(&location_name, location_id, &pressure),
             )?);
             let titled_run = match dispatch_elaboration_wave(
                 &mut titled_scheduler,
@@ -282,7 +284,7 @@ async fn main() -> anyhow::Result<()> {
                 &titled_eligible,
                 titled_invocation_budget,
                 titled_parallelism,
-                titled_worker,
+                titled_worker.clone(),
             )
             .await
             {
@@ -313,7 +315,7 @@ async fn main() -> anyhow::Result<()> {
                             "schema":"ghostlight.titled_elaboration_failure.v1",
                             "location_id":location_id,
                             "location_name":location_name,
-                            "request":request,
+                            "request":titled_worker.task_request(),
                             "wave":failure.wave,
                             "schedule":failure.schedule,
                             "completed_invocations":failure.completed_invocations.iter().map(|invocation|serde_json::json!({
@@ -350,7 +352,7 @@ async fn main() -> anyhow::Result<()> {
                     "schema":"ghostlight.titled_elaboration_preview.v1",
                     "location_id":location_id,
                     "location_name":location_name,
-                    "request":request,
+                    "request":titled_worker.task_request(),
                     "wave":admission.wave(),
                     "schedule":admission.schedule(),
                     "accepted_operations":admission.accepted_operations(),
@@ -377,7 +379,7 @@ async fn main() -> anyhow::Result<()> {
             let verifier_receipt = match compiler
                 .verify_titled_locality_elaboration(
                     &campaign,
-                    &request,
+                    titled_worker.task_request(),
                     description,
                     candidate,
                     &causal_receipt_ids,
@@ -933,6 +935,18 @@ fn strategic_locality_request(location_name: &str, location_id: &str, pressure: 
     request.chars().take(500).collect()
 }
 
+fn strategic_titled_locality_request(
+    location_name: &str,
+    location_id: &str,
+    pressure: &str,
+) -> String {
+    let pressure = pressure.chars().take(60).collect::<String>();
+    let request = format!(
+        "Deepen canonical locality {location_name:?} (ID {location_id}) after its civic foundation has been admitted. Current pressure: {pressure}. Add independently authored texture, material pressure, ordinary life, political leverage, secrets, active instability, and numinous meaning without rewriting the admitted apparatus."
+    );
+    request.chars().take(500).collect()
+}
+
 fn strategic_world_elaboration_profile() -> ghostlight_dungeon::elaboration::WorldElaborationProfile
 {
     use ghostlight_dungeon::elaboration::{
@@ -1218,6 +1232,7 @@ fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
 mod tests {
     use super::{
         admitted_public_channel, final_wave_field, strategic_campaign, strategic_locality_request,
+        strategic_titled_locality_request,
     };
 
     #[test]
@@ -1257,6 +1272,23 @@ mod tests {
         assert!(request.contains("exactly six distinct institutions"));
         assert!(request.contains("authority, succession, revenue, redress"));
         assert!(request.contains("public notice or report channel"));
+        assert!(request.chars().count() <= 500);
+    }
+
+    #[test]
+    fn titled_elaboration_request_owns_only_the_additive_pass() {
+        let request = strategic_titled_locality_request(
+            "Seed Vault",
+            "loc-seed-vault",
+            &"an intricately witnessed constitutional crisis ".repeat(40),
+        );
+
+        assert!(request.contains("Seed Vault"));
+        assert!(request.contains("loc-seed-vault"));
+        assert!(request.contains("after its civic foundation has been admitted"));
+        assert!(request.contains("ordinary life, political leverage, secrets"));
+        assert!(!request.contains("exactly four"));
+        assert!(!request.contains("exactly six"));
         assert!(request.chars().count() <= 500);
     }
 
