@@ -987,7 +987,9 @@ four small typed actions: `validate_current`, or `revise_and_validate` with a
 bounded transactional edit batch. The edit algebra replaces one stable fact
 slot, one resident fact-ID set, one frozen institution's operational fields,
 individual local relations, or the civic-manifest membership and fact lanes.
-The action schema contains no complete-candidate type. A failed edit batch
+The action wire is one root object with a typed tool discriminant and nullable
+edit batch; the connector refuses root-union schemas locally before provider
+submission. The action schema contains no complete-candidate type. A failed edit batch
 changes nothing. An admitted edit persists only in the private workbench and
 returns `Continue` when the resulting draft still fails validation; its digest,
 changed slots, and exact typed finding become the next observation without
@@ -1130,10 +1132,13 @@ receipts by content hash, restores scheduler state from the consumed schedule,
 and continues at the first incomplete authority boundary. A committed
 foundation is checked against its preserved civic apparatus. A titled preview
 is not completion authority: only a post-kernel completion checkpoint bound to
-the before/after revisions, admission digest, semantic verifier, model receipts,
-exact `WorldCommitReceipt`, and the kernel-owned mutation authority, batch, and
-receipt may skip that commit. The batch's `intended_effect_digest` binds the
-complete finalized candidate before deterministic aggregate projection, so the
+the before/after revisions, semantic verifier, model receipts, exact
+`WorldCommitReceipt`, and the kernel-owned mutation authority, batch, and
+receipt may skip that commit. New checkpoints also bind the admission digest;
+legacy inference instead binds the finalized candidate through the persisted
+mutation proof before minting its checkpoint. The batch's
+`intended_effect_digest` binds the complete finalized candidate before
+deterministic aggregate projection, so the
 resume verifier does not duplicate the reducer's set and ordering rules.
 Run-32's older committed Canopy pass can be admitted once through that persisted
 mutation proof plus its complete civic candidate, then gains the same durable

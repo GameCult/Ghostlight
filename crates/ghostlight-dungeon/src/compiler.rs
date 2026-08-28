@@ -777,13 +777,19 @@ enum DestinationReconciliationEdit {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
-#[serde(tag = "tool", rename_all = "snake_case", deny_unknown_fields)]
-enum DestinationReconciliationToolAction {
+#[serde(rename_all = "snake_case")]
+enum DestinationReconciliationTool {
     ValidateCurrent,
-    ReviseAndValidate {
-        #[schemars(length(min = 1, max = 12))]
-        edits: Vec<DestinationReconciliationEdit>,
-    },
+    ReviseAndValidate,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct DestinationReconciliationToolAction {
+    tool: DestinationReconciliationTool,
+    #[serde(default)]
+    #[schemars(length(min = 1, max = 12))]
+    edits: Option<Vec<DestinationReconciliationEdit>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -3406,11 +3412,13 @@ impl ModelAgentTool for DestinationReconciliationAgentTool<'_> {
         action: Self::Action,
         context: &ModelAgentToolContext,
     ) -> ModelAgentToolOutcome<Self::Output, Self::Finding> {
-        match action {
-            DestinationReconciliationToolAction::ValidateCurrent => {
+        match (action.tool, action.edits) {
+            (DestinationReconciliationTool::ValidateCurrent, None) => {
                 self.validate_current(context, Vec::new()).await
             }
-            DestinationReconciliationToolAction::ReviseAndValidate { edits } => {
+            (DestinationReconciliationTool::ReviseAndValidate, Some(edits))
+                if (1..=12).contains(&edits.len()) =>
+            {
                 let applied_edits =
                     match apply_destination_reconciliation_edits(&mut self.draft, edits) {
                         Ok(applied_edits) => applied_edits,
@@ -3428,6 +3436,19 @@ impl ModelAgentTool for DestinationReconciliationAgentTool<'_> {
                     };
                 self.validate_current(context, applied_edits).await
             }
+            (tool, edits) => ModelAgentToolOutcome::Rejected {
+                finding: self.observation(
+                    Vec::new(),
+                    DestinationReconciliationFinding::Edit {
+                        message: format!(
+                            "reconciliation tool {:?} received an invalid edit batch of length {}",
+                            tool,
+                            edits.as_ref().map_or(0, Vec::len)
+                        ),
+                    },
+                ),
+                receipts: Vec::new(),
+            },
         }
     }
 }
@@ -9886,8 +9907,9 @@ mod tests {
             })
             .collect();
         let draft = civic_reconciliation_draft(&seed).unwrap();
-        let action = DestinationReconciliationToolAction::ReviseAndValidate {
-            edits: vec![DestinationReconciliationEdit::ReplaceFact {
+        let action = DestinationReconciliationToolAction {
+            tool: DestinationReconciliationTool::ReviseAndValidate,
+            edits: Some(vec![DestinationReconciliationEdit::ReplaceFact {
                 fact_index: 31,
                 fact: WorldFact {
                     id: "fact:large:31".into(),
@@ -9896,7 +9918,7 @@ mod tests {
                     evidence_receipt_ids: vec![],
                     discoverable_at_location_ids: BTreeSet::from(["refuge".into()]),
                 },
-            }],
+            }]),
         };
         let draft_bytes = serde_json::to_vec(&draft).unwrap();
         let action_bytes = serde_json::to_vec(&action).unwrap();
@@ -9967,6 +9989,7 @@ mod tests {
         crate::model_connector::project_strict_responses_schema(&mut schema).unwrap();
 
         let schema_text = serde_json::to_string(&schema).unwrap();
+        assert_eq!(schema["type"], "object");
         assert!(!schema_text.contains("CompiledDestinationReconciliation"));
         assert!(schema_text.contains("validate_current"));
         assert!(schema_text.contains("revise_and_validate"));

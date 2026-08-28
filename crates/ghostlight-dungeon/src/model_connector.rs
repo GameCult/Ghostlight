@@ -281,6 +281,9 @@ fn unix_ms() -> Result<u64> {
 pub(crate) fn project_strict_responses_schema(schema: &mut serde_json::Value) -> Result<()> {
     lower_schema_for_responses_format(schema);
     require_closed_responses_objects(schema, "$")?;
+    if schema.get("type").and_then(serde_json::Value::as_str) != Some("object") {
+        bail!("Responses output schema root must have type object")
+    }
     if !responses_schema_is_strict(schema) {
         bail!("projected Responses output schema is not strict")
     }
@@ -865,6 +868,32 @@ mod tests {
             .unwrap_err()
             .to_string();
         assert!(error.contains("sibling keywords beside $ref"));
+    }
+
+    #[test]
+    fn strict_schema_projection_rejects_root_unions_before_provider_submission() {
+        let mut schema = serde_json::json!({
+            "oneOf":[
+                {
+                    "type":"object",
+                    "required":["kind"],
+                    "properties":{"kind":{"type":"string","const":"one"}},
+                    "additionalProperties":false
+                },
+                {
+                    "type":"object",
+                    "required":["kind"],
+                    "properties":{"kind":{"type":"string","const":"two"}},
+                    "additionalProperties":false
+                }
+            ]
+        });
+
+        let error = project_strict_responses_schema(&mut schema)
+            .unwrap_err()
+            .to_string();
+
+        assert!(error.contains("root must have type object"));
     }
 
     #[test]
