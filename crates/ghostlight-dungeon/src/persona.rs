@@ -237,10 +237,6 @@ enum CellInterpreterAgentCommand {
         subject_id: String,
         decision: serde_json::Value,
     },
-    RemoveDecision {
-        subject_id: String,
-    },
-    InspectDraft,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -262,7 +258,6 @@ enum CellInterpreterFinding {
         decision_subject_ids: Vec<String>,
         missing_subject_ids: Vec<String>,
     },
-    DraftRequired,
     UnknownDecisionOwner {
         subject_id: String,
         allowed_subject_ids: Vec<String>,
@@ -508,15 +503,6 @@ const CELL_PROJECTION_OUTPUT_CONTRACT: &str = r#"{
   ]
 }"#;
 
-const CELL_INTERPRETER_AGENT_OUTPUT_CONTRACT: &str = r#"{
-  "command":{
-    "kind":"submit | upsert_decision | remove_decision | inspect_draft",
-    "decisions":"present only for submit; the exact complete decision map",
-    "subject_id":"present only for upsert_decision or remove_decision",
-    "decision":"present only for upsert_decision; one exact action, inaction, or undecided value"
-  }
-}"#;
-
 const CELL_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between an Interpreter and the world kernel. Judge this one candidate action's typed effects as one composition against the exact attributed subject's choice in the Persona turn. Structural permissions were already checked. Use exact_subject_permission as the sole map of canonical subjects, locations, and destinations for this actor. canonical_locations is sibling identity context: compare it with exact_subject_permission.location_ids, and never treat a name as granting locality, co-presence, reach, publication, movement, target, effect, or mutation authority. A matching current-location name denotes that place or its unnamed local public, not an omitted canonical subject. activity_targets supplies each canonical target's exact name and current locations; reachable_destinations supplies exact actor-movement destination IDs and names; migration_destinations supplies exact population names and locations. Preserve every distinct affirmative means the subject actually chooses. Do not invent another means from a purpose, refusal, restraint, condition to preserve, desired social norm, or hoped-for state. Keeping someone's choice open, declining to coerce them, leaving state unchanged, respecting autonomy, or waiting for another subject's decision requires no additional typed effect unless the Persona separately chooses an observable act to do it. Communication can therefore be faithfully combined with restraint without implying coordinate, recruit, posture, or pressure effects. Reject effect omission only when the Persona explicitly undertakes another observable act. When one choice contains relocation, an activity at the subject's exact snapshot location occurs before relocation and an activity at the exact admitted destination occurs after arrival; activities within one location phase are an unordered atomic set. Array and object field order are not chronology. When the Persona chooses to go to a canonical target, actor_move must use that target's actual different reachable location. If actor and target are already co-located, reject movement to some other place; a local communicate, coordinate, or prepare may encode the stated attempt instead. A place named only in prose and absent from reachable_destinations and migration_destinations is local texture inside the supplied activity location; walking to it cannot justify rejecting a concrete local prepare or repair as omitted travel. Return exactly one verdict with action_index 0. A gestalt_migration means that exact population leaf chooses to travel together to the supplied destination within the strategic horizon; loading, waiting, giving away passage, sending only some other subject, or merely considering travel does not entail it. Conversely, when the population chooses to board, depart, or relocate together, reject gestalt_activity prepare that erases the chosen journey. Gestalt migration never entails that a named member moved. A member_migration means that named member personally chooses to travel to the destination. Boarding a transport whose supplied destination is unambiguous in the lived stream is a chosen journey; the Persona need not repeat the place name. Giving away a berth, sending somebody else, waiting, or merely considering travel does not entail migration. Conversely, when the member chooses to board, depart, travel, or join the supplied destination, reject member_activity that reduces that commitment to preparing, queuing, or approaching. A member_activity belongs only to that exact named person's stated attempt; it cannot be reassigned to their population. Communication targets must be the exact canonical subjects actually addressed in the Persona turn. An exact activity_targets entry is sufficient authority to attempt direct communication with that named subject; allowed_persistent_publication_channels governs only durable public publication and is never an additional requirement for direct contact. One communicate activity is also the complete supported composition when the same utterance addresses exact canonical targets and an unnamed public audience: target_subject_ids names the canonical addressees and candidate_action.public_channels names the simultaneous public reach. A call to unnamed people at a canonical location is such public or local audience, not a missing activity target. Do not demand a second targetless communicate for that same utterance. Use a targetless communicate only when the communication has no exact canonical addressee. Internal-population coordination is owner-specific: apply only coordination_target_contract.rule for this exact attributed subject, never a rule belonging to another subject kind. If the Persona addresses an unnamed clerk, dock master, passerby, or local environment, reject any effect that substitutes a containing population, related institution, or merely permitted ID. A targetless local investigate at the subject's exact current or paired movement destination is the faithful supported shape for seeking information from an unnamed role or the environment; its empty target list is intentional and must not itself be grounds for rejection. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. An activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, acceptance, or target response. Reject omissions, reversals, subject swaps, wrong destinations, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object. A faithful verdict uses result \"match\", null mismatch_kind, and null repair_guidance. Otherwise use result \"mismatch\", exactly one mismatch_kind (\"subject_swap\", \"effect_omission\", \"effect_reversal\", \"target_substitution\", \"invented_outcome\", or \"wrong_effect_kind\"), and one concrete repair_guidance sentence of at most 240 characters. Name the exact omitted choice, substituted target, or wrong destination. When no supplied typed effect composition can faithfully encode the choice, explicitly say to remove the action rather than downgrade or redirect it. Shape: {\"verdicts\":[{\"action_index\":0,\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}]}";
 
 const CELL_ACTIVITY_CLASSIFICATION_GUIDANCE: &str = "Classify the chosen means by what the subject actually does. communicate means speak, send, offer, ask, or notify; coordinate means arrange a joint attempt; investigate means inspect, examine, diagnose, measure, test, or assess an existing condition in order to learn; recruit means invite; trade means offer an exchange; obstruct means attempt interference. prepare means materially repair, build, arrange, or ready a bounded resource, capability, or plan. Merely inspecting a handcart, regulator, record, route, patient, or other existing condition before deciding what to do is investigate, not prepare. Only actual repair or readiness work is prepare.";
@@ -624,7 +610,7 @@ impl PersonaProjectionEngine {
                 typed_context: &typed_context,
                 lived_stream: &lived.text,
                 persona_output: &persona.narrative,
-                output_schema: &serde_json::to_string(&prompt_schema)?,
+                output_schema: Some(&serde_json::to_string(&prompt_schema)?),
                 domain_guidance: &permission_guidance,
             }),
             output_schema: Some(schema),
@@ -1286,6 +1272,7 @@ struct CellInterpreterWorkbench {
     lived_stream: String,
     persona_turn: String,
     campaign_policy: String,
+    appraisal_schema: serde_json::Value,
     draft: BTreeMap<String, serde_json::Value>,
     repair_subject_ids: BTreeSet<String>,
     accepted_verifier_bindings: BTreeSet<String>,
@@ -1494,6 +1481,18 @@ impl ModelAgentTool for CellInterpreterWorkbench {
     type Output = CellInterpreterAgentOutput;
     type Finding = CellInterpreterFinding;
 
+    fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
+        let state = if self.draft.is_empty() {
+            CellInterpreterSchemaState::Initial
+        } else if self.repair_subject_ids.is_empty() {
+            return Err("nonterminal Interpreter draft has no repair owner".into());
+        } else {
+            CellInterpreterSchemaState::Repair(&self.repair_subject_ids)
+        };
+        cell_interpreter_agent_schema(&self.appraisal_schema, state)
+            .map_err(|error| error.to_string())
+    }
+
     async fn invoke(
         &mut self,
         action: Self::Action,
@@ -1537,34 +1536,9 @@ impl ModelAgentTool for CellInterpreterWorkbench {
                         receipts: Vec::new(),
                     };
                 }
-                self.repair_subject_ids = BTreeSet::from([subject_id.clone()]);
                 self.draft.insert(subject_id, decision);
                 self.compile_draft(&context.source_receipt_ids).await
             }
-            CellInterpreterAgentCommand::RemoveDecision { subject_id } => {
-                if self.draft.is_empty() {
-                    return ModelAgentToolOutcome::Rejected {
-                        finding: CellInterpreterFinding::DraftRequired,
-                        receipts: Vec::new(),
-                    };
-                }
-                if !self.repair_subject_ids.contains(&subject_id) {
-                    return ModelAgentToolOutcome::Rejected {
-                        finding: CellInterpreterFinding::DecisionNotRepairable {
-                            subject_id,
-                            repair_subject_ids: self.repair_subject_ids.iter().cloned().collect(),
-                        },
-                        receipts: Vec::new(),
-                    };
-                }
-                self.repair_subject_ids = BTreeSet::from([subject_id.clone()]);
-                self.draft.remove(&subject_id);
-                self.compile_draft(&context.source_receipt_ids).await
-            }
-            CellInterpreterAgentCommand::InspectDraft => ModelAgentToolOutcome::Continue {
-                observation: self.progress(),
-                receipts: Vec::new(),
-            },
         }
     }
 }
@@ -1852,16 +1826,14 @@ impl CellProjectionEngine {
         let permission_guidance = format!(
             "{permission_guidance} Campaign policy is a hard output boundary, not actor knowledge. Emit no action, inaction rationale, pressure, migration, posture, or activity that introduces a line topic, depicts a veil topic on-screen, or introduces an ask_first topic. Never reveal boundary attribution. CAMPAIGN POLICY: {campaign_policy}"
         );
-        let action_schema = cell_interpreter_agent_schema(&schema)
-            .map_err(|error| cell_pipeline_failure(error, stage_receipts.clone()))?;
         let instructions = build_interpreter_prompt(&InterpreterPrompt {
             identity: &slice.cell_id,
             typed_context: &interpreter_context,
             lived_stream: &lived.text,
             persona_output: &persona.narrative,
-            output_schema: CELL_INTERPRETER_AGENT_OUTPUT_CONTRACT,
+            output_schema: None,
             domain_guidance: &format!(
-                "{permission_guidance} Operate the private Interpreter workbench. Prefer one submit action containing the complete exact decision map on the first step. A rejected submit preserves its draft. Repair only named decisions with upsert_decision; inspect_draft and remove_decision are nonterminal. Only the deterministic workbench can accept the appraisal."
+                "{permission_guidance} Operate the private Interpreter workbench. Its current typed action schema is authoritative and exposes only the transition legal now: one complete submit initially, then exact named upsert_decision repairs after rejection. A rejected submit preserves its draft. Only the deterministic workbench can accept the appraisal."
             ),
         });
         let mut interpreter_causal_receipts = causal_receipts;
@@ -1873,7 +1845,6 @@ impl CellProjectionEngine {
             model: self.interpreter_model.clone(),
             snapshot_binding: slice.snapshot_binding.clone(),
             instructions,
-            action_schema,
             source_receipt_ids,
             temperature: Some(0.0),
             max_output_tokens: Some(1_600),
@@ -1888,6 +1859,7 @@ impl CellProjectionEngine {
             lived_stream: lived.text.clone(),
             persona_turn: persona.narrative.clone(),
             campaign_policy: campaign_policy.clone(),
+            appraisal_schema: schema,
             draft: BTreeMap::new(),
             repair_subject_ids: BTreeSet::new(),
             accepted_verifier_bindings: BTreeSet::new(),
@@ -3022,8 +2994,14 @@ fn constrain_cell_proposal_schema(
     Ok(())
 }
 
+enum CellInterpreterSchemaState<'a> {
+    Initial,
+    Repair(&'a BTreeSet<String>),
+}
+
 fn cell_interpreter_agent_schema(
     appraisal_schema: &serde_json::Value,
+    state: CellInterpreterSchemaState<'_>,
 ) -> Result<serde_json::Value> {
     let decisions_schema = appraisal_schema
         .pointer("/properties/decisions")
@@ -3033,47 +3011,40 @@ fn cell_interpreter_agent_schema(
         .get("properties")
         .and_then(serde_json::Value::as_object)
         .ok_or_else(|| anyhow!("cell appraisal schema has no exact decision owners"))?;
-    let allowed_subject_ids = decision_properties.keys().cloned().collect::<Vec<_>>();
-    let mut commands = vec![serde_json::json!({
-        "type":"object",
-        "additionalProperties":false,
-        "required":["kind","decisions"],
-        "properties":{
-            "kind":{"const":"submit"},
-            "decisions":decisions_schema
-        }
-    })];
-    commands.extend(
-        decision_properties
-            .iter()
-            .map(|(subject_id, decision_schema)| {
-                serde_json::json!({
-                    "type":"object",
-                    "additionalProperties":false,
-                    "required":["kind","subject_id","decision"],
-                    "properties":{
-                        "kind":{"const":"upsert_decision"},
-                        "subject_id":{"const":subject_id},
-                        "decision":decision_schema
-                    }
+    let commands = match state {
+        CellInterpreterSchemaState::Initial => vec![serde_json::json!({
+            "type":"object",
+            "additionalProperties":false,
+            "required":["kind","decisions"],
+            "properties":{
+                "kind":{"const":"submit"},
+                "decisions":decisions_schema
+            }
+        })],
+        CellInterpreterSchemaState::Repair(repair_subject_ids) => {
+            if repair_subject_ids.is_empty() {
+                return Err(anyhow!("Interpreter repair schema requires a subject"));
+            }
+            repair_subject_ids
+                .iter()
+                .map(|subject_id| {
+                    let decision_schema = decision_properties.get(subject_id).ok_or_else(|| {
+                        anyhow!("Interpreter repair subject {subject_id} has no decision schema")
+                    })?;
+                    Ok(serde_json::json!({
+                        "type":"object",
+                        "additionalProperties":false,
+                        "required":["kind","subject_id","decision"],
+                        "properties":{
+                            "kind":{"const":"upsert_decision"},
+                            "subject_id":{"const":subject_id},
+                            "decision":decision_schema
+                        }
+                    }))
                 })
-            }),
-    );
-    commands.push(serde_json::json!({
-        "type":"object",
-        "additionalProperties":false,
-        "required":["kind","subject_id"],
-        "properties":{
-            "kind":{"const":"remove_decision"},
-            "subject_id":{"type":"string","enum":allowed_subject_ids}
+                .collect::<Result<Vec<_>>>()?
         }
-    }));
-    commands.push(serde_json::json!({
-        "type":"object",
-        "additionalProperties":false,
-        "required":["kind"],
-        "properties":{"kind":{"const":"inspect_draft"}}
-    }));
+    };
     Ok(serde_json::json!({
         "$schema":"https://json-schema.org/draft/2020-12/schema",
         "type":"object",
@@ -3574,6 +3545,11 @@ mod tests {
                 }
                 "cell_interpreter" => {
                     let call = self.interpreter_calls.fetch_add(1, Ordering::SeqCst);
+                    let action_schema = request
+                        .output_schema
+                        .as_ref()
+                        .expect("Interpreter step has a tool-owned schema");
+                    let action_schema_text = serde_json::to_string(action_schema).unwrap();
                     assert!(
                         request
                             .lived_stream
@@ -3596,6 +3572,8 @@ mod tests {
                     ));
                     assert!(request.lived_stream.contains("is investigate, not prepare"));
                     if call == 0 {
+                        assert!(action_schema_text.contains("submit"));
+                        assert!(!action_schema_text.contains("upsert_decision"));
                         return Ok(serde_json::json!({
                             "command":{
                                 "kind":"submit",
@@ -3631,16 +3609,14 @@ mod tests {
                         }
                     });
                     assert!(
-                        jsonschema::validator_for(
-                            request
-                                .output_schema
-                                .as_ref()
-                                .expect("correction retains its schema")
-                        )
-                        .unwrap()
-                        .is_valid(&repeated),
-                        "the correction schema must keep describing the same semantic action space; the verifier owns semantic rejection"
+                        jsonschema::validator_for(action_schema)
+                            .unwrap()
+                            .is_valid(&repeated),
+                        "the correction schema must admit the exact rejected owner"
                     );
+                    assert!(!action_schema_text.contains("submit"));
+                    assert!(action_schema_text.contains("upsert_decision"));
+                    assert!(!action_schema_text.contains("inspect_draft"));
                     self.saw_rejected_appraisal.store(
                         request.lived_stream.contains("local_validation")
                             && request
@@ -4133,6 +4109,9 @@ mod tests {
             calls: AtomicUsize::new(0),
             faction_seven_calls: AtomicUsize::new(0),
         });
+        let mut appraisal_schema =
+            serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
+        constrain_cell_proposal_schema(&mut appraisal_schema, &slice, &active_subject_ids).unwrap();
         let mut workbench = CellInterpreterWorkbench {
             model: model.clone(),
             permit: Arc::new(AllowAllPermit),
@@ -4142,6 +4121,7 @@ mod tests {
             lived_stream: "At location forum: Faction Six and Faction Seven.".into(),
             persona_turn: "Faction Six withholds; Faction Seven publishes.".into(),
             campaign_policy: "{}".into(),
+            appraisal_schema,
             draft: BTreeMap::new(),
             repair_subject_ids: BTreeSet::new(),
             accepted_verifier_bindings: BTreeSet::new(),
@@ -4149,6 +4129,10 @@ mod tests {
         let context = ModelAgentToolContext {
             source_receipt_ids: vec!["persona:one".into()],
         };
+        let initial_schema = workbench.action_schema().unwrap();
+        let initial_schema_text = serde_json::to_string(&initial_schema).unwrap();
+        assert!(initial_schema_text.contains("submit"));
+        assert!(!initial_schema_text.contains("upsert_decision"));
         let first = workbench
             .invoke(
                 CellInterpreterAgentAction {
@@ -4187,6 +4171,14 @@ mod tests {
         ));
         assert_eq!(model.calls.load(Ordering::SeqCst), 2);
         assert_eq!(model.faction_seven_calls.load(Ordering::SeqCst), 1);
+        let repair_schema = workbench.action_schema().unwrap();
+        let repair_schema_text = serde_json::to_string(&repair_schema).unwrap();
+        assert!(!repair_schema_text.contains("submit"));
+        assert!(repair_schema_text.contains("upsert_decision"));
+        assert!(repair_schema_text.contains("faction-06"));
+        assert!(!repair_schema_text.contains("faction-07"));
+        assert!(!repair_schema_text.contains("inspect_draft"));
+        assert!(!repair_schema_text.contains("remove_decision"));
 
         let wholesale_resubmit = workbench
             .invoke(
@@ -4259,6 +4251,82 @@ mod tests {
             1,
             "the unchanged accepted action must not repay its semantic verifier"
         );
+    }
+
+    #[tokio::test]
+    async fn interpreter_repair_keeps_other_unadmitted_owners_repairable() {
+        let mut slice = fixture_cell_slice();
+        let mut second = slice.constituents[0].clone();
+        second.subject_id = "faction-07".into();
+        second.name = "Faction Seven".into();
+        second.permitted_state_references = BTreeSet::from(["institution:faction-07".into()]);
+        slice.constituents.push(second);
+        slice.decision_owner_ids.insert("faction-07".into());
+        slice.max_actions = 2;
+        let active_subject_ids = slice.decision_owner_ids.clone();
+        let mut appraisal_schema =
+            serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
+        constrain_cell_proposal_schema(&mut appraisal_schema, &slice, &active_subject_ids).unwrap();
+        let mut workbench = CellInterpreterWorkbench {
+            model: Arc::new(CachingVerifierModel {
+                calls: AtomicUsize::new(0),
+                faction_seven_calls: AtomicUsize::new(0),
+            }),
+            permit: Arc::new(AllowAllPermit),
+            interpreter_model: "flash".into(),
+            slice,
+            active_subject_ids,
+            lived_stream: "At location forum: Faction Six and Faction Seven.".into(),
+            persona_turn: "Both factions hold for the count.".into(),
+            campaign_policy: "{}".into(),
+            appraisal_schema,
+            draft: BTreeMap::from([
+                (
+                    "faction-06".into(),
+                    serde_json::json!({"inaction":{
+                        "subject_id":"faction-06",
+                        "reason":""
+                    }}),
+                ),
+                (
+                    "faction-07".into(),
+                    serde_json::json!({"inaction":{
+                        "subject_id":"faction-07",
+                        "reason":""
+                    }}),
+                ),
+            ]),
+            repair_subject_ids: BTreeSet::from(["faction-06".into(), "faction-07".into()]),
+            accepted_verifier_bindings: BTreeSet::new(),
+        };
+        let outcome = workbench
+            .invoke(
+                CellInterpreterAgentAction {
+                    command: CellInterpreterAgentCommand::UpsertDecision {
+                        subject_id: "faction-06".into(),
+                        decision: serde_json::json!({"inaction":{
+                            "subject_id":"faction-06",
+                            "reason":"Faction Six deliberately holds for the verified count."
+                        }}),
+                    },
+                },
+                &ModelAgentToolContext {
+                    source_receipt_ids: vec!["persona:one".into()],
+                },
+            )
+            .await;
+
+        assert!(matches!(
+            outcome,
+            ModelAgentToolOutcome::Rejected {
+                finding: CellInterpreterFinding::LocalValidation { .. },
+                ..
+            }
+        ));
+        let repair_schema_text =
+            serde_json::to_string(&workbench.action_schema().unwrap()).unwrap();
+        assert!(repair_schema_text.contains("faction-07"));
+        assert!(!repair_schema_text.contains("submit"));
     }
 
     #[test]
@@ -4353,7 +4421,6 @@ mod tests {
 
     #[test]
     fn compact_cell_prompt_contract_is_valid_json() {
-        serde_json::from_str::<serde_json::Value>(CELL_INTERPRETER_AGENT_OUTPUT_CONTRACT).unwrap();
         let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
         constrain_cell_proposal_schema(
             &mut schema,
@@ -4368,23 +4435,40 @@ mod tests {
         assert!(schema.pointer("/properties/decisions").is_some());
         assert!(schema.pointer("/properties/actions").is_none());
         assert!(schema.pointer("/properties/inactions").is_none());
-        let agent_schema = cell_interpreter_agent_schema(&schema).unwrap();
-        let agent_schema_text = serde_json::to_string(&agent_schema).unwrap();
-        assert_eq!(agent_schema["type"], "object");
-        assert!(agent_schema.get("oneOf").is_none());
-        assert!(agent_schema.pointer("/properties/command/oneOf").is_some());
-        assert!(agent_schema_text.contains("upsert_decision"));
-        assert!(agent_schema_text.contains("inspect_draft"));
-        assert!(agent_schema_text.contains("\"maxLength\":240"));
+        let initial_schema =
+            cell_interpreter_agent_schema(&schema, CellInterpreterSchemaState::Initial).unwrap();
+        let initial_schema_text = serde_json::to_string(&initial_schema).unwrap();
+        assert_eq!(initial_schema["type"], "object");
+        assert!(initial_schema.get("oneOf").is_none());
         assert!(
-            jsonschema::validator_for(&agent_schema)
+            initial_schema
+                .pointer("/properties/command/oneOf")
+                .is_some()
+        );
+        assert!(initial_schema_text.contains("submit"));
+        assert!(!initial_schema_text.contains("upsert_decision"));
+        assert!(!initial_schema_text.contains("inspect_draft"));
+        assert!(!initial_schema_text.contains("remove_decision"));
+        assert!(initial_schema_text.contains("\"maxLength\":240"));
+        assert!(
+            jsonschema::validator_for(&initial_schema)
                 .unwrap()
                 .is_valid(&serde_json::json!({
-                    "command":{"kind":"inspect_draft"}
+                    "command":{
+                        "kind":"submit",
+                        "decisions":{
+                            "faction-06":{
+                                "inaction":{
+                                    "subject_id":"faction-06",
+                                    "reason":"Faction Six deliberately waits for the count."
+                                }
+                            }
+                        }
+                    }
                 }))
         );
         assert!(
-            !jsonschema::validator_for(&agent_schema)
+            !jsonschema::validator_for(&initial_schema)
                 .unwrap()
                 .is_valid(&serde_json::json!({
                     "command":{
@@ -4394,7 +4478,7 @@ mod tests {
                     }
                 }))
         );
-        let mut provider_schema = agent_schema;
+        let mut provider_schema = initial_schema;
         crate::model_connector::project_strict_responses_schema(&mut provider_schema).unwrap();
         assert_eq!(provider_schema["type"], "object");
         assert!(
@@ -4406,7 +4490,61 @@ mod tests {
             jsonschema::validator_for(&provider_schema)
                 .unwrap()
                 .is_valid(&serde_json::json!({
-                    "command":{"kind":"inspect_draft"}
+                    "command":{
+                        "kind":"submit",
+                        "decisions":{
+                            "faction-06":{
+                                "inaction":{
+                                    "subject_id":"faction-06",
+                                    "reason":"Faction Six deliberately waits for the count."
+                                }
+                            }
+                        }
+                    }
+                }))
+        );
+        let repair_subject_ids = BTreeSet::from(["faction-06".to_owned()]);
+        let repair_schema = cell_interpreter_agent_schema(
+            &schema,
+            CellInterpreterSchemaState::Repair(&repair_subject_ids),
+        )
+        .unwrap();
+        let repair_schema_text = serde_json::to_string(&repair_schema).unwrap();
+        assert!(repair_schema_text.contains("upsert_decision"));
+        assert!(!repair_schema_text.contains("submit"));
+        assert!(
+            jsonschema::validator_for(&repair_schema)
+                .unwrap()
+                .is_valid(&serde_json::json!({
+                    "command":{
+                        "kind":"upsert_decision",
+                        "subject_id":"faction-06",
+                        "decision":{
+                            "inaction":{
+                                "subject_id":"faction-06",
+                                "reason":"Faction Six deliberately waits for the count."
+                            }
+                        }
+                    }
+                }))
+        );
+        let mut provider_repair_schema = repair_schema;
+        crate::model_connector::project_strict_responses_schema(&mut provider_repair_schema)
+            .unwrap();
+        assert!(
+            jsonschema::validator_for(&provider_repair_schema)
+                .unwrap()
+                .is_valid(&serde_json::json!({
+                    "command":{
+                        "kind":"upsert_decision",
+                        "subject_id":"faction-06",
+                        "decision":{
+                            "inaction":{
+                                "subject_id":"faction-06",
+                                "reason":"Faction Six deliberately waits for the count."
+                            }
+                        }
+                    }
                 }))
         );
         assert_eq!(

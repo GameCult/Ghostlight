@@ -11,7 +11,6 @@ pub struct ModelAgentSpec {
     pub model: String,
     pub snapshot_binding: String,
     pub instructions: String,
-    pub action_schema: serde_json::Value,
     pub source_receipt_ids: Vec<String>,
     pub temperature: Option<f64>,
     pub max_output_tokens: Option<u32>,
@@ -73,6 +72,11 @@ pub trait ModelAgentTool: Send {
     type Output: Send;
     type Finding: Serialize + Send;
 
+    /// The tool owns the action space that is legal at its current private
+    /// workbench state. The agent loop asks again before every model step so a
+    /// rejected action can narrow the next call to the exact repair surface.
+    fn action_schema(&self) -> std::result::Result<serde_json::Value, String>;
+
     async fn invoke(
         &mut self,
         action: Self::Action,
@@ -96,19 +100,44 @@ pub async fn run_model_agent<Tool: ModelAgentTool>(
     let mut transcript = String::new();
     let mut last_observation = None;
     for step in 0..spec.max_steps {
+        let action_schema = match tool.action_schema() {
+            Ok(schema) => schema,
+            Err(message) => {
+                return Err(ModelAgentFailure {
+                    message: format!(
+                        "model agent {} tool could not publish its current action schema: {message}",
+                        spec.stage
+                    ),
+                    receipts,
+                });
+            }
+        };
+        let action_schema_text = match serde_json::to_string(&action_schema) {
+            Ok(schema) => schema,
+            Err(error) => {
+                return Err(ModelAgentFailure {
+                    message: format!(
+                        "model agent {} could not serialize its current action schema: {error}",
+                        spec.stage
+                    ),
+                    receipts,
+                });
+            }
+        };
         let source_receipt_ids = causal_source_ids(&spec.source_receipt_ids, &receipts);
         let request = ModelStageRequest {
             stage: spec.stage.clone(),
             model: spec.model.clone(),
             snapshot_binding: spec.snapshot_binding.clone(),
             lived_stream: format!(
-                "{}{}\n\nAGENT STEP: {} of {}. Choose one typed tool action. The harness will execute it against the frozen state and return the real tool observation. Do not claim success yourself; only an accepted tool result can end the task.",
+                "CURRENT LEGAL TOOL ACTION SCHEMA:\n{}\n\n{}{}\n\nAGENT STEP: {} of {}. Choose one typed tool action admitted by the current schema. The harness will execute it against the frozen state and return the real tool observation. Do not claim success yourself; only an accepted tool result can end the task.",
+                action_schema_text,
                 spec.instructions,
                 transcript,
                 step + 1,
                 spec.max_steps,
             ),
-            output_schema: Some(spec.action_schema.clone()),
+            output_schema: Some(action_schema),
             source_receipt_ids,
             temperature: spec.temperature,
             max_output_tokens: spec.max_output_tokens,
@@ -337,6 +366,10 @@ mod tests {
         type Output = String;
         type Finding = ExactFinding;
 
+        fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
+            serde_json::to_value(schema_for!(CandidateAction)).map_err(|error| error.to_string())
+        }
+
         async fn invoke(
             &mut self,
             action: Self::Action,
@@ -360,6 +393,54 @@ mod tests {
                         received: action.value.clone(),
                     },
                     receipts: vec![fixture_tool_receipt(&action.value)],
+                }
+            }
+        }
+    }
+
+    struct NarrowingTool {
+        draft_stored: bool,
+    }
+
+    #[async_trait]
+    impl ModelAgentTool for NarrowingTool {
+        type Action = CandidateAction;
+        type Output = String;
+        type Finding = ExactFinding;
+
+        fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
+            let value = if self.draft_stored {
+                "accepted"
+            } else {
+                "drafted"
+            };
+            Ok(serde_json::json!({
+                "type":"object",
+                "additionalProperties":false,
+                "required":["value"],
+                "properties":{"value":{"const":value}}
+            }))
+        }
+
+        async fn invoke(
+            &mut self,
+            action: Self::Action,
+            _context: &ModelAgentToolContext,
+        ) -> ModelAgentToolOutcome<Self::Output, Self::Finding> {
+            if self.draft_stored {
+                assert_eq!(action.value, "accepted");
+                ModelAgentToolOutcome::Accepted {
+                    output: action.value,
+                    receipts: Vec::new(),
+                }
+            } else {
+                assert_eq!(action.value, "drafted");
+                self.draft_stored = true;
+                ModelAgentToolOutcome::Continue {
+                    observation: ExactFinding::DraftStored {
+                        value: action.value,
+                    },
+                    receipts: Vec::new(),
                 }
             }
         }
@@ -399,7 +480,6 @@ mod tests {
             model: MODEL_BALANCED.into(),
             snapshot_binding: "snapshot:1".into(),
             instructions: "Use the tool.".into(),
-            action_schema: serde_json::to_value(schema_for!(CandidateAction)).unwrap(),
             source_receipt_ids: vec!["source:one".into()],
             temperature: Some(0.0),
             max_output_tokens: Some(128),
@@ -444,7 +524,6 @@ mod tests {
             model: MODEL_BALANCED.into(),
             snapshot_binding: "snapshot:1".into(),
             instructions: "Use the tool.".into(),
-            action_schema: serde_json::to_value(schema_for!(CandidateAction)).unwrap(),
             source_receipt_ids: vec!["source:one".into()],
             temperature: Some(0.0),
             max_output_tokens: Some(128),
@@ -470,6 +549,49 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn tool_state_owns_each_steps_exact_action_schema() {
+        let model = ScriptedModel {
+            outputs: Mutex::new(vec![
+                r#"{"value":"drafted"}"#.into(),
+                r#"{"value":"accepted"}"#.into(),
+            ]),
+            requests: Mutex::new(Vec::new()),
+        };
+        let spec = ModelAgentSpec {
+            stage: "fixture_agent".into(),
+            model: MODEL_BALANCED.into(),
+            snapshot_binding: "snapshot:1".into(),
+            instructions: "Use the current tool contract.".into(),
+            source_receipt_ids: vec!["source:one".into()],
+            temperature: Some(0.0),
+            max_output_tokens: Some(128),
+            max_steps: 2,
+        };
+        let mut tool = NarrowingTool {
+            draft_stored: false,
+        };
+
+        let run = run_model_agent(&model, &spec, &mut tool).await.unwrap();
+
+        assert_eq!(run.output, "accepted");
+        let requests = model.requests.lock().unwrap();
+        assert_eq!(
+            requests[0].output_schema.as_ref().unwrap()["properties"]["value"]["const"],
+            "drafted"
+        );
+        assert_eq!(
+            requests[1].output_schema.as_ref().unwrap()["properties"]["value"]["const"],
+            "accepted"
+        );
+        assert!(
+            requests[1]
+                .lived_stream
+                .contains("CURRENT LEGAL TOOL ACTION SCHEMA")
+        );
+        assert!(requests[1].lived_stream.contains(r#""const":"accepted""#));
+    }
+
+    #[tokio::test]
     async fn exhausted_agent_preserves_every_action_and_tool_receipt() {
         let model = ScriptedModel {
             outputs: Mutex::new(vec![
@@ -483,7 +605,6 @@ mod tests {
             model: MODEL_BALANCED.into(),
             snapshot_binding: "snapshot:1".into(),
             instructions: "Use the tool.".into(),
-            action_schema: serde_json::to_value(schema_for!(CandidateAction)).unwrap(),
             source_receipt_ids: vec!["source:one".into()],
             temperature: Some(0.0),
             max_output_tokens: Some(128),

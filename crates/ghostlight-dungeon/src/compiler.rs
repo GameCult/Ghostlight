@@ -855,6 +855,7 @@ struct DestinationReconciliationAgentTool<'a> {
     existing_destination_id: Option<&'a str>,
     snapshot: &'a str,
     admission_evidence_receipt_ids: &'a [String],
+    action_schema: serde_json::Value,
 }
 
 enum CivicSystemVerificationOutcome {
@@ -3018,7 +3019,6 @@ impl WorldCompiler {
             model: MODEL_BALANCED.into(),
             snapshot_binding: binding,
             instructions,
-            action_schema: schema,
             source_receipt_ids: causal_source_receipt_ids.to_vec(),
             temperature: Some(0.0),
             max_output_tokens: Some(2_500),
@@ -3036,6 +3036,7 @@ impl WorldCompiler {
             existing_destination_id,
             snapshot,
             admission_evidence_receipt_ids,
+            action_schema: schema,
         };
         run_model_agent(self.model.as_ref(), &spec, &mut tool).await
     }
@@ -3406,6 +3407,10 @@ impl ModelAgentTool for DestinationReconciliationAgentTool<'_> {
     type Action = DestinationReconciliationToolAction;
     type Output = AcceptedDestinationReconciliation;
     type Finding = DestinationReconciliationObservation;
+
+    fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
+        Ok(self.action_schema.clone())
+    }
 
     async fn invoke(
         &mut self,

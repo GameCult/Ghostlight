@@ -1211,6 +1211,12 @@ impl crate::agent::ModelAgentTool for WorldElaborationAgentTool<'_> {
     type Output = WorldElaborationProposal;
     type Finding = WorldElaborationAgentFinding;
 
+    fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
+        self.assignment
+            .action_schema(self.target_location_id)
+            .map_err(|error| error.to_string())
+    }
+
     async fn invoke(
         &mut self,
         action: Self::Action,
@@ -1299,12 +1305,6 @@ impl ElaborationSubAgentPort<WorldElaborationProposal> for ModelWorldElaboration
             model: model.into(),
             snapshot_binding,
             instructions,
-            action_schema: assignment
-                .action_schema(&self.target_location_id)
-                .map_err(|error| ElaborationSubAgentFailure {
-                    diagnostic: error.to_string(),
-                    model_stage_receipts: Vec::new(),
-                })?,
             source_receipt_ids: Vec::new(),
             temperature: Some(0.4),
             max_output_tokens: Some(1_800),

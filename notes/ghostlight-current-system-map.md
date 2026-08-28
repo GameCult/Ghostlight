@@ -194,22 +194,22 @@ code bounds it before correction and never publishes private cell choices to a
 player error surface. A rejected wave returns one spoiler-free message while
 its exact diagnostic remains operator-only.
 
-The Interpreter is a bounded model agent over a private workbench. Its efficient
-first action may submit the complete exact decision map only while the draft is
-empty. A rejected draft stays in the tool; later actions may upsert or remove
-only the exact decisions named as missing or rejected, or inspect the draft.
-Its action wire is one strict root object containing one exact typed command.
-The nested command union binds each `kind` to only its own payload, so a model
-cannot emit a submit mixed with incremental-edit fields. The workbench remains
-the only owner allowed to apply that structurally legal command to the draft.
-The tool structurally rejects whole-draft replacement and edits to unrelated
-accepted decisions. Local validation returns a typed `local_validation`
-finding and the semantic verifier returns exact subject-scoped mismatch
-findings. Neither validator chooses the replacement or gains commit authority.
-Verifier matches are cached by the exact snapshot-and-action binding, so
-repairing one action does not repay inference for unchanged accepted actions.
-An `undecided` result returns to the Persona owner instead of letting the
-Interpreter invent a choice.
+The Interpreter is a bounded model agent over a private workbench. Every
+model-agent workbench owns the action schema legal at its current state; the
+provider-neutral loop asks the tool for that schema before every semantic step
+and places the same schema in both prompt guidance and the structured response
+boundary. For an empty Interpreter draft, the only command is one complete
+exact `submit`. A rejected draft remains private tool state, and the next schema
+contains only `upsert_decision` commands for exact missing or rejected owners.
+There is no inspection, removal, wholesale resubmit, or unrelated repair branch
+for the model to spend a step on. The action wire remains one strict root object
+containing one exact typed command. Local validation returns a typed
+`local_validation` finding and the semantic verifier returns exact
+subject-scoped mismatch findings. Neither validator chooses the replacement or
+gains commit authority. Verifier matches are cached by the exact
+snapshot-and-action binding, so repairing one action does not repay inference
+for unchanged accepted actions. An `undecided` result returns to the Persona
+owner instead of letting the Interpreter invent a choice.
 
 The strategic scheduler owns partial-wave recovery. Its typed checkpoint binds
 the exact campaign revision, resolution epoch, deterministic cover and plan,
@@ -982,16 +982,19 @@ reject but cannot rewrite or commit the proposal.
 
 Destination repair is the first consumer of the generic model-agent harness.
 The harness owner is `run_model_agent`, operating only over `ModelPort`, a
-`ModelAgentSpec`, and a consumer-owned `ModelAgentTool`. Its inputs are a stage,
-logical model class, frozen snapshot binding, instructions, action schema,
-causal receipt IDs, per-call settings, and a semantic step limit. Its outputs
-are one accepted consumer-owned value plus the complete receipt chain, or one
-terminal failure plus the receipts completed before failure. Step transcript,
-tool observations, causal source-ID accumulation, and `semantic_invalid`
-marking are derived run state. The harness has no campaign, fact, institution,
-civic, kernel, or persistence type and cannot validate or mutate world state.
-Patina or another consumer may supply a different action and tool without
-moving that consumer's state authority into the harness.
+`ModelAgentSpec`, and a consumer-owned `ModelAgentTool`. The spec supplies the
+stage, logical model class, frozen snapshot binding, instructions, causal
+receipt IDs, per-call settings, and semantic step limit. Before every step, the
+tool publishes the action schema legal at its current private state. Static
+tools may route a contract from their actual domain owner; world elaboration,
+for example, delegates schema derivation to `WorldElaborationAssignment`. The
+harness outputs one accepted consumer-owned value plus the complete receipt
+chain, or one terminal failure plus the receipts completed before failure. Step
+transcript, tool observations, causal source-ID accumulation, and
+`semantic_invalid` marking are derived run state. The harness has no campaign,
+fact, institution, civic, kernel, or persistence type and cannot validate or
+mutate world state. Patina or another consumer may supply a different action
+and tool without moving that consumer's state authority into the harness.
 
 Once the destination compiler has produced a repairable frozen civic candidate,
 that exact seed initializes one private workbench owned by

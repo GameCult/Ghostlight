@@ -26,7 +26,7 @@ pub struct InterpreterPrompt<'a> {
     pub typed_context: &'a str,
     pub lived_stream: &'a str,
     pub persona_output: &'a str,
-    pub output_schema: &'a str,
+    pub output_schema: Option<&'a str>,
     pub domain_guidance: &'a str,
 }
 
@@ -52,14 +52,19 @@ pub fn build_persona_prompt(input: &PersonaPrompt<'_>) -> String {
 }
 
 pub fn build_interpreter_prompt(input: &InterpreterPrompt<'_>) -> String {
+    let output_contract = match input.output_schema {
+        Some(schema) => format!(
+            "Return exactly one JSON object matching this stable shape:\n{schema}"
+        ),
+        None => "The agent harness supplies the current legal typed action schema immediately before each step. Return exactly one action matching that schema; do not reuse a command from an earlier step.".into(),
+    };
     format!(
-        "<!-- membrane:{MEMBRANE_SCHEMA}:interpreter -->\nYou are a private Interpreter. Convert a natural Persona turn into typed candidate effects supported by the lived stream and permissioned typed context. Candidates are proposals only; the owning runtime validates and commits them. Do not invent knowledge, capability, custody, perception, identifiers, state references, or completed consequences.\n\nReturn exactly one JSON object matching this stable shape:\n{schema}\n\nDomain guidance and exact permissions:\n{guidance}\n\nIdentity:\n{identity}\n\nPermissioned typed context:\n{context}\n\nLived stream:\n{stream}\n\nPersona turn:\n{output}",
+        "<!-- membrane:{MEMBRANE_SCHEMA}:interpreter -->\nYou are a private Interpreter. Convert a natural Persona turn into typed candidate effects supported by the lived stream and permissioned typed context. Candidates are proposals only; the owning runtime validates and commits them. Do not invent knowledge, capability, custody, perception, identifiers, state references, or completed consequences.\n\n{output_contract}\n\nDomain guidance and exact permissions:\n{guidance}\n\nIdentity:\n{identity}\n\nPermissioned typed context:\n{context}\n\nLived stream:\n{stream}\n\nPersona turn:\n{output}",
         identity = input.identity,
         guidance = input.domain_guidance,
         context = input.typed_context,
         stream = input.lived_stream,
         output = input.persona_output,
-        schema = input.output_schema,
     )
 }
 
