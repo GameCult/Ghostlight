@@ -198,6 +198,9 @@ The Interpreter is a bounded model agent over a private workbench. Its efficient
 first action may submit the complete exact decision map only while the draft is
 empty. A rejected draft stays in the tool; later actions may upsert or remove
 only the exact decisions named as missing or rejected, or inspect the draft.
+Its action wire is one strict root object with a typed `kind` discriminant and
+nullable payload slots. The workbench owns the legal tool/payload combinations;
+an invalid combination becomes a typed agent finding and cannot touch the draft.
 The tool structurally rejects whole-draft replacement and edits to unrelated
 accepted decisions. Local validation returns a typed `local_validation`
 finding and the semantic verifier returns exact subject-scoped mismatch
@@ -291,11 +294,13 @@ the Interpreter still receives only exact effect permissions. A promise does
 not become a hard-coded behavior rule, but it cannot disappear merely because
 the actor entered offscreen simulation.
 
-The Interpreter output schema is conditional on exact decision-owner ID.
+The Interpreter decision schema is derived from every exact decision-owner ID.
 Institution, actor, Gestalt, and named-member effect variants cannot cross
-subjects. Target IDs, canonical locations, pressure resolutions, movement
-destinations, state references, and public channels are enumerated from that
-subject's permitted slice. Movement and population-migration variants disappear
+subjects: complete submits bind decisions by owner-key, while incremental edits
+are rebound and validated under the selected owner by the workbench. Target IDs,
+canonical locations, pressure resolutions, movement destinations, state
+references, and public channels are enumerated from that subject's permitted
+slice. Movement and population-migration variants disappear
 when the subject has no exact destination; target-requiring activities cannot
 emit an empty target list. Semantic correction therefore judges meaning rather
 than repairing type combinations local code already knows are impossible.

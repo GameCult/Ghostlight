@@ -1551,7 +1551,7 @@ mod tests {
                         .as_ref()
                         .and_then(|schema| {
                             schema
-                                .pointer("/oneOf/0/properties/decisions/properties")
+                                .pointer("/properties/decisions/anyOf/0/properties")
                                 .and_then(serde_json::Value::as_object)
                         })
                         .map(|properties| properties.keys().cloned().collect::<Vec<_>>())
