@@ -18,7 +18,10 @@ use anyhow::{Context, Result, anyhow};
 use chrono::Utc;
 use cultcache_legacy::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
 use serde::{Serialize, de::DeserializeOwned};
-use std::{collections::BTreeSet, path::Path};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    path::Path,
+};
 
 #[derive(Clone)]
 pub struct CampaignStore {
@@ -91,16 +94,8 @@ impl CampaignStore {
 
     pub fn persist_model_stage_receipts(&self, receipts: &[ModelStageReceipt]) -> Result<()> {
         for receipt in receipts {
-            if let Some((_, existing)) =
-                self.load::<ModelStageReceipt>("persona_stage_receipt.v1", receipt.storage_key())?
-            {
-                if existing.same_receipted_content(receipt) {
-                    continue;
-                }
-                return Err(anyhow!(
-                    "immutable model-stage receipt conflict: {}",
-                    receipt.storage_key()
-                ));
+            if self.matching_model_stage_receipt(receipt)?.is_some() {
+                continue;
             }
             let inserted = self.insert(
                 "persona_stage_receipt.v1",
@@ -109,15 +104,30 @@ impl CampaignStore {
                 receipt,
             );
             if let Err(error) = inserted {
-                let repeated = self
-                    .load::<ModelStageReceipt>("persona_stage_receipt.v1", receipt.storage_key())?
-                    .is_some_and(|(_, existing)| existing.same_receipted_content(receipt));
-                if !repeated {
+                if self.matching_model_stage_receipt(receipt)?.is_none() {
                     return Err(error);
                 }
             }
         }
         Ok(())
+    }
+
+    fn matching_model_stage_receipt(
+        &self,
+        receipt: &ModelStageReceipt,
+    ) -> Result<Option<CultCacheEnvelope>> {
+        let Some((row, existing)) =
+            self.load::<ModelStageReceipt>("persona_stage_receipt.v1", receipt.storage_key())?
+        else {
+            return Ok(None);
+        };
+        if !existing.same_receipted_content(receipt) {
+            return Err(anyhow!(
+                "immutable model-stage receipt conflict: {}",
+                receipt.storage_key()
+            ));
+        }
+        Ok(Some(row))
     }
 
     pub fn create_component_world_state(
@@ -891,17 +901,31 @@ impl CampaignStore {
                 )?,
             )?;
         }
+        let mut unique_model_receipts = BTreeMap::<String, &ModelStageReceipt>::new();
         for item in model_receipts {
-            self.append_idempotent_companion(
-                &mut expected_rows,
-                &mut rows,
-                envelope(
+            if let Some(existing) = unique_model_receipts.get(item.storage_key()) {
+                if !existing.same_receipted_content(item) {
+                    return Err(anyhow!(
+                        "immutable model-stage receipt conflict: {}",
+                        item.storage_key()
+                    ));
+                }
+                continue;
+            }
+            unique_model_receipts.insert(item.storage_key().to_owned(), item);
+        }
+        for item in unique_model_receipts.into_values() {
+            if let Some(existing) = self.matching_model_stage_receipt(item)? {
+                expected_rows.push(existing.clone());
+                rows.push(existing);
+            } else {
+                rows.push(envelope(
                     "persona_stage_receipt.v1",
                     "ghostlight.persona_stage_receipt.v1",
                     item.storage_key(),
                     item,
-                )?,
-            )?;
+                )?);
+            }
         }
         if let Some(mutation) = mutation {
             append_mutation_proof(&mut rows, receipt, mutation)?;
@@ -918,17 +942,32 @@ impl CampaignStore {
         replacements: &mut Vec<CultCacheEnvelope>,
         row: CultCacheEnvelope,
     ) -> Result<()> {
-        if let Some(existing) = self.load_envelope(&row.r#type, &row.key)? {
-            if existing != row {
+        if let Some(pending) = replacements
+            .iter()
+            .find(|pending| pending.r#type == row.r#type && pending.key == row.key)
+        {
+            if !same_immutable_envelope_content(pending, &row) {
                 return Err(anyhow!(
                     "immutable world-commit companion conflict: {}/{}",
                     row.r#type,
                     row.key
                 ));
             }
-            expected.push(existing);
+            return Ok(());
         }
-        replacements.push(row);
+        if let Some(existing) = self.load_envelope(&row.r#type, &row.key)? {
+            if !same_immutable_envelope_content(&existing, &row) {
+                return Err(anyhow!(
+                    "immutable world-commit companion conflict: {}/{}",
+                    row.r#type,
+                    row.key
+                ));
+            }
+            expected.push(existing.clone());
+            replacements.push(existing);
+        } else {
+            replacements.push(row);
+        }
         Ok(())
     }
 
@@ -1131,6 +1170,13 @@ impl CampaignStore {
     }
 }
 
+fn same_immutable_envelope_content(left: &CultCacheEnvelope, right: &CultCacheEnvelope) -> bool {
+    left.key == right.key
+        && left.r#type == right.r#type
+        && left.payload == right.payload
+        && left.schema_id == right.schema_id
+}
+
 fn append_mutation_proof(
     rows: &mut Vec<CultCacheEnvelope>,
     world_receipt: &WorldCommitReceipt,
@@ -1221,4 +1267,151 @@ fn envelope<T: Serialize>(
         stored_at: Utc::now().to_rfc3339(),
         schema_id: Some(schema.into()),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn model_receipt() -> ModelStageReceipt {
+        ModelStageReceipt {
+            schema: "ghostlight.persona_stage_receipt.v1".into(),
+            receipt_hash: "sha256:persistence-receipt".into(),
+            provider: "fixture".into(),
+            model: "fixture-model".into(),
+            stage: "fixture-stage".into(),
+            snapshot_binding: "campaign:test:revision:0".into(),
+            request_hash: "sha256:request".into(),
+            output_hash: "sha256:output".into(),
+            source_receipt_ids: vec!["sha256:source".into()],
+            latency_ms: 17,
+            validation_result: "valid".into(),
+            local_validation_error: None,
+            input_chars: 120,
+            output_chars: 42,
+            provider_attempts: vec![],
+        }
+    }
+
+    #[test]
+    fn world_commit_reuses_pre_persisted_semantically_identical_model_receipt() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let campaign = crate::kernel::tests::campaign();
+        let campaign_row = store
+            .create_unadmitted_fixture_campaign(&campaign, &[], &[])
+            .unwrap();
+        let stored_receipt = model_receipt();
+        store
+            .persist_model_stage_receipts(std::slice::from_ref(&stored_receipt))
+            .unwrap();
+        let (stored_envelope, _) = store
+            .load::<ModelStageReceipt>("persona_stage_receipt.v1", stored_receipt.storage_key())
+            .unwrap()
+            .unwrap();
+
+        let mut repeated_receipt = stored_receipt.clone();
+        repeated_receipt.latency_ms = 91;
+        repeated_receipt.provider_attempts = vec![crate::model::ModelProviderAttemptReceipt {
+            provider_request_id: Some("repeated-provider-request".into()),
+            latency_ms: 91,
+            ..Default::default()
+        }];
+        let mut next = campaign.clone();
+        next.revision = 1;
+        let world_receipt = WorldCommitReceipt {
+            schema: "ghostlight.world_commit_receipt.v1".into(),
+            campaign_id: campaign.id,
+            previous_revision: 0,
+            revision: 1,
+            command_kind: "persistence_regression".into(),
+            committed_at: Utc::now(),
+            roll: None,
+        };
+
+        store
+            .append_world_commit(
+                &campaign_row,
+                &next,
+                "persistence-regression-1",
+                &world_receipt,
+                &[],
+                &[],
+                std::slice::from_ref(&repeated_receipt),
+                None,
+            )
+            .unwrap();
+
+        let (reloaded_envelope, reloaded_receipt) = store
+            .load::<ModelStageReceipt>("persona_stage_receipt.v1", stored_receipt.storage_key())
+            .unwrap()
+            .unwrap();
+        assert_eq!(reloaded_envelope, stored_envelope);
+        assert_eq!(reloaded_receipt, stored_receipt);
+        assert_eq!(
+            store
+                .load::<Campaign>("campaign.v1", &campaign.id.to_string())
+                .unwrap()
+                .unwrap()
+                .1
+                .revision,
+            1
+        );
+    }
+
+    #[test]
+    fn world_commit_rejects_a_semantic_model_receipt_collision_without_mutation() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let campaign = crate::kernel::tests::campaign();
+        let campaign_row = store
+            .create_unadmitted_fixture_campaign(&campaign, &[], &[])
+            .unwrap();
+        let stored_receipt = model_receipt();
+        store
+            .persist_model_stage_receipts(std::slice::from_ref(&stored_receipt))
+            .unwrap();
+
+        let mut collision = stored_receipt;
+        collision.output_hash = "sha256:different-output".into();
+        let mut next = campaign.clone();
+        next.revision = 1;
+        let world_receipt = WorldCommitReceipt {
+            schema: "ghostlight.world_commit_receipt.v1".into(),
+            campaign_id: campaign.id,
+            previous_revision: 0,
+            revision: 1,
+            command_kind: "persistence_regression".into(),
+            committed_at: Utc::now(),
+            roll: None,
+        };
+
+        let error = store
+            .append_world_commit(
+                &campaign_row,
+                &next,
+                "persistence-regression-1",
+                &world_receipt,
+                &[],
+                &[],
+                std::slice::from_ref(&collision),
+                None,
+            )
+            .unwrap_err();
+
+        assert!(
+            error
+                .to_string()
+                .contains("immutable model-stage receipt conflict")
+        );
+        assert_eq!(
+            store
+                .load::<Campaign>("campaign.v1", &campaign.id.to_string())
+                .unwrap()
+                .unwrap()
+                .1
+                .revision,
+            0
+        );
+    }
 }
