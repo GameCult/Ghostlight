@@ -752,10 +752,34 @@ pre-persisted-receipt path and the negative collision path. All 429 library
 tests, all five strategic-smoke tests, and the locked strategic target check
 pass. A bounded Modeling/Soul audit is clear.
 
-1. Re-witness Yggdrasil's independently owned Codex Connector service,
-   loopback listener, deployment receipt, and Ghostlight model admission; then
-   launch exact pushed source `8fe7a55` in fresh run 27. Do not rerun or mutate
-   failed run 26 or the live daemon.
+Exact-source run 27 used
+`8fe7a5563c7813d0a736a108069b236f217c0e07`. Its first civic foundation and
+titled elaboration committed, advancing world revision to 2 and proving the
+run-26 receipt-persistence repair. The second civic foundation completed. Its
+titled wave then stopped after Charter dispatch ordinal 27 exhausted two
+semantic steps: the deterministic tool returned only `proposal does not
+satisfy the exact titled elaboration task assignment`, which did not tell the
+agent which exact assigned operation or identity to correct. The other sixteen
+invocations completed. Status remained at one of four elaborations and zero of
+six strategic waves; no newspaper was produced and `BUILD-WITNESS` records
+`live_service_mutated=false`. The unchanged root is archived at
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-8fe7a55-27.tar`,
+independently matching SHA-256
+`D98C86A2AC173128E6C7D976596C60050FD6143B8B1E70DA0180200D77E92BC0`.
+This retires immutable receipt persistence as the current blocker.
+
+Pushed executable commit
+`d6cfda23855414d1297b47d6d476a82df98ee43f` keeps assignment validation at its
+existing deterministic owner but appends that assignment's exact correction
+contract to the tool finding. Its focused Charter regression proves the
+finding names the required operation, exact assigned ID, and bounds. All 430
+library tests, all five strategic-smoke tests, and the locked strategic target
+check pass; bounded Modeling/Soul review is clear. Provider verification
+remains pending.
+
+1. Re-witness Yggdrasil's independently owned Codex Connector, then launch
+   exact pushed source `d6cfda23855414d1297b47d6d476a82df98ee43f` in a fresh
+   run 28. Do not rerun or mutate failed runs 24 through 27 or the live daemon.
 2. Only after all six waves commit and an immutable manifest exists, dispatch a
    fresh blind reviewer with only the strongest unedited page and a neutral
    editorial brief, then independently audit it against committed public events.
