@@ -3574,7 +3574,7 @@ fn lower_compiled_destination(
         .local_relations
         .iter()
         .map(|relation| AgencyRelation {
-            schema: "ghostlight.agency_relation.v1".into(),
+            schema: AgencyRelation::SCHEMA.into(),
             id: relation.id.clone(),
             from_subject_id: relation.from_subject_id.clone(),
             to_subject_id: relation.to_subject_id.clone(),
@@ -3588,7 +3588,7 @@ fn lower_compiled_destination(
         .migration_relations
         .iter()
         .map(|relation| AgencyRelation {
-            schema: "ghostlight.agency_relation.v1".into(),
+            schema: AgencyRelation::SCHEMA.into(),
             id: relation.id.clone(),
             from_subject_id: relation.from_gestalt_id.clone(),
             to_subject_id: relation.to_gestalt_id.clone(),
@@ -5267,7 +5267,7 @@ pub fn validate_region_expansion(
     let mut local_relation_ids = BTreeSet::new();
     for relation in &expansion.local_relations {
         if expansion.local_relations.len() > 48
-            || relation.schema != "ghostlight.agency_relation.v1"
+            || relation.schema != AgencyRelation::SCHEMA
             || relation.id.trim().is_empty()
             || !local_relation_ids.insert(relation.id.as_str())
             || campaign.agency_relations.contains_key(&relation.id)
@@ -5528,7 +5528,7 @@ pub fn validate_region_expansion(
                         && profile.simulation_eligible
                 });
         if expansion.migration_relations.len() > 32
-            || relation.schema != "ghostlight.agency_relation.v1"
+            || relation.schema != AgencyRelation::SCHEMA
             || relation.id.trim().is_empty()
             || !relation_ids.insert(relation.id.as_str())
             || campaign.agency_relations.contains_key(&relation.id)
@@ -6428,7 +6428,7 @@ fn apply_compiled_agency_skeleton(
         campaign.agency_relations.insert(
             input.id.clone(),
             AgencyRelation {
-                schema: "ghostlight.agency_relation.v1".into(),
+                schema: AgencyRelation::SCHEMA.into(),
                 id: input.id,
                 from_subject_id: input.from_subject_id,
                 to_subject_id: input.to_subject_id,

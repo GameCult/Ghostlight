@@ -1031,10 +1031,14 @@ blocked, that slot remains unused instead of increasing another title's
 frequency or creating catch-up debt. A bounded wave invokes the scheduled
 sub-agents in parallel. One typed wave binding names the immutable snapshot and
 is passed to every invocation and returned with every proposal. Successful
-proposals return in deterministic ordinal order. Provider-backed titled workers
-use the generic `ModelAgent` harness to submit one assigned typed operation to a
-deterministic frozen-snapshot validator; local rejection returns as the next
-tool observation within a two-step semantic budget. Patina, Ledger, Hearth,
+proposals return in deterministic ordinal order. `WorldElaborationAssignment`
+owns each dispatch's exact operation contract: it derives the instruction,
+projects the generated structured-output schema down to the assigned variant
+and deterministic values, and validates the submitted proposal against the
+frozen snapshot. The provider-backed worker only routes that assignment through
+the generic `ModelAgent`; the harness owns the bounded two-step transcript/tool
+loop and receipt chain, not world semantics. Local rejection returns as the
+next tool observation. Patina, Ledger, Hearth,
 Veil, and Ember use the fast model class; Charter and Tangle use balanced;
 Numen uses capable. The worker returns the complete action/tool receipt chain
 with its proposal. A failed wave returns the consumed schedule, every completed

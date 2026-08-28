@@ -774,11 +774,159 @@ impl WorldElaborationAssignment {
                 relation_id,
                 allowed_subject_ids,
             } => format!(
-                "Submit exactly one add_local_relation operation. Its id must be {relation_id:?}; both distinct endpoints must come from {}; kind must be alliance, rivalry, trade, communication, command, or coercion; strength must be 1 through 100; active must be true; evidence_receipt_ids must be empty.",
-                serde_json::to_string(allowed_subject_ids)?
+                "Submit exactly one add_local_relation operation. Its schema must be {relation_schema:?}; id must be {relation_id:?}; both distinct endpoints must come from {}; kind must be alliance, rivalry, trade, communication, command, or coercion; strength must be 1 through 100; active must be true; evidence_receipt_ids must be empty.",
+                serde_json::to_string(allowed_subject_ids)?,
+                relation_schema = crate::domain::AgencyRelation::SCHEMA,
             ),
         };
         Ok(instruction)
+    }
+
+    fn action_schema(&self, target_location_id: &str) -> Result<serde_json::Value> {
+        let mut schema = serde_json::to_value(schema_for!(WorldElaborationProposal))?;
+        schema["properties"]["schema"] = serde_json::json!({
+            "type":"string",
+            "const":"ghostlight.world_elaboration_proposal.v1",
+        });
+        let operation = schema
+            .pointer_mut("/$defs/WorldElaborationOperation")
+            .ok_or_else(|| anyhow!("world elaboration schema has no operation definition"))?;
+        let variants = operation
+            .get_mut("oneOf")
+            .and_then(serde_json::Value::as_array_mut)
+            .ok_or_else(|| anyhow!("world elaboration operation schema has no typed variants"))?;
+        let expected_type = self.operation_type();
+        let index = variants
+            .iter()
+            .position(|variant| {
+                variant
+                    .pointer("/properties/type/const")
+                    .and_then(serde_json::Value::as_str)
+                    == Some(expected_type)
+            })
+            .ok_or_else(|| {
+                anyhow!("world elaboration schema has no {expected_type} operation variant")
+            })?;
+        let selected = variants.remove(index);
+        *variants = vec![selected];
+
+        match self {
+            Self::PatinaPlace { child_location_id } => {
+                let branch = selected_operation_branch(&mut schema)?;
+                branch["properties"]["id"] = exact_schema(child_location_id);
+                branch["properties"]["container_id"] = exact_schema(target_location_id);
+                branch["properties"]["name"]["minLength"] = serde_json::json!(1);
+                branch["properties"]["persistent_features"]["minItems"] = serde_json::json!(1);
+                branch["required"] = serde_json::json!([
+                    "type",
+                    "id",
+                    "name",
+                    "container_id",
+                    "persistent_features"
+                ]);
+            }
+            Self::PatinaOriginRoute {
+                child_location_id,
+                route_id,
+            } => {
+                let branch = selected_operation_branch(&mut schema)?;
+                branch["properties"]["origin_location_id"] = exact_schema(target_location_id);
+                branch["properties"]["route_id"] = exact_schema(route_id);
+                constrain_exact_object(
+                    schema.pointer_mut("/$defs/Route").ok_or_else(|| {
+                        anyhow!("world elaboration schema has no route definition")
+                    })?,
+                    &serde_json::json!({
+                        "destination_id":child_location_id,
+                        "distance":"a short internal path",
+                        "travel_minutes":3,
+                    }),
+                )?;
+            }
+            Self::PatinaReturnRoute {
+                child_location_id,
+                route_id,
+            } => {
+                let branch = selected_operation_branch(&mut schema)?;
+                branch["properties"]["origin_location_id"] = exact_schema(child_location_id);
+                branch["properties"]["route_id"] = exact_schema(route_id);
+                constrain_exact_object(
+                    schema.pointer_mut("/$defs/Route").ok_or_else(|| {
+                        anyhow!("world elaboration schema has no route definition")
+                    })?,
+                    &serde_json::json!({
+                        "destination_id":target_location_id,
+                        "distance":"a short internal path",
+                        "travel_minutes":3,
+                    }),
+                )?;
+            }
+            Self::PreserveCivicSystem { system } => constrain_exact_object(
+                schema
+                    .pointer_mut("/$defs/CivicSystemManifest")
+                    .ok_or_else(|| anyhow!("world elaboration schema has no civic definition"))?,
+                &serde_json::to_value(system)?,
+            )?,
+            Self::AddFact { fact_id } => {
+                let fact = schema
+                    .pointer_mut("/$defs/WorldFact")
+                    .ok_or_else(|| anyhow!("world elaboration schema has no fact definition"))?;
+                fact["properties"]["id"] = exact_schema(fact_id);
+                fact["properties"]["scope"] = exact_schema("branch_local");
+                fact["properties"]["evidence_receipt_ids"] = exact_schema(&Vec::<String>::new());
+                fact["properties"]["discoverable_at_location_ids"] =
+                    exact_schema(&vec![target_location_id]);
+                fact["properties"]["statement"]["minLength"] = serde_json::json!(1);
+                fact["properties"]["statement"]["maxLength"] = serde_json::json!(500);
+                fact["required"] = serde_json::json!([
+                    "id",
+                    "statement",
+                    "scope",
+                    "evidence_receipt_ids",
+                    "discoverable_at_location_ids"
+                ]);
+                fact["additionalProperties"] = serde_json::json!(false);
+            }
+            Self::AddPoliticalRelation {
+                relation_id,
+                allowed_subject_ids,
+            } => {
+                let relation = schema.pointer_mut("/$defs/AgencyRelation").ok_or_else(|| {
+                    anyhow!("world elaboration schema has no relation definition")
+                })?;
+                relation["properties"]["schema"] =
+                    exact_schema(crate::domain::AgencyRelation::SCHEMA);
+                relation["properties"]["id"] = exact_schema(relation_id);
+                let allowed = allowed_subject_ids.iter().cloned().collect::<Vec<_>>();
+                relation["properties"]["from_subject_id"] = serde_json::json!({
+                    "type":"string",
+                    "enum":allowed,
+                });
+                relation["properties"]["to_subject_id"] = serde_json::json!({
+                    "type":"string",
+                    "enum":allowed_subject_ids.iter().cloned().collect::<Vec<_>>(),
+                });
+                relation["properties"]["kind"] = serde_json::json!({
+                    "type":"string",
+                    "enum":["alliance", "rivalry", "trade", "communication", "command", "coercion"],
+                });
+                relation["properties"]["active"] = exact_schema(&true);
+                relation["properties"]["evidence_receipt_ids"] =
+                    exact_schema(&Vec::<String>::new());
+                relation["additionalProperties"] = serde_json::json!(false);
+            }
+        }
+        Ok(schema)
+    }
+
+    fn operation_type(&self) -> &'static str {
+        match self {
+            Self::PatinaPlace { .. } => "add_place",
+            Self::PatinaOriginRoute { .. } | Self::PatinaReturnRoute { .. } => "add_route",
+            Self::PreserveCivicSystem { .. } => "set_civic_system",
+            Self::AddFact { .. } => "add_fact",
+            Self::AddPoliticalRelation { .. } => "add_local_relation",
+        }
     }
 
     fn validate(
@@ -856,6 +1004,7 @@ impl WorldElaborationAssignment {
                 },
                 AddLocalRelation { relation },
             ) if relation.id == *relation_id
+                && relation.schema == crate::domain::AgencyRelation::SCHEMA
                 && allowed_subject_ids.contains(&relation.from_subject_id)
                 && allowed_subject_ids.contains(&relation.to_subject_id)
                 && relation.from_subject_id != relation.to_subject_id
@@ -880,6 +1029,50 @@ impl WorldElaborationAssignment {
         }
         Ok(())
     }
+}
+
+fn selected_operation_branch(schema: &mut serde_json::Value) -> Result<&mut serde_json::Value> {
+    schema
+        .pointer_mut("/$defs/WorldElaborationOperation/oneOf/0")
+        .ok_or_else(|| anyhow!("world elaboration schema lost its selected operation variant"))
+}
+
+fn exact_schema(value: impl Serialize) -> serde_json::Value {
+    let value = serde_json::to_value(value).expect("serializable assignment value");
+    let value_type = match &value {
+        serde_json::Value::Null => "null",
+        serde_json::Value::Bool(_) => "boolean",
+        serde_json::Value::Number(number) if number.is_i64() || number.is_u64() => "integer",
+        serde_json::Value::Number(_) => "number",
+        serde_json::Value::String(_) => "string",
+        serde_json::Value::Array(_) => "array",
+        serde_json::Value::Object(_) => "object",
+    };
+    serde_json::json!({
+        "type":value_type,
+        "const":value,
+    })
+}
+
+fn constrain_exact_object(schema: &mut serde_json::Value, exact: &serde_json::Value) -> Result<()> {
+    let exact = exact
+        .as_object()
+        .ok_or_else(|| anyhow!("exact assignment value is not an object"))?;
+    let properties = schema
+        .get_mut("properties")
+        .and_then(serde_json::Value::as_object_mut)
+        .ok_or_else(|| anyhow!("generated assignment object schema has no properties"))?;
+    for (name, value) in exact {
+        if !properties.contains_key(name) {
+            return Err(anyhow!(
+                "generated assignment object schema has no {name} property"
+            ));
+        }
+        properties.insert(name.clone(), exact_schema(value));
+    }
+    schema["required"] = serde_json::json!(exact.keys().collect::<Vec<_>>());
+    schema["additionalProperties"] = serde_json::json!(false);
+    Ok(())
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -988,12 +1181,12 @@ impl ElaborationSubAgentPort<WorldElaborationProposal> for ModelWorldElaboration
             model: model.into(),
             snapshot_binding,
             instructions,
-            action_schema: serde_json::to_value(schema_for!(WorldElaborationProposal)).map_err(
-                |error| ElaborationSubAgentFailure {
+            action_schema: assignment
+                .action_schema(&self.target_location_id)
+                .map_err(|error| ElaborationSubAgentFailure {
                     diagnostic: error.to_string(),
                     model_stage_receipts: Vec::new(),
-                },
-            )?,
+                })?,
             source_receipt_ids: Vec::new(),
             temperature: Some(0.4),
             max_output_tokens: Some(1_800),
@@ -2169,6 +2362,8 @@ mod tests {
 
     struct PanicIfInvokedModel;
 
+    struct ExactAssignmentSchemaModel;
+
     struct ReceiptlessWorldWorker;
 
     #[async_trait]
@@ -2208,6 +2403,64 @@ mod tests {
         }
     }
 
+    #[async_trait]
+    impl crate::model::ModelPort for ExactAssignmentSchemaModel {
+        async fn run(&self, request: &crate::model::ModelStageRequest) -> Result<String> {
+            let schema = request
+                .output_schema
+                .as_ref()
+                .ok_or_else(|| anyhow!("titled agent lost its action schema"))?;
+            assert_eq!(
+                schema.pointer("/$defs/WorldElaborationOperation/oneOf/0/properties/type/const"),
+                Some(&serde_json::json!("add_fact"))
+            );
+            assert_eq!(
+                schema
+                    .pointer("/$defs/WorldElaborationOperation/oneOf")
+                    .and_then(serde_json::Value::as_array)
+                    .map(Vec::len),
+                Some(1)
+            );
+            assert_eq!(
+                schema.pointer("/$defs/WorldFact/properties/id/const"),
+                Some(&serde_json::json!("elab:room:charter-fact:2"))
+            );
+            let output = serde_json::json!({
+                "schema":"ghostlight.world_elaboration_proposal.v1",
+                "operation":{
+                    "type":"add_fact",
+                    "fact":{
+                        "id":"elab:room:charter-fact:2",
+                        "statement":"The room elects a threshold witness after every public repair count.",
+                        "scope":"branch_local",
+                        "evidence_receipt_ids":[],
+                        "discoverable_at_location_ids":["room"]
+                    }
+                }
+            });
+            let validator = jsonschema::validator_for(schema)?;
+            assert!(validator.is_valid(&output));
+            let mut wrong_id = output.clone();
+            wrong_id["operation"]["fact"]["id"] = serde_json::json!("wrong-id");
+            assert!(!validator.is_valid(&wrong_id));
+            assert!(!validator.is_valid(&serde_json::json!({
+                "schema":"ghostlight.world_elaboration_proposal.v1",
+                "operation":{
+                    "type":"set_civic_system",
+                    "system":{}
+                }
+            })));
+            let mut provider_schema = schema.clone();
+            crate::model_connector::project_strict_responses_schema(&mut provider_schema)?;
+            assert!(jsonschema::validator_for(&provider_schema)?.is_valid(&output));
+            Ok(output.to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "exact-assignment-schema-fixture"
+        }
+    }
+
     #[tokio::test]
     async fn provider_worker_rejects_a_wave_from_a_newer_world_before_model_inference() {
         let frozen = campaign_with_civic_room();
@@ -2239,6 +2492,97 @@ mod tests {
 
         assert!(error.diagnostic.contains("frozen campaign"));
         assert!(error.model_stage_receipts.is_empty());
+    }
+
+    #[tokio::test]
+    async fn provider_worker_publishes_the_exact_assignment_schema() {
+        let campaign = campaign_with_civic_room();
+        let worker = ModelWorldElaborationWorker::new(
+            Arc::new(ExactAssignmentSchemaModel),
+            Arc::new(campaign.clone()),
+            "room",
+            "add political texture",
+        )
+        .unwrap();
+        let output = worker
+            .invoke(ElaborationSubAgentInvocation {
+                wave: world_elaboration_wave_binding(&campaign, "room").unwrap(),
+                dispatch: ElaborationDispatch {
+                    schema: "ghostlight.elaboration_dispatch.v1".into(),
+                    budget_ordinal: 2,
+                    ordinal: 2,
+                    title: ElaboratorTitle::Charter,
+                    title_weight: 1,
+                    total_enabled_weight: 1,
+                    requested_share_millionths: 1_000_000,
+                    title_dispatch_count: 2,
+                },
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(output.model_stage_receipts.len(), 1);
+        assert!(matches!(
+            output.proposal.operation,
+            WorldElaborationOperation::AddFact { ref fact }
+                if fact.id == "elab:room:charter-fact:2"
+        ));
+    }
+
+    #[test]
+    fn every_assignment_schema_exposes_one_owned_operation_variant() {
+        let mut campaign = campaign_with_civic_room();
+        campaign
+            .civic_systems
+            .get_mut("room")
+            .unwrap()
+            .governing_institution_ids =
+            BTreeSet::from(["first-council".into(), "second-council".into()]);
+        let cases = [
+            (ElaboratorTitle::Patina, 1, "add_place"),
+            (ElaboratorTitle::Patina, 2, "add_route"),
+            (ElaboratorTitle::Patina, 3, "add_route"),
+            (ElaboratorTitle::Charter, 1, "set_civic_system"),
+            (ElaboratorTitle::Charter, 2, "add_fact"),
+            (ElaboratorTitle::Tangle, 1, "add_local_relation"),
+            (ElaboratorTitle::Tangle, 2, "add_fact"),
+            (ElaboratorTitle::Ledger, 1, "add_fact"),
+        ];
+
+        for (ordinal, (title, title_dispatch_count, expected_type)) in cases.into_iter().enumerate()
+        {
+            let assignment = WorldElaborationAssignment::for_dispatch(
+                &campaign,
+                "room",
+                &ElaborationDispatch {
+                    schema: "ghostlight.elaboration_dispatch.v1".into(),
+                    budget_ordinal: ordinal as u64 + 1,
+                    ordinal: ordinal as u64 + 1,
+                    title,
+                    title_weight: 1,
+                    total_enabled_weight: 1,
+                    requested_share_millionths: 1_000_000,
+                    title_dispatch_count,
+                },
+            )
+            .unwrap();
+            let schema = assignment.action_schema("room").unwrap();
+            let branches = schema
+                .pointer("/$defs/WorldElaborationOperation/oneOf")
+                .and_then(serde_json::Value::as_array)
+                .unwrap();
+
+            assert_eq!(branches.len(), 1);
+            assert_eq!(
+                branches[0]
+                    .pointer("/properties/type/const")
+                    .and_then(serde_json::Value::as_str),
+                Some(expected_type)
+            );
+            let mut provider_schema = schema;
+            crate::model_connector::project_strict_responses_schema(&mut provider_schema).unwrap();
+            jsonschema::validator_for(&provider_schema).unwrap();
+        }
     }
 
     #[test]
@@ -2281,6 +2625,89 @@ mod tests {
         );
         assert!(error.to_string().contains("elab:room:charter-fact:2"));
         assert!(error.to_string().contains("exactly one add_fact"));
+    }
+
+    #[tokio::test]
+    async fn assignment_tool_rejects_a_relation_schema_bypass_then_accepts_the_correction() {
+        let mut campaign = campaign_with_civic_room();
+        campaign
+            .civic_systems
+            .get_mut("room")
+            .unwrap()
+            .governing_institution_ids =
+            BTreeSet::from(["first-council".into(), "second-council".into()]);
+        let assignment = WorldElaborationAssignment::for_dispatch(
+            &campaign,
+            "room",
+            &ElaborationDispatch {
+                schema: "ghostlight.elaboration_dispatch.v1".into(),
+                budget_ordinal: 1,
+                ordinal: 1,
+                title: ElaboratorTitle::Tangle,
+                title_weight: 1,
+                total_enabled_weight: 1,
+                requested_share_millionths: 1_000_000,
+                title_dispatch_count: 1,
+            },
+        )
+        .unwrap();
+        let wrong = WorldElaborationProposal {
+            schema: "ghostlight.world_elaboration_proposal.v1".into(),
+            operation: WorldElaborationOperation::AddLocalRelation {
+                relation: crate::domain::AgencyRelation {
+                    schema: "wrong.relation.schema".into(),
+                    id: "elab:room:tangle-relation:1".into(),
+                    from_subject_id: "first-council".into(),
+                    to_subject_id: "second-council".into(),
+                    kind: crate::domain::AgencyRelationKind::Rivalry,
+                    strength: 50,
+                    active: true,
+                    evidence_receipt_ids: vec![],
+                },
+            },
+        };
+        let mut tool = WorldElaborationAgentTool {
+            campaign: &campaign,
+            target_location_id: "room",
+            assignment: &assignment,
+        };
+        let context = crate::agent::ModelAgentToolContext {
+            source_receipt_ids: Vec::new(),
+        };
+
+        let rejected = crate::agent::ModelAgentTool::invoke(&mut tool, wrong, &context).await;
+        match rejected {
+            crate::agent::ModelAgentToolOutcome::Rejected { finding, .. } => {
+                assert!(
+                    finding
+                        .diagnostic
+                        .contains(crate::domain::AgencyRelation::SCHEMA)
+                );
+            }
+            _ => panic!("wrong relation schema bypassed the assignment tool"),
+        }
+
+        let corrected = WorldElaborationProposal {
+            schema: "ghostlight.world_elaboration_proposal.v1".into(),
+            operation: WorldElaborationOperation::AddLocalRelation {
+                relation: crate::domain::AgencyRelation {
+                    schema: crate::domain::AgencyRelation::SCHEMA.into(),
+                    id: "elab:room:tangle-relation:1".into(),
+                    from_subject_id: "first-council".into(),
+                    to_subject_id: "second-council".into(),
+                    kind: crate::domain::AgencyRelationKind::Rivalry,
+                    strength: 50,
+                    active: true,
+                    evidence_receipt_ids: vec![],
+                },
+            },
+        };
+
+        let accepted = crate::agent::ModelAgentTool::invoke(&mut tool, corrected, &context).await;
+        assert!(matches!(
+            accepted,
+            crate::agent::ModelAgentToolOutcome::Accepted { .. }
+        ));
     }
 
     #[tokio::test]

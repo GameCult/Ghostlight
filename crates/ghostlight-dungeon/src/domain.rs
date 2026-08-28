@@ -321,6 +321,10 @@ pub struct AgencyRelation {
     pub evidence_receipt_ids: Vec<String>,
 }
 
+impl AgencyRelation {
+    pub const SCHEMA: &'static str = "ghostlight.agency_relation.v1";
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct GestaltLineage {
     pub schema: String,
