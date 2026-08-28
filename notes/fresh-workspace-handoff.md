@@ -723,13 +723,39 @@ three-model Ghostlight allowlist above. Recheck service state, loopback `4103`,
 the deployment receipt, and caller admission on Yggdrasil immediately before
 dispatch; the ops ledger is not a substitute for a live health witness.
 
-1. Preflight Yggdrasil's independently owned Codex Connector service, loopback
-   listener, exact deployment receipt, and Ghostlight caller model admission;
-   then dispatch executable source `975ee46` through Codex Connector in a fresh
-   four-foundation/four-titled-elaboration/six-wave provider root. If it
-   completes, preserve and
-   verify the immutable artifact manifest without mutating the live daemon or
-   any prior run root.
+Exact-source run 26 used
+`975ee4613932cbac04f01653ed90537846b36ded`. It completed the first foundation
+compile, all seventeen provider-backed titled calls, deterministic admission,
+and titled semantic verification. The titled preview contains seventeen
+accepted operations, no operation rejection, and seventeen model-receipt
+hashes. Atomic persistence then failed with
+`immutable world-commit companion conflict` for
+`persona_stage_receipt.v1/sha256:5cf4deb7b6477f9cbdd603bc34792c26fd3ae8c10026e5f38bdb88a09c608688`.
+Status remained world revision 0 with zero of four elaborations and zero of six
+strategic waves; no newspaper was produced and `BUILD-WITNESS` records
+`live_service_mutated=false`. The unchanged root is archived at
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-975ee46-26.tar`,
+independently matching SHA-256
+`007717BD13AF2BEF6B1A713BA74A89D065C34B473714F76E3EB73EA059123D70`.
+This retires titled semantic verification as the current blocker. The live
+defect is now at immutable model-receipt companion persistence; run 26 must not
+be resumed or repaired in place.
+
+Pushed executable commit
+`8fe7a5563c7813d0a736a108069b236f217c0e07` removes the split receipt-equality
+authority exposed by run 26. Direct receipt persistence and atomic world commits
+now use `ModelStageReceipt::same_receipted_content`; the first stored envelope
+and its observational telemetry remain byte-for-byte immutable, same-key input
+is deduplicated before CAS construction, and a semantic collision still fails
+before campaign mutation. The focused regression proves both the successful
+pre-persisted-receipt path and the negative collision path. All 429 library
+tests, all five strategic-smoke tests, and the locked strategic target check
+pass. A bounded Modeling/Soul audit is clear.
+
+1. Re-witness Yggdrasil's independently owned Codex Connector service,
+   loopback listener, deployment receipt, and Ghostlight model admission; then
+   launch exact pushed source `8fe7a55` in fresh run 27. Do not rerun or mutate
+   failed run 26 or the live daemon.
 2. Only after all six waves commit and an immutable manifest exists, dispatch a
    fresh blind reviewer with only the strongest unedited page and a neutral
    editorial brief, then independently audit it against committed public events.
