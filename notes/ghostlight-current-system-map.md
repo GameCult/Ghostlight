@@ -936,6 +936,16 @@ object is never accepted as a substitute for route, relationship, assignment,
 or facet authority. Canonical campaign and resolution documents retain their
 map-shaped storage contracts.
 
+The Codex/OpenAI connector owns one further provider-only projection for exact
+compound literals. Scalar `const` values survive. Array and object `const`
+values lower recursively to the supported strict Responses subset: fixed array
+lengths with bounded item literals, or closed objects with every exact key
+required. Array ordering and multiplicity are necessarily wider at this
+transport layer. The native request schema remains unchanged, and its consumer
+validator still owns exact equality before any proposal can reach admission.
+No compiler, elaborator title, or generic agent loop carries a provider-specific
+repair for this dialect boundary.
+
 `F:\Projects\Kalsa` is the first bundled fantasy Vault canary. Its typed
 manifest makes the `Public` tree player-safe world knowledge and the `Spoilers`
 tree GM-only canon; workshop material is non-canonical. Selection, Git/Obsidian
@@ -1036,9 +1046,11 @@ owns each dispatch's exact operation contract: it derives the instruction,
 projects the generated structured-output schema down to the assigned variant
 and deterministic values, and validates the submitted proposal against the
 frozen snapshot. The provider-backed worker only routes that assignment through
-the generic `ModelAgent`; the harness owns the bounded two-step transcript/tool
-loop and receipt chain, not world semantics. Local rejection returns as the
-next tool observation. Patina, Ledger, Hearth,
+the generic `ModelAgent`; the connector may structurally widen unsupported
+compound literals on its private schema clone, while this unchanged assignment
+validator retains exact semantic authority. The harness owns the bounded
+two-step transcript/tool loop and receipt chain, not world semantics. Local
+rejection returns as the next tool observation. Patina, Ledger, Hearth,
 Veil, and Ember use the fast model class; Charter and Tangle use balanced;
 Numen uses capable. The worker returns the complete action/tool receipt chain
 with its proposal. A failed wave returns the consumed schedule, every completed

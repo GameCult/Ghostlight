@@ -293,6 +293,14 @@ fn responses_schema_is_strict(schema: &serde_json::Value) -> bool {
             if map.contains_key("$ref") && map.len() != 1 {
                 return false;
             }
+            if map.get("const").is_some_and(|value| {
+                matches!(
+                    value,
+                    serde_json::Value::Array(_) | serde_json::Value::Object(_)
+                )
+            }) {
+                return false;
+            }
             if (map.contains_key("const") || map.contains_key("enum")) && !map.contains_key("type")
             {
                 return false;
@@ -468,6 +476,86 @@ fn infer_responses_literal_type(map: &mut serde_json::Map<String, serde_json::Va
     }
 }
 
+fn compound_const_array_item_schema(values: &[serde_json::Value]) -> serde_json::Value {
+    if values.is_empty() {
+        // maxItems: 0 makes this item type unreachable, but the Responses
+        // schema dialect still expects arrays to declare an item shape.
+        return serde_json::json!({"type":"string"});
+    }
+    if values.iter().all(serde_json::Value::is_string) {
+        let values = values
+            .iter()
+            .filter_map(serde_json::Value::as_str)
+            .map(ToString::to_string)
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+        return if values.len() == 1 {
+            serde_json::json!({"type":"string", "const":values[0]})
+        } else {
+            serde_json::json!({"type":"string", "enum":values})
+        };
+    }
+
+    let mut alternatives = Vec::new();
+    let mut seen = BTreeSet::new();
+    for value in values {
+        let mut alternative = serde_json::json!({"const":value});
+        lower_schema_for_responses_format(&mut alternative);
+        let digest = serde_json::to_string(&alternative).expect("JSON schema serializes");
+        if seen.insert(digest) {
+            alternatives.push(alternative);
+        }
+    }
+    if alternatives.len() == 1 {
+        alternatives.pop().expect("one alternative")
+    } else {
+        serde_json::json!({"anyOf":alternatives})
+    }
+}
+
+fn lower_compound_const(map: &mut serde_json::Map<String, serde_json::Value>) {
+    let Some(value) = map.get("const").cloned() else {
+        return;
+    };
+    match value {
+        serde_json::Value::Array(values) => {
+            map.remove("const");
+            map.insert("type".to_string(), serde_json::json!("array"));
+            map.insert("minItems".to_string(), serde_json::json!(values.len()));
+            map.insert("maxItems".to_string(), serde_json::json!(values.len()));
+            map.insert(
+                "items".to_string(),
+                compound_const_array_item_schema(&values),
+            );
+        }
+        serde_json::Value::Object(values) => {
+            map.remove("const");
+            map.insert("type".to_string(), serde_json::json!("object"));
+            map.insert(
+                "required".to_string(),
+                serde_json::Value::Array(
+                    values
+                        .keys()
+                        .cloned()
+                        .map(serde_json::Value::String)
+                        .collect(),
+                ),
+            );
+            map.insert(
+                "properties".to_string(),
+                values
+                    .into_iter()
+                    .map(|(name, value)| (name, serde_json::json!({"const":value})))
+                    .collect::<serde_json::Map<_, _>>()
+                    .into(),
+            );
+            map.insert("additionalProperties".to_string(), serde_json::json!(false));
+        }
+        _ => {}
+    }
+}
+
 fn nullable_responses_property(property: serde_json::Value) -> serde_json::Value {
     if property
         .get("anyOf")
@@ -519,6 +607,7 @@ fn lower_schema_for_responses_format(schema: &mut serde_json::Value) {
     let serde_json::Value::Object(map) = schema else {
         return;
     };
+    lower_compound_const(map);
     infer_responses_literal_type(map);
     if map.get("format").and_then(serde_json::Value::as_str) == Some("uuid") {
         map.remove("format");
@@ -695,6 +784,74 @@ mod tests {
         );
         assert!(schema["properties"]["note"]["anyOf"].is_array());
         assert!(responses_schema_is_strict(&schema));
+        Ok(())
+    }
+
+    #[test]
+    fn strict_schema_projection_lowers_compound_literals_only_on_the_provider_clone() -> Result<()>
+    {
+        fn contains_compound_const(value: &serde_json::Value) -> bool {
+            match value {
+                serde_json::Value::Object(map) => {
+                    map.get("const").is_some_and(|value| {
+                        matches!(
+                            value,
+                            serde_json::Value::Array(_) | serde_json::Value::Object(_)
+                        )
+                    }) || map.values().any(contains_compound_const)
+                }
+                serde_json::Value::Array(values) => values.iter().any(contains_compound_const),
+                _ => false,
+            }
+        }
+
+        let native = serde_json::json!({
+            "type":"object",
+            "required":["empty", "ids", "manifest"],
+            "properties":{
+                "empty":{"type":"array", "const":[]},
+                "ids":{"type":"array", "const":["council:a", "council:b"]},
+                "manifest":{
+                    "type":"object",
+                    "const":{
+                        "governing_ids":["council:a", "council:b"],
+                        "schema":"fixture.v1"
+                    }
+                }
+            },
+            "additionalProperties":false
+        });
+        let mut projected = native.clone();
+
+        project_strict_responses_schema(&mut projected)?;
+
+        assert!(contains_compound_const(&native));
+        assert!(!contains_compound_const(&projected));
+        assert_eq!(projected["properties"]["empty"]["minItems"], 0);
+        assert_eq!(projected["properties"]["empty"]["maxItems"], 0);
+        assert_eq!(projected["properties"]["empty"]["items"]["type"], "string");
+        assert_eq!(projected["properties"]["ids"]["minItems"], 2);
+        assert_eq!(projected["properties"]["ids"]["maxItems"], 2);
+        assert_eq!(
+            projected["properties"]["ids"]["items"]["enum"],
+            serde_json::json!(["council:a", "council:b"])
+        );
+        assert_eq!(
+            projected["properties"]["manifest"]["additionalProperties"],
+            false
+        );
+        assert!(responses_schema_is_strict(&projected));
+
+        let reordered = serde_json::json!({
+            "empty":[],
+            "ids":["council:a", "council:a"],
+            "manifest":{
+                "governing_ids":["council:b", "council:a"],
+                "schema":"fixture.v1"
+            }
+        });
+        assert!(jsonschema::validator_for(&projected)?.is_valid(&reordered));
+        assert!(!jsonschema::validator_for(&native)?.is_valid(&reordered));
         Ok(())
     }
 
