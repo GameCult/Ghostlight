@@ -15,6 +15,11 @@ async fn main() -> anyhow::Result<()> {
     use ghostlight_dungeon::{
         compiler::DestinationCompilationFailure,
         domain::{TickSource, WorldCommand},
+        elaboration::{
+            ElaborationScheduler, ElaboratorTitle, ModelWorldElaborationWorker,
+            admit_world_elaboration_wave, dispatch_elaboration_wave, finalize_world_elaboration,
+            world_elaboration_wave_binding,
+        },
         kernel::{CommandResult, WorldKernel},
         model_runtime::ModelRuntimeSelection,
         persistence::CampaignStore,
@@ -154,6 +159,16 @@ async fn main() -> anyhow::Result<()> {
     {
         let compiler =
             strategic_world_compiler(model.clone(), description, &strategic_world_when());
+        let titled_profile = strategic_world_elaboration_profile();
+        let titled_invocation_budget = titled_profile
+            .controls
+            .iter()
+            .map(|control| u32::from(control.weight))
+            .sum::<u32>();
+        let titled_parallelism =
+            bounded_environment_usize("GHOSTLIGHT_WORLD_ELABORATION_PARALLELISM", 8, 1, 32)?;
+        let titled_eligible = ElaboratorTitle::ALL.into_iter().collect();
+        let mut titled_scheduler = ElaborationScheduler::new(&titled_profile)?;
         for (index, location_id) in initial_location_ids.iter().enumerate() {
             let location_name = campaign.locations[location_id].name.clone();
             std::fs::write(
@@ -252,11 +267,155 @@ async fn main() -> anyhow::Result<()> {
                 anyhow::bail!("strategic locality elaboration did not commit")
             };
             campaign = elaborated;
+            let titled_wave = world_elaboration_wave_binding(&campaign, location_id)?;
+            let titled_worker = Arc::new(ModelWorldElaborationWorker::new(
+                model.clone(),
+                Arc::new(campaign.clone()),
+                location_id.clone(),
+                format!(
+                    "{request}\nAfter the civic foundation, add independently authored texture, material pressure, ordinary life, political leverage, secrets, active instability, and numinous meaning without rewriting the admitted apparatus."
+                ),
+            )?);
+            let titled_run = match dispatch_elaboration_wave(
+                &mut titled_scheduler,
+                titled_wave,
+                &titled_eligible,
+                titled_invocation_budget,
+                titled_parallelism,
+                titled_worker,
+            )
+            .await
+            {
+                Ok(run) => run,
+                Err(failure) => {
+                    let receipts = failure
+                        .completed_invocations
+                        .iter()
+                        .flat_map(|invocation| invocation.model_stage_receipts.iter())
+                        .chain(
+                            failure
+                                .invocation_failures
+                                .iter()
+                                .flat_map(|failure| failure.model_stage_receipts.iter()),
+                        )
+                        .cloned()
+                        .collect::<Vec<_>>();
+                    if !receipts.is_empty() {
+                        store.persist_model_stage_receipts(&receipts)?;
+                    }
+                    let failure_path = root.join(format!(
+                        "titled-elaboration-{:02}-terminal-failure.json",
+                        index + 1
+                    ));
+                    std::fs::write(
+                        &failure_path,
+                        serde_json::to_vec_pretty(&serde_json::json!({
+                            "schema":"ghostlight.titled_elaboration_failure.v1",
+                            "location_id":location_id,
+                            "location_name":location_name,
+                            "request":request,
+                            "wave":failure.wave,
+                            "schedule":failure.schedule,
+                            "completed_invocations":failure.completed_invocations.iter().map(|invocation|serde_json::json!({
+                                "dispatch":invocation.dispatch,
+                                "proposal":invocation.proposal,
+                                "model_receipt_hashes":invocation.model_stage_receipts.iter().map(|receipt|receipt.storage_key()).collect::<Vec<_>>(),
+                            })).collect::<Vec<_>>(),
+                            "invocation_failures":failure.invocation_failures.iter().map(|failure|serde_json::json!({
+                                "dispatch":failure.dispatch,
+                                "diagnostic":failure.diagnostic,
+                                "model_receipt_hashes":failure.model_stage_receipts.iter().map(|receipt|receipt.storage_key()).collect::<Vec<_>>(),
+                            })).collect::<Vec<_>>(),
+                        }))?,
+                    )?;
+                    anyhow::bail!(
+                        "titled elaboration wave failed for {location_id}; exact receipt at {}",
+                        failure_path.display()
+                    );
+                }
+            };
+            let proposal_receipts = titled_run
+                .invocations()
+                .iter()
+                .flat_map(|invocation| invocation.model_stage_receipts.iter())
+                .cloned()
+                .collect::<Vec<_>>();
+            store.persist_model_stage_receipts(&proposal_receipts)?;
+            let admission = admit_world_elaboration_wave(&campaign, location_id, titled_run)?;
+            let titled_preview_path =
+                root.join(format!("titled-elaboration-{:02}-preview.json", index + 1));
+            std::fs::write(
+                &titled_preview_path,
+                serde_json::to_vec_pretty(&serde_json::json!({
+                    "schema":"ghostlight.titled_elaboration_preview.v1",
+                    "location_id":location_id,
+                    "location_name":location_name,
+                    "request":request,
+                    "wave":admission.wave(),
+                    "schedule":admission.schedule(),
+                    "accepted_operations":admission.accepted_operations(),
+                    "rejections":admission.rejections(),
+                    "candidate":admission.candidate(),
+                    "candidate_diagnostic":admission.candidate_diagnostic(),
+                    "model_receipt_hashes":admission.model_stage_receipts().iter().map(|receipt|receipt.storage_key()).collect::<Vec<_>>(),
+                }))?,
+            )?;
+            let candidate = admission.candidate().ok_or_else(|| {
+                anyhow::anyhow!(
+                    "titled elaboration produced no candidate: {}",
+                    admission.candidate_diagnostic().unwrap_or("no diagnostic")
+                )
+            })?;
+            if let Some(diagnostic) = admission.candidate_diagnostic() {
+                anyhow::bail!("titled elaboration candidate requires reconciliation: {diagnostic}");
+            }
+            let causal_receipt_ids = admission
+                .model_stage_receipts()
+                .iter()
+                .map(|receipt| receipt.storage_key().to_owned())
+                .collect::<Vec<_>>();
+            let verifier_receipt = match compiler
+                .verify_titled_locality_elaboration(
+                    &campaign,
+                    &request,
+                    description,
+                    candidate,
+                    &causal_receipt_ids,
+                )
+                .await
+            {
+                Ok(receipt) => receipt,
+                Err(error) => {
+                    if let Some(failure) = error.downcast_ref::<
+                        ghostlight_dungeon::compiler::CivicElaborationVerificationFailure,
+                    >() {
+                        store.persist_model_stage_receipts(&failure.model_receipts)?;
+                    }
+                    return Err(error);
+                }
+            };
+            store.persist_model_stage_receipts(std::slice::from_ref(&verifier_receipt))?;
+            let finalized =
+                finalize_world_elaboration(&campaign, admission, verifier_receipt.clone())?;
+            let CommandResult::Committed {
+                campaign: titled_elaborated,
+                ..
+            } = kernel
+                .commit_elaboration(finalized)
+                .await
+                .map_err(anyhow::Error::new)?
+            else {
+                anyhow::bail!("titled locality elaboration did not commit")
+            };
+            campaign = titled_elaborated;
             elaboration_reports.push(serde_json::json!({
                 "location_id":location_id,
                 "location_name":location_name,
                 "world_revision":campaign.revision,
                 "preview_path":preview_path,
+                "titled_preview_path":titled_preview_path,
+                "titled_model_receipts":proposal_receipts,
+                "titled_semantic_verifier_receipt":verifier_receipt,
                 "model_receipts":receipts,
             }));
         }
@@ -772,6 +931,30 @@ fn strategic_locality_request(location_name: &str, location_id: &str, pressure: 
         "Elaborate canonical locality {location_name:?} (ID {location_id}) as a politically inhabited jurisdiction. Crisis: {pressure}. Add exactly four non-overlapping resident population leaves and exactly six distinct institutions, never more. Invent authority, succession, revenue, redress, leverage, and opposed interests. Give every new subject a concrete public notice or report channel."
     );
     request.chars().take(500).collect()
+}
+
+fn strategic_world_elaboration_profile() -> ghostlight_dungeon::elaboration::WorldElaborationProfile
+{
+    use ghostlight_dungeon::elaboration::{
+        ElaboratorControl, ElaboratorTitle, WorldElaborationProfile,
+    };
+
+    WorldElaborationProfile {
+        schema: "ghostlight.world_elaboration_profile.v1".into(),
+        controls: ElaboratorTitle::ALL
+            .into_iter()
+            .map(|title| ElaboratorControl {
+                title,
+                // Patina's bounded child place requires an outward and return
+                // route. Every other title receives two operations per pass.
+                weight: if title == ElaboratorTitle::Patina {
+                    3
+                } else {
+                    2
+                },
+            })
+            .collect(),
+    }
 }
 
 fn admitted_public_channel(value: &str) -> anyhow::Result<String> {

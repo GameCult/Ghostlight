@@ -75,11 +75,7 @@ pub enum CommandResult {
 
 enum KernelInput {
     World(WorldCommand),
-    Elaboration {
-        finalized: crate::elaboration::FinalizedWorldElaboration,
-        evidence_receipts: Vec<VaultEvidenceReceipt>,
-        canon_candidates: Vec<CanonCandidate>,
-    },
+    Elaboration(crate::elaboration::FinalizedWorldElaboration),
     Mutation {
         authority: crate::transition::MutationAuthorityEnvelope,
         batch: crate::transition::WorldMutationBatch,
@@ -116,17 +112,9 @@ impl WorldKernel {
             while let Some(request) = rx.recv().await {
                 let result = match request.input {
                     KernelInput::World(command) => execute(&store, &mut assessments, command),
-                    KernelInput::Elaboration {
-                        finalized,
-                        evidence_receipts,
-                        canon_candidates,
-                    } => execute_finalized_elaboration(
-                        &store,
-                        &mut assessments,
-                        finalized,
-                        evidence_receipts,
-                        canon_candidates,
-                    ),
+                    KernelInput::Elaboration(finalized) => {
+                        execute_finalized_elaboration(&store, &mut assessments, finalized)
+                    }
                     KernelInput::Mutation { authority, batch } => {
                         execute_mutation_batch(&store, authority, batch)
                     }
@@ -171,17 +159,11 @@ impl WorldKernel {
     pub async fn commit_elaboration(
         &self,
         finalized: crate::elaboration::FinalizedWorldElaboration,
-        evidence_receipts: Vec<VaultEvidenceReceipt>,
-        canon_candidates: Vec<CanonCandidate>,
     ) -> Result<CommandResult, KernelError> {
         let (reply, receive) = oneshot::channel();
         self.tx
             .send(Request {
-                input: KernelInput::Elaboration {
-                    finalized,
-                    evidence_receipts,
-                    canon_candidates,
-                },
+                input: KernelInput::Elaboration(finalized),
                 reply,
             })
             .await
@@ -196,15 +178,13 @@ fn execute_finalized_elaboration(
     store: &CampaignStore,
     assessments: &mut BTreeMap<String, ActionAssessment>,
     finalized: crate::elaboration::FinalizedWorldElaboration,
-    evidence_receipts: Vec<VaultEvidenceReceipt>,
-    canon_candidates: Vec<CanonCandidate>,
 ) -> Result<CommandResult, KernelError> {
     let campaign_id = single_campaign_id(store)?;
     let (_, campaign): (_, Campaign) = store
         .load("campaign.v1", &campaign_id)
         .map_err(persist)?
         .ok_or(KernelError::NotFound)?;
-    let (expected_revision, elaboration, semantic_verifier_receipt) = finalized
+    let (expected_revision, elaboration, model_stage_receipts) = finalized
         .into_kernel_parts(&campaign)
         .map_err(|error| KernelError::Invalid(error.to_string()))?;
     execute(
@@ -213,9 +193,9 @@ fn execute_finalized_elaboration(
         WorldCommand::ElaborateLocality {
             expected_revision,
             elaboration,
-            evidence_receipts,
-            canon_candidates,
-            model_stage_receipts: vec![semantic_verifier_receipt],
+            evidence_receipts: Vec::new(),
+            canon_candidates: Vec::new(),
+            model_stage_receipts,
         },
     )
 }
@@ -4735,6 +4715,7 @@ pub(crate) mod tests {
     fn civic_verifier_receipt(
         campaign: &Campaign,
         expansion: &mut RegionExpansion,
+        source_receipt_ids: Vec<String>,
     ) -> crate::model::ModelStageReceipt {
         let digest = crate::compiler::civic_candidate_digest(expansion).unwrap();
         let mut receipt = crate::model::ModelStageReceipt {
@@ -4746,7 +4727,7 @@ pub(crate) mod tests {
             snapshot_binding: String::new(),
             request_hash: test_action_digest("civic-verifier-request"),
             output_hash: test_action_digest("civic-verifier-output"),
-            source_receipt_ids: vec![],
+            source_receipt_ids,
             latency_ms: 1,
             validation_result: "valid".into(),
             local_validation_error: None,
@@ -4881,17 +4862,67 @@ pub(crate) mod tests {
         async fn invoke(
             &self,
             invocation: crate::elaboration::ElaborationSubAgentInvocation,
-        ) -> anyhow::Result<crate::elaboration::WorldElaborationProposal> {
+        ) -> std::result::Result<
+            crate::elaboration::ElaborationSubAgentOutput<
+                crate::elaboration::WorldElaborationProposal,
+            >,
+            crate::elaboration::ElaborationSubAgentFailure,
+        > {
             let index = invocation.dispatch.title_dispatch_count as usize - 1;
             let operation = self
                 .operations
                 .get(&invocation.dispatch.title)
                 .and_then(|operations| operations.get(index))
                 .cloned()
-                .ok_or_else(|| anyhow::anyhow!("fixture elaborator received an extra dispatch"))?;
-            Ok(crate::elaboration::WorldElaborationProposal {
-                schema: "ghostlight.world_elaboration_proposal.v1".into(),
-                operation,
+                .ok_or_else(|| crate::elaboration::ElaborationSubAgentFailure {
+                    diagnostic: "fixture elaborator received an extra dispatch".into(),
+                    model_stage_receipts: Vec::new(),
+                })?;
+            let binding = crate::elaboration::world_elaboration_invocation_binding(
+                &invocation.wave,
+                &invocation.dispatch,
+            )
+            .map_err(|error| crate::elaboration::ElaborationSubAgentFailure {
+                diagnostic: error.to_string(),
+                model_stage_receipts: Vec::new(),
+            })?;
+            let mut model_receipt = crate::model::ModelStageReceipt {
+                schema: "ghostlight.persona_stage_receipt.v1".into(),
+                receipt_hash: String::new(),
+                provider: "fixture".into(),
+                model: "fixture-model".into(),
+                stage: format!(
+                    "world_elaboration_{}",
+                    invocation
+                        .dispatch
+                        .title
+                        .display_name()
+                        .to_ascii_lowercase()
+                ),
+                snapshot_binding: String::new(),
+                request_hash: test_action_digest(&format!(
+                    "elaboration-request:{}",
+                    invocation.dispatch.ordinal
+                )),
+                output_hash: test_action_digest(&format!(
+                    "elaboration-output:{}",
+                    invocation.dispatch.ordinal
+                )),
+                source_receipt_ids: Vec::new(),
+                latency_ms: 1,
+                validation_result: "valid".into(),
+                local_validation_error: None,
+                input_chars: 1,
+                output_chars: 1,
+                provider_attempts: Vec::new(),
+            };
+            model_receipt.rebind_snapshot(binding);
+            Ok(crate::elaboration::ElaborationSubAgentOutput {
+                proposal: crate::elaboration::WorldElaborationProposal {
+                    schema: "ghostlight.world_elaboration_proposal.v1".into(),
+                    operation,
+                },
+                model_stage_receipts: vec![model_receipt],
             })
         }
     }
@@ -7923,7 +7954,7 @@ pub(crate) mod tests {
         let seed = campaign();
         let original = seed.locations["room"].clone();
         let mut elaboration = civic_locality_elaboration();
-        let verifier_receipt = civic_verifier_receipt(&seed, &mut elaboration.expansion);
+        let verifier_receipt = civic_verifier_receipt(&seed, &mut elaboration.expansion, vec![]);
         kernel
             .command(WorldCommand::CreateCampaign {
                 campaign: seed,
@@ -8081,7 +8112,9 @@ pub(crate) mod tests {
         expected.expansion.locations[0]
             .persistent_features
             .push("A weathered bronze duck statue locals call Harold".into());
-        let run = dispatch_titled_operations(&seed, "room", titled_operations_for(&expected)).await;
+        let operations = titled_operations_for(&expected);
+        let expected_model_receipt_count = operations.len() + 1;
+        let run = dispatch_titled_operations(&seed, "room", operations).await;
         let admission = admit_world_elaboration_wave(&seed, "room", run).unwrap();
         assert!(admission.rejections().is_empty());
         assert_eq!(admission.candidate(), Some(&expected));
@@ -8095,8 +8128,18 @@ pub(crate) mod tests {
                     } if persistent_features.iter().any(|feature| feature.contains("Harold"))
                 )
         }));
+        let causal_receipt_ids = admission
+            .model_stage_receipts()
+            .iter()
+            .map(|receipt| receipt.storage_key().to_owned())
+            .collect::<Vec<_>>();
         let mut verifier_candidate = expected.expansion.clone();
-        let verifier_receipt = civic_verifier_receipt(&seed, &mut verifier_candidate);
+        let missing_ancestry = civic_verifier_receipt(&seed, &mut verifier_candidate, vec![]);
+        let error =
+            finalize_world_elaboration(&seed, admission.clone(), missing_ancestry).unwrap_err();
+        assert!(error.to_string().contains("ancestry"));
+        let verifier_receipt =
+            civic_verifier_receipt(&seed, &mut verifier_candidate, causal_receipt_ids);
         let finalized = finalize_world_elaboration(&seed, admission, verifier_receipt).unwrap();
         kernel
             .command(WorldCommand::CreateCampaign {
@@ -8107,10 +8150,7 @@ pub(crate) mod tests {
             .await
             .unwrap();
 
-        let result = kernel
-            .commit_elaboration(finalized, vec![], vec![])
-            .await
-            .unwrap();
+        let result = kernel.commit_elaboration(finalized).await.unwrap();
         let CommandResult::Committed { campaign, receipt } = result else {
             panic!("expected committed titled elaboration")
         };
@@ -8123,6 +8163,10 @@ pub(crate) mod tests {
                 .any(|feature| feature.contains("Harold"))
         );
         assert_eq!(store.keys("world_mutation_batch.v1").unwrap().len(), 1);
+        assert_eq!(
+            store.keys("persona_stage_receipt.v1").unwrap().len(),
+            expected_model_receipt_count
+        );
         let batch = store
             .load_all::<crate::transition::WorldMutationBatch>("world_mutation_batch.v1")
             .unwrap()
@@ -8152,8 +8196,14 @@ pub(crate) mod tests {
         let expected = civic_locality_elaboration();
         let run = dispatch_titled_operations(&seed, "room", titled_operations_for(&expected)).await;
         let admission = admit_world_elaboration_wave(&seed, "room", run).unwrap();
+        let causal_receipt_ids = admission
+            .model_stage_receipts()
+            .iter()
+            .map(|receipt| receipt.storage_key().to_owned())
+            .collect::<Vec<_>>();
         let mut verifier_candidate = expected.expansion.clone();
-        let verifier_receipt = civic_verifier_receipt(&seed, &mut verifier_candidate);
+        let verifier_receipt =
+            civic_verifier_receipt(&seed, &mut verifier_candidate, causal_receipt_ids);
         let finalized = finalize_world_elaboration(&seed, admission, verifier_receipt).unwrap();
         kernel
             .command(WorldCommand::CreateCampaign {
@@ -8171,10 +8221,7 @@ pub(crate) mod tests {
             .await
             .unwrap();
 
-        let error = kernel
-            .commit_elaboration(finalized, vec![], vec![])
-            .await
-            .unwrap_err();
+        let error = kernel.commit_elaboration(finalized).await.unwrap_err();
 
         assert!(error.to_string().contains("stale"));
         let stored = store

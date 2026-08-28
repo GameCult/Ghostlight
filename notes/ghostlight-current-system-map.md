@@ -1031,14 +1031,22 @@ blocked, that slot remains unused instead of increasing another title's
 frequency or creating catch-up debt. A bounded wave invokes the scheduled
 sub-agents in parallel. One typed wave binding names the immutable snapshot and
 is passed to every invocation and returned with every proposal. Successful
-proposals return in deterministic ordinal order. A failed wave returns the
-consumed schedule, every completed proposal, and the exact failed dispatches,
-so persisted fairness state cannot advance without an explanatory receipt.
+proposals return in deterministic ordinal order. Provider-backed titled workers
+use the generic `ModelAgent` harness to submit one assigned typed operation to a
+deterministic frozen-snapshot validator; local rejection returns as the next
+tool observation within a two-step semantic budget. Patina, Ledger, Hearth,
+Veil, and Ember use the fast model class; Charter and Tangle use balanced;
+Numen uses capable. The worker returns the complete action/tool receipt chain
+with its proposal. A failed wave returns the consumed schedule, every completed
+proposal, each failed dispatch, and all available worker receipts, so fairness
+state cannot advance without an explanatory receipt.
 Successful wave construction is opaque outside the dispatcher. The admission
 boundary rechecks requested and unused slots, per-title and total dispatch
 counts, eligible titles, ordinal windows, weights, requested shares, final
-scheduler state, and the exact invocation partition before dispatch order may
-decide a conflict.
+scheduler state, the exact invocation partition, and every supplied worker
+receipt's dispatch-specific snapshot binding before dispatch order may decide a
+conflict. Every successful invocation must carry a terminal accepted model
+receipt; generic receiptless scheduler fixtures cannot cross world admission.
 
 Those proposals are not canonical mutations. Each invocation may return one
 additive `WorldElaborationOperation`: place, route, branch-local fact,
@@ -1050,9 +1058,18 @@ prior dispatch ordinal. It merges accepted operations into one non-canonical
 `LocalityElaboration`; ordinary locality validation owns the resulting
 structural diagnostic.
 
+Titled operations cannot claim source-evidence receipt IDs or canon-candidate
+authority. Facts are branch-local or provisional; profiles and relations carry
+no source receipts. `WorldKernel::commit_elaboration` accepts only the opaque
+finalized elaboration capability, not caller-supplied evidence or canon
+candidates. Adding source-grounded elaboration later therefore requires an
+explicit typed binding rather than an unattached vector at the commit seam.
+
 A titled worker must leave the civic semantic-verifier receipt empty.
 `finalize_world_elaboration` binds the immutable admitted candidate to one
 independent verifier receipt that may accept or reject but cannot rewrite it.
+Its ancestry must equal the complete admitted worker-receipt set, without
+omissions, additions, or duplicates.
 Admission and finalization values are opaque, serialize-only capability
 receipts; callers cannot deserialize or reconstruct them as commit authority.
 `WorldKernel::commit_elaboration` consumes that final value, revalidates the
@@ -1061,10 +1078,23 @@ inside its mailbox, then uses the existing `ElaborateLocality` path. That shared
 path lowers the complete candidate into exact permitted `WorldMutation`
 operations, applies the closed reducer, projects the accepted result, and
 persists the aggregate campaign, authority, batch, and mutation receipt
-atomically. Titled workers never receive a `WorldCommand`, permit, mutation
-batch, store, or kernel write handle. The current proposal algebra is additive
+atomically together with every titled-worker and semantic-verifier model
+receipt. Titled workers never receive a `WorldCommand`, permit, mutation batch,
+store, or kernel write handle. The current proposal algebra is additive
 locality elaboration; replacement of existing canonical subjects remains
 outside this authority.
+
+The strategic acceptance runner exercises this path as a deliberate hybrid.
+The existing destination compiler first commits the complete civic foundation
+for one canonical locality. A second revision-bound titled wave then adds one
+Patina child place with exact reciprocal routes, preserves the next civic
+manifest version through Charter, and admits title-specific facts and a
+political relation before independent civic verification and a second kernel
+commit. The acceptance profile allocates three Patina calls and two calls to
+each other title per locality; a seventeen-slot pass therefore invokes workers
+in exact configured proportion under bounded parallelism. This proves the
+titled path against a real provider without claiming that the older civic
+foundation compiler has already been replaced by the swarm.
 
 Both destination paths synthesize the smallest compatible branch-local routes,
 geometry, people, supplies, procedures, capacity, responsibility, and doctrine

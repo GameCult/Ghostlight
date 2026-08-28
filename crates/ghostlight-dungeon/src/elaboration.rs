@@ -1,6 +1,6 @@
 use anyhow::{Result, anyhow};
 use async_trait::async_trait;
-use schemars::JsonSchema;
+use schemars::{JsonSchema, schema_for};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
@@ -256,7 +256,39 @@ pub struct ElaborationInvocation<Proposal> {
     /// cannot commit canonical world state; admission and conflict handling
     /// remain downstream owners.
     pub proposal: Proposal,
+    /// Exact model/tool ancestry for this proposal. These receipts are audit
+    /// evidence only; they never become source evidence or mutation authority.
+    pub model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
 }
+
+#[derive(Debug)]
+pub struct ElaborationSubAgentOutput<Proposal> {
+    pub proposal: Proposal,
+    pub model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
+}
+
+impl<Proposal> ElaborationSubAgentOutput<Proposal> {
+    pub fn deterministic(proposal: Proposal) -> Self {
+        Self {
+            proposal,
+            model_stage_receipts: Vec::new(),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ElaborationSubAgentFailure {
+    pub diagnostic: String,
+    pub model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
+}
+
+impl std::fmt::Display for ElaborationSubAgentFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(&self.diagnostic)
+    }
+}
+
+impl std::error::Error for ElaborationSubAgentFailure {}
 
 #[derive(Debug)]
 pub struct ElaborationWaveRun<Proposal> {
@@ -283,6 +315,7 @@ impl<Proposal> ElaborationWaveRun<Proposal> {
 pub struct ElaborationInvocationFailure {
     pub dispatch: Option<ElaborationDispatch>,
     pub diagnostic: String,
+    pub model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
 }
 
 #[derive(Debug)]
@@ -295,7 +328,10 @@ pub struct ElaborationWaveFailure<Proposal> {
 
 #[async_trait]
 pub trait ElaborationSubAgentPort<Proposal>: Send + Sync {
-    async fn invoke(&self, invocation: ElaborationSubAgentInvocation) -> Result<Proposal>;
+    async fn invoke(
+        &self,
+        invocation: ElaborationSubAgentInvocation,
+    ) -> std::result::Result<ElaborationSubAgentOutput<Proposal>, ElaborationSubAgentFailure>;
 }
 
 pub struct ElaborationScheduler {
@@ -450,6 +486,7 @@ where
             invocation_failures: vec![ElaborationInvocationFailure {
                 dispatch: None,
                 diagnostic: error.to_string(),
+                model_stage_receipts: Vec::new(),
             }],
         });
     }
@@ -461,6 +498,7 @@ where
             invocation_failures: vec![ElaborationInvocationFailure {
                 dispatch: None,
                 diagnostic: "elaboration wave parallelism must be greater than zero".into(),
+                model_stage_receipts: Vec::new(),
             }],
         });
     }
@@ -481,23 +519,26 @@ where
                     .map_err(|_| ElaborationInvocationFailure {
                         dispatch: Some(dispatch.clone()),
                         diagnostic: "elaboration invocation gate closed".into(),
+                        model_stage_receipts: Vec::new(),
                     })?;
             let request = ElaborationSubAgentInvocation {
                 wave: wave.clone(),
                 dispatch: dispatch.clone(),
             };
-            let proposal =
+            let output =
                 worker
                     .invoke(request)
                     .await
                     .map_err(|error| ElaborationInvocationFailure {
                         dispatch: Some(dispatch.clone()),
-                        diagnostic: error.to_string().chars().take(2_000).collect(),
+                        diagnostic: error.diagnostic.chars().take(2_000).collect(),
+                        model_stage_receipts: error.model_stage_receipts,
                     })?;
             Ok::<_, ElaborationInvocationFailure>(ElaborationInvocation {
                 wave,
                 dispatch,
-                proposal,
+                proposal: output.proposal,
+                model_stage_receipts: output.model_stage_receipts,
             })
         });
         task_dispatches.insert(task.id(), task_dispatch);
@@ -518,6 +559,7 @@ where
             Err(error) => invocation_failures.push(ElaborationInvocationFailure {
                 dispatch: task_dispatches.remove(&error.id()),
                 diagnostic: format!("elaboration sub-agent task failed: {error}"),
+                model_stage_receipts: Vec::new(),
             }),
         }
     }
@@ -542,6 +584,429 @@ where
         schedule,
         invocations,
     })
+}
+
+/// Provider-backed titled worker for one additive locality operation. The
+/// model chooses content through the generic agent harness; a deterministic
+/// tool checks the exact task assignment and frozen campaign namespace before
+/// returning a proposal to wave admission.
+pub struct ModelWorldElaborationWorker {
+    model: Arc<dyn crate::model::ModelPort>,
+    campaign: Arc<crate::domain::Campaign>,
+    target_location_id: String,
+    request: String,
+}
+
+impl ModelWorldElaborationWorker {
+    pub fn new(
+        model: Arc<dyn crate::model::ModelPort>,
+        campaign: Arc<crate::domain::Campaign>,
+        target_location_id: impl Into<String>,
+        request: impl Into<String>,
+    ) -> Result<Self> {
+        let target_location_id = target_location_id.into();
+        if !campaign.locations.contains_key(&target_location_id) {
+            return Err(anyhow!("world elaboration worker target is unknown"));
+        }
+        if !campaign.civic_systems.contains_key(&target_location_id) {
+            return Err(anyhow!(
+                "provider-backed titled elaboration currently requires an admitted civic foundation"
+            ));
+        }
+        Ok(Self {
+            model,
+            campaign,
+            target_location_id,
+            request: request.into(),
+        })
+    }
+
+    fn projection(&self) -> Result<String> {
+        let civic = &self.campaign.civic_systems[&self.target_location_id];
+        let subject_ids = civic
+            .governing_institution_ids
+            .iter()
+            .chain(civic.resident_population_ids.iter())
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        let projection = serde_json::json!({
+            "campaign_id":self.campaign.id,
+            "world_revision":self.campaign.revision,
+            "campaign_name":self.campaign.name,
+            "target_location":self.campaign.locations.get(&self.target_location_id),
+            "current_civic_system":civic,
+            "civic_institutions":subject_ids.iter().filter_map(|id|self.campaign.institutions.get(id)).collect::<Vec<_>>(),
+            "civic_populations":subject_ids.iter().filter_map(|id|self.campaign.gestalts.get(id)).collect::<Vec<_>>(),
+            "political_relations":civic.political_relation_ids.iter().filter_map(|id|self.campaign.agency_relations.get(id)).collect::<Vec<_>>(),
+            "public_facts":civic.public_authority_fact_ids.iter()
+                .chain(civic.public_selection_fact_ids.iter())
+                .chain(civic.public_resource_fact_ids.iter())
+                .chain(civic.public_redress_fact_ids.iter())
+                .filter_map(|id|self.campaign.facts.get(id)).collect::<Vec<_>>(),
+            "existing_fact_namespace":self.campaign.facts.values().map(|fact|serde_json::json!({
+                "id":fact.id,
+                "statement":fact.statement,
+            })).collect::<Vec<_>>(),
+            "request":self.request,
+        });
+        Ok(serde_json::to_string(&projection)?)
+    }
+}
+
+#[derive(Clone, Debug)]
+enum WorldElaborationAssignment {
+    PatinaPlace {
+        child_location_id: String,
+    },
+    PatinaOriginRoute {
+        child_location_id: String,
+        route_id: String,
+    },
+    PatinaReturnRoute {
+        child_location_id: String,
+        route_id: String,
+    },
+    PreserveCivicSystem {
+        system: crate::domain::CivicSystemManifest,
+    },
+    AddFact {
+        fact_id: String,
+    },
+    AddPoliticalRelation {
+        relation_id: String,
+        allowed_subject_ids: BTreeSet<String>,
+    },
+}
+
+impl WorldElaborationAssignment {
+    fn for_dispatch(
+        campaign: &crate::domain::Campaign,
+        target_location_id: &str,
+        dispatch: &ElaborationDispatch,
+    ) -> Result<Self> {
+        let title_count = dispatch.title_dispatch_count;
+        let title_name = dispatch.title.display_name().to_ascii_lowercase();
+        match dispatch.title {
+            ElaboratorTitle::Patina => {
+                let cycle = (title_count.saturating_sub(1) / 3).saturating_add(1);
+                let child_location_id = format!("elab:{target_location_id}:patina-place:{cycle}");
+                match title_count.saturating_sub(1) % 3 {
+                    0 => Ok(Self::PatinaPlace { child_location_id }),
+                    1 => Ok(Self::PatinaOriginRoute {
+                        child_location_id,
+                        route_id: format!("elab:{target_location_id}:patina-route:{cycle}:out"),
+                    }),
+                    _ => Ok(Self::PatinaReturnRoute {
+                        child_location_id,
+                        route_id: format!("elab:{target_location_id}:patina-route:{cycle}:back"),
+                    }),
+                }
+            }
+            ElaboratorTitle::Charter if title_count % 2 == 1 => {
+                let mut system = campaign
+                    .civic_systems
+                    .get(target_location_id)
+                    .cloned()
+                    .ok_or_else(|| anyhow!("Charter requires an admitted civic system"))?;
+                system.version = system.version.saturating_add(1);
+                system.semantic_verification_receipt_id.clear();
+                Ok(Self::PreserveCivicSystem { system })
+            }
+            ElaboratorTitle::Tangle if title_count % 2 == 1 => {
+                let civic = campaign
+                    .civic_systems
+                    .get(target_location_id)
+                    .ok_or_else(|| anyhow!("Tangle requires an admitted civic system"))?;
+                let allowed_subject_ids = civic
+                    .governing_institution_ids
+                    .iter()
+                    .chain(civic.resident_population_ids.iter())
+                    .cloned()
+                    .collect::<BTreeSet<_>>();
+                if allowed_subject_ids.len() < 2 {
+                    return Err(anyhow!("Tangle requires at least two exact civic subjects"));
+                }
+                Ok(Self::AddPoliticalRelation {
+                    relation_id: format!(
+                        "elab:{target_location_id}:{title_name}-relation:{title_count}"
+                    ),
+                    allowed_subject_ids,
+                })
+            }
+            _ => Ok(Self::AddFact {
+                fact_id: format!("elab:{target_location_id}:{title_name}-fact:{title_count}"),
+            }),
+        }
+    }
+
+    fn instruction(&self, target_location_id: &str) -> Result<String> {
+        let instruction = match self {
+            Self::PatinaPlace { child_location_id } => format!(
+                "Submit exactly one add_place operation. Its id must be {child_location_id:?}, container_id must be {target_location_id:?}, name must be concrete, and persistent_features must contain one or more durable visible local details. This is Patina's texture-bearing place; a later assigned operation supplies its routes."
+            ),
+            Self::PatinaOriginRoute {
+                child_location_id,
+                route_id,
+            } => format!(
+                "Submit exactly one add_route operation from {target_location_id:?}. route_id must be {route_id:?}; destination_id must be {child_location_id:?}; distance must be \"a short internal path\"; travel_minutes must be 3."
+            ),
+            Self::PatinaReturnRoute {
+                child_location_id,
+                route_id,
+            } => format!(
+                "Submit exactly one add_route operation from {child_location_id:?}. route_id must be {route_id:?}; destination_id must be {target_location_id:?}; distance must be \"a short internal path\"; travel_minutes must be 3."
+            ),
+            Self::PreserveCivicSystem { system } => format!(
+                "Submit exactly one set_civic_system operation containing this exact next-version manifest, byte-for-byte in meaning and with an empty semantic_verification_receipt_id: {}. Do not add or omit an ID; the independent verifier owns semantic acceptance.",
+                serde_json::to_string(system)?
+            ),
+            Self::AddFact { fact_id } => format!(
+                "Submit exactly one add_fact operation. The fact id must be {fact_id:?}; scope must be branch_local; evidence_receipt_ids must be empty; discoverable_at_location_ids must contain exactly {target_location_id:?}. Invent one concrete, consequential, title-appropriate statement that does not duplicate an existing fact."
+            ),
+            Self::AddPoliticalRelation {
+                relation_id,
+                allowed_subject_ids,
+            } => format!(
+                "Submit exactly one add_local_relation operation. Its id must be {relation_id:?}; both distinct endpoints must come from {}; kind must be alliance, rivalry, trade, communication, command, or coercion; strength must be 1 through 100; active must be true; evidence_receipt_ids must be empty.",
+                serde_json::to_string(allowed_subject_ids)?
+            ),
+        };
+        Ok(instruction)
+    }
+
+    fn validate(
+        &self,
+        campaign: &crate::domain::Campaign,
+        target_location_id: &str,
+        proposal: &WorldElaborationProposal,
+    ) -> Result<()> {
+        if proposal.schema != "ghostlight.world_elaboration_proposal.v1" {
+            return Err(anyhow!("world elaboration proposal schema is unsupported"));
+        }
+        operation_claims(&proposal.operation)?;
+        use WorldElaborationOperation::*;
+        match (self, &proposal.operation) {
+            (
+                Self::PatinaPlace { child_location_id },
+                AddPlace {
+                    id,
+                    name,
+                    container_id,
+                    persistent_features,
+                },
+            ) if id == child_location_id
+                && !name.trim().is_empty()
+                && container_id.as_deref() == Some(target_location_id)
+                && !persistent_features.is_empty() => {}
+            (
+                Self::PatinaOriginRoute {
+                    child_location_id,
+                    route_id: expected_route_id,
+                },
+                AddRoute {
+                    origin_location_id,
+                    route_id,
+                    route,
+                },
+            ) if origin_location_id == target_location_id
+                && route_id == expected_route_id
+                && route.destination_id == *child_location_id
+                && route.distance == "a short internal path"
+                && route.travel_minutes == 3 => {}
+            (
+                Self::PatinaReturnRoute {
+                    child_location_id,
+                    route_id: expected_route_id,
+                },
+                AddRoute {
+                    origin_location_id,
+                    route_id,
+                    route,
+                },
+            ) if origin_location_id == child_location_id
+                && route_id == expected_route_id
+                && route.destination_id == target_location_id
+                && route.distance == "a short internal path"
+                && route.travel_minutes == 3 => {}
+            (Self::PreserveCivicSystem { system }, SetCivicSystem { system: proposed })
+                if proposed == system => {}
+            (Self::AddFact { fact_id }, AddFact { fact })
+                if fact.id == *fact_id
+                    && fact.scope == crate::domain::FactScope::BranchLocal
+                    && fact.evidence_receipt_ids.is_empty()
+                    && fact.discoverable_at_location_ids
+                        == BTreeSet::from([target_location_id.to_owned()])
+                    && !fact.statement.trim().is_empty()
+                    && fact.statement.chars().count() <= 500
+                    && campaign
+                        .facts
+                        .values()
+                        .all(|existing| existing.statement != fact.statement) => {}
+            (
+                Self::AddPoliticalRelation {
+                    relation_id,
+                    allowed_subject_ids,
+                },
+                AddLocalRelation { relation },
+            ) if relation.id == *relation_id
+                && allowed_subject_ids.contains(&relation.from_subject_id)
+                && allowed_subject_ids.contains(&relation.to_subject_id)
+                && relation.from_subject_id != relation.to_subject_id
+                && matches!(
+                    relation.kind,
+                    crate::domain::AgencyRelationKind::Alliance
+                        | crate::domain::AgencyRelationKind::Rivalry
+                        | crate::domain::AgencyRelationKind::Trade
+                        | crate::domain::AgencyRelationKind::Communication
+                        | crate::domain::AgencyRelationKind::Command
+                        | crate::domain::AgencyRelationKind::Coercion
+                )
+                && relation.active
+                && (1..=100).contains(&relation.strength)
+                && relation.evidence_receipt_ids.is_empty() => {}
+            _ => {
+                return Err(anyhow!(
+                    "proposal does not satisfy the exact titled elaboration task assignment"
+                ));
+            }
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(deny_unknown_fields)]
+struct WorldElaborationAgentFinding {
+    diagnostic: String,
+}
+
+struct WorldElaborationAgentTool<'a> {
+    campaign: &'a crate::domain::Campaign,
+    target_location_id: &'a str,
+    assignment: &'a WorldElaborationAssignment,
+}
+
+#[async_trait]
+impl crate::agent::ModelAgentTool for WorldElaborationAgentTool<'_> {
+    type Action = WorldElaborationProposal;
+    type Output = WorldElaborationProposal;
+    type Finding = WorldElaborationAgentFinding;
+
+    async fn invoke(
+        &mut self,
+        action: Self::Action,
+        _context: &crate::agent::ModelAgentToolContext,
+    ) -> crate::agent::ModelAgentToolOutcome<Self::Output, Self::Finding> {
+        match self
+            .assignment
+            .validate(self.campaign, self.target_location_id, &action)
+        {
+            Ok(()) => crate::agent::ModelAgentToolOutcome::Accepted {
+                output: action,
+                receipts: Vec::new(),
+            },
+            Err(error) => crate::agent::ModelAgentToolOutcome::Rejected {
+                finding: WorldElaborationAgentFinding {
+                    diagnostic: error.to_string(),
+                },
+                receipts: Vec::new(),
+            },
+        }
+    }
+}
+
+#[async_trait]
+impl ElaborationSubAgentPort<WorldElaborationProposal> for ModelWorldElaborationWorker {
+    async fn invoke(
+        &self,
+        invocation: ElaborationSubAgentInvocation,
+    ) -> std::result::Result<
+        ElaborationSubAgentOutput<WorldElaborationProposal>,
+        ElaborationSubAgentFailure,
+    > {
+        let expected_wave =
+            world_elaboration_wave_binding(&self.campaign, &self.target_location_id).map_err(
+                |error| ElaborationSubAgentFailure {
+                    diagnostic: error.to_string(),
+                    model_stage_receipts: Vec::new(),
+                },
+            )?;
+        if invocation.wave != expected_wave {
+            return Err(ElaborationSubAgentFailure {
+                diagnostic:
+                    "world elaboration worker invocation does not match its frozen campaign".into(),
+                model_stage_receipts: Vec::new(),
+            });
+        }
+        let assignment = WorldElaborationAssignment::for_dispatch(
+            &self.campaign,
+            &self.target_location_id,
+            &invocation.dispatch,
+        )
+        .map_err(|error| ElaborationSubAgentFailure {
+            diagnostic: error.to_string(),
+            model_stage_receipts: Vec::new(),
+        })?;
+        let snapshot_binding =
+            world_elaboration_invocation_binding(&invocation.wave, &invocation.dispatch).map_err(
+                |error| ElaborationSubAgentFailure {
+                    diagnostic: error.to_string(),
+                    model_stage_receipts: Vec::new(),
+                },
+            )?;
+        let instructions = format!(
+            "You are {}, one titled elaborator in a parallel worldbuilding wave. {} Your authority is one proposal only. Use the typed submit tool to negotiate with the deterministic validator; never claim canonical state, invent evidence receipts, or alter another assignment. Preserve the frozen civic foundation and make your contribution specific enough that later events can use it.\n\nEXACT ASSIGNMENT:\n{}\n\nFROZEN PUBLIC WORLD PROJECTION:\n{}",
+            invocation.dispatch.title.display_name(),
+            invocation.dispatch.title.mandate(),
+            assignment
+                .instruction(&self.target_location_id)
+                .map_err(|error| ElaborationSubAgentFailure {
+                    diagnostic: error.to_string(),
+                    model_stage_receipts: Vec::new(),
+                })?,
+            self.projection()
+                .map_err(|error| ElaborationSubAgentFailure {
+                    diagnostic: error.to_string(),
+                    model_stage_receipts: Vec::new(),
+                })?,
+        );
+        let model = match invocation.dispatch.title {
+            ElaboratorTitle::Charter | ElaboratorTitle::Tangle => crate::model::MODEL_BALANCED,
+            ElaboratorTitle::Numen => crate::model::MODEL_CAPABLE,
+            _ => crate::model::MODEL_FAST,
+        };
+        let spec = crate::agent::ModelAgentSpec {
+            stage: elaborator_stage(invocation.dispatch.title),
+            model: model.into(),
+            snapshot_binding,
+            instructions,
+            action_schema: serde_json::to_value(schema_for!(WorldElaborationProposal)).map_err(
+                |error| ElaborationSubAgentFailure {
+                    diagnostic: error.to_string(),
+                    model_stage_receipts: Vec::new(),
+                },
+            )?,
+            source_receipt_ids: Vec::new(),
+            temperature: Some(0.4),
+            max_output_tokens: Some(1_800),
+            max_steps: 2,
+        };
+        let mut tool = WorldElaborationAgentTool {
+            campaign: &self.campaign,
+            target_location_id: &self.target_location_id,
+            assignment: &assignment,
+        };
+        match crate::agent::run_model_agent(self.model.as_ref(), &spec, &mut tool).await {
+            Ok(run) => Ok(ElaborationSubAgentOutput {
+                proposal: run.output,
+                model_stage_receipts: run.receipts,
+            }),
+            Err(error) => Err(ElaborationSubAgentFailure {
+                diagnostic: error.message,
+                model_stage_receipts: error.receipts,
+            }),
+        }
+    }
 }
 
 /// One additive world operation proposed by one titled elaborator. These are
@@ -628,6 +1093,7 @@ pub struct WorldElaborationAdmission {
     schedule: ElaborationScheduleReceipt,
     accepted_operations: Vec<AdmittedWorldElaborationOperation>,
     rejections: Vec<WorldElaborationRejection>,
+    model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
     candidate: Option<crate::domain::LocalityElaboration>,
     candidate_diagnostic: Option<String>,
     digest: String,
@@ -663,6 +1129,17 @@ pub fn world_elaboration_wave_binding(
     })
 }
 
+pub fn world_elaboration_invocation_binding(
+    wave: &ElaborationWaveBinding,
+    dispatch: &ElaborationDispatch,
+) -> Result<String> {
+    crate::legacy_transition::digest_serializable(&(
+        "ghostlight.world_elaboration_agent_snapshot.v1",
+        wave,
+        dispatch,
+    ))
+}
+
 /// Deterministically validates, conflict-selects, and merges every proposal in
 /// a successful wave. First writer in scheduler dispatch order owns a write
 /// claim; later colliding proposals are retained as exact rejections.
@@ -678,6 +1155,7 @@ pub fn admit_world_elaboration_wave(
         ));
     }
     validate_successful_wave_run(&run)?;
+    validate_invocation_model_receipts(&run)?;
     let mut invocations = run.invocations;
     invocations.sort_by_key(|invocation| invocation.dispatch.ordinal);
     if invocations
@@ -695,7 +1173,9 @@ pub fn admit_world_elaboration_wave(
     let mut claim_owners = BTreeMap::<String, u64>::new();
     let mut accepted_operations = Vec::new();
     let mut rejections = Vec::new();
+    let mut model_stage_receipts = Vec::new();
     for invocation in invocations {
+        model_stage_receipts.extend(invocation.model_stage_receipts);
         let proposal = invocation.proposal;
         let claims = if proposal.schema == "ghostlight.world_elaboration_proposal.v1" {
             operation_claims(&proposal.operation)
@@ -751,6 +1231,7 @@ pub fn admit_world_elaboration_wave(
         schedule: run.schedule,
         accepted_operations,
         rejections,
+        model_stage_receipts,
         candidate,
         candidate_diagnostic,
         digest: String::new(),
@@ -850,11 +1331,85 @@ fn validate_successful_wave_run<Proposal>(run: &ElaborationWaveRun<Proposal>) ->
     Ok(())
 }
 
+fn validate_invocation_model_receipts<Proposal>(run: &ElaborationWaveRun<Proposal>) -> Result<()> {
+    let mut receipt_ids = BTreeSet::new();
+    for invocation in &run.invocations {
+        if invocation.model_stage_receipts.is_empty() {
+            return Err(anyhow!(
+                "world elaboration invocation lacks model receipt custody"
+            ));
+        }
+        let expected_binding =
+            world_elaboration_invocation_binding(&invocation.wave, &invocation.dispatch)?;
+        let expected_stage = elaborator_stage(invocation.dispatch.title);
+        for receipt in &invocation.model_stage_receipts {
+            let mut rebound = receipt.clone();
+            rebound.rebind_snapshot(receipt.snapshot_binding.clone());
+            if receipt.schema != "ghostlight.persona_stage_receipt.v1"
+                || receipt.stage != expected_stage
+                || receipt.snapshot_binding != expected_binding
+                || !matches!(
+                    receipt.validation_result.as_str(),
+                    "valid" | "semantic_invalid"
+                )
+                || rebound.storage_key() != receipt.storage_key()
+                || !receipt_ids.insert(receipt.storage_key().to_owned())
+            {
+                return Err(anyhow!(
+                    "world elaboration model receipt provenance is invalid or duplicated"
+                ));
+            }
+        }
+        if invocation
+            .model_stage_receipts
+            .last()
+            .is_none_or(|receipt| {
+                receipt.validation_result != "valid" || receipt.local_validation_error.is_some()
+            })
+        {
+            return Err(anyhow!(
+                "world elaboration invocation lacks a terminal accepted model receipt"
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn elaborator_stage(title: ElaboratorTitle) -> String {
+    format!(
+        "world_elaboration_{}",
+        title.display_name().to_ascii_lowercase()
+    )
+}
+
+fn validate_semantic_verifier_ancestry(
+    admission: &WorldElaborationAdmission,
+    semantic_verifier_receipt: &crate::model::ModelStageReceipt,
+) -> Result<()> {
+    let expected = admission
+        .model_stage_receipts
+        .iter()
+        .map(|receipt| receipt.storage_key().to_owned())
+        .collect::<BTreeSet<_>>();
+    let actual = semantic_verifier_receipt
+        .source_receipt_ids
+        .iter()
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    if actual.len() != semantic_verifier_receipt.source_receipt_ids.len() || actual != expected {
+        return Err(anyhow!(
+            "world elaboration semantic verifier ancestry does not exactly cover admitted model receipts"
+        ));
+    }
+    Ok(())
+}
+
 pub fn finalize_world_elaboration(
     campaign: &crate::domain::Campaign,
     admission: WorldElaborationAdmission,
     semantic_verifier_receipt: crate::model::ModelStageReceipt,
 ) -> Result<FinalizedWorldElaboration> {
+    validate_semantic_verifier_ancestry(&admission, &semantic_verifier_receipt)?;
     let mut elaboration = admission.valid_candidate(campaign)?;
     elaboration
         .expansion
@@ -892,6 +1447,10 @@ impl WorldElaborationAdmission {
 
     pub fn rejections(&self) -> &[WorldElaborationRejection] {
         &self.rejections
+    }
+
+    pub fn model_stage_receipts(&self) -> &[crate::model::ModelStageReceipt] {
+        &self.model_stage_receipts
     }
 
     pub fn candidate(&self) -> Option<&crate::domain::LocalityElaboration> {
@@ -969,7 +1528,7 @@ impl FinalizedWorldElaboration {
     ) -> Result<(
         u64,
         crate::domain::LocalityElaboration,
-        crate::model::ModelStageReceipt,
+        Vec<crate::model::ModelStageReceipt>,
     )> {
         if self.schema != "ghostlight.finalized_world_elaboration.v1"
             || self.digest != finalized_world_elaboration_digest(&self)?
@@ -978,6 +1537,7 @@ impl FinalizedWorldElaboration {
                 "finalized world elaboration is malformed or tampered"
             ));
         }
+        validate_semantic_verifier_ancestry(&self.admission, &self.semantic_verifier_receipt)?;
         let mut elaboration = self.admission.valid_candidate(campaign)?;
         elaboration
             .expansion
@@ -990,10 +1550,12 @@ impl FinalizedWorldElaboration {
             &elaboration.expansion,
             std::slice::from_ref(&self.semantic_verifier_receipt),
         )?;
+        let mut model_stage_receipts = self.admission.model_stage_receipts.clone();
+        model_stage_receipts.push(self.semantic_verifier_receipt);
         Ok((
             self.admission.expected_revision,
             elaboration,
-            self.semantic_verifier_receipt,
+            model_stage_receipts,
         ))
     }
 }
@@ -1048,6 +1610,11 @@ fn operation_claims(operation: &WorldElaborationOperation) -> Result<Vec<String>
                     "titled elaborators cannot assert canon-baseline facts"
                 ));
             }
+            if !fact.evidence_receipt_ids.is_empty() {
+                return Err(anyhow!(
+                    "titled elaborators cannot attach source-evidence receipts"
+                ));
+            }
             Ok(vec![format!("fact:{}", fact.id)])
         }
         AddPopulation {
@@ -1057,6 +1624,7 @@ fn operation_claims(operation: &WorldElaborationOperation) -> Result<Vec<String>
             nonempty(&population.id, "population id")?;
             if profile.subject_id != population.id
                 || profile.subject_kind != crate::domain::AgencySubjectKind::Gestalt
+                || !profile.evidence_receipt_ids.is_empty()
             {
                 return Err(anyhow!(
                     "world elaboration population profile does not bind its population"
@@ -1074,6 +1642,7 @@ fn operation_claims(operation: &WorldElaborationOperation) -> Result<Vec<String>
             nonempty(&institution.id, "institution id")?;
             if profile.subject_id != institution.id
                 || profile.subject_kind != crate::domain::AgencySubjectKind::Institution
+                || !profile.evidence_receipt_ids.is_empty()
             {
                 return Err(anyhow!(
                     "world elaboration institution profile does not bind its institution"
@@ -1086,6 +1655,11 @@ fn operation_claims(operation: &WorldElaborationOperation) -> Result<Vec<String>
         }
         AddLocalRelation { relation } | AddMigrationRelation { relation } => {
             nonempty(&relation.id, "relation id")?;
+            if !relation.evidence_receipt_ids.is_empty() {
+                return Err(anyhow!(
+                    "titled elaborators cannot attach source-evidence receipts"
+                ));
+            }
             Ok(vec![format!("relation:{}", relation.id)])
         }
         SetCivicSystem { system } => {
@@ -1244,6 +1818,7 @@ fn world_elaboration_admission_digest(admission: &WorldElaborationAdmission) -> 
         &admission.schedule,
         &admission.accepted_operations,
         &admission.rejections,
+        &admission.model_stage_receipts,
         &admission.candidate,
         &admission.candidate_diagnostic,
     ))
@@ -1293,7 +1868,11 @@ mod tests {
 
     #[async_trait]
     impl ElaborationSubAgentPort<String> for CountingSubAgent {
-        async fn invoke(&self, invocation: ElaborationSubAgentInvocation) -> Result<String> {
+        async fn invoke(
+            &self,
+            invocation: ElaborationSubAgentInvocation,
+        ) -> std::result::Result<ElaborationSubAgentOutput<String>, ElaborationSubAgentFailure>
+        {
             use std::sync::atomic::Ordering;
             assert_eq!(invocation.wave, wave_binding());
             let dispatch = invocation.dispatch;
@@ -1307,7 +1886,10 @@ mod tests {
                 .entry(dispatch.title)
                 .or_default() += 1;
             self.active.fetch_sub(1, Ordering::SeqCst);
-            Ok(format!("proposal:{}", dispatch.ordinal))
+            Ok(ElaborationSubAgentOutput::deterministic(format!(
+                "proposal:{}",
+                dispatch.ordinal
+            )))
         }
     }
 
@@ -1315,14 +1897,24 @@ mod tests {
 
     #[async_trait]
     impl ElaborationSubAgentPort<String> for PartiallyFailingSubAgent {
-        async fn invoke(&self, invocation: ElaborationSubAgentInvocation) -> Result<String> {
+        async fn invoke(
+            &self,
+            invocation: ElaborationSubAgentInvocation,
+        ) -> std::result::Result<ElaborationSubAgentOutput<String>, ElaborationSubAgentFailure>
+        {
             if invocation.dispatch.ordinal == 3 {
-                return Err(anyhow!("fixture refusal"));
+                return Err(ElaborationSubAgentFailure {
+                    diagnostic: "fixture refusal".into(),
+                    model_stage_receipts: Vec::new(),
+                });
             }
             if invocation.dispatch.ordinal == 4 {
                 panic!("fixture panic");
             }
-            Ok(format!("proposal:{}", invocation.dispatch.ordinal))
+            Ok(ElaborationSubAgentOutput::deterministic(format!(
+                "proposal:{}",
+                invocation.dispatch.ordinal
+            )))
         }
     }
 
@@ -1527,5 +2119,132 @@ mod tests {
         assert!(catalog.iter().any(|entry| {
             entry.title == ElaboratorTitle::Patina && entry.mandate.contains("low-stakes texture")
         }));
+    }
+
+    #[test]
+    fn titled_operations_cannot_mint_source_evidence_authority() {
+        let operation = WorldElaborationOperation::AddFact {
+            fact: crate::domain::WorldFact {
+                id: "branch-fact".into(),
+                statement: "The gate duck is called Harold.".into(),
+                scope: crate::domain::FactScope::BranchLocal,
+                evidence_receipt_ids: vec!["invented-receipt".into()],
+                discoverable_at_location_ids: BTreeSet::from(["room".into()]),
+            },
+        };
+
+        let error = operation_claims(&operation).unwrap_err();
+
+        assert!(error.to_string().contains("cannot attach source-evidence"));
+    }
+
+    struct PanicIfInvokedModel;
+
+    struct ReceiptlessWorldWorker;
+
+    #[async_trait]
+    impl ElaborationSubAgentPort<WorldElaborationProposal> for ReceiptlessWorldWorker {
+        async fn invoke(
+            &self,
+            _invocation: ElaborationSubAgentInvocation,
+        ) -> std::result::Result<
+            ElaborationSubAgentOutput<WorldElaborationProposal>,
+            ElaborationSubAgentFailure,
+        > {
+            Ok(ElaborationSubAgentOutput::deterministic(
+                WorldElaborationProposal {
+                    schema: "ghostlight.world_elaboration_proposal.v1".into(),
+                    operation: WorldElaborationOperation::AddFact {
+                        fact: crate::domain::WorldFact {
+                            id: "receiptless-fact".into(),
+                            statement: "This proposal has no provider custody.".into(),
+                            scope: crate::domain::FactScope::BranchLocal,
+                            evidence_receipt_ids: vec![],
+                            discoverable_at_location_ids: BTreeSet::from(["room".into()]),
+                        },
+                    },
+                },
+            ))
+        }
+    }
+
+    #[async_trait]
+    impl crate::model::ModelPort for PanicIfInvokedModel {
+        async fn run(&self, _request: &crate::model::ModelStageRequest) -> Result<String> {
+            panic!("stale world worker reached the model")
+        }
+
+        fn provider(&self) -> &'static str {
+            "panic-fixture"
+        }
+    }
+
+    #[tokio::test]
+    async fn provider_worker_rejects_a_wave_from_a_newer_world_before_model_inference() {
+        let mut frozen = crate::kernel::tests::campaign();
+        frozen.civic_systems.insert(
+            "room".into(),
+            crate::domain::CivicSystemManifest {
+                schema: "ghostlight.civic_system_manifest.v1".into(),
+                version: 0,
+                jurisdiction_location_id: "room".into(),
+                governing_institution_ids: BTreeSet::new(),
+                resident_population_ids: BTreeSet::new(),
+                public_authority_fact_ids: BTreeSet::new(),
+                public_selection_fact_ids: BTreeSet::new(),
+                public_resource_fact_ids: BTreeSet::new(),
+                public_redress_fact_ids: BTreeSet::new(),
+                political_relation_ids: BTreeSet::new(),
+                semantic_verification_receipt_id: String::new(),
+            },
+        );
+        let worker = ModelWorldElaborationWorker::new(
+            Arc::new(PanicIfInvokedModel),
+            Arc::new(frozen.clone()),
+            "room",
+            "add texture",
+        )
+        .unwrap();
+        let mut current = frozen;
+        current.revision = 1;
+        let invocation = ElaborationSubAgentInvocation {
+            wave: world_elaboration_wave_binding(&current, "room").unwrap(),
+            dispatch: ElaborationDispatch {
+                schema: "ghostlight.elaboration_dispatch.v1".into(),
+                budget_ordinal: 1,
+                ordinal: 1,
+                title: ElaboratorTitle::Patina,
+                title_weight: 1,
+                total_enabled_weight: 1,
+                requested_share_millionths: 1_000_000,
+                title_dispatch_count: 1,
+            },
+        };
+
+        let error = worker.invoke(invocation).await.unwrap_err();
+
+        assert!(error.diagnostic.contains("frozen campaign"));
+        assert!(error.model_stage_receipts.is_empty());
+    }
+
+    #[tokio::test]
+    async fn world_admission_rejects_a_successful_receiptless_agent_proposal() {
+        let campaign = crate::kernel::tests::campaign();
+        let mut scheduler =
+            ElaborationScheduler::new(&profile(&[(ElaboratorTitle::Patina, 1)])).unwrap();
+        let run = dispatch_elaboration_wave(
+            &mut scheduler,
+            world_elaboration_wave_binding(&campaign, "room").unwrap(),
+            &BTreeSet::from([ElaboratorTitle::Patina]),
+            1,
+            1,
+            Arc::new(ReceiptlessWorldWorker),
+        )
+        .await
+        .unwrap();
+
+        let error = admit_world_elaboration_wave(&campaign, "room", run).unwrap_err();
+
+        assert!(error.to_string().contains("lacks model receipt custody"));
     }
 }

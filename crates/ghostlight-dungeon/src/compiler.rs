@@ -129,6 +129,20 @@ impl std::fmt::Display for DestinationCompilationFailure {
 
 impl std::error::Error for DestinationCompilationFailure {}
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct CivicElaborationVerificationFailure {
+    pub message: String,
+    pub model_receipts: Vec<ModelStageReceipt>,
+}
+
+impl std::fmt::Display for CivicElaborationVerificationFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(&self.message)
+    }
+}
+
+impl std::error::Error for CivicElaborationVerificationFailure {}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 struct OpeningSet {
     openings: Vec<OpeningSuggestion>,
@@ -1990,24 +2004,7 @@ impl WorldCompiler {
                 })
             })
             .collect::<Vec<_>>();
-        let current_civic_context = campaign
-            .civic_systems
-            .get(expansion_origin_location_id)
-            .map(|system| {
-                serde_json::json!({
-                    "manifest":system,
-                    "institutions":system.governing_institution_ids.iter().filter_map(|id|campaign.institutions.get(id)).collect::<Vec<_>>(),
-                    "institution_profiles":system.governing_institution_ids.iter().filter_map(|id|campaign.agency_profiles.get(id)).collect::<Vec<_>>(),
-                    "residents":system.resident_population_ids.iter().filter_map(|id|campaign.gestalts.get(id)).collect::<Vec<_>>(),
-                    "resident_profiles":system.resident_population_ids.iter().filter_map(|id|campaign.agency_profiles.get(id)).collect::<Vec<_>>(),
-                    "public_facts":system.public_authority_fact_ids.iter()
-                        .chain(system.public_selection_fact_ids.iter())
-                        .chain(system.public_resource_fact_ids.iter())
-                        .chain(system.public_redress_fact_ids.iter())
-                        .filter_map(|id|campaign.facts.get(id)).collect::<Vec<_>>(),
-                    "political_relations":system.political_relation_ids.iter().filter_map(|id|campaign.agency_relations.get(id)).collect::<Vec<_>>(),
-                })
-            });
+        let current_civic_context = civic_context(campaign, expansion_origin_location_id);
         let scope_instruction = if let Some(target_id) = existing_destination_id.as_deref() {
             format!(
                 "The primary destination already exists as exact canonical location {target_id}. Elaborate it in place. Never emit that location again, rename it, replace it, or alter its existing routes or container. Every new location must be a bounded child whose containment chain reaches {target_id}; origin_routes are new local routes owned by {target_id}."
@@ -2186,7 +2183,6 @@ impl WorldCompiler {
                                 destination_request,
                                 &destination_evidence,
                                 &current_civic_context,
-                                &seed,
                                 expansion_candidate,
                                 &snapshot,
                                 &verification_sources,
@@ -2989,7 +2985,6 @@ impl WorldCompiler {
         destination_request: &str,
         evidence: &str,
         current_civic_context: &Option<serde_json::Value>,
-        seed: &CompiledExpansionSeed,
         expansion: &mut crate::domain::RegionExpansion,
         snapshot: &str,
         sources: &[String],
@@ -3001,12 +2996,12 @@ impl WorldCompiler {
         let candidate = match serde_json::to_string(&serde_json::json!({
             "previous_civic_apparatus":current_civic_context,
             "civic_system":civic_system,
-            "new_facts":&seed.facts,
-            "new_institutions":&seed.institutions,
-            "new_local_relations":&seed.local_relations,
-            "new_resident_populations":seed.populations.iter().map(|population| serde_json::json!({
+            "new_facts":&expansion.facts,
+            "new_institutions":&expansion.institutions,
+            "new_local_relations":&expansion.local_relations,
+            "new_resident_populations":expansion.populations.iter().map(|population| serde_json::json!({
                 "id":population.id,
-                "shared_fact_ids":population.shared_fact_ids,
+                "shared_knowledge":population.shared_knowledge,
             })).collect::<Vec<_>>(),
         })) {
             Ok(candidate) => candidate,
@@ -3096,6 +3091,58 @@ impl WorldCompiler {
             .semantic_verification_receipt_id = receipt.storage_key().to_owned();
         CivicSystemVerificationOutcome::Accepted {
             receipts: vec![receipt],
+        }
+    }
+
+    /// Independently verifies a complete titled-elaboration candidate without
+    /// granting the verifier any rewrite authority. The returned receipt is
+    /// rebound to the exact compiler candidate and can be consumed only by the
+    /// deterministic finalization boundary.
+    pub async fn verify_titled_locality_elaboration(
+        &self,
+        campaign: &Campaign,
+        destination_request: &str,
+        evidence: &str,
+        elaboration: &LocalityElaboration,
+        causal_source_receipt_ids: &[String],
+    ) -> Result<ModelStageReceipt> {
+        validate_locality_elaboration(campaign, elaboration)?;
+        let mut expansion = elaboration.expansion.clone();
+        let current_civic_context = civic_context(campaign, &elaboration.target_location_id);
+        let snapshot = format!(
+            "campaign:{}:revision:{}:titled-elaboration-verification",
+            campaign.id, campaign.revision
+        );
+        match self
+            .verify_destination_civic_system(
+                campaign,
+                destination_request,
+                evidence,
+                &current_civic_context,
+                &mut expansion,
+                &snapshot,
+                causal_source_receipt_ids,
+            )
+            .await
+        {
+            CivicSystemVerificationOutcome::Accepted { mut receipts } => receipts
+                .pop()
+                .ok_or_else(|| anyhow!("civic verifier accepted without a receipt")),
+            CivicSystemVerificationOutcome::Rejected { verdict, receipts } => {
+                Err(anyhow::Error::new(CivicElaborationVerificationFailure {
+                    message: format!(
+                        "titled elaboration civic verifier rejected the candidate: {}",
+                        verdict.rationale.trim()
+                    ),
+                    model_receipts: receipts,
+                }))
+            }
+            CivicSystemVerificationOutcome::Failed { message, receipts } => {
+                Err(anyhow::Error::new(CivicElaborationVerificationFailure {
+                    message,
+                    model_receipts: receipts,
+                }))
+            }
         }
     }
 
@@ -3205,7 +3252,6 @@ impl ModelAgentTool for DestinationReconciliationAgentTool<'_> {
                 self.destination_request,
                 self.evidence,
                 self.current_civic_context,
-                &corrected,
                 &mut expansion,
                 self.snapshot,
                 &context.source_receipt_ids,
@@ -4634,6 +4680,24 @@ fn normalized_contains(document: &str, excerpt: &str) -> bool {
     let document = document.split_whitespace().collect::<Vec<_>>().join(" ");
     let excerpt = excerpt.split_whitespace().collect::<Vec<_>>().join(" ");
     !excerpt.is_empty() && document.contains(&excerpt)
+}
+
+fn civic_context(campaign: &Campaign, location_id: &str) -> Option<serde_json::Value> {
+    campaign.civic_systems.get(location_id).map(|system| {
+        serde_json::json!({
+            "manifest":system,
+            "institutions":system.governing_institution_ids.iter().filter_map(|id|campaign.institutions.get(id)).collect::<Vec<_>>(),
+            "institution_profiles":system.governing_institution_ids.iter().filter_map(|id|campaign.agency_profiles.get(id)).collect::<Vec<_>>(),
+            "residents":system.resident_population_ids.iter().filter_map(|id|campaign.gestalts.get(id)).collect::<Vec<_>>(),
+            "resident_profiles":system.resident_population_ids.iter().filter_map(|id|campaign.agency_profiles.get(id)).collect::<Vec<_>>(),
+            "public_facts":system.public_authority_fact_ids.iter()
+                .chain(system.public_selection_fact_ids.iter())
+                .chain(system.public_resource_fact_ids.iter())
+                .chain(system.public_redress_fact_ids.iter())
+                .filter_map(|id|campaign.facts.get(id)).collect::<Vec<_>>(),
+            "political_relations":system.political_relation_ids.iter().filter_map(|id|campaign.agency_relations.get(id)).collect::<Vec<_>>(),
+        })
+    })
 }
 
 pub(crate) fn civic_candidate_digest(expansion: &crate::domain::RegionExpansion) -> Result<String> {
