@@ -675,15 +675,29 @@ the semantic verifier must cite exactly the admitted worker-receipt set. Titled
 operations cannot mint source-evidence authority. The runner takes custody of
 worker receipts once before admission and of the verifier receipt immediately
 after inference. The algebra currently elaborates additive locality state only;
-it does not replace existing canonical subjects. All 425 library tests pass.
+  it does not replace existing canonical subjects. All 426 library tests pass.
 The exact end-to-end regression commits Patina's weathered bronze duck statue,
 locally called Harold, through a real parallel dispatch and the persisted exact
 mutation batch. A bounded Modeling/Soul audit of the provider-backed path found
 no remaining P1 or P2 issue.
-Provider run 23 remains stopped and no new newspaper acceptance is claimed.
+Provider run 23 remains stopped. Exact-source run 24 used executable
+`0654ba90702be4de128cfa01a3f064737ec35244` in a new isolated root and failed
+before its first titled wave. The old civic-foundation reconciliation agent
+exhausted four steps because the verifier demanded `shared_fact_ids` while its
+candidate projection exposed only canonical `shared_knowledge` statements.
+The unchanged failed root is archived at
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-0654ba9-24.tar`,
+independently matching SHA-256
+`8ED0A978C3A4088C6E6B26C7F9FF4C648799123983DF1DAF686692D76A086084`.
+No strategic wave or newspaper was produced.
 
-Executable source `0654ba90702be4de128cfa01a3f064737ec35244` is pushed and is
-the exact body for the next acceptance build. The current `gamecult-ops` owner at commit
+Pushed executable source `5f559a6e67bf601f3ab2dabc88b40379c23db954`
+repairs that projection seam. Reconciliation still owns compiled resident fact
+IDs; lowering still owns canonical statement knowledge; the verifier now
+receives an exact derived ID view from the admitted fact namespace and cannot
+mistake storage shape for a repairable omission. A bounded Modeling/Soul audit
+found no remaining P1 or P2 issue. This commit is the exact body for the next
+acceptance build. The current `gamecult-ops` owner at commit
 `d59a23837e58ff74a352db4e3223ff5e1abe026b` records the connector release and
 three-model Ghostlight allowlist above. Recheck service state, loopback `4103`,
 the deployment receipt, and caller admission on Yggdrasil immediately before
@@ -692,7 +706,7 @@ dispatch; the ops ledger is not a substitute for a live health witness.
 1. Preflight Yggdrasil's independently owned Codex Connector service, loopback
    listener, exact deployment receipt, and Ghostlight caller model admission;
    then dispatch executable source
-   `0654ba90702be4de128cfa01a3f064737ec35244` through Codex Connector in a fresh
+   `5f559a6e67bf601f3ab2dabc88b40379c23db954` through Codex Connector in a fresh
    four-foundation/four-titled-elaboration/six-wave provider root. If it
    completes, preserve and
    verify the immutable artifact manifest without mutating the live daemon or
