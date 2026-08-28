@@ -5347,7 +5347,7 @@ pub fn validate_region_expansion(
         if !known(&civic.jurisdiction_location_id) {
             closure_failures.push("jurisdiction_location_id must name a known location".into());
         }
-        if allowed_institution_ids.len() < 2 {
+        if civic.governing_institution_ids.len() < 2 {
             closure_failures.push("candidate needs at least two governing institutions".into());
         }
         if expected_resident_ids.is_empty() {
@@ -7589,7 +7589,10 @@ mod tests {
                         serde_json::json!({
                             "schema":"ghostlight.civic_system_manifest.v1",
                             "jurisdiction_location_id":"refuge",
-                            "governing_institution_ids":["refuge-duty-council"],
+                            "governing_institution_ids":[
+                                "refuge-duty-council",
+                                "refuge-stores-office"
+                            ],
                             "resident_population_ids":["refuge-wardens"],
                             "public_authority_fact_ids":["fact:refuge_authority"],
                             "public_selection_fact_ids":["fact:refuge_selection"],
@@ -10879,6 +10882,50 @@ mod tests {
         assert!(error.contains("public_resource_fact_ids must not be empty"));
         assert!(error.contains("public_redress_fact_ids must not be empty"));
         assert!(error.contains("political_relation_ids must not be empty"));
+    }
+
+    #[test]
+    fn civic_closure_counts_declared_governors_not_available_institutions() {
+        let mut campaign = crate::resolution::tests::campaign(0, 1);
+        campaign.civic_systems.insert(
+            "center".into(),
+            CivicSystemManifest {
+                schema: "ghostlight.civic_system_manifest.v1".into(),
+                version: 0,
+                jurisdiction_location_id: "center".into(),
+                governing_institution_ids: BTreeSet::from([
+                    "first-council".into(),
+                    "second-council".into(),
+                ]),
+                resident_population_ids: BTreeSet::new(),
+                public_authority_fact_ids: BTreeSet::new(),
+                public_selection_fact_ids: BTreeSet::new(),
+                public_resource_fact_ids: BTreeSet::new(),
+                public_redress_fact_ids: BTreeSet::new(),
+                political_relation_ids: BTreeSet::new(),
+                semantic_verification_receipt_id: "receipt:previous".into(),
+            },
+        );
+        let mut expansion = valid_region_expansion();
+        expansion.civic_system = Some(CivicSystemManifest {
+            schema: "ghostlight.civic_system_manifest.v1".into(),
+            version: 1,
+            jurisdiction_location_id: "center".into(),
+            governing_institution_ids: BTreeSet::from(["first-council".into()]),
+            resident_population_ids: BTreeSet::new(),
+            public_authority_fact_ids: BTreeSet::new(),
+            public_selection_fact_ids: BTreeSet::new(),
+            public_resource_fact_ids: BTreeSet::new(),
+            public_redress_fact_ids: BTreeSet::new(),
+            political_relation_ids: BTreeSet::new(),
+            semantic_verification_receipt_id: String::new(),
+        });
+
+        let error = validate_region_expansion(&campaign, &expansion)
+            .unwrap_err()
+            .to_string();
+
+        assert!(error.contains("candidate needs at least two governing institutions"));
     }
 
     #[test]
