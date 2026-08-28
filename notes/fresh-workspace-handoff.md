@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-08-27
+Updated: 2026-08-28
 
 This is the compact re-entry packet. It records current authority, deployed
 truth, proof, and the next decision. Git history owns chronology; the system map
@@ -647,33 +647,42 @@ deterministic ordinal order. Every invocation and proposal carries an exact
 completed invocations, and exact failed dispatch for ordinary worker errors and
 task panic or cancellation; task-ID mapping preserves dispatch identity even
 when the task produces no normal payload.
-This is not yet an end-to-end elaboration path. World-domain proposal types,
-admission and conflict/merge ownership, and canonical WorldKernel integration
-remain unimplemented. Patina is therefore a real named control and schedulable
-title, but not a canonical writer. Provider run 23 remains stopped and no new
-newspaper acceptance is claimed.
+Pushed implementation commit `1c0058c` completes the local world-domain path.
+Titled workers emit a closed additive `WorldElaborationOperation` algebra;
+deterministic admission verifies the authentic frozen schedule before assigning
+first-dispatch write claims, reports exact later conflicts, and merges accepted
+operations into one compiler-owned locality candidate. An independent civic
+verifier may accept or reject that candidate but cannot rewrite it. Opaque,
+serialize-only admission and finalization capabilities prevent callers from
+fabricating a convenient schedule or canonical candidate. `WorldKernel` then
+revalidates and delegates through the existing `ElaborateLocality` lowering,
+mutation reducer, aggregate projection, and atomic CultCache persistence path.
+Titled workers never receive a world command, permit, mutation batch, store, or
+kernel handle. The algebra currently elaborates additive locality state only;
+it does not replace existing canonical subjects. All 422 library tests pass.
+The exact end-to-end regression commits Patina's weathered bronze duck statue,
+locally called Harold, through a real parallel dispatch and the persisted exact
+mutation batch. A bounded Modeling/Soul audit found no remaining P1 or P2 issue
+after successful run construction and admission capabilities were made opaque.
+Provider run 23 remains stopped and no new newspaper acceptance is claimed.
 
-1. Map and implement the missing world-domain elaboration proposal,
-   deterministic admission/conflict/merge boundary, and canonical WorldKernel
-   integration without granting any titled worker commit authority.
-2. Keep provider run 23 stopped until that domain path is verified. Then dispatch
-   the resulting exact source on Yggdrasil through Codex Connector for
+1. Dispatch the resulting exact source on Yggdrasil through Codex Connector for
    a fresh four-elaboration/six-wave provider run. If it completes, preserve and
    verify the immutable artifact manifest without mutating the live daemon or
    any prior run root.
-3. Only after all six waves commit and an immutable manifest exists, dispatch a
+2. Only after all six waves commit and an immutable manifest exists, dispatch a
    fresh blind reviewer with only the strongest unedited page and a neutral
    editorial brief, then independently audit it against committed public events.
-4. Have the game-side adapter lower its authored hierarchy into the published
+3. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-5. Prove one consumer-owned effect crosses that public API, changes two foreign
+4. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-6. Measure provider cost and continuity on the existing 200-cell authored-world
+5. Measure provider cost and continuity on the existing 200-cell authored-world
    path without coupling wave width to the provider concurrency ceiling.
-7. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+6. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-8. Keep `gamecult-ops` synchronized with every executable deployment and model
+7. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,
