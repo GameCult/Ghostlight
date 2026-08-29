@@ -1323,33 +1323,44 @@ Independent blind editorial review fails. The lead and other stories remain
 administrative, lived stakes are abstract, no named accountable Greathold
 opposition appears, severed hands are buried without court responses or
 suspects, and the seed-vault story repeats procedure. The admitted editorial
-agenda is materially sharper than the rendered copy. World simulation, ledger
-access, and lead selection are therefore not the active blocker; the live
-hypothesis is missing editorial-quality acceptance and feedback between agenda
-and publication.
+agenda is materially sharper than the rendered copy. That was the Run 57
+implementation diagnosis; it is preserved as provenance, not as a current
+publication veto or next action.
 
-The completed local worktree owns `canopy-ledger-night-editor.v8` and is
-verified but not yet committed or provider-proven. The copy desk emits one
-`WorldNewspaperCopyDeskReport` containing its assessment and complete
-consequential query set; it is not an accept/reject loop. That query set is
-mandatory input to one single-step Night close. The Night Editor must
-disposition every query and rewrite every queried article, and may also polish
-any unqueried article before deadline. The deterministic press boundary freezes
-selection, order, sections, bylines, citations, agenda, source bounds, and
-exact lineage, then persists one `WorldNewspaperPressClose` witness binding
-source page, printed page, copy receipt, Night receipt, addressed queries, and
-changed articles. No model rereads or grades the closed page.
+Pushed exact commit `161ff2f19021249563e192cce9e6f76f00429d48` owns
+provider-proven `canopy-ledger-night-editor.v8`. The copy desk emits one
+assessment plus complete consequential query set. One single-step Night Editor
+action must disposition every query and rewrite every queried article, may
+polish unqueried articles, and freezes selection, order, sections, bylines,
+citations, and agenda. One deterministic `WorldNewspaperPressClose` witness
+binds source and printed pages, both model receipts, addressed queries, changed
+articles, source bounds, and exact lineage; no model rereads or grades the
+closed page. Gates pass 20/20 newsroom tests, 475/475 library tests, and 16/16
+strategic-smoke tests. Durable publication-memory corrections remain
+unimplemented.
 
-Legacy v7 copy-desk checkpoints, including the Run 58 lineage, can import into
-one v8 close checkpoint and invoke only the Night close without replaying
-selection, writer, copy desk, world, or waves. Tests prove that import and the
-strategic recomposition contract binds copy report plus press witness with no
-post-close verdict. Registry fixtures use the same one-report/one-close flow.
-Gates pass 20/20 newsroom tests, 475/475 library tests, and 16/16
-strategic-smoke tests. Pushed v7 commit
-`f8bf73d8c4b2585a6f1757d0624fab0ea721915e` remains provenance. Durable
-publication-memory corrections are not implemented by v8 and must not be
-inferred from press immutability.
+Run 59 is printed at exact source
+`161ff2f19021249563e192cce9e6f76f00429d48` from immutable Run 58 at world
+revision 27 with no selection, writer, copy-desk, world, or wave replay. Its
+acceptance witness binds one copy report with five queries, one Night Editor
+close, `night_editor_action_applied=true`, three changed articles, and unchanged
+live-service PID/invocation identities. SHA-256: newspaper
+`ee2ce08ceb627d433ac2d4ff7e1ebecb1437bf28b1399d23bfb3d5b066c8ab27`;
+audit `b210d50d4ef1a350315d528f6d37e1e7b618926346713f737c4169c49df26b49`;
+immutable local archive
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-161ff2f-59.tar`
+`ecb4db41e9a40ee4db8b0f83dce42d74e40f940e5930b1d3c1ced227dfec76b3`.
+A finalizer verifier incorrectly expected a schema field on the
+assessment-plus-queries report; finalization resumed without another model
+call. The edition satisfies the press and delivery boundary.
+
+Post-press editorial diagnostics find strong child-seizure reporting and raw
+scandal, but also institutional paste, thin lived/public reaction, repetition,
+an HTML entity, and lowercase `sella`. Post-press grounding diagnostics identify
+two later correction candidates only: line 47 over-scopes “maintained without
+disturbing” from cordon and warnings to barriers and path; line 19 changes
+historical stalled lifts into “remains stalled.” These findings do not reopen
+the printed edition or block delivery.
 
 Run 54 exposed one separate upstream publicity defect: a public strategic
 activity propagates its channel to private `MemberMemory` outcomes, which is
@@ -1358,20 +1369,14 @@ ignore that bookkeeping, but revision 27 remains immutable. Future kernel work
 must require an outcome's own observable or communicated public scope before
 materializing a `NewsIssue`.
 
-1. Commit the exact verified v8 worktree and push the resulting commit.
-2. Inspect Yggdrasil, the exact live-service identities, and the existing Run
-   58 root before mutation. Preserve that root, create a new immutable resume
-   root from its legacy v7 copy checkpoint, and run exactly one v8 Night close
-   with the complete copy-desk query set as mandatory input.
-3. Replay no selection, writer, copy desk, world, or wave work. Require the
-   deterministic press witness and exact artifact, manifest, provenance, and
-   service-isolation evidence; that completes and permits delivery of the
-   edition. External blind editorial and grounding reviews may identify
-   later-correction work but cannot block delivery or reopen the edition.
-4. Keep later corrections as pending publication-memory work.
-5. Defer multiple publication Personas, TeX layout, and engraved cuts until the
-   single Canopy Ledger passes.
-6. Per-wave issues may use daily-like reporting windows, while a final
+1. Deliver the actual immutable Run 59 copy and its press/artifact proof. Do not
+   rerun, rewrite, or withhold the edition.
+2. Preserve the two grounding corrections and editorial diagnostics above as
+   later publication debt. After delivery, move to the publication-Persona and
+   correction-memory owner.
+3. Defer multiple publication Personas, TeX layout, and engraved cuts until
+   separately authorized after Run 59 delivery.
+4. Per-wave issues may use daily-like reporting windows, while a final
    composition may be an equally current weekly-style issue with a broader
    window. Both are selective journalism; broad fact availability increases
    editorial freedom and does not license recap voice.
