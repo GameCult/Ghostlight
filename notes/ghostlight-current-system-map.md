@@ -1344,22 +1344,28 @@ The newsroom narrative-selection boundary has this authority map:
   only world-event authority.
 - **Inputs:** exact immutable newsroom desk, publication title and voice,
   article budget, source receipt ancestry, and the newsroom contract version.
-  The workbench may inspect only those inputs and the typed agenda action.
+  The deterministic workbench derives a total news hole of at most two selected
+  desk citations per available article, capped at six citations in any one
+  story. It may inspect only those inputs and the typed agenda action.
 - **Outputs:** one typed agenda with a dominant throughline, reader stake, and
   one or more ordered story pitches. Each pitch declares whether it is the lead,
-  names exact citation IDs, and supplies bounded angle, tension, and public
-  question fields. The editor schema exposes only the union of citations
-  selected by the agenda; deterministic post-inference alignment, not the
-  schema alone, requires each article to use exactly its corresponding pitch's
-  citation set.
+  names exact citation IDs, chooses one of them as its focal citation, and
+  supplies bounded narrative claim, tension, and public-question fields. The
+  editor schema exposes only the union of citations selected by the agenda;
+  deterministic post-inference alignment, not the schema alone, requires each
+  article to use exactly its corresponding pitch's citation set. Valid but
+  omitted desk notes remain true and unreported rather than being forced into
+  the issue.
 - **Derived state:** salience, juxtaposition, pitch order, rhetorical
   interpretation, and insinuation are editorial framing. They are not committed
   events or source evidence. Semantic audit rows are a deterministic projection
   of the selected frozen sources and do not become another desk.
 - **Forbidden writers:** the narrative agent cannot write campaign state,
   events, `NewsIssue`, copy-desk verdicts, copy, checkpoints, or accepted
-  compositions. The editor cannot widen the admitted citation set. Renderers
-  cannot infer missing provenance or change assertion status.
+  compositions. The editor owns prose only: it cannot choose or widen the
+  admitted citations, change their pitch grouping or order, replace the focal
+  citation, or replace the narrative claim. Renderers cannot infer missing
+  provenance or change assertion status.
 - **Shared paths:** fresh composition runs narrative selection once, then editor
   and copy desk. A rejected page persists the complete receipt ancestry before
   reconciliation. Resume starts from that checkpoint and never reruns narrative
@@ -1376,7 +1382,7 @@ The newsroom narrative-selection boundary has this authority map:
   legacy-import validator does not independently reconstruct every historical
   `source_receipt_ids` edge; that older chain remains bounded by the explicit
   typed import witness rather than being generalized as current newsroom state.
-- **Schema/version cut:** `canopy-ledger-narrative-selection.v1` participates in
+- **Schema/version cut:** `canopy-ledger-narrative-selection.v2` participates in
   publication-task and exact editorial bindings plus article and empty-issue
   identity. New issues and CultMesh/native publication use
   `ghostlight.world_newspaper_issue.v3`; resumable state uses
@@ -1385,14 +1391,24 @@ The newsroom narrative-selection boundary has this authority map:
   binding prevent a pre-cut composition from winning current idempotence.
   Checkpoint v1 is not a live resume source; the explicit typed legacy import is
   the only admitted bridge for the named pre-cut run.
-- **Cut line:** the one-shot editor no longer owns both story selection and copy
-  composition. No multi-publication Persona, publication memory, layout engine,
-  new service, second event authority, or alternate audit store is added in this
+- **Historical compatibility seam:** `angle` is a read-only serde alias for
+  `narrative_claim`, and the default empty `focus_citation` exists only so old
+  agenda rows can be deserialized. Neither compatibility value appears as an
+  alternative in the current action schema: a current agenda must provide both
+  `narrative_claim` and a focal citation drawn from its exact story dossier, and
+  must pass v2 agenda validation and binding. Historical decoding therefore
+  cannot authorize a fresh v2 selection or composition.
+- **Cut line:** the existing deterministic selection workbench owns the news
+  hole and focal-citation constraints; the selector still owns which admitted
+  facts become stories and the editor still owns only prose. The overlapping
+  `angle` field is replaced by an explicit `narrative_claim`; no second quality
+  agent, multi-publication Persona, publication memory, layout engine, new
+  service, second event authority, or alternate audit store is added in this
   cut.
-- **Verification and build budget:** 23 focused `ghostlight-dungeon` library
+- **Verification and build budget:** 24 focused `ghostlight-dungeon` newspaper
   tests prove deterministic agenda admission, citation restriction,
   receipt/checkpoint ancestry, semantic audit projection, and existing
-  reconciliation resume; the complete library gate is 478/478. The 13/13
+  reconciliation resume; the complete library gate is 479/479. The 15/15
   strategic-smoke binary tests prove that its bounded recovery and checkpoint
   helpers remain compatible, not the newsroom semantics themselves. The cut
   adds no dependency, crate, binary, daemon, target platform, code-generation

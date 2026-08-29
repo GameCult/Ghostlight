@@ -1184,22 +1184,41 @@ and its failure evidence. Historical accepted per-wave artifacts belong to the
 byte and digest bound by their original immutable receipt; current schemas may
 not reinterpret them.
 
+Pushed `420034320c07e86c9c618c098f29d319ce113545` repaired that historical
+boundary and the same run-52 root completed final-only composition at world
+revision 27 without strategic replay. Exact live services remained unchanged.
+Final newspaper SHA-256 is
+`0070CAC0C173FFCF21B05BBE234EAD752234FF3335B12CC027453A48E26A8C45`;
+archive SHA-256 is
+`A800F8B4116A5AC7953400F96DC1E764357907D33BA54AD4D8A42E702CC1308C`.
+Independent grounding review passes.
+
+Independent blind editorial review fails. Three articles consume all 32 desk
+citations, render the survival/legitimacy agenda as administrative minutes,
+bury the severed hands, and lack sharp opposing motives, countermoves, and lived
+cost.
+
+The current uncommitted newsroom selection contract v2 owns that structural
+seam. Deterministic admission caps total selected citations at
+`min(source_count, available_articles * 2)` and each story at six citations.
+Every dossier requires one `focus_citation`; `narrative_claim` replaces the
+vague angle and travels with the exact admitted plan the editor receives. A
+read-only serde alias/default exists solely so unrelated historical checkpoint
+rows deserialize; it is not active compatibility authority. Gates pass 24/24
+newspaper tests, 479/479 library tests, and 15/15 strategic-smoke tests. Run 52
+remains immutable; run 53 has not launched.
+
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Cut and verify the acceptance driver so historical accepted per-wave
-   artifacts are admitted by their original immutable byte/digest receipts
-   without current-schema reinterpretation. Commit and push that bounded fix.
-2. Resume final-only Canopy Ledger composition in the same run-52 root from its
-   persisted `campaign.cc` and failure evidence. Do not create a replacement
-   root or invoke compilation, elaboration, Nemesis, strategic cells, outcomes,
-   clocks, the editor for accepted issues, or per-wave publication.
-3. Preserve every narrative/editor/copy-desk/reconciliation checkpoint and run
-   exact provenance, archive/hash, independent blind editorial, independent
-   grounding, and unchanged-live-service checks. Deliver the actual copy only
-   after both reviews accept it. Keep run 51, stopped run 23, and all earlier
-   immutable acceptance roots unchanged.
+1. Commit and push the verified newsroom selection contract v2.
+2. Launch one new immutable run 53 from revision 27 with final-only newsroom
+   composition. Do not invoke compilation,
+   elaboration, Nemesis, strategic cells, outcomes, clocks, or per-wave
+   publication. Preserve runs 51 and 52 and unchanged live services.
+3. Require exact provenance/archive/hash, independent grounding, and blind
+   editorial acceptance before delivery.
 4. Defer multiple publication Personas, TeX layout, and engraved cuts until the
    single Canopy Ledger copy passes.
 5. Have the game-side adapter lower its authored hierarchy into the published

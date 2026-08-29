@@ -700,7 +700,8 @@ mod tests {
             "story_pitches":[{
                 "lead":true,
                 "citations":[citation],
-                "angle":"Lead with the singular accusation against three auditors.",
+                "focus_citation":citation,
+                "narrative_claim":"The singular accusation against three auditors is itself the scandal.",
                 "tension":"The court's wording collapses three people into one accused figure.",
                 "public_question":"What process can answer an accusation framed this way?"
             }]

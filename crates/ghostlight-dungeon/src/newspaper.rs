@@ -24,8 +24,10 @@ use std::{
 
 const MAX_FRONT_PAGE_ARTICLES: usize = 6;
 const MAX_SOURCE_NEWS_ITEMS: usize = 32;
+const MAX_EDITORIAL_CITATIONS_PER_STORY: usize = 6;
+const EDITORIAL_CITATIONS_PER_ARTICLE: usize = 2;
 const GROUNDING_RECONCILIATION_ACTIONS_PER_ADVANCE: usize = 3;
-const NEWSROOM_CONTRACT_VERSION: &str = "canopy-ledger-narrative-selection.v1";
+const NEWSROOM_CONTRACT_VERSION: &str = "canopy-ledger-narrative-selection.v2";
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
@@ -324,10 +326,13 @@ pub struct WorldNewspaperEditorialAgenda {
 #[serde(deny_unknown_fields)]
 pub struct WorldNewspaperStoryPitch {
     pub lead: bool,
-    #[schemars(length(min = 1, max = 32))]
+    #[schemars(length(min = 1))]
     pub citations: Vec<String>,
+    #[serde(default)]
+    pub focus_citation: String,
     #[schemars(length(min = 1, max = 500))]
-    pub angle: String,
+    #[serde(alias = "angle")]
+    pub narrative_claim: String,
     #[schemars(length(min = 1, max = 500))]
     pub tension: String,
     #[schemars(length(min = 1, max = 500))]
@@ -371,6 +376,7 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
             .map(|source| source.citation.clone())
             .collect::<Vec<_>>();
         let story_budget = self.max_articles.min(self.sources.len());
+        let per_story_citation_budget = MAX_EDITORIAL_CITATIONS_PER_STORY.min(self.sources.len());
         let mut schema = serde_json::json!({
             "type":"object",
             "additionalProperties":false,
@@ -394,7 +400,8 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                         "required":[
                             "lead",
                             "citations",
-                            "angle",
+                            "focus_citation",
+                            "narrative_claim",
                             "tension",
                             "public_question"
                         ],
@@ -403,11 +410,12 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                             "citations":{
                                 "type":"array",
                                 "minItems":1,
-                                "maxItems":32,
+                                "maxItems":per_story_citation_budget,
                                 "uniqueItems":true,
                                 "items":{"type":"string","enum":citations}
                             },
-                            "angle":{"type":"string","minLength":1,"maxLength":500},
+                            "focus_citation":{"type":"string","enum":citations},
+                            "narrative_claim":{"type":"string","minLength":1,"maxLength":500},
                             "tension":{"type":"string","minLength":1,"maxLength":500},
                             "public_question":{"type":"string","minLength":1,"maxLength":500}
                         }
@@ -462,6 +470,14 @@ fn validate_editorial_frame(value: &str, label: &str) -> Result<()> {
     Ok(())
 }
 
+fn editorial_citation_budget(source_count: usize, max_articles: usize) -> usize {
+    source_count.min(
+        max_articles
+            .min(source_count)
+            .saturating_mul(EDITORIAL_CITATIONS_PER_ARTICLE),
+    )
+}
+
 fn validate_editorial_agenda(
     sources: &[NewsroomSource],
     agenda: &WorldNewspaperEditorialAgenda,
@@ -485,8 +501,21 @@ fn validate_editorial_agenda(
                 "editorial agenda must designate exactly its first pitch as lead"
             ));
         }
-        if pitch.citations.is_empty() {
-            return Err(anyhow!("editorial pitch {index} has no citation"));
+        if pitch.citations.is_empty()
+            || pitch.citations.len() > MAX_EDITORIAL_CITATIONS_PER_STORY.min(sources.len())
+        {
+            return Err(anyhow!(
+                "editorial pitch {index} exceeded its citation budget"
+            ));
+        }
+        if !pitch
+            .citations
+            .iter()
+            .any(|citation| citation == &pitch.focus_citation)
+        {
+            return Err(anyhow!(
+                "editorial pitch {index} focus citation is not in its story dossier"
+            ));
         }
         for citation in &pitch.citations {
             if !known_sources.contains(citation.as_str()) {
@@ -500,9 +529,12 @@ fn validate_editorial_agenda(
                 ));
             }
         }
-        validate_editorial_frame(&pitch.angle, "story angle")?;
+        validate_editorial_frame(&pitch.narrative_claim, "story narrative claim")?;
         validate_editorial_frame(&pitch.tension, "story tension")?;
         validate_editorial_frame(&pitch.public_question, "public question")?;
+    }
+    if used_sources.len() > editorial_citation_budget(sources.len(), max_articles) {
+        return Err(anyhow!("editorial agenda exceeded its total news hole"));
     }
     Ok(())
 }
@@ -712,7 +744,7 @@ async fn select_editorial_agenda(
     crate::agent::ModelAgentFailure,
 > {
     let instructions = format!(
-        "You are the narrative editor of `{}`. Construct one compelling editorial agenda from the frozen fact desk. A newspaper is not a neutral transcript: select a dominant throughline that matters to this publication's readers, juxtapose facts that illuminate one another, and identify conflict, hypocrisy, lived stakes, scandal, named opposition, or public consequence where the desk actually supports them. Do not cover a note merely because it exists. Prefer one strong dossier over several administrative summaries, and use fewer pitches when the desk lacks distinct stories. The first pitch is the lead and must set lead=true; every later pitch must set lead=false. Each citation may appear in exactly one pitch. angle, tension, public_question, dominant_throughline, and reader_stake are editorial framing and hypotheses, not evidence. They may be pointed, skeptical, or insinuating, but they must not invent an event, person, institution, place, motive, quotation, outcome, private knowledge, or factual status. The downstream editor may state facts only from the desk and will be constrained to your exact citation groupings. The copy desk will judge factual claims independently. Submit the complete agenda to the workbench.\n\nPUBLICATION VOICE:\n{}\n\nFROZEN NEWSROOM FACT DESK:\n{}",
+        "You are the narrative editor of `{}`. Construct one compelling editorial agenda from the frozen fact desk. A newspaper is not a neutral transcript: select a dominant throughline that matters to this publication's readers, juxtapose facts that illuminate one another, and identify conflict, hypocrisy, lived stakes, scandal, named opposition, or public consequence where the desk actually supports them. The paper has a hard news hole: omitted true facts remain true and unreported. Do not cover a note merely because it exists. Prefer one strong dossier over several administrative summaries, and use fewer pitches when the desk lacks distinct stories. The first pitch is the lead and must set lead=true; every later pitch must set lead=false. Each citation may appear in exactly one pitch. Every pitch must choose one focus_citation from its citations: the concrete fact the headline and lede should make impossible to ignore. narrative_claim states the pointed story the publication can responsibly construct around that dossier. narrative_claim, tension, public_question, dominant_throughline, and reader_stake are editorial framing and hypotheses, not evidence. They may be pointed, skeptical, or insinuating, but they must not invent an event, person, institution, place, motive, quotation, outcome, private knowledge, or factual status. The downstream editor may state facts only from the desk and will be constrained to your exact citation groupings. The copy desk will judge factual claims independently. Submit the complete agenda to the workbench.\n\nPUBLICATION VOICE:\n{}\n\nFROZEN NEWSROOM FACT DESK:\n{}",
         prepared.title, prepared.editorial_voice, prepared.source_json,
     );
     let spec = ModelAgentSpec {
@@ -1145,7 +1177,7 @@ pub async fn advance_world_newspaper(
     let editorial_schema = editorial_schema(&prepared.sources, &agenda)?;
     let agenda_json = serde_json::to_string_pretty(&agenda)?;
     let base_prompt = format!(
-        "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nYou are the accountable copy editor of an in-world newspaper. Turn the admitted narrative agenda and bounded newsroom fact desk below into one convincing front page for `{title}`. The narrative agenda owns selection, article order, and exact citation groupings. Implement every pitch in order and use exactly that pitch's citations for the corresponding article. The agenda's angle, tension, public_question, dominant_throughline, and reader_stake are framing instructions, not source evidence. You may express their interpretation or insinuation as clearly editorial language, but every concrete factual assertion must come from the cited desk notes. Do not recover omitted sources or invent a connective fact merely because the agenda suggests one. The first article must use section `Front Page` and, when its citations name a place, use one of those supplied place names as its dateline. Later articles use the other supplied newspaper sections.\n\nRewrite completely in the publication voice for readers who live in this world. Build a readable throughline: lead with the vivid consequence, identify opposing named actors and countermoves when the cited facts supply them, make lived material stakes legible, and let later stories echo or complicate the lead. Attribute claims and evidence to the named institution, notice, witness, or public act that supplied them. Report a published notice as a notice about physical evidence; never say an institution published the teeth, seal, corpse, or other object itself. When notes dispute a document, accusation, identity, outcome, or authority, preserve the dispute with explicit attribution or words such as alleged or disputed instead of selecting one claim as settled fact. Never invent quotations to simulate reportage.\n\nHeadlines report consequences rather than state transitions. Decks add context instead of repeating headlines. Paragraphs explain why events matter to local readers, connect institutional moves, and vary their rhythm without explaining proper nouns like a setting guide. Keep evidence inventories plain and attributed. Dry barbs, metaphor, political characterization, and rhetorical judgment are welcome when they introduce no new concrete entity, occurrence, status, motive, quotation, number, or private knowledge. This is a newspaper with a point of view, not parody and not a world-state transcript.\n\nEvery factual assertion must be supported by the cited notes for that article. You may synthesize implications plainly supported by several citations, but do not invent quotations, people, offices, places, numbers, documents, motives, chronology, outcomes, or private knowledge. Treat assertion_status as authoritative: an attempt has no result, a committed course does not complete actions embedded in its agenda, a public declaration does not prove its demand succeeded, and only material_change_committed supports a completed material consequence. A named person's supported_identity_attributes list is exhaustive; when empty, use their name or identity-neutral wording rather than inventing pronouns, gender, title, kinship, or office. Language such as attempts, tries, plans, prepares, readies, seeks, or investigates records activity, not outcome: preserve that uncertainty and do not turn it into an established or official inquiry, public availability, completion, or success unless a citation states that consequence. Use only the allowed generic bylines; they are presentation labels, not new people. Use only a supplied place name as a dateline, or the empty string. The newspaper contract owns a neutral edition label; do not invent or print a calendar, date, price, circulation claim, weather report, advertisement, or notice absent from the desk. Do not make the fact desk, citations, agenda, or verification process part of the reader-facing copy. Never end a headline with an ellipsis.\n\nPUBLICATION VOICE:\n{editorial_voice}\n\nADMITTED NARRATIVE AGENDA:\n{agenda_json}\n\nNEWSROOM FACT DESK:\n{source_json}",
+        "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nYou are the accountable copy editor of an in-world newspaper. Turn the admitted narrative agenda and bounded newsroom fact desk below into one convincing front page for `{title}`. The narrative agenda owns selection, article order, focus citation, narrative claim, and exact citation groupings. Implement every pitch in order and use exactly that pitch's citations for the corresponding article. Center each headline and lede on its focus_citation, then use the remaining dossier to substantiate or complicate the narrative_claim. The agenda's narrative_claim, tension, public_question, dominant_throughline, and reader_stake are framing instructions, not source evidence. You may express their interpretation or insinuation as clearly editorial language, but every concrete factual assertion must come from the cited desk notes. Do not recover omitted sources or invent a connective fact merely because the agenda suggests one. The first article must use section `Front Page` and, when its citations name a place, use one of those supplied place names as its dateline. Later articles use the other supplied newspaper sections.\n\nRewrite completely in the publication voice for readers who live in this world. Build a readable throughline: lead with the vivid consequence, identify opposing named actors and countermoves when the cited facts supply them, make lived material stakes legible, and let later stories echo or complicate the lead. Attribute claims and evidence to the named institution, notice, witness, or public act that supplied them. Report a published notice as a notice about physical evidence; never say an institution published the teeth, seal, corpse, or other object itself. When notes dispute a document, accusation, identity, outcome, or authority, preserve the dispute with explicit attribution or words such as alleged or disputed instead of selecting one claim as settled fact. Never invent quotations to simulate reportage.\n\nHeadlines report consequences rather than state transitions. Decks add context instead of repeating headlines. Paragraphs explain why events matter to local readers, connect institutional moves, and vary their rhythm without explaining proper nouns like a setting guide. Keep evidence inventories plain and attributed. Dry barbs, metaphor, political characterization, and rhetorical judgment are welcome when they introduce no new concrete entity, occurrence, status, motive, quotation, number, or private knowledge. This is a newspaper with a point of view, not parody and not a world-state transcript.\n\nEvery factual assertion must be supported by the cited notes for that article. You may synthesize implications plainly supported by several citations, but do not invent quotations, people, offices, places, numbers, documents, motives, chronology, outcomes, or private knowledge. Treat assertion_status as authoritative: an attempt has no result, a committed course does not complete actions embedded in its agenda, a public declaration does not prove its demand succeeded, and only material_change_committed supports a completed material consequence. A named person's supported_identity_attributes list is exhaustive; when empty, use their name or identity-neutral wording rather than inventing pronouns, gender, title, kinship, or office. Language such as attempts, tries, plans, prepares, readies, seeks, or investigates records activity, not outcome: preserve that uncertainty and do not turn it into an established or official inquiry, public availability, completion, or success unless a citation states that consequence. Use only the allowed generic bylines; they are presentation labels, not new people. Use only a supplied place name as a dateline, or the empty string. The newspaper contract owns a neutral edition label; do not invent or print a calendar, date, price, circulation claim, weather report, advertisement, or notice absent from the desk. Do not make the fact desk, citations, agenda, or verification process part of the reader-facing copy. Never end a headline with an ellipsis.\n\nPUBLICATION VOICE:\n{editorial_voice}\n\nADMITTED NARRATIVE AGENDA:\n{agenda_json}\n\nNEWSROOM FACT DESK:\n{source_json}",
         serde_json::to_string(&editorial_schema)?,
         title = prepared.title,
         editorial_voice = prepared.editorial_voice,
@@ -2028,11 +2060,12 @@ pub fn render_world_newspaper_audit_markdown(issue: &WorldNewspaperIssue) -> Str
         ));
         for (index, pitch) in agenda.story_pitches.iter().enumerate() {
             rendered.push_str(&format!(
-                "\n### Pitch {}{}\n\n- Citations: {}\n- Angle: {}\n- Tension: {}\n- Public question: {}\n",
+                "\n### Pitch {}{}\n\n- Citations: {}\n- Focus citation: {}\n- Narrative claim: {}\n- Tension: {}\n- Public question: {}\n",
                 index + 1,
                 if pitch.lead { " (lead)" } else { "" },
                 escaped_join(&pitch.citations),
-                escape_markdown_text(&pitch.angle),
+                escape_markdown_text(&pitch.focus_citation),
+                escape_markdown_text(&pitch.narrative_claim),
                 escape_markdown_text(&pitch.tension),
                 escape_markdown_text(&pitch.public_question),
             ));
@@ -2914,8 +2947,8 @@ mod tests {
         campaign
     }
 
-    const ONE_STORY_AGENDA: &str = r#"{"tool":"submit_agenda","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"citations":["1"],"angle":"Lead with the pawned royal seal and the treasurer's dismissal as one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?"}]}"#;
-    const TWO_STORY_AGENDA: &str = r#"{"tool":"submit_agenda","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"citations":["1"],"angle":"Lead with the pawned seal and dismissal as the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?"},{"lead":false,"citations":["2"],"angle":"Treat the gate closure as a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?"}]}"#;
+    const ONE_STORY_AGENDA: &str = r#"{"tool":"submit_agenda","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"citations":["1"],"focus_citation":"1","narrative_claim":"The pawned royal seal and the treasurer's dismissal are one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?"}]}"#;
+    const TWO_STORY_AGENDA: &str = r#"{"tool":"submit_agenda","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"citations":["1"],"focus_citation":"1","narrative_claim":"The pawned seal and dismissal are the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?"},{"lead":false,"citations":["2"],"focus_citation":"2","narrative_claim":"The gate closure is a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?"}]}"#;
     const ACCEPTED_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
     const TWO_ARTICLE_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]},{"section":"Dispatches","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","byline":"Staff report","dateline":"Yard","citations":["2"],"paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace the cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}]}"#;
     const EMPTY_REPAIR_ACTION: &str =
@@ -2983,14 +3016,16 @@ mod tests {
                 WorldNewspaperStoryPitch {
                     lead: false,
                     citations: vec!["1".into()],
-                    angle: "The pawned seal opens the custody crisis.".into(),
+                    focus_citation: "1".into(),
+                    narrative_claim: "The pawned seal opens the custody crisis.".into(),
                     tension: "Admission and dismissal point in different directions.".into(),
                     public_question: "Who answers for the seal?".into(),
                 },
                 WorldNewspaperStoryPitch {
                     lead: true,
                     citations: vec!["1".into()],
-                    angle: "The gate repeats the pattern.".into(),
+                    focus_citation: "1".into(),
+                    narrative_claim: "The gate repeats the pattern.".into(),
                     tension: "Access closes while repair begins.".into(),
                     public_question: "When will the route reopen?".into(),
                 },
@@ -3018,6 +3053,7 @@ mod tests {
         validate_editorial_agenda(&sources, &admitted, 4).unwrap();
         let mut duplicate = admitted.clone();
         duplicate.story_pitches[1].citations = vec!["1".into()];
+        duplicate.story_pitches[1].focus_citation = "1".into();
         assert!(
             validate_editorial_agenda(&sources, &duplicate, 4)
                 .unwrap_err()
@@ -3040,6 +3076,52 @@ mod tests {
             .to_string()
             .contains("admitted citation grouping")
         );
+    }
+
+    #[test]
+    fn narrative_workbench_owns_news_hole_focus_and_legacy_agenda_reading() {
+        let mut sources = newsroom_sources(&campaign_with_two_news()).unwrap();
+        for citation in 3..=5 {
+            let mut source = sources[0].clone();
+            source.citation = citation.to_string();
+            sources.push(source);
+        }
+        let pitch = WorldNewspaperStoryPitch {
+            lead: true,
+            citations: (1..=5).map(|citation| citation.to_string()).collect(),
+            focus_citation: "1".into(),
+            narrative_claim: "One sharp custody failure links the selected record.".into(),
+            tension: "Public consequence runs ahead of public accountability.".into(),
+            public_question: "Who answers for the admitted failure?".into(),
+        };
+        let agenda = WorldNewspaperEditorialAgenda {
+            dominant_throughline: "Custody failed in public.".into(),
+            reader_stake: "Readers bear the consequences of that failure.".into(),
+            story_pitches: vec![pitch],
+        };
+        assert!(
+            validate_editorial_agenda(&sources, &agenda, 2)
+                .unwrap_err()
+                .to_string()
+                .contains("total news hole")
+        );
+
+        let mut unfocused = agenda.clone();
+        unfocused.story_pitches[0].citations.truncate(4);
+        unfocused.story_pitches[0].focus_citation = "5".into();
+        assert!(
+            validate_editorial_agenda(&sources, &unfocused, 2)
+                .unwrap_err()
+                .to_string()
+                .contains("focus citation is not in its story dossier")
+        );
+
+        let legacy: WorldNewspaperStoryPitch = serde_json::from_str(
+            r#"{"lead":true,"citations":["1"],"angle":"A legacy framing field.","tension":"A live tension.","public_question":"What follows?"}"#,
+        )
+        .unwrap();
+        assert_eq!(legacy.focus_citation, "");
+        assert_eq!(legacy.narrative_claim, "A legacy framing field.");
     }
 
     #[test]
