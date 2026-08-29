@@ -1058,8 +1058,8 @@ presentation-only because the grounding reconciliation agent retyped an
 through 18 and the final digest were not reached; canonical world state and all
 wave checkpoints remain unchanged.
 
-The copy desk owns the exact frozen finding set. The current uncommitted cut
-makes `GroundingFindingRef` page-local and uses one shared deterministic resolver
+The copy desk owns the exact frozen finding set. Pushed `35f56f0` makes
+`GroundingFindingRef` page-local and uses one shared deterministic resolver
 to derive article, field, paragraph, phrase, and span for verdict validation and
 edit application. Agent actions contain only `finding_ref` plus replacement or
 `delete_finding_refs`; there is no compatibility path for retyped phrases. The
@@ -1071,12 +1071,25 @@ change and does not own the current acceptance repair. Earn one good Canopy
 Ledger first; multiple publication Personas come later, and TeX/layout or
 engraved-cut production begins only after editorial acceptance.
 
+Exact-source run 44 at
+`35f56f0e5e670025e1cfb031cba8d5a4ca9587d4` resumed revision 27 without
+world or successful-publication replay. Issues 13 and 14 remained preserved.
+Typed finding references were admitted and the first reconciliation action ran;
+the copy desk returned a second exact finding set, then `MAX_STEPS=1` stopped
+the agent before it could react. Issues 15 through 18 and the final digest remain
+absent. The current uncommitted cut permits exactly two total corrective actions
+in the same reconciliation session, preserves workbench state and receipts, and
+gives the second action an explicit refreshed `finding_catalog`; it never reruns
+the editor. Gates pass 15/15 newspaper tests, 469/469 library tests, 13/13
+strategic-smoke binary tests, and `git diff --check`.
+
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Commit and push the verified typed-finding-reference cut.
-2. Resume from run 43's preserved Issue 13 and Issue 14 boundary at revision 27
+1. Commit and push the verified two-action reconciliation and refreshed-
+   `finding_catalog` cut.
+2. Resume from run 44's preserved Issue 13 and Issue 14 boundary at revision 27
    to compose Issues 15 through 18 plus the final digest. Preserve every
    completed wave checkpoint and canonical world state; do not replay mechanics
    or successful publications. Require the resulting unedited publications and

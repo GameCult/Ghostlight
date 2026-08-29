@@ -1298,29 +1298,41 @@ cannot rewrite it. Its desk includes each account's typed assertion status and
 the exact supported identity attributes for every named person, including an
 explicitly empty set when canon supplies none. A rejected draft enters one
 cheap grounding-reconciliation agent over the same frozen page, desk, and
-complete typed finding set. Its sole one-step command is one transactional edit
-batch: replace an exact finding phrase in one named headline, deck, dateline,
-or paragraph, or delete a finding-bearing article when its story cannot be
-supported. Deterministic admission requires every finding to be addressed,
-requires each replacement phrase to occur exactly once in its named field of
-the frozen original, and forbids duplicate exact findings, overlapping spans,
-and simultaneous edit/delete of one article. Distinct non-overlapping findings
-may target the same headline, deck, dateline, or paragraph: owner code groups
-them by target and applies them atomically in descending byte position, so
-replacement length and model ordering cannot move a later edit. Citations,
+complete typed finding set. The workbench enumerates that set into page-local
+typed references and publishes only current references in the action schema.
+The agent supplies a reference plus replacement text, or a reference whose
+containing article should be deleted; owner code resolves the article, field,
+paragraph, exact phrase, and byte span against the frozen draft. Deterministic
+verdict validation and transactional edit application share that resolver; the
+model cannot author target coordinates or repeat phrase identity. Deterministic
+admission requires every current finding reference to be addressed and forbids
+duplicate or unknown references, overlapping spans, and simultaneous
+edit/delete of one article. Distinct non-overlapping findings may target the
+same headline, deck, dateline, or paragraph: owner code groups them by target
+and applies them atomically in descending byte position, so replacement length
+and model ordering cannot move a later edit. Citations,
 surviving article selection and order, sections, bylines, and all unaffected
 text remain frozen. If the lead is deleted, owner code promotes the next article
 to the front page. The agent cannot request a new simulation or source packet,
 submit a replacement `EditorialPageDraft`, or act as a second editor. The same
-copy desk rechecks the complete repaired page. A rejected
-repair, an empty surviving page, or a page rejected on recheck returns no
-edition; there is no further repair loop. Thus the editor owns initial copy,
-the reconciler owns only this exact repair transaction, the copy desk owns
-grounding judgment, and none owns source facts or world state. Focused tests
-cover order-independent same-target phrase repair, exact same-desk repair with
-source identity preserved, bounded article deletion with survivor recheck, and
-terminal rejection after the single repair step. The typed issue retains exact
-event IDs, channels,
+copy desk rechecks the complete repaired page. The worker permits at most two
+actions in one agent run: an initial repair and exactly one corrective action
+after a rejected tool observation. On the first rejection, the same workbench
+retains the repaired draft and current verdict, republishes the dynamic action
+schema, and exposes a freshly numbered finding catalog derived by the same
+helper used for the initial catalog. The harness includes the first action and
+copy-desk receipts in the second action's causal source chain. Acceptance ends
+the run immediately; an inadmissible repair, an empty surviving page, or a page
+rejected after the second action returns no edition. Thus the editor owns
+initial copy, the reconciler owns only this bounded repair session, the copy
+desk owns grounding judgment, and none owns source facts or world state.
+Focused tests cover order-independent same-target phrase repair, exact same-desk
+repair with source identity preserved, bounded article deletion with survivor recheck, and
+one corrective response to the copy desk's current finding catalog. A terminal
+regression proves that a second rejection exhausts the two-action budget and
+retains all six editor, copy-desk, and action receipts, including both rejected
+action dispositions. The library and strategic-binary test suites pass. The typed
+issue retains exact event IDs, channels,
 reliability, source revision, and model receipts as audit data. Its internal
 issue time is derived from the latest cited publication record without exposing
 that clock to editorial inference. Terminally rejected attempts semantically
@@ -1339,16 +1351,6 @@ path to provenance fields and escapes all model- and consumer-supplied plain
 text before Markdown emission; the provenance renderer applies the same
 plain-text boundary to its audit data. Neither editor, copy desk, renderer, nor
 receipt persistence can write world state.
-
-The grounding-repair workbench assigns every validated copy-desk finding a
-typed, page-local reference and resolves it against the frozen draft to the
-exact article, field, paragraph, phrase, and byte span. The agent submits only
-that reference plus replacement text, or uses a finding reference to request
-deletion of its containing article. The reference catalog is derived
-transaction state bound to the frozen draft and verdict, not a new copy-desk
-output or durable world fact. One shared deterministic resolver owns phrase
-location for both verdict validation and transactional edit application; the
-model cannot author target coordinates or repeat phrase identity.
 
 #### Acceptance-driver per-wave newspaper recovery
 

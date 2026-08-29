@@ -20,7 +20,7 @@ use std::{
 
 const MAX_FRONT_PAGE_ARTICLES: usize = 6;
 const MAX_SOURCE_NEWS_ITEMS: usize = 32;
-const MAX_GROUNDING_RECONCILIATION_STEPS: usize = 1;
+const MAX_GROUNDING_RECONCILIATION_STEPS: usize = 2;
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
@@ -242,7 +242,42 @@ enum GroundingReconciliationFinding {
     CopyDeskRejected {
         draft: EditorialPageDraft,
         verdict: WorldNewspaperGroundingVerdict,
+        finding_catalog: Vec<GroundingFindingCatalogEntry>,
     },
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct GroundingFindingCatalogEntry {
+    finding_ref: GroundingFindingRef,
+    finding: WorldNewspaperGroundingFinding,
+}
+
+fn grounding_finding_catalog(
+    verdict: &WorldNewspaperGroundingVerdict,
+) -> Vec<GroundingFindingCatalogEntry> {
+    verdict
+        .findings
+        .iter()
+        .enumerate()
+        .map(|(index, finding)| GroundingFindingCatalogEntry {
+            finding_ref: GroundingFindingRef(
+                u16::try_from(index).expect("bounded grounding finding index"),
+            ),
+            finding: finding.clone(),
+        })
+        .collect()
+}
+
+fn grounding_reconciliation_finding(
+    draft: EditorialPageDraft,
+    verdict: WorldNewspaperGroundingVerdict,
+) -> GroundingReconciliationFinding {
+    let finding_catalog = grounding_finding_catalog(&verdict);
+    GroundingReconciliationFinding::CopyDeskRejected {
+        draft,
+        verdict,
+        finding_catalog,
+    }
 }
 
 struct GroundingReconciliationOutput {
@@ -374,10 +409,7 @@ pub async fn compose_world_newspaper(
             model_receipts: receipts,
         });
     }
-    let initial_finding = GroundingReconciliationFinding::CopyDeskRejected {
-        draft: draft.clone(),
-        verdict,
-    };
+    let initial_finding = grounding_reconciliation_finding(draft.clone(), verdict);
 
     let reconciliation_sources = receipts
         .iter()
@@ -481,9 +513,9 @@ impl ModelAgentTool for GroundingReconciliationWorkbench<'_> {
             Ok(draft) => draft,
             Err(error) => {
                 return ModelAgentToolOutcome::Rejected {
-                    finding: GroundingReconciliationFinding::CopyDeskRejected {
-                        draft: self.draft.clone(),
-                        verdict: WorldNewspaperGroundingVerdict {
+                    finding: grounding_reconciliation_finding(
+                        self.draft.clone(),
+                        WorldNewspaperGroundingVerdict {
                             accepted: false,
                             assessment: format!(
                                 "The proposed narrow repair was not admitted: {error}"
@@ -493,16 +525,16 @@ impl ModelAgentTool for GroundingReconciliationWorkbench<'_> {
                             .collect(),
                             findings: self.verdict.findings.clone(),
                         },
-                    },
+                    ),
                     receipts: Vec::new(),
                 };
             }
         };
         if let Err(error) = validate_editorial_draft(self.sources, &draft, self.max_articles) {
             return ModelAgentToolOutcome::Rejected {
-                finding: GroundingReconciliationFinding::CopyDeskRejected {
-                    draft: self.draft.clone(),
-                    verdict: WorldNewspaperGroundingVerdict {
+                finding: grounding_reconciliation_finding(
+                    self.draft.clone(),
+                    WorldNewspaperGroundingVerdict {
                         accepted: false,
                         assessment: format!("The narrow repair produced invalid copy: {error}")
                             .chars()
@@ -510,7 +542,7 @@ impl ModelAgentTool for GroundingReconciliationWorkbench<'_> {
                             .collect(),
                         findings: self.verdict.findings.clone(),
                     },
-                },
+                ),
                 receipts: Vec::new(),
             };
         }
@@ -558,7 +590,7 @@ impl ModelAgentTool for GroundingReconciliationWorkbench<'_> {
             self.draft = draft.clone();
             self.verdict = verdict.clone();
             ModelAgentToolOutcome::Rejected {
-                finding: GroundingReconciliationFinding::CopyDeskRejected { draft, verdict },
+                finding: grounding_reconciliation_finding(draft, verdict),
                 receipts: copy_desk_receipts,
             }
         }
@@ -773,20 +805,7 @@ async fn run_grounding_reconciliation(
     let initial_verdict = match &initial_finding {
         GroundingReconciliationFinding::CopyDeskRejected { verdict, .. } => verdict.clone(),
     };
-    let indexed_findings = initial_verdict
-        .findings
-        .iter()
-        .enumerate()
-        .map(|(finding_index, finding)| {
-            serde_json::json!({
-                "finding_ref":finding_index,
-                "article_index":finding.article_index,
-                "category":finding.category,
-                "claim_or_phrase":finding.claim_or_phrase,
-                "reason":finding.reason,
-            })
-        })
-        .collect::<Vec<_>>();
+    let indexed_findings = grounding_finding_catalog(&initial_verdict);
     let instructions = format!(
         "You are Ghostlight's grounding reconciliation agent. Repair one already-edited newspaper page against the same frozen source desk and exact rejection. You do not report new events, add spice, improve the simulation, or rerun the editor. The workbench freezes article selection, order, sections, bylines, citations, and all unaffected copy. Submit only replacements for the numbered current findings, or delete the article containing a numbered finding when its cited notes cannot support a grounded story. Each replacement selects one finding_ref and supplies only its replacement text. The deterministic workbench owns the selected finding's article, text field, paragraph, exact phrase, and byte span. replacement may be empty when phrase deletion is the honest repair. Address the complete finding set in this one pass. Preserve source status exactly: an attempt is not a result, a committed course does not complete its embedded plans, and a public declaration is not evidence that its demand succeeded. A named person's supported_identity_attributes is exhaustive; when it is empty, use the name or identity-neutral wording and do not invent pronouns, gender, title, kinship, or office. Delete an unsupported phrase rather than replacing it with an adjacent invention. The deterministic workbench applies the edits transactionally and reruns the same whole-page copy desk.\n\nFROZEN NEWSROOM FACT DESK:\n{}\n\nINITIAL DRAFT:\n{}\n\nNUMBERED EXACT FINDINGS:\n{}",
         source_json,
@@ -1757,6 +1776,7 @@ mod tests {
     const ACCEPTED_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
     const TWO_ARTICLE_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]},{"section":"Dispatches","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","byline":"Staff report","dateline":"Yard","citations":["2"],"paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace the cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}]}"#;
     const REPAIR_DECK_ACTION: &str = r#"{"tool":"submit_edits","replacements":[{"finding_ref":0,"replacement":"The court's admission leaves one official carrying the blame for the pawned seal."}],"delete_finding_refs":[]}"#;
+    const SECOND_REPAIR_DECK_ACTION: &str = r#"{"tool":"submit_edits","replacements":[{"finding_ref":0,"replacement":"the dismissed treasurer named in the public record"}],"delete_finding_refs":[]}"#;
     const DELETE_SECOND_ARTICLE_ACTION: &str =
         r#"{"tool":"submit_edits","replacements":[],"delete_finding_refs":[0]}"#;
     const ACCEPTING_COPY_DESK: &str = r#"{"accepted":true,"assessment":"The copy is fully supported by its cited public source and reads as attributed court reporting.","findings":[]}"#;
@@ -2204,7 +2224,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn terminal_copy_desk_rejection_carries_every_completed_receipt() {
+    async fn grounding_agent_may_react_once_to_the_copy_desks_repair_observation() {
         const REJECTED: &str = r#"{"accepted":false,"assessment":"The deck overstates where the admitted debt reached.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"A gambling debt reaches the throne room and leaves one official carrying the blame.","reason":"The cited source records the pawned seal and dismissal but does not locate the debt in the throne room."}]}"#;
         const REJECTED_AFTER_REPAIR: &str = r#"{"accepted":false,"assessment":"The revised deck still overstates blame.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"one official carrying the blame","reason":"The cited source records dismissal but does not establish how blame was allocated."}]}"#;
         let campaign = campaign_with_news();
@@ -2213,6 +2233,58 @@ mod tests {
             REJECTED,
             REPAIR_DECK_ACTION,
             REJECTED_AFTER_REPAIR,
+            SECOND_REPAIR_DECK_ACTION,
+            ACCEPTING_COPY_DESK,
+        ]);
+        let composition = compose_world_newspaper(
+            &model,
+            &campaign,
+            "The Underdeep Clarion",
+            "A skeptical court broadsheet with dry restraint.",
+            4,
+        )
+        .await
+        .unwrap();
+        assert_eq!(composition.model_receipts.len(), 6);
+        assert!(composition.grounding.accepted);
+        let requests = model.requests();
+        assert_eq!(
+            requests
+                .iter()
+                .filter(|request| request.stage == "newspaper_editor")
+                .count(),
+            1
+        );
+        assert_eq!(
+            requests
+                .iter()
+                .filter(|request| {
+                    request.stage == "newspaper_grounding_reconciliation_agent_action"
+                })
+                .count(),
+            2
+        );
+        assert!(
+            requests[4]
+                .lived_stream
+                .contains("revised deck still overstates blame")
+        );
+        assert!(requests[4].lived_stream.contains("\"finding_ref\":0"));
+    }
+
+    #[tokio::test]
+    async fn terminal_copy_desk_rejection_carries_every_completed_receipt() {
+        const REJECTED: &str = r#"{"accepted":false,"assessment":"The deck overstates where the admitted debt reached.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"A gambling debt reaches the throne room and leaves one official carrying the blame.","reason":"The cited source records the pawned seal and dismissal but does not locate the debt in the throne room."}]}"#;
+        const REJECTED_AFTER_REPAIR: &str = r#"{"accepted":false,"assessment":"The revised deck still overstates blame.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"one official carrying the blame","reason":"The cited source records dismissal but does not establish how blame was allocated."}]}"#;
+        const REJECTED_AFTER_SECOND_REPAIR: &str = r#"{"accepted":false,"assessment":"The second revision still overstates the record.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"named in the public record","reason":"The source records a dismissal but does not say the treasurer was named in the record."}]}"#;
+        let campaign = campaign_with_news();
+        let model = ScriptedNewspaperModel::new([
+            ACCEPTED_PAGE,
+            REJECTED,
+            REPAIR_DECK_ACTION,
+            REJECTED_AFTER_REPAIR,
+            SECOND_REPAIR_DECK_ACTION,
+            REJECTED_AFTER_SECOND_REPAIR,
         ]);
         let error = compose_world_newspaper(
             &model,
@@ -2227,14 +2299,15 @@ mod tests {
             .downcast_ref::<WorldNewspaperCompositionFailure>()
             .expect("terminal editorial rejection must retain its receipts");
 
-        assert_eq!(failure.model_receipts.len(), 4);
+        assert!(failure.message.contains("exhausted 2 semantic steps"));
+        assert_eq!(failure.model_receipts.len(), 6);
         assert_eq!(
             failure
                 .model_receipts
                 .iter()
                 .filter(|receipt| receipt.validation_result == "semantic_invalid")
                 .count(),
-            1
+            2
         );
         for rejected in failure
             .model_receipts
