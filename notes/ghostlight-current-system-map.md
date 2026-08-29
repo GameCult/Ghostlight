@@ -1312,7 +1312,10 @@ the same field are not competing writers: owner code orders outer spans first,
 applies the outer replacement once, and treats contained replacements as
 covered. Distinct non-overlapping findings are grouped by target and applied
 atomically in descending byte position, so replacement length and model
-ordering cannot move a later edit. Citations,
+ordering cannot move a later edit. Empty replacement is a first-class deletion:
+the workbench owns its text seam and consumes one adjacent ASCII space when the
+deleted phrase begins or ends the field, preventing its own operation from
+creating malformed leading or trailing whitespace. Citations,
 surviving article selection and order, sections, bylines, and all unaffected
 text remain frozen. If the lead is deleted, owner code promotes the next article
 to the front page. The agent cannot request a new simulation or source packet,
@@ -1393,12 +1396,14 @@ The resumable reconciliation boundary is now live:
   copy-desk ancestry, accepted-composition idempotence without inference,
   same-task source-drift rejection and fork rejection before inference, typed
   legacy import through the common validator, and Registry preservation of
-  pending state. The current verified gate is 476/476 library tests and 13/13
+  pending state. The current verified gate is 477/477 library tests and 13/13
   strategic-smoke binary tests, including same-task source-drift and fork
   rejection before inference. Provider runs 47 through 49 prove exact-chain
   resume and accepted-publication idempotence through Issue 16; Issue 17 reached
   generation 24 without editor or world replay and exposed the nested-finding
-  admission case now owned by the workbench.
+  admission case now owned by the workbench. Run 50 then admitted Issue 17 and
+  exposed empty-deletion seam ownership while advancing Issue 18 to generation
+  24, again without editor or world replay.
 
 The typed issue retains exact event IDs, channels, reliability, source
 revision, and model receipts as audit data. Its internal issue time is derived

@@ -1124,25 +1124,37 @@ revision 27, every strategic checkpoint, and accepted Issues 13 through 16
 remain immutable. Live codex-connector and ghostlight-dungeon service PIDs and
 invocation IDs remained unchanged.
 
-The current bounded fix keeps this decision in the grounding workbench: edits
-sort deterministically by start, outer span, and finding reference; an outer
-replacement owns and covers contained repairs, while partial overlaps still
-fail closed. The complete finding set remains mandatory and the same copy desk
-rechecks the transaction. Gates pass 21/21 newspaper tests and 476/476 library
-tests.
+Pushed `8b1db895578a7c800d42a3bc761666720f86456b` keeps this decision in
+the grounding workbench: edits sort deterministically by start, outer span, and
+finding reference; an outer replacement owns and covers contained repairs,
+while partial overlaps still fail closed. Run 50 resumed the exact Issue 17
+generation-24 checkpoint, admitted Issue 17 on its first repair, and advanced
+Issue 18 to generation 24. Its two remaining findings both call for deletion of
+a trailing sentence. The agent repeatedly supplied empty replacements, but raw
+span deletion left trailing spaces and reader-copy validation rejected those
+workbench-created malformed paragraphs. Runs 46 through 50, world revision 27,
+every strategic checkpoint, and accepted Issues 13 through 17 remain immutable.
+Live services remained unchanged; run 50 unit invocation is
+`6fc5b829f48247419a00bf9b02b54d08`.
+
+The current bounded fix makes the same workbench own its documented empty-edit
+seam: a deletion consumes one adjacent ASCII space only when its phrase begins
+or ends the field. The complete finding set remains mandatory, partial overlaps
+still fail closed, and the same copy desk rechecks the transaction. Gates pass
+four focused grounding-repair tests and 477/477 library tests.
 
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Commit and push the nested-finding normalization.
-2. Launch run 50 from run 49's exact Issue 17 generation-24 checkpoint. Preserve
-   accepted Issues 13 through 16, every completed wave checkpoint and canonical
+1. Commit and push empty-replacement seam ownership.
+2. Launch run 51 from run 50's exact Issue 18 generation-24 checkpoint. Preserve
+   accepted Issues 13 through 17, every completed wave checkpoint and canonical
    world state; do not replay mechanics, the editor, or successful publications.
-   Compose Issues 17 and 18 plus the final digest, then require fresh independent
+   Compose Issue 18 plus the final digest, then require fresh independent
    editorial and grounding review, provenance and archive/hash verification,
    and unchanged-live-service proof before claiming acceptance. Preserve runs
-   38 through 49, the run-41 committed world lineage, stopped run 23, and the
+   38 through 50, the run-41 committed world lineage, stopped run 23, and the
    exact acceptance conditions.
 3. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.

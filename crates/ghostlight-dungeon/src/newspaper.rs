@@ -1328,7 +1328,18 @@ fn apply_grounding_edits(
             .get_mut(article_index)
             .ok_or_else(|| anyhow!("grounding repair names an invalid article"))?;
         let target = grounding_edit_target(article, &field, paragraph_index)?;
-        for (start, end, _, replacement) in disjoint_edits.into_iter().rev() {
+        for (mut start, mut end, _, replacement) in disjoint_edits.into_iter().rev() {
+            if replacement.is_empty() {
+                let bytes = target.as_bytes();
+                if start > 0
+                    && bytes[start - 1] == b' '
+                    && (end == bytes.len() || bytes[end] == b' ')
+                {
+                    start -= 1;
+                } else if start == 0 && end < bytes.len() && bytes[end] == b' ' {
+                    end += 1;
+                }
+            }
             target.replace_range(start..end, &replacement);
         }
     }
@@ -2594,6 +2605,40 @@ mod tests {
         assert_eq!(
             repaired.articles[0].paragraphs[1],
             "The treasurer delivered the admission in open court and was dismissed soon afterward; the seal remained pawned."
+        );
+    }
+
+    #[test]
+    fn grounding_repair_empty_replacement_owns_its_space_seam() {
+        let draft: EditorialPageDraft = serde_json::from_str(ACCEPTED_PAGE).unwrap();
+        let verdict = WorldNewspaperGroundingVerdict {
+            accepted: false,
+            assessment: "One unsupported trailing sentence.".into(),
+            findings: vec![WorldNewspaperGroundingFinding {
+                article_index: 0,
+                category: WorldNewspaperGroundingCategory::UnsupportedFact,
+                claim_or_phrase:
+                    "The court has explained the firing; it has not made the seal any less pawned."
+                        .into(),
+                reason: "The source establishes dismissal, not an explanation.".into(),
+            }],
+        };
+        let repaired = apply_grounding_edits(
+            &draft,
+            &verdict,
+            GroundingReconciliationAction::SubmitEdits {
+                replacements: vec![GroundingTextReplacement {
+                    finding_ref: GroundingFindingRef(0),
+                    replacement: String::new(),
+                }],
+                delete_finding_refs: Vec::new(),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            repaired.articles[0].paragraphs[1],
+            "The treasurer who delivered that admission in open court was dismissed soon afterward."
         );
     }
 
