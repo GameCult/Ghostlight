@@ -707,12 +707,35 @@ mod tests {
         }
     }
 
+    fn first_schema_property_const<'a>(
+        schema: &'a serde_json::Value,
+        property: &str,
+    ) -> Option<&'a str> {
+        match schema {
+            serde_json::Value::Object(object) => object
+                .get("properties")
+                .and_then(serde_json::Value::as_object)
+                .and_then(|properties| properties.get(property))
+                .and_then(|value| value.get("const"))
+                .and_then(serde_json::Value::as_str)
+                .or_else(|| {
+                    object
+                        .values()
+                        .find_map(|value| first_schema_property_const(value, property))
+                }),
+            serde_json::Value::Array(values) => values
+                .iter()
+                .find_map(|value| first_schema_property_const(value, property)),
+            _ => None,
+        }
+    }
+
     fn registry_newspaper_narrative_response(request: &ModelStageRequest) -> Result<String> {
         let schema = request
             .output_schema
             .as_ref()
             .ok_or_else(|| anyhow!("newspaper fixture lost its narrative action schema"))?;
-        if !schema.to_string().contains("submit_agenda") {
+        if !schema.to_string().contains("propose_agenda") {
             return Ok(serde_json::json!({
                 "command":{
                     "tool":"query_public_records",
@@ -728,11 +751,22 @@ mod tests {
             })
             .to_string());
         }
+        if schema.to_string().contains("commit_agenda") {
+            let candidate_digest = first_schema_property_const(schema, "candidate_digest")
+                .ok_or_else(|| anyhow!("newspaper fixture lost its reviewed agenda digest"))?;
+            return Ok(serde_json::json!({
+                "command":{
+                    "tool":"commit_agenda",
+                    "candidate_digest":candidate_digest,
+                }
+            })
+            .to_string());
+        }
         let citation = first_schema_property_enum(schema, "citations")
             .ok_or_else(|| anyhow!("newspaper fixture lost its narrative citation enum"))?;
         Ok(serde_json::json!({
             "command":{
-                "tool":"submit_agenda",
+                "tool":"propose_agenda",
                 "dominant_throughline":"The inner court has converted an audit dispute into a public crisis of accusation and arithmetic.",
                 "reader_stake":"Readers depend on whether the court can distinguish an allegation from a judgment.",
                 "story_pitches":[{
@@ -1731,7 +1765,7 @@ mod tests {
         else {
             panic!("registry must preserve typed pending reconciliation state")
         };
-        assert_eq!(model_receipts.len(), 10);
+        assert_eq!(model_receipts.len(), 11);
         assert_eq!(checkpoint.generation(), 3);
         let stored_after_rejection = runtime.store.keys("persona_stage_receipt.v1").unwrap();
         let newly_observed_failure_receipts = model_receipts

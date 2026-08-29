@@ -24,9 +24,9 @@ use std::{
 
 const MAX_FRONT_PAGE_ARTICLES: usize = 6;
 const MAX_PUBLIC_RECORD_QUERY_RESULTS: usize = 24;
-const MAX_NARRATIVE_SELECTION_STEPS: usize = 8;
+const MAX_NARRATIVE_SELECTION_STEPS: usize = 12;
 const GROUNDING_RECONCILIATION_ACTIONS_PER_ADVANCE: usize = 3;
-const NEWSROOM_CONTRACT_VERSION: &str = "canopy-ledger-public-ledger-query.v4";
+const NEWSROOM_CONTRACT_VERSION: &str = "canopy-ledger-deliberative-news-judgment.v5";
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
@@ -327,13 +327,17 @@ enum NarrativeSelectionCommand {
         #[schemars(range(min = 1, max = 24))]
         limit: u8,
     },
-    SubmitAgenda {
+    ProposeAgenda {
         #[schemars(length(min = 1, max = 500))]
         dominant_throughline: String,
         #[schemars(length(min = 1, max = 500))]
         reader_stake: String,
         #[schemars(length(min = 1, max = 6))]
         story_pitches: Vec<WorldNewspaperStoryPitch>,
+    },
+    CommitAgenda {
+        #[schemars(length(min = 71, max = 71))]
+        candidate_digest: String,
     },
 }
 
@@ -380,6 +384,29 @@ enum NarrativeSelectionFinding {
         records: Vec<PublicRecordProjection>,
         next_cursor: Option<String>,
     },
+    AgendaProposed {
+        candidate_digest: String,
+        front_page: EditorialPitchProof,
+        below_fold: Vec<EditorialPitchProof>,
+        review_questions: Vec<String>,
+    },
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+struct EditorialPitchProof {
+    page_position: String,
+    narrative_claim: String,
+    tension: String,
+    public_question: String,
+    focus_record: PublicRecordProjection,
+    supporting_records: Vec<EditorialSupportingRecord>,
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+struct EditorialSupportingRecord {
+    record_id: String,
+    at: DateTime<Utc>,
+    headline: String,
 }
 
 struct NarrativeSelectionWorkbench<'a> {
@@ -387,6 +414,7 @@ struct NarrativeSelectionWorkbench<'a> {
     max_articles: usize,
     visible_record_ids: BTreeSet<String>,
     completed_queries: BTreeSet<PublicRecordQuery>,
+    pending_agenda: Option<(String, WorldNewspaperEditorialAgenda)>,
 }
 
 impl NarrativeSelectionWorkbench<'_> {
@@ -464,6 +492,96 @@ impl NarrativeSelectionWorkbench<'_> {
             next_cursor,
         })
     }
+
+    fn propose_agenda(
+        &mut self,
+        agenda: WorldNewspaperEditorialAgenda,
+    ) -> Result<NarrativeSelectionFinding> {
+        let uninspected_record = agenda
+            .story_pitches
+            .iter()
+            .flat_map(|pitch| &pitch.citations)
+            .find(|record_id| !self.visible_record_ids.contains(*record_id));
+        if let Some(record_id) = uninspected_record {
+            return Err(anyhow!(
+                "agenda cites public record {record_id} without querying it"
+            ));
+        }
+        validate_editorial_agenda(self.records, &agenda, self.max_articles)?;
+        let candidate_digest = editorial_agenda_candidate_digest(&agenda)?;
+        let mut pitches = agenda
+            .story_pitches
+            .iter()
+            .enumerate()
+            .map(|(index, pitch)| self.pitch_proof(index, pitch))
+            .collect::<Result<Vec<_>>>()?;
+        let front_page = pitches.remove(0);
+        self.pending_agenda = Some((candidate_digest.clone(), agenda));
+        Ok(NarrativeSelectionFinding::AgendaProposed {
+            candidate_digest,
+            front_page,
+            below_fold: pitches,
+            review_questions: vec![
+                "Compare the lead focus fact with every below-fold focus fact. Would a reader reasonably call another story more vivid, consequential, scandalous, or urgent? If so, propose a revised agenda rather than committing this one."
+                    .into(),
+                "Does each continuing story foreground the incident and then identify what changed, or has routine handling displaced the thing readers actually care about?"
+                    .into(),
+                "Do the pitches expose people or institutions in conflict and make public or material stakes legible, or do they mainly explain what records do not prove? Query for missing opposition, countermoves, reaction, or lived cost when the ledger may contain them."
+                    .into(),
+            ],
+        })
+    }
+
+    fn pitch_proof(
+        &self,
+        index: usize,
+        pitch: &WorldNewspaperStoryPitch,
+    ) -> Result<EditorialPitchProof> {
+        let focus_record = self
+            .records
+            .iter()
+            .find(|record| record.record_id == pitch.focus_citation)
+            .cloned()
+            .ok_or_else(|| anyhow!("agenda focus record is absent from the public ledger"))?;
+        let supporting_records = pitch
+            .citations
+            .iter()
+            .filter(|record_id| **record_id != pitch.focus_citation)
+            .map(|record_id| {
+                let record = self
+                    .records
+                    .iter()
+                    .find(|record| &record.record_id == record_id)
+                    .ok_or_else(|| {
+                        anyhow!("agenda supporting record is absent from the public ledger")
+                    })?;
+                Ok(EditorialSupportingRecord {
+                    record_id: record.record_id.clone(),
+                    at: record.at,
+                    headline: record.headline.clone(),
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        Ok(EditorialPitchProof {
+            page_position: if index == 0 {
+                "front_page_lead".into()
+            } else {
+                format!("inside_article_{}", index + 1)
+            },
+            narrative_claim: pitch.narrative_claim.clone(),
+            tension: pitch.tension.clone(),
+            public_question: pitch.public_question.clone(),
+            focus_record,
+            supporting_records,
+        })
+    }
+}
+
+fn editorial_agenda_candidate_digest(agenda: &WorldNewspaperEditorialAgenda) -> Result<String> {
+    Ok(format!(
+        "sha256:{:x}",
+        Sha256::digest(rmp_serde::to_vec_named(agenda)?)
+    ))
 }
 
 fn normalize_query_terms(values: &mut Vec<String>, label: &str) -> Result<()> {
@@ -543,7 +661,7 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
     fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
         let citations = self.visible_record_ids.iter().cloned().collect::<Vec<_>>();
         let story_budget = self.max_articles.min(self.records.len());
-        let submit_schema = serde_json::json!({
+        let propose_schema = serde_json::json!({
             "type":"object",
             "additionalProperties":false,
             "required":[
@@ -553,7 +671,7 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                 "story_pitches"
             ],
             "properties":{
-                "tool":{"const":"submit_agenda"},
+                "tool":{"const":"propose_agenda"},
                 "dominant_throughline":{"type":"string","minLength":1,"maxLength":500},
                 "reader_stake":{"type":"string","minLength":1,"maxLength":500},
                 "story_pitches":{
@@ -627,10 +745,25 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                 "limit":{"type":"integer","minimum":1,"maximum":MAX_PUBLIC_RECORD_QUERY_RESULTS}
             }
         });
-        let command_schema = if citations.is_empty() {
-            query_schema
+        let mut commands = vec![query_schema];
+        if !citations.is_empty() {
+            commands.push(propose_schema);
+        }
+        if let Some((candidate_digest, _)) = &self.pending_agenda {
+            commands.push(serde_json::json!({
+                "type":"object",
+                "additionalProperties":false,
+                "required":["tool","candidate_digest"],
+                "properties":{
+                    "tool":{"const":"commit_agenda"},
+                    "candidate_digest":{"const":candidate_digest}
+                }
+            }));
+        }
+        let command_schema = if commands.len() == 1 {
+            commands.remove(0)
         } else {
-            serde_json::json!({"oneOf":[query_schema,submit_schema]})
+            serde_json::json!({"oneOf":commands})
         };
         let mut schema = serde_json::json!({
             "type":"object",
@@ -679,7 +812,7 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                     receipts: Vec::new(),
                 },
             },
-            NarrativeSelectionCommand::SubmitAgenda {
+            NarrativeSelectionCommand::ProposeAgenda {
                 dominant_throughline,
                 reader_stake,
                 story_pitches,
@@ -689,29 +822,38 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                     reader_stake,
                     story_pitches,
                 };
-                let uninspected_record = agenda
-                    .story_pitches
-                    .iter()
-                    .flat_map(|pitch| &pitch.citations)
-                    .find(|record_id| !self.visible_record_ids.contains(*record_id));
-                if let Some(record_id) = uninspected_record {
-                    return ModelAgentToolOutcome::Rejected {
-                        finding: NarrativeSelectionFinding::AgendaRejected {
-                            reason: format!(
-                                "agenda cites public record {record_id} without querying it"
-                            ),
-                        },
-                        receipts: Vec::new(),
-                    };
-                }
-                match validate_editorial_agenda(self.records, &agenda, self.max_articles) {
-                    Ok(()) => ModelAgentToolOutcome::Accepted {
-                        output: agenda,
+                match self.propose_agenda(agenda) {
+                    Ok(observation) => ModelAgentToolOutcome::Continue {
+                        observation,
                         receipts: Vec::new(),
                     },
                     Err(error) => ModelAgentToolOutcome::Rejected {
                         finding: NarrativeSelectionFinding::AgendaRejected {
                             reason: error.to_string().chars().take(500).collect(),
+                        },
+                        receipts: Vec::new(),
+                    },
+                }
+            }
+            NarrativeSelectionCommand::CommitAgenda { candidate_digest } => {
+                match &self.pending_agenda {
+                    Some((expected_digest, agenda)) if &candidate_digest == expected_digest => {
+                        ModelAgentToolOutcome::Accepted {
+                            output: agenda.clone(),
+                            receipts: Vec::new(),
+                        }
+                    }
+                    Some((expected_digest, _)) => ModelAgentToolOutcome::Rejected {
+                        finding: NarrativeSelectionFinding::AgendaRejected {
+                            reason: format!(
+                                "agenda commit names stale candidate {candidate_digest}; current candidate is {expected_digest}"
+                            ),
+                        },
+                        receipts: Vec::new(),
+                    },
+                    None => ModelAgentToolOutcome::Rejected {
+                        finding: NarrativeSelectionFinding::AgendaRejected {
+                            reason: "agenda commit requires one reviewed proposal".into(),
                         },
                         receipts: Vec::new(),
                     },
@@ -991,7 +1133,7 @@ async fn select_editorial_agenda(
     crate::agent::ModelAgentFailure,
 > {
     let instructions = format!(
-        "You are the narrative editor of `{}`. Construct one compelling editorial agenda by investigating a frozen public ledger containing {} canonical news records. No intermediate source object owns these facts and no initial viewport is privileged. Use query_public_records to inspect the ledger. An empty query browses it in the requested order; literal terms, exact public entity names, assertion status, channel, and an inspected cursor may narrow or page it. Query responses are bounded context over stable record IDs, not summaries that replace the ledger. Search backward for causes when recent administrative responses hide the original rupture; search by actors, places, objects, institutions, or consequences to find opposition and countermoves. Never cite a record until the workbench has returned it.\n\nA newspaper is not a neutral transcript. Select a dominant throughline that matters to this publication's readers; connect records that expose conflict, responsibility, hypocrisy, lived stakes, scandal, named opposition, public reaction, or material consequence. Omitted true facts remain true and unreported. Use every relevant inspected record that the actual story needs; article count and bounded copy define page space. Do not cover a record merely because it exists. Treat bookkeeping about someone retaining a memory as context unless the act of remembering itself caused a public consequence. The first pitch is the lead and must set lead=true; every later pitch must set lead=false. A foundational public record may support more than one continuing story when each pitch uses it for a distinct throughline. Every pitch must choose one focus_citation from its stable record IDs: the concrete fact the headline and lede should make impossible to ignore. When a later procedural update belongs to an older vivid incident, query and cite both: identify what is newly changed, acknowledge the continuing incident, and do not let routine handling impersonate the original news. narrative_claim states the pointed story the publication can responsibly construct from those records. narrative_claim, tension, public_question, dominant_throughline, and reader_stake are editorial framing and hypotheses, not evidence. They may be pointed, skeptical, or insinuating, but they must not invent an event, person, institution, place, motive, quotation, outcome, private knowledge, or factual status. The downstream editor may state facts only from the admitted record IDs and will be constrained to the exact groupings. The copy desk judges factual claims independently. Submit the agenda only after the query results support a coherent story.\n\nPUBLICATION VOICE:\n{}",
+        "You are the narrative editor of `{}`. Construct one compelling editorial agenda by investigating a frozen public ledger containing {} canonical news records. No intermediate source object owns these facts and no initial viewport is privileged. Use query_public_records to inspect the ledger. An empty query browses it in the requested order; literal terms, exact public entity names, assertion status, channel, and an inspected cursor may narrow or page it. Query responses are bounded context over stable record IDs, not summaries that replace the ledger. Search backward for causes when recent administrative responses hide the original rupture; search by actors, places, objects, institutions, or consequences to find opposition and countermoves. Never cite a record until the workbench has returned it.\n\nA newspaper is not a neutral transcript. Select a dominant throughline that matters to this publication's readers; connect records that expose conflict, responsibility, hypocrisy, lived stakes, scandal, named opposition, public reaction, or material consequence. Omitted true facts remain true and unreported. Use every relevant inspected record that the actual story needs; article count and bounded copy define page space. Do not cover a record merely because it exists. Treat bookkeeping about someone retaining a memory as context unless the act of remembering itself caused a public consequence. The first pitch is the lead and must set lead=true; every later pitch must set lead=false. A foundational public record may support more than one continuing story when each pitch uses it for a distinct throughline. Every pitch must choose one focus_citation from its stable record IDs: the concrete fact the headline and lede should make impossible to ignore. When a later procedural update belongs to an older vivid incident, query and cite both: identify what is newly changed, acknowledge the continuing incident, and do not let routine handling impersonate the original news. narrative_claim states the pointed story the publication can responsibly construct from those records. narrative_claim, tension, public_question, dominant_throughline, and reader_stake are editorial framing and hypotheses, not evidence. They may be pointed, skeptical, or insinuating, but they must not invent an event, person, institution, place, motive, quotation, outcome, private knowledge, or factual status. The downstream editor may state facts only from the admitted record IDs and will be constrained to the exact groupings. The copy desk judges factual claims independently.\n\nPropose the agenda first. The workbench will dereference every focus record and return a front-page proof that places the proposed lead beside the stories it would bury. Treat that as an editorial meeting, not a schema ceremony: compare actual reader consequence, revise the agenda or query again when the proof exposes a stronger lead or a paperwork-shaped angle, and commit only the candidate you are prepared to print.\n\nPUBLICATION VOICE:\n{}",
         prepared.title,
         prepared.records.len(),
         prepared.editorial_voice,
@@ -1011,6 +1153,7 @@ async fn select_editorial_agenda(
         max_articles,
         visible_record_ids: BTreeSet::new(),
         completed_queries: BTreeSet::new(),
+        pending_agenda: None,
     };
     crate::agent::run_model_agent(model, &spec, &mut tool).await
 }
@@ -1429,7 +1572,7 @@ pub async fn advance_world_newspaper(
     let agenda_json = serde_json::to_string_pretty(&agenda)?;
     let selected_source_json = source_json_for_agenda(&prepared.records, Some(&agenda))?;
     let base_prompt = format!(
-        "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nYou are the accountable copy editor of an in-world newspaper. Turn the admitted narrative agenda and bounded newsroom fact desk below into one convincing front page for `{title}`. The narrative agenda owns selection, article order, focus citation, narrative claim, and exact citation groupings. Implement every pitch in order and use exactly that pitch's citations for the corresponding article. Center each headline and lede on the most consequential concrete fact supported by its focus_citation, then use the other selected records to substantiate or complicate the narrative_claim. Record bookkeeping, memory retention, maintained warnings, and routine procedure are not automatically the news merely because they are recent. When a later update belongs to an older vivid incident, distinguish what changed from what persists and tell readers plainly that this is a continuing story; do not parade the handling protocol in front of the incident itself. The agenda's narrative_claim, tension, public_question, dominant_throughline, and reader_stake are framing instructions, not source evidence. You may express their interpretation or insinuation as clearly editorial language, but every concrete factual assertion must come from the cited public records. Do not recover omitted sources or invent a connective fact merely because the agenda suggests one. The first article must use section `Front Page` and, when its citations name a place, use one of those supplied place names as its dateline. Later articles use the other supplied newspaper sections.\n\nRewrite completely in the publication voice for readers who live in this world. Build a readable throughline: lead with the vivid consequence, identify opposing named actors and countermoves when the cited facts supply them, make lived material stakes legible, and let later stories echo or complicate the lead. Attribute claims and evidence to the named institution, notice, witness, or public act that supplied them. Report a published notice as a notice about physical evidence; never say an institution published the teeth, seal, corpse, or other object itself. When records dispute a document, accusation, identity, outcome, or authority, preserve the dispute with explicit attribution or words such as alleged or disputed instead of selecting one claim as settled fact. Never invent quotations to simulate reportage.\n\nHeadlines report consequences rather than state transitions. Decks add context instead of repeating headlines. Paragraphs explain why events matter to local readers, connect institutional moves, and vary their rhythm without explaining proper nouns like a setting guide. Keep evidence inventories plain and attributed. Dry barbs, metaphor, political characterization, and rhetorical judgment are welcome when they introduce no new concrete entity, occurrence, status, motive, quotation, number, or private knowledge. This is a newspaper with a point of view, not parody and not a world-state transcript.\n\nEvery factual assertion must be supported by the cited records for that article. You may synthesize implications plainly supported by several citations, but do not invent quotations, people, offices, places, numbers, documents, motives, chronology, outcomes, or private knowledge. Treat assertion_status as authoritative: an attempt has no result, a committed course does not complete actions embedded in its agenda, a public declaration does not prove its demand succeeded, and only material_change_committed supports a completed material consequence. A named person's supported_identity_attributes list is exhaustive; when empty, use their name or identity-neutral wording rather than inventing pronouns, gender, title, kinship, or office. Language such as attempts, tries, plans, prepares, readies, seeks, or investigates records activity, not outcome: preserve that uncertainty and do not turn it into an established or official inquiry, public availability, completion, or success unless a citation states that consequence. Use only the allowed generic bylines; they are presentation labels, not new people. Use only a supplied place name as a dateline, or the empty string. The newspaper contract owns a neutral edition label; do not invent or print a calendar, date, price, circulation claim, weather report, advertisement, or notice absent from the desk. Do not make the fact desk, citations, agenda, or verification process part of the reader-facing copy. Never end a headline with an ellipsis.\n\nPUBLICATION VOICE:\n{editorial_voice}\n\nADMITTED NARRATIVE AGENDA:\n{agenda_json}\n\nNEWSROOM FACT DESK:\n{source_json}",
+        "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nYou are `{title}`'s lead writer. Your job is not to transmit a neutral inventory of verified facts. Use the admitted facts as raw material for the publication's chosen narrative: decide what they mean together for your readers, assign blame and importance as clearly signalled interpretation, juxtapose hypocrisy with consequence, ask who benefits, and make one memorable case about the world they inhabit. The narrative agenda owns selection, article order, focus citation, narrative claim, and exact citation groupings. Implement every pitch in order and use exactly that pitch's citations for the corresponding article. Center each headline and lede on the most consequential concrete fact supported by its focus_citation, then use the other selected records to substantiate or complicate the narrative_claim. Record bookkeeping, memory retention, maintained warnings, and routine procedure are not automatically the news merely because they are recent. When a later update belongs to an older vivid incident, distinguish what changed from what persists and tell readers plainly that this is a continuing story; do not parade the handling protocol in front of the incident itself. The agenda's narrative_claim, tension, public_question, dominant_throughline, and reader_stake are the point of the work, not source evidence. Do not recover omitted sources or invent a connective fact merely because the agenda suggests one. The first article must use section `Front Page` and, when its citations name a place, use one of those supplied place names as its dateline. Later articles use the other supplied newspaper sections.\n\nWrite completely in the publication voice for readers who live in this world. Build a readable throughline: lead with the vivid consequence, identify opposing named actors and countermoves when the cited facts supply them, make lived material stakes legible, and let later stories echo or complicate the lead. Attribute claims and evidence naturally to the named institution, notice, witness, or public act that supplied them. Preserve genuinely disputed claims with attribution or ordinary words such as alleged or disputed. Do not turn source limitations into the subject of the article: readers need the event and its consequence, not repeated explanations of what a ledger fails to establish. The independent copy desk owns factual judgment and will return exact findings if the draft overreaches. Write declaratively, let ordinary tense and attribution carry uncertainty, and leave repair to that loop.\n\nHeadlines report consequences rather than state transitions. Decks add context instead of repeating headlines. Paragraphs explain why events matter to local readers, connect institutional moves, and vary their rhythm without explaining proper nouns like a setting guide. Dry barbs, metaphor, political characterization, rhetorical judgment, selection, juxtaposition, and clearly signalled insinuation are your proper tools when they introduce no new concrete fact. This is a newspaper with a point of view, not parody, an evidence inventory, or a world-state transcript.\n\nUse only the selected records for each article and preserve the names and identity attributes they actually supply. Never invent quotations, people, offices, places, numbers, documents, motives, chronology, outcomes, or private knowledge. Use only the allowed generic bylines and supplied place names. The newspaper contract owns a neutral edition label; do not invent or print a calendar, date, price, circulation claim, weather report, advertisement, or notice absent from the desk. Do not mention the fact desk, citations, agenda, assertion statuses, verification process, or phrases such as `the record does not establish` in reader-facing copy. Never end a headline with an ellipsis.\n\nPUBLICATION VOICE:\n{editorial_voice}\n\nADMITTED NARRATIVE AGENDA:\n{agenda_json}\n\nNEWSROOM FACT DESK:\n{source_json}",
         serde_json::to_string(&editorial_schema)?,
         title = prepared.title,
         editorial_voice = prepared.editorial_voice,
@@ -2111,7 +2254,7 @@ async fn run_grounding_reconciliation_step(
 > {
     let indexed_findings = grounding_finding_catalog(&verdict);
     let instructions = format!(
-        "You are Ghostlight's grounding reconciliation agent. Repair one already-edited newspaper page against the same frozen source desk and exact rejection. You do not report new events, add spice, improve the simulation, or rerun the editor. The workbench freezes article selection, order, sections, bylines, citations, and all unaffected copy. Submit only replacements for the numbered current findings, or delete the article containing a numbered finding when its cited notes cannot support a grounded story. Each replacement selects one finding_ref and supplies only its replacement text. The deterministic workbench owns the selected finding's article, text field, paragraph, exact phrase, and byte span. replacement may be empty when phrase deletion is the honest repair. Address the complete finding set in this one pass. When exact findings are nested in one text field, still answer every finding_ref; the workbench deterministically applies the outermost replacement because it owns the complete affected span and treats contained replacements as covered. Preserve source status exactly: an attempt is not a result, a committed course does not complete its embedded plans, and a public declaration is not evidence that its demand succeeded. A named person's supported_identity_attributes is exhaustive; when it is empty, use the name or identity-neutral wording and do not invent pronouns, gender, title, kinship, or office. Delete an unsupported phrase rather than replacing it with an adjacent invention. The deterministic workbench applies the edits transactionally and reruns the same whole-page copy desk.\n\nFROZEN NEWSROOM FACT DESK:\n{}\n\nCURRENT CHECKPOINTED DRAFT:\n{}\n\nCURRENT REJECTION VERDICT:\n{}\n\nNUMBERED EXACT FINDINGS:\n{}",
+        "You are Ghostlight's grounding reconciliation agent. Repair one already-edited newspaper page against the same frozen source desk and exact rejection. You do not report new events, add spice, improve the simulation, or rerun the writer. The workbench freezes article selection, order, sections, bylines, citations, and all unaffected copy. Submit only replacements for the numbered current findings, or delete the article containing a numbered finding when its cited notes cannot support a grounded story. Each replacement selects one finding_ref and supplies only its replacement text. The deterministic workbench owns the selected finding's article, text field, paragraph, exact phrase, and byte span. replacement may be empty when phrase deletion is the honest repair. Address the complete finding set in this one pass. When exact findings are nested in one text field, still answer every finding_ref; the workbench deterministically applies the outermost replacement because it owns the complete affected span and treats contained replacements as covered. The copy desk's exact finding owns the semantic defect; repair that defect in ordinary newspaper prose without explaining the verification process or converting unsupported absence into a new claim. Prefer the smallest deletion, attribution, or tense change that leaves the surrounding narrative alive. The deterministic workbench applies the edits transactionally and reruns the same whole-page copy desk.\n\nFROZEN NEWSROOM FACT DESK:\n{}\n\nCURRENT CHECKPOINTED DRAFT:\n{}\n\nCURRENT REJECTION VERDICT:\n{}\n\nNUMBERED EXACT FINDINGS:\n{}",
         source_json,
         serde_json::to_string_pretty(&draft).unwrap_or_default(),
         serde_json::to_string_pretty(&verdict).unwrap_or_default(),
@@ -2991,6 +3134,45 @@ mod tests {
     impl ModelPort for ScriptedNewspaperModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             self.requests.lock().unwrap().push(request.clone());
+            if request.stage == "newspaper_narrative_selection_agent_action"
+                && request
+                    .output_schema
+                    .as_ref()
+                    .is_some_and(|schema| schema.to_string().contains("commit_agenda"))
+            {
+                fn candidate_digest(schema: &serde_json::Value) -> Option<&str> {
+                    if schema
+                        .pointer("/properties/tool/const")
+                        .and_then(serde_json::Value::as_str)
+                        == Some("commit_agenda")
+                    {
+                        return schema
+                            .pointer("/properties/candidate_digest/const")
+                            .and_then(serde_json::Value::as_str);
+                    }
+                    match schema {
+                        serde_json::Value::Array(values) => {
+                            values.iter().find_map(candidate_digest)
+                        }
+                        serde_json::Value::Object(values) => {
+                            values.values().find_map(candidate_digest)
+                        }
+                        _ => None,
+                    }
+                }
+                let digest = request
+                    .output_schema
+                    .as_ref()
+                    .and_then(candidate_digest)
+                    .ok_or_else(|| anyhow!("fixture commit schema omitted candidate digest"))?;
+                return Ok(serde_json::json!({
+                    "command":{
+                        "tool":"commit_agenda",
+                        "candidate_digest":digest,
+                    }
+                })
+                .to_string());
+            }
             let response = self
                 .responses
                 .lock()
@@ -3175,8 +3357,8 @@ mod tests {
 
     const QUERY_ALL_RECORDS: &str = r#"{"command":{"tool":"query_public_records","terms":[],"match_terms":"all","entity_names":[],"assertion_statuses":[],"channels":[],"order":"newest","cursor":null,"limit":24}}"#;
     const QUERY_FOUNDING_CRISIS: &str = r#"{"command":{"tool":"query_public_records","terms":["speaking child","severed delegation hands","failed grain pumps"],"match_terms":"any","entity_names":[],"assertion_statuses":[],"channels":[],"order":"oldest","cursor":null,"limit":24}}"#;
-    const ONE_STORY_AGENDA: &str = r#"{"command":{"tool":"submit_agenda","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned royal seal and the treasurer's dismissal are one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?"}]}}"#;
-    const TWO_STORY_AGENDA: &str = r#"{"command":{"tool":"submit_agenda","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned seal and dismissal are the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?"},{"lead":false,"citations":["news:west-gate"],"focus_citation":"news:west-gate","narrative_claim":"The gate closure is a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?"}]}}"#;
+    const ONE_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned royal seal and the treasurer's dismissal are one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?"}]}}"#;
+    const TWO_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned seal and dismissal are the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?"},{"lead":false,"citations":["news:west-gate"],"focus_citation":"news:west-gate","narrative_claim":"The gate closure is a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?"}]}}"#;
     const ACCEPTED_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
     const TWO_ARTICLE_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]},{"section":"Dispatches","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","byline":"Staff report","dateline":"Yard","citations":["news:west-gate"],"paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace its cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}]}"#;
     const EMPTY_REPAIR_ACTION: &str =
@@ -3269,7 +3451,7 @@ mod tests {
         );
 
         let agenda: NarrativeSelectionAction = serde_json::from_str(TWO_STORY_AGENDA).unwrap();
-        let NarrativeSelectionCommand::SubmitAgenda {
+        let NarrativeSelectionCommand::ProposeAgenda {
             dominant_throughline,
             reader_stake,
             story_pitches,
@@ -3330,9 +3512,10 @@ mod tests {
             max_articles: 3,
             visible_record_ids: BTreeSet::new(),
             completed_queries: BTreeSet::new(),
+            pending_agenda: None,
         };
         let initial_schema = tool.action_schema().unwrap().to_string();
-        assert!(!initial_schema.contains("submit_agenda"));
+        assert!(!initial_schema.contains("propose_agenda"));
 
         let retrieval = tool
             .invoke(
@@ -3375,8 +3558,30 @@ mod tests {
                 .contains("news:archive:00")
         );
 
+        let ModelAgentToolOutcome::Rejected { finding, .. } = tool
+            .invoke(
+                NarrativeSelectionAction {
+                    command: NarrativeSelectionCommand::CommitAgenda {
+                        candidate_digest: format!("sha256:{}", "0".repeat(64)),
+                    },
+                },
+                &ModelAgentToolContext {
+                    source_receipt_ids: Vec::new(),
+                    current_model_receipt: None,
+                },
+            )
+            .await
+        else {
+            panic!("an unreviewed agenda must not be committable")
+        };
+        assert!(matches!(
+            finding,
+            NarrativeSelectionFinding::AgendaRejected { reason }
+                if reason.contains("requires one reviewed proposal")
+        ));
+
         let action = NarrativeSelectionAction {
-            command: NarrativeSelectionCommand::SubmitAgenda {
+            command: NarrativeSelectionCommand::ProposeAgenda {
                 dominant_throughline: "The original crisis survived its administrative aftermath."
                     .into(),
                 reader_stake: "Readers still bear the consequences of the founding rupture.".into(),
@@ -3392,7 +3597,7 @@ mod tests {
                 }],
             },
         };
-        let ModelAgentToolOutcome::Accepted { output: agenda, .. } = tool
+        let ModelAgentToolOutcome::Continue { observation, .. } = tool
             .invoke(
                 action,
                 &ModelAgentToolContext {
@@ -3402,7 +3607,100 @@ mod tests {
             )
             .await
         else {
-            panic!("queried foundational record must be admissible")
+            panic!("queried foundational record must enter editorial review")
+        };
+        let NarrativeSelectionFinding::AgendaProposed {
+            candidate_digest,
+            front_page,
+            below_fold,
+            ..
+        } = observation
+        else {
+            panic!("proposal must return a front-page proof")
+        };
+        assert_eq!(front_page.focus_record.record_id, "news:archive:00");
+        assert!(below_fold.is_empty());
+        assert!(
+            tool.action_schema()
+                .unwrap()
+                .to_string()
+                .contains("commit_agenda")
+        );
+
+        let revised_action = NarrativeSelectionAction {
+            command: NarrativeSelectionCommand::ProposeAgenda {
+                dominant_throughline:
+                    "The founding rupture still governs the administrative aftermath.".into(),
+                reader_stake: "Readers still bear the consequences of the founding rupture.".into(),
+                story_pitches: vec![WorldNewspaperStoryPitch {
+                    lead: true,
+                    citations: vec!["news:archive:00".into()],
+                    focus_citation: "news:archive:00".into(),
+                    narrative_claim:
+                        "The original crisis remains more consequential than its paperwork.".into(),
+                    tension: "Institutions administer consequences without resolving the cause."
+                        .into(),
+                    public_question: "Who benefits when the founding rupture leaves the page?"
+                        .into(),
+                }],
+            },
+        };
+        let ModelAgentToolOutcome::Continue { observation, .. } = tool
+            .invoke(
+                revised_action,
+                &ModelAgentToolContext {
+                    source_receipt_ids: Vec::new(),
+                    current_model_receipt: None,
+                },
+            )
+            .await
+        else {
+            panic!("a revised agenda must receive a new editorial review")
+        };
+        let NarrativeSelectionFinding::AgendaProposed {
+            candidate_digest: revised_candidate_digest,
+            ..
+        } = observation
+        else {
+            panic!("revised proposal must return a front-page proof")
+        };
+        assert_ne!(candidate_digest, revised_candidate_digest);
+        let ModelAgentToolOutcome::Rejected { finding, .. } = tool
+            .invoke(
+                NarrativeSelectionAction {
+                    command: NarrativeSelectionCommand::CommitAgenda {
+                        candidate_digest: candidate_digest.clone(),
+                    },
+                },
+                &ModelAgentToolContext {
+                    source_receipt_ids: Vec::new(),
+                    current_model_receipt: None,
+                },
+            )
+            .await
+        else {
+            panic!("a superseded agenda digest must not be committable")
+        };
+        assert!(matches!(
+            finding,
+            NarrativeSelectionFinding::AgendaRejected { reason }
+                if reason.contains("stale candidate")
+        ));
+        let ModelAgentToolOutcome::Accepted { output: agenda, .. } = tool
+            .invoke(
+                NarrativeSelectionAction {
+                    command: NarrativeSelectionCommand::CommitAgenda {
+                        candidate_digest: revised_candidate_digest,
+                    },
+                },
+                &ModelAgentToolContext {
+                    source_receipt_ids: Vec::new(),
+                    current_model_receipt: None,
+                },
+            )
+            .await
+        else {
+            panic!("reviewed proposal must be committable")
         };
         let editor_desk = source_json_for_agenda(&records, Some(&agenda)).unwrap();
         assert!(editor_desk.contains("\"record_id\": \"news:archive:00\""));
@@ -3417,6 +3715,7 @@ mod tests {
             max_articles: 3,
             visible_record_ids: BTreeSet::new(),
             completed_queries: BTreeSet::new(),
+            pending_agenda: None,
         };
         let query = |cursor| PublicRecordQuery {
             terms: Vec::new(),
@@ -3456,7 +3755,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn narrative_agent_queries_before_submitting_an_agenda() {
+    async fn narrative_agent_queries_and_reviews_before_committing_an_agenda() {
         let prepared = prepare_newspaper(
             &campaign_with_archive_news(),
             "The Canopy Ledger",
@@ -3466,16 +3765,16 @@ mod tests {
         .unwrap();
         let model = ScriptedNewspaperModel::new([
             QUERY_FOUNDING_CRISIS,
-            r#"{"command":{"tool":"submit_agenda","dominant_throughline":"The founding crisis survived its administrative aftermath.","reader_stake":"Readers still bear the consequences while institutions manage the paperwork.","story_pitches":[{"lead":true,"citations":["news:archive:00"],"focus_citation":"news:archive:00","narrative_claim":"The original public record is the fact later notices cannot domesticate.","tension":"Administrative responses multiply while the founding rupture remains unresolved.","public_question":"Who benefits when the cause leaves the front page?"}]}}"#,
+            r#"{"command":{"tool":"propose_agenda","dominant_throughline":"The founding crisis survived its administrative aftermath.","reader_stake":"Readers still bear the consequences while institutions manage the paperwork.","story_pitches":[{"lead":true,"citations":["news:archive:00"],"focus_citation":"news:archive:00","narrative_claim":"The original public record is the fact later notices cannot domesticate.","tension":"Administrative responses multiply while the founding rupture remains unresolved.","public_question":"Who benefits when the cause leaves the front page?"}]}}"#,
         ]);
 
         let run = select_editorial_agenda(&model, &prepared, 3).await.unwrap();
 
-        assert_eq!(run.receipts.len(), 2);
+        assert_eq!(run.receipts.len(), 3);
         assert_eq!(run.output.story_pitches.len(), 1);
         assert_eq!(run.output.story_pitches[0].citations, ["news:archive:00"]);
         let requests = model.requests();
-        assert_eq!(requests.len(), 2);
+        assert_eq!(requests.len(), 3);
         assert!(requests[1].lived_stream.contains("news:archive:00"));
     }
 
@@ -3764,7 +4063,7 @@ mod tests {
             audit.contains("Assertion status: course_committed_embedded_actions_not_completed")
         );
         assert!(audit.contains("Named people: None asserted"));
-        assert_eq!(composition.model_receipts.len(), 4);
+        assert_eq!(composition.model_receipts.len(), 5);
         let requests = model.requests();
         assert_eq!(
             requests[0].stage,
@@ -3775,14 +4074,18 @@ mod tests {
             requests[1].stage,
             "newspaper_narrative_selection_agent_action"
         );
-        assert_eq!(requests[2].stage, "newspaper_editor");
+        assert_eq!(
+            requests[2].stage,
+            "newspaper_narrative_selection_agent_action"
+        );
+        assert_eq!(requests[3].stage, "newspaper_editor");
         assert!(
-            requests[2]
+            requests[3]
                 .lived_stream
                 .contains("ADMITTED NARRATIVE AGENDA")
         );
         assert!(
-            requests[2]
+            requests[3]
                 .source_receipt_ids
                 .contains(&composition.model_receipts[0].storage_key().to_owned())
         );
@@ -3970,23 +4273,24 @@ mod tests {
         .await
         .unwrap();
 
-        assert_eq!(composition.model_receipts.len(), 6);
+        assert_eq!(composition.model_receipts.len(), 7);
         let requests = model.requests();
         assert_eq!(requests[0].temperature, Some(0.8));
         assert_eq!(requests[1].temperature, Some(0.8));
-        assert_eq!(requests[2].temperature, Some(0.75));
-        assert_eq!(requests[4].temperature, Some(0.1));
-        assert_eq!(requests[4].model, MODEL_BALANCED);
+        assert_eq!(requests[2].temperature, Some(0.8));
+        assert_eq!(requests[3].temperature, Some(0.75));
+        assert_eq!(requests[5].temperature, Some(0.1));
+        assert_eq!(requests[5].model, MODEL_BALANCED);
         assert_eq!(
-            requests[4].stage,
+            requests[5].stage,
             "newspaper_grounding_reconciliation_agent_action"
         );
         assert!(
-            requests[4]
+            requests[5]
                 .lived_stream
                 .contains("A gambling debt reaches the throne room")
         );
-        let repair_schema_value = requests[4].output_schema.as_ref().unwrap();
+        let repair_schema_value = requests[5].output_schema.as_ref().unwrap();
         assert_eq!(
             repair_schema_value
                 .pointer("/properties/replacements/items/properties/finding_ref/enum"),
@@ -4008,8 +4312,8 @@ mod tests {
             composition.issue.articles[0].source_news_ids(),
             ["news:seal-scandal"]
         );
-        assert!(requests[3].lived_stream.contains("publication role labels"));
-        assert!(requests[3].lived_stream.contains("Metaphor, dry wit"));
+        assert!(requests[4].lived_stream.contains("publication role labels"));
+        assert!(requests[4].lived_stream.contains("Metaphor, dry wit"));
         assert!(composition.grounding.accepted);
     }
 
@@ -4043,7 +4347,7 @@ mod tests {
         assert!(
             !render_world_newspaper_markdown(&composition.issue).contains("west gate is unsafe")
         );
-        assert_eq!(composition.model_receipts.len(), 6);
+        assert_eq!(composition.model_receipts.len(), 7);
         let final_copy_desk = composition.model_receipts.last().unwrap();
         assert_eq!(final_copy_desk.stage, "newspaper_copy_desk");
         assert!(
@@ -4090,7 +4394,7 @@ mod tests {
         )
         .await
         .unwrap();
-        assert_eq!(composition.model_receipts.len(), 8);
+        assert_eq!(composition.model_receipts.len(), 9);
         assert!(composition.grounding.accepted);
         let requests = model.requests();
         assert_eq!(
@@ -4110,11 +4414,11 @@ mod tests {
             2
         );
         assert!(
-            requests[6]
+            requests[7]
                 .lived_stream
                 .contains("revised deck still overstates blame")
         );
-        assert!(requests[6].lived_stream.contains("\"finding_ref\""));
+        assert!(requests[7].lived_stream.contains("\"finding_ref\""));
     }
 
     #[tokio::test]
@@ -4143,7 +4447,7 @@ mod tests {
         .await
         .unwrap();
 
-        assert_eq!(composition.model_receipts.len(), 9);
+        assert_eq!(composition.model_receipts.len(), 10);
         assert!(composition.grounding.accepted);
         let requests = model.requests();
         assert_eq!(
@@ -4172,16 +4476,16 @@ mod tests {
                 .count(),
             2
         );
-        assert!(requests[5].lived_stream.contains("was not admitted"));
+        assert!(requests[6].lived_stream.contains("was not admitted"));
         assert!(
-            requests[7]
+            requests[8]
                 .lived_stream
                 .contains("revised deck still overstates blame")
         );
         let final_copy_desk = composition.model_receipts.last().unwrap();
         assert_eq!(final_copy_desk.stage, "newspaper_copy_desk");
         assert_eq!(final_copy_desk.validation_result, "valid");
-        assert!(composition.model_receipts[..8].iter().all(|receipt| {
+        assert!(composition.model_receipts[..9].iter().all(|receipt| {
             final_copy_desk
                 .source_receipt_ids
                 .contains(&receipt.storage_key().to_owned())
@@ -4221,7 +4525,7 @@ mod tests {
             .expect("terminal editorial rejection must retain its receipts");
 
         assert!(failure.message.contains("pending after 3 semantic steps"));
-        assert_eq!(failure.model_receipts.len(), 10);
+        assert_eq!(failure.model_receipts.len(), 11);
         assert_eq!(
             failure
                 .model_receipts
@@ -4289,7 +4593,7 @@ mod tests {
             panic!("three rejected actions must yield typed pending state")
         };
         assert_eq!(checkpoint.generation(), 3);
-        assert_eq!(prior_receipts.len(), 10);
+        assert_eq!(prior_receipts.len(), 11);
         assert_eq!(
             store
                 .keys("world_newspaper_reconciliation_checkpoint.v2")
@@ -4334,13 +4638,13 @@ mod tests {
                 .source_receipt_ids
                 .contains(&checkpoint.id().to_owned())
         );
-        assert_eq!(accepted.model_receipts.len(), 12);
+        assert_eq!(accepted.model_receipts.len(), 13);
         assert_eq!(
             &accepted.model_receipts[..prior_receipts.len()],
             prior_receipts.as_slice()
         );
         let final_copy_desk = accepted.model_receipts.last().unwrap();
-        assert!(accepted.model_receipts[..11].iter().all(|receipt| {
+        assert!(accepted.model_receipts[..12].iter().all(|receipt| {
             final_copy_desk
                 .source_receipt_ids
                 .contains(&receipt.storage_key().to_owned())
