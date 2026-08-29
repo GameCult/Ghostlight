@@ -1285,27 +1285,24 @@ The deliberative newsroom boundary is live under this authority map:
   selects the facts its actual stories require, and constructs a pointed
   narrative without inventing world state or paying for a duplicate source
   ontology.
-- **Owner:** canonical `NewsIssue` plus `Event` rows own public provenance
-  and facts. `Event::public_assertion_status` owns attempt, declaration,
+- **Owner:** canonical `NewsIssue` plus `Event` rows own public provenance and
+  facts. `Event::public_assertion_status` owns attempt, declaration,
   committed-course, material-outcome, and unspecified-account semantics. The
-  narrative-selection agent owns story choice, order, focal record, and
-  framing. The publication writer owns narrative construction in reader-facing
-  prose: meaning, emphasis, juxtaposition, rhetorical judgment, and clearly
-  signalled interpretation over the admitted facts. Its deterministic
-  workbench owns query admission, inspected-record
-  membership, agenda validation, focus-record dereferencing, the current
-  candidate agenda, its exact digest, and commit admission. The initial
-  publication editor owns the first prose proposal. The admitted agenda remains
-  the sole owner of article selection, order, focus, citation grouping, and
-  framing. The copy desk owns factual judgment. The Night Editor owns
-  editorial-quality acceptance and article-specific findings after factual
-  clearance. The publication rewrite desk owns prose repair for either desk's
-  rejection, and the shared publication-review primitive owns the fixed review
-  order: copy desk first, Night Editor second. `WorldKernel` remains the only
-  world-event writer. Query results, editorial proofs, and both review verdicts
-  own no world facts.
+  narrative-selection agent owns assignment: story choice, order, focal record,
+  exact citation grouping, throughline, tension, and reader question. Its
+  deterministic workbench owns query admission, inspected-record membership,
+  agenda validation, focus-record dereferencing, candidate identity, and exact
+  commit admission. The lead writer owns one complete reader-facing page from
+  that assignment. The copy desk owns one complete factual query report over
+  the writer's page; it neither rewrites nor accepts publication. The Night
+  Editor owns one deadline close over that page and report. The deterministic
+  press witness owns structural admission, lineage, and exact before/after
+  evidence for what printed; it does not judge prose. Errors discovered after
+  close belong to a later edition's correction memory, not a same-edition
+  repair loop. V8 defines that ownership boundary but does not yet persist a
+  typed correction record. `WorldKernel` remains the only world-event writer.
 - **Inputs:** one exact campaign revision, publication title and voice, article
-  budget, source-receipt ancestry, and newsroom contract version. Through the
+  budget, source-receipt ancestry, and v8 newsroom contract. Through the
   existing generic agent harness, the selector issues deterministic bounded
   queries over stable `NewsIssue` IDs using literal terms, exact asserted
   public entity names, assertion statuses, channels, newest/oldest ordering,
@@ -1326,15 +1323,20 @@ The deliberative newsroom boundary is live under this authority map:
   public question. Article count plus bounded paragraphs and output tokens
   define page space. There is no citation-count page budget. A foundational
   record may support several continuing stories when each pitch uses it for a
-  distinct throughline.
+  distinct throughline. The writer emits one page; the copy desk emits one
+  assessment plus the complete bounded set of exact factual query passages;
+  the Night Editor emits one close action; and accepted composition v3 carries
+  the printed issue, copy report, press-close witness, and exact receipt chain.
 - **Derived state:** public-record projections contain their stable ID,
   timestamp, channel, headline, reliability, exact committed accounts,
   assertion statuses, committed event IDs, and only those people,
   institutions, populations, places, and identity attributes asserted by the
   account. Query pages, the visible-ID set, pending agenda, candidate digest,
   front-page proof, review questions, and late reader-facing citation numbers
-  are transparent derived views. They are not persisted newsroom subjects,
-  fact bundles, relevance authorities, factual verdicts, or event writers.
+  are transparent derived views. The query-index set, query-bearing article
+  set, changed-article set, source-page digest, printed-page digest, and
+  receipt-chain digest are also derived. None is a persisted world subject,
+  fact bundle, relevance authority, prose judge, or event writer.
 - **Editorial path:** the selector must inspect a record before citing it. It
   can search backward from routine updates to the original rupture and can
   acknowledge that later handling is an installment in a continuing story.
@@ -1348,86 +1350,82 @@ The deliberative newsroom boundary is live under this authority map:
   each article on its focus record's consequential fact, and may not widen or
   regroup the selection. Record bookkeeping, memory retention, maintained
   warnings, and procedure are not automatically the lede merely because they
-  are recent. The copy desk, Night Editor, and publication rewrite desk see the
-  same selected-record projection.
-- **Review and grounding path:** accepted stable IDs lower once into the existing
+  are recent. The writer, copy desk, and Night Editor see the same
+  selected-record projection.
+- **Desk and press path:** accepted stable IDs lower once into the existing
   self-contained semantic audit with source news IDs, channels, reliability,
   exact account text, assertion status, event IDs, supported identity
   attributes, institutions, populations, and places. Reader-facing numeric
-  labels are assigned only during lowering. The copy desk first judges every
-  concrete reader-facing claim against those exact cited records. Only a
-  factually accepted page reaches the Night Editor, which judges whether the
-  page makes the admitted throughline and strongest honest case legible from
-  the same selected records. Either desk may reject through one tagged desk
-  verdict. Rejected copy enters one publication-owned rewrite desk. That agent
-  receives the rejecting desk's exact findings, frozen selected-record
-  projection, publication title and house voice, admitted agenda, and current
-  frozen page. It may
-  rewrite all reader-facing prose of only the articles named by the findings:
-  headline, deck, dateline, and paragraphs. Its deterministic workbench merges
-  only those complete article rewrites into the page, preserves article
-  selection, order, section, byline, citations, every unaffected article, and
-  all world state, then invokes the same shared publication review on the whole
-  resulting page. Acceptance requires both an accepted factual verdict and an
-  accepted editorial-quality verdict.
+  labels are assigned only during lowering. The copy desk reads the selected
+  fact projection and writer page exactly once, returning all factual queries
+  at once as exact unique passages with reasons. The immutable close checkpoint
+  binds that report, page, agenda, task, sources, and receipts before the Night
+  Editor acts. The Night Editor receives the assignment, selected facts, page,
+  and numbered query list, then gets one action to disposition every query and
+  provide complete replacement prose for each queried article. In that same
+  close it may optionally replace any other article to sharpen its headline,
+  lede, throughline, rhythm, or ending. The press workbench freezes article
+  selection, order, section, byline, citations, and agenda while allowing prose
+  replacement across any existing article. It validates structure and source
+  membership, not whether the final language is true or compelling. A structurally invalid
+  close exhausts the one action and prints the checkpointed writer page with an
+  explicit non-applied close witness. There is no post-close model reread.
 - **Invariants:** private events do not enter the query surface; every selected
-  stable ID resolves at the bound revision; article facts remain constrained to
-  selected records; story order, selection, citation grouping, and focus remain
-  agenda-owned; no proposal can become editor input without one intervening
-  deterministic proof observation
-  and an exact-current-digest commit; omitted public facts remain true; query,
-  proof, editing, factual review, editorial-quality review, and rewrite cannot
-  mutate the world; the rewrite
-  desk cannot change an unaffected article or retain a rejected article by
-  editing around one phrase; resume does not rerun selection or initial
-  editing. If the admitted selection and citations cannot support an honest
-  article, the edition remains rejected or pending; article deletion, source
-  widening, and agenda mutation are not repair paths.
+  stable ID resolves at the bound revision; story order, selection, citation
+  grouping, and focus remain agenda-owned; no proposal reaches the writer
+  without deterministic proof observation and exact-current-digest commit;
+  omitted public facts remain true; assignment, writing, copy queries, close,
+  lowering, and witness creation cannot mutate the world. There is one writer
+  pass, one copy report, and one admitted Night Editor close. No model verdict
+  rereads the printed page, no rejected close opens an iterative rewrite loop,
+  and no external evaluation can reopen an immutable edition. The witness must
+  preserve exact source and printed page digests, receipt ancestry, every query
+  disposition, every changed article index, and deterministic re-derivation of
+  the printed issue.
 - **Forbidden writers:** the selector and query workbench cannot create,
   mutate, deduplicate, summarize into, or reclassify `NewsIssue` or `Event`
   state. The deterministic proof cannot rank stories or commit an agenda; it
   exposes the model's proposed ordering against exact focus facts. A proposal
   cannot bypass review by returning as accepted output, and a missing or stale
   candidate digest cannot commit. The editor cannot widen the admitted record
-  set. The copy desk cannot rewrite prose. The rewrite desk cannot select or
-  delete articles; reorder them; change section, byline, citation membership,
-  agenda, findings, facts, title, or house voice; rewrite an article absent from
-  the rejected verdict; persist checkpoints; or accept its own copy. The copy
-  desk cannot decide whether accurate prose is compelling journalism. The
-  Night Editor cannot relitigate factual grounding, demand facts absent from
-  the selection, select stories, rewrite prose, or accept its own requested
-  repair. Caches and renderers cannot decide record equivalence, assertion
-  status, story
-  relevance, or fact completion. The newspaper module has no second event-kind
-  status switch.
+  set or write a second page. The copy desk cannot rewrite, suppress, or accept
+  prose, select stories, close the press, or withhold the complete query set for
+  a later pass. The Night Editor cannot widen sources, add, remove, or reorder
+  stories, alter sections, bylines, citations, or agenda, invoke another model
+  judge, or reopen a completed close. The Night Editor may change the
+  reader-facing prose of any existing article during that one close, but every
+  copy-query-bearing article is mandatory. The press witness cannot certify
+  factual or editorial quality; it can only prove the exact admitted process and
+  bytes.
+  Renderers, strategic smoke, Registry, external blind reviewers, and grounding
+  reviewers cannot write the page, desk report, close, correction, world state,
+  or acceptance state. Caches cannot decide record equivalence, assertion
+  status, story relevance, or fact completion.
 - **Shared paths:** fresh composition queries stable records, proposes one or
   more agendas, observes the deterministic front-page proof for each proposal,
-  and commits exactly one current candidate before invoking the editor. Editor,
-  copy desk, Night Editor, lowering, audit, and rewrite desk all dereference
-  that committed agenda's same stable IDs. Initial editor output and every
-  merged rewrite call the same `run_publication_review` primitive: the copy
-  desk runs first, and only factual acceptance reaches the Night Editor. On
-  either rejection, both fresh and resumed paths derive the affected article
-  set from the exact tagged verdict, invoke the same rewrite desk with the same
-  frozen facts, title, house voice, and agenda, merge the complete rewrites
-  through the same deterministic workbench, and return through that same
-  two-desk review primitive. Resume reconstructs the selected projection from
-  the checkpointed committed agenda and bound ledger without replaying
-  selection, proof, commit, or initial editing. Accepted-composition
-  idempotence returns the stored issue.
-- **Persistence and compatibility:** reconciliation checkpoint v3 binds the
-  agenda, draft, tagged rejecting-desk verdict, task and exact editorial
-  bindings, immutable receipt
-  chain, generation, and parent. The internal contract is
-  `canopy-ledger-night-editor.v7`; it prevents pre-cut compositions and
-  checkpoints from winning current idempotence. Candidate
-  agendas and proofs are ephemeral within one bounded selector run; only the
-  committed agenda and its ordered model-receipt ancestry cross into editor and
-  reconciliation persistence. Public issue schema v3 remains unchanged.
-  Accepted composition envelope v2 stores both factual and editorial verdicts,
-  and current idempotence requires both to be accepted. The read-only `angle`
-  alias and empty legacy `focus_citation` default can decode historical rows
-  but cannot authorize a fresh v7 compose.
+  and commits exactly one current candidate before invoking the writer. Fresh
+  work then follows one path: writer, copy report, immutable close checkpoint,
+  one Night Editor action, deterministic press witness, lowering, persistence.
+  Registry, live per-wave composition, missing-issue recovery, and final digest
+  all delegate to `advance_world_newspaper`. Resume begins from the immutable
+  close checkpoint and does not rerun assignment, writer, or copy desk. A
+  persisted composition is revalidated against its close checkpoint and exact
+  stored receipts, then returned without model work.
+- **Persistence and compatibility:** the live internal contract is
+  `canopy-ledger-night-editor.v8`. Close checkpoint v1 binds the assigned agenda,
+  writer page, single copy report, task and exact editorial bindings, source
+  checkpoint when present, and immutable receipt chain. Composition v3 stores
+  the printed issue, copy report, press-close witness, and receipts. Public issue
+  schema v3 remains unchanged. Candidate agendas and front-page proofs remain
+  ephemeral. V7 reconciliation checkpoint v3 is read-only resume provenance:
+  an explicit external import may materialize the exact immutable Run 58 copy
+  tip once, but v8 never appends to or advances that chain. Only a v7 tip whose
+  rejecting owner is the copy desk can become one v8 close checkpoint; its
+  draft, agenda, query report, bindings, and receipt ancestry must validate
+  exactly. A v7 Night Editor rejection fails closed rather than being recast as
+  copy evidence. Run 58's v7 copy tip is imported into one v8 Night Editor
+  close without replaying ledger queries, agenda selection, writer, copy desk,
+  world mechanics, strategic waves, or accepted per-wave publications.
 - **Cut line:** `NewsroomSource`, transient ordinal selection IDs, fact-bundle
   deduplication, fixed newest-32/preceding-12/foundational-12 windows,
   per-story and total citation ceilings, global record uniqueness across
@@ -1436,38 +1434,37 @@ The deliberative newsroom boundary is live under this authority map:
   structurally valid proposal is insufficient authority to invoke the editor.
   Phrase replacements, finding references, target-field and
   paragraph addressing, byte-span resolution, overlap ordering, empty-phrase
-  deletion, and article deletion are deleted. No compatibility path may retain
-  any of those operations as an alternate writer. The copy-desk-only
-  acceptance path is deleted: no initial draft or rewritten page can lower into
-  an accepted composition without both desk verdicts. Complete rejected-article
-  prose is the rewrite unit, and the admitted agenda plus deterministic merge
-  remains the owner of everything around it.
+  deletion, and article deletion remain absent. V8 additionally deletes the
+  publication-review verdict union, editorial-quality verdict, generic rewrite
+  desk, bounded multi-action rewrite cadence, repeated copy-desk calls, Night
+  Editor rereview, reconciliation advancement, and pending-as-editorial-state
+  path. No compatibility path may retain those operations as live writers.
+  Whole-article prose is the sole Night Editor close unit. Query-bearing
+  articles are mandatory, any other existing article is optional, and the
+  admitted agenda plus deterministic close merge owns everything around them.
   Query projection and front-page proof reuse the generic agent harness and
   existing public-record, agenda, accepted issue, and audit shapes. No
   dependency, crate, binary, daemon, persistent schema, service, cache, event
   writer, target platform, code-generation path, or world-simulation pass was
   added.
-- **Verification and build budget:** focused newspaper tests cover query
-  admission, stable-record selection, foundational retrieval, reuse across
-  stories, absence of a fixed source-count ceiling, proposal as a nonterminal
-  observation, exact focus-record proof, exact-current-digest commit, common
-  editor/copy/audit/rewrite-desk dereferencing, receipt ancestry, and resume.
-  Negative checks prove that an unreviewed or stale candidate cannot become
-  accepted agenda output. The rewrite-desk gates prove that only
-  rejected article indexes are writable; every rejected article is supplied as
-  one complete reader-facing rewrite; article count, order, section, byline,
-  citations, agenda, and unaffected article bytes survive unchanged; old
-  finding-ref/span/delete commands are absent from schemas and code; malformed,
-  partial, duplicate, unknown, or unaffected-article rewrites are rejected;
-  the same whole-page two-desk review judges every initial and merged draft;
-  Night Editor findings target one exact unique passage and an achievable
-  rewrite goal without widening the selected facts; exact-chain resume
-  reaches that same workbench without the initial editor; and no world event or
-  campaign revision changes. Verification remains bounded to the existing
-  newspaper library and strategic-smoke targets plus formatting, state, and
-  system-map gates; the current focused gates pass at 30/30 newspaper tests,
-  485/485 library tests, and 15/15 strategic-smoke tests. The cut adds no
-  service, crate, dependency, event authority, or simulation pass.
+- **Verification and build budget:** focused newspaper tests retain query
+  admission, exact focus proof, agenda commit, selected-record alignment, and
+  audit grounding. V8 gates prove one complete copy report, exact unique query
+  targets, one Night Editor action, complete query disposition, mandatory
+  rewrites for query-bearing articles, optional polish of any other article,
+  preservation of assignment-owned structure and citations, no post-close copy
+  or editorial stage, deterministic source/printed digests,
+  exact receipt ancestry, close-checkpoint resume without writer or copy replay,
+  idempotent persisted-composition validation, printing the checkpointed page
+  after a structurally rejected close, and conversion of one legacy v7 copy tip
+  into one v8 close without replay. Strategic recomposition v3 binds the copy
+  report and press witness by digest while v1/v2 remain historical validation
+  inputs. Independent blind editorial and grounding reviews evaluate the
+  resulting artifact for the acceptance experiment only; they are deliberately
+  outside runtime publication authority. Verification remains bounded to the
+  existing newspaper library and strategic-smoke targets plus formatting,
+  state, and system-map gates. The cut adds no service, crate, dependency,
+  event authority, or simulation pass.
 
 Run 54 is immutable mechanically complete evidence at exact source
 `01581b8576774f370884e331558605e7ef5e1b9b`, implementation
@@ -1491,149 +1488,79 @@ or communicated public scope before `NewsIssue` materialization. Revision 27
 remains immutable evidence and is not rewritten for this newsroom-only
 acceptance.
 
-The resumable composition and publication-review rewrite boundary is live:
+The v8 close persistence and legacy-resume boundary is live:
 
-- **Owner:** `newspaper::advance_world_newspaper` is the single composition,
-  checkpoint-advance, resume, and accepted-composition owner. `CampaignStore`
-  owns immutable storage only. Registry and the strategic driver supply policy
-  inputs and consume `WorldNewspaperAdvance::{Accepted, Pending}`; neither
-  reconstructs the workbench or decides editorial state. The publication-owned
-  rewrite desk proposes complete reader-facing prose for rejected articles
-  only. Its deterministic workbench owns affected-article membership, frozen
-  field preservation, merge, local structural validation, and reinvocation of
-  the shared publication review. The copy desk alone accepts or rejects factual
-  grounding; the Night Editor alone accepts or rejects editorial quality after
-  grounding passes. The same rewrite desk handles the tagged rejection from
-  either owner and cannot accept its own result.
-- **Inputs:** one exact `Campaign` snapshot, title, editorial voice, article
-  budget, model port, and `CampaignStore`. A publication-task binding covers
-  campaign id and revision plus title, voice, and budget. The editorial binding
-  additionally covers the exact ordered public-record projections derived from
-  the bound `NewsIssue` and `Event` ledger. Each rewrite action receives the
-  admitted agenda, current frozen page, complete exact rejecting-desk verdict,
-  selected frozen facts, publication title, and house voice.
-  This lets the owner find the task's checkpoint chain while still rejecting
-  same-task source drift before inference.
-- **Outputs:** acceptance is one immutable persisted composition containing an
-  accepted factual verdict and an accepted editorial-quality verdict. A still
-  rejected page is typed `Pending`, carrying the current immutable checkpoint
-  and complete ordered receipt chain; pending is not a
-  `WorldNewspaperCompositionFailure`. Fatal model, schema, local-validation,
-  persistence, and checkpoint-conflict errors remain failures and leave the
-  last admitted checkpoint available. A rewrite proposal contains exactly one
-  complete reader-facing prose replacement for every rejected article and none
-  for any other article. The workbench emits a merged full-page draft only
-  after preserving the frozen fields and unaffected articles.
-- **Persistent and derived state:** the initial review rejection persists its
-  narrative-selection, editor, copy-desk, and, when factual review passed,
-  Night Editor receipts, then publishes generation zero before any rewrite
-  action. Each later rejected action persists its new receipts before
-  appending one checkpoint with task and editorial bindings, generation,
-  parent id, typed origin, admitted editorial agenda, current private draft,
-  tagged rejecting-desk verdict, ordered receipt ids, and receipt-chain digest.
-  Checkpoint v3 verifies that the latest review receipt matches the desk named
-  by that rejection. The rejected article-index set, per-article rewrite schema,
-  immutable-field comparison, selected fact projection, and chain tip are
-  derived and validated; they are not parallel state owners. Each persisted
-  verdict is also validated so acceptance is true exactly when its finding set
-  is empty.
-  Three actions per call remain only the current
-  advance cadence. Reaching that boundary returns `Pending` and does not make
-  rejection terminal.
-- **Resume and idempotence:** every call checks the accepted composition marker
-  before checkpoint discovery. Otherwise it loads the unique checkpoint tip,
-  reloads every typed receipt, validates checkpoint identity, task and exact
-  editorial bindings, generation and parent links, strict receipt-prefix
-  growth, agenda admission and editor alignment, draft, tagged rejecting-desk
-  verdict, rejecting-desk receipt, and rejected article membership, then
-  reconstructs the same rewrite workbench. A
-  resumed action
-  includes the checkpoint id and every prior receipt in its causal ancestry and
-  never invokes the initial editor. Acceptance persists its receipts and a
-  composition-v2 envelope linked to the source checkpoint only when both
-  review verdicts accept;
-  later calls return that composition without model work even though the
-  historical pending chain remains immutable.
-- **Forbidden writers:** the initial editor, rewrite desk, copy desk, and Night
-  Editor may propose, rewrite, or judge only within their named seams and cannot
-  persist or resume reconciliation state. The copy desk cannot own editorial
-  quality; the Night Editor cannot own factual admission or prose; neither may
-  bypass the other. The rewrite desk cannot alter article count,
-  selection, order, section, byline, citations, agenda, unaffected articles,
-  findings, facts, world state, or acceptance. Registry, strategic smoke,
-  renderers, JSON result/checkpoint projections, world cells, Nemesis, clocks,
-  and `WorldKernel` cannot write the draft, verdict, receipt chain, checkpoint,
-  or accepted composition. They cannot replay world mechanics or overwrite an
-  already accepted issue to repair editorial copy.
-- **Shared paths:** Registry calls `advance_world_newspaper` directly. Strategic
-  live per-wave, missing-issue recovery, and final-combined composition use a
-  thin `compose_persisted_newspaper` delegate to that same owner and store. All
-  entry paths use the same initial-or-resumed rewrite workbench and the same
-  ordered copy-desk-then-Night-Editor review primitive. A
-  pending interim issue is recorded in its immutable wave report and does not
-  stop later strategic waves; recovery resumes it from `CampaignStore`. A
-  pending final combined issue writes pending result/status projections and
-  ends that acceptance invocation nonzero without changing the world.
-- **Legacy import boundary:** Run 46 may enter only through the explicit typed
-  `WorldNewspaperReconciliationImport` and strategic import envelope. The
-  envelope binds wave, recovery boundary, and world revision; the common
-  library validator rebinds the witness to the exact prepared task and desk,
-  validates its draft, rejected verdict, and typed receipts, and admits it as a
-  generation-zero `LegacyTerminalImport`. An existing accepted composition or
-  different checkpoint tip rejects the import. No live path parses failure
-  prose, infers a checkpoint from JSON error text, or falls back to a fresh
-  editor after a configured import fails admission.
-- **Cut line:** the newspaper path uses the agent harness's typed
-  `ModelAgentProgress::Exhausted` result; the older generic harness API may still
-  lower exhaustion to failure for non-resumable consumers, but it no longer
-  owns newspaper correctness. The bounded rewrite cadence is
-  `REWRITE_DESK_ACTIONS_PER_ADVANCE`. Registry's separate
-  receipt-persistence/failure path is gone, and the strategic persistence
-  helper is only a delegate rather than a second composition owner. The
-  phrase-edit command algebra, finding reference catalog, field and
-  paragraph target resolution, byte ranges, overlap ordering, whitespace seam,
-  and article-delete branch before adding the rejected-article rewrite command.
-  None remains as a compatibility writer. Copy-desk acceptance is no longer
-  publication acceptance, and no second rewrite mechanism was added for Night
-  Editor findings.
-- **Verification layer:** focused tests prove typed harness exhaustion,
-  generation zero plus one append per rejected rewrite, typed pending after
-  three `REWRITE_DESK_ACTIONS_PER_ADVANCE`, exact-chain resume without the
-  initial editor, cumulative
-  receipt and review ancestry, accepted-composition idempotence without
-  inference, same-task source-drift rejection and fork rejection before
-  inference, typed legacy import through the common validator, and Registry
-  preservation of pending state. Implemented negative tests require the exact
-  set of rejected article indexes, reject missing, duplicate, unaffected, and
-  out-of-range article rewrites, and preserve each unaffected article plus the
-  rewritten article's section, byline, and citations. The provider schema
-  exposes only the rejected article-index enum and complete headline, deck,
-  dateline, and paragraph fields; it exposes no section, byline, citations, or
-  finding reference. Focused path tests prove the same selected records, title,
-  house voice, agenda, and exact findings reach the desk; initial drafts and
-  merged rewrites use the same ordered publication review; a copy-desk
-  rejection skips the Night Editor, while factual acceptance must still obtain
-  Night Editor acceptance; a Night Editor rejection returns through the same
-  full-article rewrite path; repeated rejection may invoke another whole
-  rewrite without another initial editor; exact-chain resume preserves receipt
-  ancestry; and accepted output retains the admitted source IDs plus both
-  verdicts. Strategic recomposition receipt v2 binds and validates both verdict
-  digests while historical receipt v1 remains readable evidence. No event,
-  world-simulation, selector, agenda, or source-provenance authority moved.
+- **Owner:** `newspaper::advance_world_newspaper` owns fresh composition,
+  close-checkpoint resume, legacy-tip conversion, press witnessing, and
+  accepted-composition idempotence. `CampaignStore` owns immutable storage.
+  Registry and strategic smoke provide policy inputs and consume results; they
+  do not reconstruct or judge the newsroom.
+- **Inputs:** one exact campaign snapshot, title, voice, article budget, model
+  port, and store; the current v8 publication and editorial bindings; and,
+  during the bounded transition, an optional exact v7 reconciliation tip under
+  its legacy bindings. The close receives one agenda, one writer page, one copy
+  report, and their complete ordered receipts.
+- **Outputs:** a nonempty edition yields composition v3 with one issue, one copy
+  report, one `WorldNewspaperPressClose`, and the receipt chain. A close action
+  that passes structural admission records every query and changed article. A
+  structurally rejected one-action close prints the checkpointed page and marks
+  `night_editor_action_applied=false`; it does not become pending editorial work.
+  Provider, schema, persistence, or checkpoint-integrity failures remain errors
+  before an immutable composition exists.
+- **Persistent and derived state:** close checkpoint v1 persists once before the
+  Night Editor acts. The press witness derives exact source and printed page
+  digests, copy and Night Editor receipt IDs, action-applied status, addressed
+  query indices, and changed article indices. Composition validation reloads
+  every receipt, validates checkpoint lineage, reconstructs the printed draft,
+  re-derives the typed issue, and rejects any drift. These witnesses observe the
+  edition; they do not make its claims true.
+- **Resume and shared paths:** every caller checks accepted composition v3,
+  resumes one current close checkpoint if present, then optionally converts the
+  unique validated v7 copy tip into one v8 close checkpoint. That conversion
+  retains the v7 tip's exact draft, agenda, copy findings, source identity, and
+  receipts while rebinding only the current task. It never invokes assignment,
+  writer, copy desk, mechanics, or waves. Fresh work reaches the same close
+  owner after assignment, writer, and copy. Live per-wave, recovery, and final
+  combined publication all use the thin common delegate.
+- **Forbidden writers:** v8 cannot append a v7 reconciliation generation or
+  resume its rewrite loop. An explicit import may admit one external immutable
+  v7 checkpoint as provenance, but cannot infer it from error prose, fork an
+  existing chain, or mutate it after admission. Strategic smoke, renderers,
+  reviewers, and world organs cannot alter a close checkpoint, press witness,
+  accepted issue, or source campaign. A later correction must be new
+  publication state; overwriting the closed edition is forbidden.
+- **Cut line:** the rewrite-desk cadence, repeated desk verdicts, pending
+  reconciliation advances, and copy/editor rereplay paths are absent from live
+  v8 authority. `WorldNewspaperAdvance::Pending` and its consumer branches
+  remain compatibility-shaped surface only; the v8 newspaper owner has no
+  pending producer. Legacy v7 schemas remain solely to validate and convert the
+  Run 58 copy tip.
+- **Verification layer:** focused tests prove one-action close admission,
+  structural rejection printing the bound source page, exact press-witness
+  re-derivation, tamper rejection, close resume without writer or copy replay,
+  accepted-composition idempotence, and exact Run-58-shaped v7 copy-tip
+  conversion into one v8 Night Editor close. Negative gates reject incomplete
+  query disposition, missing mandatory or duplicate article rewrites, mutation
+  of frozen assignment fields, v7 Night Editor rejection masquerading as copy
+  evidence, multiple close checkpoints, source drift, receipt drift, and witness
+  drift. No event,
+  simulation, selector, agenda, or provenance authority moved.
 
 The typed issue retains exact event IDs, channels, reliability, source
 revision, and model receipts as audit data. Its internal issue time is derived
 from the latest cited publication record without exposing that clock to
 editorial inference. Rejected action attempts semantically rebind their
-otherwise immutable model receipts to collision-free invalid dispositions
-before checkpoint admission. The top-level strategic plan, receipt hash, and
-commit always project the final completed wave, matching the top-level counts
-and persisted campaign head; per-wave history remains under `waves`. The reader
+otherwise immutable model receipts to collision-free invalid dispositions; a
+structurally rejected deadline action prints the already checkpointed source
+page instead of creating another editorial turn. The top-level strategic plan,
+receipt hash, and commit always project the final completed wave, matching the
+top-level counts and persisted campaign head; per-wave history remains under
+`waves`. The reader
 renderer has no path to provenance fields and escapes all model- and
 consumer-supplied plain text before Markdown emission; the provenance renderer
-applies the same plain-text boundary to its audit data. Neither editor, rewrite
-desk, copy desk, Night Editor, renderer, nor receipt persistence can write
-world state.
+applies the same plain-text boundary to its audit data. Neither assignment
+editor, writer, copy desk, Night Editor, renderer, nor receipt persistence can
+write world state.
 
 #### Acceptance-driver per-wave newspaper recovery
 
@@ -1652,21 +1579,19 @@ world state.
   already exists, its immutable receipt and exact named reader/audit files are
   additional inputs.
 - **Output:** acceptance writes one separately named immutable recomposition
-  checkpoint containing the issue, grounding verdict, editorial verdict, and
+  checkpoint containing the issue, copy report, press-close witness, and
   newspaper model receipts, plus the rendered reader and audit files. Its
   receipt binds the
   narrowed source campaign, recovery boundary, title/voice/article-budget
   contract, issue, model-receipt collection, expected filenames, and both
-  rendered byte streams by digest. Current recomposition v2 receipts bind the
-  complete typed grounding and editorial verdicts by digest. The configured
+  rendered byte streams by digest. Current recomposition v3 receipts bind the
+  complete typed copy report and press-close witness by digest. The configured
   boundary is also
   projected through run status and success or failure result artifacts. The
   driver fills only the missing newspaper fields in its in-memory result
-  projection. Pending reconciliation
-  instead writes an immutable diagnostic projection of the library-owned
-  checkpoint and stops that recovery invocation; canonical resume state remains
-  in `CampaignStore`. Existing successful issues and original wave checkpoints
-  remain unchanged.
+  projection. A pre-close provider or integrity failure stops that invocation;
+  canonical close state remains in `CampaignStore`. Existing successful issues
+  and original wave checkpoints remain unchanged.
 - **Derived state:** the newsroom receives a clone of the completed wave's
   campaign whose news ledger is narrowed to rows appended since the preceding
   committed boundary. All events and canonical names remain available only so
@@ -1682,22 +1607,21 @@ world state.
   issue when a later invocation selects a narrower range.
 - **Forbidden writers:** recovery cannot rerun a strategic tick, Nemesis,
   simulation cells, outcome resolution, clocks, or `WorldKernel`, and it cannot
-  alter campaign, event, or news state. Pending or failed recomposition stops
-  consumer recovery and cannot repair mechanics.
+  alter campaign, event, or news state. Failed recomposition stops consumer
+  recovery and cannot repair mechanics.
 - **Shared paths:** live per-wave composition, recovery composition, and final
   combined composition all call the thin `compose_persisted_newspaper` delegate
-  into `advance_world_newspaper`, including the same ordered factual and
-  editorial review, checkpoint-resume, and receipt-persistence owner. A later
-  resume advances a
-  pending library checkpoint without rerunning the editor. Once accepted, it
+  into `advance_world_newspaper`, including the same assignment, writer, single
+  copy report, one deadline close, checkpoint-resume, and receipt-persistence
+  owner. A later invocation resumes a close checkpoint without rerunning the
+  writer or copy desk. Once printed, it
   consumes the successful recomposition artifact instead of paying for the
   newspaper again. The driver recomputes its wave, source-campaign, and
   editorial-contract bindings, validates the recorded original recovery
   boundary, and checks the exact issue value, typed model-receipt set, reader
   bytes, and audit bytes against their immutable digests. A current-schema issue
-  and grounding verdict are additionally deserialized, their grounding digest
-  is required, and the issue is rendered again. Current recomposition v2 also
-  deserializes the accepted editorial verdict and requires its exact digest. A
+  is deserialized and rendered again. Current recomposition v3 also deserializes
+  the copy report and press-close witness and requires their exact digests. A
   historical v2 accepted issue
   is structurally deserialized only as v2 and is not reinterpreted through the
   current issue type or renderer; its original receipt owns those historical
@@ -1712,9 +1636,10 @@ world state.
   Raw digest verification is not a migration path and cannot create, repair, or
   reaccept a paper: all applicable original source, contract, filename, issue,
   receipt-set, and byte bindings must already be present and exact. Current
-  issue v3 requires its exact grounding digest, and recomposition v2 additionally
-  requires exact editorial acceptance and digest; historical issue v2 keeps the
-  explicitly bounded accepted-status plus archive/manifest proof described above.
+  recomposition v3 requires exact copy-report and press-close digests;
+  historical recomposition v1/v2 retains its bounded grounding/editorial
+  validation, and historical issue v2 keeps the explicitly bounded
+  accepted-status plus archive/manifest proof described above.
   Strategic state and per-wave artifacts remain forbidden writers.
 - **Verification layer:** the focused boundary regression proves that a second
   wave is recomposed from only its newly appended news row while retaining the
@@ -1729,9 +1654,10 @@ world state.
   skipped while later missing issues are selected. Dedicated regressions prove
   that historical v2 preserves its recorded original recovery boundary and
   accepts exact historical bytes without current rendering while rejecting byte
-  drift, that current issue v3 still requires typed deserialization, exact
-  rendering, and an exact grounding digest, and that current recomposition v2
-  rejects editorial-verdict drift. The strategic binary gate is 15/15.
+  drift, that current issue v3 still requires typed deserialization and exact
+  rendering, and that current recomposition v3 rejects copy-report or press-close
+  witness drift. Historical recomposition v1/v2 validation remains bounded to
+  its original verdict shapes.
 
 The first-wave limit is now an explicit closed boundary rather than inferred
 recovery: when wave one is selected, the driver refuses to compose without a

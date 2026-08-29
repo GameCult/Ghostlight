@@ -84,6 +84,7 @@ fn validate_completed_newspaper_recomposition_receipt(
         recomposition_schema,
         Some("ghostlight.newspaper_wave_recomposition.v1")
             | Some("ghostlight.newspaper_wave_recomposition.v2")
+            | Some("ghostlight.newspaper_wave_recomposition.v3")
     ) || recomposition["wave_index"].as_u64() != Some(wave_index)
         || wave_index < current_recovery_start_wave as u64
         || recorded_recovery_start_wave == 0
@@ -92,9 +93,16 @@ fn validate_completed_newspaper_recomposition_receipt(
         || recomposition["source_campaign_digest"] != source_campaign_digest
         || recomposition["editorial_contract_digest"] != editorial_contract_digest
         || recomposition["issue"].is_null()
-        || recomposition["newspaper_grounding"]["accepted"] != true
+        || matches!(
+            recomposition_schema,
+            Some("ghostlight.newspaper_wave_recomposition.v1")
+                | Some("ghostlight.newspaper_wave_recomposition.v2")
+        ) && recomposition["newspaper_grounding"]["accepted"] != true
         || recomposition_schema == Some("ghostlight.newspaper_wave_recomposition.v2")
             && recomposition["newspaper_editorial"]["accepted"] != true
+        || recomposition_schema == Some("ghostlight.newspaper_wave_recomposition.v3")
+            && (recomposition["newspaper_copy_desk"].is_null()
+                || recomposition["newspaper_press_close"].is_null())
         || recomposition["issue_file"] != format!("newspaper-wave-{wave_index:02}.md")
         || recomposition["issue_audit_file"] != format!("newspaper-wave-{wave_index:02}.audit.md")
     {
@@ -146,7 +154,32 @@ fn validate_completed_newspaper_recomposition_receipt(
     {
         anyhow::bail!("completed wave newspaper recomposition artifact differs from its receipt")
     }
-    if current_schema {
+    if current_schema && recomposition_schema == Some("ghostlight.newspaper_wave_recomposition.v3")
+    {
+        let copy_desk: ghostlight_dungeon::newspaper::WorldNewspaperCopyDeskReport =
+            serde_json::from_value(recomposition["newspaper_copy_desk"].clone()).map_err(
+                |error| {
+                    anyhow::anyhow!(
+                        "completed wave newspaper recomposition has an invalid copy-desk report: {error}"
+                    )
+                },
+            )?;
+        let press_close: ghostlight_dungeon::newspaper::WorldNewspaperPressClose =
+            serde_json::from_value(recomposition["newspaper_press_close"].clone()).map_err(
+                |error| {
+                    anyhow::anyhow!(
+                        "completed wave newspaper recomposition has an invalid press close: {error}"
+                    )
+                },
+            )?;
+        if recomposition["copy_desk_digest"] != strategic_smoke_digest(&copy_desk)?
+            || recomposition["press_close_digest"] != strategic_smoke_digest(&press_close)?
+        {
+            anyhow::bail!(
+                "completed wave newspaper recomposition close evidence differs from its receipt"
+            )
+        }
+    } else if current_schema {
         let grounding: ghostlight_dungeon::newspaper::WorldNewspaperGroundingVerdict =
             serde_json::from_value(recomposition["newspaper_grounding"].clone()).map_err(
                 |error| {
@@ -1864,8 +1897,8 @@ async fn main() -> anyhow::Result<()> {
         .await;
         let (
             issue,
-            newspaper_grounding,
-            newspaper_editorial,
+            newspaper_copy_desk,
+            newspaper_press_close,
             newspaper_model_receipts,
             issue_path,
             issue_audit_path,
@@ -1890,8 +1923,8 @@ async fn main() -> anyhow::Result<()> {
                 )?;
                 (
                     Some(composition.issue),
-                    Some(composition.grounding),
-                    Some(composition.editorial),
+                    Some(composition.copy_desk),
+                    Some(composition.press_close),
                     composition.model_receipts,
                     Some(issue_path),
                     Some(issue_audit_path),
@@ -1941,8 +1974,8 @@ async fn main() -> anyhow::Result<()> {
             "plan":plan,
             "commit":committed,
             "issue":issue,
-            "newspaper_grounding":newspaper_grounding,
-            "newspaper_editorial":newspaper_editorial,
+            "newspaper_copy_desk":newspaper_copy_desk,
+            "newspaper_press_close":newspaper_press_close,
             "newspaper_model_receipts":newspaper_model_receipts,
             "newspaper_error":newspaper_error,
             "newspaper_reconciliation_checkpoint":newspaper_reconciliation_checkpoint,
@@ -2094,21 +2127,21 @@ async fn main() -> anyhow::Result<()> {
                 std::fs::write(&issue_path, &reader_copy)?;
                 std::fs::write(&issue_audit_path, &audit_copy)?;
                 let checkpoint = serde_json::json!({
-                    "schema":"ghostlight.newspaper_wave_recomposition.v2",
+                    "schema":"ghostlight.newspaper_wave_recomposition.v3",
                     "wave_index":wave_index,
                     "recovery_start_wave":newspaper_recovery_start_wave,
                     "world_revision":issue_campaign.revision,
                     "source_campaign_digest":source_campaign_digest,
                     "editorial_contract_digest":editorial_contract_digest,
                     "issue_digest":strategic_smoke_digest(&composition.issue)?,
-                    "grounding_digest":strategic_smoke_digest(&composition.grounding)?,
-                    "editorial_digest":strategic_smoke_digest(&composition.editorial)?,
+                    "copy_desk_digest":strategic_smoke_digest(&composition.copy_desk)?,
+                    "press_close_digest":strategic_smoke_digest(&composition.press_close)?,
                     "model_receipt_set_digest":strategic_smoke_digest(&composition.model_receipts)?,
                     "reader_copy_digest":strategic_smoke_bytes_digest(reader_copy.as_bytes()),
                     "audit_copy_digest":strategic_smoke_bytes_digest(audit_copy.as_bytes()),
                     "issue":composition.issue,
-                    "newspaper_grounding":composition.grounding,
-                    "newspaper_editorial":composition.editorial,
+                    "newspaper_copy_desk":composition.copy_desk,
+                    "newspaper_press_close":composition.press_close,
                     "newspaper_model_receipts":composition.model_receipts,
                     "issue_file":format!("newspaper-wave-{wave_index:02}.md"),
                     "issue_audit_file":format!("newspaper-wave-{wave_index:02}.audit.md"),
@@ -2144,6 +2177,8 @@ async fn main() -> anyhow::Result<()> {
                 "issue",
                 "newspaper_grounding",
                 "newspaper_editorial",
+                "newspaper_copy_desk",
+                "newspaper_press_close",
                 "newspaper_model_receipts",
             ] {
                 report.insert(field.into(), recomposition[field].clone());
@@ -2316,8 +2351,8 @@ async fn main() -> anyhow::Result<()> {
         "event_count":campaign.events.len(),
         "news_count":campaign.news.len(),
         "newspaper":newspaper_composition.issue,
-        "newspaper_grounding":newspaper_composition.grounding,
-        "newspaper_editorial":newspaper_composition.editorial,
+        "newspaper_copy_desk":newspaper_composition.copy_desk,
+        "newspaper_press_close":newspaper_composition.press_close,
         "newspaper_model_receipts":newspaper_composition.model_receipts,
         "newspaper_path":newspaper_path,
         "newspaper_audit_path":newspaper_audit_path,
@@ -2945,7 +2980,7 @@ mod tests {
     }
 
     #[test]
-    fn current_recomposition_requires_both_review_verdicts_and_rerenders() {
+    fn v2_recomposition_requires_both_historical_review_verdicts_and_rerenders() {
         let issue = ghostlight_dungeon::newspaper::WorldNewspaperIssue {
             schema: "ghostlight.world_newspaper_issue.v3".into(),
             id: "issue:current".into(),
@@ -3062,6 +3097,93 @@ mod tests {
         assert!(
             validate_completed_newspaper_recomposition_receipt(
                 &changed_grounding,
+                18,
+                18,
+                27,
+                "sha256:campaign",
+                "sha256:contract",
+                &reader_copy,
+                &audit_copy,
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn v3_recomposition_binds_copy_report_and_press_close_without_a_post_close_verdict() {
+        let issue = ghostlight_dungeon::newspaper::WorldNewspaperIssue {
+            schema: "ghostlight.world_newspaper_issue.v3".into(),
+            id: "issue:v3".into(),
+            title: "The Canopy Ledger".into(),
+            edition_label: "Current Edition".into(),
+            at: chrono::DateTime::parse_from_rfc3339("2026-08-29T00:00:00Z")
+                .unwrap()
+                .with_timezone(&chrono::Utc),
+            source_world_revision: 27,
+            lead_article_id: None,
+            editorial_agenda: None,
+            articles: Vec::new(),
+            editorial_receipt_ids: Vec::new(),
+        };
+        let copy_desk = ghostlight_dungeon::newspaper::WorldNewspaperCopyDeskReport {
+            assessment: "The copy desk marked no factual queries.".into(),
+            queries: Vec::new(),
+        };
+        let press_close = ghostlight_dungeon::newspaper::WorldNewspaperPressClose {
+            schema: "ghostlight.world_newspaper_press_close.v1".into(),
+            source_checkpoint_id: "newspaper-close:fixture".into(),
+            copy_desk_receipt_id: "sha256:copy".into(),
+            night_editor_receipt_id: "sha256:night".into(),
+            night_editor_action_applied: true,
+            addressed_query_indices: Vec::new(),
+            changed_article_indices: Vec::new(),
+            source_page_digest: format!("sha256:{}", "a".repeat(64)),
+            printed_page_digest: format!("sha256:{}", "a".repeat(64)),
+        };
+        let reader_copy = ghostlight_dungeon::newspaper::render_world_newspaper_markdown(&issue);
+        let audit_copy =
+            ghostlight_dungeon::newspaper::render_world_newspaper_audit_markdown(&issue);
+        let receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt> = Vec::new();
+        let recomposition = serde_json::json!({
+            "schema":"ghostlight.newspaper_wave_recomposition.v3",
+            "wave_index":18,
+            "recovery_start_wave":18,
+            "world_revision":27,
+            "source_campaign_digest":"sha256:campaign",
+            "editorial_contract_digest":"sha256:contract",
+            "issue_digest":strategic_smoke_digest(&issue).unwrap(),
+            "copy_desk_digest":strategic_smoke_digest(&copy_desk).unwrap(),
+            "press_close_digest":strategic_smoke_digest(&press_close).unwrap(),
+            "model_receipt_set_digest":strategic_smoke_digest(&receipts).unwrap(),
+            "reader_copy_digest":strategic_smoke_bytes_digest(reader_copy.as_bytes()),
+            "audit_copy_digest":strategic_smoke_bytes_digest(audit_copy.as_bytes()),
+            "issue":issue,
+            "newspaper_copy_desk":copy_desk,
+            "newspaper_press_close":press_close,
+            "newspaper_model_receipts":receipts,
+            "issue_file":"newspaper-wave-18.md",
+            "issue_audit_file":"newspaper-wave-18.audit.md",
+        });
+
+        validate_completed_newspaper_recomposition_receipt(
+            &recomposition,
+            18,
+            18,
+            27,
+            "sha256:campaign",
+            "sha256:contract",
+            &reader_copy,
+            &audit_copy,
+        )
+        .unwrap();
+        assert!(recomposition["newspaper_grounding"].is_null());
+        assert!(recomposition["newspaper_editorial"].is_null());
+        let mut changed_close = recomposition.clone();
+        changed_close["newspaper_press_close"]["night_editor_receipt_id"] =
+            serde_json::json!("sha256:changed");
+        assert!(
+            validate_completed_newspaper_recomposition_receipt(
+                &changed_close,
                 18,
                 18,
                 27,

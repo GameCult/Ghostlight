@@ -813,17 +813,16 @@ mod tests {
             }
             if request.stage == "newspaper_copy_desk" {
                 return Ok(serde_json::json!({
-                    "accepted":true,
                     "assessment":"The page is grounded in its cited public report.",
-                    "findings":[]
+                    "queries":[]
                 })
                 .to_string());
             }
-            if request.stage == "newspaper_night_editor" {
+            if request.stage == "newspaper_night_editor_close_agent_action" {
                 return Ok(serde_json::json!({
-                    "accepted":true,
-                    "assessment":"The page makes its admitted accusation legible and consequential.",
-                    "findings":[]
+                    "tool":"submit_close",
+                    "addressed_query_indices":[],
+                    "rewrites":[]
                 })
                 .to_string());
             }
@@ -851,9 +850,8 @@ mod tests {
                     "three granary auditors of being one witch in a long coat"
                 };
                 return Ok(serde_json::json!({
-                    "accepted":false,
                     "assessment":"The article states an outcome that its source does not support.",
-                    "findings":[{
+                    "queries":[{
                         "article_index":0,
                         "category":"unsupported_fact",
                         "claim_or_phrase":claim,
@@ -862,9 +860,10 @@ mod tests {
                 })
                 .to_string());
             }
-            if request.stage == "newspaper_rewrite_desk_agent_action" {
+            if request.stage == "newspaper_night_editor_close_agent_action" {
                 return Ok(serde_json::json!({
-                    "tool":"submit_rewrites",
+                    "tool":"submit_close",
+                    "addressed_query_indices":[0],
                     "rewrites":[{
                         "article_index":0,
                         "headline":"Court Auditors Face a Singular Accusation",
@@ -1767,31 +1766,33 @@ mod tests {
         let receipt_count_before_rejection = successful_receipts.len();
         let mut rejected_request = newspaper_request;
         rejected_request.title.push_str(" Evening");
-        let pending = registry
+        let closed = registry
             .compose_world_newspaper(rejected_request, &RejectingRegistryNewspaperModel)
             .await
-            .unwrap();
-        let crate::newspaper::WorldNewspaperAdvance::Pending {
-            checkpoint,
-            model_receipts,
-        } = pending
-        else {
-            panic!("registry must preserve typed pending reconciliation state")
-        };
-        assert_eq!(model_receipts.len(), 11);
-        assert_eq!(checkpoint.generation(), 3);
+            .unwrap()
+            .into_accepted()
+            .expect("the Night Editor must close the marked page once");
+        assert_eq!(closed.model_receipts.len(), 6);
+        assert_eq!(closed.copy_desk.queries.len(), 1);
+        assert!(closed.press_close.night_editor_action_applied);
+        assert_eq!(closed.press_close.addressed_query_indices, [0]);
+        assert_eq!(
+            closed.issue.articles[0].paragraphs[0],
+            "The inner court has accused three granary auditors of acting as one accused person, placing the allegation into the public record."
+        );
         let stored_after_rejection = runtime.store.keys("persona_stage_receipt.v1").unwrap();
-        let newly_observed_failure_receipts = model_receipts
+        let newly_observed_close_receipts = closed
+            .model_receipts
             .iter()
             .map(|receipt| receipt.storage_key().to_owned())
             .filter(|receipt_id| !successful_receipts.contains(receipt_id))
             .collect::<BTreeSet<_>>();
         assert_eq!(
             stored_after_rejection.len(),
-            receipt_count_before_rejection + newly_observed_failure_receipts.len()
+            receipt_count_before_rejection + newly_observed_close_receipts.len()
         );
         assert!(
-            model_receipts.iter().all(|receipt| {
+            closed.model_receipts.iter().all(|receipt| {
                 stored_after_rejection.contains(&receipt.storage_key().to_owned())
             })
         );

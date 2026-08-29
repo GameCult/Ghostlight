@@ -1328,18 +1328,28 @@ access, and lead selection are therefore not the active blocker; the live
 hypothesis is missing editorial-quality acceptance and feedback between agenda
 and publication.
 
-Pushed implementation commit
-`f8bf73d8c4b2585a6f1757d0624fab0ea721915e` owns contract
-`canopy-ledger-night-editor.v7` and is locally verified but not yet
-provider-accepted. The independent copy-desk agent remains the sole factual
-judge. After factual clearance, the publication-owned Night Editor judges the
-page against the admitted agenda and selected facts. A rejection names exact
-article passages and achievable editorial goals, then enters the same
-publication-owned full-article rewrite path used for factual rejection. Every
-revision returns through copy-desk judgment and Night Editor judgment before
-acceptance. The Night Editor gains no fact, world, event, selection, or
-persistence authority. Gates pass 30/30 focused newspaper tests, 485/485
-library tests, and 15/15 strategic-smoke tests.
+The completed local worktree owns `canopy-ledger-night-editor.v8` and is
+verified but not yet committed or provider-proven. The copy desk emits one
+`WorldNewspaperCopyDeskReport` containing its assessment and complete
+consequential query set; it is not an accept/reject loop. That query set is
+mandatory input to one single-step Night close. The Night Editor must
+disposition every query and rewrite every queried article, and may also polish
+any unqueried article before deadline. The deterministic press boundary freezes
+selection, order, sections, bylines, citations, agenda, source bounds, and
+exact lineage, then persists one `WorldNewspaperPressClose` witness binding
+source page, printed page, copy receipt, Night receipt, addressed queries, and
+changed articles. No model rereads or grades the closed page.
+
+Legacy v7 copy-desk checkpoints, including the Run 58 lineage, can import into
+one v8 close checkpoint and invoke only the Night close without replaying
+selection, writer, copy desk, world, or waves. Tests prove that import and the
+strategic recomposition contract binds copy report plus press witness with no
+post-close verdict. Registry fixtures use the same one-report/one-close flow.
+Gates pass 20/20 newsroom tests, 475/475 library tests, and 16/16
+strategic-smoke tests. Pushed v7 commit
+`f8bf73d8c4b2585a6f1757d0624fab0ea721915e` remains provenance. Durable
+publication-memory corrections are not implemented by v8 and must not be
+inferred from press immutability.
 
 Run 54 exposed one separate upstream publicity defect: a public strategic
 activity propagates its channel to private `MemberMemory` outcomes, which is
@@ -1348,20 +1358,20 @@ ignore that bookkeeping, but revision 27 remains immutable. Future kernel work
 must require an outcome's own observable or communicated public scope before
 materializing a `NewsIssue`.
 
-1. Preserve immutable runs 55 through 57 and the exact live services. Stage
-   exact pushed implementation commit
-   `f8bf73d8c4b2585a6f1757d0624fab0ea721915e` for immutable Run 58 as a newsroom-only continuation
-   from run 57's frozen revision-27 campaign and accepted per-wave
-   publications. Replay no world mechanic or wave; retain and resume typed
-   rewrite checkpoints.
-2. Require internal copy-desk factual acceptance and Night Editor
-   editorial-quality acceptance, exact newspaper, audit, result, archive,
-   manifest, provenance, and service-isolation proof, then independent blind
-   editorial and grounding acceptance. Deliver the actual copy only if both
-   independent reviews accept.
-3. Defer multiple publication Personas, TeX layout, and engraved cuts until the
+1. Commit the exact verified v8 worktree and push the resulting commit.
+2. Inspect Yggdrasil, the exact live-service identities, and the existing Run
+   58 root before mutation. Preserve that root, create a new immutable resume
+   root from its legacy v7 copy checkpoint, and run exactly one v8 Night close
+   with the complete copy-desk query set as mandatory input.
+3. Replay no selection, writer, copy desk, world, or wave work. Require the
+   deterministic press witness and exact artifact, manifest, provenance, and
+   service-isolation evidence; that completes and permits delivery of the
+   edition. External blind editorial and grounding reviews may identify
+   later-correction work but cannot block delivery or reopen the edition.
+4. Keep later corrections as pending publication-memory work.
+5. Defer multiple publication Personas, TeX layout, and engraved cuts until the
    single Canopy Ledger passes.
-4. Per-wave issues may use daily-like reporting windows, while a final
+6. Per-wave issues may use daily-like reporting windows, while a final
    composition may be an equally current weekly-style issue with a broader
    window. Both are selective journalism; broad fact availability increases
    editorial freedom and does not license recap voice.
