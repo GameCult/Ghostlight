@@ -1350,6 +1350,9 @@ The newsroom narrative-selection boundary has this authority map:
   12 older sources after that initial viewport, or `foundational`, the oldest
   up to 12 sources beyond the initial viewport. Each exact window is available
   at most once and only while it contains a citation not already visible. The
+  agent run is bounded to four semantic actions, so spending both retrieval
+  windows still leaves one agenda submission and one response to an exact
+  deterministic rejection. The
   deterministic workbench derives a total news hole of at most two selected
   citations per available article, capped at six citations in any one story.
 - **Outputs:** one typed agenda with a dominant throughline, reader stake, and
@@ -1420,10 +1423,10 @@ The newsroom narrative-selection boundary has this authority map:
   editor owns only prose. No post-copy quality agent, multi-publication Persona,
   publication memory, layout engine, new service, second event authority, or
   alternate audit store is added in this cut.
-- **Verification and build budget:** 25 focused `ghostlight-dungeon` newspaper
+- **Verification and build budget:** 26 focused `ghostlight-dungeon` newspaper
   tests prove deterministic agenda admission, citation restriction,
   receipt/checkpoint ancestry, semantic audit projection, and existing
-  reconciliation resume; the complete library gate is 480/480. The 15/15
+  reconciliation resume; the complete library gate is 481/481. The 15/15
   strategic-smoke binary tests prove that its bounded recovery and checkpoint
   helpers remain compatible, not the newsroom semantics themselves. The cut
   adds no dependency, crate, binary, daemon, target platform, code-generation

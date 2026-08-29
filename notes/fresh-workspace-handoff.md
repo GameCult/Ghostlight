@@ -1248,28 +1248,44 @@ new agent or event authority is added. Gates pass 25/25 newspaper tests, 480/480
 library tests, and 15/15 strategic-smoke tests. Run 53 and its hashes and review
 verdicts remain immutable.
 
+Exact-source run 54 attempt 1 at
+`3288d9ef780f5ea0d2ff1f15bc0a1844b5cfe6b3` preserved world revision 27
+with 18/18 waves, 363 events, and 853 news rows and performed no simulation
+replay. The narrative selector used both bounded archive retrieval steps, then
+its first agenda exceeded the deterministic six-citation total news hole. The
+three-step budget left no fourth step to correct that rejection. Attempt-1
+artifacts and the result root remain failure evidence.
+
+The current uncommitted correction gives the same narrative-selection agent one
+bounded fourth semantic step without changing archive windows, retrieved-only
+admission, selected-only downstream projection, or the six-citation news hole.
+A regression proves the exact path: two retrievals, one overfull rejection, and
+one corrected six-citation agenda. Gates pass 26/26 newspaper tests, 481/481
+library tests, and 15/15 strategic-smoke tests. No world, event, review-agent,
+or per-wave authority is added.
+
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Launch one new immutable run 54 from revision 27 with final-only newsroom
-   composition and no strategic or per-wave replay. Preserve runs 51 through
-   53 and unchanged live services.
-2. Require final newspaper and archive hashes, exact provenance and manifest,
+1. Review the one-step newsroom correction diff, then commit and push it.
+2. Preserve run-54 attempt-1 artifacts, rebuild the exact pushed source, and
+   resume the same run-54 result root without world or wave replay.
+3. Require final newspaper and archive hashes, exact provenance and manifest,
    unchanged-service proof, independent grounding, and blind editorial
    acceptance before delivery.
-3. Defer multiple publication Personas, TeX layout, and engraved cuts until the
+4. Defer multiple publication Personas, TeX layout, and engraved cuts until the
    single Canopy Ledger copy passes.
-4. Have the game-side adapter lower its authored hierarchy into the published
+5. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-5. Prove one consumer-owned effect crosses that public API, changes two foreign
+6. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-6. Measure provider cost and continuity on the existing 200-cell authored-world
+7. Measure provider cost and continuity on the existing 200-cell authored-world
    path without coupling wave width to the provider concurrency ceiling.
-7. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+8. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-8. Keep `gamecult-ops` synchronized with every executable deployment and model
+9. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,

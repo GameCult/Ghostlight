@@ -909,7 +909,10 @@ async fn select_editorial_agenda(
         source_receipt_ids: prepared.source_receipt_ids.clone(),
         temperature: Some(0.8),
         max_output_tokens: Some(2_000),
-        max_steps: 3,
+        // Two archive windows may consume the first two actions. Preserve one
+        // bounded corrective action after the first admitted-schema agenda is
+        // rejected by the stricter total news-hole invariant.
+        max_steps: 4,
     };
     let visible_citations = prepared
         .sources
@@ -3187,6 +3190,12 @@ mod tests {
 
     const ONE_STORY_AGENDA: &str = r#"{"command":{"tool":"submit_agenda","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"citations":["1"],"focus_citation":"1","narrative_claim":"The pawned royal seal and the treasurer's dismissal are one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?"}]}}"#;
     const TWO_STORY_AGENDA: &str = r#"{"command":{"tool":"submit_agenda","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"citations":["1"],"focus_citation":"1","narrative_claim":"The pawned seal and dismissal are the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?"},{"lead":false,"citations":["2"],"focus_citation":"2","narrative_claim":"The gate closure is a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?"}]}}"#;
+    const REQUEST_PRECEDING_ARCHIVE: &str =
+        r#"{"command":{"tool":"request_archive_context","window":"preceding_recent"}}"#;
+    const REQUEST_FOUNDATIONAL_ARCHIVE: &str =
+        r#"{"command":{"tool":"request_archive_context","window":"foundational"}}"#;
+    const OVERFULL_ARCHIVE_AGENDA: &str = r#"{"command":{"tool":"submit_agenda","dominant_throughline":"The crisis became an archive of evasions.","reader_stake":"Readers pay for every institution that turns consequence into procedure.","story_pitches":[{"lead":true,"citations":["34","35","36","37"],"focus_citation":"34","narrative_claim":"The oldest responses expose the first evasion.","tension":"Public danger meets procedural delay.","public_question":"Who accepted the cost?"},{"lead":false,"citations":["38","39","40","41"],"focus_citation":"38","narrative_claim":"A second dossier repeats the pattern.","tension":"More notices arrive without resolution.","public_question":"Who benefits from repetition?"}]}}"#;
+    const CORRECTED_ARCHIVE_AGENDA: &str = r#"{"command":{"tool":"submit_agenda","dominant_throughline":"The founding crisis survived its administrative aftermath.","reader_stake":"Readers still bear the consequences while institutions manage the paperwork.","story_pitches":[{"lead":true,"citations":["40","41","42","43","44","45"],"focus_citation":"45","narrative_claim":"The original public dossier is the fact later notices cannot domesticate.","tension":"Administrative responses multiply while the founding rupture remains unresolved.","public_question":"Who benefits when the cause leaves the front page?"}]}}"#;
     const ACCEPTED_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
     const TWO_ARTICLE_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]},{"section":"Dispatches","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","byline":"Staff report","dateline":"Yard","citations":["2"],"paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace the cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}]}"#;
     const EMPTY_REPAIR_ACTION: &str =
@@ -3392,6 +3401,36 @@ mod tests {
         let editor_desk = source_json_for_agenda(&sources, Some(&agenda)).unwrap();
         assert!(editor_desk.contains("\"citation\": \"45\""));
         assert!(!editor_desk.contains("\"citation\": \"1\""));
+    }
+
+    #[tokio::test]
+    async fn narrative_agent_can_correct_the_news_hole_after_retrieving_both_archive_windows() {
+        let prepared = prepare_newspaper(
+            &campaign_with_archive_news(),
+            "The Canopy Ledger",
+            "Independent and pointed.",
+            3,
+        )
+        .unwrap();
+        let model = ScriptedNewspaperModel::new([
+            REQUEST_PRECEDING_ARCHIVE,
+            REQUEST_FOUNDATIONAL_ARCHIVE,
+            OVERFULL_ARCHIVE_AGENDA,
+            CORRECTED_ARCHIVE_AGENDA,
+        ]);
+
+        let run = select_editorial_agenda(&model, &prepared, 3).await.unwrap();
+
+        assert_eq!(run.receipts.len(), 4);
+        assert_eq!(run.output.story_pitches.len(), 1);
+        assert_eq!(run.output.story_pitches[0].citations.len(), 6);
+        let requests = model.requests();
+        assert_eq!(requests.len(), 4);
+        assert!(
+            requests[3]
+                .lived_stream
+                .contains("editorial agenda exceeded its total news hole")
+        );
     }
 
     #[test]
