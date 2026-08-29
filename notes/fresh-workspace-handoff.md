@@ -1002,38 +1002,41 @@ for exact-receipt kernel admission, exact causal outcome context, legitimate
 empty judgment, durable replay suppression, narrow one-pass exact-phrase
 grounding repair, and bounded complete mismatch feedback.
 
-Exact-source run 40 resumed immutable run 39 without replay. Waves 13 and 14
-committed through revision 23. Wave 15 then exhausted five rejected pulses and
-failed terminally with `causal response owner is absent from its exact cell
-slice`. The source owner was `responder_cell`: it mapped a materialized member
-actor to the dormant aggregate's Gestalt cell, where the actor was absent. The
-remote root is
-`/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-b040a35-40`.
-`BUILD-WITNESS` binds exact source
-`92c7647014dc3ffc53bc89d5bd291b81ba053e81`, the run-39 resume root, and
-`live_service_mutated=false`. `status.json` is stale at running/revision 23;
-the wave-15 terminal artifact and inactive service own terminal state.
+Exact-source run 40 resumed immutable run 39 without replay, committed waves 13
+and 14 through revision 23, then exposed a responder-cell identity defect at
+wave 15. That materialized-versus-dormant routing fix was pushed in exact source
+`46810c31b15c880026ee22c0318a563e638c42bc`.
 
-The current uncommitted diff maps materialized members to their actor cells and
-only dormant members to their Gestalt cells. The defining regression
-`materialized_member_responders_use_their_actor_cell` passes. This repair is not
-yet committed, pushed, or provider-verified. Run 39's independent FAIL and run
-40's terminal failure remain authoritative; acceptance is incomplete.
+Run 41 cloned run 40 at committed revision 23, removed only copied wave-15
+failure artifacts, and did not replay prior waves. It committed waves 15 through
+18 through revision 27 with 363 events and 853 news rows. The unit then failed
+only during final newspaper composition: one-pass grounding reconciliation
+rejected distinct findings that shared one editable target. The remote root is
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-46810c3-41`.
+`BUILD-WITNESS` binds the run-40 resume root and
+`live_service_mutated=false`. Simulation mechanics are complete; no accepted
+final digest exists. Runs 38, 39, and 40 remain preserved, and acceptance is
+incomplete.
+
+The current uncommitted `newspaper.rs` diff groups replacements by editable
+target, validates every exact phrase once against the original copy, rejects
+overlapping ranges, and atomically applies distinct non-overlapping replacements
+in reverse source order before requiring the complete finding set and fresh
+whole-page verification. Its defining regression and all newspaper tests pass;
+the full 468-test library gate and `git diff --check` also pass. The fix is not
+yet committed, pushed, provider-proven, or editorially accepted.
 
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Complete bounded review of the materialized-versus-dormant responder-cell
-   ownership fix, then commit and push the exact source.
-2. Resume from run 40's committed revision 23 without replaying waves 13 or 14.
-   Require wave 15 to cross the ordinary Nemesis, Persona, outcome, kernel,
-   newspaper, and grounding path before continuing acceptance. Preserve
-   immutable runs 38/39, the incomplete run-40 root and provenance, stopped run
-   23, exact acceptance conditions, and unchanged live daemons. Do not claim
-   editorial acceptance until a completed continuation produces unedited issues
-   and a final digest that pass fresh independent editorial and provenance
-   review.
+1. Commit and push the locally verified atomic same-target grounding edit fix.
+2. Resume only final newspaper composition from run 41's committed revision 27.
+   Do not replay waves 15-18 or any earlier wave. Require the resulting unedited
+   final digest to pass fresh independent editorial and provenance review before
+   claiming acceptance. Preserve runs 38/39/40, the run-41 root and committed
+   world lineage, stopped run 23, exact acceptance conditions, and unchanged
+   live daemons.
 3. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
 4. Prove one consumer-owned effect crosses that public API, changes two foreign

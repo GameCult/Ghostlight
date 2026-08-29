@@ -1302,20 +1302,25 @@ complete typed finding set. Its sole one-step command is one transactional edit
 batch: replace an exact finding phrase in one named headline, deck, dateline,
 or paragraph, or delete a finding-bearing article when its story cannot be
 supported. Deterministic admission requires every finding to be addressed,
-requires each replacement phrase to occur exactly once in its named field,
-forbids duplicate targets and simultaneous edit/delete of one article, and
-keeps citations, surviving article selection and order, sections, bylines, and
-all unaffected text frozen. If the lead is deleted, owner code promotes the
-next article to the front page. The agent cannot request a new simulation or
-source packet, submit a replacement `EditorialPageDraft`, or act as a second
-editor. The same copy desk rechecks the complete repaired page. A rejected
+requires each replacement phrase to occur exactly once in its named field of
+the frozen original, and forbids duplicate exact findings, overlapping spans,
+and simultaneous edit/delete of one article. Distinct non-overlapping findings
+may target the same headline, deck, dateline, or paragraph: owner code groups
+them by target and applies them atomically in descending byte position, so
+replacement length and model ordering cannot move a later edit. Citations,
+surviving article selection and order, sections, bylines, and all unaffected
+text remain frozen. If the lead is deleted, owner code promotes the next article
+to the front page. The agent cannot request a new simulation or source packet,
+submit a replacement `EditorialPageDraft`, or act as a second editor. The same
+copy desk rechecks the complete repaired page. A rejected
 repair, an empty surviving page, or a page rejected on recheck returns no
 edition; there is no further repair loop. Thus the editor owns initial copy,
 the reconciler owns only this exact repair transaction, the copy desk owns
 grounding judgment, and none owns source facts or world state. Focused tests
-cover exact same-desk repair with source identity preserved, bounded article
-deletion with survivor recheck, and terminal rejection after the single repair
-step. The typed issue retains exact event IDs, channels,
+cover order-independent same-target phrase repair, exact same-desk repair with
+source identity preserved, bounded article deletion with survivor recheck, and
+terminal rejection after the single repair step. The typed issue retains exact
+event IDs, channels,
 reliability, source revision, and model receipts as audit data. Its internal
 issue time is derived from the latest cited publication record without exposing
 that clock to editorial inference. Terminally rejected attempts semantically

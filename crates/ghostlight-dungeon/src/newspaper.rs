@@ -611,7 +611,9 @@ fn apply_grounding_edits(
                 .cloned()
         })
         .collect::<BTreeSet<_>>();
-    let mut edit_targets = BTreeSet::new();
+    let mut edits_by_target =
+        BTreeMap::<(usize, GroundingEditableField, Option<u16>), Vec<(usize, usize, String)>>::new(
+        );
     let mut draft = original.clone();
     for replacement in replacements {
         let article_index = usize::from(replacement.article_index);
@@ -626,14 +628,14 @@ fn apply_grounding_edits(
                 "grounding repair may replace only an exact phrase named by the current findings"
             ));
         }
+        if !addressed.insert(finding_key) {
+            return Err(anyhow!("grounding repair repeats one exact finding"));
+        }
         let target_key = (
             article_index,
             replacement.field.clone(),
             replacement.paragraph_index,
         );
-        if !edit_targets.insert(target_key) {
-            return Err(anyhow!("grounding repair repeats one editable text target"));
-        }
         if replacement.replacement.trim() != replacement.replacement
             || replacement.replacement.contains(['\r', '\n'])
             || replacement.replacement.chars().any(char::is_control)
@@ -642,18 +644,47 @@ fn apply_grounding_edits(
                 "grounding replacement is not bounded reader-facing text"
             ));
         }
-        let article = draft
+        let mut source_article = original
             .articles
-            .get_mut(article_index)
+            .get(article_index)
+            .cloned()
             .ok_or_else(|| anyhow!("grounding repair names an invalid article"))?;
-        let target = grounding_edit_target(article, &replacement)?;
-        if target.match_indices(&replacement.expected_phrase).count() != 1 {
+        let source_target = grounding_edit_target(
+            &mut source_article,
+            &replacement.field,
+            replacement.paragraph_index,
+        )?;
+        let matches = source_target
+            .match_indices(&replacement.expected_phrase)
+            .map(|(start, _)| start)
+            .collect::<Vec<_>>();
+        if matches.len() != 1 {
             return Err(anyhow!(
                 "grounding replacement expected_phrase must occur exactly once in its target"
             ));
         }
-        *target = target.replacen(&replacement.expected_phrase, &replacement.replacement, 1);
-        addressed.insert(finding_key);
+        let start = matches[0];
+        edits_by_target.entry(target_key).or_default().push((
+            start,
+            start + replacement.expected_phrase.len(),
+            replacement.replacement,
+        ));
+    }
+    for ((article_index, field, paragraph_index), mut edits) in edits_by_target {
+        edits.sort_by_key(|(start, end, _)| (*start, *end));
+        if edits.windows(2).any(|window| window[0].1 > window[1].0) {
+            return Err(anyhow!(
+                "grounding repair contains overlapping exact phrases in one text target"
+            ));
+        }
+        let article = draft
+            .articles
+            .get_mut(article_index)
+            .ok_or_else(|| anyhow!("grounding repair names an invalid article"))?;
+        let target = grounding_edit_target(article, &field, paragraph_index)?;
+        for (start, end, replacement) in edits.into_iter().rev() {
+            target.replace_range(start..end, &replacement);
+        }
     }
     if addressed != expected_findings {
         return Err(anyhow!(
@@ -673,9 +704,10 @@ fn apply_grounding_edits(
 
 fn grounding_edit_target<'a>(
     article: &'a mut EditorialArticleDraft,
-    replacement: &GroundingTextReplacement,
+    field: &GroundingEditableField,
+    paragraph_index: Option<u16>,
 ) -> Result<&'a mut String> {
-    match (&replacement.field, replacement.paragraph_index) {
+    match (field, paragraph_index) {
         (GroundingEditableField::Headline, None) => Ok(&mut article.headline),
         (GroundingEditableField::Deck, None) => Ok(&mut article.deck),
         (GroundingEditableField::Dateline, None) => Ok(&mut article.dateline),
@@ -1704,6 +1736,138 @@ mod tests {
         ] {
             assert!(schema.contains(category));
         }
+    }
+
+    #[test]
+    fn grounding_repair_applies_distinct_same_target_findings_atomically() {
+        let draft: EditorialPageDraft = serde_json::from_str(ACCEPTED_PAGE).unwrap();
+        let verdict = WorldNewspaperGroundingVerdict {
+            accepted: false,
+            assessment: "Two unsupported claims share one deck.".into(),
+            findings: vec![
+                WorldNewspaperGroundingFinding {
+                    article_index: 0,
+                    category: WorldNewspaperGroundingCategory::UnsupportedFact,
+                    claim_or_phrase: "A gambling debt reaches the throne room".into(),
+                    reason: "The source does not establish that location.".into(),
+                },
+                WorldNewspaperGroundingFinding {
+                    article_index: 0,
+                    category: WorldNewspaperGroundingCategory::UnsupportedFact,
+                    claim_or_phrase: "one official carrying the blame".into(),
+                    reason: "The source establishes dismissal, not blame allocation.".into(),
+                },
+            ],
+        };
+        let mut replacements = vec![
+            GroundingTextReplacement {
+                article_index: 0,
+                field: GroundingEditableField::Deck,
+                paragraph_index: None,
+                expected_phrase: "A gambling debt reaches the throne room".into(),
+                replacement: "The court's admission reaches the public".into(),
+            },
+            GroundingTextReplacement {
+                article_index: 0,
+                field: GroundingEditableField::Deck,
+                paragraph_index: None,
+                expected_phrase: "one official carrying the blame".into(),
+                replacement: "the dismissed treasurer carrying the record".into(),
+            },
+        ];
+        let repaired = apply_grounding_edits(
+            &draft,
+            &verdict,
+            GroundingReconciliationAction::SubmitEdits {
+                replacements: replacements.clone(),
+                delete_article_indices: Vec::new(),
+            },
+        )
+        .unwrap();
+        replacements.reverse();
+        let repaired_reversed = apply_grounding_edits(
+            &draft,
+            &verdict,
+            GroundingReconciliationAction::SubmitEdits {
+                replacements,
+                delete_article_indices: Vec::new(),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(repaired, repaired_reversed);
+        assert_eq!(
+            repaired.articles[0].deck,
+            "The court's admission reaches the public and leaves the dismissed treasurer carrying the record."
+        );
+    }
+
+    #[test]
+    fn grounding_repair_rejects_duplicate_findings_and_overlapping_spans() {
+        let draft: EditorialPageDraft = serde_json::from_str(ACCEPTED_PAGE).unwrap();
+        let finding = WorldNewspaperGroundingFinding {
+            article_index: 0,
+            category: WorldNewspaperGroundingCategory::UnsupportedFact,
+            claim_or_phrase: "A gambling debt reaches".into(),
+            reason: "The source does not establish that movement.".into(),
+        };
+        let replacement = GroundingTextReplacement {
+            article_index: 0,
+            field: GroundingEditableField::Deck,
+            paragraph_index: None,
+            expected_phrase: finding.claim_or_phrase.clone(),
+            replacement: "The court's admission reaches".into(),
+        };
+        let duplicate = apply_grounding_edits(
+            &draft,
+            &WorldNewspaperGroundingVerdict {
+                accepted: false,
+                assessment: "One finding.".into(),
+                findings: vec![finding.clone()],
+            },
+            GroundingReconciliationAction::SubmitEdits {
+                replacements: vec![replacement.clone(), replacement],
+                delete_article_indices: Vec::new(),
+            },
+        )
+        .unwrap_err();
+        assert!(duplicate.to_string().contains("repeats one exact finding"));
+
+        let overlapping_finding = WorldNewspaperGroundingFinding {
+            article_index: 0,
+            category: WorldNewspaperGroundingCategory::UnsupportedFact,
+            claim_or_phrase: "gambling debt reaches the throne room".into(),
+            reason: "The source does not establish that location.".into(),
+        };
+        let overlap = apply_grounding_edits(
+            &draft,
+            &WorldNewspaperGroundingVerdict {
+                accepted: false,
+                assessment: "Overlapping findings.".into(),
+                findings: vec![finding.clone(), overlapping_finding.clone()],
+            },
+            GroundingReconciliationAction::SubmitEdits {
+                replacements: vec![
+                    GroundingTextReplacement {
+                        article_index: 0,
+                        field: GroundingEditableField::Deck,
+                        paragraph_index: None,
+                        expected_phrase: finding.claim_or_phrase,
+                        replacement: "The admission reaches".into(),
+                    },
+                    GroundingTextReplacement {
+                        article_index: 0,
+                        field: GroundingEditableField::Deck,
+                        paragraph_index: None,
+                        expected_phrase: overlapping_finding.claim_or_phrase,
+                        replacement: "the public record".into(),
+                    },
+                ],
+                delete_article_indices: Vec::new(),
+            },
+        )
+        .unwrap_err();
+        assert!(overlap.to_string().contains("overlapping exact phrases"));
     }
 
     #[tokio::test]
