@@ -308,6 +308,11 @@ fn responses_schema_is_strict(schema: &serde_json::Value) -> bool {
             {
                 return false;
             }
+            if map.get("type").and_then(serde_json::Value::as_str) == Some("array")
+                && !map.contains_key("items")
+            {
+                return false;
+            }
             if schema_map_describes_object(map) {
                 if map.get("additionalProperties") != Some(&serde_json::Value::Bool(false)) {
                     return false;
@@ -894,6 +899,24 @@ mod tests {
             .to_string();
 
         assert!(error.contains("root must have type object"));
+    }
+
+    #[test]
+    fn strict_schema_projection_rejects_arrays_without_an_item_contract() {
+        let mut schema = serde_json::json!({
+            "type":"object",
+            "required":["findings"],
+            "properties":{
+                "findings":{"type":"array", "maxItems":0}
+            },
+            "additionalProperties":false
+        });
+
+        let error = project_strict_responses_schema(&mut schema)
+            .unwrap_err()
+            .to_string();
+
+        assert!(error.contains("not strict"));
     }
 
     #[test]

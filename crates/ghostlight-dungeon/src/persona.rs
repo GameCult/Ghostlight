@@ -2143,6 +2143,28 @@ fn cell_effect_verifier_schema(action_count: usize) -> Result<serde_json::Value>
     let verdict = schema
         .pointer_mut("/$defs/CellActionEffectVerdict")
         .ok_or_else(|| anyhow!("cell effect verifier schema has no verdict definition"))?;
+    let finding_schema = serde_json::json!({
+        "type":"object",
+        "additionalProperties":false,
+        "required":["mismatch_kind", "repair_guidance"],
+        "properties":{
+            "mismatch_kind":{
+                "enum":[
+                    "subject_swap",
+                    "effect_omission",
+                    "effect_reversal",
+                    "target_substitution",
+                    "invented_outcome",
+                    "wrong_effect_kind"
+                ]
+            },
+            "repair_guidance":{
+                "type":"string",
+                "minLength":1,
+                "maxLength":240
+            }
+        }
+    });
     *verdict = serde_json::json!({
         "oneOf":[
             {
@@ -2156,7 +2178,11 @@ fn cell_effect_verifier_schema(action_count: usize) -> Result<serde_json::Value>
                         "maximum":action_count - 1
                     },
                     "result":{"const":"match"},
-                    "findings":{"type":"array", "maxItems":0}
+                    "findings":{
+                        "type":"array",
+                        "maxItems":0,
+                        "items":finding_schema.clone()
+                    }
                 }
             },
             {
@@ -2174,28 +2200,7 @@ fn cell_effect_verifier_schema(action_count: usize) -> Result<serde_json::Value>
                         "type":"array",
                         "minItems":1,
                         "maxItems":6,
-                        "items":{
-                            "type":"object",
-                            "additionalProperties":false,
-                            "required":["mismatch_kind", "repair_guidance"],
-                            "properties":{
-                                "mismatch_kind":{
-                                    "enum":[
-                                        "subject_swap",
-                                        "effect_omission",
-                                        "effect_reversal",
-                                        "target_substitution",
-                                        "invented_outcome",
-                                        "wrong_effect_kind"
-                                    ]
-                                },
-                                "repair_guidance":{
-                                    "type":"string",
-                                    "minLength":1,
-                                    "maxLength":240
-                                }
-                            }
-                        }
+                        "items":finding_schema
                     }
                 }
             }
@@ -5046,6 +5051,12 @@ mod tests {
         assert_eq!(
             schema.pointer("/properties/verdicts/maxItems"),
             Some(&serde_json::json!(4))
+        );
+        assert!(
+            schema
+                .pointer("/$defs/CellActionEffectVerdict/oneOf/0/properties/findings/items")
+                .is_some(),
+            "even a zero-length findings branch needs an items schema at the provider boundary"
         );
         let validator = jsonschema::validator_for(&schema).unwrap();
         let faithful = serde_json::json!({
