@@ -1104,32 +1104,46 @@ finding is one mechanical duplicated clause. Issues 15 through 18 and the final
 digest remain absent. Unit invocation is
 `3276392f4a7149fc9d127a966e792633`.
 
-Another fixed step would repeat the same compensator. The current uncommitted
-resumable-reconciliation cut persists a typed generation-zero checkpoint and a
-new typed checkpoint after every rejection, binding the exact draft, verdict
-and finding catalog, model and deterministic receipts, and source/contract
-identity. Accepted composition and strategic artifact records separately bind
-issue and rendered-file ancestry. Resume continues that exact pending chain
-without rerunning the editor. Typed run-46 import converts the preserved
-terminal evidence into the same checkpoint contract. Gates pass
-475/475 library tests and 13/13 strategic-smoke binary tests, including
-same-task source-drift and fork rejection before inference.
+Pushed `db48befa71fcca25f1aae9976110ded5fad7cf2b` persists a typed
+generation-zero checkpoint and a new typed checkpoint after every rejection,
+binding the exact draft, verdict and finding catalog, model and deterministic
+receipts, and source/contract identity. Accepted composition and strategic
+artifact records separately bind issue and rendered-file ancestry. Resume
+continues that exact pending chain without rerunning the editor. Typed run-46
+import converts the preserved terminal evidence into the same checkpoint
+contract.
+
+Exact-source run 47 admitted Issue 15 and reached Issue 16 generation three.
+Run 48 resumed Issue 16 to generation six. Run 49 resumed and admitted Issue
+16, then advanced Issue 17 through generation 24 before its deliberately
+bounded eight-call launcher stopped. The final five findings include one
+paragraph-sized mechanical finding containing a smaller unsupported phrase.
+The reconciliation agent repeatedly supplied both exact repairs, but the
+workbench rejected the nested spans as overlap. Runs 46 through 49, world
+revision 27, every strategic checkpoint, and accepted Issues 13 through 16
+remain immutable. Live codex-connector and ghostlight-dungeon service PIDs and
+invocation IDs remained unchanged.
+
+The current bounded fix keeps this decision in the grounding workbench: edits
+sort deterministically by start, outer span, and finding reference; an outer
+replacement owns and covers contained repairs, while partial overlaps still
+fail closed. The complete finding set remains mandatory and the same copy desk
+rechecks the transaction. Gates pass 21/21 newspaper tests and 476/476 library
+tests.
 
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Commit and push the verified typed resumable-reconciliation checkpoint and
-   run-46 import cut.
-2. Launch run 47 by resuming run 46's Issue 15 reconciliation chain at revision
-   27 to compose Issues 15 through 18 plus the final digest. Preserve every
-   completed wave checkpoint and canonical world state; do not replay mechanics
-   or successful publications. Require the resulting unedited publications and
-   final digest to pass fresh independent editorial and provenance review before
-   claiming acceptance. Preserve runs 38/39/40/42/43/44/45/46, the run-41 root
-   and committed world lineage, stopped run 23, exact acceptance conditions,
-   and unchanged live daemons.
-   Run 47 remains unlaunched.
+1. Commit and push the nested-finding normalization.
+2. Launch run 50 from run 49's exact Issue 17 generation-24 checkpoint. Preserve
+   accepted Issues 13 through 16, every completed wave checkpoint and canonical
+   world state; do not replay mechanics, the editor, or successful publications.
+   Compose Issues 17 and 18 plus the final digest, then require fresh independent
+   editorial and grounding review, provenance and archive/hash verification,
+   and unchanged-live-service proof before claiming acceptance. Preserve runs
+   38 through 49, the run-41 committed world lineage, stopped run 23, and the
+   exact acceptance conditions.
 3. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
 4. Prove one consumer-owned effect crosses that public API, changes two foreign

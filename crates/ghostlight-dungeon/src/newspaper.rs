@@ -1268,9 +1268,10 @@ fn apply_grounding_edits(
                 })
         })
         .collect::<BTreeSet<_>>();
-    let mut edits_by_target =
-        BTreeMap::<(usize, GroundingEditableField, Option<u16>), Vec<(usize, usize, String)>>::new(
-        );
+    let mut edits_by_target = BTreeMap::<
+        (usize, GroundingEditableField, Option<u16>),
+        Vec<(usize, usize, usize, String)>,
+    >::new();
     let mut draft = original.clone();
     for replacement in replacements {
         let finding_index = usize::from(replacement.finding_ref.0);
@@ -1300,22 +1301,34 @@ fn apply_grounding_edits(
         edits_by_target.entry(target_key).or_default().push((
             resolved.start,
             resolved.end,
+            finding_index,
             replacement.replacement,
         ));
     }
     for ((article_index, field, paragraph_index), mut edits) in edits_by_target {
-        edits.sort_by_key(|(start, end, _)| (*start, *end));
-        if edits.windows(2).any(|window| window[0].1 > window[1].0) {
-            return Err(anyhow!(
-                "grounding repair contains overlapping exact phrases in one text target"
-            ));
+        edits.sort_by_key(|(start, end, finding_index, _)| {
+            (*start, std::cmp::Reverse(*end), *finding_index)
+        });
+        let mut disjoint_edits = Vec::with_capacity(edits.len());
+        for edit in edits {
+            if let Some((_, previous_end, _, _)) = disjoint_edits.last() {
+                if edit.0 < *previous_end {
+                    if edit.1 <= *previous_end {
+                        continue;
+                    }
+                    return Err(anyhow!(
+                        "grounding repair contains partially overlapping exact phrases in one text target"
+                    ));
+                }
+            }
+            disjoint_edits.push(edit);
         }
         let article = draft
             .articles
             .get_mut(article_index)
             .ok_or_else(|| anyhow!("grounding repair names an invalid article"))?;
         let target = grounding_edit_target(article, &field, paragraph_index)?;
-        for (start, end, replacement) in edits.into_iter().rev() {
+        for (start, end, _, replacement) in disjoint_edits.into_iter().rev() {
             target.replace_range(start..end, &replacement);
         }
     }
@@ -1434,7 +1447,7 @@ async fn run_grounding_reconciliation_step(
 > {
     let indexed_findings = grounding_finding_catalog(&verdict);
     let instructions = format!(
-        "You are Ghostlight's grounding reconciliation agent. Repair one already-edited newspaper page against the same frozen source desk and exact rejection. You do not report new events, add spice, improve the simulation, or rerun the editor. The workbench freezes article selection, order, sections, bylines, citations, and all unaffected copy. Submit only replacements for the numbered current findings, or delete the article containing a numbered finding when its cited notes cannot support a grounded story. Each replacement selects one finding_ref and supplies only its replacement text. The deterministic workbench owns the selected finding's article, text field, paragraph, exact phrase, and byte span. replacement may be empty when phrase deletion is the honest repair. Address the complete finding set in this one pass. Preserve source status exactly: an attempt is not a result, a committed course does not complete its embedded plans, and a public declaration is not evidence that its demand succeeded. A named person's supported_identity_attributes is exhaustive; when it is empty, use the name or identity-neutral wording and do not invent pronouns, gender, title, kinship, or office. Delete an unsupported phrase rather than replacing it with an adjacent invention. The deterministic workbench applies the edits transactionally and reruns the same whole-page copy desk.\n\nFROZEN NEWSROOM FACT DESK:\n{}\n\nCURRENT CHECKPOINTED DRAFT:\n{}\n\nCURRENT REJECTION VERDICT:\n{}\n\nNUMBERED EXACT FINDINGS:\n{}",
+        "You are Ghostlight's grounding reconciliation agent. Repair one already-edited newspaper page against the same frozen source desk and exact rejection. You do not report new events, add spice, improve the simulation, or rerun the editor. The workbench freezes article selection, order, sections, bylines, citations, and all unaffected copy. Submit only replacements for the numbered current findings, or delete the article containing a numbered finding when its cited notes cannot support a grounded story. Each replacement selects one finding_ref and supplies only its replacement text. The deterministic workbench owns the selected finding's article, text field, paragraph, exact phrase, and byte span. replacement may be empty when phrase deletion is the honest repair. Address the complete finding set in this one pass. When exact findings are nested in one text field, still answer every finding_ref; the workbench deterministically applies the outermost replacement because it owns the complete affected span and treats contained replacements as covered. Preserve source status exactly: an attempt is not a result, a committed course does not complete its embedded plans, and a public declaration is not evidence that its demand succeeded. A named person's supported_identity_attributes is exhaustive; when it is empty, use the name or identity-neutral wording and do not invent pronouns, gender, title, kinship, or office. Delete an unsupported phrase rather than replacing it with an adjacent invention. The deterministic workbench applies the edits transactionally and reruns the same whole-page copy desk.\n\nFROZEN NEWSROOM FACT DESK:\n{}\n\nCURRENT CHECKPOINTED DRAFT:\n{}\n\nCURRENT REJECTION VERDICT:\n{}\n\nNUMBERED EXACT FINDINGS:\n{}",
         source_json,
         serde_json::to_string_pretty(&draft).unwrap_or_default(),
         serde_json::to_string_pretty(&verdict).unwrap_or_default(),
@@ -2534,6 +2547,53 @@ mod tests {
         assert_eq!(
             repaired.articles[0].deck,
             "The court's admission reaches the public and leaves the dismissed treasurer carrying the record."
+        );
+    }
+
+    #[test]
+    fn grounding_repair_collapses_nested_findings_to_the_outer_span() {
+        let draft: EditorialPageDraft = serde_json::from_str(ACCEPTED_PAGE).unwrap();
+        let outer = "The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned.";
+        let verdict = WorldNewspaperGroundingVerdict {
+            accepted: false,
+            assessment: "One unsupported clause sits inside repetitive copy.".into(),
+            findings: vec![
+                WorldNewspaperGroundingFinding {
+                    article_index: 0,
+                    category: WorldNewspaperGroundingCategory::MechanicalCopy,
+                    claim_or_phrase: outer.into(),
+                    reason: "Rewrite the paragraph once.".into(),
+                },
+                WorldNewspaperGroundingFinding {
+                    article_index: 0,
+                    category: WorldNewspaperGroundingCategory::UnsupportedFact,
+                    claim_or_phrase: "The court has explained the firing".into(),
+                    reason: "The source establishes dismissal, not an explanation.".into(),
+                },
+            ],
+        };
+        let repaired = apply_grounding_edits(
+            &draft,
+            &verdict,
+            GroundingReconciliationAction::SubmitEdits {
+                replacements: vec![
+                    GroundingTextReplacement {
+                        finding_ref: GroundingFindingRef(1),
+                        replacement: "The record gives no reason for the firing".into(),
+                    },
+                    GroundingTextReplacement {
+                        finding_ref: GroundingFindingRef(0),
+                        replacement: "The treasurer delivered the admission in open court and was dismissed soon afterward; the seal remained pawned.".into(),
+                    },
+                ],
+                delete_finding_refs: Vec::new(),
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            repaired.articles[0].paragraphs[1],
+            "The treasurer delivered the admission in open court and was dismissed soon afterward; the seal remained pawned."
         );
     }
 
