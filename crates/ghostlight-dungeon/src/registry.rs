@@ -689,22 +689,26 @@ mod tests {
             .output_schema
             .as_ref()
             .and_then(|schema| {
-                schema.pointer("/properties/story_pitches/items/properties/citations/items/enum/0")
+                schema.pointer(
+                    "/properties/command/properties/story_pitches/items/properties/citations/items/enum/0",
+                )
             })
             .and_then(serde_json::Value::as_str)
             .ok_or_else(|| anyhow!("newspaper fixture lost its narrative citation enum"))?;
         Ok(serde_json::json!({
-            "tool":"submit_agenda",
-            "dominant_throughline":"The inner court has converted an audit dispute into a public crisis of accusation and arithmetic.",
-            "reader_stake":"Readers depend on whether the court can distinguish an allegation from a judgment.",
-            "story_pitches":[{
-                "lead":true,
-                "citations":[citation],
-                "focus_citation":citation,
-                "narrative_claim":"The singular accusation against three auditors is itself the scandal.",
-                "tension":"The court's wording collapses three people into one accused figure.",
-                "public_question":"What process can answer an accusation framed this way?"
-            }]
+            "command":{
+                "tool":"submit_agenda",
+                "dominant_throughline":"The inner court has converted an audit dispute into a public crisis of accusation and arithmetic.",
+                "reader_stake":"Readers depend on whether the court can distinguish an allegation from a judgment.",
+                "story_pitches":[{
+                    "lead":true,
+                    "citations":[citation],
+                    "focus_citation":citation,
+                    "narrative_claim":"The singular accusation against three auditors is itself the scandal.",
+                    "tension":"The court's wording collapses three people into one accused figure.",
+                    "public_question":"What process can answer an accusation framed this way?"
+                }]
+            }
         })
         .to_string())
     }

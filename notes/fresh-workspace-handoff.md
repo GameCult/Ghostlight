@@ -1207,31 +1207,70 @@ vague angle and travels with the exact admitted plan the editor receives. A
 read-only serde alias/default exists solely so unrelated historical checkpoint
 rows deserialize; it is not active compatibility authority. Gates pass 24/24
 newspaper tests, 479/479 library tests, and 15/15 strategic-smoke tests. Run 52
-remains immutable; run 53 has not launched.
+remains immutable.
+
+Exact-source run 53 at
+`d42caca278c467573f0a4b810d562bd86d29a3f1` uses newsroom implementation
+`6a045bc3327860483f71abd5546b7b215e45a3e5` and is mechanically complete at
+world revision 27 with 18 waves, no world or wave replay, and exact live
+services unchanged. Immutable root is
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-d42caca-53`.
+SHA-256: newspaper
+`0358c4e82fa716f0364976aabe3ac79a1426596d9bd9eb4f8f4f61654bceb7e2`;
+audit `19b9cfa5da0eb3d20614905b68338e071eeaeb076d803cb87832ba0c9592e34f`;
+result `dbc1048e7f77db3b7fc7a77c31f03a7af562e90027ac5f0c8c47789266cb7a38`;
+archive `F8940F1EEC46344E2D041022B22A52E36F52907AF88F1A7CB992E098BCF8B60D`.
+Every manifest row passes and independent grounding review passes.
+
+Independent blind editorial review fails. The paper leads with one
+five-citation conduit/severed-hands dossier, then falls into cordons, reports,
+and reviews without responsibility, opposing motive or countermove, scandal,
+lived consequence, or a next-issue hook.
+
+Source inspection of run 53's exact implementation overturns post-compose
+self-review as the current hypothesis. That source caps dossiers at 32, sorts
+newest-first, and silently skips each later unique source. Run 53's committed
+result still contains the original public `strategic_pressure` complex: the
+speaking child, murderer-of-river accusation, forest sale, severed delegation
+hands and court seals, pump failures, legion refusal, and bridge seizure. That
+material was outside the selector's desk. Post-copy review is not disproven
+forever, but it was premature for run 53 because archive context was missing.
+
+The current uncommitted newsroom archive-context contract v3 retains the
+complete deduplicated public source archive inside the existing narrative
+workbench while exposing only the 32 newest dossiers initially. The same
+narrative-selection agent may spend bounded semantic steps requesting exact
+12-item `preceding_recent` and `foundational` windows before agenda submission.
+Deterministic admission permits only citations actually retrieved; editor, copy
+desk, and reconciliation receive only the exact selected-source projection. No
+new agent or event authority is added. Gates pass 25/25 newspaper tests, 480/480
+library tests, and 15/15 strategic-smoke tests. Run 53 and its hashes and review
+verdicts remain immutable.
 
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Launch one new immutable run 53 from run 52's revision-27 checkpoint with
-   final-only newsroom composition. Do not invoke compilation, elaboration,
-   Nemesis, strategic cells, outcomes, clocks, or per-wave publication.
-   Preserve runs 51 and 52 and unchanged live services.
-2. Require final newspaper and archive hashes, exact provenance,
+1. Review the newsroom archive-context v3 structural diff, then commit and push
+   it.
+2. Launch one new immutable run 54 from revision 27 with final-only newsroom
+   composition and no strategic or per-wave replay. Preserve runs 51 through
+   53 and unchanged live services.
+3. Require final newspaper and archive hashes, exact provenance and manifest,
    unchanged-service proof, independent grounding, and blind editorial
    acceptance before delivery.
-3. Defer multiple publication Personas, TeX layout, and engraved cuts until the
+4. Defer multiple publication Personas, TeX layout, and engraved cuts until the
    single Canopy Ledger copy passes.
-4. Have the game-side adapter lower its authored hierarchy into the published
+5. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-5. Prove one consumer-owned effect crosses that public API, changes two foreign
+6. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-6. Measure provider cost and continuity on the existing 200-cell authored-world
+7. Measure provider cost and continuity on the existing 200-cell authored-world
    path without coupling wave width to the provider concurrency ceiling.
-7. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+8. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-8. Keep `gamecult-ops` synchronized with every executable deployment and model
+9. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,

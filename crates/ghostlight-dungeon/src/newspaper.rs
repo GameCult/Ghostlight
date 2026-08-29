@@ -23,11 +23,12 @@ use std::{
 };
 
 const MAX_FRONT_PAGE_ARTICLES: usize = 6;
-const MAX_SOURCE_NEWS_ITEMS: usize = 32;
+const MAX_INITIAL_NEWSROOM_SOURCES: usize = 32;
+const MAX_ARCHIVE_CONTEXT_SOURCES: usize = 12;
 const MAX_EDITORIAL_CITATIONS_PER_STORY: usize = 6;
 const EDITORIAL_CITATIONS_PER_ARTICLE: usize = 2;
 const GROUNDING_RECONCILIATION_ACTIONS_PER_ADVANCE: usize = 3;
-const NEWSROOM_CONTRACT_VERSION: &str = "canopy-ledger-narrative-selection.v2";
+const NEWSROOM_CONTRACT_VERSION: &str = "canopy-ledger-narrative-selection.v3";
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
@@ -340,8 +341,17 @@ pub struct WorldNewspaperStoryPitch {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct NarrativeSelectionAction {
+    command: NarrativeSelectionCommand,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "tool", rename_all = "snake_case", deny_unknown_fields)]
-enum NarrativeSelectionAction {
+enum NarrativeSelectionCommand {
+    RequestArchiveContext {
+        window: WorldNewspaperArchiveWindow,
+    },
     SubmitAgenda {
         #[schemars(length(min = 1, max = 500))]
         dominant_throughline: String,
@@ -352,15 +362,72 @@ enum NarrativeSelectionAction {
     },
 }
 
+#[derive(
+    Clone, Copy, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord,
+)]
+#[serde(rename_all = "snake_case")]
+enum WorldNewspaperArchiveWindow {
+    PrecedingRecent,
+    Foundational,
+}
+
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum NarrativeSelectionFinding {
-    AgendaRejected { reason: String },
+    AgendaRejected {
+        reason: String,
+    },
+    ArchiveRequestRejected {
+        reason: String,
+    },
+    ArchiveContext {
+        window: WorldNewspaperArchiveWindow,
+        desk: serde_json::Value,
+    },
 }
 
 struct NarrativeSelectionWorkbench<'a> {
     sources: &'a [NewsroomSource],
     max_articles: usize,
+    visible_citations: BTreeSet<String>,
+    requested_windows: BTreeSet<WorldNewspaperArchiveWindow>,
+}
+
+impl NarrativeSelectionWorkbench<'_> {
+    fn archive_citations(&self, window: WorldNewspaperArchiveWindow) -> BTreeSet<String> {
+        let archive_start = MAX_INITIAL_NEWSROOM_SOURCES.min(self.sources.len());
+        let range = match window {
+            WorldNewspaperArchiveWindow::PrecedingRecent => {
+                archive_start..(archive_start + MAX_ARCHIVE_CONTEXT_SOURCES).min(self.sources.len())
+            }
+            WorldNewspaperArchiveWindow::Foundational => {
+                self.sources
+                    .len()
+                    .saturating_sub(MAX_ARCHIVE_CONTEXT_SOURCES)
+                    .max(archive_start)..self.sources.len()
+            }
+        };
+        self.sources[range]
+            .iter()
+            .map(|source| source.citation.clone())
+            .collect()
+    }
+
+    fn available_archive_windows(&self) -> Vec<WorldNewspaperArchiveWindow> {
+        [
+            WorldNewspaperArchiveWindow::PrecedingRecent,
+            WorldNewspaperArchiveWindow::Foundational,
+        ]
+        .into_iter()
+        .filter(|window| {
+            !self.requested_windows.contains(window)
+                && self
+                    .archive_citations(*window)
+                    .iter()
+                    .any(|citation| !self.visible_citations.contains(citation))
+        })
+        .collect()
+    }
 }
 
 #[async_trait]
@@ -370,14 +437,10 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
     type Finding = NarrativeSelectionFinding;
 
     fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
-        let citations = self
-            .sources
-            .iter()
-            .map(|source| source.citation.clone())
-            .collect::<Vec<_>>();
+        let citations = self.visible_citations.iter().cloned().collect::<Vec<_>>();
         let story_budget = self.max_articles.min(self.sources.len());
-        let per_story_citation_budget = MAX_EDITORIAL_CITATIONS_PER_STORY.min(self.sources.len());
-        let mut schema = serde_json::json!({
+        let per_story_citation_budget = MAX_EDITORIAL_CITATIONS_PER_STORY.min(citations.len());
+        let submit_schema = serde_json::json!({
             "type":"object",
             "additionalProperties":false,
             "required":[
@@ -423,6 +486,34 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                 }
             }
         });
+        let available_windows = self.available_archive_windows();
+        let command_schema = if available_windows.is_empty() {
+            submit_schema
+        } else {
+            serde_json::json!({
+                "oneOf":[
+                    {
+                        "type":"object",
+                        "additionalProperties":false,
+                        "required":["tool","window"],
+                        "properties":{
+                            "tool":{"const":"request_archive_context"},
+                            "window":{
+                                "type":"string",
+                                "enum":available_windows
+                            }
+                        }
+                    },
+                    submit_schema
+                ]
+            })
+        };
+        let mut schema = serde_json::json!({
+            "type":"object",
+            "additionalProperties":false,
+            "required":["command"],
+            "properties":{"command":command_schema}
+        });
         crate::model_connector::project_strict_responses_schema(&mut schema)
             .map_err(|error| error.to_string())?;
         Ok(schema)
@@ -433,27 +524,78 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
         action: Self::Action,
         _context: &ModelAgentToolContext,
     ) -> ModelAgentToolOutcome<Self::Output, Self::Finding> {
-        let NarrativeSelectionAction::SubmitAgenda {
-            dominant_throughline,
-            reader_stake,
-            story_pitches,
-        } = action;
-        let agenda = WorldNewspaperEditorialAgenda {
-            dominant_throughline,
-            reader_stake,
-            story_pitches,
-        };
-        match validate_editorial_agenda(self.sources, &agenda, self.max_articles) {
-            Ok(()) => ModelAgentToolOutcome::Accepted {
-                output: agenda,
-                receipts: Vec::new(),
-            },
-            Err(error) => ModelAgentToolOutcome::Rejected {
-                finding: NarrativeSelectionFinding::AgendaRejected {
-                    reason: error.to_string().chars().take(500).collect(),
-                },
-                receipts: Vec::new(),
-            },
+        match action.command {
+            NarrativeSelectionCommand::RequestArchiveContext { window } => {
+                if !self.available_archive_windows().contains(&window) {
+                    return ModelAgentToolOutcome::Rejected {
+                        finding: NarrativeSelectionFinding::ArchiveRequestRejected {
+                            reason:
+                                "archive window is empty, already visible, or already requested"
+                                    .into(),
+                        },
+                        receipts: Vec::new(),
+                    };
+                }
+                let citations = self.archive_citations(window);
+                self.requested_windows.insert(window);
+                self.visible_citations.extend(citations.iter().cloned());
+                let desk = match serde_json::to_value(newsroom_desk_for_citations(
+                    self.sources,
+                    &citations,
+                )) {
+                    Ok(desk) => desk,
+                    Err(error) => {
+                        return ModelAgentToolOutcome::Failed {
+                            message: format!(
+                                "narrative-selection workbench could not project archive context: {error}"
+                            ),
+                            receipts: Vec::new(),
+                        };
+                    }
+                };
+                ModelAgentToolOutcome::Continue {
+                    observation: NarrativeSelectionFinding::ArchiveContext { window, desk },
+                    receipts: Vec::new(),
+                }
+            }
+            NarrativeSelectionCommand::SubmitAgenda {
+                dominant_throughline,
+                reader_stake,
+                story_pitches,
+            } => {
+                let agenda = WorldNewspaperEditorialAgenda {
+                    dominant_throughline,
+                    reader_stake,
+                    story_pitches,
+                };
+                let invisible_citation = agenda
+                    .story_pitches
+                    .iter()
+                    .flat_map(|pitch| &pitch.citations)
+                    .find(|citation| !self.visible_citations.contains(*citation));
+                if let Some(citation) = invisible_citation {
+                    return ModelAgentToolOutcome::Rejected {
+                        finding: NarrativeSelectionFinding::AgendaRejected {
+                            reason: format!(
+                                "agenda cites newsroom note {citation} without retrieving it"
+                            ),
+                        },
+                        receipts: Vec::new(),
+                    };
+                }
+                match validate_editorial_agenda(self.sources, &agenda, self.max_articles) {
+                    Ok(()) => ModelAgentToolOutcome::Accepted {
+                        output: agenda,
+                        receipts: Vec::new(),
+                    },
+                    Err(error) => ModelAgentToolOutcome::Rejected {
+                        finding: NarrativeSelectionFinding::AgendaRejected {
+                            reason: error.to_string().chars().take(500).collect(),
+                        },
+                        receipts: Vec::new(),
+                    },
+                }
+            }
         }
     }
 }
@@ -684,7 +826,7 @@ struct PreparedNewspaper {
     editorial_voice: String,
     sources: Vec<NewsroomSource>,
     source_receipt_ids: Vec<String>,
-    source_json: String,
+    initial_source_json: String,
     publication_task_binding: String,
     binding: String,
 }
@@ -720,7 +862,13 @@ fn prepare_newspaper(
         .iter()
         .flat_map(|source| source.news_ids.iter().cloned())
         .collect::<Vec<_>>();
-    let source_json = serde_json::to_string_pretty(&newsroom_desk(&sources))?;
+    let initial_citations = sources
+        .iter()
+        .take(MAX_INITIAL_NEWSROOM_SOURCES)
+        .map(|source| source.citation.clone())
+        .collect::<BTreeSet<_>>();
+    let initial_source_json =
+        serde_json::to_string_pretty(&newsroom_desk_for_citations(&sources, &initial_citations))?;
     let publication_task_binding =
         publication_task_binding(campaign, &title, &editorial_voice, max_articles)?;
     let binding = editorial_binding(campaign, &title, &editorial_voice, max_articles, &sources)?;
@@ -729,7 +877,7 @@ fn prepare_newspaper(
         editorial_voice,
         sources,
         source_receipt_ids,
-        source_json,
+        initial_source_json,
         publication_task_binding,
         binding,
     })
@@ -744,8 +892,14 @@ async fn select_editorial_agenda(
     crate::agent::ModelAgentFailure,
 > {
     let instructions = format!(
-        "You are the narrative editor of `{}`. Construct one compelling editorial agenda from the frozen fact desk. A newspaper is not a neutral transcript: select a dominant throughline that matters to this publication's readers, juxtapose facts that illuminate one another, and identify conflict, hypocrisy, lived stakes, scandal, named opposition, or public consequence where the desk actually supports them. The paper has a hard news hole: omitted true facts remain true and unreported. Do not cover a note merely because it exists. Prefer one strong dossier over several administrative summaries, and use fewer pitches when the desk lacks distinct stories. The first pitch is the lead and must set lead=true; every later pitch must set lead=false. Each citation may appear in exactly one pitch. Every pitch must choose one focus_citation from its citations: the concrete fact the headline and lede should make impossible to ignore. narrative_claim states the pointed story the publication can responsibly construct around that dossier. narrative_claim, tension, public_question, dominant_throughline, and reader_stake are editorial framing and hypotheses, not evidence. They may be pointed, skeptical, or insinuating, but they must not invent an event, person, institution, place, motive, quotation, outcome, private knowledge, or factual status. The downstream editor may state facts only from the desk and will be constrained to your exact citation groupings. The copy desk will judge factual claims independently. Submit the complete agenda to the workbench.\n\nPUBLICATION VOICE:\n{}\n\nFROZEN NEWSROOM FACT DESK:\n{}",
-        prepared.title, prepared.editorial_voice, prepared.source_json,
+        "You are the narrative editor of `{}`. Construct one compelling editorial agenda from a frozen public-news archive containing {} unique fact dossiers. The initial desk below contains the {} newest dossiers, not the whole archive. If administrative aftermath lacks the cause, conflict, scandal, named opposition, or lived stakes needed to understand it, use request_archive_context before submitting: preceding_recent returns the next {} older dossiers and foundational returns the {} oldest dossiers. Each window is exact frozen evidence, may be requested once, and costs one of your bounded semantic steps. Never cite an archive note until the workbench has shown it to you.\n\nA newspaper is not a neutral transcript: select a dominant throughline that matters to this publication's readers, juxtapose facts that illuminate one another, and identify conflict, hypocrisy, lived stakes, scandal, named opposition, or public consequence where the desk actually supports them. The paper has a hard news hole: omitted true facts remain true and unreported. Do not cover a note merely because it exists. Prefer one strong dossier over several administrative summaries, and use fewer pitches when the desk lacks distinct stories. The first pitch is the lead and must set lead=true; every later pitch must set lead=false. Each citation may appear in exactly one pitch. Every pitch must choose one focus_citation from its citations: the concrete fact the headline and lede should make impossible to ignore. narrative_claim states the pointed story the publication can responsibly construct around that dossier. narrative_claim, tension, public_question, dominant_throughline, and reader_stake are editorial framing and hypotheses, not evidence. They may be pointed, skeptical, or insinuating, but they must not invent an event, person, institution, place, motive, quotation, outcome, private knowledge, or factual status. The downstream editor may state facts only from your admitted citations and will be constrained to your exact citation groupings. The copy desk will judge factual claims independently. Submit the complete agenda to the workbench once you have enough evidence.\n\nPUBLICATION VOICE:\n{}\n\nINITIAL FROZEN NEWSROOM FACT DESK:\n{}",
+        prepared.title,
+        prepared.sources.len(),
+        MAX_INITIAL_NEWSROOM_SOURCES.min(prepared.sources.len()),
+        MAX_ARCHIVE_CONTEXT_SOURCES,
+        MAX_ARCHIVE_CONTEXT_SOURCES,
+        prepared.editorial_voice,
+        prepared.initial_source_json,
     );
     let spec = ModelAgentSpec {
         stage: "newspaper_narrative_selection_agent_action".into(),
@@ -755,11 +909,19 @@ async fn select_editorial_agenda(
         source_receipt_ids: prepared.source_receipt_ids.clone(),
         temperature: Some(0.8),
         max_output_tokens: Some(2_000),
-        max_steps: 2,
+        max_steps: 3,
     };
+    let visible_citations = prepared
+        .sources
+        .iter()
+        .take(MAX_INITIAL_NEWSROOM_SOURCES)
+        .map(|source| source.citation.clone())
+        .collect();
     let mut tool = NarrativeSelectionWorkbench {
         sources: &prepared.sources,
         max_articles,
+        visible_citations,
+        requested_windows: BTreeSet::new(),
     };
     crate::agent::run_model_agent(model, &spec, &mut tool).await
 }
@@ -1176,13 +1338,14 @@ pub async fn advance_world_newspaper(
     let agenda = agenda_run.output;
     let editorial_schema = editorial_schema(&prepared.sources, &agenda)?;
     let agenda_json = serde_json::to_string_pretty(&agenda)?;
+    let selected_source_json = source_json_for_agenda(&prepared.sources, Some(&agenda))?;
     let base_prompt = format!(
         "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nYou are the accountable copy editor of an in-world newspaper. Turn the admitted narrative agenda and bounded newsroom fact desk below into one convincing front page for `{title}`. The narrative agenda owns selection, article order, focus citation, narrative claim, and exact citation groupings. Implement every pitch in order and use exactly that pitch's citations for the corresponding article. Center each headline and lede on its focus_citation, then use the remaining dossier to substantiate or complicate the narrative_claim. The agenda's narrative_claim, tension, public_question, dominant_throughline, and reader_stake are framing instructions, not source evidence. You may express their interpretation or insinuation as clearly editorial language, but every concrete factual assertion must come from the cited desk notes. Do not recover omitted sources or invent a connective fact merely because the agenda suggests one. The first article must use section `Front Page` and, when its citations name a place, use one of those supplied place names as its dateline. Later articles use the other supplied newspaper sections.\n\nRewrite completely in the publication voice for readers who live in this world. Build a readable throughline: lead with the vivid consequence, identify opposing named actors and countermoves when the cited facts supply them, make lived material stakes legible, and let later stories echo or complicate the lead. Attribute claims and evidence to the named institution, notice, witness, or public act that supplied them. Report a published notice as a notice about physical evidence; never say an institution published the teeth, seal, corpse, or other object itself. When notes dispute a document, accusation, identity, outcome, or authority, preserve the dispute with explicit attribution or words such as alleged or disputed instead of selecting one claim as settled fact. Never invent quotations to simulate reportage.\n\nHeadlines report consequences rather than state transitions. Decks add context instead of repeating headlines. Paragraphs explain why events matter to local readers, connect institutional moves, and vary their rhythm without explaining proper nouns like a setting guide. Keep evidence inventories plain and attributed. Dry barbs, metaphor, political characterization, and rhetorical judgment are welcome when they introduce no new concrete entity, occurrence, status, motive, quotation, number, or private knowledge. This is a newspaper with a point of view, not parody and not a world-state transcript.\n\nEvery factual assertion must be supported by the cited notes for that article. You may synthesize implications plainly supported by several citations, but do not invent quotations, people, offices, places, numbers, documents, motives, chronology, outcomes, or private knowledge. Treat assertion_status as authoritative: an attempt has no result, a committed course does not complete actions embedded in its agenda, a public declaration does not prove its demand succeeded, and only material_change_committed supports a completed material consequence. A named person's supported_identity_attributes list is exhaustive; when empty, use their name or identity-neutral wording rather than inventing pronouns, gender, title, kinship, or office. Language such as attempts, tries, plans, prepares, readies, seeks, or investigates records activity, not outcome: preserve that uncertainty and do not turn it into an established or official inquiry, public availability, completion, or success unless a citation states that consequence. Use only the allowed generic bylines; they are presentation labels, not new people. Use only a supplied place name as a dateline, or the empty string. The newspaper contract owns a neutral edition label; do not invent or print a calendar, date, price, circulation claim, weather report, advertisement, or notice absent from the desk. Do not make the fact desk, citations, agenda, or verification process part of the reader-facing copy. Never end a headline with an ellipsis.\n\nPUBLICATION VOICE:\n{editorial_voice}\n\nADMITTED NARRATIVE AGENDA:\n{agenda_json}\n\nNEWSROOM FACT DESK:\n{source_json}",
         serde_json::to_string(&editorial_schema)?,
         title = prepared.title,
         editorial_voice = prepared.editorial_voice,
         agenda_json = agenda_json,
-        source_json = prepared.source_json,
+        source_json = selected_source_json,
     );
     let mut receipts = agenda_run.receipts;
     let editor_sources = prepared
@@ -1241,7 +1404,7 @@ pub async fn advance_world_newspaper(
     let verdict = match run_copy_desk(
         model,
         format!("{}:draft:{editor_output_hash}", prepared.binding),
-        &prepared.source_json,
+        &selected_source_json,
         &prepared.source_receipt_ids,
         std::slice::from_ref(&editor_receipt_id),
         &draft,
@@ -1403,12 +1566,14 @@ async fn advance_reconciliation(
 ) -> Result<WorldNewspaperAdvance> {
     validate_reconciliation_checkpoint(&checkpoint, prepared, max_articles, &receipts)?;
     for _ in 0..GROUNDING_RECONCILIATION_ACTIONS_PER_ADVANCE {
+        let selected_source_json =
+            source_json_for_agenda(&prepared.sources, checkpoint.editorial_agenda.as_ref())?;
         let progress = run_grounding_reconciliation_step(
             model,
             &prepared.sources,
             max_articles,
             &prepared.binding,
-            &prepared.source_json,
+            &selected_source_json,
             &prepared.source_receipt_ids,
             &receipts,
             checkpoint.id(),
@@ -2183,9 +2348,6 @@ fn newsroom_sources(campaign: &Campaign) -> Result<Vec<NewsroomSource>> {
             }
             continue;
         }
-        if sources.len() == MAX_SOURCE_NEWS_ITEMS {
-            continue;
-        }
         source.citation = (sources.len() + 1).to_string();
         fact_sources.insert(fact_identity, sources.len());
         sources.push(source);
@@ -2325,6 +2487,45 @@ fn newsroom_desk(sources: &[NewsroomSource]) -> Vec<NewsroomDeskNote<'_>> {
             facts: newsroom_facts(&source.events),
         })
         .collect()
+}
+
+fn newsroom_desk_for_citations<'a>(
+    sources: &'a [NewsroomSource],
+    citations: &BTreeSet<String>,
+) -> Vec<NewsroomDeskNote<'a>> {
+    sources
+        .iter()
+        .filter(|source| citations.contains(&source.citation))
+        .map(|source| NewsroomDeskNote {
+            citation: &source.citation,
+            facts: newsroom_facts(&source.events),
+        })
+        .collect()
+}
+
+fn source_json_for_agenda(
+    sources: &[NewsroomSource],
+    agenda: Option<&WorldNewspaperEditorialAgenda>,
+) -> Result<String> {
+    let citations = agenda.map_or_else(
+        || {
+            sources
+                .iter()
+                .take(MAX_INITIAL_NEWSROOM_SOURCES)
+                .map(|source| source.citation.clone())
+                .collect()
+        },
+        |agenda| {
+            agenda
+                .story_pitches
+                .iter()
+                .flat_map(|pitch| pitch.citations.iter().cloned())
+                .collect()
+        },
+    );
+    Ok(serde_json::to_string_pretty(&newsroom_desk_for_citations(
+        sources, &citations,
+    ))?)
 }
 
 fn editorial_schema(
@@ -2887,6 +3088,43 @@ mod tests {
         campaign
     }
 
+    fn campaign_with_archive_news() -> Campaign {
+        let mut campaign = crate::kernel::tests::campaign();
+        campaign.revision = 45;
+        for index in 0..45 {
+            let at = campaign.world_time + chrono::Duration::minutes(index);
+            let summary = if index == 0 {
+                "The oldest public dossier records the speaking child, severed delegation hands, failed grain pumps, a legion refusal, and occupied toll bridges."
+                    .to_owned()
+            } else {
+                format!(
+                    "Public aftermath dossier {index} records one distinct administrative response."
+                )
+            };
+            let event_id = format!("event:archive:{index:02}");
+            campaign.events.push(Event {
+                id: event_id.clone(),
+                at,
+                kind: "public_notice".into(),
+                summary: summary.clone(),
+                actor_ids: vec![],
+                institution_ids: vec![],
+                gestalt_ids: vec![],
+                location_ids: vec!["room".into()],
+                public_channels: vec!["court broadsheet".into()],
+            });
+            campaign.news.push(NewsIssue {
+                id: format!("news:archive:{index:02}"),
+                at,
+                channel: "court broadsheet".into(),
+                headline: crate::domain::committed_news_headline(&summary),
+                event_ids: vec![event_id],
+                reliability: "committed public channel".into(),
+            });
+        }
+        campaign
+    }
+
     fn campaign_with_typed_and_duplicate_news() -> Campaign {
         let mut campaign = campaign_with_news();
         let duplicate = campaign.events.last().unwrap().clone();
@@ -2947,8 +3185,8 @@ mod tests {
         campaign
     }
 
-    const ONE_STORY_AGENDA: &str = r#"{"tool":"submit_agenda","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"citations":["1"],"focus_citation":"1","narrative_claim":"The pawned royal seal and the treasurer's dismissal are one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?"}]}"#;
-    const TWO_STORY_AGENDA: &str = r#"{"tool":"submit_agenda","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"citations":["1"],"focus_citation":"1","narrative_claim":"The pawned seal and dismissal are the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?"},{"lead":false,"citations":["2"],"focus_citation":"2","narrative_claim":"The gate closure is a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?"}]}"#;
+    const ONE_STORY_AGENDA: &str = r#"{"command":{"tool":"submit_agenda","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"citations":["1"],"focus_citation":"1","narrative_claim":"The pawned royal seal and the treasurer's dismissal are one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?"}]}}"#;
+    const TWO_STORY_AGENDA: &str = r#"{"command":{"tool":"submit_agenda","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"citations":["1"],"focus_citation":"1","narrative_claim":"The pawned seal and dismissal are the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?"},{"lead":false,"citations":["2"],"focus_citation":"2","narrative_claim":"The gate closure is a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?"}]}}"#;
     const ACCEPTED_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
     const TWO_ARTICLE_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]},{"section":"Dispatches","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","byline":"Staff report","dateline":"Yard","citations":["2"],"paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace the cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}]}"#;
     const EMPTY_REPAIR_ACTION: &str =
@@ -3040,11 +3278,14 @@ mod tests {
         );
 
         let agenda: NarrativeSelectionAction = serde_json::from_str(TWO_STORY_AGENDA).unwrap();
-        let NarrativeSelectionAction::SubmitAgenda {
+        let NarrativeSelectionCommand::SubmitAgenda {
             dominant_throughline,
             reader_stake,
             story_pitches,
-        } = agenda;
+        } = agenda.command
+        else {
+            panic!("fixture must submit an agenda")
+        };
         let admitted = WorldNewspaperEditorialAgenda {
             dominant_throughline,
             reader_stake,
@@ -3076,6 +3317,81 @@ mod tests {
             .to_string()
             .contains("admitted citation grouping")
         );
+    }
+
+    #[tokio::test]
+    async fn narrative_workbench_retrieves_foundational_context_without_widening_the_editor_desk() {
+        let sources = newsroom_sources(&campaign_with_archive_news()).unwrap();
+        assert_eq!(sources.len(), 45);
+        assert!(sources[44].events[0].summary.contains("speaking child"));
+        let visible_citations = sources
+            .iter()
+            .take(MAX_INITIAL_NEWSROOM_SOURCES)
+            .map(|source| source.citation.clone())
+            .collect::<BTreeSet<_>>();
+        let mut tool = NarrativeSelectionWorkbench {
+            sources: &sources,
+            max_articles: 3,
+            visible_citations,
+            requested_windows: BTreeSet::new(),
+        };
+        let initial_schema = tool.action_schema().unwrap().to_string();
+        assert!(!initial_schema.contains("\"45\""));
+
+        let retrieval = tool
+            .invoke(
+                NarrativeSelectionAction {
+                    command: NarrativeSelectionCommand::RequestArchiveContext {
+                        window: WorldNewspaperArchiveWindow::Foundational,
+                    },
+                },
+                &ModelAgentToolContext {
+                    source_receipt_ids: Vec::new(),
+                    current_model_receipt: None,
+                },
+            )
+            .await;
+        let ModelAgentToolOutcome::Continue { observation, .. } = retrieval else {
+            panic!("foundational archive request must continue the same agent run")
+        };
+        let NarrativeSelectionFinding::ArchiveContext { desk, .. } = observation else {
+            panic!("archive request must return exact desk notes")
+        };
+        assert!(desk.to_string().contains("speaking child"));
+        assert!(tool.action_schema().unwrap().to_string().contains("\"45\""));
+
+        let action = NarrativeSelectionAction {
+            command: NarrativeSelectionCommand::SubmitAgenda {
+                dominant_throughline: "The original crisis survived its administrative aftermath."
+                    .into(),
+                reader_stake: "Readers still bear the consequences of the founding rupture.".into(),
+                story_pitches: vec![WorldNewspaperStoryPitch {
+                    lead: true,
+                    citations: vec!["45".into()],
+                    focus_citation: "45".into(),
+                    narrative_claim: "The oldest dossier is the fact later notices avoid.".into(),
+                    tension: "Institutions administer consequences without resolving the cause."
+                        .into(),
+                    public_question: "Who benefits when the founding rupture leaves the page?"
+                        .into(),
+                }],
+            },
+        };
+        let ModelAgentToolOutcome::Accepted { output: agenda, .. } = tool
+            .invoke(
+                action,
+                &ModelAgentToolContext {
+                    source_receipt_ids: Vec::new(),
+                    current_model_receipt: None,
+                },
+            )
+            .await
+        else {
+            panic!("retrieved foundational citation must be admissible")
+        };
+        let editor_desk = source_json_for_agenda(&sources, Some(&agenda)).unwrap();
+        assert!(editor_desk.contains("\"citation\": \"45\""));
+        assert!(!editor_desk.contains("\"citation\": \"1\""));
     }
 
     #[test]

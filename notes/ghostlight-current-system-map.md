@@ -1294,8 +1294,9 @@ citations. A deterministic workbench owns the article budget, exact citation
 membership, uniqueness, lead selection, and bounded reader-facing framing
 fields. The agenda is interpretation and selection, never evidence: it cannot
 create an event, person, institution, place, motive, quotation, outcome, or
-world mutation. The editor receives the admitted agenda plus the same desk and
-may compose only from the agenda's selected citations. It owns headline, deck,
+world mutation. The editor receives the admitted agenda plus a deterministic
+projection of only the citations selected by that agenda and may compose only
+from those selected citations. It owns headline, deck,
 byline class, dateline, and article prose as a proposal; it does not silently
 recover citations the narrative owner omitted. Edition chrome is
 contract-derived, not model copy. Local validation binds every article to
@@ -1342,33 +1343,44 @@ The newsroom narrative-selection boundary has this authority map:
   the single publication's current editorial agenda. The editor owns prose
   proposal, the copy desk owns factual judgment, and `WorldKernel` remains the
   only world-event authority.
-- **Inputs:** exact immutable newsroom desk, publication title and voice,
-  article budget, source receipt ancestry, and the newsroom contract version.
-  The deterministic workbench derives a total news hole of at most two selected
-  desk citations per available article, capped at six citations in any one
-  story. It may inspect only those inputs and the typed agenda action.
+- **Inputs:** the exact complete deduplicated public-news archive, publication
+  title and voice, article budget, source receipt ancestry, and the newsroom
+  contract version. The agent initially sees at most the 32 newest sources.
+  Through the same workbench it may request `preceding_recent`, the next up to
+  12 older sources after that initial viewport, or `foundational`, the oldest
+  up to 12 sources beyond the initial viewport. Each exact window is available
+  at most once and only while it contains a citation not already visible. The
+  deterministic workbench derives a total news hole of at most two selected
+  citations per available article, capped at six citations in any one story.
 - **Outputs:** one typed agenda with a dominant throughline, reader stake, and
   one or more ordered story pitches. Each pitch declares whether it is the lead,
   names exact citation IDs, chooses one of them as its focal citation, and
   supplies bounded narrative claim, tension, and public-question fields. The
-  editor schema exposes only the union of citations selected by the agenda;
-  deterministic post-inference alignment, not the schema alone, requires each
-  article to use exactly its corresponding pitch's citation set. Valid but
-  omitted desk notes remain true and unreported rather than being forced into
-  the issue.
+  editor schema and prompt expose only the union of citations selected by the
+  agenda; deterministic post-inference alignment, not the schema alone,
+  requires each article to use exactly its corresponding pitch's citation set.
+  The copy desk and grounding reconciler receive the same exact selected-source
+  projection, and lowering resolves only the article citations against the
+  complete archive. Valid but omitted archive notes remain true and unreported
+  rather than being forced into the issue.
 - **Derived state:** salience, juxtaposition, pitch order, rhetorical
   interpretation, and insinuation are editorial framing. They are not committed
   events or source evidence. Semantic audit rows are a deterministic projection
-  of the selected frozen sources and do not become another desk.
+  of the selected frozen sources and do not become another desk. Archive-window
+  observations change only the agent's private visible citation set; they do
+  not publish, mutate, or summarize new world facts.
 - **Forbidden writers:** the narrative agent cannot write campaign state,
   events, `NewsIssue`, copy-desk verdicts, copy, checkpoints, or accepted
   compositions. The editor owns prose only: it cannot choose or widen the
   admitted citations, change their pitch grouping or order, replace the focal
   citation, or replace the narrative claim. Renderers cannot infer missing
-  provenance or change assertion status.
+  provenance or change assertion status. Neither the selector nor its archive
+  workbench may read private events, model memories, or unpublished world state.
 - **Shared paths:** fresh composition runs narrative selection once, then editor
-  and copy desk. A rejected page persists the complete receipt ancestry before
-  reconciliation. Resume starts from that checkpoint and never reruns narrative
+  and copy desk over the selected-source projection. A rejected page persists
+  the admitted agenda and complete receipt ancestry before reconciliation.
+  Resume deterministically reconstructs that same projection from the
+  checkpointed agenda and complete bound archive; it never reruns narrative
   selection or the editor. Accepted-composition idempotence returns the exact
   stored issue.
 - **Persistence and ancestry:** reconciliation checkpoint v2 binds the admitted
@@ -1382,9 +1394,11 @@ The newsroom narrative-selection boundary has this authority map:
   legacy-import validator does not independently reconstruct every historical
   `source_receipt_ids` edge; that older chain remains bounded by the explicit
   typed import witness rather than being generalized as current newsroom state.
-- **Schema/version cut:** `canopy-ledger-narrative-selection.v2` participates in
+- **Schema/version cut:** `canopy-ledger-narrative-selection.v3` participates in
   publication-task and exact editorial bindings plus article and empty-issue
-  identity. New issues and CultMesh/native publication use
+  identity, while the exact editorial binding covers the complete deduplicated
+  archive and its provenance rather than only the initial or selected viewport.
+  New issues and CultMesh/native publication use
   `ghostlight.world_newspaper_issue.v3`; resumable state uses
   `ghostlight.world_newspaper_reconciliation_checkpoint.v2`. The accepted
   composition envelope remains v1 but its contract-versioned key and editorial
@@ -1396,19 +1410,20 @@ The newsroom narrative-selection boundary has this authority map:
   agenda rows can be deserialized. Neither compatibility value appears as an
   alternative in the current action schema: a current agenda must provide both
   `narrative_claim` and a focal citation drawn from its exact story dossier, and
-  must pass v2 agenda validation and binding. Historical decoding therefore
-  cannot authorize a fresh v2 selection or composition.
-- **Cut line:** the existing deterministic selection workbench owns the news
-  hole and focal-citation constraints; the selector still owns which admitted
-  facts become stories and the editor still owns only prose. The overlapping
-  `angle` field is replaced by an explicit `narrative_claim`; no second quality
-  agent, multi-publication Persona, publication memory, layout engine, new
-  service, second event authority, or alternate audit store is added in this
-  cut.
-- **Verification and build budget:** 24 focused `ghostlight-dungeon` newspaper
+  must pass v3 agenda validation and binding. Historical decoding therefore
+  cannot authorize a fresh v3 selection or composition.
+- **Cut line:** the global 32-source truncation is deleted. Thirty-two is now a
+  bounded initial-view limit, not an archive-deletion rule; the complete archive
+  remains prepared and bound. The existing selection workbench owns exact archive
+  window retrieval, visible-citation admission, the news hole, and focal-source
+  constraints; the selector owns which visible facts become stories and the
+  editor owns only prose. No post-copy quality agent, multi-publication Persona,
+  publication memory, layout engine, new service, second event authority, or
+  alternate audit store is added in this cut.
+- **Verification and build budget:** 25 focused `ghostlight-dungeon` newspaper
   tests prove deterministic agenda admission, citation restriction,
   receipt/checkpoint ancestry, semantic audit projection, and existing
-  reconciliation resume; the complete library gate is 479/479. The 15/15
+  reconciliation resume; the complete library gate is 480/480. The 15/15
   strategic-smoke binary tests prove that its bounded recovery and checkpoint
   helpers remain compatible, not the newsroom semantics themselves. The cut
   adds no dependency, crate, binary, daemon, target platform, code-generation
