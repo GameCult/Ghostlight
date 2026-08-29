@@ -1137,25 +1137,43 @@ every strategic checkpoint, and accepted Issues 13 through 17 remain immutable.
 Live services remained unchanged; run 50 unit invocation is
 `6fc5b829f48247419a00bf9b02b54d08`.
 
-The current bounded fix makes the same workbench own its documented empty-edit
+Pushed `ccc51df` makes the same workbench own its documented empty-edit
 seam: a deletion consumes one adjacent ASCII space only when its phrase begins
 or ends the field. The complete finding set remains mandatory, partial overlaps
 still fail closed, and the same copy desk rechecks the transaction. Gates pass
 four focused grounding-repair tests and 477/477 library tests.
 
+Exact-source run 51 is mechanically complete at world revision 27 with accepted
+Issues 13 through 18 and a final newspaper. The immutable local archive is
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-ccc51df-51.tar`
+with SHA-256
+`FC7A930C73E6B22FDD11D137616B6A38B4EDA19AA837B25DA6DAEF7B7C0611F2`.
+Its manifest binds final `newspaper.md` to SHA-256
+`250131C321C5D90C48854FDBA032591B51B51AA1D5B7060BB9D419944625CA7D`.
+Exact live codex-connector and ghostlight-dungeon service identities remained
+unchanged.
+
+Independent blind editorial review returns FAIL: the digest remains procedural
+and lacks a sustained throughline, material lived cost, and countermoves.
+Independent grounding review returns FAIL: the audit omits semantic source
+descriptions, assertion status, and identity evidence, and the copy contains
+status inflation. Mechanical completion is proven; editorial and grounding
+acceptance are not.
+
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Commit and push empty-replacement seam ownership.
-2. Launch run 51 from run 50's exact Issue 18 generation-24 checkpoint. Preserve
-   accepted Issues 13 through 17, every completed wave checkpoint and canonical
-   world state; do not replay mechanics, the editor, or successful publications.
-   Compose Issue 18 plus the final digest, then require fresh independent
-   editorial and grounding review, provenance and archive/hash verification,
-   and unchanged-live-service proof before claiming acceptance. Preserve runs
-   38 through 50, the run-41 committed world lineage, stopped run 23, and the
-   exact acceptance conditions.
+1. Map a newsroom-only architectural cut over run 51's immutable fact substrate:
+   one Canopy Ledger narrative-selection owner for sustained throughlines, lived
+   costs, and countermoves; and a self-contained semantic provenance surface for
+   source descriptions, assertion status, identity evidence, and exact factual
+   support. Grounding remains authoritative over assertions without flattening
+   editorial framing. Do not resimulate the world.
+2. Implement and verify one good Canopy Ledger before multiple publication
+   Personas. Defer TeX layout and engraved cuts until editorial acceptance.
+   Preserve run 51, revision 27, stopped run 23, exact acceptance conditions,
+   and unchanged live daemons.
 3. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
 4. Prove one consumer-owned effect crosses that public API, changes two foreign
