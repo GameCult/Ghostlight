@@ -1083,18 +1083,30 @@ gives the second action an explicit refreshed `finding_catalog`; it never reruns
 the editor. Gates pass 15/15 newspaper tests, 469/469 library tests, 13/13
 strategic-smoke binary tests, and `git diff --check`.
 
+Exact-source run 45 at
+`1d898489daeb34fc9f53e6c6bddf00738fc66364` resumed revision 27 without
+world or successful-publication replay. Issues 13 and 14 remained preserved.
+Action one was rejected locally before the copy desk. Action two was admitted
+and rechecked, and the copy desk returned four fresh findings, but the
+two-action ceiling left no action to answer them. Issues 15 through 18 and the
+final digest remain absent. The bounded protocol needs three total actions: the
+initial action, at most one local-admission correction, and at most one fresh
+copy-desk correction. A rejection after action three is terminal; the same
+workbench state and receipts persist, and the editor never reruns. The exact
+mixed-path regression and full gates pass: 16/16 newspaper tests, 470/470
+library tests, 13/13 strategic-smoke binary tests, and `git diff --check`.
+
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Commit and push the verified two-action reconciliation and refreshed-
-   `finding_catalog` cut.
-2. Resume from run 44's preserved Issue 13 and Issue 14 boundary at revision 27
+1. Commit and push the verified three-action reconciliation cut.
+2. Launch exact-source run 46 from immutable run 45's preserved Issue 13 and Issue 14 boundary at revision 27
    to compose Issues 15 through 18 plus the final digest. Preserve every
    completed wave checkpoint and canonical world state; do not replay mechanics
    or successful publications. Require the resulting unedited publications and
    final digest to pass fresh independent editorial and provenance review before
-   claiming acceptance. Preserve runs 38/39/40/42, the run-41 root and committed
+   claiming acceptance. Preserve runs 38/39/40/42/43/44/45, the run-41 root and committed
    world lineage, stopped run 23, exact acceptance conditions, and unchanged
    live daemons.
 3. Have the game-side adapter lower its authored hierarchy into the published

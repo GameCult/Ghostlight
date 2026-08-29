@@ -1315,24 +1315,30 @@ surviving article selection and order, sections, bylines, and all unaffected
 text remain frozen. If the lead is deleted, owner code promotes the next article
 to the front page. The agent cannot request a new simulation or source packet,
 submit a replacement `EditorialPageDraft`, or act as a second editor. The same
-copy desk rechecks the complete repaired page. The worker permits at most two
-actions in one agent run: an initial repair and exactly one corrective action
-after a rejected tool observation. On the first rejection, the same workbench
-retains the repaired draft and current verdict, republishes the dynamic action
-schema, and exposes a freshly numbered finding catalog derived by the same
-helper used for the initial catalog. The harness includes the first action and
-copy-desk receipts in the second action's causal source chain. Acceptance ends
-the run immediately; an inadmissible repair, an empty surviving page, or a page
-rejected after the second action returns no edition. Thus the editor owns
+copy desk rechecks the complete repaired page. The worker permits at most three
+actions in one agent run: the initial repair and two bounded corrections. The
+intended full path can spend one correction on deterministic admission and one
+on a fresh copy-desk verdict; every rejected action consumes the same total
+budget rather than opening a separate retry owner for either boundary. After
+the first or second rejection, the same workbench retains the current private
+draft and verdict, republishes the dynamic action schema, and exposes a freshly
+numbered finding catalog derived by the same helper used for the initial
+catalog. The harness includes every prior action receipt and any copy-desk tool
+receipts in the next action's causal source chain; a local admission rejection
+correctly contributes no nonexistent tool receipt. Acceptance ends the run
+immediately. An inadmissible repair, an empty surviving page, or a page rejected
+after the third action returns no edition. Thus the editor owns
 initial copy, the reconciler owns only this bounded repair session, the copy
 desk owns grounding judgment, and none owns source facts or world state.
 Focused tests cover order-independent same-target phrase repair, exact same-desk
-repair with source identity preserved, bounded article deletion with survivor recheck, and
-one corrective response to the copy desk's current finding catalog. A terminal
-regression proves that a second rejection exhausts the two-action budget and
-retains all six editor, copy-desk, and action receipts, including both rejected
-action dispositions. The library and strategic-binary test suites pass. The typed
-issue retains exact event IDs, channels,
+repair with source identity preserved, bounded article deletion with survivor
+recheck, and one corrective response to the copy desk's current finding catalog.
+A mixed-path regression proves local empty-repair rejection, admitted repair and
+copy-desk rejection, then third-action acceptance with seven receipts and final
+copy-desk ancestry over every prior completed receipt. A terminal regression
+proves that three admitted but rejected repairs exhaust the three-action budget
+and retain all eight editor, copy-desk, and action receipts, including all three
+rejected action dispositions. The typed issue retains exact event IDs, channels,
 reliability, source revision, and model receipts as audit data. Its internal
 issue time is derived from the latest cited publication record without exposing
 that clock to editorial inference. Terminally rejected attempts semantically

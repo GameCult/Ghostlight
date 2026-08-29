@@ -1670,7 +1670,7 @@ mod tests {
         let failure = error
             .downcast_ref::<crate::newspaper::WorldNewspaperCompositionFailure>()
             .expect("registry must preserve the typed terminal editorial failure");
-        assert_eq!(failure.model_receipts.len(), 6);
+        assert_eq!(failure.model_receipts.len(), 8);
         let stored_after_rejection = runtime.store.keys("persona_stage_receipt.v1").unwrap();
         let newly_observed_failure_receipts = failure
             .model_receipts

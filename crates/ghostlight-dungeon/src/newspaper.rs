@@ -20,7 +20,7 @@ use std::{
 
 const MAX_FRONT_PAGE_ARTICLES: usize = 6;
 const MAX_SOURCE_NEWS_ITEMS: usize = 32;
-const MAX_GROUNDING_RECONCILIATION_STEPS: usize = 2;
+const MAX_GROUNDING_RECONCILIATION_STEPS: usize = 3;
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
@@ -1775,8 +1775,11 @@ mod tests {
 
     const ACCEPTED_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
     const TWO_ARTICLE_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]},{"section":"Dispatches","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","byline":"Staff report","dateline":"Yard","citations":["2"],"paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace the cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}]}"#;
+    const EMPTY_REPAIR_ACTION: &str =
+        r#"{"tool":"submit_edits","replacements":[],"delete_finding_refs":[]}"#;
     const REPAIR_DECK_ACTION: &str = r#"{"tool":"submit_edits","replacements":[{"finding_ref":0,"replacement":"The court's admission leaves one official carrying the blame for the pawned seal."}],"delete_finding_refs":[]}"#;
     const SECOND_REPAIR_DECK_ACTION: &str = r#"{"tool":"submit_edits","replacements":[{"finding_ref":0,"replacement":"the dismissed treasurer named in the public record"}],"delete_finding_refs":[]}"#;
+    const THIRD_REPAIR_DECK_ACTION: &str = r#"{"tool":"submit_edits","replacements":[{"finding_ref":0,"replacement":"identified as the dismissed treasurer"}],"delete_finding_refs":[]}"#;
     const DELETE_SECOND_ARTICLE_ACTION: &str =
         r#"{"tool":"submit_edits","replacements":[],"delete_finding_refs":[0]}"#;
     const ACCEPTING_COPY_DESK: &str = r#"{"accepted":true,"assessment":"The copy is fully supported by its cited public source and reads as attributed court reporting.","findings":[]}"#;
@@ -2273,10 +2276,80 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn grounding_agent_can_correct_admission_then_copy_desk_within_three_actions() {
+        const REJECTED: &str = r#"{"accepted":false,"assessment":"The deck overstates where the admitted debt reached.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"A gambling debt reaches the throne room and leaves one official carrying the blame.","reason":"The cited source records the pawned seal and dismissal but does not locate the debt in the throne room."}]}"#;
+        const REJECTED_AFTER_REPAIR: &str = r#"{"accepted":false,"assessment":"The revised deck still overstates blame.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"one official carrying the blame","reason":"The cited source records dismissal but does not establish how blame was allocated."}]}"#;
+        let campaign = campaign_with_news();
+        let model = ScriptedNewspaperModel::new([
+            ACCEPTED_PAGE,
+            REJECTED,
+            EMPTY_REPAIR_ACTION,
+            REPAIR_DECK_ACTION,
+            REJECTED_AFTER_REPAIR,
+            SECOND_REPAIR_DECK_ACTION,
+            ACCEPTING_COPY_DESK,
+        ]);
+        let composition = compose_world_newspaper(
+            &model,
+            &campaign,
+            "The Underdeep Clarion",
+            "A skeptical court broadsheet with dry restraint.",
+            4,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(composition.model_receipts.len(), 7);
+        assert!(composition.grounding.accepted);
+        let requests = model.requests();
+        assert_eq!(
+            requests
+                .iter()
+                .filter(|request| request.stage == "newspaper_editor")
+                .count(),
+            1
+        );
+        assert_eq!(
+            requests
+                .iter()
+                .filter(|request| {
+                    request.stage == "newspaper_grounding_reconciliation_agent_action"
+                })
+                .count(),
+            3
+        );
+        assert_eq!(
+            composition
+                .model_receipts
+                .iter()
+                .filter(|receipt| receipt.stage
+                    == "newspaper_grounding_reconciliation_agent_action"
+                    && receipt.validation_result == "semantic_invalid")
+                .count(),
+            2
+        );
+        assert!(requests[3].lived_stream.contains("was not admitted"));
+        assert!(
+            requests[5]
+                .lived_stream
+                .contains("revised deck still overstates blame")
+        );
+        let final_copy_desk = composition.model_receipts.last().unwrap();
+        assert_eq!(final_copy_desk.stage, "newspaper_copy_desk");
+        assert_eq!(final_copy_desk.validation_result, "valid");
+        assert!(composition.model_receipts[..6].iter().all(|receipt| {
+            final_copy_desk
+                .source_receipt_ids
+                .contains(&receipt.storage_key().to_owned())
+        }));
+    }
+
+    #[tokio::test]
     async fn terminal_copy_desk_rejection_carries_every_completed_receipt() {
         const REJECTED: &str = r#"{"accepted":false,"assessment":"The deck overstates where the admitted debt reached.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"A gambling debt reaches the throne room and leaves one official carrying the blame.","reason":"The cited source records the pawned seal and dismissal but does not locate the debt in the throne room."}]}"#;
         const REJECTED_AFTER_REPAIR: &str = r#"{"accepted":false,"assessment":"The revised deck still overstates blame.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"one official carrying the blame","reason":"The cited source records dismissal but does not establish how blame was allocated."}]}"#;
         const REJECTED_AFTER_SECOND_REPAIR: &str = r#"{"accepted":false,"assessment":"The second revision still overstates the record.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"named in the public record","reason":"The source records a dismissal but does not say the treasurer was named in the record."}]}"#;
+        const REJECTED_AFTER_THIRD_REPAIR: &str = r#"{"accepted":false,"assessment":"The third revision still overstates identification.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"identified as the dismissed treasurer","reason":"The source records a dismissal but does not establish that the deck's subject was identified in this way."}]}"#;
         let campaign = campaign_with_news();
         let model = ScriptedNewspaperModel::new([
             ACCEPTED_PAGE,
@@ -2285,6 +2358,8 @@ mod tests {
             REJECTED_AFTER_REPAIR,
             SECOND_REPAIR_DECK_ACTION,
             REJECTED_AFTER_SECOND_REPAIR,
+            THIRD_REPAIR_DECK_ACTION,
+            REJECTED_AFTER_THIRD_REPAIR,
         ]);
         let error = compose_world_newspaper(
             &model,
@@ -2299,15 +2374,15 @@ mod tests {
             .downcast_ref::<WorldNewspaperCompositionFailure>()
             .expect("terminal editorial rejection must retain its receipts");
 
-        assert!(failure.message.contains("exhausted 2 semantic steps"));
-        assert_eq!(failure.model_receipts.len(), 6);
+        assert!(failure.message.contains("exhausted 3 semantic steps"));
+        assert_eq!(failure.model_receipts.len(), 8);
         assert_eq!(
             failure
                 .model_receipts
                 .iter()
                 .filter(|receipt| receipt.validation_result == "semantic_invalid")
                 .count(),
-            2
+            3
         );
         for rejected in failure
             .model_receipts
