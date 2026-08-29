@@ -819,6 +819,14 @@ mod tests {
                 })
                 .to_string());
             }
+            if request.stage == "newspaper_night_editor" {
+                return Ok(serde_json::json!({
+                    "accepted":true,
+                    "assessment":"The page makes its admitted accusation legible and consequential.",
+                    "findings":[]
+                })
+                .to_string());
+            }
             registry_newspaper_editor_response(request)
         }
 

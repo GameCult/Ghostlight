@@ -28,7 +28,7 @@ const MAX_FRONT_PAGE_ARTICLES: usize = 6;
 const MAX_PUBLIC_RECORD_QUERY_RESULTS: usize = 24;
 const MAX_NARRATIVE_SELECTION_STEPS: usize = 12;
 const REWRITE_DESK_ACTIONS_PER_ADVANCE: usize = 3;
-const NEWSROOM_CONTRACT_VERSION: &str = "canopy-ledger-publication-rewrite-desk.v6";
+const NEWSROOM_CONTRACT_VERSION: &str = "canopy-ledger-night-editor.v7";
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
@@ -151,7 +151,40 @@ pub struct WorldNewspaperComposition {
     pub schema: String,
     pub issue: WorldNewspaperIssue,
     pub grounding: WorldNewspaperGroundingVerdict,
+    pub editorial: WorldNewspaperEditorialVerdict,
     pub model_receipts: Vec<ModelStageReceipt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct WorldNewspaperEditorialFinding {
+    pub article_index: u16,
+    pub category: WorldNewspaperEditorialCategory,
+    #[schemars(length(min = 1, max = 500))]
+    pub passage: String,
+    #[schemars(length(min = 1, max = 500))]
+    pub reason: String,
+    #[schemars(length(min = 1, max = 500))]
+    pub rewrite_goal: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum WorldNewspaperEditorialCategory {
+    BuriedLede,
+    ProceduralForeground,
+    ThroughlineDropped,
+    StakesAbstracted,
+    TensionFlattened,
+    RepetitiveUpdate,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct WorldNewspaperEditorialVerdict {
+    pub accepted: bool,
+    #[schemars(length(min = 1, max = 500))]
+    pub assessment: String,
+    #[schemars(length(max = 24))]
+    pub findings: Vec<WorldNewspaperEditorialFinding>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -185,9 +218,46 @@ impl WorldNewspaperAdvance {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum WorldNewspaperCheckpointOrigin {
-    InitialCopyDesk,
+    InitialReview,
     Reconciliation,
     LegacyTerminalImport,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "owner", rename_all = "snake_case")]
+enum WorldNewspaperDeskRejection {
+    CopyDesk {
+        verdict: WorldNewspaperGroundingVerdict,
+    },
+    NightEditor {
+        verdict: WorldNewspaperEditorialVerdict,
+    },
+}
+
+impl WorldNewspaperDeskRejection {
+    fn affected_article_indices(&self) -> BTreeSet<usize> {
+        match self {
+            Self::CopyDesk { verdict } => verdict
+                .findings
+                .iter()
+                .map(|finding| usize::from(finding.article_index))
+                .collect(),
+            Self::NightEditor { verdict } => verdict
+                .findings
+                .iter()
+                .map(|finding| usize::from(finding.article_index))
+                .collect(),
+        }
+    }
+
+    fn with_assessment(&self, assessment: String) -> Self {
+        let mut rejection = self.clone();
+        match &mut rejection {
+            Self::CopyDesk { verdict } => verdict.assessment = assessment,
+            Self::NightEditor { verdict } => verdict.assessment = assessment,
+        }
+        rejection
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -204,7 +274,7 @@ pub struct WorldNewspaperReconciliationCheckpoint {
     #[serde(default)]
     editorial_agenda: Option<WorldNewspaperEditorialAgenda>,
     draft: EditorialPageDraft,
-    verdict: WorldNewspaperGroundingVerdict,
+    rejection: WorldNewspaperDeskRejection,
     model_receipt_ids: Vec<String>,
     receipt_chain_digest: String,
 }
@@ -1016,22 +1086,31 @@ struct NewsroomArticleRewrite {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum NewsroomRewriteDeskFinding {
-    CopyDeskRejected {
+    DeskRejected {
         draft: EditorialPageDraft,
-        verdict: WorldNewspaperGroundingVerdict,
+        rejection: WorldNewspaperDeskRejection,
     },
 }
 
 fn newsroom_rewrite_desk_finding(
     draft: EditorialPageDraft,
-    verdict: WorldNewspaperGroundingVerdict,
+    rejection: WorldNewspaperDeskRejection,
 ) -> NewsroomRewriteDeskFinding {
-    NewsroomRewriteDeskFinding::CopyDeskRejected { draft, verdict }
+    NewsroomRewriteDeskFinding::DeskRejected { draft, rejection }
 }
 
 struct NewsroomRewriteDeskOutput {
     draft: EditorialPageDraft,
-    verdict: WorldNewspaperGroundingVerdict,
+    grounding: WorldNewspaperGroundingVerdict,
+    editorial: WorldNewspaperEditorialVerdict,
+}
+
+enum WorldNewspaperPublicationReview {
+    Accepted {
+        grounding: WorldNewspaperGroundingVerdict,
+        editorial: WorldNewspaperEditorialVerdict,
+    },
+    Rejected(WorldNewspaperDeskRejection),
 }
 
 struct PreparedNewspaper {
@@ -1137,7 +1216,7 @@ fn checkpoint_identity(
     source_witness_digest: Option<&str>,
     editorial_agenda: Option<&WorldNewspaperEditorialAgenda>,
     draft: &EditorialPageDraft,
-    verdict: &WorldNewspaperGroundingVerdict,
+    rejection: &WorldNewspaperDeskRejection,
     model_receipt_ids: &[String],
     receipt_chain_digest: &str,
 ) -> Result<String> {
@@ -1152,7 +1231,7 @@ fn checkpoint_identity(
             source_witness_digest,
             editorial_agenda,
             draft,
-            verdict,
+            rejection,
             model_receipt_ids,
             receipt_chain_digest,
         ))?)
@@ -1169,7 +1248,7 @@ fn new_reconciliation_checkpoint(
     source_witness_digest: Option<String>,
     editorial_agenda: Option<WorldNewspaperEditorialAgenda>,
     draft: EditorialPageDraft,
-    verdict: WorldNewspaperGroundingVerdict,
+    rejection: WorldNewspaperDeskRejection,
     receipts: &[ModelStageReceipt],
 ) -> Result<WorldNewspaperReconciliationCheckpoint> {
     let model_receipt_ids = receipts
@@ -1186,12 +1265,12 @@ fn new_reconciliation_checkpoint(
         source_witness_digest.as_deref(),
         editorial_agenda.as_ref(),
         &draft,
-        &verdict,
+        &rejection,
         &model_receipt_ids,
         &receipt_chain_digest,
     )?;
     Ok(WorldNewspaperReconciliationCheckpoint {
-        schema: "ghostlight.world_newspaper_reconciliation_checkpoint.v2".into(),
+        schema: "ghostlight.world_newspaper_reconciliation_checkpoint.v3".into(),
         id,
         publication_task_binding: publication_task_binding.into(),
         editorial_binding: binding.into(),
@@ -1201,7 +1280,7 @@ fn new_reconciliation_checkpoint(
         source_witness_digest,
         editorial_agenda,
         draft,
-        verdict,
+        rejection,
         model_receipt_ids,
         receipt_chain_digest,
     })
@@ -1211,7 +1290,7 @@ fn persist_reconciliation_checkpoint(
     store: &CampaignStore,
     checkpoint: &WorldNewspaperReconciliationCheckpoint,
 ) -> Result<()> {
-    let kind = "world_newspaper_reconciliation_checkpoint.v2";
+    let kind = "world_newspaper_reconciliation_checkpoint.v3";
     if let Some((_, existing)) =
         store.load::<WorldNewspaperReconciliationCheckpoint>(kind, checkpoint.id())?
     {
@@ -1225,7 +1304,7 @@ fn persist_reconciliation_checkpoint(
     }
     store.insert(
         kind,
-        "ghostlight.world_newspaper_reconciliation_checkpoint.v2",
+        "ghostlight.world_newspaper_reconciliation_checkpoint.v3",
         checkpoint.id(),
         checkpoint,
     )?;
@@ -1239,9 +1318,9 @@ fn persist_newspaper_completion(
     source_checkpoint_id: Option<String>,
     composition: &WorldNewspaperComposition,
 ) -> Result<()> {
-    let kind = "world_newspaper_composition.v1";
+    let kind = "world_newspaper_composition.v2";
     let record = PersistedWorldNewspaperComposition {
-        schema: "ghostlight.persisted_world_newspaper_composition.v1".into(),
+        schema: "ghostlight.persisted_world_newspaper_composition.v2".into(),
         publication_task_binding: publication_task_binding.into(),
         editorial_binding: binding.into(),
         source_checkpoint_id,
@@ -1259,7 +1338,7 @@ fn persist_newspaper_completion(
     }
     store.insert(
         kind,
-        "ghostlight.persisted_world_newspaper_composition.v1",
+        "ghostlight.persisted_world_newspaper_composition.v2",
         publication_task_binding,
         &record,
     )?;
@@ -1288,11 +1367,10 @@ fn validate_reconciliation_checkpoint(
     max_articles: usize,
     receipts: &[ModelStageReceipt],
 ) -> Result<()> {
-    if checkpoint.schema != "ghostlight.world_newspaper_reconciliation_checkpoint.v2"
+    if checkpoint.schema != "ghostlight.world_newspaper_reconciliation_checkpoint.v3"
         || checkpoint.publication_task_binding != prepared.publication_task_binding
         || checkpoint.editorial_binding != prepared.binding
-        || checkpoint.verdict.accepted
-        || checkpoint.verdict.findings.is_empty()
+        || checkpoint.editorial_agenda.is_none()
         || receipts.len() != checkpoint.model_receipt_ids.len()
     {
         return Err(anyhow!("newspaper reconciliation checkpoint is invalid"));
@@ -1320,7 +1398,7 @@ fn validate_reconciliation_checkpoint(
             checkpoint.source_witness_digest.as_deref(),
             checkpoint.editorial_agenda.as_ref(),
             &checkpoint.draft,
-            &checkpoint.verdict,
+            &checkpoint.rejection,
             &checkpoint.model_receipt_ids,
             &checkpoint.receipt_chain_digest,
         )? != checkpoint.id
@@ -1351,7 +1429,7 @@ fn validate_reconciliation_checkpoint(
                         == Some("newspaper_copy_desk")
             }
         }
-        WorldNewspaperCheckpointOrigin::InitialCopyDesk
+        WorldNewspaperCheckpointOrigin::InitialReview
         | WorldNewspaperCheckpointOrigin::Reconciliation => {
             let editor_index = receipts
                 .iter()
@@ -1384,12 +1462,26 @@ fn validate_reconciliation_checkpoint(
         validate_editorial_agenda(&prepared.records, agenda, max_articles)?;
         validate_editorial_alignment(&checkpoint.draft, agenda)?;
     }
-    let verdict = GroundingVerdictDraft {
-        accepted: checkpoint.verdict.accepted,
-        assessment: checkpoint.verdict.assessment.clone(),
-        findings: checkpoint.verdict.findings.clone(),
+    validate_desk_rejection(&checkpoint.draft, &checkpoint.rejection)?;
+    let latest_review_stage = receipts
+        .iter()
+        .rev()
+        .find(|receipt| {
+            matches!(
+                receipt.stage.as_str(),
+                "newspaper_copy_desk" | "newspaper_night_editor"
+            )
+        })
+        .map(|receipt| receipt.stage.as_str());
+    let expected_review_stage = match &checkpoint.rejection {
+        WorldNewspaperDeskRejection::CopyDesk { .. } => "newspaper_copy_desk",
+        WorldNewspaperDeskRejection::NightEditor { .. } => "newspaper_night_editor",
     };
-    validate_grounding_verdict(&checkpoint.draft, &verdict)?;
+    if latest_review_stage != Some(expected_review_stage) {
+        return Err(anyhow!(
+            "newspaper reconciliation checkpoint lost its rejecting desk receipt"
+        ));
+    }
     Ok(())
 }
 
@@ -1405,7 +1497,7 @@ fn load_reconciliation_tip(
 > {
     let checkpoints = store
         .load_all::<WorldNewspaperReconciliationCheckpoint>(
-            "world_newspaper_reconciliation_checkpoint.v2",
+            "world_newspaper_reconciliation_checkpoint.v3",
         )?
         .into_iter()
         .filter(|checkpoint| {
@@ -1466,13 +1558,14 @@ pub async fn advance_world_newspaper(
 ) -> Result<WorldNewspaperAdvance> {
     let prepared = prepare_newspaper(campaign, title, editorial_voice, max_articles)?;
     if let Some((_, persisted)) = store.load::<PersistedWorldNewspaperComposition>(
-        "world_newspaper_composition.v1",
+        "world_newspaper_composition.v2",
         &prepared.publication_task_binding,
     )? {
-        if persisted.schema != "ghostlight.persisted_world_newspaper_composition.v1"
+        if persisted.schema != "ghostlight.persisted_world_newspaper_composition.v2"
             || persisted.publication_task_binding != prepared.publication_task_binding
             || persisted.editorial_binding != prepared.binding
             || !persisted.composition.grounding.accepted
+            || !persisted.composition.editorial.accepted
             || persisted.composition.issue.source_world_revision != campaign.revision
             || persisted.composition.issue.title != prepared.title
         {
@@ -1508,11 +1601,17 @@ pub async fn advance_world_newspaper(
             editorial_receipt_ids: Vec::new(),
         };
         let composition = WorldNewspaperComposition {
-            schema: "ghostlight.world_newspaper_composition.v1".into(),
+            schema: "ghostlight.world_newspaper_composition.v2".into(),
             issue,
             grounding: WorldNewspaperGroundingVerdict {
                 accepted: true,
                 assessment: "No public source material was available, so no edition was issued."
+                    .into(),
+                findings: Vec::new(),
+            },
+            editorial: WorldNewspaperEditorialVerdict {
+                accepted: true,
+                assessment: "No edition was issued, so there is no page to assess editorially."
                     .into(),
                 findings: Vec::new(),
             },
@@ -1596,9 +1695,12 @@ pub async fn advance_world_newspaper(
     store.persist_model_stage_receipts(&receipts)?;
     let editor_receipt_id = receipts[editor_receipt_index].storage_key().to_owned();
     let editor_output_hash = receipts[editor_receipt_index].output_hash.clone();
-    let verdict = match run_copy_desk(
+    let review = match run_publication_review(
         model,
         format!("{}:draft:{editor_output_hash}", prepared.binding),
+        &prepared.title,
+        &prepared.editorial_voice,
+        &agenda,
         &selected_source_json,
         &prepared.source_receipt_ids,
         std::slice::from_ref(&editor_receipt_id),
@@ -1607,47 +1709,54 @@ pub async fn advance_world_newspaper(
     )
     .await
     {
-        Ok(verdict) => verdict,
+        Ok(review) => review,
         Err(error) => {
             store.persist_model_stage_receipts(&receipts)?;
             return Err(composition_failure(error.to_string(), receipts));
         }
     };
     store.persist_model_stage_receipts(&receipts)?;
-    if verdict.accepted {
-        let issue = lower_editorial_page(
-            campaign,
-            prepared.title.clone(),
-            &prepared.records,
-            Some(agenda.clone()),
-            draft,
-            &receipts,
-        )?;
-        let composition = WorldNewspaperComposition {
-            schema: "ghostlight.world_newspaper_composition.v1".into(),
-            issue,
-            grounding: verdict,
-            model_receipts: receipts,
-        };
-        persist_newspaper_completion(
-            store,
-            &prepared.publication_task_binding,
-            &prepared.binding,
-            None,
-            &composition,
-        )?;
-        return Ok(WorldNewspaperAdvance::Accepted { composition });
-    }
+    let rejection = match review {
+        WorldNewspaperPublicationReview::Accepted {
+            grounding,
+            editorial,
+        } => {
+            let issue = lower_editorial_page(
+                campaign,
+                prepared.title.clone(),
+                &prepared.records,
+                Some(agenda.clone()),
+                draft,
+                &receipts,
+            )?;
+            let composition = WorldNewspaperComposition {
+                schema: "ghostlight.world_newspaper_composition.v2".into(),
+                issue,
+                grounding,
+                editorial,
+                model_receipts: receipts,
+            };
+            persist_newspaper_completion(
+                store,
+                &prepared.publication_task_binding,
+                &prepared.binding,
+                None,
+                &composition,
+            )?;
+            return Ok(WorldNewspaperAdvance::Accepted { composition });
+        }
+        WorldNewspaperPublicationReview::Rejected(rejection) => rejection,
+    };
     let checkpoint = new_reconciliation_checkpoint(
         &prepared.publication_task_binding,
         &prepared.binding,
         0,
         None,
-        WorldNewspaperCheckpointOrigin::InitialCopyDesk,
+        WorldNewspaperCheckpointOrigin::InitialReview,
         None,
         Some(agenda),
         draft,
-        verdict,
+        rejection,
         &receipts,
     )?;
     persist_reconciliation_checkpoint(store, &checkpoint)?;
@@ -1709,7 +1818,7 @@ pub fn admit_world_newspaper_reconciliation_import(
         || import.source_witness_digest.len() != 71
         || store
             .load::<PersistedWorldNewspaperComposition>(
-                "world_newspaper_composition.v1",
+                "world_newspaper_composition.v2",
                 &prepared.publication_task_binding,
             )?
             .is_some()
@@ -1727,7 +1836,9 @@ pub fn admit_world_newspaper_reconciliation_import(
         Some(import.source_witness_digest),
         import.editorial_agenda,
         import.draft,
-        import.verdict,
+        WorldNewspaperDeskRejection::CopyDesk {
+            verdict: import.verdict,
+        },
         &import.model_receipts,
     )?;
     validate_reconciliation_checkpoint(
@@ -1760,9 +1871,12 @@ async fn advance_reconciliation(
     mut receipts: Vec<ModelStageReceipt>,
 ) -> Result<WorldNewspaperAdvance> {
     validate_reconciliation_checkpoint(&checkpoint, prepared, max_articles, &receipts)?;
+    let agenda = checkpoint
+        .editorial_agenda
+        .clone()
+        .ok_or_else(|| anyhow!("newspaper reconciliation checkpoint lost its editorial agenda"))?;
     for _ in 0..REWRITE_DESK_ACTIONS_PER_ADVANCE {
-        let selected_source_json =
-            source_json_for_agenda(&prepared.records, checkpoint.editorial_agenda.as_ref())?;
+        let selected_source_json = source_json_for_agenda(&prepared.records, Some(&agenda))?;
         let progress = run_newsroom_rewrite_desk_step(
             model,
             &prepared.records,
@@ -1770,13 +1884,13 @@ async fn advance_reconciliation(
             &prepared.binding,
             &prepared.title,
             &prepared.editorial_voice,
-            checkpoint.editorial_agenda.as_ref(),
+            &agenda,
             &selected_source_json,
             &prepared.source_receipt_ids,
             &receipts,
             checkpoint.id(),
             checkpoint.draft.clone(),
-            checkpoint.verdict.clone(),
+            checkpoint.rejection.clone(),
         )
         .await;
         match progress {
@@ -1792,9 +1906,10 @@ async fn advance_reconciliation(
                     &receipts,
                 )?;
                 let composition = WorldNewspaperComposition {
-                    schema: "ghostlight.world_newspaper_composition.v1".into(),
+                    schema: "ghostlight.world_newspaper_composition.v2".into(),
                     issue,
-                    grounding: run.output.verdict,
+                    grounding: run.output.grounding,
+                    editorial: run.output.editorial,
                     model_receipts: receipts,
                 };
                 persist_newspaper_completion(
@@ -1806,7 +1921,7 @@ async fn advance_reconciliation(
                 )?;
                 return Ok(WorldNewspaperAdvance::Accepted { composition });
             }
-            Ok((ModelAgentProgress::Exhausted(exhausted), draft, verdict)) => {
+            Ok((ModelAgentProgress::Exhausted(exhausted), draft, rejection)) => {
                 store.persist_model_stage_receipts(&exhausted.receipts)?;
                 receipts.extend(exhausted.receipts);
                 let next = new_reconciliation_checkpoint(
@@ -1818,7 +1933,7 @@ async fn advance_reconciliation(
                     None,
                     checkpoint.editorial_agenda.clone(),
                     draft,
-                    verdict,
+                    rejection,
                     &receipts,
                 )?;
                 persist_reconciliation_checkpoint(store, &next)?;
@@ -1844,8 +1959,11 @@ struct NewsroomRewriteDeskWorkbench<'a> {
     binding: &'a str,
     source_json: &'a str,
     source_receipt_ids: &'a [String],
+    title: &'a str,
+    editorial_voice: &'a str,
+    agenda: &'a WorldNewspaperEditorialAgenda,
     draft: EditorialPageDraft,
-    verdict: WorldNewspaperGroundingVerdict,
+    rejection: WorldNewspaperDeskRejection,
 }
 
 #[async_trait]
@@ -1865,13 +1983,10 @@ impl ModelAgentTool for NewsroomRewriteDeskWorkbench<'_> {
             schema.remove("$schema");
         }
         let affected_article_indices = self
-            .verdict
-            .findings
-            .iter()
-            .map(|finding| finding.article_index)
-            .collect::<BTreeSet<_>>()
+            .rejection
+            .affected_article_indices()
             .into_iter()
-            .map(serde_json::Value::from)
+            .map(|index| serde_json::Value::from(index as u64))
             .collect::<Vec<_>>();
         rewrite_schema["properties"]["article_index"] = serde_json::json!({
             "type":"integer",
@@ -1901,36 +2016,32 @@ impl ModelAgentTool for NewsroomRewriteDeskWorkbench<'_> {
         action: Self::Action,
         context: &ModelAgentToolContext,
     ) -> ModelAgentToolOutcome<Self::Output, Self::Finding> {
-        let draft = match apply_newsroom_article_rewrites(&self.draft, &self.verdict, action) {
+        let draft = match apply_newsroom_article_rewrites(&self.draft, &self.rejection, action) {
             Ok(draft) => draft,
             Err(error) => {
-                let verdict = WorldNewspaperGroundingVerdict {
-                    accepted: false,
-                    assessment: format!("The proposed article rewrite was not admitted: {error}")
+                let rejection = self.rejection.with_assessment(
+                    format!("The proposed article rewrite was not admitted: {error}")
                         .chars()
                         .take(500)
                         .collect(),
-                    findings: self.verdict.findings.clone(),
-                };
-                self.verdict = verdict.clone();
+                );
+                self.rejection = rejection.clone();
                 return ModelAgentToolOutcome::Rejected {
-                    finding: newsroom_rewrite_desk_finding(self.draft.clone(), verdict),
+                    finding: newsroom_rewrite_desk_finding(self.draft.clone(), rejection),
                     receipts: Vec::new(),
                 };
             }
         };
         if let Err(error) = validate_editorial_draft(self.records, &draft, self.max_articles) {
-            let verdict = WorldNewspaperGroundingVerdict {
-                accepted: false,
-                assessment: format!("The article rewrite produced invalid copy: {error}")
+            let rejection = self.rejection.with_assessment(
+                format!("The article rewrite produced invalid copy: {error}")
                     .chars()
                     .take(500)
                     .collect(),
-                findings: self.verdict.findings.clone(),
-            };
-            self.verdict = verdict.clone();
+            );
+            self.rejection = rejection.clone();
             return ModelAgentToolOutcome::Rejected {
-                finding: newsroom_rewrite_desk_finding(self.draft.clone(), verdict),
+                finding: newsroom_rewrite_desk_finding(self.draft.clone(), rejection),
                 receipts: Vec::new(),
             };
         }
@@ -1949,37 +2060,48 @@ impl ModelAgentTool for NewsroomRewriteDeskWorkbench<'_> {
             .filter(|receipt_id| !self.source_receipt_ids.contains(receipt_id))
             .cloned()
             .collect::<Vec<_>>();
-        let mut copy_desk_receipts = Vec::new();
-        let verdict = match run_copy_desk(
+        let mut review_receipts = Vec::new();
+        let review = match run_publication_review(
             self.model,
             format!("{}:newsroom-rewrite:{draft_digest}", self.binding),
+            self.title,
+            self.editorial_voice,
+            self.agenda,
             self.source_json,
             self.source_receipt_ids,
             &editorial_receipt_ids,
             &draft,
-            &mut copy_desk_receipts,
+            &mut review_receipts,
         )
         .await
         {
-            Ok(verdict) => verdict,
+            Ok(review) => review,
             Err(error) => {
                 return ModelAgentToolOutcome::Failed {
                     message: error.to_string(),
-                    receipts: copy_desk_receipts,
+                    receipts: review_receipts,
                 };
             }
         };
-        if verdict.accepted {
-            ModelAgentToolOutcome::Accepted {
-                output: NewsroomRewriteDeskOutput { draft, verdict },
-                receipts: copy_desk_receipts,
-            }
-        } else {
-            self.draft = draft.clone();
-            self.verdict = verdict.clone();
-            ModelAgentToolOutcome::Rejected {
-                finding: newsroom_rewrite_desk_finding(draft, verdict),
-                receipts: copy_desk_receipts,
+        match review {
+            WorldNewspaperPublicationReview::Accepted {
+                grounding,
+                editorial,
+            } => ModelAgentToolOutcome::Accepted {
+                output: NewsroomRewriteDeskOutput {
+                    draft,
+                    grounding,
+                    editorial,
+                },
+                receipts: review_receipts,
+            },
+            WorldNewspaperPublicationReview::Rejected(rejection) => {
+                self.draft = draft.clone();
+                self.rejection = rejection.clone();
+                ModelAgentToolOutcome::Rejected {
+                    finding: newsroom_rewrite_desk_finding(draft, rejection),
+                    receipts: review_receipts,
+                }
             }
         }
     }
@@ -1987,28 +2109,24 @@ impl ModelAgentTool for NewsroomRewriteDeskWorkbench<'_> {
 
 fn apply_newsroom_article_rewrites(
     original: &EditorialPageDraft,
-    verdict: &WorldNewspaperGroundingVerdict,
+    rejection: &WorldNewspaperDeskRejection,
     action: NewsroomRewriteDeskAction,
 ) -> Result<EditorialPageDraft> {
     let NewsroomRewriteDeskAction::SubmitRewrites { rewrites } = action;
-    if verdict.findings.is_empty() {
-        return Err(anyhow!("the copy desk supplied no rejected articles"));
+    let affected = rejection.affected_article_indices();
+    if affected.is_empty() {
+        return Err(anyhow!("the rejecting desk supplied no affected articles"));
     }
     if rewrites.is_empty() {
         return Err(anyhow!(
             "a newsroom rewrite must address every rejected article"
         ));
     }
-    let affected = verdict
-        .findings
-        .iter()
-        .map(|finding| usize::from(finding.article_index))
-        .collect::<BTreeSet<_>>();
     if affected
         .iter()
         .any(|article_index| *article_index >= original.articles.len())
     {
-        return Err(anyhow!("copy desk named an invalid article"));
+        return Err(anyhow!("rejecting desk named an invalid article"));
     }
     let mut draft = original.clone();
     let mut rewritten = BTreeSet::new();
@@ -2044,29 +2162,29 @@ async fn run_newsroom_rewrite_desk_step(
     binding: &str,
     title: &str,
     editorial_voice: &str,
-    agenda: Option<&WorldNewspaperEditorialAgenda>,
+    agenda: &WorldNewspaperEditorialAgenda,
     source_json: &str,
     source_receipt_ids: &[String],
     reconciliation_receipts: &[ModelStageReceipt],
     checkpoint_id: &str,
     draft: EditorialPageDraft,
-    verdict: WorldNewspaperGroundingVerdict,
+    rejection: WorldNewspaperDeskRejection,
 ) -> std::result::Result<
     (
         ModelAgentProgress<NewsroomRewriteDeskOutput>,
         EditorialPageDraft,
-        WorldNewspaperGroundingVerdict,
+        WorldNewspaperDeskRejection,
     ),
     crate::agent::ModelAgentFailure,
 > {
     let instructions = format!(
-        "You are `{title}`'s rewrite desk: the publication's night editor, not a compliance patcher. Rewrite the complete reader-facing prose of every article rejected by the factual copy desk while preserving the admitted edition's argument, urgency, and house voice. Submit headline, deck, dateline, and all paragraphs for each rejected article_index. The deterministic workbench freezes article selection, order, sections, bylines, citations, and every unaffected article; it rejects partial coverage, source widening, or structural mutation, then reruns the same whole-page copy desk. If the admitted sources cannot support an honest version of an article, the edition must remain rejected rather than changing its agenda.\n\nThe copy desk findings identify factual boundaries, not the desired prose. Rebuild each affected article as journalism. Lead with the consequential fact, name the pressure or opposing act when the cited material supplies it, and make the stakes legible to readers. Preserve the admitted narrative claim as interpretation rather than flattening the page into verification notes. You may create meaning through selection, ordering, contrast, metaphor, political characterization, and source-safe juxtaposition. Keep distinct reports grammatically distinct when their causal relationship is not established: proximity can invite the reader's inference, but your prose must not silently turn chronology or juxtaposition into a concrete causal claim. Attribute disputes naturally to their supplied speaker or institution. Do not mention the fact desk, citations, findings, verification, support boundaries, or phrases such as `the record does not establish` in reader-facing copy. Do not invent events, entities, motives, outcomes, chronology, identity attributes, or private knowledge.\n\nPUBLICATION VOICE:\n{editorial_voice}\n\nADMITTED NARRATIVE AGENDA:\n{agenda_json}\n\nFROZEN NEWSROOM FACT DESK:\n{source_json}\n\nCURRENT CHECKPOINTED PAGE:\n{draft_json}\n\nCOPY DESK VERDICT AND COMPLETE FINDINGS:\n{verdict_json}",
+        "You are `{title}`'s rewrite editor, not a compliance patcher. Rewrite the complete reader-facing prose of every article rejected by either the factual copy desk or the independent editorial-quality desk while preserving the admitted edition's argument, urgency, and house voice. Submit headline, deck, dateline, and all paragraphs for each rejected article_index. The deterministic workbench freezes article selection, order, sections, bylines, citations, and every unaffected article; it rejects partial coverage, source widening, or structural mutation, then reruns the factual copy desk followed by editorial review. If the admitted sources cannot support an honest version of an article, the edition must remain rejected rather than changing its agenda.\n\nThe rejecting desk's findings identify boundaries and editorial failures, not the desired prose. Rebuild each affected article as journalism. Lead with the consequential fact, name the pressure or opposing act when the cited material supplies it, and make the stakes legible to readers. Preserve the admitted narrative claim as interpretation rather than flattening the page into verification notes. You may create meaning through selection, ordering, contrast, metaphor, political characterization, pointed questions, and source-safe juxtaposition. Keep distinct reports grammatically distinct when their causal relationship is not established: proximity can invite the reader's inference, but your prose must not silently turn chronology or juxtaposition into a concrete causal claim. Attribute disputes naturally to their supplied speaker or institution. When editorial findings ask for stronger stakes or conflict, use the admitted agenda and selected facts more sharply; do not answer by inventing a missing fact. Do not mention the fact desk, citations, findings, verification, support boundaries, or phrases such as `the record does not establish` in reader-facing copy. Do not invent events, entities, motives, outcomes, chronology, spatial relationships, affiliations, identity attributes, or private knowledge.\n\nPUBLICATION VOICE:\n{editorial_voice}\n\nADMITTED NARRATIVE AGENDA:\n{agenda_json}\n\nFROZEN NEWSROOM FACT DESK:\n{source_json}\n\nCURRENT CHECKPOINTED PAGE:\n{draft_json}\n\nREJECTING DESK VERDICT AND COMPLETE FINDINGS:\n{rejection_json}",
         title = title,
         editorial_voice = editorial_voice,
         agenda_json = serde_json::to_string_pretty(&agenda).unwrap_or_default(),
         source_json = source_json,
         draft_json = serde_json::to_string_pretty(&draft).unwrap_or_default(),
-        verdict_json = serde_json::to_string_pretty(&verdict).unwrap_or_default(),
+        rejection_json = serde_json::to_string_pretty(&rejection).unwrap_or_default(),
     );
     let mut causal_sources = source_receipt_ids
         .iter()
@@ -2098,11 +2216,140 @@ async fn run_newsroom_rewrite_desk_step(
         binding,
         source_json,
         source_receipt_ids,
+        title,
+        editorial_voice,
+        agenda,
         draft,
-        verdict,
+        rejection,
     };
     let progress = crate::agent::run_model_agent_progress(model, &spec, &mut tool).await?;
-    Ok((progress, tool.draft, tool.verdict))
+    Ok((progress, tool.draft, tool.rejection))
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_publication_review(
+    model: &dyn ModelPort,
+    snapshot_binding: String,
+    title: &str,
+    editorial_voice: &str,
+    agenda: &WorldNewspaperEditorialAgenda,
+    source_json: &str,
+    source_receipt_ids: &[String],
+    editorial_source_receipt_ids: &[String],
+    draft: &EditorialPageDraft,
+    receipts: &mut Vec<ModelStageReceipt>,
+) -> Result<WorldNewspaperPublicationReview> {
+    let grounding = run_copy_desk(
+        model,
+        snapshot_binding.clone(),
+        source_json,
+        source_receipt_ids,
+        editorial_source_receipt_ids,
+        draft,
+        receipts,
+    )
+    .await?;
+    if !grounding.accepted {
+        return Ok(WorldNewspaperPublicationReview::Rejected(
+            WorldNewspaperDeskRejection::CopyDesk { verdict: grounding },
+        ));
+    }
+    let copy_desk_receipt_id = receipts
+        .last()
+        .map(|receipt| receipt.storage_key().to_owned())
+        .ok_or_else(|| anyhow!("accepted copy-desk review produced no receipt"))?;
+    let editorial_receipt_ids = editorial_source_receipt_ids
+        .iter()
+        .cloned()
+        .chain(std::iter::once(copy_desk_receipt_id))
+        .collect::<Vec<_>>();
+    let editorial = run_night_editor(
+        model,
+        format!("{snapshot_binding}:night-editor"),
+        title,
+        editorial_voice,
+        agenda,
+        source_json,
+        source_receipt_ids,
+        &editorial_receipt_ids,
+        draft,
+        receipts,
+    )
+    .await?;
+    if !editorial.accepted {
+        return Ok(WorldNewspaperPublicationReview::Rejected(
+            WorldNewspaperDeskRejection::NightEditor { verdict: editorial },
+        ));
+    }
+    Ok(WorldNewspaperPublicationReview::Accepted {
+        grounding,
+        editorial,
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_night_editor(
+    model: &dyn ModelPort,
+    snapshot_binding: String,
+    title: &str,
+    editorial_voice: &str,
+    agenda: &WorldNewspaperEditorialAgenda,
+    source_json: &str,
+    source_receipt_ids: &[String],
+    editorial_source_receipt_ids: &[String],
+    draft: &EditorialPageDraft,
+    receipts: &mut Vec<ModelStageReceipt>,
+) -> Result<WorldNewspaperEditorialVerdict> {
+    let schema = serde_json::to_value(schema_for!(WorldNewspaperEditorialVerdict))?;
+    let request = ModelStageRequest {
+        stage: "newspaper_night_editor".into(),
+        model: MODEL_CAPABLE.into(),
+        snapshot_binding,
+        lived_stream: format!(
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nYou are the independent night editor of `{title}`. The factual copy desk has already cleared this exact page. Decide whether it is publishable journalism for the stated audience, not merely accurate prose. Judge the rendered page against the publication voice and the admitted narrative agenda using only the selected fact desk. Acceptance requires the page to make the agenda's throughline legible; put each story's consequential incident before routine handling; use available tension, opposition, reaction, scandal, bodily danger, or material cost; make the lead feel like the lead; and avoid repetitive administrative minutes. Strong rhetoric, pointed questions, political judgment, metaphor, and source-safe juxtaposition are assets.\n\nDo not relitigate factual grounding and do not demand a person, motive, reaction, consequence, or scene detail absent from the selected facts. Judge whether the copy makes the strongest honest case available from this exact selection. A finding must identify one article_index and one exact contiguous passage occurring exactly once in that article, explain the editorial failure, and state a rewrite_goal achievable with the admitted agenda and selected facts. Categories are buried_lede, procedural_foreground, throughline_dropped, stakes_abstracted, tension_flattened, and repetitive_update. Return the complete bounded finding set. `accepted` is true exactly when findings is empty. Do not rewrite the page.\n\nPUBLICATION VOICE:\n{}\n\nADMITTED NARRATIVE AGENDA:\n{}\n\nSELECTED FACT DESK:\n{}\n\nPROPOSED PAGE:\n{}",
+            serde_json::to_string(&schema)?,
+            editorial_voice,
+            serde_json::to_string_pretty(agenda)?,
+            source_json,
+            serde_json::to_string_pretty(draft)?,
+        ),
+        output_schema: Some(schema),
+        source_receipt_ids: source_receipt_ids
+            .iter()
+            .cloned()
+            .chain(editorial_source_receipt_ids.iter().cloned())
+            .collect(),
+        temperature: Some(0.0),
+        max_output_tokens: Some(1_500),
+    };
+    let output = run_validated_stage(model, &request)
+        .await
+        .map_err(|error| anyhow!("newspaper night-editor inference failed: {error}"))?;
+    receipts.push(output.receipt);
+    let receipt_index = receipts.len() - 1;
+    let structured = output
+        .structured
+        .ok_or_else(|| anyhow!("newspaper night editor returned no structured output"));
+    let structured = match structured {
+        Ok(structured) => structured,
+        Err(error) => {
+            mark_semantic_invalid(&mut receipts[receipt_index], &error);
+            return Err(error);
+        }
+    };
+    let verdict: WorldNewspaperEditorialVerdict = match serde_json::from_value(structured) {
+        Ok(verdict) => verdict,
+        Err(error) => {
+            let error = anyhow!("newspaper night editor returned an invalid verdict: {error}");
+            mark_semantic_invalid(&mut receipts[receipt_index], &error);
+            return Err(error);
+        }
+    };
+    if let Err(error) = validate_editorial_verdict(draft, &verdict) {
+        mark_semantic_invalid(&mut receipts[receipt_index], &error);
+        return Err(error);
+    }
+    Ok(verdict)
 }
 
 async fn run_copy_desk(
@@ -2120,7 +2367,7 @@ async fn run_copy_desk(
         model: MODEL_CAPABLE.into(),
         snapshot_binding,
         lived_stream: format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAct as a strict copy desk, not a rewriting model. Compare every reader-facing factual claim in the proposed fantasy newspaper page with only its cited notes in the bounded newsroom fact desk. Reject invented or overconfident facts, quotations, identities, offices, places, numbers, motives, outcomes, chronology, or private knowledge. Treat each fact's assertion_status as an exhaustive boundary: attempt_committed_outcome_unknown never supports completion; course_committed_embedded_actions_not_completed supports the adopted course but not completion of acts named inside it; public_declaration supports only the declaration; material_change_committed supports the stated material change. Treat each named person's supported_identity_attributes as exhaustive. If it is empty, reject pronouns, gender, title, kinship, or office not independently stated in that fact, and require the name or identity-neutral wording. When cited notes dispute a document, accusation, identity, outcome, or authority, require explicit attribution or qualified language; one public claim does not silently settle another note's dispute. Distinguish an institution publishing a notice about evidence from displaying, releasing, or publishing the physical objects themselves. Reject copy that exposes the fact desk, citations, verification work, or state transitions instead of reporting news.\n\nThe five allowed generic bylines are publication role labels supplied by the newspaper contract, not claims about new people, witnesses, or reporting acts; never reject an allowed byline for lacking source evidence. Metaphor, dry wit, rhetorical contrast, plainly signalled opinion, and political characterization are editorial language rather than world facts when they introduce no concrete entity, occurrence, status, motive, quotation, number, or private knowledge. Do not demand a source sentence for such language. Still reject a rhetorical phrase when it smuggles in a concrete outcome, such as treating a proposed kiln closure as completed, or turns missing evidence into proof that something did not happen. Return the complete bounded finding set in one verdict rather than revealing one defect per pass. Every claim_or_phrase must copy one exact contiguous reader-facing substring that occurs exactly once in its named article; never paraphrase the defect in that field. A neutral contract-owned edition label is not part of the proposed model copy. `accepted` may be true only when findings is empty. Return findings only; never propose replacement copy.\n\nNEWSROOM FACT DESK:\n{}\n\nPROPOSED PAGE:\n{}",
+            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAct as a strict copy desk, not a rewriting model. Compare every reader-facing factual claim in the proposed fantasy newspaper page with only its cited notes in the bounded newsroom fact desk. Reject invented or overconfident facts, quotations, identities, offices, places, numbers, motives, outcomes, chronology, spatial relationships, or private knowledge. Treat each fact's assertion_status as an exhaustive boundary: attempt_committed_outcome_unknown never supports completion; course_committed_embedded_actions_not_completed supports the adopted course but not completion of acts named inside it; public_declaration supports only the declaration; material_change_committed supports the stated material change. Treat each named person's supported_identity_attributes as exhaustive. If it is empty, reject pronouns, gender, title, kinship, office, membership, or affiliation not independently stated in that fact, and require the name or identity-neutral wording. A person acting within, at, beside, or through a named population or institution does not by itself belong to it. Shared location, a cordon, a route, barriers, and nearby evidence do not establish unstated containment, adjacency, or surrounding geometry. When cited notes dispute a document, accusation, identity, outcome, or authority, require explicit attribution or qualified language; one public claim does not silently settle another note's dispute. Distinguish an institution publishing a notice about evidence from displaying, releasing, or publishing the physical objects themselves. Reject copy that exposes the fact desk, citations, verification work, or state transitions instead of reporting news.\n\nThe five allowed generic bylines are publication role labels supplied by the newspaper contract, not claims about new people, witnesses, or reporting acts; never reject an allowed byline for lacking source evidence. Metaphor, dry wit, rhetorical contrast, plainly signalled opinion, and political characterization are editorial language rather than world facts when they introduce no concrete entity, occurrence, status, motive, quotation, number, spatial relationship, or private knowledge. Do not demand a source sentence for such language. Still reject a rhetorical phrase when it smuggles in a concrete outcome, such as treating a proposed kiln closure as completed, or turns missing evidence into proof that something did not happen. Return the complete bounded finding set in one verdict rather than revealing one defect per pass. Every claim_or_phrase must copy one exact contiguous reader-facing substring that occurs exactly once in its named article; never paraphrase the defect in that field. A neutral contract-owned edition label is not part of the proposed model copy. `accepted` may be true only when findings is empty. Return findings only; never propose replacement copy.\n\nNEWSROOM FACT DESK:\n{}\n\nPROPOSED PAGE:\n{}",
             serde_json::to_string(&verifier_schema)?,
             source_json,
             serde_json::to_string_pretty(draft)?,
@@ -2719,25 +2966,34 @@ fn validate_grounding_finding_target(
     draft: &EditorialPageDraft,
     finding: &WorldNewspaperGroundingFinding,
 ) -> Result<()> {
-    let article = draft
-        .articles
-        .get(usize::from(finding.article_index))
-        .ok_or_else(|| anyhow!("copy desk returned an invalid article index"))?;
-    let occurrence_count = [
-        article.headline.as_str(),
-        article.deck.as_str(),
-        article.dateline.as_str(),
-    ]
-    .into_iter()
-    .chain(article.paragraphs.iter().map(String::as_str))
-    .map(|text| text.match_indices(&finding.claim_or_phrase).count())
-    .sum::<usize>();
+    let occurrence_count =
+        article_passage_occurrence_count(draft, finding.article_index, &finding.claim_or_phrase)
+            .ok_or_else(|| anyhow!("copy desk returned an invalid article index"))?;
     if occurrence_count != 1 {
         return Err(anyhow!(
             "copy-desk claim_or_phrase must be one exact contiguous phrase occurring once in the named article"
         ));
     }
     Ok(())
+}
+
+fn article_passage_occurrence_count(
+    draft: &EditorialPageDraft,
+    article_index: u16,
+    passage: &str,
+) -> Option<usize> {
+    let article = draft.articles.get(usize::from(article_index))?;
+    Some(
+        [
+            article.headline.as_str(),
+            article.deck.as_str(),
+            article.dateline.as_str(),
+        ]
+        .into_iter()
+        .chain(article.paragraphs.iter().map(String::as_str))
+        .map(|text| text.match_indices(passage).count())
+        .sum::<usize>(),
+    )
 }
 
 fn validate_grounding_verdict(
@@ -2759,6 +3015,63 @@ fn validate_grounding_verdict(
             return Err(anyhow!("copy desk repeated one exact finding phrase"));
         }
         validate_grounding_finding_target(draft, finding)?;
+    }
+    Ok(())
+}
+
+fn validate_editorial_verdict(
+    draft: &EditorialPageDraft,
+    verdict: &WorldNewspaperEditorialVerdict,
+) -> Result<()> {
+    validate_single_line(&verdict.assessment, 500, "night-editor assessment")?;
+    if verdict.accepted != verdict.findings.is_empty() {
+        return Err(anyhow!(
+            "night-editor acceptance must be true exactly when findings are empty"
+        ));
+    }
+    let mut exact_passages = BTreeSet::new();
+    for finding in &verdict.findings {
+        validate_single_line(&finding.passage, 500, "night-editor passage")?;
+        validate_single_line(&finding.reason, 500, "night-editor reason")?;
+        validate_single_line(&finding.rewrite_goal, 500, "night-editor rewrite goal")?;
+        let article_index = usize::from(finding.article_index);
+        if !exact_passages.insert((article_index, finding.passage.as_str())) {
+            return Err(anyhow!("night editor repeated one exact finding passage"));
+        }
+        let occurrence_count =
+            article_passage_occurrence_count(draft, finding.article_index, &finding.passage)
+                .ok_or_else(|| anyhow!("night editor returned an invalid article index"))?;
+        if occurrence_count != 1 {
+            return Err(anyhow!(
+                "night-editor passage must occur exactly once in the named article"
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn validate_desk_rejection(
+    draft: &EditorialPageDraft,
+    rejection: &WorldNewspaperDeskRejection,
+) -> Result<()> {
+    match rejection {
+        WorldNewspaperDeskRejection::CopyDesk { verdict } => {
+            let draft_verdict = GroundingVerdictDraft {
+                accepted: verdict.accepted,
+                assessment: verdict.assessment.clone(),
+                findings: verdict.findings.clone(),
+            };
+            validate_grounding_verdict(draft, &draft_verdict)?;
+            if verdict.accepted {
+                return Err(anyhow!("copy-desk rejection cannot contain acceptance"));
+            }
+        }
+        WorldNewspaperDeskRejection::NightEditor { verdict } => {
+            validate_editorial_verdict(draft, verdict)?;
+            if verdict.accepted {
+                return Err(anyhow!("night-editor rejection cannot contain acceptance"));
+            }
+        }
     }
     Ok(())
 }
@@ -3202,6 +3515,8 @@ mod tests {
     const FINAL_REPAIR_DECK_ACTION: &str = r#"{"tool":"submit_rewrites","rewrites":[{"article_index":0,"headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"The court's admission leaves the dismissed treasurer.","dateline":"Room","paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
     const REWRITE_SECOND_ARTICLE_ACTION: &str = r#"{"tool":"submit_rewrites","rewrites":[{"article_index":1,"headline":"Cracked Hinge Closes West Gate at Moonrise","deck":"Masons will replace the hinge after the announced closure.","dateline":"Yard","paragraphs":["Officials say the west gate will close at moonrise while masons replace its cracked hinge.","Travellers have a closing hour but no announced reopening time."]}]}"#;
     const ACCEPTING_COPY_DESK: &str = r#"{"accepted":true,"assessment":"The copy is fully supported by its cited public source and reads as attributed court reporting.","findings":[]}"#;
+    const ACCEPTING_NIGHT_EDITOR: &str = r#"{"accepted":true,"assessment":"The page fulfills its admitted agenda with a clear lead, concrete stakes and pointed narrative framing.","findings":[]}"#;
+    const REJECTING_NIGHT_EDITOR: &str = r#"{"accepted":false,"assessment":"The page buries the court's scandal beneath an abstract deck.","findings":[{"article_index":0,"category":"procedural_foreground","passage":"A gambling debt reaches the throne room and leaves one official carrying the blame.","reason":"The deck summarizes blame instead of leading with the pawned royal seal and the court's retaliation against its messenger.","rewrite_goal":"Lead with the pawned seal, then juxtapose the court's admission with the treasurer's dismissal."}]}"#;
 
     async fn pending_local_rejection_fixture() -> (
         Campaign,
@@ -3248,6 +3563,34 @@ mod tests {
         ] {
             assert!(schema.contains(category));
         }
+    }
+
+    #[test]
+    fn night_editor_schema_and_validation_own_article_specific_quality_findings() {
+        let schema = serde_json::to_string(&schema_for!(WorldNewspaperEditorialVerdict)).unwrap();
+        for category in [
+            "buried_lede",
+            "procedural_foreground",
+            "throughline_dropped",
+            "stakes_abstracted",
+            "tension_flattened",
+            "repetitive_update",
+        ] {
+            assert!(schema.contains(category));
+        }
+        let draft: EditorialPageDraft = serde_json::from_str(ACCEPTED_PAGE).unwrap();
+        let verdict: WorldNewspaperEditorialVerdict =
+            serde_json::from_str(REJECTING_NIGHT_EDITOR).unwrap();
+        validate_editorial_verdict(&draft, &verdict).unwrap();
+
+        let mut invalid = verdict;
+        invalid.findings[0].passage = "a phrase absent from the page".into();
+        assert!(
+            validate_editorial_verdict(&draft, &invalid)
+                .unwrap_err()
+                .to_string()
+                .contains("must occur exactly once")
+        );
     }
 
     #[test]
@@ -3672,7 +4015,9 @@ mod tests {
         };
         let repaired = apply_newsroom_article_rewrites(
             &draft,
-            &verdict,
+            &WorldNewspaperDeskRejection::CopyDesk {
+                verdict: verdict.clone(),
+            },
             NewsroomRewriteDeskAction::SubmitRewrites {
                 rewrites: vec![NewsroomArticleRewrite {
                     article_index: 0,
@@ -3722,7 +4067,9 @@ mod tests {
         };
         let incomplete = apply_newsroom_article_rewrites(
             &draft,
-            &verdict,
+            &WorldNewspaperDeskRejection::CopyDesk {
+                verdict: verdict.clone(),
+            },
             NewsroomRewriteDeskAction::SubmitRewrites {
                 rewrites: vec![NewsroomArticleRewrite {
                     article_index: 0,
@@ -3764,7 +4111,9 @@ mod tests {
         };
         let unaffected = apply_newsroom_article_rewrites(
             &draft,
-            &verdict,
+            &WorldNewspaperDeskRejection::CopyDesk {
+                verdict: verdict.clone(),
+            },
             NewsroomRewriteDeskAction::SubmitRewrites {
                 rewrites: vec![rewrite],
             },
@@ -3781,7 +4130,9 @@ mod tests {
         };
         let duplicate = apply_newsroom_article_rewrites(
             &draft,
-            &verdict,
+            &WorldNewspaperDeskRejection::CopyDesk {
+                verdict: verdict.clone(),
+            },
             NewsroomRewriteDeskAction::SubmitRewrites {
                 rewrites: vec![rewrite.clone(), rewrite],
             },
@@ -3795,15 +4146,17 @@ mod tests {
         let draft: EditorialPageDraft = serde_json::from_str(ACCEPTED_PAGE).unwrap();
         let invalid = apply_newsroom_article_rewrites(
             &draft,
-            &WorldNewspaperGroundingVerdict {
-                accepted: false,
-                assessment: "Invalid article index.".into(),
-                findings: vec![WorldNewspaperGroundingFinding {
-                    article_index: 1,
-                    category: WorldNewspaperGroundingCategory::UnsupportedFact,
-                    claim_or_phrase: "missing phrase".into(),
-                    reason: "Fixture error.".into(),
-                }],
+            &WorldNewspaperDeskRejection::CopyDesk {
+                verdict: WorldNewspaperGroundingVerdict {
+                    accepted: false,
+                    assessment: "Invalid article index.".into(),
+                    findings: vec![WorldNewspaperGroundingFinding {
+                        article_index: 1,
+                        category: WorldNewspaperGroundingCategory::UnsupportedFact,
+                        claim_or_phrase: "missing phrase".into(),
+                        reason: "Fixture error.".into(),
+                    }],
+                },
             },
             NewsroomRewriteDeskAction::SubmitRewrites {
                 rewrites: vec![NewsroomArticleRewrite {
@@ -3819,7 +4172,7 @@ mod tests {
         assert!(
             invalid
                 .to_string()
-                .contains("copy desk named an invalid article")
+                .contains("rejecting desk named an invalid article")
         );
     }
 
@@ -3831,6 +4184,7 @@ mod tests {
             ONE_STORY_AGENDA,
             ACCEPTED_PAGE,
             ACCEPTING_COPY_DESK,
+            ACCEPTING_NIGHT_EDITOR,
         ]);
         let composition = compose_world_newspaper(
             &model,
@@ -3879,7 +4233,9 @@ mod tests {
             render_world_newspaper_audit_markdown(&boundary_issue)
                 .contains("audit shows the complete stored account and asserts nothing beyond it")
         );
-        assert_eq!(composition.model_receipts.len(), 5);
+        assert_eq!(composition.model_receipts.len(), 6);
+        assert!(composition.grounding.accepted);
+        assert!(composition.editorial.accepted);
         let requests = model.requests();
         assert_eq!(
             requests[0].stage,
@@ -3895,6 +4251,8 @@ mod tests {
             "newspaper_narrative_selection_agent_action"
         );
         assert_eq!(requests[3].stage, "newspaper_editor");
+        assert_eq!(requests[4].stage, "newspaper_copy_desk");
+        assert_eq!(requests[5].stage, "newspaper_night_editor");
         assert!(
             requests[3]
                 .lived_stream
@@ -4078,6 +4436,7 @@ mod tests {
             REJECTED,
             REPAIR_DECK_ACTION,
             ACCEPTING_COPY_DESK,
+            ACCEPTING_NIGHT_EDITOR,
         ]);
         let composition = compose_world_newspaper(
             &model,
@@ -4089,7 +4448,7 @@ mod tests {
         .await
         .unwrap();
 
-        assert_eq!(composition.model_receipts.len(), 7);
+        assert_eq!(composition.model_receipts.len(), 8);
         let requests = model.requests();
         assert_eq!(requests[0].temperature, Some(0.8));
         assert_eq!(requests[1].temperature, Some(0.8));
@@ -4135,7 +4494,69 @@ mod tests {
         );
         assert!(requests[4].lived_stream.contains("publication role labels"));
         assert!(requests[4].lived_stream.contains("Metaphor, dry wit"));
+        assert!(
+            requests[4]
+                .lived_stream
+                .contains("does not by itself belong to it")
+        );
+        assert!(
+            requests[4]
+                .lived_stream
+                .contains("do not establish unstated containment")
+        );
         assert!(composition.grounding.accepted);
+    }
+
+    #[tokio::test]
+    async fn night_editor_rejection_reuses_the_same_rewrite_and_review_loop() {
+        let campaign = campaign_with_news();
+        let model = ScriptedNewspaperModel::new([
+            QUERY_ALL_RECORDS,
+            ONE_STORY_AGENDA,
+            ACCEPTED_PAGE,
+            ACCEPTING_COPY_DESK,
+            REJECTING_NIGHT_EDITOR,
+            REPAIR_DECK_ACTION,
+            ACCEPTING_COPY_DESK,
+            ACCEPTING_NIGHT_EDITOR,
+        ]);
+
+        let composition = compose_world_newspaper(
+            &model,
+            &campaign,
+            "The Underdeep Clarion",
+            "A skeptical court broadsheet with dry restraint.",
+            4,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(composition.model_receipts.len(), 9);
+        assert!(composition.grounding.accepted);
+        assert!(composition.editorial.accepted);
+        assert_eq!(
+            composition.issue.articles[0].source_news_ids(),
+            ["news:seal-scandal"]
+        );
+        let requests = model.requests();
+        assert_eq!(requests[4].stage, "newspaper_copy_desk");
+        assert_eq!(requests[5].stage, "newspaper_night_editor");
+        assert_eq!(requests[6].stage, "newspaper_rewrite_desk_agent_action");
+        assert_eq!(requests[7].stage, "newspaper_copy_desk");
+        assert_eq!(requests[8].stage, "newspaper_night_editor");
+        assert!(
+            requests[6]
+                .lived_stream
+                .contains("buries the court's scandal")
+        );
+        assert_eq!(
+            requests[6]
+                .output_schema
+                .as_ref()
+                .unwrap()
+                .pointer("/properties/rewrites/items/properties/article_index/enum"),
+            Some(&serde_json::json!([0]))
+        );
     }
 
     #[tokio::test]
@@ -4149,6 +4570,7 @@ mod tests {
             REJECTED_SECOND,
             REWRITE_SECOND_ARTICLE_ACTION,
             ACCEPTING_COPY_DESK,
+            ACCEPTING_NIGHT_EDITOR,
         ]);
         let composition = compose_world_newspaper(
             &model,
@@ -4176,9 +4598,13 @@ mod tests {
         assert!(
             !render_world_newspaper_markdown(&composition.issue).contains("west gate is unsafe")
         );
-        assert_eq!(composition.model_receipts.len(), 7);
-        let final_copy_desk = composition.model_receipts.last().unwrap();
+        assert_eq!(composition.model_receipts.len(), 8);
+        let final_copy_desk = &composition.model_receipts[composition.model_receipts.len() - 2];
         assert_eq!(final_copy_desk.stage, "newspaper_copy_desk");
+        assert_eq!(
+            composition.model_receipts.last().unwrap().stage,
+            "newspaper_night_editor"
+        );
         assert!(
             final_copy_desk
                 .snapshot_binding
@@ -4197,6 +4623,7 @@ mod tests {
                     .contains(&receipt.storage_key().to_owned())
         }));
         assert!(composition.grounding.accepted);
+        assert!(composition.editorial.accepted);
     }
 
     #[tokio::test]
@@ -4213,6 +4640,7 @@ mod tests {
             REJECTED_AFTER_REPAIR,
             SECOND_REPAIR_DECK_ACTION,
             ACCEPTING_COPY_DESK,
+            ACCEPTING_NIGHT_EDITOR,
         ]);
         let composition = compose_world_newspaper(
             &model,
@@ -4223,8 +4651,9 @@ mod tests {
         )
         .await
         .unwrap();
-        assert_eq!(composition.model_receipts.len(), 9);
+        assert_eq!(composition.model_receipts.len(), 10);
         assert!(composition.grounding.accepted);
+        assert!(composition.editorial.accepted);
         let requests = model.requests();
         assert_eq!(
             requests
@@ -4263,6 +4692,7 @@ mod tests {
             REJECTED_AFTER_REPAIR,
             SECOND_REPAIR_DECK_ACTION,
             ACCEPTING_COPY_DESK,
+            ACCEPTING_NIGHT_EDITOR,
         ]);
         let composition = compose_world_newspaper(
             &model,
@@ -4274,8 +4704,9 @@ mod tests {
         .await
         .unwrap();
 
-        assert_eq!(composition.model_receipts.len(), 10);
+        assert_eq!(composition.model_receipts.len(), 11);
         assert!(composition.grounding.accepted);
+        assert!(composition.editorial.accepted);
         let requests = model.requests();
         assert_eq!(
             requests
@@ -4308,7 +4739,7 @@ mod tests {
                 .lived_stream
                 .contains("revised deck still overstates blame")
         );
-        let final_copy_desk = composition.model_receipts.last().unwrap();
+        let final_copy_desk = &composition.model_receipts[composition.model_receipts.len() - 2];
         assert_eq!(final_copy_desk.stage, "newspaper_copy_desk");
         assert_eq!(final_copy_desk.validation_result, "valid");
         assert!(composition.model_receipts[..9].iter().all(|receipt| {
@@ -4370,7 +4801,7 @@ mod tests {
                 rejected
                     .local_validation_error
                     .as_deref()
-                    .is_some_and(|finding| finding.contains("copy_desk_rejected"))
+                    .is_some_and(|finding| finding.contains("desk_rejected"))
             );
         }
     }
@@ -4418,7 +4849,7 @@ mod tests {
         assert_eq!(prior_receipts.len(), 11);
         assert_eq!(
             store
-                .keys("world_newspaper_reconciliation_checkpoint.v2")
+                .keys("world_newspaper_reconciliation_checkpoint.v3")
                 .unwrap()
                 .len(),
             4
@@ -4430,8 +4861,11 @@ mod tests {
                 .is_some()
         }));
 
-        let resume_model =
-            ScriptedNewspaperModel::new([FINAL_REPAIR_DECK_ACTION, ACCEPTING_COPY_DESK]);
+        let resume_model = ScriptedNewspaperModel::new([
+            FINAL_REPAIR_DECK_ACTION,
+            ACCEPTING_COPY_DESK,
+            ACCEPTING_NIGHT_EDITOR,
+        ]);
         let accepted = advance_world_newspaper(
             &resume_model,
             &campaign,
@@ -4445,7 +4879,7 @@ mod tests {
         .into_accepted()
         .unwrap();
         let resumed_requests = resume_model.requests();
-        assert_eq!(resumed_requests.len(), 2);
+        assert_eq!(resumed_requests.len(), 3);
         assert!(
             resumed_requests
                 .iter()
@@ -4461,12 +4895,17 @@ mod tests {
                 .source_receipt_ids
                 .contains(&checkpoint.id().to_owned())
         );
-        assert_eq!(accepted.model_receipts.len(), 13);
+        assert_eq!(accepted.model_receipts.len(), 14);
         assert_eq!(
             &accepted.model_receipts[..prior_receipts.len()],
             prior_receipts.as_slice()
         );
-        let final_copy_desk = accepted.model_receipts.last().unwrap();
+        let final_copy_desk = &accepted.model_receipts[accepted.model_receipts.len() - 2];
+        assert_eq!(final_copy_desk.stage, "newspaper_copy_desk");
+        assert_eq!(
+            accepted.model_receipts.last().unwrap().stage,
+            "newspaper_night_editor"
+        );
         assert!(accepted.model_receipts[..12].iter().all(|receipt| {
             final_copy_desk
                 .source_receipt_ids
@@ -4533,7 +4972,12 @@ mod tests {
             source_witness_digest: format!("sha256:{}", "a".repeat(64)),
             editorial_agenda: checkpoint.editorial_agenda.clone(),
             draft: checkpoint.draft.clone(),
-            verdict: checkpoint.verdict.clone(),
+            verdict: match &checkpoint.rejection {
+                WorldNewspaperDeskRejection::CopyDesk { verdict } => verdict.clone(),
+                WorldNewspaperDeskRejection::NightEditor { .. } => {
+                    panic!("fixture must stop on copy-desk rejection")
+                }
+            },
             model_receipts: model_receipts.clone(),
         };
         let imported_directory = tempfile::tempdir().unwrap();
@@ -4554,8 +4998,11 @@ mod tests {
             WorldNewspaperCheckpointOrigin::LegacyTerminalImport
         );
 
-        let resume_model =
-            ScriptedNewspaperModel::new([FINAL_REPAIR_DECK_ACTION, ACCEPTING_COPY_DESK]);
+        let resume_model = ScriptedNewspaperModel::new([
+            FINAL_REPAIR_DECK_ACTION,
+            ACCEPTING_COPY_DESK,
+            ACCEPTING_NIGHT_EDITOR,
+        ]);
         let accepted = advance_world_newspaper(
             &resume_model,
             &campaign,
@@ -4568,7 +5015,7 @@ mod tests {
         .unwrap()
         .into_accepted()
         .unwrap();
-        assert_eq!(accepted.model_receipts.len(), model_receipts.len() + 2);
+        assert_eq!(accepted.model_receipts.len(), model_receipts.len() + 3);
         assert!(
             resume_model
                 .requests()
@@ -4614,7 +5061,7 @@ mod tests {
             sibling.source_witness_digest.as_deref(),
             sibling.editorial_agenda.as_ref(),
             &sibling.draft,
-            &sibling.verdict,
+            &sibling.rejection,
             &sibling.model_receipt_ids,
             &sibling.receipt_chain_digest,
         )
@@ -4646,6 +5093,7 @@ mod tests {
             ONE_STORY_AGENDA,
             MARKDOWN_PAGE,
             ACCEPTING_COPY_DESK,
+            ACCEPTING_NIGHT_EDITOR,
         ]);
         let composition = compose_world_newspaper(
             &model,
@@ -4704,6 +5152,7 @@ mod tests {
                 ONE_STORY_AGENDA,
                 ACCEPTED_PAGE,
                 ACCEPTING_COPY_DESK,
+                ACCEPTING_NIGHT_EDITOR,
             ]),
             &campaign,
             "The Underdeep Clarion",
@@ -4718,6 +5167,7 @@ mod tests {
                 ONE_STORY_AGENDA,
                 ALTERNATE_PAGE,
                 ACCEPTING_COPY_DESK,
+                ACCEPTING_NIGHT_EDITOR,
             ]),
             &campaign,
             "The Underdeep Clarion",

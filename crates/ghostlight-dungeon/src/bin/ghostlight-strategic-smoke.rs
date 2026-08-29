@@ -79,8 +79,12 @@ fn validate_completed_newspaper_recomposition_receipt(
             .ok_or_else(|| {
                 anyhow::anyhow!("completed wave newspaper recomposition has no recovery boundary")
             })?;
-    if recomposition["schema"] != "ghostlight.newspaper_wave_recomposition.v1"
-        || recomposition["wave_index"].as_u64() != Some(wave_index)
+    let recomposition_schema = recomposition["schema"].as_str();
+    if !matches!(
+        recomposition_schema,
+        Some("ghostlight.newspaper_wave_recomposition.v1")
+            | Some("ghostlight.newspaper_wave_recomposition.v2")
+    ) || recomposition["wave_index"].as_u64() != Some(wave_index)
         || wave_index < current_recovery_start_wave as u64
         || recorded_recovery_start_wave == 0
         || recorded_recovery_start_wave > wave_index
@@ -89,6 +93,8 @@ fn validate_completed_newspaper_recomposition_receipt(
         || recomposition["editorial_contract_digest"] != editorial_contract_digest
         || recomposition["issue"].is_null()
         || recomposition["newspaper_grounding"]["accepted"] != true
+        || recomposition_schema == Some("ghostlight.newspaper_wave_recomposition.v2")
+            && recomposition["newspaper_editorial"]["accepted"] != true
         || recomposition["issue_file"] != format!("newspaper-wave-{wave_index:02}.md")
         || recomposition["issue_audit_file"] != format!("newspaper-wave-{wave_index:02}.audit.md")
     {
@@ -153,6 +159,21 @@ fn validate_completed_newspaper_recomposition_receipt(
             anyhow::bail!(
                 "completed wave newspaper recomposition grounding differs from its receipt"
             )
+        }
+        if recomposition_schema == Some("ghostlight.newspaper_wave_recomposition.v2") {
+            let editorial: ghostlight_dungeon::newspaper::WorldNewspaperEditorialVerdict =
+                serde_json::from_value(recomposition["newspaper_editorial"].clone()).map_err(
+                    |error| {
+                        anyhow::anyhow!(
+                            "completed wave newspaper recomposition has an invalid editorial verdict: {error}"
+                        )
+                    },
+                )?;
+            if recomposition["editorial_digest"] != strategic_smoke_digest(&editorial)? {
+                anyhow::bail!(
+                    "completed wave newspaper recomposition editorial verdict differs from its receipt"
+                )
+            }
         }
     }
     Ok(())
@@ -1844,6 +1865,7 @@ async fn main() -> anyhow::Result<()> {
         let (
             issue,
             newspaper_grounding,
+            newspaper_editorial,
             newspaper_model_receipts,
             issue_path,
             issue_audit_path,
@@ -1869,6 +1891,7 @@ async fn main() -> anyhow::Result<()> {
                 (
                     Some(composition.issue),
                     Some(composition.grounding),
+                    Some(composition.editorial),
                     composition.model_receipts,
                     Some(issue_path),
                     Some(issue_audit_path),
@@ -1880,6 +1903,7 @@ async fn main() -> anyhow::Result<()> {
                 checkpoint,
                 model_receipts,
             }) => (
+                None,
                 None,
                 None,
                 model_receipts,
@@ -1895,6 +1919,7 @@ async fn main() -> anyhow::Result<()> {
                     return Err(error);
                 };
                 (
+                    None,
                     None,
                     None,
                     failure.model_receipts.clone(),
@@ -1917,6 +1942,7 @@ async fn main() -> anyhow::Result<()> {
             "commit":committed,
             "issue":issue,
             "newspaper_grounding":newspaper_grounding,
+            "newspaper_editorial":newspaper_editorial,
             "newspaper_model_receipts":newspaper_model_receipts,
             "newspaper_error":newspaper_error,
             "newspaper_reconciliation_checkpoint":newspaper_reconciliation_checkpoint,
@@ -2068,7 +2094,7 @@ async fn main() -> anyhow::Result<()> {
                 std::fs::write(&issue_path, &reader_copy)?;
                 std::fs::write(&issue_audit_path, &audit_copy)?;
                 let checkpoint = serde_json::json!({
-                    "schema":"ghostlight.newspaper_wave_recomposition.v1",
+                    "schema":"ghostlight.newspaper_wave_recomposition.v2",
                     "wave_index":wave_index,
                     "recovery_start_wave":newspaper_recovery_start_wave,
                     "world_revision":issue_campaign.revision,
@@ -2076,11 +2102,13 @@ async fn main() -> anyhow::Result<()> {
                     "editorial_contract_digest":editorial_contract_digest,
                     "issue_digest":strategic_smoke_digest(&composition.issue)?,
                     "grounding_digest":strategic_smoke_digest(&composition.grounding)?,
+                    "editorial_digest":strategic_smoke_digest(&composition.editorial)?,
                     "model_receipt_set_digest":strategic_smoke_digest(&composition.model_receipts)?,
                     "reader_copy_digest":strategic_smoke_bytes_digest(reader_copy.as_bytes()),
                     "audit_copy_digest":strategic_smoke_bytes_digest(audit_copy.as_bytes()),
                     "issue":composition.issue,
                     "newspaper_grounding":composition.grounding,
+                    "newspaper_editorial":composition.editorial,
                     "newspaper_model_receipts":composition.model_receipts,
                     "issue_file":format!("newspaper-wave-{wave_index:02}.md"),
                     "issue_audit_file":format!("newspaper-wave-{wave_index:02}.audit.md"),
@@ -2112,7 +2140,12 @@ async fn main() -> anyhow::Result<()> {
             let report = wave_reports[report_index]
                 .as_object_mut()
                 .ok_or_else(|| anyhow::anyhow!("completed wave report is not an object"))?;
-            for field in ["issue", "newspaper_grounding", "newspaper_model_receipts"] {
+            for field in [
+                "issue",
+                "newspaper_grounding",
+                "newspaper_editorial",
+                "newspaper_model_receipts",
+            ] {
                 report.insert(field.into(), recomposition[field].clone());
             }
             report.insert("issue_path".into(), serde_json::to_value(issue_path)?);
@@ -2284,6 +2317,7 @@ async fn main() -> anyhow::Result<()> {
         "news_count":campaign.news.len(),
         "newspaper":newspaper_composition.issue,
         "newspaper_grounding":newspaper_composition.grounding,
+        "newspaper_editorial":newspaper_composition.editorial,
         "newspaper_model_receipts":newspaper_composition.model_receipts,
         "newspaper_path":newspaper_path,
         "newspaper_audit_path":newspaper_audit_path,
@@ -2911,7 +2945,7 @@ mod tests {
     }
 
     #[test]
-    fn current_recomposition_is_still_typed_and_rerendered() {
+    fn current_recomposition_requires_both_review_verdicts_and_rerenders() {
         let issue = ghostlight_dungeon::newspaper::WorldNewspaperIssue {
             schema: "ghostlight.world_newspaper_issue.v3".into(),
             id: "issue:current".into(),
@@ -2935,8 +2969,13 @@ mod tests {
             assessment: "Exact current grounding".into(),
             findings: Vec::new(),
         };
+        let editorial = ghostlight_dungeon::newspaper::WorldNewspaperEditorialVerdict {
+            accepted: true,
+            assessment: "Exact current editorial acceptance".into(),
+            findings: Vec::new(),
+        };
         let recomposition = serde_json::json!({
-            "schema":"ghostlight.newspaper_wave_recomposition.v1",
+            "schema":"ghostlight.newspaper_wave_recomposition.v2",
             "wave_index":18,
             "recovery_start_wave":18,
             "world_revision":27,
@@ -2944,11 +2983,13 @@ mod tests {
             "editorial_contract_digest":"sha256:contract",
             "issue_digest":strategic_smoke_digest(&issue).unwrap(),
             "grounding_digest":strategic_smoke_digest(&grounding).unwrap(),
+            "editorial_digest":strategic_smoke_digest(&editorial).unwrap(),
             "model_receipt_set_digest":strategic_smoke_digest(&receipts).unwrap(),
             "reader_copy_digest":strategic_smoke_bytes_digest(reader_copy.as_bytes()),
             "audit_copy_digest":strategic_smoke_bytes_digest(audit_copy.as_bytes()),
             "issue":issue,
             "newspaper_grounding":grounding,
+            "newspaper_editorial":editorial,
             "newspaper_model_receipts":receipts,
             "issue_file":"newspaper-wave-18.md",
             "issue_audit_file":"newspaper-wave-18.audit.md",
@@ -2956,6 +2997,27 @@ mod tests {
 
         validate_completed_newspaper_recomposition_receipt(
             &recomposition,
+            18,
+            18,
+            27,
+            "sha256:campaign",
+            "sha256:contract",
+            &reader_copy,
+            &audit_copy,
+        )
+        .unwrap();
+        let mut legacy_current = recomposition.clone();
+        legacy_current["schema"] = serde_json::json!("ghostlight.newspaper_wave_recomposition.v1");
+        legacy_current
+            .as_object_mut()
+            .unwrap()
+            .remove("editorial_digest");
+        legacy_current
+            .as_object_mut()
+            .unwrap()
+            .remove("newspaper_editorial");
+        validate_completed_newspaper_recomposition_receipt(
+            &legacy_current,
             18,
             18,
             27,
@@ -2974,6 +3036,22 @@ mod tests {
                 "sha256:campaign",
                 "sha256:contract",
                 "# A different paper\n",
+                &audit_copy,
+            )
+            .is_err()
+        );
+        let mut changed_editorial = recomposition.clone();
+        changed_editorial["newspaper_editorial"]["assessment"] =
+            serde_json::json!("Changed after admission");
+        assert!(
+            validate_completed_newspaper_recomposition_receipt(
+                &changed_editorial,
+                18,
+                18,
+                27,
+                "sha256:campaign",
+                "sha256:contract",
+                &reader_copy,
                 &audit_copy,
             )
             .is_err()

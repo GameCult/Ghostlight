@@ -1310,6 +1310,36 @@ The audit discloses when an immutable source account reaches the shared
 account and asserts nothing beyond it. Reviewers must treat that as the owned
 world-source boundary, not as newsroom truncation or omitted provenance.
 
+Exact-source run 57 at
+`0c1400985c061c0db44969288846eff79eeed69a`, using rewrite-desk contract v6,
+is an immutable mechanically complete newspaper-only run over frozen world
+revision 27 with 18 waves, 363 events, and 853 news rows. SHA-256: newspaper
+`d90758f411193aa6e86ae2e8cb390650d9b8a58eac77ef87018bd61e9a668c57`;
+audit `895268bc22aa3e4176b1da31388e85327f0fe11e4ea4ea4ee600b4e3270a8eed`;
+archive `241354b669ee2357c9bb7a06e10e0b93378637621ff2b8b27ab7cf35c2e44e28`.
+Mechanical grounding accepts.
+
+Independent blind editorial review fails. The lead and other stories remain
+administrative, lived stakes are abstract, no named accountable Greathold
+opposition appears, severed hands are buried without court responses or
+suspects, and the seed-vault story repeats procedure. The admitted editorial
+agenda is materially sharper than the rendered copy. World simulation, ledger
+access, and lead selection are therefore not the active blocker; the live
+hypothesis is missing editorial-quality acceptance and feedback between agenda
+and publication.
+
+The completed local Night Editor cut owns contract
+`canopy-ledger-night-editor.v7` and is verified but not yet committed or
+provider-accepted. The independent copy-desk agent remains the sole factual
+judge. After factual clearance, the publication-owned Night Editor judges the
+page against the admitted agenda and selected facts. A rejection names exact
+article passages and achievable editorial goals, then enters the same
+publication-owned full-article rewrite path used for factual rejection. Every
+revision returns through copy-desk judgment and Night Editor judgment before
+acceptance. The Night Editor gains no fact, world, event, selection, or
+persistence authority. Gates pass 30/30 focused newspaper tests, 485/485
+library tests, and 15/15 strategic-smoke tests.
+
 Run 54 exposed one separate upstream publicity defect: a public strategic
 activity propagates its channel to private `MemberMemory` outcomes, which is
 how Orin Pell retaining a memory became a public news row. The newsroom should
@@ -1317,15 +1347,18 @@ ignore that bookkeeping, but revision 27 remains immutable. Future kernel work
 must require an outcome's own observable or communicated public scope before
 materializing a `NewsIssue`.
 
-1. Preserve immutable runs 55 and 56 and the exact live services. Stage pushed
-   commit `0c1400985c061c0db44969288846eff79eeed69a` against run 56's frozen
-   revision-27 campaign and accepted per-wave publications.
-2. Run one immutable final-newspaper-only acceptance with no world or per-wave
-   replay. Retain and resume typed rewrite checkpoints rather than rerunning
-   the publication writer.
-3. Require exact newspaper, audit, result, archive, manifest, provenance, and
-   service-isolation proof, then obtain independent blind editorial and
-   grounding reviews. Deliver the actual copy only if both accept.
+1. Commit the exact verified Night Editor v7 worktree and push the resulting
+   commit. Do not name a commit hash until that exact body exists remotely.
+2. Preserve immutable runs 55 through 57 and the exact live services. Stage the
+   exact pushed commit for immutable Run 58 as a newsroom-only continuation
+   from run 57's frozen revision-27 campaign and accepted per-wave
+   publications. Replay no world mechanic or wave; retain and resume typed
+   rewrite checkpoints.
+3. Require internal copy-desk factual acceptance and Night Editor
+   editorial-quality acceptance, exact newspaper, audit, result, archive,
+   manifest, provenance, and service-isolation proof, then independent blind
+   editorial and grounding acceptance. Deliver the actual copy only if both
+   independent reviews accept.
 4. Defer multiple publication Personas, TeX layout, and engraved cuts until the
    single Canopy Ledger passes.
 5. Per-wave issues may use daily-like reporting windows, while a final
