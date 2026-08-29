@@ -1027,29 +1027,42 @@ verification. Its defining regression, all newspaper tests, the full 468-test
 library gate, and `git diff --check` pass. Provider and editorial acceptance
 remain open.
 
-The current uncommitted strategic-smoke runner diff adds a presentation-only
-recovery seam for missing per-wave editions. It derives each absent issue from
-that wave's immutable committed campaign snapshot and exact prior committed news
-boundary, publishes an immutable recomposition receipt, and skips accepted
-issues such as Issue 14. It fails closed when the exact prior boundary is
-unavailable, including a missing first-wave issue. Every recomposition receipt
-binds source, contract, issue, typed model receipts, rendered content, and file
-digests; typed receipt JSON roundtrip is covered. The complete local gate passes
-12/12 strategic-smoke binary tests, 468/468 library tests, and
-`git diff --check`. It cannot replay or mutate world mechanics and is not yet
-committed, pushed, or provider-proven.
+Pushed `8a971da` adds a presentation-only recovery seam for missing per-wave
+editions. It derives each absent issue from that wave's immutable committed
+campaign snapshot and exact prior committed news boundary, publishes an
+immutable recomposition receipt, and skips accepted issues such as Issue 14. It
+fails closed when the exact prior boundary is unavailable, including a missing
+first-wave issue. Every recomposition receipt binds source, contract, issue,
+typed model receipts, rendered content, and file digests; typed receipt JSON
+roundtrip is covered. Its local gate passed 12/12 strategic-smoke binary tests,
+468/468 library tests, and `git diff --check`.
+
+Exact-source run 42 at
+`8a971daab8d3dfc77c29d69b3d139ff71d53314a` cloned run 41 at revision
+27 without replaying or mutating world mechanics. Recovery selected historical
+missing Issue 2 before the requested run-41 editions; the copy desk rejected
+unsupported `prepares`. Issues 13 and 15 through 18 and the final digest were
+not reached. Issue 14, canonical world state, and all wave checkpoints remain
+unchanged.
+
+The current uncommitted runner cut adds an explicit bounded newspaper recovery
+start wave. Run 43 will set it to 13 so recovery selects only missing Issues 13
+and 15 through 18, preserving accepted Issue 14 and older newspaper history.
+The complete local gate passes 13/13 strategic-smoke binary tests, 468/468
+library tests, and `git diff --check`.
 
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Commit and push the locally verified missing-edition recomposition boundary.
-2. Launch exact-source run 42 from run 41's committed revision 27 to compose only missing Issues 13
+1. Commit and push the explicit bounded newspaper recovery start-wave cut.
+2. Launch exact-source run 43 from run 41's committed revision 27 with recovery
+   start wave 13 to compose only missing Issues 13
    and 15 through 18 plus the final digest. Preserve accepted Issue 14, every
    completed wave checkpoint, and canonical world state; do not replay any
    mechanics. Require the resulting unedited publications and final digest to
    pass fresh independent editorial and provenance review before claiming
-   acceptance. Preserve runs 38/39/40, the run-41 root and committed world
+   acceptance. Preserve runs 38/39/40/42, the run-41 root and committed world
    lineage, stopped run 23, exact acceptance conditions, and unchanged live
    daemons.
 3. Have the game-side adapter lower its authored hierarchy into the published

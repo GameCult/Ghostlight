@@ -76,6 +76,25 @@ fn completed_wave_issue_campaign(
     Ok(campaign)
 }
 
+fn missing_newspaper_report_indices(
+    wave_reports: &[serde_json::Value],
+    recovery_start_wave: usize,
+) -> anyhow::Result<Vec<usize>> {
+    let mut indices = Vec::new();
+    for (report_index, report) in wave_reports.iter().enumerate() {
+        let wave_index = report["wave_index"]
+            .as_u64()
+            .ok_or_else(|| anyhow::anyhow!("completed wave report has no wave index"))?;
+        if wave_index != report_index as u64 + 1 {
+            anyhow::bail!("completed wave reports are not a contiguous prefix")
+        }
+        if wave_index >= recovery_start_wave as u64 && report["issue"].is_null() {
+            indices.push(report_index);
+        }
+    }
+    Ok(indices)
+}
+
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct CompilerCheckpoint {
@@ -632,6 +651,12 @@ async fn main() -> anyhow::Result<()> {
             .into()
     });
     let wave_count = bounded_environment_usize("GHOSTLIGHT_STRATEGIC_WAVES", 1, 1, 32)?;
+    let newspaper_recovery_start_wave = bounded_environment_usize(
+        "GHOSTLIGHT_STRATEGIC_NEWSPAPER_RECOVERY_START_WAVE",
+        1,
+        1,
+        wave_count,
+    )?;
     let max_rejected_pulses_per_wave =
         bounded_environment_usize("GHOSTLIGHT_STRATEGIC_MAX_REJECTED_PULSES_PER_WAVE", 2, 0, 4)?;
     let root = std::env::var_os("GHOSTLIGHT_LIVE_FIRE_RESULT_ROOT")
@@ -724,6 +749,7 @@ async fn main() -> anyhow::Result<()> {
                 "state":"compiling_world",
                 "waves_completed":0,
                 "waves_requested":wave_count,
+                "newspaper_recovery_start_wave":newspaper_recovery_start_wave,
                 "updated_at":Utc::now(),
             }))?,
         )?;
@@ -810,6 +836,7 @@ async fn main() -> anyhow::Result<()> {
                 "state":"binding_clock_consequences",
                 "waves_completed":campaign.strategic_tick_count,
                 "waves_requested":wave_count,
+                "newspaper_recovery_start_wave":newspaper_recovery_start_wave,
                 "world_revision":campaign.revision,
                 "updated_at":Utc::now(),
             }))?,
@@ -923,6 +950,7 @@ async fn main() -> anyhow::Result<()> {
                     "current_location_id":location_id,
                     "waves_completed":0,
                     "waves_requested":wave_count,
+                    "newspaper_recovery_start_wave":newspaper_recovery_start_wave,
                     "world_revision":campaign.revision,
                     "updated_at":Utc::now(),
                 }))?,
@@ -1752,6 +1780,7 @@ async fn main() -> anyhow::Result<()> {
                 "state":"running",
                 "waves_completed":wave_index,
                 "waves_requested":wave_count,
+                "newspaper_recovery_start_wave":newspaper_recovery_start_wave,
                 "world_revision":campaign.revision,
                 "event_count":campaign.events.len(),
                 "news_count":campaign.news.len(),
@@ -1760,10 +1789,9 @@ async fn main() -> anyhow::Result<()> {
         )?;
     }
     if resume {
-        for report_index in 0..wave_reports.len() {
-            if !wave_reports[report_index]["issue"].is_null() {
-                continue;
-            }
+        for report_index in
+            missing_newspaper_report_indices(&wave_reports, newspaper_recovery_start_wave)?
+        {
             let wave_index = wave_reports[report_index]["wave_index"]
                 .as_u64()
                 .ok_or_else(|| anyhow::anyhow!("completed wave report has no wave index"))?;
@@ -1803,12 +1831,13 @@ async fn main() -> anyhow::Result<()> {
                                 "newspaper-wave-{wave_index:02}-recomposition-terminal-failure.json"
                             )),
                             &serde_json::json!({
-                                "schema":"ghostlight.newspaper_wave_recomposition_failure.v1",
-                                "wave_index":wave_index,
-                                "world_revision":issue_campaign.revision,
-                                "error":error.to_string(),
-                                "model_receipts":model_receipts,
-                            }),
+                            "schema":"ghostlight.newspaper_wave_recomposition_failure.v1",
+                            "wave_index":wave_index,
+                            "recovery_start_wave":newspaper_recovery_start_wave,
+                            "world_revision":issue_campaign.revision,
+                                            "error":error.to_string(),
+                                            "model_receipts":model_receipts,
+                                        }),
                         )?;
                         return Err(error);
                     }
@@ -1828,6 +1857,7 @@ async fn main() -> anyhow::Result<()> {
                 let checkpoint = serde_json::json!({
                     "schema":"ghostlight.newspaper_wave_recomposition.v1",
                     "wave_index":wave_index,
+                    "recovery_start_wave":newspaper_recovery_start_wave,
                     "world_revision":issue_campaign.revision,
                     "source_campaign_digest":source_campaign_digest,
                     "editorial_contract_digest":editorial_contract_digest,
@@ -1846,6 +1876,8 @@ async fn main() -> anyhow::Result<()> {
             };
             if recomposition["schema"] != "ghostlight.newspaper_wave_recomposition.v1"
                 || recomposition["wave_index"].as_u64() != Some(wave_index)
+                || recomposition["recovery_start_wave"].as_u64()
+                    != Some(newspaper_recovery_start_wave as u64)
                 || recomposition["world_revision"]
                     != wave_reports[report_index]["world_revision_after"]
                 || recomposition["source_campaign_digest"] != source_campaign_digest
@@ -1941,6 +1973,7 @@ async fn main() -> anyhow::Result<()> {
                 "scenario_id":scenario_id,
                 "pressure":pressure,
                 "wave_count":wave_count,
+                "newspaper_recovery_start_wave":newspaper_recovery_start_wave,
                 "campaign_id":campaign.id,
                 "elapsed_seconds":started.elapsed().as_secs_f64(),
                 "model_runtime":model_selection.status("configured"),
@@ -1967,6 +2000,7 @@ async fn main() -> anyhow::Result<()> {
                     "state":"failed",
                     "waves_completed":wave_count,
                     "waves_requested":wave_count,
+                    "newspaper_recovery_start_wave":newspaper_recovery_start_wave,
                     "world_revision":campaign.revision,
                     "event_count":campaign.events.len(),
                     "news_count":campaign.news.len(),
@@ -1997,6 +2031,7 @@ async fn main() -> anyhow::Result<()> {
         "scenario_id":scenario_id,
         "pressure":pressure,
         "wave_count":wave_count,
+        "newspaper_recovery_start_wave":newspaper_recovery_start_wave,
         "campaign_id":campaign.id,
         "elapsed_seconds":started.elapsed().as_secs_f64(),
         "model_runtime":model_selection.status("configured"),
@@ -2028,6 +2063,7 @@ async fn main() -> anyhow::Result<()> {
             "state":"complete",
             "waves_completed":wave_count,
             "waves_requested":wave_count,
+            "newspaper_recovery_start_wave":newspaper_recovery_start_wave,
             "world_revision":campaign.revision,
             "event_count":campaign.events.len(),
             "news_count":campaign.news.len(),
@@ -2494,10 +2530,10 @@ mod tests {
     use super::{
         admitted_public_channel, civic_manifest_is_committed_candidate,
         committed_elaboration_mutation_proof, completed_wave_issue_campaign, final_wave_field,
-        latest_partial_wave_checkpoint, publish_immutable_checkpoint,
-        recomposed_model_receipt_set_digest, recover_committed_clock_binding, strategic_campaign,
-        strategic_locality_request, strategic_smoke_digest, strategic_titled_locality_request,
-        titled_failure_checkpoint_paths,
+        latest_partial_wave_checkpoint, missing_newspaper_report_indices,
+        publish_immutable_checkpoint, recomposed_model_receipt_set_digest,
+        recover_committed_clock_binding, strategic_campaign, strategic_locality_request,
+        strategic_smoke_digest, strategic_titled_locality_request, titled_failure_checkpoint_paths,
     };
 
     fn civic_manifest(
@@ -2530,6 +2566,28 @@ mod tests {
 
         let commit = final_wave_field(&waves, "commit").unwrap();
         assert_eq!(commit["campaign"]["revision"], 2);
+    }
+
+    #[test]
+    fn newspaper_recovery_boundary_skips_history_and_successful_issues() {
+        let reports = vec![
+            serde_json::json!({"wave_index":1,"issue":null}),
+            serde_json::json!({"wave_index":2,"issue":{"id":"accepted"}}),
+            serde_json::json!({"wave_index":3,"issue":null}),
+        ];
+
+        assert_eq!(
+            missing_newspaper_report_indices(&reports, 1).unwrap(),
+            vec![0, 2]
+        );
+        assert_eq!(
+            missing_newspaper_report_indices(&reports, 2).unwrap(),
+            vec![2]
+        );
+        assert_eq!(
+            missing_newspaper_report_indices(&reports, 3).unwrap(),
+            vec![2]
+        );
     }
 
     #[test]

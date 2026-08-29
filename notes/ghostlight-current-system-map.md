@@ -1347,20 +1347,28 @@ receipt persistence can write world state.
   the wave nor the newspaper's factual or editorial judgment.
 - **Inputs:** the missing wave's immutable checkpoint and committed `Campaign`
   snapshot, the preceding wave checkpoint's committed news-ledger boundary,
-  the configured title and voice, and the same campaign receipt store used by
-  ordinary newspaper composition.
+  the configured title and voice, the explicit resume recovery boundary
+  (`GHOSTLIGHT_STRATEGIC_NEWSPAPER_RECOVERY_START_WAVE`, defaulting to wave one
+  and validated within `1..=wave_count`), and the same campaign receipt store
+  used by ordinary newspaper composition.
 - **Output:** one separately named immutable recomposition checkpoint containing
   the accepted issue, grounding verdict, and newspaper model receipts, plus the
   rendered reader and audit files. Its receipt binds the narrowed source
-  campaign, title/voice/article-budget contract, issue, model-receipt collection,
-  expected filenames, and both rendered byte streams by digest. The driver fills
-  only the missing newspaper fields in its in-memory result projection. Existing
-  successful issues and original wave checkpoints remain unchanged.
+  campaign, recovery boundary, title/voice/article-budget contract, issue,
+  model-receipt collection, expected filenames, and both rendered byte streams
+  by digest. The configured boundary is also projected through run status and
+  success or failure result artifacts. The driver fills only the missing
+  newspaper fields in its in-memory result projection. Existing successful
+  issues and original wave checkpoints remain unchanged.
 - **Derived state:** the newsroom receives a clone of the completed wave's
   campaign whose news ledger is narrowed to rows appended since the preceding
   committed boundary. All events and canonical names remain available only so
   those exact news rows can resolve their sources; the clone is a consumer view,
-  not a campaign mutation.
+  not a campaign mutation. Before that handoff, the driver validates that wave
+  reports form a contiguous prefix and selects only reports at or after the
+  configured recovery boundary whose issue is absent. Earlier missing reports
+  remain historical gaps, while any already successful issue inside the selected
+  range is left untouched.
 - **Forbidden writers:** recovery cannot rerun a strategic tick, Nemesis,
   simulation cells, outcome resolution, clocks, or `WorldKernel`, and it cannot
   alter campaign, event, or news state. A failed recomposition stops consumer
@@ -1370,8 +1378,9 @@ receipt persistence can write world state.
   same grounding/copy-desk path and idempotent model-receipt persistence. A
   later resume consumes the successful recomposition checkpoint instead of
   paying for the newspaper again, but only after recomputing its source and
-  contract bindings, deserializing the issue, regenerating reader and audit copy,
-  and comparing the exact stored files and digests.
+  contract bindings, checking the exact recovery boundary, deserializing the
+  issue, regenerating reader and audit copy, and comparing the exact stored files
+  and digests.
 - **Verification layer:** the focused boundary regression proves that a second
   wave is recomposed from only its newly appended news row while retaining the
   committed event ledger needed to resolve that row. It also rejects prior-news
@@ -1380,16 +1389,19 @@ receipt persistence can write world state.
   overwrite and publishes by synchronized temporary-file rename. A typed
   receipt-digest regression proves that checkpoint JSON is deserialized back to
   `Vec<ModelStageReceipt>` before hashing and rejects an invalid receipt shape,
-  so creation and verification share one representation. The current binary and
+  so creation and verification share one representation. A scope-selection
+  regression proves that earlier missing issues and successful issues are
+  skipped while later missing issues are selected. The current binary and
   library test suites pass.
 
 The first-wave limit is now an explicit closed boundary rather than inferred
-recovery: without a preserved pre-run news prefix the driver refuses to compose.
-Run 41 already has its first issue, so the bounded recovery set is later missing
-issues only. The remaining limitation is verification breadth, not split
-authority: no focused test yet executes the complete resume orchestration from
-fresh recomposition through later reuse while asserting successful-issue
-preservation, exact rendered-file validation, and absence of mechanics calls.
+recovery: when wave one is selected, the driver refuses to compose without a
+preserved pre-run news prefix. A later explicit boundary can instead define an
+acceptance continuation whose older missing issues are intentionally out of
+scope. The remaining limitation is verification breadth: no focused test yet
+executes the complete resume orchestration from fresh recomposition through
+later reuse while asserting successful-issue preservation, exact rendered-file
+validation, and absence of mechanics calls.
 
 Session Zero compilation, expansion, and fission follow the same projection
 rule. Review projections expose topology, pressures, source-use coverage, gaps,
