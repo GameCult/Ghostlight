@@ -1283,6 +1283,33 @@ the paper led on the regulator audit rather than its strongest human conflict
 and retained an audit-ledger rhythm. Ledger access is no longer the active
 blocker; news judgment before agenda admission is.
 
+Exact-source run 56 at
+`c34c4b1f94706661cdc35d5314ea23347bda6fd7` is an immutable mechanically
+complete newspaper-only run over the frozen revision-27 simulation. Both
+independent reviews fail. The query-backed selector and deliberative lead
+challenge worked and chose the consequential lead. Phrase-level grounding
+reconciliation is now falsified as the repair owner: it can make isolated copy
+safer, but it produces compliance prose and cannot express source-safe
+journalistic juxtaposition across a whole article.
+
+Pushed exact commit `0c1400985c061c0db44969288846eff79eeed69a`
+owns contract `canopy-ledger-publication-rewrite-desk.v6`. Phrase-level repair
+is replaced by a publication-owned full-article rewrite desk over the admitted
+selection, exact canonical public records, rejected articles, and complete
+copy-desk findings. The deterministic workbench freezes article selection, order, sections,
+bylines, citations, and unaffected articles. The desk may reconstruct every
+reader-facing field of each rejected article, after which it invokes the same
+independent copy-desk agent as factual judge. Typed rewrite checkpoints
+preserve the exact draft, verdict, selected records, and receipt chain for
+resume without replaying the publication writer or simulation. Gates pass
+28/28 focused newspaper tests, 483/483 library tests, and 15/15
+strategic-smoke tests.
+
+The audit discloses when an immutable source account reaches the shared
+240-character public-event summary boundary: it shows the complete stored
+account and asserts nothing beyond it. Reviewers must treat that as the owned
+world-source boundary, not as newsroom truncation or omitted provenance.
+
 Run 54 exposed one separate upstream publicity defect: a public strategic
 activity propagates its channel to private `MemberMemory` outcomes, which is
 how Orin Pell retaining a memory became a public news row. The newsroom should
@@ -1290,18 +1317,15 @@ ignore that bookkeeping, but revision 27 remains immutable. Future kernel work
 must require an outcome's own observable or communicated public scope before
 materializing a `NewsIssue`.
 
-1. Push exact implementation `c34c4b1f94706661cdc35d5314ea23347bda6fd7`.
-2. Preserve run 55 and the live services, then create one new immutable
-   final-newspaper-only run from run 55's exact revision-27 campaign and
-   accepted per-wave publications. Compose one current weekly-style Canopy
-   Ledger with a broad reporting window over the cumulative immutable public
-   ledger. The ledger is an archive available for selective reporting, not a
-   table of contents and not a mandate for retrospective recap. Use the v5
-   deliberative newsroom; do not replay world mechanics or per-wave
-   publications.
-3. Preserve run 55 and require final newspaper and archive hashes, exact provenance and manifest,
-   unchanged-service proof, independent grounding, and blind editorial
-   acceptance before delivering the actual copy.
+1. Preserve immutable runs 55 and 56 and the exact live services. Stage pushed
+   commit `0c1400985c061c0db44969288846eff79eeed69a` against run 56's frozen
+   revision-27 campaign and accepted per-wave publications.
+2. Run one immutable final-newspaper-only acceptance with no world or per-wave
+   replay. Retain and resume typed rewrite checkpoints rather than rerunning
+   the publication writer.
+3. Require exact newspaper, audit, result, archive, manifest, provenance, and
+   service-isolation proof, then obtain independent blind editorial and
+   grounding reviews. Deliver the actual copy only if both accept.
 4. Defer multiple publication Personas, TeX layout, and engraved cuts until the
    single Canopy Ledger passes.
 5. Per-wave issues may use daily-like reporting windows, while a final
