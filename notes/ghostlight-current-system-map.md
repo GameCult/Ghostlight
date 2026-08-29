@@ -1286,13 +1286,27 @@ actor, institution, population, or ambiguous multi-place scope into an asserted
 fact or dateline; a single event location may supply its canonical dateline,
 while a multi-place event must name the place in its public account. News IDs,
 event IDs and kinds, channels, reliability, source headlines, and wall-clock
-timestamps remain internal. A capable editor model owns selection,
-grouping, headline, deck, byline class, dateline, and article prose as a
-proposal. Edition chrome is contract-derived, not model copy. Local validation
-binds every article to opaque citations, places supplied by those cited facts,
-the front-page budget, and reader-safe presentation labels. Accepted citations
-are then lowered back to exact canonical source-news and event IDs for the
-typed issue and audit. A separate copy-desk stage may reject unsupported facts,
+timestamps remain internal. One bounded narrative-selection agent owns the
+Canopy Ledger's editorial agenda over that frozen desk: it chooses a dominant
+throughline, reader stake, article groupings, and rhetorical angles, then
+submits a typed agenda whose story pitches reference only exact newsroom
+citations. A deterministic workbench owns the article budget, exact citation
+membership, uniqueness, lead selection, and bounded reader-facing framing
+fields. The agenda is interpretation and selection, never evidence: it cannot
+create an event, person, institution, place, motive, quotation, outcome, or
+world mutation. The editor receives the admitted agenda plus the same desk and
+may compose only from the agenda's selected citations. It owns headline, deck,
+byline class, dateline, and article prose as a proposal; it does not silently
+recover citations the narrative owner omitted. Edition chrome is
+contract-derived, not model copy. Local validation binds every article to
+agenda-selected opaque citations, places supplied by those cited facts, the
+front-page budget, and reader-safe presentation labels. Accepted citations are
+then lowered once to exact canonical source-news/event IDs and a semantic audit
+projection containing the cited accounts, assertion status, named people and
+their exhaustive supported identity attributes, institutions, populations,
+and places. That projection is derived from the same selected `NewsroomSource`
+records; it is not a second fact authority. A separate copy-desk stage may
+reject unsupported facts,
 unearned attribution, procedural leakage, or mechanical state-ledger copy but
 cannot rewrite it. Its desk includes each account's typed assertion status and
 the exact supported identity attributes for every named person, including an
@@ -1322,6 +1336,68 @@ to the front page. The agent cannot request a new simulation or source packet,
 submit a replacement `EditorialPageDraft`, or act as a second editor. The same
 copy desk rechecks the complete repaired page.
 
+The newsroom narrative-selection boundary has this authority map:
+
+- **Owner:** the narrative-selection agent plus its deterministic workbench own
+  the single publication's current editorial agenda. The editor owns prose
+  proposal, the copy desk owns factual judgment, and `WorldKernel` remains the
+  only world-event authority.
+- **Inputs:** exact immutable newsroom desk, publication title and voice,
+  article budget, source receipt ancestry, and the newsroom contract version.
+  The workbench may inspect only those inputs and the typed agenda action.
+- **Outputs:** one typed agenda with a dominant throughline, reader stake, and
+  one or more ordered story pitches. Each pitch declares whether it is the lead,
+  names exact citation IDs, and supplies bounded angle, tension, and public
+  question fields. The editor schema exposes only the union of citations
+  selected by the agenda; deterministic post-inference alignment, not the
+  schema alone, requires each article to use exactly its corresponding pitch's
+  citation set.
+- **Derived state:** salience, juxtaposition, pitch order, rhetorical
+  interpretation, and insinuation are editorial framing. They are not committed
+  events or source evidence. Semantic audit rows are a deterministic projection
+  of the selected frozen sources and do not become another desk.
+- **Forbidden writers:** the narrative agent cannot write campaign state,
+  events, `NewsIssue`, copy-desk verdicts, copy, checkpoints, or accepted
+  compositions. The editor cannot widen the admitted citation set. Renderers
+  cannot infer missing provenance or change assertion status.
+- **Shared paths:** fresh composition runs narrative selection once, then editor
+  and copy desk. A rejected page persists the complete receipt ancestry before
+  reconciliation. Resume starts from that checkpoint and never reruns narrative
+  selection or the editor. Accepted-composition idempotence returns the exact
+  stored issue.
+- **Persistence and ancestry:** reconciliation checkpoint v2 binds the admitted
+  agenda, draft, rejected verdict, task and exact desk bindings, immutable
+  receipt IDs, receipt-chain digest, generation, and parent. Resume reloads the
+  typed receipts, validates narrative/editor/copy-desk stage order, exact
+  checkpoint identity, agenda admission and editor alignment, and strict receipt
+  prefix growth before inference. Fresh-path and resume tests separately prove
+  that the editor consumes the narrative receipt and resumed reconciliation
+  consumes the complete earlier receipt set plus checkpoint ID. The common
+  legacy-import validator does not independently reconstruct every historical
+  `source_receipt_ids` edge; that older chain remains bounded by the explicit
+  typed import witness rather than being generalized as current newsroom state.
+- **Schema/version cut:** `canopy-ledger-narrative-selection.v1` participates in
+  publication-task and exact editorial bindings plus article and empty-issue
+  identity. New issues and CultMesh/native publication use
+  `ghostlight.world_newspaper_issue.v3`; resumable state uses
+  `ghostlight.world_newspaper_reconciliation_checkpoint.v2`. The accepted
+  composition envelope remains v1 but its contract-versioned key and editorial
+  binding prevent a pre-cut composition from winning current idempotence.
+  Checkpoint v1 is not a live resume source; the explicit typed legacy import is
+  the only admitted bridge for the named pre-cut run.
+- **Cut line:** the one-shot editor no longer owns both story selection and copy
+  composition. No multi-publication Persona, publication memory, layout engine,
+  new service, second event authority, or alternate audit store is added in this
+  cut.
+- **Verification and build budget:** 23 focused `ghostlight-dungeon` library
+  tests prove deterministic agenda admission, citation restriction,
+  receipt/checkpoint ancestry, semantic audit projection, and existing
+  reconciliation resume; the complete library gate is 478/478. The 13/13
+  strategic-smoke binary tests prove that its bounded recovery and checkpoint
+  helpers remain compatible, not the newsroom semantics themselves. The cut
+  adds no dependency, crate, binary, daemon, target platform, code-generation
+  path, or world-simulation pass.
+
 The resumable reconciliation boundary is now live:
 
 - **Owner:** `newspaper::advance_world_newspaper` is the single composition,
@@ -1342,22 +1418,24 @@ The resumable reconciliation boundary is now live:
   persistence, and checkpoint-conflict errors remain failures and leave the
   last admitted checkpoint available.
 - **Persistent and derived state:** the initial copy-desk rejection persists its
-  editor and copy-desk receipts, then publishes generation zero before any
-  repair action. Each later rejected action persists its new receipts before
+  narrative-selection, editor, and copy-desk receipts, then publishes
+  generation zero before any repair action. Each later rejected action persists
+  its new receipts before
   appending one checkpoint with task and editorial bindings, generation,
-  parent id, typed origin, current private draft, rejected verdict, ordered
-  receipt ids, and receipt-chain digest. The current finding catalog, exact
-  target spans, action schema, and chain tip are derived and validated; they are
-  not parallel state owners. Three actions per call are only the current
-  advance cadence. Reaching that boundary returns `Pending` and does not make
-  rejection terminal.
+  parent id, typed origin, admitted editorial agenda, current private draft,
+  rejected verdict, ordered receipt ids, and receipt-chain digest. The current
+  finding catalog, exact target spans, action schema, and chain tip are derived
+  and validated; they are not parallel state owners. Three actions per call are
+  only the current advance cadence. Reaching that boundary returns `Pending`
+  and does not make rejection terminal.
 - **Resume and idempotence:** every call checks the accepted composition marker
   before checkpoint discovery. Otherwise it loads the unique checkpoint tip,
   reloads every typed receipt, validates checkpoint identity, task and exact
   editorial bindings, generation and parent links, strict receipt-prefix
-  growth, draft, rejected verdict and finding targets, then reconstructs the
-  same workbench. A resumed action includes the checkpoint id and every prior
-  receipt in its causal ancestry and never invokes the editor. Acceptance
+  growth, agenda admission and editor alignment, draft, rejected verdict and
+  finding targets, then reconstructs the same workbench. A resumed action
+  includes the checkpoint id and every prior receipt in its causal ancestry and
+  never invokes the editor. Acceptance
   persists its receipts and a composition linked to the source checkpoint;
   later calls return that composition without model work even though the
   historical pending chain remains immutable.
@@ -1396,9 +1474,10 @@ The resumable reconciliation boundary is now live:
   copy-desk ancestry, accepted-composition idempotence without inference,
   same-task source-drift rejection and fork rejection before inference, typed
   legacy import through the common validator, and Registry preservation of
-  pending state. The current verified gate is 477/477 library tests and 13/13
-  strategic-smoke binary tests, including same-task source-drift and fork
-  rejection before inference. Provider runs 47 through 49 prove exact-chain
+  pending state. The current verified gates are 478/478 library tests and 13/13
+  strategic-smoke binary tests. Same-task source-drift and fork rejection before
+  inference are library proofs; the binary tests cover the acceptance driver's
+  recovery/checkpoint helpers. Provider runs 47 through 49 prove exact-chain
   resume and accepted-publication idempotence through Issue 16; Issue 17 reached
   generation 24 without editor or world replay and exposed the nested-finding
   admission case now owned by the workbench. Run 50 then admitted Issue 17 and

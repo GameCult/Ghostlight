@@ -684,6 +684,30 @@ mod tests {
 
     struct RejectingRegistryNewspaperModel;
 
+    fn registry_newspaper_narrative_response(request: &ModelStageRequest) -> Result<String> {
+        let citation = request
+            .output_schema
+            .as_ref()
+            .and_then(|schema| {
+                schema.pointer("/properties/story_pitches/items/properties/citations/items/enum/0")
+            })
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| anyhow!("newspaper fixture lost its narrative citation enum"))?;
+        Ok(serde_json::json!({
+            "tool":"submit_agenda",
+            "dominant_throughline":"The inner court has converted an audit dispute into a public crisis of accusation and arithmetic.",
+            "reader_stake":"Readers depend on whether the court can distinguish an allegation from a judgment.",
+            "story_pitches":[{
+                "lead":true,
+                "citations":[citation],
+                "angle":"Lead with the singular accusation against three auditors.",
+                "tension":"The court's wording collapses three people into one accused figure.",
+                "public_question":"What process can answer an accusation framed this way?"
+            }]
+        })
+        .to_string())
+    }
+
     fn registry_newspaper_editor_response(request: &ModelStageRequest) -> Result<String> {
         let citation = request
             .output_schema
@@ -713,6 +737,9 @@ mod tests {
     #[async_trait]
     impl ModelPort for RegistryNewspaperModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            if request.stage == "newspaper_narrative_selection_agent_action" {
+                return registry_newspaper_narrative_response(request);
+            }
             if request.stage == "newspaper_copy_desk" {
                 return Ok(serde_json::json!({
                     "accepted":true,
@@ -732,6 +759,9 @@ mod tests {
     #[async_trait]
     impl ModelPort for RejectingRegistryNewspaperModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
+            if request.stage == "newspaper_narrative_selection_agent_action" {
+                return registry_newspaper_narrative_response(request);
+            }
             if request.stage == "newspaper_copy_desk" {
                 let claim = if request
                     .lived_stream
@@ -1616,7 +1646,7 @@ mod tests {
         assert_eq!(newspaper.source_world_revision, 3);
         assert_eq!(newspaper.articles.len(), 1);
         assert_eq!(
-            newspaper.articles[0].event_ids,
+            newspaper.articles[0].event_ids(),
             ["strategic:3:institution:inner-court"]
         );
         assert!(
@@ -1664,7 +1694,7 @@ mod tests {
         else {
             panic!("registry must preserve typed pending reconciliation state")
         };
-        assert_eq!(model_receipts.len(), 8);
+        assert_eq!(model_receipts.len(), 9);
         assert_eq!(checkpoint.generation(), 3);
         let stored_after_rejection = runtime.store.keys("persona_stage_receipt.v1").unwrap();
         let newly_observed_failure_receipts = model_receipts

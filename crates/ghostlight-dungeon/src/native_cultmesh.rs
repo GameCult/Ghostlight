@@ -316,7 +316,7 @@ async fn handle_operation_inner(
                     .registry
                     .compose_world_newspaper(command, model)
                     .await?;
-                success_response(request, "ghostlight.world_newspaper_issue.v2", &issue)
+                success_response(request, "ghostlight.world_newspaper_issue.v3", &issue)
             }
             _ => bail!("world consumer operation is not advertised by Ghostlight"),
         };

@@ -979,8 +979,7 @@ Mechanical provider acceptance is complete. Independent blind editorial review
 returns FAIL: only Issue 7 approaches spicy, while Issues 8 through 12 are
 dominated by plans, filings, inspections, warnings, and abstract relationship
 deltas without betrayal, scandal, public reaction, sustained reversal, or
-material lived cost. The defect belongs upstream in causal follow-through and
-outcome ownership, not in newsroom spice prompting. Independent grounding
+material lived cost. Independent grounding
 review also returns FAIL: Issue 9 inflates a planned expedited agenda into
 completion, while Issue 8 assigns unsupported feminine pronouns to Sela Venn
 and Eryn Tal. Citation resolution, temporal bounds, player immutability,
@@ -1160,30 +1159,47 @@ descriptions, assertion status, and identity evidence, and the copy contains
 status inflation. Mechanical completion is proven; editorial and grounding
 acceptance are not.
 
+The newsroom-only ownership cut is locally verified. A capable
+narrative-selection agent now submits one typed agenda through the generic
+agent harness; its deterministic workbench owns lead selection, story budget,
+unique exact citations, bounded framing, and exact per-pitch grouping. The
+editor may compose only from that admitted selection, while the existing copy
+desk and grounding-reconciliation agent retain factual judgment and bounded
+repair. Issue v3 persists the agenda and one semantic citation projection with
+exact committed accounts, assertion status, supported identity attributes, and
+canonical provenance; the duplicate flat audit fields are gone. Contract-bound
+checkpoint v2 preserves agenda and narrative/editor/copy-desk ancestry so
+reconciliation resume cannot replay either upstream agent. Gates pass 23/23
+focused newspaper tests, 478/478 library tests, and 13/13 strategic-smoke tests.
+No dependency, crate, binary, daemon, target, or world-simulation pass was
+added.
+
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Map a newsroom-only architectural cut over run 51's immutable fact substrate:
-   one Canopy Ledger narrative-selection owner for sustained throughlines, lived
-   costs, and countermoves; and a self-contained semantic provenance surface for
-   source descriptions, assertion status, identity evidence, and exact factual
-   support. Grounding remains authoritative over assertions without flattening
-   editorial framing. Do not resimulate the world.
-2. Implement and verify one good Canopy Ledger before multiple publication
-   Personas. Defer TeX layout and engraved cuts until editorial acceptance.
-   Preserve run 51, revision 27, stopped run 23, exact acceptance conditions,
-   and unchanged live daemons.
-3. Have the game-side adapter lower its authored hierarchy into the published
+1. Commit and push the verified newsroom cut, then create one immutable
+   newsroom-only acceptance root from run 51's exact revision-27 campaign and
+   accepted per-wave publications. Recompose only the final Canopy Ledger; do
+   not invoke compilation, elaboration, Nemesis, strategic cells, outcomes,
+   clocks, or per-wave publication.
+2. Preserve every narrative/editor/copy-desk/reconciliation checkpoint and run
+   exact provenance, archive/hash, independent blind editorial, independent
+   grounding, and unchanged-live-service checks. Deliver the actual copy only
+   after both reviews accept it. Keep run 51, stopped run 23, and all earlier
+   immutable acceptance roots unchanged.
+3. Defer multiple publication Personas, TeX layout, and engraved cuts until the
+   single Canopy Ledger copy passes.
+4. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-4. Prove one consumer-owned effect crosses that public API, changes two foreign
+5. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-5. Measure provider cost and continuity on the existing 200-cell authored-world
+6. Measure provider cost and continuity on the existing 200-cell authored-world
    path without coupling wave width to the provider concurrency ceiling.
-6. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+7. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-7. Keep `gamecult-ops` synchronized with every executable deployment and model
+8. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,
