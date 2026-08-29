@@ -175,9 +175,14 @@ an independent semantic verifier run before approval and is rebound and checked
 again at kernel admission. Accepted civic manifests are versioned component
 state. Later destination passes receive that exact apparatus and may only retain
 and deepen it; they cannot publish a duplicate resident body or government.
-Public strategic events lower to `NewsIssue` records, and the generic CultNet
-world-consumer boundary projects those committed records as an authority-gated
-typed newspaper with exact event provenance.
+Committed public events lower to `NewsIssue` records as factual substrate, not
+as publication voice. Each publication is a persistent political/editorial
+Persona that owns its audience, remembered beats, narrative memeplex,
+selective pickup, recurring throughlines, ideological framing, and rivalries.
+Competing publications may frame the same committed event substrate
+differently. Grounding constrains factual assertions and preserves exact event
+provenance without neutralizing legible interpretation, selection, framing, or
+insinuation; publication Personas cannot write world state.
 Initial compiler publication is
 explicitly bounded as an empty-store creation transaction owned by the
 CampaignRegistry, not a runtime mutation. Named-person presence is a resolution
