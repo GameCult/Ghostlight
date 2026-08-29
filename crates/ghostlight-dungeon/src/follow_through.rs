@@ -528,7 +528,12 @@ pub fn responder_cell<'a>(
     let owning_subject = responder_subject_id
         .strip_prefix("member:")
         .and_then(|member_id| campaign.gestalt_members.get(member_id))
-        .map(|member| member.gestalt_id.as_str())
+        .and_then(|member| {
+            member
+                .materialized_actor_id
+                .is_none()
+                .then_some(member.gestalt_id.as_str())
+        })
         .unwrap_or(responder_subject_id);
     cover
         .cells
@@ -955,7 +960,7 @@ fn subject_stakes(campaign: &Campaign, subject_id: &str) -> Vec<String> {
 mod tests {
     use super::*;
     use crate::{
-        domain::{ActorState, Event},
+        domain::{ActorState, Event, GestaltMemberDelta},
         model::ModelStageRequest,
         resolution::{default_demand, ensure_agency_profiles, plan_cover},
     };
@@ -1116,6 +1121,55 @@ mod tests {
 
         cover.causal_follow_through[0].responder_subject_id = "player".into();
         assert!(validate_causal_follow_through(&campaign, &cover).is_err());
+    }
+
+    #[test]
+    fn materialized_member_responders_use_their_actor_cell() {
+        let (mut campaign, mut cover) = campaign_and_cover();
+        let member = |id: &str, materialized_actor_id: Option<&str>| GestaltMemberDelta {
+            schema: "ghostlight.gestalt_member_delta.v1".into(),
+            id: id.into(),
+            gestalt_id: "household".into(),
+            version: 0,
+            name: id.into(),
+            capability_additions: BTreeSet::new(),
+            capability_removals: BTreeSet::new(),
+            knowledge_additions: BTreeSet::new(),
+            knowledge_removals: BTreeSet::new(),
+            equipment: BTreeSet::new(),
+            conditions: BTreeSet::new(),
+            obligations: BTreeSet::new(),
+            relationships: BTreeMap::new(),
+            goals: Vec::new(),
+            memories: Vec::new(),
+            last_location_id: Some("room".into()),
+            materialized_actor_id: materialized_actor_id.map(str::to_owned),
+            last_relevant_revision: 0,
+            relevance_lease_until_revision: 0,
+        };
+        campaign
+            .gestalt_members
+            .insert("awake".into(), member("awake", Some("member:awake")));
+        campaign
+            .gestalt_members
+            .insert("folded".into(), member("folded", None));
+
+        let mut actor_cell = cover.cells[0].clone();
+        actor_cell.id = "actor-cell".into();
+        actor_cell.subject_ids = BTreeSet::from(["member:awake".into()]);
+        let mut gestalt_cell = cover.cells[0].clone();
+        gestalt_cell.id = "gestalt-cell".into();
+        gestalt_cell.subject_ids = BTreeSet::from(["household".into()]);
+        cover.cells = vec![actor_cell, gestalt_cell];
+
+        assert_eq!(
+            responder_cell(&campaign, &cover, "member:awake").map(|cell| cell.id.as_str()),
+            Some("actor-cell")
+        );
+        assert_eq!(
+            responder_cell(&campaign, &cover, "member:folded").map(|cell| cell.id.as_str()),
+            Some("gestalt-cell")
+        );
     }
 
     #[tokio::test]

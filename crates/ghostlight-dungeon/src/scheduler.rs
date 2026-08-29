@@ -1362,7 +1362,9 @@ fn cell_slice(
                 .insert(focus.anchor_reference.clone());
         } else {
             return Err(anyhow!(
-                "causal response owner is absent from its exact cell slice"
+                "causal response owner {} is absent from exact cell {}",
+                focus.responder_subject_id,
+                cell.id
             ));
         }
     }

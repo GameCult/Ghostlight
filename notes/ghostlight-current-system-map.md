@@ -199,7 +199,8 @@ exact campaign revision
 - **Inputs:** one frozen campaign revision, its committed public events and
   active pressures and clock progress, the durable Nemesis attention history,
   the deterministic resolution cover, exact perception routes, simulation
-  eligibility, player-control boundary, and each cell's action quota.
+  eligibility, Gestalt-member materialization state, player-control boundary,
+  and each cell's action quota.
 - **Output:** one bounded follow-through agenda binding exact event, pressure,
   or clock anchors to exact eligible decision owners already represented by the
   cover, plus the model receipt rebound to the exact campaign snapshot and
@@ -210,12 +211,20 @@ exact campaign revision
   permitted cell slice, takes precedence over ordinary rotation for that wave,
   and supplies that anchor's exact current committed account to the action's
   private outcome context. The anchor is context, not new mutation authority.
-  Unassigned recent events remain an ambient perception projection.
+  Responder-cell routing preserves identity ownership: a materialized
+  `member:*` subject remains an actor and binds only to its actor cell; a dormant
+  member keeps its exact member identity but routes through its aggregate
+  Gestalt's cell as a selected member exception. Unassigned recent events remain
+  an ambient perception projection.
 - **Forbidden writers:** the follow-through agent cannot emit events, mutate
   pressures, choose an action or outcome, move a subject, rewrite a cell
-  Persona, or touch newspaper copy. The outcome organ remains the sole
-  assessor of selected attempts; `WorldKernel` remains the sole world and
-  event writer and the sole writer of durable served-window records.
+  Persona, change member materialization, collapse a materialized actor into its
+  aggregate Gestalt, or touch newspaper copy. The outcome organ remains the
+  sole assessor of selected attempts; `WorldKernel` remains the sole world and
+  event writer and the sole writer of durable served-window records. Member
+  materialization changes only through the existing kernel presence transition;
+  bounded legacy identity normalization may canonicalize an already materialized
+  actor ID but does not decide presence.
 - **Shared paths:** first execution and checkpoint resume consume the identical
   accepted agenda and exact receipt binding. `WorldKernel` independently
   requires that exact admitted receipt before it commits a nonempty causal
@@ -223,7 +232,9 @@ exact campaign revision
   wave. Local cell verification and final wave admission both check that
   required owners were considered without requiring them to act rather than
   choose an attributed inaction. Later discovery excludes an already served
-  exact pair; a clock's new progress value creates a new anchor.
+  exact pair; a clock's new progress value creates a new anchor. Responder
+  discovery, agenda quota/focus admission, validation, and per-cell assignment
+  injection all use the same materialization-aware cell resolver.
 - **Cut line:** blind tick rotation no longer decides a slot already occupied
   by an admitted causal assignee, and the global last-twelve-event truncation
   cannot hide that assignee's exact anchor. No prompt downstream may compensate
@@ -233,13 +244,15 @@ exact campaign revision
   actual model invocation.
 - **Verification layer:** focused tests prove paged retrieval beyond the initial
   event viewport, valid empty judgment, exact-pair replay suppression, player
-  exclusion, exact owner consideration, exact anchor citation, outcome context
-  containing only the assigned anchor and its committed account, and kernel
-  rejection of a forged agenda followed by atomic acceptance and served-window
-  recording for the exact receipted agenda. Deterministic validators reject
-  unknown anchors, ineligible or duplicate responders, over-quota agendas,
-  missing exact receipts, and stale anchor accounts. A strategic smoke remains
-  the whole-system verification that named competing decisions produce
+  exclusion, exact owner consideration, materialized-member routing to the actor
+  cell versus dormant-member routing to the Gestalt cell, exact anchor citation,
+  outcome context containing only the assigned anchor and its committed
+  account, and kernel rejection of a forged agenda followed by atomic acceptance
+  and served-window recording for the exact receipted agenda. Deterministic
+  validators reject unknown anchors, ineligible or duplicate responders,
+  over-quota agendas, missing exact receipts, and stale anchor accounts. A
+  strategic smoke remains the whole-system verification that named competing
+  decisions produce
   committed material outcomes before editorial quality is assessed.
 
 The model owns no tick mutation. A provider failure or invalid proposal leaves
