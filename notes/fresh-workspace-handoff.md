@@ -1248,8 +1248,9 @@ SHA-256
 `835F72FCB19C38815C543DC1497977288F2F1442F22FDBD32D1B312490B34808`.
 Every manifest row passes and live service identities remained unchanged.
 
-The query-backed newsroom ownership cut is implemented in the current working
-tree. Canonical `NewsIssue` plus `Event` rows own public facts and stable
+Exact implementation commit
+`c454d13ecd80d0720e072cc94460ccf5b98c843c` owns the query-backed newsroom
+cut. Canonical `NewsIssue` plus `Event` rows own public facts and stable
 selection IDs. `Event::public_assertion_status` owns factual completion
 semantics. The existing generic agent harness now offers bounded deterministic
 queries over the full immutable ledger; the selector owns story choice and
@@ -1272,8 +1273,8 @@ ignore that bookkeeping, but revision 27 remains immutable. Future kernel work
 must require an outcome's own observable or communicated public scope before
 materializing a `NewsIssue`.
 
-1. Complete bounded package, strategic-smoke, format, state, and system-map
-   verification; commit and push the query-backed newsroom cut.
+1. Push and stage exact implementation
+   `c454d13ecd80d0720e072cc94460ccf5b98c843c` on Yggdrasil.
 2. Create one new immutable newsroom-only root from run 54's exact revision-27
    campaign and accepted per-wave publications. Recompose only the final Canopy
    Ledger; preserve resumable selection/editor/reconciliation receipts.
