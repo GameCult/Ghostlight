@@ -1174,32 +1174,44 @@ focused newspaper tests, 478/478 library tests, and 13/13 strategic-smoke tests.
 No dependency, crate, binary, daemon, target, or world-simulation pass was
 added.
 
+Exact-source run 52 attempt 1 at
+`5c07d49edb550bc0047f1b0bae422f186bd25ad6` stopped before any strategic
+wave or final newsroom composition. The acceptance driver tried to reinterpret
+run 51's immutable accepted per-wave recomposition receipts under the current
+Issue v3 recovery contract. Run 51 and every world, wave, and publication
+artifact remain unchanged. The run-52 root now durably contains `campaign.cc`
+and its failure evidence. Historical accepted per-wave artifacts belong to the
+byte and digest bound by their original immutable receipt; current schemas may
+not reinterpret them.
+
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Commit and push the verified newsroom cut, then create one immutable
-   newsroom-only acceptance root from run 51's exact revision-27 campaign and
-   accepted per-wave publications. Recompose only the final Canopy Ledger; do
-   not invoke compilation, elaboration, Nemesis, strategic cells, outcomes,
-   clocks, or per-wave publication.
-2. Preserve every narrative/editor/copy-desk/reconciliation checkpoint and run
+1. Cut and verify the acceptance driver so historical accepted per-wave
+   artifacts are admitted by their original immutable byte/digest receipts
+   without current-schema reinterpretation. Commit and push that bounded fix.
+2. Resume final-only Canopy Ledger composition in the same run-52 root from its
+   persisted `campaign.cc` and failure evidence. Do not create a replacement
+   root or invoke compilation, elaboration, Nemesis, strategic cells, outcomes,
+   clocks, the editor for accepted issues, or per-wave publication.
+3. Preserve every narrative/editor/copy-desk/reconciliation checkpoint and run
    exact provenance, archive/hash, independent blind editorial, independent
    grounding, and unchanged-live-service checks. Deliver the actual copy only
    after both reviews accept it. Keep run 51, stopped run 23, and all earlier
    immutable acceptance roots unchanged.
-3. Defer multiple publication Personas, TeX layout, and engraved cuts until the
+4. Defer multiple publication Personas, TeX layout, and engraved cuts until the
    single Canopy Ledger copy passes.
-4. Have the game-side adapter lower its authored hierarchy into the published
+5. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-5. Prove one consumer-owned effect crosses that public API, changes two foreign
+6. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-6. Measure provider cost and continuity on the existing 200-cell authored-world
+7. Measure provider cost and continuity on the existing 200-cell authored-world
    path without coupling wave width to the provider concurrency ceiling.
-7. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+8. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-8. Keep `gamecult-ops` synchronized with every executable deployment and model
+9. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,

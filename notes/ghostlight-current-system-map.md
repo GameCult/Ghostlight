@@ -1501,21 +1501,28 @@ desk, renderer, nor receipt persistence can write world state.
 
 - **Owner:** the strategic acceptance driver owns recovery of a missing
   consumer artifact after its world wave has already committed. It owns neither
-  the wave nor the newspaper's factual or editorial judgment.
+  the wave nor the newspaper's factual or editorial judgment. For an already
+  accepted historical recomposition, the original immutable recomposition
+  receipt owns the typed issue value and reader/audit bytes; the current driver only
+  validates and projects that artifact.
 - **Inputs:** the missing wave's immutable checkpoint and committed `Campaign`
   snapshot, the preceding wave checkpoint's committed news-ledger boundary,
   the configured title and voice, the explicit resume recovery boundary
   (`GHOSTLIGHT_STRATEGIC_NEWSPAPER_RECOVERY_START_WAVE`, defaulting to wave one
   and validated within `1..=wave_count`), and the same campaign receipt store
-  used by ordinary newspaper composition.
+  used by ordinary newspaper composition. When an accepted recomposition
+  already exists, its immutable receipt and exact named reader/audit files are
+  additional inputs.
 - **Output:** acceptance writes one separately named immutable recomposition
   checkpoint containing the issue, grounding verdict, and newspaper model
-  receipts, plus the rendered reader and audit files. Its receipt binds the narrowed source
-  campaign, recovery boundary, title/voice/article-budget contract, issue,
-  model-receipt collection, expected filenames, and both rendered byte streams
-  by digest. The configured boundary is also projected through run status and
-  success or failure result artifacts. The driver fills only the missing
-  newspaper fields in its in-memory result projection. Pending reconciliation
+  receipts, plus the rendered reader and audit files. Its receipt binds the
+  narrowed source campaign, recovery boundary, title/voice/article-budget
+  contract, issue, model-receipt collection, expected filenames, and both
+  rendered byte streams by digest. Current v3 receipts additionally bind the
+  complete typed grounding verdict by digest. The configured boundary is also
+  projected through run status and success or failure result artifacts. The
+  driver fills only the missing newspaper fields in its in-memory result
+  projection. Pending reconciliation
   instead writes an immutable diagnostic projection of the library-owned
   checkpoint and stops that recovery invocation; canonical resume state remains
   in `CampaignStore`. Existing successful issues and original wave checkpoints
@@ -1528,7 +1535,11 @@ desk, renderer, nor receipt persistence can write world state.
   reports form a contiguous prefix and selects only reports at or after the
   configured recovery boundary whose issue is absent. Earlier missing reports
   remain historical gaps, while any already successful issue inside the selected
-  range is left untouched.
+  range is left untouched. The configured recovery boundary owns selection of
+  the missing reports in the current invocation. A completed recomposition's
+  recorded recovery boundary is immutable provenance for the invocation that
+  produced it; it does not become a second selector or invalidate the accepted
+  issue when a later invocation selects a narrower range.
 - **Forbidden writers:** recovery cannot rerun a strategic tick, Nemesis,
   simulation cells, outcome resolution, clocks, or `WorldKernel`, and it cannot
   alter campaign, event, or news state. Pending or failed recomposition stops
@@ -1539,9 +1550,28 @@ desk, renderer, nor receipt persistence can write world state.
   checkpoint-resume, and receipt-persistence owner. A later resume advances a
   pending library checkpoint without rerunning the editor. Once accepted, it
   consumes the successful recomposition artifact instead of paying for the
-  newspaper again, but only after recomputing its source and contract bindings,
-  checking the exact recovery boundary, deserializing the issue, regenerating
-  reader and audit copy, and comparing the exact stored files and digests.
+  newspaper again. The driver recomputes its wave, source-campaign, and
+  editorial-contract bindings, validates the recorded original recovery
+  boundary, and checks the exact issue value, typed model-receipt set, reader
+  bytes, and audit bytes against their immutable digests. A current-schema issue
+  and grounding verdict are additionally deserialized, their grounding digest
+  is required, and the issue is rendered again. A historical v2 accepted issue
+  is structurally deserialized only as v2 and is not reinterpreted through the
+  current issue type or renderer; its original receipt owns those historical
+  bytes, and the driver carries its JSON only as an inert result projection.
+  Historical v2 predates `grounding_digest`, so this local validator requires
+  accepted status but does not claim a retroactive digest for its complete
+  grounding verdict. Whole-checkpoint integrity instead remains anchored by the
+  unchanged Run 51 source-root/archive hash and Run 52 before/after artifact
+  manifest.
+- **Cut line:** current `WorldNewspaperIssue` deserialization and current
+  renderer output are no longer authorities over a historical accepted issue.
+  Raw digest verification is not a migration path and cannot create, repair, or
+  reaccept a paper: all applicable original source, contract, filename, issue,
+  receipt-set, and byte bindings must already be present and exact. Current v3
+  also requires its exact grounding digest; historical v2 keeps the explicitly
+  bounded accepted-status plus archive/manifest proof described above.
+  Strategic state and per-wave artifacts remain forbidden writers.
 - **Verification layer:** the focused boundary regression proves that a second
   wave is recomposed from only its newly appended news row while retaining the
   committed event ledger needed to resolve that row. It also rejects prior-news
@@ -1552,8 +1582,11 @@ desk, renderer, nor receipt persistence can write world state.
   `Vec<ModelStageReceipt>` before hashing and rejects an invalid receipt shape,
   so creation and verification share one representation. A scope-selection
   regression proves that earlier missing issues and successful issues are
-  skipped while later missing issues are selected. The current binary and
-  library test suites pass.
+  skipped while later missing issues are selected. Dedicated regressions prove
+  that historical v2 preserves its recorded original recovery boundary and
+  accepts exact historical bytes without current rendering while rejecting byte
+  drift, and that current v3 still requires typed deserialization, exact
+  rendering, and an exact grounding digest. The strategic binary gate is 15/15.
 
 The first-wave limit is now an explicit closed boundary rather than inferred
 recovery: when wave one is selected, the driver refuses to compose without a
