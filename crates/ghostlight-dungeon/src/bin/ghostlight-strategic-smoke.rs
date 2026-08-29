@@ -564,7 +564,7 @@ async fn main() -> anyhow::Result<()> {
         "The sovereign deep-hold diverted the White Root aquifer. Two tithe caravans have vanished, the charcoal guilds threaten secession, and somebody pawned the regent's rain seal."
             .into()
     });
-    let wave_count = bounded_environment_usize("GHOSTLIGHT_STRATEGIC_WAVES", 1, 1, 16)?;
+    let wave_count = bounded_environment_usize("GHOSTLIGHT_STRATEGIC_WAVES", 1, 1, 32)?;
     let max_rejected_pulses_per_wave =
         bounded_environment_usize("GHOSTLIGHT_STRATEGIC_MAX_REJECTED_PULSES_PER_WAVE", 2, 0, 4)?;
     let root = std::env::var_os("GHOSTLIGHT_LIVE_FIRE_RESULT_ROOT")
