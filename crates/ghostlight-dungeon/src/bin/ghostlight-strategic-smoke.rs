@@ -9,6 +9,73 @@ fn final_wave_field(
         .ok_or_else(|| anyhow::anyhow!("final strategic wave is missing {field}"))
 }
 
+fn strategic_smoke_digest<T: serde::Serialize + ?Sized>(value: &T) -> anyhow::Result<String> {
+    use sha2::{Digest, Sha256};
+
+    Ok(format!(
+        "sha256:{:x}",
+        Sha256::digest(serde_json::to_vec(value)?)
+    ))
+}
+
+fn strategic_smoke_bytes_digest(bytes: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+
+    format!("sha256:{:x}", Sha256::digest(bytes))
+}
+
+fn recomposed_model_receipt_set_digest(value: &serde_json::Value) -> anyhow::Result<String> {
+    let receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt> =
+        serde_json::from_value(value.clone()).map_err(|error| {
+            anyhow::anyhow!("newspaper recomposition has invalid model receipts: {error}")
+        })?;
+    strategic_smoke_digest(&receipts)
+}
+
+fn completed_wave_issue_campaign(
+    wave_reports: &[serde_json::Value],
+    report_index: usize,
+) -> anyhow::Result<ghostlight_dungeon::domain::Campaign> {
+    let report = wave_reports
+        .get(report_index)
+        .ok_or_else(|| anyhow::anyhow!("completed wave report is absent"))?;
+    let wave_index = report["wave_index"]
+        .as_u64()
+        .ok_or_else(|| anyhow::anyhow!("completed wave report has no wave index"))?;
+    if wave_index != report_index as u64 + 1 {
+        anyhow::bail!("completed wave reports are not a contiguous prefix")
+    }
+    let mut campaign: ghostlight_dungeon::domain::Campaign =
+        serde_json::from_value(report["commit"]["campaign"].clone()).map_err(|error| {
+            anyhow::anyhow!("completed wave has no committed campaign: {error}")
+        })?;
+    if campaign.revision != report["world_revision_after"].as_u64().unwrap_or_default() {
+        anyhow::bail!("completed wave campaign disagrees with its committed revision")
+    }
+    let previous_campaign: ghostlight_dungeon::domain::Campaign = if report_index == 0 {
+        anyhow::bail!(
+            "a missing first-wave newspaper cannot recover its exact pre-wave news boundary"
+        )
+    } else {
+        serde_json::from_value(wave_reports[report_index - 1]["commit"]["campaign"].clone())
+            .map_err(|error| {
+                anyhow::anyhow!("prior completed wave has no committed campaign: {error}")
+            })?
+    };
+    let previous_news_count = previous_campaign.news.len();
+    if previous_news_count > campaign.news.len() {
+        anyhow::bail!("completed wave news ledger is shorter than its prior committed prefix")
+    }
+    if campaign.news[..previous_news_count] != previous_campaign.news {
+        anyhow::bail!("completed wave news ledger does not preserve its exact prior prefix")
+    }
+    campaign.news = campaign.news[previous_news_count..].to_vec();
+    if campaign.news.is_empty() {
+        anyhow::bail!("completed wave has no recoverable gated news")
+    }
+    Ok(campaign)
+}
+
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct CompilerCheckpoint {
@@ -1692,6 +1759,154 @@ async fn main() -> anyhow::Result<()> {
             }))?,
         )?;
     }
+    if resume {
+        for report_index in 0..wave_reports.len() {
+            if !wave_reports[report_index]["issue"].is_null() {
+                continue;
+            }
+            let wave_index = wave_reports[report_index]["wave_index"]
+                .as_u64()
+                .ok_or_else(|| anyhow::anyhow!("completed wave report has no wave index"))?;
+            let issue_campaign = completed_wave_issue_campaign(&wave_reports, report_index)?;
+            let issue_title = format!("{newspaper_title} — Issue {wave_index}");
+            let source_campaign_digest = strategic_smoke_digest(&issue_campaign)?;
+            let editorial_contract_digest = strategic_smoke_digest(&serde_json::json!({
+                "title":&issue_title,
+                "editorial_voice":&newspaper_voice,
+                "max_articles":5,
+            }))?;
+            let recomposition_path =
+                root.join(format!("newspaper-wave-{wave_index:02}-recomposition.json"));
+            let recomposition = if recomposition_path.is_file() {
+                read_checkpoint::<serde_json::Value>(&recomposition_path)?
+            } else {
+                let composition = match compose_persisted_newspaper(
+                    model.as_ref(),
+                    &issue_campaign,
+                    &issue_title,
+                    &newspaper_voice,
+                    5,
+                    &store,
+                )
+                .await
+                {
+                    Ok(composition) => composition,
+                    Err(error) => {
+                        let model_receipts = error
+                            .downcast_ref::<
+                                ghostlight_dungeon::newspaper::WorldNewspaperCompositionFailure,
+                            >()
+                            .map(|failure| failure.model_receipts.clone())
+                            .unwrap_or_default();
+                        publish_immutable_checkpoint(
+                            &root.join(format!(
+                                "newspaper-wave-{wave_index:02}-recomposition-terminal-failure.json"
+                            )),
+                            &serde_json::json!({
+                                "schema":"ghostlight.newspaper_wave_recomposition_failure.v1",
+                                "wave_index":wave_index,
+                                "world_revision":issue_campaign.revision,
+                                "error":error.to_string(),
+                                "model_receipts":model_receipts,
+                            }),
+                        )?;
+                        return Err(error);
+                    }
+                };
+                let issue_path = root.join(format!("newspaper-wave-{wave_index:02}.md"));
+                let issue_audit_path =
+                    root.join(format!("newspaper-wave-{wave_index:02}.audit.md"));
+                let reader_copy = ghostlight_dungeon::newspaper::render_world_newspaper_markdown(
+                    &composition.issue,
+                );
+                let audit_copy =
+                    ghostlight_dungeon::newspaper::render_world_newspaper_audit_markdown(
+                        &composition.issue,
+                    );
+                std::fs::write(&issue_path, &reader_copy)?;
+                std::fs::write(&issue_audit_path, &audit_copy)?;
+                let checkpoint = serde_json::json!({
+                    "schema":"ghostlight.newspaper_wave_recomposition.v1",
+                    "wave_index":wave_index,
+                    "world_revision":issue_campaign.revision,
+                    "source_campaign_digest":source_campaign_digest,
+                    "editorial_contract_digest":editorial_contract_digest,
+                    "issue_digest":strategic_smoke_digest(&composition.issue)?,
+                    "model_receipt_set_digest":strategic_smoke_digest(&composition.model_receipts)?,
+                    "reader_copy_digest":strategic_smoke_bytes_digest(reader_copy.as_bytes()),
+                    "audit_copy_digest":strategic_smoke_bytes_digest(audit_copy.as_bytes()),
+                    "issue":composition.issue,
+                    "newspaper_grounding":composition.grounding,
+                    "newspaper_model_receipts":composition.model_receipts,
+                    "issue_file":format!("newspaper-wave-{wave_index:02}.md"),
+                    "issue_audit_file":format!("newspaper-wave-{wave_index:02}.audit.md"),
+                });
+                publish_immutable_checkpoint(&recomposition_path, &checkpoint)?;
+                checkpoint
+            };
+            if recomposition["schema"] != "ghostlight.newspaper_wave_recomposition.v1"
+                || recomposition["wave_index"].as_u64() != Some(wave_index)
+                || recomposition["world_revision"]
+                    != wave_reports[report_index]["world_revision_after"]
+                || recomposition["source_campaign_digest"] != source_campaign_digest
+                || recomposition["editorial_contract_digest"] != editorial_contract_digest
+                || recomposition["issue"].is_null()
+                || recomposition["newspaper_grounding"]["accepted"] != true
+                || recomposition["issue_file"] != format!("newspaper-wave-{wave_index:02}.md")
+                || recomposition["issue_audit_file"]
+                    != format!("newspaper-wave-{wave_index:02}.audit.md")
+            {
+                anyhow::bail!(
+                    "completed wave newspaper recomposition does not bind its exact accepted issue"
+                )
+            }
+            let issue_path = root.join(format!("newspaper-wave-{wave_index:02}.md"));
+            let issue_audit_path = root.join(format!("newspaper-wave-{wave_index:02}.audit.md"));
+            if !issue_path.is_file() || !issue_audit_path.is_file() {
+                anyhow::bail!("completed wave newspaper recomposition lost its rendered artifact")
+            }
+            let recomposed_issue: ghostlight_dungeon::newspaper::WorldNewspaperIssue =
+                serde_json::from_value(recomposition["issue"].clone()).map_err(|error| {
+                    anyhow::anyhow!(
+                        "completed wave newspaper recomposition has an invalid issue: {error}"
+                    )
+                })?;
+            let reader_copy = std::fs::read_to_string(&issue_path)?;
+            let audit_copy = std::fs::read_to_string(&issue_audit_path)?;
+            if reader_copy
+                != ghostlight_dungeon::newspaper::render_world_newspaper_markdown(&recomposed_issue)
+                || audit_copy
+                    != ghostlight_dungeon::newspaper::render_world_newspaper_audit_markdown(
+                        &recomposed_issue,
+                    )
+                || recomposition["issue_digest"] != strategic_smoke_digest(&recomposed_issue)?
+                || recomposition["model_receipt_set_digest"]
+                    != recomposed_model_receipt_set_digest(
+                        &recomposition["newspaper_model_receipts"],
+                    )?
+                || recomposition["reader_copy_digest"]
+                    != strategic_smoke_bytes_digest(reader_copy.as_bytes())
+                || recomposition["audit_copy_digest"]
+                    != strategic_smoke_bytes_digest(audit_copy.as_bytes())
+            {
+                anyhow::bail!(
+                    "completed wave newspaper recomposition artifact differs from its receipt"
+                )
+            }
+            let report = wave_reports[report_index]
+                .as_object_mut()
+                .ok_or_else(|| anyhow::anyhow!("completed wave report is not an object"))?;
+            for field in ["issue", "newspaper_grounding", "newspaper_model_receipts"] {
+                report.insert(field.into(), recomposition[field].clone());
+            }
+            report.insert("issue_path".into(), serde_json::to_value(issue_path)?);
+            report.insert(
+                "issue_audit_path".into(),
+                serde_json::to_value(issue_audit_path)?,
+            );
+            report.insert("newspaper_error".into(), serde_json::Value::Null);
+        }
+    }
     let final_plan = final_wave_field(&wave_reports, "plan")?;
     let final_commit = final_wave_field(&wave_reports, "commit")?;
     let final_model_receipt_hash = final_wave_field(&wave_reports, "model_receipt_hash")?;
@@ -2278,9 +2493,10 @@ fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
 mod tests {
     use super::{
         admitted_public_channel, civic_manifest_is_committed_candidate,
-        committed_elaboration_mutation_proof, final_wave_field, latest_partial_wave_checkpoint,
-        publish_immutable_checkpoint, recover_committed_clock_binding, strategic_campaign,
-        strategic_locality_request, strategic_titled_locality_request,
+        committed_elaboration_mutation_proof, completed_wave_issue_campaign, final_wave_field,
+        latest_partial_wave_checkpoint, publish_immutable_checkpoint,
+        recomposed_model_receipt_set_digest, recover_committed_clock_binding, strategic_campaign,
+        strategic_locality_request, strategic_smoke_digest, strategic_titled_locality_request,
         titled_failure_checkpoint_paths,
     };
 
@@ -2314,6 +2530,105 @@ mod tests {
 
         let commit = final_wave_field(&waves, "commit").unwrap();
         assert_eq!(commit["campaign"]["revision"], 2);
+    }
+
+    #[test]
+    fn recomposition_receipt_rehashes_typed_model_receipts() {
+        let receipts = vec![ghostlight_dungeon::model::ModelStageReceipt {
+            schema: "ghostlight.model_stage_receipt.v1".into(),
+            receipt_hash: "sha256:receipt".into(),
+            provider: "fixture".into(),
+            model: "fixture-model".into(),
+            stage: "newspaper_editor".into(),
+            snapshot_binding: "sha256:snapshot".into(),
+            request_hash: "sha256:request".into(),
+            output_hash: "sha256:output".into(),
+            source_receipt_ids: vec!["sha256:source".into()],
+            latency_ms: 1,
+            validation_result: "accepted".into(),
+            local_validation_error: None,
+            input_chars: 10,
+            output_chars: 20,
+            provider_attempts: Vec::new(),
+        }];
+        let value = serde_json::to_value(&receipts).unwrap();
+
+        assert_eq!(
+            recomposed_model_receipt_set_digest(&value).unwrap(),
+            strategic_smoke_digest(&receipts).unwrap()
+        );
+        assert!(recomposed_model_receipt_set_digest(&serde_json::json!({})).is_err());
+    }
+
+    #[test]
+    fn completed_wave_newspaper_resume_uses_only_that_waves_committed_news() {
+        let mut first = strategic_campaign();
+        first.revision = 1;
+        let first_event = ghostlight_dungeon::domain::Event {
+            id: "event:first".into(),
+            at: first.world_time,
+            kind: "fixture".into(),
+            summary: "The first event entered the public ledger.".into(),
+            actor_ids: Vec::new(),
+            institution_ids: vec!["board".into()],
+            gestalt_ids: Vec::new(),
+            location_ids: vec!["yard".into()],
+            public_channels: vec!["root-wire broadsheet".into()],
+        };
+        ghostlight_dungeon::domain::append_event_with_publications(&mut first, first_event);
+        let mut second = first.clone();
+        second.revision = 2;
+        let second_event = ghostlight_dungeon::domain::Event {
+            id: "event:second".into(),
+            at: second.world_time,
+            kind: "fixture".into(),
+            summary: "The second event entered the public ledger.".into(),
+            actor_ids: Vec::new(),
+            institution_ids: vec!["synod".into()],
+            gestalt_ids: Vec::new(),
+            location_ids: vec!["depot".into()],
+            public_channels: vec!["root-wire broadsheet".into()],
+        };
+        ghostlight_dungeon::domain::append_event_with_publications(&mut second, second_event);
+        let reports = vec![
+            serde_json::json!({
+                "wave_index":1,
+                "world_revision_after":1,
+                "commit":{"campaign":first},
+            }),
+            serde_json::json!({
+                "wave_index":2,
+                "world_revision_after":2,
+                "commit":{"campaign":second},
+            }),
+        ];
+
+        let issue_campaign = completed_wave_issue_campaign(&reports, 1).unwrap();
+
+        assert_eq!(issue_campaign.revision, 2);
+        assert_eq!(issue_campaign.events.len(), 2);
+        assert_eq!(issue_campaign.news.len(), 1);
+        assert!(
+            issue_campaign.news[0]
+                .event_ids
+                .contains(&"event:second".into())
+        );
+
+        let mut tampered_prefix = reports.clone();
+        tampered_prefix[0]["commit"]["campaign"]["news"][0]["headline"] =
+            "A different earlier publication".into();
+        assert!(
+            completed_wave_issue_campaign(&tampered_prefix, 1)
+                .unwrap_err()
+                .to_string()
+                .contains("does not preserve its exact prior prefix")
+        );
+        assert!(
+            completed_wave_issue_campaign(&reports, 0)
+                .unwrap_err()
+                .to_string()
+                .contains("cannot recover its exact pre-wave news boundary")
+        );
     }
 
     #[test]

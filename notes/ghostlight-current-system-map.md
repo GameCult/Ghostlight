@@ -1340,6 +1340,57 @@ text before Markdown emission; the provenance renderer applies the same
 plain-text boundary to its audit data. Neither editor, copy desk, renderer, nor
 receipt persistence can write world state.
 
+#### Acceptance-driver per-wave newspaper recovery
+
+- **Owner:** the strategic acceptance driver owns recovery of a missing
+  consumer artifact after its world wave has already committed. It owns neither
+  the wave nor the newspaper's factual or editorial judgment.
+- **Inputs:** the missing wave's immutable checkpoint and committed `Campaign`
+  snapshot, the preceding wave checkpoint's committed news-ledger boundary,
+  the configured title and voice, and the same campaign receipt store used by
+  ordinary newspaper composition.
+- **Output:** one separately named immutable recomposition checkpoint containing
+  the accepted issue, grounding verdict, and newspaper model receipts, plus the
+  rendered reader and audit files. Its receipt binds the narrowed source
+  campaign, title/voice/article-budget contract, issue, model-receipt collection,
+  expected filenames, and both rendered byte streams by digest. The driver fills
+  only the missing newspaper fields in its in-memory result projection. Existing
+  successful issues and original wave checkpoints remain unchanged.
+- **Derived state:** the newsroom receives a clone of the completed wave's
+  campaign whose news ledger is narrowed to rows appended since the preceding
+  committed boundary. All events and canonical names remain available only so
+  those exact news rows can resolve their sources; the clone is a consumer view,
+  not a campaign mutation.
+- **Forbidden writers:** recovery cannot rerun a strategic tick, Nemesis,
+  simulation cells, outcome resolution, clocks, or `WorldKernel`, and it cannot
+  alter campaign, event, or news state. A failed recomposition stops consumer
+  recovery and cannot repair mechanics.
+- **Shared paths:** live per-wave composition, recovery composition, and final
+  combined composition all call `compose_persisted_newspaper`, including the
+  same grounding/copy-desk path and idempotent model-receipt persistence. A
+  later resume consumes the successful recomposition checkpoint instead of
+  paying for the newspaper again, but only after recomputing its source and
+  contract bindings, deserializing the issue, regenerating reader and audit copy,
+  and comparing the exact stored files and digests.
+- **Verification layer:** the focused boundary regression proves that a second
+  wave is recomposed from only its newly appended news row while retaining the
+  committed event ledger needed to resolve that row. It also rejects prior-news
+  prefix drift and confirms that first-wave recovery fails closed without an
+  exact pre-run boundary. Immutable checkpoint publication separately rejects
+  overwrite and publishes by synchronized temporary-file rename. A typed
+  receipt-digest regression proves that checkpoint JSON is deserialized back to
+  `Vec<ModelStageReceipt>` before hashing and rejects an invalid receipt shape,
+  so creation and verification share one representation. The current binary and
+  library test suites pass.
+
+The first-wave limit is now an explicit closed boundary rather than inferred
+recovery: without a preserved pre-run news prefix the driver refuses to compose.
+Run 41 already has its first issue, so the bounded recovery set is later missing
+issues only. The remaining limitation is verification breadth, not split
+authority: no focused test yet executes the complete resume orchestration from
+fresh recomposition through later reuse while asserting successful-issue
+preservation, exact rendered-file validation, and absence of mechanics calls.
+
 Session Zero compilation, expansion, and fission follow the same projection
 rule. Review projections expose topology, pressures, source-use coverage, gaps,
 assumptions, public party cards, and only the current viewer's private ledger.

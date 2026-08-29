@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-08-28
+Updated: 2026-08-29
 
 This is the compact re-entry packet. It records current authority, deployed
 truth, proof, and the next decision. Git history owns chronology; the system map
@@ -1009,34 +1009,49 @@ wave 15. That materialized-versus-dormant routing fix was pushed in exact source
 
 Run 41 cloned run 40 at committed revision 23, removed only copied wave-15
 failure artifacts, and did not replay prior waves. It committed waves 15 through
-18 through revision 27 with 363 events and 853 news rows. The unit then failed
-only during final newspaper composition: one-pass grounding reconciliation
-rejected distinct findings that shared one editable target. The remote root is
+18 through revision 27 with 363 events and 853 news rows. Issue 14 is accepted;
+Issues 13 and 15 through 18 are absent because their old grounding repair failed
+after the corresponding immutable world-wave commit. Final newspaper composition
+also failed. The remote root is
 `/var/lib/gamecult/ghostlight-dungeon/acceptance/elven-realms-autonomous-46810c3-41`.
 `BUILD-WITNESS` binds the run-40 resume root and
-`live_service_mutated=false`. Simulation mechanics are complete; no accepted
-final digest exists. Runs 38, 39, and 40 remain preserved, and acceptance is
-incomplete.
+`live_service_mutated=false`. Simulation mechanics are complete; the derived
+publication sequence and final digest are incomplete. Runs 38, 39, and 40
+remain preserved, and acceptance is incomplete.
 
-The current uncommitted `newspaper.rs` diff groups replacements by editable
-target, validates every exact phrase once against the original copy, rejects
-overlapping ranges, and atomically applies distinct non-overlapping replacements
-in reverse source order before requiring the complete finding set and fresh
-whole-page verification. Its defining regression and all newspaper tests pass;
-the full 468-test library gate and `git diff --check` also pass. The fix is not
-yet committed, pushed, provider-proven, or editorially accepted.
+Pushed `19a66a4` groups newspaper grounding replacements by editable target,
+validates every exact phrase once against the original copy, rejects overlapping
+ranges, and atomically applies distinct non-overlapping replacements in reverse
+source order before requiring the complete finding set and fresh whole-page
+verification. Its defining regression, all newspaper tests, the full 468-test
+library gate, and `git diff --check` pass. Provider and editorial acceptance
+remain open.
+
+The current uncommitted strategic-smoke runner diff adds a presentation-only
+recovery seam for missing per-wave editions. It derives each absent issue from
+that wave's immutable committed campaign snapshot and exact prior committed news
+boundary, publishes an immutable recomposition receipt, and skips accepted
+issues such as Issue 14. It fails closed when the exact prior boundary is
+unavailable, including a missing first-wave issue. Every recomposition receipt
+binds source, contract, issue, typed model receipts, rendered content, and file
+digests; typed receipt JSON roundtrip is covered. The complete local gate passes
+12/12 strategic-smoke binary tests, 468/468 library tests, and
+`git diff --check`. It cannot replay or mutate world mechanics and is not yet
+committed, pushed, or provider-proven.
 
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Commit and push the locally verified atomic same-target grounding edit fix.
-2. Resume only final newspaper composition from run 41's committed revision 27.
-   Do not replay waves 15-18 or any earlier wave. Require the resulting unedited
-   final digest to pass fresh independent editorial and provenance review before
-   claiming acceptance. Preserve runs 38/39/40, the run-41 root and committed
-   world lineage, stopped run 23, exact acceptance conditions, and unchanged
-   live daemons.
+1. Commit and push the locally verified missing-edition recomposition boundary.
+2. Launch exact-source run 42 from run 41's committed revision 27 to compose only missing Issues 13
+   and 15 through 18 plus the final digest. Preserve accepted Issue 14, every
+   completed wave checkpoint, and canonical world state; do not replay any
+   mechanics. Require the resulting unedited publications and final digest to
+   pass fresh independent editorial and provenance review before claiming
+   acceptance. Preserve runs 38/39/40, the run-41 root and committed world
+   lineage, stopped run 23, exact acceptance conditions, and unchanged live
+   daemons.
 3. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
 4. Prove one consumer-owned effect crosses that public API, changes two foreign
