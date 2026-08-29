@@ -1,8 +1,8 @@
 use crate::{
     domain::{
-        Campaign, CausalFollowThroughAssignment, CellActionProposal, StrategicActivityKind,
-        StrategicActivityOutcome, StrategicCellEffect, StrategicOutcomeBand,
-        StrategicOutcomeEffect, StrategicTickPlan,
+        Campaign, CausalFollowThroughAssignment, CellActionProposal,
+        MAX_PUBLIC_EVENT_SUMMARY_CHARS, StrategicActivityKind, StrategicActivityOutcome,
+        StrategicCellEffect, StrategicOutcomeBand, StrategicOutcomeEffect, StrategicTickPlan,
     },
     model::{
         MODEL_BALANCED, MODEL_FAST, ModelPort, ModelStageOutput, ModelStageReceipt,
@@ -1146,8 +1146,11 @@ fn resolved_outcome_summary(
             )
         }
     };
-    let summary = summary.chars().take(240).collect::<String>();
-    if !bounded_text(&summary, 240) {
+    let summary = summary
+        .chars()
+        .take(MAX_PUBLIC_EVENT_SUMMARY_CHARS)
+        .collect::<String>();
+    if !bounded_text(&summary, MAX_PUBLIC_EVENT_SUMMARY_CHARS) {
         return Err(anyhow!("derived strategic outcome summary is empty"));
     }
     Ok(summary)

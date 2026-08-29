@@ -1415,7 +1415,10 @@ fn execute(
                         ),
                         at: campaign.world_time,
                         kind: "gestalt_individuation".into(),
-                        summary: summary.chars().take(240).collect(),
+                        summary: summary
+                            .chars()
+                            .take(MAX_PUBLIC_EVENT_SUMMARY_CHARS)
+                            .collect(),
                         actor_ids: vec![crate::domain::gestalt_member_subject_id(&member.id)],
                         institution_ids: vec![],
                         gestalt_ids: vec![proposal.individuation.gestalt_id.clone()],

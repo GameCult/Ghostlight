@@ -854,14 +854,19 @@ mod tests {
                 })
                 .to_string());
             }
-            if request.stage == "newspaper_grounding_reconciliation_agent_action" {
+            if request.stage == "newspaper_rewrite_desk_agent_action" {
                 return Ok(serde_json::json!({
-                    "tool":"submit_edits",
-                    "replacements":[{
-                        "finding_ref":0,
-                        "replacement":"three granary auditors of acting as one accused person"
-                    }],
-                    "delete_finding_refs":[]
+                    "tool":"submit_rewrites",
+                    "rewrites":[{
+                        "article_index":0,
+                        "headline":"Court Auditors Face a Singular Accusation",
+                        "deck":"The inner court has turned a granary inquiry into a question of witchcraft and arithmetic.",
+                        "dateline":"Room",
+                        "paragraphs":[
+                            "The inner court has accused three granary auditors of acting as one accused person, placing the allegation into the public record.",
+                            "The charge leaves the auditors answering a court that has made one person out of three, at least for purposes of blame."
+                        ]
+                    }]
                 })
                 .to_string());
             }

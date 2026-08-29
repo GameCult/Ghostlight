@@ -913,6 +913,8 @@ pub struct NewsIssue {
     pub reliability: String,
 }
 
+pub const MAX_PUBLIC_EVENT_SUMMARY_CHARS: usize = 240;
+
 pub fn committed_news_headline(summary: &str) -> String {
     const MAX_HEADLINE_CHARS: usize = 96;
     let summary = summary.trim();
