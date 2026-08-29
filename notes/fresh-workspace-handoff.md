@@ -1198,9 +1198,10 @@ citations, render the survival/legitimacy agenda as administrative minutes,
 bury the severed hands, and lack sharp opposing motives, countermoves, and lived
 cost.
 
-The current uncommitted newsroom selection contract v2 owns that structural
-seam. Deterministic admission caps total selected citations at
-`min(source_count, available_articles * 2)` and each story at six citations.
+Pushed commit `6a045bc3327860483f71abd5546b7b215e45a3e5` owns newsroom selection
+contract v2 and that structural seam. Deterministic admission caps total
+selected citations at `min(source_count, available_articles * 2)` and each
+story at six citations.
 Every dossier requires one `focus_citation`; `narrative_claim` replaces the
 vague angle and travels with the exact admitted plan the editor receives. A
 read-only serde alias/default exists solely so unrelated historical checkpoint
@@ -1212,25 +1213,25 @@ Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Commit and push the verified newsroom selection contract v2.
-2. Launch one new immutable run 53 from revision 27 with final-only newsroom
-   composition. Do not invoke compilation,
-   elaboration, Nemesis, strategic cells, outcomes, clocks, or per-wave
-   publication. Preserve runs 51 and 52 and unchanged live services.
-3. Require exact provenance/archive/hash, independent grounding, and blind
-   editorial acceptance before delivery.
-4. Defer multiple publication Personas, TeX layout, and engraved cuts until the
+1. Launch one new immutable run 53 from run 52's revision-27 checkpoint with
+   final-only newsroom composition. Do not invoke compilation, elaboration,
+   Nemesis, strategic cells, outcomes, clocks, or per-wave publication.
+   Preserve runs 51 and 52 and unchanged live services.
+2. Require final newspaper and archive hashes, exact provenance,
+   unchanged-service proof, independent grounding, and blind editorial
+   acceptance before delivery.
+3. Defer multiple publication Personas, TeX layout, and engraved cuts until the
    single Canopy Ledger copy passes.
-5. Have the game-side adapter lower its authored hierarchy into the published
+4. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-6. Prove one consumer-owned effect crosses that public API, changes two foreign
+5. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-7. Measure provider cost and continuity on the existing 200-cell authored-world
+6. Measure provider cost and continuity on the existing 200-cell authored-world
    path without coupling wave width to the provider concurrency ceiling.
-8. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+7. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-9. Keep `gamecult-ops` synchronized with every executable deployment and model
+8. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,
