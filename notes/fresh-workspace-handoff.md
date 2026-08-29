@@ -936,33 +936,78 @@ two-owner regression proves B remains repairable after A changes and submit
 stays unavailable. Independent Modeling re-audit is clear after its P2
 correction. Final verification is 448 library tests, nine strategic-smoke
 tests, two projection tests, the locked strategic target check, rustfmt, and
-diff checks. Push and provider proof remain pending.
+diff checks.
+
+Exact-source run 38 at
+`596e50679244b5d42b4cfdf70d723f815751b8ff` resumed the run-37 world at
+revision 8 without replaying compilation or any of the four committed locality
+elaborations. Dynamic per-step schemas recovered 51 of 52 strategic-wave cells
+on pulse three and the final cell on pulse four. All six waves committed through
+world revision 14. Issues 1 and 3 through 6 and a final digest were emitted;
+wave 2 was withheld by the tense-inflation guard. The immutable local archive
+is
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-596e506-38.tar`,
+independently matching SHA-256
+`38637A8DC14F04EBF1C7B1BB4675B2456379EECB1D59E7982CFF3279C06E9FAF`.
+`BUILD-WITNESS` records `live_service_mutated=false`.
+
+Run 38 accepts the provider execution path, not the newspaper. The emitted
+copy is procedural rather than spicy, and the missing per-wave Issue 2 leaves
+the sequence incomplete. Editorial acceptance remains failed.
+
+Pushed commit `3a69306f3004e4af2cd57bba612a6ad8d1b8132f`
+implements the mapped clock-consequence owner and is verified locally. World
+clocks own declared consequence text and exact observable scope. A bounded
+agent may propose legacy scope binding; `WorldKernel` alone admits it and
+materializes stable threshold-crossing events and public news through the
+common mutation path. Binding, emitted-event ancestry, mutation receipts, and
+the next newspaper boundary persist atomically.
+
+Exact-source run 39 is terminal complete at world revision 21 with twelve of
+twelve waves. It resumed run 38 without replaying its six committed waves,
+bound clock consequences, committed six new waves, and emitted Issues 7 through
+12 plus a final digest. All inherited wave 1-6 checkpoint hashes match run 38
+exactly. The immutable local archive is
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-3a69306-39.tar`,
+independently matching SHA-256
+`FA259C699464DF1575022DFAAEA51A3D02E1410770369D14BFE570AC71D24838`.
+`BUILD-WITNESS` binds exact source
+`3a69306f3004e4af2cd57bba612a6ad8d1b8132f`, the run-38 resume root, and
+`live_service_mutated=false`.
+
+Mechanical provider acceptance is complete. Independent blind editorial review
+returns FAIL: only Issue 7 approaches spicy, while Issues 8 through 12 are
+dominated by plans, filings, inspections, warnings, and abstract relationship
+deltas without betrayal, scandal, public reaction, sustained reversal, or
+material lived cost. The defect belongs upstream in causal follow-through and
+outcome ownership, not in newsroom spice prompting. Independent grounding
+review also returns FAIL: Issue 9 inflates a planned expedited agenda into
+completion, while Issue 8 assigns unsupported feminine pronouns to Sela Venn
+and Eryn Tal. Citation resolution, temporal bounds, player immutability,
+manifest integrity, archive integrity, and live-service isolation otherwise
+pass. Editorial and grounding acceptance are terminally failed for run 39.
 
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Push the verified tool-owned per-step schema cut and this checkpoint.
-2. Launch exact-source run 38 as a provider-backed strategic resume from run
-   37's world revision 8 and existing pulse/checkpoint lineage. Never replay
-   world compilation or any committed locality elaboration. Run 38's first
-   checkpoint may directly prove the dynamic initial-submit and rejected-owner
-   repair schemas; no separate preliminary provider run is required. Preserve
-   stopped run 23, all artifacts, exact acceptance conditions, and the live
-   daemon.
-3. Only after all six waves commit and an immutable manifest exists, dispatch a
-   fresh blind reviewer with only the strongest unedited page and a neutral
-   editorial brief, then independently audit it against committed public events.
-4. Have the game-side adapter lower its authored hierarchy into the published
+1. Before editing code, map and cut the missing causal follow-through and
+   outcome ownership upstream of the newsroom, using the independent review
+   findings as exact falsifiers. Separately map the grounding reconciliation
+   owner that must reject completion inflation and unsupported identity
+   attributes before publication. Do not add a newsroom spice prompt rule.
+   Preserve the immutable run-38 and run-39 archives, stopped run 23, exact
+   acceptance conditions, and unchanged live daemons.
+3. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-5. Prove one consumer-owned effect crosses that public API, changes two foreign
+4. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-6. Measure provider cost and continuity on the existing 200-cell authored-world
+5. Measure provider cost and continuity on the existing 200-cell authored-world
    path without coupling wave width to the provider concurrency ceiling.
-7. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+6. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-8. Keep `gamecult-ops` synchronized with every executable deployment and model
+7. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,
