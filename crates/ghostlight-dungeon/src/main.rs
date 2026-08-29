@@ -6527,8 +6527,28 @@ mod tests {
             resolution_policy: Default::default(),
             resolution_pins: BTreeMap::new(),
             resolution_cover: None,
+            nemesis_attention_history: Vec::new(),
             strategic_tick_count: 0,
         }
+    }
+
+    fn add_aggregate_clock_witness(campaign: &mut Campaign) {
+        campaign.institutions.insert(
+            "channel-watch".into(),
+            ghostlight_dungeon::domain::InstitutionState {
+                id: "channel-watch".into(),
+                name: "Channel Watch".into(),
+                resources: Vec::new(),
+                goals: Vec::new(),
+                posture: "observing".into(),
+            },
+        );
+        ghostlight_dungeon::resolution::ensure_agency_profiles(campaign);
+        campaign
+            .agency_profiles
+            .get_mut("channel-watch")
+            .expect("fixture institution has a profile")
+            .active_leaf = false;
     }
 
     fn empty_app_state(root: &std::path::Path) -> AppState {
@@ -6998,9 +7018,10 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let state = empty_app_state(dir.path());
         let mut campaign = seed("Quiet world");
+        add_aggregate_clock_witness(&mut campaign);
         let original_player = campaign.actors["player"].clone();
         let original_time = campaign.world_time;
-        campaign.last_player_activity = chrono::Utc::now() - chrono::Duration::hours(2);
+        campaign.last_player_activity = chrono::Utc::now() - chrono::Duration::minutes(90);
         campaign.clocks.insert(
             "tide".into(),
             ghostlight_dungeon::domain::WorldClock {
@@ -7009,6 +7030,11 @@ mod tests {
                 progress: 0,
                 threshold: 4,
                 consequence: "the channel narrows".into(),
+                consequence_scope: ghostlight_dungeon::domain::WorldEventScope {
+                    institution_ids: vec!["channel-watch".into()],
+                    location_ids: vec!["room".into()],
+                    ..Default::default()
+                },
             },
         );
         let runtime = state
@@ -7026,12 +7052,12 @@ mod tests {
         .unwrap();
 
         let advanced = load_campaign(&runtime.store).unwrap();
-        assert_eq!(advanced.away_ticks_processed, 2);
-        assert_eq!(advanced.strategic_tick_count, 2);
-        assert_eq!(advanced.clocks["tide"].progress, 2);
+        assert_eq!(advanced.away_ticks_processed, 1);
+        assert_eq!(advanced.strategic_tick_count, 1);
+        assert_eq!(advanced.clocks["tide"].progress, 1);
         assert_eq!(
             advanced.world_time,
-            original_time + chrono::Duration::hours(12)
+            original_time + chrono::Duration::hours(6)
         );
         assert_eq!(advanced.actors["player"], original_player);
         let operator = state.mesh.operator_surface(campaign.id).unwrap();
@@ -7049,6 +7075,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let state = empty_app_state(dir.path());
         let mut campaign = seed("Player wait world");
+        add_aggregate_clock_witness(&mut campaign);
         let original_time = campaign.world_time;
         campaign.last_player_activity = chrono::Utc::now() - chrono::Duration::hours(4);
         campaign.away_ticks_processed = 3;
@@ -7061,6 +7088,11 @@ mod tests {
                 progress: 0,
                 threshold: 4,
                 consequence: "the settlement must choose".into(),
+                consequence_scope: ghostlight_dungeon::domain::WorldEventScope {
+                    institution_ids: vec!["channel-watch".into()],
+                    location_ids: vec!["room".into()],
+                    ..Default::default()
+                },
             },
         );
         let runtime = state

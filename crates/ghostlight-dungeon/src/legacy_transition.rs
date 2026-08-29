@@ -3410,6 +3410,7 @@ mod tests {
             resolution_policy: ResolutionPolicy::default(),
             resolution_pins: BTreeMap::new(),
             resolution_cover: None,
+            nemesis_attention_history: Vec::new(),
             strategic_tick_count: 0,
         }
     }

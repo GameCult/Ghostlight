@@ -9,6 +9,7 @@ pub mod consumer;
 pub mod d20;
 pub mod domain;
 pub mod elaboration;
+pub mod follow_through;
 pub mod gestalt;
 pub mod idunn_health;
 pub mod initiative;

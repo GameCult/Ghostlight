@@ -1126,6 +1126,7 @@ fn dynamics_campaign() -> ghostlight_dungeon::domain::Campaign {
         },
         resolution_pins: BTreeMap::new(),
         resolution_cover: None,
+        nemesis_attention_history: Vec::new(),
         strategic_tick_count: 0,
     };
     ghostlight_dungeon::resolution::ensure_agency_profiles(&mut campaign);

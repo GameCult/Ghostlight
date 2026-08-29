@@ -1237,6 +1237,20 @@ fn execute(
                             .insert((receipt.stage.clone(), receipt.snapshot_binding.clone()));
                     }
                 }
+                if !wave.cover.causal_follow_through.is_empty() {
+                    let expected_binding =
+                        crate::follow_through::nemesis_admission_binding(&campaign, &wave.cover)
+                            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+                    if !stage_bindings.contains(&(
+                        crate::follow_through::NEMESIS_STAGE.into(),
+                        expected_binding,
+                    )) {
+                        return Err(KernelError::Invalid(
+                            "resolution wave lacks the exact Nemesis receipt admitted for its causal agenda"
+                                .into(),
+                        ));
+                    }
+                }
                 for cell in &wave.cover.cells {
                     let binding = format!(
                         "campaign:{}:revision:{}:resolution:{}:cell:{}",
@@ -3843,6 +3857,26 @@ fn commit_strategic_tick(
 ) -> Result<CommandResult, KernelError> {
     crate::resolution::ensure_agency_profiles(&mut campaign);
     let previous_revision = campaign.revision;
+    if let Some(wave) = &resolution_wave {
+        for assignment in &wave.cover.causal_follow_through {
+            if campaign.nemesis_attention_history.iter().any(|record| {
+                record.anchor_reference == assignment.anchor_reference
+                    && record.responder_subject_id == assignment.responder_subject_id
+            }) {
+                return Err(KernelError::Invalid(
+                    "Nemesis attempted to serve an already committed causal attention window"
+                        .into(),
+                ));
+            }
+            campaign
+                .nemesis_attention_history
+                .push(crate::domain::NemesisAttentionRecord {
+                    anchor_reference: assignment.anchor_reference.clone(),
+                    responder_subject_id: assignment.responder_subject_id.clone(),
+                    served_world_revision: previous_revision.saturating_add(1),
+                });
+        }
+    }
     campaign.revision += 1;
     let committed_at = Utc::now();
     let external_authorities = store
@@ -4594,6 +4628,7 @@ pub(crate) mod tests {
             resolution_policy: Default::default(),
             resolution_pins: BTreeMap::new(),
             resolution_cover: None,
+            nemesis_attention_history: Vec::new(),
             strategic_tick_count: 0,
         }
     }
@@ -10102,6 +10137,113 @@ pub(crate) mod tests {
         assert_eq!(store.keys("cell_appraisal.v1").unwrap().len(), cell_count);
         assert_eq!(store.keys("resolution_plan_receipt.v1").unwrap().len(), 1);
         assert_eq!(store.keys("strategic_tick.v1").unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn kernel_rejects_a_forged_nemesis_agenda_and_commits_the_exact_receipted_one() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(dir.path().join("campaign.cc")).unwrap();
+        let kernel = WorldKernel::start(store.clone());
+        let mut seed = crate::resolution::tests::campaign(1, 1);
+        let responder = "faction-0000";
+        seed.agency_profiles
+            .get_mut(responder)
+            .unwrap()
+            .information_channels
+            .insert("public-court".into());
+        seed.events.push(crate::domain::Event {
+            id: "court-accusation".into(),
+            at: seed.world_time,
+            kind: "public_accusation".into(),
+            summary: "The court accuses Faction 0 of concealing the winter tally.".into(),
+            actor_ids: vec![],
+            institution_ids: vec![],
+            gestalt_ids: vec![],
+            location_ids: vec![],
+            public_channels: vec!["public-court".into()],
+        });
+        kernel
+            .command(WorldCommand::CreateCampaign {
+                campaign: seed.clone(),
+                evidence_receipts: vec![],
+                model_stage_receipts: vec![],
+            })
+            .await
+            .unwrap();
+        let persisted = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        let mut wave = inaction_wave(&persisted, &store);
+        wave.cover.causal_follow_through = vec![crate::domain::CausalFollowThroughAssignment {
+            anchor_reference: "event:court-accusation".into(),
+            responder_subject_id: responder.into(),
+        }];
+
+        let error = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: 0,
+                source: TickSource::Scheduler,
+                plan: None,
+                model_receipt_hash: Some(format!("sha256:{}", "9".repeat(64))),
+                resolution_wave: Some(wave.clone()),
+            })
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("exact Nemesis receipt"));
+        let unchanged = store
+            .load::<Campaign>("campaign.v1", &seed.id.to_string())
+            .unwrap()
+            .unwrap()
+            .1;
+        assert_eq!(unchanged.revision, 0);
+        assert!(unchanged.nemesis_attention_history.is_empty());
+
+        let mut receipt = resolution_stage(
+            &wave.cover.cells[0].id,
+            &persisted,
+            crate::follow_through::NEMESIS_STAGE,
+            'z',
+        );
+        receipt.snapshot_binding =
+            crate::follow_through::nemesis_admission_binding(&persisted, &wave.cover).unwrap();
+        store
+            .insert(
+                "persona_stage_receipt.v1",
+                "ghostlight.persona_stage_receipt.v1",
+                receipt.storage_key(),
+                &receipt,
+            )
+            .unwrap();
+        wave.model_receipt_hashes
+            .push(receipt.storage_key().to_owned());
+        let result = kernel
+            .command(WorldCommand::AdvanceStrategicTick {
+                expected_revision: 0,
+                source: TickSource::Scheduler,
+                plan: None,
+                model_receipt_hash: Some(format!("sha256:{}", "9".repeat(64))),
+                resolution_wave: Some(wave),
+            })
+            .await
+            .unwrap();
+        let CommandResult::Committed { campaign, .. } = result else {
+            panic!()
+        };
+        assert_eq!(campaign.nemesis_attention_history.len(), 1);
+        assert_eq!(
+            campaign.nemesis_attention_history[0].anchor_reference,
+            "event:court-accusation"
+        );
+        assert_eq!(
+            campaign.nemesis_attention_history[0].responder_subject_id,
+            responder
+        );
+        assert_eq!(
+            campaign.nemesis_attention_history[0].served_world_revision,
+            1
+        );
     }
 
     #[tokio::test]

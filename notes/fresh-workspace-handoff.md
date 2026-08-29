@@ -987,17 +987,44 @@ and Eryn Tal. Citation resolution, temporal bounds, player immutability,
 manifest integrity, archive integrity, and live-service isolation otherwise
 pass. Editorial and grounding acceptance are terminally failed for run 39.
 
+The current uncommitted cut names Nemesis as the causal-attention owner.
+Nemesis may bind exact committed pressure anchors to eligible autonomous
+decision owners already represented in the frozen cover, or return an empty
+judgment; it cannot choose their actions or outcomes. Deterministic scheduler
+admission enforces visibility, simulation authority, player exclusion, cell
+quota, and checkpoint binding. `WorldKernel` requires the exact admitted
+Nemesis receipt before commit and persists the served anchor/responder pair so
+durable continuation suppresses replay. The outcome resolver receives the
+exact assigned causal account as context rather than a generic demand for
+drama. The action-effect verifier returns one bounded complete mismatch set for
+one private Interpreter correction.
+
+Newspaper grounding repair is a `ModelAgentTool` transaction over the same
+frozen desk and complete finding set. One bounded pass may replace only an
+exact uniquely occurring phrase named by a finding or delete its flagged
+article, then must undergo fresh whole-page verification. Focused tests pass
+for exact-receipt kernel admission, exact causal outcome context, legitimate
+empty judgment, durable replay suppression, narrow one-pass exact-phrase
+grounding repair, and bounded complete mismatch feedback. Local package
+verification is complete: all 464 library tests pass; 42 of 44 binary tests
+passed in the package run, and the two fixture-only failures caused by clocks
+binding the externally controlled player both pass after the shared fixture was
+corrected to use one non-active aggregate institution as exact observable
+consequence scope. The cut is not yet committed, pushed, provider-proven, or
+editorially accepted; run 39's independent FAIL verdicts remain authoritative.
+
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Before editing code, map and cut the missing causal follow-through and
-   outcome ownership upstream of the newsroom, using the independent review
-   findings as exact falsifiers. Separately map the grounding reconciliation
-   owner that must reject completion inflation and unsupported identity
-   attributes before publication. Do not add a newsroom spice prompt rule.
-   Preserve the immutable run-38 and run-39 archives, stopped run 23, exact
-   acceptance conditions, and unchanged live daemons.
+1. Commit and push the locally verified Nemesis, causal-context,
+   complete-mismatch, and grounding-reconciliation source.
+2. Launch exact-source run 40 as a continuation from immutable run 39 at
+   revision 21 without replaying prior waves. Submit the strongest unedited
+   run-40 issue plus final digest to fresh independent editorial and provenance
+   review. Preserve run 39's FAIL verdicts until those reviews reverse them;
+   preserve immutable runs 38/39, stopped run 23, exact acceptance conditions,
+   and unchanged live daemons.
 3. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
 4. Prove one consumer-owned effect crosses that public API, changes two foreign

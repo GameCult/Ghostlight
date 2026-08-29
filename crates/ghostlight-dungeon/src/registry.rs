@@ -754,15 +754,37 @@ mod tests {
     impl ModelPort for RejectingRegistryNewspaperModel {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             if request.stage == "newspaper_copy_desk" {
+                let claim = if request
+                    .lived_stream
+                    .contains("three granary auditors of acting as one accused person")
+                {
+                    "three granary auditors of acting as one accused person"
+                } else {
+                    "three granary auditors of being one witch in a long coat"
+                };
                 return Ok(serde_json::json!({
                     "accepted":false,
                     "assessment":"The article states an outcome that its source does not support.",
                     "findings":[{
                         "article_index":0,
                         "category":"unsupported_fact",
-                        "claim_or_phrase":"the allegation is proven",
+                        "claim_or_phrase":claim,
                         "reason":"The cited report records only an accusation."
                     }]
+                })
+                .to_string());
+            }
+            if request.stage == "newspaper_grounding_reconciliation_agent_action" {
+                return Ok(serde_json::json!({
+                    "tool":"submit_edits",
+                    "replacements":[{
+                        "article_index":0,
+                        "field":"paragraph",
+                        "paragraph_index":0,
+                        "expected_phrase":"three granary auditors of being one witch in a long coat",
+                        "replacement":"three granary auditors of acting as one accused person"
+                    }],
+                    "delete_article_indices":[]
                 })
                 .to_string());
             }
@@ -831,6 +853,7 @@ mod tests {
             resolution_policy: Default::default(),
             resolution_pins: BTreeMap::new(),
             resolution_cover: None,
+            nemesis_attention_history: Vec::new(),
             strategic_tick_count: 0,
         }
     }
@@ -1650,7 +1673,7 @@ mod tests {
         let failure = error
             .downcast_ref::<crate::newspaper::WorldNewspaperCompositionFailure>()
             .expect("registry must preserve the typed terminal editorial failure");
-        assert_eq!(failure.model_receipts.len(), 9);
+        assert_eq!(failure.model_receipts.len(), 4);
         let stored_after_rejection = runtime.store.keys("persona_stage_receipt.v1").unwrap();
         let newly_observed_failure_receipts = failure
             .model_receipts

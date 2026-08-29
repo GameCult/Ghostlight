@@ -173,6 +173,8 @@ exact campaign revision
   -> flash-model six-axis resolution demand
   -> connected agency graph + budget/pins/leases/detail debt
   -> cohesive or arena simulation-cell cover
+  -> scheduler-owned Nemesis agent binds exact committed event, pressure, or clock anchors to eligible decision owners inside that cover
+  -> deterministic agenda admission checks anchor visibility, simulation authority, player exclusion, and per-cell decision quota
   -> one private Projector/Persona/Interpreter membrane per cell
   -> Interpreter agent submits or incrementally edits one private exact-decision draft
   -> deterministic draft compiler checks exact ownership, permissions, topology, and bounds
@@ -189,17 +191,74 @@ exact campaign revision
   -> one atomic campaign/event/news/cover/appraisal commit
 ```
 
+### Causal follow-through (Nemesis)
+
+- **Owner:** the strategic scheduler owns which already-committed consequence
+  deserves another decision window. The bounded model agent serving that
+  decision is Nemesis. It does not own what any subject decides.
+- **Inputs:** one frozen campaign revision, its committed public events and
+  active pressures and clock progress, the durable Nemesis attention history,
+  the deterministic resolution cover, exact perception routes, simulation
+  eligibility, player-control boundary, and each cell's action quota.
+- **Output:** one bounded follow-through agenda binding exact event, pressure,
+  or clock anchors to exact eligible decision owners already represented by the
+  cover, plus the model receipt rebound to the exact campaign snapshot and
+  admitted agenda.
+  The agenda is scheduler state checkpointed with that cover, not canonical
+  world state. An empty agenda is a valid Nemesis judgment.
+- **Derived state:** an assigned owner receives the exact anchor in its
+  permitted cell slice, takes precedence over ordinary rotation for that wave,
+  and supplies that anchor's exact current committed account to the action's
+  private outcome context. The anchor is context, not new mutation authority.
+  Unassigned recent events remain an ambient perception projection.
+- **Forbidden writers:** the follow-through agent cannot emit events, mutate
+  pressures, choose an action or outcome, move a subject, rewrite a cell
+  Persona, or touch newspaper copy. The outcome organ remains the sole
+  assessor of selected attempts; `WorldKernel` remains the sole world and
+  event writer and the sole writer of durable served-window records.
+- **Shared paths:** first execution and checkpoint resume consume the identical
+  accepted agenda and exact receipt binding. `WorldKernel` independently
+  requires that exact admitted receipt before it commits a nonempty causal
+  agenda, then records each exact anchor/responder pair atomically with the
+  wave. Local cell verification and final wave admission both check that
+  required owners were considered without requiring them to act rather than
+  choose an attributed inaction. Later discovery excludes an already served
+  exact pair; a clock's new progress value creates a new anchor.
+- **Cut line:** blind tick rotation no longer decides a slot already occupied
+  by an admitted causal assignee, and the global last-twelve-event truncation
+  cannot hide that assignee's exact anchor. No prompt downstream may compensate
+  for a missing scheduler decision window. `response_role` and a claimed
+  accepted-receipt ID are not part of the admission: the scheduler admits only
+  the exact anchor/responder assignment, and receipt identity comes from the
+  actual model invocation.
+- **Verification layer:** focused tests prove paged retrieval beyond the initial
+  event viewport, valid empty judgment, exact-pair replay suppression, player
+  exclusion, exact owner consideration, exact anchor citation, outcome context
+  containing only the assigned anchor and its committed account, and kernel
+  rejection of a forged agenda followed by atomic acceptance and served-window
+  recording for the exact receipted agenda. Deterministic validators reject
+  unknown anchors, ineligible or duplicate responders, over-quota agendas,
+  missing exact receipts, and stale anchor accounts. A strategic smoke remains
+  the whole-system verification that named competing decisions produce
+  committed material outcomes before editorial quality is assessed.
+
 The model owns no tick mutation. A provider failure or invalid proposal leaves
 the campaign revision and world time untouched. Background inference checks
 live-turn pressure before launch and again before commit; return catch-up uses
 the same command path with player-turn priority for fictional commands.
 
-The effect and outcome verdict schemas make semantic coherence structural:
-`match` carries no mismatch fields, while `mismatch` requires its exact kind or
-repair text. Repair prose is ephemeral diagnostic input, not world state; local
-code bounds it before correction and never publishes private cell choices to a
-player error surface. A rejected wave returns one spoiler-free message while
-its exact diagnostic remains operator-only.
+The effect and outcome verdict schemas make semantic coherence structural. Each
+candidate action receives its own parallel effect-verifier call. Its schema and
+local validator both require one index-zero verdict: `match` with no findings,
+or `mismatch` with one through six findings whose mismatch kinds are distinct
+and whose concrete repair guidance is nonempty, trimmed, and at most 240
+characters. The prompt asks for that complete bounded set and the request's
+1,200-token ceiling can carry the full schema maximum. Every returned finding
+enters one subject-scoped Interpreter repair. Repair prose is ephemeral
+diagnostic input, not world state; no verifier chooses the replacement or gains
+commit authority, and private cell choices never reach a player error surface.
+A rejected wave returns one spoiler-free message while its exact diagnostic
+remains operator-only.
 
 The Interpreter is a bounded model agent over a private workbench. Every
 model-agent workbench owns the action schema legal at its current state; the
@@ -1222,10 +1281,28 @@ the front-page budget, and reader-safe presentation labels. Accepted citations
 are then lowered back to exact canonical source-news and event IDs for the
 typed issue and audit. A separate copy-desk stage may reject unsupported facts,
 unearned attribution, procedural leakage, or mechanical state-ledger copy but
-cannot rewrite it. Two same-desk editor corrections are allowed. After both
-fail, the composition owner may remove every flagged article and must submit
-the surviving page to a fresh whole-page copy-desk review; an empty or rejected
-page returns no edition. The typed issue retains exact event IDs, channels,
+cannot rewrite it. Its desk includes each account's typed assertion status and
+the exact supported identity attributes for every named person, including an
+explicitly empty set when canon supplies none. A rejected draft enters one
+cheap grounding-reconciliation agent over the same frozen page, desk, and
+complete typed finding set. Its sole one-step command is one transactional edit
+batch: replace an exact finding phrase in one named headline, deck, dateline,
+or paragraph, or delete a finding-bearing article when its story cannot be
+supported. Deterministic admission requires every finding to be addressed,
+requires each replacement phrase to occur exactly once in its named field,
+forbids duplicate targets and simultaneous edit/delete of one article, and
+keeps citations, surviving article selection and order, sections, bylines, and
+all unaffected text frozen. If the lead is deleted, owner code promotes the
+next article to the front page. The agent cannot request a new simulation or
+source packet, submit a replacement `EditorialPageDraft`, or act as a second
+editor. The same copy desk rechecks the complete repaired page. A rejected
+repair, an empty surviving page, or a page rejected on recheck returns no
+edition; there is no further repair loop. Thus the editor owns initial copy,
+the reconciler owns only this exact repair transaction, the copy desk owns
+grounding judgment, and none owns source facts or world state. Focused tests
+cover exact same-desk repair with source identity preserved, bounded article
+deletion with survivor recheck, and terminal rejection after the single repair
+step. The typed issue retains exact event IDs, channels,
 reliability, source revision, and model receipts as audit data. Its internal
 issue time is derived from the latest cited publication record without exposing
 that clock to editorial inference. Terminally rejected attempts semantically

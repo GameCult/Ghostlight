@@ -148,6 +148,13 @@ pub struct CellPerceivedEventSlice {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct CellCausalFollowThroughSlice {
+    pub anchor_reference: String,
+    pub responder_subject_id: String,
+    pub summary: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct PermittedCellSlice {
     pub cell_id: String,
     pub mode: crate::domain::SimulationCellMode,
@@ -159,6 +166,10 @@ pub struct PermittedCellSlice {
     pub shared_knowledge: BTreeSet<String>,
     pub shared_capabilities: BTreeSet<String>,
     pub perceived_events: Vec<CellPerceivedEventSlice>,
+    /// Scheduler-selected historical or durable pressure that owns an exact
+    /// response window in this cell. It is context and provenance, never a
+    /// prescribed action or outcome.
+    pub causal_follow_through: Vec<CellCausalFollowThroughSlice>,
     pub world_clock_pressure: Vec<String>,
     /// Canonical names for the exact current locations already represented by
     /// this slice. This is identity context only; it grants no movement,
@@ -432,8 +443,14 @@ struct CellEffectVerification {
 struct CellActionEffectVerdict {
     action_index: usize,
     result: CellEffectMatchResult,
-    mismatch_kind: Option<CellEffectMismatchKind>,
-    repair_guidance: Option<String>,
+    findings: Vec<CellEffectMismatchFinding>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct CellEffectMismatchFinding {
+    mismatch_kind: CellEffectMismatchKind,
+    repair_guidance: String,
 }
 
 struct CellActionVerificationRun {
@@ -473,7 +490,7 @@ enum CellEffectMatchResult {
     Mismatch,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
 enum CellEffectMismatchKind {
     SubjectSwap,
@@ -503,7 +520,7 @@ const CELL_PROJECTION_OUTPUT_CONTRACT: &str = r#"{
   ]
 }"#;
 
-const CELL_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between an Interpreter and the world kernel. Judge this one candidate action's typed effects as one composition against the exact attributed subject's choice in the Persona turn. Structural permissions were already checked. Use exact_subject_permission as the sole map of canonical subjects, locations, and destinations for this actor. canonical_locations is sibling identity context: compare it with exact_subject_permission.location_ids, and never treat a name as granting locality, co-presence, reach, publication, movement, target, effect, or mutation authority. A matching current-location name denotes that place or its unnamed local public, not an omitted canonical subject. activity_targets supplies each canonical target's exact name and current locations; reachable_destinations supplies exact actor-movement destination IDs and names; migration_destinations supplies exact population names and locations. Preserve every distinct affirmative means the subject actually chooses. Do not invent another means from a purpose, refusal, restraint, condition to preserve, desired social norm, or hoped-for state. Keeping someone's choice open, declining to coerce them, leaving state unchanged, respecting autonomy, or waiting for another subject's decision requires no additional typed effect unless the Persona separately chooses an observable act to do it. Communication can therefore be faithfully combined with restraint without implying coordinate, recruit, posture, or pressure effects. Reject effect omission only when the Persona explicitly undertakes another observable act. When one choice contains relocation, an activity at the subject's exact snapshot location occurs before relocation and an activity at the exact admitted destination occurs after arrival; activities within one location phase are an unordered atomic set. Array and object field order are not chronology. When the Persona chooses to go to a canonical target, actor_move must use that target's actual different reachable location. If actor and target are already co-located, reject movement to some other place; a local communicate, coordinate, or prepare may encode the stated attempt instead. A place named only in prose and absent from reachable_destinations and migration_destinations is local texture inside the supplied activity location; walking to it cannot justify rejecting a concrete local prepare or repair as omitted travel. Return exactly one verdict with action_index 0. A gestalt_migration means that exact population leaf chooses to travel together to the supplied destination within the strategic horizon; loading, waiting, giving away passage, sending only some other subject, or merely considering travel does not entail it. Conversely, when the population chooses to board, depart, or relocate together, reject gestalt_activity prepare that erases the chosen journey. Gestalt migration never entails that a named member moved. A member_migration means that named member personally chooses to travel to the destination. Boarding a transport whose supplied destination is unambiguous in the lived stream is a chosen journey; the Persona need not repeat the place name. Giving away a berth, sending somebody else, waiting, or merely considering travel does not entail migration. Conversely, when the member chooses to board, depart, travel, or join the supplied destination, reject member_activity that reduces that commitment to preparing, queuing, or approaching. A member_activity belongs only to that exact named person's stated attempt; it cannot be reassigned to their population. Communication targets must be the exact canonical subjects actually addressed in the Persona turn. An exact activity_targets entry is sufficient authority to attempt direct communication with that named subject; allowed_persistent_publication_channels governs only durable public publication and is never an additional requirement for direct contact. One communicate activity is also the complete supported composition when the same utterance addresses exact canonical targets and an unnamed public audience: target_subject_ids names the canonical addressees and candidate_action.public_channels names the simultaneous public reach. A call to unnamed people at a canonical location is such public or local audience, not a missing activity target. Do not demand a second targetless communicate for that same utterance. Use a targetless communicate only when the communication has no exact canonical addressee. Internal-population coordination is owner-specific: apply only coordination_target_contract.rule for this exact attributed subject, never a rule belonging to another subject kind. If the Persona addresses an unnamed clerk, dock master, passerby, or local environment, reject any effect that substitutes a containing population, related institution, or merely permitted ID. A targetless local investigate at the subject's exact current or paired movement destination is the faithful supported shape for seeking information from an unnamed role or the environment; its empty target list is intentional and must not itself be grounds for rejection. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. An activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, acceptance, or target response. Reject omissions, reversals, subject swaps, wrong destinations, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object. A faithful verdict uses result \"match\", null mismatch_kind, and null repair_guidance. Otherwise use result \"mismatch\", exactly one mismatch_kind (\"subject_swap\", \"effect_omission\", \"effect_reversal\", \"target_substitution\", \"invented_outcome\", or \"wrong_effect_kind\"), and one concrete repair_guidance sentence of at most 240 characters. Name the exact omitted choice, substituted target, or wrong destination. When no supplied typed effect composition can faithfully encode the choice, explicitly say to remove the action rather than downgrade or redirect it. Shape: {\"verdicts\":[{\"action_index\":0,\"result\":\"match\",\"mismatch_kind\":null,\"repair_guidance\":null}]}";
+const CELL_EFFECT_VERIFIER_INSTRUCTIONS: &str = "You are the private semantic verifier between an Interpreter and the world kernel. Judge this one candidate action's typed effects as one composition against the exact attributed subject's choice in the Persona turn. Structural permissions were already checked. Use exact_subject_permission as the sole map of canonical subjects, locations, and destinations for this actor. canonical_locations is sibling identity context: compare it with exact_subject_permission.location_ids, and never treat a name as granting locality, co-presence, reach, publication, movement, target, effect, or mutation authority. A matching current-location name denotes that place or its unnamed local public, not an omitted canonical subject. activity_targets supplies each canonical target's exact name and current locations; reachable_destinations supplies exact actor-movement destination IDs and names; migration_destinations supplies exact population names and locations. Preserve every distinct affirmative means the subject actually chooses. Do not invent another means from a purpose, refusal, restraint, condition to preserve, desired social norm, or hoped-for state. Keeping someone's choice open, declining to coerce them, leaving state unchanged, respecting autonomy, or waiting for another subject's decision requires no additional typed effect unless the Persona separately chooses an observable act to do it. Communication can therefore be faithfully combined with restraint without implying coordinate, recruit, posture, or pressure effects. Reject effect omission only when the Persona explicitly undertakes another observable act. When one choice contains relocation, an activity at the subject's exact snapshot location occurs before relocation and an activity at the exact admitted destination occurs after arrival; activities within one location phase are an unordered atomic set. Array and object field order are not chronology. When the Persona chooses to go to a canonical target, actor_move must use that target's actual different reachable location. If actor and target are already co-located, reject movement to some other place; a local communicate, coordinate, or prepare may encode the stated attempt instead. A place named only in prose and absent from reachable_destinations and migration_destinations is local texture inside the supplied activity location; walking to it cannot justify rejecting a concrete local prepare or repair as omitted travel. Return exactly one verdict with action_index 0. A gestalt_migration means that exact population leaf chooses to travel together to the supplied destination within the strategic horizon; loading, waiting, giving away passage, sending only some other subject, or merely considering travel does not entail it. Conversely, when the population chooses to board, depart, or relocate together, reject gestalt_activity prepare that erases the chosen journey. Gestalt migration never entails that a named member moved. A member_migration means that named member personally chooses to travel to the destination. Boarding a transport whose supplied destination is unambiguous in the lived stream is a chosen journey; the Persona need not repeat the place name. Giving away a berth, sending somebody else, waiting, or merely considering travel does not entail migration. Conversely, when the member chooses to board, depart, travel, or join the supplied destination, reject member_activity that reduces that commitment to preparing, queuing, or approaching. A member_activity belongs only to that exact named person's stated attempt; it cannot be reassigned to their population. Communication targets must be the exact canonical subjects actually addressed in the Persona turn. An exact activity_targets entry is sufficient authority to attempt direct communication with that named subject; allowed_persistent_publication_channels governs only durable public publication and is never an additional requirement for direct contact. One communicate activity is also the complete supported composition when the same utterance addresses exact canonical targets and an unnamed public audience: target_subject_ids names the canonical addressees and candidate_action.public_channels names the simultaneous public reach. A call to unnamed people at a canonical location is such public or local audience, not a missing activity target. Do not demand a second targetless communicate for that same utterance. Use a targetless communicate only when the communication has no exact canonical addressee. Internal-population coordination is owner-specific: apply only coordination_target_contract.rule for this exact attributed subject, never a rule belonging to another subject kind. If the Persona addresses an unnamed clerk, dock master, passerby, or local environment, reject any effect that substitutes a containing population, related institution, or merely permitted ID. A targetless local investigate at the subject's exact current or paired movement destination is the faithful supported shape for seeking information from an unnamed role or the environment; its empty target list is intentional and must not itself be grounds for rejection. An institution posture must express its stated commitment or withholding. A gestalt pressure resolution must be causally supported by its stated attempt, and an added pressure must be a resulting unresolved condition rather than completed-action prose. An activity records only the exact attempt—never successful preparation, coordination, discovery, recruitment, obstruction, exchange, delivery, persuasion, acceptance, or target response. Reject omissions, reversals, subject swaps, wrong destinations, wishful outcomes, and effects that the Persona did not choose. Be concise. Return exactly one JSON object. A faithful verdict uses result \"match\" and an empty findings array. Otherwise use result \"mismatch\" and return the complete bounded set of distinct mismatches you can identify in this same action; do not reveal one defect per pass. Every finding needs mismatch_kind (\"subject_swap\", \"effect_omission\", \"effect_reversal\", \"target_substitution\", \"invented_outcome\", or \"wrong_effect_kind\") and one concrete repair_guidance sentence of at most 240 characters. Name the exact omitted choice, substituted target, or wrong destination. When no supplied typed effect composition can faithfully encode the choice, explicitly say to remove the action rather than downgrade or redirect it. Shape: {\"verdicts\":[{\"action_index\":0,\"result\":\"match\",\"findings\":[]}]}";
 
 const CELL_ACTIVITY_CLASSIFICATION_GUIDANCE: &str = "Classify the chosen means by what the subject actually does. communicate means speak, send, offer, ask, or notify; coordinate means arrange a joint attempt; investigate means inspect, examine, diagnose, measure, test, or assess an existing condition in order to learn; recruit means invite; trade means offer an exchange; obstruct means attempt interference. prepare means materially repair, build, arrange, or ready a bounded resource, capability, or plan. Merely inspecting a handcart, regulator, record, route, patient, or other existing condition before deciding what to do is investigate, not prepare. Only actual repair or readiness work is prepare.";
 
@@ -878,6 +895,7 @@ fn cell_projector_context(slice: &PermittedCellSlice) -> serde_json::Value {
         "shared_knowledge": slice.shared_knowledge,
         "shared_capabilities": slice.shared_capabilities,
         "perceived_events": slice.perceived_events,
+        "causal_follow_through": slice.causal_follow_through,
         "world_clock_pressure": slice.world_clock_pressure,
         "canonical_locations": slice.canonical_locations,
         "detail_focus_subject_id": slice.detail_focus_subject_id,
@@ -896,6 +914,7 @@ fn cell_interpreter_context(
         "resolution_epoch": slice.resolution_epoch,
         "canonical_locations": slice.canonical_locations,
         "detail_focus_subject_id": slice.detail_focus_subject_id,
+        "causal_follow_through": slice.causal_follow_through,
         "max_actions": slice.max_actions,
         "exact_permissions": slice.constituents.iter().filter(|subject| active_subject_ids.contains(&subject.subject_id)).map(constituent_permission_context).collect::<Vec<_>>(),
         "member_permissions": slice.member_exceptions.iter().filter(|member| active_subject_ids.contains(&member.subject_id)).map(member_permission_context).collect::<Vec<_>>(),
@@ -1435,24 +1454,23 @@ impl CellInterpreterWorkbench {
             if matches!(verification.verdict.result, CellEffectMatchResult::Match) {
                 self.accepted_verifier_bindings.insert(binding);
             } else {
-                let mismatch_kind = verification
+                let repair_summary = verification
                     .verdict
-                    .mismatch_kind
-                    .clone()
-                    .expect("validated mismatch requires a kind");
-                let repair_guidance = verification
-                    .verdict
-                    .repair_guidance
-                    .clone()
-                    .expect("validated mismatch requires repair guidance");
+                    .findings
+                    .iter()
+                    .map(|finding| finding.repair_guidance.as_str())
+                    .collect::<Vec<_>>()
+                    .join(" ");
                 verification.output.receipt.validation_result = "semantic_invalid".into();
                 verification.output.receipt.local_validation_error =
-                    Some(repair_guidance.chars().take(1_000).collect());
-                rejected.push(CellInterpreterEffectFinding {
-                    subject_id: action.subject_id.clone(),
-                    mismatch_kind,
-                    repair_guidance,
-                });
+                    Some(repair_summary.chars().take(1_000).collect());
+                rejected.extend(verification.verdict.findings.iter().map(|finding| {
+                    CellInterpreterEffectFinding {
+                        subject_id: action.subject_id.clone(),
+                        mismatch_kind: finding.mismatch_kind.clone(),
+                        repair_guidance: finding.repair_guidance.clone(),
+                    }
+                }));
             }
             receipts.push(verification.output.receipt.clone());
         }
@@ -1651,9 +1669,15 @@ impl CellProjectionEngine {
                 .await?;
             let projector_context = serde_json::to_string(&cell_projector_context(&slice))?;
             let visible_stimulus = slice
-                .perceived_events
+                .causal_follow_through
                 .iter()
-                .map(|event| {
+                .map(|focus| {
+                    format!(
+                        "Causal response window for {} [{}]: {}",
+                        focus.responder_subject_id, focus.anchor_reference, focus.summary
+                    )
+                })
+                .chain(slice.perceived_events.iter().map(|event| {
                     format!(
                         "Perceived by [{}]: {}",
                         event
@@ -1664,12 +1688,12 @@ impl CellProjectionEngine {
                             .join(", "),
                         event.summary
                     )
-                })
+                }))
                 .collect::<Vec<_>>()
                 .join("\n");
             let mode_guidance = cell_projector_mode_guidance(&slice.mode);
             let mode_guidance = format!(
-                "{mode_guidance} Treat already_committed_posture as an institutional course already in force, not a pressure, option, or fresh decision. Continuing it is holding steady; only a materially different commitment is a new posture choice. Each perceived event names the exact constituents that can perceive it; do not teach it to anyone else. Only supplied constituents and member_exceptions may own an internal perspective or choice. A person merely mentioned in an event is external observation when absent from those lists: never voice them. Every supplied member_exception was selected because that person has an actionable decision in this horizon. Render each selected person explicitly by name, with only their own footing and choices."
+                "{mode_guidance} Treat already_committed_posture as an institutional course already in force, not a pressure, option, or fresh decision. Continuing it is holding steady; only a materially different commitment is a new posture choice. Each perceived event names the exact constituents that can perceive it; do not teach it to anyone else. A causal response window means the scheduler selected that exact committed anchor as decision-relevant for that exact responder; render the responder confronting it without prescribing action, emotion, success, or another subject's reply. Only supplied constituents and member_exceptions may own an internal perspective or choice. A person merely mentioned in an event is external observation when absent from those lists: never voice them. Every supplied member_exception was selected because that person has an actionable decision in this horizon. Render each selected person explicitly by name, with only their own footing and choices."
             );
             let required_projection_subject_ids = required_projection_subject_ids(&slice);
             let word_budget =
@@ -1824,6 +1848,9 @@ impl CellProjectionEngine {
             "{permission_guidance} A targetless local obstruct at the exact supplied location records attempted interference with unnamed infrastructure, terrain, traffic, or another local feature. It records only the source's attempt—never damage, disruption, or a target response. Never substitute a merely permitted canonical subject for that unnamed local feature."
         );
         let permission_guidance = format!(
+            "{permission_guidance} causal_follow_through assigns a committed anchor to one exact decision owner without prescribing their choice. If that owner acts in response, include the supplied anchor_reference in state_references so the causal basis survives admission. An attributed inaction remains legal and needs no invented effect."
+        );
+        let permission_guidance = format!(
             "{permission_guidance} Campaign policy is a hard output boundary, not actor knowledge. Emit no action, inaction rationale, pressure, migration, posture, or activity that introduces a line topic, depicts a veil topic on-screen, or introduces an ask_first topic. Never reveal boundary attribution. CAMPAIGN POLICY: {campaign_policy}"
         );
         let instructions = build_interpreter_prompt(&InterpreterPrompt {
@@ -1954,7 +1981,7 @@ async fn run_cell_effect_verifier_wave(
             output_schema: Some(verifier_schema.clone()),
             source_receipt_ids: source_receipt_ids.to_vec(),
             temperature: Some(0.0),
-            max_output_tokens: Some(192),
+            max_output_tokens: Some(1_200),
         };
         let model = model.clone();
         jobs.spawn(async move {
@@ -2070,20 +2097,29 @@ fn validate_effect_verification(
                 "cell effect verifier returned an incoherent verdict for action {expected_index}"
             ));
         }
-        match (
-            &verdict.result,
-            &verdict.mismatch_kind,
-            &verdict.repair_guidance,
-        ) {
-            (CellEffectMatchResult::Match, None, None) => {}
-            (CellEffectMatchResult::Mismatch, Some(_), Some(guidance))
-                if !guidance.trim().is_empty() =>
+        match &verdict.result {
+            CellEffectMatchResult::Match if verdict.findings.is_empty() => {}
+            CellEffectMatchResult::Mismatch
+                if !verdict.findings.is_empty()
+                    && verdict.findings.len() <= 6
+                    && verdict.findings.iter().all(|finding| {
+                        !finding.repair_guidance.trim().is_empty()
+                            && finding.repair_guidance.trim() == finding.repair_guidance
+                            && finding.repair_guidance.chars().count() <= 240
+                    })
+                    && verdict
+                        .findings
+                        .iter()
+                        .map(|finding| &finding.mismatch_kind)
+                        .collect::<BTreeSet<_>>()
+                        .len()
+                        == verdict.findings.len() =>
             {
-                rejected.push(expected_index)
+                rejected.push(expected_index);
             }
             _ => {
                 return Err(anyhow!(
-                    "cell effect verifier returned an incoherent result or repair guidance for action {expected_index}"
+                    "cell effect verifier returned an incoherent result or findings set for action {expected_index}"
                 ));
             }
         }
@@ -2112,7 +2148,7 @@ fn cell_effect_verifier_schema(action_count: usize) -> Result<serde_json::Value>
             {
                 "type":"object",
                 "additionalProperties":false,
-                "required":["action_index", "result", "mismatch_kind", "repair_guidance"],
+                "required":["action_index", "result", "findings"],
                 "properties":{
                     "action_index":{
                         "type":"integer",
@@ -2120,14 +2156,13 @@ fn cell_effect_verifier_schema(action_count: usize) -> Result<serde_json::Value>
                         "maximum":action_count - 1
                     },
                     "result":{"const":"match"},
-                    "mismatch_kind":{"type":"null"},
-                    "repair_guidance":{"type":"null"}
+                    "findings":{"type":"array", "maxItems":0}
                 }
             },
             {
                 "type":"object",
                 "additionalProperties":false,
-                "required":["action_index", "result", "mismatch_kind", "repair_guidance"],
+                "required":["action_index", "result", "findings"],
                 "properties":{
                     "action_index":{
                         "type":"integer",
@@ -2135,19 +2170,32 @@ fn cell_effect_verifier_schema(action_count: usize) -> Result<serde_json::Value>
                         "maximum":action_count - 1
                     },
                     "result":{"const":"mismatch"},
-                    "mismatch_kind":{
-                        "enum":[
-                            "subject_swap",
-                            "effect_omission",
-                            "effect_reversal",
-                            "target_substitution",
-                            "invented_outcome",
-                            "wrong_effect_kind"
-                        ]
-                    },
-                    "repair_guidance":{
-                        "type":"string",
-                        "minLength":1
+                    "findings":{
+                        "type":"array",
+                        "minItems":1,
+                        "maxItems":6,
+                        "items":{
+                            "type":"object",
+                            "additionalProperties":false,
+                            "required":["mismatch_kind", "repair_guidance"],
+                            "properties":{
+                                "mismatch_kind":{
+                                    "enum":[
+                                        "subject_swap",
+                                        "effect_omission",
+                                        "effect_reversal",
+                                        "target_substitution",
+                                        "invented_outcome",
+                                        "wrong_effect_kind"
+                                    ]
+                                },
+                                "repair_guidance":{
+                                    "type":"string",
+                                    "minLength":1,
+                                    "maxLength":240
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -2480,6 +2528,24 @@ fn validate_cell_action(
         return Err(anyhow!(
             "action for subject {} requires non-empty intent and intended_effect",
             action.subject_id
+        ));
+    }
+    let required_causal_references = slice
+        .causal_follow_through
+        .iter()
+        .filter(|focus| focus.responder_subject_id == action.subject_id)
+        .map(|focus| focus.anchor_reference.as_str())
+        .collect::<BTreeSet<_>>();
+    if !required_causal_references.is_empty()
+        && action
+            .state_references
+            .iter()
+            .all(|reference| !required_causal_references.contains(reference.as_str()))
+    {
+        return Err(anyhow!(
+            "action for causal responder {} omits its exact scheduler anchor {:?}",
+            action.subject_id,
+            required_causal_references
         ));
     }
     if let Some(subject) = slice
@@ -3664,8 +3730,7 @@ mod tests {
                         "verdicts":[{
                             "action_index":0,
                             "result":"match",
-                            "mismatch_kind":null,
-                            "repair_guidance":null
+                            "findings":[]
                         }]
                     })
                     .to_string())
@@ -3714,6 +3779,7 @@ mod tests {
                 summary: "The final vote is public.".into(),
                 perceived_by_subject_ids: BTreeSet::from(["house-a".into(), "house-b".into()]),
             }],
+            causal_follow_through: vec![],
             world_clock_pressure: vec!["vote 5/6".into()],
             canonical_locations: BTreeMap::from([("forum".into(), "Forum".into())]),
             detail_focus_subject_id: Some("faction-06".into()),
@@ -3917,23 +3983,26 @@ mod tests {
                         assert!(request
                             .lived_stream
                             .contains("Preserve the Persona's exact withholding decision"));
+                        assert!(request
+                            .lived_stream
+                            .contains("include the explicit notice to ward clerks"));
                     }
                     let decision = serde_json::json!({"action":{
                             "subject_id":"faction-06",
                             "intent":"state the reserve decision",
-                            "intended_effect":match call {
-                                0 => "release the reserve immediately",
-                                1 => "withhold release pending a verified count",
-                                _ => "withhold release pending a verified count and notify the ward clerks",
+                            "intended_effect":if call == 0 {
+                                "release the reserve immediately"
+                            } else {
+                                "withhold release pending a verified count and notify the ward clerks"
                             },
                             "priority":5,
                             "state_references":["institution:faction-06"],
                             "public_channels":["public bulletin"],
                             "effects":{"institution":{
-                                "posture":match call {
-                                    0 => "releases the reserve immediately",
-                                    1 => "withholds the reserve pending a verified public count",
-                                    _ => "withhold reserve pending a verified public count; notify ward clerks of the delay",
+                                "posture":if call == 0 {
+                                    "releases the reserve immediately"
+                                } else {
+                                    "withhold reserve pending a verified public count; notify ward clerks of the delay"
                                 },
                                 "location_ids":["forum"]
                             }}
@@ -3973,20 +4042,20 @@ mod tests {
                     Ok(serde_json::json!({
                         "verdicts":[{
                             "action_index":0,
-                            "result":if call > 1 { "match" } else { "mismatch" },
-                            "mismatch_kind":if call > 1 {
-                                None::<&str>
-                            } else if call == 1 {
-                                Some("effect_omission")
+                            "result":if call > 0 { "match" } else { "mismatch" },
+                            "findings":if call > 0 {
+                                Vec::<serde_json::Value>::new()
                             } else {
-                                Some("effect_reversal")
-                            },
-                            "repair_guidance":if call > 1 {
-                                None::<&str>
-                            } else if call == 1 {
-                                Some("Rewrite the posture compactly to include the explicit notice to ward clerks as well as the withholding decision.")
-                            } else {
-                                Some("Preserve the Persona's exact withholding decision rather than reversing it into release.")
+                                vec![
+                                    serde_json::json!({
+                                        "mismatch_kind":"effect_reversal",
+                                        "repair_guidance":"Preserve the Persona's exact withholding decision rather than reversing it into release."
+                                    }),
+                                    serde_json::json!({
+                                        "mismatch_kind":"effect_omission",
+                                        "repair_guidance":"Rewrite the posture compactly to include the explicit notice to ward clerks as well as the withholding decision."
+                                    })
+                                ]
                             }
                         }]
                     })
@@ -4002,7 +4071,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn effect_verifier_supports_two_bounded_corrections_before_terminal_output() {
+    async fn effect_verifier_delivers_multiple_findings_to_one_bounded_correction() {
         let model = Arc::new(SemanticallyCorrectingCellModel {
             interpreter_calls: AtomicUsize::new(0),
             verifier_calls: AtomicUsize::new(0),
@@ -4021,17 +4090,12 @@ mod tests {
         .await
         .unwrap();
         assert!(model.saw_verifier_rejection.load(Ordering::SeqCst));
-        assert_eq!(model.interpreter_calls.load(Ordering::SeqCst), 3);
-        assert_eq!(model.verifier_calls.load(Ordering::SeqCst), 3);
-        assert_eq!(output.stage_receipts.len(), 8);
+        assert_eq!(model.interpreter_calls.load(Ordering::SeqCst), 2);
+        assert_eq!(model.verifier_calls.load(Ordering::SeqCst), 2);
+        assert_eq!(output.stage_receipts.len(), 6);
         assert_eq!(output.stage_receipts[3].stage, "cell_effect_verifier");
         assert_eq!(
             output.stage_receipts[3].validation_result,
-            "semantic_invalid"
-        );
-        assert_eq!(output.stage_receipts[5].stage, "cell_effect_verifier");
-        assert_eq!(
-            output.stage_receipts[5].validation_result,
             "semantic_invalid"
         );
         let StrategicCellEffect::Institution { posture, .. } =
@@ -4060,11 +4124,13 @@ mod tests {
                 "verdicts":[{
                     "action_index":0,
                     "result":if mismatch { "mismatch" } else { "match" },
-                    "mismatch_kind":if mismatch { Some("effect_reversal") } else { None },
-                    "repair_guidance":if mismatch {
-                        Some("Preserve Faction Six's stated withholding rather than reversing it.")
+                    "findings":if mismatch {
+                        vec![serde_json::json!({
+                            "mismatch_kind":"effect_reversal",
+                            "repair_guidance":"Preserve Faction Six's stated withholding rather than reversing it."
+                        })]
                     } else {
-                        None
+                        Vec::<serde_json::Value>::new()
                     }
                 }]
             })
@@ -4931,17 +4997,16 @@ mod tests {
                 CellActionEffectVerdict {
                     action_index: 0,
                     result: CellEffectMatchResult::Match,
-                    mismatch_kind: None,
-                    repair_guidance: None,
+                    findings: Vec::new(),
                 },
                 CellActionEffectVerdict {
                     action_index: 1,
                     result: CellEffectMatchResult::Mismatch,
-                    mismatch_kind: Some(CellEffectMismatchKind::TargetSubstitution),
-                    repair_guidance: Some(
-                        "Remove the substituted target and retain only the exact addressed subject."
+                    findings: vec![CellEffectMismatchFinding {
+                        mismatch_kind: CellEffectMismatchKind::TargetSubstitution,
+                        repair_guidance: "Remove the substituted target and retain only the exact addressed subject."
                             .into(),
-                    ),
+                    }],
                 },
             ],
         };
@@ -4951,12 +5016,14 @@ mod tests {
         );
 
         let mut missing_guidance = verification.clone();
-        missing_guidance.verdicts[1].repair_guidance = None;
+        missing_guidance.verdicts[1].findings[0]
+            .repair_guidance
+            .clear();
         assert!(
             validate_effect_verification(&missing_guidance, 2)
                 .unwrap_err()
                 .to_string()
-                .contains("repair guidance")
+                .contains("findings set")
         );
 
         let mut duplicate = verification;
@@ -4983,30 +5050,30 @@ mod tests {
         let validator = jsonschema::validator_for(&schema).unwrap();
         let faithful = serde_json::json!({
             "verdicts":[
-                {"action_index":0,"result":"match","mismatch_kind":null,"repair_guidance":null},
-                {"action_index":1,"result":"mismatch","mismatch_kind":"target_substitution","repair_guidance":"Use the exact addressed subject."},
-                {"action_index":2,"result":"match","mismatch_kind":null,"repair_guidance":null},
-                {"action_index":3,"result":"match","mismatch_kind":null,"repair_guidance":null}
+                {"action_index":0,"result":"match","findings":[]},
+                {"action_index":1,"result":"mismatch","findings":[{"mismatch_kind":"target_substitution","repair_guidance":"Use the exact addressed subject."}]},
+                {"action_index":2,"result":"match","findings":[]},
+                {"action_index":3,"result":"match","findings":[]}
             ]
         });
         assert!(validator.is_valid(&faithful));
 
         let long_but_semantically_coherent_guidance = serde_json::json!({
             "verdicts":[
-                {"action_index":0,"result":"mismatch","mismatch_kind":"wrong_effect_kind","repair_guidance":"The Persona chose a concrete journey, so preserve that exact decision with the supplied migration effect rather than downgrading it to coordination; if no supplied effect can represent the destination, remove this action and let the world retain the attributed choice without committing an invented route."},
-                {"action_index":1,"result":"match","mismatch_kind":null,"repair_guidance":null},
-                {"action_index":2,"result":"match","mismatch_kind":null,"repair_guidance":null},
-                {"action_index":3,"result":"match","mismatch_kind":null,"repair_guidance":null}
+                {"action_index":0,"result":"mismatch","findings":[{"mismatch_kind":"wrong_effect_kind","repair_guidance":"The Persona chose a concrete journey, so preserve that exact decision with the supplied migration effect rather than downgrading it to coordination; if no supplied effect can represent the destination, remove this action and let the world retain the attributed choice without committing an invented route."}]},
+                {"action_index":1,"result":"match","findings":[]},
+                {"action_index":2,"result":"match","findings":[]},
+                {"action_index":3,"result":"match","findings":[]}
             ]
         });
-        assert!(validator.is_valid(&long_but_semantically_coherent_guidance));
+        assert!(!validator.is_valid(&long_but_semantically_coherent_guidance));
 
         let incoherent = serde_json::json!({
             "verdicts":[
-                {"action_index":0,"result":"match","mismatch_kind":"invented_outcome","repair_guidance":null},
-                {"action_index":1,"result":"match","mismatch_kind":null,"repair_guidance":null},
-                {"action_index":2,"result":"match","mismatch_kind":null,"repair_guidance":null},
-                {"action_index":3,"result":"match","mismatch_kind":null,"repair_guidance":null}
+                {"action_index":0,"result":"match","findings":[{"mismatch_kind":"invented_outcome","repair_guidance":"Do not claim this succeeded."}]},
+                {"action_index":1,"result":"match","findings":[]},
+                {"action_index":2,"result":"match","findings":[]},
+                {"action_index":3,"result":"match","findings":[]}
             ]
         });
         assert!(!validator.is_valid(&incoherent));
@@ -5030,8 +5097,7 @@ mod tests {
                 "verdicts":[{
                     "action_index":0,
                     "result":"match",
-                    "mismatch_kind":null,
-                    "repair_guidance":null
+                    "findings":[]
                 }]
             })
             .to_string())

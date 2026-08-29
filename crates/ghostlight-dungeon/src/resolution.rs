@@ -852,6 +852,7 @@ pub fn plan_cover(campaign: &Campaign, demand: ResolutionDemand) -> Result<Resol
             .saturating_sub(campaign.resolution_policy.active_cell_budget),
         cells,
         demand,
+        causal_follow_through: Vec::new(),
     })
 }
 
@@ -1854,6 +1855,7 @@ pub fn select_resolution_wave(
     }
     validate_demand(campaign, &wave.cover.demand)?;
     validate_cover(campaign, &wave.cover.demand, &wave.cover.cells)?;
+    crate::follow_through::validate_causal_follow_through(campaign, &wave.cover)?;
     if wave.plan_receipt.cell_ids
         != wave
             .cover
@@ -1901,6 +1903,17 @@ pub fn select_resolution_wave(
         {
             return Err(anyhow!(
                 "cell appraisal considered a subject outside its exact cell authority"
+            ));
+        }
+        let causal_assignments =
+            crate::follow_through::assignments_for_cell(campaign, &wave.cover, cell);
+        if causal_assignments.iter().any(|assignment| {
+            !appraisal
+                .considered_subject_ids
+                .contains(&assignment.responder_subject_id)
+        }) {
+            return Err(anyhow!(
+                "cell appraisal omitted a scheduler-admitted causal responder"
             ));
         }
         if cell
@@ -1957,7 +1970,26 @@ pub fn select_resolution_wave(
             ));
         }
         for proposal in &appraisal.actions {
-            validate_cell_proposal(campaign, cell, proposal)?;
+            let causal_assignment = causal_assignments
+                .iter()
+                .find(|assignment| assignment.responder_subject_id == proposal.subject_id)
+                .copied();
+            if causal_assignment.is_some_and(|assignment| {
+                !proposal
+                    .state_references
+                    .contains(&assignment.anchor_reference)
+            }) {
+                return Err(anyhow!(
+                    "causal response action does not cite its admitted committed anchor"
+                ));
+            }
+            let mut scoped_proposal = proposal.clone();
+            if let Some(assignment) = causal_assignment {
+                scoped_proposal
+                    .state_references
+                    .retain(|reference| reference != &assignment.anchor_reference);
+            }
+            validate_cell_proposal(campaign, cell, &scoped_proposal)?;
             proposals.push(proposal.clone());
         }
     }
@@ -3437,6 +3469,7 @@ pub(crate) mod tests {
             },
             resolution_pins: BTreeMap::new(),
             resolution_cover: None,
+            nemesis_attention_history: Vec::new(),
             strategic_tick_count: 0,
         };
         ensure_agency_profiles(&mut value);
@@ -3842,6 +3875,7 @@ pub(crate) mod tests {
             mandatory_overage: 0,
             cells: stale_cells.clone(),
             demand: demand.clone(),
+            causal_follow_through: Vec::new(),
         });
 
         let cover = plan_cover(&value, demand).unwrap();
@@ -4274,16 +4308,14 @@ pub(crate) mod tests {
         validate_and_resolve_wave(&value, &mixed).unwrap();
 
         let mut maximum_posture = valid_action.clone();
-        let StrategicCellEffect::Institution { posture, .. } =
-            &mut maximum_posture.effects[0]
+        let StrategicCellEffect::Institution { posture, .. } = &mut maximum_posture.effects[0]
         else {
             unreachable!()
         };
         *posture = "x".repeat(MAX_POSTURE_CHARS);
         validate_and_resolve_wave(&value, &make_wave(maximum_posture.clone())).unwrap();
 
-        let StrategicCellEffect::Institution { posture, .. } =
-            &mut maximum_posture.effects[0]
+        let StrategicCellEffect::Institution { posture, .. } = &mut maximum_posture.effects[0]
         else {
             unreachable!()
         };
@@ -4305,6 +4337,88 @@ pub(crate) mod tests {
             reason: "The same institution cannot also hold.".into(),
         }];
         assert!(validate_and_resolve_wave(&value, &contradictory).is_err());
+    }
+
+    #[test]
+    fn causal_response_owner_must_consider_and_cite_the_scheduler_admitted_anchor() {
+        let mut value = campaign(1, 1);
+        value.events.push(Event {
+            id: "winter-tally-accusation".into(),
+            at: value.world_time,
+            kind: "institution_action".into(),
+            summary: "Faction 0000 is publicly accused of hiding the winter tally.".into(),
+            actor_ids: Vec::new(),
+            institution_ids: vec!["faction-0000".into()],
+            gestalt_ids: Vec::new(),
+            location_ids: vec!["center".into()],
+            public_channels: vec!["public notice".into()],
+        });
+        let mut cover = plan_cover(
+            &value,
+            default_demand(&value, "a committed accusation requires a decision window"),
+        )
+        .unwrap();
+        cover.causal_follow_through = vec![CausalFollowThroughAssignment {
+            anchor_reference: "event:winter-tally-accusation".into(),
+            responder_subject_id: "faction-0000".into(),
+        }];
+        crate::follow_through::validate_causal_follow_through(&value, &cover).unwrap();
+        let action = CellActionProposal {
+            subject_id: "faction-0000".into(),
+            intent: "answer the accusation".into(),
+            intended_effect: "publish a bounded denial without deciding public belief".into(),
+            priority: 50,
+            state_references: Vec::new(),
+            public_channels: Vec::new(),
+            effects: vec![StrategicCellEffect::Institution {
+                institution_id: "faction-0000".into(),
+                posture: "publicly contests the winter-tally accusation".into(),
+                location_ids: Vec::new(),
+            }],
+        };
+        let make_wave = |action: CellActionProposal| ResolutionWaveCommit {
+            schema: "ghostlight.resolution_wave_commit.v1".into(),
+            world_revision: value.revision,
+            resolution_epoch: value.resolution_policy.resolution_epoch,
+            plan_receipt: plan_receipt(&value, &cover),
+            appraisals: vec![CellAppraisal {
+                schema: "ghostlight.cell_appraisal.v1".into(),
+                cell_id: cover.cells[0].id.clone(),
+                world_revision: value.revision,
+                resolution_epoch: value.resolution_policy.resolution_epoch,
+                considered_subject_ids: BTreeSet::from(["faction-0000".into()]),
+                actions: vec![action],
+                inactions: Vec::new(),
+            }],
+            cover: cover.clone(),
+            activity_outcomes: Vec::new(),
+            strategic_individuations: Vec::new(),
+            model_receipt_hashes: Vec::new(),
+        };
+
+        assert!(select_resolution_wave(&value, &make_wave(action.clone())).is_err());
+        let mut grounded = action;
+        grounded
+            .state_references
+            .push("event:winter-tally-accusation".into());
+        let grounded_result = select_resolution_wave(&value, &make_wave(grounded));
+        assert!(grounded_result.is_ok(), "{:#?}", grounded_result.err());
+
+        let mut omitted = make_wave(CellActionProposal {
+            subject_id: "faction-0000".into(),
+            intent: "hold".into(),
+            intended_effect: "hold".into(),
+            priority: 1,
+            state_references: vec!["event:winter-tally-accusation".into()],
+            public_channels: Vec::new(),
+            effects: vec![StrategicCellEffect::Institution {
+                institution_id: "faction-0000".into(),
+                posture: "holds its prior course".into(),
+                location_ids: vec!["center".into()],
+            }],
+        });
+        omitted.appraisals[0].considered_subject_ids.clear();
+        assert!(select_resolution_wave(&value, &omitted).is_err());
     }
 
     #[test]
@@ -4567,14 +4681,15 @@ pub(crate) mod tests {
                 location_ids: vec!["center".into()],
             }],
         };
-        let internal_plan =
-            select_resolution_wave(&value, &make_wave(internal_coordination))
-                .unwrap()
-                .plan;
+        let internal_plan = select_resolution_wave(&value, &make_wave(internal_coordination))
+            .unwrap()
+            .plan;
         assert_eq!(internal_plan.gestalt_activities.len(), 1);
-        assert!(internal_plan.gestalt_activities[0]
-            .target_subject_ids
-            .is_empty());
+        assert!(
+            internal_plan.gestalt_activities[0]
+                .target_subject_ids
+                .is_empty()
+        );
 
         let lower_priority_pressure = CellActionProposal {
             subject_id: "refugees".into(),

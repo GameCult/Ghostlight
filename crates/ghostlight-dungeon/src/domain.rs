@@ -50,6 +50,11 @@ pub struct Campaign {
     pub resolution_pins: BTreeMap<String, ResolutionPin>,
     #[serde(default)]
     pub resolution_cover: Option<ResolutionCover>,
+    /// Durable record of exact causal attention windows already served by
+    /// Nemesis. WorldKernel is the sole writer; the scheduler reads it only to
+    /// avoid repeatedly assigning the same anchor to the same responder.
+    #[serde(default)]
+    pub nemesis_attention_history: Vec<NemesisAttentionRecord>,
     #[serde(default)]
     pub strategic_tick_count: u64,
 }
@@ -433,6 +438,27 @@ pub struct ResolutionCover {
     pub mandatory_overage: u8,
     pub cells: Vec<SimulationCell>,
     pub demand: ResolutionDemand,
+    /// Scheduler-owned reaction windows for already committed world pressure.
+    /// These bindings decide who must receive a decision slot, never what that
+    /// subject decides or which consequence the kernel commits.
+    #[serde(default)]
+    pub causal_follow_through: Vec<CausalFollowThroughAssignment>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct CausalFollowThroughAssignment {
+    /// Exact opaque handle from the scheduler's frozen anchor catalog.
+    pub anchor_reference: String,
+    /// One exact autonomous actor, institution, population, or dormant member
+    /// that owns a decision window for this anchor in the current cover.
+    pub responder_subject_id: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct NemesisAttentionRecord {
+    pub anchor_reference: String,
+    pub responder_subject_id: String,
+    pub served_world_revision: u64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]

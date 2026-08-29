@@ -1,7 +1,8 @@
 use crate::{
     domain::{
-        Campaign, CellActionProposal, StrategicActivityKind, StrategicActivityOutcome,
-        StrategicCellEffect, StrategicOutcomeBand, StrategicOutcomeEffect, StrategicTickPlan,
+        Campaign, CausalFollowThroughAssignment, CellActionProposal, StrategicActivityKind,
+        StrategicActivityOutcome, StrategicCellEffect, StrategicOutcomeBand,
+        StrategicOutcomeEffect, StrategicTickPlan,
     },
     model::{
         MODEL_BALANCED, MODEL_FAST, ModelPort, ModelStageOutput, ModelStageReceipt,
@@ -36,6 +37,7 @@ struct ActionOutcomeContext {
     source_name: String,
     intent: String,
     intended_effect: String,
+    causal_anchors: Vec<CausalAnchorOutcomeContext>,
     activities: Vec<StrategicActivityKind>,
     target_subject_ids: Vec<String>,
     location_ids: Vec<String>,
@@ -51,6 +53,12 @@ struct ActionOutcomeContext {
     member_state_owner_id: Option<String>,
     admissible_effect_kinds: Vec<OutcomeEffectKind>,
     allowed_state_references: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct CausalAnchorOutcomeContext {
+    anchor_reference: String,
+    committed_account: String,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -190,6 +198,15 @@ pub async fn resolve_activity_outcomes(
     campaign: &Campaign,
     proposals: &[CellActionProposal],
 ) -> Result<(Vec<StrategicActivityOutcome>, Vec<ModelStageOutput>)> {
+    resolve_activity_outcomes_with_causal_assignments(model, campaign, proposals, &[]).await
+}
+
+pub async fn resolve_activity_outcomes_with_causal_assignments(
+    model: Arc<dyn ModelPort>,
+    campaign: &Campaign,
+    proposals: &[CellActionProposal],
+    causal_assignments: &[CausalFollowThroughAssignment],
+) -> Result<(Vec<StrategicActivityOutcome>, Vec<ModelStageOutput>)> {
     if proposals.is_empty() {
         return Ok((Vec::new(), Vec::new()));
     }
@@ -198,6 +215,8 @@ pub async fn resolve_activity_outcomes(
     let campaign = Arc::new(campaign.clone());
     let mut tasks = JoinSet::new();
     for (index, proposal) in proposals.iter().cloned().enumerate() {
+        let causal_anchors =
+            causal_anchor_contexts(campaign.as_ref(), &proposal, causal_assignments)?;
         let model = model.clone();
         let campaign = campaign.clone();
         let permits = permits.clone();
@@ -206,7 +225,9 @@ pub async fn resolve_activity_outcomes(
                 .acquire_owned()
                 .await
                 .map_err(|_| anyhow!("strategic outcome concurrency gate closed"))?;
-            let resolved = resolve_activity_outcome(model.as_ref(), &campaign, &proposal).await?;
+            let resolved =
+                resolve_activity_outcome(model.as_ref(), &campaign, &proposal, causal_anchors)
+                    .await?;
             Ok::<_, anyhow::Error>((index, resolved))
         });
     }
@@ -264,9 +285,10 @@ async fn resolve_activity_outcome(
     model: &dyn ModelPort,
     campaign: &Campaign,
     proposal: &CellActionProposal,
+    causal_anchors: Vec<CausalAnchorOutcomeContext>,
 ) -> Result<(Vec<StrategicActivityOutcome>, Vec<ModelStageOutput>)> {
     let proposals = std::slice::from_ref(proposal);
-    let context = build_context(campaign, proposals)?;
+    let context = build_context_with_causal_anchors(campaign, proposals, &causal_anchors)?;
     let digests = proposals
         .iter()
         .map(cell_action_digest)
@@ -286,7 +308,7 @@ async fn resolve_activity_outcome(
         .into_iter()
         .collect();
     let static_contract = format!(
-        "You are Ghostlight's private strategic outcome resolver. The Interpreter already established each exact constituent's selected attempt; you alone assess opposition and choose its bounded durable result. Resolve every supplied action_digest exactly once. Never add or remove an action. For each action, effect_kind must come from that action's admissible_effect_kinds; this is the runtime's exact projection of locally valid consequence handles. Use only IDs, resources, pressure resolutions, relations, facts, member owners, targets, and state references supplied for that same action. Never mutate the player. Never treat an arena as an actor or union constituents' private state. Prefer the most specific causally supported durable effect when the attempt and its band establish one. A mixed result should preserve bounded progress, cost, or a new unresolved pressure when a supplied handle supports it; do not collapse concrete partial work into no change merely because it is incomplete. Use no_material_change when none of the other supplied handles honestly represents a durable result; success or mixed success does not itself authorize inventing a response, fact, relationship, or resource. A failure may create a pressure or spend a committed resource when causally supported. Every material effect must actually change the supplied state; do not repeat an existing resource, pressure, memory, obligation, relationship description, or known fact. Choose exactly one effect_kind. Populate only its fields and omit every irrelevant optional field. no_material_change requires reason. resource_created creates one bounded branch-local resource and requires a capability reference. Its owner_subject_id must copy one exact resource_creation_owner_ids value: choose the source for portable stock or equipment it retains, or an exact activity location for a durable installed, placed, or repaired feature there. resource_consumed spends one exact existing source resource. resource_transferred gives one exact existing source resource to one recipient: copy one exact resource_recipient_ids value into the output field other_subject_id; it cannot take from a target. For resource_consumed and resource_transferred, owner_subject_id must copy that action's exact resource_owner_id, including any member: prefix. gestalt_pressure copies one exact pressure_owners.owner_subject_id value adjacent to that owner's current_pressures into owner_subject_id; resolutions must copy exact current pressure text. agency_relation_shift uses one supplied active relation and a nonzero delta from -10 through 10. Member memory, obligation, or relationship may change only the supplied member_state_owner_id; member_id omits the member: prefix. A relationship's other_subject_id must be one exact action target. knowledge_learned uses one supplied discoverable fact and teaches only the source. knowledge_communicated copies one communicable_facts fact_id and a nonempty subset of its exact recipient_subject_ids; owner_subject_id is the source speaker. Every material effect needs at least one supporting_state_reference copied literally and only from that action's allowed_state_references. IDs shown in source_state, target_state, target_subject_ids, or effect-specific owner and target fields are not provenance handles unless repeated in allowed_state_references. Return one JSON object and no prose outside JSON.\n\nOUTPUT CONTRACT:\n{OUTCOME_PROPOSAL_OUTPUT_CONTRACT}"
+        "You are Ghostlight's private strategic outcome resolver. The Interpreter already established each exact constituent's selected attempt; you alone assess opposition and choose its bounded durable result. Resolve every supplied action_digest exactly once. Never add or remove an action. causal_anchors contains the exact committed account that caused Nemesis to assign this responder a turn; use it to judge causal follow-through, but never treat it as new mutation authority. For each action, effect_kind must come from that action's admissible_effect_kinds; this is the runtime's exact projection of locally valid consequence handles. Use only IDs, resources, pressure resolutions, relations, facts, member owners, targets, and state references supplied for that same action. Never mutate the player. Never treat an arena as an actor or union constituents' private state. Prefer the most specific causally supported durable effect when the attempt and its band establish one. A mixed result should preserve bounded progress, cost, or a new unresolved pressure when a supplied handle supports it; do not collapse concrete partial work into no change merely because it is incomplete. Use no_material_change when none of the other supplied handles honestly represents a durable result; success or mixed success does not itself authorize inventing a response, fact, relationship, or resource. A failure may create a pressure or spend a committed resource when causally supported. Every material effect must actually change the supplied state; do not repeat an existing resource, pressure, memory, obligation, relationship description, or known fact. Choose exactly one effect_kind. Populate only its fields and omit every irrelevant optional field. no_material_change requires reason. resource_created creates one bounded branch-local resource and requires a capability reference. Its owner_subject_id must copy one exact resource_creation_owner_ids value: choose the source for portable stock or equipment it retains, or an exact activity location for a durable installed, placed, or repaired feature there. resource_consumed spends one exact existing source resource. resource_transferred gives one exact existing source resource to one recipient: copy one exact resource_recipient_ids value into the output field other_subject_id; it cannot take from a target. For resource_consumed and resource_transferred, owner_subject_id must copy that action's exact resource_owner_id, including any member: prefix. gestalt_pressure copies one exact pressure_owners.owner_subject_id value adjacent to that owner's current_pressures into owner_subject_id; resolutions must copy exact current pressure text. agency_relation_shift uses one supplied active relation and a nonzero delta from -10 through 10. Member memory, obligation, or relationship may change only the supplied member_state_owner_id; member_id omits the member: prefix. A relationship's other_subject_id must be one exact action target. knowledge_learned uses one supplied discoverable fact and teaches only the source. knowledge_communicated copies one communicable_facts fact_id and a nonempty subset of its exact recipient_subject_ids; owner_subject_id is the source speaker. Every material effect needs at least one supporting_state_reference copied literally and only from that action's allowed_state_references. IDs shown in source_state, target_state, target_subject_ids, or effect-specific owner and target fields are not provenance handles unless repeated in allowed_state_references. Return one JSON object and no prose outside JSON.\n\nOUTPUT CONTRACT:\n{OUTCOME_PROPOSAL_OUTPUT_CONTRACT}"
     );
     let request = ModelStageRequest {
         stage: "strategic_outcome_resolver".into(),
@@ -324,6 +346,7 @@ async fn resolve_activity_outcome(
             model,
             campaign,
             proposals,
+            &context,
             candidate_bundle.clone(),
             &candidate_sources,
         )
@@ -397,6 +420,7 @@ async fn evaluate_outcome_candidate(
     model: &dyn ModelPort,
     campaign: &Campaign,
     proposals: &[CellActionProposal],
+    context: &OutcomeContext,
     proposal_bundle: OutcomeProposalBundle,
     source_receipt_ids: &[String],
 ) -> Result<OutcomeCandidateEvaluation> {
@@ -425,14 +449,16 @@ async fn evaluate_outcome_candidate(
         .map(|outcome| outcome.action_digest.clone())
         .collect::<Vec<_>>();
     let semantic_digest_set = semantic_digests.iter().cloned().collect::<BTreeSet<_>>();
-    let semantic_proposals = proposals
-        .iter()
-        .filter(|proposal| {
-            cell_action_digest(proposal).is_ok_and(|digest| semantic_digest_set.contains(&digest))
-        })
-        .cloned()
-        .collect::<Vec<_>>();
-    let semantic_context = build_context(campaign, &semantic_proposals)?;
+    let semantic_context = OutcomeContext {
+        world_revision: context.world_revision,
+        resolution_epoch: context.resolution_epoch,
+        actions: context
+            .actions
+            .iter()
+            .filter(|action| semantic_digest_set.contains(&action.action_digest))
+            .cloned()
+            .collect(),
+    };
     let (verifier, mismatches) = verify_outcomes(
         model,
         campaign,
@@ -1510,20 +1536,38 @@ fn validate_member_owner(
     Ok(())
 }
 
+#[cfg(test)]
 fn build_context(campaign: &Campaign, proposals: &[CellActionProposal]) -> Result<OutcomeContext> {
+    build_context_with_causal_anchors(campaign, proposals, &[])
+}
+
+fn build_context_with_causal_anchors(
+    campaign: &Campaign,
+    proposals: &[CellActionProposal],
+    causal_anchors: &[CausalAnchorOutcomeContext],
+) -> Result<OutcomeContext> {
     Ok(OutcomeContext {
         world_revision: campaign.revision,
         resolution_epoch: campaign.resolution_policy.resolution_epoch,
         actions: proposals
             .iter()
-            .map(|proposal| action_context(campaign, proposal))
+            .map(|proposal| action_context_with_causal_anchors(campaign, proposal, causal_anchors))
             .collect::<Result<_>>()?,
     })
 }
 
+#[cfg(test)]
 fn action_context(
     campaign: &Campaign,
     proposal: &CellActionProposal,
+) -> Result<ActionOutcomeContext> {
+    action_context_with_causal_anchors(campaign, proposal, &[])
+}
+
+fn action_context_with_causal_anchors(
+    campaign: &Campaign,
+    proposal: &CellActionProposal,
+    causal_anchors: &[CausalAnchorOutcomeContext],
 ) -> Result<ActionOutcomeContext> {
     let (activities, targets, locations) = activity_parts(proposal)?;
     let source_name = subject_name(campaign, &proposal.subject_id)?;
@@ -1580,6 +1624,7 @@ fn action_context(
         source_name,
         intent: proposal.intent.clone(),
         intended_effect: proposal.intended_effect.clone(),
+        causal_anchors: causal_anchors.to_vec(),
         activities,
         target_subject_ids: targets,
         location_ids: locations,
@@ -1612,6 +1657,44 @@ fn action_context(
             .into_iter()
             .collect(),
     })
+}
+
+fn causal_anchor_contexts(
+    campaign: &Campaign,
+    proposal: &CellActionProposal,
+    assignments: &[CausalFollowThroughAssignment],
+) -> Result<Vec<CausalAnchorOutcomeContext>> {
+    let matching = assignments
+        .iter()
+        .filter(|assignment| assignment.responder_subject_id == proposal.subject_id)
+        .collect::<Vec<_>>();
+    if matching.len() > 1 {
+        return Err(anyhow!(
+            "one strategic action cannot inherit more than one Nemesis attention anchor"
+        ));
+    }
+    matching
+        .into_iter()
+        .map(|assignment| {
+            if !proposal
+                .state_references
+                .contains(&assignment.anchor_reference)
+            {
+                return Err(anyhow!(
+                    "Nemesis-assigned action omitted its exact causal anchor"
+                ));
+            }
+            let committed_account = crate::follow_through::causal_anchor_summary(
+                campaign,
+                &assignment.anchor_reference,
+            )
+            .ok_or_else(|| anyhow!("Nemesis attention anchor is no longer grounded"))?;
+            Ok(CausalAnchorOutcomeContext {
+                anchor_reference: assignment.anchor_reference.clone(),
+                committed_account,
+            })
+        })
+        .collect()
 }
 
 fn admissible_effect_kinds(
@@ -2595,7 +2678,7 @@ mod tests {
     use crate::{
         domain::{
             AgencyProfile, AgencyRelation, AgencyRelationKind, AgencySubjectKind, BranchOrigin,
-            GestaltPersonaState, Location, ResolutionPolicy, WorldFact,
+            Event, GestaltPersonaState, Location, ResolutionPolicy, WorldFact,
         },
         resolution::ensure_agency_profiles,
     };
@@ -3029,6 +3112,7 @@ mod tests {
             resolution_policy: ResolutionPolicy::default(),
             resolution_pins: BTreeMap::new(),
             resolution_cover: None,
+            nemesis_attention_history: Vec::new(),
             strategic_tick_count: 0,
         };
         value.actors.insert(
@@ -3086,6 +3170,55 @@ mod tests {
                 location_ids: vec!["dock".into()],
             }],
         }
+    }
+
+    #[test]
+    fn outcome_context_carries_only_the_exact_nemesis_anchor_account() {
+        let mut value = campaign();
+        value.events.push(Event {
+            id: "old-crisis".into(),
+            at: value.world_time,
+            kind: "public_crisis".into(),
+            summary: "The harbor court publicly voided the dockers' winter charter.".into(),
+            actor_ids: vec![],
+            institution_ids: vec![],
+            gestalt_ids: vec!["dockers".into()],
+            location_ids: vec!["dock".into()],
+            public_channels: vec!["harbor-notices".into()],
+        });
+        value.events.push(Event {
+            id: "unrelated".into(),
+            at: value.world_time,
+            kind: "public_notice".into(),
+            summary: "A distant bell was repaired.".into(),
+            actor_ids: vec![],
+            institution_ids: vec![],
+            gestalt_ids: vec![],
+            location_ids: vec![],
+            public_channels: vec!["harbor-notices".into()],
+        });
+        let mut action = proposal();
+        action.state_references.push("event:old-crisis".into());
+        action.state_references.push("event:unrelated".into());
+        let assignments = [CausalFollowThroughAssignment {
+            anchor_reference: "event:old-crisis".into(),
+            responder_subject_id: "dockers".into(),
+        }];
+
+        let anchors = causal_anchor_contexts(&value, &action, &assignments).unwrap();
+        let context =
+            build_context_with_causal_anchors(&value, std::slice::from_ref(&action), &anchors)
+                .unwrap();
+        let serialized = serde_json::to_string(&context).unwrap();
+        assert!(serialized.contains("event:old-crisis"));
+        assert!(serialized.contains("publicly voided the dockers' winter charter"));
+        assert!(!serialized.contains("A distant bell was repaired"));
+        assert!(
+            context.actions[0]
+                .allowed_state_references
+                .iter()
+                .all(|reference| reference != "event:unrelated")
+        );
     }
 
     #[test]

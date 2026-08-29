@@ -3,17 +3,22 @@ use crate::{
         AgencyAxis, AgencySubjectKind, Campaign, GestaltIndividuation, GestaltMemberDelta,
         ResolutionDemand, ResolutionWaveCommit, SimulationCell, StrategicGestaltIndividuation,
     },
+    follow_through::{
+        NEMESIS_STAGE, assignments_for_cell, causal_anchor_summary, causal_follow_through_snapshot,
+        nemesis_admission_binding, propose_causal_follow_through, validate_causal_follow_through,
+    },
     model::{
         MODEL_FAST, ModelPort, ModelStageOutput, ModelStageReceipt, ModelStageRequest,
         run_validated_stage,
     },
     outcome::{
-        StrategicOutcomeResolutionFailure, activity_outcome_binding, resolve_activity_outcomes,
+        StrategicOutcomeResolutionFailure, activity_outcome_binding,
+        resolve_activity_outcomes_with_causal_assignments,
     },
     persona::{
-        CellActivityTargetSlice, CellConstituentSlice, CellMemberSlice,
-        CellMigrationDestinationSlice, CellPerceivedEventSlice, CellPipelineFailure,
-        CellProjectionEngine, ExecutionPermit, PermittedCellSlice,
+        CellActivityTargetSlice, CellCausalFollowThroughSlice, CellConstituentSlice,
+        CellMemberSlice, CellMigrationDestinationSlice, CellPerceivedEventSlice,
+        CellPipelineFailure, CellProjectionEngine, ExecutionPermit, PermittedCellSlice,
     },
     resolution::{
         cell_action_digest, cell_action_limit, default_demand, plan_cover, plan_receipt,
@@ -173,14 +178,52 @@ pub async fn propose_resolution_wave_with_policy(
     campaign_contract: Option<&CampaignContract>,
     aggregate_boundaries: &[AggregatedBoundary],
 ) -> Result<StrategicResolutionOutput> {
-    let (demand, stages) = project_resolution_demand(
+    let (demand, mut stages) = project_resolution_demand(
         model.as_ref(),
         campaign,
         campaign_contract,
         aggregate_boundaries,
     )
     .await;
-    let cover = plan_cover(campaign, demand)?;
+    let mut cover = plan_cover(campaign, demand)?;
+    let follow_through_binding = causal_follow_through_snapshot(campaign, &cover)?;
+    permit
+        .require(
+            "strategic-follow-through",
+            &follow_through_binding,
+            NEMESIS_STAGE,
+        )
+        .await?;
+    let follow_through = propose_causal_follow_through(model.as_ref(), campaign, &cover).await;
+    match follow_through {
+        Ok(Some(proposal)) => {
+            cover.causal_follow_through = proposal.admission.assignments;
+            stages.extend(
+                proposal
+                    .receipts
+                    .into_iter()
+                    .map(|receipt| ModelStageOutput {
+                        narrative: String::new(),
+                        structured: None,
+                        receipt,
+                    }),
+            );
+        }
+        Ok(None) => {}
+        Err(failure) => {
+            let mut stage_receipts = stages
+                .iter()
+                .map(|stage| stage.receipt.clone())
+                .collect::<Vec<_>>();
+            stage_receipts.extend(failure.receipts);
+            return Err(anyhow::Error::new(ResolutionWavePipelineFailure {
+                pipeline_errors: vec![failure.message],
+                stage_receipts,
+                checkpoint: None,
+            }));
+        }
+    }
+    validate_causal_follow_through(campaign, &cover)?;
     let checkpoint = seal_resolution_wave_checkpoint(ResolutionWaveCheckpoint {
         schema: "ghostlight.resolution_wave_checkpoint.v1".into(),
         campaign_id: campaign.id,
@@ -251,7 +294,7 @@ async fn resume_resolution_wave_from_checkpoint(
     {
         let engine = engine.clone();
         let semaphore = semaphore.clone();
-        let slice = cell_slice(campaign, &cell)?;
+        let slice = cell_slice(campaign, &cover, &cell)?;
         jobs.spawn(async move {
             let cell_id = cell.id;
             let subject_ids = cell.subject_ids;
@@ -411,10 +454,11 @@ async fn resume_resolution_wave_from_checkpoint(
             )
             .await?;
     }
-    let outcome_resolution = resolve_activity_outcomes(
+    let outcome_resolution = resolve_activity_outcomes_with_causal_assignments(
         outcome_model.clone(),
         campaign,
         &selection.activity_proposals,
+        &wave.cover.causal_follow_through,
     )
     .await;
     let (activity_outcomes, outcome_stages) = match outcome_resolution {
@@ -521,6 +565,7 @@ fn validate_resolution_wave_checkpoint(
     }
     validate_demand(campaign, &checkpoint.cover.demand)?;
     validate_cover(campaign, &checkpoint.cover.demand, &checkpoint.cover.cells)?;
+    validate_causal_follow_through(campaign, &checkpoint.cover)?;
     let planning_binding = format!(
         "campaign:{}:revision:{}:resolution:{}",
         campaign.id, campaign.revision, campaign.resolution_policy.resolution_epoch
@@ -531,24 +576,59 @@ fn validate_resolution_wave_checkpoint(
         .iter()
         .cloned()
         .collect::<BTreeSet<_>>();
+    let causal_binding = causal_follow_through_snapshot(campaign, &checkpoint.cover)?;
+    let admitted_causal_binding = nemesis_admission_binding(campaign, &checkpoint.cover)?;
     let mut planning_receipt_keys = BTreeSet::new();
+    let mut accepted_causal_receipt = false;
     for receipt in &checkpoint.planning_stage_receipts {
         if receipt.schema != "ghostlight.persona_stage_receipt.v1"
-            || receipt.stage != "resolution_demand"
-            || receipt.snapshot_binding != planning_binding
             || !model_receipt_hashes_are_well_formed(receipt)
-            || !planning_receipt_keys.insert(receipt.storage_key())
-            || receipt
-                .source_receipt_ids
-                .iter()
-                .cloned()
-                .collect::<BTreeSet<_>>()
-                != planning_sources
+            || planning_receipt_keys.contains(receipt.storage_key())
+            || !receipt.source_receipt_ids.iter().all(|source| {
+                planning_sources.contains(source) || planning_receipt_keys.contains(source)
+            })
         {
             return Err(anyhow!(
                 "strategic wave checkpoint contains invalid planning receipt provenance"
             ));
         }
+        match receipt.stage.as_str() {
+            "resolution_demand" => {
+                if receipt.snapshot_binding != planning_binding
+                    || receipt
+                        .source_receipt_ids
+                        .iter()
+                        .cloned()
+                        .collect::<BTreeSet<_>>()
+                        != planning_sources
+                {
+                    return Err(anyhow!(
+                        "strategic wave checkpoint contains misbound demand provenance"
+                    ));
+                }
+            }
+            NEMESIS_STAGE => {
+                if receipt.snapshot_binding != causal_binding
+                    && receipt.snapshot_binding != admitted_causal_binding
+                {
+                    return Err(anyhow!(
+                        "strategic wave checkpoint contains misbound causal follow-through provenance"
+                    ));
+                }
+                accepted_causal_receipt |= receipt.snapshot_binding == admitted_causal_binding;
+            }
+            _ => {
+                return Err(anyhow!(
+                    "strategic wave checkpoint contains an unknown planning authority"
+                ));
+            }
+        }
+        planning_receipt_keys.insert(receipt.storage_key().to_owned());
+    }
+    if !checkpoint.cover.causal_follow_through.is_empty() && !accepted_causal_receipt {
+        return Err(anyhow!(
+            "strategic wave checkpoint lacks the receipt admitted for its exact causal agenda"
+        ));
     }
     let expected_plan = plan_receipt(campaign, &checkpoint.cover);
     if checkpoint.plan_receipt.campaign_id != expected_plan.campaign_id
@@ -583,7 +663,7 @@ fn validate_resolution_wave_checkpoint(
                 "strategic wave checkpoint contains duplicate completed cell authority"
             ));
         }
-        validate_resolution_cell_terminal(campaign, cell, completed)?;
+        validate_resolution_cell_terminal(campaign, &checkpoint.cover, cell, completed)?;
     }
     if checkpoint.failed_cell_ids.iter().any(|cell_id| {
         !cells.contains_key(cell_id.as_str()) || completed_ids.contains(cell_id.as_str())
@@ -603,10 +683,11 @@ fn validate_resolution_wave_checkpoint(
 
 fn validate_resolution_cell_terminal(
     campaign: &Campaign,
+    cover: &crate::domain::ResolutionCover,
     cell: &crate::domain::SimulationCell,
     completed: &ResolutionCellTerminalCheckpoint,
 ) -> Result<()> {
-    let slice = cell_slice(campaign, cell)?;
+    let slice = cell_slice(campaign, cover, cell)?;
     let terminal = &completed.terminal;
     if terminal.appraisal.cell_id != completed.cell_id
         || terminal.appraisal.world_revision != campaign.revision
@@ -1230,9 +1311,15 @@ fn resolution_demand_context(campaign: &Campaign) -> (Vec<String>, serde_json::V
     )
 }
 
-fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCellSlice> {
+fn cell_slice(
+    campaign: &Campaign,
+    cover: &crate::domain::ResolutionCover,
+    cell: &SimulationCell,
+) -> Result<PermittedCellSlice> {
     let member_candidates = member_exceptions(campaign, cell)?;
-    let decision_owner_ids = select_cell_decision_owners(campaign, cell, &member_candidates)?;
+    let causal_assignments = assignments_for_cell(campaign, cover, cell);
+    let decision_owner_ids =
+        select_cell_decision_owners(campaign, cell, &member_candidates, &causal_assignments)?;
     let mut member_exceptions = member_candidates
         .into_iter()
         .filter(|member| decision_owner_ids.contains(&member.subject_id))
@@ -1246,6 +1333,39 @@ fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCel
         .iter()
         .map(|id| constituent_slice(campaign, id))
         .collect::<Result<Vec<_>>>()?;
+    let causal_follow_through = causal_assignments
+        .iter()
+        .map(|assignment| {
+            let summary = causal_anchor_summary(campaign, &assignment.anchor_reference)
+                .ok_or_else(|| anyhow!("causal response anchor vanished from campaign state"))?;
+            Ok(CellCausalFollowThroughSlice {
+                anchor_reference: assignment.anchor_reference.clone(),
+                responder_subject_id: assignment.responder_subject_id.clone(),
+                summary,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+    for focus in &causal_follow_through {
+        if let Some(subject) = constituents
+            .iter_mut()
+            .find(|subject| subject.subject_id == focus.responder_subject_id)
+        {
+            subject
+                .permitted_state_references
+                .insert(focus.anchor_reference.clone());
+        } else if let Some(member) = member_exceptions
+            .iter_mut()
+            .find(|member| member.subject_id == focus.responder_subject_id)
+        {
+            member
+                .permitted_state_references
+                .insert(focus.anchor_reference.clone());
+        } else {
+            return Err(anyhow!(
+                "causal response owner is absent from its exact cell slice"
+            ));
+        }
+    }
     for subject in &mut constituents {
         subject.activity_targets.retain(|target, _| {
             !target.starts_with("member:") || selected_member_ids.contains(target)
@@ -1299,6 +1419,7 @@ fn cell_slice(campaign: &Campaign, cell: &SimulationCell) -> Result<PermittedCel
         shared_knowledge,
         shared_capabilities,
         perceived_events,
+        causal_follow_through,
         world_clock_pressure: campaign
             .clocks
             .values()
@@ -1316,6 +1437,7 @@ fn select_cell_decision_owners(
     campaign: &Campaign,
     cell: &SimulationCell,
     member_candidates: &[CellMemberSlice],
+    causal_assignments: &[&crate::domain::CausalFollowThroughAssignment],
 ) -> Result<BTreeSet<String>> {
     let quota = cell_action_limit(cell);
     if quota == 0 || cell.subject_ids.is_empty() {
@@ -1328,27 +1450,52 @@ fn select_cell_decision_owners(
     }
 
     let canonical = cell.subject_ids.iter().cloned().collect::<Vec<_>>();
-    let mut selected = BTreeSet::new();
-    if let Some(focus) = cell.detail_focus_subject_id.as_ref() {
-        selected.insert(focus.clone());
+    let mut owners = causal_assignments
+        .iter()
+        .map(|assignment| assignment.responder_subject_id.clone())
+        .collect::<BTreeSet<_>>();
+    if owners.len() != causal_assignments.len() || owners.len() > quota {
+        return Err(anyhow!(
+            "causal response agenda duplicates an owner or exceeds this cell's quota"
+        ));
     }
+    let represented_canonical = |owners: &BTreeSet<String>| {
+        owners
+            .iter()
+            .map(|owner| {
+                owner
+                    .strip_prefix("member:")
+                    .and_then(|member_id| campaign.gestalt_members.get(member_id))
+                    .map(|member| member.gestalt_id.clone())
+                    .unwrap_or_else(|| owner.clone())
+            })
+            .collect::<BTreeSet<_>>()
+    };
+    if let Some(focus) = cell.detail_focus_subject_id.as_ref()
+        && owners.len() < quota
+        && !represented_canonical(&owners).contains(focus)
+    {
+        owners.insert(focus.clone());
+    }
+    let represented = represented_canonical(&owners);
     let available = canonical
         .iter()
-        .filter(|subject_id| !selected.contains(*subject_id))
+        .filter(|subject_id| !represented.contains(*subject_id))
         .cloned()
         .collect::<Vec<_>>();
-    let remaining = quota.saturating_sub(selected.len()).min(available.len());
-    if remaining == available.len() {
-        selected.extend(available);
+    let remaining = quota.saturating_sub(owners.len()).min(available.len());
+    let selected = if remaining == available.len() {
+        available
     } else if remaining > 0 {
         let start =
             (campaign.strategic_tick_count as usize).saturating_mul(remaining) % available.len();
-        for offset in 0..remaining {
-            selected.insert(available[(start + offset) % available.len()].clone());
-        }
-    }
+        (0..remaining)
+            .map(|offset| available[(start + offset) % available.len()].clone())
+            .collect()
+    } else {
+        Vec::new()
+    };
 
-    let mut owners = BTreeSet::new();
     for subject_id in selected {
         if cell.detail_focus_subject_id.as_deref() == Some(subject_id.as_str())
             || !campaign.gestalts.contains_key(&subject_id)
@@ -2068,8 +2215,7 @@ mod tests {
                     "verdicts":[{
                         "action_index":0,
                         "result":"match",
-                        "mismatch_kind":null,
-                        "repair_guidance":null
+                        "findings":[]
                     }]
                 })
                 .to_string()),
@@ -2440,7 +2586,7 @@ mod tests {
             crate::resolution::default_demand(&campaign, "resettlement"),
         )
         .unwrap();
-        let slice = cell_slice(&campaign, &cover.cells[0]).unwrap();
+        let slice = cell_slice(&campaign, &cover, &cover.cells[0]).unwrap();
         assert_eq!(
             slice.canonical_locations.get("center").map(String::as_str),
             Some("Center")
@@ -2523,7 +2669,7 @@ mod tests {
 
         let mut focused_cell = cover.cells[0].clone();
         focused_cell.detail_focus_subject_id = Some("refugees".into());
-        let focused = cell_slice(&campaign, &focused_cell).unwrap();
+        let focused = cell_slice(&campaign, &cover, &focused_cell).unwrap();
         assert!(focused.decision_owner_ids.contains("refugees"));
         assert!(!focused.decision_owner_ids.contains("member:mira"));
 
@@ -2533,7 +2679,8 @@ mod tests {
             crate::resolution::default_demand(&campaign, "ordinary local work"),
         )
         .unwrap();
-        let local_only = cell_slice(&campaign, &local_only_cover.cells[0]).unwrap();
+        let local_only =
+            cell_slice(&campaign, &local_only_cover, &local_only_cover.cells[0]).unwrap();
         assert!(
             local_only
                 .member_exceptions
