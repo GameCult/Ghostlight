@@ -1359,9 +1359,9 @@ materializing a `NewsIssue`.
    manifest, provenance, and service-isolation proof, then independent blind
    editorial and grounding acceptance. Deliver the actual copy only if both
    independent reviews accept.
-4. Defer multiple publication Personas, TeX layout, and engraved cuts until the
+3. Defer multiple publication Personas, TeX layout, and engraved cuts until the
    single Canopy Ledger passes.
-5. Per-wave issues may use daily-like reporting windows, while a final
+4. Per-wave issues may use daily-like reporting windows, while a final
    composition may be an equally current weekly-style issue with a broader
    window. Both are selective journalism; broad fact availability increases
    editorial freedom and does not license recap voice.
