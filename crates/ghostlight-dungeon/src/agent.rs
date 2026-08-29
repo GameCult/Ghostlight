@@ -1,6 +1,6 @@
 use crate::model::{
-    ModelPort, ModelStageReceipt, ModelStageRequest, mark_model_receipt_semantic_invalid,
-    run_validated_stage,
+    ModelInputItem, ModelPort, ModelStageReceipt, ModelStageRequest,
+    mark_model_receipt_semantic_invalid, render_model_input, run_validated_conversation_stage,
 };
 use async_trait::async_trait;
 use serde::{Serialize, de::DeserializeOwned};
@@ -147,7 +147,10 @@ pub async fn run_model_agent_progress<Tool: ModelAgentTool>(
     }
 
     let mut receipts = Vec::new();
-    let mut transcript = String::new();
+    let mut input = vec![ModelInputItem::user(format!(
+        "{}\n\nAGENT STEP: 1 of {}. Choose one typed tool action admitted by the current output schema. The harness will execute it against the frozen state and return the real tool observation. Do not claim success yourself; only an accepted tool result can end the task.",
+        spec.instructions, spec.max_steps
+    ))];
     let mut last_observation = None;
     for step in 0..spec.max_steps {
         let action_schema = match tool.action_schema() {
@@ -162,37 +165,18 @@ pub async fn run_model_agent_progress<Tool: ModelAgentTool>(
                 });
             }
         };
-        let action_schema_text = match serde_json::to_string(&action_schema) {
-            Ok(schema) => schema,
-            Err(error) => {
-                return Err(ModelAgentFailure {
-                    message: format!(
-                        "model agent {} could not serialize its current action schema: {error}",
-                        spec.stage
-                    ),
-                    receipts,
-                });
-            }
-        };
         let source_receipt_ids = causal_source_ids(&spec.source_receipt_ids, &receipts);
         let request = ModelStageRequest {
             stage: spec.stage.clone(),
             model: spec.model.clone(),
             snapshot_binding: spec.snapshot_binding.clone(),
-            lived_stream: format!(
-                "CURRENT LEGAL TOOL ACTION SCHEMA:\n{}\n\n{}{}\n\nAGENT STEP: {} of {}. Choose one typed tool action admitted by the current schema. The harness will execute it against the frozen state and return the real tool observation. Do not claim success yourself; only an accepted tool result can end the task.",
-                action_schema_text,
-                spec.instructions,
-                transcript,
-                step + 1,
-                spec.max_steps,
-            ),
+            lived_stream: render_model_input(&input),
             output_schema: Some(action_schema),
             source_receipt_ids,
             temperature: spec.temperature,
             max_output_tokens: spec.max_output_tokens,
         };
-        let mut stage = match run_validated_stage(port, &request).await {
+        let mut stage = match run_validated_conversation_stage(port, &request, &input).await {
             Ok(stage) => stage,
             Err(error) => {
                 return Err(ModelAgentFailure {
@@ -212,12 +196,14 @@ pub async fn run_model_agent_progress<Tool: ModelAgentTool>(
                     "message":"agent returned no typed action",
                 });
                 mark_model_receipt_semantic_invalid(&mut stage.receipt, &finding);
-                transcript.push_str(&tool_observation(
+                append_agent_observation(
+                    &mut input,
+                    &stage.narrative,
                     step,
+                    spec.max_steps,
                     "rejected",
-                    &serde_json::Value::Null,
                     &finding,
-                ));
+                );
                 last_observation = Some(finding);
                 receipts.push(stage.receipt);
                 continue;
@@ -231,7 +217,14 @@ pub async fn run_model_agent_progress<Tool: ModelAgentTool>(
                     "message":error.to_string(),
                 });
                 mark_model_receipt_semantic_invalid(&mut stage.receipt, &finding);
-                transcript.push_str(&tool_observation(step, "rejected", &action_value, &finding));
+                append_agent_observation(
+                    &mut input,
+                    &stage.narrative,
+                    step,
+                    spec.max_steps,
+                    "rejected",
+                    &finding,
+                );
                 last_observation = Some(finding);
                 receipts.push(stage.receipt);
                 continue;
@@ -266,12 +259,14 @@ pub async fn run_model_agent_progress<Tool: ModelAgentTool>(
                         return Err(ModelAgentFailure { message, receipts });
                     }
                 };
-                transcript.push_str(&tool_observation(
+                append_agent_observation(
+                    &mut input,
+                    &stage.narrative,
                     step,
+                    spec.max_steps,
                     "continued",
-                    &action_value,
                     &observation,
-                ));
+                );
                 last_observation = Some(observation);
                 receipts.push(stage.receipt);
                 receipts.extend(tool_receipts);
@@ -305,7 +300,14 @@ pub async fn run_model_agent_progress<Tool: ModelAgentTool>(
                     }
                 };
                 mark_model_receipt_semantic_invalid(&mut stage.receipt, &finding);
-                transcript.push_str(&tool_observation(step, "rejected", &action_value, &finding));
+                append_agent_observation(
+                    &mut input,
+                    &stage.narrative,
+                    step,
+                    spec.max_steps,
+                    "rejected",
+                    &finding,
+                );
                 last_observation = Some(finding);
                 receipts.push(stage.receipt);
                 receipts.extend(tool_receipts);
@@ -346,18 +348,23 @@ pub(crate) fn causal_source_ids(base: &[String], receipts: &[ModelStageReceipt])
         .collect()
 }
 
-fn tool_observation(
+fn append_agent_observation(
+    input: &mut Vec<ModelInputItem>,
+    assistant_output: &str,
     step: usize,
+    max_steps: usize,
     status: &str,
-    action: &serde_json::Value,
     observation: &serde_json::Value,
-) -> String {
-    format!(
-        "\n\nTOOL OBSERVATION AFTER AGENT STEP {} ({status}):\n{}\nPREVIOUS TOOL ACTION:\n{}\nReturn the next complete typed tool action. Preserve frozen identity and useful valid draft work; change only what the observation actually rejects or requests.",
-        step + 1,
-        serde_json::to_string(observation).unwrap_or_else(|_| "null".into()),
-        serde_json::to_string(action).unwrap_or_else(|_| "null".into()),
-    )
+) {
+    input.push(ModelInputItem::assistant(assistant_output));
+    if step + 1 < max_steps {
+        input.push(ModelInputItem::user(format!(
+            "TOOL OBSERVATION AFTER AGENT STEP {} ({status}):\n{}\n\nAGENT STEP: {} of {max_steps}. Return the next complete typed tool action. Preserve frozen identity and useful valid draft work; change only what the observation actually rejects or requests.",
+            step + 1,
+            serde_json::to_string(observation).unwrap_or_else(|_| "null".into()),
+            step + 2,
+        )));
+    }
 }
 
 #[cfg(test)]
@@ -556,7 +563,13 @@ mod tests {
         );
         let requests = model.requests.lock().unwrap();
         assert!(requests[1].lived_stream.contains("wrong_value"));
-        assert!(requests[1].lived_stream.contains("PREVIOUS TOOL ACTION"));
+        assert!(requests[1].lived_stream.contains("ASSISTANT:"));
+        assert!(
+            requests[1]
+                .lived_stream
+                .starts_with(&requests[0].lived_stream)
+        );
+        assert_eq!(requests[0].output_schema, requests[1].output_schema);
     }
 
     #[tokio::test]
@@ -633,11 +646,10 @@ mod tests {
             "accepted"
         );
         assert!(
-            requests[1]
+            !requests[1]
                 .lived_stream
                 .contains("CURRENT LEGAL TOOL ACTION SCHEMA")
         );
-        assert!(requests[1].lived_stream.contains(r#""const":"accepted""#));
     }
 
     #[tokio::test]

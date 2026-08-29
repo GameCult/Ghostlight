@@ -1362,6 +1362,24 @@ disturbing” from cordon and warnings to barriers and path; line 19 changes
 historical stalled lifts into “remains stalled.” These findings do not reopen
 the printed edition or block delivery.
 
+The source-grounded prompt audit falsified v8 as the target newsroom
+architecture. Run 59 narrative selection used ten provider calls, 1,373,208
+input characters, 582,184 prompt tokens, and zero cached tokens.
+`character-newsroom.v9` now uses typed append-only model items, stable selector
+and Night action schemas, stable stage/model/schema cache routing, and no
+prompt-embedded tool schemas or repeated prior actions. Veyra Kest sees the
+complete embodied publication roster and assigns every story to a journalist whose character,
+biases, and preferences inform that choice. Each reporter sees only their own
+profile, assignment, and exact cited records. Dalen Marr alone raises one
+complete factual checklist. Meret Sorn receives only queried articles, their
+assignments and cited facts, and the affected reporter profiles; she gets one
+chance to resolve exactly those objections while preserving the story. The
+one-shot whole-page writer and generic byline registry are deleted.
+Deterministic press admission still owns structure, provenance, query
+disposition, and closure. Focused gates pass 475/475 library tests, 16/16
+strategic-smoke tests, and all-target checks. No provider or simulation run has
+been launched for v9.
+
 Run 54 exposed one separate upstream publicity defect: a public strategic
 activity propagates its channel to private `MemberMemory` outcomes, which is
 how Orin Pell retaining a memory became a public news row. The newsroom should
@@ -1369,13 +1387,14 @@ ignore that bookkeeping, but revision 27 remains immutable. Future kernel work
 must require an outcome's own observable or communicated public scope before
 materializing a `NewsIssue`.
 
-1. Deliver the actual immutable Run 59 copy and its press/artifact proof. Do not
-   rerun, rewrite, or withhold the edition.
-2. Preserve the two grounding corrections and editorial diagnostics above as
-   later publication debt. After delivery, move to the publication-Persona and
-   correction-memory owner.
-3. Defer multiple publication Personas, TeX layout, and engraved cuts until
-   separately authorized after Run 59 delivery.
+1. Preserve immutable Run 59 and its later-publication correction debt; do not
+   rewrite or resimulate it.
+2. Exercise `character-newsroom.v9` only in a separately authorized
+   newsroom-only provider run. Measure actual cached tokens and judge the
+   embodied reporters' copy rather than treating local cache invariants as
+   provider acceptance.
+3. Defer multiple publications, TeX layout, and engraved cuts until separately
+   authorized.
 4. Per-wave issues may use daily-like reporting windows, while a final
    composition may be an equally current weekly-style issue with a broader
    window. Both are selective journalism; broad fact availability increases

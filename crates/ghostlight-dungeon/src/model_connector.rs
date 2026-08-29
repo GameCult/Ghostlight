@@ -15,8 +15,8 @@ use tokio::sync::Semaphore;
 use zeroize::Zeroizing;
 
 use crate::model::{
-    MODEL_BALANCED, MODEL_CAPABLE, MODEL_FAST, ModelPort, ModelProviderOutput, ModelStageRequest,
-    ModelTokenUsage,
+    MODEL_BALANCED, MODEL_CAPABLE, MODEL_FAST, ModelInputItem, ModelPort, ModelProviderOutput,
+    ModelStageRequest, ModelTokenUsage,
 };
 
 const MAX_FRAME_BYTES: usize = 1_052_672;
@@ -90,6 +90,14 @@ impl CodexConnectorModelPort {
     }
 
     fn invoke(&self, request: &ModelStageRequest) -> Result<ModelProviderOutput> {
+        self.invoke_with_input(request, None)
+    }
+
+    fn invoke_with_input(
+        &self,
+        request: &ModelStageRequest,
+        conversation: Option<&[ModelInputItem]>,
+    ) -> Result<ModelProviderOutput> {
         let request_id = format!("ghostlight-model-{}", uuid::Uuid::new_v4());
         let resolved_model = match request.model.as_str() {
             MODEL_FAST => self.fast_model.clone(),
@@ -103,9 +111,26 @@ impl CodexConnectorModelPort {
             resolved_model,
             "Execute the supplied Ghostlight model stage. Treat it as projected context, obey its output contract, and return only the requested public answer.",
         );
-        provider_request.input = vec![CodexInputItem::UserText {
-            text: request.lived_stream.clone(),
-        }];
+        provider_request.input = conversation.map_or_else(
+            || {
+                vec![CodexInputItem::UserText {
+                    text: request.lived_stream.clone(),
+                }]
+            },
+            |input| {
+                input
+                    .iter()
+                    .map(|item| match item {
+                        ModelInputItem::UserText { text } => {
+                            CodexInputItem::UserText { text: text.clone() }
+                        }
+                        ModelInputItem::AssistantText { text } => {
+                            CodexInputItem::AssistantText { text: text.clone() }
+                        }
+                    })
+                    .collect()
+            },
+        );
         provider_request.reasoning_effort = Some(
             if matches!(request.model.as_str(), MODEL_BALANCED | MODEL_CAPABLE) {
                 "medium"
@@ -126,7 +151,11 @@ impl CodexConnectorModelPort {
         provider_request.max_output_tokens = request.max_output_tokens;
         provider_request.prompt_cache_key = Some(prompt_cache_key(request)?);
 
-        let native_request_sha256 = Sha256::digest(rmp_serde::to_vec(request)?).into();
+        let native_request_sha256 = Sha256::digest(match conversation {
+            Some(input) => rmp_serde::to_vec_named(&(request, input))?,
+            None => rmp_serde::to_vec(request)?,
+        })
+        .into();
         let invocation = CodexTransportInvocation::new(
             self.caller_runtime_id.clone(),
             unix_ms()?.saturating_add(REQUEST_EXPIRY.as_millis() as u64),
@@ -155,6 +184,27 @@ impl ModelPort for CodexConnectorModelPort {
         tokio::task::spawn_blocking(move || {
             let _permit = permit;
             port.invoke(&request)
+        })
+        .await?
+    }
+
+    async fn run_observed_conversation(
+        &self,
+        request: &ModelStageRequest,
+        input: &[ModelInputItem],
+    ) -> Result<ModelProviderOutput> {
+        let permit = self
+            .request_gate
+            .clone()
+            .acquire_owned()
+            .await
+            .map_err(|_| anyhow::anyhow!("CodexConnector request gate closed"))?;
+        let port = self.clone();
+        let request = request.clone();
+        let input = input.to_vec();
+        tokio::task::spawn_blocking(move || {
+            let _permit = permit;
+            port.invoke_with_input(&request, Some(&input))
         })
         .await?
     }
@@ -673,8 +723,7 @@ mod tests {
     };
 
     #[tokio::test]
-    async fn connector_port_uses_the_shared_v2_transport_and_exact_provider_request() -> Result<()>
-    {
+    async fn connector_port_preserves_append_only_roles_in_the_provider_request() -> Result<()> {
         let listener = TcpListener::bind("127.0.0.1:0")?;
         let endpoint = listener.local_addr()?;
         let server = std::thread::spawn(move || -> Result<CodexTransportInvocation> {
@@ -728,23 +777,27 @@ mod tests {
             1,
         )?;
         assert_eq!(port.request_gate.available_permits(), 1);
-        let output = port
-            .run_observed(&ModelStageRequest {
-                stage: "test_interpreter".to_string(),
-                model: MODEL_BALANCED.to_string(),
-                snapshot_binding: "revision:7".to_string(),
-                lived_stream: "Return the typed answer.".to_string(),
-                output_schema: Some(serde_json::json!({
-                    "type":"object",
-                    "required":["answer"],
-                    "properties":{"answer":{"type":"string"}},
-                    "additionalProperties":false
-                })),
-                source_receipt_ids: Vec::new(),
-                temperature: Some(0.0),
-                max_output_tokens: Some(512),
-            })
-            .await?;
+        let request = ModelStageRequest {
+            stage: "test_interpreter".to_string(),
+            model: MODEL_BALANCED.to_string(),
+            snapshot_binding: "revision:7".to_string(),
+            lived_stream: "Return the typed answer.".to_string(),
+            output_schema: Some(serde_json::json!({
+                "type":"object",
+                "required":["answer"],
+                "properties":{"answer":{"type":"string"}},
+                "additionalProperties":false
+            })),
+            source_receipt_ids: Vec::new(),
+            temperature: Some(0.0),
+            max_output_tokens: Some(512),
+        };
+        let input = vec![
+            ModelInputItem::user("Choose one action."),
+            ModelInputItem::assistant("{\"answer\":\"draft\"}"),
+            ModelInputItem::user("The tool rejected that draft; repair it."),
+        ];
+        let output = port.run_observed_conversation(&request, &input).await?;
         let invocation = server.join().expect("server thread")?;
         assert_eq!(invocation.request.model, "gpt-5.6-terra");
         assert_eq!(invocation.request.max_output_tokens, Some(512));
@@ -752,6 +805,16 @@ mod tests {
             invocation.request.output_format_name.as_deref(),
             Some("test_interpreter")
         );
+        assert!(matches!(
+            invocation.request.input.as_slice(),
+            [
+                CodexInputItem::UserText { text: first },
+                CodexInputItem::AssistantText { text: second },
+                CodexInputItem::UserText { text: third },
+            ] if first == "Choose one action."
+                && second == "{\"answer\":\"draft\"}"
+                && third == "The tool rejected that draft; repair it."
+        ));
         assert_eq!(output.content, "{\"answer\":\"ready\"}");
         assert_eq!(
             output.token_usage.expect("usage").prompt_cache_hit_tokens,
@@ -971,6 +1034,14 @@ mod tests {
         changed_context.snapshot_binding = "revision:8".to_string();
         changed_context.lived_stream = "A different world slice.".to_string();
         assert_eq!(
+            prompt_cache_key(&request)?,
+            prompt_cache_key(&changed_context)?
+        );
+        changed_context.output_schema = Some(serde_json::json!({
+            "type":"object",
+            "properties":{"different_action":{"type":"string"}}
+        }));
+        assert_ne!(
             prompt_cache_key(&request)?,
             prompt_cache_key(&changed_context)?
         );

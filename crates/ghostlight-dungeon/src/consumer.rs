@@ -323,6 +323,7 @@ pub struct WorldNewspaperRequest {
     pub title: String,
     #[schemars(length(min = 1, max = 600))]
     pub editorial_voice: String,
+    pub newsroom: crate::newspaper::WorldNewspaperNewsroom,
     #[schemars(range(min = 1, max = 6))]
     pub max_articles: u16,
 }

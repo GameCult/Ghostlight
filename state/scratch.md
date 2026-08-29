@@ -1,4 +1,4 @@
-# Ghostlight Scratch
+# Scratch Working Memory
 
 ## Current Subgoal
 

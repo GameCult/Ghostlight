@@ -304,10 +304,10 @@ async fn handle_operation_inner(
                 success_response(request, "ghostlight.external_proposal_receipt.v1", &receipt)
             }
             ghostlight_dungeon::consumer::COMPOSE_NEWSPAPER_OPERATION => {
-                require_schema(payload_schema, "ghostlight.world_newspaper_request.v2")?;
+                require_schema(payload_schema, "ghostlight.world_newspaper_request.v3")?;
                 let command: ghostlight_dungeon::consumer::WorldNewspaperRequest =
                     decode_request(request)?;
-                require_schema(&command.schema, "ghostlight.world_newspaper_request.v2")?;
+                require_schema(&command.schema, "ghostlight.world_newspaper_request.v3")?;
                 let model = state
                     .model
                     .as_deref()
@@ -525,14 +525,14 @@ mod tests {
         assert!(
             require_schema(
                 "ghostlight.world_newspaper_request.v1",
-                "ghostlight.world_newspaper_request.v2"
+                "ghostlight.world_newspaper_request.v3"
             )
             .is_err()
         );
         assert!(
             require_schema(
-                "ghostlight.world_newspaper_request.v2",
-                "ghostlight.world_newspaper_request.v2"
+                "ghostlight.world_newspaper_request.v3",
+                "ghostlight.world_newspaper_request.v3"
             )
             .is_ok()
         );

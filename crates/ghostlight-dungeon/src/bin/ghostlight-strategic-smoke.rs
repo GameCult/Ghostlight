@@ -2013,9 +2013,11 @@ async fn main() -> anyhow::Result<()> {
             let issue_campaign = completed_wave_issue_campaign(&wave_reports, report_index)?;
             let issue_title = format!("{newspaper_title} — Issue {wave_index}");
             let source_campaign_digest = strategic_smoke_digest(&issue_campaign)?;
+            let newsroom = ghostlight_dungeon::newspaper::canopy_ledger_newsroom();
             let editorial_contract_digest = strategic_smoke_digest(&serde_json::json!({
                 "title":&issue_title,
                 "editorial_voice":&newspaper_voice,
+                "newsroom":&newsroom,
                 "max_articles":5,
             }))?;
             let recomposition_path =
@@ -2040,6 +2042,7 @@ async fn main() -> anyhow::Result<()> {
                             &issue_campaign,
                             &issue_title,
                             &newspaper_voice,
+                            &newsroom,
                             5,
                             &store,
                             import.import,
@@ -2397,6 +2400,7 @@ async fn compose_persisted_newspaper(
         campaign,
         title,
         editorial_voice,
+        &ghostlight_dungeon::newspaper::canopy_ledger_newsroom(),
         max_articles,
         store,
     )

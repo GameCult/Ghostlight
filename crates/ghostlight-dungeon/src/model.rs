@@ -32,6 +32,44 @@ pub struct ModelStageRequest {
     pub max_output_tokens: Option<u32>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "role", rename_all = "snake_case", deny_unknown_fields)]
+pub enum ModelInputItem {
+    UserText { text: String },
+    AssistantText { text: String },
+}
+
+impl ModelInputItem {
+    pub fn user(text: impl Into<String>) -> Self {
+        Self::UserText { text: text.into() }
+    }
+
+    pub fn assistant(text: impl Into<String>) -> Self {
+        Self::AssistantText { text: text.into() }
+    }
+
+    fn text(&self) -> &str {
+        match self {
+            Self::UserText { text } | Self::AssistantText { text } => text,
+        }
+    }
+}
+
+pub fn render_model_input(items: &[ModelInputItem]) -> String {
+    items
+        .iter()
+        .map(|item| match item {
+            ModelInputItem::UserText { text } => format!("USER:\n{text}"),
+            ModelInputItem::AssistantText { text } => format!("ASSISTANT:\n{text}"),
+        })
+        .collect::<Vec<_>>()
+        .join("\n\n")
+}
+
+fn model_input_chars(items: &[ModelInputItem]) -> usize {
+    items.iter().map(|item| item.text().chars().count()).sum()
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct ModelStageReceipt {
     pub schema: String,
@@ -165,6 +203,15 @@ pub trait ModelPort: Send + Sync {
             ..Default::default()
         })
     }
+    async fn run_observed_conversation(
+        &self,
+        request: &ModelStageRequest,
+        input: &[ModelInputItem],
+    ) -> Result<ModelProviderOutput> {
+        let mut projected = request.clone();
+        projected.lived_stream = render_model_input(input);
+        self.run_observed(&projected).await
+    }
     fn provider(&self) -> &'static str;
     fn attempt_timeout(&self, _request: &ModelStageRequest) -> std::time::Duration {
         std::time::Duration::from_secs(45)
@@ -175,13 +222,36 @@ pub async fn run_validated_stage(
     port: &dyn ModelPort,
     request: &ModelStageRequest,
 ) -> Result<ModelStageOutput> {
-    run_validated_stage_with_timeout(port, request, port.attempt_timeout(request)).await
+    run_validated_stage_inner(port, request, port.attempt_timeout(request), None).await
+}
+
+pub async fn run_validated_conversation_stage(
+    port: &dyn ModelPort,
+    request: &ModelStageRequest,
+    input: &[ModelInputItem],
+) -> Result<ModelStageOutput> {
+    run_validated_stage_inner(
+        port,
+        request,
+        port.attempt_timeout(request),
+        Some(input.to_vec()),
+    )
+    .await
 }
 
 pub async fn run_validated_stage_with_timeout(
     port: &dyn ModelPort,
     request: &ModelStageRequest,
     timeout: std::time::Duration,
+) -> Result<ModelStageOutput> {
+    run_validated_stage_inner(port, request, timeout, None).await
+}
+
+async fn run_validated_stage_inner(
+    port: &dyn ModelPort,
+    request: &ModelStageRequest,
+    timeout: std::time::Duration,
+    mut conversation: Option<Vec<ModelInputItem>>,
 ) -> Result<ModelStageOutput> {
     let validator = request
         .output_schema
@@ -202,10 +272,15 @@ pub async fn run_validated_stage_with_timeout(
             let mut transport_attempt = 0;
             loop {
                 let started = Instant::now();
-                let (failure_kind, diagnostic) = match tokio::time::timeout(
-                    timeout,
-                    port.run_observed(&attempt_request),
-                )
+                let (failure_kind, diagnostic) = match tokio::time::timeout(timeout, async {
+                    match conversation.as_deref() {
+                        Some(input) => {
+                            port.run_observed_conversation(&attempt_request, input)
+                                .await
+                        }
+                        None => port.run_observed(&attempt_request).await,
+                    }
+                })
                 .await
                 {
                     Ok(Ok(output)) => break (output, started.elapsed().as_millis() as u64),
@@ -216,7 +291,10 @@ pub async fn run_validated_stage_with_timeout(
                             "model stage {} timed out after {} seconds with {} input characters",
                             request.stage,
                             timeout.as_secs(),
-                            attempt_request.lived_stream.chars().count()
+                            conversation.as_deref().map_or_else(
+                                || attempt_request.lived_stream.chars().count(),
+                                model_input_chars,
+                            )
                         ),
                     ),
                 };
@@ -269,8 +347,11 @@ pub async fn run_validated_stage_with_timeout(
                 .expect("attempt was just recorded")
                 .local_validation_error = Some("provider returned an empty response".into());
             if attempt == 0 {
-                attempt_request.lived_stream.push_str(
-                    "\n\nLOCAL VALIDATOR: The previous response was empty. Return one complete response against the same snapshot and output contract.",
+                append_validation_retry(
+                    &mut attempt_request,
+                    &mut conversation,
+                    &output,
+                    "LOCAL VALIDATOR: The previous response was empty. Return one complete response against the same snapshot and output contract.".into(),
                 );
                 continue;
             }
@@ -299,9 +380,14 @@ pub async fn run_validated_stage_with_timeout(
                             .expect("attempt was just recorded")
                             .local_validation_error = Some(bounded_validation_error(&diagnostic));
                         if attempt == 0 {
-                            attempt_request.lived_stream.push_str(&format!(
-                                "\n\nLOCAL VALIDATOR REJECTED THE PREVIOUS JSON: {diagnostic}\nReturn one corrected complete JSON object against the same snapshot and schema."
-                            ));
+                            append_validation_retry(
+                                &mut attempt_request,
+                                &mut conversation,
+                                &output,
+                                format!(
+                                    "LOCAL VALIDATOR REJECTED THE PREVIOUS JSON: {diagnostic}\nReturn one corrected complete JSON object against the same snapshot and schema."
+                                ),
+                            );
                             continue;
                         }
                         return Err(anyhow!(
@@ -319,9 +405,14 @@ pub async fn run_validated_stage_with_timeout(
                         .last_mut()
                         .expect("attempt was just recorded")
                         .local_validation_error = Some(bounded_validation_error(&error));
-                    attempt_request.lived_stream.push_str(&format!(
-                        "\n\nLOCAL VALIDATOR COULD NOT PARSE THE PREVIOUS RESPONSE AS JSON: {error}\nReturn one corrected complete JSON object against the same snapshot and schema."
-                    ));
+                    append_validation_retry(
+                        &mut attempt_request,
+                        &mut conversation,
+                        &output,
+                        format!(
+                            "LOCAL VALIDATOR COULD NOT PARSE THE PREVIOUS RESPONSE AS JSON: {error}\nReturn one corrected complete JSON object against the same snapshot and schema."
+                        ),
+                    );
                     continue;
                 }
                 Err(error) => {
@@ -345,6 +436,9 @@ pub async fn run_validated_stage_with_timeout(
         let receipt_model = resolved_model.unwrap_or_else(|| attempt_request.model.clone());
         let mut receipted_request = attempt_request.clone();
         receipted_request.model.clone_from(&receipt_model);
+        if let Some(input) = conversation.as_deref() {
+            receipted_request.lived_stream = render_model_input(input);
+        }
         let request_bytes = serde_json::to_vec(&receipted_request)?;
         let provider = port.provider().to_owned();
         let request_hash = format!("sha256:{:x}", Sha256::digest(&request_bytes));
@@ -380,13 +474,33 @@ pub async fn run_validated_stage_with_timeout(
                 latency_ms: stage_started.elapsed().as_millis() as u64,
                 validation_result: "valid".into(),
                 local_validation_error: None,
-                input_chars: attempt_request.lived_stream.chars().count(),
+                input_chars: conversation.as_deref().map_or_else(
+                    || attempt_request.lived_stream.chars().count(),
+                    model_input_chars,
+                ),
                 output_chars: output.chars().count(),
                 provider_attempts,
             },
         });
     }
     unreachable!()
+}
+
+fn append_validation_retry(
+    request: &mut ModelStageRequest,
+    conversation: &mut Option<Vec<ModelInputItem>>,
+    rejected_output: &str,
+    diagnostic: String,
+) {
+    if let Some(input) = conversation.as_mut() {
+        if !rejected_output.trim().is_empty() {
+            input.push(ModelInputItem::assistant(rejected_output));
+        }
+        input.push(ModelInputItem::user(diagnostic));
+    } else {
+        request.lived_stream.push_str("\n\n");
+        request.lived_stream.push_str(&diagnostic);
+    }
 }
 
 fn bounded_validation_error(error: &impl std::fmt::Display) -> String {

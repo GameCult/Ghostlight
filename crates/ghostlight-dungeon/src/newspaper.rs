@@ -27,7 +27,7 @@ use std::{
 const MAX_FRONT_PAGE_ARTICLES: usize = 6;
 const MAX_PUBLIC_RECORD_QUERY_RESULTS: usize = 24;
 const MAX_NARRATIVE_SELECTION_STEPS: usize = 12;
-const NEWSROOM_CONTRACT_VERSION: &str = "canopy-ledger-night-editor.v8";
+const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v9";
 const LEGACY_RECONCILIATION_CONTRACT_VERSION: &str = "canopy-ledger-night-editor.v7";
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
@@ -38,13 +38,121 @@ const ALLOWED_SECTIONS: [&str; 6] = [
     "Dispatches",
     "Comment",
 ];
-const ALLOWED_BYLINES: [&str; 5] = [
-    "By our own correspondent",
-    "By the political editor",
-    "By the trade correspondent",
-    "Staff report",
-    "Editorial",
-];
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct WorldNewspaperStaffMember {
+    pub id: String,
+    pub name: String,
+    #[schemars(length(min = 1, max = 500))]
+    pub character: String,
+    #[schemars(length(min = 1, max = 6))]
+    pub biases: Vec<String>,
+    #[schemars(length(min = 1, max = 6))]
+    pub preferences: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct WorldNewspaperJournalist {
+    pub staff: WorldNewspaperStaffMember,
+    #[schemars(length(min = 1, max = 60))]
+    pub byline: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct WorldNewspaperNewsroom {
+    pub assignment_editor: WorldNewspaperStaffMember,
+    #[schemars(length(min = 1, max = 6))]
+    pub journalists: Vec<WorldNewspaperJournalist>,
+    pub copy_editor: WorldNewspaperStaffMember,
+    pub night_editor: WorldNewspaperStaffMember,
+}
+
+pub fn canopy_ledger_newsroom() -> WorldNewspaperNewsroom {
+    WorldNewspaperNewsroom {
+        assignment_editor: WorldNewspaperStaffMember {
+            id: "veyra-kest".into(),
+            name: "Veyra Kest".into(),
+            character: "A veteran city editor who treats official vagueness as a confession delivered without the useful nouns.".into(),
+            biases: vec![
+                "Institutional euphemism usually protects whoever already has a seal and a chair.".into(),
+                "A public consequence outranks an announced intention.".into(),
+            ],
+            preferences: vec![
+                "Conflict with named opposing actors and visible stakes.".into(),
+                "Continuing stories whose new turn changes what readers should fear or demand.".into(),
+            ],
+        },
+        journalists: vec![
+            WorldNewspaperJournalist {
+                staff: WorldNewspaperStaffMember {
+                    id: "aven-tarl".into(),
+                    name: "Aven Tarl".into(),
+                    character: "A court reporter with immaculate cuffs, a long memory for humiliation, and no respect for inherited dignity once it becomes funny.".into(),
+                    biases: vec!["Power is most legible when it is embarrassed in public.".into()],
+                    preferences: vec!["Court scandal, succession, hypocrisy, and status reversals.".into()],
+                },
+                byline: "Aven Tarl".into(),
+            },
+            WorldNewspaperJournalist {
+                staff: WorldNewspaperStaffMember {
+                    id: "mera-quill".into(),
+                    name: "Mera Quill".into(),
+                    character: "A street correspondent who listens first to witnesses, children, mourners, and whoever must clean the room after policy leaves it.".into(),
+                    biases: vec!["Procedure is often the name authority gives to somebody else's pain.".into()],
+                    preferences: vec!["Bodies, witnesses, private cost, public anger, and grotesque physical evidence.".into()],
+                },
+                byline: "Mera Quill".into(),
+            },
+            WorldNewspaperJournalist {
+                staff: WorldNewspaperStaffMember {
+                    id: "ossan-reed".into(),
+                    name: "Ossan Reed".into(),
+                    character: "A former works clerk who can smell a failing pump, a cooked ledger, and management's preferred order for blaming the shift.".into(),
+                    biases: vec!["Infrastructure failures are political decisions with tools attached.".into()],
+                    preferences: vec!["Labor, shortages, hazardous works, guild conflict, and material consequences.".into()],
+                },
+                byline: "Ossan Reed".into(),
+            },
+            WorldNewspaperJournalist {
+                staff: WorldNewspaperStaffMember {
+                    id: "lysa-fen".into(),
+                    name: "Lysa Fen".into(),
+                    character: "A border correspondent who reads every truce as a maneuver and every maneuver as somebody else's future funeral.".into(),
+                    biases: vec!["Security claims deserve to be read from the exposed side of the boundary.".into()],
+                    preferences: vec!["Borders, armed orders, treaties, migrations, and rival countermoves.".into()],
+                },
+                byline: "Lysa Fen".into(),
+            },
+            WorldNewspaperJournalist {
+                staff: WorldNewspaperStaffMember {
+                    id: "corin-vey".into(),
+                    name: "Corin Vey".into(),
+                    character: "A trade columnist who believes every noble abstraction eventually arrives as a toll, an empty stall, or a favor owed.".into(),
+                    biases: vec!["Markets reveal alliances that proclamations try to hide.".into()],
+                    preferences: vec!["Trade, tolls, communes, debt, patronage, and who profits from disorder.".into()],
+                },
+                byline: "Corin Vey".into(),
+            },
+        ],
+        copy_editor: WorldNewspaperStaffMember {
+            id: "dalen-marr".into(),
+            name: "Dalen Marr".into(),
+            character: "A copy editor with a jeweller's patience for exact language and a personal grudge against causation smuggled through a comma.".into(),
+            biases: vec!["Certainty is expensive and reporters spend it too freely.".into()],
+            preferences: vec!["Complete factual query lists, exact quoted passages, and no proposed prose.".into()],
+        },
+        night_editor: WorldNewspaperStaffMember {
+            id: "meret-sorn".into(),
+            name: "Meret Sorn".into(),
+            character: "A deadline editor who can remove a libelous hinge without sanding the blade off the sentence around it.".into(),
+            biases: vec!["A late correction is survivable; a page that says nothing is not worth printing.".into()],
+            preferences: vec!["The smallest repair that clears every lodged objection and preserves the reporter's case.".into()],
+        },
+    }
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct WorldNewspaperIssue {
@@ -381,6 +489,10 @@ pub struct WorldNewspaperEditorialAgenda {
 #[serde(deny_unknown_fields)]
 pub struct WorldNewspaperStoryPitch {
     pub lead: bool,
+    #[serde(default)]
+    pub section: String,
+    #[serde(default)]
+    pub journalist_id: String,
     #[schemars(length(min = 1))]
     pub citations: Vec<String>,
     #[serde(default)]
@@ -502,6 +614,7 @@ struct EditorialSupportingRecord {
 
 struct NarrativeSelectionWorkbench<'a> {
     records: &'a [PublicRecordProjection],
+    newsroom: &'a WorldNewspaperNewsroom,
     max_articles: usize,
     visible_record_ids: BTreeSet<String>,
     completed_queries: BTreeSet<PublicRecordQuery>,
@@ -509,15 +622,6 @@ struct NarrativeSelectionWorkbench<'a> {
 }
 
 impl NarrativeSelectionWorkbench<'_> {
-    fn known_channels(&self) -> Vec<String> {
-        self.records
-            .iter()
-            .map(|record| record.channel.clone())
-            .collect::<BTreeSet<_>>()
-            .into_iter()
-            .collect()
-    }
-
     fn query(&mut self, mut query: PublicRecordQuery) -> Result<NarrativeSelectionFinding> {
         normalize_query_terms(&mut query.terms, "query term")?;
         normalize_query_terms(&mut query.entity_names, "query entity")?;
@@ -598,7 +702,7 @@ impl NarrativeSelectionWorkbench<'_> {
                 "agenda cites public record {record_id} without querying it"
             ));
         }
-        validate_editorial_agenda(self.records, &agenda, self.max_articles)?;
+        validate_editorial_agenda(self.records, self.newsroom, &agenda, self.max_articles)?;
         let candidate_digest = editorial_agenda_candidate_digest(&agenda)?;
         let mut pitches = agenda
             .story_pitches
@@ -750,8 +854,13 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
     type Finding = NarrativeSelectionFinding;
 
     fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
-        let citations = self.visible_record_ids.iter().cloned().collect::<Vec<_>>();
-        let story_budget = self.max_articles.min(self.records.len());
+        let story_budget = self.max_articles;
+        let journalist_ids = self
+            .newsroom
+            .journalists
+            .iter()
+            .map(|journalist| journalist.staff.id.clone())
+            .collect::<Vec<_>>();
         let propose_schema = serde_json::json!({
             "type":"object",
             "additionalProperties":false,
@@ -774,6 +883,8 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                         "additionalProperties":false,
                         "required":[
                             "lead",
+                            "section",
+                            "journalist_id",
                             "citations",
                             "focus_citation",
                             "narrative_claim",
@@ -782,14 +893,15 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                         ],
                         "properties":{
                             "lead":{"type":"boolean"},
+                            "section":{"type":"string","enum":ALLOWED_SECTIONS},
+                            "journalist_id":{"type":"string","enum":journalist_ids},
                             "citations":{
                                 "type":"array",
                                 "minItems":1,
-                                "maxItems":citations.len(),
                                 "uniqueItems":true,
-                                "items":{"type":"string","enum":citations}
+                                "items":{"type":"string","minLength":1,"maxLength":240}
                             },
-                            "focus_citation":{"type":"string","enum":citations},
+                            "focus_citation":{"type":"string","minLength":1,"maxLength":240},
                             "narrative_claim":{"type":"string","minLength":1,"maxLength":500},
                             "tension":{"type":"string","minLength":1,"maxLength":500},
                             "public_question":{"type":"string","minLength":1,"maxLength":500}
@@ -798,14 +910,10 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                 }
             }
         });
-        let cursor_schema = if citations.is_empty() {
-            serde_json::json!({"type":"null"})
-        } else {
-            serde_json::json!({"anyOf":[
-                {"type":"string","enum":citations},
-                {"type":"null"}
-            ]})
-        };
+        let cursor_schema = serde_json::json!({"anyOf":[
+            {"type":"string","minLength":1,"maxLength":240},
+            {"type":"null"}
+        ]});
         let assertion_status_schema =
             serde_json::to_value(schema_for!(WorldNewspaperAssertionStatus))
                 .map_err(|error| error.to_string())?;
@@ -830,32 +938,26 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                 "assertion_statuses":{"type":"array","maxItems":5,"uniqueItems":true,
                     "items":{"type":"string","enum":assertion_statuses}},
                 "channels":{"type":"array","maxItems":6,"uniqueItems":true,
-                    "items":{"type":"string","enum":self.known_channels()}},
+                    "items":{"type":"string","minLength":1,"maxLength":240}},
                 "order":{"type":"string","enum":["newest","oldest"]},
                 "cursor":cursor_schema,
                 "limit":{"type":"integer","minimum":1,"maximum":MAX_PUBLIC_RECORD_QUERY_RESULTS}
             }
         });
-        let mut commands = vec![query_schema];
-        if !citations.is_empty() {
-            commands.push(propose_schema);
-        }
-        if let Some((candidate_digest, _)) = &self.pending_agenda {
-            commands.push(serde_json::json!({
+        let commands = vec![
+            query_schema,
+            propose_schema,
+            serde_json::json!({
                 "type":"object",
                 "additionalProperties":false,
                 "required":["tool","candidate_digest"],
                 "properties":{
                     "tool":{"const":"commit_agenda"},
-                    "candidate_digest":{"const":candidate_digest}
+                    "candidate_digest":{"type":"string","minLength":71,"maxLength":71}
                 }
-            }));
-        }
-        let command_schema = if commands.len() == 1 {
-            commands.remove(0)
-        } else {
-            serde_json::json!({"oneOf":commands})
-        };
+            }),
+        ];
+        let command_schema = serde_json::json!({"oneOf":commands});
         let mut schema = serde_json::json!({
             "type":"object",
             "additionalProperties":false,
@@ -966,6 +1068,95 @@ fn validate_editorial_frame(value: &str, label: &str) -> Result<()> {
     Ok(())
 }
 
+fn validate_staff_member(member: &WorldNewspaperStaffMember, label: &str) -> Result<()> {
+    validate_single_line(&member.id, 80, &format!("{label} ID"))?;
+    validate_single_line(&member.name, 80, &format!("{label} name"))?;
+    validate_editorial_frame(&member.character, &format!("{label} character"))?;
+    if member.biases.is_empty()
+        || member.biases.len() > 6
+        || member.preferences.is_empty()
+        || member.preferences.len() > 6
+    {
+        return Err(anyhow!("{label} has an invalid disposition"));
+    }
+    for bias in &member.biases {
+        validate_editorial_frame(bias, &format!("{label} bias"))?;
+    }
+    for preference in &member.preferences {
+        validate_editorial_frame(preference, &format!("{label} preference"))?;
+    }
+    Ok(())
+}
+
+fn validate_newsroom(newsroom: &WorldNewspaperNewsroom) -> Result<()> {
+    if newsroom.journalists.is_empty() || newsroom.journalists.len() > MAX_FRONT_PAGE_ARTICLES {
+        return Err(anyhow!("newsroom must employ one to six journalists"));
+    }
+    validate_staff_member(&newsroom.assignment_editor, "assignment editor")?;
+    validate_staff_member(&newsroom.copy_editor, "copy editor")?;
+    validate_staff_member(&newsroom.night_editor, "Night Editor")?;
+    let mut staff_ids = BTreeSet::from([
+        newsroom.assignment_editor.id.as_str(),
+        newsroom.copy_editor.id.as_str(),
+        newsroom.night_editor.id.as_str(),
+    ]);
+    let mut staff_names = BTreeSet::from([
+        newsroom.assignment_editor.name.as_str(),
+        newsroom.copy_editor.name.as_str(),
+        newsroom.night_editor.name.as_str(),
+    ]);
+    if staff_ids.len() != 3 || staff_names.len() != 3 {
+        return Err(anyhow!("newsroom staff identities must be unique"));
+    }
+    let mut bylines = BTreeSet::new();
+    for journalist in &newsroom.journalists {
+        validate_staff_member(&journalist.staff, "journalist")?;
+        validate_single_line(&journalist.byline, 60, "journalist byline")?;
+        if !staff_ids.insert(&journalist.staff.id)
+            || !staff_names.insert(&journalist.staff.name)
+            || !bylines.insert(journalist.byline.as_str())
+        {
+            return Err(anyhow!(
+                "newsroom staff identities and bylines must be unique"
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn journalist_by_id<'a>(
+    newsroom: &'a WorldNewspaperNewsroom,
+    journalist_id: &str,
+) -> Result<&'a WorldNewspaperJournalist> {
+    newsroom
+        .journalists
+        .iter()
+        .find(|journalist| journalist.staff.id == journalist_id)
+        .ok_or_else(|| anyhow!("editorial pitch assigned an unknown journalist {journalist_id}"))
+}
+
+fn normalize_legacy_agenda(
+    agenda: &mut WorldNewspaperEditorialAgenda,
+    newsroom: &WorldNewspaperNewsroom,
+) {
+    for (index, pitch) in agenda.story_pitches.iter_mut().enumerate() {
+        if pitch.section.is_empty() {
+            pitch.section = if index == 0 {
+                "Front Page"
+            } else {
+                "Dispatches"
+            }
+            .into();
+        }
+        if pitch.journalist_id.is_empty() {
+            pitch.journalist_id = newsroom.journalists[index % newsroom.journalists.len()]
+                .staff
+                .id
+                .clone();
+        }
+    }
+}
+
 fn selected_record_ids<'a>(record_ids: &'a [String], label: &str) -> Result<BTreeSet<&'a str>> {
     if record_ids.is_empty() {
         return Err(anyhow!("{label} selected no public record"));
@@ -982,6 +1173,7 @@ fn selected_record_ids<'a>(record_ids: &'a [String], label: &str) -> Result<BTre
 
 fn validate_editorial_agenda(
     records: &[PublicRecordProjection],
+    newsroom: &WorldNewspaperNewsroom,
     agenda: &WorldNewspaperEditorialAgenda,
     max_articles: usize,
 ) -> Result<()> {
@@ -1002,6 +1194,13 @@ fn validate_editorial_agenda(
                 "editorial agenda must designate exactly its first pitch as lead"
             ));
         }
+        if (index == 0 && pitch.section != "Front Page")
+            || (index > 0 && pitch.section == "Front Page")
+            || !ALLOWED_SECTIONS.contains(&pitch.section.as_str())
+        {
+            return Err(anyhow!("editorial pitch {index} chose an invalid section"));
+        }
+        journalist_by_id(newsroom, &pitch.journalist_id)?;
         let selected = selected_record_ids(&pitch.citations, &format!("editorial pitch {index}"))?;
         if !selected.contains(pitch.focus_citation.as_str()) {
             return Err(anyhow!(
@@ -1024,6 +1223,7 @@ fn validate_editorial_agenda(
 
 fn validate_editorial_alignment(
     draft: &EditorialPageDraft,
+    newsroom: &WorldNewspaperNewsroom,
     agenda: &WorldNewspaperEditorialAgenda,
 ) -> Result<()> {
     if draft.articles.len() != agenda.story_pitches.len() {
@@ -1037,6 +1237,12 @@ fn validate_editorial_alignment(
         if article_citations != pitch_citations {
             return Err(anyhow!(
                 "article {index} does not implement its admitted citation grouping"
+            ));
+        }
+        let journalist = journalist_by_id(newsroom, &pitch.journalist_id)?;
+        if article.section != pitch.section || article.byline != journalist.byline {
+            return Err(anyhow!(
+                "article {index} changed its assigned section or journalist"
             ));
         }
     }
@@ -1067,6 +1273,99 @@ struct EditorialArticleDraft {
     citations: Vec<String>,
     #[schemars(length(min = 2, max = 5))]
     paragraphs: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "tool", rename_all = "snake_case", deny_unknown_fields)]
+enum JournalistAction {
+    FileStory {
+        #[schemars(length(min = 1, max = 100))]
+        headline: String,
+        #[schemars(length(min = 1, max = 220))]
+        deck: String,
+        #[schemars(length(max = 100))]
+        dateline: String,
+        #[schemars(length(min = 2, max = 5))]
+        paragraphs: Vec<String>,
+    },
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+enum JournalistFinding {
+    StoryRejected { reason: String },
+}
+
+struct JournalistWorkbench<'a> {
+    records: &'a [PublicRecordProjection],
+    article_index: usize,
+    section: &'a str,
+    byline: &'a str,
+    citations: &'a [String],
+}
+
+#[async_trait]
+impl ModelAgentTool for JournalistWorkbench<'_> {
+    type Action = JournalistAction;
+    type Output = EditorialArticleDraft;
+    type Finding = JournalistFinding;
+
+    fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
+        let mut schema = serde_json::json!({
+            "type":"object",
+            "additionalProperties":false,
+            "required":["tool","headline","deck","dateline","paragraphs"],
+            "properties":{
+                "tool":{"const":"file_story"},
+                "headline":{"type":"string","minLength":1,"maxLength":100},
+                "deck":{"type":"string","minLength":1,"maxLength":220},
+                "dateline":{"type":"string","maxLength":100},
+                "paragraphs":{
+                    "type":"array",
+                    "minItems":2,
+                    "maxItems":5,
+                    "items":{"type":"string"}
+                }
+            }
+        });
+        crate::model_connector::project_strict_responses_schema(&mut schema)
+            .map_err(|error| error.to_string())?;
+        Ok(schema)
+    }
+
+    async fn invoke(
+        &mut self,
+        action: Self::Action,
+        _context: &ModelAgentToolContext,
+    ) -> ModelAgentToolOutcome<Self::Output, Self::Finding> {
+        let JournalistAction::FileStory {
+            headline,
+            deck,
+            dateline,
+            paragraphs,
+        } = action;
+        let article = EditorialArticleDraft {
+            section: self.section.into(),
+            headline,
+            deck,
+            byline: self.byline.into(),
+            dateline,
+            citations: self.citations.to_vec(),
+            paragraphs,
+        };
+        match validate_editorial_article(self.records, &article, self.article_index) {
+            Ok(()) => ModelAgentToolOutcome::Accepted {
+                output: article,
+                receipts: Vec::new(),
+            },
+            Err(error) => ModelAgentToolOutcome::Rejected {
+                finding: JournalistFinding::StoryRejected {
+                    reason: error.to_string().chars().take(500).collect(),
+                },
+                receipts: Vec::new(),
+            },
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -1126,6 +1425,7 @@ struct NightEditorCloseOutput {
 struct PreparedNewspaper {
     title: String,
     editorial_voice: String,
+    newsroom: WorldNewspaperNewsroom,
     records: Vec<PublicRecordProjection>,
     source_receipt_ids: Vec<String>,
     publication_task_binding: String,
@@ -1138,6 +1438,7 @@ fn prepare_newspaper(
     campaign: &Campaign,
     title: impl Into<String>,
     editorial_voice: impl Into<String>,
+    newsroom: &WorldNewspaperNewsroom,
     max_articles: usize,
 ) -> Result<PreparedNewspaper> {
     if !(1..=MAX_FRONT_PAGE_ARTICLES).contains(&max_articles) {
@@ -1160,14 +1461,22 @@ fn prepare_newspaper(
     {
         return Err(anyhow!("newspaper editorial voice is invalid"));
     }
+    validate_newsroom(newsroom)?;
     let records = public_news_records(campaign)?;
     let source_receipt_ids = records
         .iter()
         .map(|record| record.record_id.clone())
         .collect::<Vec<_>>();
     let publication_task_binding =
-        publication_task_binding(campaign, &title, &editorial_voice, max_articles)?;
-    let binding = editorial_binding(campaign, &title, &editorial_voice, max_articles, &records)?;
+        publication_task_binding(campaign, &title, &editorial_voice, newsroom, max_articles)?;
+    let binding = editorial_binding(
+        campaign,
+        &title,
+        &editorial_voice,
+        newsroom,
+        max_articles,
+        &records,
+    )?;
     let legacy_publication_task_binding = publication_task_binding_for_contract(
         LEGACY_RECONCILIATION_CONTRACT_VERSION,
         campaign,
@@ -1186,6 +1495,7 @@ fn prepare_newspaper(
     Ok(PreparedNewspaper {
         title,
         editorial_voice,
+        newsroom: newsroom.clone(),
         records,
         source_receipt_ids,
         publication_task_binding,
@@ -1203,11 +1513,16 @@ async fn select_editorial_agenda(
     crate::agent::ModelAgentRun<WorldNewspaperEditorialAgenda>,
     crate::agent::ModelAgentFailure,
 > {
+    let assignment_staff = serde_json::json!({
+        "assignment_editor": &prepared.newsroom.assignment_editor,
+        "journalists": &prepared.newsroom.journalists,
+    });
     let instructions = format!(
-        "You are the narrative editor of `{}`. Construct one compelling editorial agenda by investigating a frozen public ledger containing {} canonical news records. No intermediate source object owns these facts and no initial viewport is privileged. Use query_public_records to inspect the ledger. An empty query browses it in the requested order; literal terms, exact public entity names, assertion status, channel, and an inspected cursor may narrow or page it. Query responses are bounded context over stable record IDs, not summaries that replace the ledger. Search backward for causes when recent administrative responses hide the original rupture; search by actors, places, objects, institutions, or consequences to find opposition and countermoves. Never cite a record until the workbench has returned it.\n\nA newspaper is not a neutral transcript. Select a dominant throughline that matters to this publication's readers; connect records that expose conflict, responsibility, hypocrisy, lived stakes, scandal, named opposition, public reaction, or material consequence. Omitted true facts remain true and unreported. Use every relevant inspected record that the actual story needs; article count and bounded copy define page space. Do not cover a record merely because it exists. Treat bookkeeping about someone retaining a memory as context unless the act of remembering itself caused a public consequence. The first pitch is the lead and must set lead=true; every later pitch must set lead=false. A foundational public record may support more than one continuing story when each pitch uses it for a distinct throughline. Every pitch must choose one focus_citation from its stable record IDs: the concrete fact the headline and lede should make impossible to ignore. When a later procedural update belongs to an older vivid incident, query and cite both: identify what is newly changed, acknowledge the continuing incident, and do not let routine handling impersonate the original news. narrative_claim states the pointed story the publication can responsibly construct from those records. narrative_claim, tension, public_question, dominant_throughline, and reader_stake are editorial framing and hypotheses, not evidence. They may be pointed, skeptical, or insinuating, but they must not invent an event, person, institution, place, motive, quotation, outcome, private knowledge, or factual status. The downstream editor may state facts only from the admitted record IDs and will be constrained to the exact groupings. The copy desk judges factual claims independently.\n\nPropose the agenda first. The workbench will dereference every focus record and return a front-page proof that places the proposed lead beside the stories it would bury. Treat that as an editorial meeting, not a schema ceremony: compare actual reader consequence, revise the agenda or query again when the proof exposes a stronger lead or a paperwork-shaped angle, and commit only the candidate you are prepared to print.\n\nPUBLICATION VOICE:\n{}",
-        prepared.title,
-        prepared.records.len(),
-        prepared.editorial_voice,
+        "You are {editor}, assignment editor of `{title}`. Investigate its frozen public ledger with query_public_records, then assign a page. An empty query browses; terms, exact entity names, status, channel, and an inspected cursor narrow or page. Cite only returned record IDs. Search backward when procedure hides the rupture and sideways for opposition, countermoves, reaction, scandal, and lived cost.\n\nChoose one dominant throughline, then only stories that sharpen or complicate it. The first pitch is the Front Page lead; later pitches use another allowed section. For every pitch choose the staff journalist whose biases and preferences will produce the strongest treatment. Give that journalist the exact record grouping, one focus record that the lede cannot bury, a pointed narrative claim, the live tension, and the public question. A routine update to a vivid continuing incident should cite both and say what changed. Remembering, filing, warning, and planning are context unless they themselves produce a public consequence. Editorial frames may insinuate and judge but cannot invent concrete facts. The copy editor, not you or the reporters, owns fact checking.\n\nPropose before committing. The workbench returns the lead beside what it would bury; revise or query again if the proof exposes a stronger page.\n\nPUBLICATION VOICE:\n{voice}\n\nSTAFF BOOK:\n{staff}",
+        editor = prepared.newsroom.assignment_editor.name,
+        title = prepared.title,
+        voice = prepared.editorial_voice,
+        staff = serde_json::to_string(&assignment_staff).unwrap_or_default(),
     );
     let spec = ModelAgentSpec {
         stage: "newspaper_narrative_selection_agent_action".into(),
@@ -1221,6 +1536,7 @@ async fn select_editorial_agenda(
     };
     let mut tool = NarrativeSelectionWorkbench {
         records: &prepared.records,
+        newsroom: &prepared.newsroom,
         max_articles,
         visible_record_ids: BTreeSet::new(),
         completed_queries: BTreeSet::new(),
@@ -1241,6 +1557,96 @@ fn editorial_page_digest(draft: &EditorialPageDraft) -> Result<String> {
         "sha256:{:x}",
         Sha256::digest(rmp_serde::to_vec_named(draft)?)
     ))
+}
+
+async fn run_assigned_journalists(
+    model: &dyn ModelPort,
+    prepared: &PreparedNewspaper,
+    agenda: &WorldNewspaperEditorialAgenda,
+    selection_receipts: &[ModelStageReceipt],
+) -> std::result::Result<
+    (EditorialPageDraft, Vec<ModelStageReceipt>),
+    crate::agent::ModelAgentFailure,
+> {
+    let mut articles = Vec::with_capacity(agenda.story_pitches.len());
+    let mut receipts = Vec::new();
+    for (index, pitch) in agenda.story_pitches.iter().enumerate() {
+        let journalist = match journalist_by_id(&prepared.newsroom, &pitch.journalist_id) {
+            Ok(journalist) => journalist,
+            Err(error) => {
+                return Err(crate::agent::ModelAgentFailure {
+                    message: error.to_string(),
+                    receipts,
+                });
+            }
+        };
+        let selected = pitch.citations.iter().cloned().collect::<BTreeSet<_>>();
+        let source_json =
+            serde_json::to_string(&public_records_for_ids(&prepared.records, &selected))
+                .unwrap_or_else(|_| "[]".into());
+        let assignment = serde_json::json!({
+            "dominant_throughline": agenda.dominant_throughline,
+            "reader_stake": agenda.reader_stake,
+            "pitch": pitch,
+            "journalist": journalist,
+            "records": serde_json::from_str::<serde_json::Value>(&source_json)
+                .unwrap_or_else(|_| serde_json::json!([])),
+        });
+        let instructions = format!(
+            "You are {name}, filing one assigned story for `{title}`. You are a partisan storyteller with a nose for the material your character and biases care about, not the newsroom's fact checker. Make the strongest memorable case this assignment supports: lead with the focus event, use selection and juxtaposition to imply meaning, expose hypocrisy or conflict, and make public or bodily cost vivid. A continuing story should say what changed without treating routine handling as the lede.\n\nUse only the supplied records for concrete events, people, institutions, places, identity attributes, chronology, quotations, motives, and outcomes. Preserve disputes through natural attribution. You may be cutting, emotional, insinuating, metaphorical, or politically judgmental without pretending the insinuation is a sourced causal fact. Do not discuss records, citations, verification, assertion statuses, or missing evidence in reader copy. The copy editor will fact-check the filed story later. File two to five substantial paragraphs. The lead needs a supplied place as dateline when one exists; otherwise leave dateline empty.\n\nPUBLICATION VOICE:\n{voice}\n\nASSIGNMENT PACKET:\n{assignment}",
+            name = journalist.staff.name,
+            title = prepared.title,
+            voice = prepared.editorial_voice,
+            assignment = serde_json::to_string(&assignment).unwrap_or_default(),
+        );
+        let mut causal_sources = pitch
+            .citations
+            .iter()
+            .cloned()
+            .chain(
+                selection_receipts
+                    .iter()
+                    .map(|receipt| receipt.storage_key().to_owned()),
+            )
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+        causal_sources.sort();
+        let spec = ModelAgentSpec {
+            stage: "newspaper_journalist_agent_action".into(),
+            model: MODEL_CAPABLE.into(),
+            snapshot_binding: format!(
+                "{}:journalist:{}:article:{}",
+                prepared.binding, journalist.staff.id, index
+            ),
+            instructions,
+            source_receipt_ids: causal_sources,
+            temperature: Some(0.9),
+            max_output_tokens: Some(2_200),
+            max_steps: 2,
+        };
+        let mut workbench = JournalistWorkbench {
+            records: &prepared.records,
+            article_index: index,
+            section: &pitch.section,
+            byline: &journalist.byline,
+            citations: &pitch.citations,
+        };
+        match crate::agent::run_model_agent(model, &spec, &mut workbench).await {
+            Ok(run) => {
+                articles.push(run.output);
+                receipts.extend(run.receipts);
+            }
+            Err(mut failure) => {
+                receipts.append(&mut failure.receipts);
+                return Err(crate::agent::ModelAgentFailure {
+                    message: failure.message,
+                    receipts,
+                });
+            }
+        }
+    }
+    Ok((EditorialPageDraft { articles }, receipts))
 }
 
 fn legacy_copy_desk_report(
@@ -1572,16 +1978,17 @@ fn validate_reconciliation_checkpoint(
         | WorldNewspaperCheckpointOrigin::Reconciliation => {
             let editor_index = receipts
                 .iter()
-                .position(|receipt| receipt.stage == "newspaper_editor");
+                .position(|receipt| receipt.stage == "newspaper_journalist_agent_action");
             checkpoint.editorial_agenda.is_some()
                 && editor_index.is_some_and(|index| {
                     index > 0
                         && receipts[..index].iter().all(|receipt| {
                             receipt.stage == "newspaper_narrative_selection_agent_action"
                         })
-                        && receipts
-                            .get(index + 1)
-                            .map(|receipt| receipt.stage.as_str())
+                        && receipts[index..receipts.len().saturating_sub(1)]
+                            .iter()
+                            .all(|receipt| receipt.stage == "newspaper_journalist_agent_action")
+                        && receipts.last().map(|receipt| receipt.stage.as_str())
                             == Some("newspaper_copy_desk")
                 })
         }
@@ -1598,8 +2005,8 @@ fn validate_reconciliation_checkpoint(
     }
     validate_editorial_draft(&prepared.records, &checkpoint.draft, max_articles)?;
     if let Some(agenda) = &checkpoint.editorial_agenda {
-        validate_editorial_agenda(&prepared.records, agenda, max_articles)?;
-        validate_editorial_alignment(&checkpoint.draft, agenda)?;
+        validate_editorial_agenda(&prepared.records, &prepared.newsroom, agenda, max_articles)?;
+        validate_editorial_alignment(&checkpoint.draft, &prepared.newsroom, agenda)?;
     }
     validate_desk_rejection(&checkpoint.draft, &checkpoint.rejection)?;
     let latest_review_stage = receipts
@@ -1799,11 +2206,16 @@ fn validate_close_checkpoint(
     }
     validate_editorial_agenda(
         &prepared.records,
+        &prepared.newsroom,
         &checkpoint.editorial_agenda,
         max_articles,
     )?;
     validate_editorial_draft(&prepared.records, &checkpoint.draft, max_articles)?;
-    validate_editorial_alignment(&checkpoint.draft, &checkpoint.editorial_agenda)?;
+    validate_editorial_alignment(
+        &checkpoint.draft,
+        &prepared.newsroom,
+        &checkpoint.editorial_agenda,
+    )?;
     validate_copy_desk_report(&checkpoint.draft, &checkpoint.copy_desk)?;
     Ok(())
 }
@@ -1925,7 +2337,8 @@ fn validate_persisted_composition(
     }
     if composition.issue.articles.is_empty() {
         if persisted.source_checkpoint_id.is_some()
-            || composition.issue.id != empty_issue_id(campaign, &prepared.title)?
+            || composition.issue.id
+                != empty_issue_id(campaign, &prepared.title, &prepared.newsroom)?
             || composition.issue.at != campaign.world_time
             || composition.issue.lead_article_id.is_some()
             || composition.issue.editorial_agenda.is_some()
@@ -2041,7 +2454,7 @@ fn validate_persisted_composition(
             && (addressed_queries != expected_queries
                 || addressed_queries.len()
                     != composition.press_close.addressed_query_indices.len()
-                || !changed_articles.is_superset(&required_changed_articles)
+                || changed_articles != required_changed_articles
                 || changed_articles.len() != composition.press_close.changed_article_indices.len()
                 || changed_articles
                     .iter()
@@ -2078,8 +2491,11 @@ async fn close_world_newspaper(
     mut receipts: Vec<ModelStageReceipt>,
 ) -> Result<WorldNewspaperAdvance> {
     validate_close_checkpoint(store, &checkpoint, prepared, max_articles, &receipts)?;
-    let source_json =
-        source_json_for_agenda(&prepared.records, Some(&checkpoint.editorial_agenda))?;
+    let source_json = source_json_for_copy_queries(
+        &prepared.records,
+        &checkpoint.editorial_agenda,
+        &checkpoint.copy_desk,
+    )?;
     let progress = match run_night_editor_close(
         model,
         &prepared.records,
@@ -2087,6 +2503,7 @@ async fn close_world_newspaper(
         &prepared.binding,
         &prepared.title,
         &prepared.editorial_voice,
+        &prepared.newsroom,
         &checkpoint.editorial_agenda,
         &source_json,
         &prepared.source_receipt_ids,
@@ -2177,10 +2594,11 @@ pub async fn advance_world_newspaper(
     campaign: &Campaign,
     title: impl Into<String>,
     editorial_voice: impl Into<String>,
+    newsroom: &WorldNewspaperNewsroom,
     max_articles: usize,
     store: &CampaignStore,
 ) -> Result<WorldNewspaperAdvance> {
-    let prepared = prepare_newspaper(campaign, title, editorial_voice, max_articles)?;
+    let prepared = prepare_newspaper(campaign, title, editorial_voice, newsroom, max_articles)?;
     if let Some((_, persisted)) = store.load::<PersistedWorldNewspaperComposition>(
         "world_newspaper_composition.v3",
         &prepared.publication_task_binding,
@@ -2219,7 +2637,7 @@ pub async fn advance_world_newspaper(
     if prepared.records.is_empty() {
         let issue = WorldNewspaperIssue {
             schema: "ghostlight.world_newspaper_issue.v3".into(),
-            id: empty_issue_id(campaign, &prepared.title)?,
+            id: empty_issue_id(campaign, &prepared.title, &prepared.newsroom)?,
             title: prepared.title.clone(),
             edition_label: "No edition issued".into(),
             at: campaign.world_time,
@@ -2263,76 +2681,33 @@ pub async fn advance_world_newspaper(
         .await
         .map_err(|failure| composition_failure(failure.message, failure.receipts))?;
     let agenda = agenda_run.output;
-    let editorial_schema = editorial_schema(&prepared.records, &agenda)?;
-    let agenda_json = serde_json::to_string_pretty(&agenda)?;
     let selected_source_json = source_json_for_agenda(&prepared.records, Some(&agenda))?;
-    let base_prompt = format!(
-        "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nYou are `{title}`'s lead writer. Your job is not to transmit a neutral inventory of verified facts. Use the admitted facts as raw material for the publication's chosen narrative: decide what they mean together for your readers, assign blame and importance as clearly signalled interpretation, juxtapose hypocrisy with consequence, ask who benefits, and make one memorable case about the world they inhabit. The narrative agenda owns selection, article order, focus citation, narrative claim, and exact citation groupings. Implement every pitch in order and use exactly that pitch's citations for the corresponding article. Center each headline and lede on the most consequential concrete fact supported by its focus_citation, then use the other selected records to substantiate or complicate the narrative_claim. Record bookkeeping, memory retention, maintained warnings, and routine procedure are not automatically the news merely because they are recent. When a later update belongs to an older vivid incident, distinguish what changed from what persists and tell readers plainly that this is a continuing story; do not parade the handling protocol in front of the incident itself. The agenda's narrative_claim, tension, public_question, dominant_throughline, and reader_stake are the point of the work, not source evidence. Do not recover omitted sources or invent a connective fact merely because the agenda suggests one. The first article must use section `Front Page` and, when its citations name a place, use one of those supplied place names as its dateline. Later articles use the other supplied newspaper sections.\n\nWrite completely in the publication voice for readers who live in this world. Build a readable throughline: lead with the vivid consequence, identify opposing named actors and countermoves when the cited facts supply them, make lived material stakes legible, and let later stories echo or complicate the lead. Attribute claims and evidence naturally to the named institution, notice, witness, or public act that supplied them. Preserve genuinely disputed claims with attribution or ordinary words such as alleged or disputed. Do not turn source limitations into the subject of the article: readers need the event and its consequence, not repeated explanations of what a ledger fails to establish. The copy desk will mark every factual query once; the Night Editor will receive that complete list and close the page once at deadline. Write declaratively and let ordinary tense and attribution carry uncertainty.\n\nHeadlines report consequences rather than state transitions. Decks add context instead of repeating headlines. Paragraphs explain why events matter to local readers, connect institutional moves, and vary their rhythm without explaining proper nouns like a setting guide. Dry barbs, metaphor, political characterization, rhetorical judgment, selection, juxtaposition, and clearly signalled insinuation are your proper tools when they introduce no new concrete fact. This is a newspaper with a point of view, not parody, an evidence inventory, or a world-state transcript.\n\nUse only the selected records for each article and preserve the names and identity attributes they actually supply. Never invent quotations, people, offices, places, numbers, documents, motives, chronology, outcomes, or private knowledge. Use only the allowed generic bylines and supplied place names. The newspaper contract owns a neutral edition label; do not invent or print a calendar, date, price, circulation claim, weather report, advertisement, or notice absent from the desk. Do not mention the fact desk, citations, agenda, assertion statuses, verification process, or phrases such as `the record does not establish` in reader-facing copy. Never end a headline with an ellipsis.\n\nPUBLICATION VOICE:\n{editorial_voice}\n\nADMITTED NARRATIVE AGENDA:\n{agenda_json}\n\nNEWSROOM FACT DESK:\n{source_json}",
-        serde_json::to_string(&editorial_schema)?,
-        title = prepared.title,
-        editorial_voice = prepared.editorial_voice,
-        agenda_json = agenda_json,
-        source_json = selected_source_json,
-    );
     let mut receipts = agenda_run.receipts;
-    let editor_sources = prepared
-        .source_receipt_ids
-        .iter()
-        .cloned()
-        .chain(
-            receipts
-                .iter()
-                .map(|receipt| receipt.storage_key().to_owned()),
-        )
-        .collect::<BTreeSet<_>>()
-        .into_iter()
-        .collect();
-    let request = ModelStageRequest {
-        stage: "newspaper_editor".into(),
-        model: MODEL_CAPABLE.into(),
-        snapshot_binding: prepared.binding.clone(),
-        lived_stream: base_prompt,
-        output_schema: Some(editorial_schema),
-        source_receipt_ids: editor_sources,
-        temperature: Some(0.75),
-        max_output_tokens: Some(4_500),
-    };
-    let editor_output = run_validated_stage(model, &request).await?;
-    receipts.push(editor_output.receipt);
-    let editor_receipt_index = receipts.len() - 1;
-    let editor_structured = match editor_output.structured {
-        Some(structured) => structured,
-        None => {
-            let error = anyhow!("newspaper editor returned no structured output");
-            mark_semantic_invalid(&mut receipts[editor_receipt_index], &error);
-            return Err(composition_failure(error.to_string(), receipts));
-        }
-    };
-    let draft: EditorialPageDraft = match serde_json::from_value(editor_structured) {
-        Ok(draft) => draft,
-        Err(error) => {
-            let error = anyhow!("newspaper editor returned an invalid page: {error}");
-            mark_semantic_invalid(&mut receipts[editor_receipt_index], &error);
-            return Err(composition_failure(error.to_string(), receipts));
-        }
-    };
-
-    if let Err(error) = validate_editorial_draft(&prepared.records, &draft, max_articles) {
-        mark_semantic_invalid(&mut receipts[editor_receipt_index], &error);
-        return Err(composition_failure(error.to_string(), receipts));
-    }
-    if let Err(error) = validate_editorial_alignment(&draft, &agenda) {
-        mark_semantic_invalid(&mut receipts[editor_receipt_index], &error);
-        return Err(composition_failure(error.to_string(), receipts));
-    }
+    let (draft, journalist_receipts) =
+        run_assigned_journalists(model, &prepared, &agenda, &receipts)
+            .await
+            .map_err(|failure| {
+                let mut all_receipts = receipts.clone();
+                all_receipts.extend(failure.receipts);
+                composition_failure(failure.message, all_receipts)
+            })?;
+    receipts.extend(journalist_receipts);
+    validate_editorial_draft(&prepared.records, &draft, max_articles)?;
+    validate_editorial_alignment(&draft, &prepared.newsroom, &agenda)?;
     store.persist_model_stage_receipts(&receipts)?;
-    let editor_output_hash = receipts[editor_receipt_index].output_hash.clone();
+    let page_digest = editorial_page_digest(&draft)?;
+    let journalist_receipt_ids = receipts
+        .iter()
+        .filter(|receipt| receipt.stage == "newspaper_journalist_agent_action")
+        .map(|receipt| receipt.storage_key().to_owned())
+        .collect::<Vec<_>>();
     let copy_desk = match run_copy_desk(
         model,
-        format!("{}:draft:{editor_output_hash}", prepared.binding),
+        format!("{}:draft:{page_digest}", prepared.binding),
         &selected_source_json,
+        &prepared.newsroom.copy_editor,
         &prepared.source_receipt_ids,
-        &[receipts[editor_receipt_index].storage_key().to_owned()],
+        &journalist_receipt_ids,
         &draft,
         &mut receipts,
     )
@@ -2383,6 +2758,7 @@ async fn compose_world_newspaper(
         campaign,
         title,
         editorial_voice,
+        &canopy_ledger_newsroom(),
         max_articles,
         &store,
     )
@@ -2400,11 +2776,16 @@ pub fn admit_world_newspaper_reconciliation_import(
     campaign: &Campaign,
     title: impl Into<String>,
     editorial_voice: impl Into<String>,
+    newsroom: &WorldNewspaperNewsroom,
     max_articles: usize,
     store: &CampaignStore,
     import: WorldNewspaperReconciliationImport,
 ) -> Result<WorldNewspaperReconciliationCheckpoint> {
-    let prepared = prepare_newspaper(campaign, title, editorial_voice, max_articles)?;
+    let prepared = prepare_newspaper(campaign, title, editorial_voice, newsroom, max_articles)?;
+    let mut import = import;
+    if let Some(agenda) = &mut import.editorial_agenda {
+        normalize_legacy_agenda(agenda, newsroom);
+    }
     let existing_tip = load_legacy_reconciliation_tip(store, &prepared, max_articles)?;
     if import.schema != "ghostlight.world_newspaper_reconciliation_import.v1"
         || !import.source_witness_digest.starts_with("sha256:")
@@ -2478,19 +2859,7 @@ impl ModelAgentTool for NightEditorCloseWorkbench<'_> {
         if let Some(schema) = rewrite_schema.as_object_mut() {
             schema.remove("$schema");
         }
-        let required_article_indices = self
-            .copy_desk
-            .queries
-            .iter()
-            .map(|query| usize::from(query.article_index))
-            .collect::<BTreeSet<_>>()
-            .into_iter()
-            .map(|index| serde_json::Value::from(index as u64))
-            .collect::<Vec<_>>();
-        let article_indices = (0..self.draft.articles.len())
-            .map(serde_json::Value::from)
-            .collect::<Vec<_>>();
-        let query_indices = (0..self.copy_desk.queries.len())
+        let article_indices = (0..self.max_articles)
             .map(serde_json::Value::from)
             .collect::<Vec<_>>();
         rewrite_schema["properties"]["article_index"] = serde_json::json!({
@@ -2505,15 +2874,13 @@ impl ModelAgentTool for NightEditorCloseWorkbench<'_> {
                 "tool":{"const":"submit_close"},
                 "addressed_query_indices":{
                     "type":"array",
-                    "minItems":query_indices.len(),
-                    "maxItems":query_indices.len(),
                     "uniqueItems":true,
-                    "items":{"type":"integer", "enum":query_indices}
+                    "items":{"type":"integer", "minimum":0, "maximum":65535}
                 },
                 "rewrites":{
                     "type":"array",
-                    "minItems":required_article_indices.len(),
-                    "maxItems":self.draft.articles.len(),
+                    "minItems":0,
+                    "maxItems":self.max_articles,
                     "uniqueItems":true,
                     "items":rewrite_schema
                 }
@@ -2611,9 +2978,9 @@ fn apply_night_editor_close(
         article.dateline = rewrite.dateline;
         article.paragraphs = rewrite.paragraphs;
     }
-    if !rewritten.is_superset(&affected) {
+    if rewritten != affected {
         return Err(anyhow!(
-            "the Night Editor must close every copy-queried article in one bounded pass"
+            "the Night Editor must rewrite exactly the copy-queried articles in one bounded pass"
         ));
     }
     Ok(NightEditorCloseOutput {
@@ -2631,6 +2998,7 @@ async fn run_night_editor_close(
     binding: &str,
     title: &str,
     editorial_voice: &str,
+    newsroom: &WorldNewspaperNewsroom,
     agenda: &WorldNewspaperEditorialAgenda,
     source_json: &str,
     source_receipt_ids: &[String],
@@ -2646,14 +3014,55 @@ async fn run_night_editor_close(
         .enumerate()
         .map(|(query_index, query)| serde_json::json!({"query_index":query_index, "query":query}))
         .collect::<Vec<_>>();
+    let affected_article_indices = copy_desk
+        .queries
+        .iter()
+        .map(|query| usize::from(query.article_index))
+        .collect::<BTreeSet<_>>();
+    let affected_assignments = agenda
+        .story_pitches
+        .iter()
+        .enumerate()
+        .filter(|(article_index, _)| affected_article_indices.contains(article_index))
+        .map(|(article_index, pitch)| {
+            serde_json::json!({"article_index": article_index, "assignment": pitch})
+        })
+        .collect::<Vec<_>>();
+    let queried_articles = draft
+        .articles
+        .iter()
+        .enumerate()
+        .filter(|(article_index, _)| affected_article_indices.contains(article_index))
+        .map(|(article_index, article)| {
+            serde_json::json!({"article_index": article_index, "article": article})
+        })
+        .collect::<Vec<_>>();
+    let affected_journalist_ids = copy_desk
+        .queries
+        .iter()
+        .filter_map(|query| agenda.story_pitches.get(usize::from(query.article_index)))
+        .map(|pitch| pitch.journalist_id.as_str())
+        .collect::<BTreeSet<_>>();
+    let affected_journalists = newsroom
+        .journalists
+        .iter()
+        .filter(|journalist| affected_journalist_ids.contains(journalist.staff.id.as_str()))
+        .collect::<Vec<_>>();
     let instructions = format!(
-        "You are the Night Editor of `{title}`. The press closes after this one action. The copy desk has marked the current page and supplied its complete factual query list. Work every numbered query while preserving the edition's selected stories, argument, urgency, and house voice. Submit one complete reader-facing replacement for every queried article and mark every query_index addressed. You may also replace any other article that needs a sharper headline, lede, throughline, rhythm, or ending before deadline. The deterministic press workbench freezes article selection, order, sections, bylines, citations, and agenda. It checks only that the close is structurally complete and source-bounded; nobody rereads or grades your final prose before the forms go downstairs. You may make mistakes. A later edition may have to correct them.\n\nDo not turn this into compliance copy. Preserve the story while resolving the marked claims. Lead with the consequential fact, name pressure and opposition when the admitted facts supply them, and keep lived stakes ahead of routine administration. Selection, ordering, contrast, metaphor, political characterization, pointed questions, and source-safe juxtaposition may create meaning without asserting an unsupported cause. Keep distinct reports grammatically distinct when their causal relationship is not established. Attribute disputes naturally. Do not mention the copy desk, queries, citations, verification, support boundaries, or phrases such as `the record does not establish` in reader-facing copy. Do not invent events, entities, motives, outcomes, chronology, spatial relationships, affiliations, identity attributes, or private knowledge. If no article needs a change and there are no queries, submit an unchanged close with empty query and rewrite lists.\n\nPUBLICATION VOICE:\n{editorial_voice}\n\nADMITTED NARRATIVE AGENDA:\n{agenda_json}\n\nFROZEN NEWSROOM FACT DESK:\n{source_json}\n\nCURRENT PAGE:\n{draft_json}\n\nCOPY-DESK ASSESSMENT:\n{copy_assessment}\n\nNUMBERED COPY-DESK QUERIES:\n{query_json}",
+        "You are {night_editor}, Night Editor of `{title}`. The copy editor has lodged one complete numbered factual checklist and the press closes after this action. Address every item, replacing exactly the articles named by that checklist. Preserve each reporter's argument, urgency, style, and insinuation while making the smallest changes that resolve the cited defect. Do not select stories, widen sources, or improve unrelated articles. Sections, bylines, citations, story order, and assignments are frozen. Nobody rereads the final prose before printing; a later edition may correct a mistake.\n\nKeep distinct reports grammatically distinct when causation is not established and attribute disputes naturally. Do not expose the checklist or verification machinery in reader copy. If there are no queries, submit an unchanged close with empty lists.\n\nNIGHT EDITOR:\n{night_profile}\n\nAFFECTED REPORTERS:\n{reporters}\n\nPUBLICATION VOICE:\n{editorial_voice}\n\nAFFECTED ASSIGNMENTS:\n{agenda_json}\n\nFACTS FOR QUERIED ARTICLES:\n{source_json}\n\nQUERIED ARTICLES:\n{draft_json}\n\nNUMBERED QUERIES:\n{query_json}",
+        night_editor = newsroom.night_editor.name,
         title = title,
+        night_profile = serde_json::to_string(&newsroom.night_editor).unwrap_or_default(),
+        reporters = serde_json::to_string(&affected_journalists).unwrap_or_default(),
         editorial_voice = editorial_voice,
-        agenda_json = serde_json::to_string_pretty(&agenda).unwrap_or_default(),
+        agenda_json = serde_json::to_string_pretty(&serde_json::json!({
+            "dominant_throughline": agenda.dominant_throughline,
+            "reader_stake": agenda.reader_stake,
+            "assignments": affected_assignments,
+        }))
+        .unwrap_or_default(),
         source_json = source_json,
-        draft_json = serde_json::to_string_pretty(&draft).unwrap_or_default(),
-        copy_assessment = copy_desk.assessment,
+        draft_json = serde_json::to_string_pretty(&queried_articles).unwrap_or_default(),
         query_json = serde_json::to_string_pretty(&numbered_queries).unwrap_or_default(),
     );
     let mut causal_sources = source_receipt_ids
@@ -2692,6 +3101,7 @@ async fn run_copy_desk(
     model: &dyn ModelPort,
     snapshot_binding: String,
     source_json: &str,
+    copy_editor: &WorldNewspaperStaffMember,
     source_receipt_ids: &[String],
     editorial_source_receipt_ids: &[String],
     draft: &EditorialPageDraft,
@@ -2703,8 +3113,9 @@ async fn run_copy_desk(
         model: MODEL_CAPABLE.into(),
         snapshot_binding,
         lived_stream: format!(
-            "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nAct as a strict copy desk, not a rewriting model or publication judge. Compare every reader-facing factual claim in the proposed fantasy newspaper page with only its cited notes in the bounded newsroom fact desk. Query invented or overconfident facts, quotations, identities, offices, places, numbers, motives, outcomes, chronology, spatial relationships, or private knowledge. Treat each fact's assertion_status as an exhaustive boundary: attempt_committed_outcome_unknown never supports completion; course_committed_embedded_actions_not_completed supports the adopted course but not completion of acts named inside it; public_declaration supports only the declaration; material_change_committed supports the stated material change. Treat each named person's supported_identity_attributes as exhaustive. If it is empty, query pronouns, gender, title, kinship, office, membership, or affiliation not independently stated in that fact, and require the name or identity-neutral wording. A person acting within, at, beside, or through a named population or institution does not by itself belong to it. Shared location, a cordon, a route, barriers, and nearby evidence do not establish unstated containment, adjacency, or surrounding geometry. When cited notes dispute a document, accusation, identity, outcome, or authority, require explicit attribution or qualified language; one public claim does not silently settle another note's dispute. Distinguish an institution publishing a notice about evidence from displaying, releasing, or publishing the physical objects themselves. Query copy that exposes the fact desk, citations, verification work, or state transitions instead of reporting news.\n\nThe five allowed generic bylines are publication role labels supplied by the newspaper contract, not claims about new people, witnesses, or reporting acts; never query an allowed byline for lacking source evidence. Metaphor, dry wit, rhetorical contrast, plainly signalled opinion, and political characterization are editorial language rather than world facts when they introduce no concrete entity, occurrence, status, motive, quotation, number, spatial relationship, or private knowledge. Do not demand a source sentence for such language. Still query a rhetorical phrase when it smuggles in a concrete outcome, such as treating a proposed kiln closure as completed, or turns missing evidence into proof that something did not happen. Return the complete bounded query set at once rather than revealing one defect per pass. Every claim_or_phrase must copy one exact contiguous reader-facing substring that occurs exactly once in its named article; never paraphrase the defect in that field. A neutral contract-owned edition label is not part of the proposed model copy. An empty queries list means the desk has no objections. Never propose replacement copy.\n\nNEWSROOM FACT DESK:\n{}\n\nPROPOSED PAGE:\n{}",
-            serde_json::to_string(&verifier_schema)?,
+            "You are {}, the publication's copy editor. Act as the sole factual query desk, not a rewriting model or publication judge. Compare every concrete reader-facing claim with only its cited notes. Query invented or overconfident facts, quotations, identities, offices, places, numbers, motives, outcomes, chronology, spatial relationships, affiliations, or private knowledge. Assertion status is exhaustive: an attempted or adopted course does not prove embedded acts completed, and a public declaration proves only the declaration. Supported identity attributes are exhaustive; an empty list supports no pronoun, title, kinship, office, membership, or affiliation. Shared location does not establish unstated geometry. Preserve disputes through attribution.\n\nMetaphor, wit, contrast, opinion, political characterization, and juxtaposition are editorial language unless they smuggle in a concrete fact or causal outcome. Return the complete query set at once. Each claim_or_phrase must be an exact unique substring of its article. Never propose replacement copy and never query a staff byline merely because the world ledger does not name the employee.\n\nCOPY EDITOR:\n{}\n\nFACT DESK:\n{}\n\nPROPOSED PAGE:\n{}",
+            copy_editor.name,
+            serde_json::to_string(copy_editor)?,
             source_json,
             serde_json::to_string_pretty(draft)?,
         ),
@@ -3082,55 +3493,23 @@ fn source_json_for_agenda(
     ))?)
 }
 
-fn editorial_schema(
+fn source_json_for_copy_queries(
     records: &[PublicRecordProjection],
     agenda: &WorldNewspaperEditorialAgenda,
-) -> Result<serde_json::Value> {
-    let mut schema = serde_json::to_value(schema_for!(EditorialPageDraft))?;
-    let selected_citations = agenda
-        .story_pitches
-        .iter()
-        .flat_map(|pitch| pitch.citations.iter().cloned())
-        .collect::<BTreeSet<_>>();
-    let citations = selected_citations.iter().cloned().collect::<Vec<_>>();
-    let mut datelines = records
-        .iter()
-        .filter(|record| selected_citations.contains(&record.record_id))
-        .flat_map(|record| record.facts.iter())
-        .flat_map(|fact| fact.places.iter().cloned())
-        .collect::<BTreeSet<_>>();
-    datelines.insert(String::new());
-    *schema
-        .pointer_mut("/properties/articles/maxItems")
-        .ok_or_else(|| anyhow!("editorial schema omitted article budget"))? =
-        agenda.story_pitches.len().into();
-    *schema
-        .pointer_mut("/properties/articles/minItems")
-        .ok_or_else(|| anyhow!("editorial schema omitted minimum article count"))? =
-        agenda.story_pitches.len().into();
-    *schema
-        .pointer_mut("/$defs/EditorialArticleDraft/properties/citations/items")
-        .ok_or_else(|| anyhow!("editorial schema omitted citation items"))? =
-        serde_json::json!({"type":"string","enum":citations});
-    if let Some(citation_array) = schema
-        .pointer_mut("/$defs/EditorialArticleDraft/properties/citations")
-        .and_then(serde_json::Value::as_object_mut)
-    {
-        citation_array.insert("uniqueItems".into(), true.into());
+    copy_desk: &WorldNewspaperCopyDeskReport,
+) -> Result<String> {
+    let mut record_ids = BTreeSet::new();
+    for query in &copy_desk.queries {
+        let pitch = agenda
+            .story_pitches
+            .get(usize::from(query.article_index))
+            .ok_or_else(|| anyhow!("copy-desk query names an unknown article"))?;
+        record_ids.extend(pitch.citations.iter().cloned());
     }
-    *schema
-        .pointer_mut("/$defs/EditorialArticleDraft/properties/dateline")
-        .ok_or_else(|| anyhow!("editorial schema omitted dateline"))? =
-        serde_json::json!({"type":"string","enum":datelines});
-    *schema
-        .pointer_mut("/$defs/EditorialArticleDraft/properties/section")
-        .ok_or_else(|| anyhow!("editorial schema omitted section"))? =
-        serde_json::json!({"type":"string","enum":ALLOWED_SECTIONS});
-    *schema
-        .pointer_mut("/$defs/EditorialArticleDraft/properties/byline")
-        .ok_or_else(|| anyhow!("editorial schema omitted byline"))? =
-        serde_json::json!({"type":"string","enum":ALLOWED_BYLINES});
-    Ok(schema)
+    Ok(serde_json::to_string_pretty(&public_records_for_ids(
+        records,
+        &record_ids,
+    ))?)
 }
 
 fn validate_editorial_draft(
@@ -3141,10 +3520,47 @@ fn validate_editorial_draft(
     if draft.articles.is_empty() || draft.articles.len() > max_articles.min(records.len()) {
         return Err(anyhow!("editorial page exceeded its story budget"));
     }
+    let mut headlines = BTreeSet::new();
+    for (index, article) in draft.articles.iter().enumerate() {
+        validate_editorial_article(records, article, index)?;
+        if !headlines.insert(article.headline.to_lowercase()) {
+            return Err(anyhow!("front page repeats a headline"));
+        }
+    }
+    Ok(())
+}
+
+fn validate_editorial_article(
+    records: &[PublicRecordProjection],
+    article: &EditorialArticleDraft,
+    index: usize,
+) -> Result<()> {
+    if (index == 0 && article.section != "Front Page")
+        || (index > 0 && article.section == "Front Page")
+        || !ALLOWED_SECTIONS.contains(&article.section.as_str())
+    {
+        return Err(anyhow!("article {index} used an invalid section"));
+    }
+    validate_single_line(&article.headline, 100, "headline")?;
+    validate_single_line(&article.deck, 220, "deck")?;
+    validate_single_line(&article.byline, 60, "byline")?;
+    if article.headline.ends_with('…') || article.headline.ends_with("...") {
+        return Err(anyhow!("article {index} headline ends in truncation"));
+    }
+    if article.headline.eq_ignore_ascii_case(&article.deck) {
+        return Err(anyhow!("article {index} deck repeats its headline"));
+    }
     let known_sources = records
         .iter()
         .map(|record| record.record_id.as_str())
         .collect::<BTreeSet<_>>();
+    for citation in selected_record_ids(&article.citations, &format!("article {index}"))? {
+        if !known_sources.contains(citation) {
+            return Err(anyhow!(
+                "article {index} cites unknown public record {citation}"
+            ));
+        }
+    }
     let source_datelines = records
         .iter()
         .map(|record| {
@@ -3158,107 +3574,60 @@ fn validate_editorial_draft(
             )
         })
         .collect::<BTreeMap<_, _>>();
-    let source_summaries = records
+    let cited_dateline_supported = article
+        .citations
         .iter()
-        .map(|record| {
-            (
-                record.record_id.as_str(),
-                record
-                    .facts
-                    .iter()
-                    .map(|fact| fact.account.trim())
-                    .collect::<Vec<_>>(),
-            )
-        })
-        .collect::<BTreeMap<_, _>>();
-    let mut headlines = BTreeSet::new();
-    for (index, article) in draft.articles.iter().enumerate() {
-        if (index == 0 && article.section != "Front Page")
-            || (index > 0 && article.section == "Front Page")
+        .any(|citation| source_datelines[citation.as_str()].contains(article.dateline.as_str()));
+    let cited_place_available = article
+        .citations
+        .iter()
+        .any(|citation| !source_datelines[citation.as_str()].is_empty());
+    if !article.dateline.is_empty() && !cited_dateline_supported {
+        return Err(anyhow!(
+            "article {index} invented or misattributed a dateline"
+        ));
+    }
+    if index == 0 && article.dateline.is_empty() && cited_place_available {
+        return Err(anyhow!(
+            "the lead article must use a cited source place as its dateline"
+        ));
+    }
+    if !(2..=5).contains(&article.paragraphs.len()) {
+        return Err(anyhow!(
+            "article {index} must contain two to five paragraphs"
+        ));
+    }
+    for paragraph in &article.paragraphs {
+        let text = paragraph.trim();
+        if text != paragraph
+            || text.chars().count() < 40
+            || text.chars().count() > 900
+            || text.contains(['\r', '\n'])
         {
+            return Err(anyhow!("article {index} contains a malformed paragraph"));
+        }
+        if article.citations.iter().any(|citation| {
+            records
+                .iter()
+                .find(|record| record.record_id == *citation)
+                .is_some_and(|record| record.facts.iter().any(|fact| fact.account.trim() == text))
+        }) {
             return Err(anyhow!(
-                "only the lead article may use the Front Page section"
+                "article {index} printed a source summary as final copy"
             ));
         }
-        if !ALLOWED_SECTIONS.contains(&article.section.as_str())
-            || !ALLOWED_BYLINES.contains(&article.byline.as_str())
-        {
-            return Err(anyhow!(
-                "article {index} used an unowned presentation label"
-            ));
-        }
-        validate_single_line(&article.headline, 100, "headline")?;
-        validate_single_line(&article.deck, 220, "deck")?;
-        validate_single_line(&article.byline, 60, "byline")?;
-        if article.headline.ends_with('…') || article.headline.ends_with("...") {
-            return Err(anyhow!("article {index} headline ends in truncation"));
-        }
-        if article.headline.eq_ignore_ascii_case(&article.deck) {
-            return Err(anyhow!("article {index} deck repeats its headline"));
-        }
-        if !headlines.insert(article.headline.to_lowercase()) {
-            return Err(anyhow!("front page repeats a headline"));
-        }
-        let selected = selected_record_ids(&article.citations, &format!("article {index}"))?;
-        for citation in selected {
-            if !known_sources.contains(citation) {
-                return Err(anyhow!(
-                    "article {index} cites unknown public record {citation}"
-                ));
-            }
-        }
-        let cited_dateline_supported = article.citations.iter().any(|citation| {
-            source_datelines[citation.as_str()].contains(article.dateline.as_str())
-        });
-        let cited_place_available = article
-            .citations
-            .iter()
-            .any(|citation| !source_datelines[citation.as_str()].is_empty());
-        if !article.dateline.is_empty() && !cited_dateline_supported {
-            return Err(anyhow!(
-                "article {index} invented or misattributed a dateline"
-            ));
-        }
-        if index == 0 && article.dateline.is_empty() && cited_place_available {
-            return Err(anyhow!(
-                "the lead article must use a cited source place as its dateline"
-            ));
-        }
-        if !(2..=5).contains(&article.paragraphs.len()) {
-            return Err(anyhow!(
-                "article {index} must contain two to five paragraphs"
-            ));
-        }
-        for paragraph in &article.paragraphs {
-            let text = paragraph.trim();
-            if text != paragraph
-                || text.chars().count() < 40
-                || text.chars().count() > 900
-                || text.contains(['\r', '\n'])
-            {
-                return Err(anyhow!("article {index} contains a malformed paragraph"));
-            }
-            if article.citations.iter().any(|citation| {
-                source_summaries[citation.as_str()]
-                    .iter()
-                    .any(|summary| *summary == text)
-            }) {
-                return Err(anyhow!(
-                    "article {index} printed a source summary as final copy"
-                ));
-            }
-        }
-        let reader_copy = format!(
+    }
+    validate_no_reader_plumbing(
+        &format!(
             "{} {} {} {} {}",
             article.headline,
             article.deck,
             article.byline,
             article.dateline,
             article.paragraphs.join(" ")
-        );
-        validate_no_reader_plumbing(&reader_copy, &format!("article {index}"))?;
-    }
-    Ok(())
+        ),
+        &format!("article {index}"),
+    )
 }
 
 fn validate_no_reader_plumbing(value: &str, label: &str) -> Result<()> {
@@ -3511,15 +3880,24 @@ fn publication_task_binding(
     campaign: &Campaign,
     title: &str,
     voice: &str,
+    newsroom: &WorldNewspaperNewsroom,
     max_articles: usize,
 ) -> Result<String> {
-    publication_task_binding_for_contract(
+    let bytes = rmp_serde::to_vec_named(&(
         NEWSROOM_CONTRACT_VERSION,
-        campaign,
+        campaign.id,
+        campaign.revision,
         title,
         voice,
+        newsroom,
         max_articles,
-    )
+    ))?;
+    Ok(format!(
+        "campaign:{}:revision:{}:newspaper-task:sha256:{:x}",
+        campaign.id,
+        campaign.revision,
+        Sha256::digest(bytes)
+    ))
 }
 
 fn publication_task_binding_for_contract(
@@ -3549,17 +3927,27 @@ fn editorial_binding(
     campaign: &Campaign,
     title: &str,
     voice: &str,
+    newsroom: &WorldNewspaperNewsroom,
     max_articles: usize,
     records: &[PublicRecordProjection],
 ) -> Result<String> {
-    editorial_binding_for_contract(
+    let bytes = rmp_serde::to_vec_named(&(
         NEWSROOM_CONTRACT_VERSION,
-        campaign,
+        campaign.id,
+        campaign.revision,
+        campaign.world_time,
         title,
         voice,
+        newsroom,
         max_articles,
         records,
-    )
+    ))?;
+    Ok(format!(
+        "campaign:{}:revision:{}:newspaper:sha256:{:x}",
+        campaign.id,
+        campaign.revision,
+        Sha256::digest(bytes)
+    ))
 }
 
 fn editorial_binding_for_contract(
@@ -3588,12 +3976,17 @@ fn editorial_binding_for_contract(
     ))
 }
 
-fn empty_issue_id(campaign: &Campaign, title: &str) -> Result<String> {
+fn empty_issue_id(
+    campaign: &Campaign,
+    title: &str,
+    newsroom: &WorldNewspaperNewsroom,
+) -> Result<String> {
     let identity = rmp_serde::to_vec_named(&(
         NEWSROOM_CONTRACT_VERSION,
         campaign.id,
         campaign.revision,
         title,
+        newsroom,
         "no-edition",
     ))?;
     Ok(format!("newspaper:sha256:{:x}", Sha256::digest(identity)))
@@ -3653,36 +4046,19 @@ mod tests {
         async fn run(&self, request: &ModelStageRequest) -> Result<String> {
             self.requests.lock().unwrap().push(request.clone());
             if request.stage == "newspaper_narrative_selection_agent_action"
-                && request
-                    .output_schema
-                    .as_ref()
-                    .is_some_and(|schema| schema.to_string().contains("commit_agenda"))
+                && request.lived_stream.contains("candidate_digest")
             {
-                fn candidate_digest(schema: &serde_json::Value) -> Option<&str> {
-                    if schema
-                        .pointer("/properties/tool/const")
-                        .and_then(serde_json::Value::as_str)
-                        == Some("commit_agenda")
-                    {
-                        return schema
-                            .pointer("/properties/candidate_digest/const")
-                            .and_then(serde_json::Value::as_str);
-                    }
-                    match schema {
-                        serde_json::Value::Array(values) => {
-                            values.iter().find_map(candidate_digest)
-                        }
-                        serde_json::Value::Object(values) => {
-                            values.values().find_map(candidate_digest)
-                        }
-                        _ => None,
-                    }
-                }
                 let digest = request
-                    .output_schema
-                    .as_ref()
-                    .and_then(candidate_digest)
-                    .ok_or_else(|| anyhow!("fixture commit schema omitted candidate digest"))?;
+                    .lived_stream
+                    .match_indices("sha256:")
+                    .filter_map(|(index, _)| request.lived_stream.get(index..index + 71))
+                    .filter(|candidate| {
+                        candidate[7..]
+                            .chars()
+                            .all(|character| character.is_ascii_hexdigit())
+                    })
+                    .last()
+                    .ok_or_else(|| anyhow!("fixture transcript omitted candidate digest"))?;
                 return Ok(serde_json::json!({
                     "command":{
                         "tool":"commit_agenda",
@@ -3865,10 +4241,11 @@ mod tests {
 
     const QUERY_ALL_RECORDS: &str = r#"{"command":{"tool":"query_public_records","terms":[],"match_terms":"all","entity_names":[],"assertion_statuses":[],"channels":[],"order":"newest","cursor":null,"limit":24}}"#;
     const QUERY_FOUNDING_CRISIS: &str = r#"{"command":{"tool":"query_public_records","terms":["speaking child","severed delegation hands","failed grain pumps"],"match_terms":"any","entity_names":[],"assertion_statuses":[],"channels":[],"order":"oldest","cursor":null,"limit":24}}"#;
-    const ONE_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned royal seal and the treasurer's dismissal are one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?"}]}}"#;
-    const TWO_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned seal and dismissal are the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?"},{"lead":false,"citations":["news:west-gate"],"focus_citation":"news:west-gate","narrative_claim":"The gate closure is a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?"}]}}"#;
-    const ACCEPTED_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
-    const TWO_ARTICLE_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]},{"section":"Dispatches","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","byline":"Staff report","dateline":"Yard","citations":["news:west-gate"],"paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace its cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}]}"#;
+    const ONE_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"aven-tarl","citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned royal seal and the treasurer's dismissal are one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?"}]}}"#;
+    const TWO_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"aven-tarl","citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned seal and dismissal are the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?"},{"lead":false,"section":"Dispatches","journalist_id":"lysa-fen","citations":["news:west-gate"],"focus_citation":"news:west-gate","narrative_claim":"The gate closure is a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?"}]}}"#;
+    const ACCEPTED_STORY_ACTION: &str = r#"{"tool":"file_story","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","dateline":"Room","paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}"#;
+    const ACCEPTED_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"Aven Tarl","dateline":"Room","citations":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
+    const TWO_ARTICLE_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"Aven Tarl","dateline":"Room","citations":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]},{"section":"Dispatches","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","byline":"Lysa Fen","dateline":"Yard","citations":["news:west-gate"],"paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace its cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}]}"#;
     const UNCHANGED_NIGHT_CLOSE: &str =
         r#"{"tool":"submit_close","addressed_query_indices":[],"rewrites":[]}"#;
     const QUERY_DECK_CLOSE: &str = r#"{"tool":"submit_close","addressed_query_indices":[0],"rewrites":[{"article_index":0,"headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"The court admits the pawned seal and dismisses the official who carried the confession.","dateline":"Room","paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
@@ -3898,6 +4275,8 @@ mod tests {
             story_pitches: vec![
                 WorldNewspaperStoryPitch {
                     lead: false,
+                    section: "Front Page".into(),
+                    journalist_id: "aven-tarl".into(),
                     citations: vec!["news:seal-scandal".into()],
                     focus_citation: "news:seal-scandal".into(),
                     narrative_claim: "The pawned seal opens the custody crisis.".into(),
@@ -3906,6 +4285,8 @@ mod tests {
                 },
                 WorldNewspaperStoryPitch {
                     lead: true,
+                    section: "Dispatches".into(),
+                    journalist_id: "lysa-fen".into(),
                     citations: vec!["news:seal-scandal".into()],
                     focus_citation: "news:seal-scandal".into(),
                     narrative_claim: "The gate repeats the pattern.".into(),
@@ -3916,7 +4297,7 @@ mod tests {
         };
 
         assert!(
-            validate_editorial_agenda(&records, &invalid, 4)
+            validate_editorial_agenda(&records, &canopy_ledger_newsroom(), &invalid, 4)
                 .unwrap_err()
                 .to_string()
                 .contains("exactly its first pitch as lead")
@@ -3936,21 +4317,26 @@ mod tests {
             reader_stake,
             story_pitches,
         };
-        validate_editorial_agenda(&records, &admitted, 4).unwrap();
+        validate_editorial_agenda(&records, &canopy_ledger_newsroom(), &admitted, 4).unwrap();
         let mut duplicate = admitted.clone();
         duplicate.story_pitches[1]
             .citations
             .push("news:seal-scandal".into());
-        validate_editorial_agenda(&records, &duplicate, 4).unwrap();
+        validate_editorial_agenda(&records, &canopy_ledger_newsroom(), &duplicate, 4).unwrap();
         let mut repeated_within_pitch = admitted.clone();
         repeated_within_pitch.story_pitches[0]
             .citations
             .push("news:seal-scandal".into());
         assert!(
-            validate_editorial_agenda(&records, &repeated_within_pitch, 4)
-                .unwrap_err()
-                .to_string()
-                .contains("repeats a public record ID")
+            validate_editorial_agenda(
+                &records,
+                &canopy_ledger_newsroom(),
+                &repeated_within_pitch,
+                4,
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("repeats a public record ID")
         );
 
         let mut widened: EditorialPageDraft = serde_json::from_str(ACCEPTED_PAGE).unwrap();
@@ -3958,6 +4344,7 @@ mod tests {
         assert!(
             validate_editorial_alignment(
                 &widened,
+                &canopy_ledger_newsroom(),
                 &WorldNewspaperEditorialAgenda {
                     dominant_throughline: admitted.dominant_throughline.clone(),
                     reader_stake: admitted.reader_stake.clone(),
@@ -3973,6 +4360,7 @@ mod tests {
     #[tokio::test]
     async fn narrative_workbench_queries_foundational_context_by_stable_record_id() {
         let records = public_news_records(&campaign_with_archive_news()).unwrap();
+        let newsroom = canopy_ledger_newsroom();
         assert_eq!(records.len(), 45);
         assert!(
             records
@@ -3981,13 +4369,15 @@ mod tests {
         );
         let mut tool = NarrativeSelectionWorkbench {
             records: &records,
+            newsroom: &newsroom,
             max_articles: 3,
             visible_record_ids: BTreeSet::new(),
             completed_queries: BTreeSet::new(),
             pending_agenda: None,
         };
         let initial_schema = tool.action_schema().unwrap().to_string();
-        assert!(!initial_schema.contains("propose_agenda"));
+        assert!(initial_schema.contains("propose_agenda"));
+        assert!(initial_schema.contains("commit_agenda"));
 
         let retrieval = tool
             .invoke(
@@ -4023,12 +4413,7 @@ mod tests {
         assert_eq!(found[0].record_id, "news:archive:00");
         assert!(found[0].facts[0].account.contains("speaking child"));
         assert!(next_cursor.is_none());
-        assert!(
-            tool.action_schema()
-                .unwrap()
-                .to_string()
-                .contains("news:archive:00")
-        );
+        assert_eq!(tool.action_schema().unwrap().to_string(), initial_schema);
 
         let ModelAgentToolOutcome::Rejected { finding, .. } = tool
             .invoke(
@@ -4059,6 +4444,8 @@ mod tests {
                 reader_stake: "Readers still bear the consequences of the founding rupture.".into(),
                 story_pitches: vec![WorldNewspaperStoryPitch {
                     lead: true,
+                    section: "Front Page".into(),
+                    journalist_id: "mera-quill".into(),
                     citations: vec!["news:archive:00".into()],
                     focus_citation: "news:archive:00".into(),
                     narrative_claim: "The oldest dossier is the fact later notices avoid.".into(),
@@ -4106,6 +4493,8 @@ mod tests {
                 reader_stake: "Readers still bear the consequences of the founding rupture.".into(),
                 story_pitches: vec![WorldNewspaperStoryPitch {
                     lead: true,
+                    section: "Front Page".into(),
+                    journalist_id: "mera-quill".into(),
                     citations: vec!["news:archive:00".into()],
                     focus_citation: "news:archive:00".into(),
                     narrative_claim:
@@ -4182,8 +4571,10 @@ mod tests {
     #[test]
     fn narrative_workbench_pages_the_complete_ledger_from_an_inspected_cursor() {
         let records = public_news_records(&campaign_with_archive_news()).unwrap();
+        let newsroom = canopy_ledger_newsroom();
         let mut tool = NarrativeSelectionWorkbench {
             records: &records,
+            newsroom: &newsroom,
             max_articles: 3,
             visible_record_ids: BTreeSet::new(),
             completed_queries: BTreeSet::new(),
@@ -4232,12 +4623,13 @@ mod tests {
             &campaign_with_archive_news(),
             "The Canopy Ledger",
             "Independent and pointed.",
+            &canopy_ledger_newsroom(),
             3,
         )
         .unwrap();
         let model = ScriptedNewspaperModel::new([
             QUERY_FOUNDING_CRISIS,
-            r#"{"command":{"tool":"propose_agenda","dominant_throughline":"The founding crisis survived its administrative aftermath.","reader_stake":"Readers still bear the consequences while institutions manage the paperwork.","story_pitches":[{"lead":true,"citations":["news:archive:00"],"focus_citation":"news:archive:00","narrative_claim":"The original public record is the fact later notices cannot domesticate.","tension":"Administrative responses multiply while the founding rupture remains unresolved.","public_question":"Who benefits when the cause leaves the front page?"}]}}"#,
+            r#"{"command":{"tool":"propose_agenda","dominant_throughline":"The founding crisis survived its administrative aftermath.","reader_stake":"Readers still bear the consequences while institutions manage the paperwork.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"mera-quill","citations":["news:archive:00"],"focus_citation":"news:archive:00","narrative_claim":"The original public record is the fact later notices cannot domesticate.","tension":"Administrative responses multiply while the founding rupture remains unresolved.","public_question":"Who benefits when the cause leaves the front page?"}]}}"#,
         ]);
 
         let run = select_editorial_agenda(&model, &prepared, 3).await.unwrap();
@@ -4255,6 +4647,8 @@ mod tests {
         let records = public_news_records(&campaign_with_archive_news()).unwrap();
         let pitch = WorldNewspaperStoryPitch {
             lead: true,
+            section: "Front Page".into(),
+            journalist_id: "aven-tarl".into(),
             citations: (0..8)
                 .map(|index| format!("news:archive:{index:02}"))
                 .collect(),
@@ -4268,13 +4662,13 @@ mod tests {
             reader_stake: "Readers bear the consequences of that failure.".into(),
             story_pitches: vec![pitch],
         };
-        validate_editorial_agenda(&records, &agenda, 2).unwrap();
+        validate_editorial_agenda(&records, &canopy_ledger_newsroom(), &agenda, 2).unwrap();
 
         let mut unfocused = agenda.clone();
         unfocused.story_pitches[0].citations.truncate(4);
         unfocused.story_pitches[0].focus_citation = "news:archive:07".into();
         assert!(
-            validate_editorial_agenda(&records, &unfocused, 2)
+            validate_editorial_agenda(&records, &canopy_ledger_newsroom(), &unfocused, 2)
                 .unwrap_err()
                 .to_string()
                 .contains("focus record is not in its selected record set")
@@ -4309,6 +4703,23 @@ mod tests {
             ],
         };
         let records = public_news_records(&campaign_with_two_news()).unwrap();
+        let action: NarrativeSelectionAction = serde_json::from_str(TWO_STORY_AGENDA).unwrap();
+        let NarrativeSelectionCommand::ProposeAgenda {
+            dominant_throughline,
+            reader_stake,
+            story_pitches,
+        } = action.command
+        else {
+            panic!("fixture must propose an agenda")
+        };
+        let agenda = WorldNewspaperEditorialAgenda {
+            dominant_throughline,
+            reader_stake,
+            story_pitches,
+        };
+        let night_sources = source_json_for_copy_queries(&records, &agenda, &report).unwrap();
+        assert!(night_sources.contains("news:seal-scandal"));
+        assert!(!night_sources.contains("news:west-gate"));
         let schema = NightEditorCloseWorkbench {
             records: &records,
             max_articles: 2,
@@ -4317,45 +4728,45 @@ mod tests {
         }
         .action_schema()
         .unwrap();
-        assert_eq!(schema["properties"]["rewrites"]["minItems"], 1);
+        assert_eq!(schema["properties"]["rewrites"]["minItems"], 0);
         assert_eq!(schema["properties"]["rewrites"]["maxItems"], 2);
         assert_eq!(
             schema["properties"]["rewrites"]["items"]["properties"]["article_index"]["enum"],
             serde_json::json!([0, 1])
         );
+        let stable_schema = NightEditorCloseWorkbench {
+            records: &records,
+            max_articles: 2,
+            draft: draft.clone(),
+            copy_desk: WorldNewspaperCopyDeskReport {
+                assessment: "No queries.".into(),
+                queries: Vec::new(),
+            },
+        }
+        .action_schema()
+        .unwrap();
+        assert_eq!(schema, stable_schema);
         let closed = apply_night_editor_close(
             &draft,
             &report,
             NightEditorCloseAction::SubmitClose {
                 addressed_query_indices: vec![0, 1],
-                rewrites: vec![
-                    NightEditorArticleClose {
-                        article_index: 0,
-                        headline: "Pawned Seal, Dismissed Messenger".into(),
-                        deck: "The court admitted one loss and imposed another.".into(),
-                        dateline: "Room".into(),
-                        paragraphs: vec![
-                            "The Thorn Court admitted that its royal seal was pawned to cover a dragon's gambling debt.".into(),
-                            "The treasurer carried that admission into open court and was dismissed soon afterward. Readers may decide which act embarrassed the court more.".into(),
-                        ],
-                    },
-                    NightEditorArticleClose {
-                        article_index: 1,
-                        headline: "Moonrise Will Shut the West Gate".into(),
-                        deck: "A cracked hinge turns the evening bell into a travel deadline.".into(),
-                        dateline: "Yard".into(),
-                        paragraphs: vec![
-                            "The west gate will close at moonrise while masons replace the cracked hinge named in the palace warning.".into(),
-                            "Travellers have a closing hour but no announced reopening hour, which is the sort of precision institutions prefer to distribute unevenly.".into(),
-                        ],
-                    },
-                ],
+                rewrites: vec![NightEditorArticleClose {
+                    article_index: 0,
+                    headline: "Pawned Seal, Dismissed Messenger".into(),
+                    deck: "The court admitted one loss and imposed another.".into(),
+                    dateline: "Room".into(),
+                    paragraphs: vec![
+                        "The Thorn Court admitted that its royal seal was pawned to cover a dragon's gambling debt.".into(),
+                        "The treasurer carried that admission into open court and was dismissed soon afterward. Readers may decide which act embarrassed the court more.".into(),
+                    ],
+                }],
             },
         )
         .unwrap();
 
         assert_eq!(closed.addressed_query_indices, [0, 1]);
-        assert_eq!(closed.changed_article_indices, [0, 1]);
+        assert_eq!(closed.changed_article_indices, [0]);
         assert_eq!(closed.draft.articles[0].section, draft.articles[0].section);
         assert_eq!(closed.draft.articles[0].byline, draft.articles[0].byline);
         assert_eq!(
@@ -4368,7 +4779,7 @@ mod tests {
             closed.draft.articles[1].citations,
             draft.articles[1].citations
         );
-        assert_ne!(
+        assert_eq!(
             closed.draft.articles[1].headline,
             draft.articles[1].headline
         );
@@ -4391,7 +4802,7 @@ mod tests {
         let model = ScriptedNewspaperModel::new([
             QUERY_ALL_RECORDS,
             ONE_STORY_AGENDA,
-            ACCEPTED_PAGE,
+            ACCEPTED_STORY_ACTION,
             ACCEPTING_COPY_DESK,
             UNCHANGED_NIGHT_CLOSE,
         ]);
@@ -4420,6 +4831,17 @@ mod tests {
             ["news:seal-scandal"]
         );
         assert_eq!(composition.issue.edition_label, EDITION_LABEL);
+        assert_eq!(
+            composition
+                .issue
+                .editorial_agenda
+                .as_ref()
+                .unwrap()
+                .story_pitches[0]
+                .journalist_id,
+            "aven-tarl"
+        );
+        assert_eq!(composition.issue.articles[0].byline, "Aven Tarl");
         assert!(page.contains("Court Sells the Crown's Seal"));
         assert!(page.contains("*Current Edition*"));
         assert!(page.contains("The court has explained the firing"));
@@ -4460,17 +4882,32 @@ mod tests {
             requests[2].stage,
             "newspaper_narrative_selection_agent_action"
         );
-        assert_eq!(requests[3].stage, "newspaper_editor");
+        assert_eq!(requests[3].stage, "newspaper_journalist_agent_action");
         assert_eq!(requests[4].stage, "newspaper_copy_desk");
         assert_eq!(
             requests[5].stage,
             "newspaper_night_editor_close_agent_action"
         );
+        assert!(requests[3].lived_stream.contains("ASSIGNMENT PACKET"));
+        assert!(requests[0].lived_stream.contains("Veyra Kest"));
+        assert!(requests[0].lived_stream.contains("Mera Quill"));
+        assert!(requests[3].lived_stream.contains("Aven Tarl"));
+        assert!(!requests[3].lived_stream.contains("Mera Quill"));
+        assert!(requests[4].lived_stream.contains("Dalen Marr"));
+        assert!(requests[5].lived_stream.contains("Meret Sorn"));
+        assert!(!requests[5].lived_stream.contains("recover drama"));
         assert!(
-            requests[3]
+            requests[1]
                 .lived_stream
-                .contains("ADMITTED NARRATIVE AGENDA")
+                .starts_with(&requests[0].lived_stream)
         );
+        assert!(
+            requests[2]
+                .lived_stream
+                .starts_with(&requests[1].lived_stream)
+        );
+        assert_eq!(requests[0].output_schema, requests[1].output_schema);
+        assert_eq!(requests[1].output_schema, requests[2].output_schema);
         assert!(
             requests[3]
                 .source_receipt_ids
@@ -4645,7 +5082,7 @@ mod tests {
         let model = ScriptedNewspaperModel::new([
             QUERY_ALL_RECORDS,
             ONE_STORY_AGENDA,
-            ACCEPTED_PAGE,
+            ACCEPTED_STORY_ACTION,
             REJECTED,
             QUERY_DECK_CLOSE,
         ]);
@@ -4701,7 +5138,7 @@ mod tests {
         let model = ScriptedNewspaperModel::new([
             QUERY_ALL_RECORDS,
             ONE_STORY_AGENDA,
-            ACCEPTED_PAGE,
+            ACCEPTED_STORY_ACTION,
             REJECTED,
             INVALID_CLOSE,
         ]);
@@ -4744,7 +5181,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn close_checkpoint_resumes_without_replaying_writer_or_copy_desk() {
+    async fn close_checkpoint_resumes_without_replaying_reporter_or_copy_desk() {
         const REJECTED: &str = r#"{"assessment":"The deck overstates where the admitted debt reached.","queries":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"A gambling debt reaches the throne room and leaves one official carrying the blame.","reason":"The cited source records the pawned seal and dismissal but does not locate the debt in the throne room."}]}"#;
         let campaign = campaign_with_news();
         let directory = tempfile::tempdir().unwrap();
@@ -4752,7 +5189,7 @@ mod tests {
         let first_model = ScriptedNewspaperModel::new([
             QUERY_ALL_RECORDS,
             ONE_STORY_AGENDA,
-            ACCEPTED_PAGE,
+            ACCEPTED_STORY_ACTION,
             REJECTED,
         ]);
         let error = advance_world_newspaper(
@@ -4760,6 +5197,7 @@ mod tests {
             &campaign,
             "The Underdeep Clarion",
             "A skeptical court broadsheet with dry restraint.",
+            &canopy_ledger_newsroom(),
             4,
             &store,
         )
@@ -4784,6 +5222,7 @@ mod tests {
             &campaign,
             "The Underdeep Clarion",
             "A skeptical court broadsheet with dry restraint.",
+            &canopy_ledger_newsroom(),
             4,
             &store,
         )
@@ -4805,6 +5244,7 @@ mod tests {
             &campaign,
             "The Underdeep Clarion",
             "A skeptical court broadsheet with dry restraint.",
+            &canopy_ledger_newsroom(),
             4,
             &store,
         )
@@ -4819,6 +5259,7 @@ mod tests {
             &campaign,
             "The Underdeep Clarion",
             "A skeptical court broadsheet with dry restraint.",
+            &canopy_ledger_newsroom(),
             4,
         )
         .unwrap();
@@ -4839,7 +5280,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn legacy_v7_copy_tip_becomes_one_v8_night_close_without_replay() {
+    async fn legacy_v7_copy_tip_becomes_one_v9_night_close_without_replay() {
         const LEGACY_REJECTION: &str = r#"{"accepted":false,"assessment":"The deck overstates where the admitted debt reached.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"A gambling debt reaches the throne room and leaves one official carrying the blame.","reason":"The cited source records the pawned seal and dismissal but does not locate the debt in the throne room."}]}"#;
         const CURRENT_COPY_REPORT: &str = r#"{"assessment":"The deck overstates where the admitted debt reached.","queries":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"A gambling debt reaches the throne room and leaves one official carrying the blame.","reason":"The cited source records the pawned seal and dismissal but does not locate the debt in the throne room."}]}"#;
         let campaign = campaign_with_news();
@@ -4847,6 +5288,7 @@ mod tests {
             &campaign,
             "The Underdeep Clarion",
             "A skeptical court broadsheet with dry restraint.",
+            &canopy_ledger_newsroom(),
             4,
         )
         .unwrap();
@@ -4856,7 +5298,7 @@ mod tests {
         let source_model = ScriptedNewspaperModel::new([
             QUERY_ALL_RECORDS,
             ONE_STORY_AGENDA,
-            ACCEPTED_PAGE,
+            ACCEPTED_STORY_ACTION,
             CURRENT_COPY_REPORT,
         ]);
         let error = advance_world_newspaper(
@@ -4864,6 +5306,7 @@ mod tests {
             &campaign,
             "The Underdeep Clarion",
             "A skeptical court broadsheet with dry restraint.",
+            &canopy_ledger_newsroom(),
             4,
             &source_store,
         )
@@ -4877,6 +5320,9 @@ mod tests {
         let mut receipt_keys = BTreeMap::<String, String>::new();
         for receipt in &mut legacy_receipts {
             let old_key = receipt.storage_key().to_owned();
+            if receipt.stage == "newspaper_journalist_agent_action" {
+                receipt.stage = "newspaper_editor".into();
+            }
             for source_id in &mut receipt.source_receipt_ids {
                 if let Some(rebound) = receipt_keys.get(source_id) {
                     *source_id = rebound.clone();
@@ -4895,6 +5341,7 @@ mod tests {
             &campaign,
             "The Underdeep Clarion",
             "A skeptical court broadsheet with dry restraint.",
+            &canopy_ledger_newsroom(),
             4,
             &store,
             WorldNewspaperReconciliationImport {
@@ -4929,6 +5376,7 @@ mod tests {
             &campaign,
             "The Underdeep Clarion",
             "A skeptical court broadsheet with dry restraint.",
+            &canopy_ledger_newsroom(),
             4,
             &store,
         )
@@ -4963,7 +5411,7 @@ mod tests {
 
     #[tokio::test]
     async fn reader_projection_escapes_model_and_consumer_markdown() {
-        const MARKDOWN_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"[Court](https://headline.invalid) Faces <Reckoning>","deck":"The *royal* debt now reaches every keeper of the seal.","byline":"By the political editor","dateline":"Room","citations":["news:seal-scandal"],"paragraphs":["- The Thorn Court admitted the royal seal was pawned to cover a dragon's gambling debt; <img src=x> cannot make the confession ~~prettier~~.","1. The dismissed treasurer leaves readers with a [public record](https://copy.invalid) and the court with a seal that remains pawned."]}]}"#;
+        const MARKDOWN_PAGE: &str = r#"{"tool":"file_story","headline":"[Court](https://headline.invalid) Faces <Reckoning>","deck":"The *royal* debt now reaches every keeper of the seal.","dateline":"Room","paragraphs":["- The Thorn Court admitted the royal seal was pawned to cover a dragon's gambling debt; <img src=x> cannot make the confession ~~prettier~~.","1. The dismissed treasurer leaves readers with a [public record](https://copy.invalid) and the court with a seal that remains pawned."]}"#;
         let campaign = campaign_with_news();
         let model = ScriptedNewspaperModel::new([
             QUERY_ALL_RECORDS,
@@ -5021,13 +5469,13 @@ mod tests {
 
     #[tokio::test]
     async fn article_identity_covers_the_published_copy() {
-        const ALTERNATE_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"The same scandal leaves the throne defending both its custody and its judgment.","byline":"By the political editor","dateline":"Room","citations":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
+        const ALTERNATE_PAGE: &str = r#"{"tool":"file_story","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"The same scandal leaves the throne defending both its custody and its judgment.","dateline":"Room","paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}"#;
         let campaign = campaign_with_news();
         let first = compose_world_newspaper(
             &ScriptedNewspaperModel::new([
                 QUERY_ALL_RECORDS,
                 ONE_STORY_AGENDA,
-                ACCEPTED_PAGE,
+                ACCEPTED_STORY_ACTION,
                 ACCEPTING_COPY_DESK,
                 UNCHANGED_NIGHT_CLOSE,
             ]),

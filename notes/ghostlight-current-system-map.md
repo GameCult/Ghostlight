@@ -1288,21 +1288,26 @@ The deliberative newsroom boundary is live under this authority map:
 - **Owner:** canonical `NewsIssue` plus `Event` rows own public provenance and
   facts. `Event::public_assertion_status` owns attempt, declaration,
   committed-course, material-outcome, and unspecified-account semantics. The
-  narrative-selection agent owns assignment: story choice, order, focal record,
-  exact citation grouping, throughline, tension, and reader question. Its
+  in-world assignment editor owns assignment: story choice, order, section,
+  journalist, focal record, exact citation grouping, throughline, tension, and
+  reader question. Its
   deterministic workbench owns query admission, inspected-record membership,
   agenda validation, focus-record dereferencing, candidate identity, and exact
-  commit admission. The lead writer owns one complete reader-facing page from
-  that assignment. The copy desk owns one complete factual query report over
-  the writer's page; it neither rewrites nor accepts publication. The Night
+  commit admission. Each assigned in-world journalist owns one reader-facing
+  story and receives only that pitch, its exact records, and that journalist's
+  character, biases, and preferences. The copy editor owns one complete factual
+  query report over the assembled page; it neither rewrites nor accepts
+  publication. The Night
   Editor owns one deadline close over that page and report. The deterministic
   press witness owns structural admission, lineage, and exact before/after
   evidence for what printed; it does not judge prose. Errors discovered after
   close belong to a later edition's correction memory, not a same-edition
-  repair loop. V8 defines that ownership boundary but does not yet persist a
-  typed correction record. `WorldKernel` remains the only world-event writer.
+  repair loop. V9 defines that ownership boundary but does not yet persist a
+  typed correction record. Publication employees are not world actors or event
+  writers. `WorldKernel` remains the only world-event writer.
 - **Inputs:** one exact campaign revision, publication title and voice, article
-  budget, source-receipt ancestry, and v8 newsroom contract. Through the
+  budget, a validated embodied newsroom roster, source-receipt ancestry, and
+  `character-newsroom.v9` contract. Through the
   existing generic agent harness, the selector issues deterministic bounded
   queries over stable `NewsIssue` IDs using literal terms, exact asserted
   public entity names, assertion statuses, channels, newest/oldest ordering,
@@ -1319,11 +1324,13 @@ The deliberative newsroom boundary is live under this authority map:
   submits `commit_agenda` with the exact digest of the current reviewed
   candidate. The committed agenda carries one dominant throughline, reader
   stake, and ordered story pitches. Every pitch names stable public-record IDs,
-  chooses one focus record, and supplies bounded narrative claim, tension, and
-  public question. Article count plus bounded paragraphs and output tokens
+  chooses one focus record, section, and journalist, and supplies bounded
+  narrative claim, tension, and public question. Article count plus bounded paragraphs and output tokens
   define page space. There is no citation-count page budget. A foundational
   record may support several continuing stories when each pitch uses it for a
-  distinct throughline. The writer emits one page; the copy desk emits one
+  distinct throughline. One journalist agent files each assigned story and the
+  page is assembled deterministically from assignment-owned section, byline,
+  and citations plus journalist-owned prose. The copy desk emits one
   assessment plus the complete bounded set of exact factual query passages;
   the Night Editor emits one close action; and accepted composition v3 carries
   the printed issue, copy report, press-close witness, and exact receipt chain.
@@ -1345,38 +1352,52 @@ The deliberative newsroom boundary is live under this authority map:
   would bury, and returns the exact candidate digest. This is an observation,
   not acceptance. The agent must reconsider the actual consequences in that
   proof and explicitly commit the current digest; a replacement proposal
-  retires the prior candidate as commit authority. The downstream editor sees
-  only the committed agenda, dereferences exactly its selected IDs, centers
-  each article on its focus record's consequential fact, and may not widen or
-  regroup the selection. Record bookkeeping, memory retention, maintained
+  retires the prior candidate as commit authority. Each assigned journalist
+  sees only the publication voice, shared reporting contract, their own
+  character, the page throughline, one pitch, and that pitch's exact records.
+  They center their story on its focus record and may not widen or regroup the
+  selection. Record bookkeeping, memory retention, maintained
   warnings, and procedure are not automatically the lede merely because they
-  are recent. The writer, copy desk, and Night Editor see the same
-  selected-record projection.
+  are recent. The copy editor sees the assembled page and selected facts. The
+  Night Editor sees only queried articles, their assignments and cited facts,
+  the numbered checklist, its own profile, and the profiles of the affected
+  reporters.
 - **Desk and press path:** accepted stable IDs lower once into the existing
   self-contained semantic audit with source news IDs, channels, reliability,
   exact account text, assertion status, event IDs, supported identity
   attributes, institutions, populations, and places. Reader-facing numeric
   labels are assigned only during lowering. The copy desk reads the selected
-  fact projection and writer page exactly once, returning all factual queries
+  fact projection and assembled page exactly once, returning all factual queries
   at once as exact unique passages with reasons. The immutable close checkpoint
   binds that report, page, agenda, task, sources, and receipts before the Night
-  Editor acts. The Night Editor receives the assignment, selected facts, page,
-  and numbered query list, then gets one action to disposition every query and
-  provide complete replacement prose for each queried article. In that same
-  close it may optionally replace any other article to sharpen its headline,
-  lede, throughline, rhythm, or ending. The press workbench freezes article
-  selection, order, section, byline, citations, and agenda while allowing prose
-  replacement across any existing article. It validates structure and source
+  Editor acts. The Night Editor receives the affected assignments, queried
+  articles and facts, and numbered query list, then gets one action to
+  disposition every query and provide complete replacement prose for exactly
+  each queried article. The
+  press workbench freezes article selection, order, section, byline, citations,
+  and agenda and forbids changes to every unqueried article. It validates structure and source
   membership, not whether the final language is true or compelling. A structurally invalid
-  close exhausts the one action and prints the checkpointed writer page with an
+  close exhausts the one action and prints the checkpointed journalist page with an
   explicit non-applied close witness. There is no post-close model reread.
+- **Agent context and cache path:** the generic harness sends typed append-only
+  user/assistant items instead of flattening every turn into one new user
+  transcript. Selector query, proposal, and commit share one stable structured
+  action schema, so each later provider request preserves the exact previous
+  prefix. The Night close schema is likewise stable across checklist contents;
+  its private workbench enforces the exact queried set. Tool schemas stay in the
+  provider output contract rather than being duplicated in prompt text.
+  Prompt-cache routing binds stage, model class, and exact output schema;
+  changing world context does not mint another routing key, while changing the
+  contract does. Each journalist receives only one pitch and its records. Copy
+  receives the complete selected desk because it alone checks the page; Night
+  receives only the subset named by Copy's checklist.
 - **Invariants:** private events do not enter the query surface; every selected
   stable ID resolves at the bound revision; story order, selection, citation
-  grouping, and focus remain agenda-owned; no proposal reaches the writer
+  grouping, focus, section, and journalist remain agenda-owned; no proposal reaches the journalists
   without deterministic proof observation and exact-current-digest commit;
   omitted public facts remain true; assignment, writing, copy queries, close,
-  lowering, and witness creation cannot mutate the world. There is one writer
-  pass, one copy report, and one admitted Night Editor close. No model verdict
+  lowering, and witness creation cannot mutate the world. There is one bounded
+  reporter pass per pitch, one copy report, and one admitted Night Editor close. No model verdict
   rereads the printed page, no rejected close opens an iterative rewrite loop,
   and no external evaluation can reopen an immutable edition. The witness must
   preserve exact source and printed page digests, receipt ancestry, every query
@@ -1387,77 +1408,74 @@ The deliberative newsroom boundary is live under this authority map:
   state. The deterministic proof cannot rank stories or commit an agenda; it
   exposes the model's proposed ordering against exact focus facts. A proposal
   cannot bypass review by returning as accepted output, and a missing or stale
-  candidate digest cannot commit. The editor cannot widen the admitted record
-  set or write a second page. The copy desk cannot rewrite, suppress, or accept
+  candidate digest cannot commit. A journalist cannot change section, byline,
+  citations, assignment, another journalist's prose, or the admitted record
+  set. The copy desk cannot rewrite, suppress, or accept
   prose, select stories, close the press, or withhold the complete query set for
   a later pass. The Night Editor cannot widen sources, add, remove, or reorder
   stories, alter sections, bylines, citations, or agenda, invoke another model
-  judge, or reopen a completed close. The Night Editor may change the
-  reader-facing prose of any existing article during that one close, but every
-  copy-query-bearing article is mandatory. The press witness cannot certify
+  judge, reopen a completed close, or touch an article absent from the copy
+  checklist. Every copy-query-bearing article and no other article is mandatory.
+  The press witness cannot certify
   factual or editorial quality; it can only prove the exact admitted process and
   bytes.
   Renderers, strategic smoke, Registry, external blind reviewers, and grounding
   reviewers cannot write the page, desk report, close, correction, world state,
   or acceptance state. Caches cannot decide record equivalence, assertion
-  status, story relevance, or fact completion.
+  status, story relevance, fact completion, or staff assignment.
 - **Shared paths:** fresh composition queries stable records, proposes one or
   more agendas, observes the deterministic front-page proof for each proposal,
-  and commits exactly one current candidate before invoking the writer. Fresh
-  work then follows one path: writer, copy report, immutable close checkpoint,
+  and commits exactly one current candidate before invoking the assigned
+  journalists. Fresh work then follows one path: one bounded reporter agent per
+  pitch, deterministic page assembly, copy report, immutable close checkpoint,
   one Night Editor action, deterministic press witness, lowering, persistence.
   Registry, live per-wave composition, missing-issue recovery, and final digest
   all delegate to `advance_world_newspaper`. Resume begins from the immutable
-  close checkpoint and does not rerun assignment, writer, or copy desk. A
+  close checkpoint and does not rerun assignment, journalists, or copy desk. A
   persisted composition is revalidated against its close checkpoint and exact
   stored receipts, then returned without model work.
 - **Persistence and compatibility:** the live internal contract is
-  `canopy-ledger-night-editor.v8`. Close checkpoint v1 binds the assigned agenda,
-  writer page, single copy report, task and exact editorial bindings, source
+  `character-newsroom.v9`. Public request schema v3 carries the publication
+  roster and binds it into the task and editorial identities. Close checkpoint
+  v1 binds the assigned agenda, assembled page, single copy report, task and exact editorial bindings, source
   checkpoint when present, and immutable receipt chain. Composition v3 stores
   the printed issue, copy report, press-close witness, and receipts. Public issue
   schema v3 remains unchanged. Candidate agendas and front-page proofs remain
   ephemeral. V7 reconciliation checkpoint v3 is read-only resume provenance:
   an explicit external import may materialize the exact immutable Run 58 copy
-  tip once, but v8 never appends to or advances that chain. Only a v7 tip whose
-  rejecting owner is the copy desk can become one v8 close checkpoint; its
+  tip once, but v9 never appends to or advances that chain. Only a v7 tip whose
+  rejecting owner is the copy desk can become one v9 close checkpoint; its
   draft, agenda, query report, bindings, and receipt ancestry must validate
   exactly. A v7 Night Editor rejection fails closed rather than being recast as
-  copy evidence. Run 58's v7 copy tip is imported into one v8 Night Editor
-  close without replaying ledger queries, agenda selection, writer, copy desk,
+  copy evidence. Run 58's v7 copy tip is imported into one v9 Night Editor
+  close without replaying ledger queries, agenda selection, journalists, copy desk,
   world mechanics, strategic waves, or accepted per-wave publications.
-- **Cut line:** `NewsroomSource`, transient ordinal selection IDs, fact-bundle
-  deduplication, fixed newest-32/preceding-12/foundational-12 windows,
-  per-story and total citation ceilings, global record uniqueness across
-  articles, and the newspaper-local event-kind status mapping are removed.
-  The direct `submit_agenda` acceptance path is also removed: query plus a
-  structurally valid proposal is insufficient authority to invoke the editor.
-  Phrase replacements, finding references, target-field and
-  paragraph addressing, byte-span resolution, overlap ordering, empty-phrase
-  deletion, and article deletion remain absent. V8 additionally deletes the
-  publication-review verdict union, editorial-quality verdict, generic rewrite
-  desk, bounded multi-action rewrite cadence, repeated copy-desk calls, Night
-  Editor rereview, reconciliation advancement, and pending-as-editorial-state
-  path. No compatibility path may retain those operations as live writers.
-  Whole-article prose is the sole Night Editor close unit. Query-bearing
-  articles are mandatory, any other existing article is optional, and the
-  admitted agenda plus deterministic close merge owns everything around them.
-  Query projection and front-page proof reuse the generic agent harness and
-  existing public-record, agenda, accepted issue, and audit shapes. No
-  dependency, crate, binary, daemon, persistent schema, service, cache, event
-  writer, target platform, code-generation path, or world-simulation pass was
-  added.
+- **Cut line:** the generic byline list and one-shot whole-page writer are
+  deleted. Assignment-owned section, journalist, byline, citations, and order
+  are no longer regenerated in prose output. Tool schema text and prior-action
+  copies are absent from prompts; agent history is no longer flattened and
+  retransmitted as a newly rendered user transcript. Selector commands no
+  longer mutate the action schema as records become visible. Phrase-level
+  repairs, repeated copy calls, Night rereview, post-close model judgment, and
+  edits to unqueried articles remain absent. Whole-article prose is the sole
+  Night Editor close unit, and exactly the query-bearing articles are mandatory.
+  The roster, query projection, front-page proof, and article assembly reuse the
+  generic agent harness and existing public-record, agenda, accepted issue, and
+  audit shapes. No dependency, crate, binary, daemon, persistent schema,
+  service, cache, event writer, target platform, code-generation path, or
+  world-simulation pass was added.
 - **Verification and build budget:** focused newspaper tests retain query
   admission, exact focus proof, agenda commit, selected-record alignment, and
-  audit grounding. V8 gates prove one complete copy report, exact unique query
-  targets, one Night Editor action, complete query disposition, mandatory
-  rewrites for query-bearing articles, optional polish of any other article,
-  preservation of assignment-owned structure and citations, no post-close copy
-  or editorial stage, deterministic source/printed digests,
-  exact receipt ancestry, close-checkpoint resume without writer or copy replay,
-  idempotent persisted-composition validation, printing the checkpointed page
-  after a structurally rejected close, and conversion of one legacy v7 copy tip
-  into one v8 close without replay. Strategic recomposition v3 binds the copy
+  audit grounding. V9 gates prove stable selector and Night schemas plus
+  append-only provider prefixes, assignment-aware reporter context isolation, one complete
+  copy report, exact unique query targets, one Night Editor action over only the
+  queried articles and facts, complete query disposition, preservation of
+  assignment-owned structure and citations, no post-close copy or editorial
+  stage, deterministic source/printed digests, exact receipt ancestry,
+  close-checkpoint resume without reporter or copy replay, idempotent persisted
+  composition validation, printing the checkpointed page after a structurally
+  rejected close, and conversion of one legacy v7 copy tip into one v9 close
+  without replay. Strategic recomposition v3 binds the copy
   report and press witness by digest while v1/v2 remain historical validation
   inputs. Independent blind editorial and grounding reviews evaluate the
   resulting artifact for the acceptance experiment only; they are deliberately

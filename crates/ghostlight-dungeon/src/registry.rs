@@ -381,7 +381,7 @@ impl CampaignRegistry {
         request: WorldNewspaperRequest,
         model: &dyn ModelPort,
     ) -> Result<crate::newspaper::WorldNewspaperAdvance> {
-        if request.schema != "ghostlight.world_newspaper_request.v2"
+        if request.schema != "ghostlight.world_newspaper_request.v3"
             || request.max_articles == 0
             || request.max_articles > 6
             || request.editorial_voice.trim().is_empty()
@@ -414,6 +414,7 @@ impl CampaignRegistry {
             &campaign,
             request.title,
             request.editorial_voice,
+            &request.newsroom,
             usize::from(request.max_articles),
             &runtime.store,
         )
@@ -684,58 +685,26 @@ mod tests {
 
     struct RejectingRegistryNewspaperModel;
 
-    fn first_schema_property_enum<'a>(
-        schema: &'a serde_json::Value,
-        property: &str,
-    ) -> Option<&'a str> {
-        match schema {
-            serde_json::Value::Object(object) => object
-                .get("properties")
-                .and_then(serde_json::Value::as_object)
-                .and_then(|properties| properties.get(property))
-                .and_then(|value| value.pointer("/items/enum/0"))
-                .and_then(serde_json::Value::as_str)
-                .or_else(|| {
-                    object
-                        .values()
-                        .find_map(|value| first_schema_property_enum(value, property))
-                }),
-            serde_json::Value::Array(values) => values
-                .iter()
-                .find_map(|value| first_schema_property_enum(value, property)),
-            _ => None,
-        }
-    }
-
-    fn first_schema_property_const<'a>(
-        schema: &'a serde_json::Value,
-        property: &str,
-    ) -> Option<&'a str> {
-        match schema {
-            serde_json::Value::Object(object) => object
-                .get("properties")
-                .and_then(serde_json::Value::as_object)
-                .and_then(|properties| properties.get(property))
-                .and_then(|value| value.get("const"))
-                .and_then(serde_json::Value::as_str)
-                .or_else(|| {
-                    object
-                        .values()
-                        .find_map(|value| first_schema_property_const(value, property))
-                }),
-            serde_json::Value::Array(values) => values
-                .iter()
-                .find_map(|value| first_schema_property_const(value, property)),
-            _ => None,
-        }
+    fn last_transcript_value(stream: &str, prefix: &str) -> Option<String> {
+        let start = stream.match_indices(prefix).last()?.0 + prefix.len();
+        let tail = stream.get(start..)?;
+        Some(tail.split('"').next()?.to_owned())
     }
 
     fn registry_newspaper_narrative_response(request: &ModelStageRequest) -> Result<String> {
-        let schema = request
-            .output_schema
-            .as_ref()
-            .ok_or_else(|| anyhow!("newspaper fixture lost its narrative action schema"))?;
-        if !schema.to_string().contains("propose_agenda") {
+        if let Some(candidate_digest) =
+            last_transcript_value(&request.lived_stream, "\"candidate_digest\":\"")
+        {
+            return Ok(serde_json::json!({
+                "command":{
+                    "tool":"commit_agenda",
+                    "candidate_digest":candidate_digest,
+                }
+            })
+            .to_string());
+        }
+        let Some(citation) = last_transcript_value(&request.lived_stream, "\"record_id\":\"")
+        else {
             return Ok(serde_json::json!({
                 "command":{
                     "tool":"query_public_records",
@@ -750,20 +719,7 @@ mod tests {
                 }
             })
             .to_string());
-        }
-        if schema.to_string().contains("commit_agenda") {
-            let candidate_digest = first_schema_property_const(schema, "candidate_digest")
-                .ok_or_else(|| anyhow!("newspaper fixture lost its reviewed agenda digest"))?;
-            return Ok(serde_json::json!({
-                "command":{
-                    "tool":"commit_agenda",
-                    "candidate_digest":candidate_digest,
-                }
-            })
-            .to_string());
-        }
-        let citation = first_schema_property_enum(schema, "citations")
-            .ok_or_else(|| anyhow!("newspaper fixture lost its narrative citation enum"))?;
+        };
         Ok(serde_json::json!({
             "command":{
                 "tool":"propose_agenda",
@@ -771,6 +727,8 @@ mod tests {
                 "reader_stake":"Readers depend on whether the court can distinguish an allegation from a judgment.",
                 "story_pitches":[{
                     "lead":true,
+                    "section":"Front Page",
+                    "journalist_id":"aven-tarl",
                     "citations":[citation],
                     "focus_citation":citation,
                     "narrative_claim":"The singular accusation against three auditors is itself the scandal.",
@@ -782,25 +740,16 @@ mod tests {
         .to_string())
     }
 
-    fn registry_newspaper_editor_response(request: &ModelStageRequest) -> Result<String> {
-        let citation = request
-            .output_schema
-            .as_ref()
-            .and_then(|schema| first_schema_property_enum(schema, "citations"))
-            .ok_or_else(|| anyhow!("newspaper fixture lost its citation enum"))?;
+    fn registry_newspaper_editor_response(_request: &ModelStageRequest) -> Result<String> {
         Ok(serde_json::json!({
-            "articles":[{
-                "section":"Front Page",
-                "headline":"Court Auditors Face a Singular Accusation",
-                "deck":"The inner court has turned a granary inquiry into a question of witchcraft and arithmetic.",
-                "byline":"By the political editor",
-                "dateline":"Room",
-                "citations":[citation],
-                "paragraphs":[
-                    "The inner court has accused three granary auditors of being one witch in a long coat, placing the allegation into the public record.",
-                    "The charge leaves the auditors answering a court that has made one person out of three, at least for purposes of blame."
-                ]
-            }]
+            "tool":"file_story",
+            "headline":"Court Auditors Face a Singular Accusation",
+            "deck":"The inner court has turned a granary inquiry into a question of witchcraft and arithmetic.",
+            "dateline":"Room",
+            "paragraphs":[
+                "The inner court has accused three granary auditors of being one witch in a long coat, placing the allegation into the public record.",
+                "The charge leaves the auditors answering a court that has made one person out of three, at least for purposes of blame."
+            ]
         })
         .to_string())
     }
@@ -1482,13 +1431,14 @@ mod tests {
         let (_, repeated) = registry.admit_world_seed(request).await.unwrap();
         assert_eq!(repeated.seed_digest, receipt.seed_digest);
         let newspaper_request = crate::consumer::WorldNewspaperRequest {
-            schema: "ghostlight.world_newspaper_request.v2".into(),
+            schema: "ghostlight.world_newspaper_request.v3".into(),
             campaign_id: campaign.id,
             authority_id: "authority:external-hold".into(),
             owner_id: "fixture-consumer".into(),
             authority_key: authority_key.into(),
             title: "The Consumer Gazette".into(),
             editorial_voice: "A skeptical regional court broadsheet.".into(),
+            newsroom: crate::newspaper::canopy_ledger_newsroom(),
             max_articles: 4,
         };
         let mut denied_newspaper = newspaper_request.clone();

@@ -8310,7 +8310,7 @@ mod tests {
                         && request.lived_stream.contains("duplicate_statement")
                         && request.lived_stream.contains("fact:refuge_authority")
                         && request.lived_stream.contains("fact:refuge_resources")
-                        && request.lived_stream.contains("PREVIOUS TOOL ACTION"),
+                        && request.lived_stream.contains("ASSISTANT:"),
                     Ordering::SeqCst,
                 );
                 Ok(serde_json::json!({
