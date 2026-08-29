@@ -1293,18 +1293,21 @@ materializing a `NewsIssue`.
 1. Push exact implementation `c34c4b1f94706661cdc35d5314ea23347bda6fd7`.
 2. Preserve run 55 and the live services, then create one new immutable
    final-newspaper-only run from run 55's exact revision-27 campaign and
-   accepted per-wave publications. Recompose only the cumulative Canopy Ledger
-   with the v5 deliberative newsroom; do not replay world mechanics or
-   per-wave publications.
+   accepted per-wave publications. Compose one current weekly-style Canopy
+   Ledger with a broad reporting window over the cumulative immutable public
+   ledger. The ledger is an archive available for selective reporting, not a
+   table of contents and not a mandate for retrospective recap. Use the v5
+   deliberative newsroom; do not replay world mechanics or per-wave
+   publications.
 3. Preserve run 55 and require final newspaper and archive hashes, exact provenance and manifest,
    unchanged-service proof, independent grounding, and blind editorial
    acceptance before delivering the actual copy.
 4. Defer multiple publication Personas, TeX layout, and engraved cuts until the
    single Canopy Ledger passes.
-5. After this hostile cumulative-ledger test passes, make independently
-   publishable per-wave issues the normal Delvehold contract. Treat any
-   retrospective digest as a separate publication type rather than the default
-   newspaper.
+5. Per-wave issues may use daily-like reporting windows, while a final
+   composition may be an equally current weekly-style issue with a broader
+   window. Both are selective journalism; broad fact availability increases
+   editorial freedom and does not license recap voice.
 
 Do not weaken actor custody, private projection, unanimous approval,
 knowledge gates, no-puppeting, or atomic-wave invariants to make the smoke pass.
