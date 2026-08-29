@@ -1249,22 +1249,39 @@ SHA-256
 Every manifest row passes and live service identities remained unchanged.
 
 Exact implementation commit
-`c454d13ecd80d0720e072cc94460ccf5b98c843c` owns the query-backed newsroom
-cut. Canonical `NewsIssue` plus `Event` rows own public facts and stable
-selection IDs. `Event::public_assertion_status` owns factual completion
-semantics. The existing generic agent harness now offers bounded deterministic
-queries over the full immutable ledger; the selector owns story choice and
-framing, and editor, copy desk, audit, and reconciliation dereference the same
-selected IDs. Reader-facing numeric citations are assigned only during
-lowering. The cut removes `NewsroomSource`, fact-bundle deduplication,
-transient ordinal selection IDs, fixed archive windows, citation-count
-ceilings, cross-story record uniqueness, and the newspaper-local event-kind
-status mapping. Deterministic admission also rejects ambiguous ledger IDs and
-repeated IDs inside persisted agenda or draft record groups. Gates pass 28/28
-focused newspaper tests, 483/483 library tests, and 15/15 strategic-smoke
-tests. No dependency, crate,
-binary, daemon, persistent schema, cache, event writer, service, or simulation
-pass was added.
+`c34c4b1f94706661cdc35d5314ea23347bda6fd7` owns the deliberative newsroom
+cut. Canonical `NewsIssue` plus `Event` rows remain the sole public fact
+ledger. The selector queries that ledger, proposes an agenda, receives a
+deterministic comparison of its proposed lead with every below-fold focus
+fact, and may query or revise again. Only an exact-current-digest commit admits
+the reviewed agenda to the publication writer. The writer owns narrative
+construction, emphasis, juxtaposition, and clearly signalled interpretation
+over admitted facts; the independent copy desk alone owns factual judgment.
+Direct proposal acceptance is removed. Candidate agendas, proofs, and digests
+are ephemeral views and gain no fact, world, or persistence authority. Gates
+pass 28/28 focused newspaper tests, including unreviewed and stale-digest
+rejection, 483/483 library tests, and 15/15 strategic-smoke tests. Formatting
+and diff checks pass. No dependency, crate, binary, daemon, persistent schema,
+cache, event writer, service, or simulation pass was added.
+
+Exact-source run 55 at
+`c454d13ecd80d0720e072cc94460ccf5b98c843c` is mechanically complete at
+world revision 27 with 18/18 waves, 363 events, and 853 news rows and no world
+or successful per-wave publication replay. Its immutable artifact root is
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-c454d13-55-reader\elven-realms-autonomous-c454d13-55`.
+SHA-256: newspaper
+`256a72523c034027fb03db193638ad36479de91be05e39141ba369c22eb87338`;
+audit `28ca9ab82a8ee756c32e30f44e2e53886a45f5ee7d2d0fb5cc573c7f04672906`;
+result `f04a4591a5a681cecf5f62520bcd8a5341642c58606acdbc86eea7a75be3dd6a`;
+status `a7065af10b6d90fe93ffc6d4d66fd7bdabe297f864f99aeeddeb1124962695ed`.
+The acceptance witness binds unchanged live-service identities and
+`world_or_wave_replay=false`.
+
+Independent grounding review passes. Independent blind editorial review
+fails. The query-backed ledger gave the newsroom the relevant material, but
+the paper led on the regulator audit rather than its strongest human conflict
+and retained an audit-ledger rhythm. Ledger access is no longer the active
+blocker; news judgment before agenda admission is.
 
 Run 54 exposed one separate upstream publicity defect: a public strategic
 activity propagates its channel to private `MemberMemory` outcomes, which is
@@ -1273,16 +1290,21 @@ ignore that bookkeeping, but revision 27 remains immutable. Future kernel work
 must require an outcome's own observable or communicated public scope before
 materializing a `NewsIssue`.
 
-1. Push and stage exact implementation
-   `c454d13ecd80d0720e072cc94460ccf5b98c843c` on Yggdrasil.
-2. Create one new immutable newsroom-only root from run 54's exact revision-27
-   campaign and accepted per-wave publications. Recompose only the final Canopy
-   Ledger; preserve resumable selection/editor/reconciliation receipts.
-3. Require final newspaper and archive hashes, exact provenance and manifest,
+1. Push exact implementation `c34c4b1f94706661cdc35d5314ea23347bda6fd7`.
+2. Preserve run 55 and the live services, then create one new immutable
+   final-newspaper-only run from run 55's exact revision-27 campaign and
+   accepted per-wave publications. Recompose only the cumulative Canopy Ledger
+   with the v5 deliberative newsroom; do not replay world mechanics or
+   per-wave publications.
+3. Preserve run 55 and require final newspaper and archive hashes, exact provenance and manifest,
    unchanged-service proof, independent grounding, and blind editorial
    acceptance before delivering the actual copy.
 4. Defer multiple publication Personas, TeX layout, and engraved cuts until the
    single Canopy Ledger passes.
+5. After this hostile cumulative-ledger test passes, make independently
+   publishable per-wave issues the normal Delvehold contract. Treat any
+   retrospective digest as a separate publication type rather than the default
+   newspaper.
 
 Do not weaken actor custody, private projection, unanimous approval,
 knowledge gates, no-puppeting, or atomic-wave invariants to make the smoke pass.
