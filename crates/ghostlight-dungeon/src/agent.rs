@@ -24,6 +24,41 @@ pub struct ModelAgentRun<Output> {
 }
 
 #[derive(Debug)]
+pub enum ModelAgentProgress<Output> {
+    Accepted(ModelAgentRun<Output>),
+    Exhausted(ModelAgentExhausted),
+}
+
+#[derive(Debug)]
+pub struct ModelAgentExhausted {
+    pub stage: String,
+    pub max_steps: usize,
+    pub final_observation: Option<serde_json::Value>,
+    pub receipts: Vec<ModelStageReceipt>,
+}
+
+impl ModelAgentExhausted {
+    pub fn message(&self) -> String {
+        format!(
+            "model agent {} exhausted {} semantic steps; final tool observation: {}",
+            self.stage,
+            self.max_steps,
+            self.final_observation
+                .as_ref()
+                .map(serde_json::Value::to_string)
+                .unwrap_or_else(|| "none".into()),
+        )
+    }
+
+    fn into_failure(self) -> ModelAgentFailure {
+        ModelAgentFailure {
+            message: self.message(),
+            receipts: self.receipts,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct ModelAgentFailure {
     pub message: String,
     pub receipts: Vec<ModelStageReceipt>,
@@ -93,6 +128,17 @@ pub async fn run_model_agent<Tool: ModelAgentTool>(
     spec: &ModelAgentSpec,
     tool: &mut Tool,
 ) -> std::result::Result<ModelAgentRun<Tool::Output>, ModelAgentFailure> {
+    match run_model_agent_progress(port, spec, tool).await? {
+        ModelAgentProgress::Accepted(run) => Ok(run),
+        ModelAgentProgress::Exhausted(exhausted) => Err(exhausted.into_failure()),
+    }
+}
+
+pub async fn run_model_agent_progress<Tool: ModelAgentTool>(
+    port: &dyn ModelPort,
+    spec: &ModelAgentSpec,
+    tool: &mut Tool,
+) -> std::result::Result<ModelAgentProgress<Tool::Output>, ModelAgentFailure> {
     if spec.max_steps == 0 {
         return Err(ModelAgentFailure {
             message: format!("model agent {} has no semantic step budget", spec.stage),
@@ -236,7 +282,10 @@ pub async fn run_model_agent<Tool: ModelAgentTool>(
             } => {
                 receipts.push(stage.receipt);
                 receipts.extend(tool_receipts);
-                return Ok(ModelAgentRun { output, receipts });
+                return Ok(ModelAgentProgress::Accepted(ModelAgentRun {
+                    output,
+                    receipts,
+                }));
             }
             ModelAgentToolOutcome::Rejected {
                 finding,
@@ -273,17 +322,12 @@ pub async fn run_model_agent<Tool: ModelAgentTool>(
         }
     }
 
-    Err(ModelAgentFailure {
-        message: format!(
-            "model agent {} exhausted {} semantic steps; final tool observation: {}",
-            spec.stage,
-            spec.max_steps,
-            last_observation
-                .map(|observation| observation.to_string())
-                .unwrap_or_else(|| "none".into()),
-        ),
+    Ok(ModelAgentProgress::Exhausted(ModelAgentExhausted {
+        stage: spec.stage.clone(),
+        max_steps: spec.max_steps,
+        final_observation: last_observation,
         receipts,
-    })
+    }))
 }
 
 /// Builds one deterministic causal ancestry set for every model stage. This is
@@ -636,5 +680,35 @@ mod tests {
                 .source_receipt_ids
                 .contains(&failure.receipts[1].storage_key().to_owned())
         );
+    }
+
+    #[tokio::test]
+    async fn progress_api_returns_exhaustion_as_resumable_state() {
+        let model = ScriptedModel {
+            outputs: Mutex::new(vec![r#"{"value":"still-wrong"}"#.into()]),
+            requests: Mutex::new(Vec::new()),
+        };
+        let spec = ModelAgentSpec {
+            stage: "fixture_agent".into(),
+            model: MODEL_BALANCED.into(),
+            snapshot_binding: "snapshot:1".into(),
+            instructions: "Use the tool.".into(),
+            source_receipt_ids: vec!["source:one".into()],
+            temperature: Some(0.0),
+            max_output_tokens: Some(128),
+            max_steps: 1,
+        };
+
+        let progress = run_model_agent_progress(&model, &spec, &mut ExactTool)
+            .await
+            .unwrap();
+        let ModelAgentProgress::Exhausted(exhausted) = progress else {
+            panic!("one rejected action must remain resumable")
+        };
+
+        assert_eq!(exhausted.stage, "fixture_agent");
+        assert_eq!(exhausted.max_steps, 1);
+        assert_eq!(exhausted.receipts.len(), 2);
+        assert_eq!(exhausted.final_observation.unwrap()["kind"], "wrong_value");
     }
 }

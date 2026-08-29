@@ -1096,19 +1096,40 @@ workbench state and receipts persist, and the editor never reruns. The exact
 mixed-path regression and full gates pass: 16/16 newspaper tests, 470/470
 library tests, 13/13 strategic-smoke binary tests, and `git diff --check`.
 
+Exact-source run 46 at
+`dfe0926041b83d69a4b02451cdab706572522ae3` resumed revision 27 without
+world or successful-publication replay. Issues 13 and 14 remained preserved.
+Issue 15 exhausted three admitted repair/copy-desk rounds; the final exact
+finding is one mechanical duplicated clause. Issues 15 through 18 and the final
+digest remain absent. Unit invocation is
+`3276392f4a7149fc9d127a966e792633`.
+
+Another fixed step would repeat the same compensator. The current uncommitted
+resumable-reconciliation cut persists a typed generation-zero checkpoint and a
+new typed checkpoint after every rejection, binding the exact draft, verdict
+and finding catalog, model and deterministic receipts, and source/contract
+identity. Accepted composition and strategic artifact records separately bind
+issue and rendered-file ancestry. Resume continues that exact pending chain
+without rerunning the editor. Typed run-46 import converts the preserved
+terminal evidence into the same checkpoint contract. Gates pass
+475/475 library tests and 13/13 strategic-smoke binary tests, including
+same-task source-drift and fork rejection before inference.
+
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Commit and push the verified three-action reconciliation cut.
-2. Launch exact-source run 46 from immutable run 45's preserved Issue 13 and Issue 14 boundary at revision 27
-   to compose Issues 15 through 18 plus the final digest. Preserve every
+1. Commit and push the verified typed resumable-reconciliation checkpoint and
+   run-46 import cut.
+2. Launch run 47 by resuming run 46's Issue 15 reconciliation chain at revision
+   27 to compose Issues 15 through 18 plus the final digest. Preserve every
    completed wave checkpoint and canonical world state; do not replay mechanics
    or successful publications. Require the resulting unedited publications and
    final digest to pass fresh independent editorial and provenance review before
-   claiming acceptance. Preserve runs 38/39/40/42/43/44/45, the run-41 root and committed
-   world lineage, stopped run 23, exact acceptance conditions, and unchanged
-   live daemons.
+   claiming acceptance. Preserve runs 38/39/40/42/43/44/45/46, the run-41 root
+   and committed world lineage, stopped run 23, exact acceptance conditions,
+   and unchanged live daemons.
+   Run 47 remains unlaunched.
 3. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
 4. Prove one consumer-owned effect crosses that public API, changes two foreign

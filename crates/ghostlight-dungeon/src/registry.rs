@@ -380,7 +380,7 @@ impl CampaignRegistry {
         &self,
         request: WorldNewspaperRequest,
         model: &dyn ModelPort,
-    ) -> Result<crate::newspaper::WorldNewspaperIssue> {
+    ) -> Result<crate::newspaper::WorldNewspaperAdvance> {
         if request.schema != "ghostlight.world_newspaper_request.v2"
             || request.max_articles == 0
             || request.max_articles > 6
@@ -409,36 +409,15 @@ impl CampaignRegistry {
             .load::<Campaign>("campaign.v1", &request.campaign_id.to_string())?
             .ok_or_else(|| anyhow!("campaign is missing"))?
             .1;
-        let composition_result = crate::newspaper::compose_world_newspaper(
+        crate::newspaper::advance_world_newspaper(
             model,
             &campaign,
             request.title,
             request.editorial_voice,
             usize::from(request.max_articles),
+            &runtime.store,
         )
-        .await;
-        if let Err(error) = &composition_result
-            && let Some(failure) =
-                error.downcast_ref::<crate::newspaper::WorldNewspaperCompositionFailure>()
-            && let Err(persistence_error) = runtime
-                .store
-                .persist_model_stage_receipts(&failure.model_receipts)
-        {
-            return Err(anyhow::Error::new(
-                crate::newspaper::WorldNewspaperCompositionFailure {
-                    message: format!(
-                        "{}; model-receipt persistence failed: {persistence_error}",
-                        failure.message
-                    ),
-                    model_receipts: failure.model_receipts.clone(),
-                },
-            ));
-        }
-        let composition = composition_result?;
-        runtime
-            .store
-            .persist_model_stage_receipts(&composition.model_receipts)?;
-        Ok(composition.issue)
+        .await
     }
 
     pub async fn acknowledge_external_proposal(
@@ -1410,7 +1389,10 @@ mod tests {
         let newspaper = registry
             .compose_world_newspaper(newspaper_request.clone(), &RegistryNewspaperModel)
             .await
-            .unwrap();
+            .unwrap()
+            .into_accepted()
+            .unwrap()
+            .issue;
         assert_eq!(newspaper.source_world_revision, 0);
         assert!(newspaper.articles.is_empty());
 
@@ -1627,7 +1609,10 @@ mod tests {
         let newspaper = registry
             .compose_world_newspaper(newspaper_request.clone(), &RegistryNewspaperModel)
             .await
-            .unwrap();
+            .unwrap()
+            .into_accepted()
+            .unwrap()
+            .issue;
         assert_eq!(newspaper.source_world_revision, 3);
         assert_eq!(newspaper.articles.len(), 1);
         assert_eq!(
@@ -1651,7 +1636,10 @@ mod tests {
         let repeated_newspaper = registry
             .compose_world_newspaper(newspaper_request.clone(), &RegistryNewspaperModel)
             .await
-            .unwrap();
+            .unwrap()
+            .into_accepted()
+            .unwrap()
+            .issue;
         assert_eq!(repeated_newspaper.id, newspaper.id);
         assert_eq!(
             runtime
@@ -1663,17 +1651,23 @@ mod tests {
         );
 
         let receipt_count_before_rejection = successful_receipts.len();
-        let error = registry
-            .compose_world_newspaper(newspaper_request, &RejectingRegistryNewspaperModel)
+        let mut rejected_request = newspaper_request;
+        rejected_request.title.push_str(" Evening");
+        let pending = registry
+            .compose_world_newspaper(rejected_request, &RejectingRegistryNewspaperModel)
             .await
-            .unwrap_err();
-        let failure = error
-            .downcast_ref::<crate::newspaper::WorldNewspaperCompositionFailure>()
-            .expect("registry must preserve the typed terminal editorial failure");
-        assert_eq!(failure.model_receipts.len(), 8);
+            .unwrap();
+        let crate::newspaper::WorldNewspaperAdvance::Pending {
+            checkpoint,
+            model_receipts,
+        } = pending
+        else {
+            panic!("registry must preserve typed pending reconciliation state")
+        };
+        assert_eq!(model_receipts.len(), 8);
+        assert_eq!(checkpoint.generation(), 3);
         let stored_after_rejection = runtime.store.keys("persona_stage_receipt.v1").unwrap();
-        let newly_observed_failure_receipts = failure
-            .model_receipts
+        let newly_observed_failure_receipts = model_receipts
             .iter()
             .map(|receipt| receipt.storage_key().to_owned())
             .filter(|receipt_id| !successful_receipts.contains(receipt_id))
@@ -1683,7 +1677,7 @@ mod tests {
             receipt_count_before_rejection + newly_observed_failure_receipts.len()
         );
         assert!(
-            failure.model_receipts.iter().all(|receipt| {
+            model_receipts.iter().all(|receipt| {
                 stored_after_rejection.contains(&receipt.storage_key().to_owned())
             })
         );

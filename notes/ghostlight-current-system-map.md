@@ -1315,48 +1315,99 @@ surviving article selection and order, sections, bylines, and all unaffected
 text remain frozen. If the lead is deleted, owner code promotes the next article
 to the front page. The agent cannot request a new simulation or source packet,
 submit a replacement `EditorialPageDraft`, or act as a second editor. The same
-copy desk rechecks the complete repaired page. The worker permits at most three
-actions in one agent run: the initial repair and two bounded corrections. The
-intended full path can spend one correction on deterministic admission and one
-on a fresh copy-desk verdict; every rejected action consumes the same total
-budget rather than opening a separate retry owner for either boundary. After
-the first or second rejection, the same workbench retains the current private
-draft and verdict, republishes the dynamic action schema, and exposes a freshly
-numbered finding catalog derived by the same helper used for the initial
-catalog. The harness includes every prior action receipt and any copy-desk tool
-receipts in the next action's causal source chain; a local admission rejection
-correctly contributes no nonexistent tool receipt. Acceptance ends the run
-immediately. An inadmissible repair, an empty surviving page, or a page rejected
-after the third action returns no edition. Thus the editor owns
-initial copy, the reconciler owns only this bounded repair session, the copy
-desk owns grounding judgment, and none owns source facts or world state.
-Focused tests cover order-independent same-target phrase repair, exact same-desk
-repair with source identity preserved, bounded article deletion with survivor
-recheck, and one corrective response to the copy desk's current finding catalog.
-A mixed-path regression proves local empty-repair rejection, admitted repair and
-copy-desk rejection, then third-action acceptance with seven receipts and final
-copy-desk ancestry over every prior completed receipt. A terminal regression
-proves that three admitted but rejected repairs exhaust the three-action budget
-and retain all eight editor, copy-desk, and action receipts, including all three
-rejected action dispositions. The typed issue retains exact event IDs, channels,
-reliability, source revision, and model receipts as audit data. Its internal
-issue time is derived from the latest cited publication record without exposing
-that clock to editorial inference. Terminally rejected attempts semantically
-rebind their otherwise immutable model receipts to a collision-free invalid
-disposition and return a typed failure carrying every completed receipt. The
-campaign store owns idempotent model-receipt persistence; the registry and
-strategic acceptance smoke use that same primitive before returning a
-rejection. In the acceptance smoke, an interim edition rejection is local to
-the consumer and cannot stop later world waves. A rejected final combined
-edition remains a nonzero acceptance failure, but first writes the completed
-wave reports, rejection receipts, and failed status. Its top-level plan,
-receipt hash, and commit always project the final completed wave, matching the
-top-level counts and persisted campaign head; per-wave history remains under
-`waves`. The reader renderer has no
-path to provenance fields and escapes all model- and consumer-supplied plain
-text before Markdown emission; the provenance renderer applies the same
-plain-text boundary to its audit data. Neither editor, copy desk, renderer, nor
-receipt persistence can write world state.
+copy desk rechecks the complete repaired page.
+
+The resumable reconciliation boundary is now live:
+
+- **Owner:** `newspaper::advance_world_newspaper` is the single composition,
+  checkpoint-advance, resume, and accepted-composition owner. `CampaignStore`
+  owns immutable storage only. Registry and the strategic driver supply policy
+  inputs and consume `WorldNewspaperAdvance::{Accepted, Pending}`; neither
+  reconstructs the workbench or decides editorial state.
+- **Inputs:** one exact `Campaign` snapshot, title, editorial voice, article
+  budget, model port, and `CampaignStore`. A publication-task binding covers
+  campaign id and revision plus title, voice, and budget. The editorial binding
+  additionally covers the exact derived newsroom source desk and provenance.
+  This lets the owner find the task's checkpoint chain while still rejecting
+  same-task source drift before inference.
+- **Outputs:** acceptance is one immutable persisted composition. A still
+  rejected page is typed `Pending`, carrying the current immutable checkpoint
+  and complete ordered receipt chain; pending is not a
+  `WorldNewspaperCompositionFailure`. Fatal model, schema, local-validation,
+  persistence, and checkpoint-conflict errors remain failures and leave the
+  last admitted checkpoint available.
+- **Persistent and derived state:** the initial copy-desk rejection persists its
+  editor and copy-desk receipts, then publishes generation zero before any
+  repair action. Each later rejected action persists its new receipts before
+  appending one checkpoint with task and editorial bindings, generation,
+  parent id, typed origin, current private draft, rejected verdict, ordered
+  receipt ids, and receipt-chain digest. The current finding catalog, exact
+  target spans, action schema, and chain tip are derived and validated; they are
+  not parallel state owners. Three actions per call are only the current
+  advance cadence. Reaching that boundary returns `Pending` and does not make
+  rejection terminal.
+- **Resume and idempotence:** every call checks the accepted composition marker
+  before checkpoint discovery. Otherwise it loads the unique checkpoint tip,
+  reloads every typed receipt, validates checkpoint identity, task and exact
+  editorial bindings, generation and parent links, strict receipt-prefix
+  growth, draft, rejected verdict and finding targets, then reconstructs the
+  same workbench. A resumed action includes the checkpoint id and every prior
+  receipt in its causal ancestry and never invokes the editor. Acceptance
+  persists its receipts and a composition linked to the source checkpoint;
+  later calls return that composition without model work even though the
+  historical pending chain remains immutable.
+- **Forbidden writers:** the editor and copy desk may propose and judge but
+  cannot persist or resume reconciliation state. Registry, strategic smoke,
+  renderers, JSON result/checkpoint projections, world cells, Nemesis, clocks,
+  and `WorldKernel` cannot write the draft, verdict, receipt chain, checkpoint,
+  or accepted composition. They cannot replay world mechanics or overwrite an
+  already accepted issue to repair editorial copy.
+- **Shared paths:** Registry calls `advance_world_newspaper` directly. Strategic
+  live per-wave, missing-issue recovery, and final-combined composition use a
+  thin `compose_persisted_newspaper` delegate to that same owner and store. A
+  pending interim issue is recorded in its immutable wave report and does not
+  stop later strategic waves; recovery resumes it from `CampaignStore`. A
+  pending final combined issue writes pending result/status projections and
+  ends that acceptance invocation nonzero without changing the world.
+- **Legacy import boundary:** Run 46 may enter only through the explicit typed
+  `WorldNewspaperReconciliationImport` and strategic import envelope. The
+  envelope binds wave, recovery boundary, and world revision; the common
+  library validator rebinds the witness to the exact prepared task and desk,
+  validates its draft, rejected verdict, and typed receipts, and admits it as a
+  generation-zero `LegacyTerminalImport`. An existing accepted composition or
+  different checkpoint tip rejects the import. No live path parses failure
+  prose, infers a checkpoint from JSON error text, or falls back to a fresh
+  editor after a configured import fails admission.
+- **Cut line:** the newspaper path uses the agent harness's typed
+  `ModelAgentProgress::Exhausted` result; the older generic harness API may still
+  lower exhaustion to failure for non-resumable consumers, but it no longer
+  owns newspaper correctness. The former fixed terminal reconciliation ceiling
+  is now `GROUNDING_RECONCILIATION_ACTIONS_PER_ADVANCE`. Registry's separate
+  receipt-persistence/failure path is gone, and the strategic persistence
+  helper is only a delegate rather than a second composition owner.
+- **Verification layer:** focused tests prove typed harness exhaustion,
+  generation zero plus one append per rejected action, typed pending after
+  three actions, exact-chain resume without an editor, cumulative receipt and
+  copy-desk ancestry, accepted-composition idempotence without inference,
+  same-task source-drift rejection and fork rejection before inference, typed
+  legacy import through the common validator, and Registry preservation of
+  pending state. The current verified gate is 475/475 library tests and 13/13
+  strategic-smoke binary tests, including same-task source-drift and fork
+  rejection before inference. Run 47 has not yet supplied provider-backed
+  resume/acceptance proof.
+
+The typed issue retains exact event IDs, channels, reliability, source
+revision, and model receipts as audit data. Its internal issue time is derived
+from the latest cited publication record without exposing that clock to
+editorial inference. Rejected action attempts semantically rebind their
+otherwise immutable model receipts to collision-free invalid dispositions
+before checkpoint admission. The top-level strategic plan, receipt hash, and
+commit always project the final completed wave, matching the top-level counts
+and persisted campaign head; per-wave history remains under `waves`. The reader
+renderer has no path to provenance fields and escapes all model- and
+consumer-supplied plain text before Markdown emission; the provenance renderer
+applies the same plain-text boundary to its audit data. Neither editor, copy
+desk, renderer, nor receipt persistence can write world state.
 
 #### Acceptance-driver per-wave newspaper recovery
 
@@ -1369,15 +1420,18 @@ receipt persistence can write world state.
   (`GHOSTLIGHT_STRATEGIC_NEWSPAPER_RECOVERY_START_WAVE`, defaulting to wave one
   and validated within `1..=wave_count`), and the same campaign receipt store
   used by ordinary newspaper composition.
-- **Output:** one separately named immutable recomposition checkpoint containing
-  the accepted issue, grounding verdict, and newspaper model receipts, plus the
-  rendered reader and audit files. Its receipt binds the narrowed source
+- **Output:** acceptance writes one separately named immutable recomposition
+  checkpoint containing the issue, grounding verdict, and newspaper model
+  receipts, plus the rendered reader and audit files. Its receipt binds the narrowed source
   campaign, recovery boundary, title/voice/article-budget contract, issue,
   model-receipt collection, expected filenames, and both rendered byte streams
   by digest. The configured boundary is also projected through run status and
   success or failure result artifacts. The driver fills only the missing
-  newspaper fields in its in-memory result projection. Existing successful
-  issues and original wave checkpoints remain unchanged.
+  newspaper fields in its in-memory result projection. Pending reconciliation
+  instead writes an immutable diagnostic projection of the library-owned
+  checkpoint and stops that recovery invocation; canonical resume state remains
+  in `CampaignStore`. Existing successful issues and original wave checkpoints
+  remain unchanged.
 - **Derived state:** the newsroom receives a clone of the completed wave's
   campaign whose news ledger is narrowed to rows appended since the preceding
   committed boundary. All events and canonical names remain available only so
@@ -1389,16 +1443,17 @@ receipt persistence can write world state.
   range is left untouched.
 - **Forbidden writers:** recovery cannot rerun a strategic tick, Nemesis,
   simulation cells, outcome resolution, clocks, or `WorldKernel`, and it cannot
-  alter campaign, event, or news state. A failed recomposition stops consumer
-  recovery and cannot repair mechanics.
+  alter campaign, event, or news state. Pending or failed recomposition stops
+  consumer recovery and cannot repair mechanics.
 - **Shared paths:** live per-wave composition, recovery composition, and final
-  combined composition all call `compose_persisted_newspaper`, including the
-  same grounding/copy-desk path and idempotent model-receipt persistence. A
-  later resume consumes the successful recomposition checkpoint instead of
-  paying for the newspaper again, but only after recomputing its source and
-  contract bindings, checking the exact recovery boundary, deserializing the
-  issue, regenerating reader and audit copy, and comparing the exact stored files
-  and digests.
+  combined composition all call the thin `compose_persisted_newspaper` delegate
+  into `advance_world_newspaper`, including the same grounding/copy-desk,
+  checkpoint-resume, and receipt-persistence owner. A later resume advances a
+  pending library checkpoint without rerunning the editor. Once accepted, it
+  consumes the successful recomposition artifact instead of paying for the
+  newspaper again, but only after recomputing its source and contract bindings,
+  checking the exact recovery boundary, deserializing the issue, regenerating
+  reader and audit copy, and comparing the exact stored files and digests.
 - **Verification layer:** the focused boundary regression proves that a second
   wave is recomposed from only its newly appended news row while retaining the
   committed event ledger needed to resolve that row. It also rejects prior-news
