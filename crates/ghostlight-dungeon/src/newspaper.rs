@@ -3,7 +3,7 @@ use crate::{
         ModelAgentProgress, ModelAgentSpec, ModelAgentTool, ModelAgentToolContext,
         ModelAgentToolOutcome,
     },
-    domain::{Campaign, Event, NewsIssue},
+    domain::{Campaign, Event, NewsIssue, PublicEventAssertionStatus},
     model::{
         MODEL_BALANCED, MODEL_CAPABLE, ModelPort, ModelStageReceipt, ModelStageRequest,
         run_validated_stage,
@@ -23,12 +23,10 @@ use std::{
 };
 
 const MAX_FRONT_PAGE_ARTICLES: usize = 6;
-const MAX_INITIAL_NEWSROOM_SOURCES: usize = 32;
-const MAX_ARCHIVE_CONTEXT_SOURCES: usize = 12;
-const MAX_EDITORIAL_CITATIONS_PER_STORY: usize = 6;
-const EDITORIAL_CITATIONS_PER_ARTICLE: usize = 2;
+const MAX_PUBLIC_RECORD_QUERY_RESULTS: usize = 24;
+const MAX_NARRATIVE_SELECTION_STEPS: usize = 8;
 const GROUNDING_RECONCILIATION_ACTIONS_PER_ADVANCE: usize = 3;
-const NEWSROOM_CONTRACT_VERSION: &str = "canopy-ledger-narrative-selection.v3";
+const NEWSROOM_CONTRACT_VERSION: &str = "canopy-ledger-public-ledger-query.v4";
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
@@ -113,15 +111,7 @@ pub struct WorldNewspaperSourceFact {
     pub places: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum WorldNewspaperAssertionStatus {
-    AttemptCommittedOutcomeUnknown,
-    CourseCommittedEmbeddedActionsNotCompleted,
-    PublicDeclaration,
-    MaterialChangeCommitted,
-    PublicAccountStatusUnspecified,
-}
+pub type WorldNewspaperAssertionStatus = PublicEventAssertionStatus;
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct WorldNewspaperNamedPerson {
@@ -275,41 +265,14 @@ impl fmt::Display for WorldNewspaperCompositionFailure {
 
 impl StdError for WorldNewspaperCompositionFailure {}
 
-#[derive(Clone, Debug)]
-struct NewsroomSource {
-    citation: String,
-    news_ids: BTreeSet<String>,
-    published_at: DateTime<Utc>,
-    channels: BTreeSet<String>,
-    reliability: BTreeSet<String>,
-    events: Vec<NewsroomEvent>,
-}
-
-#[derive(Clone, Debug)]
-struct NewsroomEvent {
-    event_ids: BTreeSet<String>,
-    summary: String,
-    assertion_status: WorldNewspaperAssertionStatus,
-    named_people: Vec<WorldNewspaperNamedPerson>,
-    institution_names: Vec<String>,
-    population_names: Vec<String>,
-    place_names: Vec<String>,
-}
-
-#[derive(Serialize)]
-struct NewsroomDeskNote<'a> {
-    citation: &'a str,
-    facts: Vec<NewsroomFact<'a>>,
-}
-
-#[derive(Serialize)]
-struct NewsroomFact<'a> {
-    account: &'a str,
-    assertion_status: &'a WorldNewspaperAssertionStatus,
-    named_people: &'a [WorldNewspaperNamedPerson],
-    institutions: &'a [String],
-    populations: &'a [String],
-    places: &'a [String],
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+struct PublicRecordProjection {
+    record_id: String,
+    at: DateTime<Utc>,
+    channel: String,
+    headline: String,
+    reliability: String,
+    facts: Vec<WorldNewspaperSourceFact>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -349,8 +312,20 @@ struct NarrativeSelectionAction {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "tool", rename_all = "snake_case", deny_unknown_fields)]
 enum NarrativeSelectionCommand {
-    RequestArchiveContext {
-        window: WorldNewspaperArchiveWindow,
+    QueryPublicRecords {
+        #[schemars(length(max = 6))]
+        terms: Vec<String>,
+        match_terms: PublicRecordTermMatch,
+        #[schemars(length(max = 6))]
+        entity_names: Vec<String>,
+        #[schemars(length(max = 5))]
+        assertion_statuses: Vec<WorldNewspaperAssertionStatus>,
+        #[schemars(length(max = 6))]
+        channels: Vec<String>,
+        order: PublicRecordOrder,
+        cursor: Option<String>,
+        #[schemars(range(min = 1, max = 24))]
+        limit: u8,
     },
     SubmitAgenda {
         #[schemars(length(min = 1, max = 500))]
@@ -366,9 +341,30 @@ enum NarrativeSelectionCommand {
     Clone, Copy, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord,
 )]
 #[serde(rename_all = "snake_case")]
-enum WorldNewspaperArchiveWindow {
-    PrecedingRecent,
-    Foundational,
+enum PublicRecordTermMatch {
+    Any,
+    All,
+}
+
+#[derive(
+    Clone, Copy, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord,
+)]
+#[serde(rename_all = "snake_case")]
+enum PublicRecordOrder {
+    Newest,
+    Oldest,
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq, PartialOrd, Ord)]
+struct PublicRecordQuery {
+    terms: Vec<String>,
+    match_terms: PublicRecordTermMatch,
+    entity_names: Vec<String>,
+    assertion_statuses: Vec<WorldNewspaperAssertionStatus>,
+    channels: Vec<String>,
+    order: PublicRecordOrder,
+    cursor: Option<String>,
+    limit: u8,
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
@@ -377,56 +373,164 @@ enum NarrativeSelectionFinding {
     AgendaRejected {
         reason: String,
     },
-    ArchiveRequestRejected {
+    QueryRejected {
         reason: String,
     },
-    ArchiveContext {
-        window: WorldNewspaperArchiveWindow,
-        desk: serde_json::Value,
+    QueryResult {
+        records: Vec<PublicRecordProjection>,
+        next_cursor: Option<String>,
     },
 }
 
 struct NarrativeSelectionWorkbench<'a> {
-    sources: &'a [NewsroomSource],
+    records: &'a [PublicRecordProjection],
     max_articles: usize,
-    visible_citations: BTreeSet<String>,
-    requested_windows: BTreeSet<WorldNewspaperArchiveWindow>,
+    visible_record_ids: BTreeSet<String>,
+    completed_queries: BTreeSet<PublicRecordQuery>,
 }
 
 impl NarrativeSelectionWorkbench<'_> {
-    fn archive_citations(&self, window: WorldNewspaperArchiveWindow) -> BTreeSet<String> {
-        let archive_start = MAX_INITIAL_NEWSROOM_SOURCES.min(self.sources.len());
-        let range = match window {
-            WorldNewspaperArchiveWindow::PrecedingRecent => {
-                archive_start..(archive_start + MAX_ARCHIVE_CONTEXT_SOURCES).min(self.sources.len())
-            }
-            WorldNewspaperArchiveWindow::Foundational => {
-                self.sources
-                    .len()
-                    .saturating_sub(MAX_ARCHIVE_CONTEXT_SOURCES)
-                    .max(archive_start)..self.sources.len()
-            }
-        };
-        self.sources[range]
+    fn known_channels(&self) -> Vec<String> {
+        self.records
             .iter()
-            .map(|source| source.citation.clone())
+            .map(|record| record.channel.clone())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
             .collect()
     }
 
-    fn available_archive_windows(&self) -> Vec<WorldNewspaperArchiveWindow> {
-        [
-            WorldNewspaperArchiveWindow::PrecedingRecent,
-            WorldNewspaperArchiveWindow::Foundational,
-        ]
-        .into_iter()
-        .filter(|window| {
-            !self.requested_windows.contains(window)
-                && self
-                    .archive_citations(*window)
-                    .iter()
-                    .any(|citation| !self.visible_citations.contains(citation))
+    fn query(&mut self, mut query: PublicRecordQuery) -> Result<NarrativeSelectionFinding> {
+        normalize_query_terms(&mut query.terms, "query term")?;
+        normalize_query_terms(&mut query.entity_names, "query entity")?;
+        query.channels.sort();
+        query.channels.dedup();
+        query.assertion_statuses.sort();
+        query.assertion_statuses.dedup();
+        if !(1..=MAX_PUBLIC_RECORD_QUERY_RESULTS).contains(&usize::from(query.limit)) {
+            return Err(anyhow!(
+                "public-record query limit is outside the bounded response"
+            ));
+        }
+        if query
+            .channels
+            .iter()
+            .any(|channel| !self.records.iter().any(|record| &record.channel == channel))
+        {
+            return Err(anyhow!("public-record query names an unknown channel"));
+        }
+        if query
+            .cursor
+            .as_ref()
+            .is_some_and(|cursor| !self.visible_record_ids.contains(cursor))
+        {
+            return Err(anyhow!(
+                "public-record query cursor was not previously inspected"
+            ));
+        }
+        if !self.completed_queries.insert(query.clone()) {
+            return Err(anyhow!(
+                "public-record query exactly repeats an earlier query"
+            ));
+        }
+
+        let ordered = match query.order {
+            PublicRecordOrder::Newest => self.records.iter().collect::<Vec<_>>(),
+            PublicRecordOrder::Oldest => self.records.iter().rev().collect::<Vec<_>>(),
+        };
+        let start = query.cursor.as_ref().map_or(0, |cursor| {
+            ordered
+                .iter()
+                .position(|record| &record.record_id == cursor)
+                .map_or(ordered.len(), |index| index.saturating_add(1))
+        });
+        let matching = ordered
+            .into_iter()
+            .skip(start)
+            .filter(|record| public_record_matches(record, &query))
+            .collect::<Vec<_>>();
+        let limit = usize::from(query.limit);
+        let records = matching
+            .iter()
+            .take(limit)
+            .map(|record| (*record).clone())
+            .collect::<Vec<_>>();
+        self.visible_record_ids
+            .extend(records.iter().map(|record| record.record_id.clone()));
+        let next_cursor = (matching.len() > records.len())
+            .then(|| records.last().map(|record| record.record_id.clone()))
+            .flatten();
+        Ok(NarrativeSelectionFinding::QueryResult {
+            records,
+            next_cursor,
         })
-        .collect()
+    }
+}
+
+fn normalize_query_terms(values: &mut Vec<String>, label: &str) -> Result<()> {
+    for value in values.iter_mut() {
+        *value = value.trim().to_owned();
+        if value.is_empty() || value.chars().count() > 80 || value.chars().any(char::is_control) {
+            return Err(anyhow!("{label} is malformed"));
+        }
+    }
+    values.sort_by_key(|value| value.to_lowercase());
+    values.dedup_by(|left, right| left.eq_ignore_ascii_case(right));
+    Ok(())
+}
+
+fn public_record_matches(record: &PublicRecordProjection, query: &PublicRecordQuery) -> bool {
+    if !query.channels.is_empty() && !query.channels.contains(&record.channel) {
+        return false;
+    }
+    if !query.assertion_statuses.is_empty()
+        && !record
+            .facts
+            .iter()
+            .any(|fact| query.assertion_statuses.contains(&fact.assertion_status))
+    {
+        return false;
+    }
+    let entity_names = record
+        .facts
+        .iter()
+        .flat_map(|fact| {
+            fact.named_people
+                .iter()
+                .map(|person| person.name.as_str())
+                .chain(fact.institutions.iter().map(String::as_str))
+                .chain(fact.populations.iter().map(String::as_str))
+                .chain(fact.places.iter().map(String::as_str))
+        })
+        .collect::<Vec<_>>();
+    if !query.entity_names.is_empty()
+        && !query.entity_names.iter().any(|expected| {
+            entity_names
+                .iter()
+                .any(|actual| actual.eq_ignore_ascii_case(expected))
+        })
+    {
+        return false;
+    }
+    if query.terms.is_empty() {
+        return true;
+    }
+    let searchable = std::iter::once(record.headline.as_str())
+        .chain(std::iter::once(record.channel.as_str()))
+        .chain(std::iter::once(record.reliability.as_str()))
+        .chain(record.facts.iter().map(|fact| fact.account.as_str()))
+        .chain(entity_names)
+        .collect::<Vec<_>>()
+        .join("\n")
+        .to_lowercase();
+    match query.match_terms {
+        PublicRecordTermMatch::Any => query
+            .terms
+            .iter()
+            .any(|term| searchable.contains(&term.to_lowercase())),
+        PublicRecordTermMatch::All => query
+            .terms
+            .iter()
+            .all(|term| searchable.contains(&term.to_lowercase())),
     }
 }
 
@@ -437,9 +541,8 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
     type Finding = NarrativeSelectionFinding;
 
     fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
-        let citations = self.visible_citations.iter().cloned().collect::<Vec<_>>();
-        let story_budget = self.max_articles.min(self.sources.len());
-        let per_story_citation_budget = MAX_EDITORIAL_CITATIONS_PER_STORY.min(citations.len());
+        let citations = self.visible_record_ids.iter().cloned().collect::<Vec<_>>();
+        let story_budget = self.max_articles.min(self.records.len());
         let submit_schema = serde_json::json!({
             "type":"object",
             "additionalProperties":false,
@@ -473,7 +576,7 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                             "citations":{
                                 "type":"array",
                                 "minItems":1,
-                                "maxItems":per_story_citation_budget,
+                                "maxItems":citations.len(),
                                 "uniqueItems":true,
                                 "items":{"type":"string","enum":citations}
                             },
@@ -486,27 +589,48 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                 }
             }
         });
-        let available_windows = self.available_archive_windows();
-        let command_schema = if available_windows.is_empty() {
-            submit_schema
+        let cursor_schema = if citations.is_empty() {
+            serde_json::json!({"type":"null"})
         } else {
-            serde_json::json!({
-                "oneOf":[
-                    {
-                        "type":"object",
-                        "additionalProperties":false,
-                        "required":["tool","window"],
-                        "properties":{
-                            "tool":{"const":"request_archive_context"},
-                            "window":{
-                                "type":"string",
-                                "enum":available_windows
-                            }
-                        }
-                    },
-                    submit_schema
-                ]
-            })
+            serde_json::json!({"anyOf":[
+                {"type":"string","enum":citations},
+                {"type":"null"}
+            ]})
+        };
+        let assertion_status_schema =
+            serde_json::to_value(schema_for!(WorldNewspaperAssertionStatus))
+                .map_err(|error| error.to_string())?;
+        let assertion_statuses = assertion_status_schema
+            .get("enum")
+            .cloned()
+            .ok_or_else(|| "public assertion status schema omitted its enum".to_owned())?;
+        let query_schema = serde_json::json!({
+            "type":"object",
+            "additionalProperties":false,
+            "required":[
+                "tool","terms","match_terms","entity_names",
+                "assertion_statuses","channels","order","cursor","limit"
+            ],
+            "properties":{
+                "tool":{"const":"query_public_records"},
+                "terms":{"type":"array","maxItems":6,"uniqueItems":true,
+                    "items":{"type":"string","minLength":1,"maxLength":80}},
+                "match_terms":{"type":"string","enum":["any","all"]},
+                "entity_names":{"type":"array","maxItems":6,"uniqueItems":true,
+                    "items":{"type":"string","minLength":1,"maxLength":80}},
+                "assertion_statuses":{"type":"array","maxItems":5,"uniqueItems":true,
+                    "items":{"type":"string","enum":assertion_statuses}},
+                "channels":{"type":"array","maxItems":6,"uniqueItems":true,
+                    "items":{"type":"string","enum":self.known_channels()}},
+                "order":{"type":"string","enum":["newest","oldest"]},
+                "cursor":cursor_schema,
+                "limit":{"type":"integer","minimum":1,"maximum":MAX_PUBLIC_RECORD_QUERY_RESULTS}
+            }
+        });
+        let command_schema = if citations.is_empty() {
+            query_schema
+        } else {
+            serde_json::json!({"oneOf":[query_schema,submit_schema]})
         };
         let mut schema = serde_json::json!({
             "type":"object",
@@ -525,39 +649,36 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
         _context: &ModelAgentToolContext,
     ) -> ModelAgentToolOutcome<Self::Output, Self::Finding> {
         match action.command {
-            NarrativeSelectionCommand::RequestArchiveContext { window } => {
-                if !self.available_archive_windows().contains(&window) {
-                    return ModelAgentToolOutcome::Rejected {
-                        finding: NarrativeSelectionFinding::ArchiveRequestRejected {
-                            reason:
-                                "archive window is empty, already visible, or already requested"
-                                    .into(),
-                        },
-                        receipts: Vec::new(),
-                    };
-                }
-                let citations = self.archive_citations(window);
-                self.requested_windows.insert(window);
-                self.visible_citations.extend(citations.iter().cloned());
-                let desk = match serde_json::to_value(newsroom_desk_for_citations(
-                    self.sources,
-                    &citations,
-                )) {
-                    Ok(desk) => desk,
-                    Err(error) => {
-                        return ModelAgentToolOutcome::Failed {
-                            message: format!(
-                                "narrative-selection workbench could not project archive context: {error}"
-                            ),
-                            receipts: Vec::new(),
-                        };
-                    }
-                };
-                ModelAgentToolOutcome::Continue {
-                    observation: NarrativeSelectionFinding::ArchiveContext { window, desk },
+            NarrativeSelectionCommand::QueryPublicRecords {
+                terms,
+                match_terms,
+                entity_names,
+                assertion_statuses,
+                channels,
+                order,
+                cursor,
+                limit,
+            } => match self.query(PublicRecordQuery {
+                terms,
+                match_terms,
+                entity_names,
+                assertion_statuses,
+                channels,
+                order,
+                cursor,
+                limit,
+            }) {
+                Ok(observation) => ModelAgentToolOutcome::Continue {
+                    observation,
                     receipts: Vec::new(),
-                }
-            }
+                },
+                Err(error) => ModelAgentToolOutcome::Rejected {
+                    finding: NarrativeSelectionFinding::QueryRejected {
+                        reason: error.to_string().chars().take(500).collect(),
+                    },
+                    receipts: Vec::new(),
+                },
+            },
             NarrativeSelectionCommand::SubmitAgenda {
                 dominant_throughline,
                 reader_stake,
@@ -568,22 +689,22 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                     reader_stake,
                     story_pitches,
                 };
-                let invisible_citation = agenda
+                let uninspected_record = agenda
                     .story_pitches
                     .iter()
                     .flat_map(|pitch| &pitch.citations)
-                    .find(|citation| !self.visible_citations.contains(*citation));
-                if let Some(citation) = invisible_citation {
+                    .find(|record_id| !self.visible_record_ids.contains(*record_id));
+                if let Some(record_id) = uninspected_record {
                     return ModelAgentToolOutcome::Rejected {
                         finding: NarrativeSelectionFinding::AgendaRejected {
                             reason: format!(
-                                "agenda cites newsroom note {citation} without retrieving it"
+                                "agenda cites public record {record_id} without querying it"
                             ),
                         },
                         receipts: Vec::new(),
                     };
                 }
-                match validate_editorial_agenda(self.sources, &agenda, self.max_articles) {
+                match validate_editorial_agenda(self.records, &agenda, self.max_articles) {
                     Ok(()) => ModelAgentToolOutcome::Accepted {
                         output: agenda,
                         receipts: Vec::new(),
@@ -612,71 +733,58 @@ fn validate_editorial_frame(value: &str, label: &str) -> Result<()> {
     Ok(())
 }
 
-fn editorial_citation_budget(source_count: usize, max_articles: usize) -> usize {
-    source_count.min(
-        max_articles
-            .min(source_count)
-            .saturating_mul(EDITORIAL_CITATIONS_PER_ARTICLE),
-    )
+fn selected_record_ids<'a>(record_ids: &'a [String], label: &str) -> Result<BTreeSet<&'a str>> {
+    if record_ids.is_empty() {
+        return Err(anyhow!("{label} selected no public record"));
+    }
+    let selected = record_ids
+        .iter()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
+    if selected.len() != record_ids.len() {
+        return Err(anyhow!("{label} repeats a public record ID"));
+    }
+    Ok(selected)
 }
 
 fn validate_editorial_agenda(
-    sources: &[NewsroomSource],
+    records: &[PublicRecordProjection],
     agenda: &WorldNewspaperEditorialAgenda,
     max_articles: usize,
 ) -> Result<()> {
     validate_editorial_frame(&agenda.dominant_throughline, "dominant throughline")?;
     validate_editorial_frame(&agenda.reader_stake, "reader stake")?;
     if agenda.story_pitches.is_empty()
-        || agenda.story_pitches.len() > max_articles.min(sources.len())
+        || agenda.story_pitches.len() > max_articles.min(records.len())
     {
         return Err(anyhow!("editorial agenda exceeded its story budget"));
     }
-    let known_sources = sources
+    let known_sources = records
         .iter()
-        .map(|source| source.citation.as_str())
+        .map(|record| record.record_id.as_str())
         .collect::<BTreeSet<_>>();
-    let mut used_sources = BTreeSet::new();
     for (index, pitch) in agenda.story_pitches.iter().enumerate() {
         if pitch.lead != (index == 0) {
             return Err(anyhow!(
                 "editorial agenda must designate exactly its first pitch as lead"
             ));
         }
-        if pitch.citations.is_empty()
-            || pitch.citations.len() > MAX_EDITORIAL_CITATIONS_PER_STORY.min(sources.len())
-        {
+        let selected = selected_record_ids(&pitch.citations, &format!("editorial pitch {index}"))?;
+        if !selected.contains(pitch.focus_citation.as_str()) {
             return Err(anyhow!(
-                "editorial pitch {index} exceeded its citation budget"
-            ));
-        }
-        if !pitch
-            .citations
-            .iter()
-            .any(|citation| citation == &pitch.focus_citation)
-        {
-            return Err(anyhow!(
-                "editorial pitch {index} focus citation is not in its story dossier"
+                "editorial pitch {index} focus record is not in its selected record set"
             ));
         }
         for citation in &pitch.citations {
             if !known_sources.contains(citation.as_str()) {
                 return Err(anyhow!(
-                    "editorial pitch {index} cites unknown newsroom note {citation}"
-                ));
-            }
-            if !used_sources.insert(citation.as_str()) {
-                return Err(anyhow!(
-                    "newsroom note {citation} appears in more than one editorial pitch"
+                    "editorial pitch {index} cites unknown public record {citation}"
                 ));
             }
         }
         validate_editorial_frame(&pitch.narrative_claim, "story narrative claim")?;
         validate_editorial_frame(&pitch.tension, "story tension")?;
         validate_editorial_frame(&pitch.public_question, "public question")?;
-    }
-    if used_sources.len() > editorial_citation_budget(sources.len(), max_articles) {
-        return Err(anyhow!("editorial agenda exceeded its total news hole"));
     }
     Ok(())
 }
@@ -722,7 +830,7 @@ struct EditorialArticleDraft {
     byline: String,
     #[schemars(length(max = 100))]
     dateline: String,
-    #[schemars(length(min = 1, max = 32))]
+    #[schemars(length(min = 1))]
     citations: Vec<String>,
     #[schemars(length(min = 2, max = 5))]
     paragraphs: Vec<String>,
@@ -824,9 +932,8 @@ struct GroundingReconciliationOutput {
 struct PreparedNewspaper {
     title: String,
     editorial_voice: String,
-    sources: Vec<NewsroomSource>,
+    records: Vec<PublicRecordProjection>,
     source_receipt_ids: Vec<String>,
-    initial_source_json: String,
     publication_task_binding: String,
     binding: String,
 }
@@ -857,27 +964,19 @@ fn prepare_newspaper(
     {
         return Err(anyhow!("newspaper editorial voice is invalid"));
     }
-    let sources = newsroom_sources(campaign)?;
-    let source_receipt_ids = sources
+    let records = public_news_records(campaign)?;
+    let source_receipt_ids = records
         .iter()
-        .flat_map(|source| source.news_ids.iter().cloned())
+        .map(|record| record.record_id.clone())
         .collect::<Vec<_>>();
-    let initial_citations = sources
-        .iter()
-        .take(MAX_INITIAL_NEWSROOM_SOURCES)
-        .map(|source| source.citation.clone())
-        .collect::<BTreeSet<_>>();
-    let initial_source_json =
-        serde_json::to_string_pretty(&newsroom_desk_for_citations(&sources, &initial_citations))?;
     let publication_task_binding =
         publication_task_binding(campaign, &title, &editorial_voice, max_articles)?;
-    let binding = editorial_binding(campaign, &title, &editorial_voice, max_articles, &sources)?;
+    let binding = editorial_binding(campaign, &title, &editorial_voice, max_articles, &records)?;
     Ok(PreparedNewspaper {
         title,
         editorial_voice,
-        sources,
+        records,
         source_receipt_ids,
-        initial_source_json,
         publication_task_binding,
         binding,
     })
@@ -892,14 +991,10 @@ async fn select_editorial_agenda(
     crate::agent::ModelAgentFailure,
 > {
     let instructions = format!(
-        "You are the narrative editor of `{}`. Construct one compelling editorial agenda from a frozen public-news archive containing {} unique fact dossiers. The initial desk below contains the {} newest dossiers, not the whole archive. If administrative aftermath lacks the cause, conflict, scandal, named opposition, or lived stakes needed to understand it, use request_archive_context before submitting: preceding_recent returns the next {} older dossiers and foundational returns the {} oldest dossiers. Each window is exact frozen evidence, may be requested once, and costs one of your bounded semantic steps. Never cite an archive note until the workbench has shown it to you.\n\nA newspaper is not a neutral transcript: select a dominant throughline that matters to this publication's readers, juxtapose facts that illuminate one another, and identify conflict, hypocrisy, lived stakes, scandal, named opposition, or public consequence where the desk actually supports them. The paper has a hard news hole: omitted true facts remain true and unreported. Do not cover a note merely because it exists. Prefer one strong dossier over several administrative summaries, and use fewer pitches when the desk lacks distinct stories. The first pitch is the lead and must set lead=true; every later pitch must set lead=false. Each citation may appear in exactly one pitch. Every pitch must choose one focus_citation from its citations: the concrete fact the headline and lede should make impossible to ignore. narrative_claim states the pointed story the publication can responsibly construct around that dossier. narrative_claim, tension, public_question, dominant_throughline, and reader_stake are editorial framing and hypotheses, not evidence. They may be pointed, skeptical, or insinuating, but they must not invent an event, person, institution, place, motive, quotation, outcome, private knowledge, or factual status. The downstream editor may state facts only from your admitted citations and will be constrained to your exact citation groupings. The copy desk will judge factual claims independently. Submit the complete agenda to the workbench once you have enough evidence.\n\nPUBLICATION VOICE:\n{}\n\nINITIAL FROZEN NEWSROOM FACT DESK:\n{}",
+        "You are the narrative editor of `{}`. Construct one compelling editorial agenda by investigating a frozen public ledger containing {} canonical news records. No intermediate source object owns these facts and no initial viewport is privileged. Use query_public_records to inspect the ledger. An empty query browses it in the requested order; literal terms, exact public entity names, assertion status, channel, and an inspected cursor may narrow or page it. Query responses are bounded context over stable record IDs, not summaries that replace the ledger. Search backward for causes when recent administrative responses hide the original rupture; search by actors, places, objects, institutions, or consequences to find opposition and countermoves. Never cite a record until the workbench has returned it.\n\nA newspaper is not a neutral transcript. Select a dominant throughline that matters to this publication's readers; connect records that expose conflict, responsibility, hypocrisy, lived stakes, scandal, named opposition, public reaction, or material consequence. Omitted true facts remain true and unreported. Use every relevant inspected record that the actual story needs; article count and bounded copy define page space. Do not cover a record merely because it exists. Treat bookkeeping about someone retaining a memory as context unless the act of remembering itself caused a public consequence. The first pitch is the lead and must set lead=true; every later pitch must set lead=false. A foundational public record may support more than one continuing story when each pitch uses it for a distinct throughline. Every pitch must choose one focus_citation from its stable record IDs: the concrete fact the headline and lede should make impossible to ignore. When a later procedural update belongs to an older vivid incident, query and cite both: identify what is newly changed, acknowledge the continuing incident, and do not let routine handling impersonate the original news. narrative_claim states the pointed story the publication can responsibly construct from those records. narrative_claim, tension, public_question, dominant_throughline, and reader_stake are editorial framing and hypotheses, not evidence. They may be pointed, skeptical, or insinuating, but they must not invent an event, person, institution, place, motive, quotation, outcome, private knowledge, or factual status. The downstream editor may state facts only from the admitted record IDs and will be constrained to the exact groupings. The copy desk judges factual claims independently. Submit the agenda only after the query results support a coherent story.\n\nPUBLICATION VOICE:\n{}",
         prepared.title,
-        prepared.sources.len(),
-        MAX_INITIAL_NEWSROOM_SOURCES.min(prepared.sources.len()),
-        MAX_ARCHIVE_CONTEXT_SOURCES,
-        MAX_ARCHIVE_CONTEXT_SOURCES,
+        prepared.records.len(),
         prepared.editorial_voice,
-        prepared.initial_source_json,
     );
     let spec = ModelAgentSpec {
         stage: "newspaper_narrative_selection_agent_action".into(),
@@ -909,22 +1004,13 @@ async fn select_editorial_agenda(
         source_receipt_ids: prepared.source_receipt_ids.clone(),
         temperature: Some(0.8),
         max_output_tokens: Some(2_000),
-        // Two archive windows may consume the first two actions. Preserve one
-        // bounded corrective action after the first admitted-schema agenda is
-        // rejected by the stricter total news-hole invariant.
-        max_steps: 4,
+        max_steps: MAX_NARRATIVE_SELECTION_STEPS,
     };
-    let visible_citations = prepared
-        .sources
-        .iter()
-        .take(MAX_INITIAL_NEWSROOM_SOURCES)
-        .map(|source| source.citation.clone())
-        .collect();
     let mut tool = NarrativeSelectionWorkbench {
-        sources: &prepared.sources,
+        records: &prepared.records,
         max_articles,
-        visible_citations,
-        requested_windows: BTreeSet::new(),
+        visible_record_ids: BTreeSet::new(),
+        completed_queries: BTreeSet::new(),
     };
     crate::agent::run_model_agent(model, &spec, &mut tool).await
 }
@@ -1187,9 +1273,9 @@ fn validate_reconciliation_checkpoint(
             "newspaper reconciliation checkpoint lost its narrative, editor, or copy-desk ancestry"
         ));
     }
-    validate_editorial_draft(&prepared.sources, &checkpoint.draft, max_articles)?;
+    validate_editorial_draft(&prepared.records, &checkpoint.draft, max_articles)?;
     if let Some(agenda) = &checkpoint.editorial_agenda {
-        validate_editorial_agenda(&prepared.sources, agenda, max_articles)?;
+        validate_editorial_agenda(&prepared.records, agenda, max_articles)?;
         validate_editorial_alignment(&checkpoint.draft, agenda)?;
     }
     let verdict = GroundingVerdictDraft {
@@ -1302,7 +1388,7 @@ pub async fn advance_world_newspaper(
         )
         .await;
     }
-    if prepared.sources.is_empty() {
+    if prepared.records.is_empty() {
         let issue = WorldNewspaperIssue {
             schema: "ghostlight.world_newspaper_issue.v3".into(),
             id: empty_issue_id(campaign, &prepared.title)?,
@@ -1339,11 +1425,11 @@ pub async fn advance_world_newspaper(
         .await
         .map_err(|failure| composition_failure(failure.message, failure.receipts))?;
     let agenda = agenda_run.output;
-    let editorial_schema = editorial_schema(&prepared.sources, &agenda)?;
+    let editorial_schema = editorial_schema(&prepared.records, &agenda)?;
     let agenda_json = serde_json::to_string_pretty(&agenda)?;
-    let selected_source_json = source_json_for_agenda(&prepared.sources, Some(&agenda))?;
+    let selected_source_json = source_json_for_agenda(&prepared.records, Some(&agenda))?;
     let base_prompt = format!(
-        "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nYou are the accountable copy editor of an in-world newspaper. Turn the admitted narrative agenda and bounded newsroom fact desk below into one convincing front page for `{title}`. The narrative agenda owns selection, article order, focus citation, narrative claim, and exact citation groupings. Implement every pitch in order and use exactly that pitch's citations for the corresponding article. Center each headline and lede on its focus_citation, then use the remaining dossier to substantiate or complicate the narrative_claim. The agenda's narrative_claim, tension, public_question, dominant_throughline, and reader_stake are framing instructions, not source evidence. You may express their interpretation or insinuation as clearly editorial language, but every concrete factual assertion must come from the cited desk notes. Do not recover omitted sources or invent a connective fact merely because the agenda suggests one. The first article must use section `Front Page` and, when its citations name a place, use one of those supplied place names as its dateline. Later articles use the other supplied newspaper sections.\n\nRewrite completely in the publication voice for readers who live in this world. Build a readable throughline: lead with the vivid consequence, identify opposing named actors and countermoves when the cited facts supply them, make lived material stakes legible, and let later stories echo or complicate the lead. Attribute claims and evidence to the named institution, notice, witness, or public act that supplied them. Report a published notice as a notice about physical evidence; never say an institution published the teeth, seal, corpse, or other object itself. When notes dispute a document, accusation, identity, outcome, or authority, preserve the dispute with explicit attribution or words such as alleged or disputed instead of selecting one claim as settled fact. Never invent quotations to simulate reportage.\n\nHeadlines report consequences rather than state transitions. Decks add context instead of repeating headlines. Paragraphs explain why events matter to local readers, connect institutional moves, and vary their rhythm without explaining proper nouns like a setting guide. Keep evidence inventories plain and attributed. Dry barbs, metaphor, political characterization, and rhetorical judgment are welcome when they introduce no new concrete entity, occurrence, status, motive, quotation, number, or private knowledge. This is a newspaper with a point of view, not parody and not a world-state transcript.\n\nEvery factual assertion must be supported by the cited notes for that article. You may synthesize implications plainly supported by several citations, but do not invent quotations, people, offices, places, numbers, documents, motives, chronology, outcomes, or private knowledge. Treat assertion_status as authoritative: an attempt has no result, a committed course does not complete actions embedded in its agenda, a public declaration does not prove its demand succeeded, and only material_change_committed supports a completed material consequence. A named person's supported_identity_attributes list is exhaustive; when empty, use their name or identity-neutral wording rather than inventing pronouns, gender, title, kinship, or office. Language such as attempts, tries, plans, prepares, readies, seeks, or investigates records activity, not outcome: preserve that uncertainty and do not turn it into an established or official inquiry, public availability, completion, or success unless a citation states that consequence. Use only the allowed generic bylines; they are presentation labels, not new people. Use only a supplied place name as a dateline, or the empty string. The newspaper contract owns a neutral edition label; do not invent or print a calendar, date, price, circulation claim, weather report, advertisement, or notice absent from the desk. Do not make the fact desk, citations, agenda, or verification process part of the reader-facing copy. Never end a headline with an ellipsis.\n\nPUBLICATION VOICE:\n{editorial_voice}\n\nADMITTED NARRATIVE AGENDA:\n{agenda_json}\n\nNEWSROOM FACT DESK:\n{source_json}",
+        "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nYou are the accountable copy editor of an in-world newspaper. Turn the admitted narrative agenda and bounded newsroom fact desk below into one convincing front page for `{title}`. The narrative agenda owns selection, article order, focus citation, narrative claim, and exact citation groupings. Implement every pitch in order and use exactly that pitch's citations for the corresponding article. Center each headline and lede on the most consequential concrete fact supported by its focus_citation, then use the other selected records to substantiate or complicate the narrative_claim. Record bookkeeping, memory retention, maintained warnings, and routine procedure are not automatically the news merely because they are recent. When a later update belongs to an older vivid incident, distinguish what changed from what persists and tell readers plainly that this is a continuing story; do not parade the handling protocol in front of the incident itself. The agenda's narrative_claim, tension, public_question, dominant_throughline, and reader_stake are framing instructions, not source evidence. You may express their interpretation or insinuation as clearly editorial language, but every concrete factual assertion must come from the cited public records. Do not recover omitted sources or invent a connective fact merely because the agenda suggests one. The first article must use section `Front Page` and, when its citations name a place, use one of those supplied place names as its dateline. Later articles use the other supplied newspaper sections.\n\nRewrite completely in the publication voice for readers who live in this world. Build a readable throughline: lead with the vivid consequence, identify opposing named actors and countermoves when the cited facts supply them, make lived material stakes legible, and let later stories echo or complicate the lead. Attribute claims and evidence to the named institution, notice, witness, or public act that supplied them. Report a published notice as a notice about physical evidence; never say an institution published the teeth, seal, corpse, or other object itself. When records dispute a document, accusation, identity, outcome, or authority, preserve the dispute with explicit attribution or words such as alleged or disputed instead of selecting one claim as settled fact. Never invent quotations to simulate reportage.\n\nHeadlines report consequences rather than state transitions. Decks add context instead of repeating headlines. Paragraphs explain why events matter to local readers, connect institutional moves, and vary their rhythm without explaining proper nouns like a setting guide. Keep evidence inventories plain and attributed. Dry barbs, metaphor, political characterization, and rhetorical judgment are welcome when they introduce no new concrete entity, occurrence, status, motive, quotation, number, or private knowledge. This is a newspaper with a point of view, not parody and not a world-state transcript.\n\nEvery factual assertion must be supported by the cited records for that article. You may synthesize implications plainly supported by several citations, but do not invent quotations, people, offices, places, numbers, documents, motives, chronology, outcomes, or private knowledge. Treat assertion_status as authoritative: an attempt has no result, a committed course does not complete actions embedded in its agenda, a public declaration does not prove its demand succeeded, and only material_change_committed supports a completed material consequence. A named person's supported_identity_attributes list is exhaustive; when empty, use their name or identity-neutral wording rather than inventing pronouns, gender, title, kinship, or office. Language such as attempts, tries, plans, prepares, readies, seeks, or investigates records activity, not outcome: preserve that uncertainty and do not turn it into an established or official inquiry, public availability, completion, or success unless a citation states that consequence. Use only the allowed generic bylines; they are presentation labels, not new people. Use only a supplied place name as a dateline, or the empty string. The newspaper contract owns a neutral edition label; do not invent or print a calendar, date, price, circulation claim, weather report, advertisement, or notice absent from the desk. Do not make the fact desk, citations, agenda, or verification process part of the reader-facing copy. Never end a headline with an ellipsis.\n\nPUBLICATION VOICE:\n{editorial_voice}\n\nADMITTED NARRATIVE AGENDA:\n{agenda_json}\n\nNEWSROOM FACT DESK:\n{source_json}",
         serde_json::to_string(&editorial_schema)?,
         title = prepared.title,
         editorial_voice = prepared.editorial_voice,
@@ -1393,7 +1479,7 @@ pub async fn advance_world_newspaper(
         }
     };
 
-    if let Err(error) = validate_editorial_draft(&prepared.sources, &draft, max_articles) {
+    if let Err(error) = validate_editorial_draft(&prepared.records, &draft, max_articles) {
         mark_semantic_invalid(&mut receipts[editor_receipt_index], &error);
         return Err(composition_failure(error.to_string(), receipts));
     }
@@ -1426,7 +1512,7 @@ pub async fn advance_world_newspaper(
         let issue = lower_editorial_page(
             campaign,
             prepared.title.clone(),
-            &prepared.sources,
+            &prepared.records,
             Some(agenda.clone()),
             draft,
             &receipts,
@@ -1570,10 +1656,10 @@ async fn advance_reconciliation(
     validate_reconciliation_checkpoint(&checkpoint, prepared, max_articles, &receipts)?;
     for _ in 0..GROUNDING_RECONCILIATION_ACTIONS_PER_ADVANCE {
         let selected_source_json =
-            source_json_for_agenda(&prepared.sources, checkpoint.editorial_agenda.as_ref())?;
+            source_json_for_agenda(&prepared.records, checkpoint.editorial_agenda.as_ref())?;
         let progress = run_grounding_reconciliation_step(
             model,
-            &prepared.sources,
+            &prepared.records,
             max_articles,
             &prepared.binding,
             &selected_source_json,
@@ -1591,7 +1677,7 @@ async fn advance_reconciliation(
                 let issue = lower_editorial_page(
                     campaign,
                     prepared.title.clone(),
-                    &prepared.sources,
+                    &prepared.records,
                     checkpoint.editorial_agenda.clone(),
                     run.output.draft,
                     &receipts,
@@ -1644,7 +1730,7 @@ async fn advance_reconciliation(
 
 struct GroundingReconciliationWorkbench<'a> {
     model: &'a dyn ModelPort,
-    sources: &'a [NewsroomSource],
+    records: &'a [PublicRecordProjection],
     max_articles: usize,
     binding: &'a str,
     source_json: &'a str,
@@ -1723,7 +1809,7 @@ impl ModelAgentTool for GroundingReconciliationWorkbench<'_> {
                 };
             }
         };
-        if let Err(error) = validate_editorial_draft(self.sources, &draft, self.max_articles) {
+        if let Err(error) = validate_editorial_draft(self.records, &draft, self.max_articles) {
             let verdict = WorldNewspaperGroundingVerdict {
                 accepted: false,
                 assessment: format!("The narrow repair produced invalid copy: {error}")
@@ -2006,7 +2092,7 @@ fn resolve_grounding_finding_target(
 #[allow(clippy::too_many_arguments)]
 async fn run_grounding_reconciliation_step(
     model: &dyn ModelPort,
-    sources: &[NewsroomSource],
+    records: &[PublicRecordProjection],
     max_articles: usize,
     binding: &str,
     source_json: &str,
@@ -2056,7 +2142,7 @@ async fn run_grounding_reconciliation_step(
     };
     let mut tool = GroundingReconciliationWorkbench {
         model,
-        sources,
+        records,
         max_articles,
         binding,
         source_json,
@@ -2228,7 +2314,7 @@ pub fn render_world_newspaper_audit_markdown(issue: &WorldNewspaperIssue) -> Str
         ));
         for (index, pitch) in agenda.story_pitches.iter().enumerate() {
             rendered.push_str(&format!(
-                "\n### Pitch {}{}\n\n- Citations: {}\n- Focus citation: {}\n- Narrative claim: {}\n- Tension: {}\n- Public question: {}\n",
+                "\n### Pitch {}{}\n\n- Public records: {}\n- Focus record: {}\n- Narrative claim: {}\n- Tension: {}\n- Public question: {}\n",
                 index + 1,
                 if pitch.lead { " (lead)" } else { "" },
                 escaped_join(&pitch.citations),
@@ -2278,7 +2364,10 @@ pub fn render_world_newspaper_audit_markdown(issue: &WorldNewspaperIssue) -> Str
                     "\n#### Fact {}\n\n- Exact committed account: {}\n- Assertion status: {}\n- Committed events: {}\n- Named people: {}\n- Institutions: {}\n- Populations: {}\n- Places: {}\n",
                     fact_index + 1,
                     escape_markdown_text(&fact.account),
-                    assertion_status_label(&fact.assertion_status),
+                    serde_json::to_value(&fact.assertion_status)
+                        .ok()
+                        .and_then(|value| value.as_str().map(str::to_owned))
+                        .unwrap_or_else(|| "invalid_assertion_status".into()),
                     escaped_join(&fact.event_ids),
                     named_people,
                     escaped_or_none(&fact.institutions),
@@ -2289,22 +2378,6 @@ pub fn render_world_newspaper_audit_markdown(issue: &WorldNewspaperIssue) -> Str
         }
     }
     rendered
-}
-
-fn assertion_status_label(status: &WorldNewspaperAssertionStatus) -> &'static str {
-    match status {
-        WorldNewspaperAssertionStatus::AttemptCommittedOutcomeUnknown => {
-            "attempt_committed_outcome_unknown"
-        }
-        WorldNewspaperAssertionStatus::CourseCommittedEmbeddedActionsNotCompleted => {
-            "course_committed_embedded_actions_not_completed"
-        }
-        WorldNewspaperAssertionStatus::PublicDeclaration => "public_declaration",
-        WorldNewspaperAssertionStatus::MaterialChangeCommitted => "material_change_committed",
-        WorldNewspaperAssertionStatus::PublicAccountStatusUnspecified => {
-            "public_account_status_unspecified"
-        }
-    }
 }
 
 fn escaped_or_none(values: &[String]) -> String {
@@ -2323,7 +2396,7 @@ fn escaped_join(values: &[String]) -> String {
         .join(", ")
 }
 
-fn newsroom_sources(campaign: &Campaign) -> Result<Vec<NewsroomSource>> {
+fn public_news_records(campaign: &Campaign) -> Result<Vec<PublicRecordProjection>> {
     let events = campaign
         .events
         .iter()
@@ -2331,42 +2404,26 @@ fn newsroom_sources(campaign: &Campaign) -> Result<Vec<NewsroomSource>> {
         .collect::<BTreeMap<_, _>>();
     let mut news = campaign.news.iter().collect::<Vec<_>>();
     news.sort_by(|left, right| right.at.cmp(&left.at).then_with(|| left.id.cmp(&right.id)));
-    let mut fact_sources = BTreeMap::<Vec<u8>, usize>::new();
-    let mut sources = Vec::<NewsroomSource>::new();
-    for issue in news {
-        let mut source = newsroom_source(campaign, issue, &events)?;
-        let fact_identity = serde_json::to_vec(&newsroom_facts(&source.events))?;
-        if let Some(index) = fact_sources.get(&fact_identity).copied() {
-            let existing: &mut NewsroomSource = &mut sources[index];
-            existing.news_ids.append(&mut source.news_ids);
-            existing.channels.append(&mut source.channels);
-            existing.reliability.append(&mut source.reliability);
-            existing.published_at = existing.published_at.max(source.published_at);
-            for (existing_event, mut duplicate_event) in
-                existing.events.iter_mut().zip(source.events)
-            {
-                existing_event
-                    .event_ids
-                    .append(&mut duplicate_event.event_ids);
-            }
-            continue;
+    let mut record_ids = BTreeSet::new();
+    for issue in &news {
+        if !record_ids.insert(issue.id.as_str()) {
+            return Err(anyhow!("public news ledger repeats record ID {}", issue.id));
         }
-        source.citation = (sources.len() + 1).to_string();
-        fact_sources.insert(fact_identity, sources.len());
-        sources.push(source);
     }
-    Ok(sources)
+    news.into_iter()
+        .map(|issue| public_news_record(campaign, issue, &events))
+        .collect()
 }
 
-fn newsroom_source(
+fn public_news_record(
     campaign: &Campaign,
     issue: &NewsIssue,
     events: &BTreeMap<&str, &Event>,
-) -> Result<NewsroomSource> {
+) -> Result<PublicRecordProjection> {
     if issue.event_ids.is_empty() {
         return Err(anyhow!("news item {} has no committed event", issue.id));
     }
-    let source_events = issue
+    let facts = issue
         .event_ids
         .iter()
         .map(|event_id| {
@@ -2381,9 +2438,10 @@ fn newsroom_source(
                 ));
             }
             let summary = event.summary.trim().to_owned();
-            Ok(NewsroomEvent {
-                event_ids: BTreeSet::from([event.id.clone()]),
-                assertion_status: newsroom_assertion_status(&event.kind),
+            Ok(WorldNewspaperSourceFact {
+                event_ids: vec![event.id.clone()],
+                assertion_status: event.public_assertion_status(),
+                account: summary.clone(),
                 named_people: event
                     .actor_ids
                     .iter()
@@ -2394,21 +2452,21 @@ fn newsroom_source(
                         supported_identity_attributes: Vec::new(),
                     })
                     .collect(),
-                institution_names: event
+                institutions: event
                     .institution_ids
                     .iter()
                     .filter_map(|id| campaign.institutions.get(id))
                     .filter(|institution| summary_mentions_name(&summary, &institution.name))
                     .map(|institution| institution.name.clone())
                     .collect(),
-                population_names: event
+                populations: event
                     .gestalt_ids
                     .iter()
                     .filter_map(|id| campaign.gestalts.get(id))
                     .filter(|gestalt| summary_mentions_name(&summary, &gestalt.name))
                     .map(|gestalt| gestalt.name.clone())
                     .collect(),
-                place_names: event
+                places: event
                     .location_ids
                     .iter()
                     .filter_map(|id| campaign.locations.get(id))
@@ -2418,40 +2476,20 @@ fn newsroom_source(
                     })
                     .map(|place| place.name.clone())
                     .collect(),
-                summary,
             })
         })
         .collect::<Result<Vec<_>>>()?;
-    if source_events.iter().any(|event| event.summary.is_empty()) {
+    if facts.iter().any(|fact| fact.account.is_empty()) {
         return Err(anyhow!("news item {} cites an empty event", issue.id));
     }
-    Ok(NewsroomSource {
-        citation: String::new(),
-        news_ids: BTreeSet::from([issue.id.clone()]),
-        published_at: issue.at,
-        channels: BTreeSet::from([issue.channel.clone()]),
-        reliability: BTreeSet::from([issue.reliability.clone()]),
-        events: source_events,
+    Ok(PublicRecordProjection {
+        record_id: issue.id.clone(),
+        at: issue.at,
+        channel: issue.channel.clone(),
+        headline: issue.headline.clone(),
+        reliability: issue.reliability.clone(),
+        facts,
     })
-}
-
-fn newsroom_assertion_status(kind: &str) -> WorldNewspaperAssertionStatus {
-    match kind {
-        "actor_activity" | "gestalt_activity" | "gestalt_member_activity" => {
-            WorldNewspaperAssertionStatus::AttemptCommittedOutcomeUnknown
-        }
-        "institution_action" => {
-            WorldNewspaperAssertionStatus::CourseCommittedEmbeddedActionsNotCompleted
-        }
-        "gestalt_action" | "public_notice" => WorldNewspaperAssertionStatus::PublicDeclaration,
-        "strategic_activity_outcome"
-        | "actor_movement"
-        | "gestalt_migration"
-        | "gestalt_member_migration"
-        | "clock_consequence"
-        | "group_travel" => WorldNewspaperAssertionStatus::MaterialChangeCommitted,
-        _ => WorldNewspaperAssertionStatus::PublicAccountStatusUnspecified,
-    }
 }
 
 fn summary_mentions_name(summary: &str, name: &str) -> bool {
@@ -2468,54 +2506,25 @@ fn summary_mentions_name(summary: &str, name: &str) -> bool {
     })
 }
 
-fn newsroom_facts(events: &[NewsroomEvent]) -> Vec<NewsroomFact<'_>> {
-    events
+fn public_records_for_ids<'a>(
+    records: &'a [PublicRecordProjection],
+    record_ids: &BTreeSet<String>,
+) -> Vec<&'a PublicRecordProjection> {
+    records
         .iter()
-        .map(|event| NewsroomFact {
-            account: &event.summary,
-            assertion_status: &event.assertion_status,
-            named_people: &event.named_people,
-            institutions: &event.institution_names,
-            populations: &event.population_names,
-            places: &event.place_names,
-        })
-        .collect()
-}
-
-fn newsroom_desk(sources: &[NewsroomSource]) -> Vec<NewsroomDeskNote<'_>> {
-    sources
-        .iter()
-        .map(|source| NewsroomDeskNote {
-            citation: &source.citation,
-            facts: newsroom_facts(&source.events),
-        })
-        .collect()
-}
-
-fn newsroom_desk_for_citations<'a>(
-    sources: &'a [NewsroomSource],
-    citations: &BTreeSet<String>,
-) -> Vec<NewsroomDeskNote<'a>> {
-    sources
-        .iter()
-        .filter(|source| citations.contains(&source.citation))
-        .map(|source| NewsroomDeskNote {
-            citation: &source.citation,
-            facts: newsroom_facts(&source.events),
-        })
+        .filter(|record| record_ids.contains(&record.record_id))
         .collect()
 }
 
 fn source_json_for_agenda(
-    sources: &[NewsroomSource],
+    records: &[PublicRecordProjection],
     agenda: Option<&WorldNewspaperEditorialAgenda>,
 ) -> Result<String> {
-    let citations = agenda.map_or_else(
+    let record_ids = agenda.map_or_else(
         || {
-            sources
+            records
                 .iter()
-                .take(MAX_INITIAL_NEWSROOM_SOURCES)
-                .map(|source| source.citation.clone())
+                .map(|record| record.record_id.clone())
                 .collect()
         },
         |agenda| {
@@ -2526,13 +2535,14 @@ fn source_json_for_agenda(
                 .collect()
         },
     );
-    Ok(serde_json::to_string_pretty(&newsroom_desk_for_citations(
-        sources, &citations,
+    Ok(serde_json::to_string_pretty(&public_records_for_ids(
+        records,
+        &record_ids,
     ))?)
 }
 
 fn editorial_schema(
-    sources: &[NewsroomSource],
+    records: &[PublicRecordProjection],
     agenda: &WorldNewspaperEditorialAgenda,
 ) -> Result<serde_json::Value> {
     let mut schema = serde_json::to_value(schema_for!(EditorialPageDraft))?;
@@ -2542,11 +2552,11 @@ fn editorial_schema(
         .flat_map(|pitch| pitch.citations.iter().cloned())
         .collect::<BTreeSet<_>>();
     let citations = selected_citations.iter().cloned().collect::<Vec<_>>();
-    let mut datelines = sources
+    let mut datelines = records
         .iter()
-        .filter(|source| selected_citations.contains(&source.citation))
-        .flat_map(|source| source.events.iter())
-        .flat_map(|event| event.place_names.iter().cloned())
+        .filter(|record| selected_citations.contains(&record.record_id))
+        .flat_map(|record| record.facts.iter())
+        .flat_map(|fact| fact.places.iter().cloned())
         .collect::<BTreeSet<_>>();
     datelines.insert(String::new());
     *schema
@@ -2583,44 +2593,43 @@ fn editorial_schema(
 }
 
 fn validate_editorial_draft(
-    sources: &[NewsroomSource],
+    records: &[PublicRecordProjection],
     draft: &EditorialPageDraft,
     max_articles: usize,
 ) -> Result<()> {
-    if draft.articles.is_empty() || draft.articles.len() > max_articles.min(sources.len()) {
+    if draft.articles.is_empty() || draft.articles.len() > max_articles.min(records.len()) {
         return Err(anyhow!("editorial page exceeded its story budget"));
     }
-    let known_sources = sources
+    let known_sources = records
         .iter()
-        .map(|source| source.citation.as_str())
+        .map(|record| record.record_id.as_str())
         .collect::<BTreeSet<_>>();
-    let source_datelines = sources
+    let source_datelines = records
         .iter()
-        .map(|source| {
+        .map(|record| {
             (
-                source.citation.as_str(),
-                source
-                    .events
+                record.record_id.as_str(),
+                record
+                    .facts
                     .iter()
-                    .flat_map(|event| event.place_names.iter().map(String::as_str))
+                    .flat_map(|fact| fact.places.iter().map(String::as_str))
                     .collect::<BTreeSet<_>>(),
             )
         })
         .collect::<BTreeMap<_, _>>();
-    let source_summaries = sources
+    let source_summaries = records
         .iter()
-        .map(|source| {
+        .map(|record| {
             (
-                source.citation.as_str(),
-                source
-                    .events
+                record.record_id.as_str(),
+                record
+                    .facts
                     .iter()
-                    .map(|event| event.summary.trim())
+                    .map(|fact| fact.account.trim())
                     .collect::<Vec<_>>(),
             )
         })
         .collect::<BTreeMap<_, _>>();
-    let mut used_sources = BTreeSet::new();
     let mut headlines = BTreeSet::new();
     for (index, article) in draft.articles.iter().enumerate() {
         if (index == 0 && article.section != "Front Page")
@@ -2649,18 +2658,11 @@ fn validate_editorial_draft(
         if !headlines.insert(article.headline.to_lowercase()) {
             return Err(anyhow!("front page repeats a headline"));
         }
-        if article.citations.is_empty() {
-            return Err(anyhow!("article {index} has no citation"));
-        }
-        for citation in &article.citations {
-            if !known_sources.contains(citation.as_str()) {
+        let selected = selected_record_ids(&article.citations, &format!("article {index}"))?;
+        for citation in selected {
+            if !known_sources.contains(citation) {
                 return Err(anyhow!(
-                    "article {index} cites unknown newsroom note {citation}"
-                ));
-            }
-            if !used_sources.insert(citation.as_str()) {
-                return Err(anyhow!(
-                    "newsroom note {citation} was printed as more than one story"
+                    "article {index} cites unknown public record {citation}"
                 ));
             }
         }
@@ -2777,47 +2779,46 @@ fn validate_grounding_verdict(
 fn lower_editorial_page(
     campaign: &Campaign,
     title: String,
-    sources: &[NewsroomSource],
+    records: &[PublicRecordProjection],
     editorial_agenda: Option<WorldNewspaperEditorialAgenda>,
     draft: EditorialPageDraft,
     receipts: &[ModelStageReceipt],
 ) -> Result<WorldNewspaperIssue> {
-    let source_map = sources
+    let source_map = records
         .iter()
-        .map(|source| (source.citation.as_str(), source))
+        .map(|record| (record.record_id.as_str(), record))
+        .collect::<BTreeMap<_, _>>();
+    let selected_record_ids = draft
+        .articles
+        .iter()
+        .flat_map(|article| article.citations.iter().cloned())
+        .collect::<BTreeSet<_>>();
+    let citation_labels = records
+        .iter()
+        .filter(|record| selected_record_ids.contains(&record.record_id))
+        .enumerate()
+        .map(|(index, record)| (record.record_id.as_str(), (index + 1).to_string()))
         .collect::<BTreeMap<_, _>>();
     let mut articles = Vec::with_capacity(draft.articles.len());
     for (index, article) in draft.articles.into_iter().enumerate() {
-        let selected_sources = article
+        let selected_records = article
             .citations
             .iter()
-            .map(|citation| {
+            .map(|record_id| {
                 source_map
-                    .get(citation.as_str())
+                    .get(record_id.as_str())
                     .copied()
-                    .ok_or_else(|| anyhow!("editorial lowering lost citation {citation}"))
+                    .ok_or_else(|| anyhow!("editorial lowering lost public record {record_id}"))
             })
             .collect::<Result<Vec<_>>>()?;
-        let audit_sources = selected_sources
+        let audit_sources = selected_records
             .iter()
-            .map(|source| WorldNewspaperSourceCitation {
-                citation: source.citation.clone(),
-                source_news_ids: source.news_ids.iter().cloned().collect(),
-                source_channels: source.channels.iter().cloned().collect(),
-                source_reliability: source.reliability.iter().cloned().collect(),
-                facts: source
-                    .events
-                    .iter()
-                    .map(|event| WorldNewspaperSourceFact {
-                        event_ids: event.event_ids.iter().cloned().collect(),
-                        account: event.summary.clone(),
-                        assertion_status: event.assertion_status.clone(),
-                        named_people: event.named_people.clone(),
-                        institutions: event.institution_names.clone(),
-                        populations: event.population_names.clone(),
-                        places: event.place_names.clone(),
-                    })
-                    .collect(),
+            .map(|record| WorldNewspaperSourceCitation {
+                citation: citation_labels[record.record_id.as_str()].clone(),
+                source_news_ids: vec![record.record_id.clone()],
+                source_channels: vec![record.channel.clone()],
+                source_reliability: vec![record.reliability.clone()],
+                facts: record.facts.clone(),
             })
             .collect::<Vec<_>>();
         let identity = rmp_serde::to_vec_named(&(
@@ -2848,9 +2849,9 @@ fn lower_editorial_page(
         .iter()
         .map(|receipt| receipt.storage_key().to_owned())
         .collect::<Vec<_>>();
-    let at = sources
+    let at = records
         .iter()
-        .map(|source| source.published_at)
+        .map(|record| record.at)
         .max()
         .unwrap_or(campaign.world_time);
     let identity = rmp_serde::to_vec_named(&(
@@ -2906,23 +2907,8 @@ fn editorial_binding(
     title: &str,
     voice: &str,
     max_articles: usize,
-    sources: &[NewsroomSource],
+    records: &[PublicRecordProjection],
 ) -> Result<String> {
-    let canonical_sources = sources
-        .iter()
-        .map(|source| {
-            (
-                &source.news_ids,
-                &source.channels,
-                &source.reliability,
-                source
-                    .events
-                    .iter()
-                    .flat_map(|event| event.event_ids.iter())
-                    .collect::<BTreeSet<_>>(),
-            )
-        })
-        .collect::<Vec<_>>();
     let bytes = rmp_serde::to_vec_named(&(
         NEWSROOM_CONTRACT_VERSION,
         campaign.id,
@@ -2931,8 +2917,7 @@ fn editorial_binding(
         title,
         voice,
         max_articles,
-        newsroom_desk(sources),
-        canonical_sources,
+        records,
     ))?;
     Ok(format!(
         "campaign:{}:revision:{}:newspaper:sha256:{:x}",
@@ -3188,16 +3173,12 @@ mod tests {
         campaign
     }
 
-    const ONE_STORY_AGENDA: &str = r#"{"command":{"tool":"submit_agenda","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"citations":["1"],"focus_citation":"1","narrative_claim":"The pawned royal seal and the treasurer's dismissal are one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?"}]}}"#;
-    const TWO_STORY_AGENDA: &str = r#"{"command":{"tool":"submit_agenda","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"citations":["1"],"focus_citation":"1","narrative_claim":"The pawned seal and dismissal are the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?"},{"lead":false,"citations":["2"],"focus_citation":"2","narrative_claim":"The gate closure is a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?"}]}}"#;
-    const REQUEST_PRECEDING_ARCHIVE: &str =
-        r#"{"command":{"tool":"request_archive_context","window":"preceding_recent"}}"#;
-    const REQUEST_FOUNDATIONAL_ARCHIVE: &str =
-        r#"{"command":{"tool":"request_archive_context","window":"foundational"}}"#;
-    const OVERFULL_ARCHIVE_AGENDA: &str = r#"{"command":{"tool":"submit_agenda","dominant_throughline":"The crisis became an archive of evasions.","reader_stake":"Readers pay for every institution that turns consequence into procedure.","story_pitches":[{"lead":true,"citations":["34","35","36","37"],"focus_citation":"34","narrative_claim":"The oldest responses expose the first evasion.","tension":"Public danger meets procedural delay.","public_question":"Who accepted the cost?"},{"lead":false,"citations":["38","39","40","41"],"focus_citation":"38","narrative_claim":"A second dossier repeats the pattern.","tension":"More notices arrive without resolution.","public_question":"Who benefits from repetition?"}]}}"#;
-    const CORRECTED_ARCHIVE_AGENDA: &str = r#"{"command":{"tool":"submit_agenda","dominant_throughline":"The founding crisis survived its administrative aftermath.","reader_stake":"Readers still bear the consequences while institutions manage the paperwork.","story_pitches":[{"lead":true,"citations":["40","41","42","43","44","45"],"focus_citation":"45","narrative_claim":"The original public dossier is the fact later notices cannot domesticate.","tension":"Administrative responses multiply while the founding rupture remains unresolved.","public_question":"Who benefits when the cause leaves the front page?"}]}}"#;
-    const ACCEPTED_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
-    const TWO_ARTICLE_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]},{"section":"Dispatches","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","byline":"Staff report","dateline":"Yard","citations":["2"],"paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace the cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}]}"#;
+    const QUERY_ALL_RECORDS: &str = r#"{"command":{"tool":"query_public_records","terms":[],"match_terms":"all","entity_names":[],"assertion_statuses":[],"channels":[],"order":"newest","cursor":null,"limit":24}}"#;
+    const QUERY_FOUNDING_CRISIS: &str = r#"{"command":{"tool":"query_public_records","terms":["speaking child","severed delegation hands","failed grain pumps"],"match_terms":"any","entity_names":[],"assertion_statuses":[],"channels":[],"order":"oldest","cursor":null,"limit":24}}"#;
+    const ONE_STORY_AGENDA: &str = r#"{"command":{"tool":"submit_agenda","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned royal seal and the treasurer's dismissal are one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?"}]}}"#;
+    const TWO_STORY_AGENDA: &str = r#"{"command":{"tool":"submit_agenda","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned seal and dismissal are the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?"},{"lead":false,"citations":["news:west-gate"],"focus_citation":"news:west-gate","narrative_claim":"The gate closure is a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?"}]}}"#;
+    const ACCEPTED_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
+    const TWO_ARTICLE_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]},{"section":"Dispatches","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","byline":"Staff report","dateline":"Yard","citations":["news:west-gate"],"paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace its cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}]}"#;
     const EMPTY_REPAIR_ACTION: &str =
         r#"{"tool":"submit_edits","replacements":[],"delete_finding_refs":[]}"#;
     const REPAIR_DECK_ACTION: &str = r#"{"tool":"submit_edits","replacements":[{"finding_ref":0,"replacement":"The court's admission leaves one official carrying the blame for the pawned seal."}],"delete_finding_refs":[]}"#;
@@ -3218,6 +3199,7 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let store = CampaignStore::open(directory.path().join("campaign.cc")).unwrap();
         let model = ScriptedNewspaperModel::new([
+            QUERY_ALL_RECORDS,
             ONE_STORY_AGENDA,
             ACCEPTED_PAGE,
             REJECTED,
@@ -3254,24 +3236,24 @@ mod tests {
     }
 
     #[test]
-    fn narrative_workbench_owns_lead_and_unique_citation_grouping() {
-        let sources = newsroom_sources(&campaign_with_two_news()).unwrap();
+    fn narrative_workbench_owns_lead_and_allows_shared_foundational_records() {
+        let records = public_news_records(&campaign_with_two_news()).unwrap();
         let invalid = WorldNewspaperEditorialAgenda {
             dominant_throughline: "Two failures of court custody.".into(),
             reader_stake: "Readers depend on both institutions.".into(),
             story_pitches: vec![
                 WorldNewspaperStoryPitch {
                     lead: false,
-                    citations: vec!["1".into()],
-                    focus_citation: "1".into(),
+                    citations: vec!["news:seal-scandal".into()],
+                    focus_citation: "news:seal-scandal".into(),
                     narrative_claim: "The pawned seal opens the custody crisis.".into(),
                     tension: "Admission and dismissal point in different directions.".into(),
                     public_question: "Who answers for the seal?".into(),
                 },
                 WorldNewspaperStoryPitch {
                     lead: true,
-                    citations: vec!["1".into()],
-                    focus_citation: "1".into(),
+                    citations: vec!["news:seal-scandal".into()],
+                    focus_citation: "news:seal-scandal".into(),
                     narrative_claim: "The gate repeats the pattern.".into(),
                     tension: "Access closes while repair begins.".into(),
                     public_question: "When will the route reopen?".into(),
@@ -3280,7 +3262,7 @@ mod tests {
         };
 
         assert!(
-            validate_editorial_agenda(&sources, &invalid, 4)
+            validate_editorial_agenda(&records, &invalid, 4)
                 .unwrap_err()
                 .to_string()
                 .contains("exactly its first pitch as lead")
@@ -3300,19 +3282,25 @@ mod tests {
             reader_stake,
             story_pitches,
         };
-        validate_editorial_agenda(&sources, &admitted, 4).unwrap();
+        validate_editorial_agenda(&records, &admitted, 4).unwrap();
         let mut duplicate = admitted.clone();
-        duplicate.story_pitches[1].citations = vec!["1".into()];
-        duplicate.story_pitches[1].focus_citation = "1".into();
+        duplicate.story_pitches[1]
+            .citations
+            .push("news:seal-scandal".into());
+        validate_editorial_agenda(&records, &duplicate, 4).unwrap();
+        let mut repeated_within_pitch = admitted.clone();
+        repeated_within_pitch.story_pitches[0]
+            .citations
+            .push("news:seal-scandal".into());
         assert!(
-            validate_editorial_agenda(&sources, &duplicate, 4)
+            validate_editorial_agenda(&records, &repeated_within_pitch, 4)
                 .unwrap_err()
                 .to_string()
-                .contains("more than one editorial pitch")
+                .contains("repeats a public record ID")
         );
 
         let mut widened: EditorialPageDraft = serde_json::from_str(ACCEPTED_PAGE).unwrap();
-        widened.articles[0].citations = vec!["2".into()];
+        widened.articles[0].citations = vec!["news:west-gate".into()];
         assert!(
             validate_editorial_alignment(
                 &widened,
@@ -3329,29 +3317,35 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn narrative_workbench_retrieves_foundational_context_without_widening_the_editor_desk() {
-        let sources = newsroom_sources(&campaign_with_archive_news()).unwrap();
-        assert_eq!(sources.len(), 45);
-        assert!(sources[44].events[0].summary.contains("speaking child"));
-        let visible_citations = sources
-            .iter()
-            .take(MAX_INITIAL_NEWSROOM_SOURCES)
-            .map(|source| source.citation.clone())
-            .collect::<BTreeSet<_>>();
+    async fn narrative_workbench_queries_foundational_context_by_stable_record_id() {
+        let records = public_news_records(&campaign_with_archive_news()).unwrap();
+        assert_eq!(records.len(), 45);
+        assert!(
+            records
+                .iter()
+                .any(|record| record.facts[0].account.contains("speaking child"))
+        );
         let mut tool = NarrativeSelectionWorkbench {
-            sources: &sources,
+            records: &records,
             max_articles: 3,
-            visible_citations,
-            requested_windows: BTreeSet::new(),
+            visible_record_ids: BTreeSet::new(),
+            completed_queries: BTreeSet::new(),
         };
         let initial_schema = tool.action_schema().unwrap().to_string();
-        assert!(!initial_schema.contains("\"45\""));
+        assert!(!initial_schema.contains("submit_agenda"));
 
         let retrieval = tool
             .invoke(
                 NarrativeSelectionAction {
-                    command: NarrativeSelectionCommand::RequestArchiveContext {
-                        window: WorldNewspaperArchiveWindow::Foundational,
+                    command: NarrativeSelectionCommand::QueryPublicRecords {
+                        terms: vec!["speaking child".into()],
+                        match_terms: PublicRecordTermMatch::All,
+                        entity_names: Vec::new(),
+                        assertion_statuses: Vec::new(),
+                        channels: Vec::new(),
+                        order: PublicRecordOrder::Oldest,
+                        cursor: None,
+                        limit: 24,
                     },
                 },
                 &ModelAgentToolContext {
@@ -3361,13 +3355,25 @@ mod tests {
             )
             .await;
         let ModelAgentToolOutcome::Continue { observation, .. } = retrieval else {
-            panic!("foundational archive request must continue the same agent run")
+            panic!("public-record query must continue the same agent run")
         };
-        let NarrativeSelectionFinding::ArchiveContext { desk, .. } = observation else {
-            panic!("archive request must return exact desk notes")
+        let NarrativeSelectionFinding::QueryResult {
+            records: found,
+            next_cursor,
+        } = observation
+        else {
+            panic!("query must return exact public records")
         };
-        assert!(desk.to_string().contains("speaking child"));
-        assert!(tool.action_schema().unwrap().to_string().contains("\"45\""));
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].record_id, "news:archive:00");
+        assert!(found[0].facts[0].account.contains("speaking child"));
+        assert!(next_cursor.is_none());
+        assert!(
+            tool.action_schema()
+                .unwrap()
+                .to_string()
+                .contains("news:archive:00")
+        );
 
         let action = NarrativeSelectionAction {
             command: NarrativeSelectionCommand::SubmitAgenda {
@@ -3376,8 +3382,8 @@ mod tests {
                 reader_stake: "Readers still bear the consequences of the founding rupture.".into(),
                 story_pitches: vec![WorldNewspaperStoryPitch {
                     lead: true,
-                    citations: vec!["45".into()],
-                    focus_citation: "45".into(),
+                    citations: vec!["news:archive:00".into()],
+                    focus_citation: "news:archive:00".into(),
                     narrative_claim: "The oldest dossier is the fact later notices avoid.".into(),
                     tension: "Institutions administer consequences without resolving the cause."
                         .into(),
@@ -3396,15 +3402,61 @@ mod tests {
             )
             .await
         else {
-            panic!("retrieved foundational citation must be admissible")
+            panic!("queried foundational record must be admissible")
         };
-        let editor_desk = source_json_for_agenda(&sources, Some(&agenda)).unwrap();
-        assert!(editor_desk.contains("\"citation\": \"45\""));
-        assert!(!editor_desk.contains("\"citation\": \"1\""));
+        let editor_desk = source_json_for_agenda(&records, Some(&agenda)).unwrap();
+        assert!(editor_desk.contains("\"record_id\": \"news:archive:00\""));
+        assert!(!editor_desk.contains("news:archive:44"));
+    }
+
+    #[test]
+    fn narrative_workbench_pages_the_complete_ledger_from_an_inspected_cursor() {
+        let records = public_news_records(&campaign_with_archive_news()).unwrap();
+        let mut tool = NarrativeSelectionWorkbench {
+            records: &records,
+            max_articles: 3,
+            visible_record_ids: BTreeSet::new(),
+            completed_queries: BTreeSet::new(),
+        };
+        let query = |cursor| PublicRecordQuery {
+            terms: Vec::new(),
+            match_terms: PublicRecordTermMatch::All,
+            entity_names: Vec::new(),
+            assertion_statuses: Vec::new(),
+            channels: Vec::new(),
+            order: PublicRecordOrder::Oldest,
+            cursor,
+            limit: 24,
+        };
+
+        assert!(tool.query(query(Some("news:archive:24".into()))).is_err());
+        let NarrativeSelectionFinding::QueryResult {
+            records: first_page,
+            next_cursor,
+        } = tool.query(query(None)).unwrap()
+        else {
+            panic!("first query must return a public-record page")
+        };
+        assert_eq!(first_page.len(), 24);
+        assert_eq!(first_page[0].record_id, "news:archive:00");
+        assert_eq!(first_page[23].record_id, "news:archive:23");
+        assert_eq!(next_cursor.as_deref(), Some("news:archive:23"));
+
+        let NarrativeSelectionFinding::QueryResult {
+            records: second_page,
+            next_cursor,
+        } = tool.query(query(next_cursor)).unwrap()
+        else {
+            panic!("second query must return a public-record page")
+        };
+        assert_eq!(second_page.len(), 21);
+        assert_eq!(second_page[0].record_id, "news:archive:24");
+        assert_eq!(second_page[20].record_id, "news:archive:44");
+        assert!(next_cursor.is_none());
     }
 
     #[tokio::test]
-    async fn narrative_agent_can_correct_the_news_hole_after_retrieving_both_archive_windows() {
+    async fn narrative_agent_queries_before_submitting_an_agenda() {
         let prepared = prepare_newspaper(
             &campaign_with_archive_news(),
             "The Canopy Ledger",
@@ -3413,38 +3465,29 @@ mod tests {
         )
         .unwrap();
         let model = ScriptedNewspaperModel::new([
-            REQUEST_PRECEDING_ARCHIVE,
-            REQUEST_FOUNDATIONAL_ARCHIVE,
-            OVERFULL_ARCHIVE_AGENDA,
-            CORRECTED_ARCHIVE_AGENDA,
+            QUERY_FOUNDING_CRISIS,
+            r#"{"command":{"tool":"submit_agenda","dominant_throughline":"The founding crisis survived its administrative aftermath.","reader_stake":"Readers still bear the consequences while institutions manage the paperwork.","story_pitches":[{"lead":true,"citations":["news:archive:00"],"focus_citation":"news:archive:00","narrative_claim":"The original public record is the fact later notices cannot domesticate.","tension":"Administrative responses multiply while the founding rupture remains unresolved.","public_question":"Who benefits when the cause leaves the front page?"}]}}"#,
         ]);
 
         let run = select_editorial_agenda(&model, &prepared, 3).await.unwrap();
 
-        assert_eq!(run.receipts.len(), 4);
+        assert_eq!(run.receipts.len(), 2);
         assert_eq!(run.output.story_pitches.len(), 1);
-        assert_eq!(run.output.story_pitches[0].citations.len(), 6);
+        assert_eq!(run.output.story_pitches[0].citations, ["news:archive:00"]);
         let requests = model.requests();
-        assert_eq!(requests.len(), 4);
-        assert!(
-            requests[3]
-                .lived_stream
-                .contains("editorial agenda exceeded its total news hole")
-        );
+        assert_eq!(requests.len(), 2);
+        assert!(requests[1].lived_stream.contains("news:archive:00"));
     }
 
     #[test]
-    fn narrative_workbench_owns_news_hole_focus_and_legacy_agenda_reading() {
-        let mut sources = newsroom_sources(&campaign_with_two_news()).unwrap();
-        for citation in 3..=5 {
-            let mut source = sources[0].clone();
-            source.citation = citation.to_string();
-            sources.push(source);
-        }
+    fn narrative_workbench_has_no_source_count_hole_and_reads_legacy_agendas() {
+        let records = public_news_records(&campaign_with_archive_news()).unwrap();
         let pitch = WorldNewspaperStoryPitch {
             lead: true,
-            citations: (1..=5).map(|citation| citation.to_string()).collect(),
-            focus_citation: "1".into(),
+            citations: (0..8)
+                .map(|index| format!("news:archive:{index:02}"))
+                .collect(),
+            focus_citation: "news:archive:00".into(),
             narrative_claim: "One sharp custody failure links the selected record.".into(),
             tension: "Public consequence runs ahead of public accountability.".into(),
             public_question: "Who answers for the admitted failure?".into(),
@@ -3454,25 +3497,20 @@ mod tests {
             reader_stake: "Readers bear the consequences of that failure.".into(),
             story_pitches: vec![pitch],
         };
-        assert!(
-            validate_editorial_agenda(&sources, &agenda, 2)
-                .unwrap_err()
-                .to_string()
-                .contains("total news hole")
-        );
+        validate_editorial_agenda(&records, &agenda, 2).unwrap();
 
         let mut unfocused = agenda.clone();
         unfocused.story_pitches[0].citations.truncate(4);
-        unfocused.story_pitches[0].focus_citation = "5".into();
+        unfocused.story_pitches[0].focus_citation = "news:archive:07".into();
         assert!(
-            validate_editorial_agenda(&sources, &unfocused, 2)
+            validate_editorial_agenda(&records, &unfocused, 2)
                 .unwrap_err()
                 .to_string()
-                .contains("focus citation is not in its story dossier")
+                .contains("focus record is not in its selected record set")
         );
 
         let legacy: WorldNewspaperStoryPitch = serde_json::from_str(
-            r#"{"lead":true,"citations":["1"],"angle":"A legacy framing field.","tension":"A live tension.","public_question":"What follows?"}"#,
+            r#"{"lead":true,"citations":["news:seal-scandal"],"angle":"A legacy framing field.","tension":"A live tension.","public_question":"What follows?"}"#,
         )
         .unwrap();
         assert_eq!(legacy.focus_citation, "");
@@ -3680,8 +3718,12 @@ mod tests {
     #[tokio::test]
     async fn newspaper_is_editorial_copy_with_separate_provenance() {
         let campaign = campaign_with_news();
-        let model =
-            ScriptedNewspaperModel::new([ONE_STORY_AGENDA, ACCEPTED_PAGE, ACCEPTING_COPY_DESK]);
+        let model = ScriptedNewspaperModel::new([
+            QUERY_ALL_RECORDS,
+            ONE_STORY_AGENDA,
+            ACCEPTED_PAGE,
+            ACCEPTING_COPY_DESK,
+        ]);
         let composition = compose_world_newspaper(
             &model,
             &campaign,
@@ -3722,38 +3764,35 @@ mod tests {
             audit.contains("Assertion status: course_committed_embedded_actions_not_completed")
         );
         assert!(audit.contains("Named people: None asserted"));
-        assert_eq!(composition.model_receipts.len(), 3);
+        assert_eq!(composition.model_receipts.len(), 4);
         let requests = model.requests();
         assert_eq!(
             requests[0].stage,
             "newspaper_narrative_selection_agent_action"
         );
         assert_eq!(requests[0].model, MODEL_CAPABLE);
-        assert_eq!(requests[1].stage, "newspaper_editor");
+        assert_eq!(
+            requests[1].stage,
+            "newspaper_narrative_selection_agent_action"
+        );
+        assert_eq!(requests[2].stage, "newspaper_editor");
         assert!(
-            requests[1]
+            requests[2]
                 .lived_stream
                 .contains("ADMITTED NARRATIVE AGENDA")
         );
         assert!(
-            requests[1]
+            requests[2]
                 .source_receipt_ids
                 .contains(&composition.model_receipts[0].storage_key().to_owned())
         );
-        assert!(requests[0].lived_stream.contains("\"citation\": \"1\""));
-        assert!(requests[0].lived_stream.contains("\"citations\""));
-        assert!(!requests[0].lived_stream.contains("published_at"));
-        assert!(!requests[0].lived_stream.contains("occurred_at"));
-        assert!(!requests[0].lived_stream.contains("news:seal-scandal"));
-        assert!(!requests[0].lived_stream.contains("event:seal-scandal"));
-        assert!(!requests[0].lived_stream.contains("institution_action"));
-        assert!(!requests[0].lived_stream.contains("source_news_ids"));
-        assert!(!requests[0].lived_stream.contains("source_headline_note"));
-        assert!(
-            !requests[0]
-                .lived_stream
-                .contains("committed public channel")
-        );
+        assert!(requests[1].lived_stream.contains("news:seal-scandal"));
+        assert!(requests[1].lived_stream.contains("event:seal-scandal"));
+        assert!(requests[1].lived_stream.contains("\"channel\""));
+        assert!(requests[1].lived_stream.contains("\"reliability\""));
+        assert!(!requests[1].lived_stream.contains("institution_action"));
+        assert!(!requests[1].lived_stream.contains("actor_ids"));
+        assert!(!requests[1].lived_stream.contains("institution_ids"));
         assert!(
             !serde_json::to_string(requests[0].output_schema.as_ref().unwrap())
                 .unwrap()
@@ -3762,60 +3801,49 @@ mod tests {
     }
 
     #[test]
-    fn newsroom_projection_hides_structure_and_merges_duplicate_provenance() {
+    fn public_record_projection_preserves_canonical_records_without_packet_authority() {
         let campaign = campaign_with_typed_and_duplicate_news();
-        let sources = newsroom_sources(&campaign).unwrap();
-        let desk = serde_json::to_string_pretty(&newsroom_desk(&sources)).unwrap();
-        let merged = sources
+        let records = public_news_records(&campaign).unwrap();
+        let desk = serde_json::to_string_pretty(&records).unwrap();
+        let original = records
             .iter()
-            .find(|source| {
-                source
-                    .events
-                    .iter()
-                    .any(|event| event.summary.contains("royal seal was pawned"))
-            })
+            .find(|record| record.record_id == "news:seal-scandal")
             .unwrap();
 
-        assert_eq!(sources.len(), 3);
-        assert_eq!(merged.news_ids.len(), 2);
-        assert!(merged.news_ids.contains("news:seal-scandal"));
-        assert!(merged.news_ids.contains("news:seal-scandal-duplicate"));
-        assert_eq!(merged.events[0].event_ids.len(), 2);
-        assert_eq!(desk.matches("royal seal was pawned").count(), 1);
+        assert_eq!(records.len(), 4);
+        assert_eq!(desk.matches("royal seal was pawned").count(), 3);
+        assert_eq!(original.facts[0].event_ids, ["event:seal-scandal"]);
         assert!(desk.contains("strains the command tie"));
         assert!(desk.contains("take up a new public demand"));
         assert!(desk.contains("course_committed_embedded_actions_not_completed"));
         assert!(desk.contains("material_change_committed"));
         assert!(desk.contains("public_declaration"));
         assert!(!desk.contains("strategic_activity_outcome"));
-        assert!(!desk.contains("event:seal-scandal"));
-        assert!(!desk.contains("news:seal-scandal"));
-        assert!(!desk.contains("channel"));
-        assert!(!desk.contains("reliability"));
+        assert!(desk.contains("event:seal-scandal"));
+        assert!(desk.contains("news:seal-scandal"));
+        assert!(desk.contains("channel"));
+        assert!(desk.contains("reliability"));
+        assert!(desk.contains("\"at\""));
+        assert!(!desk.contains("actor_ids"));
+        assert!(!desk.contains("institution_ids"));
 
         let mut draft: EditorialPageDraft = serde_json::from_str(ACCEPTED_PAGE).unwrap();
-        draft.articles[0].citations = vec![merged.citation.clone()];
+        draft.articles[0].citations = vec![original.record_id.clone()];
         let issue = lower_editorial_page(
             &campaign,
             "The Underdeep Clarion".into(),
-            &sources,
+            &records,
             None,
             draft,
             &[],
         )
         .unwrap();
-        assert_eq!(
-            issue.articles[0].source_news_ids(),
-            ["news:seal-scandal", "news:seal-scandal-duplicate"]
-        );
-        assert_eq!(
-            issue.articles[0].event_ids(),
-            ["event:seal-scandal", "event:seal-scandal-duplicate"]
-        );
+        assert_eq!(issue.articles[0].source_news_ids(), ["news:seal-scandal"]);
+        assert_eq!(issue.articles[0].event_ids(), ["event:seal-scandal"]);
     }
 
     #[test]
-    fn newsroom_does_not_promote_involved_metadata_to_asserted_names_or_datelines() {
+    fn public_records_do_not_promote_involved_metadata_to_asserted_names_or_datelines() {
         let mut campaign = campaign_with_two_news();
         let mut ann = campaign.actors["player"].clone();
         ann.id = "ann".into();
@@ -3851,18 +3879,18 @@ mod tests {
         event.institution_ids = vec!["unmentioned-regency".into()];
         event.location_ids = vec!["hall".into(), "yard".into()];
 
-        let sources = newsroom_sources(&campaign).unwrap();
-        let source = sources
+        let records = public_news_records(&campaign).unwrap();
+        let record = records
             .iter()
-            .find(|source| source.news_ids.contains("news:seal-scandal"))
+            .find(|record| record.record_id == "news:seal-scandal")
             .unwrap();
-        assert!(source.events[0].named_people.is_empty());
-        assert!(source.events[0].institution_names.is_empty());
-        assert!(source.events[0].place_names.is_empty());
+        assert!(record.facts[0].named_people.is_empty());
+        assert!(record.facts[0].institutions.is_empty());
+        assert!(record.facts[0].places.is_empty());
     }
 
     #[test]
-    fn newsroom_names_people_without_inventing_identity_attributes() {
+    fn public_records_name_people_without_inventing_identity_attributes() {
         let mut campaign = campaign_with_news();
         let mut ann = campaign.actors["player"].clone();
         ann.id = "ann".into();
@@ -3876,12 +3904,12 @@ mod tests {
         event.summary = "Ann Vey publicly contests the Thorn Court's seal account.".into();
         event.actor_ids = vec!["ann".into()];
 
-        let sources = newsroom_sources(&campaign).unwrap();
-        let named = &sources[0].events[0].named_people;
+        let records = public_news_records(&campaign).unwrap();
+        let named = &records[0].facts[0].named_people;
         assert_eq!(named.len(), 1);
         assert_eq!(named[0].name, "Ann Vey");
         assert!(named[0].supported_identity_attributes.is_empty());
-        let desk = serde_json::to_string(&newsroom_desk(&sources)).unwrap();
+        let desk = serde_json::to_string(&records).unwrap();
         assert!(desk.contains("supported_identity_attributes"));
     }
 
@@ -3903,10 +3931,29 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn copy_desk_rejection_enters_the_grounding_agent_on_the_same_source_packet() {
+    async fn newspaper_rejects_ambiguous_public_record_ids_before_inference() {
+        let mut campaign = campaign_with_two_news();
+        campaign.news[1].id = campaign.news[0].id.clone();
+        let model = ScriptedNewspaperModel::new([]);
+        let error = compose_world_newspaper(
+            &model,
+            &campaign,
+            "The Clarion",
+            "A sober regional paper.",
+            4,
+        )
+        .await
+        .unwrap_err();
+        assert!(error.to_string().contains("repeats record ID"));
+        assert!(model.requests().is_empty());
+    }
+
+    #[tokio::test]
+    async fn copy_desk_rejection_enters_the_grounding_agent_on_the_same_selected_records() {
         const REJECTED: &str = r#"{"accepted":false,"assessment":"The deck overstates where the admitted debt reached.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"A gambling debt reaches the throne room and leaves one official carrying the blame.","reason":"The cited source records the pawned seal and dismissal but does not locate the debt in the throne room."}]}"#;
         let campaign = campaign_with_news();
         let model = ScriptedNewspaperModel::new([
+            QUERY_ALL_RECORDS,
             ONE_STORY_AGENDA,
             ACCEPTED_PAGE,
             REJECTED,
@@ -3923,22 +3970,23 @@ mod tests {
         .await
         .unwrap();
 
-        assert_eq!(composition.model_receipts.len(), 5);
+        assert_eq!(composition.model_receipts.len(), 6);
         let requests = model.requests();
         assert_eq!(requests[0].temperature, Some(0.8));
-        assert_eq!(requests[1].temperature, Some(0.75));
-        assert_eq!(requests[3].temperature, Some(0.1));
-        assert_eq!(requests[3].model, MODEL_BALANCED);
+        assert_eq!(requests[1].temperature, Some(0.8));
+        assert_eq!(requests[2].temperature, Some(0.75));
+        assert_eq!(requests[4].temperature, Some(0.1));
+        assert_eq!(requests[4].model, MODEL_BALANCED);
         assert_eq!(
-            requests[3].stage,
+            requests[4].stage,
             "newspaper_grounding_reconciliation_agent_action"
         );
         assert!(
-            requests[3]
+            requests[4]
                 .lived_stream
                 .contains("A gambling debt reaches the throne room")
         );
-        let repair_schema_value = requests[3].output_schema.as_ref().unwrap();
+        let repair_schema_value = requests[4].output_schema.as_ref().unwrap();
         assert_eq!(
             repair_schema_value
                 .pointer("/properties/replacements/items/properties/finding_ref/enum"),
@@ -3960,8 +4008,8 @@ mod tests {
             composition.issue.articles[0].source_news_ids(),
             ["news:seal-scandal"]
         );
-        assert!(requests[2].lived_stream.contains("publication role labels"));
-        assert!(requests[2].lived_stream.contains("Metaphor, dry wit"));
+        assert!(requests[3].lived_stream.contains("publication role labels"));
+        assert!(requests[3].lived_stream.contains("Metaphor, dry wit"));
         assert!(composition.grounding.accepted);
     }
 
@@ -3970,6 +4018,7 @@ mod tests {
         const REJECTED_SECOND: &str = r#"{"accepted":false,"assessment":"The dispatch adds a claim absent from its source.","findings":[{"article_index":1,"category":"unsupported_fact","claim_or_phrase":"the west gate is unsafe","reason":"The cited source records a cracked hinge and closure, not a safety finding."}]}"#;
         let campaign = campaign_with_two_news();
         let model = ScriptedNewspaperModel::new([
+            QUERY_ALL_RECORDS,
             TWO_STORY_AGENDA,
             TWO_ARTICLE_PAGE,
             REJECTED_SECOND,
@@ -3994,7 +4043,7 @@ mod tests {
         assert!(
             !render_world_newspaper_markdown(&composition.issue).contains("west gate is unsafe")
         );
-        assert_eq!(composition.model_receipts.len(), 5);
+        assert_eq!(composition.model_receipts.len(), 6);
         let final_copy_desk = composition.model_receipts.last().unwrap();
         assert_eq!(final_copy_desk.stage, "newspaper_copy_desk");
         assert!(
@@ -4002,7 +4051,7 @@ mod tests {
                 .snapshot_binding
                 .contains("grounding-reconciliation")
         );
-        assert!(composition.model_receipts[..4].iter().any(|receipt| {
+        assert!(composition.model_receipts[..5].iter().any(|receipt| {
             receipt.stage == "newspaper_copy_desk"
                 && final_copy_desk
                     .source_receipt_ids
@@ -4023,6 +4072,7 @@ mod tests {
         const REJECTED_AFTER_REPAIR: &str = r#"{"accepted":false,"assessment":"The revised deck still overstates blame.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"one official carrying the blame","reason":"The cited source records dismissal but does not establish how blame was allocated."}]}"#;
         let campaign = campaign_with_news();
         let model = ScriptedNewspaperModel::new([
+            QUERY_ALL_RECORDS,
             ONE_STORY_AGENDA,
             ACCEPTED_PAGE,
             REJECTED,
@@ -4040,7 +4090,7 @@ mod tests {
         )
         .await
         .unwrap();
-        assert_eq!(composition.model_receipts.len(), 7);
+        assert_eq!(composition.model_receipts.len(), 8);
         assert!(composition.grounding.accepted);
         let requests = model.requests();
         assert_eq!(
@@ -4060,11 +4110,11 @@ mod tests {
             2
         );
         assert!(
-            requests[5]
+            requests[6]
                 .lived_stream
                 .contains("revised deck still overstates blame")
         );
-        assert!(requests[5].lived_stream.contains("\"finding_ref\""));
+        assert!(requests[6].lived_stream.contains("\"finding_ref\""));
     }
 
     #[tokio::test]
@@ -4073,6 +4123,7 @@ mod tests {
         const REJECTED_AFTER_REPAIR: &str = r#"{"accepted":false,"assessment":"The revised deck still overstates blame.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"one official carrying the blame","reason":"The cited source records dismissal but does not establish how blame was allocated."}]}"#;
         let campaign = campaign_with_news();
         let model = ScriptedNewspaperModel::new([
+            QUERY_ALL_RECORDS,
             ONE_STORY_AGENDA,
             ACCEPTED_PAGE,
             REJECTED,
@@ -4092,7 +4143,7 @@ mod tests {
         .await
         .unwrap();
 
-        assert_eq!(composition.model_receipts.len(), 8);
+        assert_eq!(composition.model_receipts.len(), 9);
         assert!(composition.grounding.accepted);
         let requests = model.requests();
         assert_eq!(
@@ -4121,16 +4172,16 @@ mod tests {
                 .count(),
             2
         );
-        assert!(requests[4].lived_stream.contains("was not admitted"));
+        assert!(requests[5].lived_stream.contains("was not admitted"));
         assert!(
-            requests[6]
+            requests[7]
                 .lived_stream
                 .contains("revised deck still overstates blame")
         );
         let final_copy_desk = composition.model_receipts.last().unwrap();
         assert_eq!(final_copy_desk.stage, "newspaper_copy_desk");
         assert_eq!(final_copy_desk.validation_result, "valid");
-        assert!(composition.model_receipts[..7].iter().all(|receipt| {
+        assert!(composition.model_receipts[..8].iter().all(|receipt| {
             final_copy_desk
                 .source_receipt_ids
                 .contains(&receipt.storage_key().to_owned())
@@ -4145,6 +4196,7 @@ mod tests {
         const REJECTED_AFTER_THIRD_REPAIR: &str = r#"{"accepted":false,"assessment":"The third revision still overstates identification.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"identified as the dismissed treasurer","reason":"The source records a dismissal but does not establish that the deck's subject was identified in this way."}]}"#;
         let campaign = campaign_with_news();
         let model = ScriptedNewspaperModel::new([
+            QUERY_ALL_RECORDS,
             ONE_STORY_AGENDA,
             ACCEPTED_PAGE,
             REJECTED,
@@ -4169,7 +4221,7 @@ mod tests {
             .expect("terminal editorial rejection must retain its receipts");
 
         assert!(failure.message.contains("pending after 3 semantic steps"));
-        assert_eq!(failure.model_receipts.len(), 9);
+        assert_eq!(failure.model_receipts.len(), 10);
         assert_eq!(
             failure
                 .model_receipts
@@ -4207,6 +4259,7 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let store = CampaignStore::open(directory.path().join("campaign.cc")).unwrap();
         let first_model = ScriptedNewspaperModel::new([
+            QUERY_ALL_RECORDS,
             ONE_STORY_AGENDA,
             ACCEPTED_PAGE,
             REJECTED,
@@ -4236,7 +4289,7 @@ mod tests {
             panic!("three rejected actions must yield typed pending state")
         };
         assert_eq!(checkpoint.generation(), 3);
-        assert_eq!(prior_receipts.len(), 9);
+        assert_eq!(prior_receipts.len(), 10);
         assert_eq!(
             store
                 .keys("world_newspaper_reconciliation_checkpoint.v2")
@@ -4281,13 +4334,13 @@ mod tests {
                 .source_receipt_ids
                 .contains(&checkpoint.id().to_owned())
         );
-        assert_eq!(accepted.model_receipts.len(), 11);
+        assert_eq!(accepted.model_receipts.len(), 12);
         assert_eq!(
             &accepted.model_receipts[..prior_receipts.len()],
             prior_receipts.as_slice()
         );
         let final_copy_desk = accepted.model_receipts.last().unwrap();
-        assert!(accepted.model_receipts[..10].iter().all(|receipt| {
+        assert!(accepted.model_receipts[..11].iter().all(|receipt| {
             final_copy_desk
                 .source_receipt_ids
                 .contains(&receipt.storage_key().to_owned())
@@ -4322,6 +4375,7 @@ mod tests {
         let source_store =
             CampaignStore::open(source_directory.path().join("campaign.cc")).unwrap();
         let source_model = ScriptedNewspaperModel::new([
+            QUERY_ALL_RECORDS,
             ONE_STORY_AGENDA,
             ACCEPTED_PAGE,
             REJECTED,
@@ -4401,7 +4455,7 @@ mod tests {
         let (mut campaign, _directory, store, _) = pending_local_rejection_fixture().await;
         campaign.events[0]
             .summary
-            .push_str(" A changed source packet.");
+            .push_str(" A changed public record.");
         let model = ScriptedNewspaperModel::new([]);
 
         let error = advance_world_newspaper(
@@ -4458,10 +4512,14 @@ mod tests {
 
     #[tokio::test]
     async fn reader_projection_escapes_model_and_consumer_markdown() {
-        const MARKDOWN_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"[Court](https://headline.invalid) Faces <Reckoning>","deck":"The *royal* debt now reaches every keeper of the seal.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["- The Thorn Court admitted the royal seal was pawned to cover a dragon's gambling debt; <img src=x> cannot make the confession ~~prettier~~.","1. The dismissed treasurer leaves readers with a [public record](https://copy.invalid) and the court with a seal that remains pawned."]}]}"#;
+        const MARKDOWN_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"[Court](https://headline.invalid) Faces <Reckoning>","deck":"The *royal* debt now reaches every keeper of the seal.","byline":"By the political editor","dateline":"Room","citations":["news:seal-scandal"],"paragraphs":["- The Thorn Court admitted the royal seal was pawned to cover a dragon's gambling debt; <img src=x> cannot make the confession ~~prettier~~.","1. The dismissed treasurer leaves readers with a [public record](https://copy.invalid) and the court with a seal that remains pawned."]}]}"#;
         let campaign = campaign_with_news();
-        let model =
-            ScriptedNewspaperModel::new([ONE_STORY_AGENDA, MARKDOWN_PAGE, ACCEPTING_COPY_DESK]);
+        let model = ScriptedNewspaperModel::new([
+            QUERY_ALL_RECORDS,
+            ONE_STORY_AGENDA,
+            MARKDOWN_PAGE,
+            ACCEPTING_COPY_DESK,
+        ]);
         let composition = compose_world_newspaper(
             &model,
             &campaign,
@@ -4493,23 +4551,33 @@ mod tests {
     #[test]
     fn lead_dateline_must_belong_to_its_cited_source() {
         let campaign = campaign_with_two_news();
-        let sources = newsroom_sources(&campaign).unwrap();
+        let records = public_news_records(&campaign).unwrap();
         let mut draft: EditorialPageDraft = serde_json::from_str(ACCEPTED_PAGE).unwrap();
         draft.articles[0].dateline.clear();
-        let missing = validate_editorial_draft(&sources, &draft, 4).unwrap_err();
+        let missing = validate_editorial_draft(&records, &draft, 4).unwrap_err();
         assert!(missing.to_string().contains("lead article must use"));
 
         draft.articles[0].dateline = "Yard".into();
-        let unsupported = validate_editorial_draft(&sources, &draft, 4).unwrap_err();
+        let unsupported = validate_editorial_draft(&records, &draft, 4).unwrap_err();
         assert!(unsupported.to_string().contains("misattributed a dateline"));
+
+        draft.articles[0].dateline = "Room".into();
+        draft.articles[0].citations.push("news:seal-scandal".into());
+        let duplicate = validate_editorial_draft(&records, &draft, 4).unwrap_err();
+        assert!(duplicate.to_string().contains("repeats a public record ID"));
     }
 
     #[tokio::test]
     async fn article_identity_covers_the_published_copy() {
-        const ALTERNATE_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"The same scandal leaves the throne defending both its custody and its judgment.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
+        const ALTERNATE_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"The same scandal leaves the throne defending both its custody and its judgment.","byline":"By the political editor","dateline":"Room","citations":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
         let campaign = campaign_with_news();
         let first = compose_world_newspaper(
-            &ScriptedNewspaperModel::new([ONE_STORY_AGENDA, ACCEPTED_PAGE, ACCEPTING_COPY_DESK]),
+            &ScriptedNewspaperModel::new([
+                QUERY_ALL_RECORDS,
+                ONE_STORY_AGENDA,
+                ACCEPTED_PAGE,
+                ACCEPTING_COPY_DESK,
+            ]),
             &campaign,
             "The Underdeep Clarion",
             "A skeptical court broadsheet with dry restraint.",
@@ -4518,7 +4586,12 @@ mod tests {
         .await
         .unwrap();
         let second = compose_world_newspaper(
-            &ScriptedNewspaperModel::new([ONE_STORY_AGENDA, ALTERNATE_PAGE, ACCEPTING_COPY_DESK]),
+            &ScriptedNewspaperModel::new([
+                QUERY_ALL_RECORDS,
+                ONE_STORY_AGENDA,
+                ALTERNATE_PAGE,
+                ACCEPTING_COPY_DESK,
+            ]),
             &campaign,
             "The Underdeep Clarion",
             "A skeptical court broadsheet with dry restraint.",

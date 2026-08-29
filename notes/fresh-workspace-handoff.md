@@ -1236,58 +1236,52 @@ hands and court seals, pump failures, legion refusal, and bridge seizure. That
 material was outside the selector's desk. Post-copy review is not disproven
 forever, but it was premature for run 53 because archive context was missing.
 
-Pushed commit `bd323664b70ba337c313f31e0550989fff8ba26f` owns newsroom
-archive-context contract v3. It retains the complete deduplicated public source
-archive inside the existing narrative workbench while exposing only the 32
-newest dossiers initially. The same
-narrative-selection agent may spend bounded semantic steps requesting exact
-12-item `preceding_recent` and `foundational` windows before agenda submission.
-Deterministic admission permits only citations actually retrieved; editor, copy
-desk, and reconciliation receive only the exact selected-source projection. No
-new agent or event authority is added. Gates pass 25/25 newspaper tests, 480/480
-library tests, and 15/15 strategic-smoke tests. Run 53 and its hashes and review
-verdicts remain immutable.
+Run 54 is immutable mechanically complete evidence at exact source
+`01581b8576774f370884e331558605e7ef5e1b9b`, implementation
+`2ac74abf12612b2c38b04acd6fcb604acd1c9d28`, and world revision 27,
+with 18/18 waves, 363 events, 853 news rows, and no world or successful
+per-wave publication replay. The newspaper passed independent grounding and
+failed blind editorial review because administrative conditions, filings,
+cordons, and recordkeeping buried conflict and bodily evidence. Its archive is
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-01581b8-54.tar`,
+SHA-256
+`835F72FCB19C38815C543DC1497977288F2F1442F22FDBD32D1B312490B34808`.
+Every manifest row passes and live service identities remained unchanged.
 
-Exact-source run 54 attempt 1 at
-`3288d9ef780f5ea0d2ff1f15bc0a1844b5cfe6b3` preserved world revision 27
-with 18/18 waves, 363 events, and 853 news rows and performed no simulation
-replay. The narrative selector used both bounded archive retrieval steps, then
-its first agenda exceeded the deterministic six-citation total news hole. The
-three-step budget left no fourth step to correct that rejection. Attempt-1
-artifacts and the result root remain failure evidence.
+The query-backed newsroom ownership cut is implemented in the current working
+tree. Canonical `NewsIssue` plus `Event` rows own public facts and stable
+selection IDs. `Event::public_assertion_status` owns factual completion
+semantics. The existing generic agent harness now offers bounded deterministic
+queries over the full immutable ledger; the selector owns story choice and
+framing, and editor, copy desk, audit, and reconciliation dereference the same
+selected IDs. Reader-facing numeric citations are assigned only during
+lowering. The cut removes `NewsroomSource`, fact-bundle deduplication,
+transient ordinal selection IDs, fixed archive windows, citation-count
+ceilings, cross-story record uniqueness, and the newspaper-local event-kind
+status mapping. Deterministic admission also rejects ambiguous ledger IDs and
+repeated IDs inside persisted agenda or draft record groups. Gates pass 28/28
+focused newspaper tests, 483/483 library tests, and 15/15 strategic-smoke
+tests. No dependency, crate,
+binary, daemon, persistent schema, cache, event writer, service, or simulation
+pass was added.
 
-Pushed `2ac74abf12612b2c38b04acd6fcb604acd1c9d28` gives the same
-narrative-selection agent one
-bounded fourth semantic step without changing archive windows, retrieved-only
-admission, selected-only downstream projection, or the six-citation news hole.
-A regression proves the exact path: two retrievals, one overfull rejection, and
-one corrected six-citation agenda. Gates pass 26/26 newspaper tests, 481/481
-library tests, and 15/15 strategic-smoke tests. No world, event, review-agent,
-or per-wave authority is added.
+Run 54 exposed one separate upstream publicity defect: a public strategic
+activity propagates its channel to private `MemberMemory` outcomes, which is
+how Orin Pell retaining a memory became a public news row. The newsroom should
+ignore that bookkeeping, but revision 27 remains immutable. Future kernel work
+must require an outcome's own observable or communicated public scope before
+materializing a `NewsIssue`.
 
-Pushed `af749de` routes a provider timeout through the shared model transport's
-existing one same-request retry and records attempt telemetry. Run 36 crossed
-that boundary; timeout retry is not its active blocker.
-
-1. Preserve run-54 attempt-1 artifacts, rebuild exact pushed source
-   `2ac74abf12612b2c38b04acd6fcb604acd1c9d28`, and
-   resume the same run-54 result root without world or wave replay.
-2. Require final newspaper and archive hashes, exact provenance and manifest,
+1. Complete bounded package, strategic-smoke, format, state, and system-map
+   verification; commit and push the query-backed newsroom cut.
+2. Create one new immutable newsroom-only root from run 54's exact revision-27
+   campaign and accepted per-wave publications. Recompose only the final Canopy
+   Ledger; preserve resumable selection/editor/reconciliation receipts.
+3. Require final newspaper and archive hashes, exact provenance and manifest,
    unchanged-service proof, independent grounding, and blind editorial
-   acceptance before delivery.
-3. Defer multiple publication Personas, TeX layout, and engraved cuts until the
-   single Canopy Ledger copy passes.
-4. Have the game-side adapter lower its authored hierarchy into the published
-   generic schemas; keep projection and economy translation consumer-owned.
-5. Prove one consumer-owned effect crosses that public API, changes two foreign
-   political layers, causes one durable named figure to emerge and later act,
-   and returns attributed news or intent without mutating Delvehold-owned truth.
-6. Measure provider cost and continuity on the existing 200-cell authored-world
-   path without coupling wave width to the provider concurrency ceiling.
-7. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
-   the operator explicitly admits either; retain Kalsa as regression evidence.
-8. Keep `gamecult-ops` synchronized with every executable deployment and model
-   transport change. Use Idunn on Yggdrasil for all builds and deployments.
+   acceptance before delivering the actual copy.
+4. Defer multiple publication Personas, TeX layout, and engraved cuts until the
+   single Canopy Ledger passes.
 
 Do not weaken actor custody, private projection, unanimous approval,
 knowledge gates, no-puppeting, or atomic-wave invariants to make the smoke pass.

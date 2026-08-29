@@ -1272,165 +1272,127 @@ may create one consequential named person through the existing Gestalt member
 commit primitive; that person enters later covers as the same canonical actor.
 Public action channels produce committed `NewsIssue` records. The world-
 consumer boundary admits an authority-gated editorial-voice request, then
-validates the exact `NewsIssue` to committed-`Event` public-channel chain. The
-public-event owner derives each committed event's human-readable account from
-its typed effect and canonical subject names; relation coordinates, numerical
-deltas, pressure-transition labels, action-selection rationale, and other state
-machinery never become the public account. The newsroom does not re-decide
-which committed public events count as truth. It merges identical fact bundles
-under one opaque per-request citation while retaining every backing news row,
-event, channel, and reliability record for later audit. The editor receives
-only those citations, human-readable accounts, and canonical names asserted by
-those accounts. Event membership metadata does not silently turn an involved
-actor, institution, population, or ambiguous multi-place scope into an asserted
-fact or dateline; a single event location may supply its canonical dateline,
-while a multi-place event must name the place in its public account. News IDs,
-event IDs and kinds, channels, reliability, source headlines, and wall-clock
-timestamps remain internal. One bounded narrative-selection agent owns the
-Canopy Ledger's editorial agenda over that frozen desk: it chooses a dominant
-throughline, reader stake, article groupings, and rhetorical angles, then
-submits a typed agenda whose story pitches reference only exact newsroom
-citations. A deterministic workbench owns the article budget, exact citation
-membership, uniqueness, lead selection, and bounded reader-facing framing
-fields. The agenda is interpretation and selection, never evidence: it cannot
-create an event, person, institution, place, motive, quotation, outcome, or
-world mutation. The editor receives the admitted agenda plus a deterministic
-projection of only the citations selected by that agenda and may compose only
-from those selected citations. It owns headline, deck,
-byline class, dateline, and article prose as a proposal; it does not silently
-recover citations the narrative owner omitted. Edition chrome is
-contract-derived, not model copy. Local validation binds every article to
-agenda-selected opaque citations, places supplied by those cited facts, the
-front-page budget, and reader-safe presentation labels. Accepted citations are
-then lowered once to exact canonical source-news/event IDs and a semantic audit
-projection containing the cited accounts, assertion status, named people and
-their exhaustive supported identity attributes, institutions, populations,
-and places. That projection is derived from the same selected `NewsroomSource`
-records; it is not a second fact authority. A separate copy-desk stage may
-reject unsupported facts,
-unearned attribution, procedural leakage, or mechanical state-ledger copy but
-cannot rewrite it. Its desk includes each account's typed assertion status and
-the exact supported identity attributes for every named person, including an
-explicitly empty set when canon supplies none. A rejected draft enters one
-cheap grounding-reconciliation agent over the same frozen page, desk, and
-complete typed finding set. The workbench enumerates that set into page-local
-typed references and publishes only current references in the action schema.
-The agent supplies a reference plus replacement text, or a reference whose
-containing article should be deleted; owner code resolves the article, field,
-paragraph, exact phrase, and byte span against the frozen draft. Deterministic
-verdict validation and transactional edit application share that resolver; the
-model cannot author target coordinates or repeat phrase identity. Deterministic
-admission requires every current finding reference to be addressed and forbids
-duplicate or unknown references, partially overlapping spans, and simultaneous
-edit/delete of one article. Findings nested inside a larger exact finding in
-the same field are not competing writers: owner code orders outer spans first,
-applies the outer replacement once, and treats contained replacements as
-covered. Distinct non-overlapping findings are grouped by target and applied
-atomically in descending byte position, so replacement length and model
-ordering cannot move a later edit. Empty replacement is a first-class deletion:
-the workbench owns its text seam and consumes one adjacent ASCII space when the
-deleted phrase begins or ends the field, preventing its own operation from
-creating malformed leading or trailing whitespace. Citations,
-surviving article selection and order, sections, bylines, and all unaffected
-text remain frozen. If the lead is deleted, owner code promotes the next article
-to the front page. The agent cannot request a new simulation or source packet,
-submit a replacement `EditorialPageDraft`, or act as a second editor. The same
-copy desk rechecks the complete repaired page.
+validates the exact `NewsIssue` to committed-`Event` public-channel chain.
+The public-event owner derives each committed event's human-readable account
+from its typed effect and canonical subject names. Event semantics own the
+assertion-status mapping used by every public consumer. Relation coordinates,
+numerical deltas, action-selection rationale, and other state machinery do not
+become public facts merely because a newsroom exists.
 
-The newsroom narrative-selection boundary has this authority map:
+The query-backed newsroom boundary is live under this authority map:
 
-- **Owner:** the narrative-selection agent plus its deterministic workbench own
-  the single publication's current editorial agenda. The editor owns prose
-  proposal, the copy desk owns factual judgment, and `WorldKernel` remains the
-  only world-event authority.
-- **Inputs:** the exact complete deduplicated public-news archive, publication
-  title and voice, article budget, source receipt ancestry, and the newsroom
-  contract version. The agent initially sees at most the 32 newest sources.
-  Through the same workbench it may request `preceding_recent`, the next up to
-  12 older sources after that initial viewport, or `foundational`, the oldest
-  up to 12 sources beyond the initial viewport. Each exact window is available
-  at most once and only while it contains a citation not already visible. The
-  agent run is bounded to four semantic actions, so spending both retrieval
-  windows still leaves one agenda submission and one response to an exact
-  deterministic rejection. The
-  deterministic workbench derives a total news hole of at most two selected
-  citations per available article, capped at six citations in any one story.
+- **Objective:** one publication investigates the immutable public record,
+  selects the facts its actual stories require, and constructs a pointed
+  narrative without inventing world state or paying for a duplicate source
+  ontology.
+- **Owner:** canonical `NewsIssue` plus `Event` rows own public provenance
+  and facts. `Event::public_assertion_status` owns attempt, declaration,
+  committed-course, material-outcome, and unspecified-account semantics. The
+  narrative-selection agent owns story choice, order, focal record, and
+  framing. The editor owns prose proposal. The copy desk owns factual judgment.
+  `WorldKernel` remains the only world-event writer. A query result owns
+  nothing.
+- **Inputs:** one exact campaign revision, publication title and voice, article
+  budget, source-receipt ancestry, and newsroom contract version. Through the
+  existing generic agent harness, the selector issues deterministic bounded
+  queries over stable `NewsIssue` IDs using literal terms, exact asserted
+  public entity names, assertion statuses, channels, newest/oldest ordering,
+  and an already-inspected cursor. An empty query browses. Each response returns
+  at most 24 exact projections and the agent has at most eight semantic steps;
+  the complete immutable ledger remains queryable rather than being split into
+  privileged recent and foundational windows.
 - **Outputs:** one typed agenda with a dominant throughline, reader stake, and
-  one or more ordered story pitches. Each pitch declares whether it is the lead,
-  names exact citation IDs, chooses one of them as its focal citation, and
-  supplies bounded narrative claim, tension, and public-question fields. The
-  editor schema and prompt expose only the union of citations selected by the
-  agenda; deterministic post-inference alignment, not the schema alone,
-  requires each article to use exactly its corresponding pitch's citation set.
-  The copy desk and grounding reconciler receive the same exact selected-source
-  projection, and lowering resolves only the article citations against the
-  complete archive. Valid but omitted archive notes remain true and unreported
-  rather than being forced into the issue.
-- **Derived state:** salience, juxtaposition, pitch order, rhetorical
-  interpretation, and insinuation are editorial framing. They are not committed
-  events or source evidence. Semantic audit rows are a deterministic projection
-  of the selected frozen sources and do not become another desk. Archive-window
-  observations change only the agent's private visible citation set; they do
-  not publish, mutate, or summarize new world facts.
-- **Forbidden writers:** the narrative agent cannot write campaign state,
-  events, `NewsIssue`, copy-desk verdicts, copy, checkpoints, or accepted
-  compositions. The editor owns prose only: it cannot choose or widen the
-  admitted citations, change their pitch grouping or order, replace the focal
-  citation, or replace the narrative claim. Renderers cannot infer missing
-  provenance or change assertion status. Neither the selector nor its archive
-  workbench may read private events, model memories, or unpublished world state.
-- **Shared paths:** fresh composition runs narrative selection once, then editor
-  and copy desk over the selected-source projection. A rejected page persists
-  the admitted agenda and complete receipt ancestry before reconciliation.
-  Resume deterministically reconstructs that same projection from the
-  checkpointed agenda and complete bound archive; it never reruns narrative
-  selection or the editor. Accepted-composition idempotence returns the exact
-  stored issue.
-- **Persistence and ancestry:** reconciliation checkpoint v2 binds the admitted
-  agenda, draft, rejected verdict, task and exact desk bindings, immutable
-  receipt IDs, receipt-chain digest, generation, and parent. Resume reloads the
-  typed receipts, validates narrative/editor/copy-desk stage order, exact
-  checkpoint identity, agenda admission and editor alignment, and strict receipt
-  prefix growth before inference. Fresh-path and resume tests separately prove
-  that the editor consumes the narrative receipt and resumed reconciliation
-  consumes the complete earlier receipt set plus checkpoint ID. The common
-  legacy-import validator does not independently reconstruct every historical
-  `source_receipt_ids` edge; that older chain remains bounded by the explicit
-  typed import witness rather than being generalized as current newsroom state.
-- **Schema/version cut:** `canopy-ledger-narrative-selection.v3` participates in
-  publication-task and exact editorial bindings plus article and empty-issue
-  identity, while the exact editorial binding covers the complete deduplicated
-  archive and its provenance rather than only the initial or selected viewport.
-  New issues and CultMesh/native publication use
-  `ghostlight.world_newspaper_issue.v3`; resumable state uses
-  `ghostlight.world_newspaper_reconciliation_checkpoint.v2`. The accepted
-  composition envelope remains v1 but its contract-versioned key and editorial
-  binding prevent a pre-cut composition from winning current idempotence.
-  Checkpoint v1 is not a live resume source; the explicit typed legacy import is
-  the only admitted bridge for the named pre-cut run.
-- **Historical compatibility seam:** `angle` is a read-only serde alias for
-  `narrative_claim`, and the default empty `focus_citation` exists only so old
-  agenda rows can be deserialized. Neither compatibility value appears as an
-  alternative in the current action schema: a current agenda must provide both
-  `narrative_claim` and a focal citation drawn from its exact story dossier, and
-  must pass v3 agenda validation and binding. Historical decoding therefore
-  cannot authorize a fresh v3 selection or composition.
-- **Cut line:** the global 32-source truncation is deleted. Thirty-two is now a
-  bounded initial-view limit, not an archive-deletion rule; the complete archive
-  remains prepared and bound. The existing selection workbench owns exact archive
-  window retrieval, visible-citation admission, the news hole, and focal-source
-  constraints; the selector owns which visible facts become stories and the
-  editor owns only prose. No post-copy quality agent, multi-publication Persona,
-  publication memory, layout engine, new service, second event authority, or
-  alternate audit store is added in this cut.
-- **Verification and build budget:** 26 focused `ghostlight-dungeon` newspaper
-  tests prove deterministic agenda admission, citation restriction,
-  receipt/checkpoint ancestry, semantic audit projection, and existing
-  reconciliation resume; the complete library gate is 481/481. The 15/15
-  strategic-smoke binary tests prove that its bounded recovery and checkpoint
-  helpers remain compatible, not the newsroom semantics themselves. The cut
-  adds no dependency, crate, binary, daemon, target platform, code-generation
-  path, or world-simulation pass.
+  ordered story pitches. Every pitch names stable public-record IDs, chooses one
+  focus record, and supplies bounded narrative claim, tension, and public
+  question. Article count plus bounded paragraphs and output tokens define page
+  space. There is no citation-count page budget. A foundational record may
+  support several continuing stories when each pitch uses it for a distinct
+  throughline.
+- **Derived state:** public-record projections contain their stable ID,
+  timestamp, channel, headline, reliability, exact committed accounts,
+  assertion statuses, committed event IDs, and only those people,
+  institutions, populations, places, and identity attributes asserted by the
+  account. Query pages and late reader-facing citation numbers are transparent
+  views. They are not persisted newsroom subjects, fact bundles, relevance
+  authorities, or event writers.
+- **Editorial path:** the selector must inspect a record before citing it. It
+  can search backward from routine updates to the original rupture and can
+  acknowledge that later handling is an installment in a continuing story.
+  The editor dereferences exactly the agenda-selected IDs, centers each article
+  on its focus record's consequential fact, and may not widen or regroup the
+  selection. Record bookkeeping, memory retention, maintained warnings, and
+  procedure are not automatically the lede merely because they are recent.
+  The copy desk and grounding reconciler see the same selected-record
+  projection.
+- **Grounding path:** accepted stable IDs lower once into the existing
+  self-contained semantic audit with source news IDs, channels, reliability,
+  exact account text, assertion status, event IDs, supported identity
+  attributes, institutions, populations, and places. Reader-facing numeric
+  labels are assigned only during lowering. A rejected draft enters the
+  existing cheap grounding-reconciliation agent over the frozen page, selected
+  records, and complete exact finding set. Its deterministic workbench owns
+  phrase targets, transactional edits, deletion, and revalidation. Selection,
+  unaffected copy, and simulation remain frozen.
+- **Invariants:** private events do not enter the query surface; every selected
+  stable ID resolves at the bound revision; article facts remain constrained to
+  selected records; story order and focus remain agenda-owned; omitted public
+  facts remain true; query, editing, copy review, and repair cannot mutate the
+  world; resume does not rerun selection or editing.
+- **Forbidden writers:** the selector and query workbench cannot create,
+  mutate, deduplicate, summarize into, or reclassify `NewsIssue` or `Event`
+  state. The editor cannot widen the admitted record set. The copy desk cannot
+  rewrite prose. Caches and renderers cannot decide record equivalence,
+  assertion status, story relevance, or fact completion. The newspaper module
+  has no second event-kind status switch.
+- **Shared paths:** fresh composition queries and selects stable records once,
+  then editor, copy desk, lowering, audit, and grounding reconciliation all
+  dereference those same IDs. Resume reconstructs the selected projection from
+  the checkpointed agenda and bound ledger without replaying the selector or
+  editor. Accepted-composition idempotence returns the stored issue.
+- **Persistence and compatibility:** reconciliation checkpoint v2 binds the
+  agenda, draft, verdict, task and exact editorial bindings, immutable receipt
+  chain, generation, and parent. The internal contract is
+  `canopy-ledger-public-ledger-query.v4`; it prevents pre-cut compositions
+  from winning current idempotence. Public issue schema v3 and the accepted
+  composition envelope remain structurally unchanged. The read-only
+  `angle` alias and empty legacy `focus_citation` default can decode
+  historical rows but cannot authorize a fresh v4 compose.
+- **Cut line:** `NewsroomSource`, transient ordinal selection IDs, fact-bundle
+  deduplication, fixed newest-32/preceding-12/foundational-12 windows,
+  per-story and total citation ceilings, global record uniqueness across
+  articles, and the newspaper-local event-kind status mapping are removed.
+  Query projection reuses existing accepted issue/audit types and the generic
+  agent harness. No dependency, crate, binary, daemon, persistent schema,
+  service, cache, event writer, target platform, code-generation path, or
+  world-simulation pass was added.
+- **Verification and build budget:** 28 focused newspaper tests cover query
+  admission, stable-record selection, foundational retrieval, reuse across
+  stories, absence of a fixed source-count ceiling, common
+  editor/copy/audit/reconciliation dereferencing, receipt ancestry, and resume.
+  The bounded package, strategic-smoke, formatting, state, and system-map gates
+  remain required before deployment.
+
+Run 54 is immutable mechanically complete evidence at exact source
+`01581b8576774f370884e331558605e7ef5e1b9b`, implementation
+`2ac74abf12612b2c38b04acd6fcb604acd1c9d28`, and world revision 27.
+Its newspaper passed independent grounding and failed independent blind
+editorial review because administrative conditions, filings, cordons, and
+recordkeeping buried conflict and bodily evidence. The archive is
+`F:\GameCult\GhostlightDungeon\acceptance\elven-realms-autonomous-01581b8-54.tar`
+with SHA-256
+`835F72FCB19C38815C543DC1497977288F2F1442F22FDBD32D1B312490B34808`.
+No next run may replay world mechanics or per-wave publications.
+
+Run 54 also exposed a separate upstream publicity defect. A public strategic
+activity currently propagates its channel to every materialized outcome,
+including a private `MemberMemory` consequence; that is how a public news row
+about Orin Pell retaining a memory entered the frozen ledger. The newsroom must
+not turn that bookkeeping into a story, but it cannot repair world-event
+authority. The future kernel cut is: parent activity publicity does not imply
+that every internal consequence is public; an outcome needs its own observable
+or communicated public scope before `NewsIssue` materialization. Revision 27
+remains immutable evidence and is not rewritten for this newsroom-only
+acceptance.
 
 The resumable reconciliation boundary is now live:
 
@@ -1442,7 +1404,8 @@ The resumable reconciliation boundary is now live:
 - **Inputs:** one exact `Campaign` snapshot, title, editorial voice, article
   budget, model port, and `CampaignStore`. A publication-task binding covers
   campaign id and revision plus title, voice, and budget. The editorial binding
-  additionally covers the exact derived newsroom source desk and provenance.
+  additionally covers the exact ordered public-record projections derived from
+  the bound `NewsIssue` and `Event` ledger.
   This lets the owner find the task's checkpoint chain while still rejecting
   same-task source drift before inference.
 - **Outputs:** acceptance is one immutable persisted composition. A still
@@ -1508,7 +1471,7 @@ The resumable reconciliation boundary is now live:
   copy-desk ancestry, accepted-composition idempotence without inference,
   same-task source-drift rejection and fork rejection before inference, typed
   legacy import through the common validator, and Registry preservation of
-  pending state. The current verified gates are 478/478 library tests and 13/13
+  pending state. The current verified gates are 483/483 library tests and 15/15
   strategic-smoke binary tests. Same-task source-drift and fork rejection before
   inference are library proofs; the binary tests cover the acceptance driver's
   recovery/checkpoint helpers. Provider runs 47 through 49 prove exact-chain

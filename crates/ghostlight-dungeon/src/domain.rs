@@ -870,6 +870,39 @@ pub struct Event {
     pub public_channels: Vec<String>,
 }
 
+#[derive(
+    Clone, Copy, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum PublicEventAssertionStatus {
+    AttemptCommittedOutcomeUnknown,
+    CourseCommittedEmbeddedActionsNotCompleted,
+    PublicDeclaration,
+    MaterialChangeCommitted,
+    PublicAccountStatusUnspecified,
+}
+
+impl Event {
+    pub fn public_assertion_status(&self) -> PublicEventAssertionStatus {
+        match self.kind.as_str() {
+            "actor_activity" | "gestalt_activity" | "gestalt_member_activity" => {
+                PublicEventAssertionStatus::AttemptCommittedOutcomeUnknown
+            }
+            "institution_action" => {
+                PublicEventAssertionStatus::CourseCommittedEmbeddedActionsNotCompleted
+            }
+            "gestalt_action" | "public_notice" => PublicEventAssertionStatus::PublicDeclaration,
+            "strategic_activity_outcome"
+            | "actor_movement"
+            | "gestalt_migration"
+            | "gestalt_member_migration"
+            | "clock_consequence"
+            | "group_travel" => PublicEventAssertionStatus::MaterialChangeCommitted,
+            _ => PublicEventAssertionStatus::PublicAccountStatusUnspecified,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct NewsIssue {
     pub id: String,
