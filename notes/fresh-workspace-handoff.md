@@ -1328,8 +1328,9 @@ access, and lead selection are therefore not the active blocker; the live
 hypothesis is missing editorial-quality acceptance and feedback between agenda
 and publication.
 
-The completed local Night Editor cut owns contract
-`canopy-ledger-night-editor.v7` and is verified but not yet committed or
+Pushed implementation commit
+`f8bf73d8c4b2585a6f1757d0624fab0ea721915e` owns contract
+`canopy-ledger-night-editor.v7` and is locally verified but not yet
 provider-accepted. The independent copy-desk agent remains the sole factual
 judge. After factual clearance, the publication-owned Night Editor judges the
 page against the admitted agenda and selected facts. A rejection names exact
@@ -1347,14 +1348,13 @@ ignore that bookkeeping, but revision 27 remains immutable. Future kernel work
 must require an outcome's own observable or communicated public scope before
 materializing a `NewsIssue`.
 
-1. Commit the exact verified Night Editor v7 worktree and push the resulting
-   commit. Do not name a commit hash until that exact body exists remotely.
-2. Preserve immutable runs 55 through 57 and the exact live services. Stage the
-   exact pushed commit for immutable Run 58 as a newsroom-only continuation
+1. Preserve immutable runs 55 through 57 and the exact live services. Stage
+   exact pushed implementation commit
+   `f8bf73d8c4b2585a6f1757d0624fab0ea721915e` for immutable Run 58 as a newsroom-only continuation
    from run 57's frozen revision-27 campaign and accepted per-wave
    publications. Replay no world mechanic or wave; retain and resume typed
    rewrite checkpoints.
-3. Require internal copy-desk factual acceptance and Night Editor
+2. Require internal copy-desk factual acceptance and Night Editor
    editorial-quality acceptance, exact newspaper, audit, result, archive,
    manifest, provenance, and service-isolation proof, then independent blind
    editorial and grounding acceptance. Deliver the actual copy only if both
