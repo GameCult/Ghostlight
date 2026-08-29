@@ -1256,7 +1256,8 @@ its first agenda exceeded the deterministic six-citation total news hole. The
 three-step budget left no fourth step to correct that rejection. Attempt-1
 artifacts and the result root remain failure evidence.
 
-The current uncommitted correction gives the same narrative-selection agent one
+Pushed `2ac74abf12612b2c38b04acd6fcb604acd1c9d28` gives the same
+narrative-selection agent one
 bounded fourth semantic step without changing archive windows, retrieved-only
 admission, selected-only downstream projection, or the six-citation news hole.
 A regression proves the exact path: two retrievals, one overfull rejection, and
@@ -1268,24 +1269,24 @@ Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Review the one-step newsroom correction diff, then commit and push it.
-2. Preserve run-54 attempt-1 artifacts, rebuild the exact pushed source, and
+1. Preserve run-54 attempt-1 artifacts, rebuild exact pushed source
+   `2ac74abf12612b2c38b04acd6fcb604acd1c9d28`, and
    resume the same run-54 result root without world or wave replay.
-3. Require final newspaper and archive hashes, exact provenance and manifest,
+2. Require final newspaper and archive hashes, exact provenance and manifest,
    unchanged-service proof, independent grounding, and blind editorial
    acceptance before delivery.
-4. Defer multiple publication Personas, TeX layout, and engraved cuts until the
+3. Defer multiple publication Personas, TeX layout, and engraved cuts until the
    single Canopy Ledger copy passes.
-5. Have the game-side adapter lower its authored hierarchy into the published
+4. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
-6. Prove one consumer-owned effect crosses that public API, changes two foreign
+5. Prove one consumer-owned effect crosses that public API, changes two foreign
    political layers, causes one durable named figure to emerge and later act,
    and returns attributed news or intent without mutating Delvehold-owned truth.
-7. Measure provider cost and continuity on the existing 200-cell authored-world
+6. Measure provider cost and continuity on the existing 200-cell authored-world
    path without coupling wave width to the provider concurrency ceiling.
-8. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
+7. Leave the unpublished Mars seed and Kalsa refuge expansion unapproved unless
    the operator explicitly admits either; retain Kalsa as regression evidence.
-9. Keep `gamecult-ops` synchronized with every executable deployment and model
+8. Keep `gamecult-ops` synchronized with every executable deployment and model
    transport change. Use Idunn on Yggdrasil for all builds and deployments.
 
 Do not weaken actor custody, private projection, unanimous approval,
