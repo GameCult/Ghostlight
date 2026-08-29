@@ -778,13 +778,10 @@ mod tests {
                 return Ok(serde_json::json!({
                     "tool":"submit_edits",
                     "replacements":[{
-                        "article_index":0,
-                        "field":"paragraph",
-                        "paragraph_index":0,
-                        "expected_phrase":"three granary auditors of being one witch in a long coat",
+                        "finding_ref":0,
                         "replacement":"three granary auditors of acting as one accused person"
                     }],
-                    "delete_article_indices":[]
+                    "delete_finding_refs":[]
                 })
                 .to_string());
             }

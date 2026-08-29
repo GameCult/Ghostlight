@@ -209,18 +209,20 @@ enum GroundingReconciliationAction {
         #[schemars(length(max = 24))]
         replacements: Vec<GroundingTextReplacement>,
         #[schemars(length(max = 6))]
-        delete_article_indices: Vec<u16>,
+        delete_finding_refs: Vec<GroundingFindingRef>,
     },
 }
+
+#[derive(
+    Clone, Copy, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord,
+)]
+#[serde(transparent)]
+struct GroundingFindingRef(u16);
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct GroundingTextReplacement {
-    article_index: u16,
-    field: GroundingEditableField,
-    paragraph_index: Option<u16>,
-    #[schemars(length(min = 1, max = 500))]
-    expected_phrase: String,
+    finding_ref: GroundingFindingRef,
     #[schemars(length(max = 900))]
     replacement: String,
 }
@@ -439,10 +441,17 @@ impl ModelAgentTool for GroundingReconciliationWorkbench<'_> {
         if let Some(schema) = replacement_schema.as_object_mut() {
             schema.remove("$schema");
         }
+        let finding_indices = (0..self.verdict.findings.len())
+            .map(serde_json::Value::from)
+            .collect::<Vec<_>>();
+        replacement_schema["properties"]["finding_ref"] = serde_json::json!({
+            "type":"integer",
+            "enum":finding_indices
+        });
         let mut schema = serde_json::json!({
             "type":"object",
             "additionalProperties":false,
-            "required":["tool", "replacements", "delete_article_indices"],
+            "required":["tool", "replacements", "delete_finding_refs"],
             "properties":{
                 "tool":{"const":"submit_edits"},
                 "replacements":{
@@ -450,10 +459,10 @@ impl ModelAgentTool for GroundingReconciliationWorkbench<'_> {
                     "maxItems":24,
                     "items":replacement_schema
                 },
-                "delete_article_indices":{
+                "delete_finding_refs":{
                     "type":"array",
                     "maxItems":6,
-                    "items":{"type":"integer","minimum":0,"maximum":65535}
+                    "items":{"type":"integer","enum":finding_indices}
                 }
             },
             "$defs":definitions
@@ -563,28 +572,25 @@ fn apply_grounding_edits(
 ) -> Result<EditorialPageDraft> {
     let GroundingReconciliationAction::SubmitEdits {
         replacements,
-        delete_article_indices,
+        delete_finding_refs,
     } = action;
-    if replacements.is_empty() && delete_article_indices.is_empty() {
+    if replacements.is_empty() && delete_finding_refs.is_empty() {
         return Err(anyhow!(
             "a grounding repair must address at least one exact finding"
         ));
     }
+    let mut deletion_findings = BTreeSet::new();
     let mut deletions = BTreeSet::new();
-    for index in delete_article_indices {
-        let index = usize::from(index);
-        if index >= original.articles.len() || !deletions.insert(index) {
+    for finding_ref in delete_finding_refs {
+        let finding_index = usize::from(finding_ref.0);
+        let finding = verdict
+            .findings
+            .get(finding_index)
+            .ok_or_else(|| anyhow!("grounding repair names an invalid finding"))?;
+        let article_index = usize::from(finding.article_index);
+        if !deletion_findings.insert(finding_index) || !deletions.insert(article_index) {
             return Err(anyhow!(
                 "grounding repair names an invalid or duplicate article deletion"
-            ));
-        }
-        if !verdict
-            .findings
-            .iter()
-            .any(|finding| usize::from(finding.article_index) == index)
-        {
-            return Err(anyhow!(
-                "grounding repair may delete only an article named by the current findings"
             ));
         }
     }
@@ -592,23 +598,17 @@ fn apply_grounding_edits(
         return Err(anyhow!("grounding repair cannot delete the entire edition"));
     }
 
-    let expected_findings = verdict
-        .findings
-        .iter()
-        .map(|finding| {
-            (
-                usize::from(finding.article_index),
-                finding.claim_or_phrase.clone(),
-            )
-        })
-        .collect::<BTreeSet<_>>();
+    let expected_findings = (0..verdict.findings.len()).collect::<BTreeSet<_>>();
     let mut addressed = deletions
         .iter()
-        .flat_map(|index| {
-            expected_findings
+        .flat_map(|article_index| {
+            verdict
+                .findings
                 .iter()
-                .filter(move |(finding_index, _)| finding_index == index)
-                .cloned()
+                .enumerate()
+                .filter_map(move |(finding_index, finding)| {
+                    (usize::from(finding.article_index) == *article_index).then_some(finding_index)
+                })
         })
         .collect::<BTreeSet<_>>();
     let mut edits_by_target =
@@ -616,26 +616,22 @@ fn apply_grounding_edits(
         );
     let mut draft = original.clone();
     for replacement in replacements {
-        let article_index = usize::from(replacement.article_index);
+        let finding_index = usize::from(replacement.finding_ref.0);
+        let finding = verdict
+            .findings
+            .get(finding_index)
+            .ok_or_else(|| anyhow!("grounding repair names an invalid finding"))?;
+        let resolved = resolve_grounding_finding_target(original, finding)?;
+        let article_index = resolved.article_index;
         if deletions.contains(&article_index) {
             return Err(anyhow!(
                 "grounding repair cannot both rewrite and delete one article"
             ));
         }
-        let finding_key = (article_index, replacement.expected_phrase.clone());
-        if !expected_findings.contains(&finding_key) {
-            return Err(anyhow!(
-                "grounding repair may replace only an exact phrase named by the current findings"
-            ));
-        }
-        if !addressed.insert(finding_key) {
+        if !addressed.insert(finding_index) {
             return Err(anyhow!("grounding repair repeats one exact finding"));
         }
-        let target_key = (
-            article_index,
-            replacement.field.clone(),
-            replacement.paragraph_index,
-        );
+        let target_key = (article_index, resolved.field, resolved.paragraph_index);
         if replacement.replacement.trim() != replacement.replacement
             || replacement.replacement.contains(['\r', '\n'])
             || replacement.replacement.chars().any(char::is_control)
@@ -644,29 +640,9 @@ fn apply_grounding_edits(
                 "grounding replacement is not bounded reader-facing text"
             ));
         }
-        let mut source_article = original
-            .articles
-            .get(article_index)
-            .cloned()
-            .ok_or_else(|| anyhow!("grounding repair names an invalid article"))?;
-        let source_target = grounding_edit_target(
-            &mut source_article,
-            &replacement.field,
-            replacement.paragraph_index,
-        )?;
-        let matches = source_target
-            .match_indices(&replacement.expected_phrase)
-            .map(|(start, _)| start)
-            .collect::<Vec<_>>();
-        if matches.len() != 1 {
-            return Err(anyhow!(
-                "grounding replacement expected_phrase must occur exactly once in its target"
-            ));
-        }
-        let start = matches[0];
         edits_by_target.entry(target_key).or_default().push((
-            start,
-            start + replacement.expected_phrase.len(),
+            resolved.start,
+            resolved.end,
             replacement.replacement,
         ));
     }
@@ -721,6 +697,64 @@ fn grounding_edit_target<'a>(
     }
 }
 
+struct ResolvedGroundingFinding {
+    article_index: usize,
+    field: GroundingEditableField,
+    paragraph_index: Option<u16>,
+    start: usize,
+    end: usize,
+}
+
+fn resolve_grounding_finding_target(
+    draft: &EditorialPageDraft,
+    finding: &WorldNewspaperGroundingFinding,
+) -> Result<ResolvedGroundingFinding> {
+    let article_index = usize::from(finding.article_index);
+    let article = draft
+        .articles
+        .get(article_index)
+        .ok_or_else(|| anyhow!("copy desk returned an invalid finding"))?;
+    let mut matches = Vec::new();
+    for (field, paragraph_index, target) in [
+        (GroundingEditableField::Headline, None, &article.headline),
+        (GroundingEditableField::Deck, None, &article.deck),
+        (GroundingEditableField::Dateline, None, &article.dateline),
+    ]
+    .into_iter()
+    .chain(
+        article
+            .paragraphs
+            .iter()
+            .enumerate()
+            .map(|(index, paragraph)| {
+                (
+                    GroundingEditableField::Paragraph,
+                    Some(u16::try_from(index).expect("bounded newspaper paragraph index")),
+                    paragraph,
+                )
+            }),
+    ) {
+        matches.extend(
+            target
+                .match_indices(&finding.claim_or_phrase)
+                .map(|(start, _)| (field.clone(), paragraph_index, start)),
+        );
+    }
+    if matches.len() != 1 {
+        return Err(anyhow!(
+            "copy-desk claim_or_phrase must be one exact contiguous phrase occurring once in the named article"
+        ));
+    }
+    let (field, paragraph_index, start) = matches.remove(0);
+    Ok(ResolvedGroundingFinding {
+        article_index,
+        field,
+        paragraph_index,
+        start,
+        end: start + finding.claim_or_phrase.len(),
+    })
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn run_grounding_reconciliation(
     model: &dyn ModelPort,
@@ -739,11 +773,25 @@ async fn run_grounding_reconciliation(
     let initial_verdict = match &initial_finding {
         GroundingReconciliationFinding::CopyDeskRejected { verdict, .. } => verdict.clone(),
     };
+    let indexed_findings = initial_verdict
+        .findings
+        .iter()
+        .enumerate()
+        .map(|(finding_index, finding)| {
+            serde_json::json!({
+                "finding_ref":finding_index,
+                "article_index":finding.article_index,
+                "category":finding.category,
+                "claim_or_phrase":finding.claim_or_phrase,
+                "reason":finding.reason,
+            })
+        })
+        .collect::<Vec<_>>();
     let instructions = format!(
-        "You are Ghostlight's grounding reconciliation agent. Repair one already-edited newspaper page against the same frozen source desk and exact rejection. You do not report new events, add spice, improve the simulation, or rerun the editor. The workbench freezes article selection, order, sections, bylines, citations, and all unaffected copy. Submit only exact text replacements for phrases named verbatim by the current findings, or delete an article named by those findings when its cited notes cannot support a grounded story. Each replacement identifies one article and headline, deck, dateline, or paragraph target; paragraph_index is required only for paragraphs. expected_phrase must copy the exact contiguous phrase from the finding and occur once in that target. replacement may be empty when deletion is the honest repair. Address the complete finding set in this one pass. Preserve source status exactly: an attempt is not a result, a committed course does not complete its embedded plans, and a public declaration is not evidence that its demand succeeded. A named person's supported_identity_attributes is exhaustive; when it is empty, use the name or identity-neutral wording and do not invent pronouns, gender, title, kinship, or office. Delete an unsupported phrase rather than replacing it with an adjacent invention. The deterministic workbench applies the edits transactionally and reruns the same whole-page copy desk.\n\nFROZEN NEWSROOM FACT DESK:\n{}\n\nINITIAL DRAFT:\n{}\n\nEXACT INITIAL FINDING:\n{}",
+        "You are Ghostlight's grounding reconciliation agent. Repair one already-edited newspaper page against the same frozen source desk and exact rejection. You do not report new events, add spice, improve the simulation, or rerun the editor. The workbench freezes article selection, order, sections, bylines, citations, and all unaffected copy. Submit only replacements for the numbered current findings, or delete the article containing a numbered finding when its cited notes cannot support a grounded story. Each replacement selects one finding_ref and supplies only its replacement text. The deterministic workbench owns the selected finding's article, text field, paragraph, exact phrase, and byte span. replacement may be empty when phrase deletion is the honest repair. Address the complete finding set in this one pass. Preserve source status exactly: an attempt is not a result, a committed course does not complete its embedded plans, and a public declaration is not evidence that its demand succeeded. A named person's supported_identity_attributes is exhaustive; when it is empty, use the name or identity-neutral wording and do not invent pronouns, gender, title, kinship, or office. Delete an unsupported phrase rather than replacing it with an adjacent invention. The deterministic workbench applies the edits transactionally and reruns the same whole-page copy desk.\n\nFROZEN NEWSROOM FACT DESK:\n{}\n\nINITIAL DRAFT:\n{}\n\nNUMBERED EXACT FINDINGS:\n{}",
         source_json,
         serde_json::to_string_pretty(&draft).unwrap_or_default(),
-        serde_json::to_string_pretty(&initial_finding).unwrap_or_default(),
+        serde_json::to_string_pretty(&indexed_findings).unwrap_or_default(),
     );
     let mut causal_sources = source_receipt_ids
         .iter()
@@ -1343,24 +1391,12 @@ fn validate_grounding_verdict(
     let mut exact_claims = BTreeSet::new();
     for finding in &verdict.findings {
         let article_index = usize::from(finding.article_index);
-        let Some(article) = draft.articles.get(article_index) else {
-            return Err(anyhow!("copy desk returned an invalid finding"));
-        };
         validate_single_line(&finding.claim_or_phrase, 500, "copy-desk claim")?;
         validate_single_line(&finding.reason, 500, "copy-desk reason")?;
         if !exact_claims.insert((article_index, finding.claim_or_phrase.as_str())) {
             return Err(anyhow!("copy desk repeated one exact finding phrase"));
         }
-        let occurrences = [&article.headline, &article.deck, &article.dateline]
-            .into_iter()
-            .chain(article.paragraphs.iter())
-            .map(|field| field.match_indices(&finding.claim_or_phrase).count())
-            .sum::<usize>();
-        if occurrences != 1 {
-            return Err(anyhow!(
-                "copy-desk claim_or_phrase must be one exact contiguous phrase occurring once in the named article"
-            ));
-        }
+        resolve_grounding_finding_target(draft, finding)?;
     }
     Ok(())
 }
@@ -1720,9 +1756,9 @@ mod tests {
 
     const ACCEPTED_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
     const TWO_ARTICLE_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"By the political editor","dateline":"Room","citations":["1"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]},{"section":"Dispatches","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","byline":"Staff report","dateline":"Yard","citations":["2"],"paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace the cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}]}"#;
-    const REPAIR_DECK_ACTION: &str = r#"{"tool":"submit_edits","replacements":[{"article_index":0,"field":"deck","paragraph_index":null,"expected_phrase":"A gambling debt reaches the throne room and leaves one official carrying the blame.","replacement":"The court's admission leaves one official carrying the blame for the pawned seal."}],"delete_article_indices":[]}"#;
+    const REPAIR_DECK_ACTION: &str = r#"{"tool":"submit_edits","replacements":[{"finding_ref":0,"replacement":"The court's admission leaves one official carrying the blame for the pawned seal."}],"delete_finding_refs":[]}"#;
     const DELETE_SECOND_ARTICLE_ACTION: &str =
-        r#"{"tool":"submit_edits","replacements":[],"delete_article_indices":[1]}"#;
+        r#"{"tool":"submit_edits","replacements":[],"delete_finding_refs":[0]}"#;
     const ACCEPTING_COPY_DESK: &str = r#"{"accepted":true,"assessment":"The copy is fully supported by its cited public source and reads as attributed court reporting.","findings":[]}"#;
 
     #[test]
@@ -1761,17 +1797,11 @@ mod tests {
         };
         let mut replacements = vec![
             GroundingTextReplacement {
-                article_index: 0,
-                field: GroundingEditableField::Deck,
-                paragraph_index: None,
-                expected_phrase: "A gambling debt reaches the throne room".into(),
+                finding_ref: GroundingFindingRef(0),
                 replacement: "The court's admission reaches the public".into(),
             },
             GroundingTextReplacement {
-                article_index: 0,
-                field: GroundingEditableField::Deck,
-                paragraph_index: None,
-                expected_phrase: "one official carrying the blame".into(),
+                finding_ref: GroundingFindingRef(1),
                 replacement: "the dismissed treasurer carrying the record".into(),
             },
         ];
@@ -1780,7 +1810,7 @@ mod tests {
             &verdict,
             GroundingReconciliationAction::SubmitEdits {
                 replacements: replacements.clone(),
-                delete_article_indices: Vec::new(),
+                delete_finding_refs: Vec::new(),
             },
         )
         .unwrap();
@@ -1790,7 +1820,7 @@ mod tests {
             &verdict,
             GroundingReconciliationAction::SubmitEdits {
                 replacements,
-                delete_article_indices: Vec::new(),
+                delete_finding_refs: Vec::new(),
             },
         )
         .unwrap();
@@ -1812,10 +1842,7 @@ mod tests {
             reason: "The source does not establish that movement.".into(),
         };
         let replacement = GroundingTextReplacement {
-            article_index: 0,
-            field: GroundingEditableField::Deck,
-            paragraph_index: None,
-            expected_phrase: finding.claim_or_phrase.clone(),
+            finding_ref: GroundingFindingRef(0),
             replacement: "The court's admission reaches".into(),
         };
         let duplicate = apply_grounding_edits(
@@ -1827,7 +1854,7 @@ mod tests {
             },
             GroundingReconciliationAction::SubmitEdits {
                 replacements: vec![replacement.clone(), replacement],
-                delete_article_indices: Vec::new(),
+                delete_finding_refs: Vec::new(),
             },
         )
         .unwrap_err();
@@ -1849,21 +1876,15 @@ mod tests {
             GroundingReconciliationAction::SubmitEdits {
                 replacements: vec![
                     GroundingTextReplacement {
-                        article_index: 0,
-                        field: GroundingEditableField::Deck,
-                        paragraph_index: None,
-                        expected_phrase: finding.claim_or_phrase,
+                        finding_ref: GroundingFindingRef(0),
                         replacement: "The admission reaches".into(),
                     },
                     GroundingTextReplacement {
-                        article_index: 0,
-                        field: GroundingEditableField::Deck,
-                        paragraph_index: None,
-                        expected_phrase: overlapping_finding.claim_or_phrase,
+                        finding_ref: GroundingFindingRef(1),
                         replacement: "the public record".into(),
                     },
                 ],
-                delete_article_indices: Vec::new(),
+                delete_finding_refs: Vec::new(),
             },
         )
         .unwrap_err();
@@ -2104,11 +2125,24 @@ mod tests {
                 .lived_stream
                 .contains("A gambling debt reaches the throne room")
         );
-        let repair_schema =
-            serde_json::to_string(requests[2].output_schema.as_ref().unwrap()).unwrap();
+        let repair_schema_value = requests[2].output_schema.as_ref().unwrap();
+        assert_eq!(
+            repair_schema_value
+                .pointer("/properties/replacements/items/properties/finding_ref/enum"),
+            Some(&serde_json::json!([0]))
+        );
+        assert_eq!(
+            repair_schema_value.pointer("/properties/delete_finding_refs/items/enum"),
+            Some(&serde_json::json!([0]))
+        );
+        let repair_schema = serde_json::to_string(repair_schema_value).unwrap();
         assert!(!repair_schema.contains("citations"));
         assert!(!repair_schema.contains("byline"));
         assert!(!repair_schema.contains("section"));
+        assert!(repair_schema.contains("finding_ref"));
+        assert!(!repair_schema.contains("expected_phrase"));
+        assert!(!repair_schema.contains("article_index"));
+        assert!(!repair_schema.contains("paragraph_index"));
         assert_eq!(
             composition.issue.articles[0].source_news_ids,
             ["news:seal-scandal"]

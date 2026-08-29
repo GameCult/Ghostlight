@@ -1045,26 +1045,45 @@ unsupported `prepares`. Issues 13 and 15 through 18 and the final digest were
 not reached. Issue 14, canonical world state, and all wave checkpoints remain
 unchanged.
 
-The current uncommitted runner cut adds an explicit bounded newspaper recovery
-start wave. Run 43 will set it to 13 so recovery selects only missing Issues 13
-and 15 through 18, preserving accepted Issue 14 and older newspaper history.
-The complete local gate passes 13/13 strategic-smoke binary tests, 468/468
-library tests, and `git diff --check`.
+Pushed `fb8f467` adds an explicit bounded newspaper recovery start wave. Its
+local gate passed 13/13 strategic-smoke binary tests, 468/468 library tests, and
+`git diff --check`.
+
+Exact-source run 43 at
+`fb8f4670679446f7f825bf733a4b8b9ea524d2b7` resumed run 41 at revision 27
+with recovery start wave 13 and did not replay or mutate world mechanics. Issue
+13 recomposition succeeded and Issue 14 remained preserved. Issue 15 failed
+presentation-only because the grounding reconciliation agent retyped an
+`expected_phrase` outside the exact frozen copy-desk finding set. Issues 16
+through 18 and the final digest were not reached; canonical world state and all
+wave checkpoints remain unchanged.
+
+The copy desk owns the exact frozen finding set. The current uncommitted cut
+makes `GroundingFindingRef` page-local and uses one shared deterministic resolver
+to derive article, field, paragraph, phrase, and span for verdict validation and
+edit application. Agent actions contain only `finding_ref` plus replacement or
+`delete_finding_refs`; there is no compatibility path for retyped phrases. The
+registry fixture is updated. Gates pass 14/14 newspaper tests, 468/468 library
+tests, 13/13 strategic-smoke binary tests, and `git diff --check`.
+Plan commit `4916638` separately admits persistent political/editorial
+publication Personas. That future architecture is not a fact-check prompt
+change and does not own the current acceptance repair. Earn one good Canopy
+Ledger first; multiple publication Personas come later, and TeX/layout or
+engraved-cut production begins only after editorial acceptance.
 
 Pushed `af749de` routes a provider timeout through the shared model transport's
 existing one same-request retry and records attempt telemetry. Run 36 crossed
 that boundary; timeout retry is not its active blocker.
 
-1. Commit and push the explicit bounded newspaper recovery start-wave cut.
-2. Launch exact-source run 43 from run 41's committed revision 27 with recovery
-   start wave 13 to compose only missing Issues 13
-   and 15 through 18 plus the final digest. Preserve accepted Issue 14, every
-   completed wave checkpoint, and canonical world state; do not replay any
-   mechanics. Require the resulting unedited publications and final digest to
-   pass fresh independent editorial and provenance review before claiming
-   acceptance. Preserve runs 38/39/40/42, the run-41 root and committed world
-   lineage, stopped run 23, exact acceptance conditions, and unchanged live
-   daemons.
+1. Commit and push the verified typed-finding-reference cut.
+2. Resume from run 43's preserved Issue 13 and Issue 14 boundary at revision 27
+   to compose Issues 15 through 18 plus the final digest. Preserve every
+   completed wave checkpoint and canonical world state; do not replay mechanics
+   or successful publications. Require the resulting unedited publications and
+   final digest to pass fresh independent editorial and provenance review before
+   claiming acceptance. Preserve runs 38/39/40/42, the run-41 root and committed
+   world lineage, stopped run 23, exact acceptance conditions, and unchanged
+   live daemons.
 3. Have the game-side adapter lower its authored hierarchy into the published
    generic schemas; keep projection and economy translation consumer-owned.
 4. Prove one consumer-owned effect crosses that public API, changes two foreign

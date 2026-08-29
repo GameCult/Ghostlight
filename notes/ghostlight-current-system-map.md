@@ -1340,6 +1340,16 @@ text before Markdown emission; the provenance renderer applies the same
 plain-text boundary to its audit data. Neither editor, copy desk, renderer, nor
 receipt persistence can write world state.
 
+The grounding-repair workbench assigns every validated copy-desk finding a
+typed, page-local reference and resolves it against the frozen draft to the
+exact article, field, paragraph, phrase, and byte span. The agent submits only
+that reference plus replacement text, or uses a finding reference to request
+deletion of its containing article. The reference catalog is derived
+transaction state bound to the frozen draft and verdict, not a new copy-desk
+output or durable world fact. One shared deterministic resolver owns phrase
+location for both verdict validation and transactional edit application; the
+model cannot author target coordinates or repeat phrase identity.
+
 #### Acceptance-driver per-wave newspaper recovery
 
 - **Owner:** the strategic acceptance driver owns recovery of a missing
