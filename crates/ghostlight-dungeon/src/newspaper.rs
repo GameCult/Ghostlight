@@ -27,7 +27,7 @@ use std::{
 const MAX_FRONT_PAGE_ARTICLES: usize = 6;
 const MAX_PUBLIC_RECORD_QUERY_RESULTS: usize = 24;
 const MAX_NARRATIVE_SELECTION_STEPS: usize = 12;
-const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v12";
+const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v13";
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
@@ -1523,11 +1523,22 @@ struct JournalistWorkbench<'a> {
 }
 
 impl JournalistWorkbench<'_> {
-    fn assignment_snapshot(&self) -> serde_json::Value {
+    fn selected_records(&self) -> Vec<&PublicRecordProjection> {
         let selected = self
             .pitch
             .citations
             .iter()
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        public_records_for_ids(self.records, &selected)
+    }
+
+    fn assignment_snapshot(&self) -> serde_json::Value {
+        let records = self.selected_records();
+        let allowed_datelines = records
+            .iter()
+            .flat_map(|record| &record.facts)
+            .flat_map(|fact| &fact.places)
             .cloned()
             .collect::<BTreeSet<_>>();
         serde_json::json!({
@@ -1536,7 +1547,8 @@ impl JournalistWorkbench<'_> {
             "dominant_throughline": self.dominant_throughline,
             "reader_stake": self.reader_stake,
             "pitch": self.pitch,
-            "records": public_records_for_ids(self.records, &selected),
+            "allowed_datelines": allowed_datelines,
+            "records": records,
         })
     }
 }
@@ -2180,7 +2192,7 @@ async fn run_assigned_journalists(
         }
         let reporter_identity = serde_json::to_string(journalist).unwrap_or_default();
         let instructions = format!(
-            "You are {name}, a recurring embodied journalist filing for `{title}`. Readers should learn what you notice, whom you distrust, which sources you seek, where your sympathies lie, and what you routinely get wrong. Treat the identity below as your stable point of view across issues, not a list of phrases to repeat. Let it govern selection, sourcing, rhythm, humor, indignation, and what you leave for another reporter. Do not flatten yourself into the publication's generic house voice.\n\nYou are a partisan storyteller, not the newsroom's fact checker. Make the strongest memorable case the current assignment supports: lead with its focus event, use selection and juxtaposition to imply meaning, expose hypocrisy or conflict your own instincts would recognize, and make the costs your beat understands vivid. If your context role assumes the issue chronology, do not reconstruct that chronology; connect to the lead with only the minimum clause needed to make your new fact intelligible. If you own the issue chronology, establish it once. If the story is self-contained, establish only its own facts. A continuing story should say what changed without treating routine handling as the lede.\n\nUse only the current workbench records for concrete events, people, institutions, places, identity attributes, chronology, quotations, motives, and outcomes. Preserve disputes through natural attribution. You may be cutting, emotional, insinuating, metaphorical, or politically judgmental without pretending the insinuation is a sourced causal fact. Do not discuss records, citations, verification, assertion statuses, or missing evidence in reader copy. The copy editor will fact-check the filed story later. File two to five substantial paragraphs. The lead needs a supplied place as dateline when one exists; otherwise leave dateline empty.\n\nPUBLICATION VOICE:\n{voice}\n\nYOUR RECURRING IDENTITY:\n{reporter_identity}",
+            "REPORTER'S HOUSE CHARTER\n\nYou file for `{title}`. You are a partisan storyteller, not the newsroom's fact checker. The assignment editor has already chosen the story, its focus event, its public question, and the evidence available for this filing. Make the strongest memorable case that assignment supports. Lead with the focus event. Use selection, sequence, contrast, and juxtaposition to imply meaning. Expose hypocrisy or conflict that your own instincts would recognize, and make the costs your beat understands vivid. A news article is not a recital of every supplied fact: omit material that does not serve the assigned story.\n\nShape the article for its declared context role. When you own an issue chronology, establish that chronology once and drive it toward the new consequence. When you assume the issue chronology, do not reconstruct the lead story; connect to it with only the minimum clause needed to make your distinct fact intelligible. When the story is self-contained, establish only its own facts. A continuing story must say what changed. Routine handling belongs behind the rupture unless the handling itself causes a public consequence. Do not repeat the deck as the first paragraph or summarize the same fact three ways to fill space.\n\nUse only the current workbench records for concrete events, people, institutions, places, identity attributes, chronology, quotations, motives, and outcomes. Preserve disputes through natural attribution. You may be cutting, emotional, insinuating, metaphorical, or politically judgmental without converting an insinuation into a sourced causal fact. Do not discuss records, citations, verification, assertion statuses, or missing evidence in reader copy. The copy editor will fact-check the filed story later. File two to five substantial paragraphs. For a lead, use exactly one value from `allowed_datelines` when that list is nonempty; when it is empty, leave the dateline empty. Non-leads may use an allowed value or leave it empty.\n\nPUBLICATION VOICE:\n{voice}\n\nRECURRING JOURNALIST\n\nYou are {name}. Readers should learn what you notice, whom you distrust, which sources you seek, where your sympathies lie, and what you routinely get wrong. Treat the identity below as your stable point of view across issues, not a list of phrases to repeat. Let it govern selection, sourcing, rhythm, humor, indignation, and what you leave for another reporter. Do not flatten yourself into the publication's generic house voice.\n\nYOUR RECURRING IDENTITY:\n{reporter_identity}",
             name = journalist.staff.name,
             title = prepared.title,
             voice = prepared.editorial_voice,
@@ -4886,6 +4898,10 @@ mod tests {
         let lead_schema = lead.action_schema().unwrap();
         assert_eq!(lead_schema["properties"]["dateline"]["maxLength"], 100);
         assert!(lead_schema["properties"]["dateline"].get("enum").is_none());
+        assert_eq!(
+            lead.assignment_snapshot()["allowed_datelines"],
+            serde_json::json!(["Room"])
+        );
 
         let dispatch_pitch = WorldNewspaperStoryPitch {
             lead: false,
@@ -4911,6 +4927,10 @@ mod tests {
             pitch: &dispatch_pitch,
         };
         assert_eq!(dispatch.action_schema().unwrap(), lead_schema);
+        assert_eq!(
+            dispatch.assignment_snapshot()["allowed_datelines"],
+            serde_json::json!(["Yard"])
+        );
     }
 
     #[test]

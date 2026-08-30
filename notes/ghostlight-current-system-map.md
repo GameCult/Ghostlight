@@ -1313,12 +1313,14 @@ The deliberative newsroom boundary is live under this authority map:
   press witness owns structural admission, lineage, and exact before/after
   evidence for what printed; it does not judge prose. Errors discovered after
   close belong to a later edition's correction memory, not a same-edition
-  repair loop. V10 defines that ownership boundary but does not yet persist a
+  repair loop. V13 defines that ownership boundary but does not yet persist a
   typed correction record. Publication employees are not world actors or event
   writers. `WorldKernel` remains the only world-event writer.
 - **Inputs:** one exact campaign revision, publication title and voice, article
   budget, a validated embodied newsroom roster, source-receipt ancestry, and
-  `character-newsroom.v12` contract. The assignment editor receives its own
+  `character-newsroom.v13` contract. Each reporter receives the common stable
+  house charter first, that journalist's stable recurring identity second, and
+  the current assignment workbench last. The assignment editor receives its own
   staff profile plus the complete journalist roster; it does not receive the
   copy editor or Night Editor profiles. Through the
   existing generic agent harness, the selector issues deterministic bounded
@@ -1351,9 +1353,11 @@ The deliberative newsroom boundary is live under this authority map:
   distinct throughline. One journalist agent files each assigned story and the
   page is assembled deterministically from assignment-owned section, byline,
   and citations plus journalist-owned prose. Every accepted filing is stored as
-  its own immutable production checkpoint before the next reporter runs. Its
-  dateline is admitted by deterministic validation against places asserted by
-  that filing's cited records: the lead must choose a cited place
+  its own immutable production checkpoint before the next reporter runs. The
+  cited facts deterministically derive `allowed_datelines` for the reporter's
+  dynamic workbench. The generic stable output schema admits the dateline's
+  syntactic shape, while `validate_editorial_article` alone admits it against
+  places asserted by that filing's cited records: the lead must choose a cited place
   when one exists, while a later article may choose a cited place or remain
   blank. The copy desk emits one
   assessment plus the complete bounded set of exact factual query passages;
@@ -1376,8 +1380,11 @@ The deliberative newsroom boundary is live under this authority map:
   and the pending candidate token; full fact bodies return only through the
   bounded query or exact-ID fetch. Production checkpoint IDs, reporter-assignment
   digests, receipt-chain and complete checkpoint-content digests are also
-  derived. Allowed datelines remain workbench-owned validation state rather
-  than changing the reporter's provider schema and cache identity.
+  derived. `allowed_datelines` is deterministic prompt guidance derived from
+  the cited facts, not factual admission authority; it remains in the dynamic
+  workbench rather than changing the reporter's generic provider schema and
+  cache identity. `validate_editorial_article` owns factual admission after the
+  model returns.
   The cacheable prefix is the byte-stable first request plus its unchanged output
   schema; the dynamic suffix is the second workbench message. Provider-reported
   cached-token counts are observations of that external cache, not newsroom
@@ -1399,9 +1406,10 @@ The deliberative newsroom boundary is live under this authority map:
   on retry. In a special issue, only the lead may own shared chronology; later
   stories assume it and perform distinct narrative functions. In a general
   issue, every story owns independent context. Each assigned journalist sees
-  only the publication voice, shared reporting contract, and their own recurring
-  character in the stable prefix. Issue shape, page throughline, one pitch, and
-  that pitch's exact records arrive in the replaceable workbench message.
+  the common publication house charter first and only that journalist's
+  recurring character second in the stable prefix. Issue shape, page
+  throughline, one pitch, its exact records, and the deterministically derived
+  `allowed_datelines` arrive last in the replaceable workbench message.
   They center their story on its focus record and may not widen or regroup the
   selection. Each accepted filing is bound to that agenda checkpoint, article
   index, exact pitch, journalist identity and profile, and local reporter
@@ -1439,8 +1447,9 @@ The deliberative newsroom boundary is live under this authority map:
   append-only conversation path after the same single-message initial request.
   The assignment workbench uses this seam for its compact
   inspected-record index and pending candidate token. Reporter workbenches use
-  the same seam so recurring identity stays cacheable while issue facts do not
-  contaminate it. Exact-ID fetch
+  the same seam: the common house charter precedes the recurring journalist
+  identity in the stable first message, and the dynamic assignment snapshot is
+  the second message. Exact-ID fetch
   restores only the requested full records. Selector query, fetch, proposal, and
   commit share one stable structured action schema. The Night close schema is
   likewise stable across checklist contents; its private workbench enforces the
@@ -1489,9 +1498,10 @@ The deliberative newsroom boundary is live under this authority map:
   exact-ID fetch cannot mutate the ledger. A production checkpoint cannot change
   the roster, agenda, pitch, reporter, article slot, section, byline, citations,
   source campaign, or receipt ancestry; a checkpoint from another contract,
-  task, or editorial binding cannot resume current production. The dateline
-  schema cannot admit an uncited place, and blank cannot evade an available
-  cited place on the lead.
+  task, or editorial binding cannot resume current production. Neither the
+  generic dateline schema nor workbench `allowed_datelines` can admit factual
+  truth; `validate_editorial_article` rejects an uncited place and rejects a
+  blank lead dateline when a cited place is available.
   A snapshot tool cannot rewrite the frozen first request, insert changing state
   ahead of it, or promote provider cache telemetry into semantic authority. A
   cache miss cannot change tool admission, receipts, or newsroom results, and a
@@ -1522,7 +1532,7 @@ The deliberative newsroom boundary is live under this authority map:
   continue through the append-only observation path. No newsroom-specific cache
   branch owns either route.
 - **Persistence and compatibility:** the live internal contract is
-  `character-newsroom.v12`. Public request schema v3 carries the publication
+  `character-newsroom.v13`. Public request schema v3 carries the publication
   roster and binds it into the task and editorial identities. Private production
   checkpoint v1 stores either the admitted agenda or one accepted reporter
   filing. Agenda identity binds the exact task and editorial identities; filing
@@ -1545,10 +1555,10 @@ The deliberative newsroom boundary is live under this authority map:
   rebind them. Historical strategic recomposition v1/v2 receipts
   are a separate acceptance-driver verification surface; their typed validators
   can prove original artifacts but cannot write newsroom state. Resume authority
-  belongs only to exact-current v10 production and close checkpoints bound to
+  belongs only to exact-current v13 production and close checkpoints bound to
   the same task, newsroom, facts, assignment, article slot, and receipt prefix.
   Run 58's v7 tip and Run 59's printed edition remain immutable evidence in
-  their original artifacts, not v10 resume inputs.
+  their original artifacts, not v13 resume inputs.
 - **Cut line:** the generic byline list and one-shot whole-page writer are
   deleted. Assignment-owned section, journalist, byline, citations, and order
   are no longer regenerated in prose output. Tool schema text and prior-action
@@ -1574,7 +1584,7 @@ The deliberative newsroom boundary is live under this authority map:
   added.
 - **Verification and build budget:** focused newspaper tests retain query
   admission, exact focus proof, agenda commit, selected-record alignment, and
-  audit grounding. V10 gates prove the stable selector instruction prefix with
+  audit grounding. V13 gates prove the stable selector instruction prefix with
   old record bodies absent from later snapshots, the compact inspected-record
   index, bounded exact-ID refetch, stable selector and Night schemas,
   assignment-aware reporter context isolation, one complete
@@ -1588,8 +1598,10 @@ The deliberative newsroom boundary is live under this authority map:
   rejected close, a fresh v10 close in a store containing a matching inert
   v7 tombstone. The close validator admits only `InitialCopyDesk` checkpoints
   with no source ancestry, while exact-current resume and idempotence regressions
-  exercise the close resume path. Dedicated regressions prove stable reporter
-  schemas with cited-place validation, plus agenda-and-filing checkpoint recovery at
+  exercise the close resume path. Dedicated regressions prove one generic
+  reporter schema with no per-assignment dateline enum, exact
+  fact-derived `allowed_datelines` in each dynamic reporter snapshot,
+  deterministic cited-place admission, plus agenda-and-filing checkpoint recovery at
   the first failed reporter without replaying accepted production. Strategic recomposition v3 binds the
   copy report and press witness by digest while v1/v2 remain historical
   validation inputs. Independent blind editorial and grounding reviews evaluate the
@@ -1609,6 +1621,12 @@ focused harness regression now proves one combined charter-plus-step-one user
 message, exact later prefix preservation, a replaced dynamic workbench message,
 no replayed assistant chatter, and an unchanged output schema. It proves request
 shape only; a nonzero provider cache hit remains runtime verification.
+
+Run 62 is preserved as an immutable failed v12 witness: the selector reported a
+cache hit, reporter calls reported zero cached tokens, and a reporter supplied
+an invalid dateline that deterministic admission rejected. It is not evidence
+for the v13 reporter prefix. The next proof is one fresh newsroom-only run from
+Run 61's immutable state and artifacts, without replaying its world or waves.
 
 The bounded selector snapshot retains a pending agenda's exact token while its
 front-page proof is the latest observation. Any later query or exact-ID fetch

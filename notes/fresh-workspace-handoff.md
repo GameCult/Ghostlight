@@ -1456,11 +1456,17 @@ diversity, recognizing Ossan, Mera, Corin, and Lysa's biases and modest
 cross-issue evolution. Preserve those Run 61 issue artifacts as immutable
 evidence; remaining copy defects are later deadline-correction work.
 
-Reporter calls still record zero cache hits because the dynamic per-article
-dateline enums change the provider output schema. The current local v12 cut uses
-one stable journalist dateline string schema while retaining the same
-deterministic cited-place validation. It passes 480 tests and the all-target
-check.
+Run 62 exercised v12 without world or wave model replay. It failed only when two
+lead articles proposed invalid datelines, and recurring reporter calls still
+recorded zero cache hits. Stable schema alone was insufficient because recurring
+identity and dynamic assignment still preceded the reusable reporter doctrine.
+Preserve Run 62 alongside Run 61 as immutable provider evidence.
+
+The current local v13 cut keeps the reporter action schema stable, puts one
+common stable house charter before recurring identity and dynamic assignment,
+and projects deterministic `allowed_datelines` from the cited records while
+retaining the same deterministic cited-place validation and copy-desk factual
+authority. It passes 480 library tests and the all-target check.
 
 Run 60 used 96,902 prompt tokens and reported zero cache hits. The bounded
 snapshot initialization had split the stable charter from the first-step
@@ -1489,11 +1495,11 @@ materializing a `NewsIssue`.
 1. Preserve immutable accepted Run 60 and Run 59; do not rewrite, recompose, or
    resimulate either edition.
 2. Preserve the delivered typeset PDF and its frozen-copy verification above.
-3. Commit and push the locally verified v12 stable reporter-schema cut, then
-   run the smallest frozen-fact provider proof that recurring reporter calls
-   receive cache hits. Preserve bounded context, exact cache prefixes, copy-desk
-   factual authority, one Night Editor close, and immutable Runs 60 and 61; do
-   not replay world or wave models.
+3. Commit and push the locally verified v13 newsroom cache cut, then run the
+   smallest fresh newsroom-only provider proof from immutable Run 61 that
+   recurring reporter calls receive cache hits. Preserve bounded context, exact
+   cache prefixes, copy-desk factual authority, one Night Editor close, and
+   immutable Runs 60 through 62; do not replay world or wave models.
 4. After that provider proof, advance the Delvehold-owned adapter against
    Ghostlight's admitted generic consumer contract. Defer multiple publications
    until separately authorized.
