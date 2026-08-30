@@ -27,7 +27,7 @@ use std::{
 const MAX_FRONT_PAGE_ARTICLES: usize = 6;
 const MAX_PUBLIC_RECORD_QUERY_RESULTS: usize = 24;
 const MAX_NARRATIVE_SELECTION_STEPS: usize = 12;
-const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v11";
+const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v12";
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
@@ -1548,18 +1548,6 @@ impl ModelAgentTool for JournalistWorkbench<'_> {
     type Finding = JournalistFinding;
 
     fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
-        let mut datelines = self
-            .records
-            .iter()
-            .filter(|record| self.pitch.citations.contains(&record.record_id))
-            .flat_map(|record| record.facts.iter())
-            .flat_map(|fact| fact.places.iter().cloned())
-            .collect::<BTreeSet<_>>()
-            .into_iter()
-            .collect::<Vec<_>>();
-        if self.article_index > 0 || datelines.is_empty() {
-            datelines.insert(0, String::new());
-        }
         let mut schema = serde_json::json!({
             "type":"object",
             "additionalProperties":false,
@@ -1568,7 +1556,7 @@ impl ModelAgentTool for JournalistWorkbench<'_> {
                 "tool":{"const":"file_story"},
                 "headline":{"type":"string","minLength":1,"maxLength":100},
                 "deck":{"type":"string","minLength":1,"maxLength":220},
-                "dateline":{"type":"string","enum":datelines},
+                "dateline":{"type":"string","maxLength":100},
                 "paragraphs":{
                     "type":"array",
                     "minItems":2,
@@ -4870,7 +4858,7 @@ mod tests {
     }
 
     #[test]
-    fn journalist_action_schema_compiles_exact_cited_datelines() {
+    fn journalist_action_schema_is_stable_while_validation_owns_exact_datelines() {
         let records = public_news_records(&campaign_with_two_news()).unwrap();
         let lead_pitch = WorldNewspaperStoryPitch {
             lead: true,
@@ -4895,10 +4883,9 @@ mod tests {
             reader_stake: "Readers depend on the seal.",
             pitch: &lead_pitch,
         };
-        assert_eq!(
-            lead.action_schema().unwrap()["properties"]["dateline"]["enum"],
-            serde_json::json!(["Room"])
-        );
+        let lead_schema = lead.action_schema().unwrap();
+        assert_eq!(lead_schema["properties"]["dateline"]["maxLength"], 100);
+        assert!(lead_schema["properties"]["dateline"].get("enum").is_none());
 
         let dispatch_pitch = WorldNewspaperStoryPitch {
             lead: false,
@@ -4923,10 +4910,7 @@ mod tests {
             reader_stake: "Readers depend on access.",
             pitch: &dispatch_pitch,
         };
-        assert_eq!(
-            dispatch.action_schema().unwrap()["properties"]["dateline"]["enum"],
-            serde_json::json!(["", "Yard"])
-        );
+        assert_eq!(dispatch.action_schema().unwrap(), lead_schema);
     }
 
     #[test]

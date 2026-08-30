@@ -1318,7 +1318,7 @@ The deliberative newsroom boundary is live under this authority map:
   writers. `WorldKernel` remains the only world-event writer.
 - **Inputs:** one exact campaign revision, publication title and voice, article
   budget, a validated embodied newsroom roster, source-receipt ancestry, and
-  `character-newsroom.v11` contract. The assignment editor receives its own
+  `character-newsroom.v12` contract. The assignment editor receives its own
   staff profile plus the complete journalist roster; it does not receive the
   copy editor or Night Editor profiles. Through the
   existing generic agent harness, the selector issues deterministic bounded
@@ -1352,8 +1352,8 @@ The deliberative newsroom boundary is live under this authority map:
   page is assembled deterministically from assignment-owned section, byline,
   and citations plus journalist-owned prose. Every accepted filing is stored as
   its own immutable production checkpoint before the next reporter runs. Its
-  dateline comes from a deterministic action-schema enum compiled from places
-  asserted by that filing's cited records: the lead must choose a cited place
+  dateline is admitted by deterministic validation against places asserted by
+  that filing's cited records: the lead must choose a cited place
   when one exists, while a later article may choose a cited place or remain
   blank. The copy desk emits one
   assessment plus the complete bounded set of exact factual query passages;
@@ -1375,8 +1375,9 @@ The deliberative newsroom boundary is live under this authority map:
   time, channel, headline, and asserted named entities, plus query/record counts
   and the pending candidate token; full fact bodies return only through the
   bounded query or exact-ID fetch. Production checkpoint IDs, reporter-assignment
-  digests, receipt-chain and complete checkpoint-content digests, and cited-place
-  dateline enums are also derived.
+  digests, receipt-chain and complete checkpoint-content digests are also
+  derived. Allowed datelines remain workbench-owned validation state rather
+  than changing the reporter's provider schema and cache identity.
   The cacheable prefix is the byte-stable first request plus its unchanged output
   schema; the dynamic suffix is the second workbench message. Provider-reported
   cached-token counts are observations of that external cache, not newsroom
@@ -1521,7 +1522,7 @@ The deliberative newsroom boundary is live under this authority map:
   continue through the append-only observation path. No newsroom-specific cache
   branch owns either route.
 - **Persistence and compatibility:** the live internal contract is
-  `character-newsroom.v10`. Public request schema v3 carries the publication
+  `character-newsroom.v12`. Public request schema v3 carries the publication
   roster and binds it into the task and editorial identities. Private production
   checkpoint v1 stores either the admitted agenda or one accepted reporter
   filing. Agenda identity binds the exact task and editorial identities; filing
@@ -1587,8 +1588,8 @@ The deliberative newsroom boundary is live under this authority map:
   rejected close, a fresh v10 close in a store containing a matching inert
   v7 tombstone. The close validator admits only `InitialCopyDesk` checkpoints
   with no source ancestry, while exact-current resume and idempotence regressions
-  exercise the close resume path. Dedicated regressions prove cited-place
-  dateline enums and validation, plus agenda-and-filing checkpoint recovery at
+  exercise the close resume path. Dedicated regressions prove stable reporter
+  schemas with cited-place validation, plus agenda-and-filing checkpoint recovery at
   the first failed reporter without replaying accepted production. Strategic recomposition v3 binds the
   copy report and press witness by digest while v1/v2 remain historical
   validation inputs. Independent blind editorial and grounding reviews evaluate the
