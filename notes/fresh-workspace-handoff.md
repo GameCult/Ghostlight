@@ -1462,11 +1462,19 @@ recorded zero cache hits. Stable schema alone was insufficient because recurring
 identity and dynamic assignment still preceded the reusable reporter doctrine.
 Preserve Run 62 alongside Run 61 as immutable provider evidence.
 
-The current local v13 cut keeps the reporter action schema stable, puts one
+Exact pushed v13 `a52d57b` keeps the reporter action schema stable, puts one
 common stable house charter before recurring identity and dynamic assignment,
 and projects deterministic `allowed_datelines` from the cited records while
 retaining the same deterministic cited-place validation and copy-desk factual
 authority. It passes 480 library tests and the all-target check.
+
+Run 63 completed Issues 17 and 18 before root stopped the final weekly
+recomposition. Both repeated bylines again reported zero cache hits, and live
+services remained unchanged. Sporadic independent filings may cool between
+issues, so reporter cache hits are not an acceptance target. The proposed v14
+cache-floor prompt growth was removed. Append-only agent contexts remain the
+natural place to benefit from stable prefixes. Preserve Run 63 as stopped
+provider evidence; do not resume or replay it for cache telemetry.
 
 Run 60 used 96,902 prompt tokens and reported zero cache hits. The bounded
 snapshot initialization had split the stable charter from the first-step
@@ -1495,15 +1503,12 @@ materializing a `NewsIssue`.
 1. Preserve immutable accepted Run 60 and Run 59; do not rewrite, recompose, or
    resimulate either edition.
 2. Preserve the delivered typeset PDF and its frozen-copy verification above.
-3. Commit and push the locally verified v13 newsroom cache cut, then run the
-   smallest fresh newsroom-only provider proof from immutable Run 61 that
-   recurring reporter calls receive cache hits. Preserve bounded context, exact
-   cache prefixes, copy-desk factual authority, one Night Editor close, and
-   immutable Runs 60 through 62; do not replay world or wave models.
-4. After that provider proof, advance the Delvehold-owned adapter against
+3. Advance the Delvehold-owned adapter against
    Ghostlight's admitted generic consumer contract. Defer multiple publications
-   until separately authorized.
-5. Per-wave issues may use daily-like reporting windows, while a final
+   until separately authorized, or follow the operator's next directed work.
+   Preserve immutable Runs 60 through 63 and do not replay newspaper work for
+   cache telemetry.
+4. Per-wave issues may use daily-like reporting windows, while a final
    composition may be an equally current weekly-style issue with a broader
    window. Both are selective journalism; broad fact availability increases
    editorial freedom and does not license recap voice.

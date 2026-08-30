@@ -132,6 +132,8 @@ capacity, inventories, orders, contracts, or conservation. Those remain
 consumer-owned unless Ghostlight later admits a deliberate economic component
 and mutation algebra. The complete contract is
 `docs/architecture/delvehold-forced-ontology-integration.md`.
+The active next implementation organ is the Delvehold-owned adapter at this
+boundary; newsroom cache probing is not on the critical path.
 
 The current checkout admits one to eight campaign members into one shared
 scene. `campaign_membership.v1` maps each authenticated account to one exact
@@ -1299,7 +1301,8 @@ The deliberative newsroom boundary is live under this authority map:
   the complete first request as one user message and replaces only the later
   workbench message. The tool owns the snapshot content. The provider owns
   automatic prefix-cache admission, retention, and hit accounting; neither the
-  harness nor the newsroom may declare a hit.
+  harness nor the newsroom may declare a hit, and newsroom correctness or
+  acceptance cannot require one.
   The production-checkpoint validator owns whether an admitted agenda or
   accepted reporter filing is exact enough to resume; `CampaignStore` owns its
   immutable storage, not its editorial judgment. Each assigned in-world
@@ -1383,12 +1386,13 @@ The deliberative newsroom boundary is live under this authority map:
   derived. `allowed_datelines` is deterministic prompt guidance derived from
   the cited facts, not factual admission authority; it remains in the dynamic
   workbench rather than changing the reporter's generic provider schema and
-  cache identity. `validate_editorial_article` owns factual admission after the
-  model returns.
+  provider request identity. `validate_editorial_article` owns factual admission
+  after the model returns.
   The cacheable prefix is the byte-stable first request plus its unchanged output
   schema; the dynamic suffix is the second workbench message. Provider-reported
-  cached-token counts are observations of that external cache, not newsroom
-  state or proof that a particular request will hit.
+  cached-token counts are optional observations of that external cache, not a
+  newsroom invariant, acceptance gate, or proof that a particular request will
+  hit.
   The query-index set, query-bearing article
   set, changed-article set, source-page digest, printed-page digest, and
   receipt-chain digest are also derived. None is a persisted world subject,
@@ -1436,7 +1440,7 @@ The deliberative newsroom boundary is live under this authority map:
   membership, not whether the final language is true or compelling. A structurally invalid
   close exhausts the one action and prints the checkpointed journalist page with an
   explicit non-applied close witness. There is no post-close model reread.
-- **Agent context and cache path:** every run begins with one user item combining
+- **Agent context path:** every run begins with one user item combining
   the stable charter and the step-one directive. For a tool that owns a bounded
   current context snapshot, that complete first request remains byte-identical;
   after each nonterminal action the harness discards old model chatter and
@@ -1457,7 +1461,11 @@ The deliberative newsroom boundary is live under this authority map:
   than being duplicated in prompt text.
   Prompt-cache routing binds stage, model class, and exact output schema;
   changing world context does not mint another routing key, while changing the
-  contract does. Each journalist receives only its own embodied profile, one
+  contract does. Cache reuse is meaningful inside repeated calls of one live
+  agent conversation, including the append-only path. Independent reporter
+  filings are sporadic one-call agents and may outlive provider retention, so
+  their cache eligibility is telemetry rather than a design requirement. Each
+  journalist receives only its own embodied profile, one
   pitch, and that pitch's records; it does not receive other reporters or desk
   staff. Copy receives its own embodied profile plus the complete selected fact
   desk and assembled page because it alone checks the page. Night receives its
@@ -1576,6 +1584,8 @@ The deliberative newsroom boundary is live under this authority map:
   step-one directive no longer sits in a prefix position that disappears when
   the first workbench snapshot replaces history. The cut adds no cache store,
   cache key registry, manual retention control, or retry compensator.
+  The live pushed reporter contract remains v13; no v14 prefix expansion is part
+  of the current architecture.
   The roster, query projection, front-page proof, and article assembly reuse the
   generic agent harness and existing public-record, agenda, accepted issue, and
   audit shapes. One private persistent production-checkpoint schema buys exact
@@ -1620,13 +1630,19 @@ so later requests did not preserve the complete first-request prefix. The
 focused harness regression now proves one combined charter-plus-step-one user
 message, exact later prefix preservation, a replaced dynamic workbench message,
 no replayed assistant chatter, and an unchanged output schema. It proves request
-shape only; a nonzero provider cache hit remains runtime verification.
+shape only; provider cache hits are non-required runtime telemetry.
 
 Run 62 is preserved as an immutable failed v12 witness: the selector reported a
 cache hit, reporter calls reported zero cached tokens, and a reporter supplied
 an invalid dateline that deterministic admission rejected. It is not evidence
-for the v13 reporter prefix. The next proof is one fresh newsroom-only run from
-Run 61's immutable state and artifacts, without replaying its world or waves.
+for the v13 reporter prefix. Run 63 is a stopped v13 observation, not an
+acceptance artifact: Issues 17 and 18 completed before the final edition, and
+repeated reporter calls still reported zero cached tokens. Its partial artifacts
+remain inert provenance; no fresh reporter-cache proof is required.
+
+Run 61 remains accepted evidence for the durable newsroom claims: recurring
+journalist voices and evidence-shaped special/general issue design. Those
+editorial boundaries do not depend on provider cache retention.
 
 The bounded selector snapshot retains a pending agenda's exact token while its
 front-page proof is the latest observation. Any later query or exact-ID fetch
