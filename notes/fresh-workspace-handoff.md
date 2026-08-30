@@ -1446,6 +1446,11 @@ immediately identify procedural generation, so the narrative reverse-Turing
 criterion passes. The review's criticism that all three stories feel like
 three rewrites of one briefing belongs to reporter-personality differentiation
 in the next newsroom run; it does not authorize rewriting accepted Run 60.
+The active cut is an ownership change, not a request for a stronger generic
+style prompt. The assignment editor owns whether an issue is special or general
+and which narrative function each assigned story serves. Recurring embodied
+journalists own recognizable, opinionated voices; their biases and preferences
+must remain visible to assignment and become trackable across issues.
 
 Run 60 used 96,902 prompt tokens and reported zero cache hits. The bounded
 snapshot initialization had split the stable charter from the first-step
@@ -1474,14 +1479,20 @@ materializing a `NewsIssue`.
 1. Preserve immutable accepted Run 60 and Run 59; do not rewrite, recompose, or
    resimulate either edition.
 2. Preserve the delivered typeset PDF and its frozen-copy verification above.
-3. On the next newsroom run, strengthen reporter-personality differentiation
-   so assigned journalists produce distinct framing, rhythm, and priorities;
-   also capture whether exact pushed `8f3c33b` produces nonzero cache hits. Do
-   not replay Run 60 to manufacture either improvement.
-4. After that newsroom run, advance the Delvehold-owned adapter against
+3. Map and implement the newsroom-first ownership cut over frozen simulation
+   facts. The current Body has static staff character/bias/preference profiles
+   and assignment pitches with a throughline, reader stake, narrative claim,
+   tension, and public question; it does not yet represent special-versus-general
+   issue shape, per-story narrative function, or durable cross-issue journalist
+   development. Preserve bounded context and exact cache prefixes, the copy
+   desk as factual authority, and one Night Editor close.
+4. Run the next newsroom provider acceptance without replaying Run 60; judge
+   recognizable reporter voices across the issue and capture whether exact
+   pushed `8f3c33b` produces nonzero cache hits.
+5. After that newsroom run, advance the Delvehold-owned adapter against
    Ghostlight's admitted generic consumer contract. Defer multiple publications
    until separately authorized.
-5. Per-wave issues may use daily-like reporting windows, while a final
+6. Per-wave issues may use daily-like reporting windows, while a final
    composition may be an equally current weekly-style issue with a broader
    window. Both are selective journalism; broad fact availability increases
    editorial freedom and does not license recap voice.

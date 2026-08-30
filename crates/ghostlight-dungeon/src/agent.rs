@@ -125,6 +125,15 @@ pub trait ModelAgentTool: Send {
         None
     }
 
+    /// Projects the dynamic private workbench before the first semantic step.
+    /// This is deliberately separate from the stable agent instructions so a
+    /// recurring agent can keep one cacheable identity prefix while each task
+    /// supplies only its bounded current assignment. Tools opt in explicitly;
+    /// existing agents keep their original one-message first request.
+    fn initial_context_snapshot(&self) -> Option<serde_json::Value> {
+        None
+    }
+
     async fn invoke(
         &mut self,
         action: Self::Action,
@@ -160,6 +169,12 @@ pub async fn run_model_agent_progress<Tool: ModelAgentTool>(
         "{}\n\nAGENT STEP: 1 of {}. Choose one typed tool action admitted by the current output schema. The harness will execute it against the frozen state and return the real tool observation. Do not claim success yourself; only an accepted tool result can end the task.",
         spec.instructions, spec.max_steps
     ))];
+    if let Some(snapshot) = tool.initial_context_snapshot() {
+        input.push(ModelInputItem::user(format!(
+            "CURRENT WORKBENCH STATE:\n{}",
+            serde_json::to_string(&snapshot).unwrap_or_else(|_| "null".into()),
+        )));
+    }
     let mut last_observation = None;
     for step in 0..spec.max_steps {
         let action_schema = match tool.action_schema() {
@@ -500,6 +515,50 @@ mod tests {
         draft_stored: bool,
     }
 
+    struct SnapshotTool {
+        step: usize,
+    }
+
+    #[async_trait]
+    impl ModelAgentTool for SnapshotTool {
+        type Action = CandidateAction;
+        type Output = String;
+        type Finding = ExactFinding;
+
+        fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
+            serde_json::to_value(schema_for!(CandidateAction)).map_err(|error| error.to_string())
+        }
+
+        fn initial_context_snapshot(&self) -> Option<serde_json::Value> {
+            Some(serde_json::json!({"assignment":"immutable facts", "step":self.step}))
+        }
+
+        fn context_snapshot(&self) -> Option<serde_json::Value> {
+            Some(serde_json::json!({"assignment":"immutable facts", "step":self.step}))
+        }
+
+        async fn invoke(
+            &mut self,
+            action: Self::Action,
+            _context: &ModelAgentToolContext,
+        ) -> ModelAgentToolOutcome<Self::Output, Self::Finding> {
+            self.step += 1;
+            if action.value == "accepted" {
+                ModelAgentToolOutcome::Accepted {
+                    output: action.value,
+                    receipts: Vec::new(),
+                }
+            } else {
+                ModelAgentToolOutcome::Continue {
+                    observation: ExactFinding::DraftStored {
+                        value: action.value,
+                    },
+                    receipts: Vec::new(),
+                }
+            }
+        }
+    }
+
     #[async_trait]
     impl ModelAgentTool for NarrowingTool {
         type Action = CandidateAction;
@@ -650,6 +709,44 @@ mod tests {
                 .source_receipt_ids
                 .contains(&run.receipts[0].storage_key().to_owned())
         );
+    }
+
+    #[tokio::test]
+    async fn dynamic_workbench_state_does_not_pollute_the_stable_agent_prefix() {
+        let model = ScriptedModel {
+            outputs: Mutex::new(vec![
+                r#"{"value":"drafted"}"#.into(),
+                r#"{"value":"accepted"}"#.into(),
+            ]),
+            requests: Mutex::new(Vec::new()),
+        };
+        let spec = ModelAgentSpec {
+            stage: "fixture_agent".into(),
+            model: MODEL_BALANCED.into(),
+            snapshot_binding: "snapshot:1".into(),
+            instructions: "A stable recurring identity.".into(),
+            source_receipt_ids: Vec::new(),
+            temperature: Some(0.0),
+            max_output_tokens: Some(128),
+            max_steps: 2,
+        };
+
+        let run = run_model_agent(&model, &spec, &mut SnapshotTool { step: 0 })
+            .await
+            .unwrap();
+
+        assert_eq!(run.output, "accepted");
+        let requests = model.requests.lock().unwrap();
+        let stable_prefix = requests[0]
+            .lived_stream
+            .split("\n\nUSER:\nCURRENT WORKBENCH STATE")
+            .next()
+            .unwrap();
+        assert!(stable_prefix.contains("A stable recurring identity."));
+        assert!(!stable_prefix.contains("immutable facts"));
+        assert!(requests[0].lived_stream.contains(r#""step":0"#));
+        assert!(requests[1].lived_stream.starts_with(stable_prefix));
+        assert!(requests[1].lived_stream.contains(r#""step":1"#));
     }
 
     #[tokio::test]

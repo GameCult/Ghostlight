@@ -1289,8 +1289,9 @@ The deliberative newsroom boundary is live under this authority map:
   facts. `Event::public_assertion_status` owns attempt, declaration,
   committed-course, material-outcome, and unspecified-account semantics. The
   in-world assignment editor owns assignment: story choice, order, section,
-  journalist, focal record, exact citation grouping, throughline, tension, and
-  reader question. Its
+  journalist, issue shape, per-story narrative function, context role, focal
+  record, exact citation grouping, throughline, tension, assignment rationale,
+  and reader question. Its
   deterministic workbench owns query admission, inspected-record membership,
   the bounded working-context projection, exact-ID fetch, agenda validation,
   focus-record dereferencing, candidate identity, and exact commit admission.
@@ -1304,7 +1305,8 @@ The deliberative newsroom boundary is live under this authority map:
   immutable storage, not its editorial judgment. Each assigned in-world
   journalist owns one reader-facing
   story and receives only that pitch, its exact records, and that journalist's
-  character, biases, and preferences. The copy editor owns one complete factual
+  stable recurring character: beat, voice, biases, preferences, source
+  instincts, and blind spots. The copy editor owns one complete factual
   query report over the assembled page; it neither rewrites nor accepts
   publication. The Night
   Editor owns one deadline close over that page and report. The deterministic
@@ -1316,7 +1318,7 @@ The deliberative newsroom boundary is live under this authority map:
   writers. `WorldKernel` remains the only world-event writer.
 - **Inputs:** one exact campaign revision, publication title and voice, article
   budget, a validated embodied newsroom roster, source-receipt ancestry, and
-  `character-newsroom.v10` contract. The assignment editor receives its own
+  `character-newsroom.v11` contract. The assignment editor receives its own
   staff profile plus the complete journalist roster; it does not receive the
   copy editor or Night Editor profiles. Through the
   existing generic agent harness, the selector issues deterministic bounded
@@ -1339,8 +1341,10 @@ The deliberative newsroom boundary is live under this authority map:
   submits `commit_agenda` with the exact digest of the current reviewed
   candidate. The committed agenda is immediately stored as one immutable
   production checkpoint before any reporter runs. It carries one dominant throughline, reader
-  stake, and ordered story pitches. Every pitch names stable public-record IDs,
-  chooses one focus record, section, and journalist, and supplies bounded
+  stake, evidence-based special-or-general issue shape, and ordered story
+  pitches. Every pitch names stable public-record IDs, chooses one focus record,
+  section, journalist, narrative function, and context role, and supplies bounded
+  assignment rationale,
   narrative claim, tension, and public question. Article count plus bounded paragraphs and output tokens
   define page space. There is no citation-count page budget. A foundational
   record may support several continuing stories when each pitch uses it for a
@@ -1391,9 +1395,12 @@ The deliberative newsroom boundary is live under this authority map:
   proof and explicitly commit the current digest; a replacement proposal
   retires the prior candidate as commit authority. Once committed, the exact
   task/editorial-bound agenda checkpoint is the sole reporter-assignment source
-  on retry. Each assigned journalist
-  sees only the publication voice, shared reporting contract, their own
-  character, the page throughline, one pitch, and that pitch's exact records.
+  on retry. In a special issue, only the lead may own shared chronology; later
+  stories assume it and perform distinct narrative functions. In a general
+  issue, every story owns independent context. Each assigned journalist sees
+  only the publication voice, shared reporting contract, and their own recurring
+  character in the stable prefix. Issue shape, page throughline, one pitch, and
+  that pitch's exact records arrive in the replaceable workbench message.
   They center their story on its focus record and may not widen or regroup the
   selection. Each accepted filing is bound to that agenda checkpoint, article
   index, exact pitch, journalist identity and profile, and local reporter
@@ -1430,7 +1437,9 @@ The deliberative newsroom boundary is live under this authority map:
   explicit breakpoint API. Tools that publish no snapshot retain the ordinary
   append-only conversation path after the same single-message initial request.
   The assignment workbench uses this seam for its compact
-  inspected-record index and pending candidate token, while exact-ID fetch
+  inspected-record index and pending candidate token. Reporter workbenches use
+  the same seam so recurring identity stays cacheable while issue facts do not
+  contaminate it. Exact-ID fetch
   restores only the requested full records. Selector query, fetch, proposal, and
   commit share one stable structured action schema. The Night close schema is
   likewise stable across checklist contents; its private workbench enforces the

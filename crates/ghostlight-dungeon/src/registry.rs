@@ -723,12 +723,17 @@ mod tests {
         Ok(serde_json::json!({
             "command":{
                 "tool":"propose_agenda",
+                "issue_shape":"special_issue",
+                "issue_shape_rationale":"The court accusation is the single public rupture in this edition.",
                 "dominant_throughline":"The inner court has converted an audit dispute into a public crisis of accusation and arithmetic.",
                 "reader_stake":"Readers depend on whether the court can distinguish an allegation from a judgment.",
                 "story_pitches":[{
                     "lead":true,
                     "section":"Front Page",
                     "journalist_id":"aven-tarl",
+                    "narrative_function":"lead_chronology",
+                    "context_role":"owns_issue_chronology",
+                    "assignment_reason":"Aven's court beat and taste for status absurdity fit the accusation.",
                     "citations":[citation],
                     "focus_citation":citation,
                     "narrative_claim":"The singular accusation against three auditors is itself the scandal.",

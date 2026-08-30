@@ -27,7 +27,7 @@ use std::{
 const MAX_FRONT_PAGE_ARTICLES: usize = 6;
 const MAX_PUBLIC_RECORD_QUERY_RESULTS: usize = 24;
 const MAX_NARRATIVE_SELECTION_STEPS: usize = 12;
-const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v10";
+const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v11";
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
@@ -57,6 +57,14 @@ pub struct WorldNewspaperJournalist {
     pub staff: WorldNewspaperStaffMember,
     #[schemars(length(min = 1, max = 60))]
     pub byline: String,
+    #[schemars(length(min = 1, max = 160))]
+    pub beat: String,
+    #[schemars(length(min = 1, max = 500))]
+    pub voice: String,
+    #[schemars(length(min = 1, max = 4))]
+    pub source_instincts: Vec<String>,
+    #[schemars(length(min = 1, max = 3))]
+    pub blind_spots: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -94,6 +102,15 @@ pub fn canopy_ledger_newsroom() -> WorldNewspaperNewsroom {
                     preferences: vec!["Court scandal, succession, hypocrisy, and status reversals.".into()],
                 },
                 byline: "Aven Tarl".into(),
+                beat: "Courts, councils, succession, and the social machinery of rank.".into(),
+                voice: "Dry, exact, and delighted by status reversal. Aven quotes ceremonial language just long enough for the facts to make it ridiculous, then ends on the person whose dignity paid for the spectacle.".into(),
+                source_instincts: vec![
+                    "Clerks, chamber servants, discarded advisers, and rivals who know which title was omitted.".into(),
+                    "Orders, seating plans, sealed filings, and tiny breaches of protocol that expose a larger panic.".into(),
+                ],
+                blind_spots: vec![
+                    "May treat sincere grief as theatre when it occurs inside a powerful household.".into(),
+                ],
             },
             WorldNewspaperJournalist {
                 staff: WorldNewspaperStaffMember {
@@ -104,6 +121,15 @@ pub fn canopy_ledger_newsroom() -> WorldNewspaperNewsroom {
                     preferences: vec!["Bodies, witnesses, private cost, public anger, and grotesque physical evidence.".into()],
                 },
                 byline: "Mera Quill".into(),
+                beat: "Streets, households, witnesses, mourning, and the bodily residue of public decisions.".into(),
+                voice: "Intimate, sensory, and morally impatient. Mera stays near the witness, names who cleans the blood or carries the water, and lets one concrete indignity indict an institution without asking permission.".into(),
+                source_instincts: vec![
+                    "Witnesses, children, mourners, cleaners, displaced households, and people officials call incidental.".into(),
+                    "Objects left at a scene, rituals interrupted, injuries, smells, queues, and public anger.".into(),
+                ],
+                blind_spots: vec![
+                    "Distrusts abstraction so deeply that necessary coordination can look like evasion before it has failed.".into(),
+                ],
             },
             WorldNewspaperJournalist {
                 staff: WorldNewspaperStaffMember {
@@ -114,6 +140,15 @@ pub fn canopy_ledger_newsroom() -> WorldNewspaperNewsroom {
                     preferences: vec!["Labor, shortages, hazardous works, guild conflict, and material consequences.".into()],
                 },
                 byline: "Ossan Reed".into(),
+                beat: "Works, labor, maintenance, shortages, guild practice, and infrastructure failure.".into(),
+                voice: "Mechanically specific, causal, and salted with shift-floor gallows humor. Ossan follows pressure, tools, schedules, and chains of command until somebody's supposedly technical decision acquires a name.".into(),
+                source_instincts: vec![
+                    "Shift workers, repair crews, stores clerks, safety stewards, and the logbook management forgot was public.".into(),
+                    "Failure sequences, material inventories, bypasses, shutdown orders, and who was placed nearest the hazard.".into(),
+                ],
+                blind_spots: vec![
+                    "Often assumes a management incentive explains a failure before allowing enough room for ordinary incompetence.".into(),
+                ],
             },
             WorldNewspaperJournalist {
                 staff: WorldNewspaperStaffMember {
@@ -124,6 +159,15 @@ pub fn canopy_ledger_newsroom() -> WorldNewspaperNewsroom {
                     preferences: vec!["Borders, armed orders, treaties, migrations, and rival countermoves.".into()],
                 },
                 byline: "Lysa Fen".into(),
+                beat: "Borders, armed orders, treaties, crossings, migration, and contested jurisdiction.".into(),
+                voice: "Clipped, tactical, and suspicious of the passive voice. Lysa reconstructs who moved, who waited, and who had the cleaner escape route, then tells readers which reassuring phrase is likely to become a casualty list.".into(),
+                source_instincts: vec![
+                    "Couriers, deserters, checkpoint families, quartermasters, scouts, and treaty interpreters.".into(),
+                    "Route changes, refused orders, missing watches, supply movement, and rival countermoves.".into(),
+                ],
+                blind_spots: vec![
+                    "Finds maneuvers so readily that she can underweight panic, accident, and institutional confusion.".into(),
+                ],
             },
             WorldNewspaperJournalist {
                 staff: WorldNewspaperStaffMember {
@@ -134,6 +178,15 @@ pub fn canopy_ledger_newsroom() -> WorldNewspaperNewsroom {
                     preferences: vec!["Trade, tolls, communes, debt, patronage, and who profits from disorder.".into()],
                 },
                 byline: "Corin Vey".into(),
+                beat: "Trade, tolls, debt, patronage, provisioning, and the household price of policy.".into(),
+                voice: "Wry, ledger-minded, and relentlessly distributive. Corin follows a noble abstraction until it becomes a fee, an empty stall, a privileged queue, or a favor somebody will collect later.".into(),
+                source_instincts: vec![
+                    "Toll clerks, traders, household cooperatives, carriers, lenders, and market gossips who remember yesterday's price.".into(),
+                    "Ledgers, petitions, route costs, shortages, exemptions, and suspiciously well-provisioned allies.".into(),
+                ],
+                blind_spots: vec![
+                    "Can force experiences that are not transactions into a market frame because the ledger usually rewards the habit.".into(),
+                ],
             },
         ],
         copy_editor: WorldNewspaperStaffMember {
@@ -365,12 +418,46 @@ struct PublicRecordProjection {
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct WorldNewspaperEditorialAgenda {
+    #[serde(default)]
+    pub issue_shape: WorldNewspaperIssueShape,
+    #[serde(default)]
+    #[schemars(length(max = 500))]
+    pub issue_shape_rationale: String,
     #[schemars(length(min = 1, max = 500))]
     pub dominant_throughline: String,
     #[schemars(length(min = 1, max = 500))]
     pub reader_stake: String,
     #[schemars(length(min = 1, max = 6))]
     pub story_pitches: Vec<WorldNewspaperStoryPitch>,
+}
+
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum WorldNewspaperIssueShape {
+    SpecialIssue,
+    #[default]
+    GeneralIssue,
+}
+
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum WorldNewspaperNarrativeFunction {
+    LeadChronology,
+    Consequence,
+    Accountability,
+    Opposition,
+    CounterNarrative,
+    #[default]
+    IndependentBeat,
+}
+
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum WorldNewspaperContextRole {
+    OwnsIssueChronology,
+    AssumesIssueChronology,
+    #[default]
+    SelfContained,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -381,6 +468,13 @@ pub struct WorldNewspaperStoryPitch {
     pub section: String,
     #[serde(default)]
     pub journalist_id: String,
+    #[serde(default)]
+    pub narrative_function: WorldNewspaperNarrativeFunction,
+    #[serde(default)]
+    pub context_role: WorldNewspaperContextRole,
+    #[serde(default)]
+    #[schemars(length(max = 500))]
+    pub assignment_reason: String,
     #[schemars(length(min = 1))]
     pub citations: Vec<String>,
     #[serde(default)]
@@ -423,6 +517,9 @@ enum NarrativeSelectionCommand {
         record_ids: Vec<String>,
     },
     ProposeAgenda {
+        issue_shape: WorldNewspaperIssueShape,
+        #[schemars(length(min = 1, max = 500))]
+        issue_shape_rationale: String,
         #[schemars(length(min = 1, max = 500))]
         dominant_throughline: String,
         #[schemars(length(min = 1, max = 500))]
@@ -481,6 +578,8 @@ enum NarrativeSelectionFinding {
     },
     AgendaProposed {
         candidate_digest: String,
+        issue_shape: WorldNewspaperIssueShape,
+        issue_shape_rationale: String,
         front_page: EditorialPitchProof,
         below_fold: Vec<EditorialPitchProof>,
         review_questions: Vec<String>,
@@ -490,6 +589,10 @@ enum NarrativeSelectionFinding {
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 struct EditorialPitchProof {
     page_position: String,
+    journalist_id: String,
+    narrative_function: WorldNewspaperNarrativeFunction,
+    context_role: WorldNewspaperContextRole,
+    assignment_reason: String,
     narrative_claim: String,
     tension: String,
     public_question: String,
@@ -511,6 +614,35 @@ struct EditorialRecordIndexEntry {
     channel: String,
     headline: String,
     named_entities: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct AssignmentJournalistProfile<'a> {
+    id: &'a str,
+    name: &'a str,
+    byline: &'a str,
+    beat: &'a str,
+    biases: &'a [String],
+    preferences: &'a [String],
+    voice_signature: &'a str,
+    source_instincts: &'a [String],
+    blind_spots: &'a [String],
+}
+
+fn assignment_journalist_profile(
+    journalist: &WorldNewspaperJournalist,
+) -> AssignmentJournalistProfile<'_> {
+    AssignmentJournalistProfile {
+        id: &journalist.staff.id,
+        name: &journalist.staff.name,
+        byline: &journalist.byline,
+        beat: &journalist.beat,
+        biases: &journalist.staff.biases,
+        preferences: &journalist.staff.preferences,
+        voice_signature: &journalist.voice,
+        source_instincts: &journalist.source_instincts,
+        blind_spots: &journalist.blind_spots,
+    }
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
@@ -704,8 +836,15 @@ impl NarrativeSelectionWorkbench<'_> {
             .collect::<Result<Vec<_>>>()?;
         let front_page = pitches.remove(0);
         self.pending_agenda = Some((candidate_digest.clone(), agenda));
+        let pending = self
+            .pending_agenda
+            .as_ref()
+            .map(|(_, agenda)| agenda)
+            .ok_or_else(|| anyhow!("agenda proposal was not retained"))?;
         Ok(NarrativeSelectionFinding::AgendaProposed {
             candidate_digest,
+            issue_shape: pending.issue_shape,
+            issue_shape_rationale: pending.issue_shape_rationale.clone(),
             front_page,
             below_fold: pitches,
             review_questions: vec![
@@ -714,6 +853,10 @@ impl NarrativeSelectionWorkbench<'_> {
                 "Does each continuing story foreground the incident and then identify what changed, or has routine handling displaced the thing readers actually care about?"
                     .into(),
                 "Do the pitches expose people or institutions in conflict and make public or material stakes legible, or do they mainly explain what records do not prove? Query for missing opposition, countermoves, reaction, or lived cost when the ledger may contain them."
+                    .into(),
+                "If this is a special issue, does only the lead own the shared chronology while every other story performs a distinct consequence, accountability, opposition, or counter-narrative function? If this is a general issue, did an exciting record improperly swallow independent beats?"
+                    .into(),
+                "Would each reporter plausibly pursue this assignment because of the named beat, biases, source instincts, and blind spots, or are the bylines interchangeable?"
                     .into(),
             ],
         })
@@ -755,6 +898,10 @@ impl NarrativeSelectionWorkbench<'_> {
             } else {
                 format!("inside_article_{}", index + 1)
             },
+            journalist_id: pitch.journalist_id.clone(),
+            narrative_function: pitch.narrative_function,
+            context_role: pitch.context_role,
+            assignment_reason: pitch.assignment_reason.clone(),
             narrative_claim: pitch.narrative_claim.clone(),
             tension: pitch.tension.clone(),
             public_question: pitch.public_question.clone(),
@@ -858,12 +1005,16 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
             "additionalProperties":false,
             "required":[
                 "tool",
+                "issue_shape",
+                "issue_shape_rationale",
                 "dominant_throughline",
                 "reader_stake",
                 "story_pitches"
             ],
             "properties":{
                 "tool":{"const":"propose_agenda"},
+                "issue_shape":{"type":"string","enum":["special_issue","general_issue"]},
+                "issue_shape_rationale":{"type":"string","minLength":1,"maxLength":500},
                 "dominant_throughline":{"type":"string","minLength":1,"maxLength":500},
                 "reader_stake":{"type":"string","minLength":1,"maxLength":500},
                 "story_pitches":{
@@ -877,6 +1028,9 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                             "lead",
                             "section",
                             "journalist_id",
+                            "narrative_function",
+                            "context_role",
+                            "assignment_reason",
                             "citations",
                             "focus_citation",
                             "narrative_claim",
@@ -887,6 +1041,14 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                             "lead":{"type":"boolean"},
                             "section":{"type":"string","enum":ALLOWED_SECTIONS},
                             "journalist_id":{"type":"string","enum":journalist_ids},
+                            "narrative_function":{"type":"string","enum":[
+                                "lead_chronology","consequence","accountability",
+                                "opposition","counter_narrative","independent_beat"
+                            ]},
+                            "context_role":{"type":"string","enum":[
+                                "owns_issue_chronology","assumes_issue_chronology","self_contained"
+                            ]},
+                            "assignment_reason":{"type":"string","minLength":1,"maxLength":500},
                             "citations":{
                                 "type":"array",
                                 "minItems":1,
@@ -1031,11 +1193,15 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                 }
             }
             NarrativeSelectionCommand::ProposeAgenda {
+                issue_shape,
+                issue_shape_rationale,
                 dominant_throughline,
                 reader_stake,
                 story_pitches,
             } => {
                 let agenda = WorldNewspaperEditorialAgenda {
+                    issue_shape,
+                    issue_shape_rationale,
                     dominant_throughline,
                     reader_stake,
                     story_pitches,
@@ -1137,6 +1303,23 @@ fn validate_newsroom(newsroom: &WorldNewspaperNewsroom) -> Result<()> {
     for journalist in &newsroom.journalists {
         validate_staff_member(&journalist.staff, "journalist")?;
         validate_single_line(&journalist.byline, 60, "journalist byline")?;
+        validate_single_line(&journalist.beat, 160, "journalist beat")?;
+        validate_editorial_frame(&journalist.voice, "journalist voice")?;
+        if journalist.source_instincts.is_empty()
+            || journalist.source_instincts.len() > 4
+            || journalist.blind_spots.is_empty()
+            || journalist.blind_spots.len() > 3
+        {
+            return Err(anyhow!(
+                "journalist source instincts and blind spots must stay bounded"
+            ));
+        }
+        for instinct in &journalist.source_instincts {
+            validate_editorial_frame(instinct, "journalist source instinct")?;
+        }
+        for blind_spot in &journalist.blind_spots {
+            validate_editorial_frame(blind_spot, "journalist blind spot")?;
+        }
         if !staff_ids.insert(&journalist.staff.id)
             || !staff_names.insert(&journalist.staff.name)
             || !bylines.insert(journalist.byline.as_str())
@@ -1180,6 +1363,10 @@ fn validate_editorial_agenda(
     agenda: &WorldNewspaperEditorialAgenda,
     max_articles: usize,
 ) -> Result<()> {
+    let legacy_agenda = agenda.issue_shape_rationale.is_empty();
+    if !legacy_agenda {
+        validate_editorial_frame(&agenda.issue_shape_rationale, "issue-shape rationale")?;
+    }
     validate_editorial_frame(&agenda.dominant_throughline, "dominant throughline")?;
     validate_editorial_frame(&agenda.reader_stake, "reader stake")?;
     if agenda.story_pitches.is_empty()
@@ -1204,6 +1391,31 @@ fn validate_editorial_agenda(
             return Err(anyhow!("editorial pitch {index} chose an invalid section"));
         }
         journalist_by_id(newsroom, &pitch.journalist_id)?;
+        if !legacy_agenda {
+            validate_editorial_frame(&pitch.assignment_reason, "journalist assignment reason")?;
+            match agenda.issue_shape {
+                WorldNewspaperIssueShape::SpecialIssue => {
+                    if (index == 0
+                        && (pitch.context_role != WorldNewspaperContextRole::OwnsIssueChronology
+                            || pitch.narrative_function
+                                != WorldNewspaperNarrativeFunction::LeadChronology))
+                        || (index > 0
+                            && pitch.context_role == WorldNewspaperContextRole::OwnsIssueChronology)
+                    {
+                        return Err(anyhow!(
+                            "special issue must give only its lead ownership of the shared chronology"
+                        ));
+                    }
+                }
+                WorldNewspaperIssueShape::GeneralIssue => {
+                    if pitch.context_role != WorldNewspaperContextRole::SelfContained {
+                        return Err(anyhow!(
+                            "general-issue stories must own only their independent context"
+                        ));
+                    }
+                }
+            }
+        }
         let selected = selected_record_ids(&pitch.citations, &format!("editorial pitch {index}"))?;
         if !selected.contains(pitch.focus_citation.as_str()) {
             return Err(anyhow!(
@@ -1302,9 +1514,31 @@ enum JournalistFinding {
 struct JournalistWorkbench<'a> {
     records: &'a [PublicRecordProjection],
     article_index: usize,
-    section: &'a str,
     byline: &'a str,
-    citations: &'a [String],
+    issue_shape: WorldNewspaperIssueShape,
+    issue_shape_rationale: &'a str,
+    dominant_throughline: &'a str,
+    reader_stake: &'a str,
+    pitch: &'a WorldNewspaperStoryPitch,
+}
+
+impl JournalistWorkbench<'_> {
+    fn assignment_snapshot(&self) -> serde_json::Value {
+        let selected = self
+            .pitch
+            .citations
+            .iter()
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        serde_json::json!({
+            "issue_shape": self.issue_shape,
+            "issue_shape_rationale": self.issue_shape_rationale,
+            "dominant_throughline": self.dominant_throughline,
+            "reader_stake": self.reader_stake,
+            "pitch": self.pitch,
+            "records": public_records_for_ids(self.records, &selected),
+        })
+    }
 }
 
 #[async_trait]
@@ -1317,7 +1551,7 @@ impl ModelAgentTool for JournalistWorkbench<'_> {
         let mut datelines = self
             .records
             .iter()
-            .filter(|record| self.citations.contains(&record.record_id))
+            .filter(|record| self.pitch.citations.contains(&record.record_id))
             .flat_map(|record| record.facts.iter())
             .flat_map(|fact| fact.places.iter().cloned())
             .collect::<BTreeSet<_>>()
@@ -1348,6 +1582,14 @@ impl ModelAgentTool for JournalistWorkbench<'_> {
         Ok(schema)
     }
 
+    fn context_snapshot(&self) -> Option<serde_json::Value> {
+        Some(self.assignment_snapshot())
+    }
+
+    fn initial_context_snapshot(&self) -> Option<serde_json::Value> {
+        Some(self.assignment_snapshot())
+    }
+
     async fn invoke(
         &mut self,
         action: Self::Action,
@@ -1360,12 +1602,12 @@ impl ModelAgentTool for JournalistWorkbench<'_> {
             paragraphs,
         } = action;
         let article = EditorialArticleDraft {
-            section: self.section.into(),
+            section: self.pitch.section.clone(),
             headline,
             deck,
             byline: self.byline.into(),
             dateline,
-            citations: self.citations.to_vec(),
+            citations: self.pitch.citations.clone(),
             paragraphs,
         };
         match validate_editorial_article(self.records, &article, self.article_index) {
@@ -1511,10 +1753,15 @@ async fn select_editorial_agenda(
 > {
     let assignment_staff = serde_json::json!({
         "assignment_editor": &prepared.newsroom.assignment_editor,
-        "journalists": &prepared.newsroom.journalists,
+        "journalists": prepared
+            .newsroom
+            .journalists
+            .iter()
+            .map(assignment_journalist_profile)
+            .collect::<Vec<_>>(),
     });
     let instructions = format!(
-        "You are {editor}, assignment editor of `{title}`. Investigate its frozen public ledger with query_public_records, then assign a page. An empty query browses; terms, exact entity names, status, channel, and an inspected cursor narrow or page. The workbench keeps a compact index of inspected records instead of replaying old query pages; use fetch_public_records with exact IDs when you need their full facts again. Cite only returned record IDs. Search backward when procedure hides the rupture and sideways for opposition, countermoves, reaction, scandal, and lived cost.\n\nChoose one dominant throughline, then only stories that sharpen or complicate it. The first pitch is the Front Page lead; later pitches use another allowed section. For every pitch choose the staff journalist whose biases and preferences will produce the strongest treatment. Give that journalist the exact record grouping, one focus record that the lede cannot bury, a pointed narrative claim, the live tension, and the public question. A routine update to a vivid continuing incident should cite both and say what changed. Remembering, filing, warning, and planning are context unless they themselves produce a public consequence. Editorial frames may insinuate and judge but cannot invent concrete facts. The copy editor, not you or the reporters, owns fact checking.\n\nPropose before committing. The workbench returns the lead beside what it would bury; revise or query again if the proof exposes a stronger page.\n\nPUBLICATION VOICE:\n{voice}\n\nSTAFF BOOK:\n{staff}",
+        "You are {editor}, assignment editor of `{title}`. Investigate its frozen public ledger with query_public_records, then assign a page. An empty query browses; terms, exact entity names, status, channel, and an inspected cursor narrow or page. The workbench keeps a compact index of inspected records instead of replaying old query pages; use fetch_public_records with exact IDs when you need their full facts again. Cite only returned record IDs. Search backward when procedure hides the rupture and sideways for opposition, countermoves, reaction, scandal, lived cost, and independent beats.\n\nFirst decide the issue shape. A special issue is earned when one upheaval genuinely reorganizes several parts of public life; its lead alone owns the shared chronology and later stories assume that chronology while performing distinct narrative functions. A general issue carries independent beats whose stories are self-contained. Do not declare a special issue merely because one incident generated many records, and do not manufacture variety when the whole realm is plainly living through one rupture. State the evidence-based rationale.\n\nThe first pitch is the Front Page lead; later pitches use another allowed section. Give each pitch a narrative function and context role. Choose the staff journalist whose beat, biases, source instincts, voice, and blind spots make them the most revealingly partial observer, and state that assignment reason. Give them the exact record grouping, one focus record the lede cannot bury, a pointed narrative claim, the live tension, and the public question. A routine update to a vivid continuing incident should cite both and say what changed. Remembering, filing, warning, and planning are context unless they themselves produce a public consequence. Editorial frames may insinuate and judge but cannot invent concrete facts. The copy editor, not you or the reporters, owns fact checking.\n\nPropose before committing. The workbench returns issue shape, reporter fit, the lead, and what it would bury; revise or query again if the proof exposes a stronger or more honest page.\n\nPUBLICATION VOICE:\n{voice}\n\nCOMPACT STAFF BOOK:\n{staff}",
         editor = prepared.newsroom.assignment_editor.name,
         title = prepared.title,
         voice = prepared.editorial_voice,
@@ -1943,24 +2190,12 @@ async fn run_assigned_journalists(
                 });
             }
         }
-        let selected = pitch.citations.iter().cloned().collect::<BTreeSet<_>>();
-        let source_json =
-            serde_json::to_string(&public_records_for_ids(&prepared.records, &selected))
-                .unwrap_or_else(|_| "[]".into());
-        let assignment = serde_json::json!({
-            "dominant_throughline": agenda.dominant_throughline,
-            "reader_stake": agenda.reader_stake,
-            "pitch": pitch,
-            "journalist": journalist,
-            "records": serde_json::from_str::<serde_json::Value>(&source_json)
-                .unwrap_or_else(|_| serde_json::json!([])),
-        });
+        let reporter_identity = serde_json::to_string(journalist).unwrap_or_default();
         let instructions = format!(
-            "You are {name}, filing one assigned story for `{title}`. You are a partisan storyteller with a nose for the material your character and biases care about, not the newsroom's fact checker. Make the strongest memorable case this assignment supports: lead with the focus event, use selection and juxtaposition to imply meaning, expose hypocrisy or conflict, and make public or bodily cost vivid. A continuing story should say what changed without treating routine handling as the lede.\n\nUse only the supplied records for concrete events, people, institutions, places, identity attributes, chronology, quotations, motives, and outcomes. Preserve disputes through natural attribution. You may be cutting, emotional, insinuating, metaphorical, or politically judgmental without pretending the insinuation is a sourced causal fact. Do not discuss records, citations, verification, assertion statuses, or missing evidence in reader copy. The copy editor will fact-check the filed story later. File two to five substantial paragraphs. The lead needs a supplied place as dateline when one exists; otherwise leave dateline empty.\n\nPUBLICATION VOICE:\n{voice}\n\nASSIGNMENT PACKET:\n{assignment}",
+            "You are {name}, a recurring embodied journalist filing for `{title}`. Readers should learn what you notice, whom you distrust, which sources you seek, where your sympathies lie, and what you routinely get wrong. Treat the identity below as your stable point of view across issues, not a list of phrases to repeat. Let it govern selection, sourcing, rhythm, humor, indignation, and what you leave for another reporter. Do not flatten yourself into the publication's generic house voice.\n\nYou are a partisan storyteller, not the newsroom's fact checker. Make the strongest memorable case the current assignment supports: lead with its focus event, use selection and juxtaposition to imply meaning, expose hypocrisy or conflict your own instincts would recognize, and make the costs your beat understands vivid. If your context role assumes the issue chronology, do not reconstruct that chronology; connect to the lead with only the minimum clause needed to make your new fact intelligible. If you own the issue chronology, establish it once. If the story is self-contained, establish only its own facts. A continuing story should say what changed without treating routine handling as the lede.\n\nUse only the current workbench records for concrete events, people, institutions, places, identity attributes, chronology, quotations, motives, and outcomes. Preserve disputes through natural attribution. You may be cutting, emotional, insinuating, metaphorical, or politically judgmental without pretending the insinuation is a sourced causal fact. Do not discuss records, citations, verification, assertion statuses, or missing evidence in reader copy. The copy editor will fact-check the filed story later. File two to five substantial paragraphs. The lead needs a supplied place as dateline when one exists; otherwise leave dateline empty.\n\nPUBLICATION VOICE:\n{voice}\n\nYOUR RECURRING IDENTITY:\n{reporter_identity}",
             name = journalist.staff.name,
             title = prepared.title,
             voice = prepared.editorial_voice,
-            assignment = serde_json::to_string(&assignment).unwrap_or_default(),
         );
         let mut causal_sources = pitch
             .citations
@@ -1991,9 +2226,12 @@ async fn run_assigned_journalists(
         let mut workbench = JournalistWorkbench {
             records: &prepared.records,
             article_index: index,
-            section: &pitch.section,
             byline: &journalist.byline,
-            citations: &pitch.citations,
+            issue_shape: agenda.issue_shape,
+            issue_shape_rationale: &agenda.issue_shape_rationale,
+            dominant_throughline: &agenda.dominant_throughline,
+            reader_stake: &agenda.reader_stake,
+            pitch,
         };
         match crate::agent::run_model_agent(model, &spec, &mut workbench).await {
             Ok(run) => {
@@ -3165,15 +3403,21 @@ pub fn render_world_newspaper_audit_markdown(issue: &WorldNewspaperIssue) -> Str
     );
     if let Some(agenda) = &issue.editorial_agenda {
         rendered.push_str(&format!(
-            "\n## Editorial agenda\n\n- Dominant throughline: {}\n- Reader stake: {}\n",
+            "\n## Editorial agenda\n\n- Issue shape: {:?}\n- Issue-shape rationale: {}\n- Dominant throughline: {}\n- Reader stake: {}\n",
+            agenda.issue_shape,
+            escape_markdown_text(&agenda.issue_shape_rationale),
             escape_markdown_text(&agenda.dominant_throughline),
             escape_markdown_text(&agenda.reader_stake),
         ));
         for (index, pitch) in agenda.story_pitches.iter().enumerate() {
             rendered.push_str(&format!(
-                "\n### Pitch {}{}\n\n- Public records: {}\n- Focus record: {}\n- Narrative claim: {}\n- Tension: {}\n- Public question: {}\n",
+                "\n### Pitch {}{}\n\n- Journalist: {}\n- Narrative function: {:?}\n- Context role: {:?}\n- Assignment reason: {}\n- Public records: {}\n- Focus record: {}\n- Narrative claim: {}\n- Tension: {}\n- Public question: {}\n",
                 index + 1,
                 if pitch.lead { " (lead)" } else { "" },
+                escape_markdown_text(&pitch.journalist_id),
+                pitch.narrative_function,
+                pitch.context_role,
+                escape_markdown_text(&pitch.assignment_reason),
                 escaped_join(&pitch.citations),
                 escape_markdown_text(&pitch.focus_citation),
                 escape_markdown_text(&pitch.narrative_claim),
@@ -4033,8 +4277,8 @@ mod tests {
 
     const QUERY_ALL_RECORDS: &str = r#"{"command":{"tool":"query_public_records","terms":[],"match_terms":"all","entity_names":[],"assertion_statuses":[],"channels":[],"order":"newest","cursor":null,"limit":24}}"#;
     const QUERY_FOUNDING_CRISIS: &str = r#"{"command":{"tool":"query_public_records","terms":["speaking child","severed delegation hands","failed grain pumps"],"match_terms":"any","entity_names":[],"assertion_statuses":[],"channels":[],"order":"oldest","cursor":null,"limit":24}}"#;
-    const ONE_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"aven-tarl","citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned royal seal and the treasurer's dismissal are one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?"}]}}"#;
-    const TWO_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"aven-tarl","citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned seal and dismissal are the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?"},{"lead":false,"section":"Dispatches","journalist_id":"lysa-fen","citations":["news:west-gate"],"focus_citation":"news:west-gate","narrative_claim":"The gate closure is a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?"}]}}"#;
+    const ONE_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","issue_shape":"special_issue","issue_shape_rationale":"The missing royal seal reorganizes public trust in court custody.","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"aven-tarl","narrative_function":"lead_chronology","context_role":"owns_issue_chronology","assignment_reason":"Aven's court beat and appetite for status reversal fit the scandal's central chronology.","citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned royal seal and the treasurer's dismissal are one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?"}]}}"#;
+    const TWO_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","issue_shape":"special_issue","issue_shape_rationale":"Failures of custody at court and gate reorganize public access and confidence.","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"aven-tarl","narrative_function":"lead_chronology","context_role":"owns_issue_chronology","assignment_reason":"Aven owns the court chronology and its status reversal.","citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned seal and dismissal are the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?"},{"lead":false,"section":"Dispatches","journalist_id":"lysa-fen","narrative_function":"consequence","context_role":"assumes_issue_chronology","assignment_reason":"Lysa's border beat tests how the custody crisis changes movement at the gate.","citations":["news:west-gate"],"focus_citation":"news:west-gate","narrative_claim":"The gate closure is a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?"}]}}"#;
     const ACCEPTED_STORY_ACTION: &str = r#"{"tool":"file_story","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","dateline":"Room","paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}"#;
     const MALFORMED_LYSA_STORY_ACTION: &str = r#"{"tool":"file_story","headline":"Gate Trouble","deck":"The western route will close at moonrise.","dateline":"Yard","paragraphs":["Too short.","Still short."]}"#;
     const ACCEPTED_LYSA_STORY_ACTION: &str = r#"{"tool":"file_story","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","dateline":"Yard","paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace its cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}"#;
@@ -4091,6 +4335,8 @@ mod tests {
     fn narrative_workbench_owns_lead_and_allows_shared_foundational_records() {
         let records = public_news_records(&campaign_with_two_news()).unwrap();
         let invalid = WorldNewspaperEditorialAgenda {
+            issue_shape: WorldNewspaperIssueShape::SpecialIssue,
+            issue_shape_rationale: "Both failures reorganize public trust in custody.".into(),
             dominant_throughline: "Two failures of court custody.".into(),
             reader_stake: "Readers depend on both institutions.".into(),
             story_pitches: vec![
@@ -4098,6 +4344,9 @@ mod tests {
                     lead: false,
                     section: "Front Page".into(),
                     journalist_id: "aven-tarl".into(),
+                    narrative_function: WorldNewspaperNarrativeFunction::LeadChronology,
+                    context_role: WorldNewspaperContextRole::OwnsIssueChronology,
+                    assignment_reason: "Aven owns the court chronology.".into(),
                     citations: vec!["news:seal-scandal".into()],
                     focus_citation: "news:seal-scandal".into(),
                     narrative_claim: "The pawned seal opens the custody crisis.".into(),
@@ -4108,6 +4357,9 @@ mod tests {
                     lead: true,
                     section: "Dispatches".into(),
                     journalist_id: "lysa-fen".into(),
+                    narrative_function: WorldNewspaperNarrativeFunction::Consequence,
+                    context_role: WorldNewspaperContextRole::AssumesIssueChronology,
+                    assignment_reason: "Lysa tests the consequence at the gate.".into(),
                     citations: vec!["news:seal-scandal".into()],
                     focus_citation: "news:seal-scandal".into(),
                     narrative_claim: "The gate repeats the pattern.".into(),
@@ -4126,6 +4378,8 @@ mod tests {
 
         let agenda: NarrativeSelectionAction = serde_json::from_str(TWO_STORY_AGENDA).unwrap();
         let NarrativeSelectionCommand::ProposeAgenda {
+            issue_shape,
+            issue_shape_rationale,
             dominant_throughline,
             reader_stake,
             story_pitches,
@@ -4134,11 +4388,40 @@ mod tests {
             panic!("fixture must submit an agenda")
         };
         let admitted = WorldNewspaperEditorialAgenda {
+            issue_shape,
+            issue_shape_rationale,
             dominant_throughline,
             reader_stake,
             story_pitches,
         };
         validate_editorial_agenda(&records, &canopy_ledger_newsroom(), &admitted, 4).unwrap();
+        let mut two_chronologies = admitted.clone();
+        two_chronologies.story_pitches[1].context_role =
+            WorldNewspaperContextRole::OwnsIssueChronology;
+        assert!(
+            validate_editorial_agenda(&records, &canopy_ledger_newsroom(), &two_chronologies, 4,)
+                .unwrap_err()
+                .to_string()
+                .contains("only its lead ownership of the shared chronology")
+        );
+        let mut general = admitted.clone();
+        general.issue_shape = WorldNewspaperIssueShape::GeneralIssue;
+        general.issue_shape_rationale =
+            "The court scandal and gate repair remain independent public concerns.".into();
+        general.story_pitches[0].narrative_function =
+            WorldNewspaperNarrativeFunction::IndependentBeat;
+        general.story_pitches[0].context_role = WorldNewspaperContextRole::SelfContained;
+        general.story_pitches[1].narrative_function =
+            WorldNewspaperNarrativeFunction::IndependentBeat;
+        general.story_pitches[1].context_role = WorldNewspaperContextRole::SelfContained;
+        validate_editorial_agenda(&records, &canopy_ledger_newsroom(), &general, 4).unwrap();
+        general.story_pitches[1].context_role = WorldNewspaperContextRole::AssumesIssueChronology;
+        assert!(
+            validate_editorial_agenda(&records, &canopy_ledger_newsroom(), &general, 4)
+                .unwrap_err()
+                .to_string()
+                .contains("general-issue stories must own only their independent context")
+        );
         let mut duplicate = admitted.clone();
         duplicate.story_pitches[1]
             .citations
@@ -4167,6 +4450,8 @@ mod tests {
                 &widened,
                 &canopy_ledger_newsroom(),
                 &WorldNewspaperEditorialAgenda {
+                    issue_shape: admitted.issue_shape,
+                    issue_shape_rationale: admitted.issue_shape_rationale.clone(),
                     dominant_throughline: admitted.dominant_throughline.clone(),
                     reader_stake: admitted.reader_stake.clone(),
                     story_pitches: vec![admitted.story_pitches[0].clone()],
@@ -4274,6 +4559,8 @@ mod tests {
 
         let action = NarrativeSelectionAction {
             command: NarrativeSelectionCommand::ProposeAgenda {
+                issue_shape: WorldNewspaperIssueShape::SpecialIssue,
+                issue_shape_rationale: "The founding rupture still organizes its aftermath.".into(),
                 dominant_throughline: "The original crisis survived its administrative aftermath."
                     .into(),
                 reader_stake: "Readers still bear the consequences of the founding rupture.".into(),
@@ -4281,6 +4568,9 @@ mod tests {
                     lead: true,
                     section: "Front Page".into(),
                     journalist_id: "mera-quill".into(),
+                    narrative_function: WorldNewspaperNarrativeFunction::LeadChronology,
+                    context_role: WorldNewspaperContextRole::OwnsIssueChronology,
+                    assignment_reason: "Mera keeps the lived cost ahead of the paperwork.".into(),
                     citations: vec!["news:archive:00".into()],
                     focus_citation: "news:archive:00".into(),
                     narrative_claim: "The oldest dossier is the fact later notices avoid.".into(),
@@ -4346,6 +4636,8 @@ mod tests {
 
         let revised_action = NarrativeSelectionAction {
             command: NarrativeSelectionCommand::ProposeAgenda {
+                issue_shape: WorldNewspaperIssueShape::SpecialIssue,
+                issue_shape_rationale: "The founding rupture still organizes its aftermath.".into(),
                 dominant_throughline:
                     "The founding rupture still governs the administrative aftermath.".into(),
                 reader_stake: "Readers still bear the consequences of the founding rupture.".into(),
@@ -4353,6 +4645,9 @@ mod tests {
                     lead: true,
                     section: "Front Page".into(),
                     journalist_id: "mera-quill".into(),
+                    narrative_function: WorldNewspaperNarrativeFunction::LeadChronology,
+                    context_role: WorldNewspaperContextRole::OwnsIssueChronology,
+                    assignment_reason: "Mera keeps the lived cost ahead of the paperwork.".into(),
                     citations: vec!["news:archive:00".into()],
                     focus_citation: "news:archive:00".into(),
                     narrative_claim:
@@ -4487,7 +4782,7 @@ mod tests {
         .unwrap();
         let model = ScriptedNewspaperModel::new([
             QUERY_FOUNDING_CRISIS,
-            r#"{"command":{"tool":"propose_agenda","dominant_throughline":"The founding crisis survived its administrative aftermath.","reader_stake":"Readers still bear the consequences while institutions manage the paperwork.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"mera-quill","citations":["news:archive:00"],"focus_citation":"news:archive:00","narrative_claim":"The original public record is the fact later notices cannot domesticate.","tension":"Administrative responses multiply while the founding rupture remains unresolved.","public_question":"Who benefits when the cause leaves the front page?"}]}}"#,
+            r#"{"command":{"tool":"propose_agenda","issue_shape":"special_issue","issue_shape_rationale":"The founding rupture still organizes its administrative aftermath.","dominant_throughline":"The founding crisis survived its administrative aftermath.","reader_stake":"Readers still bear the consequences while institutions manage the paperwork.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"mera-quill","narrative_function":"lead_chronology","context_role":"owns_issue_chronology","assignment_reason":"Mera's witness-first beat keeps the original lived rupture ahead of its paperwork.","citations":["news:archive:00"],"focus_citation":"news:archive:00","narrative_claim":"The original public record is the fact later notices cannot domesticate.","tension":"Administrative responses multiply while the founding rupture remains unresolved.","public_question":"Who benefits when the cause leaves the front page?"}]}}"#,
         ]);
 
         let run = select_editorial_agenda(&model, &prepared, 3).await.unwrap();
@@ -4536,6 +4831,9 @@ mod tests {
             lead: true,
             section: "Front Page".into(),
             journalist_id: "aven-tarl".into(),
+            narrative_function: WorldNewspaperNarrativeFunction::LeadChronology,
+            context_role: WorldNewspaperContextRole::OwnsIssueChronology,
+            assignment_reason: "Aven follows custody and status reversal.".into(),
             citations: (0..8)
                 .map(|index| format!("news:archive:{index:02}"))
                 .collect(),
@@ -4545,6 +4843,8 @@ mod tests {
             public_question: "Who answers for the admitted failure?".into(),
         };
         let agenda = WorldNewspaperEditorialAgenda {
+            issue_shape: WorldNewspaperIssueShape::SpecialIssue,
+            issue_shape_rationale: "The custody failure organizes the issue.".into(),
             dominant_throughline: "Custody failed in public.".into(),
             reader_stake: "Readers bear the consequences of that failure.".into(),
             story_pitches: vec![pitch],
@@ -4572,26 +4872,56 @@ mod tests {
     #[test]
     fn journalist_action_schema_compiles_exact_cited_datelines() {
         let records = public_news_records(&campaign_with_two_news()).unwrap();
-        let lead_citations = vec!["news:seal-scandal".to_owned()];
+        let lead_pitch = WorldNewspaperStoryPitch {
+            lead: true,
+            section: "Front Page".into(),
+            journalist_id: "aven-tarl".into(),
+            narrative_function: WorldNewspaperNarrativeFunction::LeadChronology,
+            context_role: WorldNewspaperContextRole::OwnsIssueChronology,
+            assignment_reason: "Aven follows court custody.".into(),
+            citations: vec!["news:seal-scandal".into()],
+            focus_citation: "news:seal-scandal".into(),
+            narrative_claim: "Court custody failed.".into(),
+            tension: "Admission collides with accountability.".into(),
+            public_question: "Who answers?".into(),
+        };
         let lead = JournalistWorkbench {
             records: &records,
             article_index: 0,
-            section: "Front Page",
             byline: "Aven Tarl",
-            citations: &lead_citations,
+            issue_shape: WorldNewspaperIssueShape::SpecialIssue,
+            issue_shape_rationale: "One crisis organizes the issue.",
+            dominant_throughline: "Court custody failed.",
+            reader_stake: "Readers depend on the seal.",
+            pitch: &lead_pitch,
         };
         assert_eq!(
             lead.action_schema().unwrap()["properties"]["dateline"]["enum"],
             serde_json::json!(["Room"])
         );
 
-        let dispatch_citations = vec!["news:west-gate".to_owned()];
+        let dispatch_pitch = WorldNewspaperStoryPitch {
+            lead: false,
+            section: "Dispatches".into(),
+            journalist_id: "lysa-fen".into(),
+            narrative_function: WorldNewspaperNarrativeFunction::Consequence,
+            context_role: WorldNewspaperContextRole::AssumesIssueChronology,
+            assignment_reason: "Lysa follows access consequences.".into(),
+            citations: vec!["news:west-gate".into()],
+            focus_citation: "news:west-gate".into(),
+            narrative_claim: "The gate is the practical consequence.".into(),
+            tension: "Repair closes a route.".into(),
+            public_question: "When does it reopen?".into(),
+        };
         let dispatch = JournalistWorkbench {
             records: &records,
             article_index: 1,
-            section: "Dispatches",
             byline: "Lysa Fen",
-            citations: &dispatch_citations,
+            issue_shape: WorldNewspaperIssueShape::SpecialIssue,
+            issue_shape_rationale: "One crisis organizes the issue.",
+            dominant_throughline: "Court custody failed.",
+            reader_stake: "Readers depend on access.",
+            pitch: &dispatch_pitch,
         };
         assert_eq!(
             dispatch.action_schema().unwrap()["properties"]["dateline"]["enum"],
@@ -4622,6 +4952,8 @@ mod tests {
         let records = public_news_records(&campaign_with_two_news()).unwrap();
         let action: NarrativeSelectionAction = serde_json::from_str(TWO_STORY_AGENDA).unwrap();
         let NarrativeSelectionCommand::ProposeAgenda {
+            issue_shape,
+            issue_shape_rationale,
             dominant_throughline,
             reader_stake,
             story_pitches,
@@ -4630,6 +4962,8 @@ mod tests {
             panic!("fixture must propose an agenda")
         };
         let agenda = WorldNewspaperEditorialAgenda {
+            issue_shape,
+            issue_shape_rationale,
             dominant_throughline,
             reader_stake,
             story_pitches,
@@ -4805,7 +5139,7 @@ mod tests {
             requests[5].stage,
             "newspaper_night_editor_close_agent_action"
         );
-        assert!(requests[3].lived_stream.contains("ASSIGNMENT PACKET"));
+        assert!(requests[3].lived_stream.contains("CURRENT WORKBENCH STATE"));
         assert!(requests[0].lived_stream.contains("Veyra Kest"));
         assert!(requests[0].lived_stream.contains("Mera Quill"));
         assert!(requests[3].lived_stream.contains("Aven Tarl"));
