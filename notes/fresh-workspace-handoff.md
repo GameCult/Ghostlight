@@ -1444,7 +1444,8 @@ independently dispatched blind reviewer saw only the reader-facing fantasy
 newspaper and read it as a real left-populist civic broadsheet; it did not
 immediately identify procedural generation, so the narrative reverse-Turing
 criterion passes. The review's criticism that all three stories feel like
-three rewrites of one briefing is later editorial differentiation debt.
+three rewrites of one briefing belongs to reporter-personality differentiation
+in the next newsroom run; it does not authorize rewriting accepted Run 60.
 
 Run 60 used 96,902 prompt tokens and reported zero cache hits. The bounded
 snapshot initialization had split the stable charter from the first-step
@@ -1455,6 +1456,14 @@ preserving later bounded workbench replacement; all 479 library tests pass.
 This cache-boundary fix does not require resimulation or recomposition of the
 accepted edition.
 
+Typesetting is delivered at
+`output/pdf/canopy-ledger-run-60-front-page.pdf`. It is one 10-by-12.2-inch
+three-column page with embedded Georgia/Times faces, warm press stock, and
+wordless rail/gauge cuts. The frozen Markdown source hash remains unchanged.
+Region-based extraction finds all 23 expected copy fragments, and full-page
+144-DPI visual QA finds no clipping or overlap. Typesetting is complete and no
+longer active work.
+
 Run 54 exposed one separate upstream publicity defect: a public strategic
 activity propagates its channel to private `MemberMemory` outcomes, which is
 how Orin Pell retaining a memory became a public news row. The newsroom should
@@ -1464,14 +1473,15 @@ materializing a `NewsIssue`.
 
 1. Preserve immutable accepted Run 60 and Run 59; do not rewrite, recompose, or
    resimulate either edition.
-2. Advance the Delvehold-owned adapter against Ghostlight's admitted generic
-   consumer contract. On the next naturally required multi-step provider agent
-   run, capture whether exact pushed `8f3c33b` produces nonzero cache hits; do
-   not replay Run 60 to manufacture a better metric.
-3. Keep the blind review's three-rewrites criticism as later reporter-voice
-   differentiation debt. Defer multiple publications, TeX layout, and engraved
-   cuts until separately authorized.
-4. Per-wave issues may use daily-like reporting windows, while a final
+2. Preserve the delivered typeset PDF and its frozen-copy verification above.
+3. On the next newsroom run, strengthen reporter-personality differentiation
+   so assigned journalists produce distinct framing, rhythm, and priorities;
+   also capture whether exact pushed `8f3c33b` produces nonzero cache hits. Do
+   not replay Run 60 to manufacture either improvement.
+4. After that newsroom run, advance the Delvehold-owned adapter against
+   Ghostlight's admitted generic consumer contract. Defer multiple publications
+   until separately authorized.
+5. Per-wave issues may use daily-like reporting windows, while a final
    composition may be an equally current weekly-style issue with a broader
    window. Both are selective journalism; broad fact availability increases
    editorial freedom and does not license recap voice.
