@@ -1599,14 +1599,9 @@ fn validate_copy_desk_report(
     report: &WorldNewspaperCopyDeskReport,
 ) -> Result<()> {
     validate_single_line(&report.assessment, 500, "copy-desk assessment")?;
-    let mut exact_claims = BTreeSet::new();
     for query in &report.queries {
-        let article_index = usize::from(query.article_index);
         validate_single_line(&query.claim_or_phrase, 500, "copy-desk claim")?;
         validate_single_line(&query.reason, 500, "copy-desk reason")?;
-        if !exact_claims.insert((article_index, query.claim_or_phrase.as_str())) {
-            return Err(anyhow!("copy desk repeated one exact query phrase"));
-        }
         validate_grounding_finding_target(draft, query)?;
     }
     Ok(())
@@ -3480,6 +3475,33 @@ mod tests {
         ] {
             assert!(schema.contains(category));
         }
+    }
+
+    #[test]
+    fn copy_desk_may_lodge_distinct_objections_to_one_exact_phrase() {
+        let draft: EditorialPageDraft = serde_json::from_str(ACCEPTED_PAGE).unwrap();
+        let phrase =
+            "A gambling debt reaches the throne room and leaves one official carrying the blame.";
+        let report = WorldNewspaperCopyDeskReport {
+            assessment: "The deck has both a factual and a copy-level defect.".into(),
+            queries: vec![
+                WorldNewspaperGroundingFinding {
+                    article_index: 0,
+                    category: WorldNewspaperGroundingCategory::UnsupportedFact,
+                    claim_or_phrase: phrase.into(),
+                    reason: "The cited record does not locate the debt in the throne room.".into(),
+                },
+                WorldNewspaperGroundingFinding {
+                    article_index: 0,
+                    category: WorldNewspaperGroundingCategory::MechanicalCopy,
+                    claim_or_phrase: phrase.into(),
+                    reason: "The deck states blame abstractly instead of naming the court action."
+                        .into(),
+                },
+            ],
+        };
+
+        validate_copy_desk_report(&draft, &report).unwrap();
     }
 
     #[test]

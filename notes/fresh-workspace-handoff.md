@@ -1393,6 +1393,25 @@ v9 issue runs despite a matching historical row. Gates pass 475/475 library
 tests, 16/16 strategic-smoke tests, and all-target checks. Provider and
 reverse-Turing acceptance remain unproven.
 
+Run 60 attempt 4 at exact pushed `26d1d87` passed the historical tombstone and
+reached live v9 provider work without world or per-wave replay. Ten Sol selector
+actions assigned Mera Quill, Ossan Reed, and Lysa Fen; each reporter needed one
+semantic correction. The first copy-desk transport attempt timed out at 300
+seconds and the second completed. Deterministic validation then rejected two
+distinct checklist objections because they named the same exact article phrase.
+The current tiny fix deletes only that false uniqueness rule while preserving
+exact single-occurrence target validation: distinct factual or copy objections
+may target one phrase, and Night must address every query index once. Focused
+newspaper tests pass 21/21 and strategic-smoke tests pass 16/16; full library
+passes 476/476 and all-target checks pass.
+
+Live cache evidence is mixed, not acceptance: all work used 208,480 prompt
+tokens, with 79,616 hits and 128,864 misses. The selector alone used 189,548
+tokens across ten calls, with 77,824 hits, 111,724 misses, and 714,366 serialized
+input characters. Stable prefixes eventually hit, but selector context remains
+too large and needs a later ownership cut. No v9 front page or reverse-Turing
+result is accepted yet.
+
 Run 54 exposed one separate upstream publicity defect: a public strategic
 activity propagates its channel to private `MemberMemory` outcomes, which is
 how Orin Pell retaining a memory became a public news row. The newsroom should
@@ -1402,11 +1421,10 @@ materializing a `NewsIssue`.
 
 1. Preserve immutable Run 59 and its later-publication correction debt; do not
    rewrite or resimulate it.
-2. Commit and push the inert-tombstone compatibility fix. Resume the same Run
-   60 root at final composition without simulation or per-wave replay; do not
-   launch a fresh campaign or let the historical tombstone regain close
-   authority. Measure actual cached tokens and freeze the resulting
-   reader-facing v9 front page.
+2. Commit and push the verified checklist-admission fix. Resume the same Run 60 root as attempt 5
+   without simulation or per-wave replay; do not launch a fresh campaign.
+   Freeze the resulting reader-facing v9 front page. Keep selector context
+   reduction as a later ownership cut; partial cache hits do not close it.
 3. Dispatch an independent blind reviewer with only that fantasy newspaper and
    a request for its journalistic opinion. Do not expose generation mechanics,
    prompts, receipts, provenance, or the acceptance hypothesis. Pass only if

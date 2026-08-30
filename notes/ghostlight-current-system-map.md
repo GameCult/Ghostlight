@@ -1480,8 +1480,9 @@ The deliberative newsroom boundary is live under this authority map:
   admission, exact focus proof, agenda commit, selected-record alignment, and
   audit grounding. V9 gates prove stable selector and Night schemas plus
   append-only provider prefixes, assignment-aware reporter context isolation, one complete
-  copy report, exact unique query targets, one Night Editor action over only the
-  queried articles and facts, complete query disposition, preservation of
+  copy report, exact single-occurrence query targets, multiple categorical
+  objections to the same phrase, one Night Editor action over only the queried
+  articles and facts, complete query disposition, preservation of
   assignment-owned structure and citations, no post-close copy or editorial
   stage, deterministic source/printed digests, exact receipt ancestry,
   close-checkpoint resume without reporter or copy replay, idempotent persisted
