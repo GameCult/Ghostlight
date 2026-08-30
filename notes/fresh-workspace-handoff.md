@@ -1493,14 +1493,28 @@ Region-based extraction finds all 23 expected copy fragments, and full-page
 144-DPI visual QA finds no clipping or overlap. Preserve it as the verified
 Run 60 press baseline.
 
-The operator has now authorized a new press-layout task over the designated
-accepted Canopy Ledger edition. Do not rewrite its copy. Build a reusable
-random-seed-driven newspaper layout script with bounded typography and press
-variation; the same source and seed must reproduce the same layout choices.
-Use ImageGen for story-specific woodcuts. Reserve printer's ornaments and
-fleurons for reusable decoration rather than narrative illustration. Preserve
-the source identity plus generation and visual provenance with the finished
-artifact. This task temporarily precedes the Delvehold adapter.
+The historical press-layout and style/flow seed split are complete. The
+reference corpus runs through 1914, and
+`notes/historical-newspaper-layout-grammar.md` preserves the derived grammar.
+Manifest v2 is
+`output/tex/canopy-ledger-run-61-style-1847-flow-723.manifest.toml`. It binds
+`style_seed=1847`, `flow_seed=723`, frozen source SHA-256
+`8f195140f52a40ba705d6a66987146a1500ae89668e5d82b01d1792eb3afb882`.
+The final artifact is
+`output/pdf/canopy-ledger-run-61-style-1847-flow-723.pdf`, SHA-256
+`a457f4b1702a7a52480e42fce0039f0dbe677ff32958e98f1c412b346237190c`.
+
+An identical seed pair produces byte-identical TeX and now byte-identical PDF.
+Changing only `flow_seed` preserves the exact manifest style section while
+materially changing a plausible layout; changing only `style_seed` preserves
+flow topology. Cut-first and cut-midstory templates both pass visual inspection.
+The failed split-card template was deleted. Frozen copy and assets, actual PDF
+`/BM /Multiply`, and visual provenance remain intact. Layout is closed.
+
+Future advertisements remain economic content. The layout may reserve typed
+slots, but only the economic layer may own advertiser identity, goods, price,
+claims, campaign continuity, and payment. Unfilled slots collapse unless the
+edition explicitly records unsold space; presentation cannot invent a campaign.
 
 Run 54 exposed one separate upstream publicity defect: a public strategic
 activity propagates its channel to private `MemberMemory` outcomes, which is
@@ -1512,11 +1526,10 @@ materializing a `NewsIssue`.
 1. Preserve immutable accepted Run 60 and Run 59; do not rewrite, recompose, or
    resimulate either edition.
 2. Preserve the delivered Run 60 PDF and its frozen-copy verification as the
-   baseline. Typeset the operator-designated accepted Canopy Ledger with the
-   reusable seeded press-layout machinery described above; verify the artifact
-   without changing accepted copy.
-3. After the press-layout task, advance the Delvehold-owned adapter against
-   Ghostlight's admitted generic consumer contract. Defer multiple publications
+   earlier baseline, plus the final Run 61 style/flow artifact, v2 manifest,
+   grammar, hashes, frozen copy, and art assets recorded above.
+3. Advance the Delvehold-owned adapter
+   against Ghostlight's admitted generic consumer contract. Defer multiple publications
    until separately authorized, or follow the operator's next directed work.
    Preserve immutable Runs 60 through 63 and do not replay newspaper work for
    cache telemetry.

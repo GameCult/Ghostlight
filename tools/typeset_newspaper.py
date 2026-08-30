@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Emit and compile a reproducible seed-varied TeX newspaper."""
+"""Emit a TeX newspaper with independent house-style and issue-flow seeds."""
 from __future__ import annotations
 
-import argparse, hashlib, html, random, re, shutil, subprocess, tempfile
+import argparse, hashlib, html, os, random, re, shutil, subprocess, tempfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -18,7 +18,12 @@ class Edition:
 class Style:
     seed: int; width: float; height: float; margin: float; body: float; leading: float
     gutter: float; rule: float; masthead: int; lead: int; display: str; text: str
-    paper: str; ink: str; fleuron: str; lead_cut: float; inside_cut: float; rules: str
+    paper: str; ink: str; fleuron: str; rules: str
+
+@dataclass(frozen=True)
+class Flow:
+    seed: int; template: str; inside_layout: str; page_one_secondary: int
+    lead_cut: float; inside_cut: float
 
 def plain(s: str) -> str:
     s=s.strip()
@@ -53,15 +58,24 @@ def parse(path: Path) -> Edition:
     if not mast or not ed or not out: raise ValueError("source lacks masthead, edition, or articles")
     return Edition(mast,ed,tuple(out))
 
-def choose(seed: int) -> Style:
+def choose_style(seed: int) -> Style:
     r=random.Random(seed)
-    return Style(seed,r.choice((9.8,10.0,10.2)),r.choice((13.7,14.0,14.3)),r.choice((.38,.42,.46)),
-        r.choice((8.6,8.8,9.0)),r.choice((1.04,1.07,1.10)),r.choice((9.,10.5,12.)),
+    return Style(seed,r.choice((9.6,9.8,10.0)),r.choice((10.7,10.9,11.1)),r.choice((.34,.38,.42)),
+        r.choice((7.7,7.9,8.1)),r.choice((1.03,1.05,1.07)),r.choice((8.,9.5,11.)),
         r.choice((0.,.24,.36)),r.choice((36,39,42)),r.choice((25,27,29)),
         r.choice(("Georgia","Times New Roman")),"Times New Roman",
         r.choice(("F2E5C7","F5E9CE","EFE1C2")),r.choice(("17120D","21170F","1A1510")),
-        r.choice(("diamond","cross","leaf")),r.choice((.78,.82,.86)),r.choice((.44,.50,.54)),
-        r.choice(("double","heavy-thin","triple")))
+        r.choice(("diamond","cross","leaf")),r.choice(("double","heavy-thin","triple")))
+
+def choose_flow(seed: int, e: Edition, cuts: dict[int, Path]) -> Flow:
+    r=random.Random(seed); remaining=list(range(1,len(e.articles)))
+    without_cuts=[index for index in remaining if index not in cuts]
+    secondary=r.choice(without_cuts or remaining) if remaining else -1
+    template=r.choice(("display-plate","display-band"))
+    lead_cut=r.choice((.90,.97)) if template=="display-plate" else r.choice((.78,.82,.86))
+    inside_layout=r.choice(("cut-first","cut-midstory"))
+    inside_cut=r.choice((.62,.70,.78)) if inside_layout=="cut-first" else r.choice((.44,.50,.56))
+    return Flow(seed,template,inside_layout,secondary,lead_cut,inside_cut)
 
 def esc(s: str) -> str:
     m={"\\":r"\textbackslash{}","&":r"\&","%":r"\%","$":r"\$","#":r"\#","_":r"\_","{":r"\{","}":r"\}","~":r"\textasciitilde{}","^":r"\textasciicircum{}"}
@@ -75,12 +89,17 @@ def inline(s: str) -> str:
         else: out.append(esc(p))
     return "".join(out)
 
-def article(a: Article, lead=False) -> str:
-    if lead:
-        return "\n\n".join(inline(p) for p in a.paragraphs)
+def story_body(a: Article) -> str:
+    return "\n\n".join(inline(p) for p in a.paragraphs)
+
+def story_header(a: Article) -> str:
     sec=(r"{\sectionface\fontsize{7.2}{8}\selectfont\MakeUppercase{"+esc(a.section)+r"}}\par\smallskip " if a.section else "")
     head=r"\storyhead{"+esc(a.headline)+"}\n"
-    return sec+head+r"\deck{"+esc(a.deck)+"}\n"+r"\byline{"+esc(a.author)+"}\n\n"+"\n\n".join(inline(p) for p in a.paragraphs)
+    return (r"\Needspace{18\baselineskip}\noindent\begin{minipage}{\linewidth}\hrule height .45pt\smallskip "+sec+head+
+        r"\deck{"+esc(a.deck)+"}\n"+r"\byline{"+esc(a.author)+r"}\end{minipage}\par\smallskip")
+
+def article(a: Article) -> str:
+    return story_header(a)+story_body(a)
 
 def rules(kind: str) -> str:
     return {"double":r"\hrule height 1.1pt\vspace{2pt}\hrule height .35pt","heavy-thin":r"\hrule height 1.7pt\vspace{1pt}\hrule height .25pt","triple":r"\hrule height .3pt\vspace{1pt}\hrule height 1.1pt\vspace{1pt}\hrule height .3pt"}[kind]
@@ -91,18 +110,25 @@ def ornament(kind: str) -> str:
 
 def tex_path(p: Path) -> str: return p.resolve().as_posix()
 
-def build(e: Edition, s: Style, cuts: list[Path], source: Path) -> str:
-    leadcut=""
-    if cuts:
-        leadcut=r"\noindent\includegraphics[width="+f"{s.lead_cut:.2f}"+r"\textwidth]{"+tex_path(cuts[0])+"}"
-        leadcut+=r"\par"
+def press_cut(path: Path, width: float) -> str:
+    return (r"\begin{center}\begin{tikzpicture}\begin{scope}[blend mode=multiply]"
+        r"\node[inner sep=0] {\includegraphics[width="+f"{width:.2f}"+r"\linewidth]{"+tex_path(path)+r"}};"
+        r"\end{scope}\end{tikzpicture}\end{center}")
+
+def build(e: Edition, s: Style, f: Flow, cuts: dict[int, Path], source: Path) -> str:
+    lead=e.articles[0]
+    remaining=list(enumerate(e.articles[1:],1))
+    rail=next((pair for pair in remaining if pair[0]==f.page_one_secondary),None)
+    paired=[pair for pair in remaining if pair != rail]
+    leadcut=press_cut(cuts[0],f.lead_cut) if 0 in cuts else ""
+    rail_text=(r"\par\medskip "+article(rail[1])) if rail else ""
     pre=rf"""\documentclass{{article}}
 \usepackage[paperwidth={s.width}in,paperheight={s.height}in,margin={s.margin}in]{{geometry}}
-\usepackage{{fontspec,graphicx,xcolor,microtype,multicol,ragged2e,fancyhdr}}
+\usepackage{{fontspec,graphicx,xcolor,microtype,multicol,ragged2e,fancyhdr,tikz,needspace}}
 \setmainfont{{{s.text}}}\newfontfamily\displayface{{{s.display}}}\newfontfamily\sectionface{{{s.display}}}
 \definecolor{{paper}}{{HTML}}{{{s.paper}}}\definecolor{{ink}}{{HTML}}{{{s.ink}}}\pagecolor{{paper}}\color{{ink}}
 \setlength{{\columnsep}}{{{s.gutter}pt}}\setlength{{\columnseprule}}{{{s.rule}pt}}\setlength{{\parindent}}{{1em}}\setlength{{\parskip}}{{0pt}}\setlength{{\emergencystretch}}{{1em}}
-\pagestyle{{fancy}}\fancyhf{{}}\renewcommand{{\headrulewidth}}{{0pt}}\fancyfoot[C]{{\displayface\fontsize{{6.5}}{{7}}\selectfont {esc(e.masthead.upper())} · SEED {s.seed} · \thepage}}
+\pagestyle{{fancy}}\fancyhf{{}}\renewcommand{{\headrulewidth}}{{0pt}}\fancyfoot[C]{{\displayface\fontsize{{6.5}}{{7}}\selectfont {esc(e.masthead.upper())} · HOUSE {s.seed} · FLOW {f.seed} · \thepage}}
 \newcommand{{\pressrules}}{{{rules(s.rules)}}}\newcommand{{\fleuron}}{{{ornament(s.fleuron)}}}
 \newcommand{{\masthead}}[1]{{{{\displayface\bfseries\fontsize{{{s.masthead}}}{{{s.masthead+2}}}\selectfont\centering\MakeUppercase{{#1}}\par}}}}
 \newcommand{{\leadhead}}[1]{{{{\displayface\bfseries\fontsize{{{s.lead}}}{{{s.lead+1.5}}}\selectfont\centering #1\par}}}}
@@ -113,66 +139,93 @@ def build(e: Edition, s: Style, cuts: list[Path], source: Path) -> str:
 \begin{{document}}\thispagestyle{{fancy}}
 {{\displayface\fontsize{{7}}{{8}}\selectfont {esc(e.edition.upper())}\hfill SOURCE: {esc(source.name)}\par}}\smallskip\pressrules\smallskip
 \masthead{{{esc(e.masthead)}}}\smallskip\pressrules\medskip
-\leadhead{{{esc(e.articles[0].headline)}}}\smallskip
-{{\displayface\itshape\fontsize{{9.2}}{{10.5}}\selectfont\centering {esc(e.articles[0].deck)}\par}}
-{{\displayface\bfseries\fontsize{{7}}{{8}}\selectfont\centering BY {esc(e.articles[0].author.upper())}\par}}\smallskip
+\leadhead{{{esc(lead.headline)}}}\smallskip
+{{\displayface\itshape\fontsize{{9.2}}{{10.5}}\selectfont\centering {esc(lead.deck)}\par}}
+{{\displayface\bfseries\fontsize{{7}}{{8}}\selectfont\centering BY {esc(lead.author.upper())}\par}}\smallskip
 {leadcut}\smallskip
-\begin{{multicols}}{{3}}{article(e.articles[0],True)}\end{{multicols}}\vfill\begin{{center}}\fleuron\end{{center}}
+\begin{{multicols}}{{4}}{story_body(lead)}
+{rail_text}
+\end{{multicols}}
+\vfill\begin{{center}}\fleuron\end{{center}}
 """
-    pages=[pre]; rest=list(e.articles[1:]); page=2; ci=1
-    while rest:
-        group,rest=rest[:3],rest[3:]
-        bottomcut=""
-        if ci<len(cuts):
-            bottomcut=r"\vfill\begin{center}\includegraphics[width="+f"{s.inside_cut:.2f}"+r"\textwidth]{"+tex_path(cuts[ci])+r"}\end{center}\smallskip"; ci+=1
-        cols=[r"\begin{minipage}[t]{\linewidth}"+article(a)+r"\end{minipage}" for a in group]+[""]*3
+    pages=[pre]; page=2
+    while paired:
+        group,paired=paired[:2],paired[2:]
+        first_index,first=group[0]
+        first_cut=press_cut(cuts[first_index],f.inside_cut) if first_index in cuts else ""
+        first_header=story_header(first)
+        flowing=story_body(first)
+        for _,a in group[1:]: flowing+=r"\par\medskip "+article(a)
+        if f.inside_layout=="cut-midstory" and first_cut:
+            opening=inline(first.paragraphs[0]); remainder="\n\n".join(inline(p) for p in first.paragraphs[1:])
+            for _,a in group[1:]: remainder+=r"\par\medskip "+article(a)
+            inside=rf"""{first_header}\begin{{multicols}}{{4}}{opening}\end{{multicols}}{first_cut}\begin{{multicols}}{{4}}{remainder}\end{{multicols}}"""
+        else:
+            inside=rf"""{first_header}{first_cut}\begin{{multicols}}{{4}}{flowing}\end{{multicols}}"""
         pages.append(rf"""\clearpage\thispagestyle{{fancy}}{{\displayface\fontsize{{7}}{{8}}\selectfont {esc(e.edition.upper())}\hfill PAGE {page}\par}}\smallskip\pressrules\smallskip
 {{\displayface\bfseries\fontsize{{18}}{{19}}\selectfont\centering {esc(e.masthead)}\par}}\smallskip\pressrules\medskip
-\noindent
-\begin{{minipage}}[t]{{\dimexpr(\textwidth-2\columnsep)/3\relax}}{cols[0]}\end{{minipage}}\hspace{{\columnsep}}%
-\begin{{minipage}}[t]{{\dimexpr(\textwidth-2\columnsep)/3\relax}}{cols[1]}\end{{minipage}}\hspace{{\columnsep}}%
-\begin{{minipage}}[t]{{\dimexpr(\textwidth-2\columnsep)/3\relax}}{cols[2]}\end{{minipage}}{bottomcut}\begin{{center}}\fleuron\end{{center}}"""); page+=1
+{inside}
+\vfill\begin{{center}}\fleuron\end{{center}}"""); page+=1
     return "\n".join(pages)+"\n\\end{document}\n"
 
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
-def manifest(path: Path, src: Path, out: Path, tex: Path, cuts: list[Path], style: Style, engine: Path | None):
+def verify_copy(e: Edition, rendered: str) -> None:
+    haystack=rendered.casefold(); missing=[]
+    for index,a in enumerate(e.articles):
+        fields=[("headline",esc(a.headline)),("deck",esc(a.deck)),("author",esc(a.author))]
+        fields += [(f"paragraph-{n}",inline(p)) for n,p in enumerate(a.paragraphs,1)]
+        missing += [(index,label) for label,value in fields if value.casefold() not in haystack]
+    if missing: raise ValueError(f"press projection omitted frozen copy: {missing}")
+
+def manifest(path: Path, src: Path, out: Path, tex: Path, cuts: dict[int, Path], style: Style, flow: Flow, engine: Path | None):
     tool=Path(__file__).resolve()
-    rows=['schema = "ghostlight.seeded_tex_press.v1"',f'source = "{src.resolve().as_posix()}"',f'source_sha256 = "{digest(src)}"',f'output = "{out.resolve().as_posix()}"',f'tex = "{tex.resolve().as_posix()}"',f'tex_sha256 = "{digest(tex)}"',f'tool = "{tool.as_posix()}"',f'tool_sha256 = "{digest(tool)}"',f"seed = {style.seed}"]
+    rows=['schema = "ghostlight.seeded_tex_press.v2"',f'source = "{src.resolve().as_posix()}"',f'source_sha256 = "{digest(src)}"',f'output = "{out.resolve().as_posix()}"',f'tex = "{tex.resolve().as_posix()}"',f'tex_sha256 = "{digest(tex)}"',f'tool = "{tool.as_posix()}"',f'tool_sha256 = "{digest(tool)}"',f"style_seed = {style.seed}",f"flow_seed = {flow.seed}"]
     if engine:
         rows += [f'engine = "{engine.resolve().as_posix()}"',f'engine_sha256 = "{digest(engine)}"']
     if out.is_file(): rows.append(f'output_sha256 = "{digest(out)}"')
     rows += ["","[style]"]
     for k,v in asdict(style).items():
         if k!="seed": rows.append(f'{k} = "{v}"' if isinstance(v,str) else f"{k} = {v}")
+    rows += ["","[flow]"]
+    for k,v in asdict(flow).items():
+        if k!="seed": rows.append(f'{k} = "{v}"' if isinstance(v,str) else f"{k} = {v}")
     rows += ["","[[woodcuts]]"] if cuts else []
-    for index,c in enumerate(cuts):
-        if index: rows.append("[[woodcuts]]")
-        rows += [f'path = "{c.resolve().as_posix()}"',f'sha256 = "{digest(c)}"']
+    for position,(article_index,c) in enumerate(sorted(cuts.items())):
+        if position: rows.append("[[woodcuts]]")
+        rows += [f'article_index = {article_index}',f'path = "{c.resolve().as_posix()}"',f'sha256 = "{digest(c)}"']
     path.parent.mkdir(parents=True,exist_ok=True); path.write_text("\n".join(rows)+"\n",encoding="utf-8")
 
 def compile(engine: Path, tex: Path, out: Path):
     out.parent.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="ghostlight-tex-") as td:
-        p=subprocess.run([str(engine),"-interaction=nonstopmode","-halt-on-error",f"-output-directory={td}",str(tex.resolve())],capture_output=True,text=True)
+        env=os.environ.copy(); env["SOURCE_DATE_EPOCH"]="0"; env["FORCE_SOURCE_DATE"]="1"
+        p=subprocess.run([str(engine),"-interaction=nonstopmode","-halt-on-error",f"-output-directory={td}",str(tex.resolve())],capture_output=True,text=True,env=env)
         built=Path(td)/(tex.stem+".pdf")
         if p.returncode or not built.exists(): raise RuntimeError((p.stdout+p.stderr)[-6000:])
         shutil.copy2(built,out)
 
 def main():
-    ap=argparse.ArgumentParser(description=__doc__); ap.add_argument("source",type=Path); ap.add_argument("output",type=Path); ap.add_argument("--seed",type=int,required=True); ap.add_argument("--woodcut",type=Path,action="append",default=[]); ap.add_argument("--tex-output",type=Path); ap.add_argument("--manifest",type=Path); ap.add_argument("--engine",type=Path); ap.add_argument("--no-compile",action="store_true"); a=ap.parse_args()
-    src=a.source.resolve(); out=a.output.resolve(); cuts=[p.resolve() for p in a.woodcut]
-    for p in [src,*cuts]:
+    ap=argparse.ArgumentParser(description=__doc__); ap.add_argument("source",type=Path); ap.add_argument("output",type=Path); ap.add_argument("--style-seed",type=int,required=True); ap.add_argument("--flow-seed",type=int,required=True); ap.add_argument("--woodcut",action="append",default=[],metavar="ARTICLE_INDEX=PATH"); ap.add_argument("--tex-output",type=Path); ap.add_argument("--manifest",type=Path); ap.add_argument("--engine",type=Path); ap.add_argument("--no-compile",action="store_true"); a=ap.parse_args()
+    src=a.source.resolve(); out=a.output.resolve(); cuts={}
+    for spec in a.woodcut:
+        try: raw_index,raw_path=spec.split("=",1); article_index=int(raw_index)
+        except ValueError as exc: raise ValueError("--woodcut requires ARTICLE_INDEX=PATH") from exc
+        if article_index in cuts: raise ValueError(f"duplicate woodcut for article {article_index}")
+        cuts[article_index]=Path(raw_path).resolve()
+    for p in [src,*cuts.values()]:
         if not p.is_file(): raise FileNotFoundError(p)
-    tx=(a.tex_output or Path("output/tex")/(out.stem+".tex")).resolve(); mf=(a.manifest or tx.with_suffix(".manifest.toml")).resolve(); st=choose(a.seed); ed=parse(src)
-    tx.parent.mkdir(parents=True,exist_ok=True); tx.write_text(build(ed,st,cuts,src),encoding="utf-8")
+    tx=(a.tex_output or Path("output/tex")/(out.stem+".tex")).resolve(); mf=(a.manifest or tx.with_suffix(".manifest.toml")).resolve(); ed=parse(src); st=choose_style(a.style_seed); fl=choose_flow(a.flow_seed,ed,cuts)
+    if any(index < 0 or index >= len(ed.articles) for index in cuts): raise ValueError("woodcut article index is outside the edition")
+    rendered=build(ed,st,fl,cuts,src); verify_copy(ed,rendered)
+    tx.parent.mkdir(parents=True,exist_ok=True); tx.write_text(rendered,encoding="utf-8")
     eng=None
     if not a.no_compile:
         eng=a.engine or Path(shutil.which("lualatex") or "")
         if not eng.is_file(): raise FileNotFoundError("LuaLaTeX not found; pass --engine")
         compile(eng,tx,out)
-    manifest(mf,src,out,tx,cuts,st,eng)
-    print(f"typeset={out} tex={tx} manifest={mf} seed={st.seed} articles={len(ed.articles)} pages={1+(len(ed.articles)-1+2)//3}")
+    manifest(mf,src,out,tx,cuts,st,fl,eng)
+    print(f"typeset={out} tex={tx} manifest={mf} style_seed={st.seed} flow_seed={fl.seed} articles={len(ed.articles)} pages={1+(max(0,len(ed.articles)-2)+1)//2}")
 
 if __name__=="__main__": main()

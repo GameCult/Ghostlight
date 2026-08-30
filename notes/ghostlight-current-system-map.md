@@ -1691,48 +1691,89 @@ write world state.
 #### Seeded TeX press projection
 
 - **Owner:** the operator-designated frozen newsroom Markdown owns masthead,
-  edition label, sections, story order, headlines, decks, bylines, and every
-  paragraph. `tools/typeset_newspaper.py` owns presentation only: parsing that
-  copy, choosing bounded seed-driven style, emitting TeX and its manifest, and
-  invoking LuaLaTeX. Woodcut bitmaps and their adjacent prompt sidecars own
-  illustration provenance, not facts or copy.
-- **Inputs:** one frozen Markdown edition, one required integer seed, zero or
-  more ordered wordless woodcut PNGs, output/TeX/manifest paths, and an optional
-  LuaLaTeX engine or `--no-compile`. The current Run 61 projection uses seed
-  1847 and the `boundary-rail-exchange` and `sinkroot-gauge-gallery` cuts. Their
-  matching prompt files preserve the exact fresh ImageGen requests and record
-  grayscale, 72-percent threshold, and trim preparation.
-- **Outputs:** escaped TeX, a `ghostlight.seeded_tex_press.v1` TOML manifest, and
-  optionally a compiled PDF. The manifest records source/output/TeX paths,
-  seed, selected style values, ordered woodcut paths, and SHA-256 digests for
-  source, TeX, tool, woodcuts, engine, and compiled output. These are press
-  artifacts, not another newsroom composition or correction surface.
-- **Derived state:** the parsed `Edition`, seeded `Style`, page grouping,
-  ornament choice, image placement and widths, TeX markup, and PDF pagination
-  are presentation projections. The same seed deterministically selects the
-  same bounded style. Exact portable PDF reproduction additionally depends on
-  the named system fonts; source, woodcut, engine, tool, TeX, and output bytes
-  are bound by the manifest.
+  edition label, article identities, lead designation, sections, headlines,
+  decks, bylines, and every paragraph. `tools/typeset_newspaper.py` owns
+  presentation only through two independent decisions. `style_seed` owns the
+  durable house body: sheet geometry, type, stock, ink, rules, gutters, and
+  ornaments. `flow_seed` owns the per-issue display template, secondary-story
+  grouping, which eligible secondary closes page one, cut-first versus
+  cut-midstory placement, cut scale, and page closure. Both apply the pre-WWI
+  mass-circulation grammar distilled in
+  `notes/historical-newspaper-layout-grammar.md`; neither owns copy. Woodcut
+  bitmaps and their adjacent prompt sidecars own illustration provenance, not
+  facts. A future economic layer owns advertiser identity, goods, prices,
+  claims, campaign continuity, and payment; the press may only place an already
+  admitted ad module in the shared page grid.
+- **Inputs:** one frozen Markdown edition, required independent style and flow
+  seeds, zero or more article-indexed wordless woodcut PNGs,
+  output/TeX/manifest paths, and an optional LuaLaTeX engine or `--no-compile`.
+  The current Run 61 projection uses style seed 1847 and flow seed 723 and binds
+  `boundary-rail-exchange` to article 0 and
+  `sinkroot-gauge-gallery` to article 1. Their matching prompt files preserve
+  the exact fresh ImageGen requests and record grayscale, 72-percent threshold,
+  and trim preparation. No ad module is currently admitted.
+- **Outputs:** escaped TeX, a `ghostlight.seeded_tex_press.v2` TOML manifest, and
+  optionally a compiled PDF. Manifest v2 records independent `[style]` and
+  `[flow]` projections and binds both seeds, source/output/TeX paths,
+  article-indexed woodcuts, and SHA-256 digests for source, TeX, tool, woodcuts,
+  engine, and compiled output. The current artifact is
+  `output/pdf/canopy-ledger-run-61-style-1847-flow-723.pdf`, bound by
+  `output/tex/canopy-ledger-run-61-style-1847-flow-723.manifest.toml` with output
+  SHA-256 `a457f4b1702a7a52480e42fce0039f0dbe677ff32958e98f1c412b346237190c`.
+  These are press artifacts, not another newsroom composition or correction
+  surface.
+- **Derived state:** the parsed `Edition`, house `Style`, per-issue `Flow`,
+  two-page story grouping, continuous four-column reading flow, unbreakable
+  story-header modules, story-local cut placement and widths, TeX markup, and
+  PDF pagination are presentation projections. Flow templates include
+  `display-plate` and `display-band`; inside-story placement includes
+  `cut-first` and `cut-midstory`. TikZ/PDF multiply blending makes monochrome cut
+  paper disappear into the seeded stock. The same style seed preserves the
+  bounded house body across issues while a different flow seed may change
+  grouping and placement without changing that body. Exact portable PDF
+  reproduction additionally depends on the named system fonts; source,
+  woodcut, engine, tool, TeX, and output bytes are bound by manifest v2.
 - **Forbidden writers:** the press, TeX compiler, manifest, woodcuts, and prompt
   sidecars cannot add, remove, summarize, reorder, correct, or reinterpret
-  newsroom copy; change bylines or story priority; write newsroom checkpoints
-  or world state; or promote an illustration into evidence. A successful PDF
-  compile cannot admit missing or altered copy.
+  newsroom copy; change bylines, lead designation, or newsroom-owned narrative
+  function; write newsroom checkpoints
+  or world state; promote an illustration into evidence; fabricate an
+  advertiser, offer, price, claim, payment, or campaign; or fill an unadmitted
+  ad slot. Flow may choose which eligible secondary closes page one, but it
+  cannot rewrite article text, change the lead, reassign an indexed cut, detach
+  that cut from its story, or omit it. A successful PDF compile cannot admit
+  missing or altered copy.
 - **Shared path:** every press run parses the frozen source, derives one style
-  from the seed, writes TeX and manifest, then either stops at `--no-compile` or
-  compiles that exact TeX in a temporary directory and copies the resulting PDF
-  to the named output. Woodcut order alone selects lead and later placement.
+  from `style_seed` and one issue flow from `flow_seed`, verifies that all frozen
+  fields survive, writes TeX, compiles that exact TeX when requested, and then
+  writes manifest v2. Each woodcut is keyed to its owning article index and
+  remains attached to that story's display field in either cut-first or
+  cut-midstory form; accepted copy then flows continuously through the common
+  four-column grid. There is no detached image bank or bottom-art reservation.
+  Any future admitted ad module must use this same grid without changing
+  article-internal copy order or flow-selected grouping.
 - **Cut line:** the live press path contains no model rewrite, editorial
   summarizer, copy-fitting loop, or second content owner. Press variation is
   bounded to page geometry, typography, color, rules, fleurons, and illustration
-  sizing/placement; the former fixed ReportLab front-page renderer is not live.
-- **Verification layer:** admission requires source-to-TeX/PDF copy completeness
-  and order, a same-source/seed derivation check, successful halt-on-error
-  compilation, rendered-page inspection for clipping and overlap, and matching
-  manifest/woodcut prompt provenance. LuaLaTeX produces a two-page PDF with
-  embedded Times New Roman faces. The parser flushes the final article paragraph
-  at end of file; extracted copy includes the closing `Marshal Eryn Tal`
-  paragraph, and rendered inspection shows no clipping or overlap.
+  sizing/placement. The former fixed ReportLab renderer, three-column lead plus
+  one-column rail, paired story-minipage layout, and detached image bank are not
+  live. Minipages now protect headers only; story bodies remain in continuous
+  column flow. The single-seed manifest v1 and prior
+  `output/pdf/canopy-ledger-run-61-seed-1847.pdf` artifact are not current press
+  authority.
+- **Verification layer:** admission requires source-to-TeX/PDF field completeness
+  and article-internal order, exact same-pair TeX derivation, independent style-
+  and flow-seed variation checks, successful halt-on-error compilation, rendered-page
+  inspection for clipping and overlap, one attached rendering for every indexed
+  cut, and matching manifest/woodcut prompt provenance. The current manifest v2
+  records `display-plate`, `cut-first`, and page-one secondary article 2. Its
+  final TeX uses four-column `multicols`, article-indexed cuts, `needspace` plus
+  header-only minipages, and TikZ multiply scopes. LuaLaTeX produces a two-page
+  PDF with embedded Times New Roman faces; `SOURCE_DATE_EPOCH=0` and
+  `FORCE_SOURCE_DATE=1` make the same admitted inputs byte-reproducible under the
+  bound engine. Extracted copy includes the closing `Marshal Eryn Tal`
+  paragraph. Rendered inspection confirms continuous reading order, attached
+  cuts blended into the stock, unstranded headers, and no clipping or overlap.
 
 #### Acceptance-driver per-wave newspaper recovery
 

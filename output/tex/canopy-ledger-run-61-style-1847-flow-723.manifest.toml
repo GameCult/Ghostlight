@@ -1,23 +1,24 @@
-schema = "ghostlight.seeded_tex_press.v1"
+schema = "ghostlight.seeded_tex_press.v2"
 source = "F:/Projects/Ghostlight/acceptance-run61-newspaper.md"
 source_sha256 = "8f195140f52a40ba705d6a66987146a1500ae89668e5d82b01d1792eb3afb882"
-output = "F:/Projects/Ghostlight/output/pdf/canopy-ledger-run-61-seed-1847.pdf"
-tex = "F:/Projects/Ghostlight/output/tex/canopy-ledger-run-61-seed-1847.tex"
-tex_sha256 = "c25e7390b2ca3ba68d455962401cc7e7bb77ce99caf4610f4565a380ca10a0ff"
+output = "F:/Projects/Ghostlight/output/pdf/canopy-ledger-run-61-style-1847-flow-723.pdf"
+tex = "F:/Projects/Ghostlight/output/tex/canopy-ledger-run-61-style-1847-flow-723.tex"
+tex_sha256 = "002a1a6271ee7a746e86d6632037809683e4a39510a91b4c90ee63c10e5d7717"
 tool = "F:/Projects/Ghostlight/tools/typeset_newspaper.py"
-tool_sha256 = "3090b99546c12d2cb9afa44ec1afa2270cb7474aadd3a242a7dafeab37e931d7"
-seed = 1847
+tool_sha256 = "b3481086d82f87dce8ab4302139d7343bcaad79180f57984b07246ab383456f6"
+style_seed = 1847
+flow_seed = 723
 engine = "C:/Users/Meta/AppData/Local/Programs/MiKTeX/miktex/bin/x64/lualatex.exe"
 engine_sha256 = "e2bce0b59faf2d6501d0d03d8d13a5b93621285d7839438a19911ef963d46bfa"
-output_sha256 = "529de5202c5c948f3e1339f8663184cc933794a0d85c1e42f30cd84a7f95c6c2"
+output_sha256 = "a457f4b1702a7a52480e42fce0039f0dbe677ff32958e98f1c412b346237190c"
 
 [style]
-width = 9.8
-height = 14.0
-margin = 0.38
-body = 8.6
-leading = 1.04
-gutter = 10.5
+width = 9.6
+height = 10.9
+margin = 0.34
+body = 7.7
+leading = 1.03
+gutter = 9.5
 rule = 0.36
 masthead = 39
 lead = 29
@@ -26,13 +27,20 @@ text = "Times New Roman"
 paper = "EFE1C2"
 ink = "21170F"
 fleuron = "cross"
-lead_cut = 0.82
-inside_cut = 0.54
-rules = "double"
+rules = "heavy-thin"
+
+[flow]
+template = "display-plate"
+inside_layout = "cut-first"
+page_one_secondary = 2
+lead_cut = 0.97
+inside_cut = 0.78
 
 [[woodcuts]]
+article_index = 0
 path = "F:/Projects/Ghostlight/assets/newspaper/woodcuts/boundary-rail-exchange.png"
 sha256 = "87666118f63d55c797cece58eb5b09ff0984cecfe9c5e29e69932c830508bf87"
 [[woodcuts]]
+article_index = 1
 path = "F:/Projects/Ghostlight/assets/newspaper/woodcuts/sinkroot-gauge-gallery.png"
 sha256 = "496e5b83e296e9c4479c9b00eca01ac34ed610de2aa11f8a9353ac1dc5f3cc95"
