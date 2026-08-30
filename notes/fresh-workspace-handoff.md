@@ -1409,8 +1409,34 @@ Live cache evidence is mixed, not acceptance: all work used 208,480 prompt
 tokens, with 79,616 hits and 128,864 misses. The selector alone used 189,548
 tokens across ten calls, with 77,824 hits, 111,724 misses, and 714,366 serialized
 input characters. Stable prefixes eventually hit, but selector context remains
-too large and needs a later ownership cut. No v9 front page or reverse-Turing
-result is accepted yet.
+too large. Run 60 attempt 5 then passed the same-phrase checklist boundary but
+failed deterministic dateline validation on Mera Quill's article. No pre-copy
+stage output was durable, so the attempt replayed the selector instead of
+resuming the admitted agenda and accepted reporter work. No world or per-wave
+work replayed, but no v9 front page or reverse-Turing result is accepted.
+
+The live `character-newsroom.v10` cut owns that boundary. The generic agent
+harness now lets a tool project one bounded current workbench snapshot while
+preserving the stable instruction prefix. Veyra uses that seam for a compact
+inspected-record index and bounded exact-ID fetch instead of accumulated full
+tool chatter. Any query or fetch retires a pending agenda, so retrieval can
+never leave an old proof eligible for delayed commit.
+
+One exact task/editorial-bound production checkpoint persists the admitted
+agenda before any reporter runs. Each accepted article then persists its own
+checkpoint with article slot, assignment, complete embodied reporter profile,
+and receipt chain. Deterministic cited-place enums own dateline admission. The
+context membranes remain person-shaped and bounded: Veyra sees her own profile
+and the journalist roster; each reporter sees only their profile, assignment,
+and cited facts; Dalen owns the factual page desk; Meret sees only the queried
+articles, affected assignments/reporters, cited facts, and one checklist.
+
+The affected
+`newspaper::tests::narrative_workbench_queries_foundational_context_by_stable_record_id`
+rerun passes. A fresh full library run passes 479/479, strategic-smoke passes
+16/16, and all-target checks pass with only the pre-existing native-client
+unused `path` warning. Provider cache efficiency and reverse-Turing acceptance
+remain unproven.
 
 Run 54 exposed one separate upstream publicity defect: a public strategic
 activity propagates its channel to private `MemberMemory` outcomes, which is
@@ -1421,11 +1447,11 @@ materializing a `NewsIssue`.
 
 1. Preserve immutable Run 59 and its later-publication correction debt; do not
    rewrite or resimulate it.
-2. Commit and push the verified checklist-admission fix. Resume the same Run 60 root as attempt 5
-   without simulation or per-wave replay; do not launch a fresh campaign.
-   Freeze the resulting reader-facing v9 front page. Keep selector context
-   reduction as a later ownership cut; partial cache hits do not close it.
-3. Dispatch an independent blind reviewer with only that fantasy newspaper and
+2. Commit and push the verified v10 cut, then resume the same Run 60 root
+   without world or per-wave replay. Its exact agenda and accepted-article
+   checkpoints must prevent selector or completed reporter replay.
+3. Freeze the resulting reader-facing v10 front page, then dispatch an
+   independent blind reviewer with only that fantasy newspaper and
    a request for its journalistic opinion. Do not expose generation mechanics,
    prompts, receipts, provenance, or the acceptance hypothesis. Pass only if
    the reviewer is not immediately tipped that the page is procedurally

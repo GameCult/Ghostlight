@@ -1292,8 +1292,12 @@ The deliberative newsroom boundary is live under this authority map:
   journalist, focal record, exact citation grouping, throughline, tension, and
   reader question. Its
   deterministic workbench owns query admission, inspected-record membership,
-  agenda validation, focus-record dereferencing, candidate identity, and exact
-  commit admission. Each assigned in-world journalist owns one reader-facing
+  the bounded working-context projection, exact-ID fetch, agenda validation,
+  focus-record dereferencing, candidate identity, and exact commit admission.
+  The production-checkpoint validator owns whether an admitted agenda or
+  accepted reporter filing is exact enough to resume; `CampaignStore` owns its
+  immutable storage, not its editorial judgment. Each assigned in-world
+  journalist owns one reader-facing
   story and receives only that pitch, its exact records, and that journalist's
   character, biases, and preferences. The copy editor owns one complete factual
   query report over the assembled page; it neither rewrites nor accepts
@@ -1302,17 +1306,20 @@ The deliberative newsroom boundary is live under this authority map:
   press witness owns structural admission, lineage, and exact before/after
   evidence for what printed; it does not judge prose. Errors discovered after
   close belong to a later edition's correction memory, not a same-edition
-  repair loop. V9 defines that ownership boundary but does not yet persist a
+  repair loop. V10 defines that ownership boundary but does not yet persist a
   typed correction record. Publication employees are not world actors or event
   writers. `WorldKernel` remains the only world-event writer.
 - **Inputs:** one exact campaign revision, publication title and voice, article
   budget, a validated embodied newsroom roster, source-receipt ancestry, and
-  `character-newsroom.v9` contract. Through the
+  `character-newsroom.v10` contract. The assignment editor receives its own
+  staff profile plus the complete journalist roster; it does not receive the
+  copy editor or Night Editor profiles. Through the
   existing generic agent harness, the selector issues deterministic bounded
   queries over stable `NewsIssue` IDs using literal terms, exact asserted
   public entity names, assertion statuses, channels, newest/oldest ordering,
-  and an already-inspected cursor. An empty query browses. Each response returns
-  at most 24 exact projections and the agent has at most twelve semantic steps;
+  and an already-inspected cursor. An empty query browses. It may also fetch at
+  most 24 complete records by exact stable ID. Each response returns at most 24
+  exact projections and the agent has at most twelve semantic steps;
   the complete immutable ledger remains queryable rather than being split into
   privileged recent and foundational windows.
 - **Outputs:** an agenda proposal does not finish selection. It yields one exact
@@ -1322,7 +1329,8 @@ The deliberative newsroom boundary is live under this authority map:
   tensions and public questions, and explicit comparison questions. The agent
   may query again or replace the candidate. Selection finishes only when it
   submits `commit_agenda` with the exact digest of the current reviewed
-  candidate. The committed agenda carries one dominant throughline, reader
+  candidate. The committed agenda is immediately stored as one immutable
+  production checkpoint before any reporter runs. It carries one dominant throughline, reader
   stake, and ordered story pitches. Every pitch names stable public-record IDs,
   chooses one focus record, section, and journalist, and supplies bounded
   narrative claim, tension, and public question. Article count plus bounded paragraphs and output tokens
@@ -1330,7 +1338,12 @@ The deliberative newsroom boundary is live under this authority map:
   record may support several continuing stories when each pitch uses it for a
   distinct throughline. One journalist agent files each assigned story and the
   page is assembled deterministically from assignment-owned section, byline,
-  and citations plus journalist-owned prose. The copy desk emits one
+  and citations plus journalist-owned prose. Every accepted filing is stored as
+  its own immutable production checkpoint before the next reporter runs. Its
+  dateline comes from a deterministic action-schema enum compiled from places
+  asserted by that filing's cited records: the lead must choose a cited place
+  when one exists, while a later article may choose a cited place or remain
+  blank. The copy desk emits one
   assessment plus the complete bounded set of exact factual query passages;
   the Night Editor emits one close action; and accepted composition v3 carries
   the printed issue, copy report, press-close witness, and exact receipt chain.
@@ -1340,7 +1353,14 @@ The deliberative newsroom boundary is live under this authority map:
   institutions, populations, places, and identity attributes asserted by the
   account. Query pages, the visible-ID set, pending agenda, candidate digest,
   front-page proof, review questions, and late reader-facing citation numbers
-  are transparent derived views. The query-index set, query-bearing article
+  are transparent derived views. After each nonterminal selector step, the
+  workbench derives a compact inspected-record index containing only record ID,
+  time, channel, headline, and asserted named entities, plus query/record counts
+  and the pending candidate token; full fact bodies return only through the
+  bounded query or exact-ID fetch. Production checkpoint IDs, reporter-assignment
+  digests, receipt-chain and complete checkpoint-content digests, and cited-place
+  dateline enums are also derived.
+  The query-index set, query-bearing article
   set, changed-article set, source-page digest, printed-page digest, and
   receipt-chain digest are also derived. None is a persisted world subject,
   fact bundle, relevance authority, prose judge, or event writer.
@@ -1352,11 +1372,15 @@ The deliberative newsroom boundary is live under this authority map:
   would bury, and returns the exact candidate digest. This is an observation,
   not acceptance. The agent must reconsider the actual consequences in that
   proof and explicitly commit the current digest; a replacement proposal
-  retires the prior candidate as commit authority. Each assigned journalist
+  retires the prior candidate as commit authority. Once committed, the exact
+  task/editorial-bound agenda checkpoint is the sole reporter-assignment source
+  on retry. Each assigned journalist
   sees only the publication voice, shared reporting contract, their own
   character, the page throughline, one pitch, and that pitch's exact records.
   They center their story on its focus record and may not widen or regroup the
-  selection. Record bookkeeping, memory retention, maintained
+  selection. Each accepted filing is bound to that agenda checkpoint, article
+  index, exact pitch, journalist identity and profile, and local reporter
+  snapshot binding before it becomes reusable. Record bookkeeping, memory retention, maintained
   warnings, and procedure are not automatically the lede merely because they
   are recent. The copy editor sees the assembled page and selected facts. The
   Night Editor sees only queried articles, their assignments and cited facts,
@@ -1379,18 +1403,26 @@ The deliberative newsroom boundary is live under this authority map:
   membership, not whether the final language is true or compelling. A structurally invalid
   close exhausts the one action and prints the checkpointed journalist page with an
   explicit non-applied close witness. There is no post-close model reread.
-- **Agent context and cache path:** the generic harness sends typed append-only
-  user/assistant items instead of flattening every turn into one new user
-  transcript. Selector query, proposal, and commit share one stable structured
-  action schema, so each later provider request preserves the exact previous
-  prefix. The Night close schema is likewise stable across checklist contents;
-  its private workbench enforces the exact queried set. Tool schemas stay in the
-  provider output contract rather than being duplicated in prompt text.
+- **Agent context and cache path:** the generic harness keeps the stable
+  instruction item as the first prefix. A tool may own a bounded current
+  context snapshot; after each nonterminal action the harness then discards old
+  model chatter and observations and sends only that snapshot plus the latest
+  finding. Tools that publish no snapshot retain the ordinary append-only
+  conversation path. The assignment workbench uses this seam for its compact
+  inspected-record index and pending candidate token, while exact-ID fetch
+  restores only the requested full records. Selector query, fetch, proposal, and
+  commit share one stable structured action schema. The Night close schema is
+  likewise stable across checklist contents; its private workbench enforces the
+  exact queried set. Tool schemas stay in the provider output contract rather
+  than being duplicated in prompt text.
   Prompt-cache routing binds stage, model class, and exact output schema;
   changing world context does not mint another routing key, while changing the
-  contract does. Each journalist receives only one pitch and its records. Copy
-  receives the complete selected desk because it alone checks the page; Night
-  receives only the subset named by Copy's checklist.
+  contract does. Each journalist receives only its own embodied profile, one
+  pitch, and that pitch's records; it does not receive other reporters or desk
+  staff. Copy receives its own embodied profile plus the complete selected fact
+  desk and assembled page because it alone checks the page. Night receives its
+  own embodied profile plus only the queried articles, affected assignments and
+  facts, numbered checklist, and affected reporter profiles.
 - **Invariants:** private events do not enter the query surface; every selected
   stable ID resolves at the bound revision; story order, selection, citation
   grouping, focus, section, and journalist remain agenda-owned; no proposal reaches the journalists
@@ -1402,7 +1434,10 @@ The deliberative newsroom boundary is live under this authority map:
   and no external evaluation can reopen an immutable edition. The witness must
   preserve exact source and printed page digests, receipt ancestry, every query
   disposition, every changed article index, and deterministic re-derivation of
-  the printed issue.
+  the printed issue. Admitted agenda and accepted filing checkpoints survive a
+  later reporter or copy failure without becoming printed truth; reuse requires
+  exact current task, editorial, assignment, stage, snapshot, and receipt
+  bindings.
 - **Forbidden writers:** the selector and query workbench cannot create,
   mutate, deduplicate, summarize into, or reclassify `NewsIssue` or `Event`
   state. The deterministic proof cannot rank stories or commit an agenda; it
@@ -1419,6 +1454,13 @@ The deliberative newsroom boundary is live under this authority map:
   The press witness cannot certify
   factual or editorial quality; it can only prove the exact admitted process and
   bytes.
+  A context snapshot cannot create or summarize facts into authority, and an
+  exact-ID fetch cannot mutate the ledger. A production checkpoint cannot change
+  the roster, agenda, pitch, reporter, article slot, section, byline, citations,
+  source campaign, or receipt ancestry; a checkpoint from another contract,
+  task, or editorial binding cannot resume current production. The dateline
+  schema cannot admit an uncited place, and blank cannot evade an available
+  cited place on the lead.
   Renderers, strategic smoke, Registry, external blind reviewers, and grounding
   reviewers cannot write the page, desk report, close, correction, world state,
   or acceptance state. Caches cannot decide record equivalence, assertion
@@ -1430,15 +1472,25 @@ The deliberative newsroom boundary is live under this authority map:
   pitch, deterministic page assembly, copy report, immutable close checkpoint,
   one Night Editor action, deterministic press witness, lowering, persistence.
   Registry, live per-wave composition, missing-issue recovery, and final digest
-  all delegate to `advance_world_newspaper`. Resume begins from the immutable
-  close checkpoint and does not rerun assignment, journalists, or copy desk. A
+  all delegate to `advance_world_newspaper`. Resume checks, in order, an accepted
+  composition, an exact-current close checkpoint, the exact agenda production
+  checkpoint, and each reporter filing checkpoint. It reruns only the first
+  missing stage: an interrupted reporter pass resumes at that reporter; a later
+  copy failure reuses assignment and every accepted filing; a close resume does
+  not rerun assignment, journalists, or copy desk. A
   persisted composition is revalidated against its close checkpoint and exact
   stored receipts, then returned without model work. Every caller receives one
   completed `WorldNewspaperComposition` or an error; there is no pending
   reconciliation result for a caller to interpret or advance.
 - **Persistence and compatibility:** the live internal contract is
-  `character-newsroom.v9`. Public request schema v3 carries the publication
-  roster and binds it into the task and editorial identities. Close checkpoint
+  `character-newsroom.v10`. Public request schema v3 carries the publication
+  roster and binds it into the task and editorial identities. Private production
+  checkpoint v1 stores either the admitted agenda or one accepted reporter
+  filing. Agenda identity binds the exact task and editorial identities; filing
+  identity additionally binds its agenda checkpoint, article index, exact pitch,
+  complete journalist profile, assignment digest, local reporter snapshot, and
+  receipt chain. These checkpoints are durable production inputs, not copy-desk
+  acceptance, press authority, or world facts. Close checkpoint
   v1 binds the assigned agenda, assembled page, single copy report, task and
   exact editorial bindings, and immutable receipt chain. Its only valid origin
   is `InitialCopyDesk`, and its compatibility-shaped `source_checkpoint_id`
@@ -1447,17 +1499,17 @@ The deliberative newsroom boundary is live under this authority map:
   receipt loading, validation, or close authority.
   Composition v3 stores
   the printed issue, copy report, press-close witness, and receipts. Public issue
-  schema v3 remains unchanged. Candidate agendas and front-page proofs remain
-  ephemeral. Historical v7 reconciliation rows may remain in archived or
+  schema v3 remains unchanged. Uncommitted candidate agendas and front-page
+  proofs remain ephemeral. Historical v7 reconciliation rows may remain in archived or
   resumed stores as inert provenance, but the live newspaper module defines no
   reconciliation loader, import envelope, or conversion path and does not
   rebind them. Historical strategic recomposition v1/v2 receipts
   are a separate acceptance-driver verification surface; their typed validators
   can prove original artifacts but cannot write newsroom state. Resume authority
-  belongs only to an exact-current close checkpoint bound to the same v9 task,
-  newsroom, facts, page, copy report, and receipt prefix. Run 58's v7 tip and Run
-  59's printed edition remain immutable evidence in their original artifacts,
-  not v9 close inputs.
+  belongs only to exact-current v10 production and close checkpoints bound to
+  the same task, newsroom, facts, assignment, article slot, and receipt prefix.
+  Run 58's v7 tip and Run 59's printed edition remain immutable evidence in
+  their original artifacts, not v10 resume inputs.
 - **Cut line:** the generic byline list and one-shot whole-page writer are
   deleted. Assignment-owned section, journalist, byline, citations, and order
   are no longer regenerated in prose output. Tool schema text and prior-action
@@ -1473,13 +1525,16 @@ The deliberative newsroom boundary is live under this authority map:
   not migrated or erased; nothing in the live path can make them decide a close.
   The roster, query projection, front-page proof, and article assembly reuse the
   generic agent harness and existing public-record, agenda, accepted issue, and
-  audit shapes. No dependency, crate, binary, daemon, persistent schema,
-  service, cache, event writer, target platform, code-generation path, or
-  world-simulation pass was added.
+  audit shapes. One private persistent production-checkpoint schema buys exact
+  pre-copy resume; no dependency, crate, binary, daemon, service, cache, event
+  writer, target platform, code-generation path, or world-simulation pass was
+  added.
 - **Verification and build budget:** focused newspaper tests retain query
   admission, exact focus proof, agenda commit, selected-record alignment, and
-  audit grounding. V9 gates prove stable selector and Night schemas plus
-  append-only provider prefixes, assignment-aware reporter context isolation, one complete
+  audit grounding. V10 gates prove the stable selector instruction prefix with
+  old record bodies absent from later snapshots, the compact inspected-record
+  index, bounded exact-ID refetch, stable selector and Night schemas,
+  assignment-aware reporter context isolation, one complete
   copy report, exact single-occurrence query targets, multiple categorical
   objections to the same phrase, one Night Editor action over only the queried
   articles and facts, complete query disposition, preservation of
@@ -1487,10 +1542,12 @@ The deliberative newsroom boundary is live under this authority map:
   stage, deterministic source/printed digests, exact receipt ancestry,
   close-checkpoint resume without reporter or copy replay, idempotent persisted
   composition validation, printing the checkpointed page after a structurally
-  rejected close, and a fresh v9 close in a store containing a matching inert
+  rejected close, a fresh v10 close in a store containing a matching inert
   v7 tombstone. The close validator admits only `InitialCopyDesk` checkpoints
   with no source ancestry, while exact-current resume and idempotence regressions
-  exercise the only surviving resume path. Strategic recomposition v3 binds the
+  exercise the close resume path. Dedicated regressions prove cited-place
+  dateline enums and validation, plus agenda-and-filing checkpoint recovery at
+  the first failed reporter without replaying accepted production. Strategic recomposition v3 binds the
   copy report and press witness by digest while v1/v2 remain historical
   validation inputs. Independent blind editorial and grounding reviews evaluate the
   resulting artifact for the acceptance experiment only; they are deliberately
@@ -1498,6 +1555,12 @@ The deliberative newsroom boundary is live under this authority map:
   existing newspaper library and strategic-smoke targets plus formatting,
   state, and system-map gates. The cut adds no service, crate, dependency,
   event authority, or simulation pass.
+
+The bounded selector snapshot retains a pending agenda's exact token while its
+front-page proof is the latest observation. Any later query or exact-ID fetch
+retires that candidate; the assignment editor must propose the page again and
+receive a fresh proof before commit. Retrieval cannot leave a proofless agenda
+eligible for delayed admission.
 
 Run 54 is immutable mechanically complete evidence at exact source
 `01581b8576774f370884e331558605e7ef5e1b9b`, implementation

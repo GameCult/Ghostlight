@@ -27,7 +27,7 @@ use std::{
 const MAX_FRONT_PAGE_ARTICLES: usize = 6;
 const MAX_PUBLIC_RECORD_QUERY_RESULTS: usize = 24;
 const MAX_NARRATIVE_SELECTION_STEPS: usize = 12;
-const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v9";
+const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v10";
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
@@ -301,6 +301,34 @@ struct WorldNewspaperCloseCheckpoint {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "stage", rename_all = "snake_case", deny_unknown_fields)]
+enum WorldNewspaperProductionContent {
+    EditorialAgenda {
+        editorial_agenda: WorldNewspaperEditorialAgenda,
+    },
+    FiledArticle {
+        agenda_checkpoint_id: String,
+        article_index: u16,
+        assignment_digest: String,
+        journalist_id: String,
+        article: EditorialArticleDraft,
+    },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct WorldNewspaperProductionCheckpoint {
+    schema: String,
+    id: String,
+    publication_task_binding: String,
+    editorial_binding: String,
+    content: WorldNewspaperProductionContent,
+    model_receipt_ids: Vec<String>,
+    receipt_chain_digest: String,
+    content_digest: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 struct PersistedWorldNewspaperComposition {
     schema: String,
@@ -390,6 +418,10 @@ enum NarrativeSelectionCommand {
         #[schemars(range(min = 1, max = 24))]
         limit: u8,
     },
+    FetchPublicRecords {
+        #[schemars(length(min = 1, max = 24))]
+        record_ids: Vec<String>,
+    },
     ProposeAgenda {
         #[schemars(length(min = 1, max = 500))]
         dominant_throughline: String,
@@ -472,6 +504,23 @@ struct EditorialSupportingRecord {
     headline: String,
 }
 
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+struct EditorialRecordIndexEntry {
+    record_id: String,
+    at: DateTime<Utc>,
+    channel: String,
+    headline: String,
+    named_entities: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+struct NarrativeSelectionContextSnapshot {
+    inspected_record_count: usize,
+    completed_query_count: usize,
+    inspected_records: Vec<EditorialRecordIndexEntry>,
+    pending_agenda_token: Option<String>,
+}
+
 struct NarrativeSelectionWorkbench<'a> {
     records: &'a [PublicRecordProjection],
     newsroom: &'a WorldNewspaperNewsroom,
@@ -539,6 +588,7 @@ impl NarrativeSelectionWorkbench<'_> {
             .collect::<Vec<_>>();
         self.visible_record_ids
             .extend(records.iter().map(|record| record.record_id.clone()));
+        self.pending_agenda = None;
         let next_cursor = (matching.len() > records.len())
             .then(|| records.last().map(|record| record.record_id.clone()))
             .flatten();
@@ -546,6 +596,88 @@ impl NarrativeSelectionWorkbench<'_> {
             records,
             next_cursor,
         })
+    }
+
+    fn fetch_records(&mut self, mut record_ids: Vec<String>) -> Result<NarrativeSelectionFinding> {
+        for record_id in &mut record_ids {
+            *record_id = record_id.trim().to_owned();
+            if record_id.is_empty()
+                || record_id.chars().count() > 240
+                || record_id.chars().any(char::is_control)
+            {
+                return Err(anyhow!("public record ID is malformed"));
+            }
+        }
+        record_ids.sort();
+        record_ids.dedup();
+        if record_ids.is_empty() || record_ids.len() > MAX_PUBLIC_RECORD_QUERY_RESULTS {
+            return Err(anyhow!(
+                "exact public-record fetch is outside the bounded response"
+            ));
+        }
+        let known = self
+            .records
+            .iter()
+            .map(|record| (record.record_id.as_str(), record))
+            .collect::<BTreeMap<_, _>>();
+        let records = record_ids
+            .iter()
+            .map(|record_id| {
+                known
+                    .get(record_id.as_str())
+                    .map(|record| (*record).clone())
+                    .ok_or_else(|| {
+                        anyhow!("exact public-record fetch names unknown record {record_id}")
+                    })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        self.visible_record_ids
+            .extend(records.iter().map(|record| record.record_id.clone()));
+        self.pending_agenda = None;
+        Ok(NarrativeSelectionFinding::QueryResult {
+            records,
+            next_cursor: None,
+        })
+    }
+
+    fn context(&self) -> NarrativeSelectionContextSnapshot {
+        let inspected_records = self
+            .records
+            .iter()
+            .filter(|record| self.visible_record_ids.contains(&record.record_id))
+            .map(|record| {
+                let named_entities = record
+                    .facts
+                    .iter()
+                    .flat_map(|fact| {
+                        fact.named_people
+                            .iter()
+                            .map(|person| person.name.clone())
+                            .chain(fact.institutions.iter().cloned())
+                            .chain(fact.populations.iter().cloned())
+                            .chain(fact.places.iter().cloned())
+                    })
+                    .collect::<BTreeSet<_>>()
+                    .into_iter()
+                    .collect();
+                EditorialRecordIndexEntry {
+                    record_id: record.record_id.clone(),
+                    at: record.at,
+                    channel: record.channel.clone(),
+                    headline: record.headline.clone(),
+                    named_entities,
+                }
+            })
+            .collect();
+        NarrativeSelectionContextSnapshot {
+            inspected_record_count: self.visible_record_ids.len(),
+            completed_query_count: self.completed_queries.len(),
+            inspected_records,
+            pending_agenda_token: self
+                .pending_agenda
+                .as_ref()
+                .map(|(digest, _)| digest.clone()),
+        }
     }
 
     fn propose_agenda(
@@ -806,6 +938,21 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
         });
         let commands = vec![
             query_schema,
+            serde_json::json!({
+                "type":"object",
+                "additionalProperties":false,
+                "required":["tool","record_ids"],
+                "properties":{
+                    "tool":{"const":"fetch_public_records"},
+                    "record_ids":{
+                        "type":"array",
+                        "minItems":1,
+                        "maxItems":MAX_PUBLIC_RECORD_QUERY_RESULTS,
+                        "uniqueItems":true,
+                        "items":{"type":"string","minLength":1,"maxLength":240}
+                    }
+                }
+            }),
             propose_schema,
             serde_json::json!({
                 "type":"object",
@@ -827,6 +974,10 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
         crate::model_connector::project_strict_responses_schema(&mut schema)
             .map_err(|error| error.to_string())?;
         Ok(schema)
+    }
+
+    fn context_snapshot(&self) -> Option<serde_json::Value> {
+        serde_json::to_value(self.context()).ok()
     }
 
     async fn invoke(
@@ -865,6 +1016,20 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                     receipts: Vec::new(),
                 },
             },
+            NarrativeSelectionCommand::FetchPublicRecords { record_ids } => {
+                match self.fetch_records(record_ids) {
+                    Ok(observation) => ModelAgentToolOutcome::Continue {
+                        observation,
+                        receipts: Vec::new(),
+                    },
+                    Err(error) => ModelAgentToolOutcome::Rejected {
+                        finding: NarrativeSelectionFinding::QueryRejected {
+                            reason: error.to_string().chars().take(500).collect(),
+                        },
+                        receipts: Vec::new(),
+                    },
+                }
+            }
             NarrativeSelectionCommand::ProposeAgenda {
                 dominant_throughline,
                 reader_stake,
@@ -1149,6 +1314,18 @@ impl ModelAgentTool for JournalistWorkbench<'_> {
     type Finding = JournalistFinding;
 
     fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
+        let mut datelines = self
+            .records
+            .iter()
+            .filter(|record| self.citations.contains(&record.record_id))
+            .flat_map(|record| record.facts.iter())
+            .flat_map(|fact| fact.places.iter().cloned())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+        if self.article_index > 0 || datelines.is_empty() {
+            datelines.insert(0, String::new());
+        }
         let mut schema = serde_json::json!({
             "type":"object",
             "additionalProperties":false,
@@ -1157,7 +1334,7 @@ impl ModelAgentTool for JournalistWorkbench<'_> {
                 "tool":{"const":"file_story"},
                 "headline":{"type":"string","minLength":1,"maxLength":100},
                 "deck":{"type":"string","minLength":1,"maxLength":220},
-                "dateline":{"type":"string","maxLength":100},
+                "dateline":{"type":"string","enum":datelines},
                 "paragraphs":{
                     "type":"array",
                     "minItems":2,
@@ -1337,7 +1514,7 @@ async fn select_editorial_agenda(
         "journalists": &prepared.newsroom.journalists,
     });
     let instructions = format!(
-        "You are {editor}, assignment editor of `{title}`. Investigate its frozen public ledger with query_public_records, then assign a page. An empty query browses; terms, exact entity names, status, channel, and an inspected cursor narrow or page. Cite only returned record IDs. Search backward when procedure hides the rupture and sideways for opposition, countermoves, reaction, scandal, and lived cost.\n\nChoose one dominant throughline, then only stories that sharpen or complicate it. The first pitch is the Front Page lead; later pitches use another allowed section. For every pitch choose the staff journalist whose biases and preferences will produce the strongest treatment. Give that journalist the exact record grouping, one focus record that the lede cannot bury, a pointed narrative claim, the live tension, and the public question. A routine update to a vivid continuing incident should cite both and say what changed. Remembering, filing, warning, and planning are context unless they themselves produce a public consequence. Editorial frames may insinuate and judge but cannot invent concrete facts. The copy editor, not you or the reporters, owns fact checking.\n\nPropose before committing. The workbench returns the lead beside what it would bury; revise or query again if the proof exposes a stronger page.\n\nPUBLICATION VOICE:\n{voice}\n\nSTAFF BOOK:\n{staff}",
+        "You are {editor}, assignment editor of `{title}`. Investigate its frozen public ledger with query_public_records, then assign a page. An empty query browses; terms, exact entity names, status, channel, and an inspected cursor narrow or page. The workbench keeps a compact index of inspected records instead of replaying old query pages; use fetch_public_records with exact IDs when you need their full facts again. Cite only returned record IDs. Search backward when procedure hides the rupture and sideways for opposition, countermoves, reaction, scandal, and lived cost.\n\nChoose one dominant throughline, then only stories that sharpen or complicate it. The first pitch is the Front Page lead; later pitches use another allowed section. For every pitch choose the staff journalist whose biases and preferences will produce the strongest treatment. Give that journalist the exact record grouping, one focus record that the lede cannot bury, a pointed narrative claim, the live tension, and the public question. A routine update to a vivid continuing incident should cite both and say what changed. Remembering, filing, warning, and planning are context unless they themselves produce a public consequence. Editorial frames may insinuate and judge but cannot invent concrete facts. The copy editor, not you or the reporters, owns fact checking.\n\nPropose before committing. The workbench returns the lead beside what it would bury; revise or query again if the proof exposes a stronger page.\n\nPUBLICATION VOICE:\n{voice}\n\nSTAFF BOOK:\n{staff}",
         editor = prepared.newsroom.assignment_editor.name,
         title = prepared.title,
         voice = prepared.editorial_voice,
@@ -1378,11 +1555,357 @@ fn editorial_page_digest(draft: &EditorialPageDraft) -> Result<String> {
     ))
 }
 
+fn production_agenda_checkpoint_id(prepared: &PreparedNewspaper) -> Result<String> {
+    Ok(format!(
+        "newspaper-production-agenda:sha256:{:x}",
+        Sha256::digest(rmp_serde::to_vec_named(&(
+            "editorial_agenda",
+            &prepared.publication_task_binding,
+            &prepared.binding,
+        ))?)
+    ))
+}
+
+fn reporter_assignment_digest(
+    prepared: &PreparedNewspaper,
+    agenda_checkpoint_id: &str,
+    article_index: usize,
+    pitch: &WorldNewspaperStoryPitch,
+    journalist: &WorldNewspaperJournalist,
+) -> Result<String> {
+    Ok(format!(
+        "sha256:{:x}",
+        Sha256::digest(rmp_serde::to_vec_named(&(
+            &prepared.publication_task_binding,
+            &prepared.binding,
+            agenda_checkpoint_id,
+            article_index,
+            pitch,
+            journalist,
+        ))?)
+    ))
+}
+
+fn production_article_checkpoint_id(
+    prepared: &PreparedNewspaper,
+    agenda_checkpoint_id: &str,
+    article_index: usize,
+    assignment_digest: &str,
+) -> Result<String> {
+    Ok(format!(
+        "newspaper-production-article:sha256:{:x}",
+        Sha256::digest(rmp_serde::to_vec_named(&(
+            &prepared.publication_task_binding,
+            &prepared.binding,
+            agenda_checkpoint_id,
+            article_index,
+            assignment_digest,
+        ))?)
+    ))
+}
+
+fn load_model_receipts(
+    store: &CampaignStore,
+    receipt_ids: &[String],
+    owner: &str,
+) -> Result<Vec<ModelStageReceipt>> {
+    receipt_ids
+        .iter()
+        .map(|receipt_id| {
+            store
+                .load::<ModelStageReceipt>("persona_stage_receipt.v1", receipt_id)?
+                .map(|(_, receipt)| receipt)
+                .ok_or_else(|| anyhow!("{owner} lost model receipt {receipt_id}"))
+        })
+        .collect()
+}
+
+fn validate_production_receipts(
+    checkpoint: &WorldNewspaperProductionCheckpoint,
+    receipts: &[ModelStageReceipt],
+    expected_stage: &str,
+    expected_snapshot_binding: &str,
+) -> Result<()> {
+    let receipt_ids = receipts
+        .iter()
+        .map(|receipt| receipt.storage_key().to_owned())
+        .collect::<Vec<_>>();
+    if receipts.is_empty()
+        || receipt_ids != checkpoint.model_receipt_ids
+        || receipt_ids.iter().collect::<BTreeSet<_>>().len() != receipt_ids.len()
+        || checkpoint_receipt_chain_digest(&receipt_ids)? != checkpoint.receipt_chain_digest
+        || production_checkpoint_content_digest(
+            &checkpoint.publication_task_binding,
+            &checkpoint.editorial_binding,
+            &checkpoint.content,
+            &checkpoint.model_receipt_ids,
+            &checkpoint.receipt_chain_digest,
+        )? != checkpoint.content_digest
+        || receipts.iter().any(|receipt| {
+            receipt.stage != expected_stage || receipt.snapshot_binding != expected_snapshot_binding
+        })
+        || receipts
+            .last()
+            .is_none_or(|receipt| receipt.validation_result != "valid")
+    {
+        return Err(anyhow!(
+            "newspaper production checkpoint receipt binding is invalid"
+        ));
+    }
+    Ok(())
+}
+
+fn production_checkpoint_content_digest(
+    publication_task_binding: &str,
+    editorial_binding: &str,
+    content: &WorldNewspaperProductionContent,
+    model_receipt_ids: &[String],
+    receipt_chain_digest: &str,
+) -> Result<String> {
+    Ok(format!(
+        "sha256:{:x}",
+        Sha256::digest(rmp_serde::to_vec_named(&(
+            publication_task_binding,
+            editorial_binding,
+            content,
+            model_receipt_ids,
+            receipt_chain_digest,
+        ))?)
+    ))
+}
+
+fn persist_production_checkpoint(
+    store: &CampaignStore,
+    checkpoint: &WorldNewspaperProductionCheckpoint,
+    receipts: &[ModelStageReceipt],
+) -> Result<()> {
+    store.persist_model_stage_receipts(receipts)?;
+    store.insert(
+        "world_newspaper_production_checkpoint.v1",
+        "ghostlight.world_newspaper_production_checkpoint.v1",
+        &checkpoint.id,
+        checkpoint,
+    )?;
+    Ok(())
+}
+
+fn new_agenda_checkpoint(
+    prepared: &PreparedNewspaper,
+    agenda: WorldNewspaperEditorialAgenda,
+    receipts: &[ModelStageReceipt],
+) -> Result<WorldNewspaperProductionCheckpoint> {
+    let model_receipt_ids = receipts
+        .iter()
+        .map(|receipt| receipt.storage_key().to_owned())
+        .collect::<Vec<_>>();
+    let content = WorldNewspaperProductionContent::EditorialAgenda {
+        editorial_agenda: agenda,
+    };
+    let receipt_chain_digest = checkpoint_receipt_chain_digest(&model_receipt_ids)?;
+    let content_digest = production_checkpoint_content_digest(
+        &prepared.publication_task_binding,
+        &prepared.binding,
+        &content,
+        &model_receipt_ids,
+        &receipt_chain_digest,
+    )?;
+    Ok(WorldNewspaperProductionCheckpoint {
+        schema: "ghostlight.world_newspaper_production_checkpoint.v1".into(),
+        id: production_agenda_checkpoint_id(prepared)?,
+        publication_task_binding: prepared.publication_task_binding.clone(),
+        editorial_binding: prepared.binding.clone(),
+        content,
+        receipt_chain_digest,
+        model_receipt_ids,
+        content_digest,
+    })
+}
+
+fn load_agenda_checkpoint(
+    store: &CampaignStore,
+    prepared: &PreparedNewspaper,
+    max_articles: usize,
+) -> Result<
+    Option<(
+        String,
+        WorldNewspaperEditorialAgenda,
+        Vec<ModelStageReceipt>,
+    )>,
+> {
+    let id = production_agenda_checkpoint_id(prepared)?;
+    let Some((_, checkpoint)) = store.load::<WorldNewspaperProductionCheckpoint>(
+        "world_newspaper_production_checkpoint.v1",
+        &id,
+    )?
+    else {
+        return Ok(None);
+    };
+    let receipts = load_model_receipts(store, &checkpoint.model_receipt_ids, "agenda checkpoint")?;
+    let WorldNewspaperProductionContent::EditorialAgenda { editorial_agenda } = &checkpoint.content
+    else {
+        return Err(anyhow!(
+            "agenda checkpoint occupies the wrong production slot"
+        ));
+    };
+    if checkpoint.schema != "ghostlight.world_newspaper_production_checkpoint.v1"
+        || checkpoint.id != id
+        || checkpoint.publication_task_binding != prepared.publication_task_binding
+        || checkpoint.editorial_binding != prepared.binding
+    {
+        return Err(anyhow!("newspaper agenda checkpoint identity is invalid"));
+    }
+    validate_production_receipts(
+        &checkpoint,
+        &receipts,
+        "newspaper_narrative_selection_agent_action",
+        &prepared.binding,
+    )?;
+    validate_editorial_agenda(
+        &prepared.records,
+        &prepared.newsroom,
+        editorial_agenda,
+        max_articles,
+    )?;
+    Ok(Some((id, editorial_agenda.clone(), receipts)))
+}
+
+fn new_article_checkpoint(
+    prepared: &PreparedNewspaper,
+    agenda_checkpoint_id: &str,
+    article_index: usize,
+    pitch: &WorldNewspaperStoryPitch,
+    journalist: &WorldNewspaperJournalist,
+    article: EditorialArticleDraft,
+    receipts: &[ModelStageReceipt],
+) -> Result<WorldNewspaperProductionCheckpoint> {
+    let assignment_digest = reporter_assignment_digest(
+        prepared,
+        agenda_checkpoint_id,
+        article_index,
+        pitch,
+        journalist,
+    )?;
+    let model_receipt_ids = receipts
+        .iter()
+        .map(|receipt| receipt.storage_key().to_owned())
+        .collect::<Vec<_>>();
+    let id = production_article_checkpoint_id(
+        prepared,
+        agenda_checkpoint_id,
+        article_index,
+        &assignment_digest,
+    )?;
+    let content = WorldNewspaperProductionContent::FiledArticle {
+        agenda_checkpoint_id: agenda_checkpoint_id.into(),
+        article_index: article_index
+            .try_into()
+            .map_err(|_| anyhow!("newspaper article index overflow"))?,
+        assignment_digest,
+        journalist_id: journalist.staff.id.clone(),
+        article,
+    };
+    let receipt_chain_digest = checkpoint_receipt_chain_digest(&model_receipt_ids)?;
+    let content_digest = production_checkpoint_content_digest(
+        &prepared.publication_task_binding,
+        &prepared.binding,
+        &content,
+        &model_receipt_ids,
+        &receipt_chain_digest,
+    )?;
+    Ok(WorldNewspaperProductionCheckpoint {
+        schema: "ghostlight.world_newspaper_production_checkpoint.v1".into(),
+        id,
+        publication_task_binding: prepared.publication_task_binding.clone(),
+        editorial_binding: prepared.binding.clone(),
+        content,
+        receipt_chain_digest,
+        model_receipt_ids,
+        content_digest,
+    })
+}
+
+fn load_article_checkpoint(
+    store: &CampaignStore,
+    prepared: &PreparedNewspaper,
+    agenda_checkpoint_id: &str,
+    article_index: usize,
+    pitch: &WorldNewspaperStoryPitch,
+    journalist: &WorldNewspaperJournalist,
+) -> Result<Option<(EditorialArticleDraft, Vec<ModelStageReceipt>)>> {
+    let assignment_digest = reporter_assignment_digest(
+        prepared,
+        agenda_checkpoint_id,
+        article_index,
+        pitch,
+        journalist,
+    )?;
+    let id = production_article_checkpoint_id(
+        prepared,
+        agenda_checkpoint_id,
+        article_index,
+        &assignment_digest,
+    )?;
+    let Some((_, checkpoint)) = store.load::<WorldNewspaperProductionCheckpoint>(
+        "world_newspaper_production_checkpoint.v1",
+        &id,
+    )?
+    else {
+        return Ok(None);
+    };
+    let receipts = load_model_receipts(store, &checkpoint.model_receipt_ids, "article checkpoint")?;
+    let WorldNewspaperProductionContent::FiledArticle {
+        agenda_checkpoint_id: stored_agenda_checkpoint_id,
+        article_index: stored_article_index,
+        assignment_digest: stored_assignment_digest,
+        journalist_id,
+        article,
+    } = &checkpoint.content
+    else {
+        return Err(anyhow!(
+            "article checkpoint occupies the wrong production slot"
+        ));
+    };
+    let snapshot_binding = format!(
+        "{}:journalist:{}:article:{}",
+        prepared.binding, journalist.staff.id, article_index
+    );
+    if checkpoint.schema != "ghostlight.world_newspaper_production_checkpoint.v1"
+        || checkpoint.id != id
+        || checkpoint.publication_task_binding != prepared.publication_task_binding
+        || checkpoint.editorial_binding != prepared.binding
+        || stored_agenda_checkpoint_id != agenda_checkpoint_id
+        || usize::from(*stored_article_index) != article_index
+        || stored_assignment_digest != &assignment_digest
+        || journalist_id != &journalist.staff.id
+    {
+        return Err(anyhow!("newspaper article checkpoint identity is invalid"));
+    }
+    validate_production_receipts(
+        &checkpoint,
+        &receipts,
+        "newspaper_journalist_agent_action",
+        &snapshot_binding,
+    )?;
+    validate_editorial_article(&prepared.records, article, article_index)?;
+    if article.section != pitch.section
+        || article.byline != journalist.byline
+        || article.citations.iter().collect::<BTreeSet<_>>()
+            != pitch.citations.iter().collect::<BTreeSet<_>>()
+    {
+        return Err(anyhow!(
+            "newspaper article checkpoint changed its exact assignment"
+        ));
+    }
+    Ok(Some((article.clone(), receipts)))
+}
+
 async fn run_assigned_journalists(
     model: &dyn ModelPort,
     prepared: &PreparedNewspaper,
     agenda: &WorldNewspaperEditorialAgenda,
+    agenda_checkpoint_id: &str,
     selection_receipts: &[ModelStageReceipt],
+    store: &CampaignStore,
 ) -> std::result::Result<
     (EditorialPageDraft, Vec<ModelStageReceipt>),
     crate::agent::ModelAgentFailure,
@@ -1399,6 +1922,27 @@ async fn run_assigned_journalists(
                 });
             }
         };
+        match load_article_checkpoint(
+            store,
+            prepared,
+            agenda_checkpoint_id,
+            index,
+            pitch,
+            journalist,
+        ) {
+            Ok(Some((article, article_receipts))) => {
+                articles.push(article);
+                receipts.extend(article_receipts);
+                continue;
+            }
+            Ok(None) => {}
+            Err(error) => {
+                return Err(crate::agent::ModelAgentFailure {
+                    message: error.to_string(),
+                    receipts,
+                });
+            }
+        }
         let selected = pitch.citations.iter().cloned().collect::<BTreeSet<_>>();
         let source_json =
             serde_json::to_string(&public_records_for_ids(&prepared.records, &selected))
@@ -1453,13 +1997,50 @@ async fn run_assigned_journalists(
         };
         match crate::agent::run_model_agent(model, &spec, &mut workbench).await {
             Ok(run) => {
+                let checkpoint = match new_article_checkpoint(
+                    prepared,
+                    agenda_checkpoint_id,
+                    index,
+                    pitch,
+                    journalist,
+                    run.output.clone(),
+                    &run.receipts,
+                ) {
+                    Ok(checkpoint) => checkpoint,
+                    Err(error) => {
+                        let mut failed_receipts = receipts;
+                        failed_receipts.extend(run.receipts);
+                        return Err(crate::agent::ModelAgentFailure {
+                            message: error.to_string(),
+                            receipts: failed_receipts,
+                        });
+                    }
+                };
+                if let Err(error) = persist_production_checkpoint(store, &checkpoint, &run.receipts)
+                {
+                    let mut failed_receipts = receipts;
+                    failed_receipts.extend(run.receipts);
+                    return Err(crate::agent::ModelAgentFailure {
+                        message: error.to_string(),
+                        receipts: failed_receipts,
+                    });
+                }
                 articles.push(run.output);
                 receipts.extend(run.receipts);
             }
             Err(mut failure) => {
+                let persistence_error = store
+                    .persist_model_stage_receipts(&failure.receipts)
+                    .err()
+                    .map(|error| error.to_string());
                 receipts.append(&mut failure.receipts);
                 return Err(crate::agent::ModelAgentFailure {
-                    message: failure.message,
+                    message: persistence_error.map_or(failure.message.clone(), |error| {
+                        format!(
+                            "{}; failed to persist rejected journalist receipts: {error}",
+                            failure.message
+                        )
+                    }),
                     receipts,
                 });
             }
@@ -1699,16 +2280,7 @@ fn load_close_checkpoint(
         ));
     }
     let checkpoint = checkpoints.into_iter().next().expect("one checkpoint");
-    let receipts = checkpoint
-        .model_receipt_ids
-        .iter()
-        .map(|receipt_id| {
-            store
-                .load::<ModelStageReceipt>("persona_stage_receipt.v1", receipt_id)?
-                .map(|(_, receipt)| receipt)
-                .ok_or_else(|| anyhow!("newspaper close lost model receipt {receipt_id}"))
-        })
-        .collect::<Result<Vec<_>>>()?;
+    let receipts = load_model_receipts(store, &checkpoint.model_receipt_ids, "newspaper close")?;
     validate_close_checkpoint(&checkpoint, prepared, max_articles, &receipts)?;
     Ok(Some((checkpoint, receipts)))
 }
@@ -1799,16 +2371,8 @@ fn validate_persisted_composition(
         )?
         .map(|(_, checkpoint)| checkpoint)
         .ok_or_else(|| anyhow!("persisted newspaper close checkpoint is missing"))?;
-    let checkpoint_receipts = checkpoint
-        .model_receipt_ids
-        .iter()
-        .map(|receipt_id| {
-            store
-                .load::<ModelStageReceipt>("persona_stage_receipt.v1", receipt_id)?
-                .map(|(_, receipt)| receipt)
-                .ok_or_else(|| anyhow!("persisted newspaper lost model receipt {receipt_id}"))
-        })
-        .collect::<Result<Vec<_>>>()?;
+    let checkpoint_receipts =
+        load_model_receipts(store, &checkpoint.model_receipt_ids, "persisted newspaper")?;
     validate_close_checkpoint(&checkpoint, prepared, max_articles, &checkpoint_receipts)?;
     if composition.model_receipts.len() != checkpoint_receipts.len() + 1
         || !composition.model_receipts.starts_with(&checkpoint_receipts)
@@ -2083,20 +2647,37 @@ pub async fn advance_world_newspaper(
         )?;
         return Ok(composition);
     }
-    let agenda_run = select_editorial_agenda(model, &prepared, max_articles)
-        .await
-        .map_err(|failure| composition_failure(failure.message, failure.receipts))?;
-    let agenda = agenda_run.output;
+    let (agenda_checkpoint_id, agenda, mut receipts) =
+        if let Some(checkpoint) = load_agenda_checkpoint(store, &prepared, max_articles)? {
+            checkpoint
+        } else {
+            let agenda_run = match select_editorial_agenda(model, &prepared, max_articles).await {
+                Ok(run) => run,
+                Err(failure) => {
+                    store.persist_model_stage_receipts(&failure.receipts)?;
+                    return Err(composition_failure(failure.message, failure.receipts));
+                }
+            };
+            let checkpoint =
+                new_agenda_checkpoint(&prepared, agenda_run.output.clone(), &agenda_run.receipts)?;
+            persist_production_checkpoint(store, &checkpoint, &agenda_run.receipts)?;
+            (checkpoint.id, agenda_run.output, agenda_run.receipts)
+        };
     let selected_source_json = source_json_for_agenda(&prepared.records, Some(&agenda))?;
-    let mut receipts = agenda_run.receipts;
-    let (draft, journalist_receipts) =
-        run_assigned_journalists(model, &prepared, &agenda, &receipts)
-            .await
-            .map_err(|failure| {
-                let mut all_receipts = receipts.clone();
-                all_receipts.extend(failure.receipts);
-                composition_failure(failure.message, all_receipts)
-            })?;
+    let (draft, journalist_receipts) = run_assigned_journalists(
+        model,
+        &prepared,
+        &agenda,
+        &agenda_checkpoint_id,
+        &receipts,
+        store,
+    )
+    .await
+    .map_err(|failure| {
+        let mut all_receipts = receipts.clone();
+        all_receipts.extend(failure.receipts);
+        composition_failure(failure.message, all_receipts)
+    })?;
     receipts.extend(journalist_receipts);
     validate_editorial_draft(&prepared.records, &draft, max_articles)?;
     validate_editorial_alignment(&draft, &prepared.newsroom, &agenda)?;
@@ -3455,6 +4036,8 @@ mod tests {
     const ONE_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"aven-tarl","citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned royal seal and the treasurer's dismissal are one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?"}]}}"#;
     const TWO_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"aven-tarl","citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned seal and dismissal are the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?"},{"lead":false,"section":"Dispatches","journalist_id":"lysa-fen","citations":["news:west-gate"],"focus_citation":"news:west-gate","narrative_claim":"The gate closure is a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?"}]}}"#;
     const ACCEPTED_STORY_ACTION: &str = r#"{"tool":"file_story","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","dateline":"Room","paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}"#;
+    const MALFORMED_LYSA_STORY_ACTION: &str = r#"{"tool":"file_story","headline":"Gate Trouble","deck":"The western route will close at moonrise.","dateline":"Yard","paragraphs":["Too short.","Still short."]}"#;
+    const ACCEPTED_LYSA_STORY_ACTION: &str = r#"{"tool":"file_story","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","dateline":"Yard","paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace its cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}"#;
     const ACCEPTED_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"Aven Tarl","dateline":"Room","citations":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}]}"#;
     const TWO_ARTICLE_PAGE: &str = r#"{"articles":[{"section":"Front Page","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","byline":"Aven Tarl","dateline":"Room","citations":["news:seal-scandal"],"paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]},{"section":"Dispatches","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","byline":"Lysa Fen","dateline":"Yard","citations":["news:west-gate"],"paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace its cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}]}"#;
     const UNCHANGED_NIGHT_CLOSE: &str =
@@ -3616,6 +4199,7 @@ mod tests {
         let initial_schema = tool.action_schema().unwrap().to_string();
         assert!(initial_schema.contains("propose_agenda"));
         assert!(initial_schema.contains("commit_agenda"));
+        assert!(initial_schema.contains("fetch_public_records"));
 
         let retrieval = tool
             .invoke(
@@ -3652,6 +4236,19 @@ mod tests {
         assert!(found[0].facts[0].account.contains("speaking child"));
         assert!(next_cursor.is_none());
         assert_eq!(tool.action_schema().unwrap().to_string(), initial_schema);
+        let bounded_context = serde_json::to_string(&tool.context()).unwrap();
+        assert!(bounded_context.contains("news:archive:00"));
+        assert!(!bounded_context.contains("\"facts\""));
+        assert!(!bounded_context.contains("\"assertion_status\""));
+
+        let exact_fetch = tool.fetch_records(vec!["news:archive:00".into()]).unwrap();
+        assert!(matches!(
+            exact_fetch,
+            NarrativeSelectionFinding::QueryResult { records, next_cursor }
+                if records.len() == 1
+                    && records[0].facts[0].account.contains("speaking child")
+                    && next_cursor.is_none()
+        ));
 
         let ModelAgentToolOutcome::Rejected { finding, .. } = tool
             .invoke(
@@ -3723,6 +4320,29 @@ mod tests {
                 .to_string()
                 .contains("commit_agenda")
         );
+
+        tool.fetch_records(vec!["news:archive:00".into()]).unwrap();
+        let ModelAgentToolOutcome::Rejected { finding, .. } = tool
+            .invoke(
+                NarrativeSelectionAction {
+                    command: NarrativeSelectionCommand::CommitAgenda {
+                        candidate_digest: candidate_digest.clone(),
+                    },
+                },
+                &ModelAgentToolContext {
+                    source_receipt_ids: Vec::new(),
+                    current_model_receipt: None,
+                },
+            )
+            .await
+        else {
+            panic!("new research must retire the previously reviewed agenda")
+        };
+        assert!(matches!(
+            finding,
+            NarrativeSelectionFinding::AgendaRejected { reason }
+                if reason.contains("requires one reviewed proposal")
+        ));
 
         let revised_action = NarrativeSelectionAction {
             command: NarrativeSelectionCommand::ProposeAgenda {
@@ -3880,6 +4500,38 @@ mod tests {
         assert!(requests[1].lived_stream.contains("news:archive:00"));
     }
 
+    #[tokio::test]
+    async fn assignment_editor_keeps_a_stable_prefix_without_replaying_old_record_bodies() {
+        let prepared = prepare_newspaper(
+            &campaign_with_two_news(),
+            "The Canopy Ledger",
+            "Independent and pointed.",
+            &canopy_ledger_newsroom(),
+            3,
+        )
+        .unwrap();
+        let model = ScriptedNewspaperModel::new([QUERY_ALL_RECORDS, ONE_STORY_AGENDA]);
+
+        select_editorial_agenda(&model, &prepared, 3).await.unwrap();
+
+        let requests = model.requests();
+        assert_eq!(requests.len(), 3);
+        let stable_prefix = requests[0]
+            .lived_stream
+            .split("\n\nUSER:\nAGENT STEP")
+            .next()
+            .unwrap();
+        assert!(stable_prefix.contains("STAFF BOOK"));
+        assert!(
+            requests[1..]
+                .iter()
+                .all(|request| request.lived_stream.starts_with(stable_prefix))
+        );
+        assert!(requests[1].lived_stream.contains("cracked hinge"));
+        assert!(requests[2].lived_stream.contains("news:west-gate"));
+        assert!(!requests[2].lived_stream.contains("cracked hinge"));
+    }
+
     #[test]
     fn narrative_workbench_has_no_source_count_hole_and_reads_legacy_agendas() {
         let records = public_news_records(&campaign_with_archive_news()).unwrap();
@@ -3918,6 +4570,36 @@ mod tests {
         .unwrap();
         assert_eq!(legacy.focus_citation, "");
         assert_eq!(legacy.narrative_claim, "A legacy framing field.");
+    }
+
+    #[test]
+    fn journalist_action_schema_compiles_exact_cited_datelines() {
+        let records = public_news_records(&campaign_with_two_news()).unwrap();
+        let lead_citations = vec!["news:seal-scandal".to_owned()];
+        let lead = JournalistWorkbench {
+            records: &records,
+            article_index: 0,
+            section: "Front Page",
+            byline: "Aven Tarl",
+            citations: &lead_citations,
+        };
+        assert_eq!(
+            lead.action_schema().unwrap()["properties"]["dateline"]["enum"],
+            serde_json::json!(["Room"])
+        );
+
+        let dispatch_citations = vec!["news:west-gate".to_owned()];
+        let dispatch = JournalistWorkbench {
+            records: &records,
+            article_index: 1,
+            section: "Dispatches",
+            byline: "Lysa Fen",
+            citations: &dispatch_citations,
+        };
+        assert_eq!(
+            dispatch.action_schema().unwrap()["properties"]["dateline"]["enum"],
+            serde_json::json!(["", "Yard"])
+        );
     }
 
     #[test]
@@ -4134,13 +4816,15 @@ mod tests {
         assert!(requests[4].lived_stream.contains("Dalen Marr"));
         assert!(requests[5].lived_stream.contains("Meret Sorn"));
         assert!(!requests[5].lived_stream.contains("recover drama"));
+        let stable_selector_prefix = requests[0]
+            .lived_stream
+            .split("\n\nUSER:\nAGENT STEP")
+            .next()
+            .unwrap();
+        assert!(requests[1].lived_stream.starts_with(stable_selector_prefix));
+        assert!(requests[2].lived_stream.starts_with(stable_selector_prefix));
         assert!(
-            requests[1]
-                .lived_stream
-                .starts_with(&requests[0].lived_stream)
-        );
-        assert!(
-            requests[2]
+            !requests[2]
                 .lived_stream
                 .starts_with(&requests[1].lived_stream)
         );
@@ -4514,6 +5198,110 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn production_checkpoints_resume_at_the_failed_reporter() {
+        let campaign = campaign_with_two_news();
+        let directory = tempfile::tempdir().unwrap();
+        let store = CampaignStore::open(directory.path().join("campaign.cc")).unwrap();
+        let first_model = ScriptedNewspaperModel::new([
+            QUERY_ALL_RECORDS,
+            TWO_STORY_AGENDA,
+            ACCEPTED_STORY_ACTION,
+            MALFORMED_LYSA_STORY_ACTION,
+            MALFORMED_LYSA_STORY_ACTION,
+        ]);
+        let error = advance_world_newspaper(
+            &first_model,
+            &campaign,
+            "The Underdeep Clarion",
+            "A skeptical court broadsheet with dry restraint.",
+            &canopy_ledger_newsroom(),
+            4,
+            &store,
+        )
+        .await
+        .unwrap_err();
+        assert!(error.to_string().contains("malformed paragraph"));
+        assert_eq!(
+            store
+                .keys("world_newspaper_production_checkpoint.v1")
+                .unwrap()
+                .len(),
+            2,
+            "the admitted agenda and Aven's accepted filing must survive Lysa's failure"
+        );
+        let mut filed_checkpoint = store
+            .load_all::<WorldNewspaperProductionCheckpoint>(
+                "world_newspaper_production_checkpoint.v1",
+            )
+            .unwrap()
+            .into_iter()
+            .find(|checkpoint| {
+                matches!(
+                    &checkpoint.content,
+                    WorldNewspaperProductionContent::FiledArticle { .. }
+                )
+            })
+            .unwrap();
+        let filed_receipts = load_model_receipts(
+            &store,
+            &filed_checkpoint.model_receipt_ids,
+            "tamper fixture",
+        )
+        .unwrap();
+        if let WorldNewspaperProductionContent::FiledArticle { article, .. } =
+            &mut filed_checkpoint.content
+        {
+            article.deck = "Tampered after filing.".into();
+        }
+        assert!(
+            validate_production_receipts(
+                &filed_checkpoint,
+                &filed_receipts,
+                "newspaper_journalist_agent_action",
+                &filed_receipts[0].snapshot_binding,
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("receipt binding")
+        );
+
+        let resume_model = ScriptedNewspaperModel::new([
+            ACCEPTED_LYSA_STORY_ACTION,
+            ACCEPTING_COPY_DESK,
+            UNCHANGED_NIGHT_CLOSE,
+        ]);
+        let composition = advance_world_newspaper(
+            &resume_model,
+            &campaign,
+            "The Underdeep Clarion",
+            "A skeptical court broadsheet with dry restraint.",
+            &canopy_ledger_newsroom(),
+            4,
+            &store,
+        )
+        .await
+        .unwrap();
+        let requests = resume_model.requests();
+        assert_eq!(requests.len(), 3);
+        assert_eq!(requests[0].stage, "newspaper_journalist_agent_action");
+        assert!(requests[0].lived_stream.contains("Lysa Fen"));
+        assert!(!requests[0].lived_stream.contains("Aven Tarl"));
+        assert_eq!(requests[1].stage, "newspaper_copy_desk");
+        assert_eq!(
+            requests[2].stage,
+            "newspaper_night_editor_close_agent_action"
+        );
+        assert_eq!(composition.issue.articles.len(), 2);
+        assert_eq!(
+            store
+                .keys("world_newspaper_production_checkpoint.v1")
+                .unwrap()
+                .len(),
+            3
+        );
+    }
+
+    #[tokio::test]
     async fn legacy_close_checkpoint_decodes_as_inert_history() {
         let campaign = campaign_with_news();
         let source_directory = tempfile::tempdir().unwrap();
@@ -4537,9 +5325,7 @@ mod tests {
         .await
         .unwrap_err();
         let mut legacy = source_store
-            .load_all::<WorldNewspaperCloseCheckpoint>(
-                "world_newspaper_close_checkpoint.v1",
-            )
+            .load_all::<WorldNewspaperCloseCheckpoint>("world_newspaper_close_checkpoint.v1")
             .unwrap()
             .into_iter()
             .next()

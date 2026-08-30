@@ -116,6 +116,15 @@ pub trait ModelAgentTool: Send {
     /// rejected action can narrow the next call to the exact repair surface.
     fn action_schema(&self) -> std::result::Result<serde_json::Value, String>;
 
+    /// Projects the private workbench state needed for the next semantic step.
+    /// Tools that return a snapshot replace accumulated model chatter and old
+    /// observations with this bounded state. The harness preserves the stable
+    /// instruction prefix, while the tool remains the owner of what working
+    /// memory the agent actually needs.
+    fn context_snapshot(&self) -> Option<serde_json::Value> {
+        None
+    }
+
     async fn invoke(
         &mut self,
         action: Self::Action,
@@ -147,10 +156,20 @@ pub async fn run_model_agent_progress<Tool: ModelAgentTool>(
     }
 
     let mut receipts = Vec::new();
-    let mut input = vec![ModelInputItem::user(format!(
-        "{}\n\nAGENT STEP: 1 of {}. Choose one typed tool action admitted by the current output schema. The harness will execute it against the frozen state and return the real tool observation. Do not claim success yourself; only an accepted tool result can end the task.",
-        spec.instructions, spec.max_steps
-    ))];
+    let mut input = if tool.context_snapshot().is_some() {
+        vec![
+            ModelInputItem::user(spec.instructions.clone()),
+            ModelInputItem::user(format!(
+                "AGENT STEP: 1 of {}. Choose one typed tool action admitted by the current output schema. The harness will execute it against the frozen state and return the real tool observation. Do not claim success yourself; only an accepted tool result can end the task.",
+                spec.max_steps
+            )),
+        ]
+    } else {
+        vec![ModelInputItem::user(format!(
+            "{}\n\nAGENT STEP: 1 of {}. Choose one typed tool action admitted by the current output schema. The harness will execute it against the frozen state and return the real tool observation. Do not claim success yourself; only an accepted tool result can end the task.",
+            spec.instructions, spec.max_steps
+        ))]
+    };
     let mut last_observation = None;
     for step in 0..spec.max_steps {
         let action_schema = match tool.action_schema() {
@@ -259,13 +278,14 @@ pub async fn run_model_agent_progress<Tool: ModelAgentTool>(
                         return Err(ModelAgentFailure { message, receipts });
                     }
                 };
-                append_agent_observation(
+                update_agent_context(
                     &mut input,
                     &stage.narrative,
                     step,
                     spec.max_steps,
                     "continued",
                     &observation,
+                    tool.context_snapshot(),
                 );
                 last_observation = Some(observation);
                 receipts.push(stage.receipt);
@@ -300,13 +320,14 @@ pub async fn run_model_agent_progress<Tool: ModelAgentTool>(
                     }
                 };
                 mark_model_receipt_semantic_invalid(&mut stage.receipt, &finding);
-                append_agent_observation(
+                update_agent_context(
                     &mut input,
                     &stage.narrative,
                     step,
                     spec.max_steps,
                     "rejected",
                     &finding,
+                    tool.context_snapshot(),
                 );
                 last_observation = Some(finding);
                 receipts.push(stage.receipt);
@@ -364,6 +385,37 @@ fn append_agent_observation(
             serde_json::to_string(observation).unwrap_or_else(|_| "null".into()),
             step + 2,
         )));
+    }
+}
+
+fn update_agent_context(
+    input: &mut Vec<ModelInputItem>,
+    assistant_output: &str,
+    step: usize,
+    max_steps: usize,
+    status: &str,
+    observation: &serde_json::Value,
+    context_snapshot: Option<serde_json::Value>,
+) {
+    match context_snapshot {
+        Some(snapshot) if step + 1 < max_steps => {
+            input.truncate(1);
+            input.push(ModelInputItem::user(format!(
+                "AGENT STEP: {} of {max_steps}. Return the next complete typed tool action. The private workbench has replaced prior model chatter with its current bounded state. Preserve frozen identity and useful admitted work; change only what the latest observation actually rejects or requests.\n\nCURRENT WORKBENCH STATE:\n{}\n\nLATEST TOOL OBSERVATION AFTER AGENT STEP {} ({status}):\n{}",
+                step + 2,
+                serde_json::to_string(&snapshot).unwrap_or_else(|_| "null".into()),
+                step + 1,
+                serde_json::to_string(observation).unwrap_or_else(|_| "null".into()),
+            )));
+        }
+        _ => append_agent_observation(
+            input,
+            assistant_output,
+            step,
+            max_steps,
+            status,
+            observation,
+        ),
     }
 }
 
