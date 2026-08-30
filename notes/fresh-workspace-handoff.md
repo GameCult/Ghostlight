@@ -1365,7 +1365,8 @@ the printed edition or block delivery.
 The source-grounded prompt audit falsified v8 as the target newsroom
 architecture. Run 59 narrative selection used ten provider calls, 1,373,208
 input characters, 582,184 prompt tokens, and zero cached tokens.
-`character-newsroom.v9` now uses typed append-only model items, stable selector
+Exact pushed commit `901cfcd58794acc35b24be3d1e149fd2df0f6c3d` owns
+`character-newsroom.v9`, which uses typed append-only model items, stable selector
 and Night action schemas, stable stage/model/schema cache routing, and no
 prompt-embedded tool schemas or repeated prior actions. Veyra Kest sees the
 complete embodied publication roster and assigns every story to a journalist whose character,
@@ -1389,13 +1390,17 @@ materializing a `NewsIssue`.
 
 1. Preserve immutable Run 59 and its later-publication correction debt; do not
    rewrite or resimulate it.
-2. Exercise `character-newsroom.v9` only in a separately authorized
-   newsroom-only provider run. Measure actual cached tokens and judge the
-   embodied reporters' copy rather than treating local cache invariants as
-   provider acceptance.
-3. Defer multiple publications, TeX layout, and engraved cuts until separately
+2. Run the authorized newsroom-only provider acceptance for exact pushed
+   `901cfcd58794acc35b24be3d1e149fd2df0f6c3d`. Measure actual cached tokens and
+   freeze the resulting reader-facing v9 front page without world replay.
+3. Dispatch an independent blind reviewer with only that fantasy newspaper and
+   a request for its journalistic opinion. Do not expose generation mechanics,
+   prompts, receipts, provenance, or the acceptance hypothesis. Pass only if
+   the reviewer is not immediately tipped that the page is procedurally
+   generated; a merely improved or less-bad result is not passage.
+4. Defer multiple publications, TeX layout, and engraved cuts until separately
    authorized.
-4. Per-wave issues may use daily-like reporting windows, while a final
+5. Per-wave issues may use daily-like reporting windows, while a final
    composition may be an equally current weekly-style issue with a broader
    window. Both are selective journalism; broad fact availability increases
    editorial freedom and does not license recap voice.
