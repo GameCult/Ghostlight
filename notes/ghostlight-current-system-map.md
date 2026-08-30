@@ -1688,6 +1688,52 @@ applies the same plain-text boundary to its audit data. Neither assignment
 editor, writer, copy desk, Night Editor, renderer, nor receipt persistence can
 write world state.
 
+#### Seeded TeX press projection
+
+- **Owner:** the operator-designated frozen newsroom Markdown owns masthead,
+  edition label, sections, story order, headlines, decks, bylines, and every
+  paragraph. `tools/typeset_newspaper.py` owns presentation only: parsing that
+  copy, choosing bounded seed-driven style, emitting TeX and its manifest, and
+  invoking LuaLaTeX. Woodcut bitmaps and their adjacent prompt sidecars own
+  illustration provenance, not facts or copy.
+- **Inputs:** one frozen Markdown edition, one required integer seed, zero or
+  more ordered wordless woodcut PNGs, output/TeX/manifest paths, and an optional
+  LuaLaTeX engine or `--no-compile`. The current Run 61 projection uses seed
+  1847 and the `boundary-rail-exchange` and `sinkroot-gauge-gallery` cuts. Their
+  matching prompt files preserve the exact fresh ImageGen requests and record
+  grayscale, 72-percent threshold, and trim preparation.
+- **Outputs:** escaped TeX, a `ghostlight.seeded_tex_press.v1` TOML manifest, and
+  optionally a compiled PDF. The manifest records source/output/TeX paths,
+  seed, selected style values, ordered woodcut paths, and SHA-256 digests for
+  source, TeX, tool, woodcuts, engine, and compiled output. These are press
+  artifacts, not another newsroom composition or correction surface.
+- **Derived state:** the parsed `Edition`, seeded `Style`, page grouping,
+  ornament choice, image placement and widths, TeX markup, and PDF pagination
+  are presentation projections. The same seed deterministically selects the
+  same bounded style. Exact portable PDF reproduction additionally depends on
+  the named system fonts; source, woodcut, engine, tool, TeX, and output bytes
+  are bound by the manifest.
+- **Forbidden writers:** the press, TeX compiler, manifest, woodcuts, and prompt
+  sidecars cannot add, remove, summarize, reorder, correct, or reinterpret
+  newsroom copy; change bylines or story priority; write newsroom checkpoints
+  or world state; or promote an illustration into evidence. A successful PDF
+  compile cannot admit missing or altered copy.
+- **Shared path:** every press run parses the frozen source, derives one style
+  from the seed, writes TeX and manifest, then either stops at `--no-compile` or
+  compiles that exact TeX in a temporary directory and copies the resulting PDF
+  to the named output. Woodcut order alone selects lead and later placement.
+- **Cut line:** the live press path contains no model rewrite, editorial
+  summarizer, copy-fitting loop, or second content owner. Press variation is
+  bounded to page geometry, typography, color, rules, fleurons, and illustration
+  sizing/placement; the former fixed ReportLab front-page renderer is not live.
+- **Verification layer:** admission requires source-to-TeX/PDF copy completeness
+  and order, a same-source/seed derivation check, successful halt-on-error
+  compilation, rendered-page inspection for clipping and overlap, and matching
+  manifest/woodcut prompt provenance. LuaLaTeX produces a two-page PDF with
+  embedded Times New Roman faces. The parser flushes the final article paragraph
+  at end of file; extracted copy includes the closing `Marshal Eryn Tal`
+  paragraph, and rendered inspection shows no clipping or overlap.
+
 #### Acceptance-driver per-wave newspaper recovery
 
 - **Owner:** the strategic acceptance driver owns recovery of a missing

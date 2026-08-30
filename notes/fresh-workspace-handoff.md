@@ -1490,8 +1490,17 @@ Typesetting is delivered at
 three-column page with embedded Georgia/Times faces, warm press stock, and
 wordless rail/gauge cuts. The frozen Markdown source hash remains unchanged.
 Region-based extraction finds all 23 expected copy fragments, and full-page
-144-DPI visual QA finds no clipping or overlap. Typesetting is complete and no
-longer active work.
+144-DPI visual QA finds no clipping or overlap. Preserve it as the verified
+Run 60 press baseline.
+
+The operator has now authorized a new press-layout task over the designated
+accepted Canopy Ledger edition. Do not rewrite its copy. Build a reusable
+random-seed-driven newspaper layout script with bounded typography and press
+variation; the same source and seed must reproduce the same layout choices.
+Use ImageGen for story-specific woodcuts. Reserve printer's ornaments and
+fleurons for reusable decoration rather than narrative illustration. Preserve
+the source identity plus generation and visual provenance with the finished
+artifact. This task temporarily precedes the Delvehold adapter.
 
 Run 54 exposed one separate upstream publicity defect: a public strategic
 activity propagates its channel to private `MemberMemory` outcomes, which is
@@ -1502,8 +1511,11 @@ materializing a `NewsIssue`.
 
 1. Preserve immutable accepted Run 60 and Run 59; do not rewrite, recompose, or
    resimulate either edition.
-2. Preserve the delivered typeset PDF and its frozen-copy verification above.
-3. Advance the Delvehold-owned adapter against
+2. Preserve the delivered Run 60 PDF and its frozen-copy verification as the
+   baseline. Typeset the operator-designated accepted Canopy Ledger with the
+   reusable seeded press-layout machinery described above; verify the artifact
+   without changing accepted copy.
+3. After the press-layout task, advance the Delvehold-owned adapter against
    Ghostlight's admitted generic consumer contract. Defer multiple publications
    until separately authorized, or follow the operator's next directed work.
    Preserve immutable Runs 60 through 63 and do not replay newspaper work for
