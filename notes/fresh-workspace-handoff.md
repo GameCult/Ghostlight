@@ -1449,10 +1449,11 @@ three rewrites of one briefing is later editorial differentiation debt.
 Run 60 used 96,902 prompt tokens and reported zero cache hits. The bounded
 snapshot initialization had split the stable charter from the first-step
 directive, so the first provider request did not form the exact prefix reused
-by later steps. The current one-file `agent.rs` cut collapses those into one
-exact initial cacheable message while preserving later bounded workbench
-replacement. Focused agent and newspaper tests pass. This cache-boundary fix
-does not require resimulation or recomposition of the accepted edition.
+by later steps. Exact pushed commit `8f3c33b` (`Preserve bounded agent cache
+prefixes`) collapses those into one exact initial cacheable message while
+preserving later bounded workbench replacement; all 479 library tests pass.
+This cache-boundary fix does not require resimulation or recomposition of the
+accepted edition.
 
 Run 54 exposed one separate upstream publicity defect: a public strategic
 activity propagates its channel to private `MemberMemory` outcomes, which is
@@ -1463,13 +1464,13 @@ materializing a `NewsIssue`.
 
 1. Preserve immutable accepted Run 60 and Run 59; do not rewrite, recompose, or
    resimulate either edition.
-2. Finish proportional verification of the one-file cache-prefix fix, then
-   commit and push it. Preserve Run 60's zero-hit evidence rather than replaying
-   the accepted page to manufacture a better metric.
-3. Keep the blind review's three-rewrites criticism as later editorial
+2. Advance the Delvehold-owned adapter against Ghostlight's admitted generic
+   consumer contract. On the next naturally required multi-step provider agent
+   run, capture whether exact pushed `8f3c33b` produces nonzero cache hits; do
+   not replay Run 60 to manufacture a better metric.
+3. Keep the blind review's three-rewrites criticism as later reporter-voice
    differentiation debt. Defer multiple publications, TeX layout, and engraved
-   cuts until separately
-   authorized.
+   cuts until separately authorized.
 4. Per-wave issues may use daily-like reporting windows, while a final
    composition may be an equally current weekly-style issue with a broader
    window. Both are selective journalism; broad fact availability increases
