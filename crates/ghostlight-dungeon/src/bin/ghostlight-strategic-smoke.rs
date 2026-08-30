@@ -845,7 +845,7 @@ async fn main() -> anyhow::Result<()> {
         "GHOSTLIGHT_STRATEGIC_NEWSPAPER_RECOVERY_START_WAVE",
         1,
         1,
-        wave_count,
+        wave_count + 1,
     )?;
     let max_rejected_pulses_per_wave =
         bounded_environment_usize("GHOSTLIGHT_STRATEGIC_MAX_REJECTED_PULSES_PER_WAVE", 2, 0, 4)?;
@@ -2875,6 +2875,11 @@ mod tests {
         assert_eq!(
             missing_newspaper_report_indices(&reports, 3).unwrap(),
             vec![2]
+        );
+        assert!(
+            missing_newspaper_report_indices(&reports, 4)
+                .unwrap()
+                .is_empty()
         );
     }
 
