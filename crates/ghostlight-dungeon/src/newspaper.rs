@@ -4516,17 +4516,14 @@ mod tests {
 
         let requests = model.requests();
         assert_eq!(requests.len(), 3);
-        let stable_prefix = requests[0]
-            .lived_stream
-            .split("\n\nUSER:\nAGENT STEP")
-            .next()
-            .unwrap();
+        let stable_prefix = &requests[0].lived_stream;
         assert!(stable_prefix.contains("STAFF BOOK"));
-        assert!(
-            requests[1..]
-                .iter()
-                .all(|request| request.lived_stream.starts_with(stable_prefix))
-        );
+        assert!(stable_prefix.contains("AGENT STEP: 1"));
+        assert!(requests[1..].iter().all(|request| {
+            request
+                .lived_stream
+                .starts_with(&format!("{stable_prefix}\n\nUSER:\n"))
+        }));
         assert!(requests[1].lived_stream.contains("cracked hinge"));
         assert!(requests[2].lived_stream.contains("news:west-gate"));
         assert!(!requests[2].lived_stream.contains("cracked hinge"));

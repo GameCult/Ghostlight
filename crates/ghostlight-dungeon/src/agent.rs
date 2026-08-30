@@ -156,20 +156,10 @@ pub async fn run_model_agent_progress<Tool: ModelAgentTool>(
     }
 
     let mut receipts = Vec::new();
-    let mut input = if tool.context_snapshot().is_some() {
-        vec![
-            ModelInputItem::user(spec.instructions.clone()),
-            ModelInputItem::user(format!(
-                "AGENT STEP: 1 of {}. Choose one typed tool action admitted by the current output schema. The harness will execute it against the frozen state and return the real tool observation. Do not claim success yourself; only an accepted tool result can end the task.",
-                spec.max_steps
-            )),
-        ]
-    } else {
-        vec![ModelInputItem::user(format!(
-            "{}\n\nAGENT STEP: 1 of {}. Choose one typed tool action admitted by the current output schema. The harness will execute it against the frozen state and return the real tool observation. Do not claim success yourself; only an accepted tool result can end the task.",
-            spec.instructions, spec.max_steps
-        ))]
-    };
+    let mut input = vec![ModelInputItem::user(format!(
+        "{}\n\nAGENT STEP: 1 of {}. Choose one typed tool action admitted by the current output schema. The harness will execute it against the frozen state and return the real tool observation. Do not claim success yourself; only an accepted tool result can end the task.",
+        spec.instructions, spec.max_steps
+    ))];
     let mut last_observation = None;
     for step in 0..spec.max_steps {
         let action_schema = match tool.action_schema() {

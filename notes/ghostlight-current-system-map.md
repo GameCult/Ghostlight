@@ -1294,6 +1294,11 @@ The deliberative newsroom boundary is live under this authority map:
   deterministic workbench owns query admission, inspected-record membership,
   the bounded working-context projection, exact-ID fetch, agenda validation,
   focus-record dereferencing, candidate identity, and exact commit admission.
+  The generic agent harness owns message framing: for snapshot tools it freezes
+  the complete first request as one user message and replaces only the later
+  workbench message. The tool owns the snapshot content. The provider owns
+  automatic prefix-cache admission, retention, and hit accounting; neither the
+  harness nor the newsroom may declare a hit.
   The production-checkpoint validator owns whether an admitted agenda or
   accepted reporter filing is exact enough to resume; `CampaignStore` owns its
   immutable storage, not its editorial judgment. Each assigned in-world
@@ -1321,7 +1326,10 @@ The deliberative newsroom boundary is live under this authority map:
   most 24 complete records by exact stable ID. Each response returns at most 24
   exact projections and the agent has at most twelve semantic steps;
   the complete immutable ledger remains queryable rather than being split into
-  privileged recent and foundational windows.
+  privileged recent and foundational windows. The harness receives the stable
+  role charter, semantic-step budget and output schema plus the tool's optional
+  current snapshot and latest observation; changing workbench state is not an
+  input to the frozen first message.
 - **Outputs:** an agenda proposal does not finish selection. It yields one exact
   candidate digest plus a deterministic front-page proof: the proposed lead's
   complete focus record, the complete focus record for every below-fold pitch,
@@ -1347,6 +1355,11 @@ The deliberative newsroom boundary is live under this authority map:
   assessment plus the complete bounded set of exact factual query passages;
   the Night Editor emits one close action; and accepted composition v3 carries
   the printed issue, copy report, press-close witness, and exact receipt chain.
+  Each snapshot-agent run also emits a provider request sequence whose first
+  request is one stable user message containing the complete role charter and
+  step-one directive. Every later request begins with that exact message and
+  adds one second user message containing only the current bounded workbench
+  state, latest observation, and next-step directive.
 - **Derived state:** public-record projections contain their stable ID,
   timestamp, channel, headline, reliability, exact committed accounts,
   assertion statuses, committed event IDs, and only those people,
@@ -1360,6 +1373,10 @@ The deliberative newsroom boundary is live under this authority map:
   bounded query or exact-ID fetch. Production checkpoint IDs, reporter-assignment
   digests, receipt-chain and complete checkpoint-content digests, and cited-place
   dateline enums are also derived.
+  The cacheable prefix is the byte-stable first request plus its unchanged output
+  schema; the dynamic suffix is the second workbench message. Provider-reported
+  cached-token counts are observations of that external cache, not newsroom
+  state or proof that a particular request will hit.
   The query-index set, query-bearing article
   set, changed-article set, source-page digest, printed-page digest, and
   receipt-chain digest are also derived. None is a persisted world subject,
@@ -1403,12 +1420,16 @@ The deliberative newsroom boundary is live under this authority map:
   membership, not whether the final language is true or compelling. A structurally invalid
   close exhausts the one action and prints the checkpointed journalist page with an
   explicit non-applied close witness. There is no post-close model reread.
-- **Agent context and cache path:** the generic harness keeps the stable
-  instruction item as the first prefix. A tool may own a bounded current
-  context snapshot; after each nonterminal action the harness then discards old
-  model chatter and observations and sends only that snapshot plus the latest
-  finding. Tools that publish no snapshot retain the ordinary append-only
-  conversation path. The assignment workbench uses this seam for its compact
+- **Agent context and cache path:** every run begins with one user item combining
+  the stable charter and the step-one directive. For a tool that owns a bounded
+  current context snapshot, that complete first request remains byte-identical;
+  after each nonterminal action the harness discards old model chatter and
+  observations and replaces only a second user item with the current snapshot,
+  latest finding, and next-step directive. This gives the provider an implicit
+  cache breakpoint after request one without creating an application cache or
+  explicit breakpoint API. Tools that publish no snapshot retain the ordinary
+  append-only conversation path after the same single-message initial request.
+  The assignment workbench uses this seam for its compact
   inspected-record index and pending candidate token, while exact-ID fetch
   restores only the requested full records. Selector query, fetch, proposal, and
   commit share one stable structured action schema. The Night close schema is
@@ -1461,6 +1482,10 @@ The deliberative newsroom boundary is live under this authority map:
   task, or editorial binding cannot resume current production. The dateline
   schema cannot admit an uncited place, and blank cannot evade an available
   cited place on the lead.
+  A snapshot tool cannot rewrite the frozen first request, insert changing state
+  ahead of it, or promote provider cache telemetry into semantic authority. A
+  cache miss cannot change tool admission, receipts, or newsroom results, and a
+  routing key cannot substitute for provider-reported cached tokens.
   Renderers, strategic smoke, Registry, external blind reviewers, and grounding
   reviewers cannot write the page, desk report, close, correction, world state,
   or acceptance state. Caches cannot decide record equivalence, assertion
@@ -1482,6 +1507,10 @@ The deliberative newsroom boundary is live under this authority map:
   stored receipts, then returned without model work. Every caller receives one
   completed `WorldNewspaperComposition` or an error; there is no pending
   reconciliation result for a caller to interpret or advance.
+  Generic snapshot agents and the assignment editor share the same harness
+  framing primitive; non-snapshot agents share its single initial message but
+  continue through the append-only observation path. No newsroom-specific cache
+  branch owns either route.
 - **Persistence and compatibility:** the live internal contract is
   `character-newsroom.v10`. Public request schema v3 carries the publication
   roster and binds it into the task and editorial identities. Private production
@@ -1523,6 +1552,10 @@ The deliberative newsroom boundary is live under this authority map:
   explicit import API and environment path, v7-to-v9 close conversion, and
   pending consumer branches are deleted from live authority. Existing bytes are
   not migrated or erased; nothing in the live path can make them decide a close.
+  The snapshot harness's former two-message first request is also deleted: the
+  step-one directive no longer sits in a prefix position that disappears when
+  the first workbench snapshot replaces history. The cut adds no cache store,
+  cache key registry, manual retention control, or retry compensator.
   The roster, query projection, front-page proof, and article assembly reuse the
   generic agent harness and existing public-record, agenda, accepted issue, and
   audit shapes. One private persistent production-checkpoint schema buys exact
@@ -1555,6 +1588,17 @@ The deliberative newsroom boundary is live under this authority map:
   existing newspaper library and strategic-smoke targets plus formatting,
   state, and system-map gates. The cut adds no service, crate, dependency,
   event authority, or simulation pass.
+
+Run 60 is the negative cache witness for the superseded framing: 15 calls used
+96,902 prompt tokens and reported zero cached tokens. The selector's first call
+used 1,452 prompt tokens, while later calls grew to roughly 7,500–11,800. That
+first request was large enough for automatic prompt caching, but the old
+two-message shape retained only the charter and replaced the step-one message,
+so later requests did not preserve the complete first-request prefix. The
+focused harness regression now proves one combined charter-plus-step-one user
+message, exact later prefix preservation, a replaced dynamic workbench message,
+no replayed assistant chatter, and an unchanged output schema. It proves request
+shape only; a nonzero provider cache hit remains runtime verification.
 
 The bounded selector snapshot retains a pending agenda's exact token while its
 front-page proof is the latest observation. Any later query or exact-ID fetch
