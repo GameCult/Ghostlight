@@ -1382,11 +1382,16 @@ disposition, and closure.
 Run 60 attempts 1 and 2 stopped before any v9 provider call. Attempt 1 exposed
 the missing `wave_count + 1` final-only sentinel. Attempt 2 reached final
 composition without simulation or per-wave replay, then exposed automatic v7
-close import as obsolete live authority. The current uncommitted cut deletes
-legacy reconciliation/import from live newsroom ownership, makes advance return
-one composition, and leaves the exact-current close checkpoint as the sole
-resume owner. Gates pass 474/474 library tests, 16/16 strategic-smoke tests, and
-all-target checks. Provider and reverse-Turing acceptance remain unproven.
+close import as obsolete live authority. Pushed `c0a001c` deletes that authority,
+makes advance return one composition, and leaves the exact-current close
+checkpoint as the sole resume owner. Attempt 3 built that exact source and also
+stopped before a provider call with an empty receipt list: the private
+close-origin enum could not decode historical `legacy_v7_checkpoint`. The
+current single-file fix admits that spelling solely as an inert private
+tombstone, filters it before exact-current close selection, and proves a fresh
+v9 issue runs despite a matching historical row. Gates pass 475/475 library
+tests, 16/16 strategic-smoke tests, and all-target checks. Provider and
+reverse-Turing acceptance remain unproven.
 
 Run 54 exposed one separate upstream publicity defect: a public strategic
 activity propagates its channel to private `MemberMemory` outcomes, which is
@@ -1397,10 +1402,11 @@ materializing a `NewsIssue`.
 
 1. Preserve immutable Run 59 and its later-publication correction debt; do not
    rewrite or resimulate it.
-2. Commit and push the verified resume-ownership cut. Resume the same Run 60
-   root at final composition without simulation or per-wave replay; do not
-   launch a fresh campaign or import a v7 close. Measure actual cached tokens
-   and freeze the resulting reader-facing v9 front page.
+2. Commit and push the inert-tombstone compatibility fix. Resume the same Run
+   60 root at final composition without simulation or per-wave replay; do not
+   launch a fresh campaign or let the historical tombstone regain close
+   authority. Measure actual cached tokens and freeze the resulting
+   reader-facing v9 front page.
 3. Dispatch an independent blind reviewer with only that fantasy newspaper and
    a request for its journalistic opinion. Do not expose generation mechanics,
    prompts, receipts, provenance, or the acceptance hypothesis. Pass only if

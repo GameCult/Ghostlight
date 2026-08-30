@@ -1442,14 +1442,16 @@ The deliberative newsroom boundary is live under this authority map:
   v1 binds the assigned agenda, assembled page, single copy report, task and
   exact editorial bindings, and immutable receipt chain. Its only valid origin
   is `InitialCopyDesk`, and its compatibility-shaped `source_checkpoint_id`
-  must be absent; validation rejects any other origin or imported ancestry.
+  must be absent. The private `LegacyV7Checkpoint` enum spelling is a read-only
+  deserialization tombstone: the loader filters it before task selection,
+  receipt loading, validation, or close authority.
   Composition v3 stores
   the printed issue, copy report, press-close witness, and receipts. Public issue
   schema v3 remains unchanged. Candidate agendas and front-page proofs remain
   ephemeral. Historical v7 reconciliation rows may remain in archived or
   resumed stores as inert provenance, but the live newspaper module defines no
   reconciliation loader, import envelope, or conversion path and does not
-  deserialize or rebind them. Historical strategic recomposition v1/v2 receipts
+  rebind them. Historical strategic recomposition v1/v2 receipts
   are a separate acceptance-driver verification surface; their typed validators
   can prove original artifacts but cannot write newsroom state. Resume authority
   belongs only to an exact-current close checkpoint bound to the same v9 task,
@@ -1484,7 +1486,8 @@ The deliberative newsroom boundary is live under this authority map:
   stage, deterministic source/printed digests, exact receipt ancestry,
   close-checkpoint resume without reporter or copy replay, idempotent persisted
   composition validation, printing the checkpointed page after a structurally
-  rejected close. The close validator admits only `InitialCopyDesk` checkpoints
+  rejected close, and a fresh v9 close in a store containing a matching inert
+  v7 tombstone. The close validator admits only `InitialCopyDesk` checkpoints
   with no source ancestry, while exact-current resume and idempotence regressions
   exercise the only surviving resume path. Strategic recomposition v3 binds the
   copy report and press witness by digest while v1/v2 remain historical

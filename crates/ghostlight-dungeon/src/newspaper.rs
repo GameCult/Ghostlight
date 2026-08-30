@@ -281,6 +281,7 @@ pub struct WorldNewspaperPressClose {
 #[serde(rename_all = "snake_case")]
 enum WorldNewspaperCloseOrigin {
     InitialCopyDesk,
+    LegacyV7Checkpoint,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -1690,7 +1691,8 @@ fn load_close_checkpoint(
         .load_all::<WorldNewspaperCloseCheckpoint>("world_newspaper_close_checkpoint.v1")?
         .into_iter()
         .filter(|checkpoint| {
-            checkpoint.publication_task_binding == prepared.publication_task_binding
+            checkpoint.origin == WorldNewspaperCloseOrigin::InitialCopyDesk
+                && checkpoint.publication_task_binding == prepared.publication_task_binding
         })
         .collect::<Vec<_>>();
     if checkpoints.is_empty() {
@@ -4486,6 +4488,83 @@ mod tests {
                 .unwrap_err()
                 .to_string()
                 .contains("press witness")
+        );
+    }
+
+    #[tokio::test]
+    async fn legacy_close_checkpoint_decodes_as_inert_history() {
+        let campaign = campaign_with_news();
+        let source_directory = tempfile::tempdir().unwrap();
+        let source_store =
+            CampaignStore::open(source_directory.path().join("campaign.cc")).unwrap();
+        let interrupted = ScriptedNewspaperModel::new([
+            QUERY_ALL_RECORDS,
+            ONE_STORY_AGENDA,
+            ACCEPTED_STORY_ACTION,
+            ACCEPTING_COPY_DESK,
+        ]);
+        advance_world_newspaper(
+            &interrupted,
+            &campaign,
+            "The Underdeep Clarion",
+            "A skeptical court broadsheet with dry restraint.",
+            &canopy_ledger_newsroom(),
+            4,
+            &source_store,
+        )
+        .await
+        .unwrap_err();
+        let mut legacy = source_store
+            .load_all::<WorldNewspaperCloseCheckpoint>(
+                "world_newspaper_close_checkpoint.v1",
+            )
+            .unwrap()
+            .into_iter()
+            .next()
+            .unwrap();
+        legacy.id = "newspaper-close:legacy-v7".into();
+        legacy.origin = WorldNewspaperCloseOrigin::LegacyV7Checkpoint;
+        legacy.source_checkpoint_id = Some("historical-v7-tip".into());
+
+        let target_directory = tempfile::tempdir().unwrap();
+        let target_store =
+            CampaignStore::open(target_directory.path().join("campaign.cc")).unwrap();
+        target_store
+            .insert(
+                "world_newspaper_close_checkpoint.v1",
+                "ghostlight.world_newspaper_close_checkpoint.v1",
+                &legacy.id,
+                &legacy,
+            )
+            .unwrap();
+
+        let model = ScriptedNewspaperModel::new([
+            QUERY_ALL_RECORDS,
+            ONE_STORY_AGENDA,
+            ACCEPTED_STORY_ACTION,
+            ACCEPTING_COPY_DESK,
+            UNCHANGED_NIGHT_CLOSE,
+        ]);
+        let composition = advance_world_newspaper(
+            &model,
+            &campaign,
+            "The Underdeep Clarion",
+            "A skeptical court broadsheet with dry restraint.",
+            &canopy_ledger_newsroom(),
+            4,
+            &target_store,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(model.requests().len(), 6);
+        assert_eq!(composition.issue.articles.len(), 1);
+        assert_eq!(
+            target_store
+                .keys("world_newspaper_close_checkpoint.v1")
+                .unwrap()
+                .len(),
+            2
         );
     }
 
