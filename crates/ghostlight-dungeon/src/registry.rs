@@ -380,7 +380,7 @@ impl CampaignRegistry {
         &self,
         request: WorldNewspaperRequest,
         model: &dyn ModelPort,
-    ) -> Result<crate::newspaper::WorldNewspaperAdvance> {
+    ) -> Result<crate::newspaper::WorldNewspaperComposition> {
         if request.schema != "ghostlight.world_newspaper_request.v3"
             || request.max_articles == 0
             || request.max_articles > 6
@@ -1453,8 +1453,6 @@ mod tests {
             .compose_world_newspaper(newspaper_request.clone(), &RegistryNewspaperModel)
             .await
             .unwrap()
-            .into_accepted()
-            .unwrap()
             .issue;
         assert_eq!(newspaper.source_world_revision, 0);
         assert!(newspaper.articles.is_empty());
@@ -1673,8 +1671,6 @@ mod tests {
             .compose_world_newspaper(newspaper_request.clone(), &RegistryNewspaperModel)
             .await
             .unwrap()
-            .into_accepted()
-            .unwrap()
             .issue;
         assert_eq!(newspaper.source_world_revision, 3);
         assert_eq!(newspaper.articles.len(), 1);
@@ -1700,8 +1696,6 @@ mod tests {
             .compose_world_newspaper(newspaper_request.clone(), &RegistryNewspaperModel)
             .await
             .unwrap()
-            .into_accepted()
-            .unwrap()
             .issue;
         assert_eq!(repeated_newspaper.id, newspaper.id);
         assert_eq!(
@@ -1719,9 +1713,7 @@ mod tests {
         let closed = registry
             .compose_world_newspaper(rejected_request, &RejectingRegistryNewspaperModel)
             .await
-            .unwrap()
-            .into_accepted()
-            .expect("the Night Editor must close the marked page once");
+            .unwrap();
         assert_eq!(closed.model_receipts.len(), 6);
         assert_eq!(closed.copy_desk.queries.len(), 1);
         assert!(closed.press_close.night_editor_action_applied);

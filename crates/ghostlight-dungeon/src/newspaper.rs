@@ -28,7 +28,6 @@ const MAX_FRONT_PAGE_ARTICLES: usize = 6;
 const MAX_PUBLIC_RECORD_QUERY_RESULTS: usize = 24;
 const MAX_NARRATIVE_SELECTION_STEPS: usize = 12;
 const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v9";
-const LEGACY_RECONCILIATION_CONTRACT_VERSION: &str = "canopy-ledger-night-editor.v7";
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
@@ -247,13 +246,6 @@ pub enum WorldNewspaperGroundingCategory {
     MechanicalCopy,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
-pub struct WorldNewspaperGroundingVerdict {
-    pub accepted: bool,
-    pub assessment: String,
-    pub findings: Vec<WorldNewspaperGroundingFinding>,
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 pub struct WorldNewspaperComposition {
     pub schema: String,
@@ -285,109 +277,10 @@ pub struct WorldNewspaperPressClose {
     pub printed_page_digest: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
-pub struct WorldNewspaperEditorialFinding {
-    pub article_index: u16,
-    pub category: WorldNewspaperEditorialCategory,
-    #[schemars(length(min = 1, max = 500))]
-    pub passage: String,
-    #[schemars(length(min = 1, max = 500))]
-    pub reason: String,
-    #[schemars(length(min = 1, max = 500))]
-    pub rewrite_goal: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum WorldNewspaperEditorialCategory {
-    BuriedLede,
-    ProceduralForeground,
-    ThroughlineDropped,
-    StakesAbstracted,
-    TensionFlattened,
-    RepetitiveUpdate,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
-pub struct WorldNewspaperEditorialVerdict {
-    pub accepted: bool,
-    #[schemars(length(min = 1, max = 500))]
-    pub assessment: String,
-    #[schemars(length(max = 24))]
-    pub findings: Vec<WorldNewspaperEditorialFinding>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-#[serde(tag = "state", rename_all = "snake_case")]
-pub enum WorldNewspaperAdvance {
-    Accepted {
-        composition: WorldNewspaperComposition,
-    },
-    Pending {
-        checkpoint: WorldNewspaperReconciliationCheckpoint,
-        model_receipts: Vec<ModelStageReceipt>,
-    },
-}
-
-impl WorldNewspaperAdvance {
-    pub fn model_receipts(&self) -> &[ModelStageReceipt] {
-        match self {
-            Self::Accepted { composition } => &composition.model_receipts,
-            Self::Pending { model_receipts, .. } => model_receipts,
-        }
-    }
-
-    pub fn into_accepted(self) -> Option<WorldNewspaperComposition> {
-        match self {
-            Self::Accepted { composition } => Some(composition),
-            Self::Pending { .. } => None,
-        }
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "snake_case")]
-pub enum WorldNewspaperCheckpointOrigin {
-    InitialReview,
-    Reconciliation,
-    LegacyTerminalImport,
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 enum WorldNewspaperCloseOrigin {
     InitialCopyDesk,
-    LegacyV7Checkpoint,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(tag = "owner", rename_all = "snake_case")]
-enum WorldNewspaperDeskRejection {
-    CopyDesk {
-        verdict: WorldNewspaperGroundingVerdict,
-    },
-    NightEditor {
-        verdict: WorldNewspaperEditorialVerdict,
-    },
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-#[serde(deny_unknown_fields)]
-pub struct WorldNewspaperReconciliationCheckpoint {
-    schema: String,
-    id: String,
-    publication_task_binding: String,
-    editorial_binding: String,
-    generation: u32,
-    previous_checkpoint_id: Option<String>,
-    origin: WorldNewspaperCheckpointOrigin,
-    source_witness_digest: Option<String>,
-    #[serde(default)]
-    editorial_agenda: Option<WorldNewspaperEditorialAgenda>,
-    draft: EditorialPageDraft,
-    rejection: WorldNewspaperDeskRejection,
-    model_receipt_ids: Vec<String>,
-    receipt_chain_digest: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -404,40 +297,6 @@ struct WorldNewspaperCloseCheckpoint {
     copy_desk: WorldNewspaperCopyDeskReport,
     model_receipt_ids: Vec<String>,
     receipt_chain_digest: String,
-}
-
-impl WorldNewspaperReconciliationCheckpoint {
-    pub fn id(&self) -> &str {
-        &self.id
-    }
-
-    pub fn editorial_binding(&self) -> &str {
-        &self.editorial_binding
-    }
-
-    pub fn generation(&self) -> u32 {
-        self.generation
-    }
-
-    pub fn previous_checkpoint_id(&self) -> Option<&str> {
-        self.previous_checkpoint_id.as_deref()
-    }
-
-    pub fn model_receipt_ids(&self) -> &[String] {
-        &self.model_receipt_ids
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-#[serde(deny_unknown_fields)]
-pub struct WorldNewspaperReconciliationImport {
-    schema: String,
-    source_witness_digest: String,
-    #[serde(default)]
-    editorial_agenda: Option<WorldNewspaperEditorialAgenda>,
-    draft: EditorialPageDraft,
-    verdict: WorldNewspaperGroundingVerdict,
-    model_receipts: Vec<ModelStageReceipt>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -1135,28 +994,6 @@ fn journalist_by_id<'a>(
         .ok_or_else(|| anyhow!("editorial pitch assigned an unknown journalist {journalist_id}"))
 }
 
-fn normalize_legacy_agenda(
-    agenda: &mut WorldNewspaperEditorialAgenda,
-    newsroom: &WorldNewspaperNewsroom,
-) {
-    for (index, pitch) in agenda.story_pitches.iter_mut().enumerate() {
-        if pitch.section.is_empty() {
-            pitch.section = if index == 0 {
-                "Front Page"
-            } else {
-                "Dispatches"
-            }
-            .into();
-        }
-        if pitch.journalist_id.is_empty() {
-            pitch.journalist_id = newsroom.journalists[index % newsroom.journalists.len()]
-                .staff
-                .id
-                .clone();
-        }
-    }
-}
-
 fn selected_record_ids<'a>(record_ids: &'a [String], label: &str) -> Result<BTreeSet<&'a str>> {
     if record_ids.is_empty() {
         return Err(anyhow!("{label} selected no public record"));
@@ -1430,8 +1267,6 @@ struct PreparedNewspaper {
     source_receipt_ids: Vec<String>,
     publication_task_binding: String,
     binding: String,
-    legacy_publication_task_binding: String,
-    legacy_binding: String,
 }
 
 fn prepare_newspaper(
@@ -1477,21 +1312,6 @@ fn prepare_newspaper(
         max_articles,
         &records,
     )?;
-    let legacy_publication_task_binding = publication_task_binding_for_contract(
-        LEGACY_RECONCILIATION_CONTRACT_VERSION,
-        campaign,
-        &title,
-        &editorial_voice,
-        max_articles,
-    )?;
-    let legacy_binding = editorial_binding_for_contract(
-        LEGACY_RECONCILIATION_CONTRACT_VERSION,
-        campaign,
-        &title,
-        &editorial_voice,
-        max_articles,
-        &records,
-    )?;
     Ok(PreparedNewspaper {
         title,
         editorial_voice,
@@ -1500,8 +1320,6 @@ fn prepare_newspaper(
         source_receipt_ids,
         publication_task_binding,
         binding,
-        legacy_publication_task_binding,
-        legacy_binding,
     })
 }
 
@@ -1649,15 +1467,6 @@ async fn run_assigned_journalists(
     Ok((EditorialPageDraft { articles }, receipts))
 }
 
-fn legacy_copy_desk_report(
-    verdict: WorldNewspaperGroundingVerdict,
-) -> WorldNewspaperCopyDeskReport {
-    WorldNewspaperCopyDeskReport {
-        assessment: verdict.assessment,
-        queries: verdict.findings,
-    }
-}
-
 fn close_checkpoint_identity(
     publication_task_binding: &str,
     editorial_binding: &str,
@@ -1750,110 +1559,6 @@ fn persist_close_checkpoint(
     Ok(())
 }
 
-fn checkpoint_identity(
-    publication_task_binding: &str,
-    binding: &str,
-    generation: u32,
-    previous_checkpoint_id: Option<&str>,
-    origin: &WorldNewspaperCheckpointOrigin,
-    source_witness_digest: Option<&str>,
-    editorial_agenda: Option<&WorldNewspaperEditorialAgenda>,
-    draft: &EditorialPageDraft,
-    rejection: &WorldNewspaperDeskRejection,
-    model_receipt_ids: &[String],
-    receipt_chain_digest: &str,
-) -> Result<String> {
-    Ok(format!(
-        "newspaper-reconciliation:sha256:{:x}",
-        Sha256::digest(rmp_serde::to_vec_named(&(
-            publication_task_binding,
-            binding,
-            generation,
-            previous_checkpoint_id,
-            origin,
-            source_witness_digest,
-            editorial_agenda,
-            draft,
-            rejection,
-            model_receipt_ids,
-            receipt_chain_digest,
-        ))?)
-    ))
-}
-
-#[allow(clippy::too_many_arguments)]
-fn new_reconciliation_checkpoint(
-    publication_task_binding: &str,
-    binding: &str,
-    generation: u32,
-    previous_checkpoint_id: Option<String>,
-    origin: WorldNewspaperCheckpointOrigin,
-    source_witness_digest: Option<String>,
-    editorial_agenda: Option<WorldNewspaperEditorialAgenda>,
-    draft: EditorialPageDraft,
-    rejection: WorldNewspaperDeskRejection,
-    receipts: &[ModelStageReceipt],
-) -> Result<WorldNewspaperReconciliationCheckpoint> {
-    let model_receipt_ids = receipts
-        .iter()
-        .map(|receipt| receipt.storage_key().to_owned())
-        .collect::<Vec<_>>();
-    let receipt_chain_digest = checkpoint_receipt_chain_digest(&model_receipt_ids)?;
-    let id = checkpoint_identity(
-        publication_task_binding,
-        binding,
-        generation,
-        previous_checkpoint_id.as_deref(),
-        &origin,
-        source_witness_digest.as_deref(),
-        editorial_agenda.as_ref(),
-        &draft,
-        &rejection,
-        &model_receipt_ids,
-        &receipt_chain_digest,
-    )?;
-    Ok(WorldNewspaperReconciliationCheckpoint {
-        schema: "ghostlight.world_newspaper_reconciliation_checkpoint.v3".into(),
-        id,
-        publication_task_binding: publication_task_binding.into(),
-        editorial_binding: binding.into(),
-        generation,
-        previous_checkpoint_id,
-        origin,
-        source_witness_digest,
-        editorial_agenda,
-        draft,
-        rejection,
-        model_receipt_ids,
-        receipt_chain_digest,
-    })
-}
-
-fn persist_reconciliation_checkpoint(
-    store: &CampaignStore,
-    checkpoint: &WorldNewspaperReconciliationCheckpoint,
-) -> Result<()> {
-    let kind = "world_newspaper_reconciliation_checkpoint.v3";
-    if let Some((_, existing)) =
-        store.load::<WorldNewspaperReconciliationCheckpoint>(kind, checkpoint.id())?
-    {
-        if existing != *checkpoint {
-            return Err(anyhow!(
-                "immutable newspaper reconciliation checkpoint conflict: {}",
-                checkpoint.id()
-            ));
-        }
-        return Ok(());
-    }
-    store.insert(
-        kind,
-        "ghostlight.world_newspaper_reconciliation_checkpoint.v3",
-        checkpoint.id(),
-        checkpoint,
-    )?;
-    Ok(())
-}
-
 fn persist_newspaper_completion(
     store: &CampaignStore,
     publication_task_binding: &str,
@@ -1888,219 +1593,6 @@ fn persist_newspaper_completion(
     Ok(())
 }
 
-fn load_checkpoint_receipts(
-    store: &CampaignStore,
-    checkpoint: &WorldNewspaperReconciliationCheckpoint,
-) -> Result<Vec<ModelStageReceipt>> {
-    checkpoint
-        .model_receipt_ids
-        .iter()
-        .map(|receipt_id| {
-            store
-                .load::<ModelStageReceipt>("persona_stage_receipt.v1", receipt_id)?
-                .map(|(_, receipt)| receipt)
-                .ok_or_else(|| anyhow!("newspaper checkpoint lost model receipt {receipt_id}"))
-        })
-        .collect()
-}
-
-fn validate_reconciliation_checkpoint(
-    checkpoint: &WorldNewspaperReconciliationCheckpoint,
-    prepared: &PreparedNewspaper,
-    max_articles: usize,
-    receipts: &[ModelStageReceipt],
-    expected_publication_task_binding: &str,
-    expected_editorial_binding: &str,
-) -> Result<()> {
-    if checkpoint.schema != "ghostlight.world_newspaper_reconciliation_checkpoint.v3"
-        || checkpoint.publication_task_binding != expected_publication_task_binding
-        || checkpoint.editorial_binding != expected_editorial_binding
-        || checkpoint.editorial_agenda.is_none()
-        || receipts.len() != checkpoint.model_receipt_ids.len()
-    {
-        return Err(anyhow!("newspaper reconciliation checkpoint is invalid"));
-    }
-    if checkpoint.generation == 0 && checkpoint.previous_checkpoint_id.is_some()
-        || checkpoint.generation > 0 && checkpoint.previous_checkpoint_id.is_none()
-    {
-        return Err(anyhow!(
-            "newspaper reconciliation checkpoint lineage is invalid"
-        ));
-    }
-    let receipt_ids = receipts
-        .iter()
-        .map(|receipt| receipt.storage_key().to_owned())
-        .collect::<Vec<_>>();
-    if receipt_ids != checkpoint.model_receipt_ids
-        || receipt_ids.iter().collect::<BTreeSet<_>>().len() != receipt_ids.len()
-        || checkpoint_receipt_chain_digest(&receipt_ids)? != checkpoint.receipt_chain_digest
-        || checkpoint_identity(
-            &checkpoint.publication_task_binding,
-            &checkpoint.editorial_binding,
-            checkpoint.generation,
-            checkpoint.previous_checkpoint_id.as_deref(),
-            &checkpoint.origin,
-            checkpoint.source_witness_digest.as_deref(),
-            checkpoint.editorial_agenda.as_ref(),
-            &checkpoint.draft,
-            &checkpoint.rejection,
-            &checkpoint.model_receipt_ids,
-            &checkpoint.receipt_chain_digest,
-        )? != checkpoint.id
-    {
-        return Err(anyhow!(
-            "newspaper reconciliation checkpoint receipt binding is invalid"
-        ));
-    }
-    let ancestry_valid = match checkpoint.origin {
-        WorldNewspaperCheckpointOrigin::LegacyTerminalImport => {
-            if checkpoint.editorial_agenda.is_some() {
-                let editor_index = receipts
-                    .iter()
-                    .position(|receipt| receipt.stage == "newspaper_editor");
-                editor_index.is_some_and(|index| {
-                    index > 0
-                        && receipts[..index].iter().all(|receipt| {
-                            receipt.stage == "newspaper_narrative_selection_agent_action"
-                        })
-                        && receipts
-                            .get(index + 1)
-                            .map(|receipt| receipt.stage.as_str())
-                            == Some("newspaper_copy_desk")
-                })
-            } else {
-                receipts.first().map(|receipt| receipt.stage.as_str()) == Some("newspaper_editor")
-                    && receipts.get(1).map(|receipt| receipt.stage.as_str())
-                        == Some("newspaper_copy_desk")
-            }
-        }
-        WorldNewspaperCheckpointOrigin::InitialReview
-        | WorldNewspaperCheckpointOrigin::Reconciliation => {
-            let editor_index = receipts
-                .iter()
-                .position(|receipt| receipt.stage == "newspaper_journalist_agent_action");
-            checkpoint.editorial_agenda.is_some()
-                && editor_index.is_some_and(|index| {
-                    index > 0
-                        && receipts[..index].iter().all(|receipt| {
-                            receipt.stage == "newspaper_narrative_selection_agent_action"
-                        })
-                        && receipts[index..receipts.len().saturating_sub(1)]
-                            .iter()
-                            .all(|receipt| receipt.stage == "newspaper_journalist_agent_action")
-                        && receipts.last().map(|receipt| receipt.stage.as_str())
-                            == Some("newspaper_copy_desk")
-                })
-        }
-    };
-    if !ancestry_valid
-        || receipts
-            .first()
-            .map(|receipt| receipt.snapshot_binding.as_str())
-            != Some(expected_editorial_binding)
-    {
-        return Err(anyhow!(
-            "newspaper reconciliation checkpoint lost its narrative, editor, or copy-desk ancestry"
-        ));
-    }
-    validate_editorial_draft(&prepared.records, &checkpoint.draft, max_articles)?;
-    if let Some(agenda) = &checkpoint.editorial_agenda {
-        validate_editorial_agenda(&prepared.records, &prepared.newsroom, agenda, max_articles)?;
-        validate_editorial_alignment(&checkpoint.draft, &prepared.newsroom, agenda)?;
-    }
-    validate_desk_rejection(&checkpoint.draft, &checkpoint.rejection)?;
-    let latest_review_stage = receipts
-        .iter()
-        .rev()
-        .find(|receipt| {
-            matches!(
-                receipt.stage.as_str(),
-                "newspaper_copy_desk" | "newspaper_night_editor"
-            )
-        })
-        .map(|receipt| receipt.stage.as_str());
-    let expected_review_stage = match &checkpoint.rejection {
-        WorldNewspaperDeskRejection::CopyDesk { .. } => "newspaper_copy_desk",
-        WorldNewspaperDeskRejection::NightEditor { .. } => "newspaper_night_editor",
-    };
-    if latest_review_stage != Some(expected_review_stage) {
-        return Err(anyhow!(
-            "newspaper reconciliation checkpoint lost its rejecting desk receipt"
-        ));
-    }
-    Ok(())
-}
-
-fn load_legacy_reconciliation_tip(
-    store: &CampaignStore,
-    prepared: &PreparedNewspaper,
-    max_articles: usize,
-) -> Result<
-    Option<(
-        WorldNewspaperReconciliationCheckpoint,
-        Vec<ModelStageReceipt>,
-    )>,
-> {
-    let checkpoints = store
-        .load_all::<WorldNewspaperReconciliationCheckpoint>(
-            "world_newspaper_reconciliation_checkpoint.v3",
-        )?
-        .into_iter()
-        .filter(|checkpoint| {
-            checkpoint.publication_task_binding == prepared.legacy_publication_task_binding
-        })
-        .collect::<Vec<_>>();
-    if checkpoints.is_empty() {
-        return Ok(None);
-    }
-    let by_id = checkpoints
-        .iter()
-        .map(|checkpoint| (checkpoint.id.as_str(), checkpoint))
-        .collect::<BTreeMap<_, _>>();
-    let referenced = checkpoints
-        .iter()
-        .filter_map(|checkpoint| checkpoint.previous_checkpoint_id.as_deref())
-        .collect::<BTreeSet<_>>();
-    let tips = checkpoints
-        .iter()
-        .filter(|checkpoint| !referenced.contains(checkpoint.id.as_str()))
-        .collect::<Vec<_>>();
-    if tips.len() != 1 {
-        return Err(anyhow!(
-            "newspaper reconciliation checkpoint chain has multiple or missing tips"
-        ));
-    }
-    for checkpoint in &checkpoints {
-        let receipts = load_checkpoint_receipts(store, checkpoint)?;
-        validate_reconciliation_checkpoint(
-            checkpoint,
-            prepared,
-            max_articles,
-            &receipts,
-            &prepared.legacy_publication_task_binding,
-            &prepared.legacy_binding,
-        )?;
-        if let Some(previous_id) = checkpoint.previous_checkpoint_id.as_deref() {
-            let previous = by_id
-                .get(previous_id)
-                .ok_or_else(|| anyhow!("newspaper reconciliation checkpoint parent is missing"))?;
-            if checkpoint.generation != previous.generation + 1
-                || !checkpoint
-                    .model_receipt_ids
-                    .starts_with(&previous.model_receipt_ids)
-                || checkpoint.model_receipt_ids.len() <= previous.model_receipt_ids.len()
-            {
-                return Err(anyhow!(
-                    "newspaper reconciliation checkpoint chain is not an exact receipt-prefix extension"
-                ));
-            }
-        }
-    }
-    let tip = (*tips[0]).clone();
-    let receipts = load_checkpoint_receipts(store, &tip)?;
-    Ok(Some((tip, receipts)))
-}
-
 fn validate_copy_desk_report(
     draft: &EditorialPageDraft,
     report: &WorldNewspaperCopyDeskReport,
@@ -2120,7 +1612,6 @@ fn validate_copy_desk_report(
 }
 
 fn validate_close_checkpoint(
-    store: &CampaignStore,
     checkpoint: &WorldNewspaperCloseCheckpoint,
     prepared: &PreparedNewspaper,
     max_articles: usize,
@@ -2133,42 +1624,12 @@ fn validate_close_checkpoint(
     {
         return Err(anyhow!("newspaper close checkpoint is invalid"));
     }
-    match checkpoint.origin {
-        WorldNewspaperCloseOrigin::InitialCopyDesk => {
-            if checkpoint.source_checkpoint_id.is_some() {
-                return Err(anyhow!(
-                    "initial newspaper close checkpoint names a legacy source"
-                ));
-            }
-        }
-        WorldNewspaperCloseOrigin::LegacyV7Checkpoint => {
-            let source_checkpoint_id = checkpoint
-                .source_checkpoint_id
-                .as_deref()
-                .ok_or_else(|| anyhow!("legacy newspaper close lost its source checkpoint"))?;
-            let source = store
-                .load::<WorldNewspaperReconciliationCheckpoint>(
-                    "world_newspaper_reconciliation_checkpoint.v3",
-                    source_checkpoint_id,
-                )?
-                .map(|(_, checkpoint)| checkpoint)
-                .ok_or_else(|| anyhow!("legacy newspaper close source checkpoint is missing"))?;
-            if source.id != source_checkpoint_id
-                || source.publication_task_binding != prepared.legacy_publication_task_binding
-                || source.editorial_binding != prepared.legacy_binding
-                || source.draft != checkpoint.draft
-                || source.editorial_agenda.as_ref() != Some(&checkpoint.editorial_agenda)
-                || !matches!(
-                    source.rejection,
-                    WorldNewspaperDeskRejection::CopyDesk { ref verdict }
-                        if legacy_copy_desk_report(verdict.clone()) == checkpoint.copy_desk
-                )
-            {
-                return Err(anyhow!(
-                    "legacy newspaper close source checkpoint does not bind its imported page"
-                ));
-            }
-        }
+    if checkpoint.origin != WorldNewspaperCloseOrigin::InitialCopyDesk
+        || checkpoint.source_checkpoint_id.is_some()
+    {
+        return Err(anyhow!(
+            "newspaper close checkpoint does not belong to the current newsroom"
+        ));
     }
     let receipt_ids = receipts
         .iter()
@@ -2251,37 +1712,7 @@ fn load_close_checkpoint(
                 .ok_or_else(|| anyhow!("newspaper close lost model receipt {receipt_id}"))
         })
         .collect::<Result<Vec<_>>>()?;
-    validate_close_checkpoint(store, &checkpoint, prepared, max_articles, &receipts)?;
-    Ok(Some((checkpoint, receipts)))
-}
-
-fn import_legacy_close_checkpoint(
-    store: &CampaignStore,
-    prepared: &PreparedNewspaper,
-    max_articles: usize,
-) -> Result<Option<(WorldNewspaperCloseCheckpoint, Vec<ModelStageReceipt>)>> {
-    let Some((legacy, receipts)) = load_legacy_reconciliation_tip(store, prepared, max_articles)?
-    else {
-        return Ok(None);
-    };
-    let WorldNewspaperDeskRejection::CopyDesk { verdict } = legacy.rejection.clone() else {
-        return Err(anyhow!(
-            "legacy v7 Night Editor rejection cannot become a factual close report without replay"
-        ));
-    };
-    let checkpoint = new_close_checkpoint(
-        prepared,
-        WorldNewspaperCloseOrigin::LegacyV7Checkpoint,
-        Some(legacy.id),
-        legacy
-            .editorial_agenda
-            .ok_or_else(|| anyhow!("legacy newspaper checkpoint lost its agenda"))?,
-        legacy.draft,
-        legacy_copy_desk_report(verdict),
-        &receipts,
-    )?;
-    validate_close_checkpoint(store, &checkpoint, prepared, max_articles, &receipts)?;
-    persist_close_checkpoint(store, &checkpoint)?;
+    validate_close_checkpoint(&checkpoint, prepared, max_articles, &receipts)?;
     Ok(Some((checkpoint, receipts)))
 }
 
@@ -2381,13 +1812,7 @@ fn validate_persisted_composition(
                 .ok_or_else(|| anyhow!("persisted newspaper lost model receipt {receipt_id}"))
         })
         .collect::<Result<Vec<_>>>()?;
-    validate_close_checkpoint(
-        store,
-        &checkpoint,
-        prepared,
-        max_articles,
-        &checkpoint_receipts,
-    )?;
+    validate_close_checkpoint(&checkpoint, prepared, max_articles, &checkpoint_receipts)?;
     if composition.model_receipts.len() != checkpoint_receipts.len() + 1
         || !composition.model_receipts.starts_with(&checkpoint_receipts)
         || composition.copy_desk != checkpoint.copy_desk
@@ -2489,8 +1914,8 @@ async fn close_world_newspaper(
     store: &CampaignStore,
     checkpoint: WorldNewspaperCloseCheckpoint,
     mut receipts: Vec<ModelStageReceipt>,
-) -> Result<WorldNewspaperAdvance> {
-    validate_close_checkpoint(store, &checkpoint, prepared, max_articles, &receipts)?;
+) -> Result<WorldNewspaperComposition> {
+    validate_close_checkpoint(&checkpoint, prepared, max_articles, &receipts)?;
     let source_json = source_json_for_copy_queries(
         &prepared.records,
         &checkpoint.editorial_agenda,
@@ -2586,7 +2011,7 @@ async fn close_world_newspaper(
         Some(checkpoint.id),
         &composition,
     )?;
-    Ok(WorldNewspaperAdvance::Accepted { composition })
+    Ok(composition)
 }
 
 pub async fn advance_world_newspaper(
@@ -2597,32 +2022,16 @@ pub async fn advance_world_newspaper(
     newsroom: &WorldNewspaperNewsroom,
     max_articles: usize,
     store: &CampaignStore,
-) -> Result<WorldNewspaperAdvance> {
+) -> Result<WorldNewspaperComposition> {
     let prepared = prepare_newspaper(campaign, title, editorial_voice, newsroom, max_articles)?;
     if let Some((_, persisted)) = store.load::<PersistedWorldNewspaperComposition>(
         "world_newspaper_composition.v3",
         &prepared.publication_task_binding,
     )? {
         validate_persisted_composition(store, campaign, &prepared, max_articles, &persisted)?;
-        return Ok(WorldNewspaperAdvance::Accepted {
-            composition: persisted.composition,
-        });
+        return Ok(persisted.composition);
     }
     if let Some((checkpoint, receipts)) = load_close_checkpoint(store, &prepared, max_articles)? {
-        return close_world_newspaper(
-            model,
-            campaign,
-            &prepared,
-            max_articles,
-            store,
-            checkpoint,
-            receipts,
-        )
-        .await;
-    }
-    if let Some((checkpoint, receipts)) =
-        import_legacy_close_checkpoint(store, &prepared, max_articles)?
-    {
         return close_world_newspaper(
             model,
             campaign,
@@ -2675,7 +2084,7 @@ pub async fn advance_world_newspaper(
             None,
             &composition,
         )?;
-        return Ok(WorldNewspaperAdvance::Accepted { composition });
+        return Ok(composition);
     }
     let agenda_run = select_editorial_agenda(model, &prepared, max_articles)
         .await
@@ -2729,7 +2138,7 @@ pub async fn advance_world_newspaper(
         copy_desk,
         &receipts,
     )?;
-    validate_close_checkpoint(store, &checkpoint, &prepared, max_articles, &receipts)?;
+    validate_close_checkpoint(&checkpoint, &prepared, max_articles, &receipts)?;
     persist_close_checkpoint(store, &checkpoint)?;
     close_world_newspaper(
         model,
@@ -2753,7 +2162,7 @@ async fn compose_world_newspaper(
 ) -> Result<WorldNewspaperComposition> {
     let directory = tempfile::tempdir()?;
     let store = CampaignStore::open(directory.path().join("campaign.cc"))?;
-    match advance_world_newspaper(
+    advance_world_newspaper(
         model,
         campaign,
         title,
@@ -2762,78 +2171,7 @@ async fn compose_world_newspaper(
         max_articles,
         &store,
     )
-    .await?
-    {
-        WorldNewspaperAdvance::Accepted { composition } => Ok(composition),
-        WorldNewspaperAdvance::Pending { model_receipts, .. } => Err(composition_failure(
-            "legacy newspaper reconciliation unexpectedly remained pending",
-            model_receipts,
-        )),
-    }
-}
-
-pub fn admit_world_newspaper_reconciliation_import(
-    campaign: &Campaign,
-    title: impl Into<String>,
-    editorial_voice: impl Into<String>,
-    newsroom: &WorldNewspaperNewsroom,
-    max_articles: usize,
-    store: &CampaignStore,
-    import: WorldNewspaperReconciliationImport,
-) -> Result<WorldNewspaperReconciliationCheckpoint> {
-    let prepared = prepare_newspaper(campaign, title, editorial_voice, newsroom, max_articles)?;
-    let mut import = import;
-    if let Some(agenda) = &mut import.editorial_agenda {
-        normalize_legacy_agenda(agenda, newsroom);
-    }
-    let existing_tip = load_legacy_reconciliation_tip(store, &prepared, max_articles)?;
-    if import.schema != "ghostlight.world_newspaper_reconciliation_import.v1"
-        || !import.source_witness_digest.starts_with("sha256:")
-        || import.source_witness_digest.len() != 71
-        || store
-            .load::<PersistedWorldNewspaperComposition>(
-                "world_newspaper_composition.v3",
-                &prepared.publication_task_binding,
-            )?
-            .is_some()
-    {
-        return Err(anyhow!(
-            "world newspaper reconciliation import is not admissible"
-        ));
-    }
-    let checkpoint = new_reconciliation_checkpoint(
-        &prepared.legacy_publication_task_binding,
-        &prepared.legacy_binding,
-        0,
-        None,
-        WorldNewspaperCheckpointOrigin::LegacyTerminalImport,
-        Some(import.source_witness_digest),
-        import.editorial_agenda,
-        import.draft,
-        WorldNewspaperDeskRejection::CopyDesk {
-            verdict: import.verdict,
-        },
-        &import.model_receipts,
-    )?;
-    validate_reconciliation_checkpoint(
-        &checkpoint,
-        &prepared,
-        max_articles,
-        &import.model_receipts,
-        &prepared.legacy_publication_task_binding,
-        &prepared.legacy_binding,
-    )?;
-    if let Some((existing, receipts)) = existing_tip {
-        if existing == checkpoint && receipts == import.model_receipts {
-            return Ok(existing);
-        }
-        return Err(anyhow!(
-            "world newspaper reconciliation import would fork an existing checkpoint chain"
-        ));
-    }
-    store.persist_model_stage_receipts(&import.model_receipts)?;
-    persist_reconciliation_checkpoint(store, &checkpoint)?;
-    Ok(checkpoint)
+    .await
 }
 
 struct NightEditorCloseWorkbench<'a> {
@@ -3697,81 +3035,6 @@ fn article_passage_occurrence_count(
     )
 }
 
-fn validate_legacy_grounding_verdict(
-    draft: &EditorialPageDraft,
-    verdict: &WorldNewspaperGroundingVerdict,
-) -> Result<()> {
-    validate_single_line(&verdict.assessment, 500, "copy-desk assessment")?;
-    if verdict.accepted != verdict.findings.is_empty() {
-        return Err(anyhow!(
-            "copy-desk acceptance must be true exactly when findings are empty"
-        ));
-    }
-    let mut exact_claims = BTreeSet::new();
-    for finding in &verdict.findings {
-        let article_index = usize::from(finding.article_index);
-        validate_single_line(&finding.claim_or_phrase, 500, "copy-desk claim")?;
-        validate_single_line(&finding.reason, 500, "copy-desk reason")?;
-        if !exact_claims.insert((article_index, finding.claim_or_phrase.as_str())) {
-            return Err(anyhow!("copy desk repeated one exact finding phrase"));
-        }
-        validate_grounding_finding_target(draft, finding)?;
-    }
-    Ok(())
-}
-
-fn validate_editorial_verdict(
-    draft: &EditorialPageDraft,
-    verdict: &WorldNewspaperEditorialVerdict,
-) -> Result<()> {
-    validate_single_line(&verdict.assessment, 500, "night-editor assessment")?;
-    if verdict.accepted != verdict.findings.is_empty() {
-        return Err(anyhow!(
-            "night-editor acceptance must be true exactly when findings are empty"
-        ));
-    }
-    let mut exact_passages = BTreeSet::new();
-    for finding in &verdict.findings {
-        validate_single_line(&finding.passage, 500, "night-editor passage")?;
-        validate_single_line(&finding.reason, 500, "night-editor reason")?;
-        validate_single_line(&finding.rewrite_goal, 500, "night-editor rewrite goal")?;
-        let article_index = usize::from(finding.article_index);
-        if !exact_passages.insert((article_index, finding.passage.as_str())) {
-            return Err(anyhow!("night editor repeated one exact finding passage"));
-        }
-        let occurrence_count =
-            article_passage_occurrence_count(draft, finding.article_index, &finding.passage)
-                .ok_or_else(|| anyhow!("night editor returned an invalid article index"))?;
-        if occurrence_count != 1 {
-            return Err(anyhow!(
-                "night-editor passage must occur exactly once in the named article"
-            ));
-        }
-    }
-    Ok(())
-}
-
-fn validate_desk_rejection(
-    draft: &EditorialPageDraft,
-    rejection: &WorldNewspaperDeskRejection,
-) -> Result<()> {
-    match rejection {
-        WorldNewspaperDeskRejection::CopyDesk { verdict } => {
-            validate_legacy_grounding_verdict(draft, verdict)?;
-            if verdict.accepted {
-                return Err(anyhow!("copy-desk rejection cannot contain acceptance"));
-            }
-        }
-        WorldNewspaperDeskRejection::NightEditor { verdict } => {
-            validate_editorial_verdict(draft, verdict)?;
-            if verdict.accepted {
-                return Err(anyhow!("night-editor rejection cannot contain acceptance"));
-            }
-        }
-    }
-    Ok(())
-}
-
 fn lower_editorial_page(
     campaign: &Campaign,
     title: String,
@@ -3900,29 +3163,6 @@ fn publication_task_binding(
     ))
 }
 
-fn publication_task_binding_for_contract(
-    contract_version: &str,
-    campaign: &Campaign,
-    title: &str,
-    voice: &str,
-    max_articles: usize,
-) -> Result<String> {
-    let bytes = rmp_serde::to_vec_named(&(
-        contract_version,
-        campaign.id,
-        campaign.revision,
-        title,
-        voice,
-        max_articles,
-    ))?;
-    Ok(format!(
-        "campaign:{}:revision:{}:newspaper-task:sha256:{:x}",
-        campaign.id,
-        campaign.revision,
-        Sha256::digest(bytes)
-    ))
-}
-
 fn editorial_binding(
     campaign: &Campaign,
     title: &str,
@@ -3939,32 +3179,6 @@ fn editorial_binding(
         title,
         voice,
         newsroom,
-        max_articles,
-        records,
-    ))?;
-    Ok(format!(
-        "campaign:{}:revision:{}:newspaper:sha256:{:x}",
-        campaign.id,
-        campaign.revision,
-        Sha256::digest(bytes)
-    ))
-}
-
-fn editorial_binding_for_contract(
-    contract_version: &str,
-    campaign: &Campaign,
-    title: &str,
-    voice: &str,
-    max_articles: usize,
-    records: &[PublicRecordProjection],
-) -> Result<String> {
-    let bytes = rmp_serde::to_vec_named(&(
-        contract_version,
-        campaign.id,
-        campaign.revision,
-        campaign.world_time,
-        title,
-        voice,
         max_articles,
         records,
     ))?;
@@ -5227,8 +4441,6 @@ mod tests {
             &store,
         )
         .await
-        .unwrap()
-        .into_accepted()
         .unwrap();
         let requests = resume_model.requests();
         assert_eq!(requests.len(), 1);
@@ -5249,8 +4461,6 @@ mod tests {
             &store,
         )
         .await
-        .unwrap()
-        .into_accepted()
         .unwrap();
         assert_eq!(repeated, accepted);
         assert!(idempotent_model.requests().is_empty());
@@ -5277,136 +4487,6 @@ mod tests {
                 .to_string()
                 .contains("press witness")
         );
-    }
-
-    #[tokio::test]
-    async fn legacy_v7_copy_tip_becomes_one_v9_night_close_without_replay() {
-        const LEGACY_REJECTION: &str = r#"{"accepted":false,"assessment":"The deck overstates where the admitted debt reached.","findings":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"A gambling debt reaches the throne room and leaves one official carrying the blame.","reason":"The cited source records the pawned seal and dismissal but does not locate the debt in the throne room."}]}"#;
-        const CURRENT_COPY_REPORT: &str = r#"{"assessment":"The deck overstates where the admitted debt reached.","queries":[{"article_index":0,"category":"unsupported_fact","claim_or_phrase":"A gambling debt reaches the throne room and leaves one official carrying the blame.","reason":"The cited source records the pawned seal and dismissal but does not locate the debt in the throne room."}]}"#;
-        let campaign = campaign_with_news();
-        let prepared = prepare_newspaper(
-            &campaign,
-            "The Underdeep Clarion",
-            "A skeptical court broadsheet with dry restraint.",
-            &canopy_ledger_newsroom(),
-            4,
-        )
-        .unwrap();
-        let source_directory = tempfile::tempdir().unwrap();
-        let source_store =
-            CampaignStore::open(source_directory.path().join("campaign.cc")).unwrap();
-        let source_model = ScriptedNewspaperModel::new([
-            QUERY_ALL_RECORDS,
-            ONE_STORY_AGENDA,
-            ACCEPTED_STORY_ACTION,
-            CURRENT_COPY_REPORT,
-        ]);
-        let error = advance_world_newspaper(
-            &source_model,
-            &campaign,
-            "The Underdeep Clarion",
-            "A skeptical court broadsheet with dry restraint.",
-            &canopy_ledger_newsroom(),
-            4,
-            &source_store,
-        )
-        .await
-        .unwrap_err();
-        let mut legacy_receipts = error
-            .downcast_ref::<WorldNewspaperCompositionFailure>()
-            .unwrap()
-            .model_receipts
-            .clone();
-        let mut receipt_keys = BTreeMap::<String, String>::new();
-        for receipt in &mut legacy_receipts {
-            let old_key = receipt.storage_key().to_owned();
-            if receipt.stage == "newspaper_journalist_agent_action" {
-                receipt.stage = "newspaper_editor".into();
-            }
-            for source_id in &mut receipt.source_receipt_ids {
-                if let Some(rebound) = receipt_keys.get(source_id) {
-                    *source_id = rebound.clone();
-                }
-            }
-            let legacy_snapshot = receipt
-                .snapshot_binding
-                .replace(&prepared.binding, &prepared.legacy_binding);
-            receipt.rebind_snapshot(legacy_snapshot);
-            receipt_keys.insert(old_key, receipt.storage_key().to_owned());
-        }
-
-        let directory = tempfile::tempdir().unwrap();
-        let store = CampaignStore::open(directory.path().join("campaign.cc")).unwrap();
-        let legacy_checkpoint = admit_world_newspaper_reconciliation_import(
-            &campaign,
-            "The Underdeep Clarion",
-            "A skeptical court broadsheet with dry restraint.",
-            &canopy_ledger_newsroom(),
-            4,
-            &store,
-            WorldNewspaperReconciliationImport {
-                schema: "ghostlight.world_newspaper_reconciliation_import.v1".into(),
-                source_witness_digest: format!("sha256:{}", "a".repeat(64)),
-                editorial_agenda: Some(
-                    serde_json::from_str::<NarrativeSelectionAction>(ONE_STORY_AGENDA)
-                        .map(|action| match action.command {
-                            NarrativeSelectionCommand::ProposeAgenda {
-                                dominant_throughline,
-                                reader_stake,
-                                story_pitches,
-                            } => WorldNewspaperEditorialAgenda {
-                                dominant_throughline,
-                                reader_stake,
-                                story_pitches,
-                            },
-                            _ => unreachable!(),
-                        })
-                        .unwrap(),
-                ),
-                draft: serde_json::from_str(ACCEPTED_PAGE).unwrap(),
-                verdict: serde_json::from_str(LEGACY_REJECTION).unwrap(),
-                model_receipts: legacy_receipts,
-            },
-        )
-        .unwrap();
-
-        let close_model = ScriptedNewspaperModel::new([QUERY_DECK_CLOSE]);
-        let composition = advance_world_newspaper(
-            &close_model,
-            &campaign,
-            "The Underdeep Clarion",
-            "A skeptical court broadsheet with dry restraint.",
-            &canopy_ledger_newsroom(),
-            4,
-            &store,
-        )
-        .await
-        .unwrap()
-        .into_accepted()
-        .unwrap();
-
-        let requests = close_model.requests();
-        assert_eq!(requests.len(), 1);
-        assert_eq!(
-            requests[0].stage,
-            "newspaper_night_editor_close_agent_action"
-        );
-        let close_checkpoints = store
-            .load_all::<WorldNewspaperCloseCheckpoint>("world_newspaper_close_checkpoint.v1")
-            .unwrap();
-        assert_eq!(close_checkpoints.len(), 1);
-        assert_eq!(
-            close_checkpoints[0].source_checkpoint_id.as_deref(),
-            Some(legacy_checkpoint.id())
-        );
-        assert!(
-            requests[0]
-                .source_receipt_ids
-                .contains(&close_checkpoints[0].id)
-        );
-        assert_eq!(composition.press_close.source_page_digest.len(), 71);
-        assert_eq!(composition.copy_desk.queries.len(), 1);
-        assert_eq!(composition.model_receipts.len(), 6);
     }
 
     #[tokio::test]

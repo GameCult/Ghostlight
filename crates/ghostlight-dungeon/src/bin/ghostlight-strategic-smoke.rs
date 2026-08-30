@@ -62,6 +62,43 @@ struct HistoricalWorldNewspaperArticleV2 {
     event_ids: Vec<String>,
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct HistoricalWorldNewspaperGroundingVerdict {
+    accepted: bool,
+    assessment: String,
+    findings: Vec<ghostlight_dungeon::newspaper::WorldNewspaperGroundingFinding>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct HistoricalWorldNewspaperEditorialVerdict {
+    accepted: bool,
+    assessment: String,
+    findings: Vec<HistoricalWorldNewspaperEditorialFinding>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct HistoricalWorldNewspaperEditorialFinding {
+    article_index: u16,
+    category: HistoricalWorldNewspaperEditorialCategory,
+    passage: String,
+    reason: String,
+    rewrite_goal: String,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum HistoricalWorldNewspaperEditorialCategory {
+    BuriedLede,
+    ProceduralForeground,
+    ThroughlineDropped,
+    StakesAbstracted,
+    TensionFlattened,
+    RepetitiveUpdate,
+}
+
 #[allow(clippy::too_many_arguments)]
 fn validate_completed_newspaper_recomposition_receipt(
     recomposition: &serde_json::Value,
@@ -180,7 +217,7 @@ fn validate_completed_newspaper_recomposition_receipt(
             )
         }
     } else if current_schema {
-        let grounding: ghostlight_dungeon::newspaper::WorldNewspaperGroundingVerdict =
+        let grounding: HistoricalWorldNewspaperGroundingVerdict =
             serde_json::from_value(recomposition["newspaper_grounding"].clone()).map_err(
                 |error| {
                     anyhow::anyhow!(
@@ -194,7 +231,7 @@ fn validate_completed_newspaper_recomposition_receipt(
             )
         }
         if recomposition_schema == Some("ghostlight.newspaper_wave_recomposition.v2") {
-            let editorial: ghostlight_dungeon::newspaper::WorldNewspaperEditorialVerdict =
+            let editorial: HistoricalWorldNewspaperEditorialVerdict =
                 serde_json::from_value(recomposition["newspaper_editorial"].clone()).map_err(
                     |error| {
                         anyhow::anyhow!(
@@ -291,16 +328,6 @@ struct FoundationCheckpoint {
     request: String,
     preview: ghostlight_dungeon::domain::DestinationCompilationPreview,
     model_receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt>,
-}
-
-#[derive(serde::Deserialize)]
-#[serde(deny_unknown_fields)]
-struct NewspaperReconciliationImportEnvelope {
-    schema: String,
-    wave_index: u64,
-    recovery_start_wave: usize,
-    world_revision: u64,
-    import: ghostlight_dungeon::newspaper::WorldNewspaperReconciliationImport,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -974,10 +1001,6 @@ async fn main() -> anyhow::Result<()> {
         let initial_location_ids = campaign.locations.keys().cloned().collect::<Vec<_>>();
         (campaign, vec![], vec![], None, initial_location_ids)
     };
-    let newspaper_reconciliation_import_path =
-        std::env::var_os("GHOSTLIGHT_STRATEGIC_NEWSPAPER_RECONCILIATION_IMPORT")
-            .map(std::path::PathBuf::from);
-    let mut newspaper_reconciliation_import_consumed = false;
     if resume {
         ghostlight_dungeon::compiler::validate_campaign_runtime(&campaign)?;
     } else {
@@ -1903,9 +1926,8 @@ async fn main() -> anyhow::Result<()> {
             issue_path,
             issue_audit_path,
             newspaper_error,
-            newspaper_reconciliation_checkpoint,
         ) = match issue_composition {
-            Ok(ghostlight_dungeon::newspaper::WorldNewspaperAdvance::Accepted { composition }) => {
+            Ok(composition) => {
                 let issue_path = root.join(format!("newspaper-wave-{wave_index:02}.md"));
                 let issue_audit_path =
                     root.join(format!("newspaper-wave-{wave_index:02}.audit.md"));
@@ -1929,22 +1951,8 @@ async fn main() -> anyhow::Result<()> {
                     Some(issue_path),
                     Some(issue_audit_path),
                     None,
-                    None,
                 )
             }
-            Ok(ghostlight_dungeon::newspaper::WorldNewspaperAdvance::Pending {
-                checkpoint,
-                model_receipts,
-            }) => (
-                None,
-                None,
-                None,
-                model_receipts,
-                None::<std::path::PathBuf>,
-                None::<std::path::PathBuf>,
-                None,
-                Some(checkpoint),
-            ),
             Err(error) => {
                 let Some(failure) = error.downcast_ref::<
                     ghostlight_dungeon::newspaper::WorldNewspaperCompositionFailure,
@@ -1959,7 +1967,6 @@ async fn main() -> anyhow::Result<()> {
                     None::<std::path::PathBuf>,
                     None::<std::path::PathBuf>,
                     Some(error.to_string()),
-                    None,
                 )
             }
         };
@@ -1978,7 +1985,6 @@ async fn main() -> anyhow::Result<()> {
             "newspaper_press_close":newspaper_press_close,
             "newspaper_model_receipts":newspaper_model_receipts,
             "newspaper_error":newspaper_error,
-            "newspaper_reconciliation_checkpoint":newspaper_reconciliation_checkpoint,
             "issue_path":issue_path,
             "issue_audit_path":issue_audit_path,
         });
@@ -2025,31 +2031,6 @@ async fn main() -> anyhow::Result<()> {
             let recomposition = if recomposition_path.is_file() {
                 read_checkpoint::<serde_json::Value>(&recomposition_path)?
             } else {
-                if let Some(import_path) = newspaper_reconciliation_import_path.as_deref() {
-                    let import =
-                        read_checkpoint::<NewspaperReconciliationImportEnvelope>(import_path)?;
-                    if import.wave_index == wave_index {
-                        if import.schema
-                            != "ghostlight.strategic_newspaper_reconciliation_import.v1"
-                            || import.recovery_start_wave != newspaper_recovery_start_wave
-                            || import.world_revision != issue_campaign.revision
-                        {
-                            anyhow::bail!(
-                                "strategic newspaper reconciliation import does not bind this missing issue"
-                            )
-                        }
-                        ghostlight_dungeon::newspaper::admit_world_newspaper_reconciliation_import(
-                            &issue_campaign,
-                            &issue_title,
-                            &newspaper_voice,
-                            &newsroom,
-                            5,
-                            &store,
-                            import.import,
-                        )?;
-                        newspaper_reconciliation_import_consumed = true;
-                    }
-                }
                 let composition = match compose_persisted_newspaper(
                     model.as_ref(),
                     &issue_campaign,
@@ -2060,40 +2041,7 @@ async fn main() -> anyhow::Result<()> {
                 )
                 .await
                 {
-                    Ok(ghostlight_dungeon::newspaper::WorldNewspaperAdvance::Accepted {
-                        composition,
-                    }) => composition,
-                    Ok(ghostlight_dungeon::newspaper::WorldNewspaperAdvance::Pending {
-                        checkpoint,
-                        model_receipts,
-                    }) => {
-                        let checkpoint_id = checkpoint.id().to_owned();
-                        let checkpoint_digest = strategic_smoke_digest(&checkpoint)?;
-                        let checkpoint_suffix = checkpoint_digest
-                            .strip_prefix("sha256:")
-                            .ok_or_else(|| anyhow::anyhow!("invalid checkpoint digest"))?;
-                        publish_immutable_checkpoint(
-                            &root.join(format!(
-                                "newspaper-wave-{wave_index:02}-recomposition-pending-{checkpoint_suffix}.json"
-                            )),
-                            &serde_json::json!({
-                                "schema":"ghostlight.newspaper_wave_recomposition_pending.v1",
-                                "wave_index":wave_index,
-                                "recovery_start_wave":newspaper_recovery_start_wave,
-                                "world_revision":issue_campaign.revision,
-                                "source_campaign_digest":source_campaign_digest,
-                                "editorial_contract_digest":editorial_contract_digest,
-                                "checkpoint_digest":checkpoint_digest,
-                                "checkpoint":checkpoint,
-                                "model_receipt_set_digest":strategic_smoke_digest(&model_receipts)?,
-                                "model_receipts":model_receipts,
-                            }),
-                        )?;
-                        anyhow::bail!(
-                            "newspaper reconciliation is pending at checkpoint {}",
-                            checkpoint_id
-                        )
-                    }
+                    Ok(composition) => composition,
                     Err(error) => {
                         let model_receipts = error
                             .downcast_ref::<
@@ -2193,11 +2141,6 @@ async fn main() -> anyhow::Result<()> {
             );
             report.insert("newspaper_error".into(), serde_json::Value::Null);
         }
-        if newspaper_reconciliation_import_path.is_some()
-            && !newspaper_reconciliation_import_consumed
-        {
-            anyhow::bail!("configured newspaper reconciliation import was not consumed")
-        }
     }
     let final_plan = final_wave_field(&wave_reports, "plan")?;
     let final_commit = final_wave_field(&wave_reports, "commit")?;
@@ -2222,57 +2165,7 @@ async fn main() -> anyhow::Result<()> {
     )
     .await
     {
-        Ok(ghostlight_dungeon::newspaper::WorldNewspaperAdvance::Accepted { composition }) => {
-            composition
-        }
-        Ok(ghostlight_dungeon::newspaper::WorldNewspaperAdvance::Pending {
-            checkpoint,
-            model_receipts,
-        }) => {
-            let checkpoint_id = checkpoint.id().to_owned();
-            let pending_result = serde_json::json!({
-                "schema":"ghostlight.live_strategic_smoke_pending.v1",
-                "scenario_id":scenario_id,
-                "pressure":pressure,
-                "wave_count":wave_count,
-                "newspaper_recovery_start_wave":newspaper_recovery_start_wave,
-                "campaign_id":campaign.id,
-                "elapsed_seconds":started.elapsed().as_secs_f64(),
-                "model_runtime":model_selection.status("configured"),
-                "world_compile":&world_compile,
-                "model_receipt_hash":&final_model_receipt_hash,
-                "model_stage_receipts":&model_stage_receipts,
-                "plan":&final_plan,
-                "commit":&final_commit,
-                "waves":&wave_reports,
-                "event_count":campaign.events.len(),
-                "news_count":campaign.news.len(),
-                "final_newspaper_checkpoint":checkpoint,
-                "final_newspaper_model_receipts":model_receipts,
-                "player_location_unchanged":true,
-                "player_state_unchanged":true,
-                "store":root.join("campaign.cc")
-            });
-            let result_path = root.join("result.json");
-            std::fs::write(&result_path, serde_json::to_vec_pretty(&pending_result)?)?;
-            std::fs::write(
-                root.join("status.json"),
-                serde_json::to_vec_pretty(&serde_json::json!({
-                    "schema":"ghostlight.live_strategic_smoke_status.v1",
-                    "state":"pending_newspaper_reconciliation",
-                    "waves_completed":wave_count,
-                    "waves_requested":wave_count,
-                    "newspaper_recovery_start_wave":newspaper_recovery_start_wave,
-                    "world_revision":campaign.revision,
-                    "event_count":campaign.events.len(),
-                    "news_count":campaign.news.len(),
-                    "updated_at":Utc::now(),
-                    "result_path":result_path,
-                    "newspaper_checkpoint_id":checkpoint_id,
-                }))?,
-            )?;
-            anyhow::bail!("final newspaper reconciliation is pending at checkpoint {checkpoint_id}")
-        }
+        Ok(composition) => composition,
         Err(error) => {
             let final_newspaper_model_receipts = error
                 .downcast_ref::<ghostlight_dungeon::newspaper::WorldNewspaperCompositionFailure>()
@@ -2394,7 +2287,7 @@ async fn compose_persisted_newspaper(
     editorial_voice: &str,
     max_articles: usize,
     store: &ghostlight_dungeon::persistence::CampaignStore,
-) -> anyhow::Result<ghostlight_dungeon::newspaper::WorldNewspaperAdvance> {
+) -> anyhow::Result<ghostlight_dungeon::newspaper::WorldNewspaperComposition> {
     ghostlight_dungeon::newspaper::advance_world_newspaper(
         model,
         campaign,
@@ -2814,7 +2707,8 @@ fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
 #[cfg(test)]
 mod tests {
     use super::{
-        HistoricalWorldNewspaperArticleV2, HistoricalWorldNewspaperIssueV2,
+        HistoricalWorldNewspaperArticleV2, HistoricalWorldNewspaperEditorialVerdict,
+        HistoricalWorldNewspaperGroundingVerdict, HistoricalWorldNewspaperIssueV2,
         admitted_public_channel, civic_manifest_is_committed_candidate,
         committed_elaboration_mutation_proof, completed_wave_issue_campaign, final_wave_field,
         latest_partial_wave_checkpoint, missing_newspaper_report_indices,
@@ -3008,12 +2902,12 @@ mod tests {
         let audit_copy =
             ghostlight_dungeon::newspaper::render_world_newspaper_audit_markdown(&issue);
         let receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt> = Vec::new();
-        let grounding = ghostlight_dungeon::newspaper::WorldNewspaperGroundingVerdict {
+        let grounding = HistoricalWorldNewspaperGroundingVerdict {
             accepted: true,
             assessment: "Exact current grounding".into(),
             findings: Vec::new(),
         };
-        let editorial = ghostlight_dungeon::newspaper::WorldNewspaperEditorialVerdict {
+        let editorial = HistoricalWorldNewspaperEditorialVerdict {
             accepted: true,
             assessment: "Exact current editorial acceptance".into(),
             findings: Vec::new(),
