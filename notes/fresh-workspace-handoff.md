@@ -509,7 +509,17 @@ unchanged. Mechanical completion is proven, but newspaper acceptance is not.
 The current newsroom-only cut adds a navigation-only directory of completed
 public changes grouped by period and records exact source timestamps in the
 audit. The directory derives context from canonical records and gains no fact
-or world authority. Review, commit, push, and provider proof remain pending.
+or world authority.
+
+Run 69 at source `84b31e57a462710eb939c4559e0437eb5d6a7a28`
+failed before any model call. The v14 audit renderer emitted an empty `Source
+time:` line for inherited v13 per-wave issues, so immutable recomposition
+verification rejected those unchanged artifacts. The world remains revision 27;
+no simulation or newsroom model stage replayed. Preserve failed Run 69.
+
+The current compatibility correction omits that rendered line only when a
+legacy citation's source-times field is empty; new v14 citations retain their
+exact times. Focused regression, commit, push, and provider proof remain pending.
 
 Sparse inhabited destinations now compile a versioned civic apparatus in place.
 The first pass establishes institutions, resident populations, political edges,
@@ -1583,10 +1593,10 @@ materializing a `NewsIssue`.
 2. Preserve the delivered Run 60 PDF and its frozen-copy verification as the
    earlier baseline, plus the final Run 61 style/flow artifact, v2 manifest,
    grammar, hashes, frozen copy, and art assets recorded above.
-3. Review, commit, and push the per-period completed-change navigation and audit
-   source-timestamp cut, then run newsroom-only Run 69 over immutable Run 68
-   artifacts. Do not replay simulation or waves. Preserve Run 68's paper and
-   failed reviews, bind Run 69 to exact source and provenance, then obtain fresh
+3. Run the focused legacy audit-rendering regression, then commit and push the
+   source-time compatibility correction. Launch newsroom-only Run 70 from
+   immutable Run 68 at revision 27 without simulation or wave replay. Preserve
+   failed Run 69, bind Run 70 to exact source and provenance, then obtain fresh
    independent editorial and grounding verdicts plus archive acceptance. This
    standalone run does not wait for the Delvehold adapter.
 4. Build the Delvehold-owned adapter before any real Delvehold-owned player,

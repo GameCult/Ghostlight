@@ -1549,7 +1549,10 @@ The deliberative newsroom boundary is live under this authority map:
   exact current task, editorial, assignment, stage, snapshot, and receipt
   bindings. A directory headline is never citation evidence: every assigned
   source must still have been returned by exact ledger query or exact-ID fetch,
-  and every audit citation exposes the canonical source timestamp.
+  and every new audit citation exposes the canonical source timestamp.
+  Historical v13 citations decode with an empty timestamp list and retain their
+  exact old audit rendering; the source-time line appears only when canonical
+  timestamps are present.
 - **Forbidden writers:** the selector and query workbench cannot create,
   mutate, deduplicate, summarize into, or reclassify `NewsIssue` or `Event`
   state. The deterministic proof cannot rank stories or commit an agenda; it

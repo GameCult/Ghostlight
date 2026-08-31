@@ -3445,16 +3445,24 @@ pub fn render_world_newspaper_audit_markdown(issue: &WorldNewspaperIssue) -> Str
             escape_markdown_text(&article.id),
         ));
         for source in &article.sources {
+            let source_time = if source.source_times.is_empty() {
+                String::new()
+            } else {
+                format!(
+                    "- Source time: {}\n",
+                    source
+                        .source_times
+                        .iter()
+                        .map(DateTime::<Utc>::to_rfc3339)
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
+            };
             rendered.push_str(&format!(
-                "\n### Citation {}\n\n- Source news: {}\n- Source time: {}\n- Source channels: {}\n- Source reliability: {}\n",
+                "\n### Citation {}\n\n- Source news: {}\n{}- Source channels: {}\n- Source reliability: {}\n",
                 escape_markdown_text(&source.citation),
                 escaped_join(&source.source_news_ids),
-                source
-                    .source_times
-                    .iter()
-                    .map(DateTime::<Utc>::to_rfc3339)
-                    .collect::<Vec<_>>()
-                    .join(", "),
+                source_time,
                 escaped_join(&source.source_channels),
                 escaped_join(&source.source_reliability),
             ));
@@ -5196,6 +5204,8 @@ mod tests {
         );
         assert!(audit.contains("Named people: None asserted"));
         let mut boundary_issue = composition.issue.clone();
+        boundary_issue.articles[0].sources[0].source_times.clear();
+        assert!(!render_world_newspaper_audit_markdown(&boundary_issue).contains("Source time:"));
         boundary_issue.articles[0].sources[0].facts[0].account =
             "x".repeat(MAX_PUBLIC_EVENT_SUMMARY_CHARS);
         assert!(
