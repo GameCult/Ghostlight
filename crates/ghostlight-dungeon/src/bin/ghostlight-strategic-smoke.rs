@@ -929,30 +929,30 @@ fn fission_relation_binding_is_present(
         campaign: &ghostlight_dungeon::domain::Campaign,
         current_ids: &BTreeSet<String>,
         expected_id: &str,
-        used_lineages: &BTreeSet<String>,
     ) -> bool {
         if current_ids.contains(expected_id) {
             return true;
         }
         campaign.gestalt_lineages.values().any(|lineage| {
-            if used_lineages.contains(&lineage.parent_gestalt_id)
-                || lineage.child_gestalt_ids.is_empty()
-            {
+            if lineage.child_gestalt_ids.is_empty() {
                 return false;
             }
-            let mut next_used = used_lineages.clone();
-            next_used.insert(lineage.parent_gestalt_id.clone());
-            lineage.child_gestalt_ids.iter().all(|child_id| {
-                visit(
-                    campaign,
-                    current_ids,
-                    &format!("{expected_id}:fission:{child_id}"),
-                    &next_used,
-                )
-            })
+            let child_relation_ids = lineage
+                .child_gestalt_ids
+                .iter()
+                .map(|child_id| format!("{expected_id}:fission:{child_id}"))
+                .collect::<Vec<_>>();
+            child_relation_ids.iter().all(|candidate| {
+                current_ids.contains(candidate)
+                    || current_ids
+                        .iter()
+                        .any(|current| current.starts_with(&format!("{candidate}:fission:")))
+            }) && child_relation_ids
+                .iter()
+                .all(|candidate| visit(campaign, current_ids, candidate))
         })
     }
-    visit(campaign, current_ids, expected_id, &BTreeSet::new())
+    visit(campaign, current_ids, expected_id)
 }
 
 #[cfg(test)]
@@ -3896,6 +3896,22 @@ mod tests {
                 source_revision: 1,
             },
         );
+        for index in 0..24 {
+            let parent = format!("unrelated-{index}");
+            let child = format!("unrelated-{index}-child");
+            campaign.gestalt_lineages.insert(
+                parent.clone(),
+                ghostlight_dungeon::domain::GestaltLineage {
+                    schema: "ghostlight.gestalt_lineage.v1".into(),
+                    parent_gestalt_id: parent,
+                    child_gestalt_ids: vec![child.clone()],
+                    partition_axis: ghostlight_dungeon::domain::AgencyAxis::Geography,
+                    partition_values: BTreeMap::from([(child.clone(), child.clone())]),
+                    residual_child_id: child,
+                    source_revision: 1,
+                },
+            );
+        }
         let residents = BTreeSet::from(["east".into(), "west".into()]);
         let relations = BTreeSet::from([
             "relation:fission:east".into(),
