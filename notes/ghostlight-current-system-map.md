@@ -1429,6 +1429,13 @@ outside this authority.
   mutation checkpoints suppress replay, title-by-realm compaction checkpoints
   suppress recompaction, and consecutive completed round checkpoints restore
   scheduler fairness and session memory before the first unfinished round.
+  After mutation admission, independent title-by-realm journals compact in
+  parallel under the same bounded complexity parallelism entitlement. Each
+  compactor reads the same committed campaign revision and only its own prior
+  session checkpoint and journal; the runner persists every successful model
+  receipt and immutable session checkpoint before returning any sibling
+  failure. Session checkpoints remain independent memory owners rather than a
+  shared round transcript, and canonical mutation order remains serial.
   Missing eligible parents, stale or malformed checkpoints, changed parent
   bindings, zero-growth rounds, and a nonzero deficit at the configured round
   ceiling are terminal failures. Canonical CultCache state, not the checkpoint

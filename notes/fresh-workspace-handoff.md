@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-08-29
+Updated: 2026-08-31
 
 This is the compact re-entry packet. It records current authority, deployed
 truth, proof, and the next decision. Git history owns chronology; the system map
@@ -22,6 +22,25 @@ own volatile workspace identity and the release witness owns deployed identity.
    runtime authority from workspace HEAD or from this handoff.
 5. For deployment, SSH, firewall, Idunn, Odin, Heimdall, or host work, consult
    `F:\Projects\gamecult-ops` before acting.
+
+## Current full-world pressure test
+
+Preserve immutable Runs 75 through 87. Run 87 is live on Yggdrasil at exact
+pushed source `b4cc3a29aa7e9108a3fab5c61335cd2d340d4f77`, unit
+`ghostlight-full-world-b4cc3a2-87.service`. It resumed without replay through
+the admitted Hearthcoil fission, deterministic civic reconciliation, titled
+elaboration proofs, and the single failed Hearth dispatch. Complexity rounds
+1 through 5 are complete, including all 43 round-5 mutations and their session
+compactions. The target remains 2,400 meaningful actionable subjects under
+240-cell attention, followed by ten strategic waves.
+
+The current local verified cut makes independent title-by-realm session
+compactions parallel under the existing complexity parallelism entitlement.
+Commit and push it before the next source-changing resume. The acceptance
+launcher now retains one 35 MiB content-addressed strategic-smoke runner per
+exact source commit and deletes disposable compiler output; do not restore a
+persistent Cargo target tree. Observe Run 87 first and preserve every completed
+mutation and session checkpoint.
 
 ## Mission and current product shape
 

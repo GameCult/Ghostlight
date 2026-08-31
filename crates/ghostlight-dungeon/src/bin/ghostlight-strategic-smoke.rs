@@ -2649,6 +2649,8 @@ async fn main() -> anyhow::Result<()> {
                 );
                 mutation_paths.push(commit_path);
             }
+            let compaction_limit = Arc::new(tokio::sync::Semaphore::new(complexity_parallelism));
+            let mut compactions = tokio::task::JoinSet::new();
             for (session_id, journal) in journals {
                 let (title, location_id) = session_routes
                     .get(&session_id)
@@ -2664,26 +2666,63 @@ async fn main() -> anyhow::Result<()> {
                     "complexity-round-{round:03}-session-{}-{session_suffix}.json",
                     title.display_name().to_ascii_lowercase(),
                 ));
-                let checkpoint = if path.is_file() {
-                    read_checkpoint::<ElaboratorSessionCheckpoint>(&path)?
-                } else {
-                    let (checkpoint, receipts) = compact_elaborator_session(
+                if path.is_file() {
+                    let checkpoint = read_checkpoint::<ElaboratorSessionCheckpoint>(&path)?;
+                    checkpoint.validate_for(&campaign, location_id, *title)?;
+                    session_checkpoints.insert(session_id, checkpoint);
+                    continue;
+                }
+                let model = model.clone();
+                let campaign = Arc::new(campaign.clone());
+                let title = *title;
+                let location_id = location_id.clone();
+                let previous = session_checkpoints.get(&session_id).cloned();
+                let compaction_limit = compaction_limit.clone();
+                compactions.spawn(async move {
+                    let _permit = compaction_limit
+                        .acquire_owned()
+                        .await
+                        .map_err(|_| anyhow::anyhow!("complexity compaction limiter closed"))?;
+                    let result = compact_elaborator_session(
                         model.as_ref(),
-                        &campaign,
-                        location_id,
-                        *title,
+                        campaign.as_ref(),
+                        &location_id,
+                        title,
                         &session_id,
-                        session_checkpoints.get(&session_id),
+                        previous.as_ref(),
                         &journal,
                         Vec::new(),
                     )
-                    .await?;
-                    store.persist_model_stage_receipts(&receipts)?;
-                    publish_immutable_checkpoint(&path, &checkpoint)?;
-                    checkpoint
-                };
-                checkpoint.validate_for(&campaign, location_id, *title)?;
-                session_checkpoints.insert(session_id, checkpoint);
+                    .await;
+                    Ok::<_, anyhow::Error>((session_id, title, location_id, path, campaign, result))
+                });
+            }
+            let mut first_compaction_error = None;
+            while let Some(joined) = compactions.join_next().await {
+                match joined {
+                    Err(error) => {
+                        first_compaction_error.get_or_insert_with(|| anyhow::Error::new(error));
+                    }
+                    Ok(Err(error)) => {
+                        first_compaction_error.get_or_insert(error);
+                    }
+                    Ok(Ok((session_id, title, location_id, path, campaign, result))) => {
+                        match result {
+                            Err(error) => {
+                                first_compaction_error.get_or_insert(error);
+                            }
+                            Ok((checkpoint, receipts)) => {
+                                store.persist_model_stage_receipts(&receipts)?;
+                                publish_immutable_checkpoint(&path, &checkpoint)?;
+                                checkpoint.validate_for(campaign.as_ref(), &location_id, title)?;
+                                session_checkpoints.insert(session_id, checkpoint);
+                            }
+                        }
+                    }
+                }
+            }
+            if let Some(error) = first_compaction_error {
+                return Err(error);
             }
             let actionable_after = canonical_actionable_subject_count(&campaign);
             if actionable_after <= actionable_before {
