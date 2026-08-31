@@ -1454,6 +1454,13 @@ Fission and named-member individuation are live, but institution promotion is
 not. Dormant member rows still do not count; the individuation lane earns its
 increment by atomically promoting the admitted member into an Actor and deriving
 that Actor's active agency profile through the shared presence-commit path.
+Materializing one person does not retire their population as an elaboration
+parent. A later fission transfers every exact member affiliation once. Dormant
+members have their deltas rebased against the selected child baseline;
+materialized people keep their Actor state byte-identical while their backing
+member row moves to the selected child. The complete member-assignment map,
+component membership transition, shared fission validator, and WorldKernel
+commit remain the single path for both cases.
 Architecture claims that complexity has no production caller, no durable
 elaborator compaction owner, no partial-failure resume, or only a fission
 proposal lane are stale.

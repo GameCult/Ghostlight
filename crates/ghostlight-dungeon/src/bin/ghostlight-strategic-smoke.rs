@@ -3552,13 +3552,7 @@ fn complexity_parent_candidates(
     let mut by_realm = BTreeMap::<String, Vec<(std::cmp::Reverse<u64>, String)>>::new();
     for (id, profile) in campaign.gestalts.keys().filter_map(|id| {
         let profile = campaign.agency_profiles.get(id)?;
-        (profile.active_leaf
-            && profile.simulation_eligible
-            && !campaign
-                .gestalt_members
-                .values()
-                .any(|member| member.gestalt_id == *id && member.materialized_actor_id.is_some()))
-        .then_some((id, profile))
+        (profile.active_leaf && profile.simulation_eligible).then_some((id, profile))
     }) {
         if let Some(realm) = complexity_realm_for_profile(profile, demand)
             && realm_pressure.get(&realm).copied().unwrap_or(0) > 0

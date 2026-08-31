@@ -3079,10 +3079,23 @@ fn project_member_population_transfer(
     let member = campaign
         .gestalt_members
         .get(member_id)
-        .filter(|member| {
-            member.materialized_actor_id.is_none() && member.gestalt_id == source_population_id
-        })
+        .filter(|member| member.gestalt_id == source_population_id)
         .ok_or_else(|| anyhow!("accepted member transfer has stale aggregate source"))?;
+    if let Some(actor_id) = &member.materialized_actor_id {
+        if actor_id != &crate::domain::gestalt_member_subject_id(member_id)
+            || !campaign.actors.contains_key(actor_id)
+        {
+            return Err(anyhow!(
+                "accepted materialized member transfer lost its stable actor"
+            ));
+        }
+        campaign
+            .gestalt_members
+            .get_mut(member_id)
+            .expect("member source was resolved")
+            .gestalt_id = destination_population_id.into();
+        return Ok(());
+    }
     let source = campaign
         .gestalts
         .get(source_population_id)

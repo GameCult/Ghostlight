@@ -1270,9 +1270,6 @@ impl ModelWorldComplexityWorker {
                         || !profile.simulation_eligible
                         || profile.subject_kind != crate::domain::AgencySubjectKind::Gestalt
                 })
-                || campaign.gestalt_members.values().any(|member| {
-                    member.gestalt_id == *parent_id && member.materialized_actor_id.is_some()
-                })
             {
                 return Err(anyhow!(
                     "complexity round parent is not an unresolved active Gestalt"
@@ -1828,7 +1825,7 @@ impl ElaborationSubAgentPort<WorldComplexityProposal> for ModelWorldComplexityWo
                     "Propose only child ids, names, partition values, the residual child id, and exact member/resource assignments; the deterministic tool constructs inherited child state and frozen bindings.",
                     "Create 2 through 8 non-overlapping children with distinct partition values.",
                     "Exactly one residual child must have partition value other/unknown.",
-                    "Assign every scarce resource and dormant named member exactly once.",
+                    "Assign every scarce resource and named member exactly once; materialized people retain their Actor identity while changing population affiliation.",
                     "Do not repeat inherited capabilities, knowledge, goals, pressures, evidence, or approval fields."
                 ]
             }),

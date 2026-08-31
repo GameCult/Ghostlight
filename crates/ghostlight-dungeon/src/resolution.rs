@@ -3460,13 +3460,6 @@ pub fn validate_fission(campaign: &Campaign, preview: &GestaltFissionPreview) ->
         );
     }
     require(
-        !campaign
-            .gestalt_members
-            .values()
-            .any(|member| member.gestalt_id == parent.id && member.materialized_actor_id.is_some()),
-        "parent has a materialized member and cannot be fissioned".into(),
-    );
-    require(
         assigned_resources == parent.resources,
         format!(
             "resource assignments must cover exactly the parent resources; expected {:?}, received {:?}",
@@ -5085,6 +5078,31 @@ pub(crate) mod tests {
             "other"
         );
 
+        let john_actor_id = crate::domain::gestalt_member_subject_id("john");
+        value.actors.insert(
+            john_actor_id.clone(),
+            ActorState {
+                id: john_actor_id.clone(),
+                name: "John".into(),
+                location_id: "center".into(),
+                capabilities: BTreeSet::from(["farm".into(), "smith".into()]),
+                knowledge: BTreeSet::from(["local roads".into()]),
+                equipment: BTreeSet::from(["hammer".into()]),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec!["survive winter".into()],
+                memories: vec!["met the traveler".into()],
+            },
+        );
+        value
+            .gestalt_members
+            .get_mut("john")
+            .unwrap()
+            .materialized_actor_id = Some(john_actor_id.clone());
+        ensure_agency_profiles(&mut value);
+        let john_before_nested_fission = value.actors[&john_actor_id].clone();
+
         let mut nested_residual = child("other-unknown", "Other unclassified villagers");
         nested_residual.resources.insert("granary".into());
         let nested = GestaltFissionPreview {
@@ -5134,6 +5152,13 @@ pub(crate) mod tests {
             BTreeSet::from(["granary".into()])
         );
         assert_eq!(value.gestalt_members["john"].gestalt_id, "other-smiths");
+        assert_eq!(value.actors[&john_actor_id], john_before_nested_fission);
+        assert_eq!(
+            value.gestalt_members["john"]
+                .materialized_actor_id
+                .as_deref(),
+            Some(john_actor_id.as_str())
+        );
         assert_eq!(value.gestalt_members["john"].version, 5);
         assert_eq!(
             value.gestalt_members["john"].memories,

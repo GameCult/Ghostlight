@@ -25,18 +25,19 @@ own volatile workspace identity and the release witness owns deployed identity.
 
 ## Current full-world pressure test
 
-Preserve immutable Runs 75 through 88. Run 88 completed complexity round 6 at
-383 meaningful subjects, generated all 186 frozen round-7 proposals, and
-admitted the first 45 before one later fission found its proposed child ID had
-been occupied by an earlier parallel fission. Its canonical prefix ends at
-`complexity-round-007-commit-0213.json`; do not replay it.
+Preserve immutable Runs 75 through 91. Run 91 completed complexity round 9 at
+1,168 meaningful actionable subjects, then stopped before round 10 because the
+candidate query excluded every active population after its first person had
+materialized. Rounds 1 through 9 and their session checkpoints are canonical;
+do not replay them.
 
-Bounded parallel title-by-realm compaction is pushed and proved by Run 88. The
-current local verified cut treats only occupied parallel fission child IDs as
-syntactic contention: rebase deterministically moves the colliding ID into its
-assigned parent's namespace and rewrites every child reference before normal
-validation. Commit and push, clone Run 88, and resume its preview at commit
-0214. The acceptance launcher retains one 35 MiB content-addressed runner per
+Bounded parallel title-by-realm compaction and deterministic parallel child-ID
+reconciliation are pushed and proved. The current local verified cut removes
+the scale dead end at the fission transition owner: every exact member is still
+assigned once, dormant deltas rebase against the child baseline, and a
+materialized person's Actor remains byte-identical while their backing member
+affiliation moves to the child. Commit and push, clone Run 91, and begin round
+10. The acceptance launcher retains one 35 MiB content-addressed runner per
 exact source commit and deletes disposable compiler output; do not restore a
 persistent Cargo target tree.
 
