@@ -501,6 +501,8 @@ impl crate::agent::ModelAgentTool for ElaboratorSessionCompactionTool {
         schema["properties"]["frontier_summary"]["minLength"] = serde_json::json!(1);
         schema["properties"]["frontier_summary"]["maxLength"] = serde_json::json!(4000);
         schema["properties"]["unresolved_leads"]["maxItems"] = serde_json::json!(32);
+        schema["properties"]["unresolved_leads"]["items"]["minLength"] = serde_json::json!(1);
+        schema["properties"]["unresolved_leads"]["items"]["maxLength"] = serde_json::json!(600);
         Ok(schema)
     }
 
@@ -516,19 +518,27 @@ impl crate::agent::ModelAgentTool for ElaboratorSessionCompactionTool {
         let bounded = |value: &str, maximum: usize| {
             !value.trim().is_empty() && value.chars().count() <= maximum
         };
-        if action.schema != "ghostlight.elaborator_session_compaction_draft.v1"
-            || !bounded(&action.frontier_summary, 4_000)
-            || action.unresolved_leads.len() > 32
-            || action
-                .unresolved_leads
-                .iter()
-                .any(|lead| !bounded(lead, 600))
-        {
+        let mut findings = Vec::new();
+        if action.schema != "ghostlight.elaborator_session_compaction_draft.v1" {
+            findings.push("compaction schema is unsupported".to_owned());
+        }
+        if !bounded(&action.frontier_summary, 4_000) {
+            findings.push("frontier summary must contain 1 through 4000 characters".to_owned());
+        }
+        if action.unresolved_leads.len() > 32 {
+            findings.push("compaction contains more than 32 unresolved leads".to_owned());
+        }
+        for (index, lead) in action.unresolved_leads.iter().enumerate() {
+            if !bounded(lead, 600) {
+                findings.push(format!(
+                    "unresolved lead {index} must contain 1 through 600 characters"
+                ));
+            }
+        }
+        if !findings.is_empty() {
             return crate::agent::ModelAgentToolOutcome::Rejected {
                 finding: ElaboratorSessionCompactionFinding {
-                    diagnostic:
-                        "compaction must preserve one bounded frontier and at most 32 concrete unresolved leads"
-                            .into(),
+                    diagnostic: findings.join("; "),
                 },
                 receipts: Vec::new(),
             };
@@ -3587,6 +3597,40 @@ mod tests {
                 .validate_for(&campaign, "room", ElaboratorTitle::Patina)
                 .is_err()
         );
+    }
+
+    #[tokio::test]
+    async fn session_compaction_schema_and_tool_name_every_invalid_lead() {
+        let mut tool = ElaboratorSessionCompactionTool {
+            workbench: serde_json::json!({"schema":"test.compaction_workbench.v1"}),
+        };
+        let schema = crate::agent::ModelAgentTool::action_schema(&tool).unwrap();
+        assert_eq!(
+            schema["properties"]["unresolved_leads"]["items"]["minLength"],
+            1
+        );
+        assert_eq!(
+            schema["properties"]["unresolved_leads"]["items"]["maxLength"],
+            600
+        );
+        let rejected = crate::agent::ModelAgentTool::invoke(
+            &mut tool,
+            ElaboratorSessionCompactionDraft {
+                schema: "ghostlight.elaborator_session_compaction_draft.v1".into(),
+                frontier_summary: "A bounded frontier remains live.".into(),
+                unresolved_leads: vec![String::new(), "x".repeat(601)],
+            },
+            &crate::agent::ModelAgentToolContext {
+                source_receipt_ids: Vec::new(),
+                current_model_receipt: None,
+            },
+        )
+        .await;
+        let crate::agent::ModelAgentToolOutcome::Rejected { finding, .. } = rejected else {
+            panic!("invalid compaction was admitted")
+        };
+        assert!(finding.diagnostic.contains("unresolved lead 0"));
+        assert!(finding.diagnostic.contains("unresolved lead 1"));
     }
 
     fn campaign_with_civic_room() -> crate::domain::Campaign {

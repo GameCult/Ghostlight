@@ -25,7 +25,7 @@ own volatile workspace identity and the release witness owns deployed identity.
 
 ## Current full-world pressure test
 
-Preserve immutable Runs 75 through 100. Rounds 1 through 13 and their session
+Preserve immutable Runs 75 through 103. Rounds 1 through 16 and their session
 checkpoints are canonical; do not replay them.
 
 Bounded parallel title-by-realm compaction and deterministic parallel child-ID
@@ -48,23 +48,26 @@ distinct, so global public-name uniqueness was wrongly acting as identity
 authority. The status file is stale at revision 769; `campaign.cc` and exact
 commit receipts through ordinal 804 own partial-progress truth.
 
-Run 99 crossed that identity boundary, completed round 12 with 112 commits and
-raised actionable subjects from 1,288 to 1,458, then completed round 13 with 95
-commits and raised them from 1,458 to 1,596. Its round-14 checkpoint froze 80
-successful proposals and one Veil schema failure at ordinal 966. Run 100
-retried only ordinal 966 and the model repeated null values for deterministic
-member fields it never owned.
+Run 99 completed round 12 with 112 commits and raised actionable subjects from
+1,288 to 1,458, then completed round 13 with 95 commits and raised them from
+1,458 to 1,596. Run 101 completed round 14 with 81 commits and raised subjects
+from 1,596 to 1,708, then completed round 15 with 70 commits and raised them
+from 1,708 to 1,800. Run 102 retried one missing Patina compaction, completed
+round 16 with 60 commits, and raised subjects from 1,800 to 1,880. Round 17 then
+committed 52 mutations and wrote 23 local session summaries before its remaining
+Patina compaction failed. Run 103 retried only that missing compaction and
+reproduced the failure.
 
-The current cut makes ownership structural: the model emits a compact member
-draft containing only local ID, name, traits, relationships, goals, and
-memories. The deterministic tool supplies canonical schema, exact parent ID and
-version, assigned location, materialization state, and relevance revisions
-before the unchanged shared validator and WorldKernel admission path. Review,
-gate, commit, and push it, then clone Run 100 and resume only ordinal 966. Do not
-replay the 80 successful round-14 proposals, Run 99's 207 committed mutations,
-or any earlier round. The acceptance launcher retains one 35 MiB
-content-addressed runner per exact source commit and deletes disposable compiler
-output; do not restore a persistent Cargo target tree.
+The compaction action schema bounded the unresolved-lead list without bounding
+each string, while the deterministic tool returned only one generic finding.
+The current cut gives every lead the exact 1-through-600-character schema bound
+and reports each invalid lead by index. Review, gate, commit, and push it, then
+clone Run 103 and resume only the missing Patina compaction. Preserve all 52
+round-17 mutation receipts and 23 successful session checkpoints; do not replay
+proposals, mutations, sibling compactions, or earlier rounds. The acceptance
+launcher retains one 35 MiB content-addressed runner per exact source commit and
+deletes disposable compiler output; do not restore a persistent Cargo target
+tree.
 
 ## Mission and current product shape
 
@@ -473,15 +476,13 @@ approved capability.
 
 ## Next action
 
-Preserve Runs 75 through 100. Review, gate, commit, and push the compact
-individuation-draft cut, then clone Run 100 and resume only the failed round-14
-Veil dispatch at ordinal 966. The model must not author schema, parent ID or
-version, assigned location, materialization state, or relevance revisions; the
-deterministic tool materializes them before shared validation. Do not replay the
-80 successful round-14 proposals, Run 99's 207 commits, or any earlier round.
-Continue iterative complexity rounds to 2,400 canonical actionable subjects,
-followed by ten strategic waves, publications, archive hashes, and
-unchanged-live-service verification.
+Preserve Runs 75 through 103. Review, gate, commit, and push the exact per-lead
+compaction-schema and indexed-feedback cut, then clone Run 103 and resume only
+the missing round-17 Patina compaction. Preserve its 52 admitted mutations and
+23 successful local session summaries without replaying proposals, mutations,
+sibling compactions, or earlier rounds. Continue iterative complexity rounds to
+2,400 canonical actionable subjects, followed by ten strategic waves,
+publications, archive hashes, and unchanged-live-service verification.
 
 The generic world-consumer boundary is implemented. Session Zero and external
 producers share one admitted `WorldSeed` transaction; externally authoritative

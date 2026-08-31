@@ -1404,6 +1404,12 @@ outside this authority.
   journals routed by the invocation's stable title-by-realm session ID. The
   resulting checkpoint is stored under that ID and supplied only when a later
   dispatch has the same title and deterministically derived jurisdiction.
+  The existing `ElaboratorSessionCompactionTool` owns the model-boundary
+  compaction contract: its action schema requires a nonempty frontier summary
+  of at most 4,000 characters, at most 32 unresolved leads, and each lead to
+  contain 1 through 600 characters. Tool admission rechecks those same bounds
+  and returns the complete indexed mismatch set; checkpoint construction then
+  revalidates the identical shape before hashing and persistence.
   The exact failure partition, frozen schedule, completed proposals, receipts,
   and diagnostics remain in the resumable failure checkpoint; they are not
   folded into successful session compaction.
@@ -1425,7 +1431,9 @@ outside this authority.
   name-disambiguation authority. `WorldComplexityMemberDraft` is only the
   model-boundary semantic payload; it is not a second member-state schema or
   persistence owner, and deterministic lifecycle fields do not cross the model
-  boundary.
+  boundary. The compaction repair adds no compactor, checkpoint type, session
+  store, or memory authority; it closes the item-bound seam between the
+  existing model schema, tool admission, and checkpoint validator.
 - **Verification layer:** checkpoint shape and digest bind title, session,
   campaign, target location, generation, world revision, prior checkpoint, and
   bounded narrative fields. Frozen parent digests make conflicting parallel
@@ -1469,6 +1477,10 @@ outside this authority.
   derived zero deficit rather than exhaustion of calls or rounds. Focused tests
   cover scale arithmetic, checkpoint tampering and cross-title rejection, exact
   compaction ancestry, assigned-parent validation, and safe revision rebasing.
+  A focused compaction regression proves the generated schema carries the
+  per-lead 1/600 character bounds and that empty and overlong leads in one
+  action produce separate index-addressed findings rather than one generic
+  combined diagnostic.
 - **Failure and resume:** a provider failure publishes an immutable
   round-failure generation with the exact completed and failed dispatches and
   receipts, then stops that run. Explicit resume rehydrates the latest failure,
