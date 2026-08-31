@@ -525,8 +525,33 @@ Preserve failed Run 70.
 
 The current compatibility correction omits legacy empty source times from both
 rendering and serialization, preserving the inherited v13 receipt bytes and
-digest. New v14 nonempty source times remain rendered and serialized. Focused
-regression, commit, push, and provider proof remain pending.
+digest. New v14 nonempty source times remain rendered and serialized. Exact-
+source Run 73 proves this compatibility path and final recomposition
+mechanically.
+
+Run 73 at exact source `b827d897b9579c2091a67c363d35b8695288ba2f`
+is terminal complete at
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/full-world-delvehold-b827d89-73`:
+world revision 27, 12/12 waves, 240 events, and 514 news rows. Inherited
+artifacts are byte-identical to Run 68, the manifest passes, and archive SHA-256
+is `090d05f304c8f3d33c9dccd728bffbf3e5dc2969a7aeeffc2f9d7bafe701ac8a`.
+
+Independent editorial review fails. The paper has a strong throughline, named
+actors, scandal, and lived cost, but no opposing formal-authority motive,
+response, or countermove, so it reads as one-sided polemic. Independent
+grounding review fails on unsupported `None for Appeal`, inflation from a
+witnessed event to public accessibility, and `prestigious instruments`.
+Preserve Runs 64 through 73; mechanical completion is proven, final newspaper
+acceptance is not.
+
+Current source already gives the assignment editor bounded full-ledger queries
+and tells it to search sideways for opposition and countermoves. Do not sample
+again yet. Inspect the actual Run 73 query transcript and selection against the
+frozen fact desk to distinguish missing records, missed discovery, and rejected
+selection. Inspect the copy-desk findings plus Night Editor input/output for the
+three grounding failures. Preserve the newsroom roles and fact boundary; cut
+missing context or misplaced ownership rather than adding a new judge or output
+ban.
 
 Sparse inhabited destinations now compile a versioned civic apparatus in place.
 The first pass establishes institutions, resident populations, political edges,
@@ -1600,12 +1625,17 @@ materializing a `NewsIssue`.
 2. Preserve the delivered Run 60 PDF and its frozen-copy verification as the
    earlier baseline, plus the final Run 61 style/flow artifact, v2 manifest,
    grammar, hashes, frozen copy, and art assets recorded above.
-3. Run the focused legacy source-time serialization regression, then commit and
-   push the empty-vector omission. Launch newsroom-only Run 71 from immutable
-   Run 68 at revision 27 without simulation or wave replay. Preserve failed Runs
-   69 and 70, bind Run 71 to exact source and provenance, then obtain fresh
-   independent editorial and grounding verdicts plus archive acceptance. This
-   standalone run does not wait for the Delvehold adapter.
+3. Finish and publish the mapped v15 assignment cut. Accountability,
+   opposition, and counter-narrative pitches bind two distinct named parties to
+   selected exact citations through a typed conflict axis; deterministic
+   admission rejects abstract or uncited antagonists. The bounded period
+   directory preserves canonical ledger order rather than lexically selecting
+   headlines. Run focused and full gates, commit, and push before one
+   newsroom-only run from immutable Run 68. Require mechanical and blind
+   editorial acceptance. Under the deadline contract, post-press grounding
+   findings become later-edition correction input rather than a same-edition
+   retry loop. Preserve Runs 64 through 73. This work does not wait for the
+   Delvehold adapter.
 4. Build the Delvehold-owned adapter before any real Delvehold-owned player,
    civic, dungeon, contract, workshop, or quantitative-economy state participates.
    Defer multiple publications until separately authorized, or follow the operator's next directed work.

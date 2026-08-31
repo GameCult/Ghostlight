@@ -1372,10 +1372,12 @@ The deliberative newsroom boundary is live under this authority map:
   writers. `WorldKernel` remains the only world-event writer.
 - **Inputs:** one exact campaign revision, publication title and voice, article
   budget, a validated embodied newsroom roster, source-receipt ancestry, and
-  `character-newsroom.v14` contract. Before its first query, the assignment
+  `character-newsroom.v15` contract. Before its first query, the assignment
   editor receives a bounded per-period directory containing only timestamps,
   completed-material-change headlines, the full completed-change count, and
-  counts of other records. This is
+  counts of other records. Headline sampling preserves canonical ledger order
+  within a period rather than lexically privileging whichever headline sorts
+  first. This is
   navigation context: it cannot be cited, does not make a record inspected, and
   does not replace query or exact-ID fetch. Each reporter receives the common stable
   house charter first, that journalist's stable recurring identity second, and
@@ -1406,7 +1408,13 @@ The deliberative newsroom boundary is live under this authority map:
   pitches. Every pitch names stable public-record IDs, chooses one focus record,
   section, journalist, narrative function, and context role, and supplies bounded
   assignment rationale,
-  narrative claim, tension, and public question. Article count plus bounded paragraphs and output tokens
+  narrative claim, tension, and public question. Accountability, opposition,
+  and counter-narrative pitches also carry a typed conflict axis: two distinct
+  named parties, one selected exact citation for each, and the editorially
+  framed conflict. Deterministic admission proves both parties are asserted by
+  their cited records; an abstract antagonist cannot occupy either side.
+  Consequence and independent stories may omit the axis when the ledger has no
+  honest adversarial motion. Article count plus bounded paragraphs and output tokens
   define page space. There is no citation-count page budget. A foundational
   record may support several continuing stories when each pitch uses it for a
   distinct throughline. One journalist agent files each assigned story and the
@@ -1654,7 +1662,8 @@ The deliberative newsroom boundary is live under this authority map:
   step-one directive no longer sits in a prefix position that disappears when
   the first workbench snapshot replaces history. The cut adds no cache store,
   cache key registry, manual retention control, or retry compensator.
-  V14 adds only the bounded assignment-navigation directory and source
+  V15 adds the cited conflict axis and removes lexical bias from the bounded
+  directory. V14 adds only the bounded assignment-navigation directory and source
   timestamps in the audit. It does not add a source-packet layer, second event
   authority, alternate evidence selector, or reporter-context expansion.
   The roster, query projection, front-page proof, and article assembly reuse the
@@ -1665,7 +1674,9 @@ The deliberative newsroom boundary is live under this authority map:
   added.
 - **Verification and build budget:** focused newspaper tests retain query
   admission, exact focus proof, agenda commit, selected-record alignment, and
-  audit grounding. V14 gates prove the assignment editor sees completed-change
+  audit grounding. V15 gates prove adversarial assignments bind two distinct
+  named parties to selected exact records and that period navigation preserves
+  canonical ledger order. V14 gates prove the assignment editor sees completed-change
   headlines across distinct periods before querying while stable record IDs and
   fact bodies remain absent, and that rendered audit citations expose source
   time. Existing V13 gates prove the stable selector instruction prefix with

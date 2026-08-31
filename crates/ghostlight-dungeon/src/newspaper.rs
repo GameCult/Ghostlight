@@ -27,7 +27,7 @@ use std::{
 const MAX_FRONT_PAGE_ARTICLES: usize = 6;
 const MAX_PUBLIC_RECORD_QUERY_RESULTS: usize = 24;
 const MAX_NARRATIVE_SELECTION_STEPS: usize = 12;
-const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v14";
+const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v15";
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
@@ -488,6 +488,23 @@ pub struct WorldNewspaperStoryPitch {
     pub tension: String,
     #[schemars(length(min = 1, max = 500))]
     pub public_question: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub conflict_axis: Option<WorldNewspaperConflictAxis>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct WorldNewspaperConflictAxis {
+    #[schemars(length(min = 1, max = 160))]
+    pub first_party: String,
+    #[schemars(length(min = 1, max = 160))]
+    pub first_party_citation: String,
+    #[schemars(length(min = 1, max = 160))]
+    pub opposing_party: String,
+    #[schemars(length(min = 1, max = 160))]
+    pub opposing_party_citation: String,
+    #[schemars(length(min = 1, max = 500))]
+    pub conflict: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema)]
@@ -1045,7 +1062,8 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                             "focus_citation",
                             "narrative_claim",
                             "tension",
-                            "public_question"
+                            "public_question",
+                            "conflict_axis"
                         ],
                         "properties":{
                             "lead":{"type":"boolean"},
@@ -1069,6 +1087,23 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                             "narrative_claim":{"type":"string","minLength":1,"maxLength":500},
                             "tension":{"type":"string","minLength":1,"maxLength":500},
                             "public_question":{"type":"string","minLength":1,"maxLength":500}
+                            ,"conflict_axis":{
+                                "oneOf":[
+                                    {"type":"null"},
+                                    {
+                                        "type":"object",
+                                        "additionalProperties":false,
+                                        "required":["first_party","first_party_citation","opposing_party","opposing_party_citation","conflict"],
+                                        "properties":{
+                                            "first_party":{"type":"string","minLength":1,"maxLength":160},
+                                            "first_party_citation":{"type":"string","minLength":1,"maxLength":160},
+                                            "opposing_party":{"type":"string","minLength":1,"maxLength":160},
+                                            "opposing_party_citation":{"type":"string","minLength":1,"maxLength":160},
+                                            "conflict":{"type":"string","minLength":1,"maxLength":500}
+                                        }
+                                    }
+                                ]
+                            }
                         }
                     }
                 }
@@ -1442,6 +1477,55 @@ fn validate_editorial_agenda(
         validate_editorial_frame(&pitch.narrative_claim, "story narrative claim")?;
         validate_editorial_frame(&pitch.tension, "story tension")?;
         validate_editorial_frame(&pitch.public_question, "public question")?;
+        if matches!(
+            pitch.narrative_function,
+            WorldNewspaperNarrativeFunction::Accountability
+                | WorldNewspaperNarrativeFunction::Opposition
+                | WorldNewspaperNarrativeFunction::CounterNarrative
+        ) && pitch.conflict_axis.is_none()
+        {
+            return Err(anyhow!(
+                "editorial pitch {index} declares adversarial work without binding two cited parties"
+            ));
+        }
+        if let Some(axis) = &pitch.conflict_axis {
+            validate_editorial_frame(&axis.first_party, "conflict first party")?;
+            validate_editorial_frame(&axis.opposing_party, "conflict opposing party")?;
+            validate_editorial_frame(&axis.conflict, "conflict axis")?;
+            if axis.first_party == axis.opposing_party {
+                return Err(anyhow!(
+                    "editorial pitch {index} binds the same party to both sides"
+                ));
+            }
+            for (party, citation, label) in [
+                (&axis.first_party, &axis.first_party_citation, "first"),
+                (
+                    &axis.opposing_party,
+                    &axis.opposing_party_citation,
+                    "opposing",
+                ),
+            ] {
+                if !selected.contains(citation.as_str()) {
+                    return Err(anyhow!(
+                        "editorial pitch {index} {label} party citation is not selected"
+                    ));
+                }
+                let record = records
+                    .iter()
+                    .find(|record| record.record_id == *citation)
+                    .ok_or_else(|| anyhow!("conflict citation is absent from the ledger"))?;
+                let named = record.facts.iter().any(|fact| {
+                    fact.named_people.iter().any(|person| person.name == *party)
+                        || fact.institutions.iter().any(|name| name == party)
+                        || fact.populations.iter().any(|name| name == party)
+                });
+                if !named {
+                    return Err(anyhow!(
+                        "editorial pitch {index} {label} party is not named by its citation"
+                    ));
+                }
+            }
+        }
     }
     Ok(())
 }
@@ -1772,7 +1856,7 @@ async fn select_editorial_agenda(
             .collect::<Vec<_>>(),
     });
     let instructions = format!(
-        "You are {editor}, assignment editor of `{title}`. Investigate its frozen public ledger with query_public_records, then assign a page. An empty query browses; terms, exact entity names, status, channel, and an inspected cursor narrow or page. The workbench keeps a compact index of inspected records instead of replaying old query pages; use fetch_public_records with exact IDs when you need their full facts again. Cite only returned record IDs. Search backward when procedure hides the rupture and sideways for opposition, countermoves, reaction, scandal, lived cost, and independent beats.\n\nFirst decide the issue shape. A special issue is earned when one upheaval genuinely reorganizes several parts of public life; its lead alone owns the shared chronology and later stories assume that chronology while performing distinct narrative functions. A general issue carries independent beats whose stories are self-contained. Do not declare a special issue merely because one incident generated many records, and do not manufacture variety when the whole realm is plainly living through one rupture. State the evidence-based rationale.\n\nThe first pitch is the Front Page lead; later pitches use another allowed section. Give each pitch a narrative function and context role. Choose the staff journalist whose beat, biases, source instincts, voice, and blind spots make them the most revealingly partial observer, and state that assignment reason. Give them the exact record grouping, one focus record the lede cannot bury, a pointed narrative claim, the live tension, and the public question. A routine update to a vivid continuing incident should cite both and say what changed. Remembering, filing, warning, and planning are context unless they themselves produce a public consequence. Editorial frames may insinuate and judge but cannot invent concrete facts. The copy editor, not you or the reporters, owns fact checking.\n\nPropose before committing. The workbench returns issue shape, reporter fit, the lead, and what it would bury; revise or query again if the proof exposes a stronger or more honest page.\n\nPUBLICATION VOICE:\n{voice}\n\nCOMPACT STAFF BOOK:\n{staff}\n\nLEDGER PERIOD DIRECTORY (navigation only; query exact records before citation):\n{directory}",
+        "You are {editor}, assignment editor of `{title}`. Investigate its frozen public ledger with query_public_records, then assign a page. An empty query browses; terms, exact entity names, status, channel, and an inspected cursor narrow or page. The workbench keeps a compact index of inspected records instead of replaying old query pages; use fetch_public_records with exact IDs when you need their full facts again. Cite only returned record IDs. Search backward when procedure hides the rupture and sideways for opposition, countermoves, reaction, scandal, lived cost, and independent beats.\n\nFirst decide the issue shape. A special issue is earned when one upheaval genuinely reorganizes several parts of public life; its lead alone owns the shared chronology and later stories assume that chronology while performing distinct narrative functions. A general issue carries independent beats whose stories are self-contained. Do not declare a special issue merely because one incident generated many records, and do not manufacture variety when the whole realm is plainly living through one rupture. State the evidence-based rationale.\n\nThe first pitch is the Front Page lead; later pitches use another allowed section. Give each pitch a narrative function and context role. Choose the staff journalist whose beat, biases, source instincts, voice, and blind spots make them the most revealingly partial observer, and state that assignment reason. Give them the exact record grouping, one focus record the lede cannot bury, a pointed narrative claim, the live tension, and the public question. Accountability, opposition, and counter-narrative assignments must also bind a conflict_axis: two distinct people, institutions, or populations named by exact selected citations, plus the conflict the reporter should pursue. One cited grievance against an unnamed abstraction is not an opposing side. Consequence, profile, and independent stories may leave conflict_axis null when the ledger honestly supplies no adversarial motion. A routine update to a vivid continuing incident should cite both and say what changed. Remembering, filing, warning, and planning are context unless they themselves produce a public consequence. Editorial frames may insinuate and judge but cannot invent concrete facts. The copy editor, not you or the reporters, owns fact checking.\n\nPropose before committing. The workbench returns issue shape, reporter fit, the lead, and what it would bury; revise or query again if the proof exposes a stronger or more honest page.\n\nPUBLICATION VOICE:\n{voice}\n\nCOMPACT STAFF BOOK:\n{staff}\n\nLEDGER PERIOD DIRECTORY (navigation only; query exact records before citation):\n{directory}",
         editor = prepared.newsroom.assignment_editor.name,
         title = prepared.title,
         voice = prepared.editorial_voice,
@@ -3558,32 +3642,36 @@ fn editorial_period_directory(
 ) -> Vec<EditorialPeriodDirectoryEntry> {
     const MAX_COMPLETED_HEADLINES_PER_PERIOD: usize = 12;
 
-    let mut periods = BTreeMap::<DateTime<Utc>, (BTreeSet<String>, usize)>::new();
+    let mut periods = BTreeMap::<DateTime<Utc>, (Vec<String>, BTreeSet<String>, usize)>::new();
     for record in records {
         let entry = periods.entry(record.at).or_default();
         if record.facts.iter().any(|fact| {
             fact.assertion_status == WorldNewspaperAssertionStatus::MaterialChangeCommitted
         }) {
-            entry.0.insert(record.headline.clone());
+            if entry.1.insert(record.headline.clone()) {
+                entry.0.push(record.headline.clone());
+            }
         } else {
-            entry.1 = entry.1.saturating_add(1);
+            entry.2 = entry.2.saturating_add(1);
         }
     }
     periods
         .into_iter()
         .rev()
-        .map(|(at, (completed_change_headlines, other_record_count))| {
-            let completed_change_count = completed_change_headlines.len();
-            EditorialPeriodDirectoryEntry {
-                at,
-                completed_change_headlines: completed_change_headlines
-                    .into_iter()
-                    .take(MAX_COMPLETED_HEADLINES_PER_PERIOD)
-                    .collect(),
-                completed_change_count,
-                other_record_count,
-            }
-        })
+        .map(
+            |(at, (completed_change_headlines, _, other_record_count))| {
+                let completed_change_count = completed_change_headlines.len();
+                EditorialPeriodDirectoryEntry {
+                    at,
+                    completed_change_headlines: completed_change_headlines
+                        .into_iter()
+                        .take(MAX_COMPLETED_HEADLINES_PER_PERIOD)
+                        .collect(),
+                    completed_change_count,
+                    other_record_count,
+                }
+            },
+        )
         .collect()
 }
 
@@ -4338,8 +4426,8 @@ mod tests {
 
     const QUERY_ALL_RECORDS: &str = r#"{"command":{"tool":"query_public_records","terms":[],"match_terms":"all","entity_names":[],"assertion_statuses":[],"channels":[],"order":"newest","cursor":null,"limit":24}}"#;
     const QUERY_FOUNDING_CRISIS: &str = r#"{"command":{"tool":"query_public_records","terms":["speaking child","severed delegation hands","failed grain pumps"],"match_terms":"any","entity_names":[],"assertion_statuses":[],"channels":[],"order":"oldest","cursor":null,"limit":24}}"#;
-    const ONE_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","issue_shape":"special_issue","issue_shape_rationale":"The missing royal seal reorganizes public trust in court custody.","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"aven-tarl","narrative_function":"lead_chronology","context_role":"owns_issue_chronology","assignment_reason":"Aven's court beat and appetite for status reversal fit the scandal's central chronology.","citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned royal seal and the treasurer's dismissal are one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?"}]}}"#;
-    const TWO_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","issue_shape":"special_issue","issue_shape_rationale":"Failures of custody at court and gate reorganize public access and confidence.","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"aven-tarl","narrative_function":"lead_chronology","context_role":"owns_issue_chronology","assignment_reason":"Aven owns the court chronology and its status reversal.","citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned seal and dismissal are the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?"},{"lead":false,"section":"Dispatches","journalist_id":"lysa-fen","narrative_function":"consequence","context_role":"assumes_issue_chronology","assignment_reason":"Lysa's border beat tests how the custody crisis changes movement at the gate.","citations":["news:west-gate"],"focus_citation":"news:west-gate","narrative_claim":"The gate closure is a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?"}]}}"#;
+    const ONE_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","issue_shape":"special_issue","issue_shape_rationale":"The missing royal seal reorganizes public trust in court custody.","dominant_throughline":"The court made its private gambling debt a public crisis of custody and punished the official who exposed it.","reader_stake":"Readers must decide whether dismissal protects the seal or merely the court from its own confession.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"aven-tarl","narrative_function":"lead_chronology","context_role":"owns_issue_chronology","assignment_reason":"Aven's court beat and appetite for status reversal fit the scandal's central chronology.","citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned royal seal and the treasurer's dismissal are one scandal.","tension":"The court admits the loss while directing the immediate consequence at the bearer of that admission.","public_question":"Who is being held accountable for the missing seal?","conflict_axis":null}]}}"#;
+    const TWO_STORY_AGENDA: &str = r#"{"command":{"tool":"propose_agenda","issue_shape":"special_issue","issue_shape_rationale":"Failures of custody at court and gate reorganize public access and confidence.","dominant_throughline":"Court custody fails at both the royal seal and the western gate.","reader_stake":"Readers depend on institutions that announce damage only after access or authority has already been compromised.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"aven-tarl","narrative_function":"lead_chronology","context_role":"owns_issue_chronology","assignment_reason":"Aven owns the court chronology and its status reversal.","citations":["news:seal-scandal"],"focus_citation":"news:seal-scandal","narrative_claim":"The pawned seal and dismissal are the court's crisis of custody.","tension":"The confession exposes the loss while the treasurer absorbs the immediate institutional consequence.","public_question":"Who is being held accountable for the missing seal?","conflict_axis":null},{"lead":false,"section":"Dispatches","journalist_id":"lysa-fen","narrative_function":"consequence","context_role":"assumes_issue_chronology","assignment_reason":"Lysa's border beat tests how the custody crisis changes movement at the gate.","citations":["news:west-gate"],"focus_citation":"news:west-gate","narrative_claim":"The gate closure is a practical echo of neglected custody.","tension":"A cracked hinge will close a route at moonrise while travellers wait for a reopening time.","public_question":"How long will the western route remain closed?","conflict_axis":null}]}}"#;
     const ACCEPTED_STORY_ACTION: &str = r#"{"tool":"file_story","headline":"Court Sells the Crown's Seal, Then the Treasurer","deck":"A gambling debt reaches the throne room and leaves one official carrying the blame.","dateline":"Room","paragraphs":["The Thorn Court has admitted that its royal seal was pawned to cover a dragon's gambling debt, a confession that turns private embarrassment into a public question of custody.","The treasurer who delivered that admission in open court was dismissed soon afterward. The court has explained the firing; it has not made the seal any less pawned."]}"#;
     const MALFORMED_LYSA_STORY_ACTION: &str = r#"{"tool":"file_story","headline":"Gate Trouble","deck":"The western route will close at moonrise.","dateline":"Yard","paragraphs":["Too short.","Still short."]}"#;
     const ACCEPTED_LYSA_STORY_ACTION: &str = r#"{"tool":"file_story","headline":"West Gate to Close at Moonrise","deck":"Masons will replace a cracked hinge after the palace bell keeper's warning.","dateline":"Yard","paragraphs":["Officials warn the west gate is unsafe, and the palace bell keeper says it will close at moonrise while masons replace its cracked hinge.","Travellers using the gate have been told when it will close, though no reopening hour was included in the announcement."]}"#;
@@ -4413,6 +4501,7 @@ mod tests {
                     narrative_claim: "The pawned seal opens the custody crisis.".into(),
                     tension: "Admission and dismissal point in different directions.".into(),
                     public_question: "Who answers for the seal?".into(),
+                    conflict_axis: None,
                 },
                 WorldNewspaperStoryPitch {
                     lead: true,
@@ -4426,6 +4515,7 @@ mod tests {
                     narrative_claim: "The gate repeats the pattern.".into(),
                     tension: "Access closes while repair begins.".into(),
                     public_question: "When will the route reopen?".into(),
+                    conflict_axis: None,
                 },
             ],
         };
@@ -4639,6 +4729,7 @@ mod tests {
                         .into(),
                     public_question: "Who benefits when the founding rupture leaves the page?"
                         .into(),
+                    conflict_axis: None,
                 }],
             },
         };
@@ -4717,6 +4808,7 @@ mod tests {
                         .into(),
                     public_question: "Who benefits when the founding rupture leaves the page?"
                         .into(),
+                    conflict_axis: None,
                 }],
             },
         };
@@ -4843,7 +4935,7 @@ mod tests {
         .unwrap();
         let model = ScriptedNewspaperModel::new([
             QUERY_FOUNDING_CRISIS,
-            r#"{"command":{"tool":"propose_agenda","issue_shape":"special_issue","issue_shape_rationale":"The founding rupture still organizes its administrative aftermath.","dominant_throughline":"The founding crisis survived its administrative aftermath.","reader_stake":"Readers still bear the consequences while institutions manage the paperwork.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"mera-quill","narrative_function":"lead_chronology","context_role":"owns_issue_chronology","assignment_reason":"Mera's witness-first beat keeps the original lived rupture ahead of its paperwork.","citations":["news:archive:00"],"focus_citation":"news:archive:00","narrative_claim":"The original public record is the fact later notices cannot domesticate.","tension":"Administrative responses multiply while the founding rupture remains unresolved.","public_question":"Who benefits when the cause leaves the front page?"}]}}"#,
+            r#"{"command":{"tool":"propose_agenda","issue_shape":"special_issue","issue_shape_rationale":"The founding rupture still organizes its administrative aftermath.","dominant_throughline":"The founding crisis survived its administrative aftermath.","reader_stake":"Readers still bear the consequences while institutions manage the paperwork.","story_pitches":[{"lead":true,"section":"Front Page","journalist_id":"mera-quill","narrative_function":"lead_chronology","context_role":"owns_issue_chronology","assignment_reason":"Mera's witness-first beat keeps the original lived rupture ahead of its paperwork.","citations":["news:archive:00"],"focus_citation":"news:archive:00","narrative_claim":"The original public record is the fact later notices cannot domesticate.","tension":"Administrative responses multiply while the founding rupture remains unresolved.","public_question":"Who benefits when the cause leaves the front page?","conflict_axis":null}]}}"#,
         ]);
 
         let run = select_editorial_agenda(&model, &prepared, 3).await.unwrap();
@@ -4915,6 +5007,25 @@ mod tests {
     }
 
     #[test]
+    fn period_directory_preserves_canonical_ledger_order_instead_of_lexical_headline_order() {
+        let mut campaign = campaign_with_two_news();
+        for event in &mut campaign.events {
+            event.kind = "strategic_activity_outcome".into();
+        }
+        campaign.news[0].headline = "Zulu: the first admitted change".into();
+        campaign.news[1].headline = "Alpha: the later lexical trap".into();
+        let records = public_news_records(&campaign).unwrap();
+        let directory = editorial_period_directory(&records);
+        assert_eq!(
+            directory[0].completed_change_headlines,
+            [
+                "Zulu: the first admitted change",
+                "Alpha: the later lexical trap"
+            ]
+        );
+    }
+
+    #[test]
     fn narrative_workbench_has_no_source_count_hole_and_reads_legacy_agendas() {
         let records = public_news_records(&campaign_with_archive_news()).unwrap();
         let pitch = WorldNewspaperStoryPitch {
@@ -4931,6 +5042,7 @@ mod tests {
             narrative_claim: "One sharp custody failure links the selected record.".into(),
             tension: "Public consequence runs ahead of public accountability.".into(),
             public_question: "Who answers for the admitted failure?".into(),
+            conflict_axis: None,
         };
         let agenda = WorldNewspaperEditorialAgenda {
             issue_shape: WorldNewspaperIssueShape::SpecialIssue,
@@ -4960,6 +5072,76 @@ mod tests {
     }
 
     #[test]
+    fn adversarial_assignments_bind_two_named_parties_to_selected_records() {
+        let mut campaign = campaign_with_two_news();
+        campaign.institutions.insert(
+            "court".into(),
+            crate::domain::InstitutionState {
+                id: "court".into(),
+                name: "Thorn Court".into(),
+                resources: vec![],
+                goals: vec![],
+                posture: "defending custody".into(),
+            },
+        );
+        campaign.institutions.insert(
+            "wardens".into(),
+            crate::domain::InstitutionState {
+                id: "wardens".into(),
+                name: "West Gate Wardens".into(),
+                resources: vec![],
+                goals: vec![],
+                posture: "closing the route".into(),
+            },
+        );
+        campaign.events[0].institution_ids = vec!["court".into()];
+        campaign.events[1].institution_ids = vec!["wardens".into()];
+        campaign.events[1].summary = "West Gate Wardens announce that the west gate will close at moonrise while masons replace its cracked hinge.".into();
+        let records = public_news_records(&campaign).unwrap();
+        let pitch = WorldNewspaperStoryPitch {
+            lead: true,
+            section: "Front Page".into(),
+            journalist_id: "aven-tarl".into(),
+            narrative_function: WorldNewspaperNarrativeFunction::Opposition,
+            context_role: WorldNewspaperContextRole::SelfContained,
+            assignment_reason: "Aven follows the institutions contesting public access.".into(),
+            citations: vec!["news:seal-scandal".into(), "news:west-gate".into()],
+            focus_citation: "news:seal-scandal".into(),
+            narrative_claim: "Two authorities defend incompatible forms of custody.".into(),
+            tension: "Court custody and route closure collide in public.".into(),
+            public_question: "Which authority bears the consequence?".into(),
+            conflict_axis: Some(WorldNewspaperConflictAxis {
+                first_party: "Thorn Court".into(),
+                first_party_citation: "news:seal-scandal".into(),
+                opposing_party: "West Gate Wardens".into(),
+                opposing_party_citation: "news:west-gate".into(),
+                conflict: "They impose incompatible answers to failed custody.".into(),
+            }),
+        };
+        let agenda = WorldNewspaperEditorialAgenda {
+            issue_shape: WorldNewspaperIssueShape::GeneralIssue,
+            issue_shape_rationale: "One custody rupture reorganizes court and gate.".into(),
+            dominant_throughline: "Custody has split into rival public authorities.".into(),
+            reader_stake: "Readers need to know whose closure governs movement.".into(),
+            story_pitches: vec![pitch],
+        };
+        validate_editorial_agenda(&records, &canopy_ledger_newsroom(), &agenda, 2).unwrap();
+
+        let mut abstract_opponent = agenda;
+        abstract_opponent.story_pitches[0]
+            .conflict_axis
+            .as_mut()
+            .unwrap()
+            .opposing_party = "official authority".into();
+        assert!(
+            validate_editorial_agenda(&records, &canopy_ledger_newsroom(), &abstract_opponent, 2)
+                .unwrap_err()
+                .to_string()
+                .contains("opposing party is not named")
+        );
+    }
+
+    #[test]
     fn journalist_action_schema_is_stable_while_validation_owns_exact_datelines() {
         let records = public_news_records(&campaign_with_two_news()).unwrap();
         let lead_pitch = WorldNewspaperStoryPitch {
@@ -4974,6 +5156,7 @@ mod tests {
             narrative_claim: "Court custody failed.".into(),
             tension: "Admission collides with accountability.".into(),
             public_question: "Who answers?".into(),
+            conflict_axis: None,
         };
         let lead = JournalistWorkbench {
             records: &records,
@@ -5005,6 +5188,7 @@ mod tests {
             narrative_claim: "The gate is the practical consequence.".into(),
             tension: "Repair closes a route.".into(),
             public_question: "When does it reopen?".into(),
+            conflict_axis: None,
         };
         let dispatch = JournalistWorkbench {
             records: &records,
