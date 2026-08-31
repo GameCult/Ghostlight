@@ -1690,25 +1690,27 @@ materializing a `NewsIssue`.
    bounded round pressure, not a model-call or session count and not an
    assumption that one mutation yields one subject. Elaborator context now
    keeps stable identity and mandate in a prefix separate from the bounded
-   dynamic workbench snapshot. Pushed through `7ce721d`, persistent logical
-   title-by-realm sessions use digest-chained agentic compaction, both meaningful
+   dynamic workbench snapshot. Pushed `a017737` gives persistent logical
+   title-by-realm sessions digest-chained agentic compaction; both meaningful
    Gestalt fission and grounded named-person promotion are available, only
    failed dispatches resume from the exact frozen schedule, WorldKernel alone
    commits, and canonical complexity is remeasured after each round.
 
-   Run 78 reached live provider complexity pressure but admitted no mutation.
-   Its model actions had to restate inherited full previews, so workers failed
-   before deterministic admission. The current uncommitted cut makes the model
-   submit only a compact mutation draft and makes the deterministic tool bind
-   frozen parent, revision, location, inherited state, approval fields, and the
-   complete command before the existing validator. Preserve Run 78 as failure
-   evidence. Review and verify this ownership cut, run the full package and
-   strategic gates, commit and push, then obtain provider proof from preserved
-   canonical pre-mutation state without resuming Run 75. Do not assume a fixed
-   batch yield or one model call per useful subject. Keep Resolution as cover
-   owner. Nemesis receives
+   Run 78 reached live provider complexity pressure but admitted no mutation
+   because workers had to restate inherited full previews. Run 79 made those
+   proposals compact but returned an opaque fission finding. Terminal Run 80
+   retried only Patina and Charter; complete deterministic findings proved both
+   omitted every parent resource assignment and named the exact three missing
+   resources for each parent. No mutation committed and live services remained
+   unchanged. The current uncommitted cut requires the exact frozen resource
+   and dormant-member IDs as action-schema map keys, rejects extras, and leaves
+   destination-child choice to the model. Full verification passes 495 library
+   and 16 strategic tests. Commit and push, then clone Run 80 into Run 81 and
+   resume only those same failed dispatches. Do not
+   assume a fixed batch yield or one model call per useful subject. Keep
+   Resolution as cover owner. Nemesis receives
    that cover and assigns causal decision windows inside it; it does not choose
-   cover membership. Preserve Runs 64 through 75 and both live services. This
+   cover membership. Preserve Runs 64 through 80 and both live services. This
    work does not wait for the Delvehold adapter because the Greathold remains an
    external sovereign boundary observer.
 4. Build the Delvehold-owned adapter before any real Delvehold-owned player,
