@@ -1634,6 +1634,16 @@ impl crate::agent::ModelAgentTool for WorldComplexityTool<'_> {
                 .ok_or_else(|| "complexity fission schema has no children".to_owned())?;
             children.insert("minItems".into(), serde_json::json!(2));
             children.insert("maxItems".into(), serde_json::json!(8));
+            let parent = &self.campaign.gestalts[self.parent_gestalt_id];
+            selected["properties"]["resource_child_assignments"] =
+                exact_keyed_string_map_schema(parent.resources.iter().cloned());
+            selected["properties"]["member_child_assignments"] = exact_keyed_string_map_schema(
+                self.campaign
+                    .gestalt_members
+                    .values()
+                    .filter(|member| member.gestalt_id == self.parent_gestalt_id)
+                    .map(|member| member.id.clone()),
+            );
         }
         *variants = vec![selected];
         if self.operation == WorldComplexityOperation::Individuate {
@@ -1776,6 +1786,10 @@ impl ElaborationSubAgentPort<WorldComplexityProposal> for ModelWorldComplexityWo
             },
             "assignment":assignment,
             "session_jurisdiction_id":jurisdiction_id,
+            "required_resource_assignment_ids":parent.resources,
+            "required_member_assignment_ids":self.campaign.gestalt_members.values()
+                .filter(|member|member.gestalt_id == parent_id)
+                .map(|member|member.id.clone()).collect::<Vec<_>>(),
             "parent":parent,
             "parent_profile":profile,
             "parent_members":self.campaign.gestalt_members.values()
@@ -2232,6 +2246,21 @@ fn exact_schema(value: impl Serialize) -> serde_json::Value {
     serde_json::json!({
         "type":value_type,
         "const":value,
+    })
+}
+
+fn exact_keyed_string_map_schema(keys: impl IntoIterator<Item = String>) -> serde_json::Value {
+    let keys = keys.into_iter().collect::<Vec<_>>();
+    let properties = keys
+        .iter()
+        .cloned()
+        .map(|key| (key, serde_json::json!({"type":"string","minLength":1})))
+        .collect::<serde_json::Map<_, _>>();
+    serde_json::json!({
+        "type":"object",
+        "properties":properties,
+        "required":keys,
+        "additionalProperties":false,
     })
 }
 
@@ -3454,7 +3483,7 @@ mod tests {
                 home_location_id: "room".into(),
                 shared_capabilities: BTreeSet::from(["river tending".into()]),
                 shared_knowledge: BTreeSet::from(["seasonal ford marks".into()]),
-                resources: BTreeSet::new(),
+                resources: BTreeSet::from(["ferry charter".into()]),
                 goals: vec!["keep the river habitable".into()],
                 pressures: vec!["the banks are narrowing".into()],
             },
@@ -3484,6 +3513,8 @@ mod tests {
             goals: parent.goals.clone(),
             pressures: parent.pressures.clone(),
         };
+        let mut licensed = child("licensed-river-households", "Licensed River Households");
+        licensed.resources.insert("ferry charter".into());
         crate::domain::GestaltFissionPreview {
             schema: "ghostlight.gestalt_fission_preview.v1".into(),
             campaign_id: campaign.id,
@@ -3491,7 +3522,7 @@ mod tests {
             parent_gestalt_id: parent.id.clone(),
             partition_axis: crate::domain::AgencyAxis::Authority,
             children: vec![
-                child("licensed-river-households", "Licensed River Households"),
+                licensed,
                 child("unrecorded-river-households", "Unrecorded River Households"),
             ],
             child_partition_values: BTreeMap::from([
@@ -3503,7 +3534,10 @@ mod tests {
             ]),
             residual_child_id: "unrecorded-river-households".into(),
             member_child_assignments: BTreeMap::new(),
-            resource_child_assignments: BTreeMap::new(),
+            resource_child_assignments: BTreeMap::from([(
+                "ferry charter".into(),
+                "licensed-river-households".into(),
+            )]),
             evidence_receipt_ids: Vec::new(),
             gaps: Vec::new(),
             canon_candidates: Vec::new(),
@@ -3540,6 +3574,16 @@ mod tests {
             1
         );
         assert!(schema["$defs"].get("GestaltFissionPreview").is_none());
+        assert_eq!(
+            schema["$defs"]["WorldComplexityMutationDraft"]["oneOf"][0]["properties"]["resource_child_assignments"]
+                ["required"],
+            serde_json::json!(["ferry charter"])
+        );
+        assert_eq!(
+            schema["$defs"]["WorldComplexityMutationDraft"]["oneOf"][0]["properties"]["member_child_assignments"]
+                ["required"],
+            serde_json::json!([])
+        );
         let draft = WorldComplexityMutationDraft::Fission {
             children: preview
                 .children

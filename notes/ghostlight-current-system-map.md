@@ -1396,8 +1396,10 @@ outside this authority.
   validation proves active parent and location, exact version, unique bounded
   identity, valid relationships, and non-materialized member state. WorldKernel
   revalidates either lane before atomic mutation. The model schema exposes only
-  the assigned operation, bounds fission children to two through eight, and
-  fixes invariant member fields for individuation; tool-level construction
+  the assigned operation, bounds fission children to two through eight,
+  requires exactly the frozen parent resource and dormant-member IDs as
+  assignment-map keys while leaving child custody model-authored, and fixes
+  invariant member fields for individuation; tool-level construction
   additionally rejects duplicate child IDs/partitions or incomplete exact
   member assignment before shared semantic validation. The shared fission
   validator owns one complete deterministic mismatch set, including frozen

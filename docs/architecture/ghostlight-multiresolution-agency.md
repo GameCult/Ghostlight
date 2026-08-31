@@ -102,6 +102,10 @@ therefore never paid for in model output and cannot drift while being copied.
 The shared fission validator reports the complete deterministic mismatch set in
 one observation, so an agent can repair the same compact draft without replaying
 inference or guessing which invariant failed first.
+The lane-specific action schema requires one entry for every exact frozen
+resource and dormant-member ID and rejects extra keys. The elaborator still
+chooses child custody; it cannot silently omit a scarce thing the kernel must
+conserve.
 
 Round effort is proportional to unresolved pressure rather than presumed model
 yield: `ceil(active_cell_budget * deficit / target)`, zero when the target is
