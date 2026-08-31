@@ -1248,6 +1248,10 @@ outside this authority.
   checkpoints, and elaborators cannot directly write campaign state or invent
   Delvehold-owned player, civic, dungeon, contract, workshop, or quantitative-
   economy effects.
+- **Admission policy:** the operator-authorized autonomous run may admit a
+  structurally and semantically valid branch-local destination even though the
+  Dungeon UI would label its preview `requires_approval`. Unresolved canon gaps
+  still stop the run; the driver cannot approve through them.
 - **Shared paths:** fresh and resumed runs use the same frozen ordered plan,
   destination compiler, and kernel admission path. Resume rejects omitted or
   reordered requests, skips a region only when its checkpoint and canonical

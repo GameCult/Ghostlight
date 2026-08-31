@@ -1189,7 +1189,7 @@ async fn main() -> anyhow::Result<()> {
                 model_receipts: receipts,
                 ..
             } = preview_checkpoint;
-            if preview.requires_approval || !preview.gaps.is_empty() {
+            if !preview.gaps.is_empty() {
                 publish_immutable_checkpoint(
                     &root.join(format!(
                         "world-region-{:02}-terminal-failure.json",
@@ -1203,7 +1203,7 @@ async fn main() -> anyhow::Result<()> {
                     }),
                 )?;
                 anyhow::bail!(
-                    "world-region expansion requires operator approval at index {}",
+                    "world-region expansion has unresolved canon gaps at index {}",
                     index + 1
                 )
             }
