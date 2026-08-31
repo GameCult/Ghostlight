@@ -1190,9 +1190,7 @@ async fn main() -> anyhow::Result<()> {
         let initial_location_ids = campaign.locations.keys().cloned().collect::<Vec<_>>();
         (campaign, vec![], vec![], None, initial_location_ids)
     };
-    if resume {
-        ghostlight_dungeon::compiler::validate_campaign_runtime(&campaign)?;
-    } else {
+    if !resume {
         ghostlight_dungeon::compiler::validate_campaign_seed(&campaign)?;
     }
     if !resume {
@@ -1261,6 +1259,9 @@ async fn main() -> anyhow::Result<()> {
         {
             anyhow::bail!("fission civic reconciliation checkpoint disagrees with campaign")
         }
+    }
+    if resume {
+        ghostlight_dungeon::compiler::validate_campaign_runtime(&campaign)?;
     }
     let region_requests = std::env::var("GHOSTLIGHT_WORLD_REGION_REQUESTS")
         .ok()
