@@ -847,6 +847,7 @@ fn rehydrate_complexity_failure(
 }
 
 fn civic_manifest_preserves(
+    campaign: &ghostlight_dungeon::domain::Campaign,
     current: &ghostlight_dungeon::domain::CivicSystemManifest,
     checkpoint: &ghostlight_dungeon::domain::CivicSystemManifest,
 ) -> bool {
@@ -856,9 +857,16 @@ fn civic_manifest_preserves(
         && current
             .governing_institution_ids
             .is_superset(&checkpoint.governing_institution_ids)
-        && current
+        && checkpoint
             .resident_population_ids
-            .is_superset(&checkpoint.resident_population_ids)
+            .iter()
+            .all(|resident_id| {
+                fission_population_binding_is_present(
+                    campaign,
+                    &current.resident_population_ids,
+                    resident_id,
+                )
+            })
         && current
             .public_authority_fact_ids
             .is_superset(&checkpoint.public_authority_fact_ids)
@@ -871,10 +879,80 @@ fn civic_manifest_preserves(
         && current
             .public_redress_fact_ids
             .is_superset(&checkpoint.public_redress_fact_ids)
-        && current
-            .political_relation_ids
-            .is_superset(&checkpoint.political_relation_ids)
+        && checkpoint.political_relation_ids.iter().all(|relation_id| {
+            fission_relation_binding_is_present(
+                campaign,
+                &current.political_relation_ids,
+                relation_id,
+            )
+        })
         && !current.semantic_verification_receipt_id.is_empty()
+}
+
+fn fission_population_binding_is_present(
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    current_ids: &BTreeSet<String>,
+    expected_id: &str,
+) -> bool {
+    fn visit(
+        campaign: &ghostlight_dungeon::domain::Campaign,
+        current_ids: &BTreeSet<String>,
+        expected_id: &str,
+        visited: &mut BTreeSet<String>,
+    ) -> bool {
+        if current_ids.contains(expected_id) {
+            return true;
+        }
+        if !visited.insert(expected_id.to_owned()) {
+            return false;
+        }
+        campaign
+            .gestalt_lineages
+            .get(expected_id)
+            .is_some_and(|lineage| {
+                !lineage.child_gestalt_ids.is_empty()
+                    && lineage
+                        .child_gestalt_ids
+                        .iter()
+                        .all(|child_id| visit(campaign, current_ids, child_id, visited))
+            })
+    }
+    visit(campaign, current_ids, expected_id, &mut BTreeSet::new())
+}
+
+fn fission_relation_binding_is_present(
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    current_ids: &BTreeSet<String>,
+    expected_id: &str,
+) -> bool {
+    fn visit(
+        campaign: &ghostlight_dungeon::domain::Campaign,
+        current_ids: &BTreeSet<String>,
+        expected_id: &str,
+        used_lineages: &BTreeSet<String>,
+    ) -> bool {
+        if current_ids.contains(expected_id) {
+            return true;
+        }
+        campaign.gestalt_lineages.values().any(|lineage| {
+            if used_lineages.contains(&lineage.parent_gestalt_id)
+                || lineage.child_gestalt_ids.is_empty()
+            {
+                return false;
+            }
+            let mut next_used = used_lineages.clone();
+            next_used.insert(lineage.parent_gestalt_id.clone());
+            lineage.child_gestalt_ids.iter().all(|child_id| {
+                visit(
+                    campaign,
+                    current_ids,
+                    &format!("{expected_id}:fission:{child_id}"),
+                    &next_used,
+                )
+            })
+        })
+    }
+    visit(campaign, current_ids, expected_id, &BTreeSet::new())
 }
 
 fn civic_manifest_is_committed_candidate(
@@ -1664,7 +1742,9 @@ async fn main() -> anyhow::Result<()> {
                     || campaign
                         .civic_systems
                         .get(location_id)
-                        .is_none_or(|current| !civic_manifest_preserves(current, &expected_civic))
+                        .is_none_or(|current| {
+                            !civic_manifest_preserves(&campaign, current, &expected_civic)
+                        })
                 {
                     anyhow::bail!(
                         "foundation checkpoint for {location_id} is not committed in the resumed campaign"
@@ -3756,6 +3836,7 @@ mod tests {
         HistoricalWorldNewspaperGroundingVerdict, HistoricalWorldNewspaperIssueV2,
         admitted_public_channel, civic_manifest_is_committed_candidate,
         committed_elaboration_mutation_proof, completed_wave_issue_campaign, final_wave_field,
+        fission_population_binding_is_present, fission_relation_binding_is_present,
         latest_partial_wave_checkpoint, missing_newspaper_report_indices,
         publish_immutable_checkpoint, recomposed_model_receipt_set_digest,
         recover_committed_clock_binding, strategic_campaign, strategic_locality_request,
@@ -3782,6 +3863,47 @@ mod tests {
             political_relation_ids: BTreeSet::from(["relation".into()]),
             semantic_verification_receipt_id: verifier.into(),
         }
+    }
+
+    #[test]
+    fn resumed_foundation_bindings_follow_complete_fission_lineage() {
+        use std::collections::{BTreeMap, BTreeSet};
+
+        let mut campaign = strategic_campaign();
+        campaign.gestalt_lineages.insert(
+            "residents".into(),
+            ghostlight_dungeon::domain::GestaltLineage {
+                schema: "ghostlight.gestalt_lineage.v1".into(),
+                parent_gestalt_id: "residents".into(),
+                child_gestalt_ids: vec!["east".into(), "west".into()],
+                partition_axis: ghostlight_dungeon::domain::AgencyAxis::Geography,
+                partition_values: BTreeMap::from([
+                    ("east".into(), "east".into()),
+                    ("west".into(), "west".into()),
+                ]),
+                residual_child_id: "west".into(),
+                source_revision: 1,
+            },
+        );
+        let residents = BTreeSet::from(["east".into(), "west".into()]);
+        let relations = BTreeSet::from([
+            "relation:fission:east".into(),
+            "relation:fission:west".into(),
+        ]);
+
+        assert!(fission_population_binding_is_present(
+            &campaign,
+            &residents,
+            "residents"
+        ));
+        assert!(fission_relation_binding_is_present(
+            &campaign, &relations, "relation"
+        ));
+        assert!(!fission_relation_binding_is_present(
+            &campaign,
+            &BTreeSet::from(["relation:fission:east".into()]),
+            "relation"
+        ));
     }
 
     #[test]
@@ -4559,4 +4681,4 @@ mod tests {
         );
     }
 }
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
