@@ -1448,6 +1448,99 @@ impl crate::agent::ModelAgentTool for WorldComplexityTool<'_> {
         let mut schema = serde_json::to_value(schema_for!(WorldComplexityAction))
             .map_err(|error| error.to_string())?;
         schema["properties"]["schema"] = exact_schema("ghostlight.world_complexity_action.v1");
+        let variants = schema
+            .pointer_mut("/$defs/WorldComplexityProposal/oneOf")
+            .and_then(serde_json::Value::as_array_mut)
+            .ok_or_else(|| "complexity action schema has no proposal variants".to_owned())?;
+        let expected_operation = match self.operation {
+            WorldComplexityOperation::Fission => "fission",
+            WorldComplexityOperation::Individuate => "individuate",
+        };
+        let selected = variants
+            .iter()
+            .position(|variant| {
+                variant
+                    .pointer("/properties/operation/const")
+                    .and_then(serde_json::Value::as_str)
+                    == Some(expected_operation)
+            })
+            .ok_or_else(|| {
+                format!("complexity action schema has no {expected_operation} variant")
+            })?;
+        let selected = variants.remove(selected);
+        *variants = vec![selected];
+        match self.operation {
+            WorldComplexityOperation::Fission => {
+                let preview = schema
+                    .pointer_mut("/$defs/GestaltFissionPreview/properties")
+                    .and_then(serde_json::Value::as_object_mut)
+                    .ok_or_else(|| "complexity schema has no fission preview".to_owned())?;
+                preview.insert(
+                    "schema".into(),
+                    exact_schema("ghostlight.gestalt_fission_preview.v1"),
+                );
+                preview.insert("campaign_id".into(), exact_schema(self.campaign.id));
+                preview.insert(
+                    "expected_world_revision".into(),
+                    exact_schema(self.campaign.revision),
+                );
+                preview.insert(
+                    "parent_gestalt_id".into(),
+                    exact_schema(self.parent_gestalt_id),
+                );
+                preview.insert("partition_axis".into(), exact_schema(&self.partition_axis));
+                preview.insert(
+                    "evidence_receipt_ids".into(),
+                    exact_schema(Vec::<String>::new()),
+                );
+                preview.insert("gaps".into(), exact_schema(Vec::<String>::new()));
+                preview.insert(
+                    "canon_candidates".into(),
+                    exact_schema(Vec::<crate::domain::CanonCandidate>::new()),
+                );
+                preview.insert("requires_approval".into(), exact_schema(true));
+                let children = preview
+                    .get_mut("children")
+                    .and_then(serde_json::Value::as_object_mut)
+                    .ok_or_else(|| "complexity fission schema has no children".to_owned())?;
+                children.insert("minItems".into(), serde_json::json!(2));
+                children.insert("maxItems".into(), serde_json::json!(8));
+            }
+            WorldComplexityOperation::Individuate => {
+                let individuation = schema
+                    .pointer_mut("/$defs/GestaltIndividuation/properties")
+                    .and_then(serde_json::Value::as_object_mut)
+                    .ok_or_else(|| "complexity schema has no individuation".to_owned())?;
+                individuation.insert("gestalt_id".into(), exact_schema(self.parent_gestalt_id));
+                individuation.insert(
+                    "expected_gestalt_version".into(),
+                    exact_schema(self.campaign.gestalts[self.parent_gestalt_id].version),
+                );
+                let location_id = self.campaign.agency_profiles[self.parent_gestalt_id]
+                    .location_ids
+                    .iter()
+                    .next()
+                    .ok_or_else(|| "complexity parent has no location".to_owned())?;
+                individuation.insert("location_id".into(), exact_schema(location_id));
+                let member = schema
+                    .pointer_mut("/$defs/GestaltMemberDelta/properties")
+                    .and_then(serde_json::Value::as_object_mut)
+                    .ok_or_else(|| "complexity schema has no member delta".to_owned())?;
+                member.insert(
+                    "schema".into(),
+                    exact_schema("ghostlight.gestalt_member_delta.v1"),
+                );
+                member.insert("gestalt_id".into(), exact_schema(self.parent_gestalt_id));
+                member.insert("version".into(), exact_schema(0_u64));
+                member.insert("last_location_id".into(), exact_schema(location_id));
+                member.insert(
+                    "materialized_actor_id".into(),
+                    exact_schema(Option::<String>::None),
+                );
+                member.insert("last_relevant_revision".into(), exact_schema(0_u64));
+                member.insert("relevance_lease_until_revision".into(), exact_schema(0_u64));
+            }
+        }
         Ok(schema)
     }
 
@@ -1577,6 +1670,10 @@ impl ElaborationSubAgentPort<WorldComplexityProposal> for ModelWorldComplexityWo
         );
         let workbench = serde_json::json!({
             "schema":"ghostlight.world_complexity_workbench.v1",
+            "frozen_world":{
+                "campaign_id":self.campaign.id,
+                "world_revision":self.campaign.revision,
+            },
             "assignment":assignment,
             "parent":parent,
             "parent_profile":profile,
@@ -3334,6 +3431,25 @@ mod tests {
             schema["properties"]["schema"]["const"],
             "ghostlight.world_complexity_action.v1"
         );
+        assert_eq!(
+            schema["$defs"]["WorldComplexityProposal"]["oneOf"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            schema["$defs"]["GestaltFissionPreview"]["properties"]["campaign_id"]["const"],
+            campaign.id.to_string()
+        );
+        assert_eq!(
+            schema["$defs"]["GestaltFissionPreview"]["properties"]["expected_world_revision"]["const"],
+            campaign.revision
+        );
+        assert_eq!(
+            schema["$defs"]["GestaltFissionPreview"]["properties"]["parent_gestalt_id"]["const"],
+            "river-households"
+        );
 
         let admitted = crate::agent::ModelAgentTool::invoke(
             &mut tool,
@@ -3410,6 +3526,22 @@ mod tests {
             source_receipt_ids: Vec::new(),
             current_model_receipt: None,
         };
+        let schema = crate::agent::ModelAgentTool::action_schema(&tool).unwrap();
+        assert_eq!(
+            schema["$defs"]["WorldComplexityProposal"]["oneOf"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
+        assert_eq!(
+            schema["$defs"]["GestaltIndividuation"]["properties"]["gestalt_id"]["const"],
+            "river-households"
+        );
+        assert_eq!(
+            schema["$defs"]["GestaltMemberDelta"]["properties"]["last_location_id"]["const"],
+            "room"
+        );
 
         let admitted = crate::agent::ModelAgentTool::invoke(
             &mut tool,
