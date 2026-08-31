@@ -1471,6 +1471,7 @@ pub fn rebase_world_complexity_proposal(
                 return Err(anyhow!("complexity fission belongs to another campaign"));
             }
             preview.expected_world_revision = current.revision;
+            reconcile_fission_child_id_collisions(current, preview)?;
             crate::resolution::validate_fission(current, preview)?;
         }
         WorldComplexityProposal::Individuate { individuation } => {
@@ -1478,6 +1479,77 @@ pub fn rebase_world_complexity_proposal(
         }
     }
     Ok(proposal)
+}
+
+fn reconcile_fission_child_id_collisions(
+    current: &crate::domain::Campaign,
+    preview: &mut crate::domain::GestaltFissionPreview,
+) -> Result<()> {
+    let mut replacements = BTreeMap::new();
+    for child in &preview.children {
+        if current.gestalts.contains_key(&child.id) {
+            let digest = crate::legacy_transition::digest_serializable(&(
+                "ghostlight.fission_child_id.v1",
+                current.id,
+                &preview.parent_gestalt_id,
+                &child.id,
+            ))?;
+            let suffix = digest
+                .strip_prefix("sha256:")
+                .unwrap_or(&digest)
+                .chars()
+                .take(16)
+                .collect::<String>();
+            let replacement = format!("{}:fission:{suffix}", preview.parent_gestalt_id);
+            if current.gestalts.contains_key(&replacement)
+                || preview
+                    .children
+                    .iter()
+                    .any(|other| other.id == replacement && other.id != child.id)
+                || replacements.values().any(|other| other == &replacement)
+            {
+                return Err(anyhow!(
+                    "deterministic fission child id reconciliation collided"
+                ));
+            }
+            replacements.insert(child.id.clone(), replacement);
+        }
+    }
+    if replacements.is_empty() {
+        return Ok(());
+    }
+    for child in &mut preview.children {
+        if let Some(replacement) = replacements.get(&child.id) {
+            child.id = replacement.clone();
+        }
+    }
+    preview.child_partition_values = preview
+        .child_partition_values
+        .iter()
+        .map(|(child_id, value)| {
+            (
+                replacements
+                    .get(child_id)
+                    .cloned()
+                    .unwrap_or_else(|| child_id.clone()),
+                value.clone(),
+            )
+        })
+        .collect();
+    if let Some(replacement) = replacements.get(&preview.residual_child_id) {
+        preview.residual_child_id = replacement.clone();
+    }
+    for child_id in preview.member_child_assignments.values_mut() {
+        if let Some(replacement) = replacements.get(child_id) {
+            *child_id = replacement.clone();
+        }
+    }
+    for child_id in preview.resource_child_assignments.values_mut() {
+        if let Some(replacement) = replacements.get(child_id) {
+            *child_id = replacement.clone();
+        }
+    }
+    Ok(())
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -3756,6 +3828,41 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn complexity_fission_rebase_namespaces_only_colliding_child_ids() {
+        let frozen = campaign_with_fission_parent();
+        let preview = valid_river_fission(&frozen);
+        let mut current = frozen.clone();
+        current.revision = current.revision.saturating_add(1);
+        current.gestalts.insert(
+            "licensed-river-households".into(),
+            preview.children[0].clone(),
+        );
+
+        let binding = world_complexity_parent_binding(&frozen, "river-households").unwrap();
+        let rebased = rebase_world_complexity_proposal(
+            &binding,
+            &current,
+            WorldComplexityProposal::Fission { preview },
+        )
+        .unwrap();
+        let WorldComplexityProposal::Fission { preview: rebased } = rebased else {
+            panic!("rebased mutation changed kind")
+        };
+        let renamed = rebased
+            .children
+            .iter()
+            .find(|child| child.name == "Licensed River Households")
+            .unwrap();
+        assert!(renamed.id.starts_with("river-households:fission:"));
+        assert!(rebased.child_partition_values.contains_key(&renamed.id));
+        assert_eq!(
+            rebased.resource_child_assignments["ferry charter"],
+            renamed.id
+        );
+        assert_eq!(rebased.residual_child_id, "unrecorded-river-households");
     }
 
     fn profile(weights: &[(ElaboratorTitle, u16)]) -> WorldElaborationProfile {

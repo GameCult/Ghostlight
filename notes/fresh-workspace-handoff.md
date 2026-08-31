@@ -25,22 +25,20 @@ own volatile workspace identity and the release witness owns deployed identity.
 
 ## Current full-world pressure test
 
-Preserve immutable Runs 75 through 87. Run 87 is live on Yggdrasil at exact
-pushed source `b4cc3a29aa7e9108a3fab5c61335cd2d340d4f77`, unit
-`ghostlight-full-world-b4cc3a2-87.service`. It resumed without replay through
-the admitted Hearthcoil fission, deterministic civic reconciliation, titled
-elaboration proofs, and the single failed Hearth dispatch. Complexity rounds
-1 through 5 are complete, including all 43 round-5 mutations and their session
-compactions. The target remains 2,400 meaningful actionable subjects under
-240-cell attention, followed by ten strategic waves.
+Preserve immutable Runs 75 through 88. Run 88 completed complexity round 6 at
+383 meaningful subjects, generated all 186 frozen round-7 proposals, and
+admitted the first 45 before one later fission found its proposed child ID had
+been occupied by an earlier parallel fission. Its canonical prefix ends at
+`complexity-round-007-commit-0213.json`; do not replay it.
 
-The current local verified cut makes independent title-by-realm session
-compactions parallel under the existing complexity parallelism entitlement.
-Commit and push it before the next source-changing resume. The acceptance
-launcher now retains one 35 MiB content-addressed strategic-smoke runner per
+Bounded parallel title-by-realm compaction is pushed and proved by Run 88. The
+current local verified cut treats only occupied parallel fission child IDs as
+syntactic contention: rebase deterministically moves the colliding ID into its
+assigned parent's namespace and rewrites every child reference before normal
+validation. Commit and push, clone Run 88, and resume its preview at commit
+0214. The acceptance launcher retains one 35 MiB content-addressed runner per
 exact source commit and deletes disposable compiler output; do not restore a
-persistent Cargo target tree. Observe Run 87 first and preserve every completed
-mutation and session checkpoint.
+persistent Cargo target tree.
 
 ## Mission and current product shape
 

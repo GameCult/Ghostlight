@@ -1440,6 +1440,14 @@ outside this authority.
   bindings, zero-growth rounds, and a nonzero deficit at the configured round
   ceiling are terminal failures. Canonical CultCache state, not the checkpoint
   prose, decides whether already admitted mutations exist after interruption.
+  Parallel fission proposals may independently choose the same globally scoped
+  child identifier. Rebase treats that as syntactic contention rather than a
+  semantic contradiction: only an occupied child ID is deterministically moved
+  into the assigned parent's content-addressed namespace, with partition,
+  residual, member, and resource references rewritten together before the
+  ordinary complete fission validator runs. Names, partition meaning, custody,
+  and membership remain model-authored; canonical state still admits the result
+  only through WorldKernel.
 
 One boundary remains intentionally narrow in this acceptance-driver cut.
 Fission and named-member individuation are live, but institution promotion is
