@@ -1331,7 +1331,11 @@ outside this authority.
   the target. Inherited child capabilities, knowledge, goals, pressures,
   evidence fields, campaign/revision binding, approval requirement, parent
   version, partition axis, and individuation location are deterministic
-  projections of the frozen assignment, not model-authored state. A session
+  projections of the frozen assignment, not model-authored state. An
+  individuated member's public name is presentation state attached to its stable local
+  member ID and canonical `member:<local-id>` subject ID; name equality does
+  not merge subjects, resolve an address, or grant authority over another
+  Actor or population member.
   checkpoint's title, jurisdiction, frontier summary, unresolved leads,
   rejection findings, digest chain, and recent commit IDs are bounded steering
   memory. Raw provider sessions, request history, and transcripts are neither
@@ -1345,8 +1349,11 @@ outside this authority.
   cover, or turn narrative memory into facts. A fission proposal cannot approve
   or commit itself, invent evidence, promote raw roster rows, or rewrite a
   parent. An individuation cannot invent a population, duplicate an existing
-  actor or member identity, materialize itself, or acquire relationships to
-  nonexistent subjects. The model cannot restate or alter inherited child
+  exact actor or member ID, materialize itself, or acquire relationships to
+  nonexistent subject IDs. Public names are not writers of identity or
+  authority: no lookup, relationship, action target, or admission decision may
+  select or merge a subject by display-name equality. The model cannot restate
+  or alter inherited child
   Persona constitutions, campaign identity, parent identity/version, location,
   partition axis, evidence, or approval authority because those fields do not
   exist in its mutation-draft schema. The model provider cannot select a realm,
@@ -1367,9 +1374,12 @@ outside this authority.
   passes the existing fission or individuation validator and the existing
   `WorldCommand::FissionGestalt` or `WorldCommand::IndividuateGestaltMember`
   mailbox. `resolution::validate_gestalt_individuation` is the single local
-  authority for member identity, parent version, exact location, bounds, and
-  relationship targets; strategic action-bound selection and direct kernel
-  admission both reuse it. It accumulates every failed deterministic clause in
+  authority for exact member-ID uniqueness, parent version, exact location,
+  bounds, and exact relationship subject IDs; strategic action-bound selection
+  and direct kernel admission both reuse it. Canonical member addressing uses
+  `canonical_gestalt_member_local_id` and `gestalt_member_subject_id`, while
+  strategic actions and relationships carry exact subject IDs rather than
+  public names. It accumulates every failed deterministic clause in
   one rejection so the generic agent loop can repair the exact bounded draft in
   its next semantic step; the tool does not add a second judge or relax kernel
   admission. Direct individuation then follows the ordinary
@@ -1401,14 +1411,21 @@ outside this authority.
   title-only global memory and any temptation to preserve provider transcripts;
   it introduces no provider-session store or second jurisdiction allocator.
   Compact checkpoints replace accumulated working history without replacing
-  canonical commits.
+  canonical commits. Individuation admission requires unique exact IDs, not a
+  global public-name registry; the cut adds no alias table, fuzzy resolver, or
+  name-disambiguation authority.
 - **Verification layer:** checkpoint shape and digest bind title, session,
   campaign, target location, generation, world revision, prior checkpoint, and
   bounded narrative fields. Frozen parent digests make conflicting parallel
   mutations uncommittable. Existing fission validation proves lineage, child
   partitioning, resource custody, and member transfer; shared individuation
   validation proves active parent and location, exact version, unique bounded
-  identity, valid relationships, and non-materialized member state. WorldKernel
+  member/Actor IDs, exact valid relationship targets, and non-materialized
+  member state. Equal public names on distinct exact IDs remain admissible and
+  do not change address resolution or authority. The focused tool regression
+  admits a new member whose name matches an established Actor, still rejects a
+  colliding canonical Actor ID and unsupported relationship subject, and
+  confirms name collision is absent from the rejection. WorldKernel
   revalidates either lane before atomic mutation. The model schema exposes only
   the assigned operation, bounds fission children to two through eight,
   requires exactly the frozen parent resource and dormant-member IDs as

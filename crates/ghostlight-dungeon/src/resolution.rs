@@ -2284,21 +2284,6 @@ pub fn validate_gestalt_individuation(
     {
         findings.push("member id duplicates an established Actor identity".to_owned());
     }
-    if campaign
-        .actors
-        .values()
-        .any(|actor| actor.name.trim().eq_ignore_ascii_case(member.name.trim()))
-    {
-        findings.push("member name duplicates an established Actor name".to_owned());
-    }
-    if campaign.gestalt_members.values().any(|existing| {
-        existing
-            .name
-            .trim()
-            .eq_ignore_ascii_case(member.name.trim())
-    }) {
-        findings.push("member name duplicates an established population name".to_owned());
-    }
     let unsupported_relationships = member
         .relationships
         .keys()

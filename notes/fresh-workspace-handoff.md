@@ -25,11 +25,8 @@ own volatile workspace identity and the release witness owns deployed identity.
 
 ## Current full-world pressure test
 
-Preserve immutable Runs 75 through 91. Run 91 completed complexity round 9 at
-1,168 meaningful actionable subjects, then stopped before round 10 because the
-candidate query excluded every active population after its first person had
-materialized. Rounds 1 through 9 and their session checkpoints are canonical;
-do not replay them.
+Preserve immutable Runs 75 through 98. Rounds 1 through 11 and their session
+checkpoints are canonical; do not replay them.
 
 Bounded parallel title-by-realm compaction and deterministic parallel child-ID
 reconciliation are pushed and proved. Logical sessions bind title,
@@ -39,17 +36,24 @@ dispatch resume. Tool-internal rejection findings are not yet promoted into
 later successful compaction, but no executable proposal remains live after a
 successful round.
 
-Run 94 at exact source `3f7211b` proved containment-owned routing, completed
-round 10, and raised actionable subjects from 1,168 to 1,205. Round 11 has 53
-successful proposals frozen across immutable Runs 94 through 96; only two
-Hearth individuation dispatches remain failed. Their repeated agent repairs
-received one generic population-authority diagnostic because the deterministic
-validator collapsed all mismatch clauses. The current cut keeps that validator
-as the only authority but reports the complete failed-clause set through the
-existing tool observation. Gate, commit, push, clone immutable Run 96, and
-resume only those two dispatches. The acceptance launcher retains one 35 MiB
-content-addressed runner per exact source commit and deletes disposable compiler
-output; do not restore a persistent Cargo target tree.
+Run 97 at exact source `fa016586863ccfaaa29fe6e4bbe3a944322029ef`, rooted
+at `/var/lib/gamecult/ghostlight-dungeon/acceptance/full-world-delvehold-fa01658-97`,
+completed round 11 with 55 committed mutations and raised actionable subjects
+from 1,205 to 1,288. Its terminal round-12 failure froze 109 successful
+proposals and three failures. Run 98 at the same source retried only those three
+successfully, then serially committed through ordinal 804 and failed at ordinal
+805 because Sera Venn's display name duplicated ordinal 754. The same preview
+contains Sera Vey at ordinals 796 and 822. Their canonical IDs and parents are
+distinct, so global public-name uniqueness was wrongly acting as identity
+authority. The status file is stale at revision 769; `campaign.cc` and exact
+commit receipts through ordinal 804 own partial-progress truth.
+
+The current cut preserves canonical member and Actor ID collision checks while
+allowing ambiguous public names. Review, gate, commit, and push it, then clone
+Run 98 and resume the existing round-12 preview at ordinal 805 without replaying
+provider work, frozen proposals, or admitted mutations. The acceptance launcher
+retains one 35 MiB content-addressed runner per exact source commit and deletes
+disposable compiler output; do not restore a persistent Cargo target tree.
 
 ## Mission and current product shape
 
@@ -458,9 +462,12 @@ approved capability.
 
 ## Next action
 
-Preserve Runs 75 through 96. Push the complete individuation-mismatch feedback
-cut, then resume Run 96's exact round-11 checkpoint without replaying the 53
-successful proposals. Continue iterative complexity rounds to 2,400 canonical
+Preserve Runs 75 through 98. Review, gate, commit, and push the cut that makes
+canonical member and Actor IDs the identity authority while permitting ambiguous
+public names. Clone Run 98 and resume its existing round-12 preview and commit
+lineage at ordinal 805, trusting `campaign.cc` and receipts through ordinal 804
+over the stale status projection. Do not replay provider work, frozen proposals,
+or admitted mutations. Continue iterative complexity rounds to 2,400 canonical
 actionable subjects, followed by ten strategic waves, publications, archive
 hashes, and unchanged-live-service verification.
 

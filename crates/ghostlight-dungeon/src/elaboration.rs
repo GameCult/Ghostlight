@@ -3832,9 +3832,9 @@ mod tests {
     async fn complexity_tool_reports_every_individuation_mismatch_for_agent_repair() {
         let mut campaign = campaign_with_fission_parent();
         campaign.actors.insert(
-            "actor:orin".into(),
+            "member:new-weirkeeper".into(),
             crate::domain::ActorState {
-                id: "actor:orin".into(),
+                id: "member:new-weirkeeper".into(),
                 name: "Orin Weirkeeper".into(),
                 location_id: "room".into(),
                 capabilities: BTreeSet::new(),
@@ -3858,36 +3858,53 @@ mod tests {
             source_receipt_ids: Vec::new(),
             current_model_receipt: None,
         };
-        let rejected = crate::agent::ModelAgentTool::invoke(
+        let valid_same_name = crate::domain::GestaltMemberDelta {
+            schema: "ghostlight.gestalt_member_delta.v1".into(),
+            id: "other-weirkeeper".into(),
+            gestalt_id: "river-households".into(),
+            version: 0,
+            name: "Orin Weirkeeper".into(),
+            capability_additions: BTreeSet::new(),
+            capability_removals: BTreeSet::new(),
+            knowledge_additions: BTreeSet::new(),
+            knowledge_removals: BTreeSet::new(),
+            equipment: BTreeSet::new(),
+            conditions: BTreeSet::new(),
+            obligations: BTreeSet::new(),
+            relationships: BTreeMap::new(),
+            goals: Vec::new(),
+            memories: Vec::new(),
+            last_location_id: Some("room".into()),
+            materialized_actor_id: None,
+            last_relevant_revision: 0,
+            relevance_lease_until_revision: 0,
+        };
+        let same_name = crate::agent::ModelAgentTool::invoke(
             &mut tool,
             WorldComplexityAction {
                 schema: "ghostlight.world_complexity_action.v1".into(),
                 mutation: WorldComplexityMutationDraft::Individuate {
-                    member: crate::domain::GestaltMemberDelta {
-                        schema: "ghostlight.gestalt_member_delta.v1".into(),
-                        id: "new-weirkeeper".into(),
-                        gestalt_id: "river-households".into(),
-                        version: 0,
-                        name: "Orin Weirkeeper".into(),
-                        goals: (0..9).map(|index| format!("goal {index}")).collect(),
-                        relationships: BTreeMap::from([(
-                            "actor:invented-stranger".into(),
-                            "owes a favor".into(),
-                        )]),
-                        last_location_id: Some("room".into()),
-                        capability_additions: BTreeSet::new(),
-                        capability_removals: BTreeSet::new(),
-                        knowledge_additions: BTreeSet::new(),
-                        knowledge_removals: BTreeSet::new(),
-                        equipment: BTreeSet::new(),
-                        conditions: BTreeSet::new(),
-                        obligations: BTreeSet::new(),
-                        memories: Vec::new(),
-                        materialized_actor_id: None,
-                        last_relevant_revision: 0,
-                        relevance_lease_until_revision: 0,
-                    },
+                    member: valid_same_name.clone(),
                 },
+            },
+            &context,
+        )
+        .await;
+        assert!(matches!(
+            same_name,
+            crate::agent::ModelAgentToolOutcome::Accepted { .. }
+        ));
+        let mut invalid = valid_same_name;
+        invalid.id = "new-weirkeeper".into();
+        invalid.goals = (0..9).map(|index| format!("goal {index}")).collect();
+        invalid
+            .relationships
+            .insert("actor:invented-stranger".into(), "owes a favor".into());
+        let rejected = crate::agent::ModelAgentTool::invoke(
+            &mut tool,
+            WorldComplexityAction {
+                schema: "ghostlight.world_complexity_action.v1".into(),
+                mutation: WorldComplexityMutationDraft::Individuate { member: invalid },
             },
             &context,
         )
@@ -3899,13 +3916,14 @@ mod tests {
         assert!(
             finding
                 .diagnostic
-                .contains("duplicates an established Actor name")
+                .contains("duplicates an established Actor identity")
         );
         assert!(
             finding
                 .diagnostic
                 .contains("unsupported subjects: actor:invented-stranger")
         );
+        assert!(!finding.diagnostic.contains("Actor name"));
     }
 
     #[test]
