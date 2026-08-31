@@ -508,6 +508,17 @@ struct ComplexityMutationCheckpoint {
     commit_receipt: ghostlight_dungeon::domain::WorldCommitReceipt,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+struct ComplexitySupersededInvocationCheckpoint {
+    schema: String,
+    round: u32,
+    dispatch: ghostlight_dungeon::elaboration::ElaborationDispatch,
+    retained_dispatch_ordinal: u64,
+    canonical_member_id: String,
+    diagnostic: String,
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct ComplexityRoundCheckpoint {
@@ -517,10 +528,64 @@ struct ComplexityRoundCheckpoint {
     actionable_subjects_after: u32,
     schedule: ghostlight_dungeon::elaboration::ElaborationScheduleReceipt,
     mutation_checkpoints: Vec<std::path::PathBuf>,
+    #[serde(default)]
+    superseded_invocation_checkpoints: Vec<std::path::PathBuf>,
     session_checkpoints: std::collections::BTreeMap<
         String,
         ghostlight_dungeon::elaboration::ElaboratorSessionCheckpoint,
     >,
+}
+
+fn retain_unique_complexity_invocations(
+    round: u32,
+    invocations: &[ComplexityPreviewInvocation],
+) -> (
+    Vec<&ComplexityPreviewInvocation>,
+    Vec<ComplexitySupersededInvocationCheckpoint>,
+) {
+    let mut retained_ordinals = BTreeMap::<String, u64>::new();
+    for invocation in invocations {
+        if let ghostlight_dungeon::elaboration::WorldComplexityProposal::Individuate {
+            individuation,
+        } = &invocation.proposal
+        {
+            let canonical_id = ghostlight_dungeon::domain::canonical_gestalt_member_local_id(
+                &individuation.member.id,
+            );
+            retained_ordinals
+                .entry(canonical_id)
+                .and_modify(|ordinal| *ordinal = (*ordinal).min(invocation.dispatch.ordinal))
+                .or_insert(invocation.dispatch.ordinal);
+        }
+    }
+    let mut retained = Vec::new();
+    let mut superseded = Vec::new();
+    for invocation in invocations {
+        let ghostlight_dungeon::elaboration::WorldComplexityProposal::Individuate { individuation } =
+            &invocation.proposal
+        else {
+            retained.push(invocation);
+            continue;
+        };
+        let canonical_id =
+            ghostlight_dungeon::domain::canonical_gestalt_member_local_id(&individuation.member.id);
+        let retained_ordinal = retained_ordinals[&canonical_id];
+        if invocation.dispatch.ordinal == retained_ordinal {
+            retained.push(invocation);
+        } else {
+            superseded.push(ComplexitySupersededInvocationCheckpoint {
+                schema: "ghostlight.complexity_superseded_invocation.v1".into(),
+                round,
+                dispatch: invocation.dispatch.clone(),
+                retained_dispatch_ordinal: retained_ordinal,
+                canonical_member_id: canonical_id,
+                diagnostic:
+                    "parallel individuation duplicated an exact local member identity; the earliest dispatch owns the proposal"
+                        .into(),
+            });
+        }
+    }
+    (retained, superseded)
 }
 
 fn read_checkpoint<T: serde::de::DeserializeOwned>(path: &std::path::Path) -> anyhow::Result<T> {
@@ -2525,10 +2590,29 @@ async fn main() -> anyhow::Result<()> {
                 publish_immutable_checkpoint(&preview_path, &checkpoint)?;
                 checkpoint
             };
+            let (retained_invocations, superseded_invocations) =
+                retain_unique_complexity_invocations(round, &preview.invocations);
+            let mut superseded_paths = Vec::new();
+            for superseded in superseded_invocations {
+                let path = root.join(format!(
+                    "complexity-round-{round:03}-superseded-{:04}.json",
+                    superseded.dispatch.ordinal
+                ));
+                if path.is_file() {
+                    let checkpoint: ComplexitySupersededInvocationCheckpoint =
+                        read_checkpoint(&path)?;
+                    if checkpoint != superseded {
+                        anyhow::bail!("complexity supersession checkpoint is inconsistent")
+                    }
+                } else {
+                    publish_immutable_checkpoint(&path, &superseded)?;
+                }
+                superseded_paths.push(path);
+            }
             let mut mutation_paths = Vec::new();
             let mut session_routes = BTreeMap::<String, (ElaboratorTitle, String)>::new();
             let mut invocation_sessions = BTreeMap::<u64, String>::new();
-            for invocation in &preview.invocations {
+            for invocation in &retained_invocations {
                 let profile = campaign
                     .agency_profiles
                     .get(invocation.proposal.parent_gestalt_id())
@@ -2542,7 +2626,7 @@ async fn main() -> anyhow::Result<()> {
                 session_routes.insert(session_id, (invocation.dispatch.title, location_id));
             }
             let mut journals = BTreeMap::<String, Vec<ElaboratorSessionJournalEntry>>::new();
-            for invocation in &preview.invocations {
+            for invocation in &retained_invocations {
                 let commit_path = root.join(format!(
                     "complexity-round-{round:03}-commit-{:04}.json",
                     invocation.dispatch.ordinal
@@ -2737,6 +2821,7 @@ async fn main() -> anyhow::Result<()> {
                 actionable_subjects_after: actionable_after,
                 schedule: preview.schedule,
                 mutation_checkpoints: mutation_paths,
+                superseded_invocation_checkpoints: superseded_paths,
                 session_checkpoints: session_checkpoints.clone(),
             };
             let path = root.join(format!("complexity-round-{round:03}-checkpoint.json"));
@@ -3877,17 +3962,18 @@ fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
 #[cfg(test)]
 mod tests {
     use super::{
-        HistoricalWorldNewspaperArticleV2, HistoricalWorldNewspaperEditorialVerdict,
-        HistoricalWorldNewspaperGroundingVerdict, HistoricalWorldNewspaperIssueV2,
-        admitted_public_channel, civic_manifest_is_committed_candidate, civic_manifest_preserves,
+        ComplexityPreviewInvocation, HistoricalWorldNewspaperArticleV2,
+        HistoricalWorldNewspaperEditorialVerdict, HistoricalWorldNewspaperGroundingVerdict,
+        HistoricalWorldNewspaperIssueV2, admitted_public_channel,
+        civic_manifest_is_committed_candidate, civic_manifest_preserves,
         committed_elaboration_mutation_proof, completed_wave_issue_campaign,
         complexity_realm_for_profile, final_wave_field, fission_population_binding_is_present,
         fission_relation_binding_is_present, latest_partial_wave_checkpoint,
         missing_newspaper_report_indices, publish_immutable_checkpoint,
-        recomposed_model_receipt_set_digest, recover_committed_clock_binding, strategic_campaign,
-        strategic_locality_request, strategic_smoke_bytes_digest, strategic_smoke_digest,
-        strategic_titled_locality_request, titled_failure_checkpoint_paths,
-        validate_completed_newspaper_recomposition_receipt,
+        recomposed_model_receipt_set_digest, recover_committed_clock_binding,
+        retain_unique_complexity_invocations, strategic_campaign, strategic_locality_request,
+        strategic_smoke_bytes_digest, strategic_smoke_digest, strategic_titled_locality_request,
+        titled_failure_checkpoint_paths, validate_completed_newspaper_recomposition_receipt,
     };
 
     #[test]
@@ -3946,6 +4032,76 @@ mod tests {
             Some("realm")
         );
         assert_eq!(profile.location_ids, BTreeSet::from(["ward".into()]));
+    }
+
+    #[test]
+    fn parallel_individuation_retains_one_exact_identity_and_records_supersession() {
+        use ghostlight_dungeon::domain::{GestaltIndividuation, GestaltMemberDelta};
+        use ghostlight_dungeon::elaboration::{
+            ElaborationDispatch, ElaboratorTitle, WorldComplexityProposal,
+        };
+        use std::collections::{BTreeMap, BTreeSet};
+
+        let invocation = |ordinal: u64, parent: &str, id: &str| ComplexityPreviewInvocation {
+            dispatch: ElaborationDispatch {
+                schema: "ghostlight.elaboration_dispatch.v1".into(),
+                budget_ordinal: ordinal,
+                ordinal,
+                title: ElaboratorTitle::Veil,
+                title_weight: 1,
+                total_enabled_weight: 1,
+                requested_share_millionths: 1_000_000,
+                title_dispatch_count: ordinal,
+            },
+            parent_binding: format!("binding:{parent}"),
+            proposal: WorldComplexityProposal::Individuate {
+                individuation: GestaltIndividuation {
+                    gestalt_id: parent.into(),
+                    expected_gestalt_version: 0,
+                    location_id: "yard".into(),
+                    member: GestaltMemberDelta {
+                        schema: "ghostlight.gestalt_member_delta.v1".into(),
+                        id: id.into(),
+                        gestalt_id: parent.into(),
+                        version: 0,
+                        name: "Tarin Vel".into(),
+                        capability_additions: BTreeSet::new(),
+                        capability_removals: BTreeSet::new(),
+                        knowledge_additions: BTreeSet::new(),
+                        knowledge_removals: BTreeSet::new(),
+                        equipment: BTreeSet::new(),
+                        conditions: BTreeSet::new(),
+                        obligations: BTreeSet::new(),
+                        relationships: BTreeMap::new(),
+                        goals: Vec::new(),
+                        memories: Vec::new(),
+                        last_location_id: Some("yard".into()),
+                        materialized_actor_id: None,
+                        last_relevant_revision: 0,
+                        relevance_lease_until_revision: 0,
+                    },
+                },
+            },
+            model_receipt_hashes: vec![format!("receipt:{ordinal}")],
+        };
+        let invocations = vec![
+            invocation(12, "yard-carriers", "tarin-vel"),
+            invocation(9, "route-carriers", "tarin-vel"),
+            invocation(14, "yard-carriers", "oren-pell"),
+        ];
+        let (retained, superseded) = retain_unique_complexity_invocations(19, &invocations);
+
+        assert_eq!(
+            retained
+                .iter()
+                .map(|invocation| invocation.dispatch.ordinal)
+                .collect::<Vec<_>>(),
+            [9, 14]
+        );
+        assert_eq!(superseded.len(), 1);
+        assert_eq!(superseded[0].dispatch.ordinal, 12);
+        assert_eq!(superseded[0].retained_dispatch_ordinal, 9);
+        assert_eq!(superseded[0].canonical_member_id, "tarin-vel");
     }
 
     fn civic_manifest(

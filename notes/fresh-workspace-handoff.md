@@ -25,7 +25,7 @@ own volatile workspace identity and the release witness owns deployed identity.
 
 ## Current full-world pressure test
 
-Preserve immutable Runs 75 through 103. Rounds 1 through 16 and their session
+Preserve immutable Runs 75 through 104. Rounds 1 through 18 and their session
 checkpoints are canonical; do not replay them.
 
 Bounded parallel title-by-realm compaction and deterministic parallel child-ID
@@ -48,26 +48,27 @@ distinct, so global public-name uniqueness was wrongly acting as identity
 authority. The status file is stale at revision 769; `campaign.cc` and exact
 commit receipts through ordinal 804 own partial-progress truth.
 
-Run 99 completed round 12 with 112 commits and raised actionable subjects from
-1,288 to 1,458, then completed round 13 with 95 commits and raised them from
-1,458 to 1,596. Run 101 completed round 14 with 81 commits and raised subjects
-from 1,596 to 1,708, then completed round 15 with 70 commits and raised them
-from 1,708 to 1,800. Run 102 retried one missing Patina compaction, completed
-round 16 with 60 commits, and raised subjects from 1,800 to 1,880. Round 17 then
-committed 52 mutations and wrote 23 local session summaries before its remaining
-Patina compaction failed. Run 103 retried only that missing compaction and
-reproduced the failure.
+Run 101 completed round 14 with 81 commits and raised actionable subjects from
+1,596 to 1,708, then completed round 15 with 70 commits and raised them from
+1,708 to 1,800. Run 102 completed round 16 with 60 commits and raised subjects
+from 1,800 to 1,880; round 17 then committed 52 mutations and wrote 23 session
+summaries before one Patina compaction failed. Run 103 reproduced that exact
+failure. Run 104 recovered the missing compaction and closed round 17, then
+completed round 18 with 45 commits and raised subjects from 1,954 to 2,020.
 
-The compaction action schema bounded the unresolved-lead list without bounding
-each string, while the deterministic tool returned only one generic finding.
-The current cut gives every lead the exact 1-through-600-character schema bound
-and reports each invalid lead by index. Review, gate, commit, and push it, then
-clone Run 103 and resume only the missing Patina compaction. Preserve all 52
-round-17 mutation receipts and 23 successful session checkpoints; do not replay
-proposals, mutations, sibling compactions, or earlier rounds. The acceptance
-launcher retains one 35 MiB content-addressed runner per exact source commit and
-deletes disposable compiler output; do not restore a persistent Cargo target
-tree.
+Run 104's round-19 preview committed through ordinal 1288 and failed at ordinal
+1289. Adjacent Avelune carrier parents independently proposed exact canonical
+member ID and public name `Tarin Vel` at ordinals 1272 and 1289, with
+near-identical content. The current cut groups only by canonical local member
+ID, retains the earliest ordinal, writes an immutable supersession checkpoint
+for the later invocation, excludes its mutation and compaction journal entry,
+and remeasures. Name and semantic similarity are evidence, not matching
+authority. Review, gate, commit, and push, then clone Run 104 and resume at
+ordinal 1289. Preserve the frozen preview, provider receipts, and commits through
+1288; do not replay proposals, admitted mutations, or earlier rounds. The
+acceptance launcher retains one 35 MiB content-addressed runner per exact source
+commit and deletes disposable compiler output; do not restore a persistent
+Cargo target tree.
 
 ## Mission and current product shape
 
@@ -476,11 +477,12 @@ approved capability.
 
 ## Next action
 
-Preserve Runs 75 through 103. Review, gate, commit, and push the exact per-lead
-compaction-schema and indexed-feedback cut, then clone Run 103 and resume only
-the missing round-17 Patina compaction. Preserve its 52 admitted mutations and
-23 successful local session summaries without replaying proposals, mutations,
-sibling compactions, or earlier rounds. Continue iterative complexity rounds to
+Preserve Runs 75 through 104. Review, gate, commit, and push deterministic
+exact-ID proposal supersession, then clone Run 104 and resume its frozen
+round-19 preview at ordinal 1289. Retain ordinal 1272, write ordinal 1289's
+supersession checkpoint, skip its mutation and session journal entry, continue
+ordinal 1290 onward, and remeasure. Do not replay provider proposals, commits
+through ordinal 1288, or earlier rounds. Continue iterative complexity rounds to
 2,400 canonical actionable subjects, followed by ten strategic waves,
 publications, archive hashes, and unchanged-live-service verification.
 

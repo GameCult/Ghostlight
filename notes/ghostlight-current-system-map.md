@@ -1284,7 +1284,9 @@ outside this authority.
   `derive_world_elaboration_demand` deterministically owns the target, deficit,
   realm shares, and per-round mutation pressure. Each titled elaborator owns
   only its compact title-by-realm working frontier and mutation draft. The
-  acceptance driver owns deterministic parent-to-jurisdiction routing;
+  acceptance driver owns deterministic parent-to-jurisdiction routing. After a
+  frozen parallel batch it also owns exact member-ID collision supersession by
+  retaining the lowest dispatch ordinal.
   `WorldComplexityTool` owns construction of the complete frozen proposal from
   the draft. `WorldKernel` remains the sole canonical mutation owner, and
   Resolution remains the owner of the later active cover.
@@ -1320,7 +1322,9 @@ outside this authority.
   receipt hashes; then one immutable mutation checkpoint per sequentially
   admitted fission or individuation; one compacted checkpoint for each title
   that obtained an admitted mutation in that round; and a terminal round
-  checkpoint carrying the scheduler state, mutation paths, the accumulated
+  checkpoint carrying the scheduler state, mutation paths, immutable
+  superseded-invocation checkpoint paths for same-batch duplicate member IDs,
+  the accumulated
   title-by-realm session checkpoints keyed by stable
   `<lowercase-title>:<jurisdiction-id>` session ID, and remeasured
   actionable-subject count. Per-round session filenames contain the title plus
@@ -1346,6 +1350,11 @@ outside this authority.
   context, while the campaign and kernel commit receipts remain truth.
   Resolution cover membership and Nemesis decision windows are downstream
   derivations and do not feed back into complexity admission authority.
+  Same-batch individuation supersession is scheduling evidence, not canonical
+  member state: the earliest dispatch ordinal for one canonicalized local
+  member ID is retained, while later matching invocations contribute no commit
+  or session-memory journal. The following round derives fresh demand from the
+  admitted campaign rather than treating supersession as completed complexity.
 - **Forbidden writers:** elaborators, session compaction, the scheduler,
   demand derivation, preview files, round files, and acceptance metadata cannot
   write campaign state, declare a target satisfied, allocate the Resolution
@@ -1364,7 +1373,10 @@ outside this authority.
   partition axis, evidence, or approval authority because those fields do not
   exist in its mutation-draft schema. The model provider cannot select a realm,
   merge title sessions, persist a transcript as memory, or redirect a
-  checkpoint to another title or jurisdiction. Sequential commits may update
+  checkpoint to another title or jurisdiction. Neither the proposing model nor
+  commit order may choose the winner of a same-batch exact member-ID collision;
+  later duplicate invocations cannot write commits or compaction journals.
+  Sequential commits may update
   only the optimistic revision of a frozen fission proposal after the exact
   parent binding remains unchanged; individuation instead revalidates its exact
   Gestalt version and location against current state.
@@ -1396,7 +1408,16 @@ outside this authority.
   promotes it into an Actor, `commit_gestalt_presence` calls
   `ensure_agency_profiles`, and the new active simulation-eligible actor profile
   becomes visible to `canonical_actionable_subject_count`. Parallel workers
-  read one frozen campaign; commits serialize through WorldKernel. Unrelated
+  read one frozen campaign. Before serial admission, the round runner
+  canonicalizes every proposed local member ID, retains the invocation with the
+  earliest dispatch ordinal for each ID, and publishes one immutable
+  `ghostlight.complexity_superseded_invocation.v1` checkpoint for every later
+  duplicate, binding its dispatch, retained ordinal, canonical member ID, and
+  diagnostic. Only retained invocations enter session routing, kernel commit,
+  and successful compaction journals. IDs already present in the frozen
+  canonical campaign remain ordinary semantic failures owned by
+  `validate_gestalt_individuation`; supersession does not weaken that check.
+  Retained commits serialize through WorldKernel. Unrelated
   earlier fissions may be rebased,
   while any change to the assigned parent, its profile, or its members rejects
   the later proposal instead of silently reconciling it.
@@ -1433,7 +1454,10 @@ outside this authority.
   persistence owner, and deterministic lifecycle fields do not cross the model
   boundary. The compaction repair adds no compactor, checkpoint type, session
   store, or memory authority; it closes the item-bound seam between the
-  existing model schema, tool admission, and checkpoint validator.
+  existing model schema, tool admission, and checkpoint validator. Parallel
+  member-ID supersession adds no namespace allocator, alias registry,
+  reconciliation pass, or alternate admission owner; it is a deterministic
+  filter over one frozen round's already-produced invocations.
 - **Verification layer:** checkpoint shape and digest bind title, session,
   campaign, target location, generation, world revision, prior checkpoint, and
   bounded narrative fields. Frozen parent digests make conflicting parallel
@@ -1481,6 +1505,10 @@ outside this authority.
   per-lead 1/600 character bounds and that empty and overlong leads in one
   action produce separate index-addressed findings rather than one generic
   combined diagnostic.
+  A focused batch regression proves that two parallel individuations with one
+  canonical member ID retain the lower dispatch ordinal, publish the later
+  invocation as superseded with the exact retained ordinal and ID, and leave
+  an unrelated member ID retained.
 - **Failure and resume:** a provider failure publishes an immutable
   round-failure generation with the exact completed and failed dispatches and
   receipts, then stops that run. Explicit resume rehydrates the latest failure,
@@ -1489,8 +1517,11 @@ outside this authority.
   numbered generations without changing the frozen schedule. A published
   successful round preview may also be reused on explicit resume. Existing
   mutation checkpoints suppress replay, title-by-realm compaction checkpoints
-  suppress recompaction, and consecutive completed round checkpoints restore
-  scheduler fairness and session memory before the first unfinished round.
+  suppress recompaction, immutable superseded-invocation checkpoints must
+  exactly match recomputed collision ownership and suppress commit/journal work
+  for those later duplicates, and consecutive completed round checkpoints
+  restore scheduler fairness and session memory before the first unfinished
+  round.
   After mutation admission, independent title-by-realm journals compact in
   parallel under the same bounded complexity parallelism entitlement. Each
   compactor reads the same committed campaign revision and only its own prior
