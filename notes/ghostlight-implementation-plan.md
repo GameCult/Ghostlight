@@ -192,6 +192,12 @@ Competing publications may frame the same committed event substrate
 differently. Grounding constrains factual assertions and preserves exact event
 provenance without neutralizing legible interpretation, selection, framing, or
 insinuation; publication Personas cannot write world state.
+Strategic named-person selection is optional proposal production. Resolution
+owns one exact strategic-individuation validator; the scheduler uses it to
+discard a semantically invalid optional person before wave assembly, while
+WorldKernel invokes the same validator again at admission before the shared
+individuation commit primitive. Early rejection cannot weaken kernel authority
+or turn the scheduler into a second semantic owner.
 Initial compiler publication is
 explicitly bounded as an empty-store creation transaction owned by the
 CampaignRegistry, not a runtime mutation. Named-person presence is a resolution

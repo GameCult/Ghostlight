@@ -1037,6 +1037,15 @@ async fn propose_strategic_individuation(
             location_id: location_id.clone(),
         },
     };
+    if let Err(error) = crate::resolution::validate_strategic_individuation_proposals(
+        campaign,
+        std::slice::from_ref(&proposal),
+        selected_actions,
+    ) {
+        output.receipt.validation_result = "semantic_invalid".into();
+        output.receipt.local_validation_error = Some(error.to_string());
+        return (Vec::new(), vec![output]);
+    }
     let proposal_digest = match strategic_individuation_proposal_digest(&proposal) {
         Ok(digest) => digest,
         Err(_) => return (Vec::new(), vec![output]),
@@ -1971,7 +1980,9 @@ mod tests {
         calls: Mutex<Vec<String>>,
     }
 
-    struct PersonFixtureModel;
+    struct PersonFixtureModel {
+        invalid_relationship: bool,
+    }
 
     #[test]
     fn gestalt_state_references_qualify_canonical_ids_exactly_once() {
@@ -2278,6 +2289,11 @@ mod tests {
                 })
                 .and_then(serde_json::Value::as_str)
                 .ok_or_else(|| anyhow!("person fixture lacks Gestalt"))?;
+            let relationships = if self.invalid_relationship {
+                serde_json::json!({"unknown-court":"owes a private favor"})
+            } else {
+                serde_json::json!({})
+            };
             Ok(serde_json::json!({"proposals":[{
                 "action_digest":digest,
                 "gestalt_id":gestalt_id,
@@ -2285,7 +2301,7 @@ mod tests {
                 "name":"Veska Rill",
                 "goals":["control the grain delegation"],
                 "obligations":["answer to the river wards"],
-                "relationships":{},
+                "relationships":relationships,
                 "memories":["the lower road vanished after the dwarven excavation"],
                 "rationale":"The delegation needs one accountable broker."
             }]})
@@ -3182,9 +3198,14 @@ mod tests {
             }],
         };
         let selected_actions = vec![action, institution_action];
-        let (proposals, stages) =
-            propose_strategic_individuation(&PersonFixtureModel, &campaign, &selected_actions)
-                .await;
+        let (proposals, stages) = propose_strategic_individuation(
+            &PersonFixtureModel {
+                invalid_relationship: false,
+            },
+            &campaign,
+            &selected_actions,
+        )
+        .await;
         assert_eq!(proposals.len(), 1);
         assert_eq!(stages.len(), 1);
         assert_eq!(proposals[0].action_digest, digest);
@@ -3199,6 +3220,65 @@ mod tests {
         assert_eq!(
             stages[0].receipt.snapshot_binding,
             strategic_individuation_binding(&campaign, &candidate_digests, Some(&proposal_digest),)
+        );
+    }
+
+    #[tokio::test]
+    async fn invalid_strategic_person_is_rejected_before_wave_admission() {
+        use crate::domain::{AgencySubjectKind, GestaltPersonaState, StrategicCellEffect};
+        let mut campaign = crate::resolution::tests::campaign(1, 1);
+        let mut profile = campaign.agency_profiles["faction-0000"].clone();
+        profile.subject_id = "river-wards".into();
+        profile.subject_kind = AgencySubjectKind::Gestalt;
+        profile.location_ids = BTreeSet::from(["center".into()]);
+        campaign
+            .agency_profiles
+            .insert(profile.subject_id.clone(), profile);
+        campaign.gestalts.insert(
+            "river-wards".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "river-wards".into(),
+                name: "River Wards".into(),
+                version: 0,
+                home_location_id: "center".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec!["keep the wards fed".into()],
+                pressures: vec!["the lower road failed".into()],
+            },
+        );
+        let action = crate::domain::CellActionProposal {
+            subject_id: "river-wards".into(),
+            intent: "Send a delegation.".into(),
+            intended_effect: "Find an accountable route broker.".into(),
+            priority: 80,
+            state_references: vec![],
+            public_channels: vec![],
+            effects: vec![StrategicCellEffect::Gestalt {
+                gestalt_id: "river-wards".into(),
+                pressure_additions: vec!["a broker must answer publicly".into()],
+                pressure_resolutions: vec![],
+            }],
+        };
+        let (proposals, stages) = propose_strategic_individuation(
+            &PersonFixtureModel {
+                invalid_relationship: true,
+            },
+            &campaign,
+            &[action],
+        )
+        .await;
+        assert!(proposals.is_empty());
+        assert_eq!(stages.len(), 1);
+        assert_eq!(stages[0].receipt.validation_result, "semantic_invalid");
+        assert!(
+            stages[0]
+                .receipt
+                .local_validation_error
+                .as_deref()
+                .is_some_and(|error| error.contains("exact Gestalt action authority"))
         );
     }
 

@@ -480,11 +480,21 @@ Ghostlight-owned organ or special runtime. Ghostlight owns the world beyond the
 Greathold as a persistent multiresolution political simulation, while Delvehold
 retains player sovereignty and quantitative economy. WorldKernel now admits at
 most one action-bound strategic individuation per wave through the existing
-individuation commit primitive. The selector proposes identity content; the
-kernel retains revision, lineage, location, uniqueness, materialization, and
-atomic commit authority. The active budget ceiling is 240, independent of the
-32-call provider gate. A fixture proves 1,000 subjects across 200 cells and all
-200 membrane pipelines under a seven-call gate.
+individuation commit primitive. Resolution owns the exact strategic-
+individuation validator. The scheduler now calls that shared validator at
+proposal production, records `semantic_invalid`, and drops an invalid optional
+person before wave assembly; WorldKernel reuses the same validator at admission
+and retains revision, lineage, location, uniqueness, materialization, and
+atomic commit authority. The selector proposes identity content only. The
+active budget ceiling is 240, independent of the 32-call provider gate. A
+fixture proves 1,000 subjects across 200 cells and all 200 membrane pipelines
+under a seven-call gate.
+
+Run 67 is preserved as a failed full-world witness at revision 15. All five
+requested realms and all five locality elaborations committed, but no strategic
+wave committed. Its failure exposed late rejection of an optional malformed
+strategic person, not loss of the admitted world. Resume must preserve those
+realm and elaboration commits and begin at the first strategic-wave boundary.
 
 Sparse inhabited destinations now compile a versioned civic apparatus in place.
 The first pass establishes institutions, resident populations, political edges,

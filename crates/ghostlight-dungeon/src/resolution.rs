@@ -2197,7 +2197,19 @@ fn validate_strategic_individuations(
     wave: &ResolutionWaveCommit,
     selected_actions: &[CellActionProposal],
 ) -> Result<()> {
-    if wave.strategic_individuations.len() > 1 {
+    validate_strategic_individuation_proposals(
+        campaign,
+        &wave.strategic_individuations,
+        selected_actions,
+    )
+}
+
+pub(crate) fn validate_strategic_individuation_proposals(
+    campaign: &Campaign,
+    proposals: &[StrategicGestaltIndividuation],
+    selected_actions: &[CellActionProposal],
+) -> Result<()> {
+    if proposals.len() > 1 {
         return Err(anyhow!(
             "one strategic wave can admit at most one new person"
         ));
@@ -2206,7 +2218,7 @@ fn validate_strategic_individuations(
         .iter()
         .map(|action| Ok((cell_action_digest(action)?, action)))
         .collect::<Result<BTreeMap<_, _>>>()?;
-    for proposal in &wave.strategic_individuations {
+    for proposal in proposals {
         let action = selected
             .get(&proposal.action_digest)
             .ok_or_else(|| anyhow!("strategic individuation is not bound to a selected action"))?;

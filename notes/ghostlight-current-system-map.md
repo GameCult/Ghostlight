@@ -839,11 +839,19 @@ A separate strategic selector may propose one first-relevance identity only for
 an exact selected Gestalt-owned action in the current resolution wave. Its
 receipt binds the eligible Gestalt action digest set, exact locally admitted
 proposal digest, and world revision.
-WorldKernel revalidates the action/Gestalt pair, active simulation authority,
-location, version, lineage, bounded identity payload, and uniqueness, then calls
-the same `apply_individuation` primitive used by the system-only direct command.
-The proposal and strategic plan commit atomically; the selector cannot own
-entity creation, location, revision, materialization, or commit.
+`resolution::validate_strategic_individuation_proposals` is the single owner of
+exact strategic-individuation semantics: one-person budget, selected-action
+binding, Gestalt action authority, location, version, lineage, bounded identity
+payload, relationships, and uniqueness. The scheduler calls that shared owner
+immediately after proposal production. An invalid optional person marks the
+selector receipt `semantic_invalid`, records the exact local finding, and is
+dropped before wave assembly; the otherwise valid strategic wave may continue.
+WorldKernel calls the same validator again against the admitted wave snapshot,
+then invokes the same `apply_individuation` primitive used by the system-only
+direct command. Early validation is proposal hygiene, not mutation authority or
+a substitute for kernel revalidation. The proposal and strategic plan commit
+atomically; the selector cannot own entity creation, location, revision,
+materialization, or commit.
 
 Institution `already_committed_posture` is projected as durable state, distinct
 from unresolved pressure and fresh choice. Maintaining it is inaction. A model
