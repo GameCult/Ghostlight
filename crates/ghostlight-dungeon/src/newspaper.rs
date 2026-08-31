@@ -27,7 +27,7 @@ use std::{
 const MAX_FRONT_PAGE_ARTICLES: usize = 6;
 const MAX_PUBLIC_RECORD_QUERY_RESULTS: usize = 24;
 const MAX_NARRATIVE_SELECTION_STEPS: usize = 12;
-const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v13";
+const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v14";
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
@@ -257,6 +257,8 @@ impl WorldNewspaperArticle {
 pub struct WorldNewspaperSourceCitation {
     pub citation: String,
     pub source_news_ids: Vec<String>,
+    #[serde(default)]
+    pub source_times: Vec<DateTime<Utc>>,
     pub source_channels: Vec<String>,
     pub source_reliability: Vec<String>,
     pub facts: Vec<WorldNewspaperSourceFact>,
@@ -614,6 +616,14 @@ struct EditorialRecordIndexEntry {
     channel: String,
     headline: String,
     named_entities: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+struct EditorialPeriodDirectoryEntry {
+    at: DateTime<Utc>,
+    completed_change_headlines: Vec<String>,
+    completed_change_count: usize,
+    other_record_count: usize,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -1751,6 +1761,7 @@ async fn select_editorial_agenda(
     crate::agent::ModelAgentRun<WorldNewspaperEditorialAgenda>,
     crate::agent::ModelAgentFailure,
 > {
+    let period_directory = editorial_period_directory(&prepared.records);
     let assignment_staff = serde_json::json!({
         "assignment_editor": &prepared.newsroom.assignment_editor,
         "journalists": prepared
@@ -1761,11 +1772,12 @@ async fn select_editorial_agenda(
             .collect::<Vec<_>>(),
     });
     let instructions = format!(
-        "You are {editor}, assignment editor of `{title}`. Investigate its frozen public ledger with query_public_records, then assign a page. An empty query browses; terms, exact entity names, status, channel, and an inspected cursor narrow or page. The workbench keeps a compact index of inspected records instead of replaying old query pages; use fetch_public_records with exact IDs when you need their full facts again. Cite only returned record IDs. Search backward when procedure hides the rupture and sideways for opposition, countermoves, reaction, scandal, lived cost, and independent beats.\n\nFirst decide the issue shape. A special issue is earned when one upheaval genuinely reorganizes several parts of public life; its lead alone owns the shared chronology and later stories assume that chronology while performing distinct narrative functions. A general issue carries independent beats whose stories are self-contained. Do not declare a special issue merely because one incident generated many records, and do not manufacture variety when the whole realm is plainly living through one rupture. State the evidence-based rationale.\n\nThe first pitch is the Front Page lead; later pitches use another allowed section. Give each pitch a narrative function and context role. Choose the staff journalist whose beat, biases, source instincts, voice, and blind spots make them the most revealingly partial observer, and state that assignment reason. Give them the exact record grouping, one focus record the lede cannot bury, a pointed narrative claim, the live tension, and the public question. A routine update to a vivid continuing incident should cite both and say what changed. Remembering, filing, warning, and planning are context unless they themselves produce a public consequence. Editorial frames may insinuate and judge but cannot invent concrete facts. The copy editor, not you or the reporters, owns fact checking.\n\nPropose before committing. The workbench returns issue shape, reporter fit, the lead, and what it would bury; revise or query again if the proof exposes a stronger or more honest page.\n\nPUBLICATION VOICE:\n{voice}\n\nCOMPACT STAFF BOOK:\n{staff}",
+        "You are {editor}, assignment editor of `{title}`. Investigate its frozen public ledger with query_public_records, then assign a page. An empty query browses; terms, exact entity names, status, channel, and an inspected cursor narrow or page. The workbench keeps a compact index of inspected records instead of replaying old query pages; use fetch_public_records with exact IDs when you need their full facts again. Cite only returned record IDs. Search backward when procedure hides the rupture and sideways for opposition, countermoves, reaction, scandal, lived cost, and independent beats.\n\nFirst decide the issue shape. A special issue is earned when one upheaval genuinely reorganizes several parts of public life; its lead alone owns the shared chronology and later stories assume that chronology while performing distinct narrative functions. A general issue carries independent beats whose stories are self-contained. Do not declare a special issue merely because one incident generated many records, and do not manufacture variety when the whole realm is plainly living through one rupture. State the evidence-based rationale.\n\nThe first pitch is the Front Page lead; later pitches use another allowed section. Give each pitch a narrative function and context role. Choose the staff journalist whose beat, biases, source instincts, voice, and blind spots make them the most revealingly partial observer, and state that assignment reason. Give them the exact record grouping, one focus record the lede cannot bury, a pointed narrative claim, the live tension, and the public question. A routine update to a vivid continuing incident should cite both and say what changed. Remembering, filing, warning, and planning are context unless they themselves produce a public consequence. Editorial frames may insinuate and judge but cannot invent concrete facts. The copy editor, not you or the reporters, owns fact checking.\n\nPropose before committing. The workbench returns issue shape, reporter fit, the lead, and what it would bury; revise or query again if the proof exposes a stronger or more honest page.\n\nPUBLICATION VOICE:\n{voice}\n\nCOMPACT STAFF BOOK:\n{staff}\n\nLEDGER PERIOD DIRECTORY (navigation only; query exact records before citation):\n{directory}",
         editor = prepared.newsroom.assignment_editor.name,
         title = prepared.title,
         voice = prepared.editorial_voice,
         staff = serde_json::to_string(&assignment_staff).unwrap_or_default(),
+        directory = serde_json::to_string(&period_directory).unwrap_or_default(),
     );
     let spec = ModelAgentSpec {
         stage: "newspaper_narrative_selection_agent_action".into(),
@@ -3434,9 +3446,15 @@ pub fn render_world_newspaper_audit_markdown(issue: &WorldNewspaperIssue) -> Str
         ));
         for source in &article.sources {
             rendered.push_str(&format!(
-                "\n### Citation {}\n\n- Source news: {}\n- Source channels: {}\n- Source reliability: {}\n",
+                "\n### Citation {}\n\n- Source news: {}\n- Source time: {}\n- Source channels: {}\n- Source reliability: {}\n",
                 escape_markdown_text(&source.citation),
                 escaped_join(&source.source_news_ids),
+                source
+                    .source_times
+                    .iter()
+                    .map(DateTime::<Utc>::to_rfc3339)
+                    .collect::<Vec<_>>()
+                    .join(", "),
                 escaped_join(&source.source_channels),
                 escaped_join(&source.source_reliability),
             ));
@@ -3524,6 +3542,40 @@ fn public_news_records(campaign: &Campaign) -> Result<Vec<PublicRecordProjection
     }
     news.into_iter()
         .map(|issue| public_news_record(campaign, issue, &events))
+        .collect()
+}
+
+fn editorial_period_directory(
+    records: &[PublicRecordProjection],
+) -> Vec<EditorialPeriodDirectoryEntry> {
+    const MAX_COMPLETED_HEADLINES_PER_PERIOD: usize = 12;
+
+    let mut periods = BTreeMap::<DateTime<Utc>, (BTreeSet<String>, usize)>::new();
+    for record in records {
+        let entry = periods.entry(record.at).or_default();
+        if record.facts.iter().any(|fact| {
+            fact.assertion_status == WorldNewspaperAssertionStatus::MaterialChangeCommitted
+        }) {
+            entry.0.insert(record.headline.clone());
+        } else {
+            entry.1 = entry.1.saturating_add(1);
+        }
+    }
+    periods
+        .into_iter()
+        .rev()
+        .map(|(at, (completed_change_headlines, other_record_count))| {
+            let completed_change_count = completed_change_headlines.len();
+            EditorialPeriodDirectoryEntry {
+                at,
+                completed_change_headlines: completed_change_headlines
+                    .into_iter()
+                    .take(MAX_COMPLETED_HEADLINES_PER_PERIOD)
+                    .collect(),
+                completed_change_count,
+                other_record_count,
+            }
+        })
         .collect()
 }
 
@@ -3897,6 +3949,7 @@ fn lower_editorial_page(
             .map(|record| WorldNewspaperSourceCitation {
                 citation: citation_labels[record.record_id.as_str()].clone(),
                 source_news_ids: vec![record.record_id.clone()],
+                source_times: vec![record.at],
                 source_channels: vec![record.channel.clone()],
                 source_reliability: vec![record.reliability.clone()],
                 facts: record.facts.clone(),
@@ -4824,6 +4877,35 @@ mod tests {
         assert!(!requests[2].lived_stream.contains("cracked hinge"));
     }
 
+    #[tokio::test]
+    async fn assignment_editor_receives_a_bounded_period_directory_before_querying() {
+        let mut campaign = campaign_with_two_news();
+        campaign.events[0].kind = "strategic_activity_outcome".into();
+        campaign.news[0].at -= chrono::Duration::hours(12);
+        campaign.events[0].at = campaign.news[0].at;
+        let older_headline = campaign.news[0].headline.clone();
+        let newer_headline = campaign.news[1].headline.clone();
+        campaign.events[1].kind = "strategic_activity_outcome".into();
+        let prepared = prepare_newspaper(
+            &campaign,
+            "The Canopy Ledger",
+            "Independent and pointed.",
+            &canopy_ledger_newsroom(),
+            3,
+        )
+        .unwrap();
+        let model = ScriptedNewspaperModel::new([QUERY_ALL_RECORDS, ONE_STORY_AGENDA]);
+
+        select_editorial_agenda(&model, &prepared, 3).await.unwrap();
+
+        let first_request = &model.requests()[0].lived_stream;
+        assert!(first_request.contains("LEDGER PERIOD DIRECTORY"));
+        assert!(first_request.contains(&older_headline));
+        assert!(first_request.contains(&newer_headline));
+        assert!(!first_request.contains("news:seal-scandal"));
+        assert!(!first_request.contains("news:west-gate"));
+    }
+
     #[test]
     fn narrative_workbench_has_no_source_count_hole_and_reads_legacy_agendas() {
         let records = public_news_records(&campaign_with_archive_news()).unwrap();
@@ -5108,6 +5190,7 @@ mod tests {
         assert!(audit.contains("Editorial agenda"));
         assert!(audit.contains("court made its private gambling debt"));
         assert!(audit.contains("Exact committed account: The Thorn Court admits"));
+        assert!(audit.contains("Source time:"));
         assert!(
             audit.contains("Assertion status: course_committed_embedded_actions_not_completed")
         );

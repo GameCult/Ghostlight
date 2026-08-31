@@ -1344,7 +1344,8 @@ The deliberative newsroom boundary is live under this authority map:
   journalist, issue shape, per-story narrative function, context role, focal
   record, exact citation grouping, throughline, tension, assignment rationale,
   and reader question. Its
-  deterministic workbench owns query admission, inspected-record membership,
+  deterministic workbench owns derivation of the bounded period directory,
+  query admission, inspected-record membership,
   the bounded working-context projection, exact-ID fetch, agenda validation,
   focus-record dereferencing, candidate identity, and exact commit admission.
   The generic agent harness owns message framing: for snapshot tools it freezes
@@ -1371,7 +1372,12 @@ The deliberative newsroom boundary is live under this authority map:
   writers. `WorldKernel` remains the only world-event writer.
 - **Inputs:** one exact campaign revision, publication title and voice, article
   budget, a validated embodied newsroom roster, source-receipt ancestry, and
-  `character-newsroom.v13` contract. Each reporter receives the common stable
+  `character-newsroom.v14` contract. Before its first query, the assignment
+  editor receives a bounded per-period directory containing only timestamps,
+  completed-material-change headlines, the full completed-change count, and
+  counts of other records. This is
+  navigation context: it cannot be cited, does not make a record inspected, and
+  does not replace query or exact-ID fetch. Each reporter receives the common stable
   house charter first, that journalist's stable recurring identity second, and
   the current assignment workbench last. The assignment editor receives its own
   staff profile plus the complete journalist roster; it does not receive the
@@ -1425,7 +1431,10 @@ The deliberative newsroom boundary is live under this authority map:
   timestamp, channel, headline, reliability, exact committed accounts,
   assertion statuses, committed event IDs, and only those people,
   institutions, populations, places, and identity attributes asserted by the
-  account. Query pages, the visible-ID set, pending agenda, candidate digest,
+  account. The per-period directory groups those projections by exact
+  timestamp, retains at most twelve distinct completed-change headlines per
+  period, and counts every other record. It is a lossy navigation projection
+  with no factual, selection, or citation authority. Query pages, the visible-ID set, pending agenda, candidate digest,
   front-page proof, review questions, and late reader-facing citation numbers
   are transparent derived views. After each nonterminal selector step, the
   workbench derives a compact inspected-record index containing only record ID,
@@ -1447,7 +1456,9 @@ The deliberative newsroom boundary is live under this authority map:
   set, changed-article set, source-page digest, printed-page digest, and
   receipt-chain digest are also derived. None is a persisted world subject,
   fact bundle, relevance authority, prose judge, or event writer.
-- **Editorial path:** the selector must inspect a record before citing it. It
+- **Editorial path:** the selector may use the period directory to choose where
+  to investigate, but it must inspect a record through query or exact-ID fetch
+  before citing it. It
   can search backward from routine updates to the original rupture and can
   acknowledge that later handling is an installment in a continuing story.
   It first proposes an agenda. The workbench validates it, dereferences the
@@ -1474,7 +1485,8 @@ The deliberative newsroom boundary is live under this authority map:
   the numbered checklist, its own profile, and the profiles of the affected
   reporters.
 - **Desk and press path:** accepted stable IDs lower once into the existing
-  self-contained semantic audit with source news IDs, channels, reliability,
+  self-contained semantic audit with source news IDs, source timestamps,
+  channels, reliability,
   exact account text, assertion status, event IDs, supported identity
   attributes, institutions, populations, and places. Reader-facing numeric
   labels are assigned only during lowering. The copy desk reads the selected
@@ -1535,7 +1547,9 @@ The deliberative newsroom boundary is live under this authority map:
   the printed issue. Admitted agenda and accepted filing checkpoints survive a
   later reporter or copy failure without becoming printed truth; reuse requires
   exact current task, editorial, assignment, stage, snapshot, and receipt
-  bindings.
+  bindings. A directory headline is never citation evidence: every assigned
+  source must still have been returned by exact ledger query or exact-ID fetch,
+  and every audit citation exposes the canonical source timestamp.
 - **Forbidden writers:** the selector and query workbench cannot create,
   mutate, deduplicate, summarize into, or reclassify `NewsIssue` or `Event`
   state. The deterministic proof cannot rank stories or commit an agenda; it
@@ -1552,7 +1566,9 @@ The deliberative newsroom boundary is live under this authority map:
   The press witness cannot certify
   factual or editorial quality; it can only prove the exact admitted process and
   bytes.
-  A context snapshot cannot create or summarize facts into authority, and an
+  A context snapshot cannot create or summarize facts into authority. The
+  editorial-period directory cannot create a source packet, mark a record
+  inspected, satisfy citation admission, or become an event authority. An
   exact-ID fetch cannot mutate the ledger. A production checkpoint cannot change
   the roster, agenda, pitch, reporter, article slot, section, byline, citations,
   source campaign, or receipt ancestry; a checkpoint from another contract,
@@ -1634,8 +1650,9 @@ The deliberative newsroom boundary is live under this authority map:
   step-one directive no longer sits in a prefix position that disappears when
   the first workbench snapshot replaces history. The cut adds no cache store,
   cache key registry, manual retention control, or retry compensator.
-  The live pushed reporter contract remains v13; no v14 prefix expansion is part
-  of the current architecture.
+  V14 adds only the bounded assignment-navigation directory and source
+  timestamps in the audit. It does not add a source-packet layer, second event
+  authority, alternate evidence selector, or reporter-context expansion.
   The roster, query projection, front-page proof, and article assembly reuse the
   generic agent harness and existing public-record, agenda, accepted issue, and
   audit shapes. One private persistent production-checkpoint schema buys exact
@@ -1644,7 +1661,10 @@ The deliberative newsroom boundary is live under this authority map:
   added.
 - **Verification and build budget:** focused newspaper tests retain query
   admission, exact focus proof, agenda commit, selected-record alignment, and
-  audit grounding. V13 gates prove the stable selector instruction prefix with
+  audit grounding. V14 gates prove the assignment editor sees completed-change
+  headlines across distinct periods before querying while stable record IDs and
+  fact bodies remain absent, and that rendered audit citations expose source
+  time. Existing V13 gates prove the stable selector instruction prefix with
   old record bodies absent from later snapshots, the compact inspected-record
   index, bounded exact-ID refetch, stable selector and Night schemas,
   assignment-aware reporter context isolation, one complete

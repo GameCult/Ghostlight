@@ -496,6 +496,21 @@ wave committed. Its failure exposed late rejection of an optional malformed
 strategic person, not loss of the admitted world. Resume must preserve those
 realm and elaboration commits and begin at the first strategic-wave boundary.
 
+Exact-source Run 68 at
+`69c811a2669fc38f19f9199bf57088dc250bfc3e` is mechanically complete at world
+revision 27 with 12/12 strategic waves, 240 events, 514 public news rows, and a
+final newspaper. Do not resume or replay its admitted world or waves. Both
+independent editorial and grounding reviews fail. Earlier per-wave papers show
+that the same immutable record contains dramatic completed facts, including an
+organ breaching the rail capital, a dead pump, and families crossing borders;
+the final paper failed to make that committed change legible. Preserve Run 68
+unchanged. Mechanical completion is proven, but newspaper acceptance is not.
+
+The current newsroom-only cut adds a navigation-only directory of completed
+public changes grouped by period and records exact source timestamps in the
+audit. The directory derives context from canonical records and gains no fact
+or world authority. Review, commit, push, and provider proof remain pending.
+
 Sparse inhabited destinations now compile a versioned civic apparatus in place.
 The first pass establishes institutions, resident populations, political edges,
 and public authority, succession, resource, and redress facts. A later pass is
@@ -1568,14 +1583,12 @@ materializing a `NewsIssue`.
 2. Preserve the delivered Run 60 PDF and its frozen-copy verification as the
    earlier baseline, plus the final Run 61 style/flow artifact, v2 manifest,
    grammar, hashes, frozen copy, and art assets recorded above.
-3. Resume the fresh immutable full-world provider run only from its current
-   exact checkpoint boundary. Freeze the bounded root description, ordered
-   region requests, world identity and boundary observer, pressure, public
-   channel, elaboration passes, cell budget, waves, provider/source revision,
-   result root, and acceptance checks. Require every requested realm to have an
-   immutable `ExpandRegion` checkpoint and canonical jurisdiction before
-   locality elaboration or strategic waves. Preserve stopped Runs 64 and 65 as
-   failure evidence. This standalone run does not wait for the Delvehold adapter.
+3. Review, commit, and push the per-period completed-change navigation and audit
+   source-timestamp cut, then run newsroom-only Run 69 over immutable Run 68
+   artifacts. Do not replay simulation or waves. Preserve Run 68's paper and
+   failed reviews, bind Run 69 to exact source and provenance, then obtain fresh
+   independent editorial and grounding verdicts plus archive acceptance. This
+   standalone run does not wait for the Delvehold adapter.
 4. Build the Delvehold-owned adapter before any real Delvehold-owned player,
    civic, dungeon, contract, workshop, or quantitative-economy state participates.
    Defer multiple publications until separately authorized, or follow the operator's next directed work.
