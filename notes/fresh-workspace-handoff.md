@@ -445,6 +445,23 @@ channels, reliability, revision, and receipt IDs; a separate audit projection
 retains that provenance. No editorial organ can write world state.
 
 The scale and emergence gate is implemented and locally proven.
+The operator's current request is a fresh full-world simulation run, not yet a
+live Delvehold integration. The existing
+`crates/ghostlight-dungeon/src/bin/ghostlight-strategic-smoke.rs` driver can run
+that world now: `GHOSTLIGHT_WORLD_DESCRIPTION` enters the generic compiler,
+`GHOSTLIGHT_WORLD_ELABORATION_PASSES` selects up to eight admitted seed
+localities for foundation plus titled elaboration, the active cell budget may
+reach 240, and the driver advances up to 32 strategic waves with per-wave and
+final newspapers. Its default player projection is an external Greathold
+boundary observer with no simulation authority. Therefore the Delvehold adapter
+is not a prerequisite for a standalone autonomous external-world run.
+
+That conclusion stops at the ownership boundary. Actual Delvehold player,
+civic, dungeon, contract, workshop, or quantitative-economy snapshots and
+effects still require the Delvehold-owned adapter, typed proposal/receipt
+exchange, and Delvehold admission. The acceptance driver must not impersonate
+that state merely to make the run look integrated.
+
 Delvehold is a consumer of Ghostlight's generic authored-world API, not a
 Ghostlight-owned organ or special runtime. Ghostlight owns the world beyond the
 Greathold as a persistent multiresolution political simulation, while Delvehold
@@ -1528,12 +1545,17 @@ materializing a `NewsIssue`.
 2. Preserve the delivered Run 60 PDF and its frozen-copy verification as the
    earlier baseline, plus the final Run 61 style/flow artifact, v2 manifest,
    grammar, hashes, frozen copy, and art assets recorded above.
-3. Advance the Delvehold-owned adapter
-   against Ghostlight's admitted generic consumer contract. Defer multiple publications
-   until separately authorized, or follow the operator's next directed work.
+3. Prepare and launch a fresh immutable full-world provider run through the
+   existing strategic acceptance driver. Freeze the world description, world
+   identity and boundary observer, pressure, public channel, elaboration passes,
+   cell budget, waves, provider/source revision, result root, and acceptance
+   checks first. This standalone run does not wait for the Delvehold adapter.
+4. Build the Delvehold-owned adapter before any real Delvehold-owned player,
+   civic, dungeon, contract, workshop, or quantitative-economy state participates.
+   Defer multiple publications until separately authorized, or follow the operator's next directed work.
    Preserve immutable Runs 60 through 63 and do not replay newspaper work for
    cache telemetry.
-4. Per-wave issues may use daily-like reporting windows, while a final
+5. Per-wave issues may use daily-like reporting windows, while a final
    composition may be an equally current weekly-style issue with a broader
    window. Both are selective journalism; broad fact availability increases
    editorial freedom and does not license recap voice.
