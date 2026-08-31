@@ -1439,7 +1439,7 @@ enum WorldComplexityMutationDraft {
         resource_child_assignments: BTreeMap<String, String>,
     },
     Individuate {
-        member: crate::domain::GestaltMemberDelta,
+        member: WorldComplexityMemberDraft,
     },
 }
 
@@ -1449,6 +1449,42 @@ struct WorldComplexityChildDraft {
     id: String,
     name: String,
     partition_value: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct WorldComplexityMemberDraft {
+    id: String,
+    name: String,
+    capability_additions: BTreeSet<String>,
+    capability_removals: BTreeSet<String>,
+    knowledge_additions: BTreeSet<String>,
+    knowledge_removals: BTreeSet<String>,
+    equipment: BTreeSet<String>,
+    conditions: BTreeSet<String>,
+    obligations: BTreeSet<String>,
+    relationships: BTreeMap<String, String>,
+    goals: Vec<String>,
+    memories: Vec<String>,
+}
+
+impl From<crate::domain::GestaltMemberDelta> for WorldComplexityMemberDraft {
+    fn from(member: crate::domain::GestaltMemberDelta) -> Self {
+        Self {
+            id: member.id,
+            name: member.name,
+            capability_additions: member.capability_additions,
+            capability_removals: member.capability_removals,
+            knowledge_additions: member.knowledge_additions,
+            knowledge_removals: member.knowledge_removals,
+            equipment: member.equipment,
+            conditions: member.conditions,
+            obligations: member.obligations,
+            relationships: member.relationships,
+            goals: member.goals,
+            memories: member.memories,
+        }
+    }
 }
 
 impl WorldComplexityProposal {
@@ -1694,7 +1730,27 @@ impl WorldComplexityTool<'_> {
                 let individuation = crate::domain::GestaltIndividuation {
                     gestalt_id: self.parent_gestalt_id.into(),
                     expected_gestalt_version: parent.version,
-                    member,
+                    member: crate::domain::GestaltMemberDelta {
+                        schema: "ghostlight.gestalt_member_delta.v1".into(),
+                        id: member.id,
+                        gestalt_id: self.parent_gestalt_id.into(),
+                        version: 0,
+                        name: member.name,
+                        capability_additions: member.capability_additions,
+                        capability_removals: member.capability_removals,
+                        knowledge_additions: member.knowledge_additions,
+                        knowledge_removals: member.knowledge_removals,
+                        equipment: member.equipment,
+                        conditions: member.conditions,
+                        obligations: member.obligations,
+                        relationships: member.relationships,
+                        goals: member.goals,
+                        memories: member.memories,
+                        last_location_id: Some(location_id.clone()),
+                        materialized_actor_id: None,
+                        last_relevant_revision: 0,
+                        relevance_lease_until_revision: 0,
+                    },
                     location_id,
                 };
                 crate::resolution::validate_gestalt_individuation(self.campaign, &individuation)?;
@@ -1753,30 +1809,6 @@ impl crate::agent::ModelAgentTool for WorldComplexityTool<'_> {
             );
         }
         *variants = vec![selected];
-        if self.operation == WorldComplexityOperation::Individuate {
-            let location_id = self.campaign.agency_profiles[self.parent_gestalt_id]
-                .location_ids
-                .iter()
-                .next()
-                .ok_or_else(|| "complexity parent has no location".to_owned())?;
-            let member = schema
-                .pointer_mut("/$defs/GestaltMemberDelta/properties")
-                .and_then(serde_json::Value::as_object_mut)
-                .ok_or_else(|| "complexity schema has no member delta".to_owned())?;
-            member.insert(
-                "schema".into(),
-                exact_schema("ghostlight.gestalt_member_delta.v1"),
-            );
-            member.insert("gestalt_id".into(), exact_schema(self.parent_gestalt_id));
-            member.insert("version".into(), exact_schema(0_u64));
-            member.insert("last_location_id".into(), exact_schema(location_id));
-            member.insert(
-                "materialized_actor_id".into(),
-                exact_schema(Option::<String>::None),
-            );
-            member.insert("last_relevant_revision".into(), exact_schema(0_u64));
-            member.insert("relevance_lease_until_revision".into(), exact_schema(0_u64));
-        }
         Ok(schema)
     }
 
@@ -1872,10 +1904,10 @@ impl ElaborationSubAgentPort<WorldComplexityProposal> for ModelWorldComplexityWo
                 "parent_gestalt_id":parent_id,
                 "location_id":location_id,
                 "requirements":[
-                    "Return a ghostlight.world_complexity_action.v1 envelope whose mutation has operation=individuate and one member delta.",
-                    "The deterministic tool owns the exact parent id, parent version, and assigned location.",
+                    "Return a ghostlight.world_complexity_action.v1 envelope whose mutation has operation=individuate and one compact member draft.",
+                    "The deterministic tool owns schema, exact parent id, parent version, assigned location, materialization state, and relevance revisions; those fields are absent from your draft.",
                     "Create one consequential named person whose goals, knowledge, relationships, and memories are grounded in the parent state.",
-                    "Use a new local member id without the member: prefix; version zero; no materialized actor id.",
+                    "Use a new local member id without the member: prefix.",
                     "Do not create quota names, unsupported relationships, or decorative biography."
                 ]
             }),
@@ -3806,17 +3838,27 @@ mod tests {
             1
         );
         assert!(schema["$defs"].get("GestaltIndividuation").is_none());
-        assert_eq!(
-            schema["$defs"]["GestaltMemberDelta"]["properties"]["last_location_id"]["const"],
-            "room"
-        );
+        let member_properties = schema["$defs"]["WorldComplexityMemberDraft"]["properties"]
+            .as_object()
+            .unwrap();
+        for deterministic_field in [
+            "schema",
+            "gestalt_id",
+            "version",
+            "last_location_id",
+            "materialized_actor_id",
+            "last_relevant_revision",
+            "relevance_lease_until_revision",
+        ] {
+            assert!(!member_properties.contains_key(deterministic_field));
+        }
 
         let admitted = crate::agent::ModelAgentTool::invoke(
             &mut tool,
             WorldComplexityAction {
                 schema: "ghostlight.world_complexity_action.v1".into(),
                 mutation: WorldComplexityMutationDraft::Individuate {
-                    member: individuation.member,
+                    member: individuation.member.into(),
                 },
             },
             &context,
@@ -3884,7 +3926,7 @@ mod tests {
             WorldComplexityAction {
                 schema: "ghostlight.world_complexity_action.v1".into(),
                 mutation: WorldComplexityMutationDraft::Individuate {
-                    member: valid_same_name.clone(),
+                    member: valid_same_name.clone().into(),
                 },
             },
             &context,
@@ -3904,7 +3946,9 @@ mod tests {
             &mut tool,
             WorldComplexityAction {
                 schema: "ghostlight.world_complexity_action.v1".into(),
-                mutation: WorldComplexityMutationDraft::Individuate { member: invalid },
+                mutation: WorldComplexityMutationDraft::Individuate {
+                    member: invalid.into(),
+                },
             },
             &context,
         )

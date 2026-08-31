@@ -1300,7 +1300,10 @@ outside this authority.
   the assigned parent projection and compacted session, but its action schema
   admits only the lane-specific delta. A fission draft contains child IDs,
   names, partition values, the residual child, and exact member/resource
-  assignments. An individuation draft contains only the member delta.
+  assignments. An individuation draft is a compact
+  `WorldComplexityMemberDraft`: the model owns only the proposed local ID,
+  public name, capability and knowledge deltas, equipment, conditions,
+  obligations, exact-ID relationships, goals, and memories.
   `elaboration::unique_containing_jurisdiction` is the single read-only owner
   for deriving parent jurisdiction from canonical topology. For every exact
   operating place in `AgencyProfile.location_ids`, it walks
@@ -1352,7 +1355,10 @@ outside this authority.
   exact actor or member ID, materialize itself, or acquire relationships to
   nonexistent subject IDs. Public names are not writers of identity or
   authority: no lookup, relationship, action target, or admission decision may
-  select or merge a subject by display-name equality. The model cannot restate
+  select or merge a subject by display-name equality. The model cannot emit or
+  override the member schema, parent Gestalt ID, version, exact location,
+  materialization state, or relevance revisions because those deterministic
+  fields are absent from `WorldComplexityMemberDraft`. The model cannot restate
   or alter inherited child
   Persona constitutions, campaign identity, parent identity/version, location,
   partition axis, evidence, or approval authority because those fields do not
@@ -1369,9 +1375,12 @@ outside this authority.
   name, version, and assigned resources, builds the child-partition map,
   attaches the exact campaign/revision/parent/axis and empty
   evidence/gap/canon fields, and fixes `requires_approval=true`. For
-  individuation, it attaches the frozen parent ID/version and the exact first
-  parent-profile location to the member delta. Every constructed proposal then
-  passes the existing fission or individuation validator and the existing
+  individuation, it lowers `WorldComplexityMemberDraft` into the canonical
+  `GestaltMemberDelta`: it fixes the member schema, parent Gestalt ID, version
+  zero, exact first parent-profile location, unmaterialized state, and zeroed
+  relevance revisions around the model-owned semantic member content. Every
+  constructed proposal then passes the existing fission or individuation
+  validator and the existing
   `WorldCommand::FissionGestalt` or `WorldCommand::IndividuateGestaltMember`
   mailbox. `resolution::validate_gestalt_individuation` is the single local
   authority for exact member-ID uniqueness, parent version, exact location,
@@ -1413,7 +1422,10 @@ outside this authority.
   Compact checkpoints replace accumulated working history without replacing
   canonical commits. Individuation admission requires unique exact IDs, not a
   global public-name registry; the cut adds no alias table, fuzzy resolver, or
-  name-disambiguation authority.
+  name-disambiguation authority. `WorldComplexityMemberDraft` is only the
+  model-boundary semantic payload; it is not a second member-state schema or
+  persistence owner, and deterministic lifecycle fields do not cross the model
+  boundary.
 - **Verification layer:** checkpoint shape and digest bind title, session,
   campaign, target location, generation, world revision, prior checkpoint, and
   bounded narrative fields. Frozen parent digests make conflicting parallel
@@ -1429,9 +1441,14 @@ outside this authority.
   revalidates either lane before atomic mutation. The model schema exposes only
   the assigned operation, bounds fission children to two through eight,
   requires exactly the frozen parent resource and dormant-member IDs as
-  assignment-map keys while leaving child custody model-authored, and fixes
-  invariant member fields for individuation; tool-level construction
-  additionally rejects duplicate child IDs/partitions or incomplete exact
+  assignment-map keys while leaving child custody model-authored, and for
+  individuation exposes only semantic member fields and contains no `schema`,
+  `gestalt_id`, `version`, `last_location_id`, `materialized_actor_id`,
+  `last_relevant_revision`, or `relevance_lease_until_revision`; a focused
+  schema regression proves those deterministic fields are absent and the tool
+  still constructs an admissible canonical individuation. Tool-level
+  construction additionally rejects duplicate child IDs/partitions or
+  incomplete exact
   member assignment before shared semantic validation. The shared fission
   validator owns one complete deterministic mismatch set, including frozen
   binding, child structure and inheritance, member assignments, resource
