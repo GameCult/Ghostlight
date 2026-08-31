@@ -163,11 +163,17 @@ fn main() -> Result<()> {
         );
     }
     for gestalt in campaign.gestalts.values() {
+        let profile = campaign.agency_profiles.get(&gestalt.id);
         subjects.insert(
             gestalt.id.clone(),
             json!({
                 "kind": "gestalt",
                 "name": gestalt.name,
+                "homeLocationId": gestalt.home_location_id,
+                "activeLeaf": profile.is_some_and(|profile| profile.active_leaf),
+                "simulationEligible": profile.is_some_and(|profile| profile.simulation_eligible),
+                "locationIds": profile.map(|profile| &profile.location_ids),
+                "parentSubjectId": profile.and_then(|profile| profile.parent_subject_id.as_deref()),
                 "goals": gestalt.goals,
                 "pressures": gestalt.pressures,
                 "knowledge": gestalt.shared_knowledge,

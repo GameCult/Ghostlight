@@ -3294,6 +3294,7 @@ pub(crate) fn project_fission_resolution(
         let mut profile = profile_for_gestalt(child, &preview.evidence_receipt_ids);
         profile.parent_subject_id = Some(preview.parent_gestalt_id.clone());
         profile.facets = inherited.facets.clone();
+        inherit_fission_scope(&mut profile.location_ids, &inherited.location_ids);
         profile
             .facets
             .entry(preview.partition_axis.clone())
@@ -3318,6 +3319,72 @@ pub(crate) fn project_fission_resolution(
         .resolution_epoch
         .saturating_add(1);
     Ok(())
+}
+
+fn inherit_fission_scope(child: &mut BTreeSet<String>, parent: &BTreeSet<String>) -> bool {
+    let before = child.len();
+    child.extend(parent.iter().cloned());
+    child.len() != before
+}
+
+/// Repair the resolution-only jurisdiction scope lost by older fission
+/// projections. Exact lineage remains the authority; no geography or world
+/// fact is synthesized here.
+pub fn reconcile_fission_agency_scopes(campaign: &mut Campaign) -> Result<Vec<String>> {
+    let mut expected = campaign
+        .agency_profiles
+        .iter()
+        .map(|(id, profile)| (id.clone(), profile.location_ids.clone()))
+        .collect::<BTreeMap<_, _>>();
+    loop {
+        let mut pass_changed = false;
+        for lineage in campaign.gestalt_lineages.values() {
+            let parent_scope = expected
+                .get(&lineage.parent_gestalt_id)
+                .ok_or_else(|| anyhow!("fission lineage parent lacks an agency profile"))?
+                .clone();
+            for child_id in &lineage.child_gestalt_ids {
+                let child = campaign
+                    .agency_profiles
+                    .get(child_id)
+                    .ok_or_else(|| anyhow!("fission lineage child lacks an agency profile"))?;
+                if child.parent_subject_id.as_deref() != Some(lineage.parent_gestalt_id.as_str()) {
+                    return Err(anyhow!(
+                        "fission child agency profile disagrees with canonical lineage"
+                    ));
+                }
+                if inherit_fission_scope(
+                    expected
+                        .get_mut(child_id)
+                        .expect("validated child profile has projected scope"),
+                    &parent_scope,
+                ) {
+                    pass_changed = true;
+                }
+            }
+        }
+        if !pass_changed {
+            break;
+        }
+    }
+    let mut changed_ids = Vec::new();
+    for (id, expected_scope) in expected {
+        let profile = campaign
+            .agency_profiles
+            .get_mut(&id)
+            .expect("projected scope came from an agency profile");
+        if profile.location_ids != expected_scope {
+            profile.location_ids = expected_scope;
+            profile.profile_version = profile.profile_version.saturating_add(1);
+            changed_ids.push(id);
+        }
+    }
+    Ok(changed_ids)
+}
+
+pub fn fission_agency_scope_reconciliation_required(campaign: &Campaign) -> Result<bool> {
+    let mut projected = campaign.clone();
+    Ok(!reconcile_fission_agency_scopes(&mut projected)?.is_empty())
 }
 
 pub fn validate_fission(campaign: &Campaign, preview: &GestaltFissionPreview) -> Result<()> {
@@ -4999,6 +5066,12 @@ pub(crate) mod tests {
             },
         );
         ensure_agency_profiles(&mut value);
+        value
+            .agency_profiles
+            .get_mut("villagers")
+            .unwrap()
+            .location_ids
+            .insert("realm:grain-country".into());
         let child = |id: &str, name: &str| GestaltPersonaState {
             schema: "ghostlight.gestalt_persona_state.v1".into(),
             id: id.into(),
@@ -5060,6 +5133,10 @@ pub(crate) mod tests {
         assert!(!value.agency_profiles["villagers"].active_leaf);
         assert!(value.agency_profiles["traditionalists"].active_leaf);
         assert!(value.agency_profiles["other"].active_leaf);
+        assert_eq!(
+            value.agency_profiles["traditionalists"].location_ids,
+            BTreeSet::from(["center".into(), "realm:grain-country".into()])
+        );
         assert!(value.gestalts["villagers"].resources.is_empty());
         assert!(value.gestalts["traditionalists"].resources.is_empty());
         assert_eq!(
@@ -5145,6 +5222,10 @@ pub(crate) mod tests {
         .unwrap();
         assert!(!value.agency_profiles["other"].active_leaf);
         assert!(value.agency_profiles["other-smiths"].active_leaf);
+        assert_eq!(
+            value.agency_profiles["other-smiths"].location_ids,
+            BTreeSet::from(["center".into(), "realm:grain-country".into()])
+        );
         assert!(value.gestalts["other"].resources.is_empty());
         assert!(value.gestalts["other-smiths"].resources.is_empty());
         assert_eq!(
@@ -5169,6 +5250,31 @@ pub(crate) mod tests {
                 .unwrap()
                 .contains("smith")
         );
+        for child_id in ["traditionalists", "other", "other-smiths", "other-unknown"] {
+            value
+                .agency_profiles
+                .get_mut(child_id)
+                .unwrap()
+                .location_ids
+                .remove("realm:grain-country");
+        }
+        assert!(fission_agency_scope_reconciliation_required(&value).unwrap());
+        let reconciled = reconcile_fission_agency_scopes(&mut value).unwrap();
+        assert_eq!(
+            reconciled,
+            vec![
+                "other".to_owned(),
+                "other-smiths".to_owned(),
+                "other-unknown".to_owned(),
+                "traditionalists".to_owned(),
+            ]
+        );
+        assert!(
+            value.agency_profiles["other-smiths"]
+                .location_ids
+                .contains("realm:grain-country")
+        );
+        assert!(!fission_agency_scope_reconciliation_required(&value).unwrap());
         validate_active_gestalt_presence_location(&value, "other-smiths", "center").unwrap();
         assert!(validate_active_gestalt_presence_location(&value, "other", "center").is_err());
         assert!(validate_active_gestalt_presence_location(&value, "villagers", "center").is_err());

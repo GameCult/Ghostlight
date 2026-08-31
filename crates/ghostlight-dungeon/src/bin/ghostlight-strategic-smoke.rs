@@ -1339,6 +1339,47 @@ async fn main() -> anyhow::Result<()> {
             anyhow::bail!("fission civic reconciliation checkpoint disagrees with campaign")
         }
     }
+    let agency_scope_reconciliation_path = root.join("fission-agency-scope-reconciliation.json");
+    if resume
+        && ghostlight_dungeon::resolution::fission_agency_scope_reconciliation_required(&campaign)?
+    {
+        if agency_scope_reconciliation_path.is_file() {
+            anyhow::bail!(
+                "fission agency-scope reconciliation checkpoint exists but canonical repair is absent"
+            )
+        }
+        let committed = kernel
+            .command(WorldCommand::ReconcileFissionAgencyScopes {
+                expected_revision: campaign.revision,
+            })
+            .await?;
+        let CommandResult::Committed {
+            campaign: advanced,
+            receipt,
+        } = committed
+        else {
+            anyhow::bail!("fission agency-scope reconciliation did not commit")
+        };
+        publish_immutable_checkpoint(
+            &agency_scope_reconciliation_path,
+            &serde_json::json!({
+                "schema":"ghostlight.fission_agency_scope_reconciliation_checkpoint.v1",
+                "receipt":receipt,
+            }),
+        )?;
+        campaign = advanced;
+    } else if agency_scope_reconciliation_path.is_file() {
+        let checkpoint: serde_json::Value = read_checkpoint(&agency_scope_reconciliation_path)?;
+        let revision = checkpoint["receipt"]["revision"].as_u64().ok_or_else(|| {
+            anyhow::anyhow!("fission agency-scope reconciliation receipt is malformed")
+        })?;
+        if checkpoint["schema"] != "ghostlight.fission_agency_scope_reconciliation_checkpoint.v1"
+            || checkpoint["receipt"]["command_kind"] != "reconcile_fission_agency_scopes"
+            || revision > campaign.revision
+        {
+            anyhow::bail!("fission agency-scope reconciliation checkpoint disagrees with campaign")
+        }
+    }
     if resume {
         ghostlight_dungeon::compiler::validate_campaign_runtime(&campaign)?;
     }

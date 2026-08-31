@@ -1303,7 +1303,9 @@ outside this authority.
   assignments. An individuation draft contains only the member delta.
   `complexity_realm_for_profile` derives the parent jurisdiction from the same
   demanded-realm membership used to measure allocation pressure, and the
-  worker receives the resulting exact parent-to-jurisdiction map.
+  worker receives the resulting exact parent-to-jurisdiction map. This routing
+  depends on Resolution preserving every inherited canonical
+  `AgencyProfile.location_ids` scope across population fission.
 - **Outputs:** each round publishes an immutable frozen preview with demand,
   wave and schedule receipts, exact parent bindings, proposals, and model
   receipt hashes; then one immutable mutation checkpoint per sequentially
@@ -1370,10 +1372,13 @@ outside this authority.
   earlier fissions may be rebased,
   while any change to the assigned parent, its profile, or its members rejects
   the later proposal instead of silently reconciling it.
-  Compaction consumes only admitted commit journals plus bounded rejection
-  findings routed by the invocation's stable title-by-realm session ID. The
+  Compaction runs only after successful mutations have produced admitted commit
+  journals routed by the invocation's stable title-by-realm session ID. The
   resulting checkpoint is stored under that ID and supplied only when a later
   dispatch has the same title and deterministically derived jurisdiction.
+  The exact failure partition, frozen schedule, completed proposals, receipts,
+  and diagnostics remain in the resumable failure checkpoint; they are not
+  folded into successful session compaction.
 - **Cut line:** this cut reuses Gestalt fission, strategic Gestalt
   individuation, WorldKernel admission, model receipts, the generic scheduler,
   and immutable acceptance checkpoints. It adds no second population or member
@@ -1436,6 +1441,11 @@ outside this authority.
   receipt and immutable session checkpoint before returning any sibling
   failure. Session checkpoints remain independent memory owners rather than a
   shared round transcript, and canonical mutation order remains serial.
+  Tool-internal rejection findings are not currently copied into later
+  successful compaction. That is a bounded continuity limitation: the compacted
+  title-by-realm mind may lose a useful rejected path, but no live proposal is
+  orphaned because exact failed dispatches remain owned by the resumable failure
+  checkpoint. This limitation does not block Run 93.
   Missing eligible parents, stale or malformed checkpoints, changed parent
   bindings, zero-growth rounds, and a nonzero deficit at the configured round
   ceiling are terminal failures. Canonical CultCache state, not the checkpoint
@@ -2383,12 +2393,37 @@ either the complete state validates and commits or none of it does.
 
 The aggregate projector may copy the accepted child relations and civic
 manifests out of that component result, and `project_fission_resolution` owns
-the derived agency-profile, facet, cover-invalidation, and resolution-epoch
-projection. Later `ensure_agency_profiles` synchronization is not a cleanup
+the derived agency-profile, facet, jurisdiction-scope, cover-invalidation, and
+resolution-epoch projection. Its shared `inherit_fission_profile_scope`
+primitive copies the parent's complete `AgencyProfile.location_ids` into every
+child before adding the child's partition facet. Later `ensure_agency_profiles`
+synchronization is not a cleanup
 owner and may not repair missing civic residents, replace stale political
 relation IDs, recreate retired parent relations, or make a partially applied
 fission appear valid. The old fission function that directly wrote campaign
 state has been removed.
+
+Immutable Run 92 proves why jurisdiction scope belongs to Resolution rather
+than scheduler policy. The campaign still contained 938 active,
+simulation-eligible Gestalts, but Avelune, Veyra, and Bramblewash each had zero
+realm-routable descendants: earlier `project_fission_resolution` calls had
+dropped inherited `AgencyProfile.location_ids`. A scheduler fallback would
+only conceal corrupt derived state and is forbidden; allocation and session
+routing continue to require the exact demanded-realm membership on each
+profile.
+
+`WorldCommand::ReconcileFissionAgencyScopes` is the deterministic,
+revision-bound repair owner for that legacy projection defect. It uses the same
+Resolution inheritance primitive as live fission, walks exact canonical Gestalt
+lineage repeatedly so nested descendants inherit the complete ancestral scope,
+requires every child profile to name the same canonical parent, increments only
+profiles whose scope changes, and commits the repaired campaign through the
+normal WorldKernel revision/CAS path. The acceptance driver publishes one
+immutable `ghostlight.fission_agency_scope_reconciliation_checkpoint.v1` and
+refuses a checkpoint whose command kind or revision disagrees with canonical
+state. The reconciliation creates no location, geography, lineage, scheduler
+exception, or alternate realm allocator; once no lineage-proven scope delta
+remains, the command is inapplicable.
 
 Immutable Run 81 at exact source
 `e7ceb2c2807fabb2b0e68aeeeb0aab5948c582a5` and root

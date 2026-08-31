@@ -1239,6 +1239,9 @@ pub enum WorldCommand {
     ReconcileFissionCivicBindings {
         expected_revision: u64,
     },
+    ReconcileFissionAgencyScopes {
+        expected_revision: u64,
+    },
     ExpandRegion {
         expected_revision: u64,
         expansion: RegionExpansion,
