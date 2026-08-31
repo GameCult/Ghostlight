@@ -1353,6 +1353,13 @@ pub enum WorldComplexityProposal {
     },
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct WorldComplexityAction {
+    schema: String,
+    proposal: WorldComplexityProposal,
+}
+
 impl WorldComplexityProposal {
     pub fn parent_gestalt_id(&self) -> &str {
         match self {
@@ -1433,13 +1440,15 @@ struct WorldComplexityTool<'a> {
 
 #[async_trait]
 impl crate::agent::ModelAgentTool for WorldComplexityTool<'_> {
-    type Action = WorldComplexityProposal;
+    type Action = WorldComplexityAction;
     type Output = WorldComplexityProposal;
     type Finding = WorldComplexityFinding;
 
     fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
-        serde_json::to_value(schema_for!(WorldComplexityProposal))
-            .map_err(|error| error.to_string())
+        let mut schema = serde_json::to_value(schema_for!(WorldComplexityAction))
+            .map_err(|error| error.to_string())?;
+        schema["properties"]["schema"] = exact_schema("ghostlight.world_complexity_action.v1");
+        Ok(schema)
     }
 
     fn initial_context_snapshot(&self) -> Option<serde_json::Value> {
@@ -1451,9 +1460,10 @@ impl crate::agent::ModelAgentTool for WorldComplexityTool<'_> {
         action: Self::Action,
         _context: &crate::agent::ModelAgentToolContext,
     ) -> crate::agent::ModelAgentToolOutcome<Self::Output, Self::Finding> {
-        if action.parent_gestalt_id() != self.parent_gestalt_id
+        if action.schema != "ghostlight.world_complexity_action.v1"
+            || action.proposal.parent_gestalt_id() != self.parent_gestalt_id
             || !matches!(
-                (&self.operation, &action),
+                (&self.operation, &action.proposal),
                 (
                     WorldComplexityOperation::Fission,
                     WorldComplexityProposal::Fission { .. }
@@ -1471,7 +1481,7 @@ impl crate::agent::ModelAgentTool for WorldComplexityTool<'_> {
                 receipts: Vec::new(),
             };
         }
-        let validation = match &action {
+        let validation = match &action.proposal {
             WorldComplexityProposal::Fission { preview } => {
                 if preview.partition_axis != self.partition_axis {
                     Err(anyhow!("fission changed its assigned partition axis"))
@@ -1485,7 +1495,7 @@ impl crate::agent::ModelAgentTool for WorldComplexityTool<'_> {
         };
         match validation {
             Ok(()) => crate::agent::ModelAgentToolOutcome::Accepted {
-                output: action,
+                output: action.proposal,
                 receipts: Vec::new(),
             },
             Err(error) => crate::agent::ModelAgentToolOutcome::Rejected {
@@ -1538,7 +1548,7 @@ impl ElaborationSubAgentPort<WorldComplexityProposal> for ModelWorldComplexityWo
                 "parent_gestalt_id":parent_id,
                 "partition_axis":axis,
                 "requirements":[
-                    "Return operation=fission with a ghostlight.gestalt_fission_preview.v1 preview.",
+                    "Return a ghostlight.world_complexity_action.v1 envelope whose proposal has operation=fission and a ghostlight.gestalt_fission_preview.v1 preview.",
                     "Bind campaign_id and expected_world_revision exactly to the frozen world.",
                     "Create 2 through 8 non-overlapping children with distinct partition values.",
                     "Exactly one residual child must have partition value other/unknown.",
@@ -1552,7 +1562,7 @@ impl ElaborationSubAgentPort<WorldComplexityProposal> for ModelWorldComplexityWo
                 "parent_gestalt_id":parent_id,
                 "location_id":location_id,
                 "requirements":[
-                    "Return operation=individuate with one GestaltIndividuation.",
+                    "Return a ghostlight.world_complexity_action.v1 envelope whose proposal has operation=individuate and one GestaltIndividuation.",
                     "Use the exact parent id, parent version, and assigned location.",
                     "Create one consequential named person whose goals, knowledge, relationships, and memories are grounded in the parent state.",
                     "Use a new local member id without the member: prefix; version zero; no materialized actor id.",
@@ -3318,11 +3328,20 @@ mod tests {
             source_receipt_ids: Vec::new(),
             current_model_receipt: None,
         };
+        let schema = crate::agent::ModelAgentTool::action_schema(&tool).unwrap();
+        assert_eq!(schema["type"], "object");
+        assert_eq!(
+            schema["properties"]["schema"]["const"],
+            "ghostlight.world_complexity_action.v1"
+        );
 
         let admitted = crate::agent::ModelAgentTool::invoke(
             &mut tool,
-            WorldComplexityProposal::Fission {
-                preview: preview.clone(),
+            WorldComplexityAction {
+                schema: "ghostlight.world_complexity_action.v1".into(),
+                proposal: WorldComplexityProposal::Fission {
+                    preview: preview.clone(),
+                },
             },
             &context,
         )
@@ -3336,8 +3355,11 @@ mod tests {
         wrong_axis.partition_axis = crate::domain::AgencyAxis::Ideology;
         let rejected = crate::agent::ModelAgentTool::invoke(
             &mut tool,
-            WorldComplexityProposal::Fission {
-                preview: wrong_axis,
+            WorldComplexityAction {
+                schema: "ghostlight.world_complexity_action.v1".into(),
+                proposal: WorldComplexityProposal::Fission {
+                    preview: wrong_axis,
+                },
             },
             &context,
         )
@@ -3391,7 +3413,10 @@ mod tests {
 
         let admitted = crate::agent::ModelAgentTool::invoke(
             &mut tool,
-            WorldComplexityProposal::Individuate { individuation },
+            WorldComplexityAction {
+                schema: "ghostlight.world_complexity_action.v1".into(),
+                proposal: WorldComplexityProposal::Individuate { individuation },
+            },
             &context,
         )
         .await;
