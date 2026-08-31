@@ -99,6 +99,9 @@ capabilities, knowledge, goals, and pressures before running the ordinary
 fission validator. An individuation draft owns only the new member delta; the
 tool attaches the exact parent version and location. Unchanged world state is
 therefore never paid for in model output and cannot drift while being copied.
+The shared fission validator reports the complete deterministic mismatch set in
+one observation, so an agent can repair the same compact draft without replaying
+inference or guessing which invariant failed first.
 
 Round effort is proportional to unresolved pressure rather than presumed model
 yield: `ceil(active_cell_budget * deficit / target)`, zero when the target is

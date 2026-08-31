@@ -3359,57 +3359,153 @@ pub fn validate_fission(campaign: &Campaign, preview: &GestaltFissionPreview) ->
         .iter()
         .map(|(resource, _)| resource.clone())
         .collect::<BTreeSet<_>>();
-    if preview.campaign_id != campaign.id
-        || preview.expected_world_revision != campaign.revision
-        || !preview.requires_approval
-        || preview.children.len() < 2
-        || child_ids.len() != preview.children.len()
-        || !child_ids.contains(preview.residual_child_id.as_str())
-        || residual_value.as_deref() != Some("other/unknown")
-        || preview.child_partition_values.len() != preview.children.len()
-        || preview.children.iter().any(|child| {
-            child.id.trim().is_empty()
-                || child.name.trim().is_empty()
-                || child.version != 0
-                || campaign.gestalts.contains_key(&child.id)
-                || !campaign.locations.contains_key(&child.home_location_id)
-                || (preview.partition_axis != AgencyAxis::Geography
-                    && child.home_location_id != parent.home_location_id)
-                || child.shared_capabilities != parent.shared_capabilities
-                || child.shared_knowledge != parent.shared_knowledge
-                || child.goals != parent.goals
-                || child.pressures != parent.pressures
-                || !preview.child_partition_values.contains_key(&child.id)
-        })
-        || preview
-            .member_child_assignments
-            .iter()
-            .any(|(member, child)| {
-                campaign
-                    .gestalt_members
-                    .get(member)
-                    .is_none_or(|value| value.gestalt_id != parent.id)
-                    || !child_ids.contains(child.as_str())
-            })
-        || campaign
+    let mut mismatches = Vec::new();
+    let mut require = |condition: bool, diagnostic: String| {
+        if !condition {
+            mismatches.push(diagnostic);
+        }
+    };
+    require(
+        preview.campaign_id == campaign.id,
+        "campaign id does not match the frozen world".into(),
+    );
+    require(
+        preview.expected_world_revision == campaign.revision,
+        "expected world revision is stale".into(),
+    );
+    require(
+        preview.requires_approval,
+        "fission must require approval".into(),
+    );
+    require(
+        preview.children.len() >= 2,
+        "fission needs at least two children".into(),
+    );
+    require(
+        child_ids.len() == preview.children.len(),
+        "child ids are not unique".into(),
+    );
+    require(
+        child_ids.contains(preview.residual_child_id.as_str()),
+        "residual child id is not one of the children".into(),
+    );
+    require(
+        residual_value.as_deref() == Some("other/unknown"),
+        "residual child partition must be other/unknown".into(),
+    );
+    require(
+        preview.child_partition_values.len() == preview.children.len(),
+        "partition values do not cover the children exactly".into(),
+    );
+    for child in &preview.children {
+        let label = if child.id.trim().is_empty() {
+            "<empty>"
+        } else {
+            &child.id
+        };
+        require(!child.id.trim().is_empty(), "child id is empty".into());
+        require(
+            !child.name.trim().is_empty(),
+            format!("child {label} has an empty name"),
+        );
+        require(
+            child.version == 0,
+            format!("child {label} version is not zero"),
+        );
+        require(
+            !campaign.gestalts.contains_key(&child.id),
+            format!("child {label} already exists"),
+        );
+        require(
+            campaign.locations.contains_key(&child.home_location_id),
+            format!("child {label} has an unknown home location"),
+        );
+        require(
+            preview.partition_axis == AgencyAxis::Geography
+                || child.home_location_id == parent.home_location_id,
+            format!("child {label} changed home outside a geography fission"),
+        );
+        require(
+            child.shared_capabilities == parent.shared_capabilities,
+            format!("child {label} changed inherited capabilities"),
+        );
+        require(
+            child.shared_knowledge == parent.shared_knowledge,
+            format!("child {label} changed inherited knowledge"),
+        );
+        require(
+            child.goals == parent.goals,
+            format!("child {label} changed inherited goals"),
+        );
+        require(
+            child.pressures == parent.pressures,
+            format!("child {label} changed inherited pressures"),
+        );
+        require(
+            preview.child_partition_values.contains_key(&child.id),
+            format!("child {label} has no partition value"),
+        );
+    }
+    for (member, child) in &preview.member_child_assignments {
+        require(
+            campaign
+                .gestalt_members
+                .get(member)
+                .is_some_and(|value| value.gestalt_id == parent.id),
+            format!("member {member} does not belong to the parent"),
+        );
+        require(
+            child_ids.contains(child.as_str()),
+            format!("member {member} is assigned to unknown child {child}"),
+        );
+    }
+    require(
+        !campaign
             .gestalt_members
             .values()
-            .any(|member| member.gestalt_id == parent.id && member.materialized_actor_id.is_some())
-        || assigned_resources != parent.resources
-        || unique_child_resources != parent.resources
-        || child_resources.len() != unique_child_resources.len()
-        || preview
-            .resource_child_assignments
-            .iter()
-            .any(|(resource, child)| {
-                !child_ids.contains(child.as_str())
-                    || !preview.children.iter().any(|candidate| {
-                        candidate.id == *child && candidate.resources.contains(resource)
-                    })
-            })
-        || parent_profile.subject_kind != AgencySubjectKind::Gestalt
-    {
-        return Err(anyhow!("gestalt fission preview is stale or malformed"));
+            .any(|member| member.gestalt_id == parent.id && member.materialized_actor_id.is_some()),
+        "parent has a materialized member and cannot be fissioned".into(),
+    );
+    require(
+        assigned_resources == parent.resources,
+        format!(
+            "resource assignments must cover exactly the parent resources; expected {:?}, received {:?}",
+            parent.resources, assigned_resources
+        ),
+    );
+    require(
+        unique_child_resources == parent.resources,
+        format!(
+            "child resource custody must equal the parent resources; expected {:?}, received {:?}",
+            parent.resources, unique_child_resources
+        ),
+    );
+    require(
+        child_resources.len() == unique_child_resources.len(),
+        "a resource appears in more than one child".into(),
+    );
+    for (resource, child) in &preview.resource_child_assignments {
+        require(
+            child_ids.contains(child.as_str()),
+            format!("resource {resource} is assigned to unknown child {child}"),
+        );
+        require(
+            preview
+                .children
+                .iter()
+                .any(|candidate| candidate.id == *child && candidate.resources.contains(resource)),
+            format!("resource {resource} is absent from assigned child {child}"),
+        );
+    }
+    require(
+        parent_profile.subject_kind == AgencySubjectKind::Gestalt,
+        "parent agency profile is not a Gestalt".into(),
+    );
+    if !mismatches.is_empty() {
+        return Err(anyhow!(
+            "gestalt fission preview mismatches: {}",
+            mismatches.join("; ")
+        ));
     }
     Ok(())
 }
@@ -4944,8 +5040,15 @@ pub(crate) mod tests {
             requires_approval: true,
         };
         let mut duplicated = preview.clone();
+        duplicated.requires_approval = false;
+        duplicated.children[0].name.clear();
         duplicated.children[0].resources.insert("granary".into());
-        assert!(validate_fission(&value, &duplicated).is_err());
+        let diagnostic = validate_fission(&value, &duplicated)
+            .unwrap_err()
+            .to_string();
+        assert!(diagnostic.contains("must require approval"));
+        assert!(diagnostic.contains("has an empty name"));
+        assert!(diagnostic.contains("appears in more than one child"));
         let transition = crate::legacy_transition::lower_fission(
             &value,
             &preview,

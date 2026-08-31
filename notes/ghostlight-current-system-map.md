@@ -1399,7 +1399,11 @@ outside this authority.
   the assigned operation, bounds fission children to two through eight, and
   fixes invariant member fields for individuation; tool-level construction
   additionally rejects duplicate child IDs/partitions or incomplete exact
-  member assignment before shared semantic validation. Worker construction
+  member assignment before shared semantic validation. The shared fission
+  validator owns one complete deterministic mismatch set, including frozen
+  binding, child structure and inheritance, member assignments, resource
+  conservation and custody, approval, and parent profile eligibility; every
+  caller receives that set rather than a generic first-failure umbrella. Worker construction
   requires exactly one jurisdiction for every assigned parent, rejects extra
   routes, and proves that each jurisdiction is a canonical location on that
   parent's profile. Resume and worker construction require every checkpoint
