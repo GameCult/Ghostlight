@@ -518,7 +518,7 @@ struct ComplexityRoundCheckpoint {
     schedule: ghostlight_dungeon::elaboration::ElaborationScheduleReceipt,
     mutation_checkpoints: Vec<std::path::PathBuf>,
     session_checkpoints: std::collections::BTreeMap<
-        ghostlight_dungeon::elaboration::ElaboratorTitle,
+        String,
         ghostlight_dungeon::elaboration::ElaboratorSessionCheckpoint,
     >,
 }
@@ -1026,8 +1026,8 @@ async fn main() -> anyhow::Result<()> {
             ElaboratorTitle, ModelWorldComplexityWorker, ModelWorldElaborationWorker,
             WorldComplexityProposal, WorldScaleIntent, admit_world_elaboration_wave,
             canonical_actionable_subject_count, compact_elaborator_session,
-            derive_world_elaboration_demand, dispatch_elaboration_wave, finalize_world_elaboration,
-            rebase_world_complexity_proposal, resume_elaboration_wave,
+            derive_world_elaboration_demand, dispatch_elaboration_wave, elaborator_session_id,
+            finalize_world_elaboration, rebase_world_complexity_proposal, resume_elaboration_wave,
             world_complexity_parent_binding, world_elaboration_wave_binding,
         },
         kernel::{CommandResult, WorldKernel},
@@ -2129,9 +2129,7 @@ async fn main() -> anyhow::Result<()> {
         let complexity_profile = strategic_world_elaboration_profile();
         let eligible_titles = ElaboratorTitle::ALL.into_iter().collect::<BTreeSet<_>>();
         let mut complexity_scheduler = ElaborationScheduler::new(&complexity_profile)?;
-        let mut session_checkpoints =
-            BTreeMap::<ElaboratorTitle, ElaboratorSessionCheckpoint>::new();
-        let session_location_id = initial_location_ids[0].clone();
+        let mut session_checkpoints = BTreeMap::<String, ElaboratorSessionCheckpoint>::new();
         let mut completed_complexity_rounds = 0_u32;
         if resume {
             for round in 1..=maximum_complexity_rounds as u32 {
@@ -2151,8 +2149,14 @@ async fn main() -> anyhow::Result<()> {
                     &complexity_profile,
                     checkpoint.schedule.final_state.clone(),
                 )?;
-                for (title, session) in &checkpoint.session_checkpoints {
-                    session.validate_for(&campaign, &session_location_id, *title)?;
+                for (session_id, session) in &checkpoint.session_checkpoints {
+                    if session.session_id != *session_id
+                        || elaborator_session_id(session.title, &session.target_location_id)
+                            != *session_id
+                    {
+                        anyhow::bail!("complexity session checkpoint is misrouted")
+                    }
+                    session.validate_for(&campaign, &session.target_location_id, session.title)?;
                 }
                 session_checkpoints = checkpoint.session_checkpoints.clone();
                 completed_complexity_rounds = round;
@@ -2228,11 +2232,27 @@ async fn main() -> anyhow::Result<()> {
                         .total_dispatches
                         .saturating_add(1)
                 };
+                let parent_jurisdiction_ids = parents
+                    .iter()
+                    .map(|parent_id| {
+                        let profile = campaign.agency_profiles.get(parent_id).ok_or_else(|| {
+                            anyhow::anyhow!("complexity parent has no agency profile")
+                        })?;
+                        let jurisdiction_id = complexity_realm_for_profile(profile, &demand)
+                            .ok_or_else(|| {
+                                anyhow::anyhow!(
+                                    "complexity parent has no demanded realm jurisdiction"
+                                )
+                            })?;
+                        Ok((parent_id.clone(), jurisdiction_id))
+                    })
+                    .collect::<anyhow::Result<BTreeMap<_, _>>>()?;
                 let worker = Arc::new(ModelWorldComplexityWorker::new(
                     model.clone(),
                     Arc::new(campaign.clone()),
                     first_dispatch_ordinal,
                     parents.clone(),
+                    parent_jurisdiction_ids,
                     session_checkpoints.clone(),
                 )?);
                 let result = if let Some(path) = latest_failure.as_ref() {
@@ -2373,8 +2393,22 @@ async fn main() -> anyhow::Result<()> {
                 checkpoint
             };
             let mut mutation_paths = Vec::new();
-            let mut journals =
-                BTreeMap::<ElaboratorTitle, Vec<ElaboratorSessionJournalEntry>>::new();
+            let mut session_routes = BTreeMap::<String, (ElaboratorTitle, String)>::new();
+            let mut invocation_sessions = BTreeMap::<u64, String>::new();
+            for invocation in &preview.invocations {
+                let profile = campaign
+                    .agency_profiles
+                    .get(invocation.proposal.parent_gestalt_id())
+                    .ok_or_else(|| anyhow::anyhow!("complexity parent has no agency profile"))?;
+                let location_id =
+                    complexity_realm_for_profile(profile, &demand).ok_or_else(|| {
+                        anyhow::anyhow!("complexity parent has no demanded realm jurisdiction")
+                    })?;
+                let session_id = elaborator_session_id(invocation.dispatch.title, &location_id);
+                invocation_sessions.insert(invocation.dispatch.ordinal, session_id.clone());
+                session_routes.insert(session_id, (invocation.dispatch.title, location_id));
+            }
+            let mut journals = BTreeMap::<String, Vec<ElaboratorSessionJournalEntry>>::new();
             for invocation in &preview.invocations {
                 let commit_path = root.join(format!(
                     "complexity-round-{round:03}-commit-{:04}.json",
@@ -2459,7 +2493,10 @@ async fn main() -> anyhow::Result<()> {
                 {
                     anyhow::bail!("complexity mutation checkpoint is inconsistent")
                 }
-                journals.entry(checkpoint.dispatch.title).or_default().push(
+                let session_id = invocation_sessions
+                    .get(&checkpoint.dispatch.ordinal)
+                    .ok_or_else(|| anyhow::anyhow!("complexity invocation has no session route"))?;
+                journals.entry(session_id.clone()).or_default().push(
                     ElaboratorSessionJournalEntry {
                         world_revision: checkpoint.commit_receipt.revision,
                         commit_receipt_id: format!(
@@ -2479,10 +2516,20 @@ async fn main() -> anyhow::Result<()> {
                 );
                 mutation_paths.push(commit_path);
             }
-            for (title, journal) in journals {
+            for (session_id, journal) in journals {
+                let (title, location_id) = session_routes
+                    .get(&session_id)
+                    .ok_or_else(|| anyhow::anyhow!("complexity journal has no session route"))?;
+                let session_digest = strategic_smoke_digest(&session_id)?;
+                let session_suffix = session_digest
+                    .strip_prefix("sha256:")
+                    .unwrap_or(&session_digest)
+                    .chars()
+                    .take(12)
+                    .collect::<String>();
                 let path = root.join(format!(
-                    "complexity-round-{round:03}-session-{}.json",
-                    title.display_name().to_ascii_lowercase()
+                    "complexity-round-{round:03}-session-{}-{session_suffix}.json",
+                    title.display_name().to_ascii_lowercase(),
                 ));
                 let checkpoint = if path.is_file() {
                     read_checkpoint::<ElaboratorSessionCheckpoint>(&path)?
@@ -2490,14 +2537,10 @@ async fn main() -> anyhow::Result<()> {
                     let (checkpoint, receipts) = compact_elaborator_session(
                         model.as_ref(),
                         &campaign,
-                        &session_location_id,
-                        title,
-                        &format!(
-                            "{}:{}",
-                            title.display_name().to_ascii_lowercase(),
-                            session_location_id
-                        ),
-                        session_checkpoints.get(&title),
+                        location_id,
+                        *title,
+                        &session_id,
+                        session_checkpoints.get(&session_id),
                         &journal,
                         Vec::new(),
                     )
@@ -2506,8 +2549,8 @@ async fn main() -> anyhow::Result<()> {
                     publish_immutable_checkpoint(&path, &checkpoint)?;
                     checkpoint
                 };
-                checkpoint.validate_for(&campaign, &session_location_id, title)?;
-                session_checkpoints.insert(title, checkpoint);
+                checkpoint.validate_for(&campaign, location_id, *title)?;
+                session_checkpoints.insert(session_id, checkpoint);
             }
             let actionable_after = canonical_actionable_subject_count(&campaign);
             if actionable_after <= actionable_before {
@@ -3309,13 +3352,6 @@ fn complexity_parent_candidates(
     demand: &ghostlight_dungeon::elaboration::WorldElaborationDemand,
     limit: usize,
 ) -> Vec<String> {
-    let realm_for = |profile: &ghostlight_dungeon::domain::AgencyProfile| {
-        profile
-            .location_ids
-            .iter()
-            .find(|location_id| demand.realm_subject_targets.contains_key(*location_id))
-            .cloned()
-    };
     let mut current_by_realm = demand
         .realm_subject_targets
         .keys()
@@ -3327,7 +3363,7 @@ fn complexity_parent_candidates(
         .values()
         .filter(|profile| profile.active_leaf && profile.simulation_eligible)
     {
-        if let Some(realm) = realm_for(profile) {
+        if let Some(realm) = complexity_realm_for_profile(profile, demand) {
             *current_by_realm.entry(realm).or_default() += 1;
         }
     }
@@ -3352,7 +3388,7 @@ fn complexity_parent_candidates(
                 .any(|member| member.gestalt_id == *id && member.materialized_actor_id.is_some()))
         .then_some((id, profile))
     }) {
-        if let Some(realm) = realm_for(profile)
+        if let Some(realm) = complexity_realm_for_profile(profile, demand)
             && realm_pressure.get(&realm).copied().unwrap_or(0) > 0
         {
             by_realm
@@ -3393,6 +3429,17 @@ fn complexity_parent_candidates(
         selected.push(id);
     }
     selected
+}
+
+fn complexity_realm_for_profile(
+    profile: &ghostlight_dungeon::domain::AgencyProfile,
+    demand: &ghostlight_dungeon::elaboration::WorldElaborationDemand,
+) -> Option<String> {
+    profile
+        .location_ids
+        .iter()
+        .find(|location_id| demand.realm_subject_targets.contains_key(*location_id))
+        .cloned()
 }
 
 fn admitted_public_channel(value: &str) -> anyhow::Result<String> {

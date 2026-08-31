@@ -81,7 +81,7 @@ complexity deficit until grounded elaboration promotes them. Resolution may
 still compress roughly 2,400 such leaves into at most 240 cells.
 
 The mutation budget is not a cold-prompt budget. Each titled elaborator owns a
-resumable working session containing its current frontier, unresolved leads,
+resumable working session per realm jurisdiction containing its current frontier, unresolved leads,
 recent admitted mutations, exact rejection findings, and title mandate. The
 canonical world remains long-term memory. Bounded retrieval supplies older
 relevant state. After each round, every title that committed work receives one
@@ -90,6 +90,15 @@ commit ancestry; raw conversation is never authority, and the next turn appends
 from the checkpoint. This round boundary is the current bounded context policy.
 Scheduler frequency remains proportional to slider share across sequential
 turns.
+
+The scale workbench uses mutation drafts rather than asking a model to restate a
+complete kernel command. A fission draft owns only new child identities,
+partition values, and exact member/resource assignments. The deterministic tool
+attaches campaign revision, parent, axis, approval fields, and inherited
+capabilities, knowledge, goals, and pressures before running the ordinary
+fission validator. An individuation draft owns only the new member delta; the
+tool attaches the exact parent version and location. Unchanged world state is
+therefore never paid for in model output and cannot drift while being copied.
 
 Round effort is proportional to unresolved pressure rather than presumed model
 yield: `ceil(active_cell_budget * deficit / target)`, zero when the target is

@@ -76,12 +76,18 @@ alone commits it.
 At latent-world scale, the same titled sessions also receive
 `world-complexity-<title>-fission` or
 `world-complexity-<title>-individuate` assignments. Each call may subdivide one
-active Gestalt or promote one grounded consequential person. Deterministic
-fission/individuation validation and the existing kernel commands remain the
-only admission owners. After every productive round,
-`world-elaborator-<title>-session-compaction` distills that title's frontier and
-unresolved leads while the harness reattaches exact commit ancestry. Compacted
-memory can guide later proposals but cannot create subjects or facts.
+active Gestalt or promote one grounded consequential person. A fission worker
+returns only the partition delta—child identities and partition values plus
+exact member/resource assignments. The deterministic tool attaches the frozen
+world binding and inherited population state, avoiding repeated constitutions
+in model output. An individuation worker similarly supplies the member delta
+while the tool owns parent version and location. Deterministic validation and
+the existing kernel commands remain the only admission owners. After every productive round,
+`world-elaborator-<title>-session-compaction` distills that title's frontier in
+the assigned realm jurisdiction and its unresolved leads while the harness
+reattaches exact commit ancestry. The title-by-realm key prevents unrelated
+political frontiers from becoming one global transcript. Compacted memory can
+guide later proposals but cannot create subjects or facts.
 
 ## Foreground perception, response, and action
 

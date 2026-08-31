@@ -1283,34 +1283,54 @@ outside this authority.
   bounded termination. `WorldScaleIntent` is consumer-authored;
   `derive_world_elaboration_demand` deterministically owns the target, deficit,
   realm shares, and per-round mutation pressure. Each titled elaborator owns
-  only its compact working frontier. `WorldKernel` remains the sole canonical
-  mutation owner, and Resolution remains the owner of the later active cover.
+  only its compact title-by-realm working frontier and mutation draft. The
+  acceptance driver owns deterministic parent-to-jurisdiction routing;
+  `WorldComplexityTool` owns construction of the complete frozen proposal from
+  the draft. `WorldKernel` remains the sole canonical mutation owner, and
+  Resolution remains the owner of the later active cover.
 - **Inputs:** the admitted campaign after region and locality elaboration; its
   active-cell entitlement; a target cover ratio; equal acceptance-driver realm
   weights; a weighted titled-elaborator profile; bounded parallelism and round
   limits; active, simulation-eligible Gestalt leaves without a currently
-  materialized member; the prior per-title session checkpoint; and the exact
-  frozen parent state, members, profile, and local relations for each assigned
+  materialized member; the prior title-by-realm session checkpoint; and the
+  exact frozen parent state, members, profile, and local relations for each assigned
   mutation. Scheduler title deterministically selects the proposal lane:
   Hearth and Veil individuate one consequential member; the other six titles
-  fission the assigned population along their fixed agency axis.
+  fission the assigned population along their fixed agency axis. The model sees
+  the assigned parent projection and compacted session, but its action schema
+  admits only the lane-specific delta. A fission draft contains child IDs,
+  names, partition values, the residual child, and exact member/resource
+  assignments. An individuation draft contains only the member delta.
+  `complexity_realm_for_profile` derives the parent jurisdiction from the same
+  demanded-realm membership used to measure allocation pressure, and the
+  worker receives the resulting exact parent-to-jurisdiction map.
 - **Outputs:** each round publishes an immutable frozen preview with demand,
   wave and schedule receipts, exact parent bindings, proposals, and model
   receipt hashes; then one immutable mutation checkpoint per sequentially
   admitted fission or individuation; one compacted checkpoint for each title
   that obtained an admitted mutation in that round; and a terminal round
   checkpoint carrying the scheduler state, mutation paths, the accumulated
-  per-title session checkpoints, and remeasured
-  actionable-subject count. The final count and round reports are acceptance
-  metadata, not canonical world state.
+  title-by-realm session checkpoints keyed by stable
+  `<lowercase-title>:<jurisdiction-id>` session ID, and remeasured
+  actionable-subject count. Per-round session filenames contain the title plus
+  a stable digest suffix of that session ID; filenames are storage addresses,
+  while the map key and checkpoint's own `session_id` carry routing identity.
+  The final count and round reports are acceptance metadata, not canonical
+  world state.
 - **Derived state:** actionable complexity is the count of canonical active,
   simulation-eligible agency leaves. Dormant member rows, census texture,
   model calls, dispatches, mutation budget, and compacted prose do not satisfy
-  the target. A session checkpoint's frontier summary, unresolved leads,
+  the target. Inherited child capabilities, knowledge, goals, pressures,
+  evidence fields, campaign/revision binding, approval requirement, parent
+  version, partition axis, and individuation location are deterministic
+  projections of the frozen assignment, not model-authored state. A session
+  checkpoint's title, jurisdiction, frontier summary, unresolved leads,
   rejection findings, digest chain, and recent commit IDs are bounded steering
-  memory; the campaign and kernel commit receipts remain truth. Resolution
-  cover membership and Nemesis decision windows are downstream derivations and
-  do not feed back into complexity admission authority.
+  memory. Raw provider sessions, request history, and transcripts are neither
+  continuity nor world state; the checkpoint is the only carried elaborator
+  context, while the campaign and kernel commit receipts remain truth.
+  Resolution cover membership and Nemesis decision windows are downstream
+  derivations and do not feed back into complexity admission authority.
 - **Forbidden writers:** elaborators, session compaction, the scheduler,
   demand derivation, preview files, round files, and acceptance metadata cannot
   write campaign state, declare a target satisfied, allocate the Resolution
@@ -1318,13 +1338,25 @@ outside this authority.
   or commit itself, invent evidence, promote raw roster rows, or rewrite a
   parent. An individuation cannot invent a population, duplicate an existing
   actor or member identity, materialize itself, or acquire relationships to
-  nonexistent subjects. Sequential commits may update only the optimistic
-  revision of a frozen fission proposal after the exact parent binding remains
-  unchanged; individuation instead revalidates its exact Gestalt version and
-  location against current state.
+  nonexistent subjects. The model cannot restate or alter inherited child
+  Persona constitutions, campaign identity, parent identity/version, location,
+  partition axis, evidence, or approval authority because those fields do not
+  exist in its mutation-draft schema. The model provider cannot select a realm,
+  merge title sessions, persist a transcript as memory, or redirect a
+  checkpoint to another title or jurisdiction. Sequential commits may update
+  only the optimistic revision of a frozen fission proposal after the exact
+  parent binding remains unchanged; individuation instead revalidates its exact
+  Gestalt version and location against current state.
 - **Shared paths:** all round workers use the existing generic elaborator
-  dispatcher and weighted schedule. Every proposal passes the existing
-  fission or individuation validator and the existing
+  dispatcher and weighted schedule. `WorldComplexityTool` first lowers a
+  compact draft into the existing full proposal algebra. For fission, it clones
+  the frozen parent Persona into every child, replaces only child identity,
+  name, version, and assigned resources, builds the child-partition map,
+  attaches the exact campaign/revision/parent/axis and empty
+  evidence/gap/canon fields, and fixes `requires_approval=true`. For
+  individuation, it attaches the frozen parent ID/version and the exact first
+  parent-profile location to the member delta. Every constructed proposal then
+  passes the existing fission or individuation validator and the existing
   `WorldCommand::FissionGestalt` or `WorldCommand::IndividuateGestaltMember`
   mailbox. `resolution::validate_gestalt_individuation` is the single local
   authority for member identity, parent version, exact location, bounds, and
@@ -1339,16 +1371,23 @@ outside this authority.
   while any change to the assigned parent, its profile, or its members rejects
   the later proposal instead of silently reconciling it.
   Compaction consumes only admitted commit journals plus bounded rejection
-  findings, then the resulting title-bound checkpoint is supplied as context
-  to the next round.
+  findings routed by the invocation's stable title-by-realm session ID. The
+  resulting checkpoint is stored under that ID and supplied only when a later
+  dispatch has the same title and deterministically derived jurisdiction.
 - **Cut line:** this cut reuses Gestalt fission, strategic Gestalt
   individuation, WorldKernel admission, model receipts, the generic scheduler,
   and immutable acceptance checkpoints. It adds no second population or member
   insertion path, campaign store, parallel commit owner, cover allocator, or
-  transcript-shaped session log. The prior partial-wave
-  checkpoint remains recovery for one frozen dispatch partition; it is not
-  elaborator memory. Compact checkpoints replace accumulated working history
-  without replacing canonical commits.
+  transcript-shaped session log. `WorldComplexityAction` is a model-boundary
+  draft, not a new canonical mutation or persistent state authority; the
+  existing `WorldComplexityProposal` remains the checked checkpoint and kernel
+  handoff. The prior partial-wave checkpoint remains recovery for one frozen
+  dispatch partition; it is not
+  elaborator memory. The title-by-realm checkpoint map replaces both the former
+  title-only global memory and any temptation to preserve provider transcripts;
+  it introduces no provider-session store or second jurisdiction allocator.
+  Compact checkpoints replace accumulated working history without replacing
+  canonical commits.
 - **Verification layer:** checkpoint shape and digest bind title, session,
   campaign, target location, generation, world revision, prior checkpoint, and
   bounded narrative fields. Frozen parent digests make conflicting parallel
@@ -1356,11 +1395,24 @@ outside this authority.
   partitioning, resource custody, and member transfer; shared individuation
   validation proves active parent and location, exact version, unique bounded
   identity, valid relationships, and non-materialized member state. WorldKernel
-  revalidates either lane before atomic mutation. Each round must strictly
+  revalidates either lane before atomic mutation. The model schema exposes only
+  the assigned operation, bounds fission children to two through eight, and
+  fixes invariant member fields for individuation; tool-level construction
+  additionally rejects duplicate child IDs/partitions or incomplete exact
+  member assignment before shared semantic validation. Worker construction
+  requires exactly one jurisdiction for every assigned parent, rejects extra
+  routes, and proves that each jurisdiction is a canonical location on that
+  parent's profile. Resume and worker construction require every checkpoint
+  map key to equal both the embedded session ID and the session ID recomputed
+  from its embedded title and target location; checkpoint validation binds
+  those fields to its digest and current campaign. Runtime lookup
+  derives the expected ID from the current dispatch title and routed realm.
+  Routing tests prove that equal titles in different realms and different
+  titles in one realm produce different IDs. Each round must strictly
   increase the canonical actionable count; completion requires a freshly
-  derived zero deficit rather than exhaustion of calls or rounds. Focused tests cover scale
-  arithmetic, checkpoint tampering and cross-title rejection, exact compaction
-  ancestry, assigned-parent validation, and safe revision rebasing.
+  derived zero deficit rather than exhaustion of calls or rounds. Focused tests
+  cover scale arithmetic, checkpoint tampering and cross-title rejection, exact
+  compaction ancestry, assigned-parent validation, and safe revision rebasing.
 - **Failure and resume:** a provider failure publishes an immutable
   round-failure generation with the exact completed and failed dispatches and
   receipts, then stops that run. Explicit resume rehydrates the latest failure,
@@ -1368,22 +1420,19 @@ outside this authority.
   dispatches through `resume_elaboration_wave`; repeated failures publish
   numbered generations without changing the frozen schedule. A published
   successful round preview may also be reused on explicit resume. Existing
-  mutation checkpoints suppress replay, per-title compaction checkpoints
-  suppress recompaction, and consecutive completed round checkpoints restore scheduler
-  fairness and session memory before the first unfinished round. Missing
-  eligible parents, stale or malformed checkpoints, changed parent bindings,
-  zero-growth rounds, and a nonzero deficit at the configured round ceiling are
-  terminal failures. Canonical CultCache state, not the checkpoint prose,
-  decides whether already admitted mutations exist after interruption.
+  mutation checkpoints suppress replay, title-by-realm compaction checkpoints
+  suppress recompaction, and consecutive completed round checkpoints restore
+  scheduler fairness and session memory before the first unfinished round.
+  Missing eligible parents, stale or malformed checkpoints, changed parent
+  bindings, zero-growth rounds, and a nonzero deficit at the configured round
+  ceiling are terminal failures. Canonical CultCache state, not the checkpoint
+  prose, decides whether already admitted mutations exist after interruption.
 
-Two boundaries remain intentionally narrow in this acceptance-driver cut. One
-session checkpoint exists per title but is currently anchored to the first
-admitted jurisdiction, while assignments may mutate parents elsewhere; it is
-not yet a per-realm memory topology. Fission and named-member individuation are
-live, but institution promotion is not. Dormant member rows still do not count;
-the individuation lane earns its increment by atomically promoting the admitted
-member into an Actor and deriving that Actor's active agency profile through the
-shared presence-commit path.
+One boundary remains intentionally narrow in this acceptance-driver cut.
+Fission and named-member individuation are live, but institution promotion is
+not. Dormant member rows still do not count; the individuation lane earns its
+increment by atomically promoting the admitted member into an Actor and deriving
+that Actor's active agency profile through the shared presence-commit path.
 Architecture claims that complexity has no production caller, no durable
 elaborator compaction owner, no partial-failure resume, or only a fission
 proposal lane are stale.

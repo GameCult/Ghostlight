@@ -1690,16 +1690,23 @@ materializing a `NewsIssue`.
    bounded round pressure, not a model-call or session count and not an
    assumption that one mutation yields one subject. Elaborator context now
    keeps stable identity and mandate in a prefix separate from the bounded
-   dynamic workbench snapshot. The current uncommitted cut now persists
-   digest-chained per-title compacted sessions, proposes both meaningful Gestalt
-   fission and grounded named-person promotion, admits only through existing
-   WorldKernel commands, remeasures canonical complexity after each round, and
-   resumes only failed dispatches from the exact frozen schedule. Focused
-   complexity, session, and resume checks pass. Do not assume a fixed batch
-   yield or one model call per useful subject. Finish independent architecture
-   review and the full package/strategic gates, commit and push the exact cut,
-   then launch a fresh provider-backed product-scale acceptance without
-   resuming Run 75. Keep Resolution as cover owner. Nemesis receives
+   dynamic workbench snapshot. Pushed through `7ce721d`, persistent logical
+   title-by-realm sessions use digest-chained agentic compaction, both meaningful
+   Gestalt fission and grounded named-person promotion are available, only
+   failed dispatches resume from the exact frozen schedule, WorldKernel alone
+   commits, and canonical complexity is remeasured after each round.
+
+   Run 78 reached live provider complexity pressure but admitted no mutation.
+   Its model actions had to restate inherited full previews, so workers failed
+   before deterministic admission. The current uncommitted cut makes the model
+   submit only a compact mutation draft and makes the deterministic tool bind
+   frozen parent, revision, location, inherited state, approval fields, and the
+   complete command before the existing validator. Preserve Run 78 as failure
+   evidence. Review and verify this ownership cut, run the full package and
+   strategic gates, commit and push, then obtain provider proof from preserved
+   canonical pre-mutation state without resuming Run 75. Do not assume a fixed
+   batch yield or one model call per useful subject. Keep Resolution as cover
+   owner. Nemesis receives
    that cover and assigns causal decision windows inside it; it does not choose
    cover membership. Preserve Runs 64 through 75 and both live services. This
    work does not wait for the Delvehold adapter because the Greathold remains an
