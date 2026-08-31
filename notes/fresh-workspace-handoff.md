@@ -1652,39 +1652,20 @@ slots, but only the economic layer may own advertiser identity, goods, price,
 claims, campaign continuity, and payment. Unfilled slots collapse unless the
 edition explicitly records unsold space; presentation cannot invent a campaign.
 
-The current operator-directed workstream is a comprehensive public Ghostlight
-architecture reference at `https://ghostlight.gamecult.org`, comparable in
-breadth and navigation to Delvehold's authority, implementation, and shared-
-world documentation. Public content and Quartz deployment belong to
-`F:\Projects\GhostlightDungeon-site` / `GameCult/GhostlightDungeon-site`; this
-Ghostlight repository remains authoritative for implemented capabilities,
-stage contracts, ownership, and evidence.
+The comprehensive public Ghostlight architecture reference is complete.
+Canonical Ghostlight commit `15ea0f0` owns five pages under
+`docs/public-architecture`: overview, authority, pipelines, 43 named production
+stages, and eight titled elaborators. Site commit `ea0b026` publishes exact
+projections under `F:\Projects\GhostlightDungeon-site\content\Documentation`
+with a sync/check script, explorer and table-of-contents navigation, scoped docs
+layout, and homepage Architecture link. Ghostlight remains technical authority;
+the site repository owns public composition and deployment.
 
-The existing site has one `content/index.md` landing page. Its product summaries
-are not a complete architecture reference. Current source has distinct
-production model stages across world and destination compilation, assessment,
-Session Zero, speech routing, strategic scheduling and individuation, cell
-Projector-Persona-Interpreter and verification, outcome resolution,
-elaboration, and the multi-role newsroom. This falsifies any assumption that
-the landing page or one compact pipeline sketch adequately documents the live
-machine.
-
-Inventory production stages from source rather than copying old prose or test
-fixture stage strings. Reconcile the inventory with
-`notes/ghostlight-current-system-map.md`, authoritative architecture documents,
-schemas, registry, and verified acceptance evidence. The public reference needs
-overview and authority/dataflow maps, subsystem pages, and one explicit entry
-for every production agent or model stage: owner, purpose, inputs, outputs,
-model/tool contract, deterministic validators and forbidden authority,
-persistence or receipts, retry/resume, failure modes, and adjacent stages.
-Planned organs must be clearly distinguished from implemented ones.
-
-Use Delvehold's `Documentation/Authority Map.md`, `Documentation/Implementation
-Map.md`, `Game Design/Shared World/Simulation Architecture.md`, and `Game
-Design/Shared World/Ghostlight Boundary.md` as structural references. Do not
-publish secrets, private operational paths, or unsupported promises. Verify the
-local Quartz build, links, navigation, and representative source claims, then
-commit/push and verify the deployed commit and visible pages.
+Local Quartz build and visual browser QA pass. GitHub Pages workflow
+`33408004480` succeeded. `https://ghostlight.gamecult.org/Documentation/` and
+the extensionless `Documentation/Agents-and-model-stages` route are live. The
+stage page exposes seven tables and 51 rows. The old single-landing-page state
+is retired; do not continue treating publication as pending.
 
 Run 54 exposed one separate upstream publicity defect: a public strategic
 activity propagates its channel to private `MemberMemory` outcomes, which is
@@ -1698,12 +1679,7 @@ materializing a `NewsIssue`.
 2. Preserve the delivered Run 60 PDF and its frozen-copy verification as the
    earlier baseline, plus the final Run 61 style/flow artifact, v2 manifest,
    grammar, hashes, frozen copy, and art assets recorded above.
-3. Build and publish the comprehensive source-derived Ghostlight architecture
-   reference in `F:\Projects\GhostlightDungeon-site`. Inventory every production
-   agent and model stage, reconcile with current source/maps/contracts, create
-   navigable overview, authority/dataflow, subsystem, and stage pages, verify
-   Quartz build/links/source claims, then commit/push and verify the live site.
-4. Do not resume stopped Run 75. Map separate owners for the approximately
+3. Do not resume stopped Run 75. Map separate owners for the approximately
    2,400 potentially acting latent entities, the 240-cell active-attention
    entitlement, elaborator budget derived from world complexity versus
    simulation budget, Gestalt compression, and Nemesis attention allocation.
@@ -1711,12 +1687,12 @@ materializing a `NewsIssue`.
    ten-percent active cover before implementation. Preserve Runs 64 through 75
    and both live services. This work does not wait for the Delvehold adapter
    because the Greathold remains an external sovereign boundary observer.
-5. Build the Delvehold-owned adapter before any real Delvehold-owned player,
+4. Build the Delvehold-owned adapter before any real Delvehold-owned player,
    civic, dungeon, contract, workshop, or quantitative-economy state participates.
    Defer multiple publications until separately authorized, or follow the operator's next directed work.
    Preserve immutable Runs 60 through 63 and do not replay newspaper work for
    cache telemetry.
-6. Per-wave issues may use daily-like reporting windows, while a final
+5. Per-wave issues may use daily-like reporting windows, while a final
    composition may be an equally current weekly-style issue with a broader
    window. Both are selective journalism; broad fact availability increases
    editorial freedom and does not license recap voice.
