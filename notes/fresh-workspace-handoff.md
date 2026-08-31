@@ -517,9 +517,16 @@ time:` line for inherited v13 per-wave issues, so immutable recomposition
 verification rejected those unchanged artifacts. The world remains revision 27;
 no simulation or newsroom model stage replayed. Preserve failed Run 69.
 
-The current compatibility correction omits that rendered line only when a
-legacy citation's source-times field is empty; new v14 citations retain their
-exact times. Focused regression, commit, push, and provider proof remain pending.
+Run 70 at source `ec45952b843e102dc2ebddda3a3bbb4058687175`
+also failed before any model call or replay. Deserialized legacy v13 issues had
+empty `source_times`, but v14 serialization emitted that empty field and changed
+the recomposition digest from its receipt. The world remains revision 27.
+Preserve failed Run 70.
+
+The current compatibility correction omits legacy empty source times from both
+rendering and serialization, preserving the inherited v13 receipt bytes and
+digest. New v14 nonempty source times remain rendered and serialized. Focused
+regression, commit, push, and provider proof remain pending.
 
 Sparse inhabited destinations now compile a versioned civic apparatus in place.
 The first pass establishes institutions, resident populations, political edges,
@@ -1593,10 +1600,10 @@ materializing a `NewsIssue`.
 2. Preserve the delivered Run 60 PDF and its frozen-copy verification as the
    earlier baseline, plus the final Run 61 style/flow artifact, v2 manifest,
    grammar, hashes, frozen copy, and art assets recorded above.
-3. Run the focused legacy audit-rendering regression, then commit and push the
-   source-time compatibility correction. Launch newsroom-only Run 70 from
-   immutable Run 68 at revision 27 without simulation or wave replay. Preserve
-   failed Run 69, bind Run 70 to exact source and provenance, then obtain fresh
+3. Run the focused legacy source-time serialization regression, then commit and
+   push the empty-vector omission. Launch newsroom-only Run 71 from immutable
+   Run 68 at revision 27 without simulation or wave replay. Preserve failed Runs
+   69 and 70, bind Run 71 to exact source and provenance, then obtain fresh
    independent editorial and grounding verdicts plus archive acceptance. This
    standalone run does not wait for the Delvehold adapter.
 4. Build the Delvehold-owned adapter before any real Delvehold-owned player,

@@ -257,7 +257,7 @@ impl WorldNewspaperArticle {
 pub struct WorldNewspaperSourceCitation {
     pub citation: String,
     pub source_news_ids: Vec<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub source_times: Vec<DateTime<Utc>>,
     pub source_channels: Vec<String>,
     pub source_reliability: Vec<String>,
@@ -5206,6 +5206,11 @@ mod tests {
         let mut boundary_issue = composition.issue.clone();
         boundary_issue.articles[0].sources[0].source_times.clear();
         assert!(!render_world_newspaper_audit_markdown(&boundary_issue).contains("Source time:"));
+        assert!(
+            serde_json::to_value(&boundary_issue).unwrap()["articles"][0]["sources"][0]
+                .get("source_times")
+                .is_none()
+        );
         boundary_issue.articles[0].sources[0].facts[0].account =
             "x".repeat(MAX_PUBLIC_EVENT_SUMMARY_CHARS);
         assert!(

@@ -1551,8 +1551,9 @@ The deliberative newsroom boundary is live under this authority map:
   source must still have been returned by exact ledger query or exact-ID fetch,
   and every new audit citation exposes the canonical source timestamp.
   Historical v13 citations decode with an empty timestamp list and retain their
-  exact old audit rendering; the source-time line appears only when canonical
-  timestamps are present.
+  exact old audit rendering and serialized receipt shape; empty legacy time
+  lists are omitted from serialization. The source-time line and field appear
+  only when canonical timestamps are present.
 - **Forbidden writers:** the selector and query workbench cannot create,
   mutate, deduplicate, summarize into, or reclassify `NewsIssue` or `Event`
   state. The deterministic proof cannot rank stories or commit an agenda; it
