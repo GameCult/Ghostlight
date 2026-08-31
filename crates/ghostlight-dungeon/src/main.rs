@@ -5504,6 +5504,7 @@ fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) ->
         | WorldCommand::SetProviderParallelism { .. }
         | WorldCommand::ReplaceResolutionPins { .. }
         | WorldCommand::FissionGestalt { .. }
+        | WorldCommand::ReconcileFissionCivicBindings { .. }
         | WorldCommand::BindClockConsequences { .. } => false,
     }
 }

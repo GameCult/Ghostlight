@@ -1705,12 +1705,25 @@ materializing a `NewsIssue`.
    unchanged. The current uncommitted cut requires the exact frozen resource
    and dormant-member IDs as action-schema map keys, rejects extras, and leaves
    destination-child choice to the model. Full verification passes 495 library
-   and 16 strategic tests. Commit and push, then clone Run 80 into Run 81 and
-   resume only those same failed dispatches. Do not
+   and 16 strategic tests. Pushed `e7ceb2c` owns that exact-key boundary.
+
+   Run 81's first accepted Hearthcoil fission exposed the next canonical defect:
+   its civic manifest still named the removed parent's political relation. The
+   current uncommitted transition cut atomically replaces parent civic residency
+   with every child, replaces inherited parent relation IDs with child relation
+   IDs, removes the obsolete parent relation, and validates the component world
+   in the same fission transaction. Review and verify that future-fission cut
+   plus the deterministic recovery command, run focused/full and strategic
+   gates, then commit and push. Clone immutable Run 81 and invoke
+   `ReconcileFissionCivicBindings` exactly once. It may repair only stale civic
+   bindings proven by the admitted fission lineage and must persist its mutation
+   proof and checkpoint. Then skip Patina `commit0001` and rebase Charter. Do not
+   replay any model call, fission mutation, region/locality work, or unrelated
+   dispatch. Do not
    assume a fixed batch yield or one model call per useful subject. Keep
    Resolution as cover owner. Nemesis receives
    that cover and assigns causal decision windows inside it; it does not choose
-   cover membership. Preserve Runs 64 through 80 and both live services. This
+   cover membership. Preserve Runs 64 through 81 and both live services. This
    work does not wait for the Delvehold adapter because the Greathold remains an
    external sovereign boundary observer.
 4. Build the Delvehold-owned adapter before any real Delvehold-owned player,

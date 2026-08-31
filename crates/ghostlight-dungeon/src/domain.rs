@@ -1236,6 +1236,9 @@ pub enum WorldCommand {
         #[serde(default)]
         model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
     },
+    ReconcileFissionCivicBindings {
+        expected_revision: u64,
+    },
     ExpandRegion {
         expected_revision: u64,
         expansion: RegionExpansion,

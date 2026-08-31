@@ -1221,6 +1221,47 @@ async fn main() -> anyhow::Result<()> {
     }
     let player_before = campaign.actors[&campaign.player_actor_id].clone();
     let kernel = WorldKernel::start(store.clone());
+    let civic_reconciliation_path = root.join("fission-civic-reconciliation.json");
+    if resume
+        && ghostlight_dungeon::legacy_transition::fission_civic_reconciliation_required(&campaign)
+    {
+        if civic_reconciliation_path.is_file() {
+            anyhow::bail!(
+                "fission civic reconciliation checkpoint exists but canonical repair is absent"
+            )
+        }
+        let committed = kernel
+            .command(WorldCommand::ReconcileFissionCivicBindings {
+                expected_revision: campaign.revision,
+            })
+            .await?;
+        let CommandResult::Committed {
+            campaign: advanced,
+            receipt,
+        } = committed
+        else {
+            anyhow::bail!("fission civic reconciliation did not commit")
+        };
+        publish_immutable_checkpoint(
+            &civic_reconciliation_path,
+            &serde_json::json!({
+                "schema":"ghostlight.fission_civic_reconciliation_checkpoint.v1",
+                "receipt":receipt,
+            }),
+        )?;
+        campaign = advanced;
+    } else if civic_reconciliation_path.is_file() {
+        let checkpoint: serde_json::Value = read_checkpoint(&civic_reconciliation_path)?;
+        let revision = checkpoint["receipt"]["revision"]
+            .as_u64()
+            .ok_or_else(|| anyhow::anyhow!("fission civic reconciliation receipt is malformed"))?;
+        if checkpoint["schema"] != "ghostlight.fission_civic_reconciliation_checkpoint.v1"
+            || checkpoint["receipt"]["command_kind"] != "reconcile_fission_civic_bindings"
+            || revision > campaign.revision
+        {
+            anyhow::bail!("fission civic reconciliation checkpoint disagrees with campaign")
+        }
+    }
     let region_requests = std::env::var("GHOSTLIGHT_WORLD_REGION_REQUESTS")
         .ok()
         .map(|value| {

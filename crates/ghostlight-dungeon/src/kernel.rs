@@ -1144,6 +1144,35 @@ fn execute(
                 Some((transition, mutation_receipt)),
             )
         }
+        WorldCommand::ReconcileFissionCivicBindings { expected_revision } => {
+            require_revision(&campaign, expected_revision)?;
+            let transition = crate::legacy_transition::lower_fission_civic_reconciliation(
+                &campaign,
+                Utc::now() + Duration::minutes(5),
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?
+            .ok_or_else(|| {
+                KernelError::Invalid("campaign has no stale fission civic bindings".into())
+            })?;
+            let mutation_receipt =
+                crate::legacy_transition::apply_lowered_fission_civic_reconciliation(
+                    &mut campaign,
+                    &transition,
+                    Utc::now(),
+                )
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            commit_with_records(
+                store,
+                row,
+                campaign,
+                "reconcile_fission_civic_bindings",
+                Vec::new(),
+                Vec::new(),
+                Vec::new(),
+                None,
+                Some((transition, mutation_receipt)),
+            )
+        }
         WorldCommand::AdvanceStrategicTick {
             expected_revision,
             source,

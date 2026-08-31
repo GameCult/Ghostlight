@@ -219,6 +219,14 @@ pub fn lower_fission(
             destination_population: Some(population_subject(destination)),
         });
     }
+    for (jurisdiction, system) in
+        fission_civic_system_rebindings(campaign, preview, &source_receipt_id)
+    {
+        mutations.push(WorldMutation::SetCivicSystem {
+            jurisdiction,
+            system,
+        });
+    }
     lower_exact_mutations(
         campaign,
         mutations,
@@ -236,6 +244,179 @@ pub fn lower_fission(
         Some(preview_digest),
         expires_at,
     )
+}
+
+fn fission_civic_system_rebindings(
+    campaign: &Campaign,
+    preview: &GestaltFissionPreview,
+    verification_receipt_id: &str,
+) -> Vec<(SubjectRef, crate::domain::CivicSystemManifest)> {
+    let inherited_relation_ids = campaign
+        .agency_relations
+        .values()
+        .filter(|relation| {
+            relation.active
+                && (relation.from_subject_id == preview.parent_gestalt_id
+                    || relation.to_subject_id == preview.parent_gestalt_id)
+        })
+        .map(|relation| relation.id.clone())
+        .collect::<BTreeSet<_>>();
+    campaign
+        .civic_systems
+        .values()
+        .filter_map(|system| {
+            let mut rebound = system.clone();
+            if !apply_fission_civic_rebinding(
+                &mut rebound,
+                &preview.parent_gestalt_id,
+                &preview
+                    .children
+                    .iter()
+                    .map(|child| child.id.clone())
+                    .collect::<Vec<_>>(),
+                &inherited_relation_ids,
+            ) {
+                return None;
+            }
+            rebound.version = rebound.version.saturating_add(1);
+            rebound.semantic_verification_receipt_id = verification_receipt_id.into();
+            Some((place_subject(&rebound.jurisdiction_location_id), rebound))
+        })
+        .collect()
+}
+
+fn apply_fission_civic_rebinding(
+    system: &mut crate::domain::CivicSystemManifest,
+    parent_id: &str,
+    child_ids: &[String],
+    inherited_relation_ids: &BTreeSet<String>,
+) -> bool {
+    let mut changed = false;
+    if system.resident_population_ids.remove(parent_id) {
+        system
+            .resident_population_ids
+            .extend(child_ids.iter().cloned());
+        changed = true;
+    }
+    let rebound_relation_ids = system
+        .political_relation_ids
+        .intersection(inherited_relation_ids)
+        .cloned()
+        .collect::<Vec<_>>();
+    for relation_id in rebound_relation_ids {
+        system.political_relation_ids.remove(&relation_id);
+        system.political_relation_ids.extend(
+            child_ids
+                .iter()
+                .map(|child_id| format!("{relation_id}:fission:{child_id}")),
+        );
+        changed = true;
+    }
+    changed
+}
+
+fn fission_civic_reconciliation_rebindings(
+    campaign: &Campaign,
+) -> Vec<(SubjectRef, crate::domain::CivicSystemManifest)> {
+    campaign
+        .civic_systems
+        .values()
+        .filter_map(|system| {
+            let mut rebound = system.clone();
+            let mut changed = false;
+            for lineage in campaign.gestalt_lineages.values() {
+                let inherited_relation_ids = rebound
+                    .political_relation_ids
+                    .iter()
+                    .filter(|relation_id| !campaign.agency_relations.contains_key(*relation_id))
+                    .filter(|relation_id| {
+                        lineage.child_gestalt_ids.iter().all(|child_id| {
+                            campaign
+                                .agency_relations
+                                .contains_key(&format!("{relation_id}:fission:{child_id}"))
+                        })
+                    })
+                    .cloned()
+                    .collect::<BTreeSet<_>>();
+                changed |= apply_fission_civic_rebinding(
+                    &mut rebound,
+                    &lineage.parent_gestalt_id,
+                    &lineage.child_gestalt_ids,
+                    &inherited_relation_ids,
+                );
+            }
+            if !changed {
+                return None;
+            }
+            rebound.version = rebound.version.saturating_add(1);
+            Some((place_subject(&rebound.jurisdiction_location_id), rebound))
+        })
+        .collect()
+}
+
+pub fn fission_civic_reconciliation_required(campaign: &Campaign) -> bool {
+    !fission_civic_reconciliation_rebindings(campaign).is_empty()
+}
+
+pub fn lower_fission_civic_reconciliation(
+    campaign: &Campaign,
+    expires_at: DateTime<Utc>,
+) -> Result<Option<LoweredLegacyTransition>> {
+    let mut rebindings = fission_civic_reconciliation_rebindings(campaign);
+    if rebindings.is_empty() {
+        return Ok(None);
+    }
+    let repair_digest = digest_serializable(&(campaign.id, campaign.revision, &rebindings))?;
+    let source_receipt_id = format!(
+        "fission-civic-reconciliation:{}",
+        repair_digest.trim_start_matches("sha256:")
+    );
+    let mutations = rebindings
+        .iter_mut()
+        .map(|(jurisdiction, system)| {
+            system.semantic_verification_receipt_id = source_receipt_id.clone();
+            WorldMutation::SetCivicSystem {
+                jurisdiction: jurisdiction.clone(),
+                system: system.clone(),
+            }
+        })
+        .collect();
+    lower_exact_mutations(
+        campaign,
+        mutations,
+        MutationProcedure::CompilerAdmission,
+        None,
+        MutationOutcomeBinding::Deterministic,
+        Some(campaign.resolution_policy.resolution_epoch),
+        "Replace only stale civic population and political-relation bindings whose exact fission lineage and complete child relation set already exist in canonical state.",
+        &source_receipt_id,
+        Some(repair_digest.clone()),
+        Some(repair_digest),
+        expires_at,
+    )
+    .map(Some)
+}
+
+pub fn apply_lowered_fission_civic_reconciliation(
+    campaign: &mut Campaign,
+    transition: &LoweredLegacyTransition,
+    now: DateTime<Utc>,
+) -> Result<WorldMutationReceipt> {
+    let snapshot = component_snapshot_for_reconciliation(campaign)?;
+    let application =
+        apply_component_world_batch(&snapshot, &transition.authority, &transition.batch, now)?;
+    for system in application.state.civic_systems.values() {
+        if campaign
+            .civic_systems
+            .get(&system.jurisdiction_location_id)
+            .is_some_and(|current| current != system)
+        {
+            campaign
+                .civic_systems
+                .insert(system.jurisdiction_location_id.clone(), system.clone());
+        }
+    }
+    Ok(application.receipt)
 }
 
 pub fn apply_lowered_fission(
@@ -903,6 +1084,18 @@ fn project_accepted_fission(
                 return Err(anyhow!("accepted fission agency relation was rewritten"));
             }
             campaign.agency_relations.insert(id, inherited);
+        }
+        campaign.agency_relations.remove(&relation.id);
+    }
+    for system in next.civic_systems.values() {
+        if campaign
+            .civic_systems
+            .get(&system.jurisdiction_location_id)
+            .is_some_and(|current| current != system)
+        {
+            campaign
+                .civic_systems
+                .insert(system.jurisdiction_location_id.clone(), system.clone());
         }
     }
     campaign.gestalt_lineages.insert(
@@ -1780,6 +1973,17 @@ fn foreground_mutations(
 }
 
 fn component_snapshot(campaign: &Campaign) -> Result<ComponentWorldState> {
+    component_snapshot_with_validation(campaign, true)
+}
+
+fn component_snapshot_for_reconciliation(campaign: &Campaign) -> Result<ComponentWorldState> {
+    component_snapshot_with_validation(campaign, false)
+}
+
+fn component_snapshot_with_validation(
+    campaign: &Campaign,
+    validate: bool,
+) -> Result<ComponentWorldState> {
     let version = campaign.revision;
     let mut state = ComponentWorldState {
         schema: "ghostlight.component_world_state.v1".into(),
@@ -2346,7 +2550,9 @@ fn component_snapshot(campaign: &Campaign) -> Result<ComponentWorldState> {
             },
         );
     }
-    validate_component_world(&state)?;
+    if validate {
+        validate_component_world(&state)?;
+    }
     Ok(state)
 }
 
@@ -3478,6 +3684,195 @@ mod tests {
                 .knowledge
                 .contains_key(&key)
         );
+    }
+
+    #[test]
+    fn fission_rebinds_civic_residency_and_political_relations_atomically() {
+        let mut campaign = campaign();
+        let public_fact = campaign.facts["fact:route"].statement.clone();
+        campaign.gestalts.insert(
+            "residents".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "residents".into(),
+                name: "Residents".into(),
+                version: 0,
+                home_location_id: "room".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::from([public_fact.clone()]),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut campaign);
+        campaign.agency_relations.insert(
+            "relation:residents-watch".into(),
+            AgencyRelation {
+                schema: AgencyRelation::SCHEMA.into(),
+                id: "relation:residents-watch".into(),
+                from_subject_id: "residents".into(),
+                to_subject_id: "watch".into(),
+                kind: crate::domain::AgencyRelationKind::Membership,
+                strength: 60,
+                active: true,
+                evidence_receipt_ids: vec!["evidence:civic".into()],
+            },
+        );
+        campaign.civic_systems.insert(
+            "room".into(),
+            crate::domain::CivicSystemManifest {
+                schema: "ghostlight.civic_system_manifest.v1".into(),
+                version: 0,
+                jurisdiction_location_id: "room".into(),
+                governing_institution_ids: BTreeSet::from(["watch".into()]),
+                resident_population_ids: BTreeSet::from(["residents".into()]),
+                public_authority_fact_ids: BTreeSet::from(["fact:route".into()]),
+                public_selection_fact_ids: BTreeSet::from(["fact:route".into()]),
+                public_resource_fact_ids: BTreeSet::from(["fact:route".into()]),
+                public_redress_fact_ids: BTreeSet::from(["fact:route".into()]),
+                political_relation_ids: BTreeSet::from(["relation:residents-watch".into()]),
+                semantic_verification_receipt_id: "semantic:civic".into(),
+            },
+        );
+        let child = |id: &str, name: &str| GestaltPersonaState {
+            schema: "ghostlight.gestalt_persona_state.v1".into(),
+            id: id.into(),
+            name: name.into(),
+            version: 0,
+            home_location_id: "room".into(),
+            shared_capabilities: BTreeSet::new(),
+            shared_knowledge: BTreeSet::from([public_fact.clone()]),
+            resources: BTreeSet::new(),
+            goals: vec![],
+            pressures: vec![],
+        };
+        let preview = GestaltFissionPreview {
+            schema: "ghostlight.gestalt_fission_preview.v1".into(),
+            campaign_id: campaign.id,
+            expected_world_revision: campaign.revision,
+            parent_gestalt_id: "residents".into(),
+            partition_axis: crate::domain::AgencyAxis::Ideology,
+            children: vec![
+                child("resident-majority", "Resident majority"),
+                child("resident-dissenters", "Resident dissenters"),
+            ],
+            child_partition_values: BTreeMap::from([
+                ("resident-majority".into(), "majority".into()),
+                ("resident-dissenters".into(), "other/unknown".into()),
+            ]),
+            residual_child_id: "resident-dissenters".into(),
+            member_child_assignments: BTreeMap::new(),
+            resource_child_assignments: BTreeMap::new(),
+            evidence_receipt_ids: vec![],
+            gaps: vec![],
+            canon_candidates: vec![],
+            requires_approval: true,
+        };
+
+        let transition =
+            lower_fission(&campaign, &preview, Utc::now() + Duration::minutes(5)).unwrap();
+        assert!(
+            transition
+                .batch
+                .mutations
+                .iter()
+                .any(|mutation| matches!(mutation.mutation, WorldMutation::SetCivicSystem { .. }))
+        );
+        apply_lowered_fission(&mut campaign, &preview, &transition, Utc::now()).unwrap();
+
+        let civic = &campaign.civic_systems["room"];
+        assert_eq!(
+            civic.resident_population_ids,
+            BTreeSet::from(["resident-majority".into(), "resident-dissenters".into()])
+        );
+        assert_eq!(
+            civic.political_relation_ids,
+            BTreeSet::from([
+                "relation:residents-watch:fission:resident-majority".into(),
+                "relation:residents-watch:fission:resident-dissenters".into(),
+            ])
+        );
+        assert_eq!(civic.version, 1);
+        assert!(
+            civic
+                .semantic_verification_receipt_id
+                .starts_with("fission-preview:")
+        );
+        assert!(
+            !campaign
+                .agency_relations
+                .contains_key("relation:residents-watch")
+        );
+        for relation_id in &civic.political_relation_ids {
+            assert!(campaign.agency_relations.contains_key(relation_id));
+        }
+        let snapshot = component_snapshot(&campaign).unwrap();
+        crate::transition::validate_component_world(&snapshot).unwrap();
+
+        campaign.revision += 1;
+        campaign.civic_systems.insert(
+            "room".into(),
+            crate::domain::CivicSystemManifest {
+                schema: "ghostlight.civic_system_manifest.v1".into(),
+                version: 0,
+                jurisdiction_location_id: "room".into(),
+                governing_institution_ids: BTreeSet::from(["watch".into()]),
+                resident_population_ids: BTreeSet::from(["residents".into()]),
+                public_authority_fact_ids: BTreeSet::from(["fact:route".into()]),
+                public_selection_fact_ids: BTreeSet::from(["fact:route".into()]),
+                public_resource_fact_ids: BTreeSet::from(["fact:route".into()]),
+                public_redress_fact_ids: BTreeSet::from(["fact:route".into()]),
+                political_relation_ids: BTreeSet::from(["relation:residents-watch".into()]),
+                semantic_verification_receipt_id: "semantic:stale".into(),
+            },
+        );
+        assert!(fission_civic_reconciliation_required(&campaign));
+        let reconciliation =
+            lower_fission_civic_reconciliation(&campaign, Utc::now() + Duration::minutes(5))
+                .unwrap()
+                .unwrap();
+        let repaired_system = reconciliation
+            .batch
+            .mutations
+            .iter()
+            .find_map(|mutation| match &mutation.mutation {
+                WorldMutation::SetCivicSystem { system, .. } => Some(system),
+                _ => None,
+            })
+            .unwrap();
+        assert_eq!(
+            repaired_system.political_relation_ids,
+            BTreeSet::from([
+                "relation:residents-watch:fission:resident-majority".into(),
+                "relation:residents-watch:fission:resident-dissenters".into(),
+            ])
+        );
+        let stale_snapshot = component_snapshot_for_reconciliation(&campaign).unwrap();
+        for relation_id in &repaired_system.political_relation_ids {
+            assert!(stale_snapshot.relationships.contains_key(relation_id));
+        }
+        apply_lowered_fission_civic_reconciliation(&mut campaign, &reconciliation, Utc::now())
+            .unwrap();
+        assert!(!fission_civic_reconciliation_required(&campaign));
+        assert_eq!(
+            campaign.civic_systems["room"].resident_population_ids,
+            BTreeSet::from(["resident-majority".into(), "resident-dissenters".into()])
+        );
+        assert_eq!(
+            campaign.civic_systems["room"].political_relation_ids,
+            BTreeSet::from([
+                "relation:residents-watch:fission:resident-majority".into(),
+                "relation:residents-watch:fission:resident-dissenters".into(),
+            ])
+        );
+        assert!(
+            campaign.civic_systems["room"]
+                .semantic_verification_receipt_id
+                .starts_with("fission-civic-reconciliation:")
+        );
+        crate::transition::validate_component_world(&component_snapshot(&campaign).unwrap())
+            .unwrap();
     }
 
     #[test]

@@ -228,6 +228,8 @@ fn main() -> Result<()> {
             },
             "subjectDirectory": subjects,
             "locations": campaign.locations,
+            "civicSystems": campaign.civic_systems,
+            "agencyRelations": campaign.agency_relations,
             "latestStrategicTick": latest_tick,
             "cover": cover,
             "appraisals": appraisals,

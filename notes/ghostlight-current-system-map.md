@@ -2349,10 +2349,61 @@ shows every signed modifier with its exact references.
 
 Population fission now composes admitted child entities, stable child
 identities, one lineage split, exact resource custody transfers, and exact
-named-member membership transfers. The old fission function that directly
-wrote campaign state has been removed. Its surviving projector updates only
-agency profiles, facets, cover invalidation, and `resolution_epoch` after the
-canonical mutation batch succeeds.
+named-member membership transfers. The same fission transaction owns every
+relation and civic consequence of retiring the parent: it creates one inherited
+child agency relation per child, retires the parent relation, replaces the
+parent resident ID with all child IDs in each affected civic manifest, rebinds
+each civic political-relation ID to the exact child relation IDs, advances the
+manifest version, and binds its semantic verification/source field to the exact
+`fission-preview:<digest>` receipt. These writes lower together with child
+admission, lineage, custody, and membership into one component-world batch;
+either the complete state validates and commits or none of it does.
+
+The aggregate projector may copy the accepted child relations and civic
+manifests out of that component result, and `project_fission_resolution` owns
+the derived agency-profile, facet, cover-invalidation, and resolution-epoch
+projection. Later `ensure_agency_profiles` synchronization is not a cleanup
+owner and may not repair missing civic residents, replace stale political
+relation IDs, recreate retired parent relations, or make a partially applied
+fission appear valid. The old fission function that directly wrote campaign
+state has been removed.
+
+Immutable Run 81 at exact source
+`e7ceb2c2807fabb2b0e68aeeeb0aab5948c582a5` and root
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/full-world-delvehold-e7ceb2c-81`
+is failure evidence for this ownership boundary. Patina commit 0001 advanced
+revision 15 to 16 and admitted the Hearthcoil children, but left the Hearthcoil
+civic manifest pointing at missing parent relation
+`rel:hearthcoil-houses-member-blackchalk` while the child relation clones
+existed. Charter's already accepted frozen proposal then failed admission with
+`invalid command: canonical civic system lost a political relation`. Preserve
+the run unchanged; unit `ghostlight-full-world-e7ceb2c-81.service`, invocation
+`069f3a5de05b4bd3a972ddf621e29d54`, is terminal with an exit code.
+
+Run 81 recovery is an explicit one-boundary repair, not rollback or fission
+replay. `WorldCommand::ReconcileFissionCivicBindings` owns deterministic repair
+on a clone of Run 81. It may select only civic manifests whose stale parent
+resident or political-relation binding is proven by an existing canonical
+Gestalt lineage and, for each retired relation, the complete canonical child
+relation set. It lowers only the resulting `SetCivicSystem` mutations through
+the shared mutation kernel, increments the affected manifest version, and binds
+the repair to a deterministic `fission-civic-reconciliation:<digest>` source.
+
+The repair uses an unchecked component snapshot only as the bounded workbench
+needed to represent the known invalid starting state. The mutation application
+must produce a normally validated next component world; WorldKernel then
+persists an ordinary world commit and mutation receipt under command kind
+`reconcile_fission_civic_bindings`. The acceptance driver publishes one
+immutable `ghostlight.fission_civic_reconciliation_checkpoint.v1` and refuses a
+checkpoint whose canonical repair is absent or whose command/revision binding
+disagrees with the campaign. The unchecked snapshot is not a general admission
+mode, migration authority, cleanup loop, or permission to repair unrelated
+state.
+
+After that checkpoint, the complexity loop recognizes Patina commit 0001 as
+already admitted, skips it, and rebases the preserved Charter proposal against
+the repaired revision. The Run 81 frozen preview and model receipts remain the
+inference authority; recovery performs no model or elaboration replay.
 
 Region expansion and in-place locality elaboration compose typed place,
 proposition, population, and institution admission plus exact topology and
