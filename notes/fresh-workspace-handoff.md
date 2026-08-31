@@ -464,10 +464,13 @@ yet a live Delvehold integration. `GHOSTLIGHT_WORLD_DESCRIPTION` supplies the
 bounded root and external Greathold boundary observer;
 `GHOSTLIGHT_WORLD_REGION_REQUESTS` supplies the outer realms; and
 `GHOSTLIGHT_WORLD_ELABORATION_PASSES` selects admitted realm localities for
-foundation plus titled elaboration. The active cell budget may reach 240, and
-the driver advances up to 32 strategic waves with per-wave and final
-newspapers. The boundary observer has no simulation authority. Therefore the
-Delvehold adapter is not a prerequisite for this standalone provider run.
+foundation plus titled elaboration. The current driver accepts an active cell
+budget up to 240 and up to 32 strategic waves, but those knobs do not state
+latent world size. The corrected target is approximately 2,400 potentially
+acting entities under about ten percent active cover. Elaborator work must be
+derived from world complexity relative to that simulation budget. The boundary
+observer has no simulation authority. Therefore the Delvehold adapter is not a
+prerequisite for this standalone provider run.
 
 That conclusion stops at the ownership boundary. Actual Delvehold player,
 civic, dungeon, contract, workshop, or quantitative-economy snapshots and
@@ -486,9 +489,25 @@ proposal production, records `semantic_invalid`, and drops an invalid optional
 person before wave assembly; WorldKernel reuses the same validator at admission
 and retains revision, lineage, location, uniqueness, materialization, and
 atomic commit authority. The selector proposes identity content only. The
-active budget ceiling is 240, independent of the 32-call provider gate. A
-fixture proves 1,000 subjects across 200 cells and all 200 membrane pipelines
-under a seven-call gate.
+active budget ceiling is 240, independent of the 32-call provider gate. That is
+an attention entitlement, not a population claim. The full-world target is
+approximately 2,400 potentially acting entities, with multiresolution Gestalts
+compressing most latent subjects and Nemesis allocating causal attention across
+about ten percent active cover. A fixture proves 1,000 subjects across 200 cells
+and all 200 membrane pipelines under a seven-call gate; it remains machinery
+proof, not the product-scale target.
+
+Run 75 launched at exact source
+`86fe6ed89d51da26b65ab6a031608075840b1527` under the superseded 240-cell-only
+acceptance shape and was stopped cleanly at the operator's scale correction.
+Preserve
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/full-world-delvehold-86fe6ed-75`
+as stopped non-acceptance evidence. It contains preflight, world-region and
+titled-elaboration checkpoints, a wave-one cell terminal checkpoint, partial
+pulses 01/02, and two rejected pulse receipts. Unit
+`ghostlight-full-world-run75.service`, invocation
+`86bfe6a3ef504a7d99f579b3d67710ab`, is inactive/dead after explicit stop; live
+services remain unchanged. Do not claim terminal success or failure.
 
 Run 67 is preserved as a failed full-world witness at revision 15. All five
 requested realms and all five locality elaborations committed, but no strategic
@@ -1633,6 +1652,40 @@ slots, but only the economic layer may own advertiser identity, goods, price,
 claims, campaign continuity, and payment. Unfilled slots collapse unless the
 edition explicitly records unsold space; presentation cannot invent a campaign.
 
+The current operator-directed workstream is a comprehensive public Ghostlight
+architecture reference at `https://ghostlight.gamecult.org`, comparable in
+breadth and navigation to Delvehold's authority, implementation, and shared-
+world documentation. Public content and Quartz deployment belong to
+`F:\Projects\GhostlightDungeon-site` / `GameCult/GhostlightDungeon-site`; this
+Ghostlight repository remains authoritative for implemented capabilities,
+stage contracts, ownership, and evidence.
+
+The existing site has one `content/index.md` landing page. Its product summaries
+are not a complete architecture reference. Current source has distinct
+production model stages across world and destination compilation, assessment,
+Session Zero, speech routing, strategic scheduling and individuation, cell
+Projector-Persona-Interpreter and verification, outcome resolution,
+elaboration, and the multi-role newsroom. This falsifies any assumption that
+the landing page or one compact pipeline sketch adequately documents the live
+machine.
+
+Inventory production stages from source rather than copying old prose or test
+fixture stage strings. Reconcile the inventory with
+`notes/ghostlight-current-system-map.md`, authoritative architecture documents,
+schemas, registry, and verified acceptance evidence. The public reference needs
+overview and authority/dataflow maps, subsystem pages, and one explicit entry
+for every production agent or model stage: owner, purpose, inputs, outputs,
+model/tool contract, deterministic validators and forbidden authority,
+persistence or receipts, retry/resume, failure modes, and adjacent stages.
+Planned organs must be clearly distinguished from implemented ones.
+
+Use Delvehold's `Documentation/Authority Map.md`, `Documentation/Implementation
+Map.md`, `Game Design/Shared World/Simulation Architecture.md`, and `Game
+Design/Shared World/Ghostlight Boundary.md` as structural references. Do not
+publish secrets, private operational paths, or unsupported promises. Verify the
+local Quartz build, links, navigation, and representative source claims, then
+commit/push and verify the deployed commit and visible pages.
+
 Run 54 exposed one separate upstream publicity defect: a public strategic
 activity propagates its channel to private `MemberMemory` outcomes, which is
 how Orin Pell retaining a memory became a public news row. The newsroom should
@@ -1645,20 +1698,25 @@ materializing a `NewsIssue`.
 2. Preserve the delivered Run 60 PDF and its frozen-copy verification as the
    earlier baseline, plus the final Run 61 style/flow artifact, v2 manifest,
    grammar, hashes, frozen copy, and art assets recorded above.
-3. Commit and push the locally verified v16 distinct-moves cut, then launch one
-   fresh full-world acceptance from the preserved pre-wave checkpoint. Exercise
-   all admitted realms, the 240-cell budget, Nemesis scheduling, twelve
-   strategic waves, and the press pipeline. Preserve completed checkpoints and
-   resume failures in place instead of replaying successful work. Preserve Runs
-   64 through 74 and both live services. This work does not wait for the
-   Delvehold adapter because the Greathold remains an external sovereign
-   boundary observer.
-4. Build the Delvehold-owned adapter before any real Delvehold-owned player,
+3. Build and publish the comprehensive source-derived Ghostlight architecture
+   reference in `F:\Projects\GhostlightDungeon-site`. Inventory every production
+   agent and model stage, reconcile with current source/maps/contracts, create
+   navigable overview, authority/dataflow, subsystem, and stage pages, verify
+   Quartz build/links/source claims, then commit/push and verify the live site.
+4. Do not resume stopped Run 75. Map separate owners for the approximately
+   2,400 potentially acting latent entities, the 240-cell active-attention
+   entitlement, elaborator budget derived from world complexity versus
+   simulation budget, Gestalt compression, and Nemesis attention allocation.
+   Define persistence, resume bindings, and an acceptance fixture proving about
+   ten-percent active cover before implementation. Preserve Runs 64 through 75
+   and both live services. This work does not wait for the Delvehold adapter
+   because the Greathold remains an external sovereign boundary observer.
+5. Build the Delvehold-owned adapter before any real Delvehold-owned player,
    civic, dungeon, contract, workshop, or quantitative-economy state participates.
    Defer multiple publications until separately authorized, or follow the operator's next directed work.
    Preserve immutable Runs 60 through 63 and do not replay newspaper work for
    cache telemetry.
-5. Per-wave issues may use daily-like reporting windows, while a final
+6. Per-wave issues may use daily-like reporting windows, while a final
    composition may be an equally current weekly-style issue with a broader
    window. Both are selective journalism; broad fact availability increases
    editorial freedom and does not license recap voice.

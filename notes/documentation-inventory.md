@@ -70,6 +70,10 @@ not slowly melt into one cursed binder.
 
 ## Accessible Explanations
 
+- `docs/public-architecture/`: canonical source for the public Ghostlight site
+  architecture section: overview, authority, pipelines, and the complete
+  production agent/model-stage catalog. The site publishes an exact projection
+  and owns navigation and presentation, not technical truth.
 - `docs/articles/multiresolution-gestalts.md`: reader-facing explanation of
   Ghostlight Dungeon's dynamic agency graph, cohesive and arena cells, detail
   fairness, Persona waves, and named-character continuity.
