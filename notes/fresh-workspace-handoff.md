@@ -444,17 +444,30 @@ their model receipts idempotently. Reader Markdown escapes every plain-text fiel
 channels, reliability, revision, and receipt IDs; a separate audit projection
 retains that provenance. No editorial organ can write world state.
 
-The scale and emergence gate is implemented and locally proven.
-The operator's current request is a fresh full-world simulation run, not yet a
-live Delvehold integration. The existing
-`crates/ghostlight-dungeon/src/bin/ghostlight-strategic-smoke.rs` driver can run
-that world now: `GHOSTLIGHT_WORLD_DESCRIPTION` enters the generic compiler,
-`GHOSTLIGHT_WORLD_ELABORATION_PASSES` selects up to eight admitted seed
-localities for foundation plus titled elaboration, the active cell budget may
-reach 240, and the driver advances up to 32 strategic waves with per-wave and
-final newspapers. Its default player projection is an external Greathold
-boundary observer with no simulation authority. Therefore the Delvehold adapter
-is not a prerequisite for a standalone autonomous external-world run.
+The scale and emergence gate is implemented and locally proven. Runs 64 and 65
+were stopped before they could honestly establish whole-world acceptance: the
+root compiler is intentionally bounded-local and must not be coerced into
+inventing an entire world in one response. The strategic acceptance driver now
+accepts an ordered list of at most eight `GHOSTLIGHT_WORLD_REGION_REQUESTS`.
+After admitting the root campaign, it sequentially reuses the existing
+destination compiler agent to propose each genuinely new realm and sends that
+proposal through `WorldKernel::ExpandRegion`. Every committed realm receives an
+immutable checkpoint binding request, origin, jurisdiction, kernel receipt,
+and model-receipt hashes. Resume validates those checkpoints against canonical
+campaign state and continues at the first missing realm without replaying
+completed expansions. The committed jurisdiction IDs become the locality set
+for subsequent elaboration, multiresolution simulation, strategic waves, and
+newspapers.
+
+The operator's current request remains a fresh full-world simulation run, not
+yet a live Delvehold integration. `GHOSTLIGHT_WORLD_DESCRIPTION` supplies the
+bounded root and external Greathold boundary observer;
+`GHOSTLIGHT_WORLD_REGION_REQUESTS` supplies the outer realms; and
+`GHOSTLIGHT_WORLD_ELABORATION_PASSES` selects admitted realm localities for
+foundation plus titled elaboration. The active cell budget may reach 240, and
+the driver advances up to 32 strategic waves with per-wave and final
+newspapers. The boundary observer has no simulation authority. Therefore the
+Delvehold adapter is not a prerequisite for this standalone provider run.
 
 That conclusion stops at the ownership boundary. Actual Delvehold player,
 civic, dungeon, contract, workshop, or quantitative-economy snapshots and
@@ -1545,11 +1558,14 @@ materializing a `NewsIssue`.
 2. Preserve the delivered Run 60 PDF and its frozen-copy verification as the
    earlier baseline, plus the final Run 61 style/flow artifact, v2 manifest,
    grammar, hashes, frozen copy, and art assets recorded above.
-3. Prepare and launch a fresh immutable full-world provider run through the
-   existing strategic acceptance driver. Freeze the world description, world
-   identity and boundary observer, pressure, public channel, elaboration passes,
-   cell budget, waves, provider/source revision, result root, and acceptance
-   checks first. This standalone run does not wait for the Delvehold adapter.
+3. Resume the fresh immutable full-world provider run only from its current
+   exact checkpoint boundary. Freeze the bounded root description, ordered
+   region requests, world identity and boundary observer, pressure, public
+   channel, elaboration passes, cell budget, waves, provider/source revision,
+   result root, and acceptance checks. Require every requested realm to have an
+   immutable `ExpandRegion` checkpoint and canonical jurisdiction before
+   locality elaboration or strategic waves. Preserve stopped Runs 64 and 65 as
+   failure evidence. This standalone run does not wait for the Delvehold adapter.
 4. Build the Delvehold-owned adapter before any real Delvehold-owned player,
    civic, dungeon, contract, workshop, or quantitative-economy state participates.
    Defer multiple publications until separately authorized, or follow the operator's next directed work.

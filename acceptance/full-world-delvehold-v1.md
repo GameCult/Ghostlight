@@ -91,7 +91,7 @@ ontology or turn the Greathold into an autonomous character.
   insurers suspend cover, armies secure infrastructure, displaced families
   cross borders, and an unknown party circulates proof that several foreign
   governments secretly financed the extraction they now condemn.`
-- World elaboration passes: `4`
+- World locality elaborations: `5` (one per admitted realm jurisdiction)
 - World elaboration parallelism: `8`
 - Active cell budget: `240`
 - Strategic waves: `12`

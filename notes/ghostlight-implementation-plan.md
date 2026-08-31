@@ -175,6 +175,15 @@ an independent semantic verifier run before approval and is rebound and checked
 again at kernel admission. Accepted civic manifests are versioned component
 state. Later destination passes receive that exact apparatus and may only retain
 and deepen it; they cannot publish a duplicate resident body or government.
+Whole-world acceptance composes this existing authority rather than widening
+the initial compiler: the root stays bounded-local, while the strategic driver
+sequentially submits at most eight ordered realm requests to the destination
+compiler and admits each result through `WorldKernel::ExpandRegion`. Immutable
+run-plan, proposal, and per-region commit checkpoints bind the ordered requests
+and canonical commits so resume can reject configuration drift and recover a
+commit/checkpoint crash without replay. The committed realm jurisdictions, not
+the driver or checkpoint files, define which localities proceed to elaboration
+and strategic coverage.
 Committed public events lower to `NewsIssue` records as factual substrate, not
 as publication voice. Each publication is a persistent political/editorial
 Persona that owns its audience, remembered beats, narrative memeplex,

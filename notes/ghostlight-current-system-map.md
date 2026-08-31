@@ -1225,6 +1225,44 @@ store, or kernel write handle. The current proposal algebra is additive
 locality elaboration; replacement of existing canonical subjects remains
 outside this authority.
 
+#### Acceptance-driver whole-world bootstrap
+
+- **Owner:** the strategic acceptance driver owns orchestration and recovery of
+  an optional whole-world bootstrap. It owns neither geography nor canonical
+  mutation. The existing destination compiler agent owns each bounded region
+  proposal; `WorldKernel` alone may admit it through `ExpandRegion`.
+- **Inputs:** an admitted root campaign, its exact authored world description,
+  the boundary observer's canonical location, and an ordered list of at most
+  eight `GHOSTLIGHT_WORLD_REGION_REQUESTS`. Each request specifies one bounded
+  realm; the root compiler remains intentionally bounded-local.
+- **Outputs:** one frozen ordered `world-regions-plan.json`, one immutable
+  proposal checkpoint before each mutation, one sequential kernel commit per
+  genuinely new realm, and an immutable `world-region-NN-checkpoint.json`
+  binding request, origin, committed jurisdiction, kernel receipt, and
+  model-receipt hashes. Committed
+  jurisdiction IDs become the locality set for later elaboration and strategic
+  simulation.
+- **Derived state:** `status.json` progress and the jurisdiction list are
+  orchestration projections, not world truth.
+- **Forbidden writers:** the driver, root compiler, destination compiler,
+  checkpoints, and elaborators cannot directly write campaign state or invent
+  Delvehold-owned player, civic, dungeon, contract, workshop, or quantitative-
+  economy effects.
+- **Shared paths:** fresh and resumed runs use the same frozen ordered plan,
+  destination compiler, and kernel admission path. Resume rejects omitted or
+  reordered requests, skips a region only when its checkpoint and canonical
+  receipt agree, and recovers the kernel-commit/checkpoint crash interval from
+  the immutable proposal plus canonical campaign and commit receipt.
+- **Cut line:** whole-world scope is not overloaded onto the root compiler. The
+  driver reuses existing destination compilation and kernel admission; there is
+  no second region generator or event authority.
+- **Verification layer:** destination validation and reconciliation bind each
+  candidate before kernel revalidation and commit. End-to-end acceptance also
+  requires all requested realms to enter locality elaboration, the bounded
+  multiresolution cover, strategic waves, and grounded newspaper projection.
+  Runs 64 and 65 stopped before that claim was established and remain failure
+  evidence rather than accepted full-world runs.
+
 The strategic acceptance runner exercises this path as a deliberate hybrid.
 The existing destination compiler first commits the complete civic foundation
 for one canonical locality. A second revision-bound titled wave then adds one

@@ -332,6 +332,34 @@ struct FoundationCheckpoint {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
+struct WorldRegionPlanCheckpoint {
+    schema: String,
+    origin_location_id: String,
+    requests: Vec<String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WorldRegionPreviewCheckpoint {
+    schema: String,
+    request: String,
+    preview: ghostlight_dungeon::domain::RegionExpansionPreview,
+    model_receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WorldRegionCommitCheckpoint {
+    schema: String,
+    request: String,
+    origin_location_id: String,
+    jurisdiction_location_id: String,
+    commit_receipt: ghostlight_dungeon::domain::WorldCommitReceipt,
+    model_receipt_hashes: Vec<String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 struct ClockBindingProposalCheckpoint {
     schema: String,
     admission: ghostlight_dungeon::clock::ClockConsequenceBindingAdmission,
@@ -910,7 +938,7 @@ async fn main() -> anyhow::Result<()> {
         seed_evidence_receipts,
         seed_model_receipts,
         mut world_compile,
-        initial_seed_location_ids,
+        mut initial_seed_location_ids,
     ) = if resume {
         let checkpoint: CompilerCheckpoint = read_checkpoint(&root.join("compiler-preview.json"))?;
         let description = compiled
@@ -1032,6 +1060,232 @@ async fn main() -> anyhow::Result<()> {
     }
     let player_before = campaign.actors[&campaign.player_actor_id].clone();
     let kernel = WorldKernel::start(store.clone());
+    let region_requests = std::env::var("GHOSTLIGHT_WORLD_REGION_REQUESTS")
+        .ok()
+        .map(|value| {
+            value
+                .split("||")
+                .map(str::trim)
+                .filter(|request| !request.is_empty())
+                .map(str::to_owned)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    if region_requests.len() > 8 {
+        anyhow::bail!("GHOSTLIGHT_WORLD_REGION_REQUESTS accepts at most 8 requests")
+    }
+    let region_plan_path = root.join("world-regions-plan.json");
+    if region_plan_path.is_file() {
+        let plan: WorldRegionPlanCheckpoint = read_checkpoint(&region_plan_path)?;
+        if plan.schema != "ghostlight.world_region_plan.v1" || plan.requests != region_requests {
+            anyhow::bail!("world-region request plan differs from its frozen checkpoint")
+        }
+    }
+    if !region_requests.is_empty() {
+        let description = compiled.as_deref().ok_or_else(|| {
+            anyhow::anyhow!("world region requests require GHOSTLIGHT_WORLD_DESCRIPTION")
+        })?;
+        let compiler =
+            strategic_world_compiler(model.clone(), description, &strategic_world_when());
+        let origin_location_id = campaign.actors[&campaign.player_actor_id]
+            .location_id
+            .clone();
+        if region_plan_path.is_file() {
+            let plan: WorldRegionPlanCheckpoint = read_checkpoint(&region_plan_path)?;
+            if plan.origin_location_id != origin_location_id {
+                anyhow::bail!("world-region origin differs from its frozen checkpoint")
+            }
+        } else {
+            publish_immutable_checkpoint(
+                &region_plan_path,
+                &WorldRegionPlanCheckpoint {
+                    schema: "ghostlight.world_region_plan.v1".into(),
+                    origin_location_id: origin_location_id.clone(),
+                    requests: region_requests.clone(),
+                },
+            )?;
+        }
+        let mut expanded_jurisdictions = Vec::new();
+        for (index, request) in region_requests.iter().enumerate() {
+            let preview_path = root.join(format!("world-region-{:02}-preview.json", index + 1));
+            let commit_path = root.join(format!("world-region-{:02}-checkpoint.json", index + 1));
+            if resume && commit_path.is_file() {
+                let checkpoint: WorldRegionCommitCheckpoint = read_checkpoint(&commit_path)?;
+                if checkpoint.schema != "ghostlight.world_region_expansion_checkpoint.v1"
+                    || checkpoint.request != *request
+                    || checkpoint.origin_location_id != origin_location_id
+                    || checkpoint.commit_receipt.command_kind != "expand_region"
+                {
+                    anyhow::bail!("world-region checkpoint differs at index {}", index + 1)
+                }
+                if !campaign
+                    .locations
+                    .contains_key(&checkpoint.jurisdiction_location_id)
+                {
+                    anyhow::bail!(
+                        "world-region checkpoint is not committed: {}",
+                        checkpoint.jurisdiction_location_id
+                    )
+                }
+                let canonical_receipt = store
+                    .load::<ghostlight_dungeon::domain::WorldCommitReceipt>(
+                        "world_commit_receipt.v1",
+                        &format!("{}-{}", campaign.id, checkpoint.commit_receipt.revision),
+                    )?
+                    .map(|(_, receipt)| receipt)
+                    .ok_or_else(|| anyhow::anyhow!("world-region commit receipt is missing"))?;
+                if canonical_receipt != checkpoint.commit_receipt {
+                    anyhow::bail!("world-region checkpoint differs from canonical receipt")
+                }
+                expanded_jurisdictions.push(checkpoint.jurisdiction_location_id);
+                continue;
+            }
+            std::fs::write(
+                root.join("status.json"),
+                serde_json::to_vec_pretty(&serde_json::json!({
+                    "schema":"ghostlight.live_strategic_smoke_status.v1",
+                    "state":"expanding_world",
+                    "regions_completed":index,
+                    "regions_requested":region_requests.len(),
+                    "current_region_request":request,
+                    "waves_completed":0,
+                    "waves_requested":wave_count,
+                    "world_revision":campaign.revision,
+                    "updated_at":Utc::now(),
+                }))?,
+            )?;
+            let preview_checkpoint = if resume && preview_path.is_file() {
+                let checkpoint: WorldRegionPreviewCheckpoint = read_checkpoint(&preview_path)?;
+                if checkpoint.schema != "ghostlight.world_region_expansion_preview.v1"
+                    || checkpoint.request != *request
+                    || checkpoint.preview.expansion.origin_location_id != origin_location_id
+                {
+                    anyhow::bail!("world-region preview differs at index {}", index + 1)
+                }
+                checkpoint
+            } else {
+                let (preview, receipts) = compiler
+                    .compile_destination(&campaign, &origin_location_id, request)
+                    .await?;
+                let ghostlight_dungeon::domain::DestinationCompilationPreview::RegionExpansion(
+                    preview,
+                ) = preview
+                else {
+                    anyhow::bail!(
+                        "world-region request resolved to an existing destination: {request}"
+                    )
+                };
+                let checkpoint = WorldRegionPreviewCheckpoint {
+                    schema: "ghostlight.world_region_expansion_preview.v1".into(),
+                    request: request.clone(),
+                    preview,
+                    model_receipts: receipts,
+                };
+                publish_immutable_checkpoint(&preview_path, &checkpoint)?;
+                checkpoint
+            };
+            let WorldRegionPreviewCheckpoint {
+                preview,
+                model_receipts: receipts,
+                ..
+            } = preview_checkpoint;
+            if preview.requires_approval || !preview.gaps.is_empty() {
+                publish_immutable_checkpoint(
+                    &root.join(format!(
+                        "world-region-{:02}-terminal-failure.json",
+                        index + 1
+                    )),
+                    &serde_json::json!({
+                        "schema":"ghostlight.world_region_expansion_failure.v1",
+                        "request":request,
+                        "preview":preview,
+                        "model_receipts":receipts,
+                    }),
+                )?;
+                anyhow::bail!(
+                    "world-region expansion requires operator approval at index {}",
+                    index + 1
+                )
+            }
+            let jurisdiction_id = preview
+                .expansion
+                .civic_system
+                .as_ref()
+                .map(|civic| civic.jurisdiction_location_id.clone())
+                .or_else(|| {
+                    preview
+                        .expansion
+                        .locations
+                        .first()
+                        .map(|location| location.id.clone())
+                })
+                .ok_or_else(|| anyhow::anyhow!("world-region expansion created no locality"))?;
+            let receipt = if campaign.revision == preview.expected_revision {
+                let CommandResult::Committed {
+                    campaign: expanded,
+                    receipt,
+                } = kernel
+                    .command(WorldCommand::ExpandRegion {
+                        expected_revision: preview.expected_revision,
+                        expansion: preview.expansion.clone(),
+                        evidence_receipts: preview.evidence_receipts.clone(),
+                        canon_candidates: preview.canon_candidates.clone(),
+                        model_stage_receipts: receipts.clone(),
+                    })
+                    .await?
+                else {
+                    anyhow::bail!("world-region expansion did not commit")
+                };
+                campaign = expanded;
+                receipt
+            } else if campaign.revision > preview.expected_revision
+                && preview
+                    .expansion
+                    .locations
+                    .iter()
+                    .all(|location| campaign.locations.contains_key(&location.id))
+                && preview
+                    .expansion
+                    .institutions
+                    .iter()
+                    .all(|institution| campaign.institutions.contains_key(&institution.id))
+                && preview
+                    .expansion
+                    .populations
+                    .iter()
+                    .all(|population| campaign.gestalts.contains_key(&population.id))
+            {
+                store
+                    .load::<ghostlight_dungeon::domain::WorldCommitReceipt>(
+                        "world_commit_receipt.v1",
+                        &format!("{}-{}", campaign.id, preview.expected_revision + 1),
+                    )?
+                    .map(|(_, receipt)| receipt)
+                    .filter(|receipt| receipt.command_kind == "expand_region")
+                    .ok_or_else(|| {
+                        anyhow::anyhow!("committed world region lacks its canonical receipt")
+                    })?
+            } else {
+                anyhow::bail!("world-region preview no longer matches canonical campaign state")
+            };
+            publish_immutable_checkpoint(
+                &commit_path,
+                &WorldRegionCommitCheckpoint {
+                    schema: "ghostlight.world_region_expansion_checkpoint.v1".into(),
+                    request: request.clone(),
+                    origin_location_id: origin_location_id.clone(),
+                    jurisdiction_location_id: jurisdiction_id.clone(),
+                    commit_receipt: receipt,
+                    model_receipt_hashes: receipts
+                        .iter()
+                        .map(|receipt| receipt.storage_key().to_owned())
+                        .collect(),
+                },
+            )?;
+            expanded_jurisdictions.push(jurisdiction_id);
+        }
+        initial_seed_location_ids = expanded_jurisdictions;
+    }
     let clock_binding_path = root.join("clock-consequence-binding.json");
     let clock_binding_proposal_path = root.join("clock-consequence-binding-proposal.json");
     let mut pending_clock_news_start = None;
