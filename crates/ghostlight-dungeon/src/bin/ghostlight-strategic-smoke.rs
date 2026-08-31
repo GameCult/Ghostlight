@@ -1339,47 +1339,6 @@ async fn main() -> anyhow::Result<()> {
             anyhow::bail!("fission civic reconciliation checkpoint disagrees with campaign")
         }
     }
-    let agency_scope_reconciliation_path = root.join("fission-agency-scope-reconciliation.json");
-    if resume
-        && ghostlight_dungeon::resolution::fission_agency_scope_reconciliation_required(&campaign)?
-    {
-        if agency_scope_reconciliation_path.is_file() {
-            anyhow::bail!(
-                "fission agency-scope reconciliation checkpoint exists but canonical repair is absent"
-            )
-        }
-        let committed = kernel
-            .command(WorldCommand::ReconcileFissionAgencyScopes {
-                expected_revision: campaign.revision,
-            })
-            .await?;
-        let CommandResult::Committed {
-            campaign: advanced,
-            receipt,
-        } = committed
-        else {
-            anyhow::bail!("fission agency-scope reconciliation did not commit")
-        };
-        publish_immutable_checkpoint(
-            &agency_scope_reconciliation_path,
-            &serde_json::json!({
-                "schema":"ghostlight.fission_agency_scope_reconciliation_checkpoint.v1",
-                "receipt":receipt,
-            }),
-        )?;
-        campaign = advanced;
-    } else if agency_scope_reconciliation_path.is_file() {
-        let checkpoint: serde_json::Value = read_checkpoint(&agency_scope_reconciliation_path)?;
-        let revision = checkpoint["receipt"]["revision"].as_u64().ok_or_else(|| {
-            anyhow::anyhow!("fission agency-scope reconciliation receipt is malformed")
-        })?;
-        if checkpoint["schema"] != "ghostlight.fission_agency_scope_reconciliation_checkpoint.v1"
-            || checkpoint["receipt"]["command_kind"] != "reconcile_fission_agency_scopes"
-            || revision > campaign.revision
-        {
-            anyhow::bail!("fission agency-scope reconciliation checkpoint disagrees with campaign")
-        }
-    }
     if resume {
         ghostlight_dungeon::compiler::validate_campaign_runtime(&campaign)?;
     }
@@ -2412,12 +2371,12 @@ async fn main() -> anyhow::Result<()> {
                         let profile = campaign.agency_profiles.get(parent_id).ok_or_else(|| {
                             anyhow::anyhow!("complexity parent has no agency profile")
                         })?;
-                        let jurisdiction_id = complexity_realm_for_profile(profile, &demand)
-                            .ok_or_else(|| {
-                                anyhow::anyhow!(
-                                    "complexity parent has no demanded realm jurisdiction"
-                                )
-                            })?;
+                        let jurisdiction_id = complexity_realm_for_profile(
+                            &campaign, profile, &demand,
+                        )
+                        .ok_or_else(|| {
+                            anyhow::anyhow!("complexity parent has no demanded realm jurisdiction")
+                        })?;
                         Ok((parent_id.clone(), jurisdiction_id))
                     })
                     .collect::<anyhow::Result<BTreeMap<_, _>>>()?;
@@ -2574,8 +2533,8 @@ async fn main() -> anyhow::Result<()> {
                     .agency_profiles
                     .get(invocation.proposal.parent_gestalt_id())
                     .ok_or_else(|| anyhow::anyhow!("complexity parent has no agency profile"))?;
-                let location_id =
-                    complexity_realm_for_profile(profile, &demand).ok_or_else(|| {
+                let location_id = complexity_realm_for_profile(&campaign, profile, &demand)
+                    .ok_or_else(|| {
                         anyhow::anyhow!("complexity parent has no demanded realm jurisdiction")
                     })?;
                 let session_id = elaborator_session_id(invocation.dispatch.title, &location_id);
@@ -3576,7 +3535,7 @@ fn complexity_parent_candidates(
         .values()
         .filter(|profile| profile.active_leaf && profile.simulation_eligible)
     {
-        if let Some(realm) = complexity_realm_for_profile(profile, demand) {
+        if let Some(realm) = complexity_realm_for_profile(campaign, profile, demand) {
             *current_by_realm.entry(realm).or_default() += 1;
         }
     }
@@ -3595,7 +3554,7 @@ fn complexity_parent_candidates(
         let profile = campaign.agency_profiles.get(id)?;
         (profile.active_leaf && profile.simulation_eligible).then_some((id, profile))
     }) {
-        if let Some(realm) = complexity_realm_for_profile(profile, demand)
+        if let Some(realm) = complexity_realm_for_profile(campaign, profile, demand)
             && realm_pressure.get(&realm).copied().unwrap_or(0) > 0
         {
             by_realm
@@ -3639,14 +3598,15 @@ fn complexity_parent_candidates(
 }
 
 fn complexity_realm_for_profile(
+    campaign: &ghostlight_dungeon::domain::Campaign,
     profile: &ghostlight_dungeon::domain::AgencyProfile,
     demand: &ghostlight_dungeon::elaboration::WorldElaborationDemand,
 ) -> Option<String> {
-    profile
-        .location_ids
-        .iter()
-        .find(|location_id| demand.realm_subject_targets.contains_key(*location_id))
-        .cloned()
+    ghostlight_dungeon::elaboration::unique_containing_jurisdiction(
+        campaign,
+        &profile.location_ids,
+        &demand.realm_subject_targets.keys().cloned().collect(),
+    )
 }
 
 fn admitted_public_channel(value: &str) -> anyhow::Result<String> {
@@ -3920,14 +3880,73 @@ mod tests {
         HistoricalWorldNewspaperArticleV2, HistoricalWorldNewspaperEditorialVerdict,
         HistoricalWorldNewspaperGroundingVerdict, HistoricalWorldNewspaperIssueV2,
         admitted_public_channel, civic_manifest_is_committed_candidate, civic_manifest_preserves,
-        committed_elaboration_mutation_proof, completed_wave_issue_campaign, final_wave_field,
-        fission_population_binding_is_present, fission_relation_binding_is_present,
-        latest_partial_wave_checkpoint, missing_newspaper_report_indices,
-        publish_immutable_checkpoint, recomposed_model_receipt_set_digest,
-        recover_committed_clock_binding, strategic_campaign, strategic_locality_request,
-        strategic_smoke_bytes_digest, strategic_smoke_digest, strategic_titled_locality_request,
-        titled_failure_checkpoint_paths, validate_completed_newspaper_recomposition_receipt,
+        committed_elaboration_mutation_proof, completed_wave_issue_campaign,
+        complexity_realm_for_profile, final_wave_field, fission_population_binding_is_present,
+        fission_relation_binding_is_present, latest_partial_wave_checkpoint,
+        missing_newspaper_report_indices, publish_immutable_checkpoint,
+        recomposed_model_receipt_set_digest, recover_committed_clock_binding, strategic_campaign,
+        strategic_locality_request, strategic_smoke_bytes_digest, strategic_smoke_digest,
+        strategic_titled_locality_request, titled_failure_checkpoint_paths,
+        validate_completed_newspaper_recomposition_receipt,
     };
+
+    #[test]
+    fn complexity_realm_is_derived_from_canonical_location_containment() {
+        use ghostlight_dungeon::domain::{Location, Route};
+        use ghostlight_dungeon::elaboration::{WorldScaleIntent, derive_world_elaboration_demand};
+        use std::collections::{BTreeMap, BTreeSet};
+
+        let mut campaign = strategic_campaign();
+        campaign.locations.insert(
+            "realm".into(),
+            Location {
+                id: "realm".into(),
+                name: "Realm".into(),
+                container_id: None,
+                routes: BTreeMap::<String, Route>::new(),
+                persistent_features: Vec::new(),
+            },
+        );
+        campaign.locations.insert(
+            "town".into(),
+            Location {
+                id: "town".into(),
+                name: "Town".into(),
+                container_id: Some("realm".into()),
+                routes: BTreeMap::new(),
+                persistent_features: Vec::new(),
+            },
+        );
+        campaign.locations.insert(
+            "ward".into(),
+            Location {
+                id: "ward".into(),
+                name: "Ward".into(),
+                container_id: Some("town".into()),
+                routes: BTreeMap::new(),
+                persistent_features: Vec::new(),
+            },
+        );
+        let profile_id = campaign.agency_profiles.keys().next().unwrap().clone();
+        let profile = {
+            let profile = campaign.agency_profiles.get_mut(&profile_id).unwrap();
+            profile.location_ids = BTreeSet::from(["ward".into()]);
+            profile.clone()
+        };
+        let demand = derive_world_elaboration_demand(
+            240,
+            1,
+            &WorldScaleIntent::ten_percent(),
+            BTreeMap::from([("realm".into(), 1)]),
+        )
+        .unwrap();
+
+        assert_eq!(
+            complexity_realm_for_profile(&campaign, &profile, &demand).as_deref(),
+            Some("realm")
+        );
+        assert_eq!(profile.location_ids, BTreeSet::from(["ward".into()]));
+    }
 
     fn civic_manifest(
         version: u64,

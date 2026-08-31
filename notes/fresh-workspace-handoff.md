@@ -36,22 +36,20 @@ reconciliation are pushed and proved. Logical sessions bind title,
 jurisdiction, campaign, revision, admitted receipts, prior-checkpoint digest,
 and a bounded causal frontier; frozen failure checkpoints own exact failed-
 dispatch resume. Tool-internal rejection findings are not yet promoted into
-later successful session memory, but no executable proposal is left live after
-a successful round and this does not block the acceptance run.
+later successful compaction, but no executable proposal remains live after a
+successful round.
 
-Run 92 at exact pushed source `44c89e3` proves the materialized-member cut was
-necessary but insufficient. It resumed Run 91 without replay, reached revision
-690, and found 938 active eligible Gestalts, but realm routing saw Avelune 0,
-Veyra 0, Bramblewash 0, Kharad-Tum 456, and Hearthcoil 437. Fission projection
-had rebuilt each child profile from its home location and discarded inherited
-realm scope; only realms whose population homes were the realm root survived.
-The current local cut makes Resolution inherit parent jurisdiction scope during
-live fission and provides one revision-bound deterministic lineage
-reconciliation for existing checkpoints through the same primitive. Review,
-gate, commit, push, clone immutable Run 92, reconcile once, and begin round 10.
-The acceptance launcher retains one 35 MiB content-addressed runner per exact
-source commit and deletes disposable compiler output; do not restore a
-persistent Cargo target tree.
+Run 92 at exact source `44c89e3` retained 938 active eligible Gestalts but found
+no selectable parent. Run 93 at `31125a2` falsified the attempted lineage-scope
+repair before any model call: those three realm IDs were never profile scope,
+and adding them would wrongly conflate jurisdiction with occupancy. Canonical
+topology already owns the answer: Avelune, Veyra, and Bramblewash settlements
+are contained by their realm-root locations. The current cut leaves profiles
+unchanged and makes complexity routing walk `Location.container_id` ancestry to
+exactly one consumer realm target. Review, gate, commit, push, clone immutable
+Run 93, and begin round 10 without replay. The acceptance launcher retains one
+35 MiB content-addressed runner per exact source commit and deletes disposable
+compiler output; do not restore a persistent Cargo target tree.
 
 ## Mission and current product shape
 

@@ -64,6 +64,40 @@ pub fn canonical_actionable_subject_count(campaign: &crate::domain::Campaign) ->
     .unwrap_or(u32::MAX)
 }
 
+/// Resolve exact operating places through canonical containment to one
+/// consumer-declared jurisdiction. Presence remains owned by the profile;
+/// this read-only derivation never promotes a container into occupancy.
+pub fn unique_containing_jurisdiction(
+    campaign: &crate::domain::Campaign,
+    location_ids: &BTreeSet<String>,
+    jurisdiction_ids: &BTreeSet<String>,
+) -> Option<String> {
+    let mut jurisdictions = BTreeSet::new();
+    for location_id in location_ids {
+        let mut current = Some(location_id.as_str());
+        let mut visited = BTreeSet::new();
+        while let Some(candidate) = current {
+            if !visited.insert(candidate) {
+                break;
+            }
+            if jurisdiction_ids.contains(candidate) {
+                jurisdictions.insert(candidate.to_owned());
+                break;
+            }
+            current = campaign
+                .locations
+                .get(candidate)
+                .and_then(|location| location.container_id.as_deref());
+        }
+    }
+    (jurisdictions.len() == 1).then(|| {
+        jurisdictions
+            .into_iter()
+            .next()
+            .expect("one jurisdiction was resolved")
+    })
+}
+
 pub fn derive_world_elaboration_demand(
     active_cell_budget: u16,
     current_actionable_subjects: u32,
@@ -1280,13 +1314,17 @@ impl ModelWorldComplexityWorker {
                     "complexity round parent has no session jurisdiction"
                 ));
             };
-            if !campaign.locations.contains_key(jurisdiction_id)
-                || !campaign.agency_profiles[parent_id]
-                    .location_ids
-                    .contains(jurisdiction_id)
+            let permitted_jurisdictions = BTreeSet::from([jurisdiction_id.clone()]);
+            if unique_containing_jurisdiction(
+                &campaign,
+                &campaign.agency_profiles[parent_id].location_ids,
+                &permitted_jurisdictions,
+            )
+            .as_deref()
+                != Some(jurisdiction_id.as_str())
             {
                 return Err(anyhow!(
-                    "complexity round session jurisdiction is not an exact parent location"
+                    "complexity round session jurisdiction does not contain the parent location"
                 ));
             }
         }
@@ -4457,6 +4495,33 @@ mod tests {
             Err(error) => error,
         };
         assert!(error.to_string().contains("misrouted session checkpoint"));
+    }
+
+    #[test]
+    fn complexity_worker_accepts_a_canonical_containing_jurisdiction() {
+        let mut campaign = campaign_with_fission_parent();
+        campaign.locations.get_mut("room").unwrap().container_id = Some("realm".into());
+        campaign.locations.insert(
+            "realm".into(),
+            crate::domain::Location {
+                id: "realm".into(),
+                name: "Realm".into(),
+                container_id: None,
+                routes: BTreeMap::new(),
+                persistent_features: Vec::new(),
+            },
+        );
+
+        let worker = ModelWorldComplexityWorker::new(
+            Arc::new(PanicIfInvokedModel),
+            Arc::new(campaign),
+            1,
+            vec!["river-households".into()],
+            BTreeMap::from([("river-households".into(), "realm".into())]),
+            BTreeMap::new(),
+        );
+
+        assert!(worker.is_ok());
     }
 
     #[tokio::test]

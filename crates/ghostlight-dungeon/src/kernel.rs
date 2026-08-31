@@ -1173,27 +1173,6 @@ fn execute(
                 Some((transition, mutation_receipt)),
             )
         }
-        WorldCommand::ReconcileFissionAgencyScopes { expected_revision } => {
-            require_revision(&campaign, expected_revision)?;
-            let changed = crate::resolution::reconcile_fission_agency_scopes(&mut campaign)
-                .map_err(|error| KernelError::Invalid(error.to_string()))?;
-            if changed.is_empty() {
-                return Err(KernelError::Invalid(
-                    "campaign has no stale fission agency scopes".into(),
-                ));
-            }
-            commit_with_records(
-                store,
-                row,
-                campaign,
-                "reconcile_fission_agency_scopes",
-                Vec::new(),
-                Vec::new(),
-                Vec::new(),
-                None,
-                None,
-            )
-        }
         WorldCommand::AdvanceStrategicTick {
             expected_revision,
             source,
