@@ -7,6 +7,131 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 pub const MAX_ELABORATOR_WEIGHT: u16 = 100;
+pub const COVER_BASIS_POINTS: u32 = 10_000;
+
+/// Consumer-owned scale intent for world elaboration. This states how much of
+/// the potentially acting world may receive simultaneous cell attention; it
+/// does not change the campaign's active-cell entitlement or admit subjects.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct WorldScaleIntent {
+    pub schema: String,
+    #[schemars(range(min = 1, max = 10000))]
+    pub target_active_cover_basis_points: u16,
+}
+
+impl WorldScaleIntent {
+    pub fn ten_percent() -> Self {
+        Self {
+            schema: "ghostlight.world_scale_intent.v1".into(),
+            target_active_cover_basis_points: 1_000,
+        }
+    }
+}
+
+/// Deterministic elaboration pressure derived from scale intent and current
+/// canonical state. The scheduler may spend this budget on proposals; only
+/// existing admission and WorldKernel paths can turn them into subjects.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct WorldElaborationDemand {
+    pub schema: String,
+    pub active_cell_budget: u16,
+    pub target_active_cover_basis_points: u16,
+    pub target_actionable_subjects: u32,
+    pub current_actionable_subjects: u32,
+    pub actionable_subject_deficit: u32,
+    /// Bounded work to attempt before remeasuring canonical complexity. This
+    /// is pressure, not an assumed subject yield or model-call count.
+    pub round_mutation_budget: u32,
+    pub realm_complexity_weights: BTreeMap<String, u32>,
+    pub realm_subject_targets: BTreeMap<String, u32>,
+}
+
+/// Counts canonical active agency leaves that could own an action. Dormant
+/// member records and census texture do not satisfy world-complexity demand;
+/// an individual counts only after grounded elaboration promotes them into an
+/// Actor leaf, and a population subdivision counts only after admitted fission
+/// creates active child Gestalts.
+pub fn canonical_actionable_subject_count(campaign: &crate::domain::Campaign) -> u32 {
+    u32::try_from(
+        campaign
+            .agency_profiles
+            .values()
+            .filter(|profile| profile.active_leaf && profile.simulation_eligible)
+            .count(),
+    )
+    .unwrap_or(u32::MAX)
+}
+
+pub fn derive_world_elaboration_demand(
+    active_cell_budget: u16,
+    current_actionable_subjects: u32,
+    intent: &WorldScaleIntent,
+    realm_complexity_weights: BTreeMap<String, u32>,
+) -> Result<WorldElaborationDemand> {
+    if intent.schema != "ghostlight.world_scale_intent.v1"
+        || intent.target_active_cover_basis_points == 0
+        || u32::from(intent.target_active_cover_basis_points) > COVER_BASIS_POINTS
+    {
+        return Err(anyhow!("world scale intent is unsupported or out of range"));
+    }
+    if active_cell_budget == 0 {
+        return Err(anyhow!(
+            "world scale intent requires a nonzero active-cell budget"
+        ));
+    }
+    if realm_complexity_weights.is_empty()
+        || realm_complexity_weights
+            .iter()
+            .any(|(realm, weight)| realm.trim().is_empty() || *weight == 0)
+    {
+        return Err(anyhow!(
+            "world elaboration demand requires nonempty realms with positive complexity weights"
+        ));
+    }
+    let cover = u32::from(intent.target_active_cover_basis_points);
+    let target_actionable_subjects = u32::from(active_cell_budget)
+        .saturating_mul(COVER_BASIS_POINTS)
+        .div_ceil(cover);
+    let actionable_subject_deficit =
+        target_actionable_subjects.saturating_sub(current_actionable_subjects);
+    let round_mutation_budget = if actionable_subject_deficit == 0 {
+        0
+    } else {
+        u32::from(active_cell_budget)
+            .saturating_mul(actionable_subject_deficit)
+            .div_ceil(target_actionable_subjects)
+            .max(1)
+    };
+    let total_weight = realm_complexity_weights
+        .values()
+        .try_fold(0_u32, |total, weight| total.checked_add(*weight))
+        .ok_or_else(|| anyhow!("realm complexity weights overflow"))?;
+    let mut realm_subject_targets = BTreeMap::new();
+    let mut assigned = 0_u32;
+    let last_realm = realm_complexity_weights.keys().next_back().cloned();
+    for (realm, weight) in &realm_complexity_weights {
+        let share = if Some(realm) == last_realm.as_ref() {
+            target_actionable_subjects.saturating_sub(assigned)
+        } else {
+            target_actionable_subjects.saturating_mul(*weight) / total_weight
+        };
+        assigned = assigned.saturating_add(share);
+        realm_subject_targets.insert(realm.clone(), share);
+    }
+    Ok(WorldElaborationDemand {
+        schema: "ghostlight.world_elaboration_demand.v1".into(),
+        active_cell_budget,
+        target_active_cover_basis_points: intent.target_active_cover_basis_points,
+        target_actionable_subjects,
+        current_actionable_subjects,
+        actionable_subject_deficit,
+        round_mutation_budget,
+        realm_complexity_weights,
+        realm_subject_targets,
+    })
+}
 
 #[derive(
     Clone, Copy, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, PartialOrd, Ord, Hash,
@@ -1203,6 +1328,7 @@ struct WorldElaborationAgentTool<'a> {
     campaign: &'a crate::domain::Campaign,
     target_location_id: &'a str,
     assignment: &'a WorldElaborationAssignment,
+    workbench: serde_json::Value,
 }
 
 #[async_trait]
@@ -1215,6 +1341,10 @@ impl crate::agent::ModelAgentTool for WorldElaborationAgentTool<'_> {
         self.assignment
             .action_schema(self.target_location_id)
             .map_err(|error| error.to_string())
+    }
+
+    fn initial_context_snapshot(&self) -> Option<serde_json::Value> {
+        Some(self.workbench.clone())
     }
 
     async fn invoke(
@@ -1279,22 +1409,27 @@ impl ElaborationSubAgentPort<WorldElaborationProposal> for ModelWorldElaboration
                     model_stage_receipts: Vec::new(),
                 },
             )?;
+        // Keep identity and mandate as the stable cacheable prefix. Exact
+        // assignment, mutable world projection, and (later) compacted working
+        // memory belong to the bounded workbench snapshot.
         let instructions = format!(
-            "You are {}, one titled elaborator in a parallel worldbuilding wave. {} Your authority is one proposal only. Use the typed submit tool to negotiate with the deterministic validator; never claim canonical state, invent evidence receipts, or alter another assignment. Preserve the frozen civic foundation and make your contribution specific enough that later events can use it.\n\nEXACT ASSIGNMENT:\n{}\n\nFROZEN PUBLIC WORLD PROJECTION:\n{}",
+            "You are {}, one titled elaborator in an iterative worldbuilding session. {} Your authority is one proposal at a time. Use the typed submit tool to negotiate with the deterministic validator; never claim canonical state, invent evidence receipts, or alter another assignment. Preserve admitted structure and make each contribution specific enough that later events can use it.",
             invocation.dispatch.title.display_name(),
             invocation.dispatch.title.mandate(),
+        );
+        let assignment_instruction =
             assignment
                 .instruction(&self.target_location_id)
                 .map_err(|error| ElaborationSubAgentFailure {
                     diagnostic: error.to_string(),
                     model_stage_receipts: Vec::new(),
-                })?,
-            self.projection()
-                .map_err(|error| ElaborationSubAgentFailure {
-                    diagnostic: error.to_string(),
-                    model_stage_receipts: Vec::new(),
-                })?,
-        );
+                })?;
+        let projection = self
+            .projection()
+            .map_err(|error| ElaborationSubAgentFailure {
+                diagnostic: error.to_string(),
+                model_stage_receipts: Vec::new(),
+            })?;
         let model = match invocation.dispatch.title {
             ElaboratorTitle::Charter | ElaboratorTitle::Tangle => crate::model::MODEL_BALANCED,
             ElaboratorTitle::Numen => crate::model::MODEL_CAPABLE,
@@ -1314,6 +1449,12 @@ impl ElaborationSubAgentPort<WorldElaborationProposal> for ModelWorldElaboration
             campaign: &self.campaign,
             target_location_id: &self.target_location_id,
             assignment: &assignment,
+            workbench: serde_json::json!({
+                "schema":"ghostlight.elaborator_workbench.v1",
+                "assignment":assignment_instruction,
+                "frozen_public_world_projection":serde_json::from_str::<serde_json::Value>(&projection)
+                    .unwrap_or_else(|_| serde_json::Value::String(projection)),
+            }),
         };
         match crate::agent::run_model_agent(self.model.as_ref(), &spec, &mut tool).await {
             Ok(run) => Ok(ElaborationSubAgentOutput {
@@ -2219,6 +2360,87 @@ fn bounded_diagnostic(diagnostic: String) -> String {
 mod tests {
     use super::*;
 
+    #[test]
+    fn ten_percent_cover_derives_twenty_four_hundred_actionable_subjects() {
+        let demand = derive_world_elaboration_demand(
+            240,
+            80,
+            &WorldScaleIntent::ten_percent(),
+            BTreeMap::from([
+                ("forest".into(), 3),
+                ("grain".into(), 1),
+                ("rail".into(), 2),
+            ]),
+        )
+        .unwrap();
+        assert_eq!(demand.target_actionable_subjects, 2_400);
+        assert_eq!(demand.actionable_subject_deficit, 2_320);
+        assert_eq!(demand.round_mutation_budget, 232);
+        assert_eq!(demand.realm_subject_targets.values().sum::<u32>(), 2_400);
+        assert_eq!(demand.realm_subject_targets["forest"], 1_200);
+        assert_eq!(demand.realm_subject_targets["grain"], 400);
+        assert_eq!(demand.realm_subject_targets["rail"], 800);
+    }
+
+    #[test]
+    fn elaboration_demand_never_reopens_a_satisfied_subject_target() {
+        let demand = derive_world_elaboration_demand(
+            8,
+            100,
+            &WorldScaleIntent::ten_percent(),
+            BTreeMap::from([("locality".into(), 1)]),
+        )
+        .unwrap();
+        assert_eq!(demand.target_actionable_subjects, 80);
+        assert_eq!(demand.actionable_subject_deficit, 0);
+        assert_eq!(demand.round_mutation_budget, 0);
+    }
+
+    #[test]
+    fn elaboration_demand_counts_only_canonical_simulation_leaves() {
+        let mut campaign = campaign_with_civic_room();
+        crate::resolution::ensure_agency_profiles(&mut campaign);
+        let mut eligible = campaign.agency_profiles[&campaign.player_actor_id].clone();
+        eligible.id = "eligible-profile".into();
+        eligible.subject_id = "eligible-subject".into();
+        eligible.subject_kind = crate::domain::AgencySubjectKind::Gestalt;
+        eligible.simulation_eligible = true;
+        let eligible_id = eligible.subject_id.clone();
+        campaign.gestalts.insert(
+            eligible_id.clone(),
+            crate::domain::GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: eligible_id.clone(),
+                name: "Eligible Population".into(),
+                version: 1,
+                home_location_id: "room".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: Vec::new(),
+                pressures: Vec::new(),
+            },
+        );
+        campaign
+            .agency_profiles
+            .insert(eligible_id.clone(), eligible);
+        let mut retired = campaign.agency_profiles[&eligible_id].clone();
+        retired.id = "retired-profile".into();
+        retired.subject_id = "retired-subject".into();
+        retired.active_leaf = false;
+        campaign
+            .agency_profiles
+            .insert(retired.subject_id.clone(), retired);
+
+        let expected = campaign
+            .agency_profiles
+            .values()
+            .filter(|profile| profile.active_leaf && profile.simulation_eligible)
+            .count() as u32;
+        assert_eq!(canonical_actionable_subject_count(&campaign), expected);
+        assert!(!campaign.agency_profiles[&campaign.player_actor_id].simulation_eligible);
+    }
+
     fn campaign_with_civic_room() -> crate::domain::Campaign {
         let mut campaign = crate::kernel::tests::campaign();
         campaign.civic_systems.insert(
@@ -2942,6 +3164,7 @@ mod tests {
             campaign: &campaign,
             target_location_id: "room",
             assignment: &assignment,
+            workbench: serde_json::json!({"schema":"test.workbench.v1"}),
         };
         let context = crate::agent::ModelAgentToolContext {
             source_receipt_ids: Vec::new(),

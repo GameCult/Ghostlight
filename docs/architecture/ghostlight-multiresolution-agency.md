@@ -38,6 +38,65 @@ The wider runtime map remains `ghostlight-dungeon-mvp.md`.
 member deltas remain canonical owners. `AgencyProfile` and `AgencyRelation` are
 typed partition inputs. `SimulationCell` is always disposable and rebuildable.
 
+## Latent-world scale and elaboration demand
+
+- **Owner:** consumer-authored `WorldScaleIntent` owns the desired active-cover
+  ratio. `ResolutionPolicy` continues to own only the active-cell entitlement.
+  A deterministic `WorldElaborationDemand` derivation owns the resulting target
+  and deficit; it owns no fictional content.
+- **Inputs:** active-cell budget, target active-cover basis points, the current
+  count of simulation-eligible canonical subjects, and positive complexity
+  weights for admitted realm jurisdictions.
+- **Outputs:** target actionable-subject count, exact current deficit, a bounded
+  round-effort budget, and deterministic per-realm target shares. At 240 cells
+  and 1,000 basis points, the target is 2,400 subjects.
+- **Derived state:** demand, deficit, invocation schedule, and realm target
+  shares are resumable planning artifacts. They are not subjects, facts,
+  Personas, cells, or mutation permits.
+- **Forbidden writers:** the elaboration scheduler, titled workers, Gestalt
+  compression, Nemesis, and provider concurrency cannot create or count a
+  proposed subject as canonical. Only admitted population, institution, or
+  actor operations committed through `WorldKernel` reduce the deficit.
+- **Shared paths:** initial compilation, destination expansion, resumed
+  elaboration, and later consumer-requested scale changes use the same demand
+  derivation and canonical actionability count. Each titled worker proposes at
+  most one structural operation at a time; deterministic admission and kernel
+  commit remain unchanged. Complexity rises through grounded Gestalt fission,
+  institution creation, or promotion of an individual into an active Actor
+  leaf, never through unelaborated census or roster rows.
+- **Cut line:** fixed elaboration-pass count is not a world-scale owner. It may
+  bound which jurisdictions are being worked in one run, but it cannot declare
+  the latent world sufficiently populated. Provider concurrency controls only
+  simultaneous calls and never changes the target or deficit.
+
+Realm complexity weights distribute the target; they do not increase it. Any
+integer remainder is assigned deterministically so the realm shares sum exactly
+to the world target. A rejected or conflicting proposal leaves the deficit
+visible rather than being hidden behind an assumed model-call yield.
+
+The actionable count includes only active simulation-eligible agency leaves.
+Dormant member records are useful latent identity, but do not pay down the
+complexity deficit until grounded elaboration promotes them. Resolution may
+still compress roughly 2,400 such leaves into at most 240 cells.
+
+The mutation budget is not a cold-prompt budget. Each titled elaborator owns a
+resumable working session containing its current frontier, unresolved leads,
+recent admitted mutations, exact rejection findings, and title mandate. The
+canonical world remains long-term memory. Bounded retrieval supplies older
+relevant state. When a session exceeds its context threshold, an agentic
+compaction pass emits a typed checkpoint bound to exact world commits; the raw
+conversation is discarded as authority and the next turn appends from the
+checkpoint. Scheduler frequency remains proportional to slider share across
+these sequential turns.
+
+Round effort is proportional to unresolved pressure rather than presumed model
+yield: `ceil(active_cell_budget * deficit / target)`, zero when the target is
+satisfied. With 80 admitted leaves against the 2,400 target, the first round
+funds 232 one-operation turns. After admission the deterministic owner recounts
+active meaningful leaves and derives the next round afresh. A fission may add
+several meaningful child leaves; a rejected proposal may add none. Neither case
+changes the accounting rule or grants the scheduler fictional authority.
+
 ## Canonical population resolution
 
 Known population detail is represented by non-overlapping active gestalt

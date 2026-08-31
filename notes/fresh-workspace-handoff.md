@@ -1679,14 +1679,27 @@ materializing a `NewsIssue`.
 2. Preserve the delivered Run 60 PDF and its frozen-copy verification as the
    earlier baseline, plus the final Run 61 style/flow artifact, v2 manifest,
    grammar, hashes, frozen copy, and art assets recorded above.
-3. Do not resume stopped Run 75. Map separate owners for the approximately
-   2,400 potentially acting latent entities, the 240-cell active-attention
-   entitlement, elaborator budget derived from world complexity versus
-   simulation budget, Gestalt compression, and Nemesis attention allocation.
-   Define persistence, resume bindings, and an acceptance fixture proving about
-   ten-percent active cover before implementation. Preserve Runs 64 through 75
-   and both live services. This work does not wait for the Delvehold adapter
-   because the Greathold remains an external sovereign boundary observer.
+3. Do not resume stopped Run 75. Revise the current local scale derivation
+   before integrating it. `WorldScaleIntent` and `WorldElaborationDemand` now
+   derive a numeric 2,400-subject target from 240 cells at ten-percent cover,
+   but this is not yet the required complexity proof: a flat population roster
+   cannot satisfy the target. `round_mutation_budget` is
+   `ceil(active_cell_budget * deficit / target)`: 240 cells with a
+   2,320/2,400 deficit yields 232 demanded mutations for the next round. It is
+   bounded round pressure, not a model-call or session count and not an
+   assumption that one mutation yields one subject. Elaborator context now
+   keeps stable identity and mandate in a prefix separate from the bounded
+   dynamic workbench snapshot, but persistent elaboration checkpointing and
+   compaction are not implemented. Define a deterministic measure of admitted
+   causal complexity and an iterative loop that fissions Gestalts, promotes
+   meaningful individuals and institutions, remeasures after admission, and
+   continues until the target is met. Do not assume a fixed batch yield or one
+   model call per useful subject. Add persistence, resume binding, compaction,
+   and a product-scale fixture around that loop. Keep Resolution as cover owner. Nemesis receives
+   that cover and assigns causal decision windows inside it; it does not choose
+   cover membership. Preserve Runs 64 through 75 and both live services. This
+   work does not wait for the Delvehold adapter because the Greathold remains an
+   external sovereign boundary observer.
 4. Build the Delvehold-owned adapter before any real Delvehold-owned player,
    civic, dungeon, contract, workshop, or quantitative-economy state participates.
    Defer multiple publications until separately authorized, or follow the operator's next directed work.
