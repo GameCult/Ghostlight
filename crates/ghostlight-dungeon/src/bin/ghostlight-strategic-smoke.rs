@@ -955,6 +955,7 @@ fn fission_relation_binding_is_present(
     visit(campaign, current_ids, expected_id, &BTreeSet::new())
 }
 
+#[cfg(test)]
 fn civic_manifest_is_committed_candidate(
     current: &ghostlight_dungeon::domain::CivicSystemManifest,
     candidate: &ghostlight_dungeon::domain::CivicSystemManifest,
@@ -1864,15 +1865,25 @@ async fn main() -> anyhow::Result<()> {
                 let civic = campaign.civic_systems.get(location_id).ok_or_else(|| {
                     anyhow::anyhow!("resumed campaign lacks civic system for {location_id}")
                 })?;
-                if !civic_manifest_is_committed_candidate(civic, candidate_civic) {
+                if !candidate_civic.semantic_verification_receipt_id.is_empty()
+                    || !civic_manifest_preserves(&campaign, civic, candidate_civic)
+                {
                     anyhow::bail!(
                         "titled preview for {location_id} is not the civic system committed in CultCache"
                     )
                 }
+                let existing_commit_checkpoint = titled_commit_path
+                    .is_file()
+                    .then(|| read_checkpoint::<TitledCommitCheckpoint>(&titled_commit_path))
+                    .transpose()?;
+                let verifier_receipt_hash = existing_commit_checkpoint
+                    .as_ref()
+                    .map(|checkpoint| checkpoint.verifier_receipt_hash.as_str())
+                    .unwrap_or(&civic.semantic_verification_receipt_id);
                 let verifier_receipt = store
                     .load::<ghostlight_dungeon::model::ModelStageReceipt>(
                         "persona_stage_receipt.v1",
-                        &civic.semantic_verification_receipt_id,
+                        verifier_receipt_hash,
                     )?
                     .map(|(_, receipt)| receipt)
                     .ok_or_else(|| {
@@ -1912,8 +1923,8 @@ async fn main() -> anyhow::Result<()> {
                     &persisted_commit_receipt,
                     &finalized_expansion,
                 )?;
-                let commit_checkpoint = if titled_commit_path.is_file() {
-                    read_checkpoint::<TitledCommitCheckpoint>(&titled_commit_path)?
+                let commit_checkpoint = if let Some(checkpoint) = existing_commit_checkpoint {
+                    checkpoint
                 } else {
                     let checkpoint = TitledCommitCheckpoint {
                         schema: "ghostlight.titled_elaboration_commit.v1".into(),
@@ -3834,7 +3845,7 @@ mod tests {
     use super::{
         HistoricalWorldNewspaperArticleV2, HistoricalWorldNewspaperEditorialVerdict,
         HistoricalWorldNewspaperGroundingVerdict, HistoricalWorldNewspaperIssueV2,
-        admitted_public_channel, civic_manifest_is_committed_candidate,
+        admitted_public_channel, civic_manifest_is_committed_candidate, civic_manifest_preserves,
         committed_elaboration_mutation_proof, completed_wave_issue_campaign, final_wave_field,
         fission_population_binding_is_present, fission_relation_binding_is_present,
         latest_partial_wave_checkpoint, missing_newspaper_report_indices,
@@ -3904,6 +3915,14 @@ mod tests {
             &BTreeSet::from(["relation:fission:east".into()]),
             "relation"
         ));
+
+        let checkpoint = civic_manifest(1, "");
+        let mut current = checkpoint.clone();
+        current.version = 2;
+        current.resident_population_ids = residents;
+        current.political_relation_ids = relations;
+        current.semantic_verification_receipt_id = "fission-repair".into();
+        assert!(civic_manifest_preserves(&campaign, &current, &checkpoint));
     }
 
     #[test]
