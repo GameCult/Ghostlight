@@ -25,7 +25,7 @@ own volatile workspace identity and the release witness owns deployed identity.
 
 ## Current full-world pressure test
 
-Preserve immutable Runs 75 through 104. Rounds 1 through 18 and their session
+Preserve immutable Runs 75 through 106. Rounds 1 through 22 and their session
 checkpoints are canonical; do not replay them.
 
 Bounded parallel title-by-realm compaction and deterministic parallel child-ID
@@ -48,27 +48,26 @@ distinct, so global public-name uniqueness was wrongly acting as identity
 authority. The status file is stale at revision 769; `campaign.cc` and exact
 commit receipts through ordinal 804 own partial-progress truth.
 
-Run 101 completed round 14 with 81 commits and raised actionable subjects from
-1,596 to 1,708, then completed round 15 with 70 commits and raised them from
-1,708 to 1,800. Run 102 completed round 16 with 60 commits and raised subjects
-from 1,800 to 1,880; round 17 then committed 52 mutations and wrote 23 session
-summaries before one Patina compaction failed. Run 103 reproduced that exact
-failure. Run 104 recovered the missing compaction and closed round 17, then
-completed round 18 with 45 commits and raised subjects from 1,954 to 2,020.
+Pushed exact source `75d9235352dc6678617f532f4cd2e7f39c7b23e1`
+owns deterministic exact-ID proposal supersession. Immutable Run 105 completed
+round 21 from 2,118 to 2,159 subjects and round 22 from 2,159 to 2,194. Its
+round-23 preview froze 21 invocations and committed all 21 mutations at revisions
+1409 through 1429. Fifteen of 21 local session compactions persisted before the
+remaining compaction work stopped. Immutable same-source Run 106 cloned Run 105
+and reproduced the failure without writing another session checkpoint.
 
-Run 104's round-19 preview committed through ordinal 1288 and failed at ordinal
-1289. Adjacent Avelune carrier parents independently proposed exact canonical
-member ID and public name `Tarin Vel` at ordinals 1272 and 1289, with
-near-identical content. The current cut groups only by canonical local member
-ID, retains the earliest ordinal, writes an immutable supersession checkpoint
-for the later invocation, excludes its mutation and compaction journal entry,
-and remeasures. Name and semantic similarity are evidence, not matching
-authority. Review, gate, commit, and push, then clone Run 104 and resume at
-ordinal 1289. Preserve the frozen preview, provider receipts, and commits through
-1288; do not replay proposals, admitted mutations, or earlier rounds. The
-acceptance launcher retains one 35 MiB content-addressed runner per exact source
-commit and deletes disposable compiler output; do not restore a persistent
-Cargo target tree.
+The generic `elaborator session compaction journal is empty, stale, or
+unbounded` error is emitted by `compact_elaborator_session` before model work.
+Its combined predicate hides whether target location, journal count, revision,
+receipt ID, mutation kind, summary, or affected-subject bounds failed. Keep that
+function as the deterministic preflight owner, but report the complete mismatch
+set with indexed journal findings. Add focused tests, review, gate, commit, and
+push; then clone Run 106 and resume only the six missing round-23 compactions.
+Preserve all 21 mutation receipts and 15 successful session checkpoints; do not
+replay provider proposals, mutations, completed compactors, or earlier rounds.
+The acceptance launcher retains one 35 MiB content-addressed runner per exact
+source commit and deletes disposable compiler output; do not restore a
+persistent Cargo target tree.
 
 ## Mission and current product shape
 
@@ -477,14 +476,15 @@ approved capability.
 
 ## Next action
 
-Preserve Runs 75 through 104. Review, gate, commit, and push deterministic
-exact-ID proposal supersession, then clone Run 104 and resume its frozen
-round-19 preview at ordinal 1289. Retain ordinal 1272, write ordinal 1289's
-supersession checkpoint, skip its mutation and session journal entry, continue
-ordinal 1290 onward, and remeasure. Do not replay provider proposals, commits
-through ordinal 1288, or earlier rounds. Continue iterative complexity rounds to
-2,400 canonical actionable subjects, followed by ten strategic waves,
-publications, archive hashes, and unchanged-live-service verification.
+Preserve Runs 75 through 106. Make `compact_elaborator_session` report its
+complete deterministic preflight mismatch set with indexed journal findings,
+then add focused tests, review, gate, commit, and push. Clone Run 106 and resume
+only the six missing round-23 session compactions. Preserve all 21 committed
+mutations at revisions 1409 through 1429 and 15 successful compactions without
+replaying provider proposals, mutations, completed compactors, or earlier
+rounds. Continue iterative complexity rounds to 2,400 canonical actionable
+subjects, followed by ten strategic waves, publications, archive hashes, and
+unchanged-live-service verification.
 
 The generic world-consumer boundary is implemented. Session Zero and external
 producers share one admitted `WorldSeed` transaction; externally authoritative

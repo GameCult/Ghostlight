@@ -564,20 +564,54 @@ pub async fn compact_elaborator_session(
     ElaboratorSessionCheckpoint,
     Vec<crate::model::ModelStageReceipt>,
 )> {
-    if !campaign.locations.contains_key(target_location_id)
-        || journal.is_empty()
-        || journal.len() > 64
-        || journal.iter().any(|entry| {
-            entry.world_revision > campaign.revision
-                || entry.commit_receipt_id.trim().is_empty()
-                || entry.mutation_kind.trim().is_empty()
-                || entry.summary.trim().is_empty()
-                || entry.summary.chars().count() > 1_000
-                || entry.affected_subject_ids.len() > 32
-        })
-    {
+    let mut findings = Vec::new();
+    if !campaign.locations.contains_key(target_location_id) {
+        findings.push(format!(
+            "target location {target_location_id:?} is absent from the canonical campaign"
+        ));
+    }
+    if journal.is_empty() {
+        findings.push("journal must contain at least one admitted mutation".to_owned());
+    }
+    if journal.len() > 64 {
+        findings.push(format!(
+            "journal contains {} entries; the maximum is 64",
+            journal.len()
+        ));
+    }
+    for (index, entry) in journal.iter().enumerate() {
+        if entry.world_revision > campaign.revision {
+            findings.push(format!(
+                "journal[{index}].world_revision {} exceeds canonical revision {}",
+                entry.world_revision, campaign.revision
+            ));
+        }
+        if entry.commit_receipt_id.trim().is_empty() {
+            findings.push(format!("journal[{index}].commit_receipt_id is empty"));
+        }
+        if entry.mutation_kind.trim().is_empty() {
+            findings.push(format!("journal[{index}].mutation_kind is empty"));
+        }
+        if entry.summary.trim().is_empty() {
+            findings.push(format!("journal[{index}].summary is empty"));
+        }
+        let summary_length = entry.summary.chars().count();
+        if summary_length > 1_000 {
+            findings.push(format!(
+                "journal[{index}].summary contains {summary_length} characters; the maximum is 1000"
+            ));
+        }
+        if entry.affected_subject_ids.len() > 32 {
+            findings.push(format!(
+                "journal[{index}].affected_subject_ids contains {} subjects; the maximum is 32",
+                entry.affected_subject_ids.len()
+            ));
+        }
+    }
+    if !findings.is_empty() {
         return Err(anyhow!(
-            "elaborator session compaction journal is empty, stale, or unbounded"
+            "elaborator session compaction preflight failed: {}",
+            findings.join("; ")
         ));
     }
     if let Some(prior) = prior {
@@ -4628,6 +4662,47 @@ mod tests {
         checkpoint
             .validate_for(&campaign, "room", ElaboratorTitle::Charter)
             .unwrap();
+    }
+
+    #[tokio::test]
+    async fn session_compactor_reports_every_deterministic_preflight_mismatch() {
+        let campaign = campaign_with_civic_room();
+        let error = compact_elaborator_session(
+            &PanicIfInvokedModel,
+            &campaign,
+            "missing-realm",
+            ElaboratorTitle::Charter,
+            "charter:missing-realm",
+            None,
+            &[
+                ElaboratorSessionJournalEntry {
+                    world_revision: campaign.revision.saturating_add(1),
+                    commit_receipt_id: " ".into(),
+                    mutation_kind: "".into(),
+                    affected_subject_ids: (0..33).map(|index| format!("subject-{index}")).collect(),
+                    summary: " ".into(),
+                },
+                ElaboratorSessionJournalEntry {
+                    world_revision: campaign.revision,
+                    commit_receipt_id: "world-commit:13".into(),
+                    mutation_kind: "fission_gestalt".into(),
+                    affected_subject_ids: Vec::new(),
+                    summary: "x".repeat(1_001),
+                },
+            ],
+            Vec::new(),
+        )
+        .await
+        .unwrap_err()
+        .to_string();
+
+        assert!(error.contains("target location \"missing-realm\" is absent"));
+        assert!(error.contains("journal[0].world_revision"));
+        assert!(error.contains("journal[0].commit_receipt_id is empty"));
+        assert!(error.contains("journal[0].mutation_kind is empty"));
+        assert!(error.contains("journal[0].summary is empty"));
+        assert!(error.contains("journal[0].affected_subject_ids contains 33"));
+        assert!(error.contains("journal[1].summary contains 1001 characters"));
     }
 
     #[test]
