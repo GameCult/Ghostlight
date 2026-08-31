@@ -1270,10 +1270,123 @@ outside this authority.
   no second region generator or event authority.
 - **Verification layer:** destination validation and reconciliation bind each
   candidate before kernel revalidation and commit. End-to-end acceptance also
-  requires all requested realms to enter locality elaboration, the bounded
+  requires all requested realms to enter locality elaboration, iterative
+  complexity rounds to satisfy the consumer scale intent, the bounded
   multiresolution cover, strategic waves, and grounded newspaper projection.
   Runs 64 and 65 stopped before that claim was established and remain failure
   evidence rather than accepted full-world runs.
+
+#### Iterative latent-world complexity and elaborator continuity
+
+- **Owner:** the strategic acceptance driver owns round orchestration,
+  deterministic titled-elaborator scheduling, checkpoint publication, and
+  bounded termination. `WorldScaleIntent` is consumer-authored;
+  `derive_world_elaboration_demand` deterministically owns the target, deficit,
+  realm shares, and per-round mutation pressure. Each titled elaborator owns
+  only its compact working frontier. `WorldKernel` remains the sole canonical
+  mutation owner, and Resolution remains the owner of the later active cover.
+- **Inputs:** the admitted campaign after region and locality elaboration; its
+  active-cell entitlement; a target cover ratio; equal acceptance-driver realm
+  weights; a weighted titled-elaborator profile; bounded parallelism and round
+  limits; active, simulation-eligible Gestalt leaves without a currently
+  materialized member; the prior per-title session checkpoint; and the exact
+  frozen parent state, members, profile, and local relations for each assigned
+  mutation. Scheduler title deterministically selects the proposal lane:
+  Hearth and Veil individuate one consequential member; the other six titles
+  fission the assigned population along their fixed agency axis.
+- **Outputs:** each round publishes an immutable frozen preview with demand,
+  wave and schedule receipts, exact parent bindings, proposals, and model
+  receipt hashes; then one immutable mutation checkpoint per sequentially
+  admitted fission or individuation; one compacted checkpoint for each title
+  that obtained an admitted mutation in that round; and a terminal round
+  checkpoint carrying the scheduler state, mutation paths, the accumulated
+  per-title session checkpoints, and remeasured
+  actionable-subject count. The final count and round reports are acceptance
+  metadata, not canonical world state.
+- **Derived state:** actionable complexity is the count of canonical active,
+  simulation-eligible agency leaves. Dormant member rows, census texture,
+  model calls, dispatches, mutation budget, and compacted prose do not satisfy
+  the target. A session checkpoint's frontier summary, unresolved leads,
+  rejection findings, digest chain, and recent commit IDs are bounded steering
+  memory; the campaign and kernel commit receipts remain truth. Resolution
+  cover membership and Nemesis decision windows are downstream derivations and
+  do not feed back into complexity admission authority.
+- **Forbidden writers:** elaborators, session compaction, the scheduler,
+  demand derivation, preview files, round files, and acceptance metadata cannot
+  write campaign state, declare a target satisfied, allocate the Resolution
+  cover, or turn narrative memory into facts. A fission proposal cannot approve
+  or commit itself, invent evidence, promote raw roster rows, or rewrite a
+  parent. An individuation cannot invent a population, duplicate an existing
+  actor or member identity, materialize itself, or acquire relationships to
+  nonexistent subjects. Sequential commits may update only the optimistic
+  revision of a frozen fission proposal after the exact parent binding remains
+  unchanged; individuation instead revalidates its exact Gestalt version and
+  location against current state.
+- **Shared paths:** all round workers use the existing generic elaborator
+  dispatcher and weighted schedule. Every proposal passes the existing
+  fission or individuation validator and the existing
+  `WorldCommand::FissionGestalt` or `WorldCommand::IndividuateGestaltMember`
+  mailbox. `resolution::validate_gestalt_individuation` is the single local
+  authority for member identity, parent version, exact location, bounds, and
+  relationship targets; strategic action-bound selection and direct kernel
+  admission both reuse it. Direct individuation then follows the ordinary
+  presence path: `apply_individuation` inserts the canonical member delta and
+  promotes it into an Actor, `commit_gestalt_presence` calls
+  `ensure_agency_profiles`, and the new active simulation-eligible actor profile
+  becomes visible to `canonical_actionable_subject_count`. Parallel workers
+  read one frozen campaign; commits serialize through WorldKernel. Unrelated
+  earlier fissions may be rebased,
+  while any change to the assigned parent, its profile, or its members rejects
+  the later proposal instead of silently reconciling it.
+  Compaction consumes only admitted commit journals plus bounded rejection
+  findings, then the resulting title-bound checkpoint is supplied as context
+  to the next round.
+- **Cut line:** this cut reuses Gestalt fission, strategic Gestalt
+  individuation, WorldKernel admission, model receipts, the generic scheduler,
+  and immutable acceptance checkpoints. It adds no second population or member
+  insertion path, campaign store, parallel commit owner, cover allocator, or
+  transcript-shaped session log. The prior partial-wave
+  checkpoint remains recovery for one frozen dispatch partition; it is not
+  elaborator memory. Compact checkpoints replace accumulated working history
+  without replacing canonical commits.
+- **Verification layer:** checkpoint shape and digest bind title, session,
+  campaign, target location, generation, world revision, prior checkpoint, and
+  bounded narrative fields. Frozen parent digests make conflicting parallel
+  mutations uncommittable. Existing fission validation proves lineage, child
+  partitioning, resource custody, and member transfer; shared individuation
+  validation proves active parent and location, exact version, unique bounded
+  identity, valid relationships, and non-materialized member state. WorldKernel
+  revalidates either lane before atomic mutation. Each round must strictly
+  increase the canonical actionable count; completion requires a freshly
+  derived zero deficit rather than exhaustion of calls or rounds. Focused tests cover scale
+  arithmetic, checkpoint tampering and cross-title rejection, exact compaction
+  ancestry, assigned-parent validation, and safe revision rebasing.
+- **Failure and resume:** a provider failure publishes an immutable
+  round-failure generation with the exact completed and failed dispatches and
+  receipts, then stops that run. Explicit resume rehydrates the latest failure,
+  preserves completed invocations, and invokes only the failed original
+  dispatches through `resume_elaboration_wave`; repeated failures publish
+  numbered generations without changing the frozen schedule. A published
+  successful round preview may also be reused on explicit resume. Existing
+  mutation checkpoints suppress replay, per-title compaction checkpoints
+  suppress recompaction, and consecutive completed round checkpoints restore scheduler
+  fairness and session memory before the first unfinished round. Missing
+  eligible parents, stale or malformed checkpoints, changed parent bindings,
+  zero-growth rounds, and a nonzero deficit at the configured round ceiling are
+  terminal failures. Canonical CultCache state, not the checkpoint prose,
+  decides whether already admitted mutations exist after interruption.
+
+Two boundaries remain intentionally narrow in this acceptance-driver cut. One
+session checkpoint exists per title but is currently anchored to the first
+admitted jurisdiction, while assignments may mutate parents elsewhere; it is
+not yet a per-realm memory topology. Fission and named-member individuation are
+live, but institution promotion is not. Dormant member rows still do not count;
+the individuation lane earns its increment by atomically promoting the admitted
+member into an Actor and deriving that Actor's active agency profile through the
+shared presence-commit path.
+Architecture claims that complexity has no production caller, no durable
+elaborator compaction owner, no partial-failure resume, or only a fission
+proposal lane are stale.
 
 The strategic acceptance runner exercises this path as a deliberate hybrid.
 The existing destination compiler first commits the complete civic foundation

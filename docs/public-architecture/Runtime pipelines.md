@@ -68,15 +68,19 @@ description: End-to-end Ghostlight flows from campaign negotiation to newspapers
    provider concurrency remain separate controls.
 3. The elaboration scheduler dispatches titled workers in proportion to their
    user-controlled slider shares.
-4. Each worker proposes exactly one additive place, route, fact, population,
-   institution, relation, migration edge, or civic-system operation.
-5. Deterministic validation resolves write conflicts and verifies the complete
-   candidate. An independent civic verifier reviews inhabited apparatus.
-6. `WorldKernel` alone admits the finalized operation set.
-
-The fixed-pass full-world driver is currently being replaced by the scale
-demand described above. The derivation is implemented; subject-producing,
-resumable budget expenditure remains active work and is not claimed complete.
+4. Locality passes propose exactly one additive place, route, fact,
+   institution, relation, or civic operation. Complexity passes propose one
+   Gestalt fission or one grounded individual promotion against a distinct
+   frozen parent.
+5. Complexity proposals run concurrently, then rebase only when their exact
+   parent state is unchanged and serialize through `WorldKernel`. Successful
+   commits are checkpointed individually; a retry replays only failed calls.
+6. Every title that committed work receives one bounded agentic compaction
+   turn. Its narrative frontier is checkpointed beside deterministic commit
+   ancestry, so provider-session eviction cannot erase or rewrite history.
+7. The driver recounts canonical active agency leaves and derives another
+   round until the target cover ratio is met. Resolution then builds its
+   disposable cell cover independently.
 
 ## Newspaper
 
@@ -92,4 +96,3 @@ resumable budget expenditure remains active work and is not claimed complete.
 5. Deterministic provenance binds every factual assertion to exact committed
    sources. Errors found after close become correction memory for a later
    edition rather than an infinite rewrite loop.
-

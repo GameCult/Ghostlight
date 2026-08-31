@@ -61,9 +61,10 @@ typed partition inputs. `SimulationCell` is always disposable and rebuildable.
   elaboration, and later consumer-requested scale changes use the same demand
   derivation and canonical actionability count. Each titled worker proposes at
   most one structural operation at a time; deterministic admission and kernel
-  commit remain unchanged. Complexity rises through grounded Gestalt fission,
-  institution creation, or promotion of an individual into an active Actor
-  leaf, never through unelaborated census or roster rows.
+  commit remain unchanged. The current scale loop raises complexity through
+  grounded Gestalt fission or promotion of an individual into an active Actor
+  leaf, never through unelaborated census or roster rows. Institution admission
+  remains compiler-owned rather than being smuggled into this loop.
 - **Cut line:** fixed elaboration-pass count is not a world-scale owner. It may
   bound which jurisdictions are being worked in one run, but it cannot declare
   the latent world sufficiently populated. Provider concurrency controls only
@@ -83,11 +84,12 @@ The mutation budget is not a cold-prompt budget. Each titled elaborator owns a
 resumable working session containing its current frontier, unresolved leads,
 recent admitted mutations, exact rejection findings, and title mandate. The
 canonical world remains long-term memory. Bounded retrieval supplies older
-relevant state. When a session exceeds its context threshold, an agentic
-compaction pass emits a typed checkpoint bound to exact world commits; the raw
-conversation is discarded as authority and the next turn appends from the
-checkpoint. Scheduler frequency remains proportional to slider share across
-these sequential turns.
+relevant state. After each round, every title that committed work receives one
+agentic compaction turn. It emits a typed checkpoint bound to the exact admitted
+commit ancestry; raw conversation is never authority, and the next turn appends
+from the checkpoint. This round boundary is the current bounded context policy.
+Scheduler frequency remains proportional to slider share across sequential
+turns.
 
 Round effort is proportional to unresolved pressure rather than presumed model
 yield: `ceil(active_cell_budget * deficit / target)`, zero when the target is

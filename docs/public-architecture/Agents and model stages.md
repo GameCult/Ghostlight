@@ -73,6 +73,16 @@ exact assignment and frozen namespace. Wave admission resolves conflicts; an
 independent semantic verifier reviews the inhabited candidate; `WorldKernel`
 alone commits it.
 
+At latent-world scale, the same titled sessions also receive
+`world-complexity-<title>-fission` or
+`world-complexity-<title>-individuate` assignments. Each call may subdivide one
+active Gestalt or promote one grounded consequential person. Deterministic
+fission/individuation validation and the existing kernel commands remain the
+only admission owners. After every productive round,
+`world-elaborator-<title>-session-compaction` distills that title's frontier and
+unresolved leads while the harness reattaches exact commit ancestry. Compacted
+memory can guide later proposals but cannot create subjects or facts.
+
 ## Foreground perception, response, and action
 
 | Stage | Tier | Purpose | Output and downstream gate |

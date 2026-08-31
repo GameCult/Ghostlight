@@ -453,6 +453,76 @@ struct TitledCommitCheckpoint {
     legacy_inferred: bool,
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ComplexityPreviewInvocation {
+    dispatch: ghostlight_dungeon::elaboration::ElaborationDispatch,
+    parent_binding: String,
+    proposal: ghostlight_dungeon::elaboration::WorldComplexityProposal,
+    model_receipt_hashes: Vec<String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ComplexityRoundPreviewCheckpoint {
+    schema: String,
+    round: u32,
+    demand: ghostlight_dungeon::elaboration::WorldElaborationDemand,
+    frozen_world_revision: u64,
+    wave: ghostlight_dungeon::elaboration::ElaborationWaveBinding,
+    schedule: ghostlight_dungeon::elaboration::ElaborationScheduleReceipt,
+    invocations: Vec<ComplexityPreviewInvocation>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ComplexityFailedInvocation {
+    dispatch: Option<ghostlight_dungeon::elaboration::ElaborationDispatch>,
+    diagnostic: String,
+    model_receipt_hashes: Vec<String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ComplexityRoundFailureCheckpoint {
+    schema: String,
+    round: u32,
+    demand: ghostlight_dungeon::elaboration::WorldElaborationDemand,
+    parent_gestalt_ids: Vec<String>,
+    wave: Option<ghostlight_dungeon::elaboration::ElaborationWaveBinding>,
+    schedule: Option<ghostlight_dungeon::elaboration::ElaborationScheduleReceipt>,
+    completed_invocations: Vec<ComplexityPreviewInvocation>,
+    invocation_failures: Vec<ComplexityFailedInvocation>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ComplexityMutationCheckpoint {
+    schema: String,
+    round: u32,
+    dispatch: ghostlight_dungeon::elaboration::ElaborationDispatch,
+    parent_gestalt_id: String,
+    mutation_kind: String,
+    affected_subject_ids: Vec<String>,
+    model_receipt_hashes: Vec<String>,
+    commit_receipt: ghostlight_dungeon::domain::WorldCommitReceipt,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ComplexityRoundCheckpoint {
+    schema: String,
+    round: u32,
+    demand_before: ghostlight_dungeon::elaboration::WorldElaborationDemand,
+    actionable_subjects_after: u32,
+    schedule: ghostlight_dungeon::elaboration::ElaborationScheduleReceipt,
+    mutation_checkpoints: Vec<std::path::PathBuf>,
+    session_checkpoints: std::collections::BTreeMap<
+        ghostlight_dungeon::elaboration::ElaboratorTitle,
+        ghostlight_dungeon::elaboration::ElaboratorSessionCheckpoint,
+    >,
+}
+
 fn read_checkpoint<T: serde::de::DeserializeOwned>(path: &std::path::Path) -> anyhow::Result<T> {
     let bytes = std::fs::read(path)
         .map_err(|error| anyhow::anyhow!("cannot read checkpoint {}: {error}", path.display()))?;
@@ -694,6 +764,88 @@ fn rehydrate_titled_failure(
     })
 }
 
+fn complexity_failure_checkpoint_paths(
+    root: &std::path::Path,
+    round: u32,
+) -> anyhow::Result<Vec<std::path::PathBuf>> {
+    let original = root.join(format!("complexity-round-{round:03}-terminal-failure.json"));
+    let prefix = format!("complexity-round-{round:03}-resume-");
+    let mut paths = original
+        .is_file()
+        .then_some(original)
+        .into_iter()
+        .collect::<Vec<_>>();
+    let mut resumed = std::fs::read_dir(root)?
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| {
+            let name = entry.file_name();
+            let generation = name
+                .to_str()?
+                .strip_prefix(&prefix)?
+                .strip_suffix("-terminal-failure.json")?
+                .parse::<u32>()
+                .ok()?;
+            Some((generation, entry.path()))
+        })
+        .collect::<Vec<_>>();
+    resumed.sort_by_key(|(generation, _)| *generation);
+    paths.extend(resumed.into_iter().map(|(_, path)| path));
+    Ok(paths)
+}
+
+fn rehydrate_complexity_failure(
+    checkpoint: ComplexityRoundFailureCheckpoint,
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+) -> anyhow::Result<
+    ghostlight_dungeon::elaboration::ElaborationWaveFailure<
+        ghostlight_dungeon::elaboration::WorldComplexityProposal,
+    >,
+> {
+    if checkpoint.schema != "ghostlight.complexity_round_failure.v1" {
+        anyhow::bail!("complexity failure checkpoint schema is unsupported")
+    }
+    let wave = checkpoint.wave.clone();
+    let completed_invocations = checkpoint
+        .completed_invocations
+        .into_iter()
+        .map(|invocation| {
+            Ok(ghostlight_dungeon::elaboration::ElaborationInvocation {
+                wave: wave
+                    .clone()
+                    .ok_or_else(|| anyhow::anyhow!("complexity checkpoint has no wave"))?,
+                dispatch: invocation.dispatch,
+                proposal: invocation.proposal,
+                model_stage_receipts: load_checkpoint_receipts(
+                    store,
+                    &invocation.model_receipt_hashes,
+                )?,
+            })
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    let invocation_failures = checkpoint
+        .invocation_failures
+        .into_iter()
+        .map(|failure| {
+            Ok(
+                ghostlight_dungeon::elaboration::ElaborationInvocationFailure {
+                    dispatch: failure.dispatch,
+                    diagnostic: failure.diagnostic,
+                    model_stage_receipts: load_checkpoint_receipts(
+                        store,
+                        &failure.model_receipt_hashes,
+                    )?,
+                },
+            )
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    Ok(ghostlight_dungeon::elaboration::ElaborationWaveFailure {
+        wave,
+        schedule: checkpoint.schedule,
+        completed_invocations,
+        invocation_failures,
+    })
+}
+
 fn civic_manifest_preserves(
     current: &ghostlight_dungeon::domain::CivicSystemManifest,
     checkpoint: &ghostlight_dungeon::domain::CivicSystemManifest,
@@ -870,9 +1022,13 @@ async fn main() -> anyhow::Result<()> {
         compiler::DestinationCompilationFailure,
         domain::{TickSource, WorldCommand},
         elaboration::{
-            ElaborationScheduler, ElaboratorTitle, ModelWorldElaborationWorker,
-            admit_world_elaboration_wave, dispatch_elaboration_wave, finalize_world_elaboration,
-            resume_elaboration_wave, world_elaboration_wave_binding,
+            ElaborationScheduler, ElaboratorSessionCheckpoint, ElaboratorSessionJournalEntry,
+            ElaboratorTitle, ModelWorldComplexityWorker, ModelWorldElaborationWorker,
+            WorldComplexityProposal, WorldScaleIntent, admit_world_elaboration_wave,
+            canonical_actionable_subject_count, compact_elaborator_session,
+            derive_world_elaboration_demand, dispatch_elaboration_wave, finalize_world_elaboration,
+            rebase_world_complexity_proposal, resume_elaboration_wave,
+            world_complexity_parent_binding, world_elaboration_wave_binding,
         },
         kernel::{CommandResult, WorldKernel},
         model_runtime::ModelRuntimeSelection,
@@ -883,7 +1039,12 @@ async fn main() -> anyhow::Result<()> {
         },
         turn::SnapshotPermit,
     };
-    use std::{path::PathBuf, sync::Arc, time::Instant};
+    use std::{
+        collections::{BTreeMap, BTreeSet},
+        path::PathBuf,
+        sync::Arc,
+        time::Instant,
+    };
 
     let runtime_root = std::env::var_os("GHOSTLIGHT_DUNGEON_ROOT")
         .map(PathBuf::from)
@@ -1944,6 +2105,456 @@ async fn main() -> anyhow::Result<()> {
             serde_json::Value::Array(elaboration_reports),
         );
     }
+    let target_cover_basis_points =
+        bounded_environment_usize("GHOSTLIGHT_WORLD_TARGET_COVER_BASIS_POINTS", 0, 0, 10_000)?
+            as u16;
+    let mut complexity_reports = Vec::new();
+    if target_cover_basis_points > 0 {
+        if initial_location_ids.is_empty() {
+            anyhow::bail!("world complexity scaling requires admitted elaboration jurisdictions")
+        }
+        let complexity_parallelism =
+            bounded_environment_usize("GHOSTLIGHT_WORLD_COMPLEXITY_PARALLELISM", 8, 1, 32)?;
+        let maximum_complexity_rounds =
+            bounded_environment_usize("GHOSTLIGHT_WORLD_COMPLEXITY_MAX_ROUNDS", 32, 1, 128)?;
+        let scale_intent = WorldScaleIntent {
+            schema: "ghostlight.world_scale_intent.v1".into(),
+            target_active_cover_basis_points: target_cover_basis_points,
+        };
+        let realm_weights = initial_location_ids
+            .iter()
+            .cloned()
+            .map(|location_id| (location_id, 1_u32))
+            .collect::<BTreeMap<_, _>>();
+        let complexity_profile = strategic_world_elaboration_profile();
+        let eligible_titles = ElaboratorTitle::ALL.into_iter().collect::<BTreeSet<_>>();
+        let mut complexity_scheduler = ElaborationScheduler::new(&complexity_profile)?;
+        let mut session_checkpoints =
+            BTreeMap::<ElaboratorTitle, ElaboratorSessionCheckpoint>::new();
+        let session_location_id = initial_location_ids[0].clone();
+        let mut completed_complexity_rounds = 0_u32;
+        if resume {
+            for round in 1..=maximum_complexity_rounds as u32 {
+                let path = root.join(format!("complexity-round-{round:03}-checkpoint.json"));
+                if !path.is_file() {
+                    break;
+                }
+                let checkpoint: ComplexityRoundCheckpoint = read_checkpoint(&path)?;
+                if checkpoint.schema != "ghostlight.complexity_round_checkpoint.v1"
+                    || checkpoint.round != round
+                    || checkpoint.actionable_subjects_after
+                        > canonical_actionable_subject_count(&campaign)
+                {
+                    anyhow::bail!("complexity round checkpoint is stale or malformed")
+                }
+                complexity_scheduler = ElaborationScheduler::from_state(
+                    &complexity_profile,
+                    checkpoint.schedule.final_state.clone(),
+                )?;
+                for (title, session) in &checkpoint.session_checkpoints {
+                    session.validate_for(&campaign, &session_location_id, *title)?;
+                }
+                session_checkpoints = checkpoint.session_checkpoints.clone();
+                completed_complexity_rounds = round;
+                complexity_reports.push(serde_json::to_value(checkpoint)?);
+            }
+        }
+        for round in completed_complexity_rounds + 1..=maximum_complexity_rounds as u32 {
+            let preview_path = root.join(format!("complexity-round-{round:03}-preview.json"));
+            let resumed_preview = if resume && preview_path.is_file() {
+                Some(read_checkpoint::<ComplexityRoundPreviewCheckpoint>(
+                    &preview_path,
+                )?)
+            } else {
+                None
+            };
+            let demand = if let Some(checkpoint) = resumed_preview.as_ref() {
+                checkpoint.demand.clone()
+            } else {
+                derive_world_elaboration_demand(
+                    u16::from(campaign.resolution_policy.active_cell_budget),
+                    canonical_actionable_subject_count(&campaign),
+                    &scale_intent,
+                    realm_weights.clone(),
+                )?
+            };
+            let actionable_before = demand.current_actionable_subjects;
+            if demand.actionable_subject_deficit == 0 {
+                break;
+            }
+            let preview = if let Some(checkpoint) = resumed_preview {
+                if checkpoint.schema != "ghostlight.complexity_round_preview.v1"
+                    || checkpoint.round != round
+                    || checkpoint.invocations.is_empty()
+                {
+                    anyhow::bail!("complexity round preview checkpoint is stale or malformed")
+                }
+                complexity_scheduler = ElaborationScheduler::from_state(
+                    &complexity_profile,
+                    checkpoint.schedule.final_state.clone(),
+                )?;
+                checkpoint
+            } else {
+                let parents = complexity_parent_candidates(
+                    &campaign,
+                    &demand,
+                    usize::try_from(demand.round_mutation_budget).unwrap_or(usize::MAX),
+                );
+                if parents.is_empty() {
+                    anyhow::bail!(
+                        "world complexity remains {} subjects short but no active Gestalt can be subdivided",
+                        demand.actionable_subject_deficit
+                    )
+                }
+                let failure_paths = complexity_failure_checkpoint_paths(&root, round)?;
+                let latest_failure = failure_paths.last().cloned();
+                let first_dispatch_ordinal = if let Some(path) = latest_failure.as_ref() {
+                    let checkpoint: ComplexityRoundFailureCheckpoint = read_checkpoint(path)?;
+                    if checkpoint.round != round
+                        || checkpoint.demand != demand
+                        || checkpoint.parent_gestalt_ids != parents
+                    {
+                        anyhow::bail!("complexity failure checkpoint is stale or malformed")
+                    }
+                    checkpoint
+                        .schedule
+                        .as_ref()
+                        .and_then(|schedule| schedule.dispatches.first())
+                        .map(|dispatch| dispatch.ordinal)
+                        .ok_or_else(|| anyhow::anyhow!("complexity failure has no dispatches"))?
+                } else {
+                    complexity_scheduler
+                        .state()
+                        .total_dispatches
+                        .saturating_add(1)
+                };
+                let worker = Arc::new(ModelWorldComplexityWorker::new(
+                    model.clone(),
+                    Arc::new(campaign.clone()),
+                    first_dispatch_ordinal,
+                    parents.clone(),
+                    session_checkpoints.clone(),
+                )?);
+                let result = if let Some(path) = latest_failure.as_ref() {
+                    let checkpoint: ComplexityRoundFailureCheckpoint = read_checkpoint(path)?;
+                    let scheduler_state = checkpoint
+                        .schedule
+                        .as_ref()
+                        .ok_or_else(|| anyhow::anyhow!("complexity failure has no schedule"))?
+                        .final_state
+                        .clone();
+                    complexity_scheduler =
+                        ElaborationScheduler::from_state(&complexity_profile, scheduler_state)?;
+                    resume_elaboration_wave(
+                        rehydrate_complexity_failure(checkpoint, &store)?,
+                        complexity_parallelism,
+                        worker,
+                    )
+                    .await
+                } else {
+                    dispatch_elaboration_wave(
+                        &mut complexity_scheduler,
+                        worker.wave().clone(),
+                        &eligible_titles,
+                        u32::try_from(parents.len()).unwrap_or(u32::MAX),
+                        complexity_parallelism,
+                        worker,
+                    )
+                    .await
+                };
+                let run = match result {
+                    Ok(run) => run,
+                    Err(failure) => {
+                        let receipts = failure
+                            .completed_invocations
+                            .iter()
+                            .flat_map(|invocation| invocation.model_stage_receipts.iter())
+                            .chain(
+                                failure
+                                    .invocation_failures
+                                    .iter()
+                                    .flat_map(|failure| failure.model_stage_receipts.iter()),
+                            )
+                            .cloned()
+                            .collect::<Vec<_>>();
+                        if !receipts.is_empty() {
+                            store.persist_model_stage_receipts(&receipts)?;
+                        }
+                        let failure_path = if latest_failure.is_some() {
+                            root.join(format!(
+                                "complexity-round-{round:03}-resume-{:02}-terminal-failure.json",
+                                failure_paths.len()
+                            ))
+                        } else {
+                            root.join(format!("complexity-round-{round:03}-terminal-failure.json"))
+                        };
+                        let checkpoint = ComplexityRoundFailureCheckpoint {
+                            schema: "ghostlight.complexity_round_failure.v1".into(),
+                            round,
+                            demand: demand.clone(),
+                            parent_gestalt_ids: parents.clone(),
+                            wave: failure.wave,
+                            schedule: failure.schedule,
+                            completed_invocations: failure
+                                .completed_invocations
+                                .iter()
+                                .map(|invocation| {
+                                    Ok(ComplexityPreviewInvocation {
+                                        dispatch: invocation.dispatch.clone(),
+                                        parent_binding: world_complexity_parent_binding(
+                                            &campaign,
+                                            invocation.proposal.parent_gestalt_id(),
+                                        )?,
+                                        proposal: invocation.proposal.clone(),
+                                        model_receipt_hashes: invocation
+                                            .model_stage_receipts
+                                            .iter()
+                                            .map(|receipt| receipt.storage_key().to_owned())
+                                            .collect(),
+                                    })
+                                })
+                                .collect::<anyhow::Result<Vec<_>>>()?,
+                            invocation_failures: failure
+                                .invocation_failures
+                                .iter()
+                                .map(|failure| ComplexityFailedInvocation {
+                                    dispatch: failure.dispatch.clone(),
+                                    diagnostic: failure.diagnostic.clone(),
+                                    model_receipt_hashes: failure
+                                        .model_stage_receipts
+                                        .iter()
+                                        .map(|receipt| receipt.storage_key().to_owned())
+                                        .collect(),
+                                })
+                                .collect(),
+                        };
+                        publish_immutable_checkpoint(&failure_path, &checkpoint)?;
+                        anyhow::bail!(
+                            "world complexity round {round} failed; exact checkpoint at {}",
+                            failure_path.display()
+                        )
+                    }
+                };
+                let receipts = run
+                    .invocations()
+                    .iter()
+                    .flat_map(|invocation| invocation.model_stage_receipts.iter())
+                    .cloned()
+                    .collect::<Vec<_>>();
+                store.persist_model_stage_receipts(&receipts)?;
+                let checkpoint = ComplexityRoundPreviewCheckpoint {
+                    schema: "ghostlight.complexity_round_preview.v1".into(),
+                    round,
+                    demand: demand.clone(),
+                    frozen_world_revision: campaign.revision,
+                    wave: run.wave().clone(),
+                    schedule: run.schedule().clone(),
+                    invocations: run
+                        .invocations()
+                        .iter()
+                        .map(|invocation| {
+                            Ok(ComplexityPreviewInvocation {
+                                dispatch: invocation.dispatch.clone(),
+                                parent_binding: world_complexity_parent_binding(
+                                    &campaign,
+                                    invocation.proposal.parent_gestalt_id(),
+                                )?,
+                                proposal: invocation.proposal.clone(),
+                                model_receipt_hashes: invocation
+                                    .model_stage_receipts
+                                    .iter()
+                                    .map(|receipt| receipt.storage_key().to_owned())
+                                    .collect(),
+                            })
+                        })
+                        .collect::<anyhow::Result<Vec<_>>>()?,
+                };
+                publish_immutable_checkpoint(&preview_path, &checkpoint)?;
+                checkpoint
+            };
+            let mut mutation_paths = Vec::new();
+            let mut journals =
+                BTreeMap::<ElaboratorTitle, Vec<ElaboratorSessionJournalEntry>>::new();
+            for invocation in &preview.invocations {
+                let commit_path = root.join(format!(
+                    "complexity-round-{round:03}-commit-{:04}.json",
+                    invocation.dispatch.ordinal
+                ));
+                let checkpoint = if commit_path.is_file() {
+                    read_checkpoint::<ComplexityMutationCheckpoint>(&commit_path)?
+                } else {
+                    let proposal = rebase_world_complexity_proposal(
+                        &invocation.parent_binding,
+                        &campaign,
+                        invocation.proposal.clone(),
+                    )?;
+                    let parent_gestalt_id = proposal.parent_gestalt_id().to_owned();
+                    let mutation_kind = proposal.mutation_kind().to_owned();
+                    let affected_subject_ids = match &proposal {
+                        WorldComplexityProposal::Fission { preview } => {
+                            std::iter::once(preview.parent_gestalt_id.clone())
+                                .chain(preview.children.iter().map(|child| child.id.clone()))
+                                .collect::<Vec<_>>()
+                        }
+                        WorldComplexityProposal::Individuate { individuation } => vec![
+                            individuation.gestalt_id.clone(),
+                            ghostlight_dungeon::domain::gestalt_member_subject_id(
+                                &individuation.member.id,
+                            ),
+                        ],
+                    };
+                    let model_receipts =
+                        load_checkpoint_receipts(&store, &invocation.model_receipt_hashes)?;
+                    let committed = match proposal {
+                        WorldComplexityProposal::Fission { preview } => {
+                            kernel
+                                .command(WorldCommand::FissionGestalt {
+                                    expected_revision: campaign.revision,
+                                    preview,
+                                    evidence_receipts: Vec::new(),
+                                    model_stage_receipts: model_receipts,
+                                })
+                                .await?
+                        }
+                        WorldComplexityProposal::Individuate { individuation } => {
+                            if model_receipts.is_empty() {
+                                anyhow::bail!("complexity individuation has no model receipt")
+                            }
+                            kernel
+                                .command(WorldCommand::IndividuateGestaltMember {
+                                    expected_revision: campaign.revision,
+                                    individuation,
+                                })
+                                .await?
+                        }
+                    };
+                    let CommandResult::Committed {
+                        campaign: advanced,
+                        receipt,
+                    } = committed
+                    else {
+                        anyhow::bail!("complexity mutation did not commit")
+                    };
+                    let checkpoint = ComplexityMutationCheckpoint {
+                        schema: "ghostlight.complexity_mutation_checkpoint.v1".into(),
+                        round,
+                        dispatch: invocation.dispatch.clone(),
+                        parent_gestalt_id,
+                        mutation_kind,
+                        affected_subject_ids,
+                        model_receipt_hashes: invocation.model_receipt_hashes.clone(),
+                        commit_receipt: receipt,
+                    };
+                    publish_immutable_checkpoint(&commit_path, &checkpoint)?;
+                    campaign = advanced;
+                    checkpoint
+                };
+                if checkpoint.schema != "ghostlight.complexity_mutation_checkpoint.v1"
+                    || checkpoint.round != round
+                    || checkpoint.dispatch != invocation.dispatch
+                    || checkpoint.parent_gestalt_id != invocation.proposal.parent_gestalt_id()
+                    || checkpoint.model_receipt_hashes != invocation.model_receipt_hashes
+                    || checkpoint.mutation_kind != invocation.proposal.mutation_kind()
+                    || checkpoint.commit_receipt.command_kind != checkpoint.mutation_kind
+                {
+                    anyhow::bail!("complexity mutation checkpoint is inconsistent")
+                }
+                journals.entry(checkpoint.dispatch.title).or_default().push(
+                    ElaboratorSessionJournalEntry {
+                        world_revision: checkpoint.commit_receipt.revision,
+                        commit_receipt_id: format!(
+                            "{}-{}",
+                            checkpoint.commit_receipt.campaign_id,
+                            checkpoint.commit_receipt.revision
+                        ),
+                        mutation_kind: checkpoint.mutation_kind.clone(),
+                        affected_subject_ids: checkpoint.affected_subject_ids.clone(),
+                        summary: format!(
+                            "Applied {} to {} and admitted {}.",
+                            checkpoint.mutation_kind,
+                            checkpoint.parent_gestalt_id,
+                            checkpoint.affected_subject_ids.join(", ")
+                        ),
+                    },
+                );
+                mutation_paths.push(commit_path);
+            }
+            for (title, journal) in journals {
+                let path = root.join(format!(
+                    "complexity-round-{round:03}-session-{}.json",
+                    title.display_name().to_ascii_lowercase()
+                ));
+                let checkpoint = if path.is_file() {
+                    read_checkpoint::<ElaboratorSessionCheckpoint>(&path)?
+                } else {
+                    let (checkpoint, receipts) = compact_elaborator_session(
+                        model.as_ref(),
+                        &campaign,
+                        &session_location_id,
+                        title,
+                        &format!(
+                            "{}:{}",
+                            title.display_name().to_ascii_lowercase(),
+                            session_location_id
+                        ),
+                        session_checkpoints.get(&title),
+                        &journal,
+                        Vec::new(),
+                    )
+                    .await?;
+                    store.persist_model_stage_receipts(&receipts)?;
+                    publish_immutable_checkpoint(&path, &checkpoint)?;
+                    checkpoint
+                };
+                checkpoint.validate_for(&campaign, &session_location_id, title)?;
+                session_checkpoints.insert(title, checkpoint);
+            }
+            let actionable_after = canonical_actionable_subject_count(&campaign);
+            if actionable_after <= actionable_before {
+                anyhow::bail!(
+                    "world complexity round {round} committed without increasing admitted complexity"
+                )
+            }
+            let checkpoint = ComplexityRoundCheckpoint {
+                schema: "ghostlight.complexity_round_checkpoint.v1".into(),
+                round,
+                demand_before: demand,
+                actionable_subjects_after: actionable_after,
+                schedule: preview.schedule,
+                mutation_checkpoints: mutation_paths,
+                session_checkpoints: session_checkpoints.clone(),
+            };
+            let path = root.join(format!("complexity-round-{round:03}-checkpoint.json"));
+            publish_immutable_checkpoint(&path, &checkpoint)?;
+            complexity_reports.push(serde_json::to_value(&checkpoint)?);
+        }
+        let final_count = canonical_actionable_subject_count(&campaign);
+        let final_demand = derive_world_elaboration_demand(
+            u16::from(campaign.resolution_policy.active_cell_budget),
+            final_count,
+            &scale_intent,
+            realm_weights,
+        )?;
+        if final_demand.actionable_subject_deficit != 0 {
+            anyhow::bail!(
+                "world complexity stopped at {final_count} of {} admitted subjects after {maximum_complexity_rounds} rounds",
+                final_demand.target_actionable_subjects
+            )
+        }
+        if let Some(metadata) = world_compile
+            .as_mut()
+            .and_then(serde_json::Value::as_object_mut)
+        {
+            metadata.insert(
+                "complexity_rounds".into(),
+                serde_json::Value::Array(complexity_reports.clone()),
+            );
+            metadata.insert(
+                "actionable_subject_count".into(),
+                serde_json::json!(final_count),
+            );
+        }
+    }
     let newspaper_title = std::env::var("GHOSTLIGHT_STRATEGIC_NEWSPAPER_TITLE")
         .unwrap_or_else(|_| "The Underdeep Clarion".into());
     let newspaper_voice = std::env::var("GHOSTLIGHT_STRATEGIC_NEWSPAPER_VOICE")
@@ -2691,6 +3302,97 @@ fn strategic_world_elaboration_profile() -> ghostlight_dungeon::elaboration::Wor
             })
             .collect(),
     }
+}
+
+fn complexity_parent_candidates(
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    demand: &ghostlight_dungeon::elaboration::WorldElaborationDemand,
+    limit: usize,
+) -> Vec<String> {
+    let realm_for = |profile: &ghostlight_dungeon::domain::AgencyProfile| {
+        profile
+            .location_ids
+            .iter()
+            .find(|location_id| demand.realm_subject_targets.contains_key(*location_id))
+            .cloned()
+    };
+    let mut current_by_realm = demand
+        .realm_subject_targets
+        .keys()
+        .cloned()
+        .map(|realm| (realm, 0_u32))
+        .collect::<BTreeMap<_, _>>();
+    for profile in campaign
+        .agency_profiles
+        .values()
+        .filter(|profile| profile.active_leaf && profile.simulation_eligible)
+    {
+        if let Some(realm) = realm_for(profile) {
+            *current_by_realm.entry(realm).or_default() += 1;
+        }
+    }
+    let realm_pressure = demand
+        .realm_subject_targets
+        .iter()
+        .map(|(realm, target)| {
+            (
+                realm.clone(),
+                target.saturating_sub(current_by_realm.get(realm).copied().unwrap_or(0)),
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    let mut by_realm = BTreeMap::<String, Vec<(std::cmp::Reverse<u64>, String)>>::new();
+    for (id, profile) in campaign.gestalts.keys().filter_map(|id| {
+        let profile = campaign.agency_profiles.get(id)?;
+        (profile.active_leaf
+            && profile.simulation_eligible
+            && !campaign
+                .gestalt_members
+                .values()
+                .any(|member| member.gestalt_id == *id && member.materialized_actor_id.is_some()))
+        .then_some((id, profile))
+    }) {
+        if let Some(realm) = realm_for(profile)
+            && realm_pressure.get(&realm).copied().unwrap_or(0) > 0
+        {
+            by_realm
+                .entry(realm)
+                .or_default()
+                .push((std::cmp::Reverse(profile.detail_debt), id.clone()));
+        }
+    }
+    for candidates in by_realm.values_mut() {
+        candidates.sort();
+        candidates.reverse();
+    }
+    let mut selected_per_realm = BTreeMap::<String, u32>::new();
+    let mut selected = Vec::new();
+    while selected.len() < limit {
+        let next_realm = by_realm
+            .iter()
+            .filter(|(_, candidates)| !candidates.is_empty())
+            .min_by(|(left, _), (right, _)| {
+                let left_selected = selected_per_realm.get(*left).copied().unwrap_or(0);
+                let right_selected = selected_per_realm.get(*right).copied().unwrap_or(0);
+                let left_pressure = realm_pressure.get(*left).copied().unwrap_or(1).max(1);
+                let right_pressure = realm_pressure.get(*right).copied().unwrap_or(1).max(1);
+                left_selected
+                    .saturating_mul(right_pressure)
+                    .cmp(&right_selected.saturating_mul(left_pressure))
+                    .then_with(|| left.cmp(right))
+            })
+            .map(|(realm, _)| realm.clone());
+        let Some(realm) = next_realm else {
+            break;
+        };
+        let (_, id) = by_realm
+            .get_mut(&realm)
+            .and_then(Vec::pop)
+            .expect("selected realm has a candidate");
+        *selected_per_realm.entry(realm).or_default() += 1;
+        selected.push(id);
+    }
+    selected
 }
 
 fn admitted_public_channel(value: &str) -> anyhow::Result<String> {
@@ -3768,3 +4470,4 @@ mod tests {
         );
     }
 }
+use std::collections::BTreeMap;

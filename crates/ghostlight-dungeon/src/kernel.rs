@@ -2152,28 +2152,12 @@ fn apply_individuation(
 ) -> Result<(), KernelError> {
     let mut member = individuation.member.clone();
     member.id = crate::domain::canonical_gestalt_member_local_id(&member.id);
-    let gestalt = campaign
-        .gestalts
-        .get(&individuation.gestalt_id)
-        .ok_or_else(|| KernelError::Invalid("gestalt is unknown".into()))?;
-    crate::resolution::validate_active_gestalt_presence_location(
-        campaign,
-        &individuation.gestalt_id,
-        &individuation.location_id,
-    )
-    .map_err(|error| KernelError::Invalid(error.to_string()))?;
-    if gestalt.version != individuation.expected_gestalt_version
-        || member.gestalt_id != individuation.gestalt_id
-        || member.version != 0
-        || member.materialized_actor_id.is_some()
-        || member.id.trim().is_empty()
-        || member.name.trim().is_empty()
-        || campaign.gestalt_members.contains_key(&member.id)
-    {
-        return Err(KernelError::Invalid(
-            "gestalt individuation is stale or malformed".into(),
-        ));
-    }
+    let canonical = GestaltIndividuation {
+        member: member.clone(),
+        ..individuation.clone()
+    };
+    crate::resolution::validate_gestalt_individuation(campaign, &canonical)
+        .map_err(|error| KernelError::Invalid(error.to_string()))?;
     campaign
         .gestalt_members
         .insert(member.id.clone(), member.clone());
@@ -8413,6 +8397,13 @@ pub(crate) mod tests {
         let resident = &individuated.actors["member:iren-vale"];
         assert!(resident.knowledge.contains(&selection));
         assert!(resident.memories[0].contains("Oren Vale"));
+        let resident_profile = &individuated.agency_profiles["member:iren-vale"];
+        assert!(resident_profile.active_leaf);
+        assert!(resident_profile.simulation_eligible);
+        assert_eq!(
+            crate::elaboration::canonical_actionable_subject_count(&individuated),
+            crate::elaboration::canonical_actionable_subject_count(&elaborated) + 1
+        );
     }
 
     #[tokio::test]

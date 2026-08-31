@@ -284,6 +284,311 @@ impl WorldElaborationProfile {
     }
 }
 
+/// Compacted working memory for one titled elaborator. Narrative fields steer
+/// later proposals but own no world truth; exact commit receipts and the
+/// canonical campaign remain authoritative.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct ElaboratorSessionCheckpoint {
+    pub schema: String,
+    pub session_id: String,
+    pub title: ElaboratorTitle,
+    pub generation: u32,
+    pub campaign_id: Uuid,
+    pub through_world_revision: u64,
+    pub target_location_id: String,
+    pub frontier_summary: String,
+    pub unresolved_leads: Vec<String>,
+    pub recent_commit_receipt_ids: Vec<String>,
+    pub recent_rejection_findings: Vec<String>,
+    pub prior_checkpoint_digest: Option<String>,
+    pub digest: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct ElaboratorSessionCompactionDraft {
+    pub schema: String,
+    pub frontier_summary: String,
+    pub unresolved_leads: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct ElaboratorSessionJournalEntry {
+    pub world_revision: u64,
+    pub commit_receipt_id: String,
+    pub mutation_kind: String,
+    pub affected_subject_ids: Vec<String>,
+    pub summary: String,
+}
+
+impl ElaboratorSessionCheckpoint {
+    #[allow(clippy::too_many_arguments)]
+    pub fn bind_compaction(
+        session_id: impl Into<String>,
+        title: ElaboratorTitle,
+        generation: u32,
+        campaign_id: Uuid,
+        through_world_revision: u64,
+        target_location_id: impl Into<String>,
+        draft: ElaboratorSessionCompactionDraft,
+        recent_commit_receipt_ids: Vec<String>,
+        recent_rejection_findings: Vec<String>,
+        prior_checkpoint_digest: Option<String>,
+    ) -> Result<Self> {
+        if draft.schema != "ghostlight.elaborator_session_compaction_draft.v1" {
+            return Err(anyhow!(
+                "elaborator session compaction draft schema is unsupported"
+            ));
+        }
+        let mut checkpoint = Self {
+            schema: "ghostlight.elaborator_session_checkpoint.v1".into(),
+            session_id: session_id.into(),
+            title,
+            generation,
+            campaign_id,
+            through_world_revision,
+            target_location_id: target_location_id.into(),
+            frontier_summary: draft.frontier_summary,
+            unresolved_leads: draft.unresolved_leads,
+            recent_commit_receipt_ids,
+            recent_rejection_findings,
+            prior_checkpoint_digest,
+            digest: String::new(),
+        };
+        checkpoint.validate_shape()?;
+        checkpoint.digest = checkpoint.recompute_digest()?;
+        Ok(checkpoint)
+    }
+
+    pub fn validate_for(
+        &self,
+        campaign: &crate::domain::Campaign,
+        target_location_id: &str,
+        title: ElaboratorTitle,
+    ) -> Result<()> {
+        self.validate_shape()?;
+        if self.campaign_id != campaign.id
+            || self.through_world_revision > campaign.revision
+            || self.target_location_id != target_location_id
+            || self.title != title
+            || self.digest != self.recompute_digest()?
+        {
+            return Err(anyhow!(
+                "elaborator session checkpoint is stale, cross-session, or malformed"
+            ));
+        }
+        Ok(())
+    }
+
+    fn validate_shape(&self) -> Result<()> {
+        let bounded = |value: &str, maximum: usize| {
+            !value.trim().is_empty() && value.chars().count() <= maximum
+        };
+        if self.schema != "ghostlight.elaborator_session_checkpoint.v1"
+            || !bounded(&self.session_id, 160)
+            || !bounded(&self.target_location_id, 240)
+            || !bounded(&self.frontier_summary, 4_000)
+            || self.unresolved_leads.len() > 32
+            || self.unresolved_leads.iter().any(|lead| !bounded(lead, 600))
+            || self.recent_commit_receipt_ids.len() > 64
+            || self
+                .recent_commit_receipt_ids
+                .iter()
+                .any(|id| !bounded(id, 240))
+            || self.recent_rejection_findings.len() > 32
+            || self
+                .recent_rejection_findings
+                .iter()
+                .any(|finding| !bounded(finding, 800))
+            || self
+                .prior_checkpoint_digest
+                .as_deref()
+                .is_some_and(|digest| !bounded(digest, 160))
+        {
+            return Err(anyhow!(
+                "elaborator session checkpoint exceeds its bounded memory contract"
+            ));
+        }
+        Ok(())
+    }
+
+    fn recompute_digest(&self) -> Result<String> {
+        crate::legacy_transition::digest_serializable(&(
+            "ghostlight.elaborator_session_checkpoint.v1",
+            &self.session_id,
+            self.title,
+            self.generation,
+            self.campaign_id,
+            self.through_world_revision,
+            &self.target_location_id,
+            &self.frontier_summary,
+            &self.unresolved_leads,
+            &self.recent_commit_receipt_ids,
+            &self.recent_rejection_findings,
+            &self.prior_checkpoint_digest,
+        ))
+    }
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ElaboratorSessionCompactionFinding {
+    diagnostic: String,
+}
+
+struct ElaboratorSessionCompactionTool {
+    workbench: serde_json::Value,
+}
+
+#[async_trait]
+impl crate::agent::ModelAgentTool for ElaboratorSessionCompactionTool {
+    type Action = ElaboratorSessionCompactionDraft;
+    type Output = ElaboratorSessionCompactionDraft;
+    type Finding = ElaboratorSessionCompactionFinding;
+
+    fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
+        let mut schema = serde_json::to_value(schema_for!(ElaboratorSessionCompactionDraft))
+            .map_err(|error| error.to_string())?;
+        schema["properties"]["schema"] =
+            exact_schema("ghostlight.elaborator_session_compaction_draft.v1");
+        schema["properties"]["frontier_summary"]["minLength"] = serde_json::json!(1);
+        schema["properties"]["frontier_summary"]["maxLength"] = serde_json::json!(4000);
+        schema["properties"]["unresolved_leads"]["maxItems"] = serde_json::json!(32);
+        Ok(schema)
+    }
+
+    fn initial_context_snapshot(&self) -> Option<serde_json::Value> {
+        Some(self.workbench.clone())
+    }
+
+    async fn invoke(
+        &mut self,
+        action: Self::Action,
+        _context: &crate::agent::ModelAgentToolContext,
+    ) -> crate::agent::ModelAgentToolOutcome<Self::Output, Self::Finding> {
+        let bounded = |value: &str, maximum: usize| {
+            !value.trim().is_empty() && value.chars().count() <= maximum
+        };
+        if action.schema != "ghostlight.elaborator_session_compaction_draft.v1"
+            || !bounded(&action.frontier_summary, 4_000)
+            || action.unresolved_leads.len() > 32
+            || action
+                .unresolved_leads
+                .iter()
+                .any(|lead| !bounded(lead, 600))
+        {
+            return crate::agent::ModelAgentToolOutcome::Rejected {
+                finding: ElaboratorSessionCompactionFinding {
+                    diagnostic:
+                        "compaction must preserve one bounded frontier and at most 32 concrete unresolved leads"
+                            .into(),
+                },
+                receipts: Vec::new(),
+            };
+        }
+        crate::agent::ModelAgentToolOutcome::Accepted {
+            output: action,
+            receipts: Vec::new(),
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub async fn compact_elaborator_session(
+    model: &dyn crate::model::ModelPort,
+    campaign: &crate::domain::Campaign,
+    target_location_id: &str,
+    title: ElaboratorTitle,
+    session_id: &str,
+    prior: Option<&ElaboratorSessionCheckpoint>,
+    journal: &[ElaboratorSessionJournalEntry],
+    recent_rejection_findings: Vec<String>,
+) -> Result<(
+    ElaboratorSessionCheckpoint,
+    Vec<crate::model::ModelStageReceipt>,
+)> {
+    if !campaign.locations.contains_key(target_location_id)
+        || journal.is_empty()
+        || journal.len() > 64
+        || journal.iter().any(|entry| {
+            entry.world_revision > campaign.revision
+                || entry.commit_receipt_id.trim().is_empty()
+                || entry.mutation_kind.trim().is_empty()
+                || entry.summary.trim().is_empty()
+                || entry.summary.chars().count() > 1_000
+                || entry.affected_subject_ids.len() > 32
+        })
+    {
+        return Err(anyhow!(
+            "elaborator session compaction journal is empty, stale, or unbounded"
+        ));
+    }
+    if let Some(prior) = prior {
+        prior.validate_for(campaign, target_location_id, title)?;
+    }
+    let generation = prior.map_or(0, |checkpoint| checkpoint.generation.saturating_add(1));
+    let snapshot_binding = crate::legacy_transition::digest_serializable(&(
+        "ghostlight.elaborator_session_compaction_snapshot.v1",
+        campaign.id,
+        campaign.revision,
+        target_location_id,
+        title,
+        session_id,
+        prior.map(|checkpoint| checkpoint.digest.as_str()),
+        journal,
+        &recent_rejection_findings,
+    ))?;
+    let instructions = format!(
+        "You compact working memory for the {} elaborator. {} Preserve the causal frontier, unfinished structural leads, and useful rejected paths. Do not invent commits, subjects, facts, or completed work. The canonical world and exact journal remain authoritative; your summary only steers the next turn.",
+        title.display_name(),
+        title.mandate(),
+    );
+    let spec = crate::agent::ModelAgentSpec {
+        stage: format!(
+            "world-elaboration-{}-session-compaction",
+            title.display_name().to_ascii_lowercase()
+        ),
+        model: crate::model::MODEL_FAST.into(),
+        snapshot_binding,
+        instructions,
+        source_receipt_ids: Vec::new(),
+        temperature: Some(0.1),
+        max_output_tokens: Some(1_400),
+        max_steps: 2,
+    };
+    let mut tool = ElaboratorSessionCompactionTool {
+        workbench: serde_json::json!({
+            "schema":"ghostlight.elaborator_session_compaction_workbench.v1",
+            "prior_checkpoint":prior,
+            "recent_admitted_journal":journal,
+            "recent_rejection_findings":recent_rejection_findings,
+            "through_world_revision":campaign.revision,
+            "target_location_id":target_location_id,
+        }),
+    };
+    let run = crate::agent::run_model_agent(model, &spec, &mut tool)
+        .await
+        .map_err(|failure| anyhow!(failure.message))?;
+    let checkpoint = ElaboratorSessionCheckpoint::bind_compaction(
+        session_id,
+        title,
+        generation,
+        campaign.id,
+        campaign.revision,
+        target_location_id,
+        run.output,
+        journal
+            .iter()
+            .map(|entry| entry.commit_receipt_id.clone())
+            .collect(),
+        recent_rejection_findings,
+        prior.map(|checkpoint| checkpoint.digest.clone()),
+    )?;
+    Ok((checkpoint, run.receipts))
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct ElaborationDispatchState {
@@ -838,6 +1143,7 @@ pub struct ModelWorldElaborationWorker {
     campaign: Arc<crate::domain::Campaign>,
     target_location_id: String,
     request: String,
+    session_checkpoints: BTreeMap<ElaboratorTitle, ElaboratorSessionCheckpoint>,
 }
 
 impl ModelWorldElaborationWorker {
@@ -861,7 +1167,19 @@ impl ModelWorldElaborationWorker {
             campaign,
             target_location_id,
             request: request.into(),
+            session_checkpoints: BTreeMap::new(),
         })
+    }
+
+    pub fn with_session_checkpoints(
+        mut self,
+        checkpoints: BTreeMap<ElaboratorTitle, ElaboratorSessionCheckpoint>,
+    ) -> Result<Self> {
+        for (title, checkpoint) in &checkpoints {
+            checkpoint.validate_for(&self.campaign, &self.target_location_id, *title)?;
+        }
+        self.session_checkpoints = checkpoints;
+        Ok(self)
     }
 
     /// The exact semantic task shared by the worker wave, its artifacts, and
@@ -900,6 +1218,418 @@ impl ModelWorldElaborationWorker {
             "request":self.request,
         });
         Ok(serde_json::to_string(&projection)?)
+    }
+}
+
+/// Provider-backed worker for one causally meaningful Gestalt subdivision.
+/// A round assigns distinct active parents against one frozen campaign. The
+/// worker proposes only; callers must revalidate and commit each preview
+/// through `WorldKernel::FissionGestalt`.
+pub struct ModelWorldComplexityWorker {
+    model: Arc<dyn crate::model::ModelPort>,
+    campaign: Arc<crate::domain::Campaign>,
+    wave: ElaborationWaveBinding,
+    first_dispatch_ordinal: u64,
+    parent_gestalt_ids: Vec<String>,
+    session_checkpoints: BTreeMap<ElaboratorTitle, ElaboratorSessionCheckpoint>,
+}
+
+impl ModelWorldComplexityWorker {
+    pub fn new(
+        model: Arc<dyn crate::model::ModelPort>,
+        campaign: Arc<crate::domain::Campaign>,
+        first_dispatch_ordinal: u64,
+        parent_gestalt_ids: Vec<String>,
+        session_checkpoints: BTreeMap<ElaboratorTitle, ElaboratorSessionCheckpoint>,
+    ) -> Result<Self> {
+        if parent_gestalt_ids.is_empty()
+            || parent_gestalt_ids.iter().collect::<BTreeSet<_>>().len() != parent_gestalt_ids.len()
+        {
+            return Err(anyhow!(
+                "complexity round requires distinct assigned parent Gestalts"
+            ));
+        }
+        for parent_id in &parent_gestalt_ids {
+            let profile = campaign.agency_profiles.get(parent_id);
+            if !campaign.gestalts.contains_key(parent_id)
+                || profile.is_none_or(|profile| {
+                    !profile.active_leaf
+                        || !profile.simulation_eligible
+                        || profile.subject_kind != crate::domain::AgencySubjectKind::Gestalt
+                })
+                || campaign.gestalt_members.values().any(|member| {
+                    member.gestalt_id == *parent_id && member.materialized_actor_id.is_some()
+                })
+            {
+                return Err(anyhow!(
+                    "complexity round parent is not an unresolved active Gestalt"
+                ));
+            }
+        }
+        for (title, checkpoint) in &session_checkpoints {
+            if checkpoint.campaign_id != campaign.id
+                || checkpoint.through_world_revision > campaign.revision
+                || checkpoint.title != *title
+            {
+                return Err(anyhow!(
+                    "complexity worker received a stale or cross-title session checkpoint"
+                ));
+            }
+        }
+        let wave = ElaborationWaveBinding {
+            schema: "ghostlight.elaboration_wave_binding.v1".into(),
+            snapshot_binding: crate::legacy_transition::digest_serializable(&(
+                "ghostlight.world_complexity_round.v1",
+                campaign.id,
+                campaign.revision,
+                first_dispatch_ordinal,
+                &parent_gestalt_ids,
+            ))?,
+        };
+        Ok(Self {
+            model,
+            campaign,
+            wave,
+            first_dispatch_ordinal,
+            parent_gestalt_ids,
+            session_checkpoints,
+        })
+    }
+
+    pub fn wave(&self) -> &ElaborationWaveBinding {
+        &self.wave
+    }
+
+    fn parent_for(&self, dispatch: &ElaborationDispatch) -> Result<&str> {
+        let offset = dispatch
+            .ordinal
+            .checked_sub(self.first_dispatch_ordinal)
+            .ok_or_else(|| anyhow!("complexity dispatch predates its assigned round"))?;
+        self.parent_gestalt_ids
+            .get(usize::try_from(offset).unwrap_or(usize::MAX))
+            .map(String::as_str)
+            .ok_or_else(|| anyhow!("complexity dispatch exceeds its assigned parent set"))
+    }
+}
+
+fn complexity_partition_axis(title: ElaboratorTitle) -> crate::domain::AgencyAxis {
+    use crate::domain::AgencyAxis;
+    match title {
+        ElaboratorTitle::Patina | ElaboratorTitle::Hearth | ElaboratorTitle::Ember => {
+            AgencyAxis::Geography
+        }
+        ElaboratorTitle::Charter => AgencyAxis::Authority,
+        ElaboratorTitle::Ledger => AgencyAxis::EconomyRole,
+        ElaboratorTitle::Tangle | ElaboratorTitle::Numen => AgencyAxis::Ideology,
+        ElaboratorTitle::Veil => AgencyAxis::Information,
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum WorldComplexityOperation {
+    Fission,
+    Individuate,
+}
+
+fn complexity_operation(title: ElaboratorTitle) -> WorldComplexityOperation {
+    match title {
+        ElaboratorTitle::Hearth | ElaboratorTitle::Veil => WorldComplexityOperation::Individuate,
+        _ => WorldComplexityOperation::Fission,
+    }
+}
+
+/// One proposed increase in causally meaningful world resolution. This is
+/// deliberately the same command algebra the kernel already owns: elaborators
+/// may either split a population into distinct active leaves or promote one
+/// consequential person from it. They do not own a parallel subject store.
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
+#[serde(tag = "operation", rename_all = "snake_case", deny_unknown_fields)]
+pub enum WorldComplexityProposal {
+    Fission {
+        preview: crate::domain::GestaltFissionPreview,
+    },
+    Individuate {
+        individuation: crate::domain::GestaltIndividuation,
+    },
+}
+
+impl WorldComplexityProposal {
+    pub fn parent_gestalt_id(&self) -> &str {
+        match self {
+            Self::Fission { preview } => &preview.parent_gestalt_id,
+            Self::Individuate { individuation } => &individuation.gestalt_id,
+        }
+    }
+
+    pub fn mutation_kind(&self) -> &'static str {
+        match self {
+            Self::Fission { .. } => "fission_gestalt",
+            Self::Individuate { .. } => "individuate_gestalt_member",
+        }
+    }
+}
+
+/// Rebinds only the optimistic revision of a proposal produced in a frozen
+/// parallel round. The assigned parent, its active profile, and all of its
+/// member state must remain byte-identical; unrelated earlier commits may not
+/// force an expensive proposal replay.
+pub fn world_complexity_parent_binding(
+    campaign: &crate::domain::Campaign,
+    parent_gestalt_id: &str,
+) -> Result<String> {
+    let members = campaign
+        .gestalt_members
+        .values()
+        .filter(|member| member.gestalt_id == parent_gestalt_id)
+        .collect::<Vec<_>>();
+    crate::legacy_transition::digest_serializable(&(
+        "ghostlight.world_complexity_parent.v1",
+        campaign.id,
+        campaign.gestalts.get(parent_gestalt_id),
+        campaign.agency_profiles.get(parent_gestalt_id),
+        members,
+    ))
+}
+
+pub fn rebase_world_complexity_proposal(
+    frozen_parent_binding: &str,
+    current: &crate::domain::Campaign,
+    mut proposal: WorldComplexityProposal,
+) -> Result<WorldComplexityProposal> {
+    let parent_id = proposal.parent_gestalt_id().to_owned();
+    if world_complexity_parent_binding(current, &parent_id)? != frozen_parent_binding {
+        return Err(anyhow!(
+            "complexity mutation parent changed after its frozen proposal"
+        ));
+    }
+    match &mut proposal {
+        WorldComplexityProposal::Fission { preview } => {
+            if preview.campaign_id != current.id {
+                return Err(anyhow!("complexity fission belongs to another campaign"));
+            }
+            preview.expected_world_revision = current.revision;
+            crate::resolution::validate_fission(current, preview)?;
+        }
+        WorldComplexityProposal::Individuate { individuation } => {
+            crate::resolution::validate_gestalt_individuation(current, individuation)?;
+        }
+    }
+    Ok(proposal)
+}
+
+#[derive(Clone, Debug, Serialize)]
+#[serde(deny_unknown_fields)]
+struct WorldComplexityFinding {
+    diagnostic: String,
+}
+
+struct WorldComplexityTool<'a> {
+    campaign: &'a crate::domain::Campaign,
+    parent_gestalt_id: &'a str,
+    operation: WorldComplexityOperation,
+    partition_axis: crate::domain::AgencyAxis,
+    workbench: serde_json::Value,
+}
+
+#[async_trait]
+impl crate::agent::ModelAgentTool for WorldComplexityTool<'_> {
+    type Action = WorldComplexityProposal;
+    type Output = WorldComplexityProposal;
+    type Finding = WorldComplexityFinding;
+
+    fn action_schema(&self) -> std::result::Result<serde_json::Value, String> {
+        serde_json::to_value(schema_for!(WorldComplexityProposal))
+            .map_err(|error| error.to_string())
+    }
+
+    fn initial_context_snapshot(&self) -> Option<serde_json::Value> {
+        Some(self.workbench.clone())
+    }
+
+    async fn invoke(
+        &mut self,
+        action: Self::Action,
+        _context: &crate::agent::ModelAgentToolContext,
+    ) -> crate::agent::ModelAgentToolOutcome<Self::Output, Self::Finding> {
+        if action.parent_gestalt_id() != self.parent_gestalt_id
+            || !matches!(
+                (&self.operation, &action),
+                (
+                    WorldComplexityOperation::Fission,
+                    WorldComplexityProposal::Fission { .. }
+                ) | (
+                    WorldComplexityOperation::Individuate,
+                    WorldComplexityProposal::Individuate { .. }
+                )
+            )
+        {
+            return crate::agent::ModelAgentToolOutcome::Rejected {
+                finding: WorldComplexityFinding {
+                    diagnostic: "complexity proposal changed its assigned parent or operation"
+                        .into(),
+                },
+                receipts: Vec::new(),
+            };
+        }
+        let validation = match &action {
+            WorldComplexityProposal::Fission { preview } => {
+                if preview.partition_axis != self.partition_axis {
+                    Err(anyhow!("fission changed its assigned partition axis"))
+                } else {
+                    crate::resolution::validate_fission(self.campaign, preview)
+                }
+            }
+            WorldComplexityProposal::Individuate { individuation } => {
+                crate::resolution::validate_gestalt_individuation(self.campaign, individuation)
+            }
+        };
+        match validation {
+            Ok(()) => crate::agent::ModelAgentToolOutcome::Accepted {
+                output: action,
+                receipts: Vec::new(),
+            },
+            Err(error) => crate::agent::ModelAgentToolOutcome::Rejected {
+                finding: WorldComplexityFinding {
+                    diagnostic: error.to_string(),
+                },
+                receipts: Vec::new(),
+            },
+        }
+    }
+}
+
+#[async_trait]
+impl ElaborationSubAgentPort<WorldComplexityProposal> for ModelWorldComplexityWorker {
+    async fn invoke(
+        &self,
+        invocation: ElaborationSubAgentInvocation,
+    ) -> std::result::Result<
+        ElaborationSubAgentOutput<WorldComplexityProposal>,
+        ElaborationSubAgentFailure,
+    > {
+        if invocation.wave != self.wave {
+            return Err(ElaborationSubAgentFailure {
+                diagnostic: "complexity invocation does not match its frozen round".into(),
+                model_stage_receipts: Vec::new(),
+            });
+        }
+        let parent_id =
+            self.parent_for(&invocation.dispatch)
+                .map_err(|error| ElaborationSubAgentFailure {
+                    diagnostic: error.to_string(),
+                    model_stage_receipts: Vec::new(),
+                })?;
+        let parent = &self.campaign.gestalts[parent_id];
+        let profile = &self.campaign.agency_profiles[parent_id];
+        let axis = complexity_partition_axis(invocation.dispatch.title);
+        let operation = complexity_operation(invocation.dispatch.title);
+        let location_id =
+            profile
+                .location_ids
+                .iter()
+                .next()
+                .ok_or_else(|| ElaborationSubAgentFailure {
+                    diagnostic: "complexity parent has no exact location".into(),
+                    model_stage_receipts: Vec::new(),
+                })?;
+        let assignment = match operation {
+            WorldComplexityOperation::Fission => serde_json::json!({
+                "operation":"fission_gestalt",
+                "parent_gestalt_id":parent_id,
+                "partition_axis":axis,
+                "requirements":[
+                    "Return operation=fission with a ghostlight.gestalt_fission_preview.v1 preview.",
+                    "Bind campaign_id and expected_world_revision exactly to the frozen world.",
+                    "Create 2 through 8 non-overlapping children with distinct partition values.",
+                    "Exactly one residual child must have partition value other/unknown.",
+                    "Children inherit capabilities, knowledge, goals, and pressures exactly.",
+                    "Assign every scarce resource and dormant named member exactly once.",
+                    "Use no evidence receipts or canon candidates and require approval."
+                ]
+            }),
+            WorldComplexityOperation::Individuate => serde_json::json!({
+                "operation":"individuate_gestalt_member",
+                "parent_gestalt_id":parent_id,
+                "location_id":location_id,
+                "requirements":[
+                    "Return operation=individuate with one GestaltIndividuation.",
+                    "Use the exact parent id, parent version, and assigned location.",
+                    "Create one consequential named person whose goals, knowledge, relationships, and memories are grounded in the parent state.",
+                    "Use a new local member id without the member: prefix; version zero; no materialized actor id.",
+                    "Do not create quota names, unsupported relationships, or decorative biography."
+                ]
+            }),
+        };
+        let instructions = format!(
+            "You are {}, one titled elaborator in an iterative world-complexity session. {} Perform exactly the assigned structural mutation where the frozen world supports consequential agency. Prefer one strong change over quota padding. Your proposal cannot commit, approve itself, or invent evidence.",
+            invocation.dispatch.title.display_name(),
+            invocation.dispatch.title.mandate(),
+        );
+        let workbench = serde_json::json!({
+            "schema":"ghostlight.world_complexity_workbench.v1",
+            "assignment":assignment,
+            "parent":parent,
+            "parent_profile":profile,
+            "parent_members":self.campaign.gestalt_members.values()
+                .filter(|member|member.gestalt_id == parent_id).collect::<Vec<_>>(),
+            "local_relations":self.campaign.agency_relations.values()
+                .filter(|relation|relation.from_subject_id == parent_id || relation.to_subject_id == parent_id)
+                .collect::<Vec<_>>(),
+            "compacted_session":self.session_checkpoints.get(&invocation.dispatch.title),
+        });
+        let mut tool = WorldComplexityTool {
+            campaign: &self.campaign,
+            parent_gestalt_id: parent_id,
+            operation,
+            partition_axis: axis,
+            workbench,
+        };
+        let spec = crate::agent::ModelAgentSpec {
+            stage: format!(
+                "world-complexity-{}-{}",
+                invocation
+                    .dispatch
+                    .title
+                    .display_name()
+                    .to_ascii_lowercase(),
+                match operation {
+                    WorldComplexityOperation::Fission => "fission",
+                    WorldComplexityOperation::Individuate => "individuate",
+                }
+            ),
+            model: match invocation.dispatch.title {
+                ElaboratorTitle::Charter | ElaboratorTitle::Tangle => {
+                    crate::model::MODEL_BALANCED.into()
+                }
+                ElaboratorTitle::Numen => crate::model::MODEL_CAPABLE.into(),
+                _ => crate::model::MODEL_FAST.into(),
+            },
+            snapshot_binding: crate::legacy_transition::digest_serializable(&(
+                "ghostlight.world_complexity_invocation.v1",
+                &self.wave,
+                &invocation.dispatch,
+                parent_id,
+            ))
+            .map_err(|error| ElaborationSubAgentFailure {
+                diagnostic: error.to_string(),
+                model_stage_receipts: Vec::new(),
+            })?,
+            instructions,
+            source_receipt_ids: Vec::new(),
+            temperature: Some(0.35),
+            max_output_tokens: Some(4_000),
+            max_steps: 3,
+        };
+        match crate::agent::run_model_agent(self.model.as_ref(), &spec, &mut tool).await {
+            Ok(run) => Ok(ElaborationSubAgentOutput {
+                proposal: run.output,
+                model_stage_receipts: run.receipts,
+            }),
+            Err(error) => Err(ElaborationSubAgentFailure {
+                diagnostic: error.message,
+                model_stage_receipts: error.receipts,
+            }),
+        }
     }
 }
 
@@ -1452,6 +2182,7 @@ impl ElaborationSubAgentPort<WorldElaborationProposal> for ModelWorldElaboration
             workbench: serde_json::json!({
                 "schema":"ghostlight.elaborator_workbench.v1",
                 "assignment":assignment_instruction,
+                "compacted_session":self.session_checkpoints.get(&invocation.dispatch.title),
                 "frozen_public_world_projection":serde_json::from_str::<serde_json::Value>(&projection)
                     .unwrap_or_else(|_| serde_json::Value::String(projection)),
             }),
@@ -2441,6 +3172,47 @@ mod tests {
         assert!(!campaign.agency_profiles[&campaign.player_actor_id].simulation_eligible);
     }
 
+    #[test]
+    fn elaborator_session_compaction_binds_narrative_memory_to_exact_commits() {
+        let campaign = campaign_with_civic_room();
+        let checkpoint = ElaboratorSessionCheckpoint::bind_compaction(
+            "charter:room",
+            ElaboratorTitle::Charter,
+            2,
+            campaign.id,
+            campaign.revision,
+            "room",
+            ElaboratorSessionCompactionDraft {
+                schema: "ghostlight.elaborator_session_compaction_draft.v1".into(),
+                frontier_summary:
+                    "The threshold witness office lacks an acknowledged succession rule.".into(),
+                unresolved_leads: vec![
+                    "Split the resident body by who can challenge a witness count.".into(),
+                ],
+            },
+            vec!["world-commit:12".into()],
+            vec!["A proposed office duplicated an admitted institution.".into()],
+            Some("sha256:prior".into()),
+        )
+        .unwrap();
+        checkpoint
+            .validate_for(&campaign, "room", ElaboratorTitle::Charter)
+            .unwrap();
+
+        let mut tampered = checkpoint.clone();
+        tampered.frontier_summary = "Invent an unrelated monarchy.".into();
+        assert!(
+            tampered
+                .validate_for(&campaign, "room", ElaboratorTitle::Charter)
+                .is_err()
+        );
+        assert!(
+            checkpoint
+                .validate_for(&campaign, "room", ElaboratorTitle::Patina)
+                .is_err()
+        );
+    }
+
     fn campaign_with_civic_room() -> crate::domain::Campaign {
         let mut campaign = crate::kernel::tests::campaign();
         campaign.civic_systems.insert(
@@ -2460,6 +3232,210 @@ mod tests {
             },
         );
         campaign
+    }
+
+    fn campaign_with_fission_parent() -> crate::domain::Campaign {
+        let mut campaign = campaign_with_civic_room();
+        campaign.gestalts.insert(
+            "river-households".into(),
+            crate::domain::GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "river-households".into(),
+                name: "River Households".into(),
+                version: 0,
+                home_location_id: "room".into(),
+                shared_capabilities: BTreeSet::from(["river tending".into()]),
+                shared_knowledge: BTreeSet::from(["seasonal ford marks".into()]),
+                resources: BTreeSet::new(),
+                goals: vec!["keep the river habitable".into()],
+                pressures: vec!["the banks are narrowing".into()],
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut campaign);
+        campaign
+            .agency_profiles
+            .get_mut("river-households")
+            .unwrap()
+            .location_ids = BTreeSet::from(["room".into()]);
+        campaign
+    }
+
+    fn valid_river_fission(
+        campaign: &crate::domain::Campaign,
+    ) -> crate::domain::GestaltFissionPreview {
+        let parent = &campaign.gestalts["river-households"];
+        let child = |id: &str, name: &str| crate::domain::GestaltPersonaState {
+            schema: parent.schema.clone(),
+            id: id.into(),
+            name: name.into(),
+            version: 0,
+            home_location_id: parent.home_location_id.clone(),
+            shared_capabilities: parent.shared_capabilities.clone(),
+            shared_knowledge: parent.shared_knowledge.clone(),
+            resources: BTreeSet::new(),
+            goals: parent.goals.clone(),
+            pressures: parent.pressures.clone(),
+        };
+        crate::domain::GestaltFissionPreview {
+            schema: "ghostlight.gestalt_fission_preview.v1".into(),
+            campaign_id: campaign.id,
+            expected_world_revision: campaign.revision,
+            parent_gestalt_id: parent.id.clone(),
+            partition_axis: crate::domain::AgencyAxis::Authority,
+            children: vec![
+                child("licensed-river-households", "Licensed River Households"),
+                child("unrecorded-river-households", "Unrecorded River Households"),
+            ],
+            child_partition_values: BTreeMap::from([
+                (
+                    "licensed-river-households".into(),
+                    "licensed tenders".into(),
+                ),
+                ("unrecorded-river-households".into(), "other/unknown".into()),
+            ]),
+            residual_child_id: "unrecorded-river-households".into(),
+            member_child_assignments: BTreeMap::new(),
+            resource_child_assignments: BTreeMap::new(),
+            evidence_receipt_ids: Vec::new(),
+            gaps: Vec::new(),
+            canon_candidates: Vec::new(),
+            requires_approval: true,
+        }
+    }
+
+    #[tokio::test]
+    async fn complexity_tool_admits_only_the_assigned_meaningful_fission() {
+        let campaign = campaign_with_fission_parent();
+        let preview = valid_river_fission(&campaign);
+        let mut tool = WorldComplexityTool {
+            campaign: &campaign,
+            parent_gestalt_id: "river-households",
+            operation: WorldComplexityOperation::Fission,
+            partition_axis: crate::domain::AgencyAxis::Authority,
+            workbench: serde_json::json!({"schema":"test.workbench.v1"}),
+        };
+        let context = crate::agent::ModelAgentToolContext {
+            source_receipt_ids: Vec::new(),
+            current_model_receipt: None,
+        };
+
+        let admitted = crate::agent::ModelAgentTool::invoke(
+            &mut tool,
+            WorldComplexityProposal::Fission {
+                preview: preview.clone(),
+            },
+            &context,
+        )
+        .await;
+        assert!(matches!(
+            admitted,
+            crate::agent::ModelAgentToolOutcome::Accepted { .. }
+        ));
+
+        let mut wrong_axis = preview;
+        wrong_axis.partition_axis = crate::domain::AgencyAxis::Ideology;
+        let rejected = crate::agent::ModelAgentTool::invoke(
+            &mut tool,
+            WorldComplexityProposal::Fission {
+                preview: wrong_axis,
+            },
+            &context,
+        )
+        .await;
+        assert!(matches!(
+            rejected,
+            crate::agent::ModelAgentToolOutcome::Rejected { .. }
+        ));
+    }
+
+    #[tokio::test]
+    async fn complexity_tool_promotes_one_grounded_person_without_a_roster() {
+        let campaign = campaign_with_fission_parent();
+        let individuation = crate::domain::GestaltIndividuation {
+            gestalt_id: "river-households".into(),
+            expected_gestalt_version: campaign.gestalts["river-households"].version,
+            location_id: "room".into(),
+            member: crate::domain::GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "orin-weirkeeper".into(),
+                gestalt_id: "river-households".into(),
+                version: 0,
+                name: "Orin Weirkeeper".into(),
+                capability_additions: BTreeSet::from(["read narrowing banks".into()]),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::from(["which ford marks were moved".into()]),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::from(["notched sounding pole".into()]),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::from(["keep the river habitable".into()]),
+                relationships: BTreeMap::new(),
+                goals: vec!["force a public reckoning over the narrowing banks".into()],
+                memories: vec!["found three seasonal ford marks reset upstream".into()],
+                last_location_id: None,
+                materialized_actor_id: None,
+                last_relevant_revision: 0,
+                relevance_lease_until_revision: 0,
+            },
+        };
+        let mut tool = WorldComplexityTool {
+            campaign: &campaign,
+            parent_gestalt_id: "river-households",
+            operation: WorldComplexityOperation::Individuate,
+            partition_axis: crate::domain::AgencyAxis::Information,
+            workbench: serde_json::json!({"schema":"test.workbench.v1"}),
+        };
+        let context = crate::agent::ModelAgentToolContext {
+            source_receipt_ids: Vec::new(),
+            current_model_receipt: None,
+        };
+
+        let admitted = crate::agent::ModelAgentTool::invoke(
+            &mut tool,
+            WorldComplexityProposal::Individuate { individuation },
+            &context,
+        )
+        .await;
+        assert!(matches!(
+            admitted,
+            crate::agent::ModelAgentToolOutcome::Accepted { .. }
+        ));
+    }
+
+    #[test]
+    fn complexity_fission_rebases_only_across_unchanged_parent_state() {
+        let frozen = campaign_with_fission_parent();
+        let preview = valid_river_fission(&frozen);
+        let mut current = frozen.clone();
+        current.revision = current.revision.saturating_add(1);
+
+        let binding = world_complexity_parent_binding(&frozen, "river-households").unwrap();
+        let rebased = rebase_world_complexity_proposal(
+            &binding,
+            &current,
+            WorldComplexityProposal::Fission {
+                preview: preview.clone(),
+            },
+        )
+        .unwrap();
+        let WorldComplexityProposal::Fission { preview: rebased } = rebased else {
+            panic!("rebased mutation changed kind")
+        };
+        assert_eq!(rebased.expected_world_revision, current.revision);
+
+        current
+            .gestalts
+            .get_mut("river-households")
+            .unwrap()
+            .pressures
+            .push("an intervening flood changed the parent".into());
+        assert!(
+            rebase_world_complexity_proposal(
+                &binding,
+                &current,
+                WorldComplexityProposal::Fission { preview },
+            )
+            .is_err()
+        );
     }
 
     fn profile(weights: &[(ElaboratorTitle, u16)]) -> WorldElaborationProfile {
@@ -2858,6 +3834,8 @@ mod tests {
 
     struct ExactAssignmentSchemaModel;
 
+    struct ExactSessionCompactionModel;
+
     struct ReceiptlessWorldWorker;
 
     #[async_trait]
@@ -2953,6 +3931,55 @@ mod tests {
         fn provider(&self) -> &'static str {
             "exact-assignment-schema-fixture"
         }
+    }
+
+    #[async_trait]
+    impl crate::model::ModelPort for ExactSessionCompactionModel {
+        async fn run(&self, request: &crate::model::ModelStageRequest) -> Result<String> {
+            assert!(request.stage.ends_with("session-compaction"));
+            assert!(request.lived_stream.contains("world-commit:12"));
+            assert!(request.lived_stream.contains("threshold witness"));
+            Ok(serde_json::json!({
+                "schema":"ghostlight.elaborator_session_compaction_draft.v1",
+                "frontier_summary":"The threshold witness office still lacks a succession rule.",
+                "unresolved_leads":["Fission the electorate by access to public count challenges."]
+            })
+            .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "session-compaction-fixture"
+        }
+    }
+
+    #[tokio::test]
+    async fn session_compactor_preserves_exact_journal_ancestry() {
+        let campaign = campaign_with_civic_room();
+        let (checkpoint, receipts) = compact_elaborator_session(
+            &ExactSessionCompactionModel,
+            &campaign,
+            "room",
+            ElaboratorTitle::Charter,
+            "charter:room",
+            None,
+            &[ElaboratorSessionJournalEntry {
+                world_revision: campaign.revision,
+                commit_receipt_id: "world-commit:12".into(),
+                mutation_kind: "fission_gestalt".into(),
+                affected_subject_ids: vec!["threshold-witnesses".into()],
+                summary: "The threshold witness electorate split over public challenges.".into(),
+            }],
+            vec!["A duplicate office proposal was rejected.".into()],
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(checkpoint.recent_commit_receipt_ids, ["world-commit:12"]);
+        assert_eq!(checkpoint.generation, 0);
+        assert_eq!(receipts.len(), 1);
+        checkpoint
+            .validate_for(&campaign, "room", ElaboratorTitle::Charter)
+            .unwrap();
     }
 
     #[tokio::test]

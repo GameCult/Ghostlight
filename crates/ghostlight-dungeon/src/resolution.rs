@@ -2204,6 +2204,71 @@ fn validate_strategic_individuations(
     )
 }
 
+pub fn validate_gestalt_individuation(
+    campaign: &Campaign,
+    individuation: &GestaltIndividuation,
+) -> Result<()> {
+    let member = &individuation.member;
+    let profile = campaign
+        .agency_profiles
+        .get(&individuation.gestalt_id)
+        .ok_or_else(|| anyhow!("individuation Gestalt has no agency profile"))?;
+    validate_active_gestalt_presence_location(
+        campaign,
+        &individuation.gestalt_id,
+        &individuation.location_id,
+    )?;
+    if !campaign.gestalts.contains_key(&individuation.gestalt_id)
+        || !profile.active_leaf
+        || !profile.simulation_eligible
+        || individuation.expected_gestalt_version
+            != campaign.gestalts[&individuation.gestalt_id].version
+        || member.schema != "ghostlight.gestalt_member_delta.v1"
+        || member.gestalt_id != individuation.gestalt_id
+        || member.version != 0
+        || member.materialized_actor_id.is_some()
+        || member.id.trim().is_empty()
+        || member.id.chars().count() > 80
+        || member.name.trim().is_empty()
+        || member.name.chars().count() > 160
+        || member.goals.len() > 8
+        || member.memories.len() > 8
+        || member.obligations.len() > 8
+        || serde_json::to_vec(member).is_ok_and(|encoded| encoded.len() > 16_384)
+        || campaign
+            .gestalt_members
+            .contains_key(&crate::domain::canonical_gestalt_member_local_id(
+                &member.id,
+            ))
+        || campaign
+            .actors
+            .contains_key(&crate::domain::gestalt_member_subject_id(&member.id))
+        || campaign
+            .actors
+            .values()
+            .any(|actor| actor.name.trim().eq_ignore_ascii_case(member.name.trim()))
+        || campaign.gestalt_members.values().any(|existing| {
+            existing
+                .name
+                .trim()
+                .eq_ignore_ascii_case(member.name.trim())
+        })
+        || member.relationships.keys().any(|subject_id| {
+            !campaign.actors.contains_key(subject_id)
+                && !campaign.institutions.contains_key(subject_id)
+                && !campaign.gestalts.contains_key(subject_id)
+                && subject_id
+                    .strip_prefix("member:")
+                    .is_none_or(|member_id| !campaign.gestalt_members.contains_key(member_id))
+        })
+    {
+        return Err(anyhow!(
+            "gestalt individuation exceeds its exact population authority"
+        ));
+    }
+    Ok(())
+}
+
 pub(crate) fn validate_strategic_individuation_proposals(
     campaign: &Campaign,
     proposals: &[StrategicGestaltIndividuation],
@@ -2223,57 +2288,11 @@ pub(crate) fn validate_strategic_individuation_proposals(
             .get(&proposal.action_digest)
             .ok_or_else(|| anyhow!("strategic individuation is not bound to a selected action"))?;
         let individuation = &proposal.individuation;
-        let member = &individuation.member;
-        let profile = campaign
-            .agency_profiles
-            .get(&individuation.gestalt_id)
-            .ok_or_else(|| anyhow!("strategic individuation Gestalt has no agency profile"))?;
         if proposal.schema != "ghostlight.strategic_gestalt_individuation.v1"
             || proposal.rationale.trim().is_empty()
             || proposal.rationale.chars().count() > 460
             || action.subject_id != individuation.gestalt_id
-            || !campaign.gestalts.contains_key(&individuation.gestalt_id)
-            || !profile.active_leaf
-            || !profile.simulation_eligible
-            || !profile.location_ids.contains(&individuation.location_id)
-            || individuation.expected_gestalt_version
-                != campaign.gestalts[&individuation.gestalt_id].version
-            || member.schema != "ghostlight.gestalt_member_delta.v1"
-            || member.gestalt_id != individuation.gestalt_id
-            || member.version != 0
-            || member.materialized_actor_id.is_some()
-            || member.id.trim().is_empty()
-            || member.id.chars().count() > 80
-            || member.name.trim().is_empty()
-            || member.name.chars().count() > 160
-            || member.goals.len() > 8
-            || member.memories.len() > 8
-            || member.obligations.len() > 8
-            || serde_json::to_vec(member).is_ok_and(|encoded| encoded.len() > 16_384)
-            || campaign.gestalt_members.contains_key(
-                &crate::domain::canonical_gestalt_member_local_id(&member.id),
-            )
-            || campaign
-                .actors
-                .contains_key(&crate::domain::gestalt_member_subject_id(&member.id))
-            || campaign
-                .actors
-                .values()
-                .any(|actor| actor.name.trim().eq_ignore_ascii_case(member.name.trim()))
-            || campaign.gestalt_members.values().any(|existing| {
-                existing
-                    .name
-                    .trim()
-                    .eq_ignore_ascii_case(member.name.trim())
-            })
-            || member.relationships.keys().any(|subject_id| {
-                !campaign.actors.contains_key(subject_id)
-                    && !campaign.institutions.contains_key(subject_id)
-                    && !campaign.gestalts.contains_key(subject_id)
-                    && subject_id
-                        .strip_prefix("member:")
-                        .is_none_or(|member_id| !campaign.gestalt_members.contains_key(member_id))
-            })
+            || validate_gestalt_individuation(campaign, individuation).is_err()
         {
             return Err(anyhow!(
                 "strategic individuation exceeds its exact Gestalt action authority"
@@ -4208,6 +4227,29 @@ pub(crate) mod tests {
             .flat_map(|cell| cell.subject_ids.iter())
             .collect::<BTreeSet<_>>();
         assert_eq!(represented.len(), 1_000);
+    }
+
+    #[test]
+    fn partitions_twenty_four_hundred_subjects_into_a_two_hundred_forty_cell_cover() {
+        let value = campaign(2_400, 240);
+        let started = Instant::now();
+        let cover = plan_cover(
+            &value,
+            default_demand(&value, "ten-percent expanded-world cover"),
+        )
+        .unwrap();
+        assert_eq!(cover.configured_budget, 240);
+        assert_eq!(cover.effective_budget, 240);
+        assert_eq!(cover.cells.len(), 240);
+        let represented = cover
+            .cells
+            .iter()
+            .flat_map(|cell| cell.subject_ids.iter())
+            .collect::<BTreeSet<_>>();
+        assert_eq!(represented.len(), 2_400);
+        if cfg!(debug_assertions) {
+            assert!(started.elapsed().as_secs_f32() < 20.0);
+        }
     }
 
     #[test]

@@ -1679,9 +1679,10 @@ materializing a `NewsIssue`.
 2. Preserve the delivered Run 60 PDF and its frozen-copy verification as the
    earlier baseline, plus the final Run 61 style/flow artifact, v2 manifest,
    grammar, hashes, frozen copy, and art assets recorded above.
-3. Do not resume stopped Run 75. Revise the current local scale derivation
-   before integrating it. `WorldScaleIntent` and `WorldElaborationDemand` now
-   derive a numeric 2,400-subject target from 240 cells at ten-percent cover,
+3. Do not resume stopped Run 75. Exact pushed
+   `df66ec989c1e44a7a8b21ed159e9589778426238` defines `WorldScaleIntent` and
+   `WorldElaborationDemand`, deriving a numeric 2,400-subject target from 240
+   cells at ten-percent cover,
    but this is not yet the required complexity proof: a flat population roster
    cannot satisfy the target. `round_mutation_budget` is
    `ceil(active_cell_budget * deficit / target)`: 240 cells with a
@@ -1689,13 +1690,16 @@ materializing a `NewsIssue`.
    bounded round pressure, not a model-call or session count and not an
    assumption that one mutation yields one subject. Elaborator context now
    keeps stable identity and mandate in a prefix separate from the bounded
-   dynamic workbench snapshot, but persistent elaboration checkpointing and
-   compaction are not implemented. Define a deterministic measure of admitted
-   causal complexity and an iterative loop that fissions Gestalts, promotes
-   meaningful individuals and institutions, remeasures after admission, and
-   continues until the target is met. Do not assume a fixed batch yield or one
-   model call per useful subject. Add persistence, resume binding, compaction,
-   and a product-scale fixture around that loop. Keep Resolution as cover owner. Nemesis receives
+   dynamic workbench snapshot. The current uncommitted cut now persists
+   digest-chained per-title compacted sessions, proposes both meaningful Gestalt
+   fission and grounded named-person promotion, admits only through existing
+   WorldKernel commands, remeasures canonical complexity after each round, and
+   resumes only failed dispatches from the exact frozen schedule. Focused
+   complexity, session, and resume checks pass. Do not assume a fixed batch
+   yield or one model call per useful subject. Finish independent architecture
+   review and the full package/strategic gates, commit and push the exact cut,
+   then launch a fresh provider-backed product-scale acceptance without
+   resuming Run 75. Keep Resolution as cover owner. Nemesis receives
    that cover and assigns causal decision windows inside it; it does not choose
    cover membership. Preserve Runs 64 through 75 and both live services. This
    work does not wait for the Delvehold adapter because the Greathold remains an
