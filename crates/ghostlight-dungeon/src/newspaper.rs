@@ -27,7 +27,7 @@ use std::{
 const MAX_FRONT_PAGE_ARTICLES: usize = 6;
 const MAX_PUBLIC_RECORD_QUERY_RESULTS: usize = 24;
 const MAX_NARRATIVE_SELECTION_STEPS: usize = 12;
-const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v15";
+const NEWSROOM_CONTRACT_VERSION: &str = "character-newsroom.v16";
 const EDITION_LABEL: &str = "Current Edition";
 const ALLOWED_SECTIONS: [&str; 6] = [
     "Front Page",
@@ -499,10 +499,14 @@ pub struct WorldNewspaperConflictAxis {
     pub first_party: String,
     #[schemars(length(min = 1, max = 160))]
     pub first_party_citation: String,
+    #[schemars(length(min = 1, max = 500))]
+    pub first_party_move: String,
     #[schemars(length(min = 1, max = 160))]
     pub opposing_party: String,
     #[schemars(length(min = 1, max = 160))]
     pub opposing_party_citation: String,
+    #[schemars(length(min = 1, max = 500))]
+    pub opposing_party_move: String,
     #[schemars(length(min = 1, max = 500))]
     pub conflict: String,
 }
@@ -1093,12 +1097,14 @@ impl ModelAgentTool for NarrativeSelectionWorkbench<'_> {
                                     {
                                         "type":"object",
                                         "additionalProperties":false,
-                                        "required":["first_party","first_party_citation","opposing_party","opposing_party_citation","conflict"],
+                                        "required":["first_party","first_party_citation","first_party_move","opposing_party","opposing_party_citation","opposing_party_move","conflict"],
                                         "properties":{
                                             "first_party":{"type":"string","minLength":1,"maxLength":160},
                                             "first_party_citation":{"type":"string","minLength":1,"maxLength":160},
+                                            "first_party_move":{"type":"string","minLength":1,"maxLength":500},
                                             "opposing_party":{"type":"string","minLength":1,"maxLength":160},
                                             "opposing_party_citation":{"type":"string","minLength":1,"maxLength":160},
+                                            "opposing_party_move":{"type":"string","minLength":1,"maxLength":500},
                                             "conflict":{"type":"string","minLength":1,"maxLength":500}
                                         }
                                     }
@@ -1491,10 +1497,17 @@ fn validate_editorial_agenda(
         if let Some(axis) = &pitch.conflict_axis {
             validate_editorial_frame(&axis.first_party, "conflict first party")?;
             validate_editorial_frame(&axis.opposing_party, "conflict opposing party")?;
+            validate_editorial_frame(&axis.first_party_move, "conflict first move")?;
+            validate_editorial_frame(&axis.opposing_party_move, "conflict opposing move")?;
             validate_editorial_frame(&axis.conflict, "conflict axis")?;
             if axis.first_party == axis.opposing_party {
                 return Err(anyhow!(
                     "editorial pitch {index} binds the same party to both sides"
+                ));
+            }
+            if axis.first_party_citation == axis.opposing_party_citation {
+                return Err(anyhow!(
+                    "editorial pitch {index} binds both sides to the same public move"
                 ));
             }
             for (party, citation, label) in [
@@ -1856,7 +1869,7 @@ async fn select_editorial_agenda(
             .collect::<Vec<_>>(),
     });
     let instructions = format!(
-        "You are {editor}, assignment editor of `{title}`. Investigate its frozen public ledger with query_public_records, then assign a page. An empty query browses; terms, exact entity names, status, channel, and an inspected cursor narrow or page. The workbench keeps a compact index of inspected records instead of replaying old query pages; use fetch_public_records with exact IDs when you need their full facts again. Cite only returned record IDs. Search backward when procedure hides the rupture and sideways for opposition, countermoves, reaction, scandal, lived cost, and independent beats.\n\nFirst decide the issue shape. A special issue is earned when one upheaval genuinely reorganizes several parts of public life; its lead alone owns the shared chronology and later stories assume that chronology while performing distinct narrative functions. A general issue carries independent beats whose stories are self-contained. Do not declare a special issue merely because one incident generated many records, and do not manufacture variety when the whole realm is plainly living through one rupture. State the evidence-based rationale.\n\nThe first pitch is the Front Page lead; later pitches use another allowed section. Give each pitch a narrative function and context role. Choose the staff journalist whose beat, biases, source instincts, voice, and blind spots make them the most revealingly partial observer, and state that assignment reason. Give them the exact record grouping, one focus record the lede cannot bury, a pointed narrative claim, the live tension, and the public question. Accountability, opposition, and counter-narrative assignments must also bind a conflict_axis: two distinct people, institutions, or populations named by exact selected citations, plus the conflict the reporter should pursue. One cited grievance against an unnamed abstraction is not an opposing side. Consequence, profile, and independent stories may leave conflict_axis null when the ledger honestly supplies no adversarial motion. A routine update to a vivid continuing incident should cite both and say what changed. Remembering, filing, warning, and planning are context unless they themselves produce a public consequence. Editorial frames may insinuate and judge but cannot invent concrete facts. The copy editor, not you or the reporters, owns fact checking.\n\nPropose before committing. The workbench returns issue shape, reporter fit, the lead, and what it would bury; revise or query again if the proof exposes a stronger or more honest page.\n\nPUBLICATION VOICE:\n{voice}\n\nCOMPACT STAFF BOOK:\n{staff}\n\nLEDGER PERIOD DIRECTORY (navigation only; query exact records before citation):\n{directory}",
+        "You are {editor}, assignment editor of `{title}`. Investigate its frozen public ledger with query_public_records, then assign a page. An empty query browses; terms, exact entity names, status, channel, and an inspected cursor narrow or page. The workbench keeps a compact index of inspected records instead of replaying old query pages; use fetch_public_records with exact IDs when you need their full facts again. Cite only returned record IDs. Search backward when procedure hides the rupture and sideways for opposition, countermoves, reaction, scandal, lived cost, and independent beats.\n\nFirst decide the issue shape. A special issue is earned when one upheaval genuinely reorganizes several parts of public life; its lead alone owns the shared chronology and later stories assume that chronology while performing distinct narrative functions. A general issue carries independent beats whose stories are self-contained. Do not declare a special issue merely because one incident generated many records, and do not manufacture variety when the whole realm is plainly living through one rupture. State the evidence-based rationale.\n\nThe first pitch is the Front Page lead; later pitches use another allowed section. Give each pitch a narrative function and context role. Choose the staff journalist whose beat, biases, source instincts, voice, and blind spots make them the most revealingly partial observer, and state that assignment reason. Give them the exact record grouping, one focus record the lede cannot bury, a pointed narrative claim, the live tension, and the public question. Accountability, opposition, and counter-narrative assignments must also bind a conflict_axis: two distinct people, institutions, or populations, two distinct selected records showing each side's own public move or position, bounded descriptions of those moves, and the conflict the reporter should pursue. A filing delivered to a passive recipient is one move, not two; query for an actual answer, refusal, competing demand, seizure, retreat, or countermove. One cited grievance against an unnamed abstraction is not an opposing side. Consequence, profile, and independent stories may leave conflict_axis null when the ledger honestly supplies no adversarial motion. A routine update to a vivid continuing incident should cite both and say what changed. Remembering, filing, warning, and planning are context unless they themselves produce a public consequence. Editorial frames may insinuate and judge but cannot invent concrete facts. The copy editor, not you or the reporters, owns fact checking.\n\nPropose before committing. The workbench returns issue shape, reporter fit, the lead, and what it would bury; revise or query again if the proof exposes a stronger or more honest page.\n\nPUBLICATION VOICE:\n{voice}\n\nCOMPACT STAFF BOOK:\n{staff}\n\nLEDGER PERIOD DIRECTORY (navigation only; query exact records before citation):\n{directory}",
         editor = prepared.newsroom.assignment_editor.name,
         title = prepared.title,
         voice = prepared.editorial_voice,
@@ -5113,8 +5126,11 @@ mod tests {
             conflict_axis: Some(WorldNewspaperConflictAxis {
                 first_party: "Thorn Court".into(),
                 first_party_citation: "news:seal-scandal".into(),
+                first_party_move: "The court admits the pawned seal and dismisses its treasurer."
+                    .into(),
                 opposing_party: "West Gate Wardens".into(),
                 opposing_party_citation: "news:west-gate".into(),
+                opposing_party_move: "The wardens announce the route closure.".into(),
                 conflict: "They impose incompatible answers to failed custody.".into(),
             }),
         };
@@ -5126,6 +5142,19 @@ mod tests {
             story_pitches: vec![pitch],
         };
         validate_editorial_agenda(&records, &canopy_ledger_newsroom(), &agenda, 2).unwrap();
+
+        let mut passive_recipient = agenda.clone();
+        passive_recipient.story_pitches[0]
+            .conflict_axis
+            .as_mut()
+            .unwrap()
+            .opposing_party_citation = "news:seal-scandal".into();
+        assert!(
+            validate_editorial_agenda(&records, &canopy_ledger_newsroom(), &passive_recipient, 2)
+                .unwrap_err()
+                .to_string()
+                .contains("same public move")
+        );
 
         let mut abstract_opponent = agenda;
         abstract_opponent.story_pitches[0]

@@ -544,14 +544,34 @@ witnessed event to public accessibility, and `prestigious instruments`.
 Preserve Runs 64 through 73; mechanical completion is proven, final newspaper
 acceptance is not.
 
-Current source already gives the assignment editor bounded full-ledger queries
-and tells it to search sideways for opposition and countermoves. Do not sample
-again yet. Inspect the actual Run 73 query transcript and selection against the
-frozen fact desk to distinguish missing records, missed discovery, and rejected
-selection. Inspect the copy-desk findings plus Night Editor input/output for the
-three grounding failures. Preserve the newsroom roles and fact boundary; cut
-missing context or misplaced ownership rather than adding a new judge or output
-ban.
+Exact-source Run 74 `b6787d909bd79b68ed3a4d143b7f6dd438e00fa2`
+is mechanically complete at
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/full-world-delvehold-b6787d9-74`:
+revision 27, 12/12 waves, 240 events, and 514 news rows. Inherited Run 68
+artifacts are byte-identical, the manifest passes, live services are unchanged,
+and archive SHA-256 is
+`957b11a5d584d27d23bf4d50ed1fbc8d067faf67953b03f80705bfb9587c496d`.
+
+Independent editorial review fails. The page has a coherent throughline and
+sharp prose, but no sustained adversarial narrative: opposing decision-makers,
+motives, responses, and countermoves are largely absent; scandal and public
+reaction are missing; lived costs remain abstract; the result reads as polished
+minutes with conclusions.
+
+The post-press correction notice has two items. `The corridor had begun closing
+hours earlier` overstates a source that says the prolonged oath-route closure
+was already diverting arrivals six hours before the breach. `no relief or
+assignment of liability has followed` must narrow to `no tribunal remedy is
+recorded yet`. These remain later-edition correction debt under the deadline
+contract; they do not reopen Run 74.
+
+Run 74 falsifies v15's assumption that two cited names prove an adversarial
+move. Four of five pitches avoided the typed conflict axis through lead or
+consequence functions. The lone accountability pitch used one transfer citation
+for both cultivators and a passive Tribunal. Map v16 around two distinct cited
+moves without collapsing every story into one template. Preserve assignment,
+copy-desk, Night Editor, fact, and correction ownership; do not sample the
+provider again until the cut is locally verified.
 
 Sparse inhabited destinations now compile a versioned civic apparatus in place.
 The first pass establishes institutions, resident populations, political edges,
@@ -1625,17 +1645,14 @@ materializing a `NewsIssue`.
 2. Preserve the delivered Run 60 PDF and its frozen-copy verification as the
    earlier baseline, plus the final Run 61 style/flow artifact, v2 manifest,
    grammar, hashes, frozen copy, and art assets recorded above.
-3. Finish and publish the mapped v15 assignment cut. Accountability,
-   opposition, and counter-narrative pitches bind two distinct named parties to
-   selected exact citations through a typed conflict axis; deterministic
-   admission rejects abstract or uncited antagonists. The bounded period
-   directory preserves canonical ledger order rather than lexically selecting
-   headlines. Run focused and full gates, commit, and push before one
-   newsroom-only run from immutable Run 68. Require mechanical and blind
-   editorial acceptance. Under the deadline contract, post-press grounding
-   findings become later-edition correction input rather than a same-edition
-   retry loop. Preserve Runs 64 through 73. This work does not wait for the
-   Delvehold adapter.
+3. Commit and push the locally verified v16 distinct-moves cut, then launch one
+   fresh full-world acceptance from the preserved pre-wave checkpoint. Exercise
+   all admitted realms, the 240-cell budget, Nemesis scheduling, twelve
+   strategic waves, and the press pipeline. Preserve completed checkpoints and
+   resume failures in place instead of replaying successful work. Preserve Runs
+   64 through 74 and both live services. This work does not wait for the
+   Delvehold adapter because the Greathold remains an external sovereign
+   boundary observer.
 4. Build the Delvehold-owned adapter before any real Delvehold-owned player,
    civic, dungeon, contract, workshop, or quantitative-economy state participates.
    Defer multiple publications until separately authorized, or follow the operator's next directed work.

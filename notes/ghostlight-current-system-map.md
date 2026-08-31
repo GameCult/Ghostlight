@@ -1372,7 +1372,7 @@ The deliberative newsroom boundary is live under this authority map:
   writers. `WorldKernel` remains the only world-event writer.
 - **Inputs:** one exact campaign revision, publication title and voice, article
   budget, a validated embodied newsroom roster, source-receipt ancestry, and
-  `character-newsroom.v15` contract. Before its first query, the assignment
+  `character-newsroom.v16` contract. Before its first query, the assignment
   editor receives a bounded per-period directory containing only timestamps,
   completed-material-change headlines, the full completed-change count, and
   counts of other records. Headline sampling preserves canonical ledger order
@@ -1410,9 +1410,12 @@ The deliberative newsroom boundary is live under this authority map:
   assignment rationale,
   narrative claim, tension, and public question. Accountability, opposition,
   and counter-narrative pitches also carry a typed conflict axis: two distinct
-  named parties, one selected exact citation for each, and the editorially
-  framed conflict. Deterministic admission proves both parties are asserted by
-  their cited records; an abstract antagonist cannot occupy either side.
+  named parties, two distinct selected exact citations, bounded descriptions of
+  each party's public move or position, and the editorially framed conflict.
+  Deterministic admission proves both parties are asserted by their cited
+  records and rejects one record presented as both sides of a dispute; an
+  abstract antagonist or passive filing recipient cannot impersonate an
+  opposing move.
   Consequence and independent stories may omit the axis when the ledger has no
   honest adversarial motion. Article count plus bounded paragraphs and output tokens
   define page space. There is no citation-count page budget. A foundational
