@@ -39,17 +39,17 @@ dispatch resume. Tool-internal rejection findings are not yet promoted into
 later successful compaction, but no executable proposal remains live after a
 successful round.
 
-Run 92 at exact source `44c89e3` retained 938 active eligible Gestalts but found
-no selectable parent. Run 93 at `31125a2` falsified the attempted lineage-scope
-repair before any model call: those three realm IDs were never profile scope,
-and adding them would wrongly conflate jurisdiction with occupancy. Canonical
-topology already owns the answer: Avelune, Veyra, and Bramblewash settlements
-are contained by their realm-root locations. The current cut leaves profiles
-unchanged and makes complexity routing walk `Location.container_id` ancestry to
-exactly one consumer realm target. Review, gate, commit, push, clone immutable
-Run 93, and begin round 10 without replay. The acceptance launcher retains one
-35 MiB content-addressed runner per exact source commit and deletes disposable
-compiler output; do not restore a persistent Cargo target tree.
+Run 94 at exact source `3f7211b` proved containment-owned routing, completed
+round 10, and raised actionable subjects from 1,168 to 1,205. Round 11 has 53
+successful proposals frozen across immutable Runs 94 through 96; only two
+Hearth individuation dispatches remain failed. Their repeated agent repairs
+received one generic population-authority diagnostic because the deterministic
+validator collapsed all mismatch clauses. The current cut keeps that validator
+as the only authority but reports the complete failed-clause set through the
+existing tool observation. Gate, commit, push, clone immutable Run 96, and
+resume only those two dispatches. The acceptance launcher retains one 35 MiB
+content-addressed runner per exact source commit and deletes disposable compiler
+output; do not restore a persistent Cargo target tree.
 
 ## Mission and current product shape
 
@@ -457,6 +457,12 @@ an explicitly requested but unanchored canon baseline, or a conflict with an
 approved capability.
 
 ## Next action
+
+Preserve Runs 75 through 96. Push the complete individuation-mismatch feedback
+cut, then resume Run 96's exact round-11 checkpoint without replaying the 53
+successful proposals. Continue iterative complexity rounds to 2,400 canonical
+actionable subjects, followed by ten strategic waves, publications, archive
+hashes, and unchanged-live-service verification.
 
 The generic world-consumer boundary is implemented. Session Zero and external
 producers share one admitted `WorldSeed` transaction; externally authoritative
@@ -1718,9 +1724,10 @@ materializing a `NewsIssue`.
    bounded round pressure, not a model-call or session count and not an
    assumption that one mutation yields one subject. Elaborator context now
    keeps stable identity and mandate in a prefix separate from the bounded
-   dynamic workbench snapshot. Pushed `a017737` gives persistent logical
-   title-by-realm sessions digest-chained agentic compaction; both meaningful
-   Gestalt fission and grounded named-person promotion are available, only
+   dynamic workbench snapshot. Pushed `a017737` gives bounded title-by-realm
+   checkpoint continuity through digest-chained agentic compaction, not a
+   persistent provider thread or complete cognition; both meaningful Gestalt
+   fission and grounded named-person promotion are available, only
    failed dispatches resume from the exact frozen schedule, WorldKernel alone
    commits, and canonical complexity is remeasured after each round.
 

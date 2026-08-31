@@ -1369,7 +1369,10 @@ outside this authority.
   mailbox. `resolution::validate_gestalt_individuation` is the single local
   authority for member identity, parent version, exact location, bounds, and
   relationship targets; strategic action-bound selection and direct kernel
-  admission both reuse it. Direct individuation then follows the ordinary
+  admission both reuse it. It accumulates every failed deterministic clause in
+  one rejection so the generic agent loop can repair the exact bounded draft in
+  its next semantic step; the tool does not add a second judge or relax kernel
+  admission. Direct individuation then follows the ordinary
   presence path: `apply_individuation` inserts the canonical member delta and
   promotes it into an Actor, `commit_gestalt_presence` calls
   `ensure_agency_profiles`, and the new active simulation-eligible actor profile

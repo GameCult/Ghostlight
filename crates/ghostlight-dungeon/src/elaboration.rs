@@ -3828,6 +3828,86 @@ mod tests {
         ));
     }
 
+    #[tokio::test]
+    async fn complexity_tool_reports_every_individuation_mismatch_for_agent_repair() {
+        let mut campaign = campaign_with_fission_parent();
+        campaign.actors.insert(
+            "actor:orin".into(),
+            crate::domain::ActorState {
+                id: "actor:orin".into(),
+                name: "Orin Weirkeeper".into(),
+                location_id: "room".into(),
+                capabilities: BTreeSet::new(),
+                knowledge: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: Vec::new(),
+                memories: Vec::new(),
+            },
+        );
+        let mut tool = WorldComplexityTool {
+            campaign: &campaign,
+            parent_gestalt_id: "river-households",
+            operation: WorldComplexityOperation::Individuate,
+            partition_axis: crate::domain::AgencyAxis::Information,
+            workbench: serde_json::json!({"schema":"test.workbench.v1"}),
+        };
+        let context = crate::agent::ModelAgentToolContext {
+            source_receipt_ids: Vec::new(),
+            current_model_receipt: None,
+        };
+        let rejected = crate::agent::ModelAgentTool::invoke(
+            &mut tool,
+            WorldComplexityAction {
+                schema: "ghostlight.world_complexity_action.v1".into(),
+                mutation: WorldComplexityMutationDraft::Individuate {
+                    member: crate::domain::GestaltMemberDelta {
+                        schema: "ghostlight.gestalt_member_delta.v1".into(),
+                        id: "new-weirkeeper".into(),
+                        gestalt_id: "river-households".into(),
+                        version: 0,
+                        name: "Orin Weirkeeper".into(),
+                        goals: (0..9).map(|index| format!("goal {index}")).collect(),
+                        relationships: BTreeMap::from([(
+                            "actor:invented-stranger".into(),
+                            "owes a favor".into(),
+                        )]),
+                        last_location_id: Some("room".into()),
+                        capability_additions: BTreeSet::new(),
+                        capability_removals: BTreeSet::new(),
+                        knowledge_additions: BTreeSet::new(),
+                        knowledge_removals: BTreeSet::new(),
+                        equipment: BTreeSet::new(),
+                        conditions: BTreeSet::new(),
+                        obligations: BTreeSet::new(),
+                        memories: Vec::new(),
+                        materialized_actor_id: None,
+                        last_relevant_revision: 0,
+                        relevance_lease_until_revision: 0,
+                    },
+                },
+            },
+            &context,
+        )
+        .await;
+        let crate::agent::ModelAgentToolOutcome::Rejected { finding, .. } = rejected else {
+            panic!("invalid individuation was admitted")
+        };
+        assert!(finding.diagnostic.contains("more than eight goals"));
+        assert!(
+            finding
+                .diagnostic
+                .contains("duplicates an established Actor name")
+        );
+        assert!(
+            finding
+                .diagnostic
+                .contains("unsupported subjects: actor:invented-stranger")
+        );
+    }
+
     #[test]
     fn complexity_fission_rebases_only_across_unchanged_parent_state() {
         let frozen = campaign_with_fission_parent();

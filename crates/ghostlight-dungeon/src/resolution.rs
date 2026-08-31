@@ -2213,60 +2213,119 @@ pub fn validate_gestalt_individuation(
         .agency_profiles
         .get(&individuation.gestalt_id)
         .ok_or_else(|| anyhow!("individuation Gestalt has no agency profile"))?;
-    validate_active_gestalt_presence_location(
+    let mut findings = Vec::new();
+    if let Err(error) = validate_active_gestalt_presence_location(
         campaign,
         &individuation.gestalt_id,
         &individuation.location_id,
-    )?;
-    if !campaign.gestalts.contains_key(&individuation.gestalt_id)
-        || !profile.active_leaf
-        || !profile.simulation_eligible
-        || individuation.expected_gestalt_version
-            != campaign.gestalts[&individuation.gestalt_id].version
-        || member.schema != "ghostlight.gestalt_member_delta.v1"
-        || member.gestalt_id != individuation.gestalt_id
-        || member.version != 0
-        || member.materialized_actor_id.is_some()
-        || member.id.trim().is_empty()
-        || member.id.chars().count() > 80
-        || member.name.trim().is_empty()
-        || member.name.chars().count() > 160
-        || member.goals.len() > 8
-        || member.memories.len() > 8
-        || member.obligations.len() > 8
-        || serde_json::to_vec(member).is_ok_and(|encoded| encoded.len() > 16_384)
-        || campaign
-            .gestalt_members
-            .contains_key(&crate::domain::canonical_gestalt_member_local_id(
-                &member.id,
-            ))
-        || campaign
-            .actors
-            .contains_key(&crate::domain::gestalt_member_subject_id(&member.id))
-        || campaign
-            .actors
-            .values()
-            .any(|actor| actor.name.trim().eq_ignore_ascii_case(member.name.trim()))
-        || campaign.gestalt_members.values().any(|existing| {
-            existing
-                .name
-                .trim()
-                .eq_ignore_ascii_case(member.name.trim())
-        })
-        || member.relationships.keys().any(|subject_id| {
-            !campaign.actors.contains_key(subject_id)
-                && !campaign.institutions.contains_key(subject_id)
-                && !campaign.gestalts.contains_key(subject_id)
+    ) {
+        findings.push(error.to_string());
+    }
+    let parent = campaign.gestalts.get(&individuation.gestalt_id);
+    if parent.is_none() {
+        findings.push("parent Gestalt does not exist".to_owned());
+    }
+    if !profile.active_leaf {
+        findings.push("parent Gestalt is not an active leaf".to_owned());
+    }
+    if !profile.simulation_eligible {
+        findings.push("parent Gestalt is not simulation eligible".to_owned());
+    }
+    if parent.is_some_and(|parent| individuation.expected_gestalt_version != parent.version) {
+        findings.push("expected Gestalt version does not match the canonical parent".to_owned());
+    }
+    if member.schema != "ghostlight.gestalt_member_delta.v1" {
+        findings.push("member schema is unsupported".to_owned());
+    }
+    if member.gestalt_id != individuation.gestalt_id {
+        findings.push("member Gestalt id does not match the canonical parent".to_owned());
+    }
+    if member.version != 0 {
+        findings.push("new member version must be zero".to_owned());
+    }
+    if member.materialized_actor_id.is_some() {
+        findings.push("new member cannot claim a materialized Actor id".to_owned());
+    }
+    if member.id.trim().is_empty() {
+        findings.push("member id is empty".to_owned());
+    }
+    if member.id.chars().count() > 80 {
+        findings.push("member id exceeds 80 characters".to_owned());
+    }
+    if member.name.trim().is_empty() {
+        findings.push("member name is empty".to_owned());
+    }
+    if member.name.chars().count() > 160 {
+        findings.push("member name exceeds 160 characters".to_owned());
+    }
+    if member.goals.len() > 8 {
+        findings.push("member has more than eight goals".to_owned());
+    }
+    if member.memories.len() > 8 {
+        findings.push("member has more than eight memories".to_owned());
+    }
+    if member.obligations.len() > 8 {
+        findings.push("member has more than eight obligations".to_owned());
+    }
+    if serde_json::to_vec(member).is_ok_and(|encoded| encoded.len() > 16_384) {
+        findings.push("member delta exceeds 16384 encoded bytes".to_owned());
+    }
+    if campaign
+        .gestalt_members
+        .contains_key(&crate::domain::canonical_gestalt_member_local_id(
+            &member.id,
+        ))
+    {
+        findings.push("member id duplicates an established population identity".to_owned());
+    }
+    if campaign
+        .actors
+        .contains_key(&crate::domain::gestalt_member_subject_id(&member.id))
+    {
+        findings.push("member id duplicates an established Actor identity".to_owned());
+    }
+    if campaign
+        .actors
+        .values()
+        .any(|actor| actor.name.trim().eq_ignore_ascii_case(member.name.trim()))
+    {
+        findings.push("member name duplicates an established Actor name".to_owned());
+    }
+    if campaign.gestalt_members.values().any(|existing| {
+        existing
+            .name
+            .trim()
+            .eq_ignore_ascii_case(member.name.trim())
+    }) {
+        findings.push("member name duplicates an established population name".to_owned());
+    }
+    let unsupported_relationships = member
+        .relationships
+        .keys()
+        .filter(|subject_id| {
+            !campaign.actors.contains_key(*subject_id)
+                && !campaign.institutions.contains_key(*subject_id)
+                && !campaign.gestalts.contains_key(*subject_id)
                 && subject_id
                     .strip_prefix("member:")
                     .is_none_or(|member_id| !campaign.gestalt_members.contains_key(member_id))
         })
-    {
-        return Err(anyhow!(
-            "gestalt individuation exceeds its exact population authority"
+        .cloned()
+        .collect::<Vec<_>>();
+    if !unsupported_relationships.is_empty() {
+        findings.push(format!(
+            "member relationships reference unsupported subjects: {}",
+            unsupported_relationships.join(", ")
         ));
     }
-    Ok(())
+    if findings.is_empty() {
+        Ok(())
+    } else {
+        Err(anyhow!(
+            "gestalt individuation exceeds its exact population authority: {}",
+            findings.join("; ")
+        ))
+    }
 }
 
 pub(crate) fn validate_strategic_individuation_proposals(
