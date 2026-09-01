@@ -73,16 +73,25 @@ load or evaluation evidence; none admits ontology or declares a world complete.
   exposed mutable state and ID issuance, admitted translation-gap evidence into
   canonical types, allowed no-op commits, and left affordance and opportunity
   authority undefined. None of it is current authority.
-- The next implementation starts with the sealed `WorldKernel`/aggregate/private
-  journal seam, then adds only the minimal private reducer needed for one
-  vertical slice.
+- `b53251f` lands the sealed private `foundation.v0` replacement owner. Exact
+  create/open, immutable snapshot, command submit, and typed receipts remain
+  crate-private with mutable aggregate state, ID issuance, authentication
+  construction, reduction, and the CultCache journal. Nine focused tests prove
+  exact idempotent create, immutable genesis, one live owner, sealed auth
+  evidence, replay and digests, persisted rejection and no-op non-commit,
+  store-path identity revocation, and post-durable lost-ack poison followed by
+  explicit reopen and exact retry.
+- The legacy exported `kernel::WorldKernel` remains the live runtime path. The
+  next implementation adds the minimal Draft-to-Active/player/autonomous
+  reducer plus mailbox, controller, affordance, and opportunity authority
+  behind the private replacement owner.
 - Legacy `WorldKernel`, `SessionZeroKernel`, aggregate Campaign/component state,
   alternate ingresses, semantic verifier/reconciliation stages, model-owned
   scheduling, and checkpoint recovery remain deletion targets.
 
 Do not deploy the rebuild branch or start another acceptance run while the
-replacement aggregate lacks its negative, restart, privacy, and sovereignty
-proofs.
+replacement owner lacks its lifecycle, controller-scope, affordance,
+opportunity, privacy, restart, and negative proofs.
 
 ## Immutable failure evidence
 
@@ -112,22 +121,20 @@ and proposals but cannot commit on their behalf.
 
 ## Next gate
 
-First establish and verify the sealed `WorldKernel`/aggregate/journal seam:
-external code can create or open a kernel, read an immutable snapshot, submit a
-`CommandEnvelope`, and receive a typed receipt, but cannot invoke canonical ID
-allocation, mutate `WorldState`, call the reducer, or obtain a journal writer.
-A caller-supplied unknown ID is merely an invalid reference; it cannot become
-canonical. Then add a minimal private reducer for Draft creation, approval,
-activation, one player action, and one autonomous action.
+Add a minimal private reducer behind the sealed `foundation.v0` owner for Draft
+creation, approval, activation, one player action, and one autonomous action.
+Give it one mailbox, canonical controller assignments and affordance grants,
+and kernel-derived revision-bound decision opportunities. A proposal must fail
+closed when its revision, controller, authority scope, affordance, or current
+opportunity differs. Translation gaps and scheduler output retain no
+world-write path.
 
-The focused seam tests must prove one writer, compare-and-swap revision, digest
-chaining, idempotency, exact restart, atomic rejection, and no-op non-commit. A
-decision proposal must fail closed when its revision, controller, authority
-scope, or currently executable affordance differs from the kernel-derived
-opportunity. Translation gaps and scheduler output must have no world-write
-path. Cut obsolete writers before migrating Session Zero, resolution,
-elaboration, persistence, and projection. No live acceptance run precedes this
-suite.
+The vertical-slice suite must preserve the landed one-writer, authentication,
+idempotency, immutable-genesis, replay/digest, non-commit, path-revocation, and
+lost-ack invariants while proving lifecycle, controller-scope, affordance,
+opportunity, privacy, and restart behavior. Cut obsolete writers as Session
+Zero, resolution, elaboration, persistence, and projection move onto that
+owner. No live acceptance run precedes this suite.
 
 ## Essential references
 
