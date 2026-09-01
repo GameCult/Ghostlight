@@ -1,1094 +1,526 @@
-# GhostlightDungeon MVP Architecture
+# Ghostlight authority architecture
+
+## Status
+
+This document is the adopted rebuild target for the Ghostlight runtime. It is
+the authority map for implementation work. The pre-rebuild body remains
+described in `notes/ghostlight-current-system-map.md` only as teardown evidence.
+
+Ghostlight is a persistent, source-grounded narrative world. Its job is to
+preserve people, institutions, places, knowledge, material consequence, and
+autonomous motion across time. It is not a pipeline for passing prose among a
+committee of models until one model permits another model's text to exist.
 
 ## Objective
 
-GhostlightDungeon is a persistent solo and bounded-co-op narrative simulation
-grounded in a source-owned worldbuilding Vault. It gives the world stable
-geography, bounded knowledge, durable actors and institutions, explicit
-consequence, and motion beyond the players' attention. Players describe
-attempts. The world decides what is possible, what is opposed, and what changes.
+Build one sparse, open-world causal machine that supports solo and bounded
+co-op play, autonomous subject decisions, source-grounded expansion, external
+world owners, and actor-private experience.
 
-The MVP runs as a native Rust daemon on Yggdrasil and publishes a
-Heimdall-authenticated Eve/CultUI surface for one to eight campaign members.
-Idunn owns daemon continuity and Odin owns Verse discovery; neither can mutate
-campaign state. Aetheria is the bundled setting adapter. The core world,
-Persona, and Vault contracts remain setting-neutral.
+The world grows when committed pressure reaches a typed boundary: a new
+destination becomes relevant, an existing polity or population enters causal
+range, a person must be individuated, or an effect needs a missing primitive.
+Population totals and cover ratios are load and evaluation profiles. They do
+not define whether a world is complete.
 
-Ghostlight's existing v0 schemas and Pallas, Lucent, and Corvid fixtures are
-evidence and regression scenarios. They do not own runtime state or commits.
+## Prime invariants
 
-## Implementation frontier
+1. One per-world `WorldKernel` owns the complete revisioned `WorldState`, from
+   draft through active play and archive.
+2. Every accepted change crosses one `CommandEnvelope`, one deterministic
+   authority derivation, one ontology reducer, and one atomic CultCache CAS.
+3. Structural identity, reference integrity, containment, topology, custody,
+   jurisdiction, knowledge scope, lineage, and external ownership are typed
+   code invariants.
+4. Every autonomous authority scope names one decision controller. A
+   `NarrativePersona` uses the Projector-Persona-Interpreter prose membrane; an
+   `OperationalAgent` receives typed state and tools directly. Neither can
+   validate, reconcile, schedule, repair, or commit another model's proposal.
+5. Projection, attention plans, transcripts, news, summaries, dashboards,
+   checkpoints, and model receipts do not own world truth.
+6. Qualitative interest, political diversity, prose quality, name repetition,
+   and actor counts are evaluation evidence. They are never mutation gates.
+7. A failed or interrupted inference leaves no half-owned world state. Recovery
+   starts from the last committed revision and derives pending work again.
 
-The Rust runtime contains a Session Zero-owned world-compiler seam:
-
-- `VaultProvider` search results become exact, hashed evidence witnesses from
-  VoidBot's live streamable MCP response shape;
-- opening generation requires exactly three distinct eras, places, and
-  pressures and installs them as shared Session Zero decisions;
-- role generation requires exactly three grounded roles and installs them in
-  each player's private channel;
-- custom compilation emits a bounded typed campaign, evidence receipts, gaps,
-  branch assumptions, and an approval-required preview;
-- custom compilation classifies every exact witness as direct seed, setting
-  background, or excluded before world generation, so a nearby story cannot
-  donate its cast, incident, clocks, or institutional posture to a new branch;
-- a separate Flash-model lane uses two stable broad retrieval queries to
-  extract witnessed remote institutions in parallel with local evidence
-  classification. A Pro synthesis stage turns exact supporting claims into a
-  concise branch-local strategic doctrine; local verification rejects canon
-  contradiction while allowing compatible operational elaboration;
-- remote institutions begin with deterministic six-axis profiles: their own
-  authority boundary and explicit unknown geography, ideology, economic role,
-  body, and information scope. Fine resources, channels, relations, and current
-  posture compile only when causal relevance supplies evidence for them;
-- inhabited destination compilation freezes one capable-model world candidate.
-  A civic semantic rejection or local civic structural failure may invoke one
-  balanced-model reconciliation over civic facts, resident civic knowledge,
-  institutions, political relations, and the civic manifest. Geography, routes,
-  population identity, migration, non-civic facts, gaps, and branch assumptions
-  remain immutable; ordinary validators and a fresh verifier judge the repair;
-- deterministic seed validation rejects missing occupancy, dangling or
-  zero-time routes, invalid containment, invalid clocks, and missing players;
-- unanimous current-digest approval plus explicit host publication atomically
-  stores campaign, membership, contract, DM Persona, approved brief, exact
-  Vault receipts, model receipts, and approval evidence in the campaign `.cc`.
-
-The Session Zero DM exposes generated openings, grounded role selection,
-unrestricted custom starts, approval-gated material gaps, exact-document
-witnesses, on-demand destination expansion, and persistent canon candidates.
-A live custom-start acceptance run on 2026-08-16 consumed 30 VoidBot witnesses
-across three exact receipts and produced three locations, three actors, two
-institutions, two clocks, explicit gaps, and branch assumptions. It remained
-an uncommitted revision-0 preview with `requires_approval: true` until the
-tester explicitly approved it.
-
-Heimdall owns public identity, Discord OAuth, and the KLTST guild-role decision.
-Ghostlight creates a short-lived login attempt and asks Heimdall for a trusted
-backend callback. Heimdall returns the result and token directly to Ghostlight;
-the browser can only poll and adopt that completed attempt. Ghostlight verifies
-the EdDSA `aud=ghostlight` access claim against Heimdall's published JWKS, maps
-the account to stable app-local campaign authority, and discards the provider
-token. Only hashed local session aliases enter `service/auth.cc`.
-
-## Body and faculty map
-
-| Faculty | Owner | Body | Authority |
-| --- | --- | --- | --- |
-| Self | `SessionZeroKernel` / `WorldKernel` mailboxes | One draft `.cc` / one campaign `.cc` | Own draft negotiation or canonical world revision, never both |
-| Eyes | `VaultProvider` and actor perception slices | VoidBot MCP receipts, topology, occupancy, knowledge | Retrieves and witnesses; never commits world truth |
-| Modeling | World compiler and action assessor | Typed campaign snapshot | Proposes topology, facts, affordances, DC, stakes, and gaps |
-| Imagination | Persona and world proposal stages | Private narrative projections | Proposes speech, private deltas, reactions, and actions |
-| Hands | `WorldCommand` commit path | CultCache/redb transaction | Performs the single allowed state transition |
-| Soul | Validators, version gates, receipts, tests | Schemas, invariants, state and visible-path probes | Refuses stale, malformed, impossible, or unsupported mutation |
-| Persona | Ghostlight Persona runtime | Narrative stream in, natural narrative out | Acts as a person without seeing schemas or raw canonical state |
-| Nervous system | Scheduler, live-priority gate, CultMesh | Mailboxes, pulses, typed publications | Carries commands, pressure, progress, and projections |
-
-## Authority map
+## Canonical owner
 
 ### Owner
 
-The per-campaign `WorldKernel` is the sole owner of canonical campaign state and
-revision numbers. Each kernel is reached through one in-process mailbox. There
-is no alternate scheduler writer, HTTP writer, model writer, import writer, or
-reload repair path.
+One mailbox-backed `WorldKernel` owns a world. The mailbox serializes commands;
+the CultCache compare-and-swap protects the same invariant across restart or
+multiple process attempts.
+
+`WorldKernel` owns:
+
+- lifecycle phase and revision;
+- membership, contract, boundaries, and approvals;
+- the typed world ontology;
+- committed events and fictional time;
+- subject readiness and other causal state that must survive restart;
+- command idempotency and the commit digest chain.
+
+There is no separate Session Zero owner, component-world owner, aggregate
+campaign owner, elaboration committer, scheduler writer, or recovery writer.
 
 ### Inputs
 
-The kernel may read:
+The only mutation input is a `CommandEnvelope` containing:
 
-- the current typed campaign snapshot from its owned CultCache store;
-- one typed `WorldCommand` carrying an expected revision where applicable;
-- validated proposal documents and exact evidence receipts referenced by that
-  command;
-- server-owned clock and random-number ports;
-- deterministic capability, custody, spatial, knowledge, resource, opposition,
-  and topology rules.
+- a stable command ID;
+- the exact world ID and expected revision;
+- an authenticated principal or internal system capability;
+- one closed command body;
+- exact evidence references where the command depends on source material.
 
-Model prose is never itself a kernel input. An Interpreter must first convert
-it to a typed proposal, which local validation can reject without mutation.
+The caller supplies identity evidence, not an authority verdict. The kernel
+derives a `MutationAuthorityEnvelope` from canonical membership, lifecycle,
+subject authority, external-owner grants, and the command kind. Callers cannot
+grant themselves scope by serializing a persuasive envelope.
+
+Interpreters and operational agents submit the same typed commands through
+narrower schemas. Narrative Personas never see those schemas or tools. No
+controller receives a privileged mutation path.
 
 ### Outputs
 
-An accepted command atomically replaces the campaign snapshot and appends a
-`world_commit_receipt.v1`. A resolved attempt also appends its
-`roll_receipt.v1`. Other stages receive the new committed revision only after
-the transaction succeeds.
+An accepted command produces one `WorldCommit` containing:
 
-A rejected command produces a typed rejection receipt or ephemeral assessment
-result. It does not modify the campaign.
+- previous and resulting revision;
+- previous and resulting state digest;
+- command ID and derived authority digest;
+- the exact admitted mutation batch;
+- committed events;
+- evidence references;
+- commit time and previous commit digest.
+
+The next `WorldState` and `WorldCommit` are persisted atomically. A rejection
+returns typed invariant failures and changes nothing.
 
 ### Derived state
 
-- A scene is derived from persistent occupancy, containment, route topology,
-  perception, and current events. A scene is not a location owner.
-- The transcript is a projection of committed events and speech. It is not
-  memory or world truth.
-- Eve surfaces, chat cards, ledgers, news drawers, operator views, and HTTP
-  health are projections of CultMesh-visible provider state.
-- Assessments are expiring previews bound to one campaign revision. They are
-  not commands and are never rebased.
-- Initiative is a compatibility and opportunity decision over proposals. It
-  cannot commit.
-- News is a character-accessible projection of committed offscreen events. It
-  cannot reveal or alter omniscient state.
-- Model-stage records are private receipts. They do not become facts merely
-  because a model said them.
+The following are recalculated from committed state and may be discarded:
+
+- subject-local projections;
+- due-owner queues and attention plans;
+- population covers and grouping choices;
+- action-owner counts and causal-capacity summaries;
+- transcript, news, narration, and operator summaries;
+- Eve/CultUI and CultMesh documents;
+- model prompts, outputs, receipts, latency, and provider telemetry;
+- qualitative evaluations and load-test reports.
+
+Derived data may guide a later proposal. It may not admit a mutation, repair a
+commit, or declare the world complete.
 
 ### Forbidden writers
 
-The following may never decide or repair canonical campaign truth:
+The following cannot decide canonical state:
 
-- browser handlers and chat transport;
-- Eve renderers and command lowering;
-- model-provider responses;
-- Projectors, Personas, Interpreters, retrievers, rerankers, and verifiers;
-- initiative and reaction selection;
-- scheduler loops and return-time catch-up calculations;
-- Vault providers and evidence caches;
-- import, fork, export, reset, or reload handlers;
-- health endpoints, operator tools, and debug probes.
+- HTTP, native, Eve, CultMesh, or chat handlers;
+- Session Zero directors, compilers, elaborators, Projectors, Personas,
+  Interpreters, assessors, verifiers, reconcilers, narrators, and copy desks;
+- schedulers, attention planners, initiative selectors, and resolution covers;
+- acceptance drivers, smoke binaries, checkpoints, resume journals, caches,
+  and compaction summaries;
+- Vault retrieval, evidence reranking, external consumers, and provider
+  telemetry;
+- import, reload, fork, and repair helpers.
 
-Each must submit the same typed command accepted by the campaign mailbox or
-remain a read-only projection.
+Each is either a read-only projection or a producer of one ordinary typed
+command.
 
-### Shared paths
+## Canonical world state
 
-Player speech, assessed attempts, confirmed rolls, waits, travel, NPC actions,
-institution actions, strategic ticks, campaign creation approval, imports, and
-reload recovery all use:
+`WorldState` is one aggregate with these owned partitions:
 
 ```text
-source intent
-  -> typed WorldCommand
+WorldState
+  identity: world_id, revision, phase, state_digest, last_commit_digest
+  governance: members, actor bindings, contract, boundaries, approvals
+  ontology:
+    places and directed routes
+    subjects and typed components
+    relations
+    pressures and commitments
+    facts, knowledge grants, and provenance
+    external-owner grants
+  time: fictional clock and subject readiness
+  events: committed factual and speech events
+  applied_commands: bounded idempotency ledger
+```
+
+The lifecycle is data inside the aggregate:
+
+- `draft`: membership, negotiation, private/shared speech, character creation,
+  evidence admission, and ontology construction are allowed by draft authority;
+- `active`: player and autonomous decisions, time, causal expansion, and
+  contract amendments are allowed by active authority;
+- `archived`: only read/export operations are allowed.
+
+Activation changes `phase` in place after the current revision has the required
+member approvals. It does not copy a preview into another store or hand truth
+from one kernel to another.
+
+## Ontology and relational algebra
+
+The component mutation algebra is the foundation. The aggregate `Campaign`
+shape is not a second canonical representation.
+
+### Runtime-issued identity
+
+Stable IDs are issued by the reducer. Creation proposals use local draft
+handles plus exact existing IDs. Lowering resolves the complete local reference
+graph before allocating canonical IDs. Display names never function as keys.
+
+Unknown IDs, cross-kind references, dangling endpoints, and ambiguous handles
+are rejected without inference.
+
+### Subjects
+
+A subject is a stable identity with a declared kind:
+
+- person;
+- institution;
+- autonomous population;
+- external subject mirror.
+
+Demographic descriptors and statistical aggregates are not automatically
+subjects. A canonical action owner is derived structurally from an active
+autonomous subject, one non-overlapping decision controller, explicit decision
+authority, and at least one executable typed affordance. Similar names, motives,
+or cultures are legal; labels alone cannot create causal capacity.
+
+Population partitions use disjoint typed slice keys. Individuation is an
+explicit causal mutation. There is no fission quota and no active-leaf
+completion metric.
+
+### Components
+
+Subject and world behavior is composed from narrow typed components:
+
+- position and jurisdiction;
+- decision controllers, authority scopes, and executable affordances;
+- resource quantity, custody, and dependency;
+- knowledge of exact fact IDs and communication access;
+- commitments, pressures, readiness, and exposure;
+- Persona material: values, voice, goals, memories, and relationship reads;
+- source provenance and external ownership.
+
+Persona text can enrich lived meaning. It cannot substitute for an authority,
+custody, topology, or knowledge component.
+
+### Relations
+
+Relations have typed endpoints and kind-specific constraints. The vocabulary
+covers:
+
+- containment and occupancy;
+- membership and lineage;
+- jurisdiction and representation;
+- custody and dependency;
+- authority and control;
+- supply and service;
+- alliance, opposition, and obligation;
+- knowledge and communication;
+- topology and access;
+- causal pressure and exposure.
+
+Civic order is a typed subgraph of authority, selection or succession,
+resource access, representation, and redress relations. It is not a prose
+manifest with fact-ID lanes and does not require a model's civic verdict.
+
+### Structural admission
+
+The reducer validates only structural promises:
+
+- every referenced entity exists or is created in the same closed batch;
+- containment is acyclic;
+- routes have exact place endpoints and valid costs;
+- relation endpoint kinds match the relation kind;
+- custody quantities and transfers conserve declared resources;
+- authority and affordance scope covers the proposed mutation;
+- knowledge additions cite an existing accessible fact or a newly admitted
+  evidenced fact;
+- population slices are disjoint beneath their declared parent;
+- external-owned components can change only through their admitted owner;
+- a batch either reduces completely or not at all.
+
+Interestingness, novelty, ideological distribution, prose style, and counts do
+not appear in this validator.
+
+## One command and commit path
+
+All user and system operations lower through the same path:
+
+```text
+authenticated intent or model tool call
+  -> CommandEnvelope
   -> mailbox ordering
-  -> expected-revision check
-  -> deterministic validation
-  -> atomic CultCache commit
-  -> commit receipt
-  -> post-commit appraisal/projection wave
+  -> load exact WorldState revision
+  -> derive MutationAuthorityEnvelope
+  -> lower command to WorldMutationBatch
+  -> validate and reduce the complete candidate
+  -> atomic WorldState + WorldCommit CAS
+  -> publish invalidation
+  -> derive projections and next attention plan
 ```
 
-### NPC initiative authority
-
-- **Owner:** `WorldKernel` owns the transition from a pending reaction proposal
-  to the single NPC action opportunity for that revision.
-- **Inputs:** the complete validated proposal set committed by the reaction
-  wave, expected campaign revision, deterministic initiative winner, and a
-  locally validated assessment bound to that same revision.
-- **Outputs:** one `npc_action_resolved` commit that consumes the proposal set,
-  obtains the server-side roll when admissible, applies the selected typed
-  outcome, and stores the roll and commit receipts atomically.
-- **Derived state:** priority ordering and the selected winner are calculations,
-  not world truth and not commits.
-- **Forbidden writers:** Persona output, the initiative selector, and the HTTP
-  handler cannot begin or resolve an NPC action directly.
-- **Shared paths:** live reactions, interrupts, and future offscreen
-  individualized actions all submit `ResolveNpcAction`; it applies the same
-  assessment validation, d20 bands, and typed outcome rules as player attempts.
-- **Cut line:** pending proposals are no longer a durable action queue. Once one
-  proposal gains the opportunity, every sibling proposal from that snapshot is
-  consumed in the same commit as its resolution; actors reappraise that result
-  before another action. Model or validation failure before this command cannot
-  leave an action-begun half-state.
-
-This deliberately serializes canonical consequence while keeping perception
-parallel. It prevents two proposals assessed against the same world snapshot
-from both committing incompatible outcomes.
-
-Each assessment also carries four bounded typed outcome deltas. The accepted
-MVP delta vocabulary is deliberately narrow: conditions and relationships on
-actors within the acting actor's location, self-movement over an existing
-route, advancement of existing clocks, and posture changes to existing
-institutions. It cannot create actors, places, capabilities, equipment, clocks,
-institutions, custody, or branch facts; a bounded knowledge
-addition may only copy an existing accessible `WorldFact` statement. The kernel validates
-all four bands before storing an assessment and applies only the OS-random
-roll's selected band in the same atomic commit as the roll receipt. Narrative
-stakes describe that transition; they are no longer the transition.
-
-The scheduler may calculate pending work, but `AdvanceStrategicTick` owns the
-transition. Return catch-up invokes that same command before the next fictional
-player action is admitted. Private assessment and resolution-policy edits do
-not enter catch-up because neither advances or enters the fiction.
-
-### Story projection authority
-
-- **Owner:** the committed campaign transcript owns the exact player-visible
-  speech and outcome prose for each world revision.
-- **Inputs:** revision-bound `NarrativeTurn` rows already admitted by the
-  `WorldKernel` transaction.
-- **Outputs:** one deterministic chronological Eve story projection. No model
-  stage sits between committed prose and the player.
-- **Derived state:** Eve text nodes and transport responses are disposable
-  lowerings; neither is a world fact, memory, action, or correction path.
-- **Forbidden writers:** display projections cannot invent, replace, suppress,
-  summarize, or reinterpret a committed turn.
-- **Shared paths:** every client—browser, native CultMesh, and generic Verse
-  consumer—receives the same ordered transcript through the provider surface.
-- **Cut line:** historical `narration_projection.v1` rows are inert migration
-  evidence. The runtime neither reads nor writes them, and the narrator and
-  verifier model stages have no executable target.
-
-Outcome assessment and Persona stages already emit bounded natural prose. A
-second generative rewrite added token cost and a new factual-authority failure
-surface without owning any state. Exact transcript lowering makes invented
-names, dialogue, injuries, and actions structurally unavailable to the display
-layer.
-
-### Cut line
-
-Ghostlight has no existing hosted runtime authority to preserve. The v0
-training pipeline remains intact as evidence. New runtime code must not route
-through its JSON fixtures or promote fixture documents into live state.
-
-The Persona machinery currently embedded in Epiphany is a separate ownership
-cut. Ghostlight will extract and generalize the projection protocol; Epiphany's
-domain state and public Persona remain Epiphany-owned. No compatibility path may
-allow Epiphany's old local projection implementation and Ghostlight's shared
-implementation to make competing decisions after migration.
-
-## Persona projection ownership
-
-The population-scale partition and cell-wave authority is specified in
-`ghostlight-multiresolution-agency.md`. It replaces a flat list of strategic
-gestalts with a dynamic, budget-aware connected cover while preserving the
-materialization rules below for named people.
-
-### Gestalt population materialization
-
-Large low-focus populations use a gestalt Persona without sacrificing durable
-individual identity.
-
-- **Owner:** `WorldKernel` owns whether a member currently occupies an active
-  actor slot. The gestalt owns shared baseline state. The member delta owns
-  individual divergence.
-- **Inputs:** relevance/perception proposal, expected campaign revision,
-  expected gestalt version, optional existing member-delta version, current
-  scene, and reviewed consequences. A first encounter may propose a bounded
-  identity and initial delta for a member not yet present in the catalog.
-- **Outputs:** a materialized actor derived from baseline plus delta, or an
-  updated persistent delta plus optional reviewed aggregate gestalt changes and
-  a materialization receipt.
-- **Derived state:** the active actor is a projection/composition. It is not a
-  second owner of the gestalt or member identity.
-- **Forbidden writers:** proximity checks, Persona output, scheduler, scene
-  rendering, and relevance heuristics may propose promotion or demotion but
-  cannot create, erase, merge, or rewrite a person.
-- **Shared paths:** first encounter uses `IndividuateGestaltMember`; return to a
-  known member uses `MaterializeGestaltMember`; leaving perception uses
-  `DematerializeGestaltMember`. Scene teardown, reload, and offscreen catch-up
-  reach those commands through the campaign mailbox.
-- **Cut line:** dematerialization never deletes the member delta. Gestalt ticks
-  never overwrite member-specific memories, relationships, possessions,
-  injuries, promises, or identity.
-
-The composition order is `gestalt baseline -> persistent member delta ->
-current scene`. Dematerialization writes individual consequences to the delta;
-only explicitly reviewed population-level learning may update the gestalt.
-This allows a corporation or village to take one strategic turn while John the
-blacksmith remains John when encountered again.
-
-After each committed player event, a cheap structured relevance stage receives
-only the current gestalt/member catalog, materialized member IDs, player
-location, and event summary. It proposes one `GestaltPresencePlan`, including
-at most the bounded first-relevance identities needed by the scene. The kernel
-validates exact gestalt/member versions, identity uniqueness, current
-materialization state, and scene location, then applies the whole plan through
-revisioned commands before the participant appraisal wave. Automatic plans
-cannot write aggregate gestalt learning. A malformed, conflicting, stale, or
-partially invalid plan changes nothing. The compiler may seed likely members,
-but it is not required to predict every future person at campaign creation.
-Identity uniqueness is scoped to the active local population rather than the
-whole universe: a new member cannot reuse the normalized public identifier of
-an existing local actor or a durable member of a locally active Gestalt.
-
-First-relevance identity admission is bound to the exact immediately committed
-player-speech turn. Existing dormant members may be recast after any relevant
-committed foreground event, but an attempt result, story text, event summary, or
-plural outcome phrase cannot authorize a new canonical person. One admitted
-speech may introduce at most one member delta; the kernel rederives that
-permission from the canonical transcript rather than trusting the planner or
-its freeform reason.
-
-### The ownership decision
-
-Ghostlight owns the reusable Persona projection machinery:
-
-1. permissioned typed-state slicing;
-2. typed slice to private lived-narrative projection;
-3. Persona invocation using only that lived narrative;
-4. natural narrative output to typed private deltas, explicit speech, reaction
-   priority, and `WorldActionProposal` interpretation;
-5. stage receipts, snapshot binding, validation, and failure isolation;
-6. parallel appraisal waves for every affected present participant.
-
-This organ is useful outside games. Its invariant is that a Persona experiences
-a bounded narrative world without receiving the machinery's schemas or raw
-state, while the surrounding system receives only typed proposals rather than
-unreviewed narrative mutation.
-
-Ghostlight does **not** own a consuming Persona's canonical mind. Epiphany owns
-Epiphany's Persona state, voice, memories, relationships, values, permissions,
-public identity, and accepted consequences. VoidBot owns its repo and companion
-Persona state. Ghostlight supplies the reusable organ through narrow typed
-ports.
-
-### Extraction from Epiphany
-
-Before moving code, map Epiphany's current projection body:
-
-- owner of canonical Persona state;
-- projector inputs and hidden prompt inputs;
-- narrative stream contract;
-- Persona model invocation and tool boundary;
-- Interpreter outputs;
-- mutation/commit authority;
-- model transport, retries, receipts, and telemetry;
-- Epiphany-specific assumptions embedded in otherwise general code.
-
-Classify each part:
-
-- **Move to Ghostlight:** general narrative projection, Persona invocation,
-  interpretation, schema validation, stage receipt, and concurrency machinery.
-- **Stay in Epiphany:** Epiphany state schemas, state store, relationship and
-  memory authority, public voice policy, tools, schedules, and consequence
-  decisions.
-- **Split at a port:** state slicing, model selection, retrieval, clocks,
-  receipts, and commit callbacks where both projects need control but only one
-  owns each decision.
-- **Delete:** duplicate local orchestration or adapters that preserve two
-  projection authorities.
-
-### Source-grounded Epiphany extraction map
-
-The current implementation lives across these Epiphany source owners:
-
-| Current source | Current responsibility | Decision |
-| --- | --- | --- |
-| `epiphany-core/src/persona_turn.rs` | Epiphany-specific input documents, prompt rendering, effect schema, effect validation, stage/terminal receipt documents, and atomic terminal-decision insertion | Split |
-| `epiphany-openai-runtime/src/persona_executor.rs` | Three-stage ordering, model-runner port, stage replay, brake checks, causal reasoning contexts, output hashing, and terminal receipt creation | Move/generalize |
-| `epiphany-openai-runtime/src/bin/epiphany-persona-service.rs` | Reserves Epiphany heartbeat work, reads Epiphany memory and transcript, observes repo activity, assembles the execution plan, admits failure/terminal state, and routes accepted speech toward Epiphany's signed Discord crossing | Stay/adapt |
-| `epiphany-core/src/persona_conversation.rs` | Epiphany conversation lifecycle, retention, terminal reconciliation, and downstream state/mouth routing | Stay |
-| `epiphany-core/src/persona_discord_crossing.rs` and `persona_discord_permit.rs` | Signed Epiphany public-consequence crossing and receipt verification | Stay |
-| Epiphany runtime spine, Mind, heartbeat, memory, and CultMesh brake documents | Canonical Epiphany state, admission, scheduling, memory, and inference permission | Stay |
-
-#### Move to Ghostlight
-
-The shared Ghostlight organ owns:
-
-- `PersonaProjectionPlan` with actor id, snapshot/version binding, stage model
-  choices, permitted typed input slice, and consumer receipt context;
-- `ProjectorInput` as a consumer-supplied typed slice whose generic categories
-  are identity experience, memories, perceived events, relationships, goals,
-  knowledge, capabilities, pressures, and affordances;
-- Projector rendering and the rule that its output is one private lived
-  narrative stream without JSON, action syntax, raw state, or substrate
-  instructions;
-- Persona invocation whose domain input is only that lived narrative stream;
-- Interpreter invocation over the lived stream plus Persona output;
-- generic `PersonaStageReceipt`, causal predecessor binding, snapshot binding,
-  request/output hashes, exact replay, empty-output refusal, schema validation,
-  and terminal receipt;
-- generic typed outputs: private delta proposals, explicit speech, reaction
-  priority, and world/action proposals;
-- concurrency primitives for parallel participant appraisal waves.
-
-The current `PersonaModelRunner` trait and `execute_persona_model_turn_with_runner`
-shape in `persona_executor.rs` are the strongest extraction seed. They already
-separate inference transport from orchestration and prove exact replay. The
-Epiphany reasoning-basis and decision-context types are consumer-specific;
-Ghostlight instead exposes receipt-context hooks so Epiphany can keep generating
-those documents without placing her Mind inside the shared crate.
-
-#### Stay in Epiphany
-
-Epiphany keeps:
-
-- `PersonaIdentity` meaning and the canonical `gamecult.persona_state.v0`
-  projection of her Mind;
-- `EpiphanyAgentMemoryEntry`, semantic-memory retrieval, pending Discord
-  mentions, repo activity observation, social affordances, organ dependencies,
-  and raw transcript ownership;
-- heartbeat reservation, swarm brake state, runtime sessions/jobs, reasoning
-  basis, decision contexts, and Epiphany terminal conversation lifecycle;
-- the `state_note`, `say`, and `drop` mapping used by her current public Persona;
-- Mind admission of memory effects and all signed Bifrost/Discord request,
-  permit, delivery, and receipt paths;
-- policy about allowed channels, speech acts, safety notes, retention, and
-  whether a candidate becomes a public consequence.
-
-`put_persona_terminal_decision` currently atomically stores Epiphany's effect
-document and terminal receipt. That storage remains Epiphany-owned. The shared
-organ returns a terminal bundle; Epiphany translates it to her documents and
-performs her own exact CAS.
-
-#### Split at narrow ports
-
-- **Typed state slicer:** Ghostlight defines generic categories and redaction
-  invariants. Epiphany reads her state and constructs the permitted slice.
-- **Narrative rendering:** Ghostlight owns the generic membrane and stage
-  contract. Epiphany supplies Persona-specific doctrine and authored voice
-  material as typed inputs, not an alternate orchestration path.
-- **Model transport:** Ghostlight defines an async stage-runner port. Epiphany
-  implements it with `EpiphanyModelRequest`, Codex/OpenAI-compatible auth,
-  runtime jobs, and private model-event recovery. GhostlightDungeon implements
-  it with the selected provider port and logical fast/balanced/capable model
-  classes.
-- **Receipts:** Ghostlight owns portable stage and terminal fields. Epiphany's
-  adapter augments them with `EpiphanyReasoningBasis`, sealed decision contexts,
-  brake evidence, and runtime-spine identities.
-- **Interpreter vocabulary:** Ghostlight owns the portable proposal envelope.
-  Each consumer registers or supplies its typed effect payload schema. The
-  consumer validates domain policy again before admission.
-- **Execution permission:** the shared executor asks a consumer-owned permit
-  port before each inference stage and before terminalization. Epiphany binds
-  it to the CultMesh swarm brake; GhostlightDungeon binds it to live-priority
-  and campaign snapshot gates.
-
-#### Delete or demote in Epiphany after parity
-
-- Delete local ownership of three-stage ordering, stage id generation, hashing,
-  exact replay, and terminal bundle construction from
-  `persona_executor.rs`; its replacement is an Epiphany adapter around the
-  Ghostlight crate.
-- Delete the second injection of semantic memory, repo activity, pending
-  mentions, social affordances, and raw transcript into the Persona turn.
-  Those inputs belong to the Projector and must reach Persona only through the
-  lived narrative stream.
-- Demote Epiphany's prompt builders to Persona-specific policy/templates fed to
-  Ghostlight, or delete them when the generic renderer fully owns the membrane.
-- Keep the old effect document reader only as a migration reader for already
-  persisted receipts. It cannot execute new turns or admit new effects.
-- Do not retain an environment flag, fallback runner, or compatibility mode
-  capable of choosing the old local executor for a new turn.
-
-#### Strict narrative-stream correction
-
-The current Epiphany `PersonaTurnInput` contains `projected_state` **and**
-identity, semantic recall, pending mentions, repo activity, social affordances,
-and transcript. Its prompt renders those channels again. That means the Persona
-does not currently receive only the Projector's narrative stream.
-
-The shared v1 contract removes those parallel inputs:
-
-```text
-consumer-owned typed slice
-  -> Ghostlight Projector
-  -> LivedNarrativeStream { text, snapshot_binding, receipt_ref }
-  -> Persona model receives text only as domain context
-  -> natural Persona narrative
-  -> Ghostlight Interpreter receives stream + output + consumer effect schema
-  -> typed proposal bundle
-  -> consumer-owned validation and commit
-```
-
-Model transport may carry provider metadata and a fixed system instruction that
-identifies the model as the Persona, but it may not smuggle state, transcript,
-tools, routing instructions, or effect syntax around the lived stream.
-
-#### Extraction verification
-
-Before deleting the Epiphany executor, capture replay fixtures from its existing
-tests and representative real terminal receipts. Run old and shared organs over
-the same typed projector inputs with frozen model outputs. Verify:
-
-- identical stage order, causal chain, hashes, replay refusal, and terminal
-  idempotency;
-- channel escape, malformed effects, empty output, wrong-model replay, brake
-  engagement, and stale snapshot all fail without a terminal admission;
-- Epiphany's adapter produces the same admissible `state_note`, `say`, and
-  `drop` documents from the shared proposal bundle;
-- the Persona request contains no second state or transcript channel;
-- no new Epiphany turn can invoke the old executor after cutover;
-- signed mouth delivery remains entirely downstream of Epiphany Mind admission
-  and is never inferred from Ghostlight completion.
-
-### Handing the organ back to Epiphany
-
-Epiphany consumes the Ghostlight projection crate/service through a pinned
-contract. Her adapter supplies:
-
-- an Epiphany-owned permissioned state slice;
-- a snapshot version and actor identity;
-- Epiphany-owned model and retrieval policy where the port permits it;
-- a callback or command boundary that accepts typed proposals for Epiphany's
-  own validation and commit path.
-
-Ghostlight returns narrative output, typed proposals, and stage receipts.
-Ghostlight never writes Epiphany's canonical state. Epiphany's existing local
-projection writer is deleted or reduced to the adapter before the shared path
-is considered live.
-
-Migration acceptance requires a replay corpus showing that the shared organ
-preserves or improves character performance, plus negative tests proving the
-old Epiphany path cannot still commit, override, or repair the new path.
-
-## Runtime organs
-
-### Campaign store
-
-Each campaign has one row-oriented MessagePack CultCache `.cc` store backed by
-redb. The daemon holds the store's exclusive owner lock for the kernel lifetime.
-The runtime root is `F:\GameCult\GhostlightDungeon` with separate service,
-campaign, receipt, export, and release directories. Service catalog and control
-state use their own `.cc` store.
-
-JSON exists only for published JSON Schemas and browser, MCP, and model-provider
-boundaries. It is not load-bearing runtime state.
-
-### Campaign registry and session authority
-
-- **Owner:** the service `CampaignRegistry` owns the mapping from authenticated
-  account hash to selected campaign ID and from campaign ID to its sole
-  `CampaignRuntime` (`CampaignStore` plus `WorldKernel` mailbox).
-- **Inputs:** persisted hashed session authority, named campaign lifecycle
-  commands, runtime-root inventory, and exact campaign IDs.
-- **Outputs:** one selected campaign runtime per entitled member, exact
-  member-to-actor bindings, isolated campaign `.cc` paths, and lifecycle
-  receipts. Group fork/reset/export remains disabled pending consent policy.
-- **Derived state:** browser selection, campaign lists, filenames, download
-  responses, and operator cards are projections of registry/control state.
-- **Forbidden writers:** route handlers, invite cookies, filesystem discovery,
-  fork/reset/export helpers, and the browser cannot select or mutate a campaign
-  except through the registry's typed lifecycle operations.
-- **Shared paths:** campaign creation approval, selection, fork, reset, reload,
-  scheduler lookup, command dispatch, and export all resolve the same
-  session-owned registry entry before touching a kernel.
-- **Cut line:** `campaigns/default/campaign.cc` and the process-global kernel are
-  removed as authorities. A session token is authentication, not campaign
-  identity; its persisted control record explicitly selects a campaign.
-
-Fork creates a new campaign ID and store from a consistent source snapshot,
-records lineage, then starts a fresh mailbox over the fork. Reset creates a new
-branch from the campaign's approved seed/export rather than rewriting history
-in place. Export snapshots the selected `.cc` plus manifest and evidence
-receipts without granting the export path write authority over live state.
-
-The service auth row stores only hashed session IDs, each session's owned
-campaign-ID set, and its selected campaign ID. Routes resolve that selection to
-the registry before loading state or dispatching commands. Preview ownership is
-also session-bound; a different authenticated tester receives `403` without
-consuming the owner's preview. The scheduler enumerates registry runtimes and
-submits ticks to each campaign's own mailbox.
-
-### Vault provider and world compiler
-
-`VaultProvider` exposes source search, surrounding context, exact documents,
-source witnesses, authority lanes, and temporal scope. The Aetheria adapter
-calls VoidBot's canonical MCP retrieval endpoint at Yggdrasil loopback. It stores
-exact evidence receipts used by the campaign, never vectors or a rival index.
-
-Compilation is staged and approval-gated:
-
-```text
-Begin Session Zero
-  -> retrieval plan
-  -> local exact evidence receipts || stable remote-agency retrieval
-  -> source-use classification || witnessed remote institution extraction
-  -> three distinct opening decisions or custom discussion
-  -> three private role decisions or custom character negotiation
-  -> typed campaign contract + private character drafts + exact approvals
-  -> direct-evidence bounded region + deterministic coarse remote profiles
-  -> semantic agency profiles only for locally materialized subjects
-  -> coverage/gap/assumption preview
-  -> explicit approval
-  -> CreateCampaign commit
-```
-
-The compiler synthesizes the smallest canon-compatible routes, geometry, people,
-procedures, resources, setting mechanics, and institutional operating doctrine
-needed for play as branch-local fact. Consequential choices remain visible as
-branch assumptions and may vary between campaigns unless the Vault pins them.
-A material gap is reserved for contradictory canon baselines, an unanchored canon
-baseline explicitly required by the approved premise, or conflict with an
-approved capability. Canon candidates are review/export records and cannot edit
-the Vault.
-The approval preview exposes the source-use coverage. Only direct evidence may
-shape the local seed. Background evidence remains receipted as setting coverage
-for the tester and future non-causal lore projections, but its source prose does
-not enter the world-seed prompt; excluded evidence is likewise absent. This
-separation preserves provenance without making retrieved adjacency into
-fictional causality.
-
-The remote catalog is not a back door into the local seed. Extraction proposes
-named institutions plus exact supporting claims. Synthesis writes one concise
-branch-local strategic doctrine constrained by those claims, and a separate
-verifier must accept its compatibility with canon. Missing policy detail is not
-a gap: the campaign needs operational state even when the Vault is silent.
-Contradiction receives one correction and then aborts without mutation; it does
-not erase an anchored institution. Generated doctrines are approval-visible
-branch assumptions. Oversized catalog entries remain on-demand coverage gaps.
-This lets the campaign represent distant powers without importing another
-story's current cast, incident, or arbitrary excerpt as behavior.
-
-The coarse profile is intentionally sparse. Asking the Pro agency compiler to
-repeat six semantic axes for every remote power exhausted output tokens while
-adding no authority. Ghostlight now derives those remote profiles locally and
-asks the model only about locally materialized subjects whose behavioral cuts
-need semantic judgment. This is both cheaper and stricter: unknown remote state
-stays unknown until on-demand compilation earns a sharper claim.
-
-### Fiction-first resolution
-
-`Assess` normalizes intent and intended effect, checks admissibility, selects a
-DC from 5/10/15/20/25/30, itemizes referenced context modifiers, caps their sum
-at ±10, states the effect ceiling and outcome stakes, and issues an expiring
-digest bound to the current revision.
-
-Modifier references are schema-bound to the exact evidence universe projected
-for that assessment. It includes the acting actor's state, exact co-located
-actors, supplied institutions, accessible facts, branch evidence, and accepted
-extraordinary permissions. A remote actor is not a valid modifier reference.
-The same set is shown to the assessor and enforced by local validation, so a
-model cannot invent a reference namespace or cite context it was not given.
-The player projection lists every modifier label, signed value, and exact
-supporting reference rather than exposing only the capped total.
-
-Before assessment, a compact private scope projection receives only the exact
-attempt and the mutation-lane names that current structural authority makes
-possible. It selects the smallest causally plausible subset. Local validation
-can only subtract from the authority-derived set: the projection cannot invent
-a lane, fact, subject, route, clock, or institution. Ghostlight removes every
-unselected lane from the generated `WorldEffectDelta` schema and withholds
-information facts entirely when investigation, perception, or disclosure is
-outside the selected scope. It separately names the selected lanes whose
-non-empty mutations are required for strong and ordinary success to realize the
-intended effect. At the strict model boundary, Ghostlight projects the canonical
-dynamic mutation maps into bounded entry arrays whose ID and value enums come
-from that exact authority snapshot. This keeps authorized mutations expressible
-without exposing open object keys; validated entries lower once into canonical
-`WorldEffectDelta` maps. Required success arrays receive `minItems: 1` and are
-checked again after lowering, so success stakes cannot claim a canonical change
-while omitting its state transition. The model schema binds that requirement to
-the admissible branch; the inadmissible branch permits only zero-length effect
-arrays, and local validation repeats that no-mutation rule. The scope is derived inference evidence,
-not world or assessment authority, and failure leaves state unchanged. Its private
-content-addressed cache prevents an unchanged attempt from paying for the scope
-projection again.
-
-After structural binding, a separate compact effect verifier receives only the
-player's exact means, intended effect, effect ceiling, visible stakes, and the
-four typed outcome deltas. It does not reassess admissibility, DC, or modifiers
-and cannot choose, rewrite, or commit an effect. Every non-empty mutation must
-be a direct realization of the intended effect or a concrete consequence of
-the attempted means in that outcome band. A structurally available fact,
-relationship, clock, posture, or route is not thereby a causal outcome. A
-mismatch marks the verifier receipt `semantic_invalid` and returns one bounded
-repair sentence to the assessor for one same-snapshot correction; a second
-mismatch or malformed verifier output aborts without an assessment or world
-mutation.
-
-The assessor receives that same causal-relevance rule before generation:
-structural availability is an upper bound, not an instruction to spend every
-available lane. Each structurally valid assessor attempt and each verifier
-verdict receives its own private stage receipt, including failed corrections,
-so a refusal cannot erase the model work that caused it.
-
-Only a structurally and semantically verified proposal may enter the cache. It
-is content-addressed by the exact scope, assessor, and verifier models, stable
-instructions, scoped action-specific schema, and permitted typed state packet. Its
-private `assessment_proposal_cache.v1` row is derived inference evidence, not an
-assessment or world authority. Campaign revision and expiry remain commit
-bindings but are absent from this semantic identity. A stale confirmation whose
-permitted packet is unchanged therefore reuses the byte-identical validated DC,
-modifiers, stakes, and outcome deltas, locally revalidates them, and issues a
-new revision-bound assessment digest without provider inference. Any change to
-the model contract, schema, actor slice, occupancy, facts, institutions,
-permissions, campaign contract, or boundaries changes the content address and
-requires a fresh assessment. Cache hits emit an explicit zero-token model-stage
-receipt pointing at the originating scope, assessment, and semantic-verifier
-receipts. They do not rerun inference, but the cached proposal still passes the
-same local and kernel admission checks against the exact current packet.
-
-Outcome-delta maps are bound to the same snapshot rather than accepting a
-free-form identifier namespace. Actor effects may name only co-located actors;
-relationship targets may additionally name the supplied institutions; movement
-may name only the acting actor and an exact adjacent route; clocks and
-institution postures may name only supplied canonical IDs. Empty authority sets
-make the corresponding map structurally empty. Local validation and WorldKernel
-admission enforce the same scope after decoding.
-
-`Attempt` consumes that exact assessment. It obtains an OS-random d20 inside the
-server command path and atomically stores roll and transition. Impossible acts
-receive no roll. Natural 20 and 1 shift one band and cannot cross impossibility
-or the effect ceiling. Speech occurs as speech; persuasion, deception, and
-intimidation are separate intended effects.
-
-The accepted Eve command result projects the exact persisted roll receipt—die,
-modifier, total, DC, and outcome band—as one-time player-visible state. If
-return catch-up makes an assessment stale, the typed `assessed` response owns
-the transient projection: it presents the replacement assessment and binds its
-Roll control to that assessment's current campaign revision.
-
-Informational attempts have two distinct lanes. They may acquire or communicate
-an existing `WorldFact`, or they may admit one new bounded observation produced
-by direct local perception, measurement, inspection, or testing. `WorldFact`
-owns branch truth and discovery locations. `ActorState.knowledge` owns which
-exact statements that actor has learned. An observation is branch-local rather
-than Vault canon and becomes truth only through the confirmed outcome's atomic
-kernel commit.
-
-The assessor receives only facts already known by the acting actor or marked
-discoverable at that actor's current location. Every proposed knowledge
-addition must exactly match one of those statements. A fact known by the acting
-actor may be communicated to another present actor; a location-bound fact may
-be discovered only by the acting actor. The separate observation lane is
-structurally bound to that actor, at most two concise statements, and must copy
-the finding exposed in the visible outcome stake. Local and semantic validation
-require the declared means to support that exact current observation and reject
-remote events, hidden motives, unsupported identities, diagnoses beyond the
-effect ceiling, existing facts, and overlap with the acquisition lane. Player
-attempts and NPC initiative use the same validator. On a permitted outcome the
-kernel content-addresses the proposition, admits it as branch-local at the
-current location, and acquires it for the actor in the same mutation batch.
-
-This ownership makes the negative invariant structural: an invented protocol
-number, hidden culprit, remote event, or lore claim cannot become true because
-an assessor wrote it into a successful stake. Unsupported information causes
-one same-snapshot correction and then aborts without mutation. A vague promise
-such as “identify any faults” is not a valid informational outcome, and an
-unstated hidden finding cannot appear after the roll. Player-readable stakes
-carry the exact declarative statement; fact IDs, keys, and slugs remain private
-typed references.
-
-Authority map:
-
-- Owner: `WorldFact` owns truth and discovery locations; `ActorState` owns
-  learned access.
-- Inputs: approved compiler or region-expansion facts, current occupancy,
-  actor knowledge, exact means, intended effect, and outcome ceiling.
-- Output: an assessment whose information deltas are exact accessible facts or
-  bounded actor-local observations exposed verbatim in its stakes.
-- Derived state: the visible stake and story are projections of that exact
-  assessment and committed revision.
-- Forbidden writers: Personas, Interpreters, assessors, and projections may
-  propose observation text but cannot admit propositions or actor knowledge.
-- Shared path: player `Attempt` and `ResolveNpcAction` call the same fact-access
-  and observation validator and the same atomic commit primitive.
-- Cut line: arbitrary knowledge prose remains forbidden; only the explicit
-  bounded-observation lane may create a branch-local proposition.
-
-### Actor and world action loop
-
-After a committed event, every affected present actor receives a parallel
-appraisal wave. Each actor gets only its perceived slice, private memories,
-relationships, goals, and retrieved knowledge. Actor-private deltas are bound
-to their own snapshot versions. Initiative selects compatible reactions for a
-later `WorldCommand`; it does not suppress perception for actors outside the
-current conversational focus.
-
-Player speech first passes through a small private address projection against
-the exact co-present, simulation-eligible actor catalog. The projection may
-select only supplied actor IDs and identifies only actors from whom the speech
-actually requests a response; people who are merely mentioned or able to hear
-remain observers. `WorldKernel` validates co-presence and simulation custody,
-then commits the selected response set with the exact speech turn. Browser and
-native callers cannot supply those IDs. Each actor's permitted slice carries
-either `direct_response_expected` or `present_observer`, while every present
-actor still appraises the event. A direct addressee must emit speech or choose
-typed deliberate silence. The latter lowers to deterministic visible refusal;
-it is not a free-text effect lane. The complete reaction wave still validates
-and commits atomically.
-
-Actor Interpreter JSON is schema-bound so silent output cannot carry an
-identity adoption. Cross-field semantic failures—such as an adopted handle not
-appearing exactly in the actor's own speech—receive one corrected Interpreter
-pass against the same snapshot, lived stream, Persona output, and permissions.
-Both Interpreter receipts survive, with the rejected one marked
-`semantic_invalid`; a second failure aborts the complete reaction wave without
-private-state mutation.
-
-For a materialized Gestalt member, the Projector slice also carries the public
-self-identifiers already owned by other people in the same active population,
-including dormant member deltas. The lived stream presents these as social
-knowledge, not raw state. The Interpreter rejects a newly adopted handle that
-collides with that bounded roster, and `WorldKernel` independently rederives
-the same local/population conflict before admitting the identity mutation.
-Existing names are grandfathered: this gate prevents a new identity claim and
-does not silently rename or merge durable people.
-
-The primary player event commits before optional presence casting, reaction
-appraisal and initiative. A failure in those later stages is stored
-as a rejected-proposal receipt and returned as an accepted committed result
-with a visible warning. It cannot be reported as rejection of the already
-persisted player action, and a browser retry cannot duplicate that action.
-
-Pending NPC initiative belongs to exactly one committed reaction-wave revision.
-A fresh reaction wave replaces the previous proposal set rather than appending
-to it, and `WorldKernel` rejects resolution unless the current revision's last
-event is that exact wave. A malformed same-snapshot assessment may be retried;
-a later player action, tick, or reaction wave cannot rebase the old proposal.
-
-### Away-time agency
-
-The service pulses every five minutes. After fifteen minutes without player
-activity, each real hour earns one pending strategic tick, capped at eight.
-Live play prevents new background model calls from launching. The absent player
-is not puppeted or directly harmed. Remote actors and institutions may move,
-prepare, recruit, investigate, bargain, obstruct, spend resources, and advance
-clocks. Information-channel-aware news is projected only if the player
-character can access its channel. Each tick first projects current pressure,
-builds a connected budgeted agency cover, and runs one private Persona membrane
-per cell. Every appraisal and stage receipt must validate before the kernel
-commits the strategic wave atomically.
-
-Live priority is an interrupt, not a polling promise. A live request publishes a
-notification that drops the in-flight background wave future, aborting its cell
-tasks and provider requests before further stages launch. Live requests hold a
-shared commit gate; scheduler commits require the exclusive side and therefore
-cannot cross a live request. Return catch-up deliberately uses the live command
-path and completes required ticks before admitting the player's next fictional
-action. `Assess` and resolution-policy changes remain outside fictional time and
-therefore do not launch or wait for strategic simulation.
-
-### Eve/CultMesh and browser
-
-Ghostlight publishes `gamecult.eve.surface.v1` and accepts typed Eve commands.
-The TypeScript browser host pins Eve's browser lowering package and owns only
-transport, sessions, and local rendering. It does not invent a parallel UI
-state model.
-
-The player HTTP command boundary returns a dedicated spoiler-safe projection:
-assessments, public commit receipts, and roll results. It never
-serializes the canonical campaign snapshot. Full actor, institution, evidence,
-and model-stage state belongs to the authenticated operator projection only.
-Player and model strings enter the DOM through text nodes rather than HTML
-insertion, and all laboratory inputs have programmatic labels.
-
-The same rule covers Session Zero and campaign-management routes. Opening and
-role suggestions are filtered typed decisions inside shared or private
-channels; raw retrieval/model receipts remain private. The review projection
-contains promised topology, institutions, populations, clocks, evidence-use
-coverage, gaps, branch assumptions, and only the current viewer's private
-character state. Publication, expansion, and fission return small public
-receipts. Group fork/reset/export is rejected until its consent policy exists.
-
-The player surface includes Session Zero channels and ledgers, transcript,
-composer, Assess/Attempt, roll confirmation, actor-specific character/news
-state, unanimous time/travel/budget proposals, Contract Review, and optional
-operator inspection.
-CultMesh state is the source of the UI projection. HTTP health is a probe over
-the same service-state document.
-
-The authenticated operator inspector projects the selected campaign's full
-typed state, topology, evidence receipts, commit receipts, model-stage receipts,
-rejected-proposal receipts, and scheduler live-turn pressure. It contains no
-provider reasoning content or secret material. Kernel command refusals append a
-private receipt without changing campaign revision, allowing the laboratory to
-inspect why impossible, stale, or malformed proposals were rejected.
-
-Live compiler and player command paths hold a process-local inference-pressure
-lease. The five-minute scheduler observes that pressure and launches no new
-campaign work while any live lease exists. Already-committed campaign state
-does not require a repair pass when background launch is skipped; the next
-scheduler pulse or return catch-up uses the same strategic-tick command.
-
-## Model boundary
-
-The provider-neutral model port records provider, model, request hash, source
-receipt ids, latency, output hash, validation result, state version, provider
-request id/fingerprint/finish reason, and prompt/completion/cache-hit/cache-miss
-token counts for every provider attempt. Local schema and semantic failures carry
-a bounded exact error. The runtime never records provider reasoning content.
-Structured stages request JSON Output and then validate locally. Empty or
-malformed output gets one retry against the same snapshot. A second failure,
-timeout, retrieval outage, or stale result produces no mutation.
-
-The provider port owns its per-attempt transport deadline because queueing and
-generation throughput are properties of the selected transport, not fictional
-state or stage semantics. The default and DeepSeek deadline is 45 seconds; the
-OpenRouter test port allows 120 seconds so a congested route remains slow
-instead of being misclassified as invalid. Stage orchestration still owns the
-same-snapshot retry and local validation, and an expired attempt still produces
-no receipt or mutation.
-
-Prompt projection follows the authority boundary instead of shipping one large
-state packet to every stage:
-
-- stable instructions and schemas precede changing campaign context so provider
-  prefix caches can do useful work;
-- Projectors receive only the typed facts needed to form the actor or cell's
-  lived situation;
-- Personas receive only the resulting narrative stream;
-- Interpreters receive the narrative output plus exact action permissions, not
-  a second copy of the entire state slice;
-- deterministic bindings already owned by the runtime—cell membership, cell id,
-  world revision, and resolution epoch—are attached locally after interpretation
-  rather than copied by a model.
-- remote institution IDs, coarse unknown facets, and evidence bindings are also
-  derived locally; the model spends completion tokens only on witnessed mandate
-  selection and behaviorally meaningful local profiles.
-
-This is both a safety and cognitive-efficiency rule. Models spend tokens on
-judgment and voice; the kernel spends deterministic work on identity, versions,
-coverage, references, and commit authority. A resolution-demand model may raise
-subject salience, but only pins and active relevance leases may force singleton
-cells or an effective-budget overage.
-
-Prompt quality is judged by useful decision work per token, not prompt brevity
-alone. Each stage receives one stable, cacheable contract followed by the
-smallest revision-bound context that can support its decision. Receipts make
-prompt, completion, cache-hit, and cache-miss tokens visible per attempt so
-acceptance can reject stages that spend heavily while producing no meaningful
-appraisal, state proposal, or player-facing consequence.
-
-Model allocation is provider-neutral inside Ghostlight. Stages request the
-logical classes `ghostlight.fast.v1`, `ghostlight.balanced.v1`, or
-`ghostlight.capable.v1`; the selected provider port alone maps those classes to
-physical model IDs. The fast class owns high-volume work, the balanced class
-owns bounded reconciliation and routine elaboration, and the capable class owns
-frontier invention and editorial judgment. Receipts record the resolved
-provider and physical model so a routing change cannot masquerade as the same
-inference.
-
-The `epiphany-codex` profile maps all three logical classes to operator-admitted
-Codex model through Epiphany's independently supervised model connector. The
-Ghostlight port constructs the native model request, exact output schema,
-reasoning-effort hint, maximum output budget, and a stable prompt-cache key;
-then it sends an expiring encrypted MessagePack invocation through bounded
-TCP-framed CultNet on loopback. It validates every outer and inner request ID,
-schema, provider, sequence, terminal receipt, and absence of reasoning/tool
-events before returning output to the stage owner. Epiphany owns only Codex
-credential custody, provider lowering, physical concurrency, and transport
-receipts. It does not see campaign stores, run its Mind or swarm, interpret
-results, or admit world state. Ghostlight cannot read the Codex credential and
-the connector cannot commit a campaign mutation.
-
-OpenRouter remains a supported test profile. It maps the balanced class to its
-configured capable model, using low reasoning for fast stages and medium
-reasoning for balanced or capable stages. OpenRouter is instructed to exclude
-reasoning from its response, and the decoder never reads or retains that field.
-
-DeepSeek remains a supported provider profile: its flash model serves the fast
-class and its pro model serves the balanced and capable classes with thinking
-disabled. A provider switch changes configuration and credentials, not
-compiler, Persona, Interpreter, scheduler, or kernel ownership.
-
-## Hosting and security
-
-The daemon serves the embedded browser bundle on TCP 8831. Public access is
-lowered through the existing Heimdall-authenticated `/ghostlight/` reverse
-proxy path; the application does not add a rival identity system. One to eight
-members map to distinct player-controlled actors while every command continues
-through the same campaign mailbox and atomic commit path. The bounded milestone
-keeps the party in one scene; the multiplayer-intention document owns the
-remaining split-party and social-governance work.
-
-The MVP runs as `ghostlight:ghostlight` under native
-`ghostlight-dungeon.service`. Idunn admits its signed typed health and owns
-same-release restart continuity; its deployment brake governs mutation of the
-installed artifact, not ordinary survival. Runtime directories are restricted
-to the service identity and administrators. Setup installs the selected model
-provider key as a root-owned `0600` systemd encrypted credential bound to the
-exact credential name. The key is absent from source, arguments, logs,
-environment projections, and exports.
-
-Releases are immutable directories built from exact commits. Activation is an
-atomic pointer switch, recorded in CultCache, and the rollback runbook lives in
-`gamecult-ops`. Systemd starts the admitted release at boot and restarts that
-same installed body through Idunn continuity. Changing the artifact,
-configuration, schema, unit, or authority binding remains a separate
-deployment operation.
-
-The Epiphany model connector, when selected, is a distinct Idunn-managed
-loopback service at `127.0.0.1:4103`. Its shared connection key is readable by
-the connector and Ghostlight service identities; its Codex home is readable
-only by the connector identity. Neither secret appears in service arguments,
-Odin, CultMesh status, health, or release directories. Odin receives only the
-redacted `model.generate.structured` capability advertisement. The connector
-is not part of Epiphany's swarm release and does not wake or bypass a braked
-Epiphany runtime.
-
-The binary owns its build provenance. Release tooling injects the clean-tree
-commit through `GHOSTLIGHT_BUILD_COMMIT`; local builds derive it from Git while
-the build script watches `HEAD`, its symbolic branch ref, the HEAD reflog, and
-packed refs. The health projection only publishes that compile-time value.
-Launchers and manifests may verify it but may not rewrite it. Activation is
-rejected unless checkout HEAD, embedded commit, immutable manifest, binary
-hash, and the running health projection agree.
-
-Live VoidBot integration is host-local on Yggdrasil at
-`127.0.0.1:17875/mcp`. VoidBot remains the Vault retrieval owner; Ghostlight
-stores exact evidence receipts rather than a rival index. Odin provides
-discovery at `10.77.0.1:17871`. The old Starfire crossing is no longer a live
-runtime dependency, and Starfire's retired VoidBot/Qdrant writers stay retired.
-
-## Public contracts
-
-Ghostlight publishes JSON Schema for:
-
-- `ghostlight.vault_manifest.v1`
-- `ghostlight.vault_evidence_receipt.v1`
-- `ghostlight.world_compile_preview.v1`
-- `ghostlight.campaign.v1`
-- `ghostlight.world_fact.v1`
-- `ghostlight.location.v1`
-- `ghostlight.actor_state.v1`
-- `ghostlight.institution_state.v1`
-- `ghostlight.relationship_state.v1`
-- `ghostlight.world_clock.v1`
-- `ghostlight.event.v1`
-- `ghostlight.player_action_assessment.v1`
-- `ghostlight.roll_receipt.v1`
-- `ghostlight.world_commit_receipt.v1`
-- `ghostlight.persona_stage_receipt.v1`
-- `ghostlight.actor_state_delta.v1`
-- `ghostlight.world_action_proposal.v1`
-- `ghostlight.strategic_tick.v1`
-- `ghostlight.news_issue.v1`
-- `ghostlight.canon_candidate.v1`
-- `ghostlight.agency_profile.v1`
-- `ghostlight.agency_relation.v1`
-- `ghostlight.gestalt_lineage.v1`
-- `ghostlight.resolution_policy.v1`
-- `ghostlight.resolution_pin.v1`
-- `ghostlight.resolution_demand.v1`
-- `ghostlight.simulation_cell.v1`
-- `ghostlight.resolution_cover.v1`
-- `ghostlight.resolution_plan_receipt.v1`
-- `ghostlight.resolution_control_receipt.v1`
-- `ghostlight.cell_appraisal.v1`
-- `ghostlight.cell_action_proposal.v1`
-- `ghostlight.strategic_activity_outcome.v1`
-- `ghostlight.gestalt_fission_preview.v1`
-
-The UI consumes existing `gamecult.eve.surface.v1` and
-`gamecult.eve.command.v1` contracts.
-
-## Implementation order
-
-1. Freeze this authority map and publish v1 schemas.
-2. Map Epiphany's current projection machinery and record move/stay/split/delete
-   decisions before extraction.
-3. Build CultCache campaign persistence and the mailbox-owned kernel.
-4. Prove shared command paths, revision checks, topology, knowledge, custody,
-   assessment, roll, and atomic failure invariants with injected ports.
-5. Extract the generalized Persona projection organ into Ghostlight and replay
-   Epiphany/Ghostlight fixtures through it.
-6. Add fixture Vault/model ports, compiler approval, actor appraisal waves, and
-   away-time commands.
-7. Add the VoidBot and provider-neutral model adapters without granting either
-   commit authority.
-8. Publish the CultMesh/Eve surface and thin authenticated browser host.
-9. Add native systemd lifecycle, encrypted-credential setup, release
-   activation, reverse-proxy, and rollback tooling under the correct repository
-   owners.
-10. Run fixture regressions, invariant fault tests, browser acceptance, and the
-    final native Yggdrasil deployment smoke.
-
-## Acceptance and negative proof
-
-Acceptance follows the user-approved MVP scenarios. In addition, every claimed
-invariant needs a negative proof at its visible layer:
-
-- stale HTTP, scheduler, model, Persona, import, and reload paths cannot commit;
-- leaving a scene cannot delete or reconstruct its location;
-- an actor without perceived evidence cannot gain the corresponding knowledge;
-- malformed or empty model output cannot partially update actor-private or
-  world state;
-- the old Epiphany projection path cannot commit or repair after migration;
-- browser state and operator probes report the same campaign revision and
-  deployed commit as CultMesh/CultCache;
-- background launch pressure yields before a live player inference wave;
-- unauthenticated, reused-invite, public-network, and cross-session campaign
-  access are rejected.
+The closed command vocabulary includes lifecycle and membership changes,
+contract and boundary changes, speech, ontology construction, subject
+decisions, time advance, external snapshots, evidence admission, and archive.
+Every command lowers to the same mutation vocabulary. There is no
+`commit_elaboration`, separate component-batch ingress, direct compiler install,
+or reload repair path.
+
+## Inference boundary
+
+Ghostlight supports two first-class decision interfaces. The ontology assigns
+each exact authority scope to one `DecisionController`; the scheduler does not
+choose a mode opportunistically. A controller changes representation and model
+ergonomics, never permission or commit authority.
+
+An opportunity is issued to exactly one controller. An untranslated intent or
+infrastructure fault cannot fall through to the other mode, and the same
+opportunity cannot be exercised twice.
+
+### NarrativePersona controller
+
+The narrative controller keeps one deliberate three-organ membrane around
+roleplay. This is not a verifier chain: each organ owns a different
+representation and none can commit.
+
+### Projector
+
+Deterministic code first constructs a permissioned `SubjectView` from exact
+occupancy, knowledge, memories, relationships, pressures, contract boundaries,
+and currently executable affordances. Private views omit unavailable facts and
+other members' private state by construction.
+
+The Projector receives that view and the visible stimulus. It emits one lived
+narrative stream: perception, memory, uncertainty, desire, bodily circumstance,
+and available possibility in prose. It cannot choose an action, emit a schema,
+or claim a consequence. The Projector is a semantic renderer across the typed
+state-to-lived-experience boundary; its prose is private derived context, not
+world truth.
+
+### Persona
+
+The Persona receives only identity guidance and the lived narrative stream. It
+does not see canonical field names, IDs, JSON, tool definitions, mutation
+vocabulary, effect schemas, or kernel errors. It emits only natural roleplay
+prose and may remain silent, speak, decide, hesitate, or attempt something in
+character.
+
+This isolation is an explicit quality invariant. Coding-agent training creates
+a powerful schema and tool-use attractor. Ghostlight does not assume that a
+model can preserve equivalent roleplay while simultaneously operating tools.
+
+### Interpreter
+
+The Interpreter receives the Persona prose, the lived stream, and the exact
+permissioned typed context. Interpretation is a total operation. It always
+finishes with an `InterpretationReport` containing:
+
+- the exact Persona speech preserved as speech;
+- every typed proposal it could faithfully lower using existing IDs and
+  available affordances;
+- zero or more `TranslationGap` records for meaningful material it could not
+  encode;
+- the exact source spans supporting both proposals and gaps.
+
+A translation gap identifies ambiguity, a missing reference, a missing
+affordance, or a missing mutation primitive. It records what the Interpreter
+believes the Persona was trying to express without pretending that the effect
+occurred. Gaps are non-fictional inference evidence. They may inform evaluation
+or a later explicit `ElaborationNeed`; they do not mutate the world.
+
+Interpreter tools provide local structural feedback and a `record_gap` action.
+Invalid tool arguments do not terminalize interpretation. The Interpreter may
+correct them or record the remaining intent as a gap. If its step budget ends,
+the harness finalizes the valid proposals and accumulated gaps instead of
+returning semantic failure.
+
+The Interpreter cannot add motivation to the Persona turn, rewrite its speech,
+infer unavailable knowledge, or commit an effect. The kernel remains the final
+structural guard for the typed proposals. A stale revision or persistence fault
+is a command/infrastructure outcome, not an interpretation failure, and does not
+summon a semantic verifier or reconciler.
+
+World authoring uses a separate typed proposal surface because it is not
+roleplay. It does not pass through Persona or borrow Persona authority.
+
+### OperationalAgent controller
+
+An operational controller receives a permissioned typed view and exact tool
+schemas directly. It is suitable when the simulated mind is itself an
+operator: an institution, political or administrative Gestalt, logistics organ,
+market participant, or other subject whose meaningful cognition is explicit
+state reasoning rather than embodied dramatic experience.
+
+The operational agent may inspect only the state and affordances granted to its
+controller and may submit zero or one typed decision proposal. It may record an
+unrepresented operational need, but it cannot emit a NarrativePersona turn as
+fallback, claim facts outside its view, or commit.
+
+Subject kind does not secretly choose the interface. A person normally carries
+a narrative controller and an administrative institution often carries an
+operational controller, but authored ontology makes the assignment explicit.
+If one institution needs both an operational decision organ and a person-shaped
+public representative, they are separate controllers with disjoint authority
+scopes. Awkward overlap is rejected rather than resolved by precedence.
+
+### Presentation inference
+
+Optional narration renders committed events for a particular audience. It is
+display-only. The exact typed events remain available beside the prose, and a
+rendering failure cannot block, alter, or repair a commit.
+
+Inference receipts are operational telemetry in a separate store. The kernel
+does not require a provider, model tier, stage name, output hash, or verifier
+receipt to authorize world state.
+
+## Action and consequence
+
+An action proposal names one subject, one executable affordance, exact targets,
+and typed desired effects. The kernel derives authority and feasibility from
+the current ontology. If uncertainty matters, server-owned entropy selects a
+bounded outcome band. Only the typed effects for that band enter the mutation
+batch.
+
+Speech is an event and may accompany an action. Generated speech cannot imply
+that an uncommitted effect occurred. Social appraisal and private memory are
+ordinary scoped mutations proposed by the affected subject; they do not gain a
+separate appraisal or verifier authority.
+
+Player, NPC, institution, population, import, and strategic actions share this
+primitive.
+
+## Autonomous scheduling
+
+The scheduler is a pure planner over one revision. It orders eligible subjects
+using committed readiness, causal exposure, unresolved pressure, and time since
+the last opportunity. It emits `DecisionOpportunity` values and cannot commit.
+
+The kernel commits at most one revision-bound decision at a time. After each
+commit the planner derives a fresh queue. Parallel inference may speculate on
+one snapshot, but stale proposals are discarded rather than rebased.
+
+Resolution covers and grouping are compute budgets for projection. They do not
+create, merge, fission, or qualify identities. A synthetic fixture may create
+1,200 action owners to pressure-test scheduling and projection; it is test data,
+not canonical lore and not a production elaboration target.
+
+## Source grounding and open-world expansion
+
+Vault retrieval returns exact evidence receipts. One author inference may fill
+semantic fields in a typed seed or boundary-expansion proposal. The reducer
+issues IDs and validates the closed structural graph.
+
+Seed construction, destination expansion, locality detail, causal
+individuation, and external import all use the same ontology mutation
+vocabulary. Expansion is requested only for a named causal boundary. A sparse
+world with enough structure for its current horizon is valid.
+
+Qualitative evaluators may report implausibility, monotony, missing social
+texture, or poor narrative leverage after a run. Those reports guide a future
+author proposal; they do not become a hidden admission tribunal.
+
+## Persistence and recovery
+
+One world `.cc` store contains:
+
+- one current `world_state.v1` row;
+- immutable `world_commit.v1` rows forming a digest chain;
+- immutable exact evidence receipts referenced by commits.
+
+Service authentication and model telemetry use separate service-owned stores.
+They cannot participate in world authority.
+
+Recovery verifies `(world_id, revision, state_digest, last_commit_digest)`,
+starts the mailbox, derives due work, and continues. In-flight inference is
+disposable. A repeated command ID is idempotent only when its full digest
+matches the recorded commit. Physical filenames, smoke checkpoints, prose
+summaries, and status files are not recovery truth.
+
+Pre-rebuild campaign stores remain immutable evidence. The new runtime does not
+load them into live authority through a compatibility adapter. Any future
+migration must be an explicit, audited import that emits ordinary commands.
+
+## External boundaries and surfaces
+
+- Heimdall owns public identity; Ghostlight stores only the app-local principal
+  needed to derive membership authority.
+- VoidBot or another Vault provider owns retrieval; evidence receipts grant
+  provenance, not mutation authority.
+- External world consumers retain sovereignty over their declared subjects.
+  Ghostlight imports only owner-signed components through the ordinary command
+  path and cannot invent internal state for them.
+- Idunn owns deployment and daemon continuity; Odin owns discovery. Neither can
+  write a world.
+- Eve/CultUI and CultMesh expose typed projections of the same `WorldState` and
+  command catalog. Renderers do not own parallel dashboard truth.
+
+## Deletion line
+
+The rebuild removes these authorities before replacing behavior:
+
+- `SessionZeroKernel`, its registry/director state, and publication handoff;
+- canonical aggregate `Campaign` and the component-to-Campaign projection
+  writer;
+- `legacy_transition` and every special construction or repair commit path;
+- duplicate or cell-specific Projector-Persona-Interpreter implementations;
+  implicit mode switching or fallback between narrative and operational
+  controllers; effect verifier, assessment verifier, outcome verifier, civic
+  verifier, and reconciliation roles;
+- destination identity inference and name-based structural binding;
+- model resolution demand, Nemesis selection, and identity invention;
+- titled elaborator quotas, complexity qualification, semantic qualification,
+  fission completion counts, and model compaction memory;
+- newspaper selection/editor/copy-desk authority and checkpoint recovery;
+- acceptance-driver gates that decide world validity;
+- checkpoints, resume files, caches, and model receipts used as fictional truth.
+
+The retained foundations are the typed component mutation algebra, one mailbox,
+CultCache CAS and immutable receipts, exact evidence, deterministic topology and
+scope validation, actor-private projection, and the declared service ownership
+boundaries.
+
+## Verification contract
+
+Focused tests must prove:
+
+1. Draft and active commands mutate the same aggregate through the same commit
+   primitive.
+2. No alternate input can write canonical state.
+3. Unknown IDs, dangling routes, invalid relation endpoints, custody creation,
+   authority escape, private-knowledge leakage, and external-owner violation
+   fail before persistence.
+4. Interpreter semantics are total: representable material becomes typed
+   proposals, unrepresentable material becomes exact translation gaps, and no
+   semantic path terminalizes the interpretation or calls a verifier or
+   reconciler model.
+5. Scheduler, transcript, news, and surfaces can be discarded and rebuilt from
+   the same committed state.
+6. Restart resumes from the commit digest chain with no checkpoint or repair
+   pass.
+7. A sparse structurally supported world activates successfully.
+8. A synthetic 1,200-owner fixture exercises scheduling and projection without
+   changing production completeness rules.
+9. Direct user, model, scheduler, import, and reload paths all reach the same
+   reducer and CAS.
+10. Every autonomous opportunity resolves through one exact controller; its
+    authority scopes do not overlap another controller, and gaps or faults
+    cannot trigger cross-mode fallback or double action.
+
+The Projector-Persona-Interpreter membrane has its own behavioral evaluation.
+Operational-agent success in its admitted scopes is not evidence that tools are
+safe for a person-shaped role. Any proposal to replace a `NarrativePersona`
+controller with a tool-using agent must compare both designs on the same
+sequential fixtures, model, visible facts, and token budget. It must show no
+material regression in voice, embodiment, uncertainty, tonal range, schema
+leakage, tool-shaped diction, or continuity while matching typed-effect
+fidelity. Until that evidence exists, narrative Personas remain prose-only.
+
+Qualitative world and narrative evaluation is a separate post-run artifact. It
+may be severe. It may not become a writer.

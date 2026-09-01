@@ -1,7 +1,13 @@
 ﻿# Ghostlight Current System Map
 
-GhostlightDungeon is the active hosted runtime. Its authority map is
-`docs/architecture/ghostlight-dungeon-mvp.md`. The implemented Rust daemon,
+> **Status: pre-rebuild as-built body, frozen 2026-09-01.** This document is a
+> teardown source, not the adopted target architecture. The live target and
+> deletion line are in `docs/architecture/ghostlight-dungeon-mvp.md`. Update
+> sections below only as corresponding cuts land; do not use old verifier,
+> reconciliation, checkpoint, or completion claims to steer new work.
+
+GhostlightDungeon is the pre-rebuild hosted runtime. Its replacement authority
+map is `docs/architecture/ghostlight-dungeon-mvp.md`. The implemented Rust daemon,
 CultCache campaign stores, CultMesh/Eve surfaces, browser lowerer, native
 Yggdrasil systemd body, Idunn continuity target, and Odin discovery crossing
 are the live machine; the older validated artifact seams remain regression

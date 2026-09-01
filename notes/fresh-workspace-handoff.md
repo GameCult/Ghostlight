@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-08-31
+Updated: 2026-09-01
 
 This is the compact re-entry packet. It records current authority, deployed
 truth, proof, and the next decision. Git history owns chronology; the system map
@@ -23,84 +23,46 @@ own volatile workspace identity and the release witness owns deployed identity.
 5. For deployment, SSH, firewall, Idunn, Odin, Heimdall, or host work, consult
    `F:\Projects\gamecult-ops` before acting.
 
-## Current full-world pressure test
+## Current rebuild authority
 
-Preserve immutable Runs 75 through 109. Run 108 reaches the exact 2,400-subject
-scale target at complexity round 43; no complexity round may replay.
+The operator stopped Run 115 and ordered a whole-machine authority rebuild.
+The adopted target is `docs/architecture/ghostlight-dungeon-mvp.md`. Do not
+resume an acceptance run or preserve the pre-rebuild pipeline through another
+stage, verifier, reconciler, retry, timeout, routing exception, checkpoint, or
+compatibility writer.
 
-Bounded parallel title-by-realm compaction and deterministic parallel child-ID
-reconciliation are pushed and proved. Logical sessions bind title,
-jurisdiction, campaign, revision, admitted receipts, prior-checkpoint digest,
-and a bounded causal frontier; frozen failure checkpoints own exact failed-
-dispatch resume. Tool-internal rejection findings are not yet promoted into
-later successful compaction, but no executable proposal remains live after a
-successful round.
+The rebuild has one per-world `WorldKernel`, one revisioned `WorldState` across
+draft and active phases, one internally derived authority envelope, one typed
+component reducer, and one atomic CultCache commit path.
 
-Run 97 at exact source `fa016586863ccfaaa29fe6e4bbe3a944322029ef`, rooted
-at `/var/lib/gamecult/ghostlight-dungeon/acceptance/full-world-delvehold-fa01658-97`,
-completed round 11 with 55 committed mutations and raised actionable subjects
-from 1,205 to 1,288. Its terminal round-12 failure froze 109 successful
-proposals and three failures. Run 98 at the same source retried only those three
-successfully, then serially committed through ordinal 804 and failed at ordinal
-805 because Sera Venn's display name duplicated ordinal 754. The same preview
-contains Sera Vey at ordinals 796 and 822. Their canonical IDs and parents are
-distinct, so global public-name uniqueness was wrongly acting as identity
-authority. The status file is stale at revision 769; `campaign.cc` and exact
-commit receipts through ordinal 804 own partial-progress truth.
+Autonomous cognition has two explicit controller modes with disjoint scopes:
 
-Pushed exact source `75d9235352dc6678617f532f4cd2e7f39c7b23e1`
-owns deterministic exact-ID proposal supersession. Immutable Run 105 completed
-round 21 from 2,118 to 2,159 subjects and round 22 from 2,159 to 2,194. Its
-round-23 preview froze 21 invocations and committed all 21 mutations at revisions
-1409 through 1429. Fifteen of 21 local session compactions persisted before the
-remaining compaction work stopped. Immutable same-source Run 106 cloned Run 105
-and reproduced the failure without writing another session checkpoint.
+- `NarrativePersona` preserves Projector -> prose-only Persona -> Interpreter
+  for embodied, relational, voice-bearing roleplay.
+- `OperationalAgent` receives a permissioned typed view and tools for
+  operator-shaped cognition such as political, institutional, logistical, or
+  administrative Gestalts.
+- Interpretation is total: it returns faithful typed proposals plus exact gaps
+  for unrepresented meaning. Gaps or infrastructure faults cannot switch modes,
+  and one opportunity cannot act through both.
 
-Pushed source `8dd3147` keeps compaction journals structurally compact.
-Immutable Run 108 reached exactly 2,400 actionable subjects at round 43. Clock
-binding then advanced the campaign to revision 1551 and resolution epoch 1545.
-Pushed source `b61e762` bounds Nemesis with paged anchors and responder dossiers
-while retaining complete deterministic eligibility privately.
+Run 115 is terminal failed at
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/full-world-delvehold-0a83034-115`:
+semantic revision 2, regions 2/8, waves 0/1. Resume2 ended on provider SSE
+timeout. Resume3 exhausted four reconciliation steps after
+`inst:kharad-road-keepers` referenced unknown `loc:kharad-rhythm-road`.
+Invocation `d9254cd9b77946aebcf7a7fdae821402` is terminal. Preserve the root and
+receipts unchanged; `status.json` is stale derived telemetry.
 
-Immutable Run 109 at
-`/var/lib/gamecult/ghostlight-dungeon/acceptance/full-world-delvehold-b61e762-109`
-proved that cut and dispatched the exact 240-cell wave. Pulse one completed 214
-cells; four bounded retries raised the durable checkpoint to 226 completed and
-14 failed cells. The final partial checkpoint SHA-256 is
-`f502ad560e0f23db226c326072e5e8a6d0ed9975f0e63bc67606d7d7cb9b2c27`.
-All 14 terminal failures are connector-frame bounds: six Projectors received
-hundreds of inactive constituent dossiers, while eight Interpreters received
-unbounded exact activity-target maps in context and generated schemas. The
-smallest failed Interpreter cells contain only two subjects, so repartitioning
-alone cannot fix the defect. No fictional wave committed and time did not
-advance.
+The 1,200 and 2,400 actor figures are synthetic load/evaluation profiles, not
+world-completeness rules. Production worlds are sparse and expand when causal
+pressure reaches a typed boundary. Interestingness, diversity, name quality,
+and prose quality remain post-run evaluation evidence.
 
-Pushed source `67421ad` bounded Projector and Interpreter frames. Immutable Run
-110 cloned Run 109's exact checkpoint and retried only its 14 failed cells. It
-proved the frame cut: no connector-frame failure recurred, and one additional
-cell completed. The durable pulse-two checkpoint contains 227 completed and 13
-failed cells with SHA-256
-`88a4f193e9f4d136841ede8d9c6b23e88788002a5f2e6b0c93bea9bb51b388de`.
-The remaining 13 Interpreters exhausted their agent steps by repeatedly asking
-the target-inspection command to resolve ordinary noun phrases. Root stopped
-the transient unit before more calls; no fictional wave committed and time did
-not advance.
-
-The current correction removes target lookup from the Interpreter. Projector
-receives only exact decision-owner dossiers and at most 24 deterministically
-relevant activity targets. Before Interpreter inference, one deterministic
-projection adds bounded canonical targets whose exact supplied names occur in
-the lived stream or Persona turn. Unmatched roles remain targetless local
-actions when supported. Full cell membership and permissions remain private;
-effect verification receives only targets cited by the candidate action.
-Resolution remains cover owner and WorldKernel remains commit owner.
-
-Pushed source `b81a977` is running as immutable Run 111 after cloning Run 110's
-exact pulse-two checkpoint. Its latest durable status records two of ten waves
-committed through revision 1553. Observe that active unit without restarting or
-replaying complexity, clock binding, Nemesis, or the 227 completed cell
-membranes. The acceptance launcher retains one content-addressed runner per
-exact source commit and deletes disposable remote compiler output.
+Next action: cut the separate Session Zero owner, aggregate Campaign writer,
+legacy transition projection, alternate kernel ingresses, verifier and
+reconciliation models, model-owned scheduling, and checkpoint recovery before
+building their replacement.
 
 ## Mission and current product shape
 
