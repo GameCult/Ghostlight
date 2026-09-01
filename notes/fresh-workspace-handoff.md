@@ -42,8 +42,9 @@ opportunities are derived and revalidated by the kernel.
 Autonomous cognition has two explicit modes under disjoint controller scopes:
 
 - `NarrativePersona` receives narrative projection and replies only in prose.
-  A total Interpreter preserves that prose, emits every faithful typed proposal
-  it can lower, and records exact translation gaps for the rest.
+  The runner records that prose as receipt-bound noncanonical source evidence;
+  a total Interpreter emits every faithful typed proposal it can lower with an
+  exact source capture and records exact translation gaps for the rest.
 - `OperationalAgent` receives a permissioned typed view and tools when
   operator-shaped cognition benefits from direct state work.
 - Mode changes representation, never authority. A decision opportunity cannot
@@ -51,12 +52,14 @@ Autonomous cognition has two explicit modes under disjoint controller scopes:
 
 The Interpreter cannot fail semantically. Missing referents, ambiguous intent,
 missing affordances, and missing command primitives become translation gaps.
-Step exhaustion finalizes accumulated speech, proposals, and gaps. Transport
-faults and stale commits remain infrastructure outcomes outside interpretation.
-Only the world kernel may accept or reject a proposed mutation.
-Translation gaps remain non-fictional inference/evaluation evidence outside
-`WorldState`; recording one cannot itself request elaboration or advance a
-world revision.
+Malformed capture spans, raw tool decode failure, and normal step exhaustion
+fall back to an exact whole-source gap rather than losing meaning. An
+infrastructure interruption discards partial captures and returns the immutable
+source pending for a fresh attempt. Source prose is not speech: only actually
+spoken words may become a typed speech proposal. Only the world kernel may
+accept or reject a proposed mutation. Translation gaps remain non-fictional
+inference/evaluation evidence outside `WorldState`; recording one cannot itself
+request elaboration or advance a world revision.
 
 World validity is sparse and causal. Actor counts, coverage ratios,
 interestingness, political diversity, name quality, and prose quality are
@@ -67,8 +70,15 @@ load or evaluation evidence; none admits ontology or declares a world complete.
 - `4aebe17` adopts the target authority map.
 - `64f50de` removes seven obsolete pipeline-smoke binaries and two live-fire
   orchestration scripts.
-- `a144c33` adds the two cognition modes and total interpretation contract in
+- `a144c33` establishes the two disjoint cognition modes in
   `ghostlight-persona-projection`.
+- `d49b907` refines total Persona interpretation: source prose is receipt-bound
+  noncanonical evidence, typed captures cite exact source spans, malformed spans,
+  raw decode failure, and normal exhaustion receive whole-source gap fallback,
+  infrastructure interruption returns the source pending, and only actual
+  spoken words qualify for a speech proposal. This contract is not wired into
+  the live legacy Persona runners; they still terminalize and remain deletion
+  targets.
 - An uncommitted broad `world.rs` prototype was rejected and deleted. It
   exposed mutable state and ID issuance, admitted translation-gap evidence into
   canonical types, allowed no-op commits, and left affordance and opportunity
