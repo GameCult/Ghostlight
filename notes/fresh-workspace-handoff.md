@@ -95,11 +95,12 @@ actions when supported. Full cell membership and permissions remain private;
 effect verification receives only targets cited by the candidate action.
 Resolution remains cover owner and WorldKernel remains commit owner.
 
-After commit and push, clone Run 110's exact pulse-two checkpoint and resume
-only its 13 failed cells. Do not replay complexity, clock binding, Nemesis, or
-the 227 completed cell membranes. The acceptance launcher retains one
-content-addressed runner per exact source commit and deletes disposable remote
-compiler output.
+Pushed source `b81a977` is running as immutable Run 111 after cloning Run 110's
+exact pulse-two checkpoint. Its latest durable status records two of ten waves
+committed through revision 1553. Observe that active unit without restarting or
+replaying complexity, clock binding, Nemesis, or the 227 completed cell
+membranes. The acceptance launcher retains one content-addressed runner per
+exact source commit and deletes disposable remote compiler output.
 
 ## Mission and current product shape
 
@@ -508,14 +509,13 @@ approved capability.
 
 ## Next action
 
-Preserve Runs 75 through 108 and the exact round-43 2,400-subject world. Map and
-cut bounded Nemesis navigation: bounded initial anchor summaries, paged current
-anchors, and paged eligible responders for an inspected anchor, with complete
-eligibility remaining private in the deterministic tool. Add focused size,
-paging, exact-eligibility, and no-authority tests; review, gate, commit, and
-push. Clone Run 108 and resume wave 1 from revision 1551/resolution epoch 1545
-without replaying elaboration or clock binding. Then require ten strategic
-waves, publications, archive hashes, and unchanged-live-service verification.
+Preserve Runs 75 through 111 and the exact round-43 2,400-subject world. Run
+111 already owns the post-target-projection continuation from Run 110's exact
+227-completed/13-failed checkpoint and is active. Observe it without restart or
+replay. At terminal state, preserve its exact root and require ten committed
+strategic waves, per-wave publications and final digest, exact provenance and
+archive/hash checks, and unchanged live-service identities; if it fails,
+diagnose only the frozen failed boundary.
 
 The generic world-consumer boundary is implemented. Session Zero and external
 producers share one admitted `WorldSeed` transaction; externally authoritative
