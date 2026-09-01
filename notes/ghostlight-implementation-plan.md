@@ -23,8 +23,8 @@ An uncommitted broad `world.rs` prototype was rejected and deleted before it
 became authority. It exposed mutable aggregate state and ID issuance, placed
 translation-gap evidence inside canonical world types, permitted empty commits,
 and defined controllers without owning executable affordances or exact decision
-opportunities. The active bounded move is now the sealed aggregate boundary,
-not a public ontology inventory.
+opportunities. The sealed aggregate boundary is landed. The active bounded move
+is now the minimal private reducer, not a public ontology inventory.
 
 ## Authority map
 
