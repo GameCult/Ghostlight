@@ -25,8 +25,8 @@ own volatile workspace identity and the release witness owns deployed identity.
 
 ## Current full-world pressure test
 
-Preserve immutable Runs 75 through 107. Rounds 1 through 22 and their session
-checkpoints are canonical; do not replay them.
+Preserve immutable Runs 75 through 108. Run 108 reaches the exact 2,400-subject
+scale target at complexity round 43; no complexity round may replay.
 
 Bounded parallel title-by-realm compaction and deterministic parallel child-ID
 reconciliation are pushed and proved. Logical sessions bind title,
@@ -56,17 +56,23 @@ round-23 preview froze 21 invocations and committed all 21 mutations at revision
 remaining compaction work stopped. Immutable same-source Run 106 cloned Run 105
 and reproduced the failure without writing another session checkpoint.
 
-Pushed diagnostic source `8cdbd2e` cloned Run 106 into immutable Run 107 and
-reported the exact preflight defect before any model call:
-`journal[1].summary contains 1047 characters; maximum 1000`. The strategic-smoke
-journal producer duplicated every typed affected-subject ID into prose. The
-current cut keeps exact identities solely in `affected_subject_ids` and emits
-only `Applied {mutation_kind} to {parent_gestalt_id}.` as summary. One focused
-producer regression and all 20 strategic-smoke tests pass. Finish the package
-gate, review, commit, and push; then clone Run 107 and resume only the six
-missing round-23 compactions. Preserve all 21 mutation receipts and 15
-successful session checkpoints; do not replay provider proposals, mutations,
-completed compactors, or earlier rounds.
+Pushed source `8dd3147` keeps compaction journals structurally compact.
+Immutable Run 108 reached exactly 2,400 actionable subjects at round 43. Clock
+binding then advanced the campaign to revision 1551 and resolution epoch 1545
+before strategic wave 1. All five wave-1 pulses were rejected and the run
+failed terminally; every Nemesis attempt stopped before reasoning with
+`connector frame exceeded its bound`. No simulation cell committed and
+fictional time did not advance.
+
+`propose_causal_follow_through` serializes the complete responder catalog into
+instructions, then serializes the initial 24 public anchors plus every current
+pressure and clock anchor with every eligible responder view embedded again.
+That multiplicative projection is the current defect. The tool already owns the
+complete deterministic eligibility catalog and paged world/subject history.
+Keep initial anchor summaries bounded; add paged current-anchor retrieval and
+paged eligible-responder retrieval for inspected anchors; keep full eligibility
+private for admission. Resolution remains cover owner and WorldKernel remains
+commit owner. Do not raise the connector bound or truncate canonical authority.
 The acceptance launcher retains one 35 MiB content-addressed runner per exact
 source commit and deletes disposable compiler output; do not restore a
 persistent Cargo target tree.
@@ -478,15 +484,14 @@ approved capability.
 
 ## Next action
 
-Preserve Runs 75 through 107. Finish the package gate, review, commit, and push
-the compact journal-summary producer cut. Clone Run 107 and resume only the six
-missing round-23 session compactions. Preserve all 21 committed mutations at
-revisions 1409 through 1429 and 15 successful compactions without replaying
-provider proposals, mutations, completed compactors, or earlier rounds. Keep
-exact affected identities in typed `affected_subject_ids`, not prose summary.
-Continue iterative complexity rounds to 2,400 canonical actionable subjects,
-followed by ten strategic waves, publications, archive hashes, and
-unchanged-live-service verification.
+Preserve Runs 75 through 108 and the exact round-43 2,400-subject world. Map and
+cut bounded Nemesis navigation: bounded initial anchor summaries, paged current
+anchors, and paged eligible responders for an inspected anchor, with complete
+eligibility remaining private in the deterministic tool. Add focused size,
+paging, exact-eligibility, and no-authority tests; review, gate, commit, and
+push. Clone Run 108 and resume wave 1 from revision 1551/resolution epoch 1545
+without replaying elaboration or clock binding. Then require ten strategic
+waves, publications, archive hashes, and unchanged-live-service verification.
 
 The generic world-consumer boundary is implemented. Session Zero and external
 producers share one admitted `WorldSeed` transaction; externally authoritative

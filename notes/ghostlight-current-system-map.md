@@ -197,12 +197,19 @@ exact campaign revision
 
 - **Owner:** the strategic scheduler owns which already-committed consequence
   deserves another decision window. The bounded model agent serving that
-  decision is Nemesis. It does not own what any subject decides.
+  decision is Nemesis. Resolution owns the complete 240-cell cover and its
+  decision quotas; Nemesis does not own cover construction or what any subject
+  decides.
 - **Inputs:** one frozen campaign revision, its committed public events and
   active pressures and clock progress, the durable Nemesis attention history,
   the deterministic resolution cover, exact perception routes, simulation
   eligibility, Gestalt-member materialization state, player-control boundary,
-  and each cell's action quota.
+  and each cell's action quota. The initial model frame contains only a cover
+  summary, bounded summaries of the 24 most recent eligible public-event
+  anchors, and the first page of 24 current pressure/clock summaries. Agent
+  commands page current anchors 24 at a time, older world or exact-subject
+  history through the existing 24-item views, and eligible responder dossiers
+  for one already-inspected anchor 12 at a time.
 - **Output:** one bounded follow-through agenda binding exact event, pressure,
   or clock anchors to exact eligible decision owners already represented by the
   cover, plus the model receipt rebound to the exact campaign snapshot and
@@ -213,6 +220,12 @@ exact campaign revision
   permitted cell slice, takes precedence over ordinary rotation for that wave,
   and supplies that anchor's exact current committed account to the action's
   private outcome context. The anchor is context, not new mutation authority.
+  `CausalAnchorCandidate` is private deterministic tool state containing anchor
+  metadata and the exact set of eligible responder IDs. It derives a summary
+  with only the responder count for broad views; it never clones a responder
+  dossier per anchor. Full responder eligibility and dossiers remain one
+  private tool catalog and are projected only for the selected inspected
+  anchor page.
   Responder-cell routing preserves identity ownership: a materialized
   `member:*` subject remains an actor and binds only to its actor cell; a dormant
   member keeps its exact member identity but routes through its aggregate
@@ -226,7 +239,10 @@ exact campaign revision
   event writer and the sole writer of durable served-window records. Member
   materialization changes only through the existing kernel presence transition;
   bounded legacy identity normalization may canonicalize an already materialized
-  actor ID but does not decide presence.
+  actor ID but does not decide presence. Nemesis cannot infer eligibility from
+  counts or summaries, address an uninspected anchor, obtain the global
+  responder-dossier cross product, exceed page or cell quotas, or commit its
+  agenda. Anchor summaries and dossier pages are observations, not writers.
 - **Shared paths:** first execution and checkpoint resume consume the identical
   accepted agenda and exact receipt binding. `WorldKernel` independently
   requires that exact admitted receipt before it commits a nonempty causal
@@ -236,16 +252,28 @@ exact campaign revision
   choose an attributed inaction. Later discovery excludes an already served
   exact pair; a clock's new progress value creates a new anchor. Responder
   discovery, agenda quota/focus admission, validation, and per-cell assignment
-  injection all use the same materialization-aware cell resolver.
+  injection all use the same materialization-aware cell resolver. Initial and
+  paged current-anchor discovery use the same candidate catalog and add exact
+  candidates to the inspected set. World/subject history pages use the existing
+  event discovery path. Anchor-responder inspection joins the chosen inspected
+  candidate's exact eligible-ID set against the single responder catalog; the
+  generated action schema exposes exact currently admissible IDs, and submit
+  admission rechecks anchor-specific eligibility, distinct responders, total
+  slots, per-cell quotas, and mandatory detail focus before binding a receipt.
 - **Cut line:** blind tick rotation no longer decides a slot already occupied
   by an admitted causal assignee, and the global last-twelve-event truncation
   cannot hide that assignee's exact anchor. No prompt downstream may compensate
   for a missing scheduler decision window. `response_role` and a claimed
   accepted-receipt ID are not part of the admission: the scheduler admits only
   the exact anchor/responder assignment, and receipt identity comes from the
-  actual model invocation.
+  actual model invocation. The cut retains one cover, one deterministic
+  eligibility computation, one action/admission validator, and one kernel
+  commit path. It adds no per-anchor responder-dossier cache, cloned candidate
+  frame, second Nemesis agent, eligibility store, or pagination-owned truth.
 - **Verification layer:** focused tests prove paged retrieval beyond the initial
-  event viewport, valid empty judgment, exact-pair replay suppression, player
+  event viewport, 24-item current-anchor paging without losing candidates,
+  12-item responder inspection for an exact chosen anchor, valid empty
+  judgment, exact-pair replay suppression, player
   exclusion, exact owner consideration, materialized-member routing to the actor
   cell versus dormant-member routing to the Gestalt cell, exact anchor citation,
   outcome context containing only the assigned anchor and its committed
@@ -253,8 +281,10 @@ exact campaign revision
   and served-window recording for the exact receipted agenda. Deterministic
   validators reject unknown anchors, ineligible or duplicate responders,
   over-quota agendas, missing exact receipts, and stale anchor accounts. A
-  strategic smoke remains the whole-system verification that named competing
-  decisions produce
+  2,400-responder frame regression proves the initial prompt remains a bounded
+  cover/anchor summary rather than multiplying every anchor by every responder
+  dossier. A strategic smoke remains the whole-system verification that named
+  competing decisions produce
   committed material outcomes before editorial quality is assessed.
 
 The model owns no tick mutation. A provider failure or invalid proposal leaves

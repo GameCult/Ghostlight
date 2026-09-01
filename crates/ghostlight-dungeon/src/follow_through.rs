@@ -14,6 +14,8 @@ use std::collections::{BTreeMap, BTreeSet};
 pub const NEMESIS_STAGE: &str = "nemesis_attention_agent_action";
 const HISTORY_PAGE_SIZE: usize = 24;
 const INITIAL_EVENT_WINDOW: usize = 24;
+const CURRENT_ANCHOR_PAGE_SIZE: usize = 24;
+const RESPONDER_PAGE_SIZE: usize = 12;
 const MAX_FOLLOW_THROUGH_STEPS: usize = 6;
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -39,6 +41,13 @@ enum CausalFollowThroughCommand {
         responder_subject_id: String,
         cursor: usize,
     },
+    InspectCurrentAnchors {
+        cursor: usize,
+    },
+    InspectAnchorResponders {
+        anchor_reference: String,
+        cursor: usize,
+    },
     Submit {
         assignments: Vec<CausalAssignmentDraft>,
     },
@@ -49,7 +58,12 @@ enum CausalFollowThroughCommand {
 enum CausalFollowThroughFinding {
     HistoryPage {
         scope: String,
-        anchors: Vec<CausalAnchorView>,
+        anchors: Vec<CausalAnchorSummaryView>,
+        next_cursor: Option<usize>,
+    },
+    ResponderPage {
+        anchor: CausalAnchorSummaryView,
+        responders: Vec<CausalResponderView>,
         next_cursor: Option<usize>,
     },
     InvalidAgenda {
@@ -58,12 +72,12 @@ enum CausalFollowThroughFinding {
 }
 
 #[derive(Clone, Debug, Serialize)]
-struct CausalAnchorView {
+struct CausalAnchorSummaryView {
     anchor_reference: String,
     kind: String,
     account: String,
     originating_subject_ids: Vec<String>,
-    eligible_responders: Vec<CausalResponderView>,
+    eligible_responder_count: usize,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -73,12 +87,28 @@ struct CausalResponderView {
     subject_kind: String,
     stakes: Vec<String>,
     cell_id: String,
+    cell_decision_slot_limit: usize,
 }
 
 #[derive(Clone, Debug)]
 struct CausalAnchorCandidate {
-    view: CausalAnchorView,
+    anchor_reference: String,
+    kind: String,
+    account: String,
+    originating_subject_ids: Vec<String>,
     eligible_responder_ids: BTreeSet<String>,
+}
+
+impl CausalAnchorCandidate {
+    fn summary(&self) -> CausalAnchorSummaryView {
+        CausalAnchorSummaryView {
+            anchor_reference: self.anchor_reference.clone(),
+            kind: self.kind.clone(),
+            account: self.account.clone(),
+            originating_subject_ids: self.originating_subject_ids.clone(),
+            eligible_responder_count: self.eligible_responder_ids.len(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
@@ -99,6 +129,7 @@ struct CausalFollowThroughTool<'a> {
     campaign: &'a Campaign,
     cover: &'a ResolutionCover,
     all_public_events: Vec<&'a Event>,
+    current_anchors: Vec<CausalAnchorCandidate>,
     discovered: BTreeMap<String, CausalAnchorCandidate>,
     responder_views: BTreeMap<String, CausalResponderView>,
 }
@@ -154,7 +185,7 @@ impl CausalFollowThroughTool<'_> {
         })
     }
 
-    fn discover_events(&mut self, events: Vec<&Event>) -> Result<Vec<CausalAnchorView>> {
+    fn discover_events(&mut self, events: Vec<&Event>) -> Result<Vec<CausalAnchorSummaryView>> {
         let mut views = Vec::new();
         for event in events {
             let candidate =
@@ -162,11 +193,63 @@ impl CausalFollowThroughTool<'_> {
             if candidate.eligible_responder_ids.is_empty() {
                 continue;
             }
-            views.push(candidate.view.clone());
+            views.push(candidate.summary());
             self.discovered
-                .insert(candidate.view.anchor_reference.clone(), candidate);
+                .insert(candidate.anchor_reference.clone(), candidate);
         }
         Ok(views)
+    }
+
+    fn inspect_current_anchor_page(&mut self, cursor: usize) -> Result<CausalFollowThroughFinding> {
+        if cursor > self.current_anchors.len() {
+            return Err(anyhow!(
+                "current-anchor cursor is outside the durable pressure ledger"
+            ));
+        }
+        let end = cursor
+            .saturating_add(CURRENT_ANCHOR_PAGE_SIZE)
+            .min(self.current_anchors.len());
+        let candidates = self.current_anchors[cursor..end].to_vec();
+        let mut anchors = Vec::with_capacity(candidates.len());
+        for candidate in candidates {
+            anchors.push(candidate.summary());
+            self.discovered
+                .insert(candidate.anchor_reference.clone(), candidate);
+        }
+        Ok(CausalFollowThroughFinding::HistoryPage {
+            scope: "current durable pressure and clocks".into(),
+            anchors,
+            next_cursor: (end < self.current_anchors.len()).then_some(end),
+        })
+    }
+
+    fn inspect_anchor_responder_page(
+        &self,
+        anchor_reference: &str,
+        cursor: usize,
+    ) -> Result<CausalFollowThroughFinding> {
+        let candidate = self
+            .discovered
+            .get(anchor_reference)
+            .ok_or_else(|| anyhow!("responder query names an anchor the agent did not inspect"))?;
+        let responder_ids = candidate.eligible_responder_ids.iter().collect::<Vec<_>>();
+        if cursor > responder_ids.len() {
+            return Err(anyhow!(
+                "anchor-responder cursor is outside the eligible responder list"
+            ));
+        }
+        let end = cursor
+            .saturating_add(RESPONDER_PAGE_SIZE)
+            .min(responder_ids.len());
+        let responders = responder_ids[cursor..end]
+            .iter()
+            .filter_map(|subject_id| self.responder_views.get(*subject_id).cloned())
+            .collect();
+        Ok(CausalFollowThroughFinding::ResponderPage {
+            anchor: candidate.summary(),
+            responders,
+            next_cursor: (end < responder_ids.len()).then_some(end),
+        })
     }
 
     fn validate_and_bind(
@@ -322,6 +405,35 @@ impl ModelAgentTool for CausalFollowThroughTool<'_> {
                     receipts: Vec::new(),
                 },
             },
+            CausalFollowThroughCommand::InspectCurrentAnchors { cursor } => {
+                match self.inspect_current_anchor_page(cursor) {
+                    Ok(observation) => ModelAgentToolOutcome::Continue {
+                        observation,
+                        receipts: Vec::new(),
+                    },
+                    Err(error) => ModelAgentToolOutcome::Rejected {
+                        finding: CausalFollowThroughFinding::InvalidAgenda {
+                            diagnostic: error.to_string(),
+                        },
+                        receipts: Vec::new(),
+                    },
+                }
+            }
+            CausalFollowThroughCommand::InspectAnchorResponders {
+                anchor_reference,
+                cursor,
+            } => match self.inspect_anchor_responder_page(&anchor_reference, cursor) {
+                Ok(observation) => ModelAgentToolOutcome::Continue {
+                    observation,
+                    receipts: Vec::new(),
+                },
+                Err(error) => ModelAgentToolOutcome::Rejected {
+                    finding: CausalFollowThroughFinding::InvalidAgenda {
+                        diagnostic: error.to_string(),
+                    },
+                    receipts: Vec::new(),
+                },
+            },
             CausalFollowThroughCommand::Submit { assignments } => {
                 match self.validate_and_bind(assignments) {
                     Ok(assignments) => {
@@ -385,6 +497,7 @@ pub async fn propose_causal_follow_through(
     cover: &ResolutionCover,
 ) -> std::result::Result<Option<CausalFollowThroughProposal>, crate::agent::ModelAgentFailure> {
     let responder_views = responder_views(campaign, cover);
+    let current_anchors = current_anchor_candidates(campaign, cover, &responder_views);
     let all_public_events = campaign
         .events
         .iter()
@@ -395,6 +508,7 @@ pub async fn propose_causal_follow_through(
         campaign,
         cover,
         all_public_events,
+        current_anchors,
         discovered: BTreeMap::new(),
         responder_views,
     };
@@ -404,21 +518,18 @@ pub async fn propose_causal_follow_through(
         .copied()
         .take(INITIAL_EVENT_WINDOW)
         .collect::<Vec<_>>();
-    let mut initial_anchors =
+    let initial_event_anchors =
         tool.discover_events(initial_events)
             .map_err(|error| crate::agent::ModelAgentFailure {
                 message: error.to_string(),
                 receipts: Vec::new(),
             })?;
-    initial_anchors.extend(current_pressure_anchors(
-        campaign,
-        cover,
-        &tool.responder_views,
-    ));
-    for anchor in current_anchor_candidates(campaign, cover, &tool.responder_views) {
-        tool.discovered
-            .insert(anchor.view.anchor_reference.clone(), anchor);
-    }
+    let initial_current_anchors =
+        tool.inspect_current_anchor_page(0)
+            .map_err(|error| crate::agent::ModelAgentFailure {
+                message: error.to_string(),
+                receipts: Vec::new(),
+            })?;
     if tool.discovered.is_empty() {
         return Ok(None);
     }
@@ -429,9 +540,14 @@ pub async fn propose_causal_follow_through(
         }
     })?;
     let instructions = format!(
-        "You are Nemesis, Ghostlight's causal attention agent. Select who receives a decision window because committed world pressure now demands an answer. You never decide their action or its outcome. Bind only exact inspected anchors to exact eligible autonomous responders. Prefer consequential acts, declared crises, active pressure, public humiliation, material loss, contested authority, and promises whose costs should now land. When one public detonation creates incompatible stakes, assign distinct rival responders to the same anchor so their independent Persona cells can make competing countermoves. Do not assign the player. Do not assign one subject twice. Stay within the cover quotas. You may inspect older world history or one subject's full perceived history in pages; the committed ledger is not limited to the initial viewport. An empty assignment list is a valid judgment when nothing currently warrants a response window. Submit the smallest agenda likely to produce genuine causal follow-through. The deterministic tool alone admits it.\n\nCURRENT COVER AND RESPONDERS:\n{}\n\nINITIAL ANCHORS (recent public accounts plus all current durable pressure/clocks):\n{}",
-        serde_json::to_string(&tool.responder_views).unwrap_or_default(),
-        serde_json::to_string(&initial_anchors).unwrap_or_default(),
+        "You are Nemesis, Ghostlight's causal attention agent. Select who receives a decision window because committed world pressure now demands an answer. You never decide their action or its outcome. Bind only exact inspected anchors to exact eligible autonomous responders. Prefer consequential acts, declared crises, active pressure, public humiliation, material loss, contested authority, and promises whose costs should now land. When one public detonation creates incompatible stakes, assign distinct rival responders to the same anchor so their independent Persona cells can make competing countermoves. Do not assign the player. Do not assign one subject twice. Stay within the cover quotas. Inspect a chosen anchor's eligible responders before assigning it. You may page through current pressure/clocks, older world history, one subject's perceived history, or one anchor's eligible responders; the committed ledger is not limited to the initial viewport. An empty assignment list is a valid judgment when nothing currently warrants a response window. Submit the smallest agenda likely to produce genuine causal follow-through. The deterministic tool alone admits it.\n\nCOVER SUMMARY:\n{}\n\nINITIAL RECENT PUBLIC ANCHORS:\n{}\n\nINITIAL CURRENT PRESSURE/CLOCK PAGE:\n{}",
+        serde_json::json!({
+            "cell_count":cover.cells.len(),
+            "eligible_responder_count":tool.responder_views.len(),
+            "maximum_decision_slots":cover.cells.iter().map(cell_action_limit).sum::<usize>(),
+        }),
+        serde_json::to_string(&initial_event_anchors).unwrap_or_default(),
+        serde_json::to_string(&initial_current_anchors).unwrap_or_default(),
     );
     let spec = ModelAgentSpec {
         stage: NEMESIS_STAGE.into(),
@@ -457,7 +573,7 @@ pub fn validate_causal_follow_through(campaign: &Campaign, cover: &ResolutionCov
     let responder_views = responder_views(campaign, cover);
     let mut catalog = current_anchor_candidates(campaign, cover, &responder_views)
         .into_iter()
-        .map(|candidate| (candidate.view.anchor_reference.clone(), candidate))
+        .map(|candidate| (candidate.anchor_reference.clone(), candidate))
         .collect::<BTreeMap<_, _>>();
     for event in campaign
         .events
@@ -465,12 +581,13 @@ pub fn validate_causal_follow_through(campaign: &Campaign, cover: &ResolutionCov
         .filter(|event| !event.public_channels.is_empty())
     {
         let candidate = event_anchor_candidate(campaign, cover, event, &responder_views)?;
-        catalog.insert(candidate.view.anchor_reference.clone(), candidate);
+        catalog.insert(candidate.anchor_reference.clone(), candidate);
     }
     let tool = CausalFollowThroughTool {
         campaign,
         cover,
         all_public_events: Vec::new(),
+        current_anchors: Vec::new(),
         discovered: catalog,
         responder_views,
     };
@@ -662,6 +779,7 @@ fn responder_views(
                 subject_kind: format!("{:?}", profile.subject_kind),
                 stakes: subject_stakes(campaign, &profile.subject_id),
                 cell_id: cell.id.clone(),
+                cell_decision_slot_limit: cell_action_limit(cell),
             },
         );
     }
@@ -693,6 +811,7 @@ fn responder_views(
                         .cloned()
                         .collect(),
                     cell_id: cell.id.clone(),
+                    cell_decision_slot_limit: cell_action_limit(cell),
                 },
             );
         }
@@ -714,10 +833,6 @@ fn event_anchor_candidate(
         })
         .cloned()
         .collect::<BTreeSet<_>>();
-    let eligible_responders = eligible_responder_ids
-        .iter()
-        .filter_map(|subject_id| responder_views.get(subject_id).cloned())
-        .collect();
     let mut originating_subject_ids = event
         .actor_ids
         .iter()
@@ -728,13 +843,10 @@ fn event_anchor_candidate(
     originating_subject_ids.sort();
     originating_subject_ids.dedup();
     Ok(CausalAnchorCandidate {
-        view: CausalAnchorView {
-            anchor_reference: format!("event:{}", event.id),
-            kind: event.kind.clone(),
-            account: event.summary.clone(),
-            originating_subject_ids,
-            eligible_responders,
-        },
+        anchor_reference: format!("event:{}", event.id),
+        kind: event.kind.clone(),
+        account: event.summary.clone(),
+        originating_subject_ids,
         eligible_responder_ids,
     })
 }
@@ -767,19 +879,13 @@ fn current_anchor_candidates(
                 continue;
             }
             anchors.push(CausalAnchorCandidate {
-                view: CausalAnchorView {
-                    anchor_reference: pressure_anchor_reference(&gestalt.id, pressure),
-                    kind: "gestalt_pressure".into(),
-                    account: format!(
-                        "Current unresolved pressure on {}: {pressure}",
-                        gestalt.name
-                    ),
-                    originating_subject_ids: vec![gestalt.id.clone()],
-                    eligible_responders: eligible_responder_ids
-                        .iter()
-                        .filter_map(|subject_id| responder_views.get(subject_id).cloned())
-                        .collect(),
-                },
+                anchor_reference: pressure_anchor_reference(&gestalt.id, pressure),
+                kind: "gestalt_pressure".into(),
+                account: format!(
+                    "Current unresolved pressure on {}: {pressure}",
+                    gestalt.name
+                ),
+                originating_subject_ids: vec![gestalt.id.clone()],
                 eligible_responder_ids,
             });
         }
@@ -812,34 +918,17 @@ fn current_anchor_candidates(
             continue;
         }
         anchors.push(CausalAnchorCandidate {
-            view: CausalAnchorView {
-                anchor_reference: clock_anchor_reference(&clock.id, clock.progress),
-                kind: "world_clock".into(),
-                account: format!(
-                    "{} is at {}/{}; declared consequence: {}",
-                    clock.label, clock.progress, clock.threshold, clock.consequence
-                ),
-                originating_subject_ids: Vec::new(),
-                eligible_responders: eligible_responder_ids
-                    .iter()
-                    .filter_map(|subject_id| responder_views.get(subject_id).cloned())
-                    .collect(),
-            },
+            anchor_reference: clock_anchor_reference(&clock.id, clock.progress),
+            kind: "world_clock".into(),
+            account: format!(
+                "{} is at {}/{}; declared consequence: {}",
+                clock.label, clock.progress, clock.threshold, clock.consequence
+            ),
+            originating_subject_ids: Vec::new(),
             eligible_responder_ids,
         });
     }
     anchors
-}
-
-fn current_pressure_anchors(
-    campaign: &Campaign,
-    cover: &ResolutionCover,
-    responder_views: &BTreeMap<String, CausalResponderView>,
-) -> Vec<CausalAnchorView> {
-    current_anchor_candidates(campaign, cover, responder_views)
-        .into_iter()
-        .map(|candidate| candidate.view)
-        .collect()
 }
 
 fn pressure_anchor_reference(gestalt_id: &str, pressure: &str) -> String {
@@ -1062,6 +1151,14 @@ mod tests {
                 .to_string(),
                 serde_json::json!({
                     "command":{
+                        "kind":"inspect_anchor_responders",
+                        "anchor_reference":"event:old",
+                        "cursor":0
+                    }
+                })
+                .to_string(),
+                serde_json::json!({
+                    "command":{
                         "kind":"submit",
                         "assignments":[{
                             "anchor_reference":"event:old",
@@ -1085,7 +1182,7 @@ mod tests {
                 responder_subject_id: "npc".into(),
             }]
         );
-        assert_eq!(proposal.receipts.len(), 3);
+        assert_eq!(proposal.receipts.len(), 4);
         assert!(
             proposal.receipts[1]
                 .source_receipt_ids
@@ -1102,6 +1199,12 @@ mod tests {
         let requests = model.requests.lock().unwrap();
         assert!(requests[1].lived_stream.contains("event:old"));
         assert!(requests[1].lived_stream.contains("next_cursor"));
+        assert!(requests[2].lived_stream.contains("Nara Venn"));
+        assert!(
+            requests[2]
+                .lived_stream
+                .contains("cell_decision_slot_limit")
+        );
     }
 
     #[test]
@@ -1197,6 +1300,105 @@ mod tests {
                 .snapshot_binding
                 .contains("causal-agenda")
         );
+    }
+
+    #[tokio::test]
+    async fn nemesis_initial_frame_does_not_multiply_anchors_by_responders() {
+        let (mut campaign, mut cover) = campaign_and_cover();
+        for index in 0..2_400 {
+            let id = format!("scale-actor-{index:03}");
+            let mut actor = campaign.actors["npc"].clone();
+            actor.id = id.clone();
+            actor.name = format!("Scale Actor {index:03}");
+            actor.goals = vec![format!(
+                "preserve constituency {index:03} through the current dispute"
+            )];
+            actor.obligations = BTreeSet::from([format!(
+                "answer pressure {index:03} without abandoning the ward"
+            )]);
+            campaign.actors.insert(id.clone(), actor);
+            let mut profile = campaign.agency_profiles["npc"].clone();
+            profile.id = format!("agency:{id}");
+            profile.subject_id = id.clone();
+            campaign.agency_profiles.insert(id.clone(), profile);
+            cover.cells[0].subject_ids.insert(id);
+        }
+        let model = ScriptedModel {
+            responses: Mutex::new(VecDeque::from([serde_json::json!({
+                "command":{"kind":"submit","assignments":[]}
+            })
+            .to_string()])),
+            requests: Mutex::new(Vec::new()),
+        };
+
+        propose_causal_follow_through(&model, &campaign, &cover)
+            .await
+            .unwrap()
+            .unwrap();
+
+        let requests = model.requests.lock().unwrap();
+        let request = &requests[0];
+        let frame_chars = request.lived_stream.chars().count()
+            + serde_json::to_string(&request.output_schema)
+                .unwrap()
+                .chars()
+                .count();
+        assert!(request.lived_stream.contains("eligible_responder_count"));
+        assert!(request.lived_stream.contains("next_cursor"));
+        assert!(!request.lived_stream.contains("Scale Actor 2399"));
+        assert!(
+            frame_chars < 500_000,
+            "bounded Nemesis frame grew to {frame_chars} characters"
+        );
+    }
+
+    #[test]
+    fn current_pressure_projection_is_paged_without_losing_candidates() {
+        let (campaign, cover) = campaign_and_cover();
+        let responders = responder_views(&campaign, &cover);
+        let current_anchors = (0..30)
+            .map(|index| CausalAnchorCandidate {
+                anchor_reference: format!("pressure:test:{index:02}"),
+                kind: "gestalt_pressure".into(),
+                account: format!("Pressure {index:02} remains unresolved."),
+                originating_subject_ids: vec!["npc".into()],
+                eligible_responder_ids: responders.keys().cloned().collect(),
+            })
+            .collect();
+        let mut tool = CausalFollowThroughTool {
+            campaign: &campaign,
+            cover: &cover,
+            all_public_events: Vec::new(),
+            current_anchors,
+            discovered: BTreeMap::new(),
+            responder_views: responders,
+        };
+
+        let CausalFollowThroughFinding::HistoryPage {
+            anchors,
+            next_cursor,
+            ..
+        } = tool.inspect_current_anchor_page(0).unwrap()
+        else {
+            panic!("current anchors returned the wrong workbench view")
+        };
+        assert_eq!(anchors.len(), CURRENT_ANCHOR_PAGE_SIZE);
+        assert_eq!(next_cursor, Some(CURRENT_ANCHOR_PAGE_SIZE));
+        assert_eq!(tool.discovered.len(), CURRENT_ANCHOR_PAGE_SIZE);
+
+        let CausalFollowThroughFinding::HistoryPage {
+            anchors,
+            next_cursor,
+            ..
+        } = tool
+            .inspect_current_anchor_page(CURRENT_ANCHOR_PAGE_SIZE)
+            .unwrap()
+        else {
+            panic!("current anchors returned the wrong workbench view")
+        };
+        assert_eq!(anchors.len(), 6);
+        assert_eq!(next_cursor, None);
+        assert_eq!(tool.discovered.len(), 30);
     }
 
     #[test]
