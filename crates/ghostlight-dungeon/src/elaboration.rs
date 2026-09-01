@@ -3718,7 +3718,7 @@ pub struct WorldElaborationAdmission {
     digest: String,
 }
 
-/// The only elaboration value accepted by `WorldKernel::commit_elaboration`.
+/// A finalized elaboration value ready to lower through the owning world command path.
 /// It binds the immutable admission result to an independently generated
 /// semantic-verifier receipt without letting that verifier rewrite the draft.
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -4214,43 +4214,6 @@ impl FinalizedWorldElaboration {
 
     pub fn semantic_verifier_receipt(&self) -> &crate::model::ModelStageReceipt {
         &self.semantic_verifier_receipt
-    }
-
-    pub(crate) fn into_kernel_parts(
-        self,
-        campaign: &crate::domain::Campaign,
-    ) -> Result<(
-        u64,
-        crate::domain::LocalityElaboration,
-        Vec<crate::model::ModelStageReceipt>,
-    )> {
-        if self.schema != "ghostlight.finalized_world_elaboration.v1"
-            || self.digest != finalized_world_elaboration_digest(&self)?
-        {
-            return Err(anyhow!(
-                "finalized world elaboration is malformed or tampered"
-            ));
-        }
-        validate_semantic_verifier_ancestry(&self.admission, &self.semantic_verifier_receipt)?;
-        let mut elaboration = self.admission.valid_candidate(campaign)?;
-        elaboration
-            .expansion
-            .civic_system
-            .as_mut()
-            .expect("valid locality elaboration has a civic system")
-            .semantic_verification_receipt_id = self.semantic_verifier_receipt.storage_key().into();
-        crate::compiler::validate_civic_admission_receipts(
-            campaign,
-            &elaboration.expansion,
-            std::slice::from_ref(&self.semantic_verifier_receipt),
-        )?;
-        let mut model_stage_receipts = self.admission.model_stage_receipts.clone();
-        model_stage_receipts.push(self.semantic_verifier_receipt);
-        Ok((
-            self.admission.expected_revision,
-            elaboration,
-            model_stage_receipts,
-        ))
     }
 }
 
