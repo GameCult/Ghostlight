@@ -114,7 +114,7 @@ projection of committed history.
 
 ## Implementation sequence
 
-### 1. Seal the aggregate boundary — in progress
+### 1. Seal the aggregate boundary — landed
 
 Establish `WorldKernel` with a private aggregate and private journal child before
 publishing ontology types. Expose only create/open, immutable snapshot, submit,
