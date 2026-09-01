@@ -322,30 +322,52 @@ The Interpreter receives the Persona prose, the lived stream, and the exact
 permissioned typed context. Interpretation is a total operation. It always
 finishes with an `InterpretationReport` containing:
 
-- the exact Persona speech preserved as speech;
+- the immutable Persona turn receipt and exact prose preserved as noncanonical
+  source evidence;
 - every typed proposal it could faithfully lower using existing IDs and
   available affordances;
 - zero or more `TranslationGap` records for meaningful material it could not
   encode;
 - the exact source spans supporting both proposals and gaps.
 
+Before interpretation, the NarrativePersona runner persists one immutable
+`PersonaTurn` receipt binding controller, decision opportunity, world
+revision/state digest, Projector receipt, Persona inference receipt, exact
+source prose, and its digest. The report carries that source receipt rather
+than reconstructing provenance from prompt text. Report fields are produced by
+the accumulator; arbitrary deserialization is not an admission path.
+
 A translation gap identifies ambiguity, a missing reference, a missing
-affordance, or a missing mutation primitive. It records what the Interpreter
-believes the Persona was trying to express without pretending that the effect
-occurred. Gaps are non-fictional inference evidence. They may inform evaluation
-or a later explicit `ElaborationNeed`; they do not mutate the world.
+affordance, a missing mutation primitive, or source left unresolved by the
+current attempt. It records what the Interpreter believes the Persona was
+trying to express without pretending that the effect occurred. Gaps are
+non-fictional inference evidence. They may inform evaluation or an explicit
+later design decision; recording one does not request elaboration or mutate the
+world.
 
 Interpreter tools provide local structural feedback and a `record_gap` action.
-Invalid tool arguments do not terminalize interpretation. The Interpreter may
-correct them or record the remaining intent as a gap. If its step budget ends,
-the harness finalizes the valid proposals and accumulated gaps instead of
-returning semantic failure.
+An invalid proposal span is not admitted, but the harness records the complete
+source as an unresolved gap. An invalid gap span is likewise rebound to the
+complete exact source rather than discarded. Raw tool arguments that cannot be
+decoded into either typed contract enter the same total fallback, with their
+payload digest retained as attempt evidence. If the step budget ends, the
+harness finalizes the valid proposals and accumulated gaps and adds an exact
+unresolved-source gap instead of returning semantic failure.
 
-The Interpreter cannot add motivation to the Persona turn, rewrite its speech,
-infer unavailable knowledge, or commit an effect. The kernel remains the final
-structural guard for the typed proposals. A stale revision or persistence fault
-is a command/infrastructure outcome, not an interpretation failure, and does not
-summon a semantic verifier or reconciler.
+The Interpreter cannot add motivation to the Persona turn, rewrite its source
+prose, infer unavailable knowledge, or commit an effect. Spoken words become a
+typed speech proposal; wondering, deciding, attempting, and narration do not
+become audible speech merely because the Persona wrote them. The kernel remains
+the final structural guard for typed proposals. A stale revision or persistence
+fault is a command/infrastructure outcome, not an interpretation failure, and
+does not summon a semantic verifier or reconciler.
+
+Any model transport or dispatch fault before explicit semantic finalization
+produces no report. The immutable Persona turn remains pending for a fresh
+interpretation attempt; partial captures are discarded as attempt telemetry,
+not committed as a half-report. `StepBudgetExhausted` means the harness reached
+its configured semantic stopping point normally. Infrastructure interruption is
+unavailable execution, not rejected meaning.
 
 World authoring uses a separate typed proposal surface because it is not
 roleplay. It does not pass through Persona or borrow Persona authority.

@@ -143,10 +143,14 @@ decision opportunity. Exercise both cognition modes without allowing either
 to write directly.
 
 For `NarrativePersona`, the Projector emits prose context, the Persona returns
-prose only, and the Interpreter returns a completed report containing preserved
-speech, zero or more typed proposals, and zero or more translation gaps. Model
-timeouts leave the source pending for retry; they do not become semantic
-interpretation failures.
+prose only, and the runner first persists an immutable receipt-bound Persona
+turn. The Interpreter returns a completed report containing that exact
+noncanonical source prose, zero or more typed proposals, and zero or more
+translation gaps. Spoken words require a typed speech proposal. Invalid capture
+spans and normal step exhaustion become exact unresolved-source gaps. Any
+transport or dispatch fault before explicit finalization discards partial
+captures and leaves the immutable source pending for a fresh attempt; it does
+not become semantic interpretation failure.
 
 For `OperationalAgent`, the controller receives only its permissioned typed
 view and tools. Its proposals enter the same command path as narrative
