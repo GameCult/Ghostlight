@@ -32,9 +32,9 @@ ontology reducer, and commits an atomic CultCache revision. Session Zero,
 autonomous turns, player commands, imports, and administrative changes must
 enter through the same `CommandEnvelope` path.
 
-That owner must be sealed before the ontology widens. The public boundary is
-create/open, immutable snapshot, submit, and typed receipts. Mutable aggregate
-state, canonical ID issuance, the reducer, and the CultCache journal writer are
+The replacement owner is sealed. Its runtime boundary remains create/open,
+immutable snapshot, submit, and typed receipts. Mutable aggregate state,
+canonical ID issuance, the reducer, and the CultCache journal writer stay
 private to the kernel. Controller assignment and affordance grants are
 canonical; current executability and exact revision-bound decision
 opportunities are derived and revalidated by the kernel.
@@ -83,25 +83,27 @@ load or evaluation evidence; none admits ontology or declares a world complete.
   exposed mutable state and ID issuance, admitted translation-gap evidence into
   canonical types, allowed no-op commits, and left affordance and opportunity
   authority undefined. None of it is current authority.
-- `b53251f` lands the sealed private `foundation.v0` replacement owner. Exact
-  create/open, immutable snapshot, command submit, and typed receipts remain
-  crate-private with mutable aggregate state, ID issuance, authentication
-  construction, reduction, and the CultCache journal. Nine focused tests prove
-  exact idempotent create, immutable genesis, one live owner, sealed auth
-  evidence, replay and digests, persisted rejection and no-op non-commit,
-  store-path identity revocation, and post-durable lost-ack poison followed by
-  explicit reopen and exact retry.
-- The legacy exported `kernel::WorldKernel` remains the live runtime path. The
-  next implementation adds the minimal Draft-to-Active/player/autonomous
-  reducer plus mailbox, controller, affordance, and opportunity authority
-  behind the private replacement owner.
-- Legacy `WorldKernel`, `SessionZeroKernel`, aggregate Campaign/component state,
-  alternate ingresses, semantic verifier/reconciliation stages, model-owned
-  scheduling, and checkpoint recovery remain deletion targets.
+- `12ee9f4` deletes the dead legacy Elaboration and Mutation kernel ingresses
+  and their component-write helpers: 686 lines removed without a replacement
+  compatibility path.
+- `66ed2ec` completes the sealed private `foundation.v0` authority loop. Draft
+  creation, approval, activation, canonical controller assignments, affordance
+  grants, revision-bound opportunities, and one shared human/autonomous action
+  reducer all commit through one aggregate and journal. One mailbox serializes
+  submission and snapshot access. Eighteen focused tests prove lifecycle,
+  controller and opportunity fail-closed behavior, restart, idempotency,
+  one-owner, authentication, non-commit, mailbox cancellation, lost replies,
+  immutable genesis, and journal forgery rejection.
+- The replacement remains crate-private. The legacy exported
+  `kernel::WorldKernel`, executable startup, Session Zero, player turn,
+  autonomous scheduling, Campaign/component, verifier/reconciliation, and
+  checkpoint paths remain live deletion targets. The next move exposes and
+  wires only the replacement runtime facade and mailbox, then cuts those owners
+  without dual-write.
 
 Do not deploy the rebuild branch or start another acceptance run while the
-replacement owner lacks its lifecycle, controller-scope, affordance,
-opportunity, privacy, restart, and negative proofs.
+legacy executable still owns startup, Draft, player, autonomous, or recovery
+mutation paths.
 
 ## Immutable failure evidence
 
@@ -131,20 +133,18 @@ and proposals but cannot commit on their behalf.
 
 ## Next gate
 
-Add a minimal private reducer behind the sealed `foundation.v0` owner for Draft
-creation, approval, activation, one player action, and one autonomous action.
-Give it one mailbox, canonical controller assignments and affordance grants,
-and kernel-derived revision-bound decision opportunities. A proposal must fail
-closed when its revision, controller, authority scope, affordance, or current
-opportunity differs. Translation gaps and scheduler output retain no
-world-write path.
+Expose the sealed replacement as the crate and executable runtime identity,
+with `WorldMailbox` as the only live world command boundary. Bind authenticated
+runtime identity to its sealed caller evidence, make startup create or open one
+owner and spawn one mailbox, then route Draft creation, approval, activation,
+player decisions, and autonomous controller proposals through the existing
+command path.
 
-The vertical-slice suite must preserve the landed one-writer, authentication,
-idempotency, immutable-genesis, replay/digest, non-commit, path-revocation, and
-lost-ack invariants while proving lifecycle, controller-scope, affordance,
-opportunity, privacy, and restart behavior. Cut obsolete writers as Session
-Zero, resolution, elaboration, persistence, and projection move onto that
-owner. No live acceptance run precedes this suite.
+Cut each old startup, Session Zero, player, autonomous, Campaign/component, and
+recovery writer before enabling its replacement path. Do not dual-write, mirror
+canonical state, or add a compatibility router. Runtime restart and negative
+checks must prove the old paths cannot mutate or repair the replacement owner
+before any live acceptance run.
 
 ## Essential references
 
