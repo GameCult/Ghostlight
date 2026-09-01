@@ -25,7 +25,7 @@ own volatile workspace identity and the release witness owns deployed identity.
 
 ## Current full-world pressure test
 
-Preserve immutable Runs 75 through 106. Rounds 1 through 22 and their session
+Preserve immutable Runs 75 through 107. Rounds 1 through 22 and their session
 checkpoints are canonical; do not replay them.
 
 Bounded parallel title-by-realm compaction and deterministic parallel child-ID
@@ -56,15 +56,17 @@ round-23 preview froze 21 invocations and committed all 21 mutations at revision
 remaining compaction work stopped. Immutable same-source Run 106 cloned Run 105
 and reproduced the failure without writing another session checkpoint.
 
-The generic `elaborator session compaction journal is empty, stale, or
-unbounded` error is emitted by `compact_elaborator_session` before model work.
-Its combined predicate hides whether target location, journal count, revision,
-receipt ID, mutation kind, summary, or affected-subject bounds failed. Keep that
-function as the deterministic preflight owner, but report the complete mismatch
-set with indexed journal findings. Add focused tests, review, gate, commit, and
-push; then clone Run 106 and resume only the six missing round-23 compactions.
-Preserve all 21 mutation receipts and 15 successful session checkpoints; do not
-replay provider proposals, mutations, completed compactors, or earlier rounds.
+Pushed diagnostic source `8cdbd2e` cloned Run 106 into immutable Run 107 and
+reported the exact preflight defect before any model call:
+`journal[1].summary contains 1047 characters; maximum 1000`. The strategic-smoke
+journal producer duplicated every typed affected-subject ID into prose. The
+current cut keeps exact identities solely in `affected_subject_ids` and emits
+only `Applied {mutation_kind} to {parent_gestalt_id}.` as summary. One focused
+producer regression and all 20 strategic-smoke tests pass. Finish the package
+gate, review, commit, and push; then clone Run 107 and resume only the six
+missing round-23 compactions. Preserve all 21 mutation receipts and 15
+successful session checkpoints; do not replay provider proposals, mutations,
+completed compactors, or earlier rounds.
 The acceptance launcher retains one 35 MiB content-addressed runner per exact
 source commit and deletes disposable compiler output; do not restore a
 persistent Cargo target tree.
@@ -476,14 +478,14 @@ approved capability.
 
 ## Next action
 
-Preserve Runs 75 through 106. Make `compact_elaborator_session` report its
-complete deterministic preflight mismatch set with indexed journal findings,
-then add focused tests, review, gate, commit, and push. Clone Run 106 and resume
-only the six missing round-23 session compactions. Preserve all 21 committed
-mutations at revisions 1409 through 1429 and 15 successful compactions without
-replaying provider proposals, mutations, completed compactors, or earlier
-rounds. Continue iterative complexity rounds to 2,400 canonical actionable
-subjects, followed by ten strategic waves, publications, archive hashes, and
+Preserve Runs 75 through 107. Finish the package gate, review, commit, and push
+the compact journal-summary producer cut. Clone Run 107 and resume only the six
+missing round-23 session compactions. Preserve all 21 committed mutations at
+revisions 1409 through 1429 and 15 successful compactions without replaying
+provider proposals, mutations, completed compactors, or earlier rounds. Keep
+exact affected identities in typed `affected_subject_ids`, not prose summary.
+Continue iterative complexity rounds to 2,400 canonical actionable subjects,
+followed by ten strategic waves, publications, archive hashes, and
 unchanged-live-service verification.
 
 The generic world-consumer boundary is implemented. Session Zero and external

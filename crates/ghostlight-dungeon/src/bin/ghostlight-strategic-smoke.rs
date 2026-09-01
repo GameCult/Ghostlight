@@ -536,6 +536,10 @@ struct ComplexityRoundCheckpoint {
     >,
 }
 
+fn complexity_session_journal_summary(mutation_kind: &str, parent_gestalt_id: &str) -> String {
+    format!("Applied {mutation_kind} to {parent_gestalt_id}.")
+}
+
 fn retain_unique_complexity_invocations(
     round: u32,
     invocations: &[ComplexityPreviewInvocation],
@@ -2723,11 +2727,9 @@ async fn main() -> anyhow::Result<()> {
                         ),
                         mutation_kind: checkpoint.mutation_kind.clone(),
                         affected_subject_ids: checkpoint.affected_subject_ids.clone(),
-                        summary: format!(
-                            "Applied {} to {} and admitted {}.",
-                            checkpoint.mutation_kind,
-                            checkpoint.parent_gestalt_id,
-                            checkpoint.affected_subject_ids.join(", ")
+                        summary: complexity_session_journal_summary(
+                            &checkpoint.mutation_kind,
+                            &checkpoint.parent_gestalt_id,
                         ),
                     },
                 );
@@ -3967,14 +3969,27 @@ mod tests {
         HistoricalWorldNewspaperIssueV2, admitted_public_channel,
         civic_manifest_is_committed_candidate, civic_manifest_preserves,
         committed_elaboration_mutation_proof, completed_wave_issue_campaign,
-        complexity_realm_for_profile, final_wave_field, fission_population_binding_is_present,
-        fission_relation_binding_is_present, latest_partial_wave_checkpoint,
-        missing_newspaper_report_indices, publish_immutable_checkpoint,
-        recomposed_model_receipt_set_digest, recover_committed_clock_binding,
-        retain_unique_complexity_invocations, strategic_campaign, strategic_locality_request,
-        strategic_smoke_bytes_digest, strategic_smoke_digest, strategic_titled_locality_request,
-        titled_failure_checkpoint_paths, validate_completed_newspaper_recomposition_receipt,
+        complexity_realm_for_profile, complexity_session_journal_summary, final_wave_field,
+        fission_population_binding_is_present, fission_relation_binding_is_present,
+        latest_partial_wave_checkpoint, missing_newspaper_report_indices,
+        publish_immutable_checkpoint, recomposed_model_receipt_set_digest,
+        recover_committed_clock_binding, retain_unique_complexity_invocations, strategic_campaign,
+        strategic_locality_request, strategic_smoke_bytes_digest, strategic_smoke_digest,
+        strategic_titled_locality_request, titled_failure_checkpoint_paths,
+        validate_completed_newspaper_recomposition_receipt,
     };
+
+    #[test]
+    fn complexity_journal_summary_does_not_duplicate_typed_subject_ids() {
+        let summary =
+            complexity_session_journal_summary("fission_gestalt", "the-assigned-parent-population");
+
+        assert_eq!(
+            summary,
+            "Applied fission_gestalt to the-assigned-parent-population."
+        );
+        assert!(summary.chars().count() < 1_000);
+    }
 
     #[test]
     fn complexity_realm_is_derived_from_canonical_location_containment() {
