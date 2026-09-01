@@ -2111,7 +2111,8 @@ impl WorldCompiler {
             })
             .collect::<Vec<_>>();
         let current_civic_context = civic_context(campaign, expansion_origin_location_id);
-        let peer_civic_context = peer_civic_contexts(campaign, expansion_origin_location_id);
+        let peer_civic_context =
+            peer_civic_generation_contexts(campaign, expansion_origin_location_id);
         let scope_instruction = if let Some(target_id) = existing_destination_id.as_deref() {
             format!(
                 "The primary destination already exists as exact canonical location {target_id}. Elaborate it in place. Never emit that location again, rename it, replace it, or alter its existing routes or container. Every new location must be a bounded child whose containment chain reaches {target_id}; origin_routes are new local routes owned by {target_id}."
@@ -2126,9 +2127,10 @@ impl WorldCompiler {
                 compiler_receipts,
             )
         };
-        let campaign_locations = serde_json::to_string(&campaign.locations).map_err(|error| {
-            destination_compilation_failure(error, completed_model_receipts(&[]))
-        })?;
+        let location_generation_context = serde_json::to_string(
+            &destination_location_generation_context(campaign, expansion_origin_location_id),
+        )
+        .map_err(|error| destination_compilation_failure(error, completed_model_receipts(&[])))?;
         let current_civic_apparatus =
             serde_json::to_string(&current_civic_context).map_err(|error| {
                 destination_compilation_failure(error, completed_model_receipts(&[]))
@@ -2142,9 +2144,9 @@ impl WorldCompiler {
                 destination_compilation_failure(error, completed_model_receipts(&[]))
             })?;
         let base_prompt = format!(
-            "Compile only the requested bounded destination region. {scope_instruction} Every new location id must be new. Return explicit origin_routes records owned by expansion anchor id {} into the new region or child locality, and give every such destination a reciprocal route record back to the anchor with the same positive travel time. Every route record needs a stable route_id local to its exact origin, an exact destination_id, a distance, and positive travel_minutes; the same local route_id may exist under another origin without naming the same route. Do not rewrite existing geography. Every place has a non-empty name, valid container, and concrete persistent features. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them.\n\nUse evidence as canon constraints, not as an exhaustive game map. Missing game-scale routes, geometry, people, ordinary procedures, supplies, local responsibilities, capacity choices, and operating doctrine require the smallest coherent playable elaboration. Mark the resulting facts branch_local or provisional_local and disclose consequential inventions in branch_assumptions. Variation between campaigns is permitted; if a detail must not vary, it belongs in the Vault. Never put a compatible elaboration in gaps merely because the Vault is silent.\n\nWhen CURRENT CIVIC APPARATUS is null, a playable inhabited destination needs one to eight non-overlapping population leaves and two to twelve distinct institutions. Each population and institution needs a materially executable means such as custody, work, mobility, ritual authority, price setting, force, refusal, or mutual aid, not merely a notice channel or aspiration. When it is present, preserve it and add only genuinely new detail needed by the request; population and institution arrays may be empty. New local relations may join new subjects to exact subjects in the current apparatus. Never duplicate a resident body, office, fact, or relation under a fresh name. Each new population home_location_id must be one new location. Each new institution location_ids set may name the jurisdiction or its new children. shared_fact_ids may contain exact fact IDs from the current apparatus or this candidate, never free-text knowledge. collective_authority_id may be null or the exact ID of one new population and denotes real shared authority.\n\nPEER CIVIC APPARATUSES are contrast evidence. Reuse a political form only when shared history or material dependence explains it. Redress need not be a tribunal or petition: exit, kin restitution, feud mediation, ritual appeal, patronage, strike, refusal, and other locally coherent remedies are valid when their power and limits are legible. Preserve mixed, diasporic, and cross-border constituencies; ancestry or species alone is not a sufficient civic partition. Return one complete civic_system manifest for every inhabited candidate. On an existing apparatus it is the next version and must retain every existing governing institution, resident population, public fact, and political relation while adding any new IDs. It must identify the exact jurisdiction, its governing institutions and resident populations, at least one committed public fact in each of four domains—current authority, selection or succession, public resources or revenue, and redress or appeal—and the political relations that make implementation, hierarchy, or contestation legible. Every named resident population must share those public civic facts. If REQUEST presupposes a mayor, election, throne, council, or other office that this locality does not use, commit facts that let a resident correct the premise; never manufacture the requested institution merely to agree with the question. The question selects the missing domain, not its answer.\n\nThe gaps array is legal only when no compatible elaboration can preserve an exact clause of REQUEST without choosing between contradictory canon baselines, inventing an unanchored canon baseline explicitly required by the request, or exceeding an approved capability. Every gap must name that exact premise clause and the exact table choice blocking compilation. `The Vault does not specify X` is never sufficient. Use an empty gaps array when branch-local invention preserves the request.\n\nA migration relation is a directed available path for a later voluntary strategic choice; it does not move anyone, establish that admission occurred, or erase destination-community agency. It may originate only from one exact co-located active population ID supplied below and may target only one new population ID. Emit a relation only when the request and supplied source population/member goals support that migration possibility. Never invent a source population or named member. The approval preview must make all branch-local assumptions explicit without misclassifying them as canon gaps.\n\nCAMPAIGN LOCATIONS:\n{}\nCURRENT CIVIC APPARATUS:\n{}\nPEER CIVIC APPARATUSES:\n{}\nCO-LOCATED SOURCE POPULATIONS AND NAMED MEMBER DELTAS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
+            "Compile only the requested bounded destination region. {scope_instruction} Every new location id must be new. Return explicit origin_routes records owned by expansion anchor id {} into the new region or child locality, and give every such destination a reciprocal route record back to the anchor with the same positive travel time. Every route record needs a stable route_id local to its exact origin, an exact destination_id, a distance, and positive travel_minutes; the same local route_id may exist under another origin without naming the same route. Do not rewrite existing geography. Every place has a non-empty name, valid container, and concrete persistent features. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them.\n\nUse evidence as canon constraints, not as an exhaustive game map. Missing game-scale routes, geometry, people, ordinary procedures, supplies, local responsibilities, capacity choices, and operating doctrine require the smallest coherent playable elaboration. Mark the resulting facts branch_local or provisional_local and disclose consequential inventions in branch_assumptions. Variation between campaigns is permitted; if a detail must not vary, it belongs in the Vault. Never put a compatible elaboration in gaps merely because the Vault is silent.\n\nWhen CURRENT CIVIC APPARATUS is null, a playable inhabited destination needs one to eight non-overlapping population leaves and two to twelve distinct institutions. Each population and institution needs a materially executable means such as custody, work, mobility, ritual authority, price setting, force, refusal, or mutual aid, not merely a notice channel or aspiration. When it is present, preserve it and add only genuinely new detail needed by the request; population and institution arrays may be empty. New local relations may join new subjects to exact subjects in the current apparatus. Never duplicate a resident body, office, fact, or relation under a fresh name. Each new population home_location_id must be one new location. Each new institution location_ids set may name the jurisdiction or its new children. shared_fact_ids may contain exact fact IDs from the current apparatus or this candidate, never free-text knowledge. collective_authority_id may be null or the exact ID of one new population and denotes real shared authority.\n\nPEER CIVIC DIVERSITY INDEX entries are compact contrast evidence, not complete remote state. Reuse a political form only when shared history or material dependence explains it. Redress need not be a tribunal or petition: exit, kin restitution, feud mediation, ritual appeal, patronage, strike, refusal, and other locally coherent remedies are valid when their power and limits are legible. Preserve mixed, diasporic, and cross-border constituencies; ancestry or species alone is not a sufficient civic partition. Return one complete civic_system manifest for every inhabited candidate. On an existing apparatus it is the next version and must retain every existing governing institution, resident population, public fact, and political relation while adding any new IDs. It must identify the exact jurisdiction, its governing institutions and resident populations, at least one committed public fact in each of four domains—current authority, selection or succession, public resources or revenue, and redress or appeal—and the political relations that make implementation, hierarchy, or contestation legible. Every named resident population must share those public civic facts. If REQUEST presupposes a mayor, election, throne, council, or other office that this locality does not use, commit facts that let a resident correct the premise; never manufacture the requested institution merely to agree with the question. The question selects the missing domain, not its answer.\n\nThe gaps array is legal only when no compatible elaboration can preserve an exact clause of REQUEST without choosing between contradictory canon baselines, inventing an unanchored canon baseline explicitly required by the request, or exceeding an approved capability. Every gap must name that exact premise clause and the exact table choice blocking compilation. `The Vault does not specify X` is never sufficient. Use an empty gaps array when branch-local invention preserves the request.\n\nA migration relation is a directed available path for a later voluntary strategic choice; it does not move anyone, establish that admission occurred, or erase destination-community agency. It may originate only from one exact co-located active population ID supplied below and may target only one new population ID. Emit a relation only when the request and supplied source population/member goals support that migration possibility. Never invent a source population or named member. The approval preview must make all branch-local assumptions explicit without misclassifying them as canon gaps.\n\nCAMPAIGN LOCATION INDEX AND FULL EXPANSION ANCHOR:\n{}\nCURRENT CIVIC APPARATUS:\n{}\nPEER CIVIC DIVERSITY INDEX:\n{}\nCO-LOCATED SOURCE POPULATIONS AND NAMED MEMBER DELTAS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
             expansion_origin_location_id,
-            campaign_locations,
+            location_generation_context,
             current_civic_apparatus,
             peer_civic_apparatuses,
             source_population_context,
@@ -5215,6 +5217,87 @@ fn normalized_contains(document: &str, excerpt: &str) -> bool {
     !excerpt.is_empty() && document.contains(&excerpt)
 }
 
+/// Projects the exact location namespace needed to generate one bounded
+/// destination without feeding every remote place's descriptive payload back
+/// into each later region. Full campaign topology remains authoritative for
+/// lowering and admission.
+fn destination_location_generation_context(
+    campaign: &Campaign,
+    expansion_origin_location_id: &str,
+) -> serde_json::Value {
+    let expansion_anchor = campaign
+        .locations
+        .get(expansion_origin_location_id)
+        .expect("destination expansion anchor is a canonical location");
+    let location_index = campaign
+        .locations
+        .values()
+        .map(|location| {
+            serde_json::json!({
+                "id":location.id,
+                "name":location.name,
+                "container_id":location.container_id,
+            })
+        })
+        .collect::<Vec<_>>();
+    serde_json::json!({
+        "location_index":location_index,
+        "expansion_anchor":expansion_anchor,
+    })
+}
+
+/// Gives the destination generator a deterministic anti-cloning index instead
+/// of full remote civic state. The independent verifier deliberately retains
+/// `peer_civic_contexts`, so this prompt projection cannot weaken admission.
+fn peer_civic_generation_contexts(
+    campaign: &Campaign,
+    excluded_location_id: &str,
+) -> Vec<serde_json::Value> {
+    campaign
+        .civic_systems
+        .values()
+        .filter(|system| system.jurisdiction_location_id != excluded_location_id)
+        .take(8)
+        .map(|system| {
+            let fact_statements = |ids: &BTreeSet<String>| {
+                ids.iter()
+                    .filter_map(|id| campaign.facts.get(id))
+                    .map(|fact| fact.statement.as_str())
+                    .collect::<Vec<_>>()
+            };
+            serde_json::json!({
+                "jurisdiction_location_id":system.jurisdiction_location_id,
+                "jurisdiction_name":campaign.locations.get(&system.jurisdiction_location_id).map(|location|location.name.as_str()),
+                "institutions":system.governing_institution_ids.iter().filter_map(|id|campaign.institutions.get(id)).map(|institution|serde_json::json!({
+                    "id":institution.id,
+                    "name":institution.name,
+                    "resources":institution.resources,
+                    "posture":institution.posture,
+                })).collect::<Vec<_>>(),
+                "resident_populations":system.resident_population_ids.iter().filter_map(|id|campaign.gestalts.get(id)).map(|population|serde_json::json!({
+                    "id":population.id,
+                    "name":population.name,
+                    "goals":population.goals,
+                    "pressures":population.pressures,
+                })).collect::<Vec<_>>(),
+                "public_facts":{
+                    "authority":fact_statements(&system.public_authority_fact_ids),
+                    "selection_or_succession":fact_statements(&system.public_selection_fact_ids),
+                    "resources_or_revenue":fact_statements(&system.public_resource_fact_ids),
+                    "redress_or_appeal":fact_statements(&system.public_redress_fact_ids),
+                },
+                "political_relations":system.political_relation_ids.iter().filter_map(|id|campaign.agency_relations.get(id)).map(|relation|serde_json::json!({
+                    "from_subject_id":relation.from_subject_id,
+                    "to_subject_id":relation.to_subject_id,
+                    "kind":relation.kind,
+                    "strength":relation.strength,
+                    "active":relation.active,
+                })).collect::<Vec<_>>(),
+            })
+        })
+        .collect()
+}
+
 fn civic_context(campaign: &Campaign, location_id: &str) -> Option<serde_json::Value> {
     campaign.civic_systems.get(location_id).map(|system| {
         let political_relations = system.political_relation_ids.iter()
@@ -7624,6 +7707,211 @@ mod tests {
         assert_eq!(
             related_institution_ids,
             BTreeSet::from(["harrow-gauge-commission"])
+        );
+    }
+
+    #[test]
+    fn destination_generation_location_context_keeps_the_namespace_and_full_anchor_only() {
+        let mut campaign = harrow_campaign();
+        campaign.locations.insert(
+            "loc:anchor".into(),
+            Location {
+                id: "loc:anchor".into(),
+                name: "Confluence".into(),
+                container_id: None,
+                routes: BTreeMap::from([(
+                    "route:anchor-out".into(),
+                    Route {
+                        destination_id: "loc:remote".into(),
+                        distance: "one witnessed crossing".into(),
+                        travel_minutes: 17,
+                    },
+                )]),
+                persistent_features: vec!["FULL_ANCHOR_FEATURE".into()],
+            },
+        );
+        campaign.locations.insert(
+            "loc:remote".into(),
+            Location {
+                id: "loc:remote".into(),
+                name: "Remote Borough".into(),
+                container_id: Some("loc:anchor".into()),
+                routes: BTreeMap::from([(
+                    "REMOTE_ROUTE_PAYLOAD".into(),
+                    Route {
+                        destination_id: "loc:anchor".into(),
+                        distance: "REMOTE_DISTANCE_PAYLOAD".into(),
+                        travel_minutes: 19,
+                    },
+                )]),
+                persistent_features: vec!["REMOTE_FEATURE_PAYLOAD".into()],
+            },
+        );
+
+        let context = destination_location_generation_context(&campaign, "loc:anchor");
+        let serialized = serde_json::to_string(&context).unwrap();
+        let indexed_ids = context["location_index"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|location| location["id"].as_str().unwrap())
+            .collect::<BTreeSet<_>>();
+
+        assert_eq!(
+            indexed_ids,
+            campaign.locations.keys().map(String::as_str).collect()
+        );
+        assert_eq!(context["expansion_anchor"]["id"], "loc:anchor");
+        assert!(serialized.contains("FULL_ANCHOR_FEATURE"));
+        assert!(serialized.contains("route:anchor-out"));
+        assert!(!serialized.contains("REMOTE_FEATURE_PAYLOAD"));
+        assert!(!serialized.contains("REMOTE_ROUTE_PAYLOAD"));
+        assert!(!serialized.contains("REMOTE_DISTANCE_PAYLOAD"));
+    }
+
+    #[test]
+    fn peer_civic_generation_context_is_complete_bounded_and_deterministic() {
+        let mut campaign = harrow_campaign();
+        for ordinal in (0..9).rev() {
+            let jurisdiction_id = format!("loc:peer-{ordinal:02}");
+            campaign.locations.insert(
+                jurisdiction_id.clone(),
+                Location {
+                    id: jurisdiction_id.clone(),
+                    name: format!("Peer {ordinal:02}"),
+                    container_id: None,
+                    routes: BTreeMap::new(),
+                    persistent_features: vec!["REMOTE_CIVIC_LOCATION_PAYLOAD".into()],
+                },
+            );
+            campaign.civic_systems.insert(
+                jurisdiction_id.clone(),
+                CivicSystemManifest {
+                    schema: "ghostlight.civic_system_manifest.v1".into(),
+                    version: 0,
+                    jurisdiction_location_id: jurisdiction_id,
+                    governing_institution_ids: BTreeSet::new(),
+                    resident_population_ids: BTreeSet::new(),
+                    public_authority_fact_ids: BTreeSet::new(),
+                    public_selection_fact_ids: BTreeSet::new(),
+                    public_resource_fact_ids: BTreeSet::new(),
+                    public_redress_fact_ids: BTreeSet::new(),
+                    political_relation_ids: BTreeSet::new(),
+                    semantic_verification_receipt_id: "REMOTE_VERIFIER_RECEIPT".into(),
+                },
+            );
+        }
+        let jurisdiction_id = "loc:peer-00";
+        campaign.institutions.insert(
+            "peer-store".into(),
+            InstitutionState {
+                id: "peer-store".into(),
+                name: "Common Store".into(),
+                resources: vec!["grain custody".into()],
+                goals: vec!["REMOTE_INSTITUTION_GOAL_PAYLOAD".into()],
+                posture: "releases grain against witnessed need".into(),
+            },
+        );
+        campaign.gestalts.insert(
+            "peer-residents".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "peer-residents".into(),
+                name: "Floodplain Neighbors".into(),
+                version: 0,
+                home_location_id: jurisdiction_id.into(),
+                shared_capabilities: BTreeSet::from(["REMOTE_CAPABILITY_PAYLOAD".into()]),
+                shared_knowledge: BTreeSet::from(["REMOTE_KNOWLEDGE_PAYLOAD".into()]),
+                resources: BTreeSet::from(["REMOTE_POPULATION_RESOURCE_PAYLOAD".into()]),
+                goals: vec!["keep the floodplain inhabited".into()],
+                pressures: vec!["the upper sluice is rationed".into()],
+            },
+        );
+        for (id, statement) in [
+            ("fact:peer-authority", "The flood moot opens the store."),
+            ("fact:peer-selection", "Lots rotate the flood witnesses."),
+            ("fact:peer-resources", "A ferry levy fills the store."),
+            ("fact:peer-redress", "A ward may refuse a disputed release."),
+        ] {
+            campaign.facts.insert(
+                id.into(),
+                WorldFact {
+                    id: id.into(),
+                    statement: statement.into(),
+                    scope: FactScope::BranchLocal,
+                    evidence_receipt_ids: vec!["REMOTE_FACT_RECEIPT".into()],
+                    discoverable_at_location_ids: BTreeSet::from([jurisdiction_id.into()]),
+                },
+            );
+        }
+        campaign.agency_relations.insert(
+            "relation:peer-store-residents".into(),
+            AgencyRelation {
+                schema: AgencyRelation::SCHEMA.into(),
+                id: "relation:peer-store-residents".into(),
+                from_subject_id: "peer-store".into(),
+                to_subject_id: "peer-residents".into(),
+                kind: AgencyRelationKind::Rivalry,
+                strength: 61,
+                active: true,
+                evidence_receipt_ids: vec!["REMOTE_RELATION_RECEIPT".into()],
+            },
+        );
+        let system = campaign.civic_systems.get_mut(jurisdiction_id).unwrap();
+        system.governing_institution_ids.insert("peer-store".into());
+        system
+            .resident_population_ids
+            .insert("peer-residents".into());
+        system
+            .public_authority_fact_ids
+            .insert("fact:peer-authority".into());
+        system
+            .public_selection_fact_ids
+            .insert("fact:peer-selection".into());
+        system
+            .public_resource_fact_ids
+            .insert("fact:peer-resources".into());
+        system
+            .public_redress_fact_ids
+            .insert("fact:peer-redress".into());
+        system
+            .political_relation_ids
+            .insert("relation:peer-store-residents".into());
+
+        let context = peer_civic_generation_contexts(&campaign, "loc:not-a-peer");
+        let serialized = serde_json::to_string(&context).unwrap();
+        let jurisdiction_ids = context
+            .iter()
+            .map(|peer| peer["jurisdiction_location_id"].as_str().unwrap())
+            .collect::<Vec<_>>();
+
+        assert_eq!(context.len(), 8);
+        assert_eq!(jurisdiction_ids.first().copied(), Some("loc:peer-00"));
+        assert_eq!(jurisdiction_ids.last().copied(), Some("loc:peer-07"));
+        assert!(serialized.contains("Common Store"));
+        assert!(serialized.contains("grain custody"));
+        assert!(serialized.contains("Floodplain Neighbors"));
+        assert!(serialized.contains("keep the floodplain inhabited"));
+        assert!(serialized.contains("The flood moot opens the store."));
+        assert!(serialized.contains("Lots rotate the flood witnesses."));
+        assert!(serialized.contains("A ferry levy fills the store."));
+        assert!(serialized.contains("A ward may refuse a disputed release."));
+        assert!(serialized.contains("redress_or_appeal"));
+        assert!(serialized.contains("rivalry"));
+        assert!(serialized.contains("\"strength\":61"));
+        assert!(!serialized.contains("REMOTE_CIVIC_LOCATION_PAYLOAD"));
+        assert!(!serialized.contains("REMOTE_VERIFIER_RECEIPT"));
+        assert!(!serialized.contains("REMOTE_INSTITUTION_GOAL_PAYLOAD"));
+        assert!(!serialized.contains("REMOTE_KNOWLEDGE_PAYLOAD"));
+        assert!(!serialized.contains("REMOTE_FACT_RECEIPT"));
+        assert!(!serialized.contains("REMOTE_RELATION_RECEIPT"));
+
+        let mut reordered = campaign.clone();
+        let civic_systems = reordered.civic_systems.into_iter().rev().collect();
+        reordered.civic_systems = civic_systems;
+        assert_eq!(
+            context,
+            peer_civic_generation_contexts(&reordered, "loc:not-a-peer")
         );
     }
 
