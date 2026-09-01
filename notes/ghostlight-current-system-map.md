@@ -13,7 +13,108 @@ Yggdrasil systemd body, Idunn continuity target, and Odin discovery crossing
 are the live machine; the older validated artifact seams remain regression
 evidence only.
 
-## GhostlightDungeon target flow
+## Implemented sealed replacement boundary (Phase 2)
+
+`crates/ghostlight-dungeon/src/world/` now contains the private
+`ghostlight.world_state.foundation.v0` owner. It is an implemented and tested
+foundation, not yet the hosted runtime: `lib.rs` still keeps `world` private and
+exports the legacy `kernel::WorldKernel`, while `main.rs` still opens
+`CampaignStore` and runs the legacy Session Zero and campaign paths. Source
+inspection finds no production caller of the replacement types outside the
+private module. The two bodies currently coexist without a state bridge; the
+hosted process still belongs to the legacy body.
+
+### Replacement authority map
+
+- **Owner:** the private `world::WorldKernel` directly contains one canonical
+  `WorldState` and one `WorldJournal`. Its reducer is the sole semantic
+  transition owner. It admits world creation, Draft title changes and
+  approvals, Draft-to-Active activation, and one `ExerciseDecision` action
+  path. `WorldJournal` is the persistence actuator: it may atomically append the
+  reducer's exact candidate state and commit, but it may not invent an effect or
+  repair semantic state.
+- **Inputs:** creation receives one `CreateWorld` seed and separately sealed
+  `AuthenticatedCaller` evidence for its owner. Later submission receives one
+  `CommandEnvelope`, the separately sealed caller, the exact world ID, and the
+  expected revision. Active decisions also carry the complete opportunity and
+  invocation. Open receives a `.cc` path and expected world ID. The current
+  ontology is deliberately closed to decision subjects, one controller per
+  subject scope, and the `Speak` affordance. Lifecycle state is exactly `Draft`
+  or `Active`.
+- **Outputs:** accepted creation yields issued world, subject, controller, and
+  affordance identities plus a genesis receipt. Accepted submissions yield an
+  applied or idempotent commit receipt; semantic no-ops yield the unchanged
+  snapshot. Snapshots expose lifecycle, subjects, controller modes, grants,
+  committed decision events, digests, and current derived opportunities. The
+  store contains one head-state row and one immutable commit row per command.
+  Each commit carries the caller bound to separate authentication at submission
+  plus the admitted effect as its semantic replay inputs; the commit digest
+  covers both.
+- **Derived state:** required Draft approvers derive from the owner and exact
+  human controller assignments. Subject snapshots derive controller and
+  affordance projections from canonical maps. Subject and affordance identity
+  exists in each map key rather than being duplicated inside the keyed value.
+  Active opportunities derive from the current state only and bind world ID,
+  revision, state digest, subject scope, controller, mode, and the complete
+  sorted affordance set. They are not separately persisted, scheduled,
+  repaired, or cached. Any commit changes the revision and state digest, so an
+  earlier opportunity loses authority.
+- **Forbidden writers:** caller claims inside a command, mailbox tasks,
+  controller implementations, model output, snapshots, derived opportunities,
+  replay, and consumers cannot mutate canonical state. The legacy
+  `SessionZeroKernel`, public `kernel::WorldKernel`, `CampaignStore` callers,
+  assessor/reconciliation chains, schedulers, and reload repair paths have no
+  admission path into the replacement journal. They remain live authorities in
+  the hosted legacy body and therefore remain on the deletion line rather than
+  becoming compatibility writers.
+- **Shared paths:** after create or open constructs the owner, `WorldMailbox`
+  consumes it and offers only `Submit` and `Snapshot`. Human controllers,
+  Narrative Personas, and operational agents all exercise the same
+  `ExerciseDecision` reducer with an exact current opportunity; there is no
+  controller-specific mutation API. Draft commands use that same submit
+  primitive. Command ID replay is checked before revision so an exact retry can
+  recover a known durable result, while reuse with different content fails.
+  Runtime identity construction and controller execution are not wired yet.
+- **Cut line:** make app-session identity the only production constructor of
+  `AuthenticatedCaller`, expose the mailbox as the runtime's world handle, and
+  route creation, Draft activation, player action, Narrative Persona action,
+  and operational-agent action through it. As each complete ingress moves, cut
+  its legacy handler and store writer. Completion requires removal of the
+  public legacy kernel, Session Zero publication split, direct `CampaignStore`
+  mutation surfaces, scheduler/reconciliation writers, reload repairs, and
+  their obsolete modules and binaries; no dual-write or compatibility mode is
+  admitted.
+- **Verification layer:** the reducer checks exact authentication, world,
+  revision, lifecycle, approver, controller, opportunity, scope, affordance,
+  and action bindings before proposing an effect. `apply_effect` rechecks the
+  persisted caller/effect pair against the predecessor state. The journal
+  checks state shape, state and commit digests, contiguous semantic replay,
+  event-command identity, path identity, and compare-and-swap ownership before
+  admitting a state row plus commit row atomically. Eighteen focused tests cover
+  the complete Draft-to-Active/player/autonomous path, denied authority, stale
+  and tampered opportunities, exact restart/replay, durable idempotency, one
+  live store owner, uncertain post-commit acknowledgement, path replacement,
+  mailbox serialization, concurrent stale submissions, caller cancellation,
+  and rejection of a forged replay caller even when its hashes are recomputed.
+
+`WorldMailbox` owns queue order and request-delivery semantics only. A send that
+never enters the queue is unavailable; loss of a submitted command's reply is
+reported as outcome-unknown so the caller can retry the same command ID. Caller
+cancellation does not cancel an enqueued command, and dropping the last sender
+drains accepted work before releasing the journal. The mailbox does not own
+authentication, authorization, opportunities, lifecycle, reduction, replay, or
+persistence semantics.
+
+Controller mode is a canonical assignment, not mutation authority by itself. A
+human controller supplies its authenticated principal; Narrative Persona and
+operational-agent controllers supply their exact sealed controller identity.
+A controller may choose prose or another typed invocation from what it can see.
+It does not own its scope, grants, opportunity, revision, effect, event, or
+commit. Narrative Persona projection and total interpretation, plus pure-agent
+tool execution, remain controller-side organs to wire onto this boundary; no
+model call exists inside the world owner.
+
+## Frozen pre-rebuild flow
 
 Campaign creation now has its own pre-world authority:
 

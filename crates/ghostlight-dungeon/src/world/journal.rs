@@ -1,11 +1,15 @@
 use super::{
-    COMMIT_SCHEMA, CommandId, KernelError, STATE_SCHEMA, WorldCommit, WorldEffect, WorldId,
-    WorldState, apply_effect, commit_digest, state_digest, validate_principal,
+    COMMIT_SCHEMA, CommandId, EventId, KernelError, STATE_SCHEMA, WorldCommit, WorldEffect,
+    WorldId, WorldState, apply_effect, commit_digest, state_digest,
 };
 use chrono::Utc;
 use cultcache_legacy::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
 use serde::{Serialize, de::DeserializeOwned};
-use std::{cell::Cell, collections::BTreeMap, path::Path};
+use std::{
+    cell::Cell,
+    collections::{BTreeMap, BTreeSet},
+    path::Path,
+};
 use thiserror::Error;
 
 const STATE_ROW: &str = "world_state.foundation.v0";
@@ -328,7 +332,8 @@ fn verify_append(
         return Err(JournalError::Corrupt("digest mismatch".into()));
     }
     let mut replay = current.clone();
-    apply_effect(&mut replay, &commit.effect).map_err(kernel_error)?;
+    verify_effect_command_binding(commit)?;
+    apply_effect(&mut replay, &commit.caller, &commit.effect).map_err(kernel_error)?;
     replay.revision = next.revision;
     replay.state_digest = state_digest(&replay).map_err(kernel_error)?;
     replay.last_commit_digest = Some(commit.digest.clone());
@@ -360,7 +365,7 @@ fn verify_history(
     let genesis = ordered
         .first()
         .ok_or_else(|| JournalError::Corrupt("world has no genesis commit".into()))?;
-    let WorldEffect::WorldCreated { owner, title } = &genesis.effect else {
+    let WorldEffect::WorldCreated { .. } = &genesis.effect else {
         return Err(JournalError::Corrupt(
             "first commit is not immutable world genesis".into(),
         ));
@@ -377,8 +382,8 @@ fn verify_history(
             "genesis commit is not canonical or verifiable".into(),
         ));
     }
-    let mut replay =
-        WorldState::genesis(state.world_id, owner.clone(), title.clone()).map_err(kernel_error)?;
+    let mut replay = WorldState::genesis(state.world_id, &genesis.caller, &genesis.effect)
+        .map_err(kernel_error)?;
     verify_state_shape(&replay)?;
     if replay.state_digest != genesis.resulting_state_digest {
         return Err(JournalError::Corrupt(
@@ -400,7 +405,8 @@ fn verify_history(
                 "commit chain is not contiguous or verifiable".into(),
             ));
         }
-        apply_effect(&mut replay, &commit.effect).map_err(kernel_error)?;
+        verify_effect_command_binding(commit)?;
+        apply_effect(&mut replay, &commit.caller, &commit.effect).map_err(kernel_error)?;
         replay.revision = commit.resulting_revision;
         replay.state_digest = state_digest(&replay).map_err(kernel_error)?;
         if replay.state_digest != commit.resulting_state_digest {
@@ -427,7 +433,112 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
             "world title is empty or noncanonical".into(),
         ));
     }
-    validate_principal(&state.owner).map_err(kernel_error)?;
+    super::validate_principal(&state.owner).map_err(kernel_error)?;
+    if state.subjects.is_empty()
+        || state.controller_assignments.len() != state.subjects.len()
+        || state.affordance_grants.is_empty()
+    {
+        return Err(JournalError::Corrupt(
+            "world ontology is empty or has split subject/controller ownership".into(),
+        ));
+    }
+    let mut controller_ids = BTreeSet::new();
+    for (subject_id, subject) in &state.subjects {
+        if subject.label.trim().is_empty() || subject.label.trim() != subject.label {
+            return Err(JournalError::Corrupt(
+                "subject label is empty or noncanonical".into(),
+            ));
+        }
+        let scope = super::DecisionScope {
+            subject_id: *subject_id,
+        };
+        let assignment = state
+            .controller_assignments
+            .get(&scope)
+            .ok_or_else(|| JournalError::Corrupt("decision subject has no controller".into()))?;
+        super::validate_assignment(assignment).map_err(kernel_error)?;
+        if !controller_ids.insert(assignment.id()) {
+            return Err(JournalError::Corrupt(
+                "controller ID owns more than one canonical scope".into(),
+            ));
+        }
+    }
+    if state
+        .controller_assignments
+        .keys()
+        .any(|scope| !state.subjects.contains_key(&scope.subject_id))
+    {
+        return Err(JournalError::Corrupt(
+            "controller assignment references an unknown subject".into(),
+        ));
+    }
+    let mut scope_kinds = BTreeSet::new();
+    let mut scopes_with_grants = BTreeSet::new();
+    for grant in state.affordance_grants.values() {
+        if !state.controller_assignments.contains_key(&grant.scope)
+            || !scope_kinds.insert((grant.scope, grant.kind))
+        {
+            return Err(JournalError::Corrupt(
+                "affordance grant is duplicated or unscoped".into(),
+            ));
+        }
+        scopes_with_grants.insert(grant.scope);
+    }
+    if state
+        .controller_assignments
+        .keys()
+        .any(|scope| !scopes_with_grants.contains(scope))
+    {
+        return Err(JournalError::Corrupt(
+            "decision scope has no affordance grant".into(),
+        ));
+    }
+    let required = super::required_approvers(state);
+    if !state.draft_approvals.is_subset(&required)
+        || (state.phase != super::WorldPhase::Draft && !required.is_subset(&state.draft_approvals))
+    {
+        return Err(JournalError::Corrupt(
+            "draft approvals do not match canonical controller ownership".into(),
+        ));
+    }
+    let mut event_ids = BTreeSet::new();
+    let mut previous_event_revision = 0;
+    for event in &state.events {
+        let assignment = state
+            .controller_assignments
+            .get(&event.scope)
+            .ok_or_else(|| JournalError::Corrupt("event references an unknown scope".into()))?;
+        let grant = state
+            .affordance_grants
+            .get(&event.invocation.affordance_id)
+            .ok_or_else(|| JournalError::Corrupt("event uses an unknown affordance".into()))?;
+        if !event_ids.insert(event.id)
+            || event.revision == 0
+            || event.revision > state.revision
+            || event.revision <= previous_event_revision
+            || event.controller_id != assignment.id()
+            || grant.scope != event.scope
+            || grant.kind != event.invocation.action.kind()
+            || super::canonical_invocation(&event.invocation).map_err(kernel_error)?
+                != event.invocation
+        {
+            return Err(JournalError::Corrupt(
+                "decision event is noncanonical or violates controller scope".into(),
+            ));
+        }
+        previous_event_revision = event.revision;
+    }
+    Ok(())
+}
+
+fn verify_effect_command_binding(commit: &WorldCommit) -> Result<(), JournalError> {
+    if let WorldEffect::DecisionExercised { event, .. } = &commit.effect
+        && event.id != EventId::for_command(commit.command_id)
+    {
+        return Err(JournalError::Corrupt(
+            "decision event ID is not bound to its command".into(),
+        ));
+    }
     Ok(())
 }
 
@@ -474,65 +585,59 @@ fn kernel_error(error: KernelError) -> JournalError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::world::PrincipalId;
+    use crate::world::{
+        AffordanceKind, AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, CreateWorld,
+        DraftSubjectHandle, NewController, NewDecisionSubject, PrincipalId, SubjectKind,
+        WorldKernel,
+    };
 
     #[test]
-    fn a_later_effect_cannot_repair_noncanonical_genesis() {
-        let world_id = WorldId::issue();
+    fn replay_rejects_a_semantically_forged_caller_even_with_valid_hashes() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
         let owner = PrincipalId::new("owner@example.test");
-        let creation_id = CommandId::new();
-        let mut genesis_state =
-            WorldState::genesis(world_id, owner.clone(), " Bad Genesis ".into()).unwrap();
-        let mut genesis = WorldCommit {
-            schema: COMMIT_SCHEMA.into(),
-            world_id,
-            command_id: creation_id,
-            command_digest: "sha256:create".into(),
-            previous_revision: None,
-            resulting_revision: 0,
-            previous_state_digest: None,
-            resulting_state_digest: genesis_state.state_digest.clone(),
-            previous_commit_digest: None,
-            effect: WorldEffect::WorldCreated {
-                owner,
-                title: genesis_state.title.clone(),
-            },
-            committed_at: Utc::now(),
-            digest: String::new(),
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        let creation = CreateWorld {
+            id: CommandId::new(),
+            owner: owner.clone(),
+            title: "Before".into(),
+            subjects: vec![NewDecisionSubject {
+                handle: DraftSubjectHandle::new("owner"),
+                label: "Owner".into(),
+                kind: SubjectKind::Person,
+                controller: NewController::Human {
+                    principal: owner.clone(),
+                },
+                affordances: BTreeSet::from([AffordanceKind::Speak]),
+            }],
         };
-        genesis.digest = commit_digest(&genesis).unwrap();
-        genesis_state.last_commit_digest = Some(genesis.digest.clone());
+        let (mut kernel, _) = WorldKernel::create(&path, creation, &authenticated).unwrap();
+        let snapshot = kernel.snapshot().unwrap();
+        let command_id = CommandId::new();
+        kernel
+            .submit(
+                CommandEnvelope {
+                    id: command_id,
+                    world_id: snapshot.world_id,
+                    expected_revision: snapshot.revision,
+                    caller: CallerId::Principal(owner),
+                    body: CommandBody::SetTitle {
+                        title: "After".into(),
+                    },
+                },
+                &authenticated,
+            )
+            .unwrap();
 
-        let effect = WorldEffect::TitleChanged {
-            previous_title: genesis_state.title.clone(),
-            resulting_title: "Canonical".into(),
-        };
-        let mut head = genesis_state.clone();
-        apply_effect(&mut head, &effect).unwrap();
-        head.revision = 1;
-        head.state_digest = state_digest(&head).unwrap();
-        let mut correction = WorldCommit {
-            schema: COMMIT_SCHEMA.into(),
-            world_id,
-            command_id: CommandId::new(),
-            command_digest: "sha256:correct".into(),
-            previous_revision: Some(0),
-            resulting_revision: 1,
-            previous_state_digest: Some(genesis_state.state_digest.clone()),
-            resulting_state_digest: head.state_digest.clone(),
-            previous_commit_digest: Some(genesis.digest.clone()),
-            effect,
-            committed_at: Utc::now(),
-            digest: String::new(),
-        };
-        correction.digest = commit_digest(&correction).unwrap();
-        head.last_commit_digest = Some(correction.digest.clone());
+        let mut forged_head = kernel.state.clone();
+        let mut forged_commits = kernel.journal.commits.clone();
+        let forged = forged_commits.get_mut(&command_id).unwrap();
+        forged.caller = CallerId::Principal(PrincipalId::new("attacker@example.test"));
+        forged.digest = commit_digest(forged).unwrap();
+        forged_head.last_commit_digest = Some(forged.digest.clone());
 
-        let mut commits = BTreeMap::new();
-        commits.insert(genesis.command_id, genesis);
-        commits.insert(correction.command_id, correction);
         assert!(matches!(
-            verify_history(&head, &commits),
+            verify_history(&forged_head, &forged_commits),
             Err(JournalError::Corrupt(_))
         ));
     }
