@@ -91,10 +91,16 @@ ontology or turn the Greathold into an autonomous character.
   insurers suspend cover, armies secure infrastructure, displaced families
   cross borders, and an unknown party circulates proof that several foreign
   governments secretly financed the extraction they now condemn.`
-- World locality elaborations: `5` (one per admitted realm jurisdiction)
+- Ordered outer-realm requests:
+  `acceptance/full-world-delvehold-regions-v2.txt` (eight requests, one per
+  line; their order is part of the acceptance input)
+- World locality elaborations: `8` (one per ordered outer-realm request)
 - World elaboration parallelism: `8`
 - Active cell budget: `240`
-- Strategic waves: `12`
+- Target active-cover basis points: `2000` (exactly `1200` qualified subjects)
+- World complexity parallelism: `8`
+- Maximum world complexity rounds: `128`
+- Strategic waves: `1`
 - Maximum rejected pulses per wave: `4`
 - Provider routing: Luna fast, Terra balanced, Sol capable through the existing
   Codex connector

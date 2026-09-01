@@ -18,6 +18,38 @@ pub fn information_channel_is_concrete(channel: &str) -> bool {
     !channel.is_empty() && channel.len() <= 160 && !channel.eq_ignore_ascii_case("unknown")
 }
 
+/// Canonical world subjects and their agency projections share one ID space.
+/// Keep this predicate deterministic and side-effect free: validators, rebases,
+/// and kernel application all consult the same occupied-set definition.
+pub(crate) fn canonical_subject_id_is_occupied(campaign: &Campaign, subject_id: &str) -> bool {
+    canonical_subject_id_is_occupied_except_member(campaign, subject_id, None)
+}
+
+pub(crate) fn canonical_subject_id_is_occupied_except_member(
+    campaign: &Campaign,
+    subject_id: &str,
+    permitted_member_id: Option<&str>,
+) -> bool {
+    let permitted_member_id =
+        permitted_member_id.map(crate::domain::canonical_gestalt_member_local_id);
+    campaign.actors.contains_key(subject_id)
+        || campaign.institutions.contains_key(subject_id)
+        || campaign.gestalts.contains_key(subject_id)
+        || campaign.gestalt_members.iter().any(|(member_id, member)| {
+            permitted_member_id.as_deref()
+                != Some(crate::domain::canonical_gestalt_member_local_id(member_id).as_str())
+                && crate::domain::gestalt_member_subject_id(&member.id) == subject_id
+        })
+        || campaign
+            .agency_profiles
+            .iter()
+            .any(|(profile_key, profile)| {
+                profile_key == subject_id
+                    || profile.id == subject_id
+                    || profile.subject_id == subject_id
+            })
+}
+
 #[derive(Clone, Debug)]
 struct Candidate {
     left: String,
@@ -2258,6 +2290,27 @@ pub fn validate_gestalt_individuation(
     if member.name.chars().count() > 160 {
         findings.push("member name exceeds 160 characters".to_owned());
     }
+    let public_name_key = public_identity_key(&member.name);
+    if public_name_key.is_empty() {
+        findings.push("member name has no public identity characters".to_owned());
+    }
+    if campaign
+        .actors
+        .values()
+        .any(|actor| public_identity_key(&actor.name) == public_name_key)
+        && !public_name_key.is_empty()
+    {
+        findings.push("member name duplicates an established public Actor identity".to_owned());
+    }
+    if campaign
+        .gestalt_members
+        .values()
+        .any(|existing| public_identity_key(&existing.name) == public_name_key)
+        && !public_name_key.is_empty()
+    {
+        findings
+            .push("member name duplicates an established public population identity".to_owned());
+    }
     if member.goals.len() > 8 {
         findings.push("member has more than eight goals".to_owned());
     }
@@ -2278,11 +2331,11 @@ pub fn validate_gestalt_individuation(
     {
         findings.push("member id duplicates an established population identity".to_owned());
     }
-    if campaign
-        .actors
-        .contains_key(&crate::domain::gestalt_member_subject_id(&member.id))
-    {
-        findings.push("member id duplicates an established Actor identity".to_owned());
+    if canonical_subject_id_is_occupied(
+        campaign,
+        &crate::domain::gestalt_member_subject_id(&member.id),
+    ) {
+        findings.push("member id duplicates an established canonical subject identity".to_owned());
     }
     let unsupported_relationships = member
         .relationships
@@ -2311,6 +2364,17 @@ pub fn validate_gestalt_individuation(
             findings.join("; ")
         ))
     }
+}
+
+/// Public names are an interface identity, not merely decorative text. Fold
+/// case and punctuation so spelling variants such as `Flint-Measure` and
+/// `Flintmeasure` cannot silently create two apparently identical people.
+pub fn public_identity_key(value: &str) -> String {
+    value
+        .chars()
+        .filter(|character| character.is_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect()
 }
 
 pub(crate) fn validate_strategic_individuation_proposals(
@@ -3337,6 +3401,9 @@ pub(crate) fn project_fission_resolution(
         campaign.gestalts.insert(child.id.clone(), child.clone());
         let mut profile = profile_for_gestalt(child, &preview.evidence_receipt_ids);
         profile.parent_subject_id = Some(preview.parent_gestalt_id.clone());
+        if child.id == preview.residual_child_id {
+            profile.simulation_eligible = false;
+        }
         profile.facets = inherited.facets.clone();
         profile
             .facets
@@ -3365,6 +3432,36 @@ pub(crate) fn project_fission_resolution(
 }
 
 pub fn validate_fission(campaign: &Campaign, preview: &GestaltFissionPreview) -> Result<()> {
+    validate_fission_shape(campaign, preview, false)
+}
+
+pub fn validate_elaborated_fission(
+    campaign: &Campaign,
+    preview: &GestaltFissionPreview,
+) -> Result<()> {
+    validate_fission_shape(campaign, preview, true)
+}
+
+fn preserves_inherited_prefix_with_unique_additions(
+    values: &[String],
+    inherited: &[String],
+) -> bool {
+    if !values.starts_with(inherited) {
+        return false;
+    }
+    let inherited_len = inherited.len();
+    let inherited = inherited.iter().collect::<BTreeSet<_>>();
+    let mut additions = BTreeSet::new();
+    values[inherited_len..]
+        .iter()
+        .all(|value| !inherited.contains(value) && additions.insert(value))
+}
+
+fn validate_fission_shape(
+    campaign: &Campaign,
+    preview: &GestaltFissionPreview,
+    allow_semantic_additions: bool,
+) -> Result<()> {
     let parent = campaign
         .gestalts
         .get(&preview.parent_gestalt_id)
@@ -3457,8 +3554,8 @@ pub fn validate_fission(campaign: &Campaign, preview: &GestaltFissionPreview) ->
             format!("child {label} version is not zero"),
         );
         require(
-            !campaign.gestalts.contains_key(&child.id),
-            format!("child {label} already exists"),
+            !canonical_subject_id_is_occupied(campaign, &child.id),
+            format!("child {label} collides with an established canonical subject identity"),
         );
         require(
             campaign.locations.contains_key(&child.home_location_id),
@@ -3470,20 +3567,45 @@ pub fn validate_fission(campaign: &Campaign, preview: &GestaltFissionPreview) ->
             format!("child {label} changed home outside a geography fission"),
         );
         require(
-            child.shared_capabilities == parent.shared_capabilities,
-            format!("child {label} changed inherited capabilities"),
+            if allow_semantic_additions {
+                child
+                    .shared_capabilities
+                    .is_superset(&parent.shared_capabilities)
+            } else {
+                child.shared_capabilities == parent.shared_capabilities
+            },
+            format!("child {label} changed inherited capabilities outside its authority"),
         );
         require(
-            child.shared_knowledge == parent.shared_knowledge,
-            format!("child {label} changed inherited knowledge"),
+            if allow_semantic_additions {
+                child.shared_knowledge.is_superset(&parent.shared_knowledge)
+            } else {
+                child.shared_knowledge == parent.shared_knowledge
+            },
+            format!("child {label} changed inherited knowledge outside its authority"),
         );
         require(
-            child.goals == parent.goals,
-            format!("child {label} changed inherited goals"),
+            if allow_semantic_additions {
+                preserves_inherited_prefix_with_unique_additions(&child.goals, &parent.goals)
+            } else {
+                child.goals == parent.goals
+            },
+            format!(
+                "child {label} must preserve inherited goals as an exact prefix and add no duplicates"
+            ),
         );
         require(
-            child.pressures == parent.pressures,
-            format!("child {label} changed inherited pressures"),
+            if allow_semantic_additions {
+                preserves_inherited_prefix_with_unique_additions(
+                    &child.pressures,
+                    &parent.pressures,
+                )
+            } else {
+                child.pressures == parent.pressures
+            },
+            format!(
+                "child {label} must preserve inherited pressures as an exact prefix and add no duplicates"
+            ),
         );
         require(
             preview.child_partition_values.contains_key(&child.id),
@@ -3657,6 +3779,118 @@ pub(crate) mod tests {
             );
         }
         value
+    }
+
+    #[test]
+    fn fission_validation_uses_the_unified_canonical_subject_id_namespace() {
+        let mut value = campaign(1, 1);
+        value.gestalts.insert(
+            "villagers".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "villagers".into(),
+                name: "Villagers".into(),
+                version: 0,
+                home_location_id: "center".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        ensure_agency_profiles(&mut value);
+        let mut detached_profile = value.agency_profiles["villagers"].clone();
+        detached_profile.id = "reserved-profile-id".into();
+        detached_profile.subject_id = "reserved-profile-subject".into();
+        detached_profile.active_leaf = false;
+        detached_profile.simulation_eligible = false;
+        value
+            .agency_profiles
+            .insert("reserved-profile-key".into(), detached_profile);
+        value.gestalt_members.insert(
+            "reserved-member".into(),
+            GestaltMemberDelta {
+                schema: "ghostlight.gestalt_member_delta.v1".into(),
+                id: "reserved-member".into(),
+                gestalt_id: "villagers".into(),
+                version: 0,
+                name: "Reserved Member".into(),
+                capability_additions: BTreeSet::new(),
+                capability_removals: BTreeSet::new(),
+                knowledge_additions: BTreeSet::new(),
+                knowledge_removals: BTreeSet::new(),
+                equipment: BTreeSet::new(),
+                conditions: BTreeSet::new(),
+                obligations: BTreeSet::new(),
+                relationships: BTreeMap::new(),
+                goals: vec![],
+                memories: vec![],
+                last_location_id: Some("center".into()),
+                materialized_actor_id: None,
+                last_relevant_revision: 0,
+                relevance_lease_until_revision: 0,
+            },
+        );
+
+        let child = |id: &str, name: &str| GestaltPersonaState {
+            schema: "ghostlight.gestalt_persona_state.v1".into(),
+            id: id.into(),
+            name: name.into(),
+            version: 0,
+            home_location_id: "center".into(),
+            shared_capabilities: BTreeSet::new(),
+            shared_knowledge: BTreeSet::new(),
+            resources: BTreeSet::new(),
+            goals: vec![],
+            pressures: vec![],
+        };
+        let preview = GestaltFissionPreview {
+            schema: "ghostlight.gestalt_fission_preview.v1".into(),
+            campaign_id: value.id,
+            expected_world_revision: value.revision,
+            parent_gestalt_id: "villagers".into(),
+            partition_axis: AgencyAxis::Ideology,
+            children: vec![
+                child("new-villagers", "New villagers"),
+                child("other", "Other"),
+            ],
+            child_partition_values: BTreeMap::from([
+                ("new-villagers".into(), "new".into()),
+                ("other".into(), "other/unknown".into()),
+            ]),
+            residual_child_id: "other".into(),
+            member_child_assignments: BTreeMap::new(),
+            resource_child_assignments: BTreeMap::new(),
+            evidence_receipt_ids: vec![],
+            gaps: vec![],
+            canon_candidates: vec![],
+            requires_approval: true,
+        };
+
+        for occupied_id in [
+            "player",
+            "faction-0000",
+            "villagers",
+            "reserved-profile-key",
+            "reserved-profile-id",
+            "reserved-profile-subject",
+            "member:reserved-member",
+        ] {
+            let mut colliding = preview.clone();
+            colliding.children[0].id = occupied_id.into();
+            colliding.child_partition_values.remove("new-villagers");
+            colliding
+                .child_partition_values
+                .insert(occupied_id.into(), "new".into());
+            let diagnostic = validate_fission(&value, &colliding)
+                .unwrap_err()
+                .to_string();
+            assert!(
+                diagnostic.contains("collides with an established canonical subject identity"),
+                "{occupied_id} escaped the canonical subject namespace: {diagnostic}"
+            );
+        }
     }
 
     #[test]
@@ -5104,6 +5338,8 @@ pub(crate) mod tests {
         assert!(!value.agency_profiles["villagers"].active_leaf);
         assert!(value.agency_profiles["traditionalists"].active_leaf);
         assert!(value.agency_profiles["other"].active_leaf);
+        assert!(value.agency_profiles["traditionalists"].simulation_eligible);
+        assert!(!value.agency_profiles["other"].simulation_eligible);
         assert!(value.gestalts["villagers"].resources.is_empty());
         assert!(value.gestalts["traditionalists"].resources.is_empty());
         assert_eq!(
@@ -5189,6 +5425,8 @@ pub(crate) mod tests {
         .unwrap();
         assert!(!value.agency_profiles["other"].active_leaf);
         assert!(value.agency_profiles["other-smiths"].active_leaf);
+        assert!(value.agency_profiles["other-smiths"].simulation_eligible);
+        assert!(!value.agency_profiles["other-unknown"].simulation_eligible);
         assert!(value.gestalts["other"].resources.is_empty());
         assert!(value.gestalts["other-smiths"].resources.is_empty());
         assert_eq!(

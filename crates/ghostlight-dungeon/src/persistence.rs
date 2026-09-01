@@ -1174,6 +1174,7 @@ impl CampaignStore {
         receipt_key: &str,
         world_receipt: &WorldCommitReceipt,
         gestalt_receipt: &GestaltMaterializationReceipt,
+        model_receipts: &[crate::model::ModelStageReceipt],
     ) -> Result<CultCacheEnvelope> {
         let next_row = envelope(
             &expected.r#type,
@@ -1181,7 +1182,7 @@ impl CampaignStore {
             &expected.key,
             next,
         )?;
-        let rows = vec![
+        let mut rows = vec![
             next_row.clone(),
             envelope(
                 "world_commit_receipt.v1",
@@ -1196,10 +1197,34 @@ impl CampaignStore {
                 gestalt_receipt,
             )?,
         ];
-        if !self
-            .inner
-            .compare_and_swap_batch(std::slice::from_ref(expected), rows)?
-        {
+        let mut expected_rows = vec![expected.clone()];
+        let mut unique_model_receipts = BTreeMap::<String, &ModelStageReceipt>::new();
+        for item in model_receipts {
+            if let Some(existing) = unique_model_receipts.get(item.storage_key()) {
+                if !existing.same_receipted_content(item) {
+                    return Err(anyhow!(
+                        "immutable model-stage receipt conflict: {}",
+                        item.storage_key()
+                    ));
+                }
+                continue;
+            }
+            unique_model_receipts.insert(item.storage_key().to_owned(), item);
+        }
+        for item in unique_model_receipts.into_values() {
+            if let Some(existing) = self.matching_model_stage_receipt(item)? {
+                expected_rows.push(existing.clone());
+                rows.push(existing);
+            } else {
+                rows.push(envelope(
+                    "persona_stage_receipt.v1",
+                    "ghostlight.persona_stage_receipt.v1",
+                    item.storage_key(),
+                    item,
+                )?);
+            }
+        }
+        if !self.inner.compare_and_swap_batch(&expected_rows, rows)? {
             return Err(anyhow!("stale CultCache snapshot"));
         }
         Ok(next_row)

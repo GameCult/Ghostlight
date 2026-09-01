@@ -5498,12 +5498,14 @@ fn player_http_command_allowed(command: &WorldCommand, player_actor_id: &str) ->
         | WorldCommand::MaterializeGestaltMember { .. }
         | WorldCommand::DematerializeGestaltMember { .. }
         | WorldCommand::IndividuateGestaltMember { .. }
+        | WorldCommand::ElaborateGestaltIndividuation { .. }
         | WorldCommand::ReconcileGestaltPresence { .. }
         | WorldCommand::ResolveReactionWave { .. }
         | WorldCommand::ResolveNpcAction { .. }
         | WorldCommand::SetProviderParallelism { .. }
         | WorldCommand::ReplaceResolutionPins { .. }
         | WorldCommand::FissionGestalt { .. }
+        | WorldCommand::ElaborateGestaltFission { .. }
         | WorldCommand::ReconcileFissionCivicBindings { .. }
         | WorldCommand::BindClockConsequences { .. } => false,
     }

@@ -1236,6 +1236,20 @@ pub enum WorldCommand {
         #[serde(default)]
         model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
     },
+    ElaborateGestaltFission {
+        expected_revision: u64,
+        preview: GestaltFissionPreview,
+        qualification: crate::elaboration::WorldComplexityFissionQualification,
+        #[serde(default)]
+        model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
+    },
+    ElaborateGestaltIndividuation {
+        expected_revision: u64,
+        individuation: GestaltIndividuation,
+        qualification: crate::elaboration::WorldComplexityIndividuationQualification,
+        #[serde(default)]
+        model_stage_receipts: Vec<crate::model::ModelStageReceipt>,
+    },
     ReconcileFissionCivicBindings {
         expected_revision: u64,
     },

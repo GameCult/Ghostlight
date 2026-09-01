@@ -330,6 +330,20 @@ struct FoundationCheckpoint {
     model_receipts: Vec<ghostlight_dungeon::model::ModelStageReceipt>,
 }
 
+#[derive(serde::Serialize, serde::Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct FoundationCommitCheckpoint {
+    schema: String,
+    location_id: String,
+    location_name: String,
+    request: String,
+    world_revision_before: u64,
+    world_revision_after: u64,
+    model_receipt_hashes: Vec<String>,
+    commit_receipt: ghostlight_dungeon::domain::WorldCommitReceipt,
+    mutation_proof: TitledMutationProof,
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct WorldRegionPlanCheckpoint {
@@ -356,6 +370,7 @@ struct WorldRegionCommitCheckpoint {
     jurisdiction_location_id: String,
     commit_receipt: ghostlight_dungeon::domain::WorldCommitReceipt,
     model_receipt_hashes: Vec<String>,
+    mutation_proof: TitledMutationProof,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -401,26 +416,58 @@ struct TitledFailureCheckpoint {
     schedule: Option<ghostlight_dungeon::elaboration::ElaborationScheduleReceipt>,
     completed_invocations: Vec<CompletedInvocationCheckpoint>,
     invocation_failures: Vec<FailedInvocationCheckpoint>,
+    #[serde(default)]
+    semantic_retry_diagnostic: Option<String>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
-struct TitledPreviewCheckpoint {
+struct TitledReadyCheckpoint {
     schema: String,
     location_id: String,
     location_name: String,
     request: String,
-    wave: ghostlight_dungeon::elaboration::ElaborationWaveBinding,
-    schedule: ghostlight_dungeon::elaboration::ElaborationScheduleReceipt,
-    accepted_operations: Vec<ghostlight_dungeon::elaboration::AdmittedWorldElaborationOperation>,
-    rejections: Vec<ghostlight_dungeon::elaboration::WorldElaborationRejection>,
-    candidate: Option<ghostlight_dungeon::domain::LocalityElaboration>,
-    candidate_diagnostic: Option<String>,
-    model_receipt_hashes: Vec<String>,
+    finalized: ghostlight_dungeon::elaboration::FinalizedWorldElaboration,
     #[serde(default)]
     resumed_from: Option<std::path::PathBuf>,
     #[serde(default)]
     retried_dispatch_ordinals: Vec<u64>,
+    #[serde(default)]
+    semantic_retry_diagnostic: Option<String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TitledSemanticFailureCheckpoint {
+    schema: String,
+    attempt: u8,
+    location_id: String,
+    location_name: String,
+    base_request: String,
+    verification_request: String,
+    repair_request: Option<String>,
+    diagnostic: String,
+    admission: ghostlight_dungeon::elaboration::WorldElaborationAdmission,
+    wave: ghostlight_dungeon::elaboration::ElaborationWaveBinding,
+    schedule: ghostlight_dungeon::elaboration::ElaborationScheduleReceipt,
+    model_receipt_hashes: Vec<String>,
+    verifier_receipt_hashes: Vec<String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TitledVerifierExecutionFailureCheckpoint {
+    schema: String,
+    semantic_attempt: u8,
+    generation: u32,
+    location_id: String,
+    location_name: String,
+    verification_request: String,
+    diagnostic: String,
+    attempts: u8,
+    admission: ghostlight_dungeon::elaboration::WorldElaborationAdmission,
+    model_receipt_hashes: Vec<String>,
+    verifier_receipt_hashes: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -435,7 +482,7 @@ struct TitledMutationProof {
     intended_effect_digest: String,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 struct TitledCommitCheckpoint {
     schema: String,
@@ -495,7 +542,7 @@ struct ComplexityRoundFailureCheckpoint {
     invocation_failures: Vec<ComplexityFailedInvocation>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 struct ComplexityMutationCheckpoint {
     schema: String,
@@ -505,7 +552,24 @@ struct ComplexityMutationCheckpoint {
     mutation_kind: String,
     affected_subject_ids: Vec<String>,
     model_receipt_hashes: Vec<String>,
+    #[serde(default)]
+    semantic_summary: String,
     commit_receipt: ghostlight_dungeon::domain::WorldCommitReceipt,
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct ComplexityPreparedMutationCheckpoint {
+    schema: String,
+    round: u32,
+    dispatch: ghostlight_dungeon::elaboration::ElaborationDispatch,
+    expected_revision: u64,
+    proposal: ghostlight_dungeon::elaboration::WorldComplexityProposal,
+    parent_gestalt_id: String,
+    mutation_kind: String,
+    affected_subject_ids: Vec<String>,
+    model_receipt_hashes: Vec<String>,
+    semantic_summary: String,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, PartialEq, Eq)]
@@ -515,8 +579,27 @@ struct ComplexitySupersededInvocationCheckpoint {
     round: u32,
     dispatch: ghostlight_dungeon::elaboration::ElaborationDispatch,
     retained_dispatch_ordinal: u64,
-    canonical_member_id: String,
+    canonical_subject_ids: Vec<String>,
+    public_identity_keys: Vec<String>,
     diagnostic: String,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+struct ComplexitySemanticRejectionCheckpoint {
+    schema: String,
+    round: u32,
+    dispatch: ghostlight_dungeon::elaboration::ElaborationDispatch,
+    parent_gestalt_id: String,
+    proposal: ghostlight_dungeon::elaboration::WorldComplexityProposal,
+    verifier_receipt_hash: String,
+    diagnostic: String,
+}
+
+fn complexity_semantic_rejection_diagnostic(
+    verdict: &ghostlight_dungeon::elaboration::WorldComplexitySemanticVerification,
+) -> anyhow::Result<String> {
+    Ok(serde_json::to_string(verdict)?)
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -536,8 +619,307 @@ struct ComplexityRoundCheckpoint {
     >,
 }
 
-fn complexity_session_journal_summary(mutation_kind: &str, parent_gestalt_id: &str) -> String {
-    format!("Applied {mutation_kind} to {parent_gestalt_id}.")
+fn complexity_affected_subject_ids(
+    proposal: &ghostlight_dungeon::elaboration::WorldComplexityProposal,
+) -> Vec<String> {
+    match proposal {
+        ghostlight_dungeon::elaboration::WorldComplexityProposal::Fission { preview, .. } => {
+            std::iter::once(preview.parent_gestalt_id.clone())
+                .chain(preview.children.iter().map(|child| child.id.clone()))
+                .collect()
+        }
+        ghostlight_dungeon::elaboration::WorldComplexityProposal::Individuate {
+            individuation,
+            ..
+        } => vec![
+            individuation.gestalt_id.clone(),
+            ghostlight_dungeon::domain::gestalt_member_subject_id(&individuation.member.id),
+        ],
+    }
+}
+
+fn complexity_session_journal_summary(
+    proposal: &ghostlight_dungeon::elaboration::WorldComplexityProposal,
+) -> anyhow::Result<String> {
+    let semantic_delta = match proposal {
+        ghostlight_dungeon::elaboration::WorldComplexityProposal::Fission { preview, .. } => {
+            let parent = preview
+                .children
+                .iter()
+                .find(|child| child.id == preview.residual_child_id)
+                .ok_or_else(|| anyhow::anyhow!("complexity fission summary lost its residual"))?;
+            serde_json::json!({
+                "specific_children":preview.children.iter()
+                    .filter(|child|child.id != preview.residual_child_id)
+                    .map(|child|serde_json::json!({
+                        "name":child.name,
+                        "capabilities":child.shared_capabilities.difference(&parent.shared_capabilities).collect::<Vec<_>>(),
+                        "knowledge":child.shared_knowledge.difference(&parent.shared_knowledge).collect::<Vec<_>>(),
+                        "goals":child.goals.iter().filter(|goal|!parent.goals.contains(goal)).collect::<Vec<_>>(),
+                        "pressures":child.pressures.iter().filter(|pressure|!parent.pressures.contains(pressure)).collect::<Vec<_>>(),
+                    })).collect::<Vec<_>>()
+            })
+        }
+        ghostlight_dungeon::elaboration::WorldComplexityProposal::Individuate {
+            individuation,
+            ..
+        } => serde_json::json!({
+            "person":individuation.member.name,
+            "capabilities":individuation.member.capability_additions,
+            "knowledge":individuation.member.knowledge_additions,
+            "obligations":individuation.member.obligations,
+            "relationships":individuation.member.relationships,
+            "goals":individuation.member.goals,
+            "memories":individuation.member.memories,
+        }),
+    };
+    Ok(bounded_prompt_excerpt(
+        &format!(
+            "Applied {} to {}. Semantic delta: {}",
+            proposal.mutation_kind(),
+            proposal.parent_gestalt_id(),
+            semantic_delta
+        ),
+        900,
+    ))
+}
+
+fn validate_complexity_round_session_checkpoints(
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    previous: &std::collections::BTreeMap<
+        String,
+        ghostlight_dungeon::elaboration::ElaboratorSessionCheckpoint,
+    >,
+    current: &std::collections::BTreeMap<
+        String,
+        ghostlight_dungeon::elaboration::ElaboratorSessionCheckpoint,
+    >,
+    session_routes: &std::collections::BTreeMap<
+        String,
+        (ghostlight_dungeon::elaboration::ElaboratorTitle, String),
+    >,
+    journals: &std::collections::BTreeMap<
+        String,
+        Vec<ghostlight_dungeon::elaboration::ElaboratorSessionJournalEntry>,
+    >,
+    rejection_findings: &std::collections::BTreeMap<String, Vec<String>>,
+    through_world_revision: u64,
+) -> anyhow::Result<()> {
+    let touched = journals
+        .keys()
+        .chain(rejection_findings.keys())
+        .cloned()
+        .collect::<std::collections::BTreeSet<_>>();
+    let expected_ids = previous
+        .keys()
+        .chain(touched.iter())
+        .cloned()
+        .collect::<std::collections::BTreeSet<_>>();
+    if current
+        .keys()
+        .cloned()
+        .collect::<std::collections::BTreeSet<_>>()
+        != expected_ids
+    {
+        anyhow::bail!(
+            "completed complexity round session checkpoint set does not match prior memory plus exact invocation journals"
+        )
+    }
+    for session_id in expected_ids {
+        let checkpoint = current
+            .get(&session_id)
+            .expect("the exact session set was checked above");
+        if !touched.contains(&session_id) {
+            if previous.get(&session_id) != Some(checkpoint) {
+                anyhow::bail!("completed complexity round changed an untouched session checkpoint")
+            }
+            continue;
+        }
+        let (title, location_id) = session_routes
+            .get(&session_id)
+            .ok_or_else(|| anyhow::anyhow!("complexity session journal has no exact route"))?;
+        checkpoint.validate_for(campaign, location_id, *title)?;
+        let expected_receipt_ids = journals
+            .get(&session_id)
+            .into_iter()
+            .flatten()
+            .map(|entry| entry.commit_receipt_id.clone())
+            .collect::<Vec<_>>();
+        let expected_rejections = rejection_findings
+            .get(&session_id)
+            .cloned()
+            .unwrap_or_default();
+        let expected_prior_digest = previous
+            .get(&session_id)
+            .map(|checkpoint| checkpoint.digest.clone());
+        let expected_generation = previous
+            .get(&session_id)
+            .map_or(1, |checkpoint| checkpoint.generation.saturating_add(1));
+        if checkpoint.through_world_revision != through_world_revision
+            || checkpoint.generation != expected_generation
+            || checkpoint.recent_commit_receipt_ids != expected_receipt_ids
+            || checkpoint.recent_rejection_findings != expected_rejections
+            || checkpoint.prior_checkpoint_digest != expected_prior_digest
+        {
+            anyhow::bail!(
+                "completed complexity round session checkpoint is not bound to its exact journal, rejection findings, and prior memory"
+            )
+        }
+    }
+    Ok(())
+}
+
+fn complexity_proposal_is_committed(
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    proposal: &ghostlight_dungeon::elaboration::WorldComplexityProposal,
+) -> bool {
+    match proposal {
+        ghostlight_dungeon::elaboration::WorldComplexityProposal::Fission { preview, .. } => {
+            let child_ids = preview
+                .children
+                .iter()
+                .map(|child| child.id.as_str())
+                .collect::<std::collections::BTreeSet<_>>();
+            let actionable =
+                ghostlight_dungeon::elaboration::canonical_actionable_subject_ids(campaign);
+            campaign
+                .gestalt_lineages
+                .get(&preview.parent_gestalt_id)
+                .is_some_and(|lineage| {
+                    lineage.child_gestalt_ids
+                        == preview
+                            .children
+                            .iter()
+                            .map(|child| child.id.clone())
+                            .collect::<Vec<_>>()
+                        && lineage.partition_axis == preview.partition_axis
+                        && lineage.partition_values == preview.child_partition_values
+                        && lineage.residual_child_id == preview.residual_child_id
+                        && lineage.source_revision == preview.expected_world_revision
+                        && preview.children.iter().all(|expected| {
+                            campaign.gestalts.get(&expected.id) == Some(expected)
+                                && campaign.agency_profiles.get(&expected.id).is_some_and(
+                                    |profile| {
+                                        profile.parent_subject_id.as_deref()
+                                            == Some(preview.parent_gestalt_id.as_str())
+                                            && profile.active_leaf
+                                            && profile.location_ids
+                                                == std::collections::BTreeSet::from([expected
+                                                    .home_location_id
+                                                    .clone()])
+                                            && profile.simulation_eligible
+                                                == (expected.id != preview.residual_child_id)
+                                    },
+                                )
+                                && actionable.contains(&expected.id)
+                                    == (expected.id != preview.residual_child_id)
+                        })
+                        && campaign
+                            .agency_profiles
+                            .get(&preview.parent_gestalt_id)
+                            .is_some_and(|profile| {
+                                !profile.active_leaf && !profile.simulation_eligible
+                            })
+                        && !actionable.contains(&preview.parent_gestalt_id)
+                        && preview
+                            .member_child_assignments
+                            .iter()
+                            .all(|(member_id, child_id)| {
+                                campaign
+                                    .gestalt_members
+                                    .get(member_id)
+                                    .is_some_and(|member| member.gestalt_id == *child_id)
+                            })
+                        && campaign.gestalt_members.values().all(|member| {
+                            member.gestalt_id != preview.parent_gestalt_id
+                                && (!child_ids.contains(member.gestalt_id.as_str())
+                                    || preview.member_child_assignments.contains_key(&member.id)
+                                    || member.gestalt_id == preview.residual_child_id)
+                        })
+                        && campaign.civic_systems.values().all(|system| {
+                            !system
+                                .resident_population_ids
+                                .contains(&preview.parent_gestalt_id)
+                        })
+                        && campaign.agency_relations.values().all(|relation| {
+                            !relation.active
+                                || (relation.from_subject_id != preview.parent_gestalt_id
+                                    && relation.to_subject_id != preview.parent_gestalt_id)
+                        })
+                })
+        }
+        ghostlight_dungeon::elaboration::WorldComplexityProposal::Individuate {
+            individuation,
+            ..
+        } => {
+            let member_id = ghostlight_dungeon::domain::canonical_gestalt_member_local_id(
+                &individuation.member.id,
+            );
+            let actor_id = ghostlight_dungeon::domain::gestalt_member_subject_id(&member_id);
+            let mut expected_member = individuation.member.clone();
+            expected_member.id = member_id.clone();
+            expected_member.version = 1;
+            expected_member.last_location_id = Some(individuation.location_id.clone());
+            expected_member.materialized_actor_id = Some(actor_id.clone());
+            expected_member.last_relevant_revision = proposal.expected_world_revision();
+            expected_member.relevance_lease_until_revision =
+                proposal.expected_world_revision().saturating_add(2);
+            let Some(gestalt) = campaign.gestalts.get(&individuation.gestalt_id) else {
+                return false;
+            };
+            let overlay =
+                |base: &std::collections::BTreeSet<String>,
+                 additions: &std::collections::BTreeSet<String>,
+                 removals: &std::collections::BTreeSet<String>| {
+                    base.difference(removals)
+                        .cloned()
+                        .chain(additions.iter().cloned())
+                        .collect::<std::collections::BTreeSet<_>>()
+                };
+            let expected_actor = ghostlight_dungeon::domain::ActorState {
+                id: actor_id.clone(),
+                name: expected_member.name.clone(),
+                location_id: individuation.location_id.clone(),
+                capabilities: overlay(
+                    &gestalt.shared_capabilities,
+                    &expected_member.capability_additions,
+                    &expected_member.capability_removals,
+                ),
+                knowledge: overlay(
+                    &gestalt.shared_knowledge,
+                    &expected_member.knowledge_additions,
+                    &expected_member.knowledge_removals,
+                ),
+                equipment: expected_member.equipment.clone(),
+                conditions: expected_member.conditions.clone(),
+                obligations: expected_member.obligations.clone(),
+                relationships: expected_member.relationships.clone(),
+                goals: if expected_member.goals.is_empty() {
+                    gestalt.goals.clone()
+                } else {
+                    expected_member.goals.clone()
+                },
+                memories: expected_member.memories.clone(),
+            };
+            campaign.gestalt_members.get(&member_id) == Some(&expected_member)
+                && campaign.actors.get(&actor_id) == Some(&expected_actor)
+                && gestalt.version == individuation.expected_gestalt_version
+                && campaign
+                    .agency_profiles
+                    .get(&actor_id)
+                    .is_some_and(|profile| {
+                        profile.subject_kind == ghostlight_dungeon::domain::AgencySubjectKind::Actor
+                            && profile.active_leaf
+                            && profile.simulation_eligible
+                            && profile.location_ids
+                                == std::collections::BTreeSet::from([individuation
+                                    .location_id
+                                    .clone()])
+                    })
+                && ghostlight_dungeon::elaboration::canonical_actionable_subject_ids(campaign)
+                    .contains(&actor_id)
+        }
+    }
 }
 
 fn retain_unique_complexity_invocations(
@@ -547,44 +929,87 @@ fn retain_unique_complexity_invocations(
     Vec<&ComplexityPreviewInvocation>,
     Vec<ComplexitySupersededInvocationCheckpoint>,
 ) {
-    let mut retained_ordinals = BTreeMap::<String, u64>::new();
-    for invocation in invocations {
-        if let ghostlight_dungeon::elaboration::WorldComplexityProposal::Individuate {
-            individuation,
-        } = &invocation.proposal
-        {
-            let canonical_id = ghostlight_dungeon::domain::canonical_gestalt_member_local_id(
-                &individuation.member.id,
-            );
-            retained_ordinals
-                .entry(canonical_id)
-                .and_modify(|ordinal| *ordinal = (*ordinal).min(invocation.dispatch.ordinal))
-                .or_insert(invocation.dispatch.ordinal);
-        }
-    }
     let mut retained = Vec::new();
     let mut superseded = Vec::new();
-    for invocation in invocations {
-        let ghostlight_dungeon::elaboration::WorldComplexityProposal::Individuate { individuation } =
-            &invocation.proposal
-        else {
-            retained.push(invocation);
-            continue;
-        };
-        let canonical_id =
-            ghostlight_dungeon::domain::canonical_gestalt_member_local_id(&individuation.member.id);
-        let retained_ordinal = retained_ordinals[&canonical_id];
-        if invocation.dispatch.ordinal == retained_ordinal {
+    let mut retained_subject_ids = BTreeMap::<String, u64>::new();
+    let mut retained_person_names = BTreeMap::<String, u64>::new();
+    let mut retained_population_names = BTreeMap::<String, u64>::new();
+    let mut ordered = invocations.iter().collect::<Vec<_>>();
+    ordered.sort_by_key(|invocation| invocation.dispatch.ordinal);
+    for invocation in ordered {
+        let (canonical_subject_ids, public_identity_keys, population_identity_keys) =
+            match &invocation.proposal {
+                ghostlight_dungeon::elaboration::WorldComplexityProposal::Individuate {
+                    individuation,
+                    ..
+                } => (
+                    vec![ghostlight_dungeon::domain::gestalt_member_subject_id(
+                        &individuation.member.id,
+                    )],
+                    vec![ghostlight_dungeon::resolution::public_identity_key(
+                        &individuation.member.name,
+                    )],
+                    Vec::new(),
+                ),
+                ghostlight_dungeon::elaboration::WorldComplexityProposal::Fission {
+                    preview,
+                    ..
+                } => (
+                    preview
+                        .children
+                        .iter()
+                        .map(|child| child.id.clone())
+                        .collect(),
+                    Vec::new(),
+                    preview
+                        .children
+                        .iter()
+                        .filter(|child| child.id != preview.residual_child_id)
+                        .map(|child| {
+                            ghostlight_dungeon::resolution::public_identity_key(&child.name)
+                        })
+                        .collect(),
+                ),
+            };
+        let retained_ordinal = canonical_subject_ids
+            .iter()
+            .filter_map(|id| retained_subject_ids.get(id))
+            .chain(
+                public_identity_keys
+                    .iter()
+                    .filter_map(|key| retained_person_names.get(key)),
+            )
+            .chain(
+                population_identity_keys
+                    .iter()
+                    .filter_map(|key| retained_population_names.get(key)),
+            )
+            .copied()
+            .min();
+        if retained_ordinal.is_none() {
+            for id in &canonical_subject_ids {
+                retained_subject_ids.insert(id.clone(), invocation.dispatch.ordinal);
+            }
+            for key in &public_identity_keys {
+                retained_person_names.insert(key.clone(), invocation.dispatch.ordinal);
+            }
+            for key in &population_identity_keys {
+                retained_population_names.insert(key.clone(), invocation.dispatch.ordinal);
+            }
             retained.push(invocation);
         } else {
             superseded.push(ComplexitySupersededInvocationCheckpoint {
                 schema: "ghostlight.complexity_superseded_invocation.v1".into(),
                 round,
                 dispatch: invocation.dispatch.clone(),
-                retained_dispatch_ordinal: retained_ordinal,
-                canonical_member_id: canonical_id,
+                retained_dispatch_ordinal: retained_ordinal.expect("duplicate has an owner"),
+                canonical_subject_ids,
+                public_identity_keys: public_identity_keys
+                    .into_iter()
+                    .chain(population_identity_keys)
+                    .collect(),
                 diagnostic:
-                    "parallel individuation duplicated an exact local member identity; the earliest dispatch owns the proposal"
+                    "parallel complexity proposals duplicated a canonical subject ID or normalized public identity; the earliest dispatch owns the proposal"
                         .into(),
             });
         }
@@ -683,6 +1108,38 @@ fn titled_failure_checkpoint_paths(
     Ok(paths)
 }
 
+fn titled_verifier_execution_failure_checkpoint_paths(
+    root: &std::path::Path,
+    index: usize,
+    semantic_attempt: u8,
+) -> anyhow::Result<Vec<(u32, std::path::PathBuf)>> {
+    let prefix = format!(
+        "titled-elaboration-{index:02}-verifier-execution-failure-{semantic_attempt:02}-generation-"
+    );
+    let mut generations = std::fs::read_dir(root)?
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| {
+            let name = entry.file_name();
+            let name = name.to_str()?;
+            let generation = name
+                .strip_prefix(&prefix)?
+                .strip_suffix(".json")?
+                .parse::<u32>()
+                .ok()?;
+            Some((generation, entry.path()))
+        })
+        .collect::<Vec<_>>();
+    generations.sort_by_key(|(generation, _)| *generation);
+    if generations
+        .iter()
+        .enumerate()
+        .any(|(index, (generation, _))| *generation != index as u32 + 1)
+    {
+        anyhow::bail!("titled verifier-execution failure checkpoint generations are not contiguous")
+    }
+    Ok(generations)
+}
+
 fn load_checkpoint_receipts(
     store: &ghostlight_dungeon::persistence::CampaignStore,
     hashes: &[String],
@@ -699,6 +1156,649 @@ fn load_checkpoint_receipts(
                 .ok_or_else(|| anyhow::anyhow!("checkpoint model receipt is missing: {hash}"))
         })
         .collect()
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ComplexityCommitValidationMode {
+    CurrentCampaignEffect,
+    HistoricalCommit,
+}
+
+fn validate_complexity_semantic_rejection_checkpoint(
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    round: u32,
+    invocation: &ComplexityPreviewInvocation,
+    path: &std::path::Path,
+) -> anyhow::Result<ComplexitySemanticRejectionCheckpoint> {
+    use ghostlight_dungeon::elaboration::{
+        WorldComplexityProposal, WorldComplexitySemanticVerification,
+        validate_world_complexity_semantic_qualification_shape,
+    };
+
+    if !path.is_file() {
+        anyhow::bail!(
+            "completed complexity round references a missing semantic-rejection checkpoint: {}",
+            path.display()
+        )
+    }
+    let rejection = read_checkpoint::<ComplexitySemanticRejectionCheckpoint>(path)?;
+    let rejected_verdict =
+        serde_json::from_str::<WorldComplexitySemanticVerification>(&rejection.diagnostic)?;
+    if rejection.schema != "ghostlight.complexity_semantic_rejection.v2"
+        || rejection.round != round
+        || rejection.dispatch != invocation.dispatch
+        || rejection.parent_gestalt_id != invocation.proposal.parent_gestalt_id()
+        || rejection.proposal.parent_gestalt_id() != invocation.proposal.parent_gestalt_id()
+        || rejected_verdict.accepted()
+    {
+        anyhow::bail!("complexity semantic-rejection checkpoint is inconsistent")
+    }
+    let receipt = store
+        .load::<ghostlight_dungeon::model::ModelStageReceipt>(
+            "persona_stage_receipt.v1",
+            &rejection.verifier_receipt_hash,
+        )?
+        .map(|(_, receipt)| receipt)
+        .ok_or_else(|| {
+            anyhow::anyhow!("complexity semantic rejection lost its verifier receipt")
+        })?;
+    let semantic = match &rejection.proposal {
+        WorldComplexityProposal::Fission { qualification, .. } => &qualification.semantic,
+        WorldComplexityProposal::Individuate { qualification, .. } => &qualification.semantic,
+    };
+    validate_world_complexity_semantic_qualification_shape(&rejection.proposal, semantic)?;
+    let expected_sources = invocation
+        .model_receipt_hashes
+        .iter()
+        .cloned()
+        .collect::<std::collections::BTreeSet<_>>();
+    let actual_sources = receipt
+        .source_receipt_ids
+        .iter()
+        .cloned()
+        .collect::<std::collections::BTreeSet<_>>();
+    let expected_error = format!(
+        "world-complexity semantic verifier rejected the candidate: {}",
+        rejection.diagnostic
+    );
+    if receipt.storage_key() != rejection.verifier_receipt_hash
+        || receipt.stage != "world-complexity-semantic-verification"
+        || receipt.model != ghostlight_dungeon::model::MODEL_BALANCED
+        || receipt.validation_result == "valid"
+        || receipt.local_validation_error.as_deref() != Some(expected_error.as_str())
+        || receipt.snapshot_binding != semantic.semantic_verification_binding
+        || semantic.frozen_campaign_id != campaign.id
+        || semantic.frozen_world_revision > campaign.revision
+        || rejection.proposal.expected_world_revision() != semantic.frozen_world_revision
+        || expected_sources.is_empty()
+        || expected_sources.len() != invocation.model_receipt_hashes.len()
+        || actual_sources.len() != receipt.source_receipt_ids.len()
+        || actual_sources != expected_sources
+    {
+        anyhow::bail!(
+            "complexity semantic rejection is not backed by its exact invalid verifier receipt"
+        )
+    }
+    Ok(rejection)
+}
+
+fn committed_complexity_fission_mutation_proof(
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+    world_receipt: &ghostlight_dungeon::domain::WorldCommitReceipt,
+    preview: &ghostlight_dungeon::domain::GestaltFissionPreview,
+) -> anyhow::Result<TitledMutationProof> {
+    let intended_effect_digest =
+        ghostlight_dungeon::legacy_transition::digest_serializable(preview)?;
+    let mut exact_batches = store
+        .load_all::<ghostlight_dungeon::transition::WorldMutationBatch>("world_mutation_batch.v1")?
+        .into_iter()
+        .filter(|batch| {
+            batch.campaign_id == world_receipt.campaign_id
+                && batch.expected_world_revision == world_receipt.previous_revision
+                && batch.intended_effect_digest.as_deref() == Some(&intended_effect_digest)
+        })
+        .collect::<Vec<_>>();
+    if exact_batches.len() != 1 {
+        anyhow::bail!(
+            "complexity fission world commit has {} exact candidate mutation batches",
+            exact_batches.len()
+        )
+    }
+    let expected_resolution_epoch = exact_batches
+        .pop()
+        .expect("one exact fission batch was required")
+        .expected_resolution_epoch;
+    committed_compiler_mutation_proof(
+        store,
+        world_receipt,
+        intended_effect_digest,
+        "elaborate_gestalt_fission",
+        "fission-preview",
+        expected_resolution_epoch,
+    )
+}
+
+fn validate_complexity_mutation_checkpoint(
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    round: u32,
+    invocation: &ComplexityPreviewInvocation,
+    prepared: &ComplexityPreparedMutationCheckpoint,
+    checkpoint: &ComplexityMutationCheckpoint,
+    mode: ComplexityCommitValidationMode,
+) -> anyhow::Result<()> {
+    use ghostlight_dungeon::elaboration::WorldComplexityProposal;
+
+    let derived_affected_subject_ids = complexity_affected_subject_ids(&prepared.proposal);
+    let derived_semantic_summary = complexity_session_journal_summary(&prepared.proposal)?;
+    if checkpoint.schema != "ghostlight.complexity_mutation_checkpoint.v1"
+        || checkpoint.round != round
+        || checkpoint.dispatch != invocation.dispatch
+        || prepared.schema != "ghostlight.complexity_prepared_mutation.v1"
+        || prepared.round != round
+        || prepared.dispatch != invocation.dispatch
+        || prepared.parent_gestalt_id != invocation.proposal.parent_gestalt_id()
+        || prepared.mutation_kind != invocation.proposal.mutation_kind()
+        || checkpoint.parent_gestalt_id != prepared.parent_gestalt_id
+        || checkpoint.mutation_kind != prepared.mutation_kind
+        || checkpoint.affected_subject_ids != derived_affected_subject_ids
+        || prepared.affected_subject_ids != derived_affected_subject_ids
+        || checkpoint.semantic_summary != derived_semantic_summary
+        || prepared.semantic_summary != derived_semantic_summary
+        || checkpoint.model_receipt_hashes != prepared.model_receipt_hashes
+        || !prepared
+            .model_receipt_hashes
+            .starts_with(&invocation.model_receipt_hashes)
+        || prepared.model_receipt_hashes.len()
+            != invocation.model_receipt_hashes.len().saturating_add(1)
+        || checkpoint.commit_receipt.schema != "ghostlight.world_commit_receipt.v1"
+        || checkpoint.commit_receipt.campaign_id != campaign.id
+        || checkpoint.commit_receipt.previous_revision != prepared.expected_revision
+        || checkpoint.commit_receipt.revision != prepared.expected_revision.saturating_add(1)
+        || checkpoint.commit_receipt.revision > campaign.revision
+        || checkpoint.commit_receipt.command_kind != checkpoint.mutation_kind
+    {
+        anyhow::bail!("complexity mutation checkpoint is inconsistent")
+    }
+    if mode == ComplexityCommitValidationMode::CurrentCampaignEffect
+        && !complexity_proposal_is_committed(campaign, &prepared.proposal)
+    {
+        anyhow::bail!(
+            "complexity mutation checkpoint is present but its committed proposal effect is absent from the campaign"
+        )
+    }
+
+    let model_receipts = load_checkpoint_receipts(store, &prepared.model_receipt_hashes)?;
+    let semantic = match &prepared.proposal {
+        WorldComplexityProposal::Fission { qualification, .. } => &qualification.semantic,
+        WorldComplexityProposal::Individuate { qualification, .. } => &qualification.semantic,
+    };
+    ghostlight_dungeon::elaboration::validate_world_complexity_semantic_receipt_provenance(
+        &prepared.proposal,
+        semantic,
+        &model_receipts,
+    )?;
+    if semantic.frozen_campaign_id != campaign.id
+        || semantic.frozen_world_revision != prepared.expected_revision
+        || prepared.proposal.expected_world_revision() != prepared.expected_revision
+    {
+        anyhow::bail!("prepared complexity qualification is bound to another campaign revision")
+    }
+
+    let canonical_receipt = store
+        .load::<ghostlight_dungeon::domain::WorldCommitReceipt>(
+            "world_commit_receipt.v1",
+            &format!(
+                "{}-{}",
+                checkpoint.commit_receipt.campaign_id, checkpoint.commit_receipt.revision
+            ),
+        )?
+        .map(|(_, receipt)| receipt)
+        .ok_or_else(|| anyhow::anyhow!("complexity mutation lacks its canonical world receipt"))?;
+    if canonical_receipt != checkpoint.commit_receipt {
+        anyhow::bail!("complexity checkpoint disagrees with its canonical world receipt")
+    }
+
+    match &prepared.proposal {
+        WorldComplexityProposal::Fission { preview, .. } => {
+            committed_complexity_fission_mutation_proof(store, &canonical_receipt, preview)?;
+        }
+        WorldComplexityProposal::Individuate { individuation, .. } => {
+            let presence = store
+                .load::<ghostlight_dungeon::domain::GestaltMaterializationReceipt>(
+                    "gestalt_materialization_receipt.v1",
+                    &format!(
+                        "{}-{}",
+                        canonical_receipt.campaign_id, canonical_receipt.revision
+                    ),
+                )?
+                .map(|(_, receipt)| receipt)
+                .ok_or_else(|| {
+                    anyhow::anyhow!("complexity individuation lacks its canonical presence receipt")
+                })?;
+            let member_id = ghostlight_dungeon::domain::canonical_gestalt_member_local_id(
+                &individuation.member.id,
+            );
+            let actor_id = ghostlight_dungeon::domain::gestalt_member_subject_id(&member_id);
+            if presence.schema != "ghostlight.gestalt_materialization_receipt.v1"
+                || presence.campaign_id != canonical_receipt.campaign_id
+                || presence.previous_revision != prepared.expected_revision
+                || presence.revision != canonical_receipt.revision
+                || presence.previous_resolution_epoch.saturating_add(1) != presence.resolution_epoch
+                || presence.reason != "model-qualified world-complexity individuation"
+                || presence.committed_at != canonical_receipt.committed_at
+                || presence.changes.len() != 1
+                || presence.changes[0].operation != "materialized"
+                || presence.changes[0].gestalt_id != individuation.gestalt_id
+                || presence.changes[0].member_id != member_id
+                || presence.changes[0].actor_id != actor_id
+                || presence.changes[0].gestalt_version != individuation.expected_gestalt_version
+                || presence.changes[0].member_version != 1
+            {
+                anyhow::bail!(
+                    "complexity individuation found a different canonical presence change"
+                )
+            }
+        }
+    }
+    Ok(())
+}
+
+fn load_and_validate_complexity_mutation_checkpoint(
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    round: u32,
+    invocation: &ComplexityPreviewInvocation,
+    prepared_path: &std::path::Path,
+    commit_path: &std::path::Path,
+    mode: ComplexityCommitValidationMode,
+) -> anyhow::Result<(
+    ComplexityPreparedMutationCheckpoint,
+    ComplexityMutationCheckpoint,
+)> {
+    if !prepared_path.is_file() {
+        anyhow::bail!(
+            "complexity commit references a missing prepared-mutation checkpoint: {}",
+            prepared_path.display()
+        )
+    }
+    if !commit_path.is_file() {
+        anyhow::bail!(
+            "completed complexity round references a missing mutation checkpoint: {}",
+            commit_path.display()
+        )
+    }
+    let prepared = read_checkpoint::<ComplexityPreparedMutationCheckpoint>(prepared_path)?;
+    let checkpoint = read_checkpoint::<ComplexityMutationCheckpoint>(commit_path)?;
+    validate_complexity_mutation_checkpoint(
+        store,
+        campaign,
+        round,
+        invocation,
+        &prepared,
+        &checkpoint,
+        mode,
+    )?;
+    Ok((prepared, checkpoint))
+}
+
+fn validate_completed_complexity_round_checkpoint(
+    root: &std::path::Path,
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    checkpoint: &ComplexityRoundCheckpoint,
+    round: u32,
+) -> anyhow::Result<()> {
+    if checkpoint.schema != "ghostlight.complexity_round_checkpoint.v1"
+        || checkpoint.round != round
+        || checkpoint.actionable_subjects_after
+            > ghostlight_dungeon::elaboration::canonical_actionable_subject_count(campaign)
+    {
+        anyhow::bail!("complexity round checkpoint is stale or malformed")
+    }
+    for path in &checkpoint.mutation_checkpoints {
+        if !path.is_file() {
+            anyhow::bail!(
+                "completed complexity round references a missing mutation checkpoint: {}",
+                path.display()
+            )
+        }
+    }
+    for path in &checkpoint.superseded_invocation_checkpoints {
+        if !path.is_file() {
+            anyhow::bail!(
+                "completed complexity round references a missing supersession or rejection checkpoint: {}",
+                path.display()
+            )
+        }
+    }
+
+    let preview_path = root.join(format!("complexity-round-{round:03}-preview.json"));
+    if !preview_path.is_file() {
+        anyhow::bail!(
+            "completed complexity round has no immutable preview checkpoint: {}",
+            preview_path.display()
+        )
+    }
+    let preview = read_checkpoint::<ComplexityRoundPreviewCheckpoint>(&preview_path)?;
+    if preview.schema != "ghostlight.complexity_round_preview.v1"
+        || preview.round != round
+        || preview.invocations.is_empty()
+        || preview.frozen_world_revision > campaign.revision
+        || preview.demand != checkpoint.demand_before
+        || preview.schedule != checkpoint.schedule
+    {
+        anyhow::bail!("completed complexity round preview is stale or malformed")
+    }
+    let previous_session_checkpoints = if round == 1 {
+        std::collections::BTreeMap::new()
+    } else {
+        let previous_path = root.join(format!(
+            "complexity-round-{:03}-checkpoint.json",
+            round.saturating_sub(1)
+        ));
+        let previous = read_checkpoint::<ComplexityRoundCheckpoint>(&previous_path)?;
+        if previous.schema != "ghostlight.complexity_round_checkpoint.v1"
+            || previous.round != round.saturating_sub(1)
+        {
+            anyhow::bail!("completed complexity round has no exact prior session checkpoint")
+        }
+        previous.session_checkpoints
+    };
+
+    let (retained_invocations, superseded_invocations) =
+        retain_unique_complexity_invocations(round, &preview.invocations);
+    let mut expected_superseded_paths = Vec::new();
+    for superseded in superseded_invocations {
+        let path = root.join(format!(
+            "complexity-round-{round:03}-superseded-{:04}.json",
+            superseded.dispatch.ordinal
+        ));
+        let persisted = read_checkpoint::<ComplexitySupersededInvocationCheckpoint>(&path)?;
+        if persisted != superseded {
+            anyhow::bail!("completed complexity supersession checkpoint is inconsistent")
+        }
+        expected_superseded_paths.push(path);
+    }
+
+    let mut expected_mutation_paths = Vec::new();
+    let mut expected_revision = preview.frozen_world_revision;
+    let mut expected_actionable_subjects = checkpoint.demand_before.current_actionable_subjects;
+    let mut session_routes = std::collections::BTreeMap::new();
+    let mut session_journals = std::collections::BTreeMap::<
+        String,
+        Vec<ghostlight_dungeon::elaboration::ElaboratorSessionJournalEntry>,
+    >::new();
+    let mut session_rejection_findings = std::collections::BTreeMap::<String, Vec<String>>::new();
+    for invocation in retained_invocations {
+        let location_id = match &invocation.proposal {
+            ghostlight_dungeon::elaboration::WorldComplexityProposal::Fission {
+                qualification,
+                ..
+            } => qualification.jurisdiction_location_id.clone(),
+            ghostlight_dungeon::elaboration::WorldComplexityProposal::Individuate {
+                qualification,
+                ..
+            } => qualification.jurisdiction_location_id.clone(),
+        };
+        let session_id = ghostlight_dungeon::elaboration::elaborator_session_id(
+            invocation.dispatch.title,
+            &location_id,
+        );
+        session_routes.insert(session_id.clone(), (invocation.dispatch.title, location_id));
+        let commit_path = root.join(format!(
+            "complexity-round-{round:03}-commit-{:04}.json",
+            invocation.dispatch.ordinal
+        ));
+        let rejection_path = root.join(format!(
+            "complexity-round-{round:03}-semantic-rejection-{:04}.json",
+            invocation.dispatch.ordinal
+        ));
+        match (commit_path.is_file(), rejection_path.is_file()) {
+            (true, false) => {
+                let prepared_path = root.join(format!(
+                    "complexity-round-{round:03}-prepared-{:04}.json",
+                    invocation.dispatch.ordinal
+                ));
+                let (prepared, mutation_checkpoint) =
+                    load_and_validate_complexity_mutation_checkpoint(
+                        store,
+                        campaign,
+                        round,
+                        invocation,
+                        &prepared_path,
+                        &commit_path,
+                        ComplexityCommitValidationMode::HistoricalCommit,
+                    )?;
+                if prepared.expected_revision != expected_revision {
+                    anyhow::bail!(
+                        "completed complexity commits do not form the exact historical revision chain"
+                    )
+                }
+                expected_revision = expected_revision.saturating_add(1);
+                expected_actionable_subjects =
+                    expected_actionable_subjects.saturating_add(match &prepared.proposal {
+                        ghostlight_dungeon::elaboration::WorldComplexityProposal::Fission {
+                            qualification,
+                            ..
+                        } => u32::from(qualification.target_actionable_gain),
+                        ghostlight_dungeon::elaboration::WorldComplexityProposal::Individuate {
+                            ..
+                        } => 1,
+                    });
+                session_journals
+                    .entry(session_id.clone())
+                    .or_default()
+                    .push(
+                        ghostlight_dungeon::elaboration::ElaboratorSessionJournalEntry {
+                            world_revision: mutation_checkpoint.commit_receipt.revision,
+                            commit_receipt_id: format!(
+                                "{}-{}",
+                                mutation_checkpoint.commit_receipt.campaign_id,
+                                mutation_checkpoint.commit_receipt.revision
+                            ),
+                            mutation_kind: mutation_checkpoint.mutation_kind,
+                            affected_subject_ids: mutation_checkpoint.affected_subject_ids,
+                            summary: mutation_checkpoint.semantic_summary,
+                        },
+                    );
+                expected_mutation_paths.push(commit_path);
+            }
+            (false, true) => {
+                let rejection = validate_complexity_semantic_rejection_checkpoint(
+                    store,
+                    campaign,
+                    round,
+                    invocation,
+                    &rejection_path,
+                )?;
+                session_rejection_findings
+                    .entry(session_id)
+                    .or_default()
+                    .push(bounded_prompt_excerpt(&rejection.diagnostic, 800));
+                expected_superseded_paths.push(rejection_path);
+            }
+            _ => anyhow::bail!(
+                "completed complexity invocation must have exactly one commit or semantic rejection checkpoint"
+            ),
+        }
+    }
+    if checkpoint.mutation_checkpoints != expected_mutation_paths
+        || checkpoint.superseded_invocation_checkpoints != expected_superseded_paths
+        || checkpoint.actionable_subjects_after != expected_actionable_subjects
+    {
+        anyhow::bail!(
+            "completed complexity round does not exactly cover its mutations, supersessions, rejections, and admitted complexity gain"
+        )
+    }
+    validate_complexity_round_session_checkpoints(
+        campaign,
+        &previous_session_checkpoints,
+        &checkpoint.session_checkpoints,
+        &session_routes,
+        &session_journals,
+        &session_rejection_findings,
+        expected_revision,
+    )?;
+    Ok(())
+}
+
+fn validate_titled_semantic_failure_checkpoint(
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    checkpoint: &TitledSemanticFailureCheckpoint,
+    expected_attempt: u8,
+    location_id: &str,
+    location_name: &str,
+    base_request: &str,
+    expected_verification_request: &str,
+    wave: &ghostlight_dungeon::elaboration::ElaborationWaveBinding,
+) -> anyhow::Result<()> {
+    wave.validate()?;
+    if checkpoint.schema != "ghostlight.titled_elaboration_semantic_failure.v2"
+        || checkpoint.attempt != expected_attempt
+        || checkpoint.location_id != location_id
+        || checkpoint.location_name != location_name
+        || checkpoint.base_request != base_request
+        || checkpoint.verification_request != expected_verification_request
+        || &checkpoint.wave != wave
+        || checkpoint.schedule.schema != "ghostlight.elaboration_schedule_receipt.v1"
+        || checkpoint.schedule.dispatches.is_empty()
+        || checkpoint.model_receipt_hashes.is_empty()
+        || checkpoint.verifier_receipt_hashes.len() != 1
+        || (expected_attempt == 1
+            && checkpoint
+                .repair_request
+                .as_deref()
+                .is_none_or(str::is_empty))
+        || (expected_attempt == 2 && checkpoint.repair_request.is_some())
+    {
+        anyhow::bail!("titled semantic-failure checkpoint is malformed or stale")
+    }
+    let candidate = checkpoint.admission.valid_candidate(campaign)?;
+    let expected_model_receipt_hashes = checkpoint
+        .admission
+        .model_stage_receipts()
+        .iter()
+        .map(|receipt| receipt.storage_key().to_owned())
+        .collect::<Vec<_>>();
+    if checkpoint.admission.target_location_id() != location_id
+        || checkpoint.admission.wave() != wave
+        || checkpoint.admission.schedule() != &checkpoint.schedule
+        || candidate.target_location_id != location_id
+        || checkpoint.model_receipt_hashes != expected_model_receipt_hashes
+    {
+        anyhow::bail!(
+            "titled semantic-failure checkpoint admission is not its exact derived candidate"
+        )
+    }
+    let loaded_model_receipts = load_checkpoint_receipts(store, &checkpoint.model_receipt_hashes)?;
+    if loaded_model_receipts != checkpoint.admission.model_stage_receipts() {
+        anyhow::bail!("titled semantic-failure checkpoint model ancestry was substituted")
+    }
+    let verifier_receipts = load_checkpoint_receipts(store, &checkpoint.verifier_receipt_hashes)?;
+    let expected_verifier_binding =
+        ghostlight_dungeon::compiler::titled_civic_verifier_binding(campaign, &candidate)?;
+    let expected_sources = checkpoint
+        .model_receipt_hashes
+        .iter()
+        .cloned()
+        .collect::<std::collections::BTreeSet<_>>();
+    if verifier_receipts.iter().any(|receipt| {
+        let actual_sources = receipt
+            .source_receipt_ids
+            .iter()
+            .cloned()
+            .collect::<std::collections::BTreeSet<_>>();
+        receipt.stage != "destination_civic_verification"
+            || receipt.model != ghostlight_dungeon::model::MODEL_CAPABLE
+            || receipt.validation_result == "valid"
+            || receipt.local_validation_error.is_none()
+            || receipt.snapshot_binding != expected_verifier_binding
+            || actual_sources.len() != receipt.source_receipt_ids.len()
+            || actual_sources != expected_sources
+    }) {
+        anyhow::bail!(
+            "titled semantic-failure checkpoint lacks its exact invalid civic verifier ancestry"
+        )
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn validate_titled_verifier_execution_failure_checkpoint(
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    checkpoint: &TitledVerifierExecutionFailureCheckpoint,
+    expected_semantic_attempt: u8,
+    expected_generation: u32,
+    location_id: &str,
+    location_name: &str,
+    expected_verification_request: &str,
+) -> anyhow::Result<()> {
+    if checkpoint.schema != "ghostlight.titled_verifier_execution_failure.v2"
+        || !matches!(expected_semantic_attempt, 1 | 2)
+        || checkpoint.semantic_attempt != expected_semantic_attempt
+        || checkpoint.generation != expected_generation
+        || checkpoint.location_id != location_id
+        || checkpoint.location_name != location_name
+        || checkpoint.verification_request != expected_verification_request
+        || checkpoint.diagnostic.trim().is_empty()
+        || checkpoint.attempts == 0
+        || checkpoint.attempts > 3
+    {
+        anyhow::bail!("titled verifier-execution failure checkpoint is malformed or stale")
+    }
+    let candidate = checkpoint.admission.valid_candidate(campaign)?;
+    let expected_model_receipt_hashes = checkpoint
+        .admission
+        .model_stage_receipts()
+        .iter()
+        .map(|receipt| receipt.storage_key().to_owned())
+        .collect::<Vec<_>>();
+    if checkpoint.admission.target_location_id() != location_id
+        || checkpoint.model_receipt_hashes != expected_model_receipt_hashes
+    {
+        anyhow::bail!(
+            "titled verifier-execution failure admission is not its exact derived candidate"
+        )
+    }
+    let loaded_model_receipts = load_checkpoint_receipts(store, &checkpoint.model_receipt_hashes)?;
+    if loaded_model_receipts != checkpoint.admission.model_stage_receipts() {
+        anyhow::bail!("titled verifier-execution failure model ancestry was substituted")
+    }
+    let verifier_receipts = load_checkpoint_receipts(store, &checkpoint.verifier_receipt_hashes)?;
+    let expected_binding =
+        ghostlight_dungeon::compiler::titled_civic_verifier_binding(campaign, &candidate)?;
+    let expected_sources = checkpoint
+        .model_receipt_hashes
+        .iter()
+        .cloned()
+        .collect::<std::collections::BTreeSet<_>>();
+    let unique_verifier_hashes = checkpoint
+        .verifier_receipt_hashes
+        .iter()
+        .collect::<std::collections::BTreeSet<_>>();
+    if unique_verifier_hashes.len() != checkpoint.verifier_receipt_hashes.len()
+        || verifier_receipts.iter().any(|receipt| {
+            let actual_sources = receipt
+                .source_receipt_ids
+                .iter()
+                .cloned()
+                .collect::<std::collections::BTreeSet<_>>();
+            receipt.stage != "destination_civic_verification"
+                || receipt.model != ghostlight_dungeon::model::MODEL_CAPABLE
+                || receipt.validation_result == "valid"
+                || receipt.local_validation_error.is_none()
+                || receipt.snapshot_binding != expected_binding
+                || actual_sources.len() != receipt.source_receipt_ids.len()
+                || actual_sources != expected_sources
+        })
+    {
+        anyhow::bail!("titled verifier-execution failure lacks its exact failed verifier ancestry")
+    }
+    Ok(())
 }
 
 fn latest_clock_binding_receipt(
@@ -1058,13 +2158,80 @@ fn committed_elaboration_mutation_proof(
     world_receipt: &ghostlight_dungeon::domain::WorldCommitReceipt,
     expansion: &ghostlight_dungeon::domain::RegionExpansion,
 ) -> anyhow::Result<TitledMutationProof> {
+    committed_compiler_mutation_proof(
+        store,
+        world_receipt,
+        ghostlight_dungeon::legacy_transition::digest_serializable(expansion)?,
+        "elaborate_locality",
+        "region-expansion",
+        None,
+    )
+}
+
+fn committed_region_mutation_proof(
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+    world_receipt: &ghostlight_dungeon::domain::WorldCommitReceipt,
+    expansion: &ghostlight_dungeon::domain::RegionExpansion,
+) -> anyhow::Result<TitledMutationProof> {
+    committed_compiler_mutation_proof(
+        store,
+        world_receipt,
+        ghostlight_dungeon::legacy_transition::digest_serializable(expansion)?,
+        "expand_region",
+        "region-expansion",
+        None,
+    )
+}
+
+fn expected_foundation_commit_checkpoint(
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+    location_id: &str,
+    location_name: &str,
+    request: &str,
+    preview: &ghostlight_dungeon::domain::LocalityElaborationPreview,
+    model_receipts: &[ghostlight_dungeon::model::ModelStageReceipt],
+    commit_receipt: ghostlight_dungeon::domain::WorldCommitReceipt,
+) -> anyhow::Result<FoundationCommitCheckpoint> {
+    if commit_receipt.command_kind != "elaborate_locality"
+        || commit_receipt.previous_revision != preview.expected_revision
+        || commit_receipt.revision != preview.expected_revision.saturating_add(1)
+        || preview.elaboration.target_location_id != location_id
+    {
+        anyhow::bail!("foundation world receipt does not bind the prepared locality")
+    }
+    Ok(FoundationCommitCheckpoint {
+        schema: "ghostlight.foundation_commit_checkpoint.v1".into(),
+        location_id: location_id.into(),
+        location_name: location_name.into(),
+        request: request.into(),
+        world_revision_before: preview.expected_revision,
+        world_revision_after: preview.expected_revision.saturating_add(1),
+        model_receipt_hashes: model_receipts
+            .iter()
+            .map(|receipt| receipt.storage_key().to_owned())
+            .collect(),
+        mutation_proof: committed_elaboration_mutation_proof(
+            store,
+            &commit_receipt,
+            &preview.elaboration.expansion,
+        )?,
+        commit_receipt,
+    })
+}
+
+fn committed_compiler_mutation_proof(
+    store: &ghostlight_dungeon::persistence::CampaignStore,
+    world_receipt: &ghostlight_dungeon::domain::WorldCommitReceipt,
+    intended_effect_digest: String,
+    expected_command_kind: &str,
+    source_receipt_kind: &str,
+    expected_resolution_epoch: Option<u64>,
+) -> anyhow::Result<TitledMutationProof> {
     use ghostlight_dungeon::transition::{
         MutationAuthorityEnvelope, WorldMutationBatch, WorldMutationReceipt, mutation_digest,
         validate_batch_structure,
     };
 
-    let intended_effect_digest =
-        ghostlight_dungeon::legacy_transition::digest_serializable(expansion)?;
     let mut batches = store
         .load_all::<WorldMutationBatch>("world_mutation_batch.v1")?
         .into_iter()
@@ -1076,7 +2243,7 @@ fn committed_elaboration_mutation_proof(
         .collect::<Vec<_>>();
     if batches.len() != 1 {
         anyhow::bail!(
-            "titled world commit has {} exact candidate mutation batches",
+            "world commit has {} exact candidate mutation batches",
             batches.len()
         )
     }
@@ -1092,7 +2259,7 @@ fn committed_elaboration_mutation_proof(
         .collect::<Vec<_>>();
     if authorities.len() != 1 {
         anyhow::bail!(
-            "titled world commit has {} exact mutation authorities",
+            "world commit has {} exact mutation authorities",
             authorities.len()
         )
     }
@@ -1114,7 +2281,7 @@ fn committed_elaboration_mutation_proof(
         .collect::<Vec<_>>();
     if mutation_receipts.len() != 1 {
         anyhow::bail!(
-            "titled world commit has {} exact mutation receipts",
+            "world commit has {} exact mutation receipts",
             mutation_receipts.len()
         )
     }
@@ -1127,18 +2294,18 @@ fn committed_elaboration_mutation_proof(
         .map(mutation_digest)
         .collect::<anyhow::Result<Vec<_>>>()?;
     let expected_source_receipt_id = format!(
-        "region-expansion:{}",
+        "{source_receipt_kind}:{}",
         intended_effect_digest.trim_start_matches("sha256:")
     );
     if world_receipt.schema != "ghostlight.world_commit_receipt.v1"
-        || world_receipt.command_kind != "elaborate_locality"
+        || world_receipt.command_kind != expected_command_kind
         || world_receipt.previous_revision.saturating_add(1) != world_receipt.revision
         || batch.schema != "ghostlight.world_mutation_batch.v1"
         || batch.source_receipt_id != expected_source_receipt_id
-        || batch.expected_resolution_epoch.is_some()
+        || batch.expected_resolution_epoch != expected_resolution_epoch
         || batch.mutations.is_empty()
         || authority.schema != "ghostlight.mutation_authority_envelope.v1"
-        || authority.resolution_epoch.is_some()
+        || authority.resolution_epoch != expected_resolution_epoch
         || authority.source_subject.is_some()
         || authority.procedure
             != ghostlight_dungeon::transition::MutationProcedure::CompilerAdmission
@@ -1149,7 +2316,7 @@ fn committed_elaboration_mutation_proof(
         || mutation_receipt.committed_at != world_receipt.committed_at
         || mutation_receipt.mutation_digests != expected_mutation_digests
     {
-        anyhow::bail!("titled mutation proof does not bind one compiler admission commit")
+        anyhow::bail!("mutation proof does not bind one compiler admission commit")
     }
 
     Ok(TitledMutationProof {
@@ -1175,7 +2342,8 @@ async fn main() -> anyhow::Result<()> {
             WorldComplexityProposal, WorldScaleIntent, admit_world_elaboration_wave,
             canonical_actionable_subject_count, compact_elaborator_session,
             derive_world_elaboration_demand, dispatch_elaboration_wave, elaborator_session_id,
-            finalize_world_elaboration, rebase_world_complexity_proposal, resume_elaboration_wave,
+            finalize_world_elaboration, qualify_world_complexity_proposal_semantics,
+            rebase_world_complexity_proposal, resume_elaboration_wave,
             world_complexity_parent_binding, world_elaboration_wave_binding,
         },
         kernel::{CommandResult, WorldKernel},
@@ -1458,26 +2626,43 @@ async fn main() -> anyhow::Result<()> {
         }
         let mut expanded_jurisdictions = Vec::new();
         for (index, request) in region_requests.iter().enumerate() {
+            let compile_request = strategic_region_request(request);
             let preview_path = root.join(format!("world-region-{:02}-preview.json", index + 1));
             let commit_path = root.join(format!("world-region-{:02}-checkpoint.json", index + 1));
             if resume && commit_path.is_file() {
                 let checkpoint: WorldRegionCommitCheckpoint = read_checkpoint(&commit_path)?;
-                if checkpoint.schema != "ghostlight.world_region_expansion_checkpoint.v1"
+                let prepared: WorldRegionPreviewCheckpoint = read_checkpoint(&preview_path)?;
+                if checkpoint.schema != "ghostlight.world_region_expansion_checkpoint.v2"
                     || checkpoint.request != *request
                     || checkpoint.origin_location_id != origin_location_id
                     || checkpoint.commit_receipt.command_kind != "expand_region"
+                    || prepared.schema != "ghostlight.world_region_expansion_preview.v1"
+                    || prepared.request != *request
+                    || prepared.preview.expansion.origin_location_id != origin_location_id
                 {
                     anyhow::bail!("world-region checkpoint differs at index {}", index + 1)
                 }
-                if !campaign
-                    .locations
-                    .contains_key(&checkpoint.jurisdiction_location_id)
-                {
-                    anyhow::bail!(
-                        "world-region checkpoint is not committed: {}",
-                        checkpoint.jurisdiction_location_id
-                    )
-                }
+                validate_strategic_region_expansion_shape(&prepared.preview.expansion)?;
+                let expected_jurisdiction_id = prepared
+                    .preview
+                    .expansion
+                    .civic_system
+                    .as_ref()
+                    .map(|civic| civic.jurisdiction_location_id.clone())
+                    .or_else(|| {
+                        prepared
+                            .preview
+                            .expansion
+                            .locations
+                            .first()
+                            .map(|location| location.id.clone())
+                    })
+                    .ok_or_else(|| anyhow::anyhow!("world-region expansion created no locality"))?;
+                let expected_model_receipt_hashes = prepared
+                    .model_receipts
+                    .iter()
+                    .map(|receipt| receipt.storage_key().to_owned())
+                    .collect::<Vec<_>>();
                 let canonical_receipt = store
                     .load::<ghostlight_dungeon::domain::WorldCommitReceipt>(
                         "world_commit_receipt.v1",
@@ -1485,8 +2670,23 @@ async fn main() -> anyhow::Result<()> {
                     )?
                     .map(|(_, receipt)| receipt)
                     .ok_or_else(|| anyhow::anyhow!("world-region commit receipt is missing"))?;
-                if canonical_receipt != checkpoint.commit_receipt {
-                    anyhow::bail!("world-region checkpoint differs from canonical receipt")
+                let mutation_proof = committed_region_mutation_proof(
+                    &store,
+                    &canonical_receipt,
+                    &prepared.preview.expansion,
+                )?;
+                if canonical_receipt != checkpoint.commit_receipt
+                    || checkpoint.commit_receipt.previous_revision
+                        != prepared.preview.expected_revision
+                    || checkpoint.jurisdiction_location_id != expected_jurisdiction_id
+                    || checkpoint.model_receipt_hashes != expected_model_receipt_hashes
+                    || checkpoint.mutation_proof != mutation_proof
+                    || load_checkpoint_receipts(&store, &checkpoint.model_receipt_hashes)?
+                        != prepared.model_receipts
+                {
+                    anyhow::bail!(
+                        "world-region checkpoint differs from its exact canonical expansion proof"
+                    )
                 }
                 expanded_jurisdictions.push(checkpoint.jurisdiction_location_id);
                 continue;
@@ -1516,7 +2716,7 @@ async fn main() -> anyhow::Result<()> {
                 checkpoint
             } else {
                 let (preview, receipts) = compiler
-                    .compile_destination(&campaign, &origin_location_id, request)
+                    .compile_destination(&campaign, &origin_location_id, &compile_request)
                     .await?;
                 let ghostlight_dungeon::domain::DestinationCompilationPreview::RegionExpansion(
                     preview,
@@ -1540,6 +2740,7 @@ async fn main() -> anyhow::Result<()> {
                 model_receipts: receipts,
                 ..
             } = preview_checkpoint;
+            validate_strategic_region_expansion_shape(&preview.expansion)?;
             if !preview.gaps.is_empty() {
                 publish_immutable_checkpoint(
                     &root.join(format!(
@@ -1589,40 +2790,29 @@ async fn main() -> anyhow::Result<()> {
                 };
                 campaign = expanded;
                 receipt
-            } else if campaign.revision > preview.expected_revision
-                && preview
-                    .expansion
-                    .locations
-                    .iter()
-                    .all(|location| campaign.locations.contains_key(&location.id))
-                && preview
-                    .expansion
-                    .institutions
-                    .iter()
-                    .all(|institution| campaign.institutions.contains_key(&institution.id))
-                && preview
-                    .expansion
-                    .populations
-                    .iter()
-                    .all(|population| campaign.gestalts.contains_key(&population.id))
-            {
+            } else if campaign.revision > preview.expected_revision {
                 store
                     .load::<ghostlight_dungeon::domain::WorldCommitReceipt>(
                         "world_commit_receipt.v1",
                         &format!("{}-{}", campaign.id, preview.expected_revision + 1),
                     )?
                     .map(|(_, receipt)| receipt)
-                    .filter(|receipt| receipt.command_kind == "expand_region")
+                    .filter(|receipt| {
+                        receipt.command_kind == "expand_region"
+                            && receipt.previous_revision == preview.expected_revision
+                    })
                     .ok_or_else(|| {
                         anyhow::anyhow!("committed world region lacks its canonical receipt")
                     })?
             } else {
                 anyhow::bail!("world-region preview no longer matches canonical campaign state")
             };
+            let mutation_proof =
+                committed_region_mutation_proof(&store, &receipt, &preview.expansion)?;
             publish_immutable_checkpoint(
                 &commit_path,
                 &WorldRegionCommitCheckpoint {
-                    schema: "ghostlight.world_region_expansion_checkpoint.v1".into(),
+                    schema: "ghostlight.world_region_expansion_checkpoint.v2".into(),
                     request: request.clone(),
                     origin_location_id: origin_location_id.clone(),
                     jurisdiction_location_id: jurisdiction_id.clone(),
@@ -1631,6 +2821,7 @@ async fn main() -> anyhow::Result<()> {
                         .iter()
                         .map(|receipt| receipt.storage_key().to_owned())
                         .collect(),
+                    mutation_proof,
                 },
             )?;
             expanded_jurisdictions.push(jurisdiction_id);
@@ -1780,6 +2971,8 @@ async fn main() -> anyhow::Result<()> {
             let foundation_request =
                 strategic_locality_request(&location_name, location_id, &pressure);
             let preview_path = root.join(format!("elaboration-{:02}-preview.json", index + 1));
+            let foundation_commit_path =
+                root.join(format!("elaboration-{:02}-commit.json", index + 1));
             let (elaborated, receipts) = if resume && preview_path.is_file() {
                 let checkpoint: FoundationCheckpoint = read_checkpoint(&preview_path)?;
                 let (expected_revision, expected_civic) = match &checkpoint.preview {
@@ -1808,19 +3001,101 @@ async fn main() -> anyhow::Result<()> {
                 if checkpoint.location_id != *location_id
                     || checkpoint.location_name != location_name
                     || checkpoint.request != foundation_request
-                    || campaign.revision <= expected_revision
-                    || campaign
-                        .civic_systems
-                        .get(location_id)
-                        .is_none_or(|current| {
-                            !civic_manifest_preserves(&campaign, current, &expected_civic)
-                        })
+                    || campaign.revision < expected_revision
                 {
                     anyhow::bail!(
-                        "foundation checkpoint for {location_id} is not committed in the resumed campaign"
+                        "foundation checkpoint for {location_id} does not bind the resumed campaign"
                     )
                 }
-                (campaign.clone(), checkpoint.model_receipts)
+                if campaign.revision == expected_revision {
+                    validate_strategic_foundation_civic_shape(&expected_civic)?;
+                    let command = match &checkpoint.preview {
+                        ghostlight_dungeon::domain::DestinationCompilationPreview::LocalityElaboration(
+                            preview,
+                        ) => WorldCommand::ElaborateLocality {
+                            expected_revision: preview.expected_revision,
+                            elaboration: preview.elaboration.clone(),
+                            evidence_receipts: preview.evidence_receipts.clone(),
+                            canon_candidates: preview.canon_candidates.clone(),
+                            model_stage_receipts: checkpoint.model_receipts.clone(),
+                        },
+                        _ => unreachable!("foundation checkpoint target was validated above"),
+                    };
+                    let CommandResult::Committed {
+                        campaign: elaborated,
+                        receipt,
+                    } = kernel.command(command).await?
+                    else {
+                        anyhow::bail!("prepared foundation did not commit")
+                    };
+                    let locality_preview = match &checkpoint.preview {
+                        ghostlight_dungeon::domain::DestinationCompilationPreview::LocalityElaboration(preview) => preview,
+                        _ => unreachable!("foundation checkpoint target was validated above"),
+                    };
+                    let expected_commit = expected_foundation_commit_checkpoint(
+                        &store,
+                        location_id,
+                        &location_name,
+                        &foundation_request,
+                        locality_preview,
+                        &checkpoint.model_receipts,
+                        receipt,
+                    )?;
+                    if foundation_commit_path.is_file() {
+                        if read_checkpoint::<FoundationCommitCheckpoint>(&foundation_commit_path)?
+                            != expected_commit
+                        {
+                            anyhow::bail!(
+                                "foundation completion checkpoint for {location_id} differs from its exact canonical proof"
+                            )
+                        }
+                    } else {
+                        publish_immutable_checkpoint(&foundation_commit_path, &expected_commit)?;
+                    }
+                    (elaborated, checkpoint.model_receipts)
+                } else {
+                    let locality_preview = match &checkpoint.preview {
+                        ghostlight_dungeon::domain::DestinationCompilationPreview::LocalityElaboration(preview) => preview,
+                        _ => unreachable!("foundation checkpoint target was validated above"),
+                    };
+                    let receipt = store
+                        .load::<ghostlight_dungeon::domain::WorldCommitReceipt>(
+                            "world_commit_receipt.v1",
+                            &format!("{}-{}", campaign.id, expected_revision.saturating_add(1)),
+                        )?
+                        .map(|(_, receipt)| receipt)
+                        .ok_or_else(|| {
+                            anyhow::anyhow!(
+                                "foundation checkpoint for {location_id} lacks its canonical world receipt"
+                            )
+                        })?;
+                    let expected_commit = expected_foundation_commit_checkpoint(
+                        &store,
+                        location_id,
+                        &location_name,
+                        &foundation_request,
+                        locality_preview,
+                        &checkpoint.model_receipts,
+                        receipt,
+                    )?;
+                    if foundation_commit_path.is_file() {
+                        if read_checkpoint::<FoundationCommitCheckpoint>(&foundation_commit_path)?
+                            != expected_commit
+                        {
+                            anyhow::bail!(
+                                "foundation completion checkpoint for {location_id} differs from its exact canonical proof"
+                            )
+                        }
+                    } else {
+                        publish_immutable_checkpoint(&foundation_commit_path, &expected_commit)?;
+                    }
+                    if load_checkpoint_receipts(&store, &expected_commit.model_receipt_hashes)?
+                        != checkpoint.model_receipts
+                    {
+                        anyhow::bail!("foundation checkpoint model ancestry was substituted")
+                    }
+                    (campaign.clone(), checkpoint.model_receipts)
+                }
             } else {
                 let compilation = compiler
                     .compile_destination(&campaign, location_id, &foundation_request)
@@ -1870,12 +3145,24 @@ async fn main() -> anyhow::Result<()> {
                 let command = match &preview {
                 ghostlight_dungeon::domain::DestinationCompilationPreview::LocalityElaboration(
                     preview,
-                ) => WorldCommand::ElaborateLocality {
-                    expected_revision: preview.expected_revision,
-                    elaboration: preview.elaboration.clone(),
-                    evidence_receipts: preview.evidence_receipts.clone(),
-                    canon_candidates: preview.canon_candidates.clone(),
-                    model_stage_receipts: receipts.clone(),
+                ) => {
+                    validate_strategic_foundation_civic_shape(
+                        preview
+                            .elaboration
+                            .expansion
+                            .civic_system
+                            .as_ref()
+                            .ok_or_else(|| anyhow::anyhow!(
+                                "strategic locality foundation has no civic manifest"
+                            ))?,
+                    )?;
+                    WorldCommand::ElaborateLocality {
+                        expected_revision: preview.expected_revision,
+                        elaboration: preview.elaboration.clone(),
+                        evidence_receipts: preview.evidence_receipts.clone(),
+                        canon_candidates: preview.canon_candidates.clone(),
+                        model_stage_receipts: receipts.clone(),
+                    }
                 },
                 ghostlight_dungeon::domain::DestinationCompilationPreview::RegionExpansion(_) => {
                     anyhow::bail!(
@@ -1883,24 +3170,38 @@ async fn main() -> anyhow::Result<()> {
                     )
                 }
             };
-                std::fs::write(
+                publish_immutable_checkpoint(
                     &preview_path,
-                    serde_json::to_vec_pretty(&serde_json::json!({
+                    &serde_json::json!({
                         "location_id":location_id,
                         "location_name":location_name,
                         "request":foundation_request,
                         "preview":&preview,
                         "model_receipts":&receipts,
-                    }))?,
+                    }),
                 )?;
                 let committed = kernel.command(command).await?;
                 let CommandResult::Committed {
                     campaign: elaborated,
-                    ..
+                    receipt,
                 } = committed
                 else {
                     anyhow::bail!("strategic locality elaboration did not commit")
                 };
+                let locality_preview = match &preview {
+                    ghostlight_dungeon::domain::DestinationCompilationPreview::LocalityElaboration(preview) => preview,
+                    _ => unreachable!("foundation command target was validated above"),
+                };
+                let expected_commit = expected_foundation_commit_checkpoint(
+                    &store,
+                    location_id,
+                    &location_name,
+                    &foundation_request,
+                    locality_preview,
+                    &receipts,
+                    receipt,
+                )?;
+                publish_immutable_checkpoint(&foundation_commit_path, &expected_commit)?;
                 (elaborated, receipts)
             };
             campaign = elaborated;
@@ -1909,136 +3210,116 @@ async fn main() -> anyhow::Result<()> {
             let titled_commit_path =
                 root.join(format!("titled-elaboration-{:02}-commit.json", index + 1));
             if resume && titled_preview_path.is_file() {
-                let titled: TitledPreviewCheckpoint = read_checkpoint(&titled_preview_path)?;
-                let candidate = titled.candidate.as_ref().ok_or_else(|| {
-                    anyhow::anyhow!("committed titled checkpoint has no candidate")
+                let titled: TitledReadyCheckpoint = read_checkpoint(&titled_preview_path)?;
+                let admission = titled.finalized.admission();
+                let candidate = admission.candidate().ok_or_else(|| {
+                    anyhow::anyhow!("prepared titled checkpoint has no candidate")
                 })?;
                 let candidate_civic =
                     candidate.expansion.civic_system.as_ref().ok_or_else(|| {
-                        anyhow::anyhow!("committed titled checkpoint has no civic candidate")
+                        anyhow::anyhow!("prepared titled checkpoint has no civic candidate")
                     })?;
-                if titled.schema != "ghostlight.titled_elaboration_preview.v1"
+                if titled.schema != "ghostlight.titled_elaboration_ready.v1"
                     || titled.location_id != *location_id
                     || titled.location_name != location_name
                     || titled.request
                         != strategic_titled_locality_request(&location_name, location_id, &pressure)
                     || candidate.target_location_id != *location_id
-                    || titled.candidate_diagnostic.is_some()
-                    || !titled.rejections.is_empty()
-                    || titled.accepted_operations.len() != titled.schedule.dispatches.len()
+                    || admission.target_location_id() != *location_id
                 {
                     anyhow::bail!(
-                        "committed titled checkpoint for {location_id} is internally inconsistent"
+                        "prepared titled checkpoint for {location_id} is internally inconsistent"
                     )
                 }
-                let civic = campaign.civic_systems.get(location_id).ok_or_else(|| {
-                    anyhow::anyhow!("resumed campaign lacks civic system for {location_id}")
-                })?;
-                if !candidate_civic.semantic_verification_receipt_id.is_empty()
-                    || !civic_manifest_preserves(&campaign, civic, candidate_civic)
-                {
-                    anyhow::bail!(
-                        "titled preview for {location_id} is not the civic system committed in CultCache"
-                    )
-                }
-                let existing_commit_checkpoint = titled_commit_path
-                    .is_file()
-                    .then(|| read_checkpoint::<TitledCommitCheckpoint>(&titled_commit_path))
-                    .transpose()?;
-                let verifier_receipt_hash = existing_commit_checkpoint
-                    .as_ref()
-                    .map(|checkpoint| checkpoint.verifier_receipt_hash.as_str())
-                    .unwrap_or(&civic.semantic_verification_receipt_id);
-                let verifier_receipt = store
-                    .load::<ghostlight_dungeon::model::ModelStageReceipt>(
-                        "persona_stage_receipt.v1",
-                        verifier_receipt_hash,
-                    )?
-                    .map(|(_, receipt)| receipt)
-                    .ok_or_else(|| {
-                        anyhow::anyhow!(
-                            "committed titled verifier receipt is missing for {location_id}"
-                        )
-                    })?;
-                let proposal_receipts =
-                    load_checkpoint_receipts(&store, &titled.model_receipt_hashes)?;
-                let expected_foundation_revision = match &read_checkpoint::<FoundationCheckpoint>(
-                    &preview_path,
-                )?
-                .preview
-                {
-                    ghostlight_dungeon::domain::DestinationCompilationPreview::LocalityElaboration(
-                        preview,
-                    ) => preview.expected_revision,
-                    _ => unreachable!("foundation checkpoint was validated above"),
-                };
-                let world_revision_before = expected_foundation_revision.saturating_add(1);
-                let world_revision_after = expected_foundation_revision.saturating_add(2);
-                let persisted_commit_receipt = store
-                    .load::<ghostlight_dungeon::domain::WorldCommitReceipt>(
-                        "world_commit_receipt.v1",
-                        &format!("{}-{world_revision_after}", campaign.id),
-                    )?
-                    .map(|(_, receipt)| receipt)
-                    .ok_or_else(|| {
-                        anyhow::anyhow!(
-                            "titled world commit receipt is missing for {location_id} revision {world_revision_after}"
-                        )
-                    })?;
+                let verifier_receipt = titled.finalized.semantic_verifier_receipt().clone();
+                let world_revision_before = admission.expected_revision();
+                let world_revision_after = world_revision_before.saturating_add(1);
                 let finalized_expansion =
                     finalized_titled_expansion(candidate, verifier_receipt.storage_key())?;
+                let (titled_elaborated, persisted_commit_receipt) = if campaign.revision
+                    == world_revision_before
+                {
+                    let CommandResult::Committed {
+                        campaign: advanced,
+                        receipt,
+                    } = kernel
+                        .commit_elaboration(titled.finalized.clone())
+                        .await
+                        .map_err(anyhow::Error::new)?
+                    else {
+                        anyhow::bail!("prepared titled elaboration did not commit")
+                    };
+                    (advanced, receipt)
+                } else if campaign.revision == world_revision_after {
+                    let civic = campaign.civic_systems.get(location_id).ok_or_else(|| {
+                        anyhow::anyhow!("resumed campaign lacks civic system for {location_id}")
+                    })?;
+                    if !civic_manifest_preserves(&campaign, civic, candidate_civic)
+                        || civic.semantic_verification_receipt_id != verifier_receipt.storage_key()
+                    {
+                        anyhow::bail!(
+                            "prepared titled elaboration for {location_id} is not the canonical committed civic system"
+                        )
+                    }
+                    let receipt = store
+                            .load::<ghostlight_dungeon::domain::WorldCommitReceipt>(
+                                "world_commit_receipt.v1",
+                                &format!("{}-{world_revision_after}", campaign.id),
+                            )?
+                            .map(|(_, receipt)| receipt)
+                            .ok_or_else(|| {
+                                anyhow::anyhow!(
+                                    "titled world commit receipt is missing for {location_id} revision {world_revision_after}"
+                                )
+                            })?;
+                    (campaign.clone(), receipt)
+                } else {
+                    anyhow::bail!(
+                        "prepared titled elaboration for {location_id} cannot recover from world revision {}",
+                        campaign.revision
+                    )
+                };
                 let mutation_proof = committed_elaboration_mutation_proof(
                     &store,
                     &persisted_commit_receipt,
                     &finalized_expansion,
                 )?;
-                let commit_checkpoint = if let Some(checkpoint) = existing_commit_checkpoint {
-                    checkpoint
-                } else {
-                    let checkpoint = TitledCommitCheckpoint {
-                        schema: "ghostlight.titled_elaboration_commit.v1".into(),
-                        location_id: location_id.clone(),
-                        location_name: location_name.clone(),
-                        world_revision_before,
-                        world_revision_after,
-                        wave: titled.wave.clone(),
-                        schedule: titled.schedule.clone(),
-                        admission_digest: None,
-                        verifier_receipt_hash: verifier_receipt.storage_key().into(),
-                        model_receipt_hashes: titled.model_receipt_hashes.clone(),
-                        commit_receipt: persisted_commit_receipt.clone(),
-                        mutation_proof: mutation_proof.clone(),
-                        legacy_inferred: true,
-                    };
-                    publish_immutable_checkpoint(&titled_commit_path, &checkpoint)?;
-                    checkpoint
+                let admitted_model_receipt_hashes = admission
+                    .model_stage_receipts()
+                    .iter()
+                    .map(|receipt| receipt.storage_key().to_owned())
+                    .collect::<Vec<_>>();
+                let expected_commit_checkpoint = TitledCommitCheckpoint {
+                    schema: "ghostlight.titled_elaboration_commit.v1".into(),
+                    location_id: location_id.clone(),
+                    location_name: location_name.clone(),
+                    world_revision_before,
+                    world_revision_after,
+                    wave: admission.wave().clone(),
+                    schedule: admission.schedule().clone(),
+                    admission_digest: Some(admission.digest().into()),
+                    verifier_receipt_hash: verifier_receipt.storage_key().into(),
+                    model_receipt_hashes: admitted_model_receipt_hashes.clone(),
+                    commit_receipt: persisted_commit_receipt.clone(),
+                    mutation_proof: mutation_proof.clone(),
+                    legacy_inferred: false,
                 };
-                if commit_checkpoint.schema != "ghostlight.titled_elaboration_commit.v1"
-                    || commit_checkpoint.location_id != *location_id
-                    || commit_checkpoint.location_name != location_name
-                    || commit_checkpoint.world_revision_before != world_revision_before
-                    || commit_checkpoint.world_revision_after != world_revision_after
-                    || commit_checkpoint.wave != titled.wave
-                    || commit_checkpoint.schedule != titled.schedule
-                    || commit_checkpoint.verifier_receipt_hash != verifier_receipt.storage_key()
-                    || commit_checkpoint.model_receipt_hashes != titled.model_receipt_hashes
-                    || commit_checkpoint.commit_receipt != persisted_commit_receipt
-                    || commit_checkpoint.mutation_proof != mutation_proof
-                    || commit_checkpoint.commit_receipt.command_kind != "elaborate_locality"
-                    || (!commit_checkpoint.legacy_inferred
-                        && commit_checkpoint
-                            .admission_digest
-                            .as_deref()
-                            .is_none_or(str::is_empty))
-                {
+                let commit_checkpoint = if titled_commit_path.is_file() {
+                    read_checkpoint::<TitledCommitCheckpoint>(&titled_commit_path)?
+                } else {
+                    publish_immutable_checkpoint(&titled_commit_path, &expected_commit_checkpoint)?;
+                    expected_commit_checkpoint.clone()
+                };
+                if commit_checkpoint != expected_commit_checkpoint {
                     anyhow::bail!(
                         "titled completion checkpoint for {location_id} is not bound to its canonical commit"
                     )
                 }
                 titled_scheduler = ElaborationScheduler::from_state(
                     &titled_profile,
-                    titled.schedule.final_state.clone(),
+                    admission.schedule().final_state.clone(),
                 )?;
+                campaign = titled_elaborated;
                 elaboration_reports.push(serde_json::json!({
                     "location_id":location_id,
                     "location_name":location_name,
@@ -2046,175 +3327,547 @@ async fn main() -> anyhow::Result<()> {
                     "preview_path":preview_path,
                     "titled_preview_path":titled_preview_path,
                     "titled_commit_path":titled_commit_path,
-                    "titled_model_receipts":proposal_receipts,
+                    "titled_model_receipts":admission.model_stage_receipts(),
                     "titled_semantic_verifier_receipt":verifier_receipt,
                     "model_receipts":receipts,
                     "resumed_committed_checkpoint":true,
-                    "original_wave":titled.wave,
+                    "original_wave":admission.wave(),
                     "original_resume_source":titled.resumed_from,
                     "original_retried_dispatch_ordinals":titled.retried_dispatch_ordinals,
                 }));
                 continue;
             }
             let titled_wave = world_elaboration_wave_binding(&campaign, location_id)?;
-            let titled_worker = Arc::new(ModelWorldElaborationWorker::new(
-                model.clone(),
-                Arc::new(campaign.clone()),
-                location_id.clone(),
-                strategic_titled_locality_request(&location_name, location_id, &pressure),
-            )?);
+            let base_titled_request =
+                strategic_titled_locality_request(&location_name, location_id, &pressure);
+            let semantic_failure_one_path = root.join(format!(
+                "titled-elaboration-{:02}-semantic-failure-01.json",
+                index + 1
+            ));
+            let semantic_failure_two_path = root.join(format!(
+                "titled-elaboration-{:02}-semantic-failure-02.json",
+                index + 1
+            ));
+            if resume && semantic_failure_two_path.is_file() {
+                if !semantic_failure_one_path.is_file() {
+                    anyhow::bail!(
+                        "terminal titled semantic failure for {location_id} lost its first-attempt authority"
+                    )
+                }
+                let first: TitledSemanticFailureCheckpoint =
+                    read_checkpoint(&semantic_failure_one_path)?;
+                validate_titled_semantic_failure_checkpoint(
+                    &store,
+                    &campaign,
+                    &first,
+                    1,
+                    location_id,
+                    &location_name,
+                    &base_titled_request,
+                    &base_titled_request,
+                    &titled_wave,
+                )?;
+                let repair_request = first.repair_request.as_deref().ok_or_else(|| {
+                    anyhow::anyhow!("first titled semantic failure has no repair request")
+                })?;
+                let terminal: TitledSemanticFailureCheckpoint =
+                    read_checkpoint(&semantic_failure_two_path)?;
+                validate_titled_semantic_failure_checkpoint(
+                    &store,
+                    &campaign,
+                    &terminal,
+                    2,
+                    location_id,
+                    &location_name,
+                    &base_titled_request,
+                    repair_request,
+                    &titled_wave,
+                )?;
+                anyhow::bail!(
+                    "titled semantic repair was already rejected for {location_id}: {}",
+                    terminal.diagnostic
+                )
+            }
+            let semantic_resume = if resume && semantic_failure_one_path.is_file() {
+                let checkpoint: TitledSemanticFailureCheckpoint =
+                    read_checkpoint(&semantic_failure_one_path)?;
+                validate_titled_semantic_failure_checkpoint(
+                    &store,
+                    &campaign,
+                    &checkpoint,
+                    1,
+                    location_id,
+                    &location_name,
+                    &base_titled_request,
+                    &base_titled_request,
+                    &titled_wave,
+                )?;
+                Some(checkpoint)
+            } else {
+                None
+            };
             let original_failure_path = root.join(format!(
                 "titled-elaboration-{:02}-terminal-failure.json",
                 index + 1
             ));
             let failure_checkpoint_paths = titled_failure_checkpoint_paths(&root, index + 1)?;
-            let checkpoint_path = failure_checkpoint_paths.last().cloned();
-            let next_failure_path = if checkpoint_path.is_some() {
+            let mut checkpoint_path = failure_checkpoint_paths.last().cloned();
+            let mut checkpoint_for_resume = checkpoint_path
+                .as_ref()
+                .map(|path| read_checkpoint::<TitledFailureCheckpoint>(path))
+                .transpose()?;
+            if let Some(semantic) = semantic_resume.as_ref()
+                && checkpoint_for_resume.as_ref().is_some_and(|checkpoint| {
+                    checkpoint.request != semantic.repair_request.as_deref().unwrap_or_default()
+                })
+            {
+                checkpoint_path = None;
+                checkpoint_for_resume = None;
+            }
+            if let (Some(semantic), Some(checkpoint)) =
+                (semantic_resume.as_ref(), checkpoint_for_resume.as_ref())
+                && checkpoint.semantic_retry_diagnostic.as_deref()
+                    != Some(semantic.diagnostic.as_str())
+            {
+                anyhow::bail!("titled repair failure checkpoint lost its semantic retry diagnostic")
+            }
+            if checkpoint_for_resume.is_none()
+                && let Some(semantic) = semantic_resume.as_ref()
+            {
+                titled_scheduler = ElaborationScheduler::from_state(
+                    &titled_profile,
+                    semantic.schedule.final_state.clone(),
+                )?;
+            }
+            let active_titled_request = checkpoint_for_resume
+                .as_ref()
+                .map(|checkpoint| checkpoint.request.clone())
+                .or_else(|| {
+                    semantic_resume
+                        .as_ref()
+                        .and_then(|checkpoint| checkpoint.repair_request.clone())
+                })
+                .unwrap_or_else(|| base_titled_request.clone());
+            let initial_semantic_retry_diagnostic = semantic_resume
+                .as_ref()
+                .map(|checkpoint| checkpoint.diagnostic.clone());
+            let mut verification_request = active_titled_request.clone();
+            let verifier_semantic_attempt = if semantic_resume.is_some() { 2 } else { 1 };
+            let verifier_execution_paths = titled_verifier_execution_failure_checkpoint_paths(
+                &root,
+                index + 1,
+                verifier_semantic_attempt,
+            )?;
+            let verifier_execution_resume = if resume {
+                let mut latest = None;
+                let mut prior_admission_digest = None::<String>;
+                let mut prior_verifier_hashes = std::collections::BTreeSet::<String>::new();
+                for (generation, path) in &verifier_execution_paths {
+                    let checkpoint =
+                        read_checkpoint::<TitledVerifierExecutionFailureCheckpoint>(path)?;
+                    validate_titled_verifier_execution_failure_checkpoint(
+                        &store,
+                        &campaign,
+                        &checkpoint,
+                        verifier_semantic_attempt,
+                        *generation,
+                        location_id,
+                        &location_name,
+                        &verification_request,
+                    )?;
+                    let verifier_hashes = checkpoint
+                        .verifier_receipt_hashes
+                        .iter()
+                        .cloned()
+                        .collect::<std::collections::BTreeSet<_>>();
+                    if let Some(prior_digest) = prior_admission_digest.as_deref()
+                        && (checkpoint.admission.digest() != prior_digest
+                            || !verifier_hashes.is_superset(&prior_verifier_hashes))
+                    {
+                        anyhow::bail!(
+                            "titled verifier-execution recovery generations changed admission or lost failed verifier ancestry"
+                        )
+                    }
+                    prior_admission_digest = Some(checkpoint.admission.digest().into());
+                    prior_verifier_hashes = verifier_hashes;
+                    latest = Some((path.clone(), checkpoint));
+                }
+                latest
+            } else {
+                None
+            };
+            if let Some((path, _)) = verifier_execution_resume.as_ref() {
+                checkpoint_path = Some(path.clone());
+            }
+            let next_failure_path = if failure_checkpoint_paths.is_empty() {
+                original_failure_path
+            } else {
                 root.join(format!(
                     "titled-elaboration-{:02}-resume-{:02}-terminal-failure.json",
                     index + 1,
                     failure_checkpoint_paths.len()
                 ))
-            } else {
-                original_failure_path
             };
             let mut retried_dispatch_ordinals = Vec::new();
-            let titled_result = if resume {
-                if let Some(checkpoint_path) = checkpoint_path.as_ref() {
-                    let checkpoint: TitledFailureCheckpoint = read_checkpoint(checkpoint_path)?;
-                    if checkpoint.location_id != *location_id
-                        || checkpoint.location_name != location_name
-                        || checkpoint.request != titled_worker.task_request()
-                        || checkpoint.wave.as_ref() != Some(&titled_wave)
-                    {
-                        anyhow::bail!(
-                            "titled failure checkpoint for {location_id} does not bind the current frozen wave"
-                        )
-                    }
-                    retried_dispatch_ordinals = checkpoint
-                        .invocation_failures
-                        .iter()
-                        .filter_map(|failure| {
-                            failure.dispatch.as_ref().map(|dispatch| dispatch.ordinal)
-                        })
-                        .collect();
-                    let scheduler_state = checkpoint
-                        .schedule
-                        .as_ref()
-                        .ok_or_else(|| anyhow::anyhow!("resume checkpoint has no schedule"))?
-                        .final_state
-                        .clone();
-                    titled_scheduler =
-                        ElaborationScheduler::from_state(&titled_profile, scheduler_state)?;
-                    resume_elaboration_wave(
-                        rehydrate_titled_failure(checkpoint, &store)?,
-                        titled_parallelism,
-                        titled_worker.clone(),
+            let (mut proposal_receipts, mut admission, mut verifier_execution_receipt_hashes) =
+                if let Some((_, checkpoint)) = verifier_execution_resume {
+                    titled_scheduler = ElaborationScheduler::from_state(
+                        &titled_profile,
+                        checkpoint.admission.schedule().final_state.clone(),
+                    )?;
+                    let proposal_receipts = checkpoint.admission.model_stage_receipts().to_vec();
+                    (
+                        proposal_receipts,
+                        checkpoint.admission,
+                        checkpoint.verifier_receipt_hashes,
                     )
-                    .await
                 } else {
-                    dispatch_elaboration_wave(
-                        &mut titled_scheduler,
-                        titled_wave,
-                        &titled_eligible,
-                        titled_invocation_budget,
-                        titled_parallelism,
-                        titled_worker.clone(),
-                    )
-                    .await
-                }
-            } else {
-                dispatch_elaboration_wave(
-                    &mut titled_scheduler,
-                    titled_wave,
-                    &titled_eligible,
-                    titled_invocation_budget,
-                    titled_parallelism,
-                    titled_worker.clone(),
-                )
-                .await
-            };
-            let titled_run = match titled_result {
-                Ok(run) => run,
-                Err(failure) => {
-                    let receipts = failure
-                        .completed_invocations
-                        .iter()
-                        .flat_map(|invocation| invocation.model_stage_receipts.iter())
-                        .chain(
-                            failure
+                    let titled_worker = Arc::new(ModelWorldElaborationWorker::new(
+                        model.clone(),
+                        Arc::new(campaign.clone()),
+                        location_id.clone(),
+                        active_titled_request,
+                    )?);
+                    let titled_result = if resume {
+                        if let Some(checkpoint) = checkpoint_for_resume {
+                            if checkpoint.location_id != *location_id
+                                || checkpoint.location_name != location_name
+                                || checkpoint.request != titled_worker.task_request()
+                                || checkpoint.wave.as_ref() != Some(&titled_wave)
+                            {
+                                anyhow::bail!(
+                                    "titled failure checkpoint for {location_id} does not bind the current frozen wave"
+                                )
+                            }
+                            retried_dispatch_ordinals = checkpoint
                                 .invocation_failures
                                 .iter()
-                                .flat_map(|failure| failure.model_stage_receipts.iter()),
+                                .filter_map(|failure| {
+                                    failure.dispatch.as_ref().map(|dispatch| dispatch.ordinal)
+                                })
+                                .collect();
+                            let scheduler_state = checkpoint
+                                .schedule
+                                .as_ref()
+                                .ok_or_else(|| {
+                                    anyhow::anyhow!("resume checkpoint has no schedule")
+                                })?
+                                .final_state
+                                .clone();
+                            titled_scheduler =
+                                ElaborationScheduler::from_state(&titled_profile, scheduler_state)?;
+                            resume_elaboration_wave(
+                                rehydrate_titled_failure(checkpoint, &store)?,
+                                titled_parallelism,
+                                titled_worker.clone(),
+                            )
+                            .await
+                        } else {
+                            dispatch_elaboration_wave(
+                                &mut titled_scheduler,
+                                titled_wave.clone(),
+                                &titled_eligible,
+                                titled_invocation_budget,
+                                titled_parallelism,
+                                titled_worker.clone(),
+                            )
+                            .await
+                        }
+                    } else {
+                        dispatch_elaboration_wave(
+                            &mut titled_scheduler,
+                            titled_wave.clone(),
+                            &titled_eligible,
+                            titled_invocation_budget,
+                            titled_parallelism,
+                            titled_worker.clone(),
                         )
+                        .await
+                    };
+                    let titled_run = match titled_result {
+                        Ok(run) => run,
+                        Err(failure) => {
+                            let receipts = failure
+                                .completed_invocations
+                                .iter()
+                                .flat_map(|invocation| invocation.model_stage_receipts.iter())
+                                .chain(
+                                    failure
+                                        .invocation_failures
+                                        .iter()
+                                        .flat_map(|failure| failure.model_stage_receipts.iter()),
+                                )
+                                .cloned()
+                                .collect::<Vec<_>>();
+                            if !receipts.is_empty() {
+                                store.persist_model_stage_receipts(&receipts)?;
+                            }
+                            let failure_path = next_failure_path;
+                            publish_immutable_checkpoint(
+                                &failure_path,
+                                &serde_json::json!({
+                                    "schema":"ghostlight.titled_elaboration_failure.v1",
+                                    "location_id":location_id,
+                                    "location_name":location_name,
+                                    "request":titled_worker.task_request(),
+                                    "wave":failure.wave,
+                                    "schedule":failure.schedule,
+                                    "completed_invocations":failure.completed_invocations.iter().map(|invocation|serde_json::json!({
+                                        "dispatch":invocation.dispatch,
+                                        "proposal":invocation.proposal,
+                                        "model_receipt_hashes":invocation.model_stage_receipts.iter().map(|receipt|receipt.storage_key()).collect::<Vec<_>>(),
+                                    })).collect::<Vec<_>>(),
+                                    "invocation_failures":failure.invocation_failures.iter().map(|failure|serde_json::json!({
+                                        "dispatch":failure.dispatch,
+                                        "diagnostic":failure.diagnostic,
+                                        "model_receipt_hashes":failure.model_stage_receipts.iter().map(|receipt|receipt.storage_key()).collect::<Vec<_>>(),
+                                    })).collect::<Vec<_>>(),
+                                    "semantic_retry_diagnostic":initial_semantic_retry_diagnostic,
+                                }),
+                            )?;
+                            anyhow::bail!(
+                                "titled elaboration wave failed for {location_id}; exact receipt at {}",
+                                failure_path.display()
+                            );
+                        }
+                    };
+                    let proposal_receipts = titled_run
+                        .invocations()
+                        .iter()
+                        .flat_map(|invocation| invocation.model_stage_receipts.iter())
                         .cloned()
                         .collect::<Vec<_>>();
-                    if !receipts.is_empty() {
-                        store.persist_model_stage_receipts(&receipts)?;
-                    }
-                    let failure_path = next_failure_path;
-                    publish_immutable_checkpoint(
-                        &failure_path,
-                        &serde_json::json!({
-                            "schema":"ghostlight.titled_elaboration_failure.v1",
-                            "location_id":location_id,
-                            "location_name":location_name,
-                            "request":titled_worker.task_request(),
-                            "wave":failure.wave,
-                            "schedule":failure.schedule,
-                            "completed_invocations":failure.completed_invocations.iter().map(|invocation|serde_json::json!({
-                                "dispatch":invocation.dispatch,
-                                "proposal":invocation.proposal,
-                                "model_receipt_hashes":invocation.model_stage_receipts.iter().map(|receipt|receipt.storage_key()).collect::<Vec<_>>(),
-                            })).collect::<Vec<_>>(),
-                            "invocation_failures":failure.invocation_failures.iter().map(|failure|serde_json::json!({
-                                "dispatch":failure.dispatch,
-                                "diagnostic":failure.diagnostic,
-                                "model_receipt_hashes":failure.model_stage_receipts.iter().map(|receipt|receipt.storage_key()).collect::<Vec<_>>(),
-                            })).collect::<Vec<_>>(),
-                        }),
-                    )?;
+                    store.persist_model_stage_receipts(&proposal_receipts)?;
+                    let admission =
+                        admit_world_elaboration_wave(&campaign, location_id, titled_run)?;
+                    (proposal_receipts, admission, Vec::new())
+                };
+            let mut semantic_retry_diagnostic = initial_semantic_retry_diagnostic;
+            let mut verifier_execution_failures = 0_u8;
+            let (candidate, verifier_receipt) = loop {
+                let candidate = admission.candidate().cloned().ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "titled elaboration produced no candidate: {}",
+                        admission.candidate_diagnostic().unwrap_or("no diagnostic")
+                    )
+                })?;
+                if let Some(diagnostic) = admission.candidate_diagnostic() {
                     anyhow::bail!(
-                        "titled elaboration wave failed for {location_id}; exact receipt at {}",
-                        failure_path.display()
+                        "titled elaboration candidate requires reconciliation: {diagnostic}"
                     );
                 }
+                let causal_receipt_ids = admission
+                    .model_stage_receipts()
+                    .iter()
+                    .map(|receipt| receipt.storage_key().to_owned())
+                    .collect::<Vec<_>>();
+                match compiler
+                    .verify_titled_locality_elaboration(
+                        &campaign,
+                        &verification_request,
+                        description,
+                        &candidate,
+                        &causal_receipt_ids,
+                    )
+                    .await
+                {
+                    Ok(receipt) => break (candidate, receipt),
+                    Err(error) => {
+                        let failure = error.downcast_ref::<
+                            ghostlight_dungeon::compiler::CivicElaborationVerificationFailure,
+                        >();
+                        if let Some(failure) = failure {
+                            store.persist_model_stage_receipts(&failure.model_receipts)?;
+                            verifier_execution_receipt_hashes.extend(
+                                failure
+                                    .model_receipts
+                                    .iter()
+                                    .map(|receipt| receipt.storage_key().to_owned()),
+                            );
+                        }
+                        if failure
+                            .and_then(|failure| failure.semantic_diagnostic.as_ref())
+                            .is_none()
+                        {
+                            verifier_execution_failures =
+                                verifier_execution_failures.saturating_add(1);
+                            if failure.is_some() && verifier_execution_failures < 3 {
+                                continue;
+                            }
+                            verifier_execution_receipt_hashes.sort();
+                            verifier_execution_receipt_hashes.dedup();
+                            let diagnostic = failure
+                                .map(|failure| failure.message.clone())
+                                .unwrap_or_else(|| error.to_string());
+                            let semantic_attempt = if semantic_retry_diagnostic.is_some() {
+                                2
+                            } else {
+                                1
+                            };
+                            let prior_failures =
+                                titled_verifier_execution_failure_checkpoint_paths(
+                                    &root,
+                                    index + 1,
+                                    semantic_attempt,
+                                )?;
+                            let generation = prior_failures
+                                .last()
+                                .map_or(1, |(generation, _)| generation.saturating_add(1));
+                            let failure_path = root.join(format!(
+                                "titled-elaboration-{:02}-verifier-execution-failure-{semantic_attempt:02}-generation-{generation:03}.json",
+                                index + 1,
+                            ));
+                            publish_immutable_checkpoint(
+                                &failure_path,
+                                &TitledVerifierExecutionFailureCheckpoint {
+                                    schema: "ghostlight.titled_verifier_execution_failure.v2"
+                                        .into(),
+                                    semantic_attempt,
+                                    generation,
+                                    location_id: location_id.clone(),
+                                    location_name: location_name.clone(),
+                                    verification_request: verification_request.clone(),
+                                    diagnostic: diagnostic.clone(),
+                                    attempts: verifier_execution_failures,
+                                    admission: admission.clone(),
+                                    model_receipt_hashes: admission
+                                        .model_stage_receipts()
+                                        .iter()
+                                        .map(|receipt| receipt.storage_key().to_owned())
+                                        .collect(),
+                                    verifier_receipt_hashes: verifier_execution_receipt_hashes
+                                        .clone(),
+                                },
+                            )?;
+                            anyhow::bail!(
+                                "titled civic verifier execution failed without rejecting the candidate for {location_id}; exact retry authority at {}: {diagnostic}",
+                                failure_path.display()
+                            )
+                        }
+                        let diagnostic = failure
+                            .and_then(|failure| failure.semantic_diagnostic.clone())
+                            .expect("semantic rejection was established above");
+                        let repair_request = strategic_titled_repair_request(
+                            &location_name,
+                            location_id,
+                            &pressure,
+                            &diagnostic,
+                        );
+                        let semantic_failure = TitledSemanticFailureCheckpoint {
+                            schema: "ghostlight.titled_elaboration_semantic_failure.v2".into(),
+                            attempt: if semantic_retry_diagnostic.is_some() {
+                                2
+                            } else {
+                                1
+                            },
+                            location_id: location_id.clone(),
+                            location_name: location_name.clone(),
+                            base_request: base_titled_request.clone(),
+                            verification_request: verification_request.clone(),
+                            repair_request: semantic_retry_diagnostic
+                                .is_none()
+                                .then_some(repair_request.clone()),
+                            diagnostic: diagnostic.clone(),
+                            admission: admission.clone(),
+                            wave: admission.wave().clone(),
+                            schedule: admission.schedule().clone(),
+                            model_receipt_hashes: admission
+                                .model_stage_receipts()
+                                .iter()
+                                .map(|receipt| receipt.storage_key().to_owned())
+                                .collect(),
+                            verifier_receipt_hashes: failure
+                                .into_iter()
+                                .flat_map(|failure| failure.model_receipts.iter())
+                                .map(|receipt| receipt.storage_key().to_owned())
+                                .collect(),
+                        };
+                        let semantic_failure_path = if semantic_retry_diagnostic.is_some() {
+                            &semantic_failure_two_path
+                        } else {
+                            &semantic_failure_one_path
+                        };
+                        publish_immutable_checkpoint(semantic_failure_path, &semantic_failure)?;
+                        if semantic_retry_diagnostic.is_some() {
+                            return Err(error);
+                        }
+                        semantic_retry_diagnostic = Some(diagnostic.clone());
+                        let repair_worker = Arc::new(ModelWorldElaborationWorker::new(
+                            model.clone(),
+                            Arc::new(campaign.clone()),
+                            location_id.clone(),
+                            repair_request.clone(),
+                        )?);
+                        let repair_result = dispatch_elaboration_wave(
+                            &mut titled_scheduler,
+                            titled_wave.clone(),
+                            &titled_eligible,
+                            titled_invocation_budget,
+                            titled_parallelism,
+                            repair_worker,
+                        )
+                        .await;
+                        let repair_run = match repair_result {
+                            Ok(run) => run,
+                            Err(failure) => {
+                                let receipts = failure
+                                    .completed_invocations
+                                    .iter()
+                                    .flat_map(|invocation| invocation.model_stage_receipts.iter())
+                                    .chain(
+                                        failure.invocation_failures.iter().flat_map(|failure| {
+                                            failure.model_stage_receipts.iter()
+                                        }),
+                                    )
+                                    .cloned()
+                                    .collect::<Vec<_>>();
+                                if !receipts.is_empty() {
+                                    store.persist_model_stage_receipts(&receipts)?;
+                                }
+                                publish_immutable_checkpoint(
+                                    &next_failure_path,
+                                    &serde_json::json!({
+                                        "schema":"ghostlight.titled_elaboration_failure.v1",
+                                        "location_id":location_id,
+                                        "location_name":location_name,
+                                        "request":repair_request,
+                                        "wave":failure.wave,
+                                        "schedule":failure.schedule,
+                                        "completed_invocations":failure.completed_invocations.iter().map(|invocation|serde_json::json!({
+                                            "dispatch":invocation.dispatch,
+                                            "proposal":invocation.proposal,
+                                            "model_receipt_hashes":invocation.model_stage_receipts.iter().map(|receipt|receipt.storage_key()).collect::<Vec<_>>(),
+                                        })).collect::<Vec<_>>(),
+                                        "invocation_failures":failure.invocation_failures.iter().map(|failure|serde_json::json!({
+                                            "dispatch":failure.dispatch,
+                                            "diagnostic":failure.diagnostic,
+                                            "model_receipt_hashes":failure.model_stage_receipts.iter().map(|receipt|receipt.storage_key()).collect::<Vec<_>>(),
+                                        })).collect::<Vec<_>>(),
+                                        "semantic_retry_diagnostic":semantic_retry_diagnostic,
+                                    }),
+                                )?;
+                                anyhow::bail!(
+                                    "titled semantic retry wave failed for {location_id}; exact receipt at {}",
+                                    next_failure_path.display()
+                                )
+                            }
+                        };
+                        let repair_receipts = repair_run
+                            .invocations()
+                            .iter()
+                            .flat_map(|invocation| invocation.model_stage_receipts.iter())
+                            .cloned()
+                            .collect::<Vec<_>>();
+                        store.persist_model_stage_receipts(&repair_receipts)?;
+                        proposal_receipts.extend(repair_receipts);
+                        verification_request = repair_request;
+                        admission =
+                            admit_world_elaboration_wave(&campaign, location_id, repair_run)?;
+                        verifier_execution_failures = 0;
+                        verifier_execution_receipt_hashes.clear();
+                    }
+                }
             };
-            let proposal_receipts = titled_run
-                .invocations()
-                .iter()
-                .flat_map(|invocation| invocation.model_stage_receipts.iter())
-                .cloned()
-                .collect::<Vec<_>>();
-            store.persist_model_stage_receipts(&proposal_receipts)?;
-            let admission = admit_world_elaboration_wave(&campaign, location_id, titled_run)?;
-            std::fs::write(
-                &titled_preview_path,
-                serde_json::to_vec_pretty(&serde_json::json!({
-                    "schema":"ghostlight.titled_elaboration_preview.v1",
-                    "location_id":location_id,
-                    "location_name":location_name,
-                    "request":titled_worker.task_request(),
-                    "wave":admission.wave(),
-                    "schedule":admission.schedule(),
-                    "accepted_operations":admission.accepted_operations(),
-                    "rejections":admission.rejections(),
-                    "candidate":admission.candidate(),
-                    "candidate_diagnostic":admission.candidate_diagnostic(),
-                    "model_receipt_hashes":admission.model_stage_receipts().iter().map(|receipt|receipt.storage_key()).collect::<Vec<_>>(),
-                    "resumed_from":checkpoint_path,
-                    "retried_dispatch_ordinals":retried_dispatch_ordinals,
-                }))?,
-            )?;
-            let candidate = admission.candidate().cloned().ok_or_else(|| {
-                anyhow::anyhow!(
-                    "titled elaboration produced no candidate: {}",
-                    admission.candidate_diagnostic().unwrap_or("no diagnostic")
-                )
-            })?;
-            if let Some(diagnostic) = admission.candidate_diagnostic() {
-                anyhow::bail!("titled elaboration candidate requires reconciliation: {diagnostic}");
-            }
             let admission_digest = admission.digest().to_owned();
             let admitted_wave = admission.wave().clone();
             let admitted_schedule = admission.schedule().clone();
@@ -2223,36 +3876,24 @@ async fn main() -> anyhow::Result<()> {
                 .iter()
                 .map(|receipt| receipt.storage_key().to_owned())
                 .collect::<Vec<_>>();
-            let causal_receipt_ids = admission
-                .model_stage_receipts()
-                .iter()
-                .map(|receipt| receipt.storage_key().to_owned())
-                .collect::<Vec<_>>();
-            let verifier_receipt = match compiler
-                .verify_titled_locality_elaboration(
-                    &campaign,
-                    titled_worker.task_request(),
-                    description,
-                    &candidate,
-                    &causal_receipt_ids,
-                )
-                .await
-            {
-                Ok(receipt) => receipt,
-                Err(error) => {
-                    if let Some(failure) = error.downcast_ref::<
-                        ghostlight_dungeon::compiler::CivicElaborationVerificationFailure,
-                    >() {
-                        store.persist_model_stage_receipts(&failure.model_receipts)?;
-                    }
-                    return Err(error);
-                }
-            };
             store.persist_model_stage_receipts(std::slice::from_ref(&verifier_receipt))?;
             let finalized_expansion =
                 finalized_titled_expansion(&candidate, verifier_receipt.storage_key())?;
             let finalized =
                 finalize_world_elaboration(&campaign, admission, verifier_receipt.clone())?;
+            publish_immutable_checkpoint(
+                &titled_preview_path,
+                &TitledReadyCheckpoint {
+                    schema: "ghostlight.titled_elaboration_ready.v1".into(),
+                    location_id: location_id.clone(),
+                    location_name: location_name.clone(),
+                    request: base_titled_request.clone(),
+                    finalized: finalized.clone(),
+                    resumed_from: checkpoint_path,
+                    retried_dispatch_ordinals,
+                    semantic_retry_diagnostic,
+                },
+            )?;
             let CommandResult::Committed {
                 campaign: titled_elaborated,
                 receipt: titled_commit_receipt,
@@ -2333,6 +3974,7 @@ async fn main() -> anyhow::Result<()> {
         let mut complexity_scheduler = ElaborationScheduler::new(&complexity_profile)?;
         let mut session_checkpoints = BTreeMap::<String, ElaboratorSessionCheckpoint>::new();
         let mut completed_complexity_rounds = 0_u32;
+        let mut last_completed_complexity_count = None;
         if resume {
             for round in 1..=maximum_complexity_rounds as u32 {
                 let path = root.join(format!("complexity-round-{round:03}-checkpoint.json"));
@@ -2340,13 +3982,13 @@ async fn main() -> anyhow::Result<()> {
                     break;
                 }
                 let checkpoint: ComplexityRoundCheckpoint = read_checkpoint(&path)?;
-                if checkpoint.schema != "ghostlight.complexity_round_checkpoint.v1"
-                    || checkpoint.round != round
-                    || checkpoint.actionable_subjects_after
-                        > canonical_actionable_subject_count(&campaign)
-                {
-                    anyhow::bail!("complexity round checkpoint is stale or malformed")
-                }
+                validate_completed_complexity_round_checkpoint(
+                    &root,
+                    &store,
+                    &campaign,
+                    &checkpoint,
+                    round,
+                )?;
                 complexity_scheduler = ElaborationScheduler::from_state(
                     &complexity_profile,
                     checkpoint.schedule.final_state.clone(),
@@ -2362,6 +4004,7 @@ async fn main() -> anyhow::Result<()> {
                 }
                 session_checkpoints = checkpoint.session_checkpoints.clone();
                 completed_complexity_rounds = round;
+                last_completed_complexity_count = Some(checkpoint.actionable_subjects_after);
                 complexity_reports.push(serde_json::to_value(checkpoint)?);
             }
         }
@@ -2455,6 +4098,7 @@ async fn main() -> anyhow::Result<()> {
                     first_dispatch_ordinal,
                     parents.clone(),
                     parent_jurisdiction_ids,
+                    demand.actionable_subject_deficit,
                     session_checkpoints.clone(),
                 )?);
                 let result = if let Some(path) = latest_failure.as_ref() {
@@ -2617,103 +4261,339 @@ async fn main() -> anyhow::Result<()> {
             let mut session_routes = BTreeMap::<String, (ElaboratorTitle, String)>::new();
             let mut invocation_sessions = BTreeMap::<u64, String>::new();
             for invocation in &retained_invocations {
-                let profile = campaign
-                    .agency_profiles
-                    .get(invocation.proposal.parent_gestalt_id())
-                    .ok_or_else(|| anyhow::anyhow!("complexity parent has no agency profile"))?;
-                let location_id = complexity_realm_for_profile(&campaign, profile, &demand)
-                    .ok_or_else(|| {
-                        anyhow::anyhow!("complexity parent has no demanded realm jurisdiction")
-                    })?;
+                let location_id = match &invocation.proposal {
+                    WorldComplexityProposal::Fission { qualification, .. } => {
+                        qualification.jurisdiction_location_id.clone()
+                    }
+                    WorldComplexityProposal::Individuate { qualification, .. } => {
+                        qualification.jurisdiction_location_id.clone()
+                    }
+                };
                 let session_id = elaborator_session_id(invocation.dispatch.title, &location_id);
                 invocation_sessions.insert(invocation.dispatch.ordinal, session_id.clone());
                 session_routes.insert(session_id, (invocation.dispatch.title, location_id));
             }
             let mut journals = BTreeMap::<String, Vec<ElaboratorSessionJournalEntry>>::new();
+            let mut recent_rejection_findings = BTreeMap::<String, Vec<String>>::new();
+            let mut accepted_round_semantic_deltas = Vec::<String>::new();
             for invocation in &retained_invocations {
                 let commit_path = root.join(format!(
                     "complexity-round-{round:03}-commit-{:04}.json",
                     invocation.dispatch.ordinal
                 ));
+                let semantic_rejection_path = root.join(format!(
+                    "complexity-round-{round:03}-semantic-rejection-{:04}.json",
+                    invocation.dispatch.ordinal
+                ));
+                let prepared_path = root.join(format!(
+                    "complexity-round-{round:03}-prepared-{:04}.json",
+                    invocation.dispatch.ordinal
+                ));
+                if semantic_rejection_path.is_file() {
+                    let rejection = validate_complexity_semantic_rejection_checkpoint(
+                        &store,
+                        &campaign,
+                        round,
+                        invocation,
+                        &semantic_rejection_path,
+                    )?;
+                    let session_id = invocation_sessions
+                        .get(&invocation.dispatch.ordinal)
+                        .ok_or_else(|| {
+                            anyhow::anyhow!("complexity rejection has no session route")
+                        })?;
+                    recent_rejection_findings
+                        .entry(session_id.clone())
+                        .or_default()
+                        .push(bounded_prompt_excerpt(&rejection.diagnostic, 800));
+                    superseded_paths.push(semantic_rejection_path);
+                    continue;
+                }
                 let checkpoint = if commit_path.is_file() {
                     read_checkpoint::<ComplexityMutationCheckpoint>(&commit_path)?
                 } else {
-                    let proposal = rebase_world_complexity_proposal(
-                        &invocation.parent_binding,
-                        &campaign,
-                        invocation.proposal.clone(),
-                    )?;
-                    let parent_gestalt_id = proposal.parent_gestalt_id().to_owned();
-                    let mutation_kind = proposal.mutation_kind().to_owned();
-                    let affected_subject_ids = match &proposal {
-                        WorldComplexityProposal::Fission { preview } => {
-                            std::iter::once(preview.parent_gestalt_id.clone())
-                                .chain(preview.children.iter().map(|child| child.id.clone()))
-                                .collect::<Vec<_>>()
+                    let prepared = if prepared_path.is_file() {
+                        let prepared = read_checkpoint::<ComplexityPreparedMutationCheckpoint>(
+                            &prepared_path,
+                        )?;
+                        let derived_affected_subject_ids =
+                            complexity_affected_subject_ids(&prepared.proposal);
+                        let derived_semantic_summary =
+                            complexity_session_journal_summary(&prepared.proposal)?;
+                        if prepared.schema != "ghostlight.complexity_prepared_mutation.v1"
+                            || prepared.round != round
+                            || prepared.dispatch != invocation.dispatch
+                            || prepared.parent_gestalt_id != invocation.proposal.parent_gestalt_id()
+                            || prepared.mutation_kind != invocation.proposal.mutation_kind()
+                            || !prepared
+                                .model_receipt_hashes
+                                .starts_with(&invocation.model_receipt_hashes)
+                            || prepared.model_receipt_hashes.len()
+                                != invocation.model_receipt_hashes.len().saturating_add(1)
+                            || prepared.affected_subject_ids != derived_affected_subject_ids
+                            || prepared.semantic_summary != derived_semantic_summary
+                        {
+                            anyhow::bail!("complexity prepared-mutation checkpoint is inconsistent")
                         }
-                        WorldComplexityProposal::Individuate { individuation } => vec![
-                            individuation.gestalt_id.clone(),
-                            ghostlight_dungeon::domain::gestalt_member_subject_id(
-                                &individuation.member.id,
-                            ),
-                        ],
+                        prepared
+                    } else {
+                        let proposal = rebase_world_complexity_proposal(
+                            &invocation.parent_binding,
+                            &campaign,
+                            invocation.proposal.clone(),
+                        )?;
+                        let semantic_summary = complexity_session_journal_summary(&proposal)?;
+                        let parent_gestalt_id = proposal.parent_gestalt_id().to_owned();
+                        let mutation_kind = proposal.mutation_kind().to_owned();
+                        let source_model_receipts =
+                            load_checkpoint_receipts(&store, &invocation.model_receipt_hashes)?;
+                        let source_receipt_ids = source_model_receipts
+                            .iter()
+                            .map(|receipt| receipt.storage_key().to_owned())
+                            .collect::<Vec<_>>();
+                        let prior_world_sessions =
+                            session_checkpoints.values().cloned().collect::<Vec<_>>();
+                        let semantic_context = serde_json::json!({
+                            "assigned_title":invocation.dispatch.title,
+                            "all_prior_round_title_jurisdiction_sessions":&prior_world_sessions,
+                            "accepted_earlier_this_round":&accepted_round_semantic_deltas,
+                        });
+                        let (proposal, semantic_verdict, semantic_receipt) =
+                            qualify_world_complexity_proposal_semantics(
+                                model.as_ref(),
+                                &campaign,
+                                &semantic_context,
+                                proposal,
+                                source_receipt_ids,
+                            )
+                            .await?;
+                        store.persist_model_stage_receipts(std::slice::from_ref(
+                            &semantic_receipt,
+                        ))?;
+                        if !semantic_verdict.accepted() {
+                            let rejection = ComplexitySemanticRejectionCheckpoint {
+                                schema: "ghostlight.complexity_semantic_rejection.v2".into(),
+                                round,
+                                dispatch: invocation.dispatch.clone(),
+                                parent_gestalt_id,
+                                proposal,
+                                verifier_receipt_hash: semantic_receipt.storage_key().into(),
+                                diagnostic: complexity_semantic_rejection_diagnostic(
+                                    &semantic_verdict,
+                                )?,
+                            };
+                            publish_immutable_checkpoint(&semantic_rejection_path, &rejection)?;
+                            let session_id = invocation_sessions
+                                .get(&invocation.dispatch.ordinal)
+                                .ok_or_else(|| {
+                                    anyhow::anyhow!("complexity rejection has no session route")
+                                })?;
+                            recent_rejection_findings
+                                .entry(session_id.clone())
+                                .or_default()
+                                .push(bounded_prompt_excerpt(&rejection.diagnostic, 800));
+                            superseded_paths.push(semantic_rejection_path);
+                            continue;
+                        }
+                        let affected_subject_ids = complexity_affected_subject_ids(&proposal);
+                        let mut model_receipts = source_model_receipts;
+                        model_receipts.push(semantic_receipt);
+                        let committed_model_receipt_hashes = model_receipts
+                            .iter()
+                            .map(|receipt| receipt.storage_key().to_owned())
+                            .collect::<Vec<_>>();
+                        let prepared = ComplexityPreparedMutationCheckpoint {
+                            schema: "ghostlight.complexity_prepared_mutation.v1".into(),
+                            round,
+                            dispatch: invocation.dispatch.clone(),
+                            expected_revision: campaign.revision,
+                            proposal,
+                            parent_gestalt_id,
+                            mutation_kind,
+                            affected_subject_ids,
+                            model_receipt_hashes: committed_model_receipt_hashes,
+                            semantic_summary,
+                        };
+                        publish_immutable_checkpoint(&prepared_path, &prepared)?;
+                        prepared
                     };
                     let model_receipts =
-                        load_checkpoint_receipts(&store, &invocation.model_receipt_hashes)?;
-                    let committed = match proposal {
-                        WorldComplexityProposal::Fission { preview } => {
-                            kernel
-                                .command(WorldCommand::FissionGestalt {
-                                    expected_revision: campaign.revision,
-                                    preview,
-                                    evidence_receipts: Vec::new(),
-                                    model_stage_receipts: model_receipts,
-                                })
-                                .await?
+                        load_checkpoint_receipts(&store, &prepared.model_receipt_hashes)?;
+                    let semantic = match &prepared.proposal {
+                        WorldComplexityProposal::Fission { qualification, .. } => {
+                            &qualification.semantic
                         }
-                        WorldComplexityProposal::Individuate { individuation } => {
-                            if model_receipts.is_empty() {
-                                anyhow::bail!("complexity individuation has no model receipt")
-                            }
-                            kernel
-                                .command(WorldCommand::IndividuateGestaltMember {
-                                    expected_revision: campaign.revision,
-                                    individuation,
-                                })
-                                .await?
+                        WorldComplexityProposal::Individuate { qualification, .. } => {
+                            &qualification.semantic
                         }
                     };
-                    let CommandResult::Committed {
-                        campaign: advanced,
-                        receipt,
-                    } = committed
-                    else {
-                        anyhow::bail!("complexity mutation did not commit")
+                    ghostlight_dungeon::elaboration::validate_world_complexity_semantic_receipt_provenance(
+                        &prepared.proposal,
+                        semantic,
+                        &model_receipts,
+                    )?;
+                    if semantic.frozen_campaign_id != campaign.id
+                        || semantic.frozen_world_revision != prepared.expected_revision
+                        || prepared.proposal.expected_world_revision() != prepared.expected_revision
+                    {
+                        anyhow::bail!(
+                            "prepared complexity qualification is bound to another campaign revision"
+                        )
+                    }
+                    let (advanced, receipt) = if campaign.revision == prepared.expected_revision {
+                        let committed = match prepared.proposal.clone() {
+                            WorldComplexityProposal::Fission {
+                                preview,
+                                qualification,
+                            } => {
+                                kernel
+                                    .command(WorldCommand::ElaborateGestaltFission {
+                                        expected_revision: campaign.revision,
+                                        preview,
+                                        qualification,
+                                        model_stage_receipts: model_receipts,
+                                    })
+                                    .await?
+                            }
+                            WorldComplexityProposal::Individuate {
+                                individuation,
+                                qualification,
+                            } => {
+                                kernel
+                                    .command(WorldCommand::ElaborateGestaltIndividuation {
+                                        expected_revision: campaign.revision,
+                                        individuation,
+                                        qualification,
+                                        model_stage_receipts: model_receipts,
+                                    })
+                                    .await?
+                            }
+                        };
+                        let CommandResult::Committed {
+                            campaign: advanced,
+                            receipt,
+                        } = committed
+                        else {
+                            anyhow::bail!("complexity mutation did not commit")
+                        };
+                        (advanced, receipt)
+                    } else if campaign.revision == prepared.expected_revision.saturating_add(1)
+                        && complexity_proposal_is_committed(&campaign, &prepared.proposal)
+                    {
+                        let receipt = store
+                            .load::<ghostlight_dungeon::domain::WorldCommitReceipt>(
+                                "world_commit_receipt.v1",
+                                &format!("{}-{}", campaign.id, campaign.revision),
+                            )?
+                            .map(|(_, receipt)| receipt)
+                            .ok_or_else(|| {
+                                anyhow::anyhow!(
+                                    "prepared complexity mutation lacks its canonical world receipt"
+                                )
+                            })?;
+                        if receipt.schema != "ghostlight.world_commit_receipt.v1"
+                            || receipt.campaign_id != campaign.id
+                            || receipt.previous_revision != prepared.expected_revision
+                            || receipt.revision != campaign.revision
+                            || receipt.command_kind != prepared.mutation_kind
+                        {
+                            anyhow::bail!(
+                                "prepared complexity mutation found a different canonical world receipt"
+                            )
+                        }
+                        match &prepared.proposal {
+                            WorldComplexityProposal::Fission { preview, .. } => {
+                                committed_compiler_mutation_proof(
+                                    &store,
+                                    &receipt,
+                                    ghostlight_dungeon::legacy_transition::digest_serializable(
+                                        preview,
+                                    )?,
+                                    "elaborate_gestalt_fission",
+                                    "fission-preview",
+                                    Some(
+                                        campaign
+                                            .resolution_policy
+                                            .resolution_epoch
+                                            .saturating_sub(1),
+                                    ),
+                                )?;
+                            }
+                            WorldComplexityProposal::Individuate { individuation, .. } => {
+                                let presence = store
+                                    .load::<ghostlight_dungeon::domain::GestaltMaterializationReceipt>(
+                                        "gestalt_materialization_receipt.v1",
+                                        &format!("{}-{}", campaign.id, campaign.revision),
+                                    )?
+                                    .map(|(_, receipt)| receipt)
+                                    .ok_or_else(|| {
+                                        anyhow::anyhow!(
+                                            "prepared individuation lacks its canonical presence receipt"
+                                        )
+                                    })?;
+                                let member_id =
+                                    ghostlight_dungeon::domain::canonical_gestalt_member_local_id(
+                                        &individuation.member.id,
+                                    );
+                                let actor_id =
+                                    ghostlight_dungeon::domain::gestalt_member_subject_id(
+                                        &member_id,
+                                    );
+                                if presence.schema
+                                    != "ghostlight.gestalt_materialization_receipt.v1"
+                                    || presence.campaign_id != campaign.id
+                                    || presence.previous_revision != prepared.expected_revision
+                                    || presence.revision != campaign.revision
+                                    || presence.reason
+                                        != "model-qualified world-complexity individuation"
+                                    || presence.changes.len() != 1
+                                    || presence.changes[0].operation != "materialized"
+                                    || presence.changes[0].gestalt_id != individuation.gestalt_id
+                                    || presence.changes[0].member_id != member_id
+                                    || presence.changes[0].actor_id != actor_id
+                                    || presence.changes[0].gestalt_version
+                                        != individuation.expected_gestalt_version
+                                    || presence.changes[0].member_version != 1
+                                {
+                                    anyhow::bail!(
+                                        "prepared individuation found a different canonical presence change"
+                                    )
+                                }
+                            }
+                        }
+                        (campaign.clone(), receipt)
+                    } else {
+                        anyhow::bail!(
+                            "prepared complexity mutation cannot recover from world revision {}",
+                            campaign.revision
+                        )
                     };
                     let checkpoint = ComplexityMutationCheckpoint {
                         schema: "ghostlight.complexity_mutation_checkpoint.v1".into(),
                         round,
                         dispatch: invocation.dispatch.clone(),
-                        parent_gestalt_id,
-                        mutation_kind,
-                        affected_subject_ids,
-                        model_receipt_hashes: invocation.model_receipt_hashes.clone(),
+                        parent_gestalt_id: prepared.parent_gestalt_id,
+                        mutation_kind: prepared.mutation_kind,
+                        affected_subject_ids: prepared.affected_subject_ids,
+                        model_receipt_hashes: prepared.model_receipt_hashes,
+                        semantic_summary: prepared.semantic_summary,
                         commit_receipt: receipt,
                     };
                     publish_immutable_checkpoint(&commit_path, &checkpoint)?;
                     campaign = advanced;
                     checkpoint
                 };
-                if checkpoint.schema != "ghostlight.complexity_mutation_checkpoint.v1"
-                    || checkpoint.round != round
-                    || checkpoint.dispatch != invocation.dispatch
-                    || checkpoint.parent_gestalt_id != invocation.proposal.parent_gestalt_id()
-                    || checkpoint.model_receipt_hashes != invocation.model_receipt_hashes
-                    || checkpoint.mutation_kind != invocation.proposal.mutation_kind()
-                    || checkpoint.commit_receipt.command_kind != checkpoint.mutation_kind
-                {
-                    anyhow::bail!("complexity mutation checkpoint is inconsistent")
-                }
+                let prepared_authority =
+                    read_checkpoint::<ComplexityPreparedMutationCheckpoint>(&prepared_path)?;
+                validate_complexity_mutation_checkpoint(
+                    &store,
+                    &campaign,
+                    round,
+                    invocation,
+                    &prepared_authority,
+                    &checkpoint,
+                    ComplexityCommitValidationMode::CurrentCampaignEffect,
+                )?;
                 let session_id = invocation_sessions
                     .get(&checkpoint.dispatch.ordinal)
                     .ok_or_else(|| anyhow::anyhow!("complexity invocation has no session route"))?;
@@ -2727,17 +4607,24 @@ async fn main() -> anyhow::Result<()> {
                         ),
                         mutation_kind: checkpoint.mutation_kind.clone(),
                         affected_subject_ids: checkpoint.affected_subject_ids.clone(),
-                        summary: complexity_session_journal_summary(
-                            &checkpoint.mutation_kind,
-                            &checkpoint.parent_gestalt_id,
-                        ),
+                        summary: checkpoint.semantic_summary.clone(),
                     },
                 );
+                accepted_round_semantic_deltas.push(checkpoint.semantic_summary.clone());
                 mutation_paths.push(commit_path);
             }
             let compaction_limit = Arc::new(tokio::sync::Semaphore::new(complexity_parallelism));
             let mut compactions = tokio::task::JoinSet::new();
-            for (session_id, journal) in journals {
+            let sessions_to_compact = journals
+                .keys()
+                .chain(recent_rejection_findings.keys())
+                .cloned()
+                .collect::<std::collections::BTreeSet<_>>();
+            for session_id in sessions_to_compact {
+                let journal = journals.remove(&session_id).unwrap_or_default();
+                let rejection_findings = recent_rejection_findings
+                    .remove(&session_id)
+                    .unwrap_or_default();
                 let (title, location_id) = session_routes
                     .get(&session_id)
                     .ok_or_else(|| anyhow::anyhow!("complexity journal has no session route"))?;
@@ -2752,9 +4639,26 @@ async fn main() -> anyhow::Result<()> {
                     "complexity-round-{round:03}-session-{}-{session_suffix}.json",
                     title.display_name().to_ascii_lowercase(),
                 ));
+                let previous = session_checkpoints.get(&session_id).cloned();
                 if path.is_file() {
                     let checkpoint = read_checkpoint::<ElaboratorSessionCheckpoint>(&path)?;
                     checkpoint.validate_for(&campaign, location_id, *title)?;
+                    let expected_commit_receipt_ids = journal
+                        .iter()
+                        .map(|entry| entry.commit_receipt_id.clone())
+                        .collect::<Vec<_>>();
+                    if checkpoint.through_world_revision != campaign.revision
+                        || checkpoint.recent_commit_receipt_ids != expected_commit_receipt_ids
+                        || checkpoint.recent_rejection_findings != rejection_findings
+                        || checkpoint.prior_checkpoint_digest
+                            != previous
+                                .as_ref()
+                                .map(|checkpoint| checkpoint.digest.clone())
+                    {
+                        anyhow::bail!(
+                            "complexity session checkpoint is not bound to its exact admitted journal and rejection findings"
+                        )
+                    }
                     session_checkpoints.insert(session_id, checkpoint);
                     continue;
                 }
@@ -2762,7 +4666,6 @@ async fn main() -> anyhow::Result<()> {
                 let campaign = Arc::new(campaign.clone());
                 let title = *title;
                 let location_id = location_id.clone();
-                let previous = session_checkpoints.get(&session_id).cloned();
                 let compaction_limit = compaction_limit.clone();
                 compactions.spawn(async move {
                     let _permit = compaction_limit
@@ -2777,7 +4680,7 @@ async fn main() -> anyhow::Result<()> {
                         &session_id,
                         previous.as_ref(),
                         &journal,
-                        Vec::new(),
+                        rejection_findings,
                     )
                     .await;
                     Ok::<_, anyhow::Error>((session_id, title, location_id, path, campaign, result))
@@ -2828,21 +4731,23 @@ async fn main() -> anyhow::Result<()> {
             };
             let path = root.join(format!("complexity-round-{round:03}-checkpoint.json"));
             publish_immutable_checkpoint(&path, &checkpoint)?;
+            last_completed_complexity_count = Some(actionable_after);
             complexity_reports.push(serde_json::to_value(&checkpoint)?);
         }
-        let final_count = canonical_actionable_subject_count(&campaign);
+        let final_count = last_completed_complexity_count
+            .unwrap_or_else(|| canonical_actionable_subject_count(&campaign));
         let final_demand = derive_world_elaboration_demand(
             u16::from(campaign.resolution_policy.active_cell_budget),
             final_count,
             &scale_intent,
             realm_weights,
         )?;
-        if final_demand.actionable_subject_deficit != 0 {
-            anyhow::bail!(
-                "world complexity stopped at {final_count} of {} admitted subjects after {maximum_complexity_rounds} rounds",
-                final_demand.target_actionable_subjects
-            )
-        }
+        validate_exact_world_scale_count(
+            final_count,
+            final_demand.target_actionable_subjects,
+            maximum_complexity_rounds,
+        )?;
+        validate_qualified_horizontal_spread(&campaign, &initial_location_ids)?;
         if let Some(metadata) = world_compile
             .as_mut()
             .and_then(serde_json::Value::as_object_mut)
@@ -3562,12 +5467,153 @@ fn strategic_world_compiler(
     )
 }
 
+fn strategic_region_request(request: &str) -> String {
+    bounded_strategic_request(
+        "Create one jurisdiction: exactly 4 resident populations, 6 governing institutions, 3+ connected internal places, homes in 3+ places, and one mixed/cross-border population. Give opposed interests executable means. Preserve every Region constraint. Region: ".into(),
+        request,
+    )
+}
+
+fn expansion_location_is_within(
+    expansion: &ghostlight_dungeon::domain::RegionExpansion,
+    location_id: &str,
+    jurisdiction_id: &str,
+) -> bool {
+    let locations = expansion
+        .locations
+        .iter()
+        .map(|location| (location.id.as_str(), location))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let mut current = Some(location_id);
+    for _ in 0..=locations.len() {
+        let Some(id) = current else {
+            return false;
+        };
+        if id == jurisdiction_id {
+            return true;
+        }
+        current = locations
+            .get(id)
+            .and_then(|location| location.container_id.as_deref());
+    }
+    false
+}
+
+fn validate_strategic_region_expansion_shape(
+    expansion: &ghostlight_dungeon::domain::RegionExpansion,
+) -> anyhow::Result<()> {
+    let civic = expansion
+        .civic_system
+        .as_ref()
+        .ok_or_else(|| anyhow::anyhow!("strategic region has no civic apparatus"))?;
+    if civic.resident_population_ids.len() != 4
+        || civic.governing_institution_ids.len() != 6
+        || expansion.populations.len() != 4
+        || expansion.institutions.len() != 6
+    {
+        anyhow::bail!(
+            "strategic region requires exactly four resident populations and six governing institutions before foundation; candidate supplied {}/{} civic IDs and {}/{} records",
+            civic.resident_population_ids.len(),
+            civic.governing_institution_ids.len(),
+            expansion.populations.len(),
+            expansion.institutions.len()
+        )
+    }
+    let admitted_locations = expansion
+        .locations
+        .iter()
+        .filter(|location| {
+            expansion_location_is_within(expansion, &location.id, &civic.jurisdiction_location_id)
+        })
+        .map(|location| location.id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    let resident_homes = expansion
+        .populations
+        .iter()
+        .filter(|population| civic.resident_population_ids.contains(&population.id))
+        .map(|population| population.home_location_id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    if admitted_locations.len() < 3
+        || resident_homes.len() < 3
+        || !resident_homes.is_subset(&admitted_locations)
+    {
+        anyhow::bail!(
+            "strategic region needs at least three admitted locations and resident homes inside its jurisdiction; candidate supplied {} locations and {} resident homes",
+            admitted_locations.len(),
+            resident_homes.len()
+        )
+    }
+    Ok(())
+}
+
+fn validate_qualified_horizontal_spread(
+    campaign: &ghostlight_dungeon::domain::Campaign,
+    jurisdiction_ids: &[String],
+) -> anyhow::Result<()> {
+    let actionable = ghostlight_dungeon::elaboration::canonical_actionable_subject_ids(campaign);
+    for jurisdiction_id in jurisdiction_ids {
+        let admitted =
+            ghostlight_dungeon::elaboration::locations_in_jurisdiction(campaign, jurisdiction_id)
+                .into_iter()
+                .collect::<std::collections::BTreeSet<_>>();
+        let mut counts = std::collections::BTreeMap::<String, usize>::new();
+        for subject_id in &actionable {
+            let Some(profile) = campaign.agency_profiles.get(subject_id) else {
+                continue;
+            };
+            let homes = profile
+                .location_ids
+                .intersection(&admitted)
+                .cloned()
+                .collect::<Vec<_>>();
+            if homes.len() == 1 {
+                *counts.entry(homes[0].clone()).or_default() += 1;
+            }
+        }
+        let total = counts.values().sum::<usize>();
+        let largest = counts.values().copied().max().unwrap_or_default();
+        if counts.len() < 3 || total == 0 || largest.saturating_mul(5) > total.saturating_mul(4) {
+            anyhow::bail!(
+                "qualified complexity in jurisdiction {jurisdiction_id} is not horizontally distributed: {total} subjects across {} occupied places, largest place {largest}",
+                counts.len()
+            )
+        }
+    }
+    Ok(())
+}
+
+fn validate_exact_world_scale_count(
+    qualified_subject_count: u32,
+    target_qualified_subject_count: u32,
+    maximum_complexity_rounds: usize,
+) -> anyhow::Result<()> {
+    if qualified_subject_count != target_qualified_subject_count {
+        anyhow::bail!(
+            "world complexity stopped at {qualified_subject_count} of exact target {target_qualified_subject_count} admitted subjects after {maximum_complexity_rounds} rounds"
+        )
+    }
+    Ok(())
+}
+
 fn strategic_locality_request(location_name: &str, location_id: &str, pressure: &str) -> String {
-    let pressure = pressure.chars().take(60).collect::<String>();
-    let request = format!(
-        "Elaborate canonical locality {location_name:?} (ID {location_id}) as a politically inhabited jurisdiction. Crisis: {pressure}. Add exactly four non-overlapping resident population leaves and exactly six distinct institutions, never more. Invent authority, succession, revenue, redress, leverage, and opposed interests. Give every new subject a concrete public notice or report channel."
+    let location_name = bounded_prompt_excerpt(location_name, 48);
+    let prefix = format!(
+        "Elaborate {location_name:?} [{location_id}]. Exactly 4 resident populations and 6 institutions. Include one mixed/diasporic/cross-border body; ancestry is not a civic partition. Give opposed interests executable means. State authority, succession, revenue, redress, and a public notice channel. Pressure: "
     );
-    request.chars().take(500).collect()
+    bounded_strategic_request(prefix, pressure)
+}
+
+fn validate_strategic_foundation_civic_shape(
+    civic: &ghostlight_dungeon::domain::CivicSystemManifest,
+) -> anyhow::Result<()> {
+    if civic.resident_population_ids.len() != 4 || civic.governing_institution_ids.len() != 6 {
+        anyhow::bail!(
+            "strategic locality foundation requires exactly four resident populations and six governing institutions; candidate supplied {} and {}",
+            civic.resident_population_ids.len(),
+            civic.governing_institution_ids.len()
+        )
+    }
+    Ok(())
 }
 
 fn strategic_titled_locality_request(
@@ -3575,11 +5621,71 @@ fn strategic_titled_locality_request(
     location_id: &str,
     pressure: &str,
 ) -> String {
-    let pressure = pressure.chars().take(60).collect::<String>();
-    let request = format!(
-        "Deepen canonical locality {location_name:?} (ID {location_id}) after its civic foundation has been admitted. Current pressure: {pressure}. Add independently authored texture, material pressure, ordinary life, political leverage, secrets, active instability, and numinous meaning without rewriting the admitted apparatus."
+    let location_name = bounded_prompt_excerpt(location_name, 48);
+    let prefix = format!(
+        "Deepen canonical locality {location_name:?} [{location_id}] after civic admission. Add intact ordinary life, material pressure, political leverage, secrets, instability, and numinous meaning. Prefer executable means, cross-border ties, and non-civic ecology over another filing procedure. Pressure: "
     );
-    request.chars().take(500).collect()
+    bounded_strategic_request(prefix, pressure)
+}
+
+fn strategic_titled_repair_request(
+    location_name: &str,
+    location_id: &str,
+    pressure: &str,
+    diagnostic: &str,
+) -> String {
+    const COMPILER_REQUEST_LIMIT: usize = 500;
+    const PRESSURE_RESERVE: usize = 48;
+    let location_name = bounded_prompt_excerpt(location_name, 48);
+    let prefix = format!(
+        "Redo {location_name:?} [{location_id}] on the same frozen world: fresh complete deepening, civic authority preserved, with material/ecological/political means. Verifier finding: "
+    );
+    let pressure_label = " Pressure: ";
+    let diagnostic_budget = COMPILER_REQUEST_LIMIT
+        .saturating_sub(prefix.chars().count())
+        .saturating_sub(pressure_label.chars().count())
+        .saturating_sub(PRESSURE_RESERVE);
+    let diagnostic = bounded_prompt_excerpt(diagnostic, diagnostic_budget);
+    bounded_strategic_request(format!("{prefix}{diagnostic}{pressure_label}"), pressure)
+}
+
+fn bounded_strategic_request(prefix: String, pressure: &str) -> String {
+    const COMPILER_REQUEST_LIMIT: usize = 500;
+    let prefix_chars = prefix.chars().count();
+    assert!(
+        prefix_chars < COMPILER_REQUEST_LIMIT,
+        "strategic request identity exceeds compiler request budget"
+    );
+    let pressure = bounded_prompt_excerpt(pressure, COMPILER_REQUEST_LIMIT - prefix_chars);
+    let request = format!("{prefix}{pressure}");
+    debug_assert!(request.chars().count() <= COMPILER_REQUEST_LIMIT);
+    request
+}
+
+fn bounded_prompt_excerpt(value: &str, max_chars: usize) -> String {
+    let trimmed = value.trim();
+    if max_chars == 0 {
+        return String::new();
+    }
+    if trimmed.chars().count() <= max_chars {
+        return trimmed.into();
+    }
+    let mut excerpt = String::new();
+    for word in trimmed.split_whitespace() {
+        let separator = usize::from(!excerpt.is_empty());
+        if excerpt.chars().count() + separator + word.chars().count() + 1 > max_chars {
+            break;
+        }
+        if !excerpt.is_empty() {
+            excerpt.push(' ');
+        }
+        excerpt.push_str(word);
+    }
+    if excerpt.is_empty() {
+        excerpt.extend(trimmed.chars().take(max_chars.saturating_sub(1)));
+    }
+    excerpt.push('…');
+    excerpt
 }
 
 fn strategic_world_elaboration_profile() -> ghostlight_dungeon::elaboration::WorldElaborationProfile
@@ -3596,10 +5702,10 @@ fn strategic_world_elaboration_profile() -> ghostlight_dungeon::elaboration::Wor
                 title,
                 // Patina's bounded child place requires an outward and return
                 // route. Every other title receives two operations per pass.
-                weight: if title == ElaboratorTitle::Patina {
-                    3
-                } else {
-                    2
+                weight: match title {
+                    ElaboratorTitle::Patina => 9,
+                    ElaboratorTitle::Tangle => 4,
+                    _ => 2,
                 },
             })
             .collect(),
@@ -3611,6 +5717,7 @@ fn complexity_parent_candidates(
     demand: &ghostlight_dungeon::elaboration::WorldElaborationDemand,
     limit: usize,
 ) -> Vec<String> {
+    let qualified_ids = ghostlight_dungeon::elaboration::canonical_actionable_subject_ids(campaign);
     let mut current_by_realm = demand
         .realm_subject_targets
         .keys()
@@ -3620,7 +5727,7 @@ fn complexity_parent_candidates(
     for profile in campaign
         .agency_profiles
         .values()
-        .filter(|profile| profile.active_leaf && profile.simulation_eligible)
+        .filter(|profile| qualified_ids.contains(&profile.subject_id))
     {
         if let Some(realm) = complexity_realm_for_profile(campaign, profile, demand) {
             *current_by_realm.entry(realm).or_default() += 1;
@@ -3639,7 +5746,7 @@ fn complexity_parent_candidates(
     let mut by_realm = BTreeMap::<String, Vec<(std::cmp::Reverse<u64>, String)>>::new();
     for (id, profile) in campaign.gestalts.keys().filter_map(|id| {
         let profile = campaign.agency_profiles.get(id)?;
-        (profile.active_leaf && profile.simulation_eligible).then_some((id, profile))
+        qualified_ids.contains(id).then_some((id, profile))
     }) {
         if let Some(realm) = complexity_realm_for_profile(campaign, profile, demand)
             && realm_pressure.get(&realm).copied().unwrap_or(0) > 0
@@ -3964,32 +6071,27 @@ fn strategic_campaign() -> ghostlight_dungeon::domain::Campaign {
 #[cfg(test)]
 mod tests {
     use super::{
-        ComplexityPreviewInvocation, HistoricalWorldNewspaperArticleV2,
+        ComplexityCommitValidationMode, ComplexityMutationCheckpoint,
+        ComplexityPreparedMutationCheckpoint, ComplexityPreviewInvocation,
+        ComplexityRoundCheckpoint, HistoricalWorldNewspaperArticleV2,
         HistoricalWorldNewspaperEditorialVerdict, HistoricalWorldNewspaperGroundingVerdict,
-        HistoricalWorldNewspaperIssueV2, admitted_public_channel,
+        HistoricalWorldNewspaperIssueV2, admitted_public_channel, bounded_prompt_excerpt,
         civic_manifest_is_committed_candidate, civic_manifest_preserves,
         committed_elaboration_mutation_proof, completed_wave_issue_campaign,
-        complexity_realm_for_profile, complexity_session_journal_summary, final_wave_field,
-        fission_population_binding_is_present, fission_relation_binding_is_present,
-        latest_partial_wave_checkpoint, missing_newspaper_report_indices,
+        complexity_affected_subject_ids, complexity_realm_for_profile,
+        complexity_semantic_rejection_diagnostic, complexity_session_journal_summary,
+        final_wave_field, fission_population_binding_is_present,
+        fission_relation_binding_is_present, latest_partial_wave_checkpoint,
+        load_and_validate_complexity_mutation_checkpoint, missing_newspaper_report_indices,
         publish_immutable_checkpoint, recomposed_model_receipt_set_digest,
         recover_committed_clock_binding, retain_unique_complexity_invocations, strategic_campaign,
-        strategic_locality_request, strategic_smoke_bytes_digest, strategic_smoke_digest,
-        strategic_titled_locality_request, titled_failure_checkpoint_paths,
+        strategic_locality_request, strategic_region_request, strategic_smoke_bytes_digest,
+        strategic_smoke_digest, strategic_titled_locality_request, strategic_titled_repair_request,
+        titled_failure_checkpoint_paths, validate_completed_complexity_round_checkpoint,
         validate_completed_newspaper_recomposition_receipt,
+        validate_complexity_round_session_checkpoints, validate_exact_world_scale_count,
+        validate_strategic_foundation_civic_shape,
     };
-
-    #[test]
-    fn complexity_journal_summary_does_not_duplicate_typed_subject_ids() {
-        let summary =
-            complexity_session_journal_summary("fission_gestalt", "the-assigned-parent-population");
-
-        assert_eq!(
-            summary,
-            "Applied fission_gestalt to the-assigned-parent-population."
-        );
-        assert!(summary.chars().count() < 1_000);
-    }
 
     #[test]
     fn complexity_realm_is_derived_from_canonical_location_containment() {
@@ -4050,10 +6152,270 @@ mod tests {
     }
 
     #[test]
+    fn completed_complexity_round_rejects_missing_referenced_mutation_despite_sufficient_count() {
+        use ghostlight_dungeon::elaboration::{
+            ElaborationDispatchState, ElaborationScheduleReceipt, WorldElaborationDemand,
+            canonical_actionable_subject_count,
+        };
+        use std::collections::{BTreeMap, BTreeSet};
+
+        let directory = tempfile::tempdir().unwrap();
+        let store = ghostlight_dungeon::persistence::CampaignStore::open(
+            directory.path().join("campaign.cc"),
+        )
+        .unwrap();
+        let campaign = strategic_campaign();
+        let missing = directory
+            .path()
+            .join("complexity-round-001-commit-0001.json");
+        let checkpoint = ComplexityRoundCheckpoint {
+            schema: "ghostlight.complexity_round_checkpoint.v1".into(),
+            round: 1,
+            demand_before: WorldElaborationDemand {
+                schema: "ghostlight.world_elaboration_demand.v1".into(),
+                active_cell_budget: 240,
+                target_active_cover_basis_points: 2_000,
+                target_actionable_subjects: 48,
+                current_actionable_subjects: 1,
+                actionable_subject_deficit: 47,
+                round_mutation_budget: 1,
+                realm_complexity_weights: BTreeMap::new(),
+                realm_subject_targets: BTreeMap::new(),
+            },
+            actionable_subjects_after: canonical_actionable_subject_count(&campaign),
+            schedule: ElaborationScheduleReceipt {
+                schema: "ghostlight.elaboration_schedule_receipt.v1".into(),
+                requested_invocations: 0,
+                unused_invocations: 0,
+                eligible_titles: BTreeSet::new(),
+                dispatch_counts: BTreeMap::new(),
+                unused_counts: BTreeMap::new(),
+                dispatches: Vec::new(),
+                final_state: ElaborationDispatchState::default(),
+            },
+            mutation_checkpoints: vec![missing],
+            superseded_invocation_checkpoints: Vec::new(),
+            session_checkpoints: BTreeMap::new(),
+        };
+
+        let error = validate_completed_complexity_round_checkpoint(
+            directory.path(),
+            &store,
+            &campaign,
+            &checkpoint,
+            1,
+        )
+        .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("references a missing mutation checkpoint")
+        );
+    }
+
+    #[test]
+    fn completed_complexity_round_cannot_drop_a_touched_session_checkpoint() {
+        use ghostlight_dungeon::elaboration::{
+            ElaboratorSessionCheckpoint, ElaboratorSessionCompactionDraft,
+            ElaboratorSessionJournalEntry, ElaboratorTitle, elaborator_session_id,
+        };
+        use std::collections::BTreeMap;
+
+        let campaign = strategic_campaign();
+        let title = ElaboratorTitle::Charter;
+        let location_id = "yard".to_owned();
+        let session_id = elaborator_session_id(title, &location_id);
+        let journal = ElaboratorSessionJournalEntry {
+            world_revision: campaign.revision,
+            commit_receipt_id: format!("{}-{}", campaign.id, campaign.revision),
+            mutation_kind: "fission".into(),
+            affected_subject_ids: vec!["workers".into()],
+            summary: "Applied one distinct charter split.".into(),
+        };
+        let checkpoint = ElaboratorSessionCheckpoint::bind_compaction(
+            &session_id,
+            title,
+            1,
+            campaign.id,
+            campaign.revision,
+            &location_id,
+            ElaboratorSessionCompactionDraft {
+                schema: "ghostlight.elaborator_session_compaction_draft.v1".into(),
+                frontier_summary: "One charter distinction remains live.".into(),
+                unresolved_leads: Vec::new(),
+            },
+            vec![journal.commit_receipt_id.clone()],
+            Vec::new(),
+            None,
+        )
+        .unwrap();
+        let routes = BTreeMap::from([(session_id.clone(), (title, location_id))]);
+        let journals = BTreeMap::from([(session_id.clone(), vec![journal])]);
+        let mut current = BTreeMap::from([(session_id.clone(), checkpoint)]);
+        validate_complexity_round_session_checkpoints(
+            &campaign,
+            &BTreeMap::new(),
+            &current,
+            &routes,
+            &journals,
+            &BTreeMap::new(),
+            campaign.revision,
+        )
+        .unwrap();
+
+        current.remove(&session_id);
+        let diagnostic = validate_complexity_round_session_checkpoints(
+            &campaign,
+            &BTreeMap::new(),
+            &current,
+            &routes,
+            &journals,
+            &BTreeMap::new(),
+            campaign.revision,
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(diagnostic.contains("session checkpoint set"));
+    }
+
+    #[test]
+    fn existing_complexity_commit_checkpoint_rejects_campaign_without_committed_effect() {
+        use ghostlight_dungeon::domain::{GestaltIndividuation, GestaltMemberDelta};
+        use ghostlight_dungeon::elaboration::{
+            ElaborationDispatch, ElaboratorTitle, WorldComplexityIndividuationQualification,
+            WorldComplexityProposal, WorldComplexitySemanticQualification,
+        };
+        use std::collections::{BTreeMap, BTreeSet};
+
+        let directory = tempfile::tempdir().unwrap();
+        let store = ghostlight_dungeon::persistence::CampaignStore::open(
+            directory.path().join("campaign.cc"),
+        )
+        .unwrap();
+        let mut campaign = strategic_campaign();
+        let expected_revision = campaign.revision;
+        let mut semantic = WorldComplexitySemanticQualification::default();
+        semantic.frozen_campaign_id = campaign.id;
+        semantic.frozen_world_revision = expected_revision;
+        let proposal = WorldComplexityProposal::Individuate {
+            individuation: GestaltIndividuation {
+                gestalt_id: "workers".into(),
+                expected_gestalt_version: campaign.gestalts["workers"].version,
+                location_id: "yard".into(),
+                member: GestaltMemberDelta {
+                    schema: "ghostlight.gestalt_member_delta.v1".into(),
+                    id: "resume-ghost".into(),
+                    gestalt_id: "workers".into(),
+                    version: 0,
+                    name: "Mara Quill".into(),
+                    capability_additions: BTreeSet::from(["read pressure gauges".into()]),
+                    capability_removals: BTreeSet::new(),
+                    knowledge_additions: BTreeSet::from(["night sluice timings".into()]),
+                    knowledge_removals: BTreeSet::new(),
+                    equipment: BTreeSet::new(),
+                    conditions: BTreeSet::new(),
+                    obligations: BTreeSet::new(),
+                    relationships: BTreeMap::new(),
+                    goals: vec!["keep the lower channel open".into()],
+                    memories: vec!["the winter gauge fracture".into()],
+                    last_location_id: Some("yard".into()),
+                    materialized_actor_id: None,
+                    last_relevant_revision: expected_revision,
+                    relevance_lease_until_revision: expected_revision,
+                },
+            },
+            qualification: WorldComplexityIndividuationQualification {
+                schema: "ghostlight.world_complexity_individuation_qualification.v1".into(),
+                title: ElaboratorTitle::Veil,
+                jurisdiction_location_id: "yard".into(),
+                semantic,
+            },
+        };
+        let dispatch = ElaborationDispatch {
+            schema: "ghostlight.elaboration_dispatch.v1".into(),
+            budget_ordinal: 1,
+            ordinal: 1,
+            title: ElaboratorTitle::Veil,
+            title_weight: 1,
+            total_enabled_weight: 1,
+            requested_share_millionths: 1_000_000,
+            title_dispatch_count: 1,
+        };
+        let invocation = ComplexityPreviewInvocation {
+            dispatch: dispatch.clone(),
+            parent_binding: "plausible-frozen-parent-binding".into(),
+            proposal: proposal.clone(),
+            model_receipt_hashes: vec!["sha256:plausible-generation".into()],
+        };
+        let semantic_summary = complexity_session_journal_summary(&proposal).unwrap();
+        let affected_subject_ids = complexity_affected_subject_ids(&proposal);
+        let prepared = ComplexityPreparedMutationCheckpoint {
+            schema: "ghostlight.complexity_prepared_mutation.v1".into(),
+            round: 1,
+            dispatch: dispatch.clone(),
+            expected_revision,
+            proposal,
+            parent_gestalt_id: "workers".into(),
+            mutation_kind: "elaborate_gestalt_individuation".into(),
+            affected_subject_ids: affected_subject_ids.clone(),
+            model_receipt_hashes: vec![
+                "sha256:plausible-generation".into(),
+                "sha256:plausible-verifier".into(),
+            ],
+            semantic_summary: semantic_summary.clone(),
+        };
+        campaign.revision = expected_revision.saturating_add(1);
+        let checkpoint = ComplexityMutationCheckpoint {
+            schema: "ghostlight.complexity_mutation_checkpoint.v1".into(),
+            round: 1,
+            dispatch,
+            parent_gestalt_id: "workers".into(),
+            mutation_kind: "elaborate_gestalt_individuation".into(),
+            affected_subject_ids,
+            model_receipt_hashes: prepared.model_receipt_hashes.clone(),
+            semantic_summary,
+            commit_receipt: ghostlight_dungeon::domain::WorldCommitReceipt {
+                schema: "ghostlight.world_commit_receipt.v1".into(),
+                campaign_id: campaign.id,
+                previous_revision: expected_revision,
+                revision: campaign.revision,
+                command_kind: "elaborate_gestalt_individuation".into(),
+                committed_at: chrono::Utc::now(),
+                roll: None,
+            },
+        };
+        let prepared_path = directory
+            .path()
+            .join("complexity-round-001-prepared-0001.json");
+        let commit_path = directory
+            .path()
+            .join("complexity-round-001-commit-0001.json");
+        publish_immutable_checkpoint(&prepared_path, &prepared).unwrap();
+        publish_immutable_checkpoint(&commit_path, &checkpoint).unwrap();
+
+        let error = load_and_validate_complexity_mutation_checkpoint(
+            &store,
+            &campaign,
+            1,
+            &invocation,
+            &prepared_path,
+            &commit_path,
+            ComplexityCommitValidationMode::CurrentCampaignEffect,
+        )
+        .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("committed proposal effect is absent")
+        );
+    }
+
+    #[test]
     fn parallel_individuation_retains_one_exact_identity_and_records_supersession() {
         use ghostlight_dungeon::domain::{GestaltIndividuation, GestaltMemberDelta};
         use ghostlight_dungeon::elaboration::{
-            ElaborationDispatch, ElaboratorTitle, WorldComplexityProposal,
+            ElaborationDispatch, ElaboratorTitle, WorldComplexityIndividuationQualification,
+            WorldComplexityProposal, WorldComplexitySemanticQualification,
         };
         use std::collections::{BTreeMap, BTreeSet};
 
@@ -4096,6 +6458,12 @@ mod tests {
                         relevance_lease_until_revision: 0,
                     },
                 },
+                qualification: WorldComplexityIndividuationQualification {
+                    schema: "ghostlight.world_complexity_individuation_qualification.v1".into(),
+                    title: ElaboratorTitle::Veil,
+                    jurisdiction_location_id: "yard".into(),
+                    semantic: WorldComplexitySemanticQualification::default(),
+                },
             },
             model_receipt_hashes: vec![format!("receipt:{ordinal}")],
         };
@@ -4111,12 +6479,147 @@ mod tests {
                 .iter()
                 .map(|invocation| invocation.dispatch.ordinal)
                 .collect::<Vec<_>>(),
-            [9, 14]
+            [9]
+        );
+        assert_eq!(
+            superseded
+                .iter()
+                .map(|checkpoint| checkpoint.dispatch.ordinal)
+                .collect::<Vec<_>>(),
+            [12, 14]
+        );
+        assert!(
+            superseded
+                .iter()
+                .all(|checkpoint| checkpoint.retained_dispatch_ordinal == 9)
+        );
+        assert_eq!(superseded[0].canonical_subject_ids, ["member:tarin-vel"]);
+        assert_eq!(superseded[1].canonical_subject_ids, ["member:oren-pell"]);
+        assert!(
+            superseded
+                .iter()
+                .all(|checkpoint| checkpoint.public_identity_keys == ["tarinvel"])
+        );
+    }
+
+    #[test]
+    fn parallel_fissions_reserve_every_child_id_and_public_specific_name() {
+        use ghostlight_dungeon::domain::{AgencyAxis, GestaltFissionPreview, GestaltPersonaState};
+        use ghostlight_dungeon::elaboration::{
+            ElaborationDispatch, ElaboratorTitle, WorldComplexityFissionQualification,
+            WorldComplexityProposal, WorldComplexitySemanticQualification,
+        };
+        use std::collections::{BTreeMap, BTreeSet};
+
+        let invocation = |ordinal: u64,
+                          parent: &str,
+                          specific_id: &str,
+                          residual_id: &str,
+                          specific_name: &str|
+         -> ComplexityPreviewInvocation {
+            ComplexityPreviewInvocation {
+                dispatch: ElaborationDispatch {
+                    schema: "ghostlight.elaboration_dispatch.v1".into(),
+                    budget_ordinal: ordinal,
+                    ordinal,
+                    title: ElaboratorTitle::Charter,
+                    title_weight: 1,
+                    total_enabled_weight: 1,
+                    requested_share_millionths: 1_000_000,
+                    title_dispatch_count: ordinal,
+                },
+                parent_binding: format!("binding:{parent}"),
+                proposal: WorldComplexityProposal::Fission {
+                    preview: GestaltFissionPreview {
+                        schema: "ghostlight.gestalt_fission_preview.v1".into(),
+                        campaign_id: uuid::Uuid::nil(),
+                        expected_world_revision: 0,
+                        parent_gestalt_id: parent.into(),
+                        partition_axis: AgencyAxis::Authority,
+                        children: vec![
+                            GestaltPersonaState {
+                                schema: "ghostlight.gestalt_persona.v1".into(),
+                                id: specific_id.into(),
+                                name: specific_name.into(),
+                                version: 0,
+                                home_location_id: "yard".into(),
+                                shared_capabilities: BTreeSet::new(),
+                                shared_knowledge: BTreeSet::new(),
+                                resources: BTreeSet::new(),
+                                goals: Vec::new(),
+                                pressures: Vec::new(),
+                            },
+                            GestaltPersonaState {
+                                schema: "ghostlight.gestalt_persona.v1".into(),
+                                id: residual_id.into(),
+                                name: format!("{parent} remainder"),
+                                version: 0,
+                                home_location_id: "yard".into(),
+                                shared_capabilities: BTreeSet::new(),
+                                shared_knowledge: BTreeSet::new(),
+                                resources: BTreeSet::new(),
+                                goals: Vec::new(),
+                                pressures: Vec::new(),
+                            },
+                        ],
+                        child_partition_values: BTreeMap::from([
+                            (specific_id.into(), "licensed".into()),
+                            (residual_id.into(), "unresolved".into()),
+                        ]),
+                        residual_child_id: residual_id.into(),
+                        member_child_assignments: BTreeMap::new(),
+                        resource_child_assignments: BTreeMap::new(),
+                        evidence_receipt_ids: Vec::new(),
+                        gaps: Vec::new(),
+                        canon_candidates: Vec::new(),
+                        requires_approval: true,
+                    },
+                    qualification: WorldComplexityFissionQualification {
+                        schema: "ghostlight.world_complexity_fission_qualification.v1".into(),
+                        title: ElaboratorTitle::Charter,
+                        jurisdiction_location_id: "yard".into(),
+                        target_actionable_gain: 1,
+                        semantic: WorldComplexitySemanticQualification::default(),
+                    },
+                },
+                model_receipt_hashes: vec![format!("receipt:{ordinal}")],
+            }
+        };
+        let invocations = vec![
+            invocation(3, "yard-carriers", "licensed", "residual", "Ledger Keepers"),
+            invocation(
+                7,
+                "route-carriers",
+                "licensed",
+                "residual",
+                "Route Charter Hands",
+            ),
+            invocation(
+                9,
+                "sluice-carriers",
+                "distinct-talliers",
+                "sluice-residual",
+                "Distinct Talliers",
+            ),
+        ];
+
+        let (retained, superseded) = retain_unique_complexity_invocations(4, &invocations);
+
+        assert_eq!(
+            retained
+                .iter()
+                .map(|invocation| invocation.dispatch.ordinal)
+                .collect::<Vec<_>>(),
+            [3, 9]
         );
         assert_eq!(superseded.len(), 1);
-        assert_eq!(superseded[0].dispatch.ordinal, 12);
-        assert_eq!(superseded[0].retained_dispatch_ordinal, 9);
-        assert_eq!(superseded[0].canonical_member_id, "tarin-vel");
+        assert_eq!(superseded[0].dispatch.ordinal, 7);
+        assert_eq!(superseded[0].retained_dispatch_ordinal, 3);
+        assert_eq!(
+            superseded[0].canonical_subject_ids,
+            ["licensed", "residual"]
+        );
+        assert_eq!(superseded[0].public_identity_keys, ["routecharterhands"]);
     }
 
     fn civic_manifest(
@@ -4138,6 +6641,17 @@ mod tests {
             political_relation_ids: BTreeSet::from(["relation".into()]),
             semantic_verification_receipt_id: verifier.into(),
         }
+    }
+
+    #[test]
+    fn strategic_foundation_shape_requires_the_requested_exact_population_and_institution_counts() {
+        let mut civic = civic_manifest(0, "");
+        civic.resident_population_ids = (0..4).map(|index| format!("people-{index}")).collect();
+        civic.governing_institution_ids = (0..6).map(|index| format!("office-{index}")).collect();
+        validate_strategic_foundation_civic_shape(&civic).unwrap();
+
+        civic.resident_population_ids.remove("people-3");
+        assert!(validate_strategic_foundation_civic_shape(&civic).is_err());
     }
 
     #[test]
@@ -4753,11 +7267,39 @@ mod tests {
 
         assert!(request.contains("Seed Vault"));
         assert!(request.contains("loc-seed-vault"));
-        assert!(request.contains("exactly four non-overlapping resident population leaves"));
-        assert!(request.contains("exactly six distinct institutions"));
+        assert!(request.contains("Exactly 4 resident populations and 6 institutions"));
         assert!(request.contains("authority, succession, revenue, redress"));
-        assert!(request.contains("public notice or report channel"));
+        assert!(request.contains("public notice channel"));
+        assert!(request.contains("Pressure: an intricately witnessed"));
+        assert!(request.ends_with('…'));
         assert!(request.chars().count() <= 500);
+
+        let maximum_identity_request = strategic_locality_request(
+            &"N".repeat(160),
+            &"location-id-".repeat(13),
+            &"pressure-word ".repeat(40),
+        );
+        assert!(maximum_identity_request.chars().count() <= 500);
+    }
+
+    #[test]
+    fn bounded_prompt_excerpt_never_cuts_through_a_word() {
+        let excerpt = bounded_prompt_excerpt(
+            "constitutional succession remains disputed across the eastern works",
+            32,
+        );
+        assert_eq!(excerpt, "constitutional succession…");
+        assert!(excerpt.chars().count() <= 32);
+    }
+
+    #[test]
+    fn bounded_prompt_excerpt_preserves_an_overlong_first_token() {
+        let pressure = format!("{} meaningful words follow", "x".repeat(80));
+        let excerpt = bounded_prompt_excerpt(&pressure, 32);
+
+        assert_eq!(excerpt.chars().count(), 32);
+        assert!(excerpt.starts_with(&"x".repeat(31)));
+        assert!(excerpt.ends_with('…'));
     }
 
     #[test]
@@ -4770,11 +7312,88 @@ mod tests {
 
         assert!(request.contains("Seed Vault"));
         assert!(request.contains("loc-seed-vault"));
-        assert!(request.contains("after its civic foundation has been admitted"));
-        assert!(request.contains("ordinary life, political leverage, secrets"));
+        assert!(request.contains("after civic admission"));
+        assert!(request.contains("ordinary life, material pressure, political leverage"));
+        assert!(request.contains("Pressure: an intricately witnessed"));
+        assert!(request.ends_with('…'));
         assert!(!request.contains("exactly four"));
         assert!(!request.contains("exactly six"));
         assert!(request.chars().count() <= 500);
+    }
+
+    #[test]
+    fn titled_semantic_repair_request_is_bounded_and_candidate_specific() {
+        let location_id = "location-id-".repeat(13);
+        let diagnostic = format!(
+            "{{\"failed_checks\":[\"constituencies_cross_boundaries_or_local_homogeneity_justified\"],\"rationale\":\"{}\"}}",
+            "verifier detail ".repeat(80)
+        );
+        let request = strategic_titled_repair_request(
+            &"N".repeat(160),
+            &location_id,
+            &"pressure-word ".repeat(80),
+            &diagnostic,
+        );
+
+        assert!(request.contains(&location_id));
+        assert!(request.contains("same frozen world"));
+        assert!(request.contains("fresh complete deepening"));
+        assert!(request.contains("constituencies_cross_boundaries_or_local_homogeneity_justified"));
+        assert!(request.contains("Pressure:"));
+        assert!(request.chars().count() <= 500);
+    }
+
+    #[test]
+    fn world_scale_completion_requires_the_exact_qualified_count() {
+        validate_exact_world_scale_count(1_200, 1_200, 128).unwrap();
+        for observed in [1_199, 1_201] {
+            let diagnostic = validate_exact_world_scale_count(observed, 1_200, 128)
+                .unwrap_err()
+                .to_string();
+            assert!(diagnostic.contains(&observed.to_string()));
+            assert!(diagnostic.contains("exact target 1200"));
+        }
+    }
+
+    #[test]
+    fn strategic_region_request_preserves_the_complete_operator_brief() {
+        let operator_brief = format!(
+            "{} final settlement, route, deep-crisis response, polity, and culture requirements.",
+            "regional-detail ".repeat(10)
+        );
+        assert!(operator_brief.chars().count() <= 241);
+
+        let request = strategic_region_request(&operator_brief);
+
+        assert!(request.ends_with(&operator_brief));
+        assert!(request.contains("exactly 4 resident populations"));
+        assert!(request.contains("6 governing institutions"));
+        assert!(request.contains("3+ connected internal places"));
+        assert!(request.contains("one mixed/cross-border population"));
+        assert!(request.chars().count() <= 500);
+    }
+
+    #[test]
+    fn complexity_semantic_feedback_preserves_each_failed_dimension() {
+        let verdict = ghostlight_dungeon::elaboration::WorldComplexitySemanticVerification {
+            public_names_are_legible_identifiers: true,
+            names_do_not_repeat_an_overused_template: false,
+            cultural_resemblance_is_grounded_not_quota_cloning: true,
+            causal_additions_are_materially_distinct: true,
+            causal_additions_do_not_repeat_an_overused_procedural_template: false,
+            rationale: "The names share one mold and the causal additions repeat a filing ritual."
+                .into(),
+        };
+
+        let diagnostic = complexity_semantic_rejection_diagnostic(&verdict).unwrap();
+        let compacted = bounded_prompt_excerpt(&diagnostic, 800);
+
+        assert!(compacted.contains("\"names_do_not_repeat_an_overused_template\":false"));
+        assert!(
+            compacted.contains(
+                "\"causal_additions_do_not_repeat_an_overused_procedural_template\":false"
+            )
+        );
     }
 
     #[test]

@@ -153,7 +153,28 @@ pub fn lower_fission(
     preview: &GestaltFissionPreview,
     expires_at: DateTime<Utc>,
 ) -> Result<LoweredLegacyTransition> {
-    crate::resolution::validate_fission(campaign, preview)?;
+    lower_fission_with_validation(campaign, preview, expires_at, false)
+}
+
+pub fn lower_elaborated_fission(
+    campaign: &Campaign,
+    preview: &GestaltFissionPreview,
+    expires_at: DateTime<Utc>,
+) -> Result<LoweredLegacyTransition> {
+    lower_fission_with_validation(campaign, preview, expires_at, true)
+}
+
+fn lower_fission_with_validation(
+    campaign: &Campaign,
+    preview: &GestaltFissionPreview,
+    expires_at: DateTime<Utc>,
+    allow_semantic_additions: bool,
+) -> Result<LoweredLegacyTransition> {
+    if allow_semantic_additions {
+        crate::resolution::validate_elaborated_fission(campaign, preview)?;
+    } else {
+        crate::resolution::validate_fission(campaign, preview)?;
+    }
     let preview_digest = digest_serializable(preview)?;
     let source_receipt_id = format!(
         "fission-preview:{}",
@@ -196,6 +217,81 @@ pub fn lower_fission(
             .collect(),
         remainder_population: Some(population_subject(&preview.residual_child_id)),
     });
+    if allow_semantic_additions {
+        for child in &preview.children {
+            let subject = population_subject(&child.id);
+            for capability in child
+                .shared_capabilities
+                .difference(&campaign.gestalts[&preview.parent_gestalt_id].shared_capabilities)
+            {
+                mutations.push(WorldMutation::ChangeCapability {
+                    subject: subject.clone(),
+                    operation: CapabilityMutationOperation::Grant,
+                    capability_id: capability.clone(),
+                    description: Some(capability.clone()),
+                });
+            }
+            for statement in child
+                .shared_knowledge
+                .difference(&campaign.gestalts[&preview.parent_gestalt_id].shared_knowledge)
+            {
+                let (proposition, needs_admission) =
+                    elaborated_fission_proposition(campaign, statement)?;
+                if needs_admission {
+                    mutations.push(WorldMutation::AdmitEntity {
+                        subject: proposition.clone(),
+                        initial_components: BTreeSet::from([
+                            WorldComponentKind::Knowledge,
+                            WorldComponentKind::PropositionContent,
+                        ]),
+                        initial_place: None,
+                        initial_profile: Some(AdmittedEntityProfile::Proposition {
+                            statement: statement.clone(),
+                            scope: FactScope::ProvisionalLocal,
+                            evidence_receipt_ids: BTreeSet::new(),
+                            discoverable_at_places: BTreeSet::new(),
+                        }),
+                        admission_receipt_id: source_receipt_id.clone(),
+                    });
+                }
+                mutations.push(WorldMutation::ChangeKnowledge {
+                    operation: KnowledgeMutationOperation::Acquire,
+                    proposition,
+                    knower: Some(subject.clone()),
+                    speaker: None,
+                    recipients: Vec::new(),
+                    channel: None,
+                });
+            }
+            for goal in child
+                .goals
+                .iter()
+                .skip(campaign.gestalts[&preview.parent_gestalt_id].goals.len())
+            {
+                mutations.push(WorldMutation::ChangeCommitment {
+                    subject: subject.clone(),
+                    operation: CommitmentMutationOperation::Create,
+                    kind: CommitmentKind::Goal,
+                    commitment_id: format!("goal:elaboration:{}", short_digest(goal)),
+                    counterparty: None,
+                    description: Some(goal.clone()),
+                });
+            }
+            for pressure in child.pressures.iter().skip(
+                campaign.gestalts[&preview.parent_gestalt_id]
+                    .pressures
+                    .len(),
+            ) {
+                mutations.push(WorldMutation::ChangePressure {
+                    pressure: gestalt_pressure_subject(&child.id, pressure),
+                    owner: subject.clone(),
+                    operation: PressureMutationOperation::Create,
+                    amount: Some(4),
+                    label: Some(pressure.clone()),
+                });
+            }
+        }
+    }
     for (resource, child_id) in &preview.resource_child_assignments {
         mutations.push(WorldMutation::TransferCustody {
             resource: resource_subject(campaign, &parent, resource),
@@ -227,6 +323,11 @@ pub fn lower_fission(
             system,
         });
     }
+    let effect_ceiling = if allow_semantic_additions {
+        "Admit the approved child populations, preserve their inherited baseline, add only each child's explicitly qualified capabilities, knowledge, goals, and pressures, partition each exact resource once, transfer each named member once, and record one population lineage split."
+    } else {
+        "Admit the approved child populations, preserve their inherited baseline, partition each exact resource once, transfer each named member once, and record one population lineage split."
+    };
     lower_exact_mutations(
         campaign,
         mutations,
@@ -234,7 +335,7 @@ pub fn lower_fission(
         None,
         MutationOutcomeBinding::Deterministic,
         Some(campaign.resolution_policy.resolution_epoch),
-        "Admit the approved child populations, preserve their inherited baseline, partition each exact resource once, transfer each named member once, and record one population lineage split.",
+        effect_ceiling,
         &source_receipt_id,
         Some(digest_serializable(&(
             "fission",
@@ -244,6 +345,51 @@ pub fn lower_fission(
         Some(preview_digest),
         expires_at,
     )
+}
+
+fn elaborated_fission_proposition(
+    campaign: &Campaign,
+    statement: &str,
+) -> Result<(SubjectRef, bool)> {
+    if let Some(fact) = campaign
+        .facts
+        .values()
+        .find(|fact| fact.statement == statement)
+    {
+        return Ok((proposition_subject(&fact.id), false));
+    }
+    let already_known = campaign
+        .actors
+        .values()
+        .any(|actor| actor.knowledge.contains(statement))
+        || campaign
+            .gestalts
+            .values()
+            .any(|gestalt| gestalt.shared_knowledge.contains(statement))
+        || campaign.gestalt_members.values().any(|member| {
+            member.knowledge_additions.contains(statement)
+                && !member.knowledge_removals.contains(statement)
+        });
+    if already_known {
+        return Ok((
+            proposition_subject(&format!("legacy-knowledge:{}", short_digest(statement))),
+            false,
+        ));
+    }
+    let fact_id = format!(
+        "fact:complexity-fission:{:x}",
+        Sha256::digest(statement.as_bytes())
+    );
+    if let Some(existing) = campaign.facts.get(&fact_id) {
+        return if existing.statement == statement {
+            Ok((proposition_subject(&fact_id), false))
+        } else {
+            Err(anyhow!(
+                "content-addressed complexity knowledge collided with another fact"
+            ))
+        };
+    }
+    Ok((proposition_subject(&fact_id), true))
 }
 
 fn fission_civic_system_rebindings(
@@ -425,7 +571,30 @@ pub fn apply_lowered_fission(
     transition: &LoweredLegacyTransition,
     now: DateTime<Utc>,
 ) -> Result<WorldMutationReceipt> {
-    crate::resolution::validate_fission(campaign, preview)?;
+    apply_lowered_fission_with_validation(campaign, preview, transition, now, false)
+}
+
+pub fn apply_lowered_elaborated_fission(
+    campaign: &mut Campaign,
+    preview: &GestaltFissionPreview,
+    transition: &LoweredLegacyTransition,
+    now: DateTime<Utc>,
+) -> Result<WorldMutationReceipt> {
+    apply_lowered_fission_with_validation(campaign, preview, transition, now, true)
+}
+
+fn apply_lowered_fission_with_validation(
+    campaign: &mut Campaign,
+    preview: &GestaltFissionPreview,
+    transition: &LoweredLegacyTransition,
+    now: DateTime<Utc>,
+    allow_semantic_additions: bool,
+) -> Result<WorldMutationReceipt> {
+    if allow_semantic_additions {
+        crate::resolution::validate_elaborated_fission(campaign, preview)?;
+    } else {
+        crate::resolution::validate_fission(campaign, preview)?;
+    }
     let snapshot = component_snapshot(campaign)?;
     let application =
         apply_component_world_batch(&snapshot, &transition.authority, &transition.batch, now)?;
@@ -962,6 +1131,116 @@ fn project_accepted_region_expansion(
     Ok(())
 }
 
+fn verify_fission_child_components(
+    next: &ComponentWorldState,
+    child: &GestaltPersonaState,
+) -> Result<()> {
+    let subject = population_subject(&child.id);
+    let capabilities = next
+        .capabilities
+        .iter()
+        .filter(|(key, value)| key.subject == subject && !value.suspended)
+        .map(|(key, value)| {
+            if value.description != key.entry_id {
+                return Err(anyhow!(
+                    "accepted fission capability identity diverged from its description"
+                ));
+            }
+            Ok(key.entry_id.clone())
+        })
+        .collect::<Result<BTreeSet<_>>>()?;
+    let knowledge = next
+        .knowledge
+        .iter()
+        .filter(|(key, value)| key.knower == subject && value.status == "known")
+        .map(|(key, _)| {
+            next.propositions
+                .get(&key.proposition)
+                .map(|value| value.statement.clone())
+                .ok_or_else(|| anyhow!("accepted fission knowledge lost proposition content"))
+        })
+        .collect::<Result<BTreeSet<_>>>()?;
+    let goals = next
+        .commitments
+        .iter()
+        .filter(|(key, value)| {
+            key.subject == subject && value.kind == CommitmentKind::Goal && value.status == "active"
+        })
+        .map(|(_, value)| value.description.clone())
+        .collect::<BTreeSet<_>>();
+    let pressures = next
+        .pressures
+        .values()
+        .filter(|value| value.owner == subject && !value.resolved)
+        .map(|value| value.label.clone())
+        .collect::<BTreeSet<_>>();
+    if capabilities != child.shared_capabilities
+        || knowledge != child.shared_knowledge
+        || goals != child.goals.iter().cloned().collect()
+        || pressures != child.pressures.iter().cloned().collect()
+    {
+        return Err(anyhow!(
+            "accepted fission component semantics diverged from the approved child"
+        ));
+    }
+    Ok(())
+}
+
+fn project_elaborated_fission_facts(
+    campaign: &mut Campaign,
+    preview: &GestaltFissionPreview,
+    next: &ComponentWorldState,
+) -> Result<()> {
+    let parent = campaign
+        .gestalts
+        .get(&preview.parent_gestalt_id)
+        .ok_or_else(|| anyhow!("accepted complexity fact lost its fission parent"))?;
+    let mut admitted = BTreeMap::new();
+    for child in &preview.children {
+        let knower = population_subject(&child.id);
+        for statement in child.shared_knowledge.difference(&parent.shared_knowledge) {
+            let (proposition_id, needs_admission) =
+                elaborated_fission_proposition(campaign, statement)?;
+            if !needs_admission {
+                continue;
+            }
+            let knowledge_key = KnowledgeKey {
+                knower: knower.clone(),
+                proposition: proposition_id.clone(),
+            };
+            if !next.knowledge.contains_key(&knowledge_key) {
+                return Err(anyhow!(
+                    "accepted complexity fact was not acquired by its approved child"
+                ));
+            }
+            let proposition = next
+                .propositions
+                .get(&proposition_id)
+                .ok_or_else(|| anyhow!("accepted complexity fact lost proposition content"))?;
+            admitted.insert(
+                proposition_id.id.clone(),
+                WorldFact {
+                    id: proposition_id.id.clone(),
+                    statement: proposition.statement.clone(),
+                    scope: proposition.scope.clone(),
+                    evidence_receipt_ids: proposition
+                        .evidence_receipt_ids
+                        .iter()
+                        .cloned()
+                        .collect(),
+                    discoverable_at_location_ids: proposition
+                        .discoverable_at_places
+                        .iter()
+                        .map(|place| place.id.clone())
+                        .collect(),
+                },
+            );
+        }
+    }
+    campaign.facts.extend(admitted);
+    Ok(())
+}
+
 fn project_accepted_fission(
     campaign: &mut Campaign,
     preview: &GestaltFissionPreview,
@@ -982,6 +1261,7 @@ fn project_accepted_fission(
         })
         .cloned()
         .collect::<Vec<_>>();
+    project_elaborated_fission_facts(campaign, preview, next)?;
 
     for approved in &preview.children {
         let subject = population_subject(&approved.id);
@@ -995,21 +1275,12 @@ fn project_accepted_fission(
             .get(&format!("identity:canonical:{}", approved.id))
             .filter(|identity| identity.subject == subject && identity.active)
             .ok_or_else(|| anyhow!("accepted fission child lacks exact identity"))?;
-        campaign.gestalts.insert(
-            approved.id.clone(),
-            GestaltPersonaState {
-                schema: "ghostlight.gestalt_persona_state.v1".into(),
-                id: approved.id.clone(),
-                name: identity.value.clone(),
-                version: 0,
-                home_location_id: place.id.clone(),
-                shared_capabilities: parent.shared_capabilities.clone(),
-                shared_knowledge: parent.shared_knowledge.clone(),
-                resources: BTreeSet::new(),
-                goals: parent.goals.clone(),
-                pressures: parent.pressures.clone(),
-            },
-        );
+        verify_fission_child_components(next, approved)?;
+        let mut accepted = approved.clone();
+        accepted.name = identity.value.clone();
+        accepted.home_location_id = place.id.clone();
+        accepted.resources.clear();
+        campaign.gestalts.insert(approved.id.clone(), accepted);
     }
 
     let member_ids = campaign
@@ -3884,6 +4155,111 @@ mod tests {
                 .semantic_verification_receipt_id
                 .starts_with("fission-civic-reconciliation:")
         );
+        crate::transition::validate_component_world(&component_snapshot(&campaign).unwrap())
+            .unwrap();
+    }
+
+    #[test]
+    fn elaborated_fission_commits_qualified_child_semantics_in_one_typed_batch() {
+        let mut campaign = campaign();
+        let inherited_knowledge = campaign.facts["fact:route"].statement.clone();
+        let parent = GestaltPersonaState {
+            schema: "ghostlight.gestalt_persona_state.v1".into(),
+            id: "residents".into(),
+            name: "Residents".into(),
+            version: 0,
+            home_location_id: "room".into(),
+            shared_capabilities: BTreeSet::from(["keep the public stair open".into()]),
+            shared_knowledge: BTreeSet::from([inherited_knowledge.clone()]),
+            resources: BTreeSet::new(),
+            goals: vec!["keep the hall inhabited".into()],
+            pressures: vec!["the night watch is thin".into()],
+        };
+        campaign.gestalts.insert(parent.id.clone(), parent.clone());
+        crate::resolution::ensure_agency_profiles(&mut campaign);
+
+        let situated_knowledge =
+            "The eastern lintel rings when the sealed cistern changes pressure.".to_owned();
+        let mut specific = parent.clone();
+        specific.id = "lintel-keepers".into();
+        specific.name = "Lintel Keepers".into();
+        specific
+            .shared_capabilities
+            .insert("sound the lintel before opening the cistern".into());
+        specific.shared_knowledge.insert(situated_knowledge.clone());
+        specific
+            .goals
+            .push("win custody of the eastern cistern key".into());
+        specific
+            .pressures
+            .push("the cistern key is promised to two rival crews".into());
+        let mut residual = parent.clone();
+        residual.id = "residents-unresolved".into();
+        residual.name = "Unresolved Residents".into();
+        let preview = GestaltFissionPreview {
+            schema: "ghostlight.gestalt_fission_preview.v1".into(),
+            campaign_id: campaign.id,
+            expected_world_revision: campaign.revision,
+            parent_gestalt_id: parent.id.clone(),
+            partition_axis: crate::domain::AgencyAxis::Ideology,
+            children: vec![specific.clone(), residual],
+            child_partition_values: BTreeMap::from([
+                (specific.id.clone(), "lintel custody".into()),
+                ("residents-unresolved".into(), "other/unknown".into()),
+            ]),
+            residual_child_id: "residents-unresolved".into(),
+            member_child_assignments: BTreeMap::new(),
+            resource_child_assignments: BTreeMap::new(),
+            evidence_receipt_ids: vec![],
+            gaps: vec![],
+            canon_candidates: vec![],
+            requires_approval: true,
+        };
+
+        assert!(lower_fission(&campaign, &preview, Utc::now() + Duration::minutes(5)).is_err());
+        let transition =
+            lower_elaborated_fission(&campaign, &preview, Utc::now() + Duration::minutes(5))
+                .unwrap();
+        assert!(transition.batch.mutations.iter().any(|mutation| matches!(
+            mutation.mutation,
+            WorldMutation::AdmitEntity {
+                initial_profile: Some(AdmittedEntityProfile::Proposition { .. }),
+                ..
+            }
+        )));
+        assert!(
+            transition.batch.mutations.iter().any(|mutation| matches!(
+                mutation.mutation,
+                WorldMutation::ChangeCapability { .. }
+            ))
+        );
+        assert!(
+            transition
+                .batch
+                .mutations
+                .iter()
+                .any(|mutation| matches!(mutation.mutation, WorldMutation::ChangeKnowledge { .. }))
+        );
+        assert!(
+            transition.batch.mutations.iter().any(|mutation| matches!(
+                mutation.mutation,
+                WorldMutation::ChangeCommitment { .. }
+            ))
+        );
+        assert!(
+            transition
+                .batch
+                .mutations
+                .iter()
+                .any(|mutation| matches!(mutation.mutation, WorldMutation::ChangePressure { .. }))
+        );
+
+        apply_lowered_elaborated_fission(&mut campaign, &preview, &transition, Utc::now()).unwrap();
+        assert_eq!(campaign.gestalts[&specific.id], specific);
+        assert!(campaign.facts.values().any(|fact| {
+            fact.statement == situated_knowledge
+                && fact.scope == crate::domain::FactScope::ProvisionalLocal
+        }));
         crate::transition::validate_component_world(&component_snapshot(&campaign).unwrap())
             .unwrap();
     }

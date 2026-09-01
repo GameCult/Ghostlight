@@ -132,6 +132,8 @@ impl std::error::Error for DestinationCompilationFailure {}
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct CivicElaborationVerificationFailure {
     pub message: String,
+    #[serde(default)]
+    pub semantic_diagnostic: Option<String>,
     pub model_receipts: Vec<ModelStageReceipt>,
 }
 
@@ -682,8 +684,60 @@ struct CivicSystemVerification {
     redress_legible: bool,
     institutional_relations_coherent: bool,
     resident_answer_grounded: bool,
+    political_form_distinct_or_deliberately_shared: bool,
+    opposed_interests_have_distinct_means: bool,
+    constituencies_cross_boundaries_or_local_homogeneity_justified: bool,
+    explicit_request_constraints_satisfied: bool,
+    public_names_do_not_repeat_an_overused_template: bool,
+    candidate_text_intact: bool,
     #[schemars(length(min = 1, max = 1_000))]
     rationale: String,
+}
+
+fn civic_verification_semantic_diagnostic(verdict: &CivicSystemVerification) -> String {
+    let failed_checks = [
+        ("authority_legible", verdict.authority_legible),
+        (
+            "selection_or_succession_legible",
+            verdict.selection_or_succession_legible,
+        ),
+        ("public_resources_legible", verdict.public_resources_legible),
+        ("redress_legible", verdict.redress_legible),
+        (
+            "institutional_relations_coherent",
+            verdict.institutional_relations_coherent,
+        ),
+        ("resident_answer_grounded", verdict.resident_answer_grounded),
+        (
+            "political_form_distinct_or_deliberately_shared",
+            verdict.political_form_distinct_or_deliberately_shared,
+        ),
+        (
+            "opposed_interests_have_distinct_means",
+            verdict.opposed_interests_have_distinct_means,
+        ),
+        (
+            "constituencies_cross_boundaries_or_local_homogeneity_justified",
+            verdict.constituencies_cross_boundaries_or_local_homogeneity_justified,
+        ),
+        (
+            "explicit_request_constraints_satisfied",
+            verdict.explicit_request_constraints_satisfied,
+        ),
+        (
+            "public_names_do_not_repeat_an_overused_template",
+            verdict.public_names_do_not_repeat_an_overused_template,
+        ),
+        ("candidate_text_intact", verdict.candidate_text_intact),
+    ]
+    .into_iter()
+    .filter_map(|(name, accepted)| (!accepted).then_some(name))
+    .collect::<Vec<_>>();
+    serde_json::json!({
+        "failed_checks":failed_checks,
+        "rationale":verdict.rationale,
+    })
+    .to_string()
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq)]
@@ -2057,6 +2111,7 @@ impl WorldCompiler {
             })
             .collect::<Vec<_>>();
         let current_civic_context = civic_context(campaign, expansion_origin_location_id);
+        let peer_civic_context = peer_civic_contexts(campaign, expansion_origin_location_id);
         let scope_instruction = if let Some(target_id) = existing_destination_id.as_deref() {
             format!(
                 "The primary destination already exists as exact canonical location {target_id}. Elaborate it in place. Never emit that location again, rename it, replace it, or alter its existing routes or container. Every new location must be a bounded child whose containment chain reaches {target_id}; origin_routes are new local routes owned by {target_id}."
@@ -2078,15 +2133,20 @@ impl WorldCompiler {
             serde_json::to_string(&current_civic_context).map_err(|error| {
                 destination_compilation_failure(error, completed_model_receipts(&[]))
             })?;
+        let peer_civic_apparatuses =
+            serde_json::to_string(&peer_civic_context).map_err(|error| {
+                destination_compilation_failure(error, completed_model_receipts(&[]))
+            })?;
         let source_population_context =
             serde_json::to_string(&origin_population_context).map_err(|error| {
                 destination_compilation_failure(error, completed_model_receipts(&[]))
             })?;
         let base_prompt = format!(
-            "Compile only the requested bounded destination region. {scope_instruction} Every new location id must be new. Return explicit origin_routes records owned by expansion anchor id {} into the new region or child locality, and give every such destination a reciprocal route record back to the anchor with the same positive travel time. Every route record needs a stable route_id local to its exact origin, an exact destination_id, a distance, and positive travel_minutes; the same local route_id may exist under another origin without naming the same route. Do not rewrite existing geography. Every place has a non-empty name, valid container, and concrete persistent features. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them.\n\nUse evidence as canon constraints, not as an exhaustive game map. Missing game-scale routes, geometry, people, ordinary procedures, supplies, local responsibilities, capacity choices, and operating doctrine require the smallest coherent playable elaboration. Mark the resulting facts branch_local or provisional_local and disclose consequential inventions in branch_assumptions. Variation between campaigns is permitted; if a detail must not vary, it belongs in the Vault. Never put a compatible elaboration in gaps merely because the Vault is silent.\n\nWhen CURRENT CIVIC APPARATUS is null, a playable inhabited destination needs one to eight non-overlapping population leaves and two to twelve distinct institutions. When it is present, preserve it and add only genuinely new detail needed by the request; population and institution arrays may be empty. New local relations may join new subjects to exact subjects in the current apparatus. Never duplicate a resident body, office, fact, or relation under a fresh name. Each new population home_location_id must be one new location. Each new institution location_ids set may name the jurisdiction or its new children. shared_fact_ids may contain exact fact IDs from the current apparatus or this candidate, never free-text knowledge. collective_authority_id may be null or the exact ID of one new population and denotes real shared authority.\n\nReturn one complete civic_system manifest for every inhabited candidate. On an existing apparatus it is the next version and must retain every existing governing institution, resident population, public fact, and political relation while adding any new IDs. It must identify the exact jurisdiction, its governing institutions and resident populations, at least one committed public fact in each of four domains—current authority, selection or succession, public resources or revenue, and redress or appeal—and the political relations that make implementation, hierarchy, or contestation legible. Every named resident population must share those public civic facts. If REQUEST presupposes a mayor, election, throne, council, or other office that this locality does not use, commit facts that let a resident correct the premise; never manufacture the requested institution merely to agree with the question. The question selects the missing domain, not its answer.\n\nThe gaps array is legal only when no compatible elaboration can preserve an exact clause of REQUEST without choosing between contradictory canon baselines, inventing an unanchored canon baseline explicitly required by the request, or exceeding an approved capability. Every gap must name that exact premise clause and the exact table choice blocking compilation. `The Vault does not specify X` is never sufficient. Use an empty gaps array when branch-local invention preserves the request.\n\nA migration relation is a directed available path for a later voluntary strategic choice; it does not move anyone, establish that admission occurred, or erase destination-community agency. It may originate only from one exact co-located active population ID supplied below and may target only one new population ID. Emit a relation only when the request and supplied source population/member goals support that migration possibility. Never invent a source population or named member. The approval preview must make all branch-local assumptions explicit without misclassifying them as canon gaps.\n\nCAMPAIGN LOCATIONS:\n{}\nCURRENT CIVIC APPARATUS:\n{}\nCO-LOCATED SOURCE POPULATIONS AND NAMED MEMBER DELTAS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
+            "Compile only the requested bounded destination region. {scope_instruction} Every new location id must be new. Return explicit origin_routes records owned by expansion anchor id {} into the new region or child locality, and give every such destination a reciprocal route record back to the anchor with the same positive travel time. Every route record needs a stable route_id local to its exact origin, an exact destination_id, a distance, and positive travel_minutes; the same local route_id may exist under another origin without naming the same route. Do not rewrite existing geography. Every place has a non-empty name, valid container, and concrete persistent features. Any locally observable clue must already exist as a fact and list exact discoverable_at_location_ids from the combined existing and new topology; later action assessment can reveal facts but cannot invent them.\n\nUse evidence as canon constraints, not as an exhaustive game map. Missing game-scale routes, geometry, people, ordinary procedures, supplies, local responsibilities, capacity choices, and operating doctrine require the smallest coherent playable elaboration. Mark the resulting facts branch_local or provisional_local and disclose consequential inventions in branch_assumptions. Variation between campaigns is permitted; if a detail must not vary, it belongs in the Vault. Never put a compatible elaboration in gaps merely because the Vault is silent.\n\nWhen CURRENT CIVIC APPARATUS is null, a playable inhabited destination needs one to eight non-overlapping population leaves and two to twelve distinct institutions. Each population and institution needs a materially executable means such as custody, work, mobility, ritual authority, price setting, force, refusal, or mutual aid, not merely a notice channel or aspiration. When it is present, preserve it and add only genuinely new detail needed by the request; population and institution arrays may be empty. New local relations may join new subjects to exact subjects in the current apparatus. Never duplicate a resident body, office, fact, or relation under a fresh name. Each new population home_location_id must be one new location. Each new institution location_ids set may name the jurisdiction or its new children. shared_fact_ids may contain exact fact IDs from the current apparatus or this candidate, never free-text knowledge. collective_authority_id may be null or the exact ID of one new population and denotes real shared authority.\n\nPEER CIVIC APPARATUSES are contrast evidence. Reuse a political form only when shared history or material dependence explains it. Redress need not be a tribunal or petition: exit, kin restitution, feud mediation, ritual appeal, patronage, strike, refusal, and other locally coherent remedies are valid when their power and limits are legible. Preserve mixed, diasporic, and cross-border constituencies; ancestry or species alone is not a sufficient civic partition. Return one complete civic_system manifest for every inhabited candidate. On an existing apparatus it is the next version and must retain every existing governing institution, resident population, public fact, and political relation while adding any new IDs. It must identify the exact jurisdiction, its governing institutions and resident populations, at least one committed public fact in each of four domains—current authority, selection or succession, public resources or revenue, and redress or appeal—and the political relations that make implementation, hierarchy, or contestation legible. Every named resident population must share those public civic facts. If REQUEST presupposes a mayor, election, throne, council, or other office that this locality does not use, commit facts that let a resident correct the premise; never manufacture the requested institution merely to agree with the question. The question selects the missing domain, not its answer.\n\nThe gaps array is legal only when no compatible elaboration can preserve an exact clause of REQUEST without choosing between contradictory canon baselines, inventing an unanchored canon baseline explicitly required by the request, or exceeding an approved capability. Every gap must name that exact premise clause and the exact table choice blocking compilation. `The Vault does not specify X` is never sufficient. Use an empty gaps array when branch-local invention preserves the request.\n\nA migration relation is a directed available path for a later voluntary strategic choice; it does not move anyone, establish that admission occurred, or erase destination-community agency. It may originate only from one exact co-located active population ID supplied below and may target only one new population ID. Emit a relation only when the request and supplied source population/member goals support that migration possibility. Never invent a source population or named member. The approval preview must make all branch-local assumptions explicit without misclassifying them as canon gaps.\n\nCAMPAIGN LOCATIONS:\n{}\nCURRENT CIVIC APPARATUS:\n{}\nPEER CIVIC APPARATUSES:\n{}\nCO-LOCATED SOURCE POPULATIONS AND NAMED MEMBER DELTAS:\n{}\nREQUEST:\n{}\nEVIDENCE:\n{}",
             expansion_origin_location_id,
             campaign_locations,
             current_civic_apparatus,
+            peer_civic_apparatuses,
             source_population_context,
             destination_request,
             evidence_text(&receipts)
@@ -2111,6 +2171,7 @@ impl WorldCompiler {
         let mut compiler_receipts: Vec<ModelStageReceipt> = Vec::new();
         let mut correction = String::new();
         let mut local_corrections = 0;
+        let mut semantic_regenerations = 0;
         let (seed, expansion) = loop {
             let output = self
                 .structured(
@@ -2141,6 +2202,9 @@ impl WorldCompiler {
             };
             if let Err(error) = validate_compiled_material_gaps(&seed.gaps, &receipts)
                 .and_then(|_| validate_branch_assumptions(&seed.branch_assumptions))
+                .and_then(|_| {
+                    validate_compiled_destination_population_names(campaign, &seed.populations)
+                })
             {
                 mark_semantic_invalid(
                     compiler_receipts
@@ -2253,10 +2317,21 @@ impl WorldCompiler {
                             }
                             CivicSystemVerificationOutcome::Rejected { verdict, receipts } => {
                                 compiler_receipts.extend(receipts);
-                                repair_finding =
-                                    Some(DestinationReconciliationFinding::CivicVerifier {
-                                        verdict,
-                                    });
+                                if semantic_regenerations == 0 {
+                                    semantic_regenerations += 1;
+                                    correction.push_str(&format!(
+                                        "\n\nINDEPENDENT CIVIC VERIFIER REJECTED THE PREVIOUS COMPLETE CANDIDATE:\n{}\nRegenerate the complete destination candidate. You own every candidate field; correct the rejected semantics and prose without weakening the request, evidence, topology, or civic invariants.",
+                                        serde_json::to_string(&verdict).unwrap_or_else(|_| verdict.rationale.clone())
+                                    ));
+                                    continue;
+                                }
+                                return Err(destination_compilation_failure(
+                                    format!(
+                                        "destination civic verifier rejected the regenerated candidate: {}",
+                                        verdict.rationale.trim()
+                                    ),
+                                    completed_model_receipts(&compiler_receipts),
+                                ));
                             }
                             CivicSystemVerificationOutcome::Failed { message, receipts } => {
                                 compiler_receipts.extend(receipts);
@@ -3078,6 +3153,11 @@ impl WorldCompiler {
             .collect::<Vec<_>>();
         let candidate = match serde_json::to_string(&serde_json::json!({
             "previous_civic_apparatus":current_civic_context,
+            "peer_civic_apparatuses":peer_civic_contexts(
+                campaign,
+                &civic_system.jurisdiction_location_id,
+            ),
+            "complete_candidate":expansion,
             "previous_resident_fact_knowledge":previous_resident_fact_knowledge,
             "civic_system":civic_system,
             "new_facts":&expansion.facts,
@@ -3094,7 +3174,7 @@ impl WorldCompiler {
             }
         };
         let base_prompt = format!(
-            "Independently verify the admitted civic apparatus. Judge meaning, not JSON shape. The public facts must actually explain current authority, selection or succession, public resources or revenue, and redress or appeal. The institutions and political relations must form a coherent local apparatus. Use previous_resident_fact_knowledge and each new resident population's exact shared_fact_ids as the authoritative identity projection for deciding whether every resident can ground an ordinary answer about local government; raw shared_knowledge elsewhere is canonical statement text, not a missing ID field. A question may select a civic domain but must not have forced its presupposed office, election, or answer into the candidate. Do not rewrite or complete the candidate; return verdicts only.\n\nREQUEST:\n{}\nEVIDENCE:\n{}\nCANDIDATE:\n{}",
+            "Independently verify the admitted civic apparatus. Judge meaning, not JSON shape. The public facts must actually explain current authority, selection or succession, public resources or revenue, and redress or appeal. The institutions and political relations must form a coherent local apparatus. Use previous_resident_fact_knowledge and each new resident population's exact shared_fact_ids as the authoritative identity projection for deciding whether every resident can ground an ordinary answer about local government; raw shared_knowledge elsewhere is canonical statement text, not a missing ID field. A question may select a civic domain but must not have forced its presupposed office, election, or answer into the candidate. Compare complete_candidate with peer_civic_apparatuses. A reused political form passes only when shared history or material dependence explains it; redress may be exit, restitution, mediation, ritual appeal, patronage, strike, refusal, or another locally effective path rather than a tribunal. Confirm opposed populations and institutions possess different executable means in their capabilities, resources, relationships, and operating posture, not merely different notices. Confirm constituencies cross ancestry, species, and jurisdictional boundaries where the setting supports it; a locally homogeneous constituency passes only when the candidate gives a material reason rather than using ancestry or species as its civic partition by default. Separately confirm every explicit REQUEST constraint is satisfied: a request that requires a mixed, diasporic, or cross-border constituency cannot be waived by a good explanation for local homogeneity, and exact requested counts or forms remain exact. Reject public population or institution names that repeat an overused surname, epithet, grammatical mold, bureaucratic construction, or lightly varied quota template across this candidate or peer civic apparatuses unless shared history or material dependence grounds the resemblance. Inspect every human-readable string field in complete_candidate, excluding stable IDs and schema tags. Reject clipped words, unfinished sentences, placeholder fragments, and corrupted prose in facts, names, goals, pressures, capabilities, knowledge, resources, posture, persistent features, route distances, facet values, information channels, and relation descriptions. Do not rewrite or complete the candidate; return verdicts only.\n\nREQUEST:\n{}\nEVIDENCE:\n{}\nCANDIDATE:\n{}",
             destination_request, evidence, candidate,
         );
         let schema = match serde_json::to_value(schema_for!(CivicSystemVerification)) {
@@ -3142,7 +3222,13 @@ impl WorldCompiler {
             && verdict.public_resources_legible
             && verdict.redress_legible
             && verdict.institutional_relations_coherent
-            && verdict.resident_answer_grounded;
+            && verdict.resident_answer_grounded
+            && verdict.political_form_distinct_or_deliberately_shared
+            && verdict.opposed_interests_have_distinct_means
+            && verdict.constituencies_cross_boundaries_or_local_homogeneity_justified
+            && verdict.explicit_request_constraints_satisfied
+            && verdict.public_names_do_not_repeat_an_overused_template
+            && verdict.candidate_text_intact;
         if !accepted {
             let error = anyhow!(
                 "destination civic verifier rejected the candidate: {}",
@@ -3191,9 +3277,9 @@ impl WorldCompiler {
     }
 
     /// Independently verifies a complete titled-elaboration candidate without
-    /// granting the verifier any rewrite authority. The returned receipt is
-    /// rebound to the exact compiler candidate and can be consumed only by the
-    /// deterministic finalization boundary.
+    /// granting the verifier any rewrite authority. Accepted and rejected
+    /// receipts are bound to the exact compiler candidate before inference so
+    /// recovery cannot attach a verdict to another draft.
     pub async fn verify_titled_locality_elaboration(
         &self,
         campaign: &Campaign,
@@ -3205,10 +3291,7 @@ impl WorldCompiler {
         validate_locality_elaboration(campaign, elaboration)?;
         let mut expansion = elaboration.expansion.clone();
         let current_civic_context = civic_context(campaign, &elaboration.target_location_id);
-        let snapshot = format!(
-            "campaign:{}:revision:{}:titled-elaboration-verification",
-            campaign.id, campaign.revision
-        );
+        let snapshot = titled_civic_verifier_binding(campaign, elaboration)?;
         match self
             .verify_destination_civic_system(
                 campaign,
@@ -3225,17 +3308,20 @@ impl WorldCompiler {
                 .pop()
                 .ok_or_else(|| anyhow!("civic verifier accepted without a receipt")),
             CivicSystemVerificationOutcome::Rejected { verdict, receipts } => {
+                let semantic_diagnostic = civic_verification_semantic_diagnostic(&verdict);
                 Err(anyhow::Error::new(CivicElaborationVerificationFailure {
                     message: format!(
                         "titled elaboration civic verifier rejected the candidate: {}",
                         verdict.rationale.trim()
                     ),
+                    semantic_diagnostic: Some(semantic_diagnostic),
                     model_receipts: receipts,
                 }))
             }
             CivicSystemVerificationOutcome::Failed { message, receipts } => {
                 Err(anyhow::Error::new(CivicElaborationVerificationFailure {
                     message,
+                    semantic_diagnostic: None,
                     model_receipts: receipts,
                 }))
             }
@@ -3387,12 +3473,27 @@ impl DestinationReconciliationAgentTool<'_> {
                 }
             }
             CivicSystemVerificationOutcome::Rejected { verdict, receipts } => {
-                ModelAgentToolOutcome::Continue {
-                    observation: self.observation(
-                        applied_edits,
-                        DestinationReconciliationFinding::CivicVerifier { verdict },
-                    ),
-                    receipts,
+                if !verdict.candidate_text_intact
+                    || !verdict.constituencies_cross_boundaries_or_local_homogeneity_justified
+                    || !verdict.explicit_request_constraints_satisfied
+                    || !verdict.public_names_do_not_repeat_an_overused_template
+                {
+                    ModelAgentToolOutcome::Failed {
+                        message: format!(
+                            "full destination owner must regenerate the broad civic candidate: {}",
+                            serde_json::to_string(&verdict)
+                                .unwrap_or_else(|_| verdict.rationale.clone())
+                        ),
+                        receipts,
+                    }
+                } else {
+                    ModelAgentToolOutcome::Continue {
+                        observation: self.observation(
+                            applied_edits,
+                            DestinationReconciliationFinding::CivicVerifier { verdict },
+                        ),
+                        receipts,
+                    }
                 }
             }
             CivicSystemVerificationOutcome::Failed { message, receipts } => {
@@ -4126,6 +4227,28 @@ fn validate_branch_assumptions(assumptions: &[String]) -> Result<()> {
         validate_user_text("branch assumption", assumption, 2_000)?;
         if !seen.insert(assumption.trim().to_lowercase()) {
             return Err(anyhow!("branch assumptions must be unique"));
+        }
+    }
+    Ok(())
+}
+
+fn validate_compiled_destination_population_names(
+    campaign: &Campaign,
+    populations: &[CompiledDestinationPopulation],
+) -> Result<()> {
+    let established = campaign
+        .gestalts
+        .values()
+        .map(|population| crate::resolution::public_identity_key(&population.name))
+        .collect::<BTreeSet<_>>();
+    let mut candidate = BTreeSet::new();
+    for population in populations {
+        let key = crate::resolution::public_identity_key(&population.name);
+        if key.is_empty() || established.contains(&key) || !candidate.insert(key) {
+            return Err(anyhow!(
+                "destination population {} needs a distinct public population identity",
+                population.id
+            ));
         }
     }
     Ok(())
@@ -5131,6 +5254,41 @@ fn civic_context(campaign: &Campaign, location_id: &str) -> Option<serde_json::V
     })
 }
 
+fn peer_civic_contexts(campaign: &Campaign, excluded_location_id: &str) -> Vec<serde_json::Value> {
+    campaign
+        .civic_systems
+        .values()
+        .filter(|system| system.jurisdiction_location_id != excluded_location_id)
+        .take(8)
+        .map(|system| {
+            serde_json::json!({
+                "jurisdiction_location_id":system.jurisdiction_location_id,
+                "jurisdiction_name":campaign.locations.get(&system.jurisdiction_location_id).map(|location|location.name.as_str()),
+                "institutions":system.governing_institution_ids.iter().filter_map(|id|campaign.institutions.get(id)).map(|institution|serde_json::json!({
+                    "id":institution.id,
+                    "name":institution.name,
+                    "goals":institution.goals,
+                    "resources":institution.resources,
+                    "posture":institution.posture,
+                })).collect::<Vec<_>>(),
+                "resident_populations":system.resident_population_ids.iter().filter_map(|id|campaign.gestalts.get(id)).map(|population|serde_json::json!({
+                    "id":population.id,
+                    "name":population.name,
+                    "goals":population.goals,
+                    "pressures":population.pressures,
+                })).collect::<Vec<_>>(),
+                "public_facts":system.public_authority_fact_ids.iter()
+                    .chain(system.public_selection_fact_ids.iter())
+                    .chain(system.public_resource_fact_ids.iter())
+                    .chain(system.public_redress_fact_ids.iter())
+                    .filter_map(|id|campaign.facts.get(id))
+                    .map(|fact|fact.statement.as_str()).collect::<Vec<_>>(),
+                "political_relations":system.political_relation_ids.iter().filter_map(|id|campaign.agency_relations.get(id)).collect::<Vec<_>>(),
+            })
+        })
+        .collect()
+}
+
 pub(crate) fn civic_candidate_digest(expansion: &crate::domain::RegionExpansion) -> Result<String> {
     let mut candidate = expansion.clone();
     if let Some(system) = &mut candidate.civic_system {
@@ -5147,6 +5305,17 @@ pub(crate) fn civic_verifier_binding(campaign: &Campaign, candidate_digest: &str
         "campaign:{}:revision:{}:destination_civic:{}",
         campaign.id, campaign.revision, candidate_digest
     )
+}
+
+pub fn titled_civic_verifier_binding(
+    campaign: &Campaign,
+    elaboration: &LocalityElaboration,
+) -> Result<String> {
+    validate_locality_elaboration(campaign, elaboration)?;
+    Ok(civic_verifier_binding(
+        campaign,
+        &civic_candidate_digest(&elaboration.expansion)?,
+    ))
 }
 
 pub(crate) fn validate_civic_admission_receipts(
@@ -5329,7 +5498,6 @@ pub fn validate_region_expansion(
             ));
         }
     }
-    let mut attached = false;
     for location in &expansion.locations {
         if location.name.trim().is_empty()
             || location
@@ -5361,13 +5529,7 @@ pub fn validate_region_expansion(
             {
                 return Err(anyhow!("destination expansion has a dangling route"));
             }
-            if route.destination_id == expansion.origin_location_id {
-                attached = true;
-            }
         }
-    }
-    if !attached {
-        return Err(anyhow!("destination expansion is not attached to origin"));
     }
     for location in &expansion.locations {
         let mut seen = BTreeSet::from([location.id.as_str()]);
@@ -5388,6 +5550,78 @@ pub fn validate_region_expansion(
                         .and_then(|container| container.container_id.as_deref())
                 });
         }
+    }
+    let mut directed_routes = BTreeMap::<String, BTreeSet<String>>::new();
+    for location in campaign.locations.values() {
+        directed_routes
+            .entry(location.id.clone())
+            .or_default()
+            .extend(
+                location
+                    .routes
+                    .values()
+                    .map(|route| route.destination_id.clone()),
+            );
+    }
+    directed_routes
+        .entry(expansion.origin_location_id.clone())
+        .or_default()
+        .extend(
+            expansion
+                .origin_routes
+                .values()
+                .map(|route| route.destination_id.clone()),
+        );
+    for location in &expansion.locations {
+        directed_routes
+            .entry(location.id.clone())
+            .or_default()
+            .extend(
+                location
+                    .routes
+                    .values()
+                    .map(|route| route.destination_id.clone()),
+            );
+    }
+    let reachable_from = |routes: &BTreeMap<String, BTreeSet<String>>, start: &str| {
+        let mut reachable = BTreeSet::from([start.to_owned()]);
+        let mut frontier = std::collections::VecDeque::from([start.to_owned()]);
+        while let Some(origin) = frontier.pop_front() {
+            for destination in routes.get(&origin).into_iter().flatten() {
+                if reachable.insert(destination.clone()) {
+                    frontier.push_back(destination.clone());
+                }
+            }
+        }
+        reachable
+    };
+    let outward_reachable = reachable_from(&directed_routes, &expansion.origin_location_id);
+    let mut reverse_routes = BTreeMap::<String, BTreeSet<String>>::new();
+    for (origin, destinations) in &directed_routes {
+        for destination in destinations {
+            reverse_routes
+                .entry(destination.clone())
+                .or_default()
+                .insert(origin.clone());
+        }
+    }
+    let return_reachable = reachable_from(&reverse_routes, &expansion.origin_location_id);
+    let unreachable_outward = new_ids
+        .iter()
+        .filter(|id| !outward_reachable.contains(**id))
+        .copied()
+        .collect::<Vec<_>>();
+    let unreachable_return = new_ids
+        .iter()
+        .filter(|id| !return_reachable.contains(**id))
+        .copied()
+        .collect::<Vec<_>>();
+    if !unreachable_outward.is_empty() || !unreachable_return.is_empty() {
+        return Err(anyhow!(
+            "destination expansion does not provide directed origin reachability for every new location; unreachable outward: {:?}; unreachable return: {:?}",
+            unreachable_outward,
+            unreachable_return
+        ));
     }
     if let Some(finding) = destination_fact_findings(campaign, &expansion.facts).first() {
         return Err(anyhow!(
@@ -5435,6 +5669,24 @@ pub fn validate_region_expansion(
         return Err(anyhow!(
             "destination populations need at most eight unique new canonical subject IDs"
         ));
+    }
+    let established_population_names = campaign
+        .gestalts
+        .values()
+        .map(|population| crate::resolution::public_identity_key(&population.name))
+        .collect::<BTreeSet<_>>();
+    let mut candidate_population_names = BTreeSet::new();
+    for population in &expansion.populations {
+        let name_key = crate::resolution::public_identity_key(&population.name);
+        if name_key.is_empty()
+            || established_population_names.contains(&name_key)
+            || !candidate_population_names.insert(name_key)
+        {
+            return Err(anyhow!(
+                "destination population {} needs a distinct public population identity",
+                population.id
+            ));
+        }
     }
     let profile_ids = expansion
         .population_profiles
@@ -6829,6 +7081,78 @@ pub fn validate_campaign_runtime(c: &Campaign) -> Result<()> {
     validate_campaign(c, false)
 }
 
+fn validate_campaign_public_identity_names(campaign: &Campaign) -> Result<()> {
+    let mut projected_member_actor_ids = BTreeSet::new();
+    for member in campaign.gestalt_members.values() {
+        let default_actor_id = crate::domain::gestalt_member_subject_id(&member.id);
+        if campaign.actors.contains_key(&default_actor_id) {
+            projected_member_actor_ids.insert(default_actor_id);
+        }
+        if let Some(actor_id) = &member.materialized_actor_id {
+            projected_member_actor_ids.insert(actor_id.clone());
+            if let Some(actor) = campaign.actors.get(actor_id)
+                && crate::resolution::public_identity_key(&actor.name)
+                    != crate::resolution::public_identity_key(&member.name)
+            {
+                return Err(anyhow!(
+                    "materialized member {} and Actor {} disagree on public identity",
+                    member.id,
+                    actor.id
+                ));
+            }
+        }
+    }
+
+    let mut person_names = BTreeMap::<String, String>::new();
+    let person_identities = campaign
+        .actors
+        .values()
+        .filter(|actor| !projected_member_actor_ids.contains(&actor.id))
+        .map(|actor| (format!("actor:{}", actor.id), actor.name.as_str()))
+        .chain(
+            campaign
+                .gestalt_members
+                .values()
+                .map(|member| (format!("member:{}", member.id), member.name.as_str())),
+        );
+    for (subject_id, name) in person_identities {
+        let key = crate::resolution::public_identity_key(name);
+        if key.is_empty() {
+            return Err(anyhow!(
+                "public person identity {subject_id} has no identity characters"
+            ));
+        }
+        if let Some(existing) = person_names.insert(key, subject_id.clone()) {
+            return Err(anyhow!(
+                "public person identities {existing} and {subject_id} collide"
+            ));
+        }
+    }
+
+    let mut population_names = BTreeMap::<String, String>::new();
+    let residual_population_ids = crate::elaboration::residual_gestalt_ids(campaign);
+    for population in campaign
+        .gestalts
+        .values()
+        .filter(|population| !residual_population_ids.contains(&population.id))
+    {
+        let key = crate::resolution::public_identity_key(&population.name);
+        if key.is_empty() {
+            return Err(anyhow!(
+                "public population identity {} has no identity characters",
+                population.id
+            ));
+        }
+        if let Some(existing) = population_names.insert(key, population.id.clone()) {
+            return Err(anyhow!(
+                "public population identities {existing} and {} collide",
+                population.id
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn validate_campaign(c: &Campaign, fresh_seed: bool) -> Result<()> {
     if c.tick_hours == 0 {
         return Err(anyhow!("strategic tick duration must be positive"));
@@ -6839,6 +7163,7 @@ fn validate_campaign(c: &Campaign, fresh_seed: bool) -> Result<()> {
     {
         return Err(anyhow!("primary controlled subject is missing"));
     }
+    validate_campaign_public_identity_names(c)?;
     crate::resolution::validate_policy(&c.resolution_policy)?;
     crate::resolution::validate_pins(c, &c.resolution_pins)?;
     if let Some(institution) = c.institutions.values().find(|institution| {
@@ -8253,6 +8578,12 @@ mod tests {
                         "redress_legible":accepted,
                         "institutional_relations_coherent":accepted,
                         "resident_answer_grounded":accepted,
+                        "political_form_distinct_or_deliberately_shared":accepted,
+                        "opposed_interests_have_distinct_means":accepted,
+                        "constituencies_cross_boundaries_or_local_homogeneity_justified":accepted,
+                        "explicit_request_constraints_satisfied":accepted,
+                        "public_names_do_not_repeat_an_overused_template":accepted,
+                        "candidate_text_intact":accepted,
                         "rationale":if accepted {
                             "The refuge facts and institutions form a legible civic apparatus grounded in every resident population."
                         } else {
@@ -8574,6 +8905,12 @@ mod tests {
                     "redress_legible":true,
                     "institutional_relations_coherent":true,
                     "resident_answer_grounded":true,
+                    "political_form_distinct_or_deliberately_shared":true,
+                    "opposed_interests_have_distinct_means":true,
+                    "constituencies_cross_boundaries_or_local_homogeneity_justified":true,
+                    "explicit_request_constraints_satisfied":true,
+                    "public_names_do_not_repeat_an_overused_template":true,
+                    "candidate_text_intact":true,
                     "rationale":"Harrow's exact public facts explain its divided authority, ballot, revenue, and appeal path to every resident population."
                 })
                 .to_string()),
@@ -9744,8 +10081,69 @@ mod tests {
         );
     }
 
+    #[test]
+    fn destination_population_names_are_unique_in_the_public_population_namespace() {
+        let mut campaign = seed_to_campaign(private_actor_test_seed(), &[]).unwrap();
+        campaign.gestalts.insert(
+            "ledger-keepers".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "ledger-keepers".into(),
+                name: "Ledger-Keepers".into(),
+                version: 0,
+                home_location_id: "convoy-staging".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: Vec::new(),
+                pressures: Vec::new(),
+            },
+        );
+        let population = |id: &str, name: &str| CompiledDestinationPopulation {
+            id: id.into(),
+            name: name.into(),
+            home_location_id: "refuge".into(),
+            shared_capabilities: BTreeSet::new(),
+            shared_fact_ids: BTreeSet::new(),
+            resources: BTreeSet::new(),
+            goals: vec!["keep the crossing usable".into()],
+            pressures: Vec::new(),
+            collective_authority_id: None,
+            facets: BTreeMap::<AgencyAxis, BTreeSet<String>>::new().into(),
+            information_channels: BTreeSet::new(),
+        };
+
+        assert!(
+            validate_compiled_destination_population_names(
+                &campaign,
+                &[population("new", "ledger keepers")]
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("distinct public population identity")
+        );
+        assert!(
+            validate_compiled_destination_population_names(
+                &campaign,
+                &[
+                    population("one", "River Hands"),
+                    population("two", "river-hands"),
+                ]
+            )
+            .is_err()
+        );
+        validate_compiled_destination_population_names(
+            &campaign,
+            &[
+                population("one", "River Hands"),
+                population("two", "Stone Sounders"),
+            ],
+        )
+        .unwrap();
+    }
+
     #[tokio::test]
-    async fn destination_agent_owns_the_reattempt_after_one_rejected_civic_verdict() {
+    async fn destination_full_owner_regenerates_after_one_rejected_civic_verdict() {
         let model = Arc::new(DestinationElaborationModel {
             saw_branch_assumption_boundary: AtomicBool::new(false),
             saw_balanced_civic_reconciliation: AtomicBool::new(false),
@@ -9778,26 +10176,25 @@ mod tests {
             .iter()
             .filter(|receipt| receipt.stage == "destination_reconciliation_agent_action")
             .collect::<Vec<_>>();
+        let compile_receipts = receipts
+            .iter()
+            .filter(|receipt| receipt.stage == "destination_compile")
+            .collect::<Vec<_>>();
 
         assert_eq!(model.civic_verification_calls.load(Ordering::SeqCst), 2);
         assert_eq!(verification_receipts.len(), 2);
-        assert_eq!(reconciliation_receipts.len(), 1);
+        assert_eq!(compile_receipts.len(), 2);
+        assert!(reconciliation_receipts.is_empty());
         assert_eq!(
             verification_receipts[0].validation_result,
             "semantic_invalid"
         );
         assert_eq!(verification_receipts[1].validation_result, "valid");
         assert!(
-            reconciliation_receipts[0]
-                .source_receipt_ids
-                .iter()
-                .any(|source| source == verification_receipts[0].storage_key())
-        );
-        assert!(
             verification_receipts[1]
                 .source_receipt_ids
                 .iter()
-                .any(|source| source == reconciliation_receipts[0].storage_key())
+                .any(|source| source == compile_receipts[1].storage_key())
         );
         assert_eq!(
             preview
@@ -9868,6 +10265,35 @@ mod tests {
 
         assert_eq!(rationale["minLength"], 1);
         assert_eq!(rationale["maxLength"], 1_000);
+    }
+
+    #[test]
+    fn civic_repair_diagnostic_leads_with_every_failed_dimension() {
+        let verdict = CivicSystemVerification {
+            authority_legible: true,
+            selection_or_succession_legible: true,
+            public_resources_legible: true,
+            redress_legible: true,
+            institutional_relations_coherent: true,
+            resident_answer_grounded: true,
+            political_form_distinct_or_deliberately_shared: true,
+            opposed_interests_have_distinct_means: true,
+            constituencies_cross_boundaries_or_local_homogeneity_justified: false,
+            explicit_request_constraints_satisfied: true,
+            public_names_do_not_repeat_an_overused_template: true,
+            candidate_text_intact: false,
+            rationale: "The late civic dimensions failed despite an otherwise legible apparatus."
+                .into(),
+        };
+
+        let diagnostic = civic_verification_semantic_diagnostic(&verdict);
+
+        assert!(diagnostic.starts_with("{\"failed_checks\":["));
+        assert!(
+            diagnostic.contains("constituencies_cross_boundaries_or_local_homogeneity_justified")
+        );
+        assert!(diagnostic.contains("candidate_text_intact"));
+        assert!(!diagnostic.contains("authority_legible"));
     }
 
     #[test]
@@ -10045,7 +10471,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn destination_civic_rejection_returns_to_one_balanced_agent_owner() {
+    async fn repeated_broad_civic_rejection_never_enters_the_narrow_reconciler() {
         let model = Arc::new(DestinationElaborationModel {
             saw_branch_assumption_boundary: AtomicBool::new(false),
             saw_balanced_civic_reconciliation: AtomicBool::new(false),
@@ -10059,75 +10485,48 @@ mod tests {
         seed.opening_narration = "The convoy waits in the rain.".into();
         let campaign = seed_to_campaign(seed, &[]).unwrap();
 
-        let (_, receipts) = compiler
+        let error = compiler
             .compile_destination(
                 &campaign,
                 "convoy-staging",
                 "a playable storm refuge with ordinary repair and admission procedure",
             )
             .await
-            .unwrap();
-        let civic_receipts = receipts
+            .unwrap_err();
+        let failure = error
+            .downcast_ref::<DestinationCompilationFailure>()
+            .expect("terminal destination failure preserves model receipts");
+        let civic_receipts = failure
+            .model_receipts
             .iter()
             .filter(|receipt| receipt.stage == "destination_civic_verification")
             .collect::<Vec<_>>();
-        let compile_receipts = receipts
+        let compile_receipts = failure
+            .model_receipts
             .iter()
             .filter(|receipt| receipt.stage == "destination_compile")
             .collect::<Vec<_>>();
-        let reconciliation_receipts = receipts
+        let reconciliation_receipts = failure
+            .model_receipts
             .iter()
             .filter(|receipt| receipt.stage == "destination_reconciliation_agent_action")
             .collect::<Vec<_>>();
 
         assert!(
-            model
+            !model
                 .saw_balanced_civic_reconciliation
                 .load(Ordering::SeqCst)
         );
-        assert_eq!(compile_receipts.len(), 1);
-        assert_eq!(reconciliation_receipts.len(), 2);
-        assert!(
-            reconciliation_receipts
-                .iter()
-                .all(|receipt| receipt.model == MODEL_BALANCED)
-        );
-        assert_eq!(civic_receipts.len(), 3);
-        assert!(
-            reconciliation_receipts[0]
-                .source_receipt_ids
-                .iter()
-                .any(|source| source == compile_receipts[0].storage_key())
-        );
-        assert!(
-            reconciliation_receipts[0]
-                .source_receipt_ids
-                .iter()
-                .any(|source| source == civic_receipts[0].storage_key())
-        );
-        assert!(
-            civic_receipts[1]
-                .source_receipt_ids
-                .iter()
-                .any(|source| source == reconciliation_receipts[0].storage_key())
-        );
-        assert!(
-            reconciliation_receipts[1]
-                .source_receipt_ids
-                .iter()
-                .any(|source| source == civic_receipts[1].storage_key())
-        );
-        assert!(
-            civic_receipts[2]
-                .source_receipt_ids
-                .iter()
-                .any(|source| source == reconciliation_receipts[1].storage_key())
-        );
+        assert_eq!(compile_receipts.len(), 2);
+        assert!(reconciliation_receipts.is_empty());
+        assert_eq!(civic_receipts.len(), 2);
         assert_eq!(civic_receipts[0].validation_result, "semantic_invalid");
         assert_eq!(civic_receipts[1].validation_result, "semantic_invalid");
-        assert_eq!(civic_receipts[2].validation_result, "valid");
-        assert_eq!(reconciliation_receipts[0].validation_result, "valid");
-        assert_eq!(reconciliation_receipts[1].validation_result, "valid");
+        assert!(
+            error
+                .to_string()
+                .contains("destination civic verifier rejected the regenerated candidate")
+        );
     }
 
     #[tokio::test]
@@ -10407,7 +10806,7 @@ mod tests {
             saw_branch_assumption_boundary: AtomicBool::new(false),
             saw_balanced_civic_reconciliation: AtomicBool::new(false),
             civic_verification_calls: AtomicUsize::new(0),
-            civic_verification_rejections: 2,
+            civic_verification_rejections: 0,
             reconciliation_steals_non_civic_fact: true,
         });
         let compiler = WorldCompiler::new(vault(), model.clone(), "flash", "pro");
@@ -10430,7 +10829,7 @@ mod tests {
             .compile_destination(
                 &campaign,
                 "convoy-staging",
-                "a playable storm refuge with ordinary repair and admission procedure",
+                "a candidate fact collision fixture with ordinary repair and admission procedure",
             )
             .await
             .unwrap_err();
@@ -10461,7 +10860,7 @@ mod tests {
                 .iter()
                 .any(|source| source == pair[0].storage_key())
         }));
-        assert_eq!(model.civic_verification_calls.load(Ordering::SeqCst), 1);
+        assert_eq!(model.civic_verification_calls.load(Ordering::SeqCst), 0);
     }
 
     #[tokio::test]
@@ -10489,9 +10888,9 @@ mod tests {
             .unwrap_err();
 
         assert!(
-            error.to_string().contains(
-                "model agent destination_reconciliation_agent_action exhausted 4 semantic steps"
-            ) && error.to_string().contains("civic_verifier_rejection"),
+            error
+                .to_string()
+                .contains("destination civic verifier rejected the regenerated candidate"),
             "{error:#}"
         );
         let failure = error
@@ -10512,23 +10911,17 @@ mod tests {
             .iter()
             .filter(|receipt| receipt.stage == "destination_reconciliation_agent_action")
             .collect::<Vec<_>>();
-        assert_eq!(compile_receipts.len(), 1);
-        assert_eq!(reconciliation_receipts.len(), 4);
-        assert_eq!(civic_receipts.len(), 5);
+        assert_eq!(compile_receipts.len(), 2);
+        assert!(reconciliation_receipts.is_empty());
+        assert_eq!(civic_receipts.len(), 2);
         assert!(
             civic_receipts
                 .iter()
                 .all(|receipt| receipt.validation_result == "semantic_invalid")
         );
-        assert_eq!(model.civic_verification_calls.load(Ordering::SeqCst), 5);
-        assert!(reconciliation_receipts.windows(2).all(|pair| {
-            pair[1]
-                .source_receipt_ids
-                .iter()
-                .any(|source| source == pair[0].storage_key())
-        }));
+        assert_eq!(model.civic_verification_calls.load(Ordering::SeqCst), 2);
         assert!(
-            model
+            !model
                 .saw_balanced_civic_reconciliation
                 .load(Ordering::SeqCst)
         );
@@ -11524,7 +11917,27 @@ mod tests {
     }
 
     #[test]
-    fn inhabited_expansion_admits_only_reachable_population_migration_edges() {
+    fn region_expansion_rejects_a_disconnected_contained_location() {
+        let campaign = crate::resolution::tests::campaign(0, 1);
+        let mut expansion = valid_region_expansion();
+        expansion.locations.push(Location {
+            id: "sealed-gallery".into(),
+            name: "Sealed Gallery".into(),
+            container_id: Some("annex".into()),
+            routes: BTreeMap::new(),
+            persistent_features: vec!["a locked internal gallery".into()],
+        });
+
+        let error = validate_region_expansion(&campaign, &expansion)
+            .unwrap_err()
+            .to_string();
+
+        assert!(error.contains("directed origin reachability"));
+        assert!(error.contains("sealed-gallery"));
+    }
+
+    #[test]
+    fn inhabited_expansion_requires_connected_population_migration_topology() {
         let mut campaign = crate::resolution::tests::campaign(0, 1);
         campaign.gestalts.insert(
             "refugees".into(),
@@ -11647,7 +12060,7 @@ mod tests {
             validate_region_expansion(&campaign, &expansion)
                 .unwrap_err()
                 .to_string()
-                .contains("strategic travel horizon")
+                .contains("directed origin reachability")
         );
     }
 

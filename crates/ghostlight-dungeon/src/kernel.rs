@@ -1144,6 +1144,74 @@ fn execute(
                 Some((transition, mutation_receipt)),
             )
         }
+        WorldCommand::ElaborateGestaltFission {
+            expected_revision,
+            preview,
+            qualification,
+            model_stage_receipts,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            if qualification.schema != "ghostlight.world_complexity_fission_qualification.v1"
+                || !(1..=6).contains(&qualification.target_actionable_gain)
+                || model_stage_receipts.is_empty()
+            {
+                return Err(KernelError::Invalid(
+                    "elaborated fission lacks its exact qualification or model provenance".into(),
+                ));
+            }
+            let parent = campaign
+                .gestalts
+                .get(&preview.parent_gestalt_id)
+                .ok_or_else(|| KernelError::Invalid("fission parent is unknown".into()))?;
+            let proposal = crate::elaboration::WorldComplexityProposal::Fission {
+                preview: preview.clone(),
+                qualification: qualification.clone(),
+            };
+            crate::resolution::validate_elaborated_fission(&campaign, &preview)
+                .and_then(|_| {
+                    crate::elaboration::validate_complexity_fission_semantics(
+                        &campaign,
+                        parent,
+                        &preview,
+                        qualification.title,
+                        &qualification.jurisdiction_location_id,
+                        qualification.target_actionable_gain,
+                    )
+                })
+                .and_then(|_| {
+                    crate::elaboration::validate_world_complexity_semantic_provenance(
+                        &campaign,
+                        &proposal,
+                        &qualification.semantic,
+                        &model_stage_receipts,
+                    )
+                })
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let transition = crate::legacy_transition::lower_elaborated_fission(
+                &campaign,
+                &preview,
+                Utc::now() + Duration::minutes(5),
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let mutation_receipt = crate::legacy_transition::apply_lowered_elaborated_fission(
+                &mut campaign,
+                &preview,
+                &transition,
+                Utc::now(),
+            )
+            .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            commit_with_records(
+                store,
+                row,
+                campaign,
+                "elaborate_gestalt_fission",
+                Vec::new(),
+                Vec::new(),
+                model_stage_receipts,
+                None,
+                Some((transition, mutation_receipt)),
+            )
+        }
         WorldCommand::ReconcileFissionCivicBindings { expected_revision } => {
             require_revision(&campaign, expected_revision)?;
             let transition = crate::legacy_transition::lower_fission_civic_reconciliation(
@@ -1618,6 +1686,7 @@ fn execute(
                 campaign,
                 "materialize_gestalt_member",
                 "direct materialization command",
+                Vec::new(),
             )
         }
         WorldCommand::IndividuateGestaltMember {
@@ -1634,6 +1703,67 @@ fn execute(
                 campaign,
                 "individuate_gestalt_member",
                 "direct individuation command",
+                Vec::new(),
+            )
+        }
+        WorldCommand::ElaborateGestaltIndividuation {
+            expected_revision,
+            individuation,
+            qualification,
+            model_stage_receipts,
+        } => {
+            require_revision(&campaign, expected_revision)?;
+            if qualification.schema != "ghostlight.world_complexity_individuation_qualification.v1"
+                || model_stage_receipts.is_empty()
+            {
+                return Err(KernelError::Invalid(
+                    "elaborated individuation lacks its exact qualification or model provenance"
+                        .into(),
+                ));
+            }
+            let proposal = crate::elaboration::WorldComplexityProposal::Individuate {
+                individuation: individuation.clone(),
+                qualification: qualification.clone(),
+            };
+            if crate::elaboration::unique_containing_jurisdiction(
+                &campaign,
+                &BTreeSet::from([individuation.location_id.clone()]),
+                &BTreeSet::from([qualification.jurisdiction_location_id.clone()]),
+            )
+            .as_deref()
+                != Some(qualification.jurisdiction_location_id.as_str())
+            {
+                return Err(KernelError::Invalid(
+                    "elaborated individuation escaped its qualified jurisdiction".into(),
+                ));
+            }
+            crate::resolution::validate_gestalt_individuation(&campaign, &individuation)
+                .and_then(|_| {
+                    crate::elaboration::validate_complexity_individuation_semantics(
+                        &campaign,
+                        qualification.title,
+                        &individuation,
+                    )
+                })
+                .and_then(|_| {
+                    crate::elaboration::validate_world_complexity_semantic_provenance(
+                        &campaign,
+                        &proposal,
+                        &qualification.semantic,
+                        &model_stage_receipts,
+                    )
+                })
+                .map_err(|error| KernelError::Invalid(error.to_string()))?;
+            let before = campaign.clone();
+            apply_individuation(&mut campaign, &individuation)?;
+            commit_gestalt_presence(
+                store,
+                row,
+                before,
+                campaign,
+                "elaborate_gestalt_individuation",
+                "model-qualified world-complexity individuation",
+                model_stage_receipts,
             )
         }
         WorldCommand::DematerializeGestaltMember {
@@ -1650,6 +1780,7 @@ fn execute(
                 campaign,
                 "dematerialize_gestalt_member",
                 "direct dematerialization command",
+                Vec::new(),
             )
         }
         WorldCommand::ReconcileGestaltPresence {
@@ -1722,6 +1853,7 @@ fn execute(
                 candidate,
                 "reconcile_gestalt_presence",
                 &reason,
+                Vec::new(),
             )
         }
         WorldCommand::ResolveReactionWave {
@@ -2235,7 +2367,7 @@ fn apply_promotion(
     }
     let member = campaign
         .gestalt_members
-        .get_mut(&promotion.member_id)
+        .get(&promotion.member_id)
         .ok_or_else(|| KernelError::Invalid("gestalt member is unknown".into()))?;
     if member.gestalt_id != promotion.gestalt_id
         || member.version != promotion.expected_member_version
@@ -2250,11 +2382,19 @@ fn apply_promotion(
         ));
     }
     let actor_id = crate::domain::gestalt_member_subject_id(&member.id);
-    if campaign.actors.contains_key(&actor_id) {
+    if crate::resolution::canonical_subject_id_is_occupied_except_member(
+        campaign,
+        &actor_id,
+        Some(&promotion.member_id),
+    ) {
         return Err(KernelError::Invalid(
-            "materialized actor id collides".into(),
+            "materialized actor id collides with an established canonical subject identity".into(),
         ));
     }
+    let member = campaign
+        .gestalt_members
+        .get_mut(&promotion.member_id)
+        .ok_or_else(|| KernelError::Invalid("gestalt member is unknown".into()))?;
     let actor = materialize_actor(&gestalt, member, &actor_id, &promotion.location_id);
     member.materialized_actor_id = Some(actor_id.clone());
     member.last_location_id = Some(promotion.location_id.clone());
@@ -3762,6 +3902,7 @@ fn commit_gestalt_presence(
     mut campaign: Campaign,
     kind: &str,
     reason: &str,
+    model_receipts: Vec<crate::model::ModelStageReceipt>,
 ) -> Result<CommandResult, KernelError> {
     let previous_resolution_epoch = campaign.resolution_policy.resolution_epoch;
     crate::resolution::ensure_agency_profiles(&mut campaign);
@@ -3853,7 +3994,14 @@ fn commit_gestalt_presence(
     };
     let key = format!("{}-{}", campaign.id, campaign.revision);
     store
-        .append_gestalt_presence(&row, &campaign, &key, &receipt, &gestalt_receipt)
+        .append_gestalt_presence(
+            &row,
+            &campaign,
+            &key,
+            &receipt,
+            &gestalt_receipt,
+            &model_receipts,
+        )
         .map_err(persist)?;
     Ok(CommandResult::Committed { campaign, receipt })
 }
@@ -5299,6 +5447,92 @@ pub(crate) mod tests {
         assert_eq!(persisted.revision, 0);
         assert!(!persisted.gestalt_members.contains_key("second-taren"));
         assert_eq!(persisted.actors["taren"].name, "Taren");
+    }
+
+    #[test]
+    fn individuation_validation_and_application_share_the_canonical_subject_namespace() {
+        let mut value = campaign();
+        value.gestalts.insert(
+            "refugees".into(),
+            GestaltPersonaState {
+                schema: "ghostlight.gestalt_persona_state.v1".into(),
+                id: "refugees".into(),
+                name: "Refugees".into(),
+                version: 0,
+                home_location_id: "room".into(),
+                shared_capabilities: BTreeSet::new(),
+                shared_knowledge: BTreeSet::new(),
+                resources: BTreeSet::new(),
+                goals: vec![],
+                pressures: vec![],
+            },
+        );
+        crate::resolution::ensure_agency_profiles(&mut value);
+        let member = GestaltMemberDelta {
+            schema: "ghostlight.gestalt_member_delta.v1".into(),
+            id: "relay-volunteer".into(),
+            gestalt_id: "refugees".into(),
+            version: 0,
+            name: "Relay Volunteer".into(),
+            capability_additions: BTreeSet::new(),
+            capability_removals: BTreeSet::new(),
+            knowledge_additions: BTreeSet::new(),
+            knowledge_removals: BTreeSet::new(),
+            equipment: BTreeSet::new(),
+            conditions: BTreeSet::new(),
+            obligations: BTreeSet::new(),
+            relationships: BTreeMap::new(),
+            goals: vec![],
+            memories: vec![],
+            last_location_id: Some("room".into()),
+            materialized_actor_id: None,
+            last_relevant_revision: 0,
+            relevance_lease_until_revision: 0,
+        };
+        let actor_id = crate::domain::gestalt_member_subject_id(&member.id);
+        let mut reservation = value.agency_profiles["refugees"].clone();
+        reservation.id = actor_id.clone();
+        reservation.subject_id = "detached-profile-subject".into();
+        reservation.active_leaf = false;
+        reservation.simulation_eligible = false;
+        value
+            .agency_profiles
+            .insert("detached-profile-key".into(), reservation);
+        let individuation = GestaltIndividuation {
+            gestalt_id: "refugees".into(),
+            expected_gestalt_version: 0,
+            member: member.clone(),
+            location_id: "room".into(),
+        };
+
+        let diagnostic = crate::resolution::validate_gestalt_individuation(&value, &individuation)
+            .unwrap_err()
+            .to_string();
+        assert!(diagnostic.contains("established canonical subject identity"));
+
+        value.gestalt_members.insert(member.id.clone(), member);
+        let error = apply_promotion(
+            &mut value,
+            &GestaltPromotion {
+                gestalt_id: "refugees".into(),
+                expected_gestalt_version: 0,
+                member_id: "relay-volunteer".into(),
+                expected_member_version: 0,
+                location_id: "room".into(),
+            },
+        )
+        .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("established canonical subject identity")
+        );
+        assert!(!value.actors.contains_key(&actor_id));
+        assert!(
+            value.gestalt_members["relay-volunteer"]
+                .materialized_actor_id
+                .is_none()
+        );
     }
 
     #[test]

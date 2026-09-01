@@ -27,6 +27,13 @@ impl WorldScaleIntent {
             target_active_cover_basis_points: 1_000,
         }
     }
+
+    pub fn twenty_percent() -> Self {
+        Self {
+            schema: "ghostlight.world_scale_intent.v1".into(),
+            target_active_cover_basis_points: 2_000,
+        }
+    }
 }
 
 /// Deterministic elaboration pressure derived from scale intent and current
@@ -48,20 +55,91 @@ pub struct WorldElaborationDemand {
     pub realm_subject_targets: BTreeMap<String, u32>,
 }
 
-/// Counts canonical active agency leaves that could own an action. Dormant
-/// member records and census texture do not satisfy world-complexity demand;
-/// an individual counts only after grounded elaboration promotes them into an
-/// Actor leaf, and a population subdivision counts only after admitted fission
-/// creates active child Gestalts.
+pub fn residual_gestalt_ids(campaign: &crate::domain::Campaign) -> BTreeSet<String> {
+    campaign
+        .gestalt_lineages
+        .values()
+        .map(|lineage| lineage.residual_child_id.clone())
+        .collect()
+}
+
+fn semantically_qualified_fission_child(
+    campaign: &crate::domain::Campaign,
+    child_id: &str,
+    parent_id: &str,
+) -> bool {
+    let Some(child) = campaign.gestalts.get(child_id) else {
+        return false;
+    };
+    let Some(parent) = campaign.gestalts.get(parent_id) else {
+        return false;
+    };
+    if !child
+        .shared_capabilities
+        .is_superset(&parent.shared_capabilities)
+        || !child.shared_knowledge.is_superset(&parent.shared_knowledge)
+        || !child.goals.starts_with(&parent.goals)
+        || !child.pressures.starts_with(&parent.pressures)
+    {
+        return false;
+    }
+    [
+        child.shared_capabilities.len() > parent.shared_capabilities.len(),
+        child.shared_knowledge.len() > parent.shared_knowledge.len(),
+        child.goals.len() > parent.goals.len(),
+        child.pressures.len() > parent.pressures.len(),
+    ]
+    .into_iter()
+    .filter(|present| *present)
+    .count()
+        >= 2
+}
+
+/// Returns active action owners whose current state can justify complexity
+/// credit. Compiler-admitted roots and individuated people are admitted by
+/// their owning gates. A fission child must additionally retain two or more
+/// semantic dimensions beyond its exact parent; a merely relabelled ordinary
+/// split remains simulatable but cannot pay the world-size bill.
+pub fn canonical_actionable_subject_ids(campaign: &crate::domain::Campaign) -> BTreeSet<String> {
+    let residual_ids = residual_gestalt_ids(campaign);
+    let fission_parents = campaign
+        .gestalt_lineages
+        .values()
+        .flat_map(|lineage| {
+            lineage
+                .child_gestalt_ids
+                .iter()
+                .map(move |child_id| (child_id.clone(), lineage.parent_gestalt_id.clone()))
+        })
+        .collect::<BTreeMap<_, _>>();
+    campaign
+        .agency_profiles
+        .values()
+        .filter(|profile| {
+            profile.active_leaf
+                && profile.simulation_eligible
+                && !residual_ids.contains(&profile.subject_id)
+                && fission_parents
+                    .get(&profile.subject_id)
+                    .is_none_or(|parent_id| {
+                        semantically_qualified_fission_child(
+                            campaign,
+                            &profile.subject_id,
+                            parent_id,
+                        )
+                    })
+        })
+        .map(|profile| profile.subject_id.clone())
+        .collect()
+}
+
+/// Counts qualified active agency leaves that could own an action. Dormant
+/// member records, census texture, and unresolved residual populations do not
+/// satisfy world-complexity demand. Residuals preserve unresolved lineage and
+/// membership state, but are not simulation-eligible action owners and cannot
+/// be recursively split for quota.
 pub fn canonical_actionable_subject_count(campaign: &crate::domain::Campaign) -> u32 {
-    u32::try_from(
-        campaign
-            .agency_profiles
-            .values()
-            .filter(|profile| profile.active_leaf && profile.simulation_eligible)
-            .count(),
-    )
-    .unwrap_or(u32::MAX)
+    u32::try_from(canonical_actionable_subject_ids(campaign).len()).unwrap_or(u32::MAX)
 }
 
 /// Resolve exact operating places through canonical containment to one
@@ -570,8 +648,10 @@ pub async fn compact_elaborator_session(
             "target location {target_location_id:?} is absent from the canonical campaign"
         ));
     }
-    if journal.is_empty() {
-        findings.push("journal must contain at least one admitted mutation".to_owned());
+    if journal.is_empty() && recent_rejection_findings.is_empty() {
+        findings.push(
+            "compaction requires an admitted mutation or a semantic rejection finding".to_owned(),
+        );
     }
     if journal.len() > 64 {
         findings.push(format!(
@@ -605,6 +685,20 @@ pub async fn compact_elaborator_session(
             findings.push(format!(
                 "journal[{index}].affected_subject_ids contains {} subjects; the maximum is 32",
                 entry.affected_subject_ids.len()
+            ));
+        }
+    }
+    if recent_rejection_findings.len() > 32 {
+        findings.push(format!(
+            "recent_rejection_findings contains {} entries; the maximum is 32",
+            recent_rejection_findings.len()
+        ));
+    }
+    for (index, finding) in recent_rejection_findings.iter().enumerate() {
+        let length = finding.trim().chars().count();
+        if length == 0 || length > 800 {
+            findings.push(format!(
+                "recent_rejection_findings[{index}] contains {length} characters; the permitted range is 1 through 800"
             ));
         }
     }
@@ -1313,7 +1407,7 @@ impl ModelWorldElaborationWorker {
 /// Provider-backed worker for one causally meaningful Gestalt subdivision.
 /// A round assigns distinct active parents against one frozen campaign. The
 /// worker proposes only; callers must revalidate and commit each preview
-/// through `WorldKernel::FissionGestalt`.
+/// through `WorldKernel::ElaborateGestaltFission`.
 pub struct ModelWorldComplexityWorker {
     model: Arc<dyn crate::model::ModelPort>,
     campaign: Arc<crate::domain::Campaign>,
@@ -1321,6 +1415,7 @@ pub struct ModelWorldComplexityWorker {
     first_dispatch_ordinal: u64,
     parent_gestalt_ids: Vec<String>,
     parent_jurisdiction_ids: BTreeMap<String, String>,
+    target_actionable_gains: BTreeMap<u64, u8>,
     session_checkpoints: BTreeMap<String, ElaboratorSessionCheckpoint>,
 }
 
@@ -1331,6 +1426,7 @@ impl ModelWorldComplexityWorker {
         first_dispatch_ordinal: u64,
         parent_gestalt_ids: Vec<String>,
         parent_jurisdiction_ids: BTreeMap<String, String>,
+        actionable_subject_deficit: u32,
         session_checkpoints: BTreeMap<String, ElaboratorSessionCheckpoint>,
     ) -> Result<Self> {
         if parent_gestalt_ids.is_empty()
@@ -1338,6 +1434,14 @@ impl ModelWorldComplexityWorker {
         {
             return Err(anyhow!(
                 "complexity round requires distinct assigned parent Gestalts"
+            ));
+        }
+        if actionable_subject_deficit == 0
+            || u32::try_from(parent_gestalt_ids.len()).unwrap_or(u32::MAX)
+                > actionable_subject_deficit
+        {
+            return Err(anyhow!(
+                "complexity round cannot dispatch more parents than its remaining subject deficit"
             ));
         }
         for parent_id in &parent_gestalt_ids {
@@ -1377,6 +1481,26 @@ impl ModelWorldComplexityWorker {
                 "complexity round session jurisdictions do not match assigned parents"
             ));
         }
+        let planned_gain = actionable_subject_deficit.min(
+            u32::try_from(parent_gestalt_ids.len())
+                .unwrap_or(u32::MAX)
+                .saturating_mul(6),
+        );
+        let parent_count = u32::try_from(parent_gestalt_ids.len()).unwrap_or(u32::MAX);
+        let base_gain = planned_gain / parent_count;
+        let remainder = planned_gain % parent_count;
+        let target_actionable_gains = parent_gestalt_ids
+            .iter()
+            .enumerate()
+            .map(|(index, _)| {
+                let index = u32::try_from(index).unwrap_or(u32::MAX);
+                let gain = base_gain.saturating_add(u32::from(index < remainder));
+                Ok((
+                    first_dispatch_ordinal.saturating_add(u64::from(index)),
+                    u8::try_from(gain.clamp(1, 6))?,
+                ))
+            })
+            .collect::<std::result::Result<BTreeMap<_, _>, std::num::TryFromIntError>>()?;
         for (session_id, checkpoint) in &session_checkpoints {
             if checkpoint.session_id != *session_id
                 || elaborator_session_id(checkpoint.title, &checkpoint.target_location_id)
@@ -1405,6 +1529,7 @@ impl ModelWorldComplexityWorker {
             first_dispatch_ordinal,
             parent_gestalt_ids,
             parent_jurisdiction_ids,
+            target_actionable_gains,
             session_checkpoints,
         })
     }
@@ -1446,7 +1571,9 @@ enum WorldComplexityOperation {
 
 fn complexity_operation(title: ElaboratorTitle) -> WorldComplexityOperation {
     match title {
-        ElaboratorTitle::Hearth | ElaboratorTitle::Veil => WorldComplexityOperation::Individuate,
+        ElaboratorTitle::Hearth | ElaboratorTitle::Tangle | ElaboratorTitle::Veil => {
+            WorldComplexityOperation::Individuate
+        }
         _ => WorldComplexityOperation::Fission,
     }
 }
@@ -1460,10 +1587,47 @@ fn complexity_operation(title: ElaboratorTitle) -> WorldComplexityOperation {
 pub enum WorldComplexityProposal {
     Fission {
         preview: crate::domain::GestaltFissionPreview,
+        qualification: WorldComplexityFissionQualification,
     },
     Individuate {
         individuation: crate::domain::GestaltIndividuation,
+        qualification: WorldComplexityIndividuationQualification,
     },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq, Default)]
+#[serde(deny_unknown_fields)]
+pub struct WorldComplexitySemanticQualification {
+    pub schema: String,
+    pub identity_namespace: String,
+    pub frozen_campaign_id: Uuid,
+    pub frozen_world_revision: u64,
+    pub established_names_digest: String,
+    pub semantic_context_digest: String,
+    pub owner_lane_digest: String,
+    pub candidate_digest: String,
+    pub semantic_verification_binding: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct WorldComplexityFissionQualification {
+    pub schema: String,
+    pub title: ElaboratorTitle,
+    pub jurisdiction_location_id: String,
+    pub target_actionable_gain: u8,
+    #[serde(default)]
+    pub semantic: WorldComplexitySemanticQualification,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct WorldComplexityIndividuationQualification {
+    pub schema: String,
+    pub title: ElaboratorTitle,
+    pub jurisdiction_location_id: String,
+    #[serde(default)]
+    pub semantic: WorldComplexitySemanticQualification,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -1493,6 +1657,11 @@ struct WorldComplexityChildDraft {
     id: String,
     name: String,
     partition_value: String,
+    home_location_id: String,
+    capability_additions: BTreeSet<String>,
+    knowledge_additions: BTreeSet<String>,
+    goals_add: Vec<String>,
+    pressures_add: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -1534,15 +1703,22 @@ impl From<crate::domain::GestaltMemberDelta> for WorldComplexityMemberDraft {
 impl WorldComplexityProposal {
     pub fn parent_gestalt_id(&self) -> &str {
         match self {
-            Self::Fission { preview } => &preview.parent_gestalt_id,
-            Self::Individuate { individuation } => &individuation.gestalt_id,
+            Self::Fission { preview, .. } => &preview.parent_gestalt_id,
+            Self::Individuate { individuation, .. } => &individuation.gestalt_id,
         }
     }
 
     pub fn mutation_kind(&self) -> &'static str {
         match self {
-            Self::Fission { .. } => "fission_gestalt",
-            Self::Individuate { .. } => "individuate_gestalt_member",
+            Self::Fission { .. } => "elaborate_gestalt_fission",
+            Self::Individuate { .. } => "elaborate_gestalt_individuation",
+        }
+    }
+
+    pub fn expected_world_revision(&self) -> u64 {
+        match self {
+            Self::Fission { preview, .. } => preview.expected_world_revision,
+            Self::Individuate { qualification, .. } => qualification.semantic.frozen_world_revision,
         }
     }
 }
@@ -1581,15 +1757,33 @@ pub fn rebase_world_complexity_proposal(
         ));
     }
     match &mut proposal {
-        WorldComplexityProposal::Fission { preview } => {
+        WorldComplexityProposal::Fission {
+            preview,
+            qualification,
+        } => {
+            if qualification.schema != "ghostlight.world_complexity_fission_qualification.v1"
+                || !(1..=6).contains(&qualification.target_actionable_gain)
+            {
+                return Err(anyhow!(
+                    "complexity fission qualification is unsupported or out of range"
+                ));
+            }
             if preview.campaign_id != current.id {
                 return Err(anyhow!("complexity fission belongs to another campaign"));
             }
             preview.expected_world_revision = current.revision;
             reconcile_fission_child_id_collisions(current, preview)?;
-            crate::resolution::validate_fission(current, preview)?;
+            crate::resolution::validate_elaborated_fission(current, preview)?;
+            validate_complexity_fission_semantics(
+                current,
+                &current.gestalts[&preview.parent_gestalt_id],
+                preview,
+                qualification.title,
+                &qualification.jurisdiction_location_id,
+                qualification.target_actionable_gain,
+            )?;
         }
-        WorldComplexityProposal::Individuate { individuation } => {
+        WorldComplexityProposal::Individuate { individuation, .. } => {
             crate::resolution::validate_gestalt_individuation(current, individuation)?;
         }
     }
@@ -1602,7 +1796,7 @@ fn reconcile_fission_child_id_collisions(
 ) -> Result<()> {
     let mut replacements = BTreeMap::new();
     for child in &preview.children {
-        if current.gestalts.contains_key(&child.id) {
+        if crate::resolution::canonical_subject_id_is_occupied(current, &child.id) {
             let digest = crate::legacy_transition::digest_serializable(&(
                 "ghostlight.fission_child_id.v1",
                 current.id,
@@ -1616,7 +1810,7 @@ fn reconcile_fission_child_id_collisions(
                 .take(16)
                 .collect::<String>();
             let replacement = format!("{}:fission:{suffix}", preview.parent_gestalt_id);
-            if current.gestalts.contains_key(&replacement)
+            if crate::resolution::canonical_subject_id_is_occupied(current, &replacement)
                 || preview
                     .children
                     .iter()
@@ -1673,12 +1867,695 @@ struct WorldComplexityFinding {
     diagnostic: String,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct WorldComplexitySemanticVerification {
+    pub public_names_are_legible_identifiers: bool,
+    pub names_do_not_repeat_an_overused_template: bool,
+    pub cultural_resemblance_is_grounded_not_quota_cloning: bool,
+    pub causal_additions_are_materially_distinct: bool,
+    pub causal_additions_do_not_repeat_an_overused_procedural_template: bool,
+    #[schemars(length(min = 1, max = 1_000))]
+    pub rationale: String,
+}
+
 struct WorldComplexityTool<'a> {
     campaign: &'a crate::domain::Campaign,
     parent_gestalt_id: &'a str,
+    title: ElaboratorTitle,
     operation: WorldComplexityOperation,
     partition_axis: crate::domain::AgencyAxis,
+    jurisdiction_location_id: &'a str,
+    target_actionable_gain: u8,
     workbench: serde_json::Value,
+}
+
+pub fn locations_in_jurisdiction(
+    campaign: &crate::domain::Campaign,
+    jurisdiction_location_id: &str,
+) -> Vec<String> {
+    let jurisdictions = BTreeSet::from([jurisdiction_location_id.to_owned()]);
+    campaign
+        .locations
+        .keys()
+        .filter(|location_id| {
+            unique_containing_jurisdiction(
+                campaign,
+                &BTreeSet::from([(*location_id).clone()]),
+                &jurisdictions,
+            )
+            .as_deref()
+                == Some(jurisdiction_location_id)
+        })
+        .cloned()
+        .collect()
+}
+
+fn semantic_text_key(value: &str) -> String {
+    value
+        .split_whitespace()
+        .flat_map(|part| part.chars())
+        .filter(|character| character.is_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect()
+}
+
+fn world_complexity_semantic_candidate_digest(
+    proposal: &WorldComplexityProposal,
+) -> Result<String> {
+    let candidate = match proposal {
+        WorldComplexityProposal::Fission { preview, .. } => serde_json::json!({
+            "operation":"fission",
+            "parent_gestalt_id":preview.parent_gestalt_id,
+            "partition_axis":preview.partition_axis,
+            "specific_children":preview.children.iter()
+                .filter(|child|child.id != preview.residual_child_id)
+                .map(|child|serde_json::json!({
+                    "name":child.name,
+                    "partition_value":preview.child_partition_values.get(&child.id),
+                    "home_location_id":child.home_location_id,
+                    "capabilities":child.shared_capabilities,
+                    "knowledge":child.shared_knowledge,
+                    "goals":child.goals,
+                    "pressures":child.pressures,
+                })).collect::<Vec<_>>(),
+        }),
+        WorldComplexityProposal::Individuate { individuation, .. } => serde_json::json!({
+            "operation":"individuate",
+            "parent_gestalt_id":individuation.gestalt_id,
+            "location_id":individuation.location_id,
+            "member":individuation.member,
+        }),
+    };
+    crate::legacy_transition::digest_serializable(&(
+        "ghostlight.world_complexity_semantic_candidate.v1",
+        candidate,
+    ))
+}
+
+fn world_complexity_semantic_verification_binding(
+    semantic: &WorldComplexitySemanticQualification,
+) -> Result<String> {
+    crate::legacy_transition::digest_serializable(&(
+        "ghostlight.world_complexity_semantic_verification.v1",
+        semantic.frozen_campaign_id,
+        semantic.frozen_world_revision,
+        &semantic.identity_namespace,
+        &semantic.established_names_digest,
+        &semantic.semantic_context_digest,
+        &semantic.owner_lane_digest,
+        &semantic.candidate_digest,
+    ))
+}
+
+fn world_complexity_owner_lane_digest(proposal: &WorldComplexityProposal) -> Result<String> {
+    let lane = match proposal {
+        WorldComplexityProposal::Fission { qualification, .. } => serde_json::json!({
+            "operation":"fission",
+            "title":qualification.title,
+            "jurisdiction_location_id":qualification.jurisdiction_location_id,
+            "target_actionable_gain":qualification.target_actionable_gain,
+        }),
+        WorldComplexityProposal::Individuate { qualification, .. } => serde_json::json!({
+            "operation":"individuate",
+            "title":qualification.title,
+            "jurisdiction_location_id":qualification.jurisdiction_location_id,
+        }),
+    };
+    crate::legacy_transition::digest_serializable(&(
+        "ghostlight.world_complexity_owner_lane.v1",
+        lane,
+    ))
+}
+
+pub fn validate_world_complexity_semantic_qualification_shape(
+    proposal: &WorldComplexityProposal,
+    semantic: &WorldComplexitySemanticQualification,
+) -> Result<()> {
+    let expected_namespace = match proposal {
+        WorldComplexityProposal::Fission { .. } => "population",
+        WorldComplexityProposal::Individuate { .. } => "person",
+    };
+    if semantic.schema != "ghostlight.world_complexity_semantic_qualification.v1"
+        || semantic.identity_namespace != expected_namespace
+        || semantic.candidate_digest != world_complexity_semantic_candidate_digest(proposal)?
+        || semantic.established_names_digest.trim().is_empty()
+        || semantic.semantic_context_digest.trim().is_empty()
+        || semantic.owner_lane_digest != world_complexity_owner_lane_digest(proposal)?
+        || semantic.semantic_verification_binding
+            != world_complexity_semantic_verification_binding(semantic)?
+    {
+        return Err(anyhow!(
+            "world-complexity semantic qualification is malformed or bound to another candidate"
+        ));
+    }
+    Ok(())
+}
+
+pub fn validate_world_complexity_semantic_qualification(
+    campaign: &crate::domain::Campaign,
+    proposal: &WorldComplexityProposal,
+    semantic: &WorldComplexitySemanticQualification,
+) -> Result<()> {
+    validate_world_complexity_semantic_qualification_shape(proposal, semantic)?;
+    let expected_namespace = match proposal {
+        WorldComplexityProposal::Fission { .. } => "population",
+        WorldComplexityProposal::Individuate { .. } => "person",
+    };
+    let established_names = match expected_namespace {
+        "population" => {
+            let residual_ids = residual_gestalt_ids(campaign);
+            campaign
+                .gestalts
+                .values()
+                .filter(|gestalt| !residual_ids.contains(&gestalt.id))
+                .map(|gestalt| gestalt.name.as_str())
+                .collect::<Vec<_>>()
+        }
+        "person" => campaign
+            .actors
+            .values()
+            .map(|actor| actor.name.as_str())
+            .chain(campaign.gestalt_members.values().filter_map(|member| {
+                member
+                    .materialized_actor_id
+                    .is_none()
+                    .then_some(member.name.as_str())
+            }))
+            .collect::<Vec<_>>(),
+        _ => unreachable!("semantic namespace is fixed above"),
+    };
+    let expected_names_digest = crate::legacy_transition::digest_serializable(&(
+        "ghostlight.world_complexity_established_names.v1",
+        expected_namespace,
+        established_names,
+    ))?;
+    if semantic.frozen_campaign_id != campaign.id
+        || semantic.frozen_world_revision != campaign.revision
+        || semantic.established_names_digest != expected_names_digest
+    {
+        return Err(anyhow!(
+            "world-complexity semantic qualification is stale, malformed, or bound to another candidate"
+        ));
+    }
+    Ok(())
+}
+
+pub fn validate_world_complexity_semantic_receipt_provenance(
+    proposal: &WorldComplexityProposal,
+    semantic: &WorldComplexitySemanticQualification,
+    receipts: &[crate::model::ModelStageReceipt],
+) -> Result<()> {
+    validate_world_complexity_semantic_qualification_shape(proposal, semantic)?;
+    let receipt_keys = receipts
+        .iter()
+        .map(|receipt| receipt.storage_key().to_owned())
+        .collect::<BTreeSet<_>>();
+    if receipt_keys.len() != receipts.len() {
+        return Err(anyhow!(
+            "world-complexity semantic provenance contains duplicate model receipts"
+        ));
+    }
+    let verifier_receipts = receipts
+        .iter()
+        .filter(|receipt| receipt.stage == "world-complexity-semantic-verification")
+        .collect::<Vec<_>>();
+    if verifier_receipts.len() != 1 {
+        return Err(anyhow!(
+            "world-complexity semantic qualification needs exactly one valid bound verifier receipt"
+        ));
+    }
+    let verifier = verifier_receipts[0];
+    let expected_sources = receipts
+        .iter()
+        .filter(|receipt| receipt.stage != "world-complexity-semantic-verification")
+        .map(|receipt| receipt.storage_key().to_owned())
+        .collect::<BTreeSet<_>>();
+    let actual_sources = verifier
+        .source_receipt_ids
+        .iter()
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    if verifier.model != crate::model::MODEL_BALANCED
+        || verifier.validation_result != "valid"
+        || verifier.local_validation_error.is_some()
+        || verifier.snapshot_binding != semantic.semantic_verification_binding
+        || expected_sources.is_empty()
+        || actual_sources.len() != verifier.source_receipt_ids.len()
+        || actual_sources != expected_sources
+    {
+        return Err(anyhow!(
+            "world-complexity semantic verifier ancestry does not exactly cover its generation receipts"
+        ));
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_world_complexity_semantic_provenance(
+    campaign: &crate::domain::Campaign,
+    proposal: &WorldComplexityProposal,
+    semantic: &WorldComplexitySemanticQualification,
+    receipts: &[crate::model::ModelStageReceipt],
+) -> Result<()> {
+    validate_world_complexity_semantic_qualification(campaign, proposal, semantic)?;
+    validate_world_complexity_semantic_receipt_provenance(proposal, semantic, receipts)
+}
+
+impl WorldComplexitySemanticVerification {
+    pub fn accepted(&self) -> bool {
+        self.public_names_are_legible_identifiers
+            && self.names_do_not_repeat_an_overused_template
+            && self.cultural_resemblance_is_grounded_not_quota_cloning
+            && self.causal_additions_are_materially_distinct
+            && self.causal_additions_do_not_repeat_an_overused_procedural_template
+            && !self.rationale.trim().is_empty()
+    }
+}
+
+pub async fn qualify_world_complexity_proposal_semantics(
+    model: &dyn crate::model::ModelPort,
+    campaign: &crate::domain::Campaign,
+    semantic_comparison_context: &serde_json::Value,
+    mut proposal: WorldComplexityProposal,
+    source_receipt_ids: Vec<String>,
+) -> Result<(
+    WorldComplexityProposal,
+    WorldComplexitySemanticVerification,
+    crate::model::ModelStageReceipt,
+)> {
+    if source_receipt_ids.is_empty() {
+        return Err(anyhow!(
+            "world-complexity semantic verification has no source generation receipt"
+        ));
+    }
+    let (identity_namespace, established_names) = match &proposal {
+        WorldComplexityProposal::Fission { .. } => {
+            let residual_ids = residual_gestalt_ids(campaign);
+            (
+                "population",
+                campaign
+                    .gestalts
+                    .values()
+                    .filter(|gestalt| !residual_ids.contains(&gestalt.id))
+                    .map(|gestalt| gestalt.name.as_str())
+                    .collect::<Vec<_>>(),
+            )
+        }
+        WorldComplexityProposal::Individuate { .. } => (
+            "person",
+            campaign
+                .actors
+                .values()
+                .map(|actor| actor.name.as_str())
+                .chain(campaign.gestalt_members.values().filter_map(|member| {
+                    member
+                        .materialized_actor_id
+                        .is_none()
+                        .then_some(member.name.as_str())
+                }))
+                .collect::<Vec<_>>(),
+        ),
+    };
+    let established_names_digest = crate::legacy_transition::digest_serializable(&(
+        "ghostlight.world_complexity_established_names.v1",
+        identity_namespace,
+        &established_names,
+    ))?;
+    let semantic_context_digest = crate::legacy_transition::digest_serializable(&(
+        "ghostlight.world_complexity_semantic_context.v1",
+        semantic_comparison_context,
+    ))?;
+    let candidate_digest = world_complexity_semantic_candidate_digest(&proposal)?;
+    let mut qualification = WorldComplexitySemanticQualification {
+        schema: "ghostlight.world_complexity_semantic_qualification.v1".into(),
+        identity_namespace: identity_namespace.into(),
+        frozen_campaign_id: campaign.id,
+        frozen_world_revision: campaign.revision,
+        established_names_digest,
+        semantic_context_digest,
+        owner_lane_digest: world_complexity_owner_lane_digest(&proposal)?,
+        candidate_digest,
+        semantic_verification_binding: String::new(),
+    };
+    qualification.semantic_verification_binding =
+        world_complexity_semantic_verification_binding(&qualification)?;
+    let parent = campaign
+        .gestalts
+        .get(proposal.parent_gestalt_id())
+        .ok_or_else(|| anyhow!("world-complexity semantic proposal lost its parent"))?;
+    let prompt = format!(
+        "Independently judge one proposed world-complexity mutation against the current canonical world and the supplied recent peer context. This is semantic review, not a keyword or spelling rule. Every public name must be a legible person or population identifier, not a role label, serial placeholder, or lightly varied quota template. Reject an overused surname, epithet, grammatical mold, bureaucratic construction, or cultureless fantasy-name pattern unless actual kinship or local culture grounds the resemblance. Also reject goals, pressures, capabilities, knowledge, obligations, relationships, or memories that merely paraphrase an overused procedural mold (for example everybody filing, registering, petitioning, or serving on another council) without adding materially different means, stakes, affordances, or causal behavior. Repeated vocabulary is allowed when the concrete mechanism and consequence differ. Judge the proposal as a whole and return only the verdict object.\n\nIDENTITY NAMESPACE:\n{}\nCOMPLETE ESTABLISHED NAMES:\n{}\nPARENT POPULATION:\n{}\nRECENT SEMANTIC COMPARISON CONTEXT:\n{}\nCANDIDATE PROPOSAL:\n{}",
+        identity_namespace,
+        serde_json::to_string(&established_names)?,
+        serde_json::to_string(parent)?,
+        serde_json::to_string(semantic_comparison_context)?,
+        serde_json::to_string(&proposal)?,
+    );
+    let request = crate::model::ModelStageRequest {
+        stage: "world-complexity-semantic-verification".into(),
+        model: crate::model::MODEL_BALANCED.into(),
+        snapshot_binding: qualification.semantic_verification_binding.clone(),
+        lived_stream: prompt,
+        output_schema: Some(serde_json::to_value(schema_for!(
+            WorldComplexitySemanticVerification
+        ))?),
+        source_receipt_ids,
+        temperature: Some(0.0),
+        max_output_tokens: Some(1_000),
+    };
+    let output = crate::model::run_validated_stage(model, &request).await?;
+    let verdict = serde_json::from_value::<WorldComplexitySemanticVerification>(
+        output
+            .structured
+            .ok_or_else(|| anyhow!("semantic verifier returned no structured verdict"))?,
+    )?;
+    let mut receipt = output.receipt;
+    if !verdict.accepted() {
+        crate::model::mark_model_receipt_semantic_invalid(
+            &mut receipt,
+            &format!(
+                "world-complexity semantic verifier rejected the candidate: {}",
+                serde_json::to_string(&verdict).unwrap_or_else(|_| verdict.rationale.clone())
+            ),
+        );
+    }
+    match &mut proposal {
+        WorldComplexityProposal::Fission {
+            qualification: owner,
+            ..
+        } => owner.semantic = qualification,
+        WorldComplexityProposal::Individuate {
+            qualification: owner,
+            ..
+        } => owner.semantic = qualification,
+    }
+    Ok((proposal, verdict, receipt))
+}
+
+fn validate_new_semantic_texts<'a>(
+    label: &str,
+    additions: impl IntoIterator<Item = &'a String>,
+    inherited: impl IntoIterator<Item = &'a String>,
+    established: impl IntoIterator<Item = &'a String>,
+) -> Result<BTreeSet<String>> {
+    let inherited = inherited
+        .into_iter()
+        .map(|value| semantic_text_key(value))
+        .collect::<BTreeSet<_>>();
+    let established = established
+        .into_iter()
+        .map(|value| semantic_text_key(value))
+        .collect::<BTreeSet<_>>();
+    let mut keys = BTreeSet::new();
+    for value in additions {
+        let key = semantic_text_key(value);
+        if value.trim().is_empty() || value.chars().count() > 300 || key.is_empty() {
+            return Err(anyhow!(
+                "{label} must contain 1 through 300 readable characters"
+            ));
+        }
+        if inherited.contains(&key) || established.contains(&key) || !keys.insert(key) {
+            return Err(anyhow!(
+                "{label} must add text distinct from its parent, siblings, and established world"
+            ));
+        }
+    }
+    Ok(keys)
+}
+
+pub(crate) fn validate_complexity_fission_semantics(
+    campaign: &crate::domain::Campaign,
+    parent: &crate::domain::GestaltPersonaState,
+    preview: &crate::domain::GestaltFissionPreview,
+    title: ElaboratorTitle,
+    jurisdiction_location_id: &str,
+    target_actionable_gain: u8,
+) -> Result<()> {
+    if complexity_operation(title) != WorldComplexityOperation::Fission {
+        return Err(anyhow!(
+            "complexity fission qualification names a non-fission elaborator"
+        ));
+    }
+    if preview.partition_axis != complexity_partition_axis(title) {
+        return Err(anyhow!(
+            "complexity fission partition axis does not belong to its elaborator title"
+        ));
+    }
+    let actual_gain = preview.children.len().saturating_sub(2);
+    if actual_gain != usize::from(target_actionable_gain) {
+        return Err(anyhow!(
+            "complexity fission must add exactly {target_actionable_gain} qualified subjects"
+        ));
+    }
+    let residual = preview
+        .children
+        .iter()
+        .find(|child| child.id == preview.residual_child_id)
+        .ok_or_else(|| anyhow!("complexity fission lost its residual child"))?;
+    if residual.home_location_id != parent.home_location_id
+        || residual.shared_capabilities != parent.shared_capabilities
+        || residual.shared_knowledge != parent.shared_knowledge
+        || residual.goals != parent.goals
+        || residual.pressures != parent.pressures
+    {
+        return Err(anyhow!(
+            "the residual child is unresolved background and cannot claim new semantic detail"
+        ));
+    }
+
+    let residual_ids = residual_gestalt_ids(campaign);
+    let established_names = campaign
+        .gestalts
+        .values()
+        .filter(|gestalt| !residual_ids.contains(&gestalt.id))
+        .map(|gestalt| crate::resolution::public_identity_key(&gestalt.name))
+        .collect::<BTreeSet<_>>();
+    let allowed_locations = locations_in_jurisdiction(campaign, jurisdiction_location_id)
+        .into_iter()
+        .collect::<BTreeSet<_>>();
+    let mut child_names = BTreeSet::new();
+    let mut sibling_capabilities = BTreeSet::new();
+    let mut sibling_knowledge = BTreeSet::new();
+    let mut sibling_goals = BTreeSet::new();
+    let mut sibling_pressures = BTreeSet::new();
+    let mut specific_homes = BTreeSet::new();
+    for child in preview
+        .children
+        .iter()
+        .filter(|child| child.id != preview.residual_child_id)
+    {
+        let name_key = crate::resolution::public_identity_key(&child.name);
+        if name_key.is_empty()
+            || established_names.contains(&name_key)
+            || !child_names.insert(name_key)
+        {
+            return Err(anyhow!(
+                "every fission child needs a distinct public population identity"
+            ));
+        }
+        if !allowed_locations.contains(&child.home_location_id) {
+            return Err(anyhow!(
+                "fission child {} is outside its assigned jurisdiction",
+                child.id
+            ));
+        }
+        if preview.partition_axis != crate::domain::AgencyAxis::Geography
+            && child.home_location_id != parent.home_location_id
+        {
+            return Err(anyhow!(
+                "only a geography fission may distribute children to other admitted places"
+            ));
+        }
+        specific_homes.insert(child.home_location_id.clone());
+        let capability_additions = child
+            .shared_capabilities
+            .difference(&parent.shared_capabilities)
+            .cloned()
+            .collect::<Vec<_>>();
+        let knowledge_additions = child
+            .shared_knowledge
+            .difference(&parent.shared_knowledge)
+            .cloned()
+            .collect::<Vec<_>>();
+        let goal_additions = child
+            .goals
+            .iter()
+            .filter(|goal| !parent.goals.contains(goal))
+            .cloned()
+            .collect::<Vec<_>>();
+        let pressure_additions = child
+            .pressures
+            .iter()
+            .filter(|pressure| !parent.pressures.contains(pressure))
+            .cloned()
+            .collect::<Vec<_>>();
+        let semantic_dimensions = [
+            !capability_additions.is_empty(),
+            !knowledge_additions.is_empty(),
+            !goal_additions.is_empty(),
+            !pressure_additions.is_empty(),
+        ]
+        .into_iter()
+        .filter(|present| *present)
+        .count();
+        if semantic_dimensions < 2
+            || goal_additions.len() > 1
+            || pressure_additions.len() > 1
+            || capability_additions.len() > 2
+            || knowledge_additions.len() > 2
+        {
+            return Err(anyhow!(
+                "each specific child needs two or more bounded causal dimensions without template padding"
+            ));
+        }
+        let title_shape_is_valid = match title {
+            ElaboratorTitle::Patina => {
+                !goal_additions.is_empty() && !capability_additions.is_empty()
+            }
+            ElaboratorTitle::Charter | ElaboratorTitle::Ledger => {
+                !goal_additions.is_empty()
+                    && !pressure_additions.is_empty()
+                    && (!capability_additions.is_empty() || !knowledge_additions.is_empty())
+            }
+            ElaboratorTitle::Ember => {
+                !pressure_additions.is_empty()
+                    && (!capability_additions.is_empty() || !knowledge_additions.is_empty())
+            }
+            ElaboratorTitle::Numen => {
+                !goal_additions.is_empty()
+                    && !pressure_additions.is_empty()
+                    && !knowledge_additions.is_empty()
+            }
+            ElaboratorTitle::Hearth | ElaboratorTitle::Tangle | ElaboratorTitle::Veil => false,
+        };
+        if !title_shape_is_valid {
+            return Err(anyhow!(
+                "specific child additions do not satisfy the assigned elaborator's causal lane"
+            ));
+        }
+        let capability_keys = validate_new_semantic_texts(
+            "child capability",
+            capability_additions.iter(),
+            parent.shared_capabilities.iter(),
+            campaign
+                .gestalts
+                .values()
+                .flat_map(|gestalt| gestalt.shared_capabilities.iter()),
+        )?;
+        let knowledge_keys = validate_new_semantic_texts(
+            "child knowledge",
+            knowledge_additions.iter(),
+            parent.shared_knowledge.iter(),
+            campaign
+                .gestalts
+                .values()
+                .flat_map(|gestalt| gestalt.shared_knowledge.iter()),
+        )?;
+        let goal_keys = validate_new_semantic_texts(
+            "child goal",
+            goal_additions.iter(),
+            parent.goals.iter(),
+            campaign
+                .gestalts
+                .values()
+                .flat_map(|gestalt| gestalt.goals.iter()),
+        )?;
+        let pressure_keys = validate_new_semantic_texts(
+            "child pressure",
+            pressure_additions.iter(),
+            parent.pressures.iter(),
+            campaign
+                .gestalts
+                .values()
+                .flat_map(|gestalt| gestalt.pressures.iter()),
+        )?;
+        if !capability_keys.is_disjoint(&sibling_capabilities)
+            || !knowledge_keys.is_disjoint(&sibling_knowledge)
+            || !goal_keys.is_disjoint(&sibling_goals)
+            || !pressure_keys.is_disjoint(&sibling_pressures)
+        {
+            return Err(anyhow!(
+                "specific fission children must not repeat one another's causal additions"
+            ));
+        }
+        sibling_capabilities.extend(capability_keys);
+        sibling_knowledge.extend(knowledge_keys);
+        sibling_goals.extend(goal_keys);
+        sibling_pressures.extend(pressure_keys);
+    }
+    if preview.partition_axis == crate::domain::AgencyAxis::Geography
+        && allowed_locations.len() > 1
+        && specific_homes.len() < 2
+    {
+        return Err(anyhow!(
+            "geography fission must distribute specific children across at least two admitted places"
+        ));
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_complexity_individuation_semantics(
+    campaign: &crate::domain::Campaign,
+    title: ElaboratorTitle,
+    individuation: &crate::domain::GestaltIndividuation,
+) -> Result<()> {
+    if !matches!(
+        title,
+        ElaboratorTitle::Hearth | ElaboratorTitle::Tangle | ElaboratorTitle::Veil
+    ) {
+        return Err(anyhow!(
+            "only Hearth, Tangle, or Veil may own a complexity individuation"
+        ));
+    }
+    let member = &individuation.member;
+    let parent = &campaign.gestalts[&individuation.gestalt_id];
+    let dimensions = [
+        !member.capability_additions.is_empty(),
+        !member.knowledge_additions.is_empty(),
+        !member.equipment.is_empty(),
+        !member.obligations.is_empty(),
+        !member.relationships.is_empty(),
+        !member.goals.is_empty(),
+        !member.memories.is_empty(),
+    ]
+    .into_iter()
+    .filter(|present| *present)
+    .count();
+    if dimensions < 3 || member.goals.is_empty() || member.memories.is_empty() {
+        return Err(anyhow!(
+            "complexity individuation needs a goal, a concrete memory, and at least one additional identity-bearing difference"
+        ));
+    }
+    validate_new_semantic_texts(
+        "member goal",
+        member.goals.iter(),
+        parent.goals.iter(),
+        campaign
+            .gestalt_members
+            .values()
+            .flat_map(|existing| existing.goals.iter()),
+    )?;
+    validate_new_semantic_texts(
+        "member memory",
+        member.memories.iter(),
+        std::iter::empty(),
+        campaign
+            .gestalt_members
+            .values()
+            .flat_map(|existing| existing.memories.iter()),
+    )?;
+    match title {
+        ElaboratorTitle::Hearth if member.obligations.is_empty() => Err(anyhow!(
+            "Hearth individuation requires one concrete care or belonging obligation"
+        )),
+        ElaboratorTitle::Tangle if member.relationships.is_empty() => Err(anyhow!(
+            "Tangle individuation requires a relationship to an existing canonical subject"
+        )),
+        ElaboratorTitle::Veil if member.knowledge_additions.is_empty() => Err(anyhow!(
+            "Veil individuation requires uneven knowledge not held by the parent population"
+        )),
+        _ => Ok(()),
+    }
 }
 
 impl WorldComplexityTool<'_> {
@@ -1731,6 +2608,15 @@ impl WorldComplexityTool<'_> {
                         state.id = child.id.clone();
                         state.name = child.name.clone();
                         state.version = 0;
+                        state.home_location_id = child.home_location_id.clone();
+                        state
+                            .shared_capabilities
+                            .extend(child.capability_additions.iter().cloned());
+                        state
+                            .shared_knowledge
+                            .extend(child.knowledge_additions.iter().cloned());
+                        state.goals.extend(child.goals_add.iter().cloned());
+                        state.pressures.extend(child.pressures_add.iter().cloned());
                         state.resources = resource_child_assignments
                             .iter()
                             .filter(|(_, child_id)| *child_id == &child.id)
@@ -1758,8 +2644,25 @@ impl WorldComplexityTool<'_> {
                     canon_candidates: Vec::new(),
                     requires_approval: true,
                 };
-                crate::resolution::validate_fission(self.campaign, &preview)?;
-                Ok(WorldComplexityProposal::Fission { preview })
+                crate::resolution::validate_elaborated_fission(self.campaign, &preview)?;
+                validate_complexity_fission_semantics(
+                    self.campaign,
+                    parent,
+                    &preview,
+                    self.title,
+                    self.jurisdiction_location_id,
+                    self.target_actionable_gain,
+                )?;
+                Ok(WorldComplexityProposal::Fission {
+                    preview,
+                    qualification: WorldComplexityFissionQualification {
+                        schema: "ghostlight.world_complexity_fission_qualification.v1".into(),
+                        title: self.title,
+                        jurisdiction_location_id: self.jurisdiction_location_id.into(),
+                        target_actionable_gain: self.target_actionable_gain,
+                        semantic: WorldComplexitySemanticQualification::default(),
+                    },
+                })
             }
             WorldComplexityMutationDraft::Individuate { member } => {
                 if self.operation != WorldComplexityOperation::Individuate {
@@ -1798,7 +2701,20 @@ impl WorldComplexityTool<'_> {
                     location_id,
                 };
                 crate::resolution::validate_gestalt_individuation(self.campaign, &individuation)?;
-                Ok(WorldComplexityProposal::Individuate { individuation })
+                validate_complexity_individuation_semantics(
+                    self.campaign,
+                    self.title,
+                    &individuation,
+                )?;
+                Ok(WorldComplexityProposal::Individuate {
+                    individuation,
+                    qualification: WorldComplexityIndividuationQualification {
+                        schema: "ghostlight.world_complexity_individuation_qualification.v1".into(),
+                        title: self.title,
+                        jurisdiction_location_id: self.jurisdiction_location_id.into(),
+                        semantic: WorldComplexitySemanticQualification::default(),
+                    },
+                })
             }
         }
     }
@@ -1814,6 +2730,49 @@ impl crate::agent::ModelAgentTool for WorldComplexityTool<'_> {
         let mut schema = serde_json::to_value(schema_for!(WorldComplexityAction))
             .map_err(|error| error.to_string())?;
         schema["properties"]["schema"] = exact_schema("ghostlight.world_complexity_action.v1");
+        if self.operation == WorldComplexityOperation::Fission {
+            let allowed_locations =
+                locations_in_jurisdiction(self.campaign, self.jurisdiction_location_id);
+            let child = &mut schema["$defs"]["WorldComplexityChildDraft"];
+            child["properties"]["home_location_id"] = serde_json::json!({
+                "type":"string",
+                "enum":allowed_locations,
+            });
+            child["properties"]["id"]["minLength"] = serde_json::json!(1);
+            child["properties"]["id"]["maxLength"] = serde_json::json!(160);
+            child["properties"]["name"]["minLength"] = serde_json::json!(1);
+            child["properties"]["name"]["maxLength"] = serde_json::json!(160);
+            for field in ["capability_additions", "knowledge_additions"] {
+                child["properties"][field]["maxItems"] = serde_json::json!(2);
+                child["properties"][field]["items"]["minLength"] = serde_json::json!(1);
+                child["properties"][field]["items"]["maxLength"] = serde_json::json!(300);
+            }
+            for field in ["goals_add", "pressures_add"] {
+                child["properties"][field]["maxItems"] = serde_json::json!(1);
+                child["properties"][field]["items"]["minLength"] = serde_json::json!(1);
+                child["properties"][field]["items"]["maxLength"] = serde_json::json!(300);
+            }
+        } else {
+            let member = &mut schema["$defs"]["WorldComplexityMemberDraft"];
+            member["properties"]["name"]["minLength"] = serde_json::json!(1);
+            member["properties"]["name"]["maxLength"] = serde_json::json!(160);
+            for field in ["goals", "memories"] {
+                member["properties"][field]["minItems"] = serde_json::json!(1);
+                member["properties"][field]["maxItems"] = serde_json::json!(8);
+            }
+            match self.title {
+                ElaboratorTitle::Hearth => {
+                    member["properties"]["obligations"]["minItems"] = serde_json::json!(1);
+                }
+                ElaboratorTitle::Tangle => {
+                    member["properties"]["relationships"]["minProperties"] = serde_json::json!(1);
+                }
+                ElaboratorTitle::Veil => {
+                    member["properties"]["knowledge_additions"]["minItems"] = serde_json::json!(1);
+                }
+                _ => {}
+            }
+        }
         let variants = schema
             .pointer_mut("/$defs/WorldComplexityMutationDraft/oneOf")
             .and_then(serde_json::Value::as_array_mut)
@@ -1839,8 +2798,9 @@ impl crate::agent::ModelAgentTool for WorldComplexityTool<'_> {
                 .pointer_mut("/properties/children")
                 .and_then(serde_json::Value::as_object_mut)
                 .ok_or_else(|| "complexity fission schema has no children".to_owned())?;
-            children.insert("minItems".into(), serde_json::json!(2));
-            children.insert("maxItems".into(), serde_json::json!(8));
+            let child_count = usize::from(self.target_actionable_gain).saturating_add(2);
+            children.insert("minItems".into(), serde_json::json!(child_count));
+            children.insert("maxItems".into(), serde_json::json!(child_count));
             let parent = &self.campaign.gestalts[self.parent_gestalt_id];
             selected["properties"]["resource_child_assignments"] =
                 exact_keyed_string_map_schema(parent.resources.iter().cloned());
@@ -1928,19 +2888,29 @@ impl ElaborationSubAgentPort<WorldComplexityProposal> for ModelWorldComplexityWo
                 model_stage_receipts: Vec::new(),
             }
         })?;
+        let target_actionable_gain = *self
+            .target_actionable_gains
+            .get(&invocation.dispatch.ordinal)
+            .ok_or_else(|| ElaborationSubAgentFailure {
+                diagnostic: "complexity dispatch has no bounded actionable gain".into(),
+                model_stage_receipts: Vec::new(),
+            })?;
         let session_id = elaborator_session_id(invocation.dispatch.title, jurisdiction_id);
         let assignment = match operation {
             WorldComplexityOperation::Fission => serde_json::json!({
                 "operation":"fission_gestalt",
                 "parent_gestalt_id":parent_id,
                 "partition_axis":axis,
+                "target_actionable_gain":target_actionable_gain,
+                "exact_child_count":usize::from(target_actionable_gain) + 2,
                 "requirements":[
                     "Return a ghostlight.world_complexity_action.v1 envelope whose mutation has operation=fission.",
-                    "Propose only child ids, names, partition values, the residual child id, and exact member/resource assignments; the deterministic tool constructs inherited child state and frozen bindings.",
-                    "Create 2 through 8 non-overlapping children with distinct partition values.",
-                    "Exactly one residual child must have partition value other/unknown.",
+                    "Create the exact assigned number of non-overlapping children with distinct partition values.",
+                    "Exactly one residual child must have partition value other/unknown, remain at the parent home, and provide empty capability_additions, knowledge_additions, goals_add, and pressures_add.",
+                    "Every specific child needs a unique public name and title-appropriate causal additions. Patina adds a concrete practice plus a goal; Charter and Ledger add a goal, pressure, and operational capability or knowledge; Ember adds pressure plus an operational capability or knowledge; Numen adds a goal, pressure, and uneven numinous knowledge.",
+                    "A geography fission distributes specific children among admitted places in this jurisdiction. Other axes keep the parent home.",
                     "Assign every scarce resource and named member exactly once; materialized people retain their Actor identity while changing population affiliation.",
-                    "Do not repeat inherited capabilities, knowledge, goals, pressures, evidence, or approval fields."
+                    "Do not restate inherited capabilities, knowledge, goals, pressures, evidence, or approval fields in the additive fields."
                 ]
             }),
             WorldComplexityOperation::Individuate => serde_json::json!({
@@ -1950,7 +2920,8 @@ impl ElaborationSubAgentPort<WorldComplexityProposal> for ModelWorldComplexityWo
                 "requirements":[
                     "Return a ghostlight.world_complexity_action.v1 envelope whose mutation has operation=individuate and one compact member draft.",
                     "The deterministic tool owns schema, exact parent id, parent version, assigned location, materialization state, and relevance revisions; those fields are absent from your draft.",
-                    "Create one consequential named person whose goals, knowledge, relationships, and memories are grounded in the parent state.",
+                    "Create one consequential named person with a distinct full public name, at least one new goal, one situated memory, and one additional identity-bearing difference grounded in the parent state.",
+                    "Hearth requires a concrete care or belonging obligation. Tangle requires leverage expressed as a relationship to one supplied canonical target. Veil requires uneven knowledge not held by the parent population.",
                     "Use a new local member id without the member: prefix.",
                     "Do not create quota names, unsupported relationships, or decorative biography."
                 ]
@@ -1961,6 +2932,32 @@ impl ElaborationSubAgentPort<WorldComplexityProposal> for ModelWorldComplexityWo
             invocation.dispatch.title.display_name(),
             invocation.dispatch.title.mandate(),
         );
+        let residual_ids = residual_gestalt_ids(&self.campaign);
+        let (public_identity_namespace, established_public_names) = match operation {
+            WorldComplexityOperation::Fission => (
+                "population",
+                self.campaign
+                    .gestalts
+                    .values()
+                    .filter(|gestalt| !residual_ids.contains(&gestalt.id))
+                    .map(|gestalt| gestalt.name.as_str())
+                    .collect::<Vec<_>>(),
+            ),
+            WorldComplexityOperation::Individuate => (
+                "person",
+                self.campaign
+                    .actors
+                    .values()
+                    .map(|actor| actor.name.as_str())
+                    .chain(
+                        self.campaign
+                            .gestalt_members
+                            .values()
+                            .map(|member| member.name.as_str()),
+                    )
+                    .collect::<Vec<_>>(),
+            ),
+        };
         let workbench = serde_json::json!({
             "schema":"ghostlight.world_complexity_workbench.v1",
             "frozen_world":{
@@ -1969,6 +2966,14 @@ impl ElaborationSubAgentPort<WorldComplexityProposal> for ModelWorldComplexityWo
             },
             "assignment":assignment,
             "session_jurisdiction_id":jurisdiction_id,
+            "admitted_home_location_ids":locations_in_jurisdiction(&self.campaign, jurisdiction_id),
+            "canonical_relationship_target_ids":self.campaign.civic_systems.get(jurisdiction_id)
+                .into_iter()
+                .flat_map(|civic| civic.governing_institution_ids.iter().chain(civic.resident_population_ids.iter()))
+                .filter(|id|id.as_str()!=parent_id)
+                .take(64).cloned().collect::<Vec<_>>(),
+            "public_identity_namespace":public_identity_namespace,
+            "established_names_in_this_identity_namespace":established_public_names,
             "required_resource_assignment_ids":parent.resources,
             "required_member_assignment_ids":self.campaign.gestalt_members.values()
                 .filter(|member|member.gestalt_id == parent_id)
@@ -1985,8 +2990,11 @@ impl ElaborationSubAgentPort<WorldComplexityProposal> for ModelWorldComplexityWo
         let mut tool = WorldComplexityTool {
             campaign: &self.campaign,
             parent_gestalt_id: parent_id,
+            title: invocation.dispatch.title,
             operation,
             partition_axis: axis,
+            jurisdiction_location_id: jurisdiction_id,
+            target_actionable_gain,
             workbench,
         };
         let spec = crate::agent::ModelAgentSpec {
@@ -2693,7 +3701,7 @@ pub struct WorldElaborationRejection {
 /// Deterministic result of admitting one successful parallel elaboration wave.
 /// The candidate remains non-canonical and carries an empty civic verifier
 /// binding until an independent semantic verifier finalizes it.
-#[derive(Clone, Debug, Serialize, JsonSchema, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct WorldElaborationAdmission {
     schema: String,
@@ -2713,7 +3721,7 @@ pub struct WorldElaborationAdmission {
 /// The only elaboration value accepted by `WorldKernel::commit_elaboration`.
 /// It binds the immutable admission result to an independently generated
 /// semantic-verifier receipt without letting that verifier rewrite the draft.
-#[derive(Clone, Debug, Serialize, JsonSchema, PartialEq)]
+#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct FinalizedWorldElaboration {
     schema: String,
@@ -3136,7 +4144,18 @@ impl WorldElaborationAdmission {
         &self.digest
     }
 
-    fn valid_candidate(
+    pub fn expected_revision(&self) -> u64 {
+        self.expected_revision
+    }
+
+    pub fn target_location_id(&self) -> &str {
+        &self.target_location_id
+    }
+
+    /// Revalidates the complete admission against the current campaign and
+    /// derives its candidate from the admitted operations. Recovery code uses
+    /// this instead of trusting a serialized candidate projection.
+    pub fn valid_candidate(
         &self,
         campaign: &crate::domain::Campaign,
     ) -> Result<crate::domain::LocalityElaboration> {
@@ -3191,6 +4210,10 @@ impl FinalizedWorldElaboration {
 
     pub fn digest(&self) -> &str {
         &self.digest
+    }
+
+    pub fn semantic_verifier_receipt(&self) -> &crate::model::ModelStageReceipt {
+        &self.semantic_verifier_receipt
     }
 
     pub(crate) fn into_kernel_parts(
@@ -3534,6 +4557,20 @@ mod tests {
     }
 
     #[test]
+    fn twenty_percent_cover_derives_twelve_hundred_qualified_subjects() {
+        let demand = derive_world_elaboration_demand(
+            240,
+            80,
+            &WorldScaleIntent::twenty_percent(),
+            BTreeMap::from([("delvehold".into(), 1)]),
+        )
+        .unwrap();
+        assert_eq!(demand.target_actionable_subjects, 1_200);
+        assert_eq!(demand.actionable_subject_deficit, 1_120);
+        assert_eq!(demand.round_mutation_budget, 224);
+    }
+
+    #[test]
     fn elaboration_demand_never_reopens_a_satisfied_subject_target() {
         let demand = derive_world_elaboration_demand(
             8,
@@ -3575,6 +4612,18 @@ mod tests {
         campaign
             .agency_profiles
             .insert(eligible_id.clone(), eligible);
+        campaign.gestalt_lineages.insert(
+            "source-parent".into(),
+            crate::domain::GestaltLineage {
+                schema: "ghostlight.gestalt_lineage.v1".into(),
+                parent_gestalt_id: "source-parent".into(),
+                child_gestalt_ids: vec![eligible_id.clone()],
+                partition_axis: crate::domain::AgencyAxis::Authority,
+                partition_values: BTreeMap::from([(eligible_id.clone(), "other/unknown".into())]),
+                residual_child_id: eligible_id.clone(),
+                source_revision: 1,
+            },
+        );
         let mut retired = campaign.agency_profiles[&eligible_id].clone();
         retired.id = "retired-profile".into();
         retired.subject_id = "retired-subject".into();
@@ -3586,10 +4635,95 @@ mod tests {
         let expected = campaign
             .agency_profiles
             .values()
-            .filter(|profile| profile.active_leaf && profile.simulation_eligible)
+            .filter(|profile| {
+                profile.active_leaf
+                    && profile.simulation_eligible
+                    && profile.subject_id != eligible_id
+            })
             .count() as u32;
         assert_eq!(canonical_actionable_subject_count(&campaign), expected);
+        assert!(campaign.agency_profiles[&eligible_id].simulation_eligible);
         assert!(!campaign.agency_profiles[&campaign.player_actor_id].simulation_eligible);
+    }
+
+    #[test]
+    fn ordinary_fission_children_cannot_pay_the_qualified_complexity_bill() {
+        let mut campaign = campaign_with_civic_room();
+        crate::resolution::ensure_agency_profiles(&mut campaign);
+        let parent_id = "source-population".to_owned();
+        let parent = crate::domain::GestaltPersonaState {
+            schema: "ghostlight.gestalt_persona_state.v1".into(),
+            id: parent_id.clone(),
+            name: "Source Population".into(),
+            version: 0,
+            home_location_id: "room".into(),
+            shared_capabilities: BTreeSet::new(),
+            shared_knowledge: BTreeSet::new(),
+            resources: BTreeSet::new(),
+            goals: Vec::new(),
+            pressures: Vec::new(),
+        };
+        campaign.gestalts.insert(parent_id.clone(), parent.clone());
+        let mut parent_profile = campaign.agency_profiles[&campaign.player_actor_id].clone();
+        parent_profile.id = format!("profile:{parent_id}");
+        parent_profile.subject_id = parent_id.clone();
+        parent_profile.subject_kind = crate::domain::AgencySubjectKind::Gestalt;
+        parent_profile.active_leaf = true;
+        parent_profile.simulation_eligible = true;
+        campaign
+            .agency_profiles
+            .insert(parent_id.clone(), parent_profile.clone());
+        let baseline = canonical_actionable_subject_count(&campaign);
+
+        let mut ordinary = parent.clone();
+        ordinary.id = "ordinary-child".into();
+        ordinary.name = "Ordinary Child".into();
+        let mut qualified = parent.clone();
+        qualified.id = "qualified-child".into();
+        qualified.name = "Qualified Child".into();
+        qualified
+            .shared_capabilities
+            .insert("operate the west sluice".into());
+        qualified
+            .goals
+            .push("secure an independent flood rota".into());
+        let mut residual = parent.clone();
+        residual.id = "residual-child".into();
+        residual.name = "Residual Child".into();
+        for child in [&ordinary, &qualified, &residual] {
+            campaign.gestalts.insert(child.id.clone(), child.clone());
+            let mut profile = parent_profile.clone();
+            profile.id = format!("profile:{}", child.id);
+            profile.subject_id = child.id.clone();
+            profile.parent_subject_id = Some(parent_id.clone());
+            campaign.agency_profiles.insert(child.id.clone(), profile);
+        }
+        campaign.gestalt_lineages.insert(
+            parent_id.clone(),
+            crate::domain::GestaltLineage {
+                schema: "ghostlight.gestalt_lineage.v1".into(),
+                parent_gestalt_id: parent_id,
+                child_gestalt_ids: vec![
+                    ordinary.id.clone(),
+                    qualified.id.clone(),
+                    residual.id.clone(),
+                ],
+                partition_axis: crate::domain::AgencyAxis::Authority,
+                partition_values: BTreeMap::from([
+                    (ordinary.id.clone(), "ordinary".into()),
+                    (qualified.id.clone(), "qualified".into()),
+                    (residual.id.clone(), "other/unknown".into()),
+                ]),
+                residual_child_id: residual.id.clone(),
+                source_revision: campaign.revision,
+            },
+        );
+
+        let ids = canonical_actionable_subject_ids(&campaign);
+        assert!(!ids.contains(&ordinary.id));
+        assert!(ids.contains(&qualified.id));
+        assert!(!ids.contains(&residual.id));
+        assert_eq!(canonical_actionable_subject_count(&campaign), baseline + 1);
     }
 
     #[test]
@@ -3732,6 +4866,25 @@ mod tests {
         };
         let mut licensed = child("licensed-river-households", "Licensed River Households");
         licensed.resources.insert("ferry charter".into());
+        licensed
+            .shared_capabilities
+            .insert("withhold licensed ferry service".into());
+        licensed
+            .goals
+            .push("keep licensed crossings under household control".into());
+        licensed
+            .pressures
+            .push("the charter renewal is being challenged".into());
+        let mut unlicensed = child("unlicensed-river-households", "Unlicensed River Households");
+        unlicensed
+            .shared_knowledge
+            .insert("unmarked low-water crossings".into());
+        unlicensed
+            .goals
+            .push("open one crossing beyond charter custody".into());
+        unlicensed
+            .pressures
+            .push("licensed patrols impound unmarked ferries".into());
         crate::domain::GestaltFissionPreview {
             schema: "ghostlight.gestalt_fission_preview.v1".into(),
             campaign_id: campaign.id,
@@ -3740,12 +4893,17 @@ mod tests {
             partition_axis: crate::domain::AgencyAxis::Authority,
             children: vec![
                 licensed,
+                unlicensed,
                 child("unrecorded-river-households", "Unrecorded River Households"),
             ],
             child_partition_values: BTreeMap::from([
                 (
                     "licensed-river-households".into(),
                     "licensed tenders".into(),
+                ),
+                (
+                    "unlicensed-river-households".into(),
+                    "unlicensed tenders".into(),
                 ),
                 ("unrecorded-river-households".into(), "other/unknown".into()),
             ]),
@@ -3762,6 +4920,16 @@ mod tests {
         }
     }
 
+    fn river_fission_qualification() -> WorldComplexityFissionQualification {
+        WorldComplexityFissionQualification {
+            schema: "ghostlight.world_complexity_fission_qualification.v1".into(),
+            title: ElaboratorTitle::Charter,
+            jurisdiction_location_id: "room".into(),
+            target_actionable_gain: 1,
+            semantic: WorldComplexitySemanticQualification::default(),
+        }
+    }
+
     #[tokio::test]
     async fn complexity_tool_admits_only_the_assigned_meaningful_fission() {
         let campaign = campaign_with_fission_parent();
@@ -3769,8 +4937,11 @@ mod tests {
         let mut tool = WorldComplexityTool {
             campaign: &campaign,
             parent_gestalt_id: "river-households",
+            title: ElaboratorTitle::Charter,
             operation: WorldComplexityOperation::Fission,
             partition_axis: crate::domain::AgencyAxis::Authority,
+            jurisdiction_location_id: "room",
+            target_actionable_gain: 1,
             workbench: serde_json::json!({"schema":"test.workbench.v1"}),
         };
         let context = crate::agent::ModelAgentToolContext {
@@ -3809,6 +4980,33 @@ mod tests {
                     id: child.id.clone(),
                     name: child.name.clone(),
                     partition_value: preview.child_partition_values[&child.id].clone(),
+                    home_location_id: child.home_location_id.clone(),
+                    capability_additions: child
+                        .shared_capabilities
+                        .difference(&campaign.gestalts["river-households"].shared_capabilities)
+                        .cloned()
+                        .collect(),
+                    knowledge_additions: child
+                        .shared_knowledge
+                        .difference(&campaign.gestalts["river-households"].shared_knowledge)
+                        .cloned()
+                        .collect(),
+                    goals_add: child
+                        .goals
+                        .iter()
+                        .filter(|goal| !campaign.gestalts["river-households"].goals.contains(goal))
+                        .cloned()
+                        .collect(),
+                    pressures_add: child
+                        .pressures
+                        .iter()
+                        .filter(|pressure| {
+                            !campaign.gestalts["river-households"]
+                                .pressures
+                                .contains(pressure)
+                        })
+                        .cloned()
+                        .collect(),
                 })
                 .collect(),
             residual_child_id: preview.residual_child_id.clone(),
@@ -3826,17 +5024,27 @@ mod tests {
         )
         .await;
         let crate::agent::ModelAgentToolOutcome::Accepted {
-            output: WorldComplexityProposal::Fission { preview: admitted },
+            output:
+                WorldComplexityProposal::Fission {
+                    preview: admitted, ..
+                },
             ..
         } = admitted
         else {
             panic!("compact fission draft was not admitted")
         };
-        assert!(admitted.children.iter().all(|child| {
-            child.shared_knowledge == campaign.gestalts["river-households"].shared_knowledge
-                && child.shared_capabilities
-                    == campaign.gestalts["river-households"].shared_capabilities
-        }));
+        assert_eq!(admitted.children.len(), 3);
+        assert!(
+            admitted
+                .children
+                .iter()
+                .filter(|child| child.id != admitted.residual_child_id)
+                .all(|child| {
+                    child.goals.len() > campaign.gestalts["river-households"].goals.len()
+                        && child.pressures.len()
+                            > campaign.gestalts["river-households"].pressures.len()
+                })
+        );
 
         let invalid = WorldComplexityMutationDraft::Fission {
             children: preview
@@ -3846,6 +5054,11 @@ mod tests {
                     id: child.id.clone(),
                     name: child.name.clone(),
                     partition_value: "same partition".into(),
+                    home_location_id: child.home_location_id.clone(),
+                    capability_additions: BTreeSet::new(),
+                    knowledge_additions: BTreeSet::new(),
+                    goals_add: Vec::new(),
+                    pressures_add: Vec::new(),
                 })
                 .collect(),
             residual_child_id: preview.residual_child_id,
@@ -3896,11 +5109,22 @@ mod tests {
                 relevance_lease_until_revision: 0,
             },
         };
+        let mut punctuation_only = individuation.clone();
+        punctuation_only.member.name = "---".into();
+        assert!(
+            crate::resolution::validate_gestalt_individuation(&campaign, &punctuation_only)
+                .unwrap_err()
+                .to_string()
+                .contains("no public identity characters")
+        );
         let mut tool = WorldComplexityTool {
             campaign: &campaign,
             parent_gestalt_id: "river-households",
+            title: ElaboratorTitle::Veil,
             operation: WorldComplexityOperation::Individuate,
             partition_axis: crate::domain::AgencyAxis::Information,
+            jurisdiction_location_id: "room",
+            target_actionable_gain: 1,
             workbench: serde_json::json!({"schema":"test.workbench.v1"}),
         };
         let context = crate::agent::ModelAgentToolContext {
@@ -3970,8 +5194,11 @@ mod tests {
         let mut tool = WorldComplexityTool {
             campaign: &campaign,
             parent_gestalt_id: "river-households",
+            title: ElaboratorTitle::Veil,
             operation: WorldComplexityOperation::Individuate,
             partition_axis: crate::domain::AgencyAxis::Information,
+            jurisdiction_location_id: "room",
+            target_actionable_gain: 1,
             workbench: serde_json::json!({"schema":"test.workbench.v1"}),
         };
         let context = crate::agent::ModelAgentToolContext {
@@ -4010,10 +5237,10 @@ mod tests {
             &context,
         )
         .await;
-        assert!(matches!(
-            same_name,
-            crate::agent::ModelAgentToolOutcome::Accepted { .. }
-        ));
+        let crate::agent::ModelAgentToolOutcome::Rejected { finding, .. } = same_name else {
+            panic!("duplicate public name was admitted")
+        };
+        assert!(finding.diagnostic.contains("public Actor identity"));
         let mut invalid = valid_same_name;
         invalid.id = "new-weirkeeper".into();
         invalid.goals = (0..9).map(|index| format!("goal {index}")).collect();
@@ -4038,14 +5265,14 @@ mod tests {
         assert!(
             finding
                 .diagnostic
-                .contains("duplicates an established Actor identity")
+                .contains("duplicates an established canonical subject identity")
         );
         assert!(
             finding
                 .diagnostic
                 .contains("unsupported subjects: actor:invented-stranger")
         );
-        assert!(!finding.diagnostic.contains("Actor name"));
+        assert!(finding.diagnostic.contains("public Actor identity"));
     }
 
     #[test]
@@ -4061,10 +5288,14 @@ mod tests {
             &current,
             WorldComplexityProposal::Fission {
                 preview: preview.clone(),
+                qualification: river_fission_qualification(),
             },
         )
         .unwrap();
-        let WorldComplexityProposal::Fission { preview: rebased } = rebased else {
+        let WorldComplexityProposal::Fission {
+            preview: rebased, ..
+        } = rebased
+        else {
             panic!("rebased mutation changed kind")
         };
         assert_eq!(rebased.expected_world_revision, current.revision);
@@ -4079,7 +5310,10 @@ mod tests {
             rebase_world_complexity_proposal(
                 &binding,
                 &current,
-                WorldComplexityProposal::Fission { preview },
+                WorldComplexityProposal::Fission {
+                    preview,
+                    qualification: river_fission_qualification(),
+                },
             )
             .is_err()
         );
@@ -4091,19 +5325,43 @@ mod tests {
         let preview = valid_river_fission(&frozen);
         let mut current = frozen.clone();
         current.revision = current.revision.saturating_add(1);
-        current.gestalts.insert(
-            "licensed-river-households".into(),
-            preview.children[0].clone(),
-        );
+        let mut collision = preview.children[0].clone();
+        collision.name = "Preexisting Licensed Register".into();
+        let parent = &frozen.gestalts["river-households"];
+        collision.shared_capabilities = parent.shared_capabilities.clone();
+        collision
+            .shared_capabilities
+            .insert("maintain tidal sluice clocks".into());
+        collision.shared_knowledge = parent.shared_knowledge.clone();
+        collision
+            .shared_knowledge
+            .insert("salt-rot marks on the old quay".into());
+        collision.goals = parent.goals.clone();
+        collision
+            .goals
+            .push("restore the abandoned east-quay sluice".into());
+        collision.pressures = parent.pressures.clone();
+        collision
+            .pressures
+            .push("spring tides are cracking the quay gates".into());
+        current
+            .gestalts
+            .insert("licensed-river-households".into(), collision);
 
         let binding = world_complexity_parent_binding(&frozen, "river-households").unwrap();
         let rebased = rebase_world_complexity_proposal(
             &binding,
             &current,
-            WorldComplexityProposal::Fission { preview },
+            WorldComplexityProposal::Fission {
+                preview,
+                qualification: river_fission_qualification(),
+            },
         )
         .unwrap();
-        let WorldComplexityProposal::Fission { preview: rebased } = rebased else {
+        let WorldComplexityProposal::Fission {
+            preview: rebased, ..
+        } = rebased
+        else {
             panic!("rebased mutation changed kind")
         };
         let renamed = rebased
@@ -4118,6 +5376,53 @@ mod tests {
             renamed.id
         );
         assert_eq!(rebased.residual_child_id, "unrecorded-river-households");
+    }
+
+    #[test]
+    fn complexity_fission_rebase_sees_agency_profile_id_collisions() {
+        let frozen = campaign_with_fission_parent();
+        let preview = valid_river_fission(&frozen);
+        let colliding_id = preview.children[0].id.clone();
+        let mut current = frozen.clone();
+        current.revision = current.revision.saturating_add(1);
+        let mut reservation = current.agency_profiles["river-households"].clone();
+        reservation.id = colliding_id;
+        reservation.subject_id = "detached-profile-subject".into();
+        reservation.active_leaf = false;
+        reservation.simulation_eligible = false;
+        current
+            .agency_profiles
+            .insert("detached-profile-key".into(), reservation);
+
+        let binding = world_complexity_parent_binding(&frozen, "river-households").unwrap();
+        let rebase = || {
+            rebase_world_complexity_proposal(
+                &binding,
+                &current,
+                WorldComplexityProposal::Fission {
+                    preview: preview.clone(),
+                    qualification: river_fission_qualification(),
+                },
+            )
+            .unwrap()
+        };
+        let renamed_id = |proposal: WorldComplexityProposal| {
+            let WorldComplexityProposal::Fission { preview, .. } = proposal else {
+                panic!("rebased mutation changed kind")
+            };
+            preview
+                .children
+                .iter()
+                .find(|child| child.name == "Licensed River Households")
+                .unwrap()
+                .id
+                .clone()
+        };
+
+        let first = renamed_id(rebase());
+        let second = renamed_id(rebase());
+        assert!(first.starts_with("river-households:fission:"));
+        assert_eq!(first, second);
     }
 
     fn profile(weights: &[(ElaboratorTitle, u16)]) -> WorldElaborationProfile {
@@ -4518,6 +5823,8 @@ mod tests {
 
     struct ExactSessionCompactionModel;
 
+    struct RejectionOnlySessionCompactionModel;
+
     struct ReceiptlessWorldWorker;
 
     #[async_trait]
@@ -4634,6 +5941,28 @@ mod tests {
         }
     }
 
+    #[async_trait]
+    impl crate::model::ModelPort for RejectionOnlySessionCompactionModel {
+        async fn run(&self, request: &crate::model::ModelStageRequest) -> Result<String> {
+            assert!(request.stage.ends_with("session-compaction"));
+            assert!(
+                request
+                    .lived_stream
+                    .contains("causal_additions_do_not_repeat_an_overused_procedural_template")
+            );
+            Ok(serde_json::json!({
+                "schema":"ghostlight.elaborator_session_compaction_draft.v1",
+                "frontier_summary":"The rejected filing mold remains a live design constraint.",
+                "unresolved_leads":["Replace procedure with a materially executable conflict."]
+            })
+            .to_string())
+        }
+
+        fn provider(&self) -> &'static str {
+            "rejection-session-compaction-fixture"
+        }
+    }
+
     #[tokio::test]
     async fn session_compactor_preserves_exact_journal_ancestry() {
         let campaign = campaign_with_civic_room();
@@ -4658,6 +5987,31 @@ mod tests {
 
         assert_eq!(checkpoint.recent_commit_receipt_ids, ["world-commit:12"]);
         assert_eq!(checkpoint.generation, 0);
+        assert_eq!(receipts.len(), 1);
+        checkpoint
+            .validate_for(&campaign, "room", ElaboratorTitle::Charter)
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn session_compactor_carries_a_semantic_rejection_without_a_commit() {
+        let campaign = campaign_with_civic_room();
+        let finding = "{\"causal_additions_do_not_repeat_an_overused_procedural_template\":false}";
+        let (checkpoint, receipts) = compact_elaborator_session(
+            &RejectionOnlySessionCompactionModel,
+            &campaign,
+            "room",
+            ElaboratorTitle::Charter,
+            "charter:room",
+            None,
+            &[],
+            vec![finding.into()],
+        )
+        .await
+        .unwrap();
+
+        assert!(checkpoint.recent_commit_receipt_ids.is_empty());
+        assert_eq!(checkpoint.recent_rejection_findings, [finding]);
         assert_eq!(receipts.len(), 1);
         checkpoint
             .validate_for(&campaign, "room", ElaboratorTitle::Charter)
@@ -4748,6 +6102,7 @@ mod tests {
             1,
             vec!["river-households".into()],
             BTreeMap::from([("river-households".into(), "room".into())]),
+            1,
             BTreeMap::from([("patina:room".into(), checkpoint)]),
         );
 
@@ -4779,6 +6134,7 @@ mod tests {
             1,
             vec!["river-households".into()],
             BTreeMap::from([("river-households".into(), "realm".into())]),
+            1,
             BTreeMap::new(),
         );
 
