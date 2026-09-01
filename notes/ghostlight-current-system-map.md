@@ -179,7 +179,8 @@ exact campaign revision
   -> deterministic agenda admission checks anchor visibility, simulation authority, player exclusion, and per-cell decision quota
   -> one private Projector/Persona/Interpreter membrane per cell
   -> Projector receives exact decision-owner dossiers plus a bounded relevant-target viewport, never every inactive constituent dossier
-  -> Interpreter agent inspects bounded exact target matches, then submits or incrementally edits one private exact-decision draft
+  -> deterministic projection adds bounded relevant targets and exact canonical names mentioned by the lived stream or Persona turn
+  -> Interpreter agent submits or incrementally edits one private exact-decision draft without performing target lookup
   -> deterministic draft compiler checks exact ownership, permissions, topology, and bounds
   -> independent per-action effect verifier checks the typed action against the Persona choice
   -> accepted unchanged actions retain their exact verifier binding across local draft repair

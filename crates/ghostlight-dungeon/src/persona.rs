@@ -241,10 +241,6 @@ struct CellAppraisalProposal {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 enum CellInterpreterAgentCommand {
-    InspectActivityTargets {
-        subject_id: String,
-        query: String,
-    },
     Submit {
         decisions: BTreeMap<String, serde_json::Value>,
     },
@@ -269,12 +265,6 @@ enum CellInterpreterAgentOutput {
 #[derive(Clone, Debug, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 enum CellInterpreterFinding {
-    ActivityTargets {
-        subject_id: String,
-        query: String,
-        matches: BTreeMap<String, CellActivityTargetSlice>,
-        total_matches: usize,
-    },
     DraftProgress {
         decision_subject_ids: Vec<String>,
         missing_subject_ids: Vec<String>,
@@ -862,7 +852,7 @@ fn append_actor_correction(
 }
 
 const INITIAL_ACTIVITY_TARGET_LIMIT: usize = 24;
-const ACTIVITY_TARGET_QUERY_LIMIT: usize = 12;
+const NARRATIVE_ACTIVITY_TARGET_LIMIT: usize = 24;
 
 fn initial_activity_targets(
     targets: &BTreeMap<String, CellActivityTargetSlice>,
@@ -933,7 +923,29 @@ fn initial_member_activity_targets(
     )
 }
 
-fn bounded_interpreter_slice(slice: &PermittedCellSlice) -> PermittedCellSlice {
+fn narrative_activity_targets(
+    targets: &BTreeMap<String, CellActivityTargetSlice>,
+    narrative: &str,
+) -> BTreeMap<String, CellActivityTargetSlice> {
+    let narrative = narrative.to_lowercase();
+    targets
+        .iter()
+        .filter(|(_, target)| {
+            let name = target.name.trim().to_lowercase();
+            name.chars().count() >= 3
+                && narrative.match_indices(&name).any(|(start, matched)| {
+                    let before = narrative[..start].chars().next_back();
+                    let after = narrative[start + matched.len()..].chars().next();
+                    !before.is_some_and(char::is_alphanumeric)
+                        && !after.is_some_and(char::is_alphanumeric)
+                })
+        })
+        .take(NARRATIVE_ACTIVITY_TARGET_LIMIT)
+        .map(|(target_id, target)| (target_id.clone(), target.clone()))
+        .collect()
+}
+
+fn bounded_interpreter_slice(slice: &PermittedCellSlice, narrative: &str) -> PermittedCellSlice {
     let mut bounded = slice.clone();
     let decision_owner_ids = bounded.decision_owner_ids.clone();
     bounded
@@ -943,10 +955,20 @@ fn bounded_interpreter_slice(slice: &PermittedCellSlice) -> PermittedCellSlice {
         .member_exceptions
         .retain(|member| decision_owner_ids.contains(&member.subject_id));
     for subject in &mut bounded.constituents {
-        subject.activity_targets = initial_constituent_activity_targets(subject);
+        let mut targets = initial_constituent_activity_targets(subject);
+        targets.extend(narrative_activity_targets(
+            &subject.activity_targets,
+            narrative,
+        ));
+        subject.activity_targets = targets;
     }
     for member in &mut bounded.member_exceptions {
-        member.activity_targets = initial_member_activity_targets(member);
+        let mut targets = initial_member_activity_targets(member);
+        targets.extend(narrative_activity_targets(
+            &member.activity_targets,
+            narrative,
+        ));
+        member.activity_targets = targets;
     }
     bounded
 }
@@ -1445,54 +1467,13 @@ struct CellInterpreterWorkbench {
     lived_stream: String,
     persona_turn: String,
     campaign_policy: String,
-    visible_slice: PermittedCellSlice,
+    appraisal_schema: serde_json::Value,
     draft: BTreeMap<String, serde_json::Value>,
     repair_subject_ids: BTreeSet<String>,
     accepted_verifier_bindings: BTreeSet<String>,
 }
 
 impl CellInterpreterWorkbench {
-    fn inspect_activity_targets(
-        &mut self,
-        subject_id: &str,
-        query: &str,
-    ) -> Result<CellInterpreterFinding> {
-        if !self.active_subject_ids.contains(subject_id) {
-            return Err(anyhow!(
-                "activity-target inspection subject {subject_id} is not an active decision owner"
-            ));
-        }
-        let query = query.trim();
-        if query.is_empty() || query.chars().count() > 160 {
-            return Err(anyhow!(
-                "activity-target inspection query must contain 1 to 160 characters"
-            ));
-        }
-        let full_targets = activity_targets_for_subject(&self.slice, subject_id)?;
-        let needle = query.to_lowercase();
-        let matching = full_targets
-            .iter()
-            .filter(|(target_id, target)| {
-                target_id.to_lowercase().contains(&needle)
-                    || target.name.to_lowercase().contains(&needle)
-            })
-            .collect::<Vec<_>>();
-        let total_matches = matching.len();
-        let matches = matching
-            .into_iter()
-            .take(ACTIVITY_TARGET_QUERY_LIMIT)
-            .map(|(target_id, target)| (target_id.clone(), target.clone()))
-            .collect::<BTreeMap<_, _>>();
-        activity_targets_for_subject_mut(&mut self.visible_slice, subject_id)?
-            .extend(matches.clone());
-        Ok(CellInterpreterFinding::ActivityTargets {
-            subject_id: subject_id.to_owned(),
-            query: query.to_owned(),
-            matches,
-            total_matches,
-        })
-    }
-
     fn progress(&self) -> CellInterpreterFinding {
         let decision_subject_ids = self.draft.keys().cloned().collect::<Vec<_>>();
         let decided = decision_subject_ids
@@ -1702,15 +1683,7 @@ impl ModelAgentTool for CellInterpreterWorkbench {
         } else {
             CellInterpreterSchemaState::Repair(&self.repair_subject_ids)
         };
-        let mut appraisal_schema = serde_json::to_value(schema_for!(CellAppraisalProposal))
-            .map_err(|error| error.to_string())?;
-        constrain_cell_proposal_schema(
-            &mut appraisal_schema,
-            &self.visible_slice,
-            &self.active_subject_ids,
-        )
-        .map_err(|error| error.to_string())?;
-        cell_interpreter_agent_schema(&appraisal_schema, state, &self.active_subject_ids)
+        cell_interpreter_agent_schema(&self.appraisal_schema, state)
             .map_err(|error| error.to_string())
     }
 
@@ -1720,21 +1693,6 @@ impl ModelAgentTool for CellInterpreterWorkbench {
         context: &ModelAgentToolContext,
     ) -> ModelAgentToolOutcome<Self::Output, Self::Finding> {
         match action.command {
-            CellInterpreterAgentCommand::InspectActivityTargets { subject_id, query } => {
-                match self.inspect_activity_targets(&subject_id, &query) {
-                    Ok(observation) => ModelAgentToolOutcome::Continue {
-                        observation,
-                        receipts: Vec::new(),
-                    },
-                    Err(error) => ModelAgentToolOutcome::Rejected {
-                        finding: CellInterpreterFinding::LocalValidation {
-                            diagnostic: error.to_string(),
-                            decision_subject_ids: self.repair_subject_ids.iter().cloned().collect(),
-                        },
-                        receipts: Vec::new(),
-                    },
-                }
-            }
             CellInterpreterAgentCommand::Submit { decisions } => {
                 if !self.draft.is_empty() {
                     return ModelAgentToolOutcome::Rejected {
@@ -1781,48 +1739,6 @@ impl ModelAgentTool for CellInterpreterWorkbench {
 
 fn required_projection_subject_ids(slice: &PermittedCellSlice) -> BTreeSet<String> {
     slice.decision_owner_ids.clone()
-}
-
-fn activity_targets_for_subject<'a>(
-    slice: &'a PermittedCellSlice,
-    subject_id: &str,
-) -> Result<&'a BTreeMap<String, CellActivityTargetSlice>> {
-    if let Some(subject) = slice
-        .constituents
-        .iter()
-        .find(|subject| subject.subject_id == subject_id)
-    {
-        return Ok(&subject.activity_targets);
-    }
-    slice
-        .member_exceptions
-        .iter()
-        .find(|member| member.subject_id == subject_id)
-        .map(|member| &member.activity_targets)
-        .ok_or_else(|| anyhow!("cell has no activity-target permissions for {subject_id}"))
-}
-
-fn activity_targets_for_subject_mut<'a>(
-    slice: &'a mut PermittedCellSlice,
-    subject_id: &str,
-) -> Result<&'a mut BTreeMap<String, CellActivityTargetSlice>> {
-    if let Some(index) = slice
-        .constituents
-        .iter()
-        .position(|subject| subject.subject_id == subject_id)
-    {
-        return Ok(&mut slice.constituents[index].activity_targets);
-    }
-    if let Some(index) = slice
-        .member_exceptions
-        .iter()
-        .position(|member| member.subject_id == subject_id)
-    {
-        return Ok(&mut slice.member_exceptions[index].activity_targets);
-    }
-    Err(anyhow!(
-        "cell has no mutable activity-target viewport for {subject_id}"
-    ))
 }
 
 fn allowed_constituent_effect_types(subject: &CellConstituentSlice) -> Vec<&'static str> {
@@ -2085,7 +2001,12 @@ impl CellProjectionEngine {
             .require(&slice.cell_id, &slice.snapshot_binding, "cell_interpreter")
             .await
             .map_err(|error| cell_pipeline_failure(error, stage_receipts.clone()))?;
-        let visible_slice = bounded_interpreter_slice(&slice);
+        let interpreter_narrative = format!("{}\n{}", lived.text, persona.narrative);
+        let visible_slice = bounded_interpreter_slice(&slice, &interpreter_narrative);
+        let mut appraisal_schema = serde_json::to_value(schema_for!(CellAppraisalProposal))
+            .map_err(|error| cell_pipeline_failure(error.into(), stage_receipts.clone()))?;
+        constrain_cell_proposal_schema(&mut appraisal_schema, &visible_slice, &active_subject_ids)
+            .map_err(|error| cell_pipeline_failure(error, stage_receipts.clone()))?;
         let interpreter_context = serde_json::to_string(&cell_interpreter_context(
             &visible_slice,
             &active_subject_ids,
@@ -2097,7 +2018,7 @@ impl CellProjectionEngine {
                 "Every subject in exact_permissions owns one schema-keyed decision slot. Fill that exact slot with one action or one inaction. Use undecided only when the Persona turn supplied no explicit choice or hold; runtime will retry the Persona rather than let the Interpreter invent one. Do not let a voiced constituent vanish during interpretation. ",
                 "Each action carries an effects object whose exact subject-specific lane keys are supplied by the schema. Across scalar effects and every expanded activity scope, an action has one to four exact effects total. Scalar lanes contain one typed effect. An activities lane is one object keyed by chosen activity kinds; each non-null kind contains an array of one to four separate exact target-and-location scopes. Preserve repeated uses of one activity kind as separate scopes when their targets or locations differ; never union scopes across distinct locations or audiences. Top-level lane names are stable across subjects: use null for a null-only unavailable lane and for any schema-required optional lane or activity key the subject does not use. A non-null lane or activity key absent from its exact schema is structurally unavailable: do not emit it and do not invent a destination. Pressure and migration lanes each have one slot. Preserve every means of one chosen course in one action. With relocation, activities at the exact snapshot location occur before departure and activities at the exact admitted destination occur after arrival; activity effects inside each location phase are an atomic set. Field and array order is not chronology. Never split one subject's single choice into multiple actions. ",
                 "Use gestalt_activities or member_activities for concrete attempts that do not themselves change pressure. A cohesive Gestalt coordinating its own unnamed internal members uses coordinate with an empty target_subject_ids list; do not invent its containing population, a distant population, or another canonical subject as the target of internal coordination. Cite the smallest exact set of state_references that materially supports each attempt; the permission list is an upper bound, not a checklist to echo. ",
-                "target_subject_ids and location_ids must come from that exact subject's permissions. activity_targets is a bounded exact viewport: each key is an authoritative ID and each value supplies the target's name and current canonical locations. When the Persona addresses a canonical subject absent from that viewport, call inspect_activity_targets for that decision owner and a distinctive fragment of the target's supplied name before drafting or repairing the decision. Inspection exposes existing permission; it cannot create it. Use an ID only when the Persona addresses that named target, never merely because the ID is permitted. If inspection returns no matching target, the addressed person or role is not a canonical target in this slice. reachable_destinations maps exact actor-movement destination IDs to names. migration_destinations maps exact population destination IDs to names and locations. When the Persona chooses to go to a canonical target, compare the target's current locations with the acting subject's current location and exact reachable destinations; never guess a destination from an opaque ID. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. When one utterance addresses canonical subjects and an unnamed public audience, emit one communicate activity with those exact target IDs and place its admitted public reach in public_channels; do not invent a second communicate lane. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
+                "target_subject_ids and location_ids must come from that exact subject's permissions. activity_targets is the bounded exact set deterministically selected from current relevance plus canonical targets named exactly in the lived stream or Persona turn: each key is an authoritative ID and each value supplies the target's name and current canonical locations. Use an ID only when the Persona addresses that named target, never merely because the ID is permitted. If an addressed name has no supplied canonical target, treat it as an unnamed role and use a targetless local activity when that lane is supported. reachable_destinations maps exact actor-movement destination IDs to names. migration_destinations maps exact population destination IDs to names and locations. When the Persona chooses to go to a canonical target, compare the target's current locations with the acting subject's current location and exact reachable destinations; never guess a destination from an opaque ID. Every activity has at most four unique target_subject_ids; choose the four most causally relevant when more permitted subjects are involved. A member activity uses exactly the member's source_location_id. Internal work is prepare with no targets. A local investigate may have no target and use the exact current location to seek information from the environment or an unnamed ordinary role; asking an unnamed clerk or dock master for facts maps here and records only the inquiry, never a reply or discovery. A local communicate may likewise have no target at the exact current location when the Persona speaks, sends, offers, asks permission, or notifies an unnamed ordinary role; it records only the source's outgoing attempt, never a listener, reply, acceptance, or outcome. Communication with a canonical subject requires that exact target ID. When one utterance addresses canonical subjects and an unnamed public audience, emit one communicate activity with those exact target IDs and place its admitted public reach in public_channels; do not invent a second communicate lane. Never substitute a containing population, related institution, or merely permitted ID for an unnamed role. ",
                 "Write intended_effect as the affirmative attempted acts, never the purpose, restraint, condition to preserve, hoped-for outcome, or target response. Keep purpose and restraint in intent. Respecting choice, declining coercion, leaving state unchanged, or waiting for another subject does not add a typed effect unless the Persona separately chooses an observable act. Merely waiting, watching, staying, holding position, or remaining ready is attributed inaction, not prepare. prepare requires concrete work on a bounded arrangement, repair, resource, or capability-backed readiness change. Institution posture must be a specific materially new commitment or withholding of at most {} characters. already_committed_posture is state already in force: maintaining, continuing, or restating it is inaction and must not emit an institution action. Gestalt pressure_resolutions copy exact current_pressures; additions are new unresolved constraints, never completed actions. Use only permitted state references. public_channels means durable publication of this attempt through exact allowed_persistent_publication_channels; it is not a perception method or ordinary local speech. Use [] when that exact list is empty. ",
                 "A population that chooses to board, depart, or relocate together to one supplied migration_destinations key emits gestalt_migration; do not reduce it to prepare. It relocates only that exact population leaf and never implies a named member traveled. A named member who chooses to board, depart, travel, or join a supplied destination emits member_migration; use prepare only while departure remains unchosen. ",
                 "A population or arena cannot migrate a person. Runtime binds identity and effect owner IDs from subject_id. Do not emit institution_id, gestalt_id, actor_id, or member_id inside effect. An inaction means that exact subject takes no strategic action in this horizon. Record only a subject that explicitly holds, waits without making another attempt, or merely continues already_committed_posture in the Persona turn as an inaction, using its exact subject_id and a concrete reason of at most 160 characters. Waiting for the result of an action, withholding a different possible action, or declining one option after choosing another does not make the chosen action an inaction. Never invent an inaction for an unvoiced subject or use absence of a Persona decision as a reason. Inactions share the same count limit stated for actions. A subject cannot appear in both actions and inactions. When nobody acts, actions is empty and inactions must still contain at least one exact attributed decision from the Persona turn."
@@ -2123,7 +2044,7 @@ impl CellProjectionEngine {
             persona_output: &persona.narrative,
             output_schema: None,
             domain_guidance: &format!(
-                "{permission_guidance} Operate the private Interpreter workbench. Its current typed action schema is authoritative and exposes only the transition legal now: inspect_activity_targets may expand one decision owner's bounded target viewport, one complete submit creates the draft, and exact named upsert_decision repairs follow rejection. A rejected submit preserves its draft. Only the deterministic workbench can accept the appraisal."
+                "{permission_guidance} Operate the private Interpreter workbench. Its current typed action schema is authoritative and exposes only the transition legal now: one complete submit creates the draft, and exact named upsert_decision repairs follow rejection. A rejected submit preserves its draft. Only the deterministic workbench can accept the appraisal."
             ),
         });
         let mut interpreter_causal_receipts = causal_receipts;
@@ -2138,7 +2059,7 @@ impl CellProjectionEngine {
             source_receipt_ids,
             temperature: Some(0.0),
             max_output_tokens: Some(1_600),
-            max_steps: active_subject_ids.len().saturating_add(6).clamp(6, 10),
+            max_steps: active_subject_ids.len().saturating_add(4).clamp(4, 8),
         };
         let mut workbench = CellInterpreterWorkbench {
             model: self.model.clone(),
@@ -2149,7 +2070,7 @@ impl CellProjectionEngine {
             lived_stream: lived.text.clone(),
             persona_turn: persona.narrative.clone(),
             campaign_policy: campaign_policy.clone(),
-            visible_slice,
+            appraisal_schema,
             draft: BTreeMap::new(),
             repair_subject_ids: BTreeSet::new(),
             accepted_verifier_bindings: BTreeSet::new(),
@@ -3336,7 +3257,6 @@ enum CellInterpreterSchemaState<'a> {
 fn cell_interpreter_agent_schema(
     appraisal_schema: &serde_json::Value,
     state: CellInterpreterSchemaState<'_>,
-    active_subject_ids: &BTreeSet<String>,
 ) -> Result<serde_json::Value> {
     let decisions_schema = appraisal_schema
         .pointer("/properties/decisions")
@@ -3346,7 +3266,7 @@ fn cell_interpreter_agent_schema(
         .get("properties")
         .and_then(serde_json::Value::as_object)
         .ok_or_else(|| anyhow!("cell appraisal schema has no exact decision owners"))?;
-    let mut commands = match state {
+    let commands = match state {
         CellInterpreterSchemaState::Initial => vec![serde_json::json!({
             "type":"object",
             "additionalProperties":false,
@@ -3380,16 +3300,6 @@ fn cell_interpreter_agent_schema(
                 .collect::<Result<Vec<_>>>()?
         }
     };
-    commands.push(serde_json::json!({
-        "type":"object",
-        "additionalProperties":false,
-        "required":["kind","subject_id","query"],
-        "properties":{
-            "kind":{"const":"inspect_activity_targets"},
-            "subject_id":{"type":"string","enum":active_subject_ids},
-            "query":{"type":"string","minLength":1,"maxLength":160}
-        }
-    }));
     Ok(serde_json::json!({
         "$schema":"https://json-schema.org/draft/2020-12/schema",
         "type":"object",
@@ -4438,6 +4348,17 @@ mod tests {
         }})
     }
 
+    fn test_appraisal_schema(
+        slice: &PermittedCellSlice,
+        active_subject_ids: &BTreeSet<String>,
+        narrative: &str,
+    ) -> serde_json::Value {
+        let visible_slice = bounded_interpreter_slice(slice, narrative);
+        let mut schema = serde_json::to_value(schema_for!(CellAppraisalProposal)).unwrap();
+        constrain_cell_proposal_schema(&mut schema, &visible_slice, active_subject_ids).unwrap();
+        schema
+    }
+
     #[tokio::test]
     async fn interpreter_workbench_reuses_unchanged_valid_effect_verification() {
         let mut slice = fixture_cell_slice();
@@ -4454,7 +4375,11 @@ mod tests {
             calls: AtomicUsize::new(0),
             faction_seven_calls: AtomicUsize::new(0),
         });
-        let visible_slice = bounded_interpreter_slice(&slice);
+        let appraisal_schema = test_appraisal_schema(
+            &slice,
+            &active_subject_ids,
+            "Faction Six withholds; Faction Seven publishes.",
+        );
         let mut workbench = CellInterpreterWorkbench {
             model: model.clone(),
             permit: Arc::new(AllowAllPermit),
@@ -4464,7 +4389,7 @@ mod tests {
             lived_stream: "At location forum: Faction Six and Faction Seven.".into(),
             persona_turn: "Faction Six withholds; Faction Seven publishes.".into(),
             campaign_policy: "{}".into(),
-            visible_slice,
+            appraisal_schema,
             draft: BTreeMap::new(),
             repair_subject_ids: BTreeSet::new(),
             accepted_verifier_bindings: BTreeSet::new(),
@@ -4520,7 +4445,7 @@ mod tests {
         assert!(!repair_schema_text.contains("submit"));
         assert!(repair_schema_text.contains("upsert_decision"));
         assert!(repair_schema_text.contains("faction-06"));
-        assert!(repair_schema_text.contains("inspect_activity_targets"));
+        assert!(!repair_schema_text.contains("inspect_activity_targets"));
         assert!(
             !jsonschema::validator_for(&repair_schema)
                 .unwrap()
@@ -4622,7 +4547,11 @@ mod tests {
         slice.decision_owner_ids.insert("faction-07".into());
         slice.max_actions = 2;
         let active_subject_ids = slice.decision_owner_ids.clone();
-        let visible_slice = bounded_interpreter_slice(&slice);
+        let appraisal_schema = test_appraisal_schema(
+            &slice,
+            &active_subject_ids,
+            "Both factions hold for the count.",
+        );
         let mut workbench = CellInterpreterWorkbench {
             model: Arc::new(CachingVerifierModel {
                 calls: AtomicUsize::new(0),
@@ -4635,7 +4564,7 @@ mod tests {
             lived_stream: "At location forum: Faction Six and Faction Seven.".into(),
             persona_turn: "Both factions hold for the count.".into(),
             campaign_policy: "{}".into(),
-            visible_slice,
+            appraisal_schema,
             draft: BTreeMap::from([
                 (
                     "faction-06".into(),
@@ -4792,13 +4721,8 @@ mod tests {
         assert!(schema.pointer("/properties/decisions").is_some());
         assert!(schema.pointer("/properties/actions").is_none());
         assert!(schema.pointer("/properties/inactions").is_none());
-        let active_subject_ids = BTreeSet::from(["faction-06".to_owned()]);
-        let initial_schema = cell_interpreter_agent_schema(
-            &schema,
-            CellInterpreterSchemaState::Initial,
-            &active_subject_ids,
-        )
-        .unwrap();
+        let initial_schema =
+            cell_interpreter_agent_schema(&schema, CellInterpreterSchemaState::Initial).unwrap();
         let initial_schema_text = serde_json::to_string(&initial_schema).unwrap();
         assert_eq!(initial_schema["type"], "object");
         assert!(initial_schema.get("oneOf").is_none());
@@ -4809,7 +4733,7 @@ mod tests {
         );
         assert!(initial_schema_text.contains("submit"));
         assert!(!initial_schema_text.contains("upsert_decision"));
-        assert!(initial_schema_text.contains("inspect_activity_targets"));
+        assert!(!initial_schema_text.contains("inspect_activity_targets"));
         assert!(!initial_schema_text.contains("inspect_draft"));
         assert!(!initial_schema_text.contains("remove_decision"));
         assert!(initial_schema_text.contains("\"maxLength\":240"));
@@ -4870,7 +4794,6 @@ mod tests {
         let repair_schema = cell_interpreter_agent_schema(
             &schema,
             CellInterpreterSchemaState::Repair(&repair_subject_ids),
-            &active_subject_ids,
         )
         .unwrap();
         let repair_schema_text = serde_json::to_string(&repair_schema).unwrap();
@@ -4975,50 +4898,38 @@ mod tests {
     }
 
     #[test]
-    fn interpreter_inspection_expands_context_without_expanding_authority() {
+    fn interpreter_projects_exact_narrative_targets_without_expanding_authority() {
         let mut slice = fixture_cell_slice();
         add_many_activity_targets(&mut slice, 1_000);
-        let visible_slice = bounded_interpreter_slice(&slice);
         let active_subject_ids = slice.decision_owner_ids.clone();
-        let model = Arc::new(CachingVerifierModel {
-            calls: AtomicUsize::new(0),
-            faction_seven_calls: AtomicUsize::new(0),
-        });
-        let mut workbench = CellInterpreterWorkbench {
-            model,
-            permit: Arc::new(AllowAllPermit),
-            interpreter_model: "flash".into(),
-            slice,
-            active_subject_ids,
-            lived_stream: "Faction Six addresses Target 0999.".into(),
-            persona_turn: "Tell Target 0999 to attend.".into(),
-            campaign_policy: "{}".into(),
-            visible_slice,
-            draft: BTreeMap::new(),
-            repair_subject_ids: BTreeSet::new(),
-            accepted_verifier_bindings: BTreeSet::new(),
-        };
-
-        let initial_schema = serde_json::to_string(&workbench.action_schema().unwrap()).unwrap();
+        let initial_schema = test_appraisal_schema(&slice, &active_subject_ids, "ordinary work");
+        let initial_schema = serde_json::to_string(&initial_schema).unwrap();
         assert!(!initial_schema.contains("target:0999"));
-        let finding = workbench
-            .inspect_activity_targets("faction-06", "Target 0999")
-            .unwrap();
-        assert!(matches!(
-            finding,
-            CellInterpreterFinding::ActivityTargets {
-                total_matches: 1,
-                ..
-            }
-        ));
-        let expanded_schema = serde_json::to_string(&workbench.action_schema().unwrap()).unwrap();
-        assert!(expanded_schema.contains("target:0999"));
+        let false_prefix = bounded_interpreter_slice(&slice, "Target 09990 remains absent.");
+        assert!(
+            !false_prefix.constituents[0]
+                .activity_targets
+                .contains_key("target:0999")
+        );
+        let visible_slice = bounded_interpreter_slice(
+            &slice,
+            "Faction Six addresses Target 0999. Tell Target 0999 to attend.",
+        );
+        let projected_targets = &visible_slice.constituents[0].activity_targets;
+        assert!(projected_targets.contains_key("target:0999"));
+        assert!(projected_targets.len() <= INITIAL_ACTIVITY_TARGET_LIMIT + 1);
+        let projected_schema = test_appraisal_schema(
+            &slice,
+            &active_subject_ids,
+            "Faction Six addresses Target 0999. Tell Target 0999 to attend.",
+        );
+        let projected_schema = serde_json::to_string(&projected_schema).unwrap();
+        assert!(projected_schema.contains("target:0999"));
+        assert!(projected_schema.len() < 64_000);
         assert_eq!(
-            activity_targets_for_subject(&workbench.slice, "faction-06")
-                .unwrap()
-                .len(),
+            slice.constituents[0].activity_targets.len(),
             1_000,
-            "inspection must not truncate or rewrite canonical permission"
+            "narrative projection must not truncate or rewrite canonical permission"
         );
     }
 

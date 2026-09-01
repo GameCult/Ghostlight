@@ -75,21 +75,31 @@ smallest failed Interpreter cells contain only two subjects, so repartitioning
 alone cannot fix the defect. No fictional wave committed and time did not
 advance.
 
-The active cut makes context a bounded query projection. Projector receives
-only exact decision-owner dossiers and at most 24 deterministically relevant
-activity targets. The existing Interpreter agent workbench starts from the
-same bounded target viewport and may inspect up to 12 exact name/ID matches;
-its dynamic schema expands only with inspected targets. Full cell membership
-and full permissions remain private deterministic state. Effect verification
-receives only targets cited by the candidate action. Resolution remains cover
-owner and WorldKernel remains commit owner. Do not raise the connector bound,
-truncate canonical authority, or split cells merely to paper over projection.
+Pushed source `67421ad` bounded Projector and Interpreter frames. Immutable Run
+110 cloned Run 109's exact checkpoint and retried only its 14 failed cells. It
+proved the frame cut: no connector-frame failure recurred, and one additional
+cell completed. The durable pulse-two checkpoint contains 227 completed and 13
+failed cells with SHA-256
+`88a4f193e9f4d136841ede8d9c6b23e88788002a5f2e6b0c93bea9bb51b388de`.
+The remaining 13 Interpreters exhausted their agent steps by repeatedly asking
+the target-inspection command to resolve ordinary noun phrases. Root stopped
+the transient unit before more calls; no fictional wave committed and time did
+not advance.
 
-After focused gates, commit and push, then clone Run 109 and resume only the 14
-failed cells from its exact checkpoint. Do not replay complexity, clock binding,
-Nemesis, or the 226 completed cell membranes. The acceptance launcher retains
-one content-addressed runner per exact source commit and deletes disposable
-remote compiler output.
+The current correction removes target lookup from the Interpreter. Projector
+receives only exact decision-owner dossiers and at most 24 deterministically
+relevant activity targets. Before Interpreter inference, one deterministic
+projection adds bounded canonical targets whose exact supplied names occur in
+the lived stream or Persona turn. Unmatched roles remain targetless local
+actions when supported. Full cell membership and permissions remain private;
+effect verification receives only targets cited by the candidate action.
+Resolution remains cover owner and WorldKernel remains commit owner.
+
+After commit and push, clone Run 110's exact pulse-two checkpoint and resume
+only its 13 failed cells. Do not replay complexity, clock binding, Nemesis, or
+the 227 completed cell membranes. The acceptance launcher retains one
+content-addressed runner per exact source commit and deletes disposable remote
+compiler output.
 
 ## Mission and current product shape
 
