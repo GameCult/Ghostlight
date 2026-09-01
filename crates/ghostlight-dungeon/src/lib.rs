@@ -34,5 +34,6 @@ pub mod vault;
 #[cfg(windows)]
 #[cfg(windows)]
 pub mod windows_secret;
+mod world;
 
 pub use kernel::{KernelError, WorldKernel};
