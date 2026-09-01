@@ -178,7 +178,8 @@ exact campaign revision
   -> scheduler-owned Nemesis agent binds exact committed event, pressure, or clock anchors to eligible decision owners inside that cover
   -> deterministic agenda admission checks anchor visibility, simulation authority, player exclusion, and per-cell decision quota
   -> one private Projector/Persona/Interpreter membrane per cell
-  -> Interpreter agent submits or incrementally edits one private exact-decision draft
+  -> Projector receives exact decision-owner dossiers plus a bounded relevant-target viewport, never every inactive constituent dossier
+  -> Interpreter agent inspects bounded exact target matches, then submits or incrementally edits one private exact-decision draft
   -> deterministic draft compiler checks exact ownership, permissions, topology, and bounds
   -> independent per-action effect verifier checks the typed action against the Persona choice
   -> accepted unchanged actions retain their exact verifier binding across local draft repair
@@ -382,12 +383,17 @@ status reconstruction.
 
 Resolution-demand focal IDs are salience hints, not partition commands. They
 cannot create mandatory singleton cells or exceed the configured budget. Cell
-Projectors receive decision-relevant situation state; cell Interpreters receive
-exact permissions and the narrative products. Membership and revision bindings
-are derived by the runtime, so a model is never asked to copy an invariant that
-the planner already owns. Stable prompt prefixes are deliberately placed before
-dynamic state, and provider receipts expose per-attempt token/cache usage plus
-bounded local validation failures.
+Projectors receive decision-relevant situation state for the scheduler-selected
+decision owners, the count of other represented subjects, and at most 24 exact
+activity targets ranked by explicit relationship, mention in current goals or
+pressure, co-location, and stable ID. Inactive constituents remain represented
+by the exact cell cover but their full dossiers do not enter the model frame.
+Cell Interpreters receive exact permissions for active decision owners and the
+narrative products. Membership and revision bindings are derived by the
+runtime, so a model is never asked to copy an invariant that the planner already
+owns. Stable prompt prefixes are deliberately placed before dynamic state, and
+provider receipts expose per-attempt token/cache usage plus bounded local
+validation failures.
 
 `ModelPort` remains Ghostlight's single inference seam. The Codex-backed
 implementation is an ordinary typed consumer of the independent CodexConnector
@@ -433,7 +439,13 @@ subjects: complete submits bind decisions by owner-key, while incremental edits
 are rebound and validated under the selected owner by the workbench. Target IDs,
 canonical locations, pressure resolutions, movement destinations, state
 references, and public channels are enumerated from that subject's permitted
-slice. Movement and population-migration variants disappear
+slice. Activity targets are the exception to eager projection, not to exact
+authority: the initial schema exposes the bounded relevant viewport, and the
+same Interpreter workbench may query one active decision owner by a supplied
+name/ID fragment for at most 12 exact matches. A successful query expands only
+that workbench's dynamic schema. It cannot add a target to canonical permission,
+change the cell, or bypass the full deterministic validator. Movement and
+population-migration variants disappear
 when the subject has no exact destination; target-requiring activities cannot
 emit an empty target list. Semantic correction therefore judges meaning rather
 than repairing type combinations local code already knows are impossible.
@@ -442,12 +454,15 @@ Each permitted activity target is one runtime-derived descriptor keyed by its
 authoritative ID, with the target's exact name and current canonical locations.
 Reachable actor destinations map exact location IDs to names; population
 migration destinations carry both population and location identity. The
-Projector, Interpreter, and effect verifier can distinguish a canonical target
-actually named by the Persona from an unnamed local role, and can prove whether
-“go to Reed” means movement at all. Opaque permitted IDs are not enough reason
-to substitute a containing population, related institution, or unrelated
-destination. Descriptor prose is disambiguation context, not a new subject or
-fuzzy-match authority.
+Projector and Interpreter bounded views distinguish a canonical target actually
+named by the Persona from an unnamed local role, and can prove whether “go to
+Reed” means movement at all. The effect verifier receives only the exact target
+descriptors cited by its already structurally valid candidate action; the full
+permission map remains private to deterministic validation. Opaque permitted
+IDs are not enough reason to substitute a containing population, related
+institution, or unrelated destination. Descriptor prose and target queries are
+disambiguation context, not a new subject, permission writer, or fuzzy-match
+authority.
 
 Targetless local activity is explicit rather than encoded through a convenient
 unrelated subject. Preparation, investigation, communication, and obstruction

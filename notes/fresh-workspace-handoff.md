@@ -25,7 +25,7 @@ own volatile workspace identity and the release witness owns deployed identity.
 
 ## Current full-world pressure test
 
-Preserve immutable Runs 75 through 108. Run 108 reaches the exact 2,400-subject
+Preserve immutable Runs 75 through 109. Run 108 reaches the exact 2,400-subject
 scale target at complexity round 43; no complexity round may replay.
 
 Bounded parallel title-by-realm compaction and deterministic parallel child-ID
@@ -58,24 +58,38 @@ and reproduced the failure without writing another session checkpoint.
 
 Pushed source `8dd3147` keeps compaction journals structurally compact.
 Immutable Run 108 reached exactly 2,400 actionable subjects at round 43. Clock
-binding then advanced the campaign to revision 1551 and resolution epoch 1545
-before strategic wave 1. All five wave-1 pulses were rejected and the run
-failed terminally; every Nemesis attempt stopped before reasoning with
-`connector frame exceeded its bound`. No simulation cell committed and
-fictional time did not advance.
+binding then advanced the campaign to revision 1551 and resolution epoch 1545.
+Pushed source `b61e762` bounds Nemesis with paged anchors and responder dossiers
+while retaining complete deterministic eligibility privately.
 
-`propose_causal_follow_through` serializes the complete responder catalog into
-instructions, then serializes the initial 24 public anchors plus every current
-pressure and clock anchor with every eligible responder view embedded again.
-That multiplicative projection is the current defect. The tool already owns the
-complete deterministic eligibility catalog and paged world/subject history.
-Keep initial anchor summaries bounded; add paged current-anchor retrieval and
-paged eligible-responder retrieval for inspected anchors; keep full eligibility
-private for admission. Resolution remains cover owner and WorldKernel remains
-commit owner. Do not raise the connector bound or truncate canonical authority.
-The acceptance launcher retains one 35 MiB content-addressed runner per exact
-source commit and deletes disposable compiler output; do not restore a
-persistent Cargo target tree.
+Immutable Run 109 at
+`/var/lib/gamecult/ghostlight-dungeon/acceptance/full-world-delvehold-b61e762-109`
+proved that cut and dispatched the exact 240-cell wave. Pulse one completed 214
+cells; four bounded retries raised the durable checkpoint to 226 completed and
+14 failed cells. The final partial checkpoint SHA-256 is
+`f502ad560e0f23db226c326072e5e8a6d0ed9975f0e63bc67606d7d7cb9b2c27`.
+All 14 terminal failures are connector-frame bounds: six Projectors received
+hundreds of inactive constituent dossiers, while eight Interpreters received
+unbounded exact activity-target maps in context and generated schemas. The
+smallest failed Interpreter cells contain only two subjects, so repartitioning
+alone cannot fix the defect. No fictional wave committed and time did not
+advance.
+
+The active cut makes context a bounded query projection. Projector receives
+only exact decision-owner dossiers and at most 24 deterministically relevant
+activity targets. The existing Interpreter agent workbench starts from the
+same bounded target viewport and may inspect up to 12 exact name/ID matches;
+its dynamic schema expands only with inspected targets. Full cell membership
+and full permissions remain private deterministic state. Effect verification
+receives only targets cited by the candidate action. Resolution remains cover
+owner and WorldKernel remains commit owner. Do not raise the connector bound,
+truncate canonical authority, or split cells merely to paper over projection.
+
+After focused gates, commit and push, then clone Run 109 and resume only the 14
+failed cells from its exact checkpoint. Do not replay complexity, clock binding,
+Nemesis, or the 226 completed cell membranes. The acceptance launcher retains
+one content-addressed runner per exact source commit and deletes disposable
+remote compiler output.
 
 ## Mission and current product shape
 
