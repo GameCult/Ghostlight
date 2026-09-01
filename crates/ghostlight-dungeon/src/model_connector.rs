@@ -25,6 +25,7 @@ const FAST_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(120);
 const BALANCED_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(180);
 const CAPABLE_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(300);
 const WORLD_COMPILE_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(600);
+const DESTINATION_COMPILE_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(600);
 
 #[derive(Clone)]
 pub struct CodexConnectorModelPort {
@@ -217,6 +218,7 @@ impl ModelPort for CodexConnectorModelPort {
     fn attempt_timeout(&self, request: &ModelStageRequest) -> Duration {
         match (request.stage.as_str(), request.model.as_str()) {
             ("world_compile", MODEL_CAPABLE) => WORLD_COMPILE_ATTEMPT_TIMEOUT,
+            ("destination_compile", MODEL_CAPABLE) => DESTINATION_COMPILE_ATTEMPT_TIMEOUT,
             (_, MODEL_BALANCED) => BALANCED_ATTEMPT_TIMEOUT,
             (_, MODEL_CAPABLE) => CAPABLE_ATTEMPT_TIMEOUT,
             _ => FAST_ATTEMPT_TIMEOUT,
@@ -985,7 +987,7 @@ mod tests {
     }
 
     #[test]
-    fn foundation_compile_gets_a_bounded_stage_specific_deadline() -> Result<()> {
+    fn large_compile_stages_get_bounded_specific_deadlines() -> Result<()> {
         let port = CodexConnectorModelPort::new(
             "127.0.0.1:4103".parse()?,
             "bounded-test-key".to_string(),
@@ -1019,6 +1021,18 @@ mod tests {
         request.stage = "agency_compile".to_string();
         request.model = MODEL_CAPABLE.to_string();
         assert_eq!(port.attempt_timeout(&request), CAPABLE_ATTEMPT_TIMEOUT);
+
+        request.stage = "destination_compile".to_string();
+        assert_eq!(
+            port.attempt_timeout(&request),
+            DESTINATION_COMPILE_ATTEMPT_TIMEOUT
+        );
+
+        request.model = MODEL_BALANCED.to_string();
+        assert_eq!(port.attempt_timeout(&request), BALANCED_ATTEMPT_TIMEOUT);
+
+        request.model = MODEL_FAST.to_string();
+        assert_eq!(port.attempt_timeout(&request), FAST_ATTEMPT_TIMEOUT);
 
         request.stage = "destination_civic_reconciliation".to_string();
         request.model = MODEL_BALANCED.to_string();
