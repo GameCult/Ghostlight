@@ -26,6 +26,7 @@ const BALANCED_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(180);
 const CAPABLE_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(300);
 const WORLD_COMPILE_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(600);
 const DESTINATION_COMPILE_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(600);
+const BALANCED_DESTINATION_COMPILE_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(300);
 
 #[derive(Clone)]
 pub struct CodexConnectorModelPort {
@@ -219,6 +220,7 @@ impl ModelPort for CodexConnectorModelPort {
         match (request.stage.as_str(), request.model.as_str()) {
             ("world_compile", MODEL_CAPABLE) => WORLD_COMPILE_ATTEMPT_TIMEOUT,
             ("destination_compile", MODEL_CAPABLE) => DESTINATION_COMPILE_ATTEMPT_TIMEOUT,
+            ("destination_compile", MODEL_BALANCED) => BALANCED_DESTINATION_COMPILE_ATTEMPT_TIMEOUT,
             (_, MODEL_BALANCED) => BALANCED_ATTEMPT_TIMEOUT,
             (_, MODEL_CAPABLE) => CAPABLE_ATTEMPT_TIMEOUT,
             _ => FAST_ATTEMPT_TIMEOUT,
@@ -1029,7 +1031,10 @@ mod tests {
         );
 
         request.model = MODEL_BALANCED.to_string();
-        assert_eq!(port.attempt_timeout(&request), BALANCED_ATTEMPT_TIMEOUT);
+        assert_eq!(
+            port.attempt_timeout(&request),
+            BALANCED_DESTINATION_COMPILE_ATTEMPT_TIMEOUT
+        );
 
         request.model = MODEL_FAST.to_string();
         assert_eq!(port.attempt_timeout(&request), FAST_ATTEMPT_TIMEOUT);

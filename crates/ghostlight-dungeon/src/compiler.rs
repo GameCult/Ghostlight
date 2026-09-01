@@ -3342,9 +3342,14 @@ impl WorldCompiler {
             "OUTPUT JSON SCHEMA (follow exactly):\n{}\n\nTASK CONTEXT:\n{prompt}",
             serde_json::to_string(&schema)?
         );
+        let model = if stage == "destination_compile" {
+            MODEL_BALANCED.to_string()
+        } else {
+            self.compiler_model.clone()
+        };
         let request = ModelStageRequest {
             stage: stage.into(),
-            model: self.compiler_model.clone(),
+            model,
             snapshot_binding: binding.into(),
             lived_stream: prompt,
             output_schema: Some(schema),
@@ -10366,6 +10371,22 @@ mod tests {
                 "destination_compile",
                 "destination_civic_verification"
             ]
+        );
+        assert_eq!(
+            receipts
+                .iter()
+                .find(|receipt| receipt.stage == "destination_compile")
+                .unwrap()
+                .model,
+            MODEL_BALANCED
+        );
+        assert_eq!(
+            receipts
+                .iter()
+                .find(|receipt| receipt.stage == "destination_civic_verification")
+                .unwrap()
+                .model,
+            "pro"
         );
     }
 
