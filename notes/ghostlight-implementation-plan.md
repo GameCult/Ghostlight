@@ -19,27 +19,64 @@ These mechanisms are teardown evidence, not foundations that must survive.
 The target map is adopted. The first subtraction removed seven pipeline-smoke
 binaries and two live-fire scripts. The projection crate now exposes explicit
 `NarrativePersona` and `OperationalAgent` modes plus a total Interpreter report.
-The replacement world ontology is the active bounded implementation move.
+An uncommitted broad `world.rs` prototype was rejected and deleted before it
+became authority. It exposed mutable aggregate state and ID issuance, placed
+translation-gap evidence inside canonical world types, permitted empty commits,
+and defined controllers without owning executable affordances or exact decision
+opportunities. The active bounded move is now the sealed aggregate boundary,
+not a public ontology inventory.
 
 ## Authority map
 
-- **Owner:** one per-world `WorldKernel` and its private aggregate journal.
-- **Inputs:** authenticated `CommandEnvelope`s, current `WorldState`, internally
-  derived authority, deterministic time/randomness inputs, and typed proposals
-  from humans or autonomous controllers.
-- **Outputs:** one accepted or rejected command receipt; accepted commands
-  produce one new digest-chained revision and derived notifications.
-- **Derived state:** projections, schedulers, news, transcripts, model receipts,
-  checkpoints, coverage counts, and evaluations. None may write world truth.
-- **Forbidden writers:** the old Session Zero publication path, aggregate
-  Campaign writer, legacy transition projection, alternate elaboration and
-  mutation inputs, verifier/reconciliation agents, model-owned schedulers,
-  recovery repair loops, and external consumer callbacks.
+- **Owner:** one sealed per-world `WorldKernel` owns its private aggregate,
+  reducer, ID allocator, and journal writer. The public crate boundary exposes
+  only create/open, immutable snapshot, command submission, and typed receipts;
+  it does not expose mutable `WorldState`, the canonical entity-ID allocator, reducer
+  entry points, or generic journal writes.
+- **Inputs:** an authenticated `CommandEnvelope` with stable command ID, exact
+  world and expected revision, principal evidence, one closed command body, and
+  exact source receipts where needed. The kernel privately loads current state,
+  derives authority, and supplies deterministic clock or entropy. Human,
+  Interpreter, operational-agent, author, scheduler, and external-owner output
+  is proposal material only.
+- **Outputs:** a rejection receipt changes nothing. An accepted command returns
+  one `WorldCommit`, including any reducer-issued ID mapping, and atomically
+  appends one digest-chained revision. A structurally valid command that lowers
+  to no factual, speech, lifecycle, or time mutation returns `NoEffect` and does
+  not advance revision, change either digest, allocate IDs, or append a journal
+  row.
+- **Derived state:** immutable snapshots and subject views, currently executable
+  affordance catalogs, revision-bound `DecisionOpportunity` values, scheduler
+  queues, translation gaps, projections, news, transcripts, model receipts,
+  checkpoints, coverage counts, and evaluations. Translation gaps may be kept
+  as inference/evaluation telemetry or motivate a later explicit author
+  proposal; they are not a `WorldState` component, event, or mutation.
+- **Forbidden writers:** public state setters or ID issuers; direct reducer
+  callers; generic CultCache insert/append handles; schedulers or controllers
+  that assign authority, mint executable affordances, consume opportunities, or
+  commit; automatic translation-gap lowering; empty commits; the old Session
+  Zero publication path, aggregate Campaign writer, legacy transition
+  projection, alternate elaboration and mutation inputs,
+  verifier/reconciliation agents, recovery repair loops, and external consumer
+  callbacks.
 - **Shared paths:** draft creation, approval, activation, player action,
-  autonomous action, time, travel, imports, reload, and administration use the
-  same submit/derive/reduce/commit primitive.
-- **Deletion line:** obsolete writers are deleted or reduced to read-only
-  evidence before their replacement path is called complete.
+  autonomous action, author expansion, time, travel, imports, reload, and
+  administration use create/open/snapshot/submit and the same private
+  derive/reduce/commit primitive. Controller harnesses submit an exact typed
+  proposal as an ordinary command. Recovery opens and verifies the same journal;
+  it cannot call a repair reducer.
+- **Cut line:** the rejected public ontology stays deleted. Translation-gap
+  records stay outside canonical world state. No public constructor or helper
+  may issue a canonical ID, mutate an aggregate, invoke the reducer, or write the
+  journal. Obsolete writers are deleted or reduced to read-only evidence before
+  their replacement path is called complete.
+- **Verification layer:** compile-time visibility proves that an external crate
+  cannot invoke the ID allocator, mutate `WorldState`, call the reducer, or
+  obtain the journal writer. Focused black-box tests prove that a caller-supplied
+  unknown ID cannot become canonical, plus atomic rejection, no-op non-commit,
+  reducer-only ID allocation, exact restart/digest recovery, translation-gap
+  non-authority, and opportunity rejection when revision, controller, scope, or
+  executable affordance does not match.
 
 `SessionZeroKernel` is no longer a target owner; Draft is a `WorldState` phase.
 Aggregate Campaign state is no longer an owner; aggregate views are derived
@@ -67,25 +104,38 @@ projection of committed history.
    review remain evaluation evidence only.
 9. Restart reconstructs the exact committed world and idempotency history; a
    recovery loop cannot repair or reinterpret it.
+10. Canonical IDs are allocated only while a complete private reduction is
+    being admitted. Rejected and no-effect commands cannot consume or reveal
+    them.
+11. Controller assignment and affordance grants are canonical aggregate state.
+    Current executability and decision opportunities are deterministic
+    revision-bound derivations. A scheduler can order those opportunities but
+    cannot mint their authority.
 
 ## Implementation sequence
 
-### 1. Typed world foundation — in progress
+### 1. Seal the aggregate boundary — in progress
 
-Define opaque runtime-issued IDs, lifecycle phases, subjects, places, routes,
-relations, governance, knowledge, resources, custody, jurisdiction, external
-ownership, controller scopes, events, commands, structural validation, and the
-pure reducer. Prove referential integrity, atomic rejection, disjoint controller
-scope, privacy, sparse activation, and lifecycle legality with focused tests.
+Establish `WorldKernel` with a private aggregate and private journal child before
+publishing ontology types. Expose only create/open, immutable snapshot, submit,
+and typed receipts. Make canonical state mutation, ID allocation, reduction,
+and CultCache writes unreachable from outside the owning module. Prove the
+visibility boundary and the one-writer transaction seam before widening the
+state vocabulary.
 
-### 2. Private aggregate journal
+### 2. Add the minimal private reducer
 
-Expose only create/open/snapshot/submit. Keep the CultCache writer in a private
-child module. Persist digest-chained commits and snapshots atomically with
-expected revision and idempotency key. Prove stale revision rejection, replay
-idempotency, corruption detection, and byte-for-byte restart recovery.
+Behind that boundary, implement only the state and command vocabulary required
+for Draft creation, approval, activation, one actor action, and one autonomous
+action. The aggregate owns controller assignments and affordance grants; it
+derives exact current executability and revision-bound opportunities. Allocate
+IDs only after a complete candidate validates, reject empty reductions without
+a commit, and persist accepted state plus commit atomically with expected
+revision and idempotency. Add places, relations, resources, external ownership,
+and other ontology components only when the vertical slice reaches their typed
+causal boundary.
 
-### 3. One vertical slice
+### 3. Exercise one vertical slice
 
 Route Draft creation and activation, one player action, and one autonomous
 action through the aggregate. Derive a subject-private projection and one
@@ -128,6 +178,14 @@ Required black-box proofs:
    fall through, and never consume one opportunity twice.
 7. Interpretation always completes semantically and preserves unlowered
    material as translation gaps.
+8. A no-effect command leaves revision, state digest, commit digest, ID
+   allocation, and journal length unchanged.
+9. An external crate cannot obtain mutable aggregate state, invoke the canonical
+   ID allocator, call the reducer, or write the journal; a caller-supplied
+   unknown ID is rejected rather than admitted.
+10. A decision proposal is rejected when its revision-bound opportunity,
+    controller, scope, or currently executable affordance is wrong; the
+    scheduler cannot manufacture or consume authority.
 
 A 1,200-actor synthetic fixture may measure load after these pass. It cannot
 serve as an ontology or completeness gate. No live Delvehold acceptance run is

@@ -32,6 +32,13 @@ ontology reducer, and commits an atomic CultCache revision. Session Zero,
 autonomous turns, player commands, imports, and administrative changes must
 enter through the same `CommandEnvelope` path.
 
+That owner must be sealed before the ontology widens. The public boundary is
+create/open, immutable snapshot, submit, and typed receipts. Mutable aggregate
+state, canonical ID issuance, the reducer, and the CultCache journal writer are
+private to the kernel. Controller assignment and affordance grants are
+canonical; current executability and exact revision-bound decision
+opportunities are derived and revalidated by the kernel.
+
 Autonomous cognition has two explicit modes under disjoint controller scopes:
 
 - `NarrativePersona` receives narrative projection and replies only in prose.
@@ -47,6 +54,9 @@ missing affordances, and missing command primitives become translation gaps.
 Step exhaustion finalizes accumulated speech, proposals, and gaps. Transport
 faults and stale commits remain infrastructure outcomes outside interpretation.
 Only the world kernel may accept or reject a proposed mutation.
+Translation gaps remain non-fictional inference/evaluation evidence outside
+`WorldState`; recording one cannot itself request elaboration or advance a
+world revision.
 
 World validity is sparse and causal. Actor counts, coverage ratios,
 interestingness, political diversity, name quality, and prose quality are
@@ -59,8 +69,13 @@ load or evaluation evidence; none admits ontology or declares a world complete.
   orchestration scripts.
 - `a144c33` adds the two cognition modes and total interpretation contract in
   `ghostlight-persona-projection`.
-- The replacement `WorldState` and `CommandEnvelope` foundation is mid-surgery.
-  It is not current authority until committed and verified.
+- An uncommitted broad `world.rs` prototype was rejected and deleted. It
+  exposed mutable state and ID issuance, admitted translation-gap evidence into
+  canonical types, allowed no-op commits, and left affordance and opportunity
+  authority undefined. None of it is current authority.
+- The next implementation starts with the sealed `WorldKernel`/aggregate/private
+  journal seam, then adds only the minimal private reducer needed for one
+  vertical slice.
 - Legacy `WorldKernel`, `SessionZeroKernel`, aggregate Campaign/component state,
   alternate ingresses, semantic verifier/reconciliation stages, model-owned
   scheduling, and checkpoint recovery remain deletion targets.
@@ -97,11 +112,22 @@ and proposals but cannot commit on their behalf.
 
 ## Next gate
 
-Finish and verify the typed world ontology, then build the private aggregate
-journal with one writer, compare-and-swap revision, digest chaining,
-idempotency, and restart recovery. Cut obsolete writers before migrating
-Session Zero, turns, resolution, elaboration, persistence, and projection onto
-that path. No live acceptance run precedes the focused contract suite.
+First establish and verify the sealed `WorldKernel`/aggregate/journal seam:
+external code can create or open a kernel, read an immutable snapshot, submit a
+`CommandEnvelope`, and receive a typed receipt, but cannot invoke canonical ID
+allocation, mutate `WorldState`, call the reducer, or obtain a journal writer.
+A caller-supplied unknown ID is merely an invalid reference; it cannot become
+canonical. Then add a minimal private reducer for Draft creation, approval,
+activation, one player action, and one autonomous action.
+
+The focused seam tests must prove one writer, compare-and-swap revision, digest
+chaining, idempotency, exact restart, atomic rejection, and no-op non-commit. A
+decision proposal must fail closed when its revision, controller, authority
+scope, or currently executable affordance differs from the kernel-derived
+opportunity. Translation gaps and scheduler output must have no world-write
+path. Cut obsolete writers before migrating Session Zero, resolution,
+elaboration, persistence, and projection. No live acceptance run precedes this
+suite.
 
 ## Essential references
 
@@ -121,6 +147,9 @@ that path. No live acceptance run precedes the focused contract suite.
   count, or derived simulation cover is not canonical world state.
 - Do not preserve an old writer through a compatibility path.
 - Do not let a translation gap become invented state or an Interpreter error.
+- Do not publish mutable world types, an ID issuer, a reducer entry point, or a
+  generic journal handle for the convenience of tests or adapters.
+- Do not append a commit when reduction produces no canonical mutation.
 - Do not resume Run 115.
 - Keep this handoff compact. Move chronology to Git, evidence, or the frozen
   system map.
