@@ -1,0 +1,4672 @@
+//! The two cognition modes behind one exact world opportunity.
+//!
+//! This organ may ask models to think. It cannot mint authority: it reads one
+//! `WorldMailbox` snapshot, binds one controller-owned opportunity, and submits
+//! one typed exercise or decline through that same mailbox. The model-facing
+//! tools never carry caller, controller, world, opportunity, revision, or
+//! affordance fields.
+
+use crate::world::{
+    AffordanceId, AffordanceKind, CommandId, CommitReceipt, ControllerMode, DecisionAction,
+    DecisionInvocation, DecisionOpportunity, KernelError, MailboxError, SubjectId, SubjectSnapshot,
+    SubmitReceipt, WorldMailbox, WorldSnapshot,
+};
+use async_trait::async_trait;
+use chrono::Utc;
+use codex_connector::{
+    CodexConnectorClient, CodexConnectorClientError, CodexInputItem, CodexProviderRequest,
+    CodexRefusal, CodexToolChoice, CodexToolDefinition, CodexTransportDisposition,
+    CodexTransportEventPayload, CodexTransportInvocation, CodexTransportOutcome,
+    provider_request_sha256,
+};
+use cultcache_legacy::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
+use ghostlight_persona_projection::{
+    CaptureToolFeedback, InterpretationAccumulator, InterpretationFinalization,
+    InterpretationReport, InterpreterPrompt, OperationalAgentPrompt, PersonaPrompt, PersonaTurn,
+    PersonaTurnBinding, ProjectorPrompt, RecordGapToolCall, TranslationGapKind,
+    build_interpreter_prompt, build_operational_agent_prompt, build_persona_prompt,
+    build_projector_prompt, sha256,
+};
+use serde::{Deserialize, Serialize};
+use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
+use std::{
+    collections::BTreeMap,
+    net::SocketAddr,
+    path::Path,
+    sync::{Arc, Mutex},
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
+use thiserror::Error;
+use zeroize::Zeroizing;
+
+const MAX_CONNECTOR_FRAME_BYTES: usize = 1_052_672;
+const REQUEST_EXPIRY: Duration = Duration::from_secs(300);
+const TOOL_STEP_BUDGET: usize = 4;
+const PERSONA_WORD_BUDGET: usize = 180;
+const CONTROLLER_WORK_ROW: &str = "controller_work.v3";
+const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v3";
+
+const SPEAK_TOOL: &str = "speak";
+const RECORD_GAP_TOOL: &str = "record_gap";
+const RECORD_NEED_TOOL: &str = "record_need";
+const FINISH_INTERPRETATION_TOOL: &str = "finish_interpretation";
+const FINISH_WITHOUT_PROPOSAL_TOOL: &str = "finish_without_proposal";
+const PERSONA_PROVIDER_INSTRUCTIONS: &str =
+    "Respond only in natural prose to the lived moment in the user message.";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) enum InferencePurpose {
+    Projector,
+    Persona,
+    Interpreter,
+    OperationalAgent,
+}
+
+/// One exact provider request. Keeping the native request visible at this seam
+/// makes the prose-only Persona boundary structurally inspectable.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct InferenceRequest {
+    purpose: InferencePurpose,
+    provider: CodexProviderRequest,
+}
+
+/// The exact connector invocation, including expiry and native provenance.
+/// Replaying this value may recover a completed connector response; rebuilding
+/// it under the same request ID would be a replay conflict.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct PreparedInference {
+    purpose: InferencePurpose,
+    invocation: CodexTransportInvocation,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+enum InferenceEvent {
+    Text(String),
+    ToolCall {
+        call_id: String,
+        name: String,
+        arguments: String,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct InferenceOutput {
+    events: Vec<InferenceEvent>,
+    receipt_digest: String,
+}
+
+impl InferenceOutput {
+    fn prose_only(self, purpose: InferencePurpose) -> Result<(String, String), ControllerError> {
+        let mut prose = String::new();
+        for event in self.events {
+            match event {
+                InferenceEvent::Text(text) => prose.push_str(&text),
+                InferenceEvent::ToolCall { .. } => {
+                    return Err(ControllerError::ProviderContract {
+                        purpose,
+                        detail: "a prose-only request returned a tool call".into(),
+                    });
+                }
+            }
+        }
+        if self.receipt_digest.is_empty() || self.receipt_digest.trim() != self.receipt_digest {
+            return Err(ControllerError::ProviderContract {
+                purpose,
+                detail: "provider output has no receipt digest".into(),
+            });
+        }
+        Ok((prose, self.receipt_digest))
+    }
+}
+
+#[derive(Clone, Debug, Error, PartialEq, Eq)]
+#[error("{detail}")]
+pub(crate) struct InferenceFault {
+    disposition: InferenceFaultDisposition,
+    detail: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum InferenceFaultDisposition {
+    Retryable,
+    RecoveryRequired,
+    IntegrityViolation,
+}
+
+impl InferenceFault {
+    fn new(detail: impl Into<String>) -> Self {
+        Self {
+            disposition: InferenceFaultDisposition::RecoveryRequired,
+            detail: detail.into(),
+        }
+    }
+
+    fn retryable(detail: impl Into<String>) -> Self {
+        Self {
+            disposition: InferenceFaultDisposition::Retryable,
+            detail: detail.into(),
+        }
+    }
+
+    fn integrity_violation(detail: impl Into<String>) -> Self {
+        Self {
+            disposition: InferenceFaultDisposition::IntegrityViolation,
+            detail: detail.into(),
+        }
+    }
+
+    fn recovery_required(&self) -> bool {
+        self.disposition == InferenceFaultDisposition::RecoveryRequired
+    }
+
+    fn integrity_was_violated(&self) -> bool {
+        self.disposition == InferenceFaultDisposition::IntegrityViolation
+    }
+}
+
+#[async_trait]
+trait InferencePort: Send + Sync {
+    fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault>;
+
+    async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, InferenceFault>;
+}
+
+/// Production lowering to CodexConnector. There is deliberately no retry,
+/// fallback model, output repair, or stage registry here; transport failure is
+/// returned to the owning controller flow with its pending evidence intact.
+#[derive(Clone)]
+struct CodexConnectorInferencePort {
+    client: CodexConnectorClient,
+    caller_runtime_id: String,
+}
+
+impl CodexConnectorInferencePort {
+    fn new(
+        endpoint: SocketAddr,
+        connection_key: String,
+        caller_runtime_id: impl Into<String>,
+    ) -> Result<Self, InferenceFault> {
+        let caller_runtime_id = caller_runtime_id.into();
+        if caller_runtime_id.trim().is_empty() || caller_runtime_id.trim() != caller_runtime_id {
+            return Err(InferenceFault::new(
+                "CodexConnector caller runtime must be one exact nonempty identity",
+            ));
+        }
+        let client = CodexConnectorClient::new(
+            endpoint,
+            connection_key,
+            MAX_CONNECTOR_FRAME_BYTES,
+            Some(REQUEST_EXPIRY),
+        )
+        .map_err(|error| InferenceFault::new(error.to_string()))?;
+        Ok(Self {
+            client,
+            caller_runtime_id,
+        })
+    }
+
+    fn from_secret_file(
+        endpoint: SocketAddr,
+        path: impl AsRef<Path>,
+        caller_runtime_id: impl Into<String>,
+    ) -> Result<Self, InferenceFault> {
+        let bytes = Zeroizing::new(
+            std::fs::read(path.as_ref()).map_err(|error| InferenceFault::new(error.to_string()))?,
+        );
+        let raw = std::str::from_utf8(bytes.as_slice())
+            .map_err(|error| InferenceFault::new(error.to_string()))?;
+        let key = raw.trim_end_matches(['\r', '\n']);
+        if key.is_empty() || key.len() != raw.trim().len() {
+            return Err(InferenceFault::new(
+                "CodexConnector key file is empty or has surrounding whitespace",
+            ));
+        }
+        Self::new(endpoint, key.to_owned(), caller_runtime_id)
+    }
+
+    fn prepare_request(
+        &self,
+        request: InferenceRequest,
+    ) -> Result<PreparedInference, InferenceFault> {
+        let request_bytes =
+            serde_json::to_vec(&request).map_err(|error| InferenceFault::new(error.to_string()))?;
+        let invocation = CodexTransportInvocation::new(
+            self.caller_runtime_id.clone(),
+            unix_ms()?.saturating_add(REQUEST_EXPIRY.as_millis() as u64),
+            Sha256::digest(request_bytes).into(),
+            request.provider,
+        )
+        .map_err(|error| InferenceFault::new(error.to_string()))?;
+        Ok(PreparedInference {
+            purpose: request.purpose,
+            invocation,
+        })
+    }
+
+    fn execute(&self, request: PreparedInference) -> Result<InferenceOutput, InferenceFault> {
+        if request.invocation.caller_runtime_id != self.caller_runtime_id {
+            return Err(InferenceFault::integrity_violation(
+                "persisted inference caller does not match the configured runtime identity",
+            ));
+        }
+        let result = self
+            .client
+            .execute(&request.invocation)
+            .map_err(|error| match error {
+                CodexConnectorClientError::Connection(_) => {
+                    InferenceFault::retryable(error.to_string())
+                }
+                CodexConnectorClientError::InvalidConfig
+                | CodexConnectorClientError::FrameSize
+                | CodexConnectorClientError::Encoding
+                | CodexConnectorClientError::Transport(_) => {
+                    InferenceFault::integrity_violation(error.to_string())
+                }
+            })?;
+        let (events, receipt) = match result.disposition {
+            CodexTransportDisposition::Refused(reason) => {
+                let detail = format!("CodexConnector refused request: {reason:?}");
+                return Err(match reason {
+                    CodexRefusal::InFlight | CodexRefusal::Capacity => {
+                        InferenceFault::retryable(detail)
+                    }
+                    CodexRefusal::Expired | CodexRefusal::Indeterminate => {
+                        InferenceFault::new(detail)
+                    }
+                    CodexRefusal::IdentitySubstitution
+                    | CodexRefusal::ProviderDigestSubstitution
+                    | CodexRefusal::Policy
+                    | CodexRefusal::ReplayConflict
+                    | CodexRefusal::Malformed => InferenceFault::integrity_violation(detail),
+                });
+            }
+            CodexTransportDisposition::Transported { events, receipt } => (events, receipt),
+        };
+        if let CodexTransportOutcome::Failed {
+            failure_kind,
+            message,
+        } = &receipt.outcome
+        {
+            return Err(InferenceFault::new(format!(
+                "Codex provider failed ({failure_kind}): {message}"
+            )));
+        }
+        let events = events
+            .into_iter()
+            .map(|event| match event.payload {
+                CodexTransportEventPayload::TextDelta { text } => InferenceEvent::Text(text),
+                CodexTransportEventPayload::ToolCall {
+                    call_id,
+                    name,
+                    arguments,
+                } => InferenceEvent::ToolCall {
+                    call_id,
+                    name,
+                    arguments,
+                },
+            })
+            .collect();
+        let receipt_bytes = rmp_serde::to_vec_named(&receipt)
+            .map_err(|error| InferenceFault::new(error.to_string()))?;
+        Ok(InferenceOutput {
+            events,
+            receipt_digest: format!("sha256:{:x}", Sha256::digest(&receipt_bytes)),
+        })
+    }
+}
+
+#[async_trait]
+impl InferencePort for CodexConnectorInferencePort {
+    fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+        self.prepare_request(request)
+    }
+
+    async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, InferenceFault> {
+        let port = self.clone();
+        tokio::task::spawn_blocking(move || port.execute(request))
+            .await
+            .map_err(|error| InferenceFault::new(error.to_string()))?
+    }
+}
+
+fn unix_ms() -> Result<u64, InferenceFault> {
+    let millis = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|error| InferenceFault::new(error.to_string()))?
+        .as_millis();
+    u64::try_from(millis).map_err(|_| InferenceFault::new("system time exceeds u64 milliseconds"))
+}
+
+/// One command has one durable tagged cognition checkpoint. Every in-flight
+/// variant owns the exact connector invocation before transport; terminal
+/// variants retain completed provider outputs so their capture is derived,
+/// never separately persisted.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "mode", content = "checkpoint", rename_all = "snake_case")]
+enum ControllerWork {
+    Narrative(NarrativeCheckpoint),
+    Operational(OperationalCheckpoint),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "stage", rename_all = "snake_case")]
+enum NarrativeCheckpoint {
+    Projector {
+        command_id: CommandId,
+        identity: String,
+        typed_view: String,
+        persona_model: String,
+        interpreter_model: String,
+        opportunity: DecisionOpportunity,
+        speak_affordance: AffordanceId,
+        invocation: PreparedInference,
+    },
+    Persona {
+        command_id: CommandId,
+        identity: String,
+        typed_view: String,
+        interpreter_model: String,
+        opportunity: DecisionOpportunity,
+        speak_affordance: AffordanceId,
+        projector_output: InferenceOutput,
+        invocation: PreparedInference,
+    },
+    InterpreterInFlight {
+        command_id: CommandId,
+        turn: PersonaTurn,
+        interpreter_prompt: String,
+        opportunity: DecisionOpportunity,
+        speak_affordance: AffordanceId,
+        completed: Vec<InferenceOutput>,
+        invocation: PreparedInference,
+    },
+    ReadyToSubmit {
+        command_id: CommandId,
+        turn: PersonaTurn,
+        interpreter_prompt: String,
+        opportunity: DecisionOpportunity,
+        speak_affordance: AffordanceId,
+        completed: Vec<InferenceOutput>,
+    },
+    NoProposal {
+        command_id: CommandId,
+        turn: PersonaTurn,
+        interpreter_prompt: String,
+        opportunity: DecisionOpportunity,
+        completed: Vec<InferenceOutput>,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "stage", rename_all = "snake_case")]
+enum OperationalCheckpoint {
+    AgentInFlight {
+        command_id: CommandId,
+        agent_prompt: String,
+        opportunity: DecisionOpportunity,
+        speak_affordance: AffordanceId,
+        completed: Vec<InferenceOutput>,
+        invocation: PreparedInference,
+    },
+    ReadyToSubmit {
+        command_id: CommandId,
+        agent_prompt: String,
+        opportunity: DecisionOpportunity,
+        speak_affordance: AffordanceId,
+        completed: Vec<InferenceOutput>,
+    },
+    NoProposal {
+        command_id: CommandId,
+        agent_prompt: String,
+        opportunity: DecisionOpportunity,
+        completed: Vec<InferenceOutput>,
+    },
+}
+
+impl ControllerWork {
+    fn command_id(&self) -> CommandId {
+        match self {
+            Self::Narrative(checkpoint) => checkpoint.command_id(),
+            Self::Operational(checkpoint) => checkpoint.command_id(),
+        }
+    }
+
+    fn mode(&self) -> ControllerMode {
+        match self {
+            Self::Narrative(_) => ControllerMode::NarrativePersona,
+            Self::Operational(_) => ControllerMode::OperationalAgent,
+        }
+    }
+
+    fn is_initial(&self) -> bool {
+        match self {
+            Self::Narrative(NarrativeCheckpoint::Projector { .. }) => true,
+            Self::Operational(OperationalCheckpoint::AgentInFlight { completed, .. }) => {
+                completed.is_empty()
+            }
+            _ => false,
+        }
+    }
+
+    fn integrity_is_valid(&self) -> bool {
+        match self {
+            Self::Narrative(checkpoint) => checkpoint.integrity_is_valid(),
+            Self::Operational(checkpoint) => checkpoint.integrity_is_valid(),
+        }
+    }
+}
+
+impl NarrativeCheckpoint {
+    fn command_id(&self) -> CommandId {
+        match self {
+            Self::Projector { command_id, .. }
+            | Self::Persona { command_id, .. }
+            | Self::InterpreterInFlight { command_id, .. }
+            | Self::ReadyToSubmit { command_id, .. }
+            | Self::NoProposal { command_id, .. } => *command_id,
+        }
+    }
+
+    fn opportunity(&self) -> &DecisionOpportunity {
+        match self {
+            Self::Projector { opportunity, .. }
+            | Self::Persona { opportunity, .. }
+            | Self::InterpreterInFlight { opportunity, .. }
+            | Self::ReadyToSubmit { opportunity, .. }
+            | Self::NoProposal { opportunity, .. } => opportunity,
+        }
+    }
+
+    fn persona_prose(&self) -> Option<&str> {
+        match self {
+            Self::InterpreterInFlight { turn, .. }
+            | Self::ReadyToSubmit { turn, .. }
+            | Self::NoProposal { turn, .. } => Some(turn.source_prose()),
+            Self::Projector { .. } | Self::Persona { .. } => None,
+        }
+    }
+
+    fn integrity_is_valid(&self) -> bool {
+        match self {
+            Self::Projector {
+                command_id,
+                identity,
+                typed_view,
+                persona_model,
+                interpreter_model,
+                opportunity,
+                speak_affordance,
+                invocation,
+            } => {
+                base_checkpoint_is_valid(
+                    identity,
+                    typed_view,
+                    opportunity,
+                    *speak_affordance,
+                    ControllerMode::NarrativePersona,
+                ) && canonical_model(persona_model)
+                    && canonical_model(interpreter_model)
+                    && exact_request_identity(
+                        invocation,
+                        *command_id,
+                        InferencePurpose::Projector,
+                        0,
+                    )
+                    && prose_request_shape_is_valid(invocation)
+            }
+            Self::Persona {
+                command_id,
+                identity,
+                typed_view,
+                interpreter_model,
+                opportunity,
+                speak_affordance,
+                projector_output,
+                invocation,
+            } => {
+                let Ok((lived_stream, _)) = projector_output
+                    .clone()
+                    .prose_only(InferencePurpose::Projector)
+                else {
+                    return false;
+                };
+                let prompt = build_persona_prompt(&PersonaPrompt {
+                    identity,
+                    lived_stream: &lived_stream,
+                    domain_guidance: "",
+                    word_budget: PERSONA_WORD_BUDGET,
+                });
+                base_checkpoint_is_valid(
+                    identity,
+                    typed_view,
+                    opportunity,
+                    *speak_affordance,
+                    ControllerMode::NarrativePersona,
+                ) && canonical_model(interpreter_model)
+                    && canonical_model(&invocation.invocation.request.model)
+                    && persona_request(*command_id, &invocation.invocation.request.model, prompt)
+                        .is_ok_and(|expected| {
+                            prepared_matches_request(invocation, &expected, *command_id, 0)
+                        })
+                    && persona_request_shape_is_valid(invocation)
+            }
+            Self::InterpreterInFlight {
+                command_id,
+                turn,
+                interpreter_prompt,
+                opportunity,
+                speak_affordance,
+                completed,
+                invocation,
+            } => {
+                turn_matches_opportunity(turn, opportunity)
+                    && opportunity.controller_mode == ControllerMode::NarrativePersona
+                    && opportunity.affordance_ids.contains(speak_affordance)
+                    && !interpreter_prompt.is_empty()
+                    && canonical_model(&invocation.invocation.request.model)
+                    && match evaluate_interpreter_loop(turn, interpreter_prompt, completed) {
+                        Ok(InterpreterLoopEvaluation::Continue { conversation }) => {
+                            interpreter_request(
+                                *command_id,
+                                completed.len(),
+                                &invocation.invocation.request.model,
+                                conversation,
+                            )
+                            .is_ok_and(|expected| {
+                                prepared_matches_request(
+                                    invocation,
+                                    &expected,
+                                    *command_id,
+                                    completed.len(),
+                                )
+                            })
+                        }
+                        Ok(InterpreterLoopEvaluation::Complete { .. }) | Err(_) => false,
+                    }
+            }
+            Self::ReadyToSubmit {
+                turn,
+                interpreter_prompt,
+                opportunity,
+                speak_affordance,
+                completed,
+                ..
+            } => {
+                turn_matches_opportunity(turn, opportunity)
+                    && opportunity.controller_mode == ControllerMode::NarrativePersona
+                    && opportunity.affordance_ids.contains(speak_affordance)
+                    && derive_narrative_capture(turn, interpreter_prompt, completed)
+                        .is_ok_and(|capture| capture.proposal.is_some())
+            }
+            Self::NoProposal {
+                turn,
+                interpreter_prompt,
+                opportunity,
+                completed,
+                ..
+            } => {
+                turn_matches_opportunity(turn, opportunity)
+                    && opportunity.controller_mode == ControllerMode::NarrativePersona
+                    && derive_narrative_capture(turn, interpreter_prompt, completed)
+                        .is_ok_and(|capture| capture.proposal.is_none())
+            }
+        }
+    }
+}
+
+impl OperationalCheckpoint {
+    fn command_id(&self) -> CommandId {
+        match self {
+            Self::AgentInFlight { command_id, .. }
+            | Self::ReadyToSubmit { command_id, .. }
+            | Self::NoProposal { command_id, .. } => *command_id,
+        }
+    }
+
+    fn opportunity(&self) -> &DecisionOpportunity {
+        match self {
+            Self::AgentInFlight { opportunity, .. }
+            | Self::ReadyToSubmit { opportunity, .. }
+            | Self::NoProposal { opportunity, .. } => opportunity,
+        }
+    }
+
+    fn integrity_is_valid(&self) -> bool {
+        match self {
+            Self::AgentInFlight {
+                command_id,
+                agent_prompt,
+                opportunity,
+                speak_affordance,
+                completed,
+                invocation,
+            } => {
+                opportunity.controller_mode == ControllerMode::OperationalAgent
+                    && opportunity.affordance_ids.contains(speak_affordance)
+                    && !agent_prompt.is_empty()
+                    && canonical_model(&invocation.invocation.request.model)
+                    && match evaluate_operational_loop(agent_prompt, completed) {
+                        Ok(OperationalLoopEvaluation::Continue { conversation }) => {
+                            operational_request(
+                                *command_id,
+                                completed.len(),
+                                &invocation.invocation.request.model,
+                                conversation,
+                            )
+                            .is_ok_and(|expected| {
+                                prepared_matches_request(
+                                    invocation,
+                                    &expected,
+                                    *command_id,
+                                    completed.len(),
+                                )
+                            })
+                        }
+                        Ok(OperationalLoopEvaluation::Complete { .. }) | Err(_) => false,
+                    }
+            }
+            Self::ReadyToSubmit {
+                agent_prompt,
+                opportunity,
+                speak_affordance,
+                completed,
+                ..
+            } => {
+                opportunity.controller_mode == ControllerMode::OperationalAgent
+                    && opportunity.affordance_ids.contains(speak_affordance)
+                    && derive_operational_capture(agent_prompt, completed)
+                        .is_ok_and(|capture| capture.proposal.is_some())
+            }
+            Self::NoProposal {
+                agent_prompt,
+                opportunity,
+                completed,
+                ..
+            } => {
+                opportunity.controller_mode == ControllerMode::OperationalAgent
+                    && derive_operational_capture(agent_prompt, completed)
+                        .is_ok_and(|capture| capture.proposal.is_none())
+            }
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct NarrativeCapture {
+    pub(crate) proposal: Option<SourceRange>,
+    pub(crate) gaps: Vec<TranslationGapSummary>,
+    pub(crate) finalization: InterpretationFinalization,
+    pub(crate) inference_receipts: Vec<String>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct SourceRange {
+    pub(crate) start_byte: usize,
+    pub(crate) end_byte: usize,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct TranslationGapSummary {
+    pub(crate) kind: TranslationGapKind,
+    pub(crate) source: SourceRange,
+    pub(crate) detail: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct OperationalCapture {
+    pub(crate) proposal: Option<String>,
+    pub(crate) needs: Vec<ControllerNeed>,
+    pub(crate) inference_receipts: Vec<String>,
+}
+
+fn base_checkpoint_is_valid(
+    identity: &str,
+    typed_view: &str,
+    opportunity: &DecisionOpportunity,
+    speak_affordance: AffordanceId,
+    mode: ControllerMode,
+) -> bool {
+    !identity.is_empty()
+        && identity.trim() == identity
+        && !typed_view.is_empty()
+        && opportunity.controller_mode == mode
+        && opportunity.affordance_ids.contains(&speak_affordance)
+}
+
+fn turn_matches_opportunity(turn: &PersonaTurn, opportunity: &DecisionOpportunity) -> bool {
+    turn.receipt_is_valid()
+        && encoded_id(&opportunity.world_id)
+            .is_ok_and(|world_id| world_id == turn.binding().world_id)
+        && encoded_id(&opportunity.controller_id)
+            .is_ok_and(|controller_id| controller_id == turn.binding().controller_id)
+        && opportunity
+            .digest()
+            .is_ok_and(|digest| digest == turn.binding().opportunity_digest)
+        && opportunity.revision == turn.binding().world_revision
+        && opportunity.state_digest == turn.binding().state_digest
+}
+
+fn derive_narrative_capture(
+    turn: &PersonaTurn,
+    interpreter_prompt: &str,
+    completed: &[InferenceOutput],
+) -> Result<NarrativeCapture, ControllerError> {
+    match evaluate_interpreter_loop(turn, interpreter_prompt, completed)? {
+        InterpreterLoopEvaluation::Complete { capture } => Ok(capture),
+        InterpreterLoopEvaluation::Continue { .. } => Err(ControllerError::Serialization(
+            "terminal Interpreter checkpoint has unfinished evidence".into(),
+        )),
+    }
+}
+
+fn derive_operational_capture(
+    agent_prompt: &str,
+    completed: &[InferenceOutput],
+) -> Result<OperationalCapture, ControllerError> {
+    match evaluate_operational_loop(agent_prompt, completed)? {
+        OperationalLoopEvaluation::Complete { capture } => Ok(capture),
+        OperationalLoopEvaluation::Continue { .. } => Err(ControllerError::Serialization(
+            "terminal operational checkpoint has unfinished evidence".into(),
+        )),
+    }
+}
+
+fn canonical_model(model: &str) -> bool {
+    !model.is_empty() && model.chars().all(|character| !character.is_whitespace())
+}
+
+fn exact_request_identity(
+    request: &PreparedInference,
+    command_id: CommandId,
+    purpose: InferencePurpose,
+    round: usize,
+) -> bool {
+    let provider = &request.invocation.request;
+    let native = InferenceRequest {
+        purpose: request.purpose,
+        provider: provider.clone(),
+    };
+    request.purpose == purpose
+        && provider.validate().is_ok()
+        && !request.invocation.caller_runtime_id.is_empty()
+        && request.invocation.caller_runtime_id.trim() == request.invocation.caller_runtime_id
+        && request.invocation.expires_at_unix_ms > 0
+        && serde_json::to_vec(&native)
+            .ok()
+            .map(|bytes| <[u8; 32]>::from(Sha256::digest(bytes)))
+            .is_some_and(|digest| digest == request.invocation.native_request_sha256)
+        && provider_request_sha256(provider)
+            .is_ok_and(|digest| digest == request.invocation.provider_request_sha256)
+        && provider_request_id(command_id, purpose, round)
+            .is_ok_and(|expected| provider.request_id == expected)
+        && conversation_id(command_id, purpose, round)
+            .is_ok_and(|expected| provider.conversation_id == expected)
+}
+
+fn prepared_matches_request(
+    prepared: &PreparedInference,
+    expected: &InferenceRequest,
+    command_id: CommandId,
+    round: usize,
+) -> bool {
+    prepared.invocation.request == expected.provider
+        && exact_request_identity(prepared, command_id, expected.purpose, round)
+}
+
+fn prose_request_shape_is_valid(request: &PreparedInference) -> bool {
+    let provider = &request.invocation.request;
+    provider.input.len() == 1
+        && matches!(
+            provider.input.first(),
+            Some(CodexInputItem::UserText { .. })
+        )
+        && provider.tools.is_empty()
+        && provider.tool_choice == CodexToolChoice::Auto
+        && !provider.parallel_tool_calls
+        && provider.output_format_name.is_none()
+        && provider.output_schema_json.is_none()
+        && provider.previous_response_id.is_none()
+}
+
+fn persona_request_shape_is_valid(request: &PreparedInference) -> bool {
+    prose_request_shape_is_valid(request)
+        && request.invocation.request.instructions == PERSONA_PROVIDER_INSTRUCTIONS
+}
+
+#[derive(Clone, Debug, Error, PartialEq, Eq)]
+enum ControllerWorkStoreError {
+    #[error("Eve command ID already belongs to the other controller mode")]
+    CommandModeConflict,
+    #[error("{detail}")]
+    Fault { detail: String },
+}
+
+impl ControllerWorkStoreError {
+    fn new(detail: impl Into<String>) -> Self {
+        Self::Fault {
+            detail: detail.into(),
+        }
+    }
+}
+
+#[async_trait]
+trait ControllerWorkStore: Send + Sync {
+    async fn lookup(
+        &self,
+        command_id: CommandId,
+    ) -> Result<ControllerWorkLookup, ControllerWorkStoreError>;
+
+    /// Owns the only legal checkpoint transition for either cognition mode.
+    async fn persist(
+        &self,
+        work: &ControllerWork,
+    ) -> Result<ControllerWorkWrite, ControllerWorkStoreError>;
+
+    /// Proves custody of the backing path without interpreting ordinary model
+    /// or world pending states as store failure.
+    async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerWorkStoreError>;
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum ControllerWorkLookup {
+    Missing,
+    Confirmed(ControllerWork),
+    CustodyUncertain(ControllerWork),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ControllerWorkWrite {
+    Applied,
+    AlreadyPresent,
+    CustodyUncertain,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ControllerWorkCustody {
+    Owned {
+        narrative_commands: usize,
+        operational_commands: usize,
+    },
+    /// A compare-and-swap or post-write ownership check did not confirm. The
+    /// process must reopen the journal before doing any other controller work.
+    Uncertain {
+        command_id: CommandId,
+        mode: ControllerMode,
+    },
+}
+
+struct ControllerWorkJournal {
+    store: OwnedRedbMessagePackBackingStore,
+    rows: Vec<CultCacheEnvelope>,
+    work: BTreeMap<CommandId, ControllerWork>,
+    uncertain: Option<ControllerWork>,
+}
+
+/// The one controller-work journal. It owns durable cognition evidence and
+/// exact handoff progress for both modes, but never owns a world decision.
+struct CultCacheControllerWorkStore {
+    journal: Mutex<ControllerWorkJournal>,
+}
+
+impl CultCacheControllerWorkStore {
+    fn open(path: impl AsRef<Path>) -> Result<Self, ControllerWorkStoreError> {
+        let store = OwnedRedbMessagePackBackingStore::new(path.as_ref())
+            .map_err(|error| ControllerWorkStoreError::new(error.to_string()))?;
+        store
+            .validate_path_identity()
+            .map_err(|error| ControllerWorkStoreError::new(error.to_string()))?;
+        let rows = store
+            .pull_all()
+            .map_err(|error| ControllerWorkStoreError::new(error.to_string()))?;
+        let mut work_by_command = BTreeMap::new();
+        for row in &rows {
+            if row.r#type != CONTROLLER_WORK_ROW
+                || row.schema_id.as_deref() != Some(CONTROLLER_WORK_SCHEMA)
+            {
+                return Err(ControllerWorkStoreError::new(format!(
+                    "unexpected row {}/{} in controller work store",
+                    row.r#type, row.key
+                )));
+            }
+            let work = decode_controller_work(row)?;
+            let command_id = work.command_id();
+            let key = store_key(command_id)?;
+            if !work.integrity_is_valid() || row.key != key {
+                return Err(ControllerWorkStoreError::new(format!(
+                    "controller work row {} failed its checkpoint binding",
+                    row.key
+                )));
+            }
+            if work_by_command.insert(command_id, work).is_some() {
+                return Err(ControllerWorkStoreError::new(format!(
+                    "duplicate controller command row {}",
+                    row.key
+                )));
+            }
+        }
+        Ok(Self {
+            journal: Mutex::new(ControllerWorkJournal {
+                store,
+                rows,
+                work: work_by_command,
+                uncertain: None,
+            }),
+        })
+    }
+}
+
+fn decode_controller_work(
+    row: &CultCacheEnvelope,
+) -> Result<ControllerWork, ControllerWorkStoreError> {
+    let value: ControllerWork = rmp_serde::from_slice(&row.payload)
+        .map_err(|error| ControllerWorkStoreError::new(error.to_string()))?;
+    let canonical = rmp_serde::to_vec_named(&value)
+        .map_err(|error| ControllerWorkStoreError::new(error.to_string()))?;
+    if canonical != row.payload {
+        return Err(ControllerWorkStoreError::new(format!(
+            "controller work row {} is not canonical",
+            row.key
+        )));
+    }
+    Ok(value)
+}
+
+#[async_trait]
+impl ControllerWorkStore for CultCacheControllerWorkStore {
+    async fn lookup(
+        &self,
+        command_id: CommandId,
+    ) -> Result<ControllerWorkLookup, ControllerWorkStoreError> {
+        let journal = self.journal.lock().map_err(|_| {
+            ControllerWorkStoreError::new("controller work store lock was poisoned")
+        })?;
+        if let Some(uncertain) = &journal.uncertain {
+            return if uncertain.command_id() == command_id {
+                Ok(ControllerWorkLookup::CustodyUncertain(uncertain.clone()))
+            } else {
+                Err(ControllerWorkStoreError::new(
+                    "controller work store ownership is uncertain; reopen before another command",
+                ))
+            };
+        }
+        verify_journal_custody(&journal)?;
+        Ok(journal
+            .work
+            .get(&command_id)
+            .cloned()
+            .map(ControllerWorkLookup::Confirmed)
+            .unwrap_or(ControllerWorkLookup::Missing))
+    }
+
+    async fn persist(
+        &self,
+        work: &ControllerWork,
+    ) -> Result<ControllerWorkWrite, ControllerWorkStoreError> {
+        if !work.integrity_is_valid() {
+            return Err(ControllerWorkStoreError::new(
+                "refused controller work with an invalid checkpoint",
+            ));
+        }
+        let command_id = work.command_id();
+        let key = store_key(command_id)?;
+        let mut journal = self.journal.lock().map_err(|_| {
+            ControllerWorkStoreError::new("controller work store lock was poisoned")
+        })?;
+        if let Some(uncertain) = &journal.uncertain {
+            return if uncertain == work {
+                Ok(ControllerWorkWrite::CustodyUncertain)
+            } else {
+                Err(ControllerWorkStoreError::new(
+                    "controller work store ownership is uncertain; reopen before mutation",
+                ))
+            };
+        }
+        verify_journal_custody(&journal)?;
+        if let Some(existing) = journal.work.get(&command_id) {
+            if existing == work {
+                return Ok(ControllerWorkWrite::AlreadyPresent);
+            }
+            if existing.mode() != work.mode() {
+                return Err(ControllerWorkStoreError::CommandModeConflict);
+            }
+            if !valid_controller_work_progression(existing, work) {
+                return Err(ControllerWorkStoreError::new(format!(
+                    "controller command {key} attempted an illegal checkpoint transition"
+                )));
+            }
+        } else if !work.is_initial() {
+            return Err(ControllerWorkStoreError::new(format!(
+                "controller command {key} did not begin before its provider boundary"
+            )));
+        }
+        let row = CultCacheEnvelope {
+            key: key.clone(),
+            r#type: CONTROLLER_WORK_ROW.into(),
+            payload: rmp_serde::to_vec_named(work)
+                .map_err(|error| ControllerWorkStoreError::new(error.to_string()))?,
+            stored_at: Utc::now().to_rfc3339(),
+            schema_id: Some(CONTROLLER_WORK_SCHEMA.into()),
+        };
+        let mut next_rows = journal
+            .rows
+            .iter()
+            .filter(|existing| !(existing.r#type == CONTROLLER_WORK_ROW && existing.key == key))
+            .cloned()
+            .collect::<Vec<_>>();
+        next_rows.push(row);
+        next_rows
+            .sort_by(|left, right| (&left.r#type, &left.key).cmp(&(&right.r#type, &right.key)));
+        if journal.store.validate_path_identity().is_err() {
+            journal.uncertain = Some(work.clone());
+            return Ok(ControllerWorkWrite::CustodyUncertain);
+        }
+        let written = journal
+            .store
+            .replace_and_append_if_snapshot_unchanged(&journal.rows, next_rows.clone());
+        if !matches!(written, Ok(true)) || journal.store.validate_path_identity().is_err() {
+            journal.uncertain = Some(work.clone());
+            return Ok(ControllerWorkWrite::CustodyUncertain);
+        }
+        journal.rows = next_rows;
+        journal.work.insert(command_id, work.clone());
+        Ok(ControllerWorkWrite::Applied)
+    }
+
+    async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerWorkStoreError> {
+        let journal = self.journal.lock().map_err(|_| {
+            ControllerWorkStoreError::new("controller work store lock was poisoned")
+        })?;
+        if let Some(uncertain) = &journal.uncertain {
+            return Ok(ControllerWorkCustody::Uncertain {
+                command_id: uncertain.command_id(),
+                mode: uncertain.mode(),
+            });
+        }
+        verify_journal_custody(&journal)?;
+        Ok(ControllerWorkCustody::Owned {
+            narrative_commands: journal
+                .work
+                .values()
+                .filter(|work| work.mode() == ControllerMode::NarrativePersona)
+                .count(),
+            operational_commands: journal
+                .work
+                .values()
+                .filter(|work| work.mode() == ControllerMode::OperationalAgent)
+                .count(),
+        })
+    }
+}
+
+fn verify_journal_custody(journal: &ControllerWorkJournal) -> Result<(), ControllerWorkStoreError> {
+    journal
+        .store
+        .validate_path_identity()
+        .map_err(|error| ControllerWorkStoreError::new(error.to_string()))?;
+    let current_rows = journal
+        .store
+        .pull_all()
+        .map_err(|error| ControllerWorkStoreError::new(error.to_string()))?;
+    if current_rows != journal.rows {
+        return Err(ControllerWorkStoreError::new(
+            "controller work snapshot changed outside its owning store",
+        ));
+    }
+    Ok(())
+}
+
+fn valid_controller_work_progression(existing: &ControllerWork, next: &ControllerWork) -> bool {
+    if !existing.integrity_is_valid() || !next.integrity_is_valid() {
+        return false;
+    }
+    match (existing, next) {
+        (ControllerWork::Narrative(existing), ControllerWork::Narrative(next)) => {
+            valid_narrative_progression(existing, next)
+        }
+        (ControllerWork::Operational(existing), ControllerWork::Operational(next)) => {
+            valid_operational_progression(existing, next)
+        }
+        _ => false,
+    }
+}
+
+fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeCheckpoint) -> bool {
+    match (existing, next) {
+        (
+            NarrativeCheckpoint::Projector {
+                command_id,
+                identity,
+                typed_view,
+                persona_model,
+                interpreter_model,
+                opportunity,
+                speak_affordance,
+                invocation: existing_invocation,
+            },
+            NarrativeCheckpoint::Persona {
+                command_id: next_command_id,
+                identity: next_identity,
+                typed_view: next_typed_view,
+                interpreter_model: next_interpreter_model,
+                opportunity: next_opportunity,
+                speak_affordance: next_speak_affordance,
+                invocation,
+                ..
+            },
+        ) => {
+            command_id == next_command_id
+                && identity == next_identity
+                && typed_view == next_typed_view
+                && interpreter_model == next_interpreter_model
+                && opportunity == next_opportunity
+                && speak_affordance == next_speak_affordance
+                && &invocation.invocation.request.model == persona_model
+                && invocation.invocation.caller_runtime_id
+                    == existing_invocation.invocation.caller_runtime_id
+        }
+        (
+            NarrativeCheckpoint::Persona {
+                command_id,
+                identity,
+                typed_view,
+                interpreter_model,
+                opportunity,
+                speak_affordance,
+                projector_output,
+                invocation: existing_invocation,
+            },
+            NarrativeCheckpoint::InterpreterInFlight {
+                command_id: next_command_id,
+                turn,
+                interpreter_prompt,
+                opportunity: next_opportunity,
+                speak_affordance: next_speak_affordance,
+                completed,
+                invocation,
+            },
+        ) => {
+            let Ok((lived_stream, projector_receipt)) = projector_output
+                .clone()
+                .prose_only(InferencePurpose::Projector)
+            else {
+                return false;
+            };
+            let expected_prompt = build_interpreter_prompt(&InterpreterPrompt {
+                identity,
+                typed_context: typed_view,
+                lived_stream: &lived_stream,
+                persona_output: turn.source_prose(),
+                output_schema: None,
+                domain_guidance: "",
+            });
+            command_id == next_command_id
+                && opportunity == next_opportunity
+                && speak_affordance == next_speak_affordance
+                && completed.is_empty()
+                && interpreter_prompt == &expected_prompt
+                && turn.binding().projector_receipt_digest == projector_receipt
+                && &invocation.invocation.request.model == interpreter_model
+                && invocation.invocation.caller_runtime_id
+                    == existing_invocation.invocation.caller_runtime_id
+        }
+        (
+            NarrativeCheckpoint::InterpreterInFlight {
+                command_id,
+                turn,
+                interpreter_prompt,
+                opportunity,
+                speak_affordance,
+                completed,
+                invocation: existing_invocation,
+            },
+            NarrativeCheckpoint::InterpreterInFlight {
+                command_id: next_command_id,
+                turn: next_turn,
+                interpreter_prompt: next_interpreter_prompt,
+                opportunity: next_opportunity,
+                speak_affordance: next_speak_affordance,
+                completed: next_completed,
+                invocation: next_invocation,
+            },
+        ) => {
+            command_id == next_command_id
+                && turn == next_turn
+                && interpreter_prompt == next_interpreter_prompt
+                && opportunity == next_opportunity
+                && speak_affordance == next_speak_affordance
+                && completed_advances(completed, next_completed)
+                && existing_invocation.invocation.request.model
+                    == next_invocation.invocation.request.model
+                && existing_invocation.invocation.caller_runtime_id
+                    == next_invocation.invocation.caller_runtime_id
+        }
+        (
+            NarrativeCheckpoint::InterpreterInFlight {
+                command_id,
+                turn,
+                interpreter_prompt,
+                opportunity,
+                speak_affordance,
+                completed,
+                ..
+            },
+            NarrativeCheckpoint::ReadyToSubmit {
+                command_id: next_command_id,
+                turn: next_turn,
+                interpreter_prompt: next_interpreter_prompt,
+                opportunity: next_opportunity,
+                speak_affordance: next_speak_affordance,
+                completed: next_completed,
+            },
+        ) => {
+            command_id == next_command_id
+                && turn == next_turn
+                && interpreter_prompt == next_interpreter_prompt
+                && opportunity == next_opportunity
+                && speak_affordance == next_speak_affordance
+                && completed_advances(completed, next_completed)
+        }
+        (
+            NarrativeCheckpoint::InterpreterInFlight {
+                command_id,
+                turn,
+                interpreter_prompt,
+                opportunity,
+                completed,
+                ..
+            },
+            NarrativeCheckpoint::NoProposal {
+                command_id: next_command_id,
+                turn: next_turn,
+                interpreter_prompt: next_interpreter_prompt,
+                opportunity: next_opportunity,
+                completed: next_completed,
+            },
+        ) => {
+            command_id == next_command_id
+                && turn == next_turn
+                && interpreter_prompt == next_interpreter_prompt
+                && opportunity == next_opportunity
+                && completed_advances(completed, next_completed)
+        }
+        _ => false,
+    }
+}
+
+fn valid_operational_progression(
+    existing: &OperationalCheckpoint,
+    next: &OperationalCheckpoint,
+) -> bool {
+    match (existing, next) {
+        (
+            OperationalCheckpoint::AgentInFlight {
+                command_id,
+                agent_prompt,
+                opportunity,
+                speak_affordance,
+                completed,
+                invocation: existing_invocation,
+            },
+            OperationalCheckpoint::AgentInFlight {
+                command_id: next_command_id,
+                agent_prompt: next_agent_prompt,
+                opportunity: next_opportunity,
+                speak_affordance: next_speak_affordance,
+                completed: next_completed,
+                invocation: next_invocation,
+            },
+        ) => {
+            command_id == next_command_id
+                && agent_prompt == next_agent_prompt
+                && opportunity == next_opportunity
+                && speak_affordance == next_speak_affordance
+                && completed_advances(completed, next_completed)
+                && existing_invocation.invocation.request.model
+                    == next_invocation.invocation.request.model
+                && existing_invocation.invocation.caller_runtime_id
+                    == next_invocation.invocation.caller_runtime_id
+        }
+        (
+            OperationalCheckpoint::AgentInFlight {
+                command_id,
+                agent_prompt,
+                opportunity,
+                speak_affordance,
+                completed,
+                ..
+            },
+            OperationalCheckpoint::ReadyToSubmit {
+                command_id: next_command_id,
+                agent_prompt: next_agent_prompt,
+                opportunity: next_opportunity,
+                speak_affordance: next_speak_affordance,
+                completed: next_completed,
+            },
+        ) => {
+            command_id == next_command_id
+                && agent_prompt == next_agent_prompt
+                && opportunity == next_opportunity
+                && speak_affordance == next_speak_affordance
+                && completed_advances(completed, next_completed)
+        }
+        (
+            OperationalCheckpoint::AgentInFlight {
+                command_id,
+                agent_prompt,
+                opportunity,
+                completed,
+                ..
+            },
+            OperationalCheckpoint::NoProposal {
+                command_id: next_command_id,
+                agent_prompt: next_agent_prompt,
+                opportunity: next_opportunity,
+                completed: next_completed,
+            },
+        ) => {
+            command_id == next_command_id
+                && agent_prompt == next_agent_prompt
+                && opportunity == next_opportunity
+                && completed_advances(completed, next_completed)
+        }
+        _ => false,
+    }
+}
+
+fn completed_advances(existing: &[InferenceOutput], next: &[InferenceOutput]) -> bool {
+    next.len() == existing.len() + 1 && next.starts_with(existing)
+}
+
+fn store_key(command_id: CommandId) -> Result<String, ControllerWorkStoreError> {
+    serde_json::to_value(command_id)
+        .map_err(|error| ControllerWorkStoreError::new(error.to_string()))?
+        .as_str()
+        .map(str::to_owned)
+        .ok_or_else(|| ControllerWorkStoreError::new("command ID did not encode as a string"))
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct ControllerModels {
+    pub(crate) projector: String,
+    pub(crate) persona: String,
+    pub(crate) interpreter: String,
+    pub(crate) operational_agent: String,
+}
+
+impl ControllerModels {
+    fn are_canonical(&self) -> bool {
+        [
+            &self.projector,
+            &self.persona,
+            &self.interpreter,
+            &self.operational_agent,
+        ]
+        .into_iter()
+        .all(|model| canonical_model(model))
+    }
+}
+
+#[derive(Debug, Error)]
+pub(crate) enum ControllerOpenError {
+    #[error("controller model IDs must be exact nonempty identifiers without whitespace")]
+    InvalidModels,
+    #[error("CodexConnector controller transport could not open: {0}")]
+    Connector(#[from] InferenceFault),
+    #[error("controller work journal could not open: {0}")]
+    WorkStore(String),
+}
+
+impl From<ControllerWorkStoreError> for ControllerOpenError {
+    fn from(error: ControllerWorkStoreError) -> Self {
+        Self::WorkStore(error.to_string())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub(crate) struct SpeakProposal {
+    text: String,
+}
+
+impl SpeakProposal {
+    pub(crate) fn text(&self) -> &str {
+        &self.text
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub(crate) struct ControllerNeed {
+    pub(crate) detail: String,
+}
+
+#[derive(Debug)]
+pub(crate) enum SubmissionDisposition {
+    NoProposal(SubmitReceipt),
+    Completed(SubmitReceipt),
+    /// Derived on demand from the WorldMailbox journal. Controller work never
+    /// persists a second opinion about the canonical commit.
+    PreviouslyConfirmed(CommitReceipt),
+}
+
+#[derive(Debug)]
+pub(crate) struct NarrativeDecision {
+    turn: PersonaTurn,
+    capture: NarrativeCapture,
+    submission: SubmissionDisposition,
+}
+
+impl NarrativeDecision {
+    pub(crate) fn persona_turn(&self) -> &PersonaTurn {
+        &self.turn
+    }
+
+    pub(crate) fn capture(&self) -> &NarrativeCapture {
+        &self.capture
+    }
+
+    pub(crate) fn submission(&self) -> &SubmissionDisposition {
+        &self.submission
+    }
+
+    pub(crate) fn into_parts(self) -> (PersonaTurn, NarrativeCapture, SubmissionDisposition) {
+        (self.turn, self.capture, self.submission)
+    }
+}
+
+#[derive(Debug)]
+pub(crate) enum NarrativeRun {
+    Completed(NarrativeDecision),
+    Pending(NarrativePending),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ControllerPendingReason {
+    /// The exact persisted connector invocation can be presented again. The
+    /// connector decides whether this is an admitted completed replay.
+    InferenceRetryable,
+    /// The connector reported an indeterminate, expired, or otherwise
+    /// non-replayable provider outcome. Integrity violations are errors and
+    /// quarantine the controller organ instead of entering this state.
+    InferenceRecoveryRequired,
+    WorldUnavailable,
+    WorldOutcomeUnknown,
+    /// The exact work remains attached for reporting, but the journal owner
+    /// must be reopened before this process may continue.
+    StoreReopenRequired,
+}
+
+fn inference_pending_reason(error: &ControllerError) -> Option<ControllerPendingReason> {
+    match error {
+        ControllerError::Inference { source, .. } if source.integrity_was_violated() => None,
+        ControllerError::Inference { source, .. } if source.recovery_required() => {
+            Some(ControllerPendingReason::InferenceRecoveryRequired)
+        }
+        ControllerError::Inference { .. } => Some(ControllerPendingReason::InferenceRetryable),
+        ControllerError::ProviderContract { .. } => {
+            Some(ControllerPendingReason::InferenceRecoveryRequired)
+        }
+        _ => None,
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct NarrativePending {
+    work: NarrativeCheckpoint,
+    reason: ControllerPendingReason,
+}
+
+impl NarrativePending {
+    pub(crate) fn mode(&self) -> ControllerMode {
+        ControllerMode::NarrativePersona
+    }
+
+    pub(crate) fn reason(&self) -> ControllerPendingReason {
+        self.reason
+    }
+
+    pub(crate) fn persona_prose(&self) -> Option<&str> {
+        self.work.persona_prose()
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct OperationalDecision {
+    capture: OperationalCapture,
+    submission: SubmissionDisposition,
+}
+
+impl OperationalDecision {
+    pub(crate) fn capture(&self) -> &OperationalCapture {
+        &self.capture
+    }
+
+    pub(crate) fn submission(&self) -> &SubmissionDisposition {
+        &self.submission
+    }
+
+    pub(crate) fn into_parts(self) -> (OperationalCapture, SubmissionDisposition) {
+        (self.capture, self.submission)
+    }
+}
+
+#[derive(Debug)]
+pub(crate) enum OperationalRun {
+    Completed(OperationalDecision),
+    Pending(OperationalPending),
+}
+
+#[derive(Debug)]
+pub(crate) struct OperationalPending {
+    work: OperationalCheckpoint,
+    reason: ControllerPendingReason,
+}
+
+impl OperationalPending {
+    pub(crate) fn mode(&self) -> ControllerMode {
+        ControllerMode::OperationalAgent
+    }
+
+    pub(crate) fn reason(&self) -> ControllerPendingReason {
+        self.reason
+    }
+}
+
+#[derive(Debug, Error)]
+pub(crate) enum ControllerError {
+    #[error("world snapshot failed: {0}")]
+    Snapshot(MailboxError),
+    #[error("subject has no exact {expected:?} opportunity")]
+    NoOpportunity { expected: ControllerMode },
+    #[error("subject has more than one current decision opportunity")]
+    AmbiguousOpportunity,
+    #[error("Eve opportunity does not match this exact controller command")]
+    OpportunityMismatch,
+    #[error("controller opportunity has no Speak affordance")]
+    SpeakUnavailable,
+    #[error("Eve command ID does not match persisted controller work")]
+    CommandMismatch,
+    #[error("no persisted controller work exists for this Eve command")]
+    MissingControllerWork,
+    #[error("{purpose:?} inference failed: {source}")]
+    Inference {
+        purpose: InferencePurpose,
+        #[source]
+        source: InferenceFault,
+    },
+    #[error("{purpose:?} provider contract failed: {detail}")]
+    ProviderContract {
+        purpose: InferencePurpose,
+        detail: String,
+    },
+    #[error("controller work was not persisted: {0}")]
+    WorkPersistence(String),
+    #[error("world command was rejected: {0}")]
+    World(#[from] KernelError),
+    #[error("controller view serialization failed: {0}")]
+    Serialization(String),
+}
+
+impl ControllerError {
+    /// Quarantine only the cognition organ. WorldMailbox and AppSession remain
+    /// authoritative and available; this error must never become a daemon-wide
+    /// fatal signal.
+    pub(crate) fn requires_quarantine(&self) -> bool {
+        match self {
+            Self::WorkPersistence(_) | Self::Serialization(_) => true,
+            Self::Inference { source, .. } => source.integrity_was_violated(),
+            _ => false,
+        }
+    }
+}
+
+impl From<ControllerWorkStoreError> for ControllerError {
+    fn from(error: ControllerWorkStoreError) -> Self {
+        match error {
+            ControllerWorkStoreError::CommandModeConflict => Self::CommandMismatch,
+            error @ ControllerWorkStoreError::Fault { .. } => {
+                Self::WorkPersistence(error.to_string())
+            }
+        }
+    }
+}
+
+enum ControllerWorldCommand {
+    Exercise(DecisionInvocation),
+    Decline,
+}
+
+enum ControllerWorldSubmission {
+    Completed(SubmissionDisposition),
+    Pending(ControllerPendingReason),
+}
+
+pub(crate) struct ControllerRunner {
+    mailbox: WorldMailbox,
+    inference: Arc<dyn InferencePort>,
+    work: Arc<dyn ControllerWorkStore>,
+    models: ControllerModels,
+}
+
+impl ControllerRunner {
+    /// Opens the complete production controller organ. Runtime supplies
+    /// deployment configuration, but cannot replace either the inference
+    /// transport or the durable controller-work owner.
+    pub(crate) fn open(
+        mailbox: WorldMailbox,
+        connector_endpoint: SocketAddr,
+        connector_key_path: impl AsRef<Path>,
+        caller_runtime_id: impl Into<String>,
+        controller_work_path: impl AsRef<Path>,
+        models: ControllerModels,
+    ) -> Result<Self, ControllerOpenError> {
+        if !models.are_canonical() {
+            return Err(ControllerOpenError::InvalidModels);
+        }
+        let inference = CodexConnectorInferencePort::from_secret_file(
+            connector_endpoint,
+            connector_key_path,
+            caller_runtime_id,
+        )?;
+        let work = CultCacheControllerWorkStore::open(controller_work_path)?;
+        Ok(Self {
+            mailbox,
+            inference: Arc::new(inference),
+            work: Arc::new(work),
+            models,
+        })
+    }
+
+    #[cfg(test)]
+    fn with_test_ports(
+        mailbox: WorldMailbox,
+        inference: Arc<dyn InferencePort>,
+        work: Arc<dyn ControllerWorkStore>,
+        models: ControllerModels,
+    ) -> Self {
+        Self {
+            mailbox,
+            inference,
+            work,
+            models,
+        }
+    }
+
+    pub(crate) async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerError> {
+        Ok(self.work.custody_probe().await?)
+    }
+
+    pub(crate) async fn run_narrative(
+        &self,
+        command_id: CommandId,
+        opportunity: &DecisionOpportunity,
+    ) -> Result<NarrativeRun, ControllerError> {
+        match self.work.lookup(command_id).await? {
+            ControllerWorkLookup::Confirmed(ControllerWork::Narrative(checkpoint)) => {
+                if checkpoint.opportunity() != opportunity {
+                    return Err(ControllerError::OpportunityMismatch);
+                }
+                return self
+                    .resume_persisted_narrative(command_id, checkpoint)
+                    .await;
+            }
+            ControllerWorkLookup::CustodyUncertain(ControllerWork::Narrative(checkpoint)) => {
+                if checkpoint.opportunity() != opportunity {
+                    return Err(ControllerError::OpportunityMismatch);
+                }
+                return Ok(narrative_pending(
+                    checkpoint,
+                    ControllerPendingReason::StoreReopenRequired,
+                ));
+            }
+            ControllerWorkLookup::Confirmed(ControllerWork::Operational(_))
+            | ControllerWorkLookup::CustodyUncertain(ControllerWork::Operational(_)) => {
+                return Err(ControllerError::CommandMismatch);
+            }
+            ControllerWorkLookup::Missing => {}
+        }
+        let selected = self
+            .select(
+                opportunity.scope.subject_id,
+                ControllerMode::NarrativePersona,
+                opportunity,
+            )
+            .await?;
+        let identity = selected.subject.label.clone();
+        let typed_view = selected.typed_view()?;
+        let projector_context = selected.projector_context()?;
+        let visible_stimulus = selected.visible_stimulus()?;
+        let projector_prompt = build_projector_prompt(&ProjectorPrompt {
+            identity: &identity,
+            typed_context: &projector_context,
+            visible_stimulus: &visible_stimulus,
+            domain_guidance: "",
+            word_budget: PERSONA_WORD_BUDGET,
+        });
+        let checkpoint = NarrativeCheckpoint::Projector {
+            command_id,
+            identity,
+            typed_view,
+            persona_model: self.models.persona.clone(),
+            interpreter_model: self.models.interpreter.clone(),
+            opportunity: selected.opportunity,
+            speak_affordance: selected.speak_affordance,
+            invocation: self.prepare(projector_request(
+                command_id,
+                &self.models.projector,
+                projector_prompt,
+            )?)?,
+        };
+        if self
+            .persist(ControllerWork::Narrative(checkpoint.clone()))
+            .await?
+            == ControllerWorkWrite::CustodyUncertain
+        {
+            return Ok(narrative_pending(
+                checkpoint,
+                ControllerPendingReason::StoreReopenRequired,
+            ));
+        }
+        self.resume_persisted_narrative(command_id, checkpoint)
+            .await
+    }
+
+    pub(crate) async fn run_operational(
+        &self,
+        command_id: CommandId,
+        opportunity: &DecisionOpportunity,
+    ) -> Result<OperationalRun, ControllerError> {
+        match self.work.lookup(command_id).await? {
+            ControllerWorkLookup::Confirmed(ControllerWork::Operational(checkpoint)) => {
+                if checkpoint.opportunity() != opportunity {
+                    return Err(ControllerError::OpportunityMismatch);
+                }
+                return self
+                    .resume_persisted_operational(command_id, checkpoint)
+                    .await;
+            }
+            ControllerWorkLookup::CustodyUncertain(ControllerWork::Operational(checkpoint)) => {
+                if checkpoint.opportunity() != opportunity {
+                    return Err(ControllerError::OpportunityMismatch);
+                }
+                return Ok(operational_pending(
+                    checkpoint,
+                    ControllerPendingReason::StoreReopenRequired,
+                ));
+            }
+            ControllerWorkLookup::Confirmed(ControllerWork::Narrative(_))
+            | ControllerWorkLookup::CustodyUncertain(ControllerWork::Narrative(_)) => {
+                return Err(ControllerError::CommandMismatch);
+            }
+            ControllerWorkLookup::Missing => {}
+        }
+        let selected = self
+            .select(
+                opportunity.scope.subject_id,
+                ControllerMode::OperationalAgent,
+                opportunity,
+            )
+            .await?;
+        let identity = selected.subject.label.clone();
+        let typed_view = selected.typed_view()?;
+        let agent_prompt = build_operational_agent_prompt(&OperationalAgentPrompt {
+            identity: &identity,
+            typed_view: &typed_view,
+            available_tools: "speak(text), record_need(detail), finish_without_proposal()",
+            decision_pressure: "Choose whether this decision owner should speak now.",
+            domain_guidance: "",
+            step_budget: TOOL_STEP_BUDGET,
+        });
+        let initial_conversation = match evaluate_operational_loop(&agent_prompt, &[])? {
+            OperationalLoopEvaluation::Continue { conversation } => conversation,
+            OperationalLoopEvaluation::Complete { .. } => {
+                return Err(ControllerError::Serialization(
+                    "empty operational evidence unexpectedly finalized".into(),
+                ));
+            }
+        };
+        let checkpoint = OperationalCheckpoint::AgentInFlight {
+            command_id,
+            agent_prompt,
+            opportunity: selected.opportunity,
+            speak_affordance: selected.speak_affordance,
+            completed: Vec::new(),
+            invocation: self.prepare(operational_request(
+                command_id,
+                0,
+                &self.models.operational_agent,
+                initial_conversation,
+            )?)?,
+        };
+        if self
+            .persist(ControllerWork::Operational(checkpoint.clone()))
+            .await?
+            == ControllerWorkWrite::CustodyUncertain
+        {
+            return Ok(operational_pending(
+                checkpoint,
+                ControllerPendingReason::StoreReopenRequired,
+            ));
+        }
+        self.resume_persisted_operational(command_id, checkpoint)
+            .await
+    }
+
+    async fn resume_persisted_operational(
+        &self,
+        command_id: CommandId,
+        checkpoint: OperationalCheckpoint,
+    ) -> Result<OperationalRun, ControllerError> {
+        if checkpoint.command_id() != command_id {
+            return Err(ControllerError::CommandMismatch);
+        }
+        match checkpoint {
+            checkpoint @ OperationalCheckpoint::AgentInFlight { .. } => {
+                self.run_operational_pending(checkpoint).await
+            }
+            checkpoint @ OperationalCheckpoint::ReadyToSubmit { .. } => {
+                self.submit_operational(checkpoint).await
+            }
+            checkpoint @ OperationalCheckpoint::NoProposal { .. } => {
+                self.submit_operational(checkpoint).await
+            }
+        }
+    }
+
+    async fn run_operational_pending(
+        &self,
+        mut checkpoint: OperationalCheckpoint,
+    ) -> Result<OperationalRun, ControllerError> {
+        loop {
+            let OperationalCheckpoint::AgentInFlight {
+                command_id,
+                agent_prompt,
+                opportunity,
+                speak_affordance,
+                mut completed,
+                invocation,
+            } = checkpoint.clone()
+            else {
+                return Err(ControllerError::Serialization(
+                    "operational runner received a terminal checkpoint".into(),
+                ));
+            };
+            self.ensure_opportunity_current(&opportunity).await?;
+            let model = invocation.invocation.request.model.clone();
+            let output = match self.infer(invocation).await {
+                Ok(output) => output,
+                Err(error) => match inference_pending_reason(&error) {
+                    Some(reason) => return Ok(operational_pending(checkpoint, reason)),
+                    None => return Err(error),
+                },
+            };
+            completed.push(output);
+            match evaluate_operational_loop(&agent_prompt, &completed) {
+                Ok(OperationalLoopEvaluation::Complete { capture }) => {
+                    let next = if capture.proposal.is_some() {
+                        OperationalCheckpoint::ReadyToSubmit {
+                            command_id,
+                            agent_prompt,
+                            opportunity,
+                            speak_affordance,
+                            completed,
+                        }
+                    } else {
+                        OperationalCheckpoint::NoProposal {
+                            command_id,
+                            agent_prompt,
+                            opportunity,
+                            completed,
+                        }
+                    };
+                    if self
+                        .persist(ControllerWork::Operational(next.clone()))
+                        .await?
+                        == ControllerWorkWrite::CustodyUncertain
+                    {
+                        return Ok(operational_pending(
+                            next,
+                            ControllerPendingReason::StoreReopenRequired,
+                        ));
+                    }
+                    return self.submit_operational(next).await;
+                }
+                Ok(OperationalLoopEvaluation::Continue { conversation }) => {
+                    let round = completed.len();
+                    let next = OperationalCheckpoint::AgentInFlight {
+                        command_id,
+                        agent_prompt,
+                        opportunity,
+                        speak_affordance,
+                        completed,
+                        invocation: self.prepare(operational_request(
+                            command_id,
+                            round,
+                            &model,
+                            conversation,
+                        )?)?,
+                    };
+                    match self
+                        .persist(ControllerWork::Operational(next.clone()))
+                        .await?
+                    {
+                        ControllerWorkWrite::Applied | ControllerWorkWrite::AlreadyPresent => {
+                            checkpoint = next;
+                        }
+                        ControllerWorkWrite::CustodyUncertain => {
+                            return Ok(operational_pending(
+                                next,
+                                ControllerPendingReason::StoreReopenRequired,
+                            ));
+                        }
+                    }
+                }
+                Err(error) => match inference_pending_reason(&error) {
+                    Some(reason) => return Ok(operational_pending(checkpoint, reason)),
+                    None => return Err(error),
+                },
+            }
+        }
+    }
+
+    fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, ControllerError> {
+        let purpose = request.purpose;
+        self.inference
+            .prepare(request)
+            .map_err(|source| ControllerError::Inference { purpose, source })
+    }
+
+    async fn infer(&self, request: PreparedInference) -> Result<InferenceOutput, ControllerError> {
+        let purpose = request.purpose;
+        self.inference
+            .infer(request)
+            .await
+            .map_err(|source| ControllerError::Inference { purpose, source })
+    }
+
+    async fn select(
+        &self,
+        subject_id: SubjectId,
+        expected: ControllerMode,
+        exact_opportunity: &DecisionOpportunity,
+    ) -> Result<SelectedDecision, ControllerError> {
+        let snapshot = self
+            .mailbox
+            .snapshot()
+            .await
+            .map_err(ControllerError::Snapshot)?;
+        let Some(subject) = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.id == subject_id)
+            .cloned()
+        else {
+            return Err(ControllerError::NoOpportunity { expected });
+        };
+        if subject.controller_mode != expected {
+            return Err(ControllerError::NoOpportunity { expected });
+        }
+        if exact_opportunity.scope.subject_id != subject.id
+            || exact_opportunity.controller_id != subject.controller_id
+            || exact_opportunity.controller_mode != expected
+        {
+            return Err(ControllerError::OpportunityMismatch);
+        }
+        let matches = snapshot
+            .opportunities
+            .iter()
+            .filter(|opportunity| *opportunity == exact_opportunity)
+            .cloned()
+            .collect::<Vec<_>>();
+        let [opportunity] = matches.as_slice() else {
+            return if matches.is_empty() {
+                Err(ControllerError::NoOpportunity { expected })
+            } else {
+                Err(ControllerError::AmbiguousOpportunity)
+            };
+        };
+        let speak_affordance = subject
+            .affordances
+            .get(&AffordanceKind::Speak)
+            .copied()
+            .filter(|id| opportunity.affordance_ids.contains(id))
+            .ok_or(ControllerError::SpeakUnavailable)?;
+        Ok(SelectedDecision {
+            snapshot,
+            subject,
+            opportunity: opportunity.clone(),
+            speak_affordance,
+        })
+    }
+
+    async fn ensure_opportunity_current(
+        &self,
+        opportunity: &DecisionOpportunity,
+    ) -> Result<(), ControllerError> {
+        self.select(
+            opportunity.scope.subject_id,
+            opportunity.controller_mode,
+            opportunity,
+        )
+        .await
+        .map(|_| ())
+    }
+
+    async fn resume_persisted_narrative(
+        &self,
+        command_id: CommandId,
+        checkpoint: NarrativeCheckpoint,
+    ) -> Result<NarrativeRun, ControllerError> {
+        if checkpoint.command_id() != command_id {
+            return Err(ControllerError::CommandMismatch);
+        }
+        match checkpoint {
+            checkpoint @ NarrativeCheckpoint::Projector { .. } => {
+                self.run_projector(checkpoint).await
+            }
+            checkpoint @ NarrativeCheckpoint::Persona { .. } => self.run_persona(checkpoint).await,
+            checkpoint @ NarrativeCheckpoint::InterpreterInFlight { .. } => {
+                self.interpret_pending(checkpoint).await
+            }
+            checkpoint @ NarrativeCheckpoint::ReadyToSubmit { .. } => {
+                self.submit_narrative(checkpoint).await
+            }
+            checkpoint @ NarrativeCheckpoint::NoProposal { .. } => {
+                self.submit_narrative(checkpoint).await
+            }
+        }
+    }
+
+    async fn run_projector(
+        &self,
+        checkpoint: NarrativeCheckpoint,
+    ) -> Result<NarrativeRun, ControllerError> {
+        let NarrativeCheckpoint::Projector {
+            command_id,
+            identity,
+            typed_view,
+            persona_model,
+            interpreter_model,
+            opportunity,
+            speak_affordance,
+            invocation,
+        } = checkpoint.clone()
+        else {
+            return Err(ControllerError::Serialization(
+                "Projector runner received another checkpoint".into(),
+            ));
+        };
+        self.ensure_opportunity_current(&opportunity).await?;
+        let projector_output = match self.infer(invocation).await {
+            Ok(output) => output,
+            Err(error) => match inference_pending_reason(&error) {
+                Some(reason) => return Ok(narrative_pending(checkpoint, reason)),
+                None => return Err(error),
+            },
+        };
+        let lived_stream = match projector_output
+            .clone()
+            .prose_only(InferencePurpose::Projector)
+        {
+            Ok((prose, _)) => prose,
+            Err(error) => match inference_pending_reason(&error) {
+                Some(reason) => return Ok(narrative_pending(checkpoint, reason)),
+                None => return Err(error),
+            },
+        };
+        let persona_prompt = build_persona_prompt(&PersonaPrompt {
+            identity: &identity,
+            lived_stream: &lived_stream,
+            domain_guidance: "",
+            word_budget: PERSONA_WORD_BUDGET,
+        });
+        let next = NarrativeCheckpoint::Persona {
+            command_id,
+            identity,
+            typed_view,
+            interpreter_model,
+            opportunity,
+            speak_affordance,
+            projector_output,
+            invocation: self.prepare(persona_request(
+                command_id,
+                &persona_model,
+                persona_prompt,
+            )?)?,
+        };
+        match self
+            .persist(ControllerWork::Narrative(next.clone()))
+            .await?
+        {
+            ControllerWorkWrite::CustodyUncertain => Ok(narrative_pending(
+                next,
+                ControllerPendingReason::StoreReopenRequired,
+            )),
+            ControllerWorkWrite::Applied | ControllerWorkWrite::AlreadyPresent => {
+                self.run_persona(next).await
+            }
+        }
+    }
+
+    async fn run_persona(
+        &self,
+        checkpoint: NarrativeCheckpoint,
+    ) -> Result<NarrativeRun, ControllerError> {
+        let NarrativeCheckpoint::Persona {
+            command_id,
+            identity,
+            typed_view,
+            interpreter_model,
+            opportunity,
+            speak_affordance,
+            projector_output,
+            invocation,
+        } = checkpoint.clone()
+        else {
+            return Err(ControllerError::Serialization(
+                "Persona runner received another checkpoint".into(),
+            ));
+        };
+        let (lived_stream, projector_receipt) = projector_output
+            .clone()
+            .prose_only(InferencePurpose::Projector)?;
+        self.ensure_opportunity_current(&opportunity).await?;
+        let persona = match self
+            .infer(invocation)
+            .await
+            .and_then(|output| output.prose_only(InferencePurpose::Persona))
+        {
+            Ok(persona) => persona,
+            Err(error) => match inference_pending_reason(&error) {
+                Some(reason) => return Ok(narrative_pending(checkpoint, reason)),
+                None => return Err(error),
+            },
+        };
+        let turn = PersonaTurn::record(
+            PersonaTurnBinding {
+                world_id: encoded_id(&opportunity.world_id)?,
+                controller_id: encoded_id(&opportunity.controller_id)?,
+                opportunity_digest: opportunity.digest()?,
+                world_revision: opportunity.revision,
+                state_digest: opportunity.state_digest.clone(),
+                projector_receipt_digest: projector_receipt,
+                persona_inference_receipt_digest: persona.1,
+            },
+            persona.0,
+        );
+        let interpreter_prompt = build_interpreter_prompt(&InterpreterPrompt {
+            identity: &identity,
+            typed_context: &typed_view,
+            lived_stream: &lived_stream,
+            persona_output: turn.source_prose(),
+            output_schema: None,
+            domain_guidance: "",
+        });
+        let initial_conversation = match evaluate_interpreter_loop(&turn, &interpreter_prompt, &[])?
+        {
+            InterpreterLoopEvaluation::Continue { conversation } => conversation,
+            InterpreterLoopEvaluation::Complete { .. } => {
+                return Err(ControllerError::Serialization(
+                    "empty Interpreter evidence unexpectedly finalized".into(),
+                ));
+            }
+        };
+        let next = NarrativeCheckpoint::InterpreterInFlight {
+            command_id,
+            turn,
+            interpreter_prompt,
+            opportunity,
+            speak_affordance,
+            completed: Vec::new(),
+            invocation: self.prepare(interpreter_request(
+                command_id,
+                0,
+                &interpreter_model,
+                initial_conversation,
+            )?)?,
+        };
+        match self
+            .persist(ControllerWork::Narrative(next.clone()))
+            .await?
+        {
+            ControllerWorkWrite::CustodyUncertain => Ok(narrative_pending(
+                next,
+                ControllerPendingReason::StoreReopenRequired,
+            )),
+            ControllerWorkWrite::Applied | ControllerWorkWrite::AlreadyPresent => {
+                self.interpret_pending(next).await
+            }
+        }
+    }
+
+    async fn interpret_pending(
+        &self,
+        mut checkpoint: NarrativeCheckpoint,
+    ) -> Result<NarrativeRun, ControllerError> {
+        loop {
+            let NarrativeCheckpoint::InterpreterInFlight {
+                command_id,
+                turn,
+                interpreter_prompt,
+                opportunity,
+                speak_affordance,
+                mut completed,
+                invocation,
+            } = checkpoint.clone()
+            else {
+                return Err(ControllerError::Serialization(
+                    "Interpreter runner received a terminal checkpoint".into(),
+                ));
+            };
+            self.ensure_opportunity_current(&opportunity).await?;
+            let model = invocation.invocation.request.model.clone();
+            let output = match self.infer(invocation).await {
+                Ok(output) => output,
+                Err(error) => match inference_pending_reason(&error) {
+                    Some(reason) => return Ok(narrative_pending(checkpoint, reason)),
+                    None => return Err(error),
+                },
+            };
+            completed.push(output);
+            match evaluate_interpreter_loop(&turn, &interpreter_prompt, &completed) {
+                Ok(InterpreterLoopEvaluation::Complete { capture }) => {
+                    let next = if capture.proposal.is_some() {
+                        NarrativeCheckpoint::ReadyToSubmit {
+                            command_id,
+                            turn,
+                            interpreter_prompt,
+                            opportunity,
+                            speak_affordance,
+                            completed,
+                        }
+                    } else {
+                        NarrativeCheckpoint::NoProposal {
+                            command_id,
+                            turn,
+                            interpreter_prompt,
+                            opportunity,
+                            completed,
+                        }
+                    };
+                    if self
+                        .persist(ControllerWork::Narrative(next.clone()))
+                        .await?
+                        == ControllerWorkWrite::CustodyUncertain
+                    {
+                        return Ok(narrative_pending(
+                            next,
+                            ControllerPendingReason::StoreReopenRequired,
+                        ));
+                    }
+                    return self.submit_narrative(next).await;
+                }
+                Ok(InterpreterLoopEvaluation::Continue { conversation }) => {
+                    let round = completed.len();
+                    let next = NarrativeCheckpoint::InterpreterInFlight {
+                        command_id,
+                        turn,
+                        interpreter_prompt,
+                        opportunity,
+                        speak_affordance,
+                        completed,
+                        invocation: self.prepare(interpreter_request(
+                            command_id,
+                            round,
+                            &model,
+                            conversation,
+                        )?)?,
+                    };
+                    match self
+                        .persist(ControllerWork::Narrative(next.clone()))
+                        .await?
+                    {
+                        ControllerWorkWrite::Applied | ControllerWorkWrite::AlreadyPresent => {
+                            checkpoint = next;
+                        }
+                        ControllerWorkWrite::CustodyUncertain => {
+                            return Ok(narrative_pending(
+                                next,
+                                ControllerPendingReason::StoreReopenRequired,
+                            ));
+                        }
+                    }
+                }
+                Err(error) => match inference_pending_reason(&error) {
+                    Some(reason) => return Ok(narrative_pending(checkpoint, reason)),
+                    None => return Err(error),
+                },
+            }
+        }
+    }
+
+    async fn submit_narrative(
+        &self,
+        checkpoint: NarrativeCheckpoint,
+    ) -> Result<NarrativeRun, ControllerError> {
+        let (command_id, opportunity) = match &checkpoint {
+            NarrativeCheckpoint::ReadyToSubmit {
+                command_id,
+                opportunity,
+                ..
+            }
+            | NarrativeCheckpoint::NoProposal {
+                command_id,
+                opportunity,
+                ..
+            } => (*command_id, opportunity.clone()),
+            _ => {
+                return Err(ControllerError::Serialization(
+                    "narrative submission requires terminal controller work".into(),
+                ));
+            }
+        };
+        if matches!(
+            self.work.custody_probe().await?,
+            ControllerWorkCustody::Uncertain { .. }
+        ) {
+            return Ok(narrative_pending(
+                checkpoint,
+                ControllerPendingReason::StoreReopenRequired,
+            ));
+        }
+        let command = match &checkpoint {
+            NarrativeCheckpoint::ReadyToSubmit { .. } => {
+                ControllerWorldCommand::Exercise(narrative_invocation(&checkpoint)?)
+            }
+            NarrativeCheckpoint::NoProposal { .. } => ControllerWorldCommand::Decline,
+            _ => unreachable!("terminal checkpoint was established above"),
+        };
+        match self
+            .submit_controller_world(command_id, &opportunity, command)
+            .await?
+        {
+            ControllerWorldSubmission::Completed(submission) => {
+                completed_narrative(&checkpoint, submission)
+            }
+            ControllerWorldSubmission::Pending(reason) => Ok(narrative_pending(checkpoint, reason)),
+        }
+    }
+
+    async fn persist(&self, work: ControllerWork) -> Result<ControllerWorkWrite, ControllerError> {
+        Ok(self.work.persist(&work).await?)
+    }
+
+    async fn submit_operational(
+        &self,
+        checkpoint: OperationalCheckpoint,
+    ) -> Result<OperationalRun, ControllerError> {
+        let (command_id, opportunity) = match &checkpoint {
+            OperationalCheckpoint::ReadyToSubmit {
+                command_id,
+                opportunity,
+                ..
+            }
+            | OperationalCheckpoint::NoProposal {
+                command_id,
+                opportunity,
+                ..
+            } => (*command_id, opportunity.clone()),
+            OperationalCheckpoint::AgentInFlight { .. } => {
+                return Err(ControllerError::Serialization(
+                    "operational submission requires terminal controller work".into(),
+                ));
+            }
+        };
+        if matches!(
+            self.work.custody_probe().await?,
+            ControllerWorkCustody::Uncertain { .. }
+        ) {
+            return Ok(operational_pending(
+                checkpoint,
+                ControllerPendingReason::StoreReopenRequired,
+            ));
+        }
+        let command = match &checkpoint {
+            OperationalCheckpoint::ReadyToSubmit { .. } => {
+                ControllerWorldCommand::Exercise(operational_invocation(&checkpoint)?)
+            }
+            OperationalCheckpoint::NoProposal { .. } => ControllerWorldCommand::Decline,
+            OperationalCheckpoint::AgentInFlight { .. } => {
+                unreachable!("terminal checkpoint was established above")
+            }
+        };
+        match self
+            .submit_controller_world(command_id, &opportunity, command)
+            .await?
+        {
+            ControllerWorldSubmission::Completed(submission) => {
+                completed_operational(&checkpoint, submission)
+            }
+            ControllerWorldSubmission::Pending(reason) => {
+                Ok(operational_pending(checkpoint, reason))
+            }
+        }
+    }
+
+    async fn submit_controller_world(
+        &self,
+        command_id: CommandId,
+        opportunity: &DecisionOpportunity,
+        command: ControllerWorldCommand,
+    ) -> Result<ControllerWorldSubmission, ControllerError> {
+        let committed = match &command {
+            ControllerWorldCommand::Exercise(invocation) => {
+                self.mailbox
+                    .controller_receipt(command_id, opportunity, invocation)
+                    .await
+            }
+            ControllerWorldCommand::Decline => {
+                self.mailbox
+                    .controller_decline_receipt(command_id, opportunity)
+                    .await
+            }
+        };
+        match committed {
+            Ok(Some(receipt)) => {
+                let submission = match command {
+                    ControllerWorldCommand::Exercise(_) => {
+                        SubmissionDisposition::PreviouslyConfirmed(receipt)
+                    }
+                    ControllerWorldCommand::Decline => {
+                        SubmissionDisposition::NoProposal(SubmitReceipt::AlreadyApplied(receipt))
+                    }
+                };
+                return Ok(ControllerWorldSubmission::Completed(submission));
+            }
+            Ok(None) => {}
+            Err(MailboxError::Unavailable) => {
+                return Ok(ControllerWorldSubmission::Pending(
+                    ControllerPendingReason::WorldUnavailable,
+                ));
+            }
+            Err(MailboxError::OutcomeUnknown { .. }) => {
+                return Ok(ControllerWorldSubmission::Pending(
+                    ControllerPendingReason::WorldOutcomeUnknown,
+                ));
+            }
+            Err(MailboxError::Kernel(error)) => return Err(ControllerError::World(error)),
+        }
+
+        let submitted = match command {
+            ControllerWorldCommand::Exercise(invocation) => self
+                .mailbox
+                .submit_controller(command_id, opportunity, invocation)
+                .await
+                .map(SubmissionDisposition::Completed),
+            ControllerWorldCommand::Decline => self
+                .mailbox
+                .submit_controller_decline(command_id, opportunity)
+                .await
+                .map(SubmissionDisposition::NoProposal),
+        };
+        match submitted {
+            Ok(submission) => Ok(ControllerWorldSubmission::Completed(submission)),
+            Err(MailboxError::OutcomeUnknown { .. }) => Ok(ControllerWorldSubmission::Pending(
+                ControllerPendingReason::WorldOutcomeUnknown,
+            )),
+            Err(MailboxError::Unavailable) => Ok(ControllerWorldSubmission::Pending(
+                ControllerPendingReason::WorldUnavailable,
+            )),
+            Err(MailboxError::Kernel(error)) => Err(ControllerError::World(error)),
+        }
+    }
+}
+
+#[derive(Clone)]
+struct SelectedDecision {
+    snapshot: WorldSnapshot,
+    subject: SubjectSnapshot,
+    opportunity: DecisionOpportunity,
+    speak_affordance: AffordanceId,
+}
+
+impl SelectedDecision {
+    fn projector_context(&self) -> Result<String, ControllerError> {
+        serde_json::to_string_pretty(&json!({
+            "world": {
+                "title": self.snapshot.title,
+                "revision": self.snapshot.revision,
+                "state_digest": self.snapshot.state_digest,
+            },
+            "subject": {
+                "id": self.subject.id,
+                "label": self.subject.label,
+                "kind": self.subject.kind,
+            },
+            "permission": {
+                "speak": true,
+            },
+        }))
+        .map_err(|error| ControllerError::Serialization(error.to_string()))
+    }
+
+    fn typed_view(&self) -> Result<String, ControllerError> {
+        serde_json::to_string_pretty(&json!({
+            "world": {
+                "title": self.snapshot.title,
+                "revision": self.snapshot.revision,
+                "state_digest": self.snapshot.state_digest,
+            },
+            "subject": {
+                "id": self.subject.id,
+                "label": self.subject.label,
+                "kind": self.subject.kind,
+            },
+            "permission": {
+                "speak": true,
+            },
+            "visible_events": self.visible_events(),
+        }))
+        .map_err(|error| ControllerError::Serialization(error.to_string()))
+    }
+
+    fn visible_stimulus(&self) -> Result<String, ControllerError> {
+        serde_json::to_string_pretty(&self.visible_events())
+            .map_err(|error| ControllerError::Serialization(error.to_string()))
+    }
+
+    fn visible_events(&self) -> Vec<Value> {
+        self.snapshot
+            .events
+            .iter()
+            .map(|event| match &event.invocation.action {
+                DecisionAction::Speak { text } => json!({
+                    "revision": event.revision,
+                    "speaker_subject_id": event.scope.subject_id,
+                    "text": text,
+                }),
+            })
+            .collect()
+    }
+}
+
+fn speak_invocation(speak_affordance: AffordanceId, text: String) -> DecisionInvocation {
+    DecisionInvocation {
+        affordance_id: speak_affordance,
+        action: DecisionAction::Speak { text },
+    }
+}
+
+fn narrative_invocation(
+    checkpoint: &NarrativeCheckpoint,
+) -> Result<DecisionInvocation, ControllerError> {
+    let NarrativeCheckpoint::ReadyToSubmit {
+        turn,
+        interpreter_prompt,
+        speak_affordance,
+        completed,
+        ..
+    } = checkpoint
+    else {
+        return Err(ControllerError::Serialization(
+            "Persona work is not ready to submit".into(),
+        ));
+    };
+    let span = derive_narrative_capture(turn, interpreter_prompt, completed)?
+        .proposal
+        .ok_or_else(|| {
+            ControllerError::Serialization("Persona work has no exact proposal span".into())
+        })?;
+    let text = turn
+        .source_prose()
+        .get(span.start_byte..span.end_byte)
+        .ok_or_else(|| ControllerError::Serialization("Persona proposal span is not exact".into()))?
+        .to_owned();
+    Ok(speak_invocation(*speak_affordance, text))
+}
+
+fn operational_invocation(
+    checkpoint: &OperationalCheckpoint,
+) -> Result<DecisionInvocation, ControllerError> {
+    let OperationalCheckpoint::ReadyToSubmit {
+        agent_prompt,
+        speak_affordance,
+        completed,
+        ..
+    } = checkpoint
+    else {
+        return Err(ControllerError::Serialization(
+            "operational work is not ready to submit".into(),
+        ));
+    };
+    let text = derive_operational_capture(agent_prompt, completed)?
+        .proposal
+        .ok_or_else(|| {
+            ControllerError::Serialization("operational work has no exact proposal".into())
+        })?;
+    Ok(speak_invocation(*speak_affordance, text))
+}
+
+fn narrative_capture(
+    report: &InterpretationReport<SpeakProposal>,
+    inference_receipts: Vec<String>,
+) -> NarrativeCapture {
+    NarrativeCapture {
+        proposal: report.proposals().first().map(|proposal| SourceRange {
+            start_byte: proposal.source().start_byte(),
+            end_byte: proposal.source().end_byte(),
+        }),
+        gaps: report
+            .gaps()
+            .iter()
+            .map(|gap| TranslationGapSummary {
+                kind: gap.kind(),
+                source: SourceRange {
+                    start_byte: gap.source().start_byte(),
+                    end_byte: gap.source().end_byte(),
+                },
+                detail: gap.detail().to_owned(),
+            })
+            .collect(),
+        finalization: report.finalization(),
+        inference_receipts,
+    }
+}
+
+fn completed_narrative(
+    checkpoint: &NarrativeCheckpoint,
+    submission: SubmissionDisposition,
+) -> Result<NarrativeRun, ControllerError> {
+    let (turn, interpreter_prompt, completed) = match checkpoint {
+        NarrativeCheckpoint::ReadyToSubmit {
+            turn,
+            interpreter_prompt,
+            completed,
+            ..
+        }
+        | NarrativeCheckpoint::NoProposal {
+            turn,
+            interpreter_prompt,
+            completed,
+            ..
+        } => (turn, interpreter_prompt, completed),
+        _ => {
+            return Err(ControllerError::Serialization(
+                "completed Persona work is not terminal".into(),
+            ));
+        }
+    };
+    Ok(NarrativeRun::Completed(NarrativeDecision {
+        turn: turn.clone(),
+        capture: derive_narrative_capture(turn, interpreter_prompt, completed)?,
+        submission,
+    }))
+}
+
+fn narrative_pending(work: NarrativeCheckpoint, reason: ControllerPendingReason) -> NarrativeRun {
+    NarrativeRun::Pending(NarrativePending { work, reason })
+}
+
+fn completed_operational(
+    checkpoint: &OperationalCheckpoint,
+    submission: SubmissionDisposition,
+) -> Result<OperationalRun, ControllerError> {
+    let (agent_prompt, completed) = match checkpoint {
+        OperationalCheckpoint::ReadyToSubmit {
+            agent_prompt,
+            completed,
+            ..
+        }
+        | OperationalCheckpoint::NoProposal {
+            agent_prompt,
+            completed,
+            ..
+        } => (agent_prompt, completed),
+        OperationalCheckpoint::AgentInFlight { .. } => {
+            return Err(ControllerError::Serialization(
+                "completed operational work is not terminal".into(),
+            ));
+        }
+    };
+    Ok(OperationalRun::Completed(OperationalDecision {
+        capture: derive_operational_capture(agent_prompt, completed)?,
+        submission,
+    }))
+}
+
+fn operational_pending(
+    work: OperationalCheckpoint,
+    reason: ControllerPendingReason,
+) -> OperationalRun {
+    OperationalRun::Pending(OperationalPending { work, reason })
+}
+
+fn encoded_id<T: Serialize>(id: &T) -> Result<String, ControllerError> {
+    let value = serde_json::to_value(id)
+        .map_err(|error| ControllerError::Serialization(error.to_string()))?;
+    value
+        .as_str()
+        .map(str::to_owned)
+        .ok_or_else(|| ControllerError::Serialization("opaque ID was not a string".into()))
+}
+
+fn tool_decode_need(name: &str, arguments: &str, detail: &str) -> ControllerNeed {
+    ControllerNeed {
+        detail: format!(
+            "tool `{name}` arguments were not usable ({detail}); raw_argument_digest={}",
+            sha256(arguments)
+        ),
+    }
+}
+
+enum InterpreterLoopEvaluation {
+    Continue { conversation: Vec<CodexInputItem> },
+    Complete { capture: NarrativeCapture },
+}
+
+fn evaluate_interpreter_loop(
+    source: &PersonaTurn,
+    prompt: &str,
+    completed: &[InferenceOutput],
+) -> Result<InterpreterLoopEvaluation, ControllerError> {
+    let mut conversation = vec![CodexInputItem::UserText {
+        text: prompt.to_owned(),
+    }];
+    let mut accumulator = InterpretationAccumulator::new(source.clone());
+    let mut captured_speech = false;
+    let mut receipts = Vec::new();
+
+    for (round, output) in completed.iter().enumerate() {
+        if output.receipt_digest.is_empty() || output.receipt_digest.trim() != output.receipt_digest
+        {
+            return Err(ControllerError::ProviderContract {
+                purpose: InferencePurpose::Interpreter,
+                detail: "provider output has no canonical receipt digest".into(),
+            });
+        }
+        receipts.push(output.receipt_digest.clone());
+        let mut called_tool = false;
+        let mut finished = false;
+        for event in &output.events {
+            match event {
+                InferenceEvent::Text(text) => {
+                    if !text.is_empty() {
+                        conversation.push(CodexInputItem::AssistantText { text: text.clone() });
+                    }
+                }
+                InferenceEvent::ToolCall {
+                    call_id,
+                    name,
+                    arguments,
+                } => {
+                    called_tool = true;
+                    conversation.push(CodexInputItem::ToolCall {
+                        call_id: call_id.clone(),
+                        name: name.clone(),
+                        arguments: arguments.clone(),
+                    });
+                    let result = match name.as_str() {
+                        SPEAK_TOOL => match serde_json::from_str::<InterpreterSpeakCall>(arguments)
+                        {
+                            Ok(call) if !captured_speech => {
+                                let derived_text = source
+                                    .source_prose()
+                                    .get(call.source_start_byte..call.source_end_byte)
+                                    .unwrap_or_default()
+                                    .to_owned();
+                                let feedback = accumulator.capture_proposal(
+                                    SpeakProposal { text: derived_text },
+                                    call.source_start_byte,
+                                    call.source_end_byte,
+                                );
+                                captured_speech = feedback == CaptureToolFeedback::Accepted;
+                                format!("{feedback:?}")
+                            }
+                            Ok(call) => {
+                                let feedback = accumulator.record_gap(RecordGapToolCall {
+                                    kind: TranslationGapKind::Ambiguity,
+                                    source_start_byte: call.source_start_byte,
+                                    source_end_byte: call.source_end_byte,
+                                    detail: "More than one speech proposal was offered; this runner permits one decision invocation per opportunity.".into(),
+                                });
+                                format!("{feedback:?}")
+                            }
+                            Err(error) => format!(
+                                "{:?}",
+                                accumulator.record_tool_decode_failure(
+                                    name,
+                                    arguments,
+                                    &error.to_string(),
+                                )
+                            ),
+                        },
+                        RECORD_GAP_TOOL => {
+                            match serde_json::from_str::<RecordGapToolCall>(arguments) {
+                                Ok(call) => format!("{:?}", accumulator.record_gap(call)),
+                                Err(error) => format!(
+                                    "{:?}",
+                                    accumulator.record_tool_decode_failure(
+                                        name,
+                                        arguments,
+                                        &error.to_string(),
+                                    )
+                                ),
+                            }
+                        }
+                        FINISH_INTERPRETATION_TOOL => {
+                            match serde_json::from_str::<EmptyToolCall>(arguments) {
+                                Ok(_) => {
+                                    finished = true;
+                                    "interpretation finished".into()
+                                }
+                                Err(error) => format!(
+                                    "{:?}",
+                                    accumulator.record_tool_decode_failure(
+                                        name,
+                                        arguments,
+                                        &error.to_string(),
+                                    )
+                                ),
+                            }
+                        }
+                        _ => format!(
+                            "{:?}",
+                            accumulator.record_tool_decode_failure(
+                                name,
+                                arguments,
+                                "tool is not available for this exact opportunity",
+                            )
+                        ),
+                    };
+                    conversation.push(CodexInputItem::ToolResult {
+                        call_id: call_id.clone(),
+                        output: result,
+                    });
+                }
+            }
+        }
+
+        let finalization = if finished || !called_tool {
+            Some(InterpretationFinalization::InterpreterFinished)
+        } else if round + 1 == TOOL_STEP_BUDGET {
+            Some(InterpretationFinalization::StepBudgetExhausted)
+        } else {
+            None
+        };
+        if let Some(finalization) = finalization {
+            if round + 1 != completed.len() {
+                return Err(ControllerError::Serialization(
+                    "interpreter evidence continued after total finalization".into(),
+                ));
+            }
+            let report = accumulator.finalize(finalization);
+            return Ok(InterpreterLoopEvaluation::Complete {
+                capture: narrative_capture(&report, receipts),
+            });
+        }
+    }
+
+    if completed.len() >= TOOL_STEP_BUDGET {
+        return Err(ControllerError::Serialization(
+            "interpreter evidence exceeded its step budget".into(),
+        ));
+    }
+    Ok(InterpreterLoopEvaluation::Continue { conversation })
+}
+
+enum OperationalLoopEvaluation {
+    Continue { conversation: Vec<CodexInputItem> },
+    Complete { capture: OperationalCapture },
+}
+
+fn evaluate_operational_loop(
+    prompt: &str,
+    completed: &[InferenceOutput],
+) -> Result<OperationalLoopEvaluation, ControllerError> {
+    let mut conversation = vec![CodexInputItem::UserText {
+        text: prompt.to_owned(),
+    }];
+    let mut proposal = None;
+    let mut needs = Vec::new();
+    let mut receipts = Vec::new();
+
+    for (round, output) in completed.iter().enumerate() {
+        if output.receipt_digest.is_empty() || output.receipt_digest.trim() != output.receipt_digest
+        {
+            return Err(ControllerError::ProviderContract {
+                purpose: InferencePurpose::OperationalAgent,
+                detail: "provider output has no canonical receipt digest".into(),
+            });
+        }
+        receipts.push(output.receipt_digest.clone());
+        let mut called_tool = false;
+        let mut terminal_choice = None;
+        for event in &output.events {
+            match event {
+                InferenceEvent::Text(text) => {
+                    if !text.is_empty() {
+                        conversation.push(CodexInputItem::AssistantText { text: text.clone() });
+                    }
+                }
+                InferenceEvent::ToolCall {
+                    call_id,
+                    name,
+                    arguments,
+                } => {
+                    called_tool = true;
+                    conversation.push(CodexInputItem::ToolCall {
+                        call_id: call_id.clone(),
+                        name: name.clone(),
+                        arguments: arguments.clone(),
+                    });
+                    let result = match name.as_str() {
+                        SPEAK_TOOL => match serde_json::from_str::<OperationalSpeakCall>(arguments)
+                        {
+                            Ok(call) if terminal_choice.is_none() => {
+                                proposal = Some(call.text);
+                                terminal_choice = Some(SPEAK_TOOL);
+                                "speech proposal captured".into()
+                            }
+                            Ok(_) => {
+                                needs.push(ControllerNeed {
+                                    detail: "The agent offered more than one terminal choice for one opportunity.".into(),
+                                });
+                                "one terminal choice is already captured".into()
+                            }
+                            Err(error) => {
+                                needs.push(tool_decode_need(name, arguments, &error.to_string()));
+                                "arguments recorded as a need".into()
+                            }
+                        },
+                        RECORD_NEED_TOOL => match serde_json::from_str::<RecordNeedCall>(arguments)
+                        {
+                            Ok(call) => {
+                                needs.push(ControllerNeed {
+                                    detail: call.detail,
+                                });
+                                "need recorded".into()
+                            }
+                            Err(error) => {
+                                needs.push(tool_decode_need(name, arguments, &error.to_string()));
+                                "arguments recorded as a need".into()
+                            }
+                        },
+                        FINISH_WITHOUT_PROPOSAL_TOOL => {
+                            match serde_json::from_str::<EmptyToolCall>(arguments) {
+                                Ok(_) => {
+                                    if terminal_choice.is_some() {
+                                        return Err(ControllerError::ProviderContract {
+                                            purpose: InferencePurpose::OperationalAgent,
+                                            detail: "finish_without_proposal contradicted an existing terminal choice".into(),
+                                        });
+                                    }
+                                    terminal_choice = Some(FINISH_WITHOUT_PROPOSAL_TOOL);
+                                    "decision finished without a proposal".into()
+                                }
+                                Err(error) => {
+                                    needs.push(tool_decode_need(
+                                        name,
+                                        arguments,
+                                        &error.to_string(),
+                                    ));
+                                    "arguments recorded as a need".into()
+                                }
+                            }
+                        }
+                        _ => {
+                            needs.push(tool_decode_need(
+                                name,
+                                arguments,
+                                "tool is not available for this exact opportunity",
+                            ));
+                            "unavailable tool recorded as a need".into()
+                        }
+                    };
+                    conversation.push(CodexInputItem::ToolResult {
+                        call_id: call_id.clone(),
+                        output: result,
+                    });
+                }
+            }
+        }
+
+        let is_complete =
+            terminal_choice.is_some() || !called_tool || round + 1 == TOOL_STEP_BUDGET;
+        if is_complete {
+            if round + 1 != completed.len() {
+                return Err(ControllerError::Serialization(
+                    "operational evidence continued after total finalization".into(),
+                ));
+            }
+            if round + 1 == TOOL_STEP_BUDGET && terminal_choice.is_none() && called_tool {
+                needs.push(ControllerNeed {
+                    detail: "The operational-agent step budget ended before explicit completion."
+                        .into(),
+                });
+            }
+            return Ok(OperationalLoopEvaluation::Complete {
+                capture: OperationalCapture {
+                    proposal,
+                    needs,
+                    inference_receipts: receipts,
+                },
+            });
+        }
+    }
+
+    if completed.len() >= TOOL_STEP_BUDGET {
+        return Err(ControllerError::Serialization(
+            "operational evidence exceeded its step budget".into(),
+        ));
+    }
+    Ok(OperationalLoopEvaluation::Continue { conversation })
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct InterpreterSpeakCall {
+    source_start_byte: usize,
+    source_end_byte: usize,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct OperationalSpeakCall {
+    text: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RecordNeedCall {
+    detail: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct EmptyToolCall {}
+
+fn projector_request(
+    command_id: CommandId,
+    model: &str,
+    prompt: String,
+) -> Result<InferenceRequest, ControllerError> {
+    text_request(
+        command_id,
+        InferencePurpose::Projector,
+        model,
+        "Render the private view in the user message as one lived narrative stream. Return only that prose.",
+        prompt,
+        1_200,
+    )
+}
+
+fn persona_request(
+    command_id: CommandId,
+    model: &str,
+    prompt: String,
+) -> Result<InferenceRequest, ControllerError> {
+    // This boundary is deliberately not lowered through a generic stage
+    // constructor. Its only model-visible input is the dedicated natural-prose
+    // prompt plus the smallest nonempty instruction required by the provider
+    // transport contract.
+    let mut provider = CodexProviderRequest::new(
+        provider_request_id(command_id, InferencePurpose::Persona, 0)?,
+        conversation_id(command_id, InferencePurpose::Persona, 0)?,
+        model,
+        PERSONA_PROVIDER_INSTRUCTIONS,
+    );
+    provider.input = vec![CodexInputItem::UserText { text: prompt }];
+    provider.reasoning_effort = Some("low".into());
+    provider.tools = Vec::new();
+    provider.tool_choice = CodexToolChoice::Auto;
+    provider.parallel_tool_calls = false;
+    provider.output_format_name = None;
+    provider.output_schema_json = None;
+    provider.max_output_tokens = Some(1_200);
+    Ok(InferenceRequest {
+        purpose: InferencePurpose::Persona,
+        provider,
+    })
+}
+
+fn text_request(
+    command_id: CommandId,
+    purpose: InferencePurpose,
+    model: &str,
+    instructions: &str,
+    prompt: String,
+    max_output_tokens: u32,
+) -> Result<InferenceRequest, ControllerError> {
+    let request = provider_request_id(command_id, purpose, 0)?;
+    let conversation = conversation_id(command_id, purpose, 0)?;
+    let mut provider = CodexProviderRequest::new(request, conversation, model, instructions);
+    provider.input = vec![CodexInputItem::UserText { text: prompt }];
+    provider.reasoning_effort = Some("low".into());
+    provider.tools = Vec::new();
+    provider.tool_choice = CodexToolChoice::Auto;
+    provider.parallel_tool_calls = false;
+    provider.output_format_name = None;
+    provider.output_schema_json = None;
+    provider.max_output_tokens = Some(max_output_tokens);
+    Ok(InferenceRequest { purpose, provider })
+}
+
+fn interpreter_request(
+    command_id: CommandId,
+    round: usize,
+    model: &str,
+    input: Vec<CodexInputItem>,
+) -> Result<InferenceRequest, ControllerError> {
+    tool_request(
+        command_id,
+        round,
+        InferencePurpose::Interpreter,
+        model,
+        "Translate the preserved Persona prose using only the supplied capture tools. Untranslatable meaning is recorded, never repaired or rejected.",
+        input,
+        interpreter_tools(),
+    )
+}
+
+fn operational_request(
+    command_id: CommandId,
+    round: usize,
+    model: &str,
+    input: Vec<CodexInputItem>,
+) -> Result<InferenceRequest, ControllerError> {
+    tool_request(
+        command_id,
+        round,
+        InferencePurpose::OperationalAgent,
+        model,
+        "Use only the supplied tools for this permissioned decision. Returning no proposal is valid.",
+        input,
+        operational_tools(),
+    )
+}
+
+fn tool_request(
+    command_id: CommandId,
+    round: usize,
+    purpose: InferencePurpose,
+    model: &str,
+    instructions: &str,
+    input: Vec<CodexInputItem>,
+    tools: Vec<CodexToolDefinition>,
+) -> Result<InferenceRequest, ControllerError> {
+    let mut provider = CodexProviderRequest::new(
+        provider_request_id(command_id, purpose, round)?,
+        conversation_id(command_id, purpose, round)?,
+        model,
+        instructions,
+    );
+    provider.input = input;
+    provider.reasoning_effort = Some("medium".into());
+    provider.tools = tools;
+    provider.tool_choice = CodexToolChoice::Auto;
+    provider.parallel_tool_calls = false;
+    provider.output_format_name = None;
+    provider.output_schema_json = None;
+    provider.max_output_tokens = Some(1_200);
+    Ok(InferenceRequest { purpose, provider })
+}
+
+fn interpreter_tools() -> Vec<CodexToolDefinition> {
+    vec![
+        tool(
+            SPEAK_TOOL,
+            "Capture one exact spoken utterance by byte span in the preserved Persona prose; the harness derives the utterance verbatim.",
+            json!({
+                "type":"object",
+                "additionalProperties":false,
+                "properties":{
+                    "source_start_byte":{"type":"integer","minimum":0},
+                    "source_end_byte":{"type":"integer","minimum":1}
+                },
+                "required":["source_start_byte","source_end_byte"]
+            }),
+        ),
+        tool(
+            RECORD_GAP_TOOL,
+            "Preserve meaningful source prose that has no safe current typed translation.",
+            json!({
+                "type":"object",
+                "additionalProperties":false,
+                "properties":{
+                    "kind":{"type":"string","enum":["ambiguity","missing_reference","missing_affordance","missing_primitive","unresolved"]},
+                    "source_start_byte":{"type":"integer","minimum":0},
+                    "source_end_byte":{"type":"integer","minimum":1},
+                    "detail":{"type":"string"}
+                },
+                "required":["kind","source_start_byte","source_end_byte","detail"]
+            }),
+        ),
+        tool(
+            FINISH_INTERPRETATION_TOOL,
+            "Finish the total interpretation after all supported captures and gaps are recorded.",
+            empty_schema(),
+        ),
+    ]
+}
+
+fn operational_tools() -> Vec<CodexToolDefinition> {
+    vec![
+        tool(
+            SPEAK_TOOL,
+            "Propose one exact utterance for this decision owner.",
+            json!({
+                "type":"object",
+                "additionalProperties":false,
+                "properties":{"text":{"type":"string"}},
+                "required":["text"]
+            }),
+        ),
+        tool(
+            RECORD_NEED_TOOL,
+            "Record information or capability the agent would need but does not currently have.",
+            json!({
+                "type":"object",
+                "additionalProperties":false,
+                "properties":{"detail":{"type":"string"}},
+                "required":["detail"]
+            }),
+        ),
+        tool(
+            FINISH_WITHOUT_PROPOSAL_TOOL,
+            "Finish this opportunity without proposing an action.",
+            empty_schema(),
+        ),
+    ]
+}
+
+fn empty_schema() -> Value {
+    json!({"type":"object","additionalProperties":false,"properties":{}})
+}
+
+fn tool(name: &str, description: &str, schema: Value) -> CodexToolDefinition {
+    CodexToolDefinition {
+        name: name.into(),
+        description: description.into(),
+        parameters_json: serde_json::to_string(&schema)
+            .expect("static controller tool schemas must serialize"),
+    }
+}
+
+fn provider_request_id(
+    command_id: CommandId,
+    purpose: InferencePurpose,
+    round: usize,
+) -> Result<String, ControllerError> {
+    Ok(format!(
+        "ghostlight-request-{}-{}-{round}",
+        encoded_id(&command_id)?,
+        purpose_name(purpose)
+    ))
+}
+
+fn conversation_id(
+    command_id: CommandId,
+    purpose: InferencePurpose,
+    round: usize,
+) -> Result<String, ControllerError> {
+    Ok(format!(
+        "ghostlight-conversation-{}-{}-{round}",
+        encoded_id(&command_id)?,
+        purpose_name(purpose)
+    ))
+}
+
+fn purpose_name(purpose: InferencePurpose) -> &'static str {
+    match purpose {
+        InferencePurpose::Projector => "projector",
+        InferencePurpose::Persona => "persona",
+        InferencePurpose::Interpreter => "interpreter",
+        InferencePurpose::OperationalAgent => "operational",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::world::{
+        AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, ControllerId, CreateWorld,
+        DecisionScope, DraftSubjectHandle, NewController, NewDecisionSubject, PrincipalId,
+        SubjectKind, WorldId, WorldPhase,
+    };
+    use std::{
+        collections::BTreeSet,
+        sync::atomic::{AtomicBool, Ordering},
+    };
+
+    #[test]
+    fn controller_work_decode_rejects_an_alternate_messagepack_shape() {
+        let command_id = CommandId::new();
+        let opportunity = fixture_opportunity(ControllerMode::OperationalAgent);
+        let work = operational_in_flight(
+            command_id,
+            &opportunity,
+            "Hold the bridge.",
+            "operational-model",
+            vec![],
+        );
+        let payload = rmp_serde::to_vec(&work).unwrap();
+        assert_eq!(
+            rmp_serde::from_slice::<ControllerWork>(&payload).unwrap(),
+            work
+        );
+        let row = CultCacheEnvelope {
+            key: store_key(command_id).unwrap(),
+            r#type: CONTROLLER_WORK_ROW.into(),
+            payload,
+            stored_at: Utc::now().to_rfc3339(),
+            schema_id: Some(CONTROLLER_WORK_SCHEMA.into()),
+        };
+        assert!(decode_controller_work(&row).is_err());
+    }
+
+    #[test]
+    fn in_flight_progression_cannot_substitute_a_model() {
+        let operational_command = CommandId::new();
+        let operational_opportunity = fixture_opportunity(ControllerMode::OperationalAgent);
+        let existing_operational = operational_in_flight(
+            operational_command,
+            &operational_opportunity,
+            "Hold the bridge.",
+            "operational-model-a",
+            vec![],
+        );
+        let completed_operational = vec![InferenceOutput {
+            events: vec![InferenceEvent::ToolCall {
+                call_id: "need".into(),
+                name: RECORD_NEED_TOOL.into(),
+                arguments: json!({"detail":"The wind reading is missing."}).to_string(),
+            }],
+            receipt_digest: "sha256:operational-round-zero".into(),
+        }];
+        let substituted_operational = operational_in_flight(
+            operational_command,
+            &operational_opportunity,
+            "Hold the bridge.",
+            "operational-model-b",
+            completed_operational,
+        );
+        assert!(existing_operational.integrity_is_valid());
+        assert!(substituted_operational.integrity_is_valid());
+        assert!(!valid_controller_work_progression(
+            &existing_operational,
+            &substituted_operational
+        ));
+
+        let narrative_command = CommandId::new();
+        let narrative_opportunity = fixture_opportunity(ControllerMode::NarrativePersona);
+        let turn = fixture_persona_turn(&narrative_opportunity, "I wait.");
+        let existing_narrative = narrative_interpreter_in_flight(
+            narrative_command,
+            &narrative_opportunity,
+            &turn,
+            "Interpret the prose.",
+            "interpreter-model-a",
+            vec![],
+        );
+        let completed_narrative = vec![InferenceOutput {
+            events: vec![InferenceEvent::ToolCall {
+                call_id: "gap".into(),
+                name: RECORD_GAP_TOOL.into(),
+                arguments: json!({
+                    "kind":"unresolved",
+                    "source_start_byte":0,
+                    "source_end_byte":1,
+                    "detail":"The intended action is unclear."
+                })
+                .to_string(),
+            }],
+            receipt_digest: "sha256:narrative-round-zero".into(),
+        }];
+        let substituted_narrative = narrative_interpreter_in_flight(
+            narrative_command,
+            &narrative_opportunity,
+            &turn,
+            "Interpret the prose.",
+            "interpreter-model-b",
+            completed_narrative,
+        );
+        assert!(existing_narrative.integrity_is_valid());
+        assert!(substituted_narrative.integrity_is_valid());
+        assert!(!valid_controller_work_progression(
+            &existing_narrative,
+            &substituted_narrative
+        ));
+    }
+
+    #[test]
+    fn persona_provider_request_is_structurally_prose_only() {
+        let command_id = CommandId::new();
+        let request = persona_request(
+            command_id,
+            "persona-model",
+            build_persona_prompt(&PersonaPrompt {
+                identity: "An old bridge keeper with sore hands.",
+                lived_stream: "Rain drums on the tollhouse roof.",
+                domain_guidance: "Answer with dry patience.",
+                word_budget: 80,
+            }),
+        )
+        .unwrap();
+        assert_eq!(request.purpose, InferencePurpose::Persona);
+        assert!(request.provider.validate().is_ok());
+        assert_eq!(request.provider.instructions, PERSONA_PROVIDER_INSTRUCTIONS);
+        assert!(request.provider.tools.is_empty());
+        assert_eq!(request.provider.tool_choice, CodexToolChoice::Auto);
+        assert!(!request.provider.parallel_tool_calls);
+        assert!(request.provider.output_format_name.is_none());
+        assert!(request.provider.output_schema_json.is_none());
+        assert!(request.provider.previous_response_id.is_none());
+        assert_eq!(request.provider.input.len(), 1);
+        let encoded = serde_json::to_string(&request.provider)
+            .unwrap()
+            .to_lowercase();
+        for leak in [
+            "world_id",
+            "controller_id",
+            "opportunity",
+            "affordance_id",
+            "execute the supplied",
+            "output contract",
+        ] {
+            assert!(!encoded.contains(leak), "Persona request leaked `{leak}`");
+        }
+    }
+
+    #[test]
+    fn controller_tool_schemas_cannot_claim_authority_or_envelopes() {
+        for definition in interpreter_tools().into_iter().chain(operational_tools()) {
+            let schema: Value = serde_json::from_str(&definition.parameters_json).unwrap();
+            assert_eq!(schema["additionalProperties"], false);
+            let properties = schema["properties"].as_object().unwrap();
+            for forbidden in [
+                "caller",
+                "caller_id",
+                "controller_id",
+                "world_id",
+                "opportunity",
+                "revision",
+                "expected_revision",
+                "affordance_id",
+                "command_id",
+            ] {
+                assert!(!properties.contains_key(forbidden));
+            }
+        }
+        assert_eq!(
+            operational_tools()
+                .iter()
+                .map(|tool| tool.name.as_str())
+                .collect::<Vec<_>>(),
+            vec![SPEAK_TOOL, RECORD_NEED_TOOL, FINISH_WITHOUT_PROPOSAL_TOOL]
+        );
+        let interpreter_speak = interpreter_tools()
+            .into_iter()
+            .find(|tool| tool.name == SPEAK_TOOL)
+            .unwrap();
+        let schema: Value = serde_json::from_str(&interpreter_speak.parameters_json).unwrap();
+        assert!(
+            !schema["properties"]
+                .as_object()
+                .unwrap()
+                .contains_key("text")
+        );
+        assert!(
+            serde_json::from_str::<InterpreterSpeakCall>(
+                r#"{"source_start_byte":0,"source_end_byte":4,"text":"invented"}"#
+            )
+            .is_err(),
+            "Interpreter speech cannot carry text independent of its source span"
+        );
+    }
+
+    #[test]
+    fn provider_request_and_conversation_ids_are_deterministic_from_the_eve_command() {
+        let command_id = CommandId::new();
+        let first = persona_request(command_id, "persona-model", "prompt".into()).unwrap();
+        let replay = persona_request(command_id, "persona-model", "prompt".into()).unwrap();
+        assert_eq!(first, replay);
+        assert_eq!(
+            conversation_id(command_id, InferencePurpose::Interpreter, 0).unwrap(),
+            conversation_id(command_id, InferencePurpose::Interpreter, 0).unwrap()
+        );
+        assert_ne!(
+            conversation_id(command_id, InferencePurpose::Interpreter, 0).unwrap(),
+            conversation_id(command_id, InferencePurpose::Interpreter, 1).unwrap()
+        );
+        let round_zero = interpreter_request(
+            command_id,
+            0,
+            "interpreter-model",
+            vec![CodexInputItem::UserText {
+                text: "prompt".into(),
+            }],
+        )
+        .unwrap();
+        let round_one = interpreter_request(
+            command_id,
+            1,
+            "interpreter-model",
+            vec![CodexInputItem::UserText {
+                text: "prompt".into(),
+            }],
+        )
+        .unwrap();
+        assert!(round_zero.provider.validate().is_ok());
+        assert!(round_one.provider.validate().is_ok());
+        assert_ne!(round_zero, round_one);
+    }
+
+    struct RecordingPort {
+        outputs: Mutex<Vec<Result<InferenceOutput, InferenceFault>>>,
+        persisted_before_interpreter: Arc<AtomicBool>,
+    }
+
+    #[async_trait]
+    impl InferencePort for RecordingPort {
+        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            fixture_prepared(request)
+        }
+
+        async fn infer(
+            &self,
+            _request: PreparedInference,
+        ) -> Result<InferenceOutput, InferenceFault> {
+            assert!(self.persisted_before_interpreter.load(Ordering::SeqCst));
+            self.outputs.lock().unwrap().remove(0)
+        }
+    }
+
+    struct ExactReplayPort {
+        expected: PreparedInference,
+        output: Mutex<Option<Result<InferenceOutput, InferenceFault>>>,
+        seen: AtomicBool,
+    }
+
+    #[async_trait]
+    impl InferencePort for ExactReplayPort {
+        fn prepare(&self, _request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            Err(InferenceFault::new(
+                "exact replay unexpectedly attempted to prepare a new invocation",
+            ))
+        }
+
+        async fn infer(
+            &self,
+            request: PreparedInference,
+        ) -> Result<InferenceOutput, InferenceFault> {
+            assert_eq!(request, self.expected);
+            assert!(!self.seen.swap(true, Ordering::SeqCst));
+            self.output.lock().unwrap().take().unwrap()
+        }
+    }
+
+    fn fixture_prepared(request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+        let native_request_sha256 = Sha256::digest(
+            serde_json::to_vec(&request).map_err(|error| InferenceFault::new(error.to_string()))?,
+        )
+        .into();
+        let purpose = request.purpose;
+        let invocation = CodexTransportInvocation::new(
+            "ghostlight-controller-test",
+            4_102_444_800_000,
+            native_request_sha256,
+            request.provider,
+        )
+        .map_err(|error| InferenceFault::new(error.to_string()))?;
+        Ok(PreparedInference {
+            purpose,
+            invocation,
+        })
+    }
+
+    fn fixture_opportunity(mode: ControllerMode) -> DecisionOpportunity {
+        DecisionOpportunity {
+            world_id: WorldId::issue(),
+            revision: 7,
+            state_digest: "sha256:fixture-state".into(),
+            scope: DecisionScope {
+                subject_id: SubjectId::issue(),
+            },
+            controller_id: ControllerId::issue(),
+            controller_mode: mode,
+            affordance_ids: vec![AffordanceId::issue()],
+        }
+    }
+
+    fn operational_in_flight(
+        command_id: CommandId,
+        opportunity: &DecisionOpportunity,
+        agent_prompt: &str,
+        model: &str,
+        completed: Vec<InferenceOutput>,
+    ) -> ControllerWork {
+        let OperationalLoopEvaluation::Continue { conversation } =
+            evaluate_operational_loop(agent_prompt, &completed).unwrap()
+        else {
+            panic!("operational fixture unexpectedly finalized")
+        };
+        let request =
+            operational_request(command_id, completed.len(), model, conversation).unwrap();
+        ControllerWork::Operational(OperationalCheckpoint::AgentInFlight {
+            command_id,
+            agent_prompt: agent_prompt.into(),
+            opportunity: opportunity.clone(),
+            speak_affordance: opportunity.affordance_ids[0],
+            completed,
+            invocation: fixture_prepared(request).unwrap(),
+        })
+    }
+
+    fn fixture_persona_turn(opportunity: &DecisionOpportunity, source_prose: &str) -> PersonaTurn {
+        PersonaTurn::record(
+            PersonaTurnBinding {
+                world_id: encoded_id(&opportunity.world_id).unwrap(),
+                controller_id: encoded_id(&opportunity.controller_id).unwrap(),
+                opportunity_digest: opportunity.digest().unwrap(),
+                world_revision: opportunity.revision,
+                state_digest: opportunity.state_digest.clone(),
+                projector_receipt_digest: "sha256:projector".into(),
+                persona_inference_receipt_digest: "sha256:persona".into(),
+            },
+            source_prose,
+        )
+    }
+
+    fn narrative_interpreter_in_flight(
+        command_id: CommandId,
+        opportunity: &DecisionOpportunity,
+        turn: &PersonaTurn,
+        interpreter_prompt: &str,
+        model: &str,
+        completed: Vec<InferenceOutput>,
+    ) -> ControllerWork {
+        let InterpreterLoopEvaluation::Continue { conversation } =
+            evaluate_interpreter_loop(turn, interpreter_prompt, &completed).unwrap()
+        else {
+            panic!("Interpreter fixture unexpectedly finalized")
+        };
+        let request =
+            interpreter_request(command_id, completed.len(), model, conversation).unwrap();
+        ControllerWork::Narrative(NarrativeCheckpoint::InterpreterInFlight {
+            command_id,
+            turn: turn.clone(),
+            interpreter_prompt: interpreter_prompt.into(),
+            opportunity: opportunity.clone(),
+            speak_affordance: opportunity.affordance_ids[0],
+            completed,
+            invocation: fixture_prepared(request).unwrap(),
+        })
+    }
+
+    struct RecordingWorkStore {
+        persisted: Arc<AtomicBool>,
+        work: Mutex<BTreeMap<CommandId, ControllerWork>>,
+    }
+
+    #[async_trait]
+    impl ControllerWorkStore for RecordingWorkStore {
+        async fn lookup(
+            &self,
+            command_id: CommandId,
+        ) -> Result<ControllerWorkLookup, ControllerWorkStoreError> {
+            Ok(self
+                .work
+                .lock()
+                .unwrap()
+                .get(&command_id)
+                .cloned()
+                .map(ControllerWorkLookup::Confirmed)
+                .unwrap_or(ControllerWorkLookup::Missing))
+        }
+
+        async fn persist(
+            &self,
+            work: &ControllerWork,
+        ) -> Result<ControllerWorkWrite, ControllerWorkStoreError> {
+            if !work.integrity_is_valid() {
+                return Err(ControllerWorkStoreError::new("invalid controller work"));
+            }
+            let command_id = work.command_id();
+            let mut stored = self.work.lock().unwrap();
+            if let Some(existing) = stored.get(&command_id) {
+                if existing == work {
+                    return Ok(ControllerWorkWrite::AlreadyPresent);
+                }
+                if existing.mode() != work.mode() {
+                    return Err(ControllerWorkStoreError::CommandModeConflict);
+                }
+                if !valid_controller_work_progression(existing, work) {
+                    return Err(ControllerWorkStoreError::new(
+                        "controller checkpoint progression conflict",
+                    ));
+                }
+            } else if !work.is_initial() {
+                return Err(ControllerWorkStoreError::new(
+                    "controller work skipped its durable pre-inference boundary",
+                ));
+            }
+            stored.insert(command_id, work.clone());
+            self.persisted.store(true, Ordering::SeqCst);
+            Ok(ControllerWorkWrite::Applied)
+        }
+
+        async fn custody_probe(&self) -> Result<ControllerWorkCustody, ControllerWorkStoreError> {
+            let stored = self.work.lock().unwrap();
+            Ok(ControllerWorkCustody::Owned {
+                narrative_commands: stored
+                    .values()
+                    .filter(|work| work.mode() == ControllerMode::NarrativePersona)
+                    .count(),
+                operational_commands: stored
+                    .values()
+                    .filter(|work| work.mode() == ControllerMode::OperationalAgent)
+                    .count(),
+            })
+        }
+    }
+
+    async fn active_mailbox(
+        controller: NewController,
+    ) -> (
+        tempfile::TempDir,
+        WorldMailbox,
+        tokio::task::JoinHandle<()>,
+        SubjectSnapshot,
+    ) {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let owner = PrincipalId::new("owner");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        let creation = mailbox
+            .create_fixture(
+                CreateWorld {
+                    id: CommandId::new(),
+                    owner: owner.clone(),
+                    title: "Controller Fixture".into(),
+                    subjects: vec![NewDecisionSubject {
+                        handle: DraftSubjectHandle::new("subject"),
+                        label: "Subject".into(),
+                        kind: SubjectKind::Person,
+                        controller,
+                        affordances: BTreeSet::from([AffordanceKind::Speak]),
+                    }],
+                },
+                &authenticated,
+            )
+            .await
+            .unwrap();
+        let mut snapshot = mailbox.snapshot().await.unwrap();
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            mailbox
+                .submit_fixture(
+                    CommandEnvelope {
+                        id: CommandId::new(),
+                        world_id: creation.world_id,
+                        expected_revision: snapshot.revision,
+                        caller: CallerId::Principal(owner.clone()),
+                        body,
+                    },
+                    &authenticated,
+                )
+                .await
+                .unwrap();
+            snapshot = mailbox.snapshot().await.unwrap();
+        }
+        assert_eq!(snapshot.phase, WorldPhase::Active);
+        let subject = snapshot.subjects[0].clone();
+        (directory, mailbox, task, subject)
+    }
+
+    fn output(
+        events: Vec<InferenceEvent>,
+        receipt: &str,
+    ) -> Result<InferenceOutput, InferenceFault> {
+        Ok(InferenceOutput {
+            events,
+            receipt_digest: format!("sha256:{receipt}"),
+        })
+    }
+
+    fn models() -> ControllerModels {
+        ControllerModels {
+            projector: "projector".into(),
+            persona: "persona".into(),
+            interpreter: "interpreter".into(),
+            operational_agent: "operator".into(),
+        }
+    }
+
+    #[tokio::test]
+    async fn narrative_turn_is_persisted_before_total_interpretation_and_shared_submit() {
+        let (_directory, mailbox, task, _subject) =
+            active_mailbox(NewController::NarrativePersona).await;
+        let persisted = Arc::new(AtomicBool::new(false));
+        let source = "I say, \"The rain has teeth tonight.\"";
+        let speech = "The rain has teeth tonight.";
+        let start = source.find(speech).unwrap();
+        let port = Arc::new(RecordingPort {
+            outputs: Mutex::new(vec![
+                output(
+                    vec![InferenceEvent::Text("Cold rain needles the bridge.".into())],
+                    "projector",
+                ),
+                output(vec![InferenceEvent::Text(source.into())], "persona"),
+                output(
+                    vec![
+                        InferenceEvent::ToolCall {
+                            call_id: "call_bad_span".into(),
+                            name: SPEAK_TOOL.into(),
+                            arguments: json!({
+                                "source_start_byte":source.len() + 10,
+                                "source_end_byte":source.len() + 20
+                            })
+                            .to_string(),
+                        },
+                        InferenceEvent::ToolCall {
+                            call_id: "call_speak".into(),
+                            name: SPEAK_TOOL.into(),
+                            arguments: json!({
+                                "source_start_byte":start,
+                                "source_end_byte":start + speech.len()
+                            })
+                            .to_string(),
+                        },
+                        InferenceEvent::ToolCall {
+                            call_id: "call_finish".into(),
+                            name: FINISH_INTERPRETATION_TOOL.into(),
+                            arguments: "{}".into(),
+                        },
+                    ],
+                    "interpreter",
+                ),
+            ]),
+            persisted_before_interpreter: persisted.clone(),
+        });
+        let store = Arc::new(RecordingWorkStore {
+            persisted,
+            work: Mutex::new(BTreeMap::new()),
+        });
+        let runner = ControllerRunner::with_test_ports(mailbox.clone(), port, store, models());
+        let opportunity = mailbox.snapshot().await.unwrap().opportunities[0].clone();
+        let command_id = CommandId::new();
+        let run = runner
+            .run_narrative(command_id, &opportunity)
+            .await
+            .unwrap();
+        let NarrativeRun::Completed(decision) = run else {
+            panic!("turn remained pending")
+        };
+        assert_eq!(
+            decision.capture.proposal,
+            Some(SourceRange {
+                start_byte: start,
+                end_byte: start + speech.len(),
+            })
+        );
+        assert_eq!(decision.capture.gaps.len(), 1);
+        assert_eq!(decision.turn.source_prose(), source);
+        assert!(matches!(
+            decision.submission,
+            SubmissionDisposition::Completed(_)
+        ));
+        let later_opportunity = mailbox.snapshot().await.unwrap().opportunities[0].clone();
+        assert!(matches!(
+            runner.run_narrative(command_id, &later_opportunity).await,
+            Err(ControllerError::OpportunityMismatch)
+        ));
+        let NarrativeRun::Completed(replayed) = runner
+            .run_narrative(command_id, &opportunity)
+            .await
+            .unwrap()
+        else {
+            panic!("terminal narrative work was not lookup-first")
+        };
+        assert!(matches!(
+            replayed.submission,
+            SubmissionDisposition::PreviouslyConfirmed(_)
+        ));
+        assert_eq!(mailbox.snapshot().await.unwrap().events.len(), 1);
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn operational_agent_uses_the_same_world_submission_without_exposed_authority() {
+        let (_directory, mailbox, task, _subject) =
+            active_mailbox(NewController::OperationalAgent).await;
+        let persisted = Arc::new(AtomicBool::new(false));
+        let port = Arc::new(RecordingPort {
+            outputs: Mutex::new(vec![output(
+                vec![
+                    InferenceEvent::ToolCall {
+                        call_id: "need".into(),
+                        name: RECORD_NEED_TOOL.into(),
+                        arguments: json!({"detail":"No wind reading is available."}).to_string(),
+                    },
+                    InferenceEvent::ToolCall {
+                        call_id: "speak".into(),
+                        name: SPEAK_TOOL.into(),
+                        arguments: json!({"text":"Close the western span."}).to_string(),
+                    },
+                ],
+                "operational",
+            )]),
+            persisted_before_interpreter: persisted.clone(),
+        });
+        let store = Arc::new(RecordingWorkStore {
+            persisted,
+            work: Mutex::new(BTreeMap::new()),
+        });
+        let runner = ControllerRunner::with_test_ports(mailbox.clone(), port, store, models());
+        let opportunity = mailbox.snapshot().await.unwrap().opportunities[0].clone();
+        let command_id = CommandId::new();
+        let run = runner
+            .run_operational(command_id, &opportunity)
+            .await
+            .unwrap();
+        let OperationalRun::Completed(decision) = run else {
+            panic!("operational work remained pending")
+        };
+        assert_eq!(decision.capture.needs.len(), 1);
+        assert!(matches!(
+            decision.submission,
+            SubmissionDisposition::Completed(_)
+        ));
+        let OperationalRun::Completed(replayed) = runner
+            .run_operational(command_id, &opportunity)
+            .await
+            .unwrap()
+        else {
+            panic!("terminal operational work was not lookup-first")
+        };
+        assert!(matches!(
+            replayed.submission,
+            SubmissionDisposition::PreviouslyConfirmed(_)
+        ));
+        assert_eq!(mailbox.snapshot().await.unwrap().events.len(), 1);
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn narrative_no_proposal_commits_an_exact_world_decline_and_replays() {
+        let (_directory, mailbox, task, _subject) =
+            active_mailbox(NewController::NarrativePersona).await;
+        let persisted = Arc::new(AtomicBool::new(false));
+        let source = "I listen to the rain and let the question pass.";
+        let port = Arc::new(RecordingPort {
+            outputs: Mutex::new(vec![
+                output(
+                    vec![InferenceEvent::Text(
+                        "Rain ticks against the bridge rail.".into(),
+                    )],
+                    "decline-projector",
+                ),
+                output(vec![InferenceEvent::Text(source.into())], "decline-persona"),
+                output(
+                    vec![
+                        InferenceEvent::ToolCall {
+                            call_id: "gap".into(),
+                            name: RECORD_GAP_TOOL.into(),
+                            arguments: json!({
+                                "kind":"unresolved",
+                                "source_start_byte":0,
+                                "source_end_byte":source.len(),
+                                "detail":"The prose expresses no supported world action."
+                            })
+                            .to_string(),
+                        },
+                        InferenceEvent::ToolCall {
+                            call_id: "finish".into(),
+                            name: FINISH_INTERPRETATION_TOOL.into(),
+                            arguments: "{}".into(),
+                        },
+                    ],
+                    "decline-interpreter",
+                ),
+            ]),
+            persisted_before_interpreter: persisted.clone(),
+        });
+        let store = Arc::new(RecordingWorkStore {
+            persisted,
+            work: Mutex::new(BTreeMap::new()),
+        });
+        let runner = ControllerRunner::with_test_ports(mailbox.clone(), port, store, models());
+        let opportunity = mailbox.snapshot().await.unwrap().opportunities[0].clone();
+        let command_id = CommandId::new();
+        let NarrativeRun::Completed(decision) = runner
+            .run_narrative(command_id, &opportunity)
+            .await
+            .unwrap()
+        else {
+            panic!("narrative decline remained pending")
+        };
+        assert!(decision.capture.proposal.is_none());
+        assert_eq!(decision.capture.gaps.len(), 1);
+        let applied = match decision.submission {
+            SubmissionDisposition::NoProposal(SubmitReceipt::Applied(receipt)) => receipt,
+            other => panic!("narrative decline was not canonically applied: {other:?}"),
+        };
+        assert_eq!(applied.resulting_revision, opportunity.revision + 1);
+        let after = mailbox.snapshot().await.unwrap();
+        assert_eq!(after.revision, opportunity.revision + 1);
+        assert!(after.events.is_empty());
+        let refreshed = after.opportunities[0].clone();
+        assert_ne!(refreshed, opportunity);
+        assert!(matches!(
+            runner.run_narrative(CommandId::new(), &opportunity).await,
+            Err(ControllerError::NoOpportunity {
+                expected: ControllerMode::NarrativePersona
+            })
+        ));
+        assert!(matches!(
+            runner.run_narrative(command_id, &refreshed).await,
+            Err(ControllerError::OpportunityMismatch)
+        ));
+
+        let NarrativeRun::Completed(replayed) = runner
+            .run_narrative(command_id, &opportunity)
+            .await
+            .unwrap()
+        else {
+            panic!("persisted narrative decline did not replay")
+        };
+        assert!(matches!(
+            replayed.submission,
+            SubmissionDisposition::NoProposal(SubmitReceipt::AlreadyApplied(ref receipt))
+                if receipt == &applied
+        ));
+        assert_eq!(mailbox.snapshot().await.unwrap(), after);
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn operational_no_proposal_commits_an_exact_world_decline_and_replays() {
+        let (_directory, mailbox, task, _subject) =
+            active_mailbox(NewController::OperationalAgent).await;
+        let persisted = Arc::new(AtomicBool::new(false));
+        let port = Arc::new(RecordingPort {
+            outputs: Mutex::new(vec![output(
+                vec![
+                    InferenceEvent::ToolCall {
+                        call_id: "need".into(),
+                        name: RECORD_NEED_TOOL.into(),
+                        arguments: json!({"detail":"No current intervention is warranted."})
+                            .to_string(),
+                    },
+                    InferenceEvent::ToolCall {
+                        call_id: "finish".into(),
+                        name: FINISH_WITHOUT_PROPOSAL_TOOL.into(),
+                        arguments: "{}".into(),
+                    },
+                ],
+                "decline-operational",
+            )]),
+            persisted_before_interpreter: persisted.clone(),
+        });
+        let store = Arc::new(RecordingWorkStore {
+            persisted,
+            work: Mutex::new(BTreeMap::new()),
+        });
+        let runner = ControllerRunner::with_test_ports(mailbox.clone(), port, store, models());
+        let opportunity = mailbox.snapshot().await.unwrap().opportunities[0].clone();
+        let command_id = CommandId::new();
+        let OperationalRun::Completed(decision) = runner
+            .run_operational(command_id, &opportunity)
+            .await
+            .unwrap()
+        else {
+            panic!("operational decline remained pending")
+        };
+        assert!(decision.capture.proposal.is_none());
+        assert_eq!(decision.capture.needs.len(), 1);
+        let applied = match decision.submission {
+            SubmissionDisposition::NoProposal(SubmitReceipt::Applied(receipt)) => receipt,
+            other => panic!("operational decline was not canonically applied: {other:?}"),
+        };
+        assert_eq!(applied.resulting_revision, opportunity.revision + 1);
+        let after = mailbox.snapshot().await.unwrap();
+        assert_eq!(after.revision, opportunity.revision + 1);
+        assert!(after.events.is_empty());
+
+        let OperationalRun::Completed(replayed) = runner
+            .run_operational(command_id, &opportunity)
+            .await
+            .unwrap()
+        else {
+            panic!("persisted operational decline did not replay")
+        };
+        assert!(matches!(
+            replayed.submission,
+            SubmissionDisposition::NoProposal(SubmitReceipt::AlreadyApplied(ref receipt))
+                if receipt == &applied
+        ));
+        assert_eq!(mailbox.snapshot().await.unwrap(), after);
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn controller_work_reopens_and_replays_the_exact_connector_invocation() {
+        let (directory, mailbox, task, _subject) =
+            active_mailbox(NewController::NarrativePersona).await;
+        let path = directory.path().join("controller-work.cc");
+        let store = Arc::new(CultCacheControllerWorkStore::open(&path).unwrap());
+        let source = "I say, \"The rain has teeth tonight.\"";
+        let speech = "The rain has teeth tonight.";
+        let start = source.find(speech).unwrap();
+        let persisted = Arc::new(AtomicBool::new(true));
+        let runner = ControllerRunner::with_test_ports(
+            mailbox.clone(),
+            Arc::new(RecordingPort {
+                outputs: Mutex::new(vec![
+                    output(
+                        vec![InferenceEvent::Text("Cold rain needles the bridge.".into())],
+                        "reopen-projector",
+                    ),
+                    output(vec![InferenceEvent::Text(source.into())], "reopen-persona"),
+                    Err(InferenceFault::retryable("connector transport interrupted")),
+                ]),
+                persisted_before_interpreter: persisted.clone(),
+            }),
+            store.clone(),
+            models(),
+        );
+        let opportunity = mailbox.snapshot().await.unwrap().opportunities[0].clone();
+        let command_id = CommandId::new();
+        let NarrativeRun::Pending(first_pending) = runner
+            .run_narrative(command_id, &opportunity)
+            .await
+            .unwrap()
+        else {
+            panic!("interrupted Interpreter unexpectedly completed")
+        };
+        assert_eq!(
+            first_pending.reason(),
+            ControllerPendingReason::InferenceRetryable
+        );
+        assert_eq!(first_pending.mode(), ControllerMode::NarrativePersona);
+        assert_eq!(first_pending.persona_prose(), Some(source));
+        let pending = first_pending.work;
+        let NarrativeCheckpoint::InterpreterInFlight {
+            invocation: exact_invocation,
+            ..
+        } = &pending
+        else {
+            panic!("interrupted Interpreter lost its persisted Persona turn")
+        };
+        let exact_invocation = exact_invocation.clone();
+        assert!(pending.integrity_is_valid());
+
+        drop(runner);
+        drop(store);
+        let reopened = Arc::new(CultCacheControllerWorkStore::open(&path).unwrap());
+        let ControllerWorkLookup::Confirmed(ControllerWork::Narrative(reopened_pending)) =
+            reopened.lookup(command_id).await.unwrap()
+        else {
+            panic!("exact command was not recovered")
+        };
+        assert_eq!(reopened_pending, pending);
+        let NarrativeCheckpoint::InterpreterInFlight {
+            invocation: reopened_invocation,
+            ..
+        } = &reopened_pending
+        else {
+            panic!("reopened command changed checkpoint")
+        };
+        assert_eq!(reopened_invocation, &exact_invocation);
+
+        let replay_port = Arc::new(ExactReplayPort {
+            expected: exact_invocation,
+            output: Mutex::new(Some(output(
+                vec![
+                    InferenceEvent::ToolCall {
+                        call_id: "bad-span".into(),
+                        name: SPEAK_TOOL.into(),
+                        arguments: json!({
+                            "source_start_byte": source.len() + 1,
+                            "source_end_byte": source.len() + 2
+                        })
+                        .to_string(),
+                    },
+                    InferenceEvent::ToolCall {
+                        call_id: "exact-span".into(),
+                        name: SPEAK_TOOL.into(),
+                        arguments: json!({
+                            "source_start_byte": start,
+                            "source_end_byte": start + speech.len()
+                        })
+                        .to_string(),
+                    },
+                    InferenceEvent::ToolCall {
+                        call_id: "finish".into(),
+                        name: FINISH_INTERPRETATION_TOOL.into(),
+                        arguments: "{}".into(),
+                    },
+                ],
+                "replayed-interpreter",
+            ))),
+            seen: AtomicBool::new(false),
+        });
+        let recovery_runner = ControllerRunner::with_test_ports(
+            mailbox.clone(),
+            replay_port.clone(),
+            reopened.clone(),
+            models(),
+        );
+        let NarrativeRun::Completed(decision) = recovery_runner
+            .run_narrative(command_id, &opportunity)
+            .await
+            .unwrap()
+        else {
+            panic!("completed connector replay did not continue")
+        };
+        assert!(replay_port.seen.load(Ordering::SeqCst));
+        assert_eq!(decision.turn.source_prose(), source);
+        assert_eq!(
+            decision.capture.proposal,
+            Some(SourceRange {
+                start_byte: start,
+                end_byte: start + speech.len(),
+            })
+        );
+        assert_eq!(decision.capture.gaps.len(), 1);
+        assert!(matches!(
+            decision.submission,
+            SubmissionDisposition::Completed(_)
+        ));
+        let captured = decision.capture.clone();
+
+        drop(recovery_runner);
+        drop(reopened);
+        let reopened_terminal = CultCacheControllerWorkStore::open(&path).unwrap();
+        let ControllerWorkLookup::Confirmed(ControllerWork::Narrative(terminal)) =
+            reopened_terminal.lookup(command_id).await.unwrap()
+        else {
+            panic!("terminal command was not recovered")
+        };
+        let NarrativeCheckpoint::ReadyToSubmit {
+            turn,
+            interpreter_prompt,
+            completed,
+            ..
+        } = &terminal
+        else {
+            panic!("terminal command changed checkpoint")
+        };
+        assert_eq!(
+            derive_narrative_capture(turn, interpreter_prompt, completed).unwrap(),
+            captured
+        );
+        let snapshot = mailbox.snapshot().await.unwrap();
+        assert_eq!(snapshot.events.len(), 1);
+        assert_eq!(
+            snapshot.events[0].invocation.action,
+            DecisionAction::Speak {
+                text: speech.into()
+            }
+        );
+
+        drop(reopened_terminal);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    #[tokio::test]
+    #[ignore = "requires the Idunn-sealed production CodexConnector"]
+    async fn real_codex_connector_cognition_modes_commit_speech() {
+        let connector_endpoint: SocketAddr = std::env::var("GHOSTLIGHT_CONTROLLER_CONNECTOR")
+            .expect("GHOSTLIGHT_CONTROLLER_CONNECTOR is required")
+            .parse()
+            .expect("GHOSTLIGHT_CONTROLLER_CONNECTOR must be a socket address");
+        let connector_credential = std::env::var_os("GHOSTLIGHT_CONTROLLER_CREDENTIAL")
+            .expect("GHOSTLIGHT_CONTROLLER_CREDENTIAL is required");
+        let runtime_id =
+            std::env::var("GHOSTLIGHT_RUNTIME_ID").expect("GHOSTLIGHT_RUNTIME_ID is required");
+        let models = ControllerModels {
+            projector: std::env::var("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL")
+                .expect("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL is required"),
+            persona: std::env::var("GHOSTLIGHT_CONTROLLER_PERSONA_MODEL")
+                .expect("GHOSTLIGHT_CONTROLLER_PERSONA_MODEL is required"),
+            interpreter: std::env::var("GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL")
+                .expect("GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL is required"),
+            operational_agent: std::env::var("GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL")
+                .expect("GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL is required"),
+        };
+        let persona_log = std::env::var_os("GHOSTLIGHT_ACCEPTANCE_PERSONA_PROSE_LOG")
+            .expect("GHOSTLIGHT_ACCEPTANCE_PERSONA_PROSE_LOG is required");
+
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let owner = PrincipalId::new("acceptance-owner");
+        let human = PrincipalId::new("acceptance-roll-caller");
+        let owner_caller = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        let human_caller = AuthenticatedCaller::fixture(CallerId::Principal(human.clone()));
+        let creation = mailbox
+            .create_fixture(
+                CreateWorld {
+                    id: CommandId::new(),
+                    owner: owner.clone(),
+                    title: "Midnight Roll Call".into(),
+                    subjects: vec![
+                        NewDecisionSubject {
+                            handle: DraftSubjectHandle::new("roll-caller"),
+                            label: "Iris, the midnight roll caller".into(),
+                            kind: SubjectKind::Person,
+                            controller: NewController::Human {
+                                principal: human.clone(),
+                            },
+                            affordances: BTreeSet::from([AffordanceKind::Speak]),
+                        },
+                        NewDecisionSubject {
+                            handle: DraftSubjectHandle::new("watch-officer"),
+                            label: "Mara, a watch officer who answers direct roll calls aloud in one short sentence".into(),
+                            kind: SubjectKind::Person,
+                            controller: NewController::NarrativePersona,
+                            affordances: BTreeSet::from([AffordanceKind::Speak]),
+                        },
+                        NewDecisionSubject {
+                            handle: DraftSubjectHandle::new("signal-council"),
+                            label: "The Signal Council, which answers direct roll calls aloud with one short operational sentence".into(),
+                            kind: SubjectKind::Institution,
+                            controller: NewController::OperationalAgent,
+                            affordances: BTreeSet::from([AffordanceKind::Speak]),
+                        },
+                    ],
+                },
+                &owner_caller,
+            )
+            .await
+            .unwrap();
+
+        let mut snapshot = mailbox.snapshot().await.unwrap();
+        mailbox
+            .submit_fixture(
+                CommandEnvelope {
+                    id: CommandId::new(),
+                    world_id: creation.world_id,
+                    expected_revision: snapshot.revision,
+                    caller: CallerId::Principal(owner.clone()),
+                    body: CommandBody::ApproveDraft,
+                },
+                &owner_caller,
+            )
+            .await
+            .unwrap();
+        snapshot = mailbox.snapshot().await.unwrap();
+        mailbox
+            .submit_fixture(
+                CommandEnvelope {
+                    id: CommandId::new(),
+                    world_id: creation.world_id,
+                    expected_revision: snapshot.revision,
+                    caller: CallerId::Principal(human.clone()),
+                    body: CommandBody::ApproveDraft,
+                },
+                &human_caller,
+            )
+            .await
+            .unwrap();
+        snapshot = mailbox.snapshot().await.unwrap();
+        mailbox
+            .submit_fixture(
+                CommandEnvelope {
+                    id: CommandId::new(),
+                    world_id: creation.world_id,
+                    expected_revision: snapshot.revision,
+                    caller: CallerId::Principal(owner.clone()),
+                    body: CommandBody::ActivateWorld,
+                },
+                &owner_caller,
+            )
+            .await
+            .unwrap();
+
+        snapshot = mailbox.snapshot().await.unwrap();
+        assert!(snapshot.phase == WorldPhase::Active);
+        let human_subject = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.human_controller.as_ref() == Some(&human))
+            .cloned()
+            .unwrap();
+        let human_opportunity = snapshot
+            .opportunities
+            .iter()
+            .find(|opportunity| opportunity.controller_id == human_subject.controller_id)
+            .cloned()
+            .unwrap();
+        let human_speak = *human_subject
+            .affordances
+            .get(&AffordanceKind::Speak)
+            .unwrap();
+        let seed = "Mara and the Signal Council, answer the midnight roll call aloud now. Each of you, say in one short sentence that you hear me.";
+        let seed_command = CommandId::new();
+        let seed_receipt = mailbox
+            .submit_fixture(
+                CommandEnvelope {
+                    id: seed_command,
+                    world_id: creation.world_id,
+                    expected_revision: snapshot.revision,
+                    caller: CallerId::Principal(human.clone()),
+                    body: CommandBody::ExerciseDecision {
+                        opportunity: human_opportunity,
+                        invocation: DecisionInvocation {
+                            affordance_id: human_speak,
+                            action: DecisionAction::Speak { text: seed.into() },
+                        },
+                    },
+                },
+                &human_caller,
+            )
+            .await
+            .unwrap();
+        assert!(matches!(seed_receipt, SubmitReceipt::Applied(_)));
+
+        let runner = ControllerRunner::open(
+            mailbox.clone(),
+            connector_endpoint,
+            connector_credential,
+            runtime_id,
+            directory.path().join("controller-work.cc"),
+            models,
+        )
+        .unwrap();
+
+        snapshot = mailbox.snapshot().await.unwrap();
+        assert!(snapshot.events.len() == 1);
+        let DecisionAction::Speak { text: seeded_text } = &snapshot.events[0].invocation.action;
+        assert!(seeded_text.as_bytes() == seed.as_bytes());
+        let narrative_subject = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.controller_mode == ControllerMode::NarrativePersona)
+            .cloned()
+            .unwrap();
+        let narrative_opportunity = snapshot
+            .opportunities
+            .iter()
+            .find(|opportunity| opportunity.controller_id == narrative_subject.controller_id)
+            .cloned()
+            .unwrap();
+        let narrative_command = CommandId::new();
+        let narrative_run = match runner
+            .run_narrative(narrative_command, &narrative_opportunity)
+            .await
+        {
+            Ok(run) => run,
+            Err(_) => panic!("NarrativePersona acceptance returned an error"),
+        };
+        let NarrativeRun::Completed(narrative_decision) = narrative_run else {
+            panic!("NarrativePersona acceptance did not complete")
+        };
+        let narrative_receipt = match narrative_decision.submission() {
+            SubmissionDisposition::Completed(SubmitReceipt::Applied(receipt)) => receipt,
+            _ => panic!("NarrativePersona acceptance did not apply one world command"),
+        };
+        assert!(narrative_receipt.command_id == narrative_command);
+        assert!(narrative_decision.persona_turn().receipt_is_valid());
+        assert!(
+            !narrative_decision
+                .persona_turn()
+                .binding()
+                .projector_receipt_digest
+                .is_empty()
+        );
+        assert!(
+            !narrative_decision
+                .persona_turn()
+                .binding()
+                .persona_inference_receipt_digest
+                .is_empty()
+        );
+        assert!(
+            narrative_decision
+                .persona_turn()
+                .binding()
+                .opportunity_digest
+                == narrative_opportunity.digest().unwrap()
+        );
+        assert!(
+            narrative_decision.persona_turn().binding().world_revision
+                == narrative_opportunity.revision
+        );
+        assert!(
+            narrative_decision.persona_turn().binding().state_digest
+                == narrative_opportunity.state_digest
+        );
+        let persona_prose = narrative_decision.persona_turn().source_prose().to_owned();
+        assert!(!persona_prose.trim().is_empty());
+        assert!(persona_prose.len() <= 65_536);
+        assert!(!narrative_decision.capture().inference_receipts.is_empty());
+        let narrative_span = narrative_decision.capture().proposal.unwrap();
+        let narrative_speech = persona_prose
+            .get(narrative_span.start_byte..narrative_span.end_byte)
+            .unwrap()
+            .to_owned();
+        assert!(!narrative_speech.trim().is_empty());
+        let ControllerWorkLookup::Confirmed(ControllerWork::Narrative(
+            NarrativeCheckpoint::ReadyToSubmit {
+                completed: persisted_interpreter_outputs,
+                ..
+            },
+        )) = runner.work.lookup(narrative_command).await.unwrap()
+        else {
+            panic!("NarrativePersona acceptance evidence was not durable")
+        };
+        let interpreter_speak = persisted_interpreter_outputs
+            .iter()
+            .flat_map(|output| output.events.iter())
+            .filter_map(|event| match event {
+                InferenceEvent::ToolCall {
+                    name, arguments, ..
+                } if name == SPEAK_TOOL => {
+                    serde_json::from_str::<InterpreterSpeakCall>(arguments).ok()
+                }
+                InferenceEvent::Text(_) | InferenceEvent::ToolCall { .. } => None,
+            })
+            .find(|call| {
+                call.source_start_byte == narrative_span.start_byte
+                    && call.source_end_byte == narrative_span.end_byte
+            })
+            .unwrap();
+        assert!(interpreter_speak.source_start_byte == narrative_span.start_byte);
+        assert!(interpreter_speak.source_end_byte == narrative_span.end_byte);
+
+        snapshot = mailbox.snapshot().await.unwrap();
+        assert!(snapshot.events.len() == 2);
+        assert!(snapshot.revision == narrative_opportunity.revision + 1);
+        let narrative_event = snapshot
+            .events
+            .iter()
+            .find(|event| event.controller_id == narrative_subject.controller_id)
+            .unwrap();
+        let DecisionAction::Speak {
+            text: committed_narrative_speech,
+        } = &narrative_event.invocation.action;
+        assert!(committed_narrative_speech.as_bytes() == narrative_speech.as_bytes());
+
+        let operational_subject = snapshot
+            .subjects
+            .iter()
+            .find(|subject| subject.controller_mode == ControllerMode::OperationalAgent)
+            .cloned()
+            .unwrap();
+        let operational_opportunity = snapshot
+            .opportunities
+            .iter()
+            .find(|opportunity| opportunity.controller_id == operational_subject.controller_id)
+            .cloned()
+            .unwrap();
+        let operational_command = CommandId::new();
+        let operational_run = match runner
+            .run_operational(operational_command, &operational_opportunity)
+            .await
+        {
+            Ok(run) => run,
+            Err(_) => panic!("OperationalAgent acceptance returned an error"),
+        };
+        let OperationalRun::Completed(operational_decision) = operational_run else {
+            panic!("OperationalAgent acceptance did not complete")
+        };
+        let operational_receipt = match operational_decision.submission() {
+            SubmissionDisposition::Completed(SubmitReceipt::Applied(receipt)) => receipt,
+            _ => panic!("OperationalAgent acceptance did not apply one world command"),
+        };
+        assert!(operational_receipt.command_id == operational_command);
+        assert!(!operational_decision.capture().inference_receipts.is_empty());
+        let operational_speech = operational_decision
+            .capture()
+            .proposal
+            .as_ref()
+            .unwrap()
+            .to_owned();
+        assert!(!operational_speech.trim().is_empty());
+        let ControllerWorkLookup::Confirmed(ControllerWork::Operational(
+            OperationalCheckpoint::ReadyToSubmit {
+                completed: persisted_agent_outputs,
+                ..
+            },
+        )) = runner.work.lookup(operational_command).await.unwrap()
+        else {
+            panic!("OperationalAgent acceptance evidence was not durable")
+        };
+        let operational_speak = persisted_agent_outputs
+            .iter()
+            .flat_map(|output| output.events.iter())
+            .find_map(|event| match event {
+                InferenceEvent::ToolCall {
+                    name, arguments, ..
+                } if name == SPEAK_TOOL => {
+                    serde_json::from_str::<OperationalSpeakCall>(arguments).ok()
+                }
+                InferenceEvent::Text(_) | InferenceEvent::ToolCall { .. } => None,
+            })
+            .unwrap();
+        assert!(operational_speak.text.as_bytes() == operational_speech.as_bytes());
+
+        snapshot = mailbox.snapshot().await.unwrap();
+        assert!(snapshot.events.len() == 3);
+        assert!(snapshot.revision == operational_opportunity.revision + 1);
+        let operational_event = snapshot
+            .events
+            .iter()
+            .find(|event| event.controller_id == operational_subject.controller_id)
+            .unwrap();
+        let DecisionAction::Speak {
+            text: committed_operational_speech,
+        } = &operational_event.invocation.action;
+        assert!(committed_operational_speech.as_bytes() == operational_speech.as_bytes());
+
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+
+        let mut persona_file = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(persona_log)
+            .unwrap();
+        std::io::Write::write_all(&mut persona_file, persona_prose.as_bytes()).unwrap();
+        persona_file.sync_all().unwrap();
+    }
+}

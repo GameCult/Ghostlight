@@ -1,6 +1,6 @@
 use super::{
-    COMMIT_SCHEMA, CommandId, EventId, KernelError, STATE_SCHEMA, WorldCommit, WorldEffect,
-    WorldId, WorldState, apply_effect, commit_digest, state_digest,
+    COMMIT_SCHEMA, CommandId, CommittedCommand, KernelError, STATE_SCHEMA, WorldCommit,
+    WorldEffect, WorldId, WorldState, apply_effect, commit_digest, reduce, state_digest,
 };
 use chrono::Utc;
 use cultcache_legacy::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
@@ -13,16 +13,12 @@ use std::{
 use thiserror::Error;
 
 const STATE_ROW: &str = "world_state.foundation.v0";
-const COMMIT_ROW: &str = "world_commit.foundation.v0";
+const COMMIT_ROW: &str = "world_commit.foundation.v1";
 
 #[derive(Debug, Error)]
 pub(super) enum JournalError {
-    #[error("world store is not empty")]
-    NotEmpty,
     #[error("opened store contains another world")]
     WorldMismatch,
-    #[error("world creation ID was reused with different content")]
-    CreationConflict,
     #[error("world ownership is uncertain after command {command_id:?}; drop and reopen")]
     RecoveryRequired { command_id: CommandId },
     #[error("world store path no longer names the owned database")]
@@ -33,9 +29,9 @@ pub(super) enum JournalError {
     Corrupt(String),
 }
 
-pub(super) enum CreationOpen {
+pub(super) enum JournalOpen {
     Empty(EmptyWorldJournal),
-    Existing {
+    Live {
         journal: WorldJournal,
         state: WorldState,
     },
@@ -43,6 +39,8 @@ pub(super) enum CreationOpen {
 
 pub(super) struct EmptyWorldJournal {
     store: OwnedRedbMessagePackBackingStore,
+    #[cfg(test)]
+    fail_after_durable_initialize: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -62,11 +60,7 @@ pub(super) struct WorldJournal {
 }
 
 impl WorldJournal {
-    pub(super) fn open_for_creation(
-        path: &Path,
-        creation_id: CommandId,
-        creation_digest: &str,
-    ) -> Result<CreationOpen, JournalError> {
+    pub(super) fn open_owner(path: &Path) -> Result<JournalOpen, JournalError> {
         let store = OwnedRedbMessagePackBackingStore::new(path)
             .map_err(|error| JournalError::Store(error.to_string()))?;
         store
@@ -79,18 +73,14 @@ impl WorldJournal {
             .validate_path_identity()
             .map_err(|_| JournalError::OwnershipLost)?;
         if rows.is_empty() {
-            return Ok(CreationOpen::Empty(EmptyWorldJournal { store }));
+            return Ok(JournalOpen::Empty(EmptyWorldJournal {
+                store,
+                #[cfg(test)]
+                fail_after_durable_initialize: false,
+            }));
         }
         let (state_row, state, commits) = recover(rows, None)?;
-        let Some(genesis) = commits.get(&creation_id) else {
-            return Err(JournalError::NotEmpty);
-        };
-        if genesis.command_digest != creation_digest
-            || !matches!(&genesis.effect, WorldEffect::WorldCreated { .. })
-        {
-            return Err(JournalError::CreationConflict);
-        }
-        Ok(CreationOpen::Existing {
+        Ok(JournalOpen::Live {
             journal: Self {
                 store,
                 state_row,
@@ -153,7 +143,8 @@ impl WorldJournal {
         commit: &WorldCommit,
     ) -> Result<(), JournalError> {
         self.ensure_healthy()?;
-        if self.commits.contains_key(&commit.command_id) {
+        let command_id = commit.command.id();
+        if self.commits.contains_key(&command_id) {
             return Err(JournalError::Corrupt(
                 "single-owner append attempted to duplicate a committed command".into(),
             ));
@@ -161,9 +152,8 @@ impl WorldJournal {
         let current: WorldState = decode(&self.state_row)?;
         verify_append(&current, next, commit)?;
         let next_row = envelope(STATE_ROW, STATE_SCHEMA, next.world_id.key(), next)?;
-        let commit_row = envelope(COMMIT_ROW, COMMIT_SCHEMA, commit.command_id.key(), commit)?;
-        self.health
-            .set(JournalHealth::RecoveryRequired(commit.command_id));
+        let commit_row = envelope(COMMIT_ROW, COMMIT_SCHEMA, command_id.key(), commit)?;
+        self.health.set(JournalHealth::RecoveryRequired(command_id));
         let swapped = self.store.compare_and_swap_batch(
             std::slice::from_ref(&self.state_row),
             vec![next_row.clone(), commit_row],
@@ -171,24 +161,18 @@ impl WorldJournal {
         match swapped {
             Ok(true) => {}
             Ok(false) | Err(_) => {
-                return Err(JournalError::RecoveryRequired {
-                    command_id: commit.command_id,
-                });
+                return Err(JournalError::RecoveryRequired { command_id });
             }
         }
         #[cfg(test)]
         if self.fail_after_durable_commit {
-            return Err(JournalError::RecoveryRequired {
-                command_id: commit.command_id,
-            });
+            return Err(JournalError::RecoveryRequired { command_id });
         }
         if self.store.validate_path_identity().is_err() {
-            return Err(JournalError::RecoveryRequired {
-                command_id: commit.command_id,
-            });
+            return Err(JournalError::RecoveryRequired { command_id });
         }
         self.state_row = next_row;
-        self.commits.insert(commit.command_id, commit.clone());
+        self.commits.insert(command_id, commit.clone());
         self.health.set(JournalHealth::Healthy);
         Ok(())
     }
@@ -209,6 +193,11 @@ impl WorldJournal {
 }
 
 impl EmptyWorldJournal {
+    #[cfg(test)]
+    pub(super) fn fail_after_durable_initialize_for_test(&mut self) {
+        self.fail_after_durable_initialize = true;
+    }
+
     pub(super) fn initialize(
         self,
         state: &WorldState,
@@ -218,21 +207,23 @@ impl EmptyWorldJournal {
             .validate_path_identity()
             .map_err(|_| JournalError::OwnershipLost)?;
         let mut commits = BTreeMap::new();
-        commits.insert(genesis.command_id, genesis.clone());
+        let command_id = genesis.command.id();
+        commits.insert(command_id, genesis.clone());
         verify_history(state, &commits)?;
         let state_row = envelope(STATE_ROW, STATE_SCHEMA, state.world_id.key(), state)?;
-        let commit_row = envelope(COMMIT_ROW, COMMIT_SCHEMA, genesis.command_id.key(), genesis)?;
+        let commit_row = envelope(COMMIT_ROW, COMMIT_SCHEMA, command_id.key(), genesis)?;
         let inserted = self
             .store
-            .append_if_snapshot_unchanged(&[], vec![state_row.clone(), commit_row])
-            .map_err(|error| JournalError::Store(error.to_string()))?;
-        if !inserted {
-            return Err(JournalError::NotEmpty);
+            .append_if_snapshot_unchanged(&[], vec![state_row.clone(), commit_row]);
+        if !matches!(inserted, Ok(true)) {
+            return Err(JournalError::RecoveryRequired { command_id });
+        }
+        #[cfg(test)]
+        if self.fail_after_durable_initialize {
+            return Err(JournalError::RecoveryRequired { command_id });
         }
         if self.store.validate_path_identity().is_err() {
-            return Err(JournalError::RecoveryRequired {
-                command_id: genesis.command_id,
-            });
+            return Err(JournalError::RecoveryRequired { command_id });
         }
         Ok(WorldJournal {
             store: self.store,
@@ -267,12 +258,13 @@ fn recover(
             COMMIT_ROW => {
                 require_schema(&row, COMMIT_SCHEMA)?;
                 let commit: WorldCommit = decode(&row)?;
-                if row.key != commit.command_id.key() {
+                let command_id = commit.command.id();
+                if row.key != command_id.key() {
                     return Err(JournalError::Corrupt(
                         "commit row key does not match command ID".into(),
                     ));
                 }
-                if commits.insert(commit.command_id, commit).is_some() {
+                if commits.insert(command_id, commit).is_some() {
                     return Err(JournalError::Corrupt("duplicate command commit".into()));
                 }
             }
@@ -332,8 +324,7 @@ fn verify_append(
         return Err(JournalError::Corrupt("digest mismatch".into()));
     }
     let mut replay = current.clone();
-    verify_effect_command_binding(commit)?;
-    apply_effect(&mut replay, &commit.caller, &commit.effect).map_err(kernel_error)?;
+    apply_committed_command(&mut replay, commit)?;
     replay.revision = next.revision;
     replay.state_digest = state_digest(&replay).map_err(kernel_error)?;
     replay.last_commit_digest = Some(commit.digest.clone());
@@ -350,6 +341,14 @@ fn verify_history(
     commits: &BTreeMap<CommandId, WorldCommit>,
 ) -> Result<(), JournalError> {
     verify_state_shape(state)?;
+    if commits
+        .iter()
+        .any(|(command_id, commit)| *command_id != commit.command.id())
+    {
+        return Err(JournalError::Corrupt(
+            "commit index does not derive from the persisted command".into(),
+        ));
+    }
     let expected_commits = usize::try_from(state.revision)
         .map_err(|_| JournalError::Corrupt("revision does not fit this runtime".into()))?;
     let expected_commits = expected_commits
@@ -365,6 +364,11 @@ fn verify_history(
     let genesis = ordered
         .first()
         .ok_or_else(|| JournalError::Corrupt("world has no genesis commit".into()))?;
+    let CommittedCommand::CreateWorld(genesis_command) = &genesis.command else {
+        return Err(JournalError::Corrupt(
+            "first commit does not contain the immutable creation command".into(),
+        ));
+    };
     let WorldEffect::WorldCreated { .. } = &genesis.effect else {
         return Err(JournalError::Corrupt(
             "first commit is not immutable world genesis".into(),
@@ -382,7 +386,7 @@ fn verify_history(
             "genesis commit is not canonical or verifiable".into(),
         ));
     }
-    let mut replay = WorldState::genesis(state.world_id, &genesis.caller, &genesis.effect)
+    let mut replay = WorldState::genesis(state.world_id, genesis_command, &genesis.effect)
         .map_err(kernel_error)?;
     verify_state_shape(&replay)?;
     if replay.state_digest != genesis.resulting_state_digest {
@@ -405,8 +409,7 @@ fn verify_history(
                 "commit chain is not contiguous or verifiable".into(),
             ));
         }
-        verify_effect_command_binding(commit)?;
-        apply_effect(&mut replay, &commit.caller, &commit.effect).map_err(kernel_error)?;
+        apply_committed_command(&mut replay, commit)?;
         replay.revision = commit.resulting_revision;
         replay.state_digest = state_digest(&replay).map_err(kernel_error)?;
         if replay.state_digest != commit.resulting_state_digest {
@@ -519,7 +522,7 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
             || event.controller_id != assignment.id()
             || grant.scope != event.scope
             || grant.kind != event.invocation.action.kind()
-            || super::canonical_invocation(&event.invocation).map_err(kernel_error)?
+            || super::validated_invocation(&event.invocation).map_err(kernel_error)?
                 != event.invocation
         {
             return Err(JournalError::Corrupt(
@@ -531,15 +534,27 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
     Ok(())
 }
 
-fn verify_effect_command_binding(commit: &WorldCommit) -> Result<(), JournalError> {
-    if let WorldEffect::DecisionExercised { event, .. } = &commit.effect
-        && event.id != EventId::for_command(commit.command_id)
-    {
+fn apply_committed_command(
+    state: &mut WorldState,
+    commit: &WorldCommit,
+) -> Result<(), JournalError> {
+    let CommittedCommand::WorldCommand(command) = &commit.command else {
         return Err(JournalError::Corrupt(
-            "decision event ID is not bound to its command".into(),
+            "creation command appears after world genesis".into(),
+        ));
+    };
+    if command.world_id != state.world_id || command.expected_revision != state.revision {
+        return Err(JournalError::Corrupt(
+            "committed command does not target the exact replay state".into(),
         ));
     }
-    Ok(())
+    let expected_effect = reduce(state, command).map_err(kernel_error)?;
+    if expected_effect != commit.effect {
+        return Err(JournalError::Corrupt(
+            "committed effect is not the deterministic reduction of its command".into(),
+        ));
+    }
+    apply_effect(state, &commit.command.caller(), &expected_effect).map_err(kernel_error)
 }
 
 fn require_schema(row: &CultCacheEnvelope, schema: &str) -> Result<(), JournalError> {
@@ -569,13 +584,22 @@ fn envelope<T: Serialize>(
     })
 }
 
-fn decode<T: DeserializeOwned>(row: &CultCacheEnvelope) -> Result<T, JournalError> {
-    rmp_serde::from_slice(&row.payload).map_err(|error| {
+fn decode<T: DeserializeOwned + Serialize>(row: &CultCacheEnvelope) -> Result<T, JournalError> {
+    let value: T = rmp_serde::from_slice(&row.payload).map_err(|error| {
         JournalError::Corrupt(format!(
             "could not decode row {}/{}: {error}",
             row.r#type, row.key
         ))
-    })
+    })?;
+    let canonical = rmp_serde::to_vec_named(&value)
+        .map_err(|error| JournalError::Corrupt(error.to_string()))?;
+    if canonical != row.payload {
+        return Err(JournalError::Corrupt(format!(
+            "row {}/{} is not canonical",
+            row.r#type, row.key
+        )));
+    }
+    Ok(value)
 }
 
 fn kernel_error(error: KernelError) -> JournalError {
@@ -591,8 +615,25 @@ mod tests {
         WorldKernel,
     };
 
+    #[derive(serde::Serialize, serde::Deserialize)]
+    struct CanonicalFixture {
+        value: u8,
+    }
+
     #[test]
-    fn replay_rejects_a_semantically_forged_caller_even_with_valid_hashes() {
+    fn decode_rejects_an_alternate_messagepack_shape() {
+        let row = CultCacheEnvelope {
+            key: "fixture".into(),
+            r#type: "fixture".into(),
+            payload: rmp_serde::to_vec(&CanonicalFixture { value: 7 }).unwrap(),
+            stored_at: Utc::now().to_rfc3339(),
+            schema_id: Some("fixture.v0".into()),
+        };
+        assert!(decode::<CanonicalFixture>(&row).is_err());
+    }
+
+    #[test]
+    fn replay_rejects_a_forged_command_or_effect_even_with_valid_hashes() {
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("world.cc");
         let owner = PrincipalId::new("owner@example.test");
@@ -621,23 +662,102 @@ mod tests {
                     world_id: snapshot.world_id,
                     expected_revision: snapshot.revision,
                     caller: CallerId::Principal(owner),
-                    body: CommandBody::SetTitle {
-                        title: "After".into(),
-                    },
+                    body: CommandBody::ApproveDraft,
                 },
                 &authenticated,
             )
             .unwrap();
 
+        let mut command_forged_head = kernel.state.clone();
+        let mut command_forged_commits = kernel.journal.commits.clone();
+        let command_forged = command_forged_commits.get_mut(&command_id).unwrap();
+        let CommittedCommand::WorldCommand(command) = &mut command_forged.command else {
+            panic!("expected a world command");
+        };
+        command.body = CommandBody::ActivateWorld;
+        command_forged.digest = commit_digest(command_forged).unwrap();
+        command_forged_head.last_commit_digest = Some(command_forged.digest.clone());
+
+        assert!(matches!(
+            verify_history(&command_forged_head, &command_forged_commits),
+            Err(JournalError::Corrupt(_))
+        ));
+
+        let mut caller_forged_head = kernel.state.clone();
+        let mut caller_forged_commits = kernel.journal.commits.clone();
+        let caller_forged = caller_forged_commits.get_mut(&command_id).unwrap();
+        let CommittedCommand::WorldCommand(command) = &mut caller_forged.command else {
+            panic!("expected a world command");
+        };
+        command.caller = CallerId::Principal(PrincipalId::new("attacker@example.test"));
+        caller_forged.digest = commit_digest(caller_forged).unwrap();
+        caller_forged_head.last_commit_digest = Some(caller_forged.digest.clone());
+
+        assert!(matches!(
+            verify_history(&caller_forged_head, &caller_forged_commits),
+            Err(JournalError::Corrupt(_))
+        ));
+
+        let mut effect_forged_head = kernel.state.clone();
+        let mut effect_forged_commits = kernel.journal.commits.clone();
+        let effect_forged = effect_forged_commits.get_mut(&command_id).unwrap();
+        effect_forged.effect = WorldEffect::WorldActivated;
+        effect_forged.digest = commit_digest(effect_forged).unwrap();
+        effect_forged_head.last_commit_digest = Some(effect_forged.digest.clone());
+
+        assert!(matches!(
+            verify_history(&effect_forged_head, &effect_forged_commits),
+            Err(JournalError::Corrupt(_))
+        ));
+    }
+
+    #[test]
+    fn replay_rejects_genesis_that_does_not_derive_from_its_creation_command() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let owner = PrincipalId::new("owner@example.test");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        let creation_id = CommandId::new();
+        let creation = CreateWorld {
+            id: creation_id,
+            owner: owner.clone(),
+            title: "Admitted".into(),
+            subjects: vec![NewDecisionSubject {
+                handle: DraftSubjectHandle::new("owner"),
+                label: "Owner".into(),
+                kind: SubjectKind::Person,
+                controller: NewController::Human { principal: owner },
+                affordances: BTreeSet::from([AffordanceKind::Speak]),
+            }],
+        };
+        let (kernel, _) = WorldKernel::create(&path, creation, &authenticated).unwrap();
         let mut forged_head = kernel.state.clone();
         let mut forged_commits = kernel.journal.commits.clone();
-        let forged = forged_commits.get_mut(&command_id).unwrap();
-        forged.caller = CallerId::Principal(PrincipalId::new("attacker@example.test"));
+        let forged = forged_commits.get_mut(&creation_id).unwrap();
+        let CommittedCommand::CreateWorld(command) = &mut forged.command else {
+            panic!("expected genesis creation command");
+        };
+        command.title = "Different command".into();
         forged.digest = commit_digest(forged).unwrap();
         forged_head.last_commit_digest = Some(forged.digest.clone());
 
         assert!(matches!(
             verify_history(&forged_head, &forged_commits),
+            Err(JournalError::Corrupt(_))
+        ));
+
+        let mut binding_forged_head = kernel.state.clone();
+        let mut binding_forged_commits = kernel.journal.commits.clone();
+        let binding_forged = binding_forged_commits.get_mut(&creation_id).unwrap();
+        let WorldEffect::WorldCreated { bindings, .. } = &mut binding_forged.effect else {
+            panic!("expected genesis effect");
+        };
+        bindings[0].subject.label = "Not the creation subject".into();
+        binding_forged.digest = commit_digest(binding_forged).unwrap();
+        binding_forged_head.last_commit_digest = Some(binding_forged.digest.clone());
+
+        assert!(matches!(
+            verify_history(&binding_forged_head, &binding_forged_commits),
             Err(JournalError::Corrupt(_))
         ));
     }

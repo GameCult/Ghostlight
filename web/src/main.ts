@@ -22,9 +22,7 @@ class GhostlightEveTransport implements EveBrowserProviderTransport {
 
   async surface(surface: EveProviderSurfaceAdvertisement): Promise<EveSurfaceDocument> {
     const surfaceId = surface.surfaceId || "ghostlight.play";
-    const pendingInvite = sessionStorage.getItem("ghostlight.pendingInvite");
-    const query = pendingInvite ? `?invite=${encodeURIComponent(pendingInvite)}` : "";
-    const document = await fetchJson<EveSurfaceDocument>(`api/eve/surfaces/${encodeURIComponent(surfaceId)}${query}`);
+    const document = await fetchJson<EveSurfaceDocument>(`api/eve/surfaces/${encodeURIComponent(surfaceId)}`);
     this.sourceVersion = Math.max(0, Math.trunc(document.version || 0));
     this.authenticatedSurface = !containsAnonymousAccessGate(document);
     return document;
@@ -40,9 +38,6 @@ class GhostlightEveTransport implements EveBrowserProviderTransport {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(intent),
     });
-    if (intent.operation.operationId === "session_zero.join" && result.receipt?.state === "accepted") {
-      sessionStorage.removeItem("ghostlight.pendingInvite");
-    }
     return result;
   }
 
@@ -65,12 +60,6 @@ class GhostlightEveTransport implements EveBrowserProviderTransport {
       receiptSchema: "gamecult.eve.command_result.v1",
     });
   }
-}
-
-const linkedInvite = new URL(window.location.href).searchParams.get("invite");
-if (linkedInvite) {
-  sessionStorage.setItem("ghostlight.pendingInvite", linkedInvite);
-  history.replaceState(null, "", `${window.location.pathname}${window.location.hash}`);
 }
 
 async function fetchJson<T = any>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {

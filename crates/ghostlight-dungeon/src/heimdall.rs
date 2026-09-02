@@ -67,7 +67,7 @@ struct HeimdallCommandBoundaryCatalogEntry {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct HeimdallCommandBoundaryRecord {
     schema: String,
     boundary_id: String,
@@ -79,7 +79,7 @@ struct HeimdallCommandBoundaryRecord {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct HeimdallBoundaryCommand {
     operation: String,
     request_schema: String,
@@ -87,7 +87,7 @@ struct HeimdallBoundaryCommand {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct HeimdallPrivateRoute {
     endpoint: String,
     exposure: String,
@@ -100,7 +100,7 @@ cultmesh_rs::cultmesh_documents!(HeimdallDiscoveryDocuments {
 });
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 struct PrivateEnvelope {
     schema: String,
     app_slug: String,
@@ -149,7 +149,7 @@ struct DiscordRolePolicy<'a> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct AuthBeginReceipt {
     pub status: String,
     pub handle: String,
@@ -158,14 +158,14 @@ pub struct AuthBeginReceipt {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct AuthNavigation {
     pub url: String,
     pub allowed_origins: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct AuthCompletionReceipt {
     pub status: String,
     pub handle: Option<String>,
@@ -180,12 +180,13 @@ pub struct AuthCompletionReceipt {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct AccountSummary {
     pub id: String,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct HeimdallSession {
     pub account_id: String,
     pub session_id: String,
@@ -195,13 +196,13 @@ pub struct HeimdallSession {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct RefreshSummary {
     pub expires_at: String,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 pub struct AuthLogoutReceipt {
     pub status: String,
     pub session_id: String,
@@ -226,6 +227,83 @@ pub struct AccessClaims {
 #[derive(Debug, Deserialize)]
 pub struct AppClaim {
     pub slug: String,
+}
+
+/// Opaque session material admitted only after a signed Heimdall completion
+/// and its response envelope agree exactly.
+pub(crate) struct VerifiedSessionAdmission(VerifiedSessionMaterial);
+
+/// Opaque refresh material admitted only after a signed Heimdall refresh and
+/// its response envelope agree exactly.
+pub(crate) struct VerifiedSessionRefresh(VerifiedSessionMaterial);
+
+struct VerifiedSessionMaterial {
+    account_id: String,
+    heimdall_session_id: String,
+    access_revision: u64,
+    capabilities: Vec<String>,
+    access_expires_at: DateTime<Utc>,
+    refresh_expires_at: DateTime<Utc>,
+    refresh_claim: String,
+}
+
+macro_rules! verified_session_accessors {
+    ($name:ident) => {
+        impl $name {
+            pub(crate) fn account_id(&self) -> &str {
+                &self.0.account_id
+            }
+
+            pub(crate) fn heimdall_session_id(&self) -> &str {
+                &self.0.heimdall_session_id
+            }
+
+            pub(crate) fn access_revision(&self) -> u64 {
+                self.0.access_revision
+            }
+
+            pub(crate) fn capabilities(&self) -> &[String] {
+                &self.0.capabilities
+            }
+
+            pub(crate) fn access_expires_at(&self) -> DateTime<Utc> {
+                self.0.access_expires_at.to_owned()
+            }
+
+            pub(crate) fn refresh_expires_at(&self) -> DateTime<Utc> {
+                self.0.refresh_expires_at.to_owned()
+            }
+
+            pub(crate) fn refresh_claim(&self) -> &str {
+                &self.0.refresh_claim
+            }
+        }
+    };
+}
+
+verified_session_accessors!(VerifiedSessionAdmission);
+verified_session_accessors!(VerifiedSessionRefresh);
+
+#[cfg(test)]
+impl VerifiedSessionAdmission {
+    pub(crate) fn fixture(
+        account_id: impl Into<String>,
+        heimdall_session_id: impl Into<String>,
+        access_revision: u64,
+        access_expires_at: DateTime<Utc>,
+        refresh_expires_at: DateTime<Utc>,
+        refresh_claim: impl Into<String>,
+    ) -> Self {
+        Self(VerifiedSessionMaterial {
+            account_id: account_id.into(),
+            heimdall_session_id: heimdall_session_id.into(),
+            access_revision,
+            capabilities: vec!["app_access".into()],
+            access_expires_at,
+            refresh_expires_at,
+            refresh_claim: refresh_claim.into(),
+        })
+    }
 }
 
 impl HeimdallClient {
@@ -364,8 +442,8 @@ impl HeimdallClient {
 
     pub async fn verify_completion(
         &self,
-        completion: &AuthCompletionReceipt,
-    ) -> anyhow::Result<AccessClaims> {
+        completion: AuthCompletionReceipt,
+    ) -> anyhow::Result<VerifiedSessionAdmission> {
         if completion.status != "authenticated" {
             bail!("Heimdall completion is not authenticated");
         }
@@ -374,14 +452,16 @@ impl HeimdallClient {
             .as_deref()
             .context("Heimdall omitted the access token")?;
         let claims = self.verify_access(token).await?;
-        verify_claim_binding(completion, &claims, true)?;
-        Ok(claims)
+        verify_claim_binding(&completion, &claims, true)?;
+        Ok(VerifiedSessionAdmission(verified_session_material(
+            completion, claims,
+        )?))
     }
 
     pub async fn verify_refresh(
         &self,
-        completion: &AuthCompletionReceipt,
-    ) -> anyhow::Result<AccessClaims> {
+        completion: AuthCompletionReceipt,
+    ) -> anyhow::Result<VerifiedSessionRefresh> {
         if completion.status != "authenticated" {
             bail!("Heimdall refresh is not authenticated");
         }
@@ -390,8 +470,10 @@ impl HeimdallClient {
             .as_deref()
             .context("Heimdall refresh omitted the access token")?;
         let claims = self.verify_access(token).await?;
-        verify_claim_binding(completion, &claims, false)?;
-        Ok(claims)
+        verify_claim_binding(&completion, &claims, false)?;
+        Ok(VerifiedSessionRefresh(verified_session_material(
+            completion, claims,
+        )?))
     }
 
     async fn verify_access(&self, token: &str) -> anyhow::Result<AccessClaims> {
@@ -483,11 +565,27 @@ impl HeimdallClient {
             bail!("Heimdall returned the wrong private response contract");
         }
         let sealed: PrivateEnvelope = rmp_serde::from_slice(&STANDARD.decode(payload)?)?;
-        if sealed.operation != operation || sealed.content_schema != expected_schema {
-            bail!("Heimdall private response disagrees with the requested operation");
-        }
+        validate_private_response_binding(&sealed, &operation, expected_schema, idempotency_key)?;
         open_envelope(&sealed, &self.shared_secret)
     }
+}
+
+fn validate_private_response_binding(
+    envelope: &PrivateEnvelope,
+    operation: &str,
+    content_schema: &str,
+    idempotency_key: &str,
+) -> anyhow::Result<()> {
+    if envelope.app_slug != APP_SLUG {
+        bail!("Heimdall private response belongs to another app");
+    }
+    if envelope.operation != operation || envelope.content_schema != content_schema {
+        bail!("Heimdall private response disagrees with the requested operation");
+    }
+    if envelope.idempotency_key != idempotency_key {
+        bail!("Heimdall private response belongs to another request");
+    }
+    Ok(())
 }
 
 fn verify_claim_binding(
@@ -517,6 +615,58 @@ fn verify_claim_binding(
         bail!("Heimdall session fields disagree with its signed claim");
     }
     Ok(())
+}
+
+fn verified_session_material(
+    completion: AuthCompletionReceipt,
+    claims: AccessClaims,
+) -> anyhow::Result<VerifiedSessionMaterial> {
+    if !completion
+        .shared_capabilities
+        .iter()
+        .any(|value| value == "app_access")
+    {
+        bail!("Heimdall response did not expose signed app_access");
+    }
+    let session = completion
+        .session
+        .as_ref()
+        .context("Heimdall omitted the verified session")?;
+    let access_expiry = i64::try_from(claims.exp).context("Heimdall access expiry is too large")?;
+    let access_expires_at =
+        DateTime::from_timestamp(access_expiry, 0).context("Heimdall access expiry is invalid")?;
+    let session_expires_at: DateTime<Utc> = session
+        .expires_at
+        .parse()
+        .context("Heimdall session expiry is invalid")?;
+    if session_expires_at != access_expires_at {
+        bail!("Heimdall session expiry disagrees with its signed claim");
+    }
+    let refresh_expires_at: DateTime<Utc> = completion
+        .refresh
+        .as_ref()
+        .context("Heimdall omitted refresh expiry")?
+        .expires_at
+        .parse()
+        .context("Heimdall refresh expiry is invalid")?;
+    if refresh_expires_at <= access_expires_at {
+        bail!("Heimdall refresh expiry does not outlive access");
+    }
+    let refresh_claim = completion
+        .refresh_token
+        .context("Heimdall omitted its refresh claim")?;
+    if refresh_claim.is_empty() || refresh_claim.trim() != refresh_claim {
+        bail!("Heimdall refresh claim is empty or noncanonical");
+    }
+    Ok(VerifiedSessionMaterial {
+        account_id: claims.account_id,
+        heimdall_session_id: claims.sid,
+        access_revision: claims.access_revision,
+        capabilities: claims.capabilities,
+        access_expires_at,
+        refresh_expires_at,
+        refresh_claim,
+    })
 }
 
 fn invoke_operation(
@@ -842,6 +992,42 @@ mod tests {
                 secret_bearing: false,
             },
         }
+    }
+
+    #[test]
+    fn private_responses_are_bound_to_the_exact_app_and_request() {
+        let secret = "fixture-shared-secret";
+        let operation = "heimdall.auth.begin";
+        let content_schema = "heimdall.auth_begin_receipt.v1";
+        let exact = seal_envelope(operation, content_schema, "request-a", secret, &"receipt")
+            .expect("fixture response should seal");
+        validate_private_response_binding(&exact, operation, content_schema, "request-a")
+            .expect("exact response binding should be accepted");
+
+        let replayed_other_request =
+            seal_envelope(operation, content_schema, "request-b", secret, &"receipt")
+                .expect("other request should seal validly");
+        assert!(
+            validate_private_response_binding(
+                &replayed_other_request,
+                operation,
+                content_schema,
+                "request-a",
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("another request")
+        );
+
+        let mut other_app = exact;
+        other_app.app_slug = "another-app".into();
+        other_app.signature = sign(&other_app, secret).expect("other app response should sign");
+        assert!(
+            validate_private_response_binding(&other_app, operation, content_schema, "request-a",)
+                .unwrap_err()
+                .to_string()
+                .contains("another app")
+        );
     }
 
     #[test]

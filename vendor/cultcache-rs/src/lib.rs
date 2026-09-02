@@ -128,6 +128,55 @@ impl SingleFileMessagePackBackingStore {
         &self.path
     }
 
+    /// Holds the pre-created sibling lock shared while a read-only consumer
+    /// evaluates and acts on one snapshot. The reader never creates or writes
+    /// either file, so an authority owner can grant only read access. Writers
+    /// cannot replace the snapshot until the action returns.
+    pub fn with_read_only_shared_snapshot<T>(
+        &self,
+        action: impl FnOnce(Vec<CultCacheEnvelope>) -> Result<T>,
+    ) -> Result<T> {
+        self.with_read_only_shared_snapshot_and_unlock_diagnostic(action, |_| {})
+    }
+
+    pub fn with_read_only_shared_snapshot_and_unlock_diagnostic<T>(
+        &self,
+        action: impl FnOnce(Vec<CultCacheEnvelope>) -> Result<T>,
+        on_unlock_failure: impl FnOnce(anyhow::Error),
+    ) -> Result<T> {
+        self.with_read_only_shared_snapshot_using(
+            action,
+            |lock| {
+                fs2::FileExt::unlock(lock)
+                    .with_context(|| format!("failed to unlock {}", self.lock_path().display()))
+            },
+            on_unlock_failure,
+        )
+    }
+
+    fn with_read_only_shared_snapshot_using<T, U, D>(
+        &self,
+        action: impl FnOnce(Vec<CultCacheEnvelope>) -> Result<T>,
+        unlock: U,
+        on_unlock_failure: D,
+    ) -> Result<T>
+    where
+        U: FnOnce(&File) -> Result<()>,
+        D: FnOnce(anyhow::Error),
+    {
+        let lock_path = self.lock_path();
+        let lock = OpenOptions::new()
+            .read(true)
+            .open(&lock_path)
+            .with_context(|| format!("failed to open pre-created {}", lock_path.display()))?;
+        fs2::FileExt::lock_shared(&lock)
+            .with_context(|| format!("failed to lock {}", lock_path.display()))?;
+        let guard = ReadOnlySharedLockGuard::new(lock, unlock, on_unlock_failure);
+        let result = self.read_all_unlocked().and_then(action);
+        drop(guard);
+        result
+    }
+
     fn read_all_unlocked(&self) -> Result<Vec<CultCacheEnvelope>> {
         if !self.path.exists() {
             return Ok(Vec::new());
@@ -209,6 +258,47 @@ impl SingleFileMessagePackBackingStore {
             .unwrap_or_else(|| "cultcache.cc".into());
         lock_name.push(".lock");
         self.path.with_file_name(lock_name)
+    }
+}
+
+struct ReadOnlySharedLockGuard<U, D>
+where
+    U: FnOnce(&File) -> Result<()>,
+    D: FnOnce(anyhow::Error),
+{
+    lock: Option<File>,
+    unlock: Option<U>,
+    on_unlock_failure: Option<D>,
+}
+
+impl<U, D> ReadOnlySharedLockGuard<U, D>
+where
+    U: FnOnce(&File) -> Result<()>,
+    D: FnOnce(anyhow::Error),
+{
+    fn new(lock: File, unlock: U, on_unlock_failure: D) -> Self {
+        Self {
+            lock: Some(lock),
+            unlock: Some(unlock),
+            on_unlock_failure: Some(on_unlock_failure),
+        }
+    }
+}
+
+impl<U, D> Drop for ReadOnlySharedLockGuard<U, D>
+where
+    U: FnOnce(&File) -> Result<()>,
+    D: FnOnce(anyhow::Error),
+{
+    fn drop(&mut self) {
+        let (Some(lock), Some(unlock)) = (self.lock.as_ref(), self.unlock.take()) else {
+            return;
+        };
+        if let Err(error) = unlock(lock)
+            && let Some(on_unlock_failure) = self.on_unlock_failure.take()
+        {
+            on_unlock_failure(error);
+        }
     }
 }
 
@@ -674,6 +764,7 @@ fn temporary_path_for(path: &Path) -> PathBuf {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+    use std::{sync::mpsc, time::Duration};
 
     #[derive(Clone, Debug, PartialEq, Eq, DatabaseEntry)]
     #[cultcache(type = "settings")]
@@ -694,6 +785,73 @@ mod tests {
     }
 
     cultcache_registry!(TestEntries { Settings, Note });
+
+    #[test]
+    fn read_only_snapshot_holds_the_precreated_writer_lock() -> Result<()> {
+        let temp = tempfile::tempdir()?;
+        let store_path = temp.path().join("authority.cc");
+        let mut store = SingleFileMessagePackBackingStore::new(&store_path);
+        let released = CultCacheEnvelope {
+            key: "traffic".into(),
+            r#type: "admission".into(),
+            payload: b"released".to_vec(),
+            stored_at: "2026-09-02T00:00:00Z".into(),
+            schema_id: Some("admission.v1".into()),
+        };
+        store.push(&released)?;
+
+        let writer_path = store_path.clone();
+        let (started_tx, started_rx) = mpsc::channel();
+        let (finished_tx, finished_rx) = mpsc::channel();
+        store.with_read_only_shared_snapshot(|captured| {
+            assert_eq!(captured, vec![released.clone()]);
+            std::thread::spawn(move || {
+                started_tx.send(()).unwrap();
+                let engaged = CultCacheEnvelope {
+                    payload: b"engaged".to_vec(),
+                    ..released
+                };
+                let mut writer = SingleFileMessagePackBackingStore::new(writer_path);
+                writer.push(&engaged).unwrap();
+                finished_tx.send(()).unwrap();
+            });
+            started_rx.recv_timeout(Duration::from_secs(1))?;
+            assert!(
+                finished_rx
+                    .recv_timeout(Duration::from_millis(100))
+                    .is_err()
+            );
+            Ok(())
+        })?;
+        finished_rx.recv_timeout(Duration::from_secs(1))?;
+        store.with_read_only_shared_snapshot(|captured| {
+            assert_eq!(captured[0].payload, b"engaged");
+            Ok(())
+        })?;
+        Ok(())
+    }
+
+    #[test]
+    fn read_only_snapshot_never_creates_a_missing_lock_or_rewrites_the_store() -> Result<()> {
+        let temp = tempfile::tempdir()?;
+        let store_path = temp.path().join("authority.cc");
+        let mut store = SingleFileMessagePackBackingStore::new(&store_path);
+        store.push(&CultCacheEnvelope {
+            key: "traffic".into(),
+            r#type: "admission".into(),
+            payload: b"released".to_vec(),
+            stored_at: "2026-09-02T00:00:00Z".into(),
+            schema_id: Some("admission.v1".into()),
+        })?;
+        let before = fs::read(&store_path)?;
+        let lock_path = store.lock_path();
+        fs::remove_file(&lock_path)?;
+
+        assert!(store.with_read_only_shared_snapshot(|_| Ok(())).is_err());
+        assert!(!lock_path.exists());
+        assert_eq!(fs::read(&store_path)?, before);
+        Ok(())
+    }
 
     #[test]
     fn familiar_cultcache_flow_persists_and_reloads_typed_documents() -> Result<()> {

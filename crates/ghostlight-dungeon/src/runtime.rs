@@ -1,0 +1,1976 @@
+//! One-process runtime for the sealed world owner.
+
+use crate::{
+    app_session::{AppSessionOwner, VerifiedPrincipalEvidence},
+    eve::{self, EveCommandInvocation},
+    heimdall::{self, HeimdallClient},
+    idunn_health::{
+        GHOSTLIGHT_IDUNN_HEALTH_CONTRACT, GhostlightTrafficAdmissionGate, IdunnHealthPublisher,
+        IdunnReleaseBinding, active_activation_binding,
+    },
+    mesh::{self, MeshPublisher, MeshRuntimeIdentity},
+    world::{
+        AffordanceId, CommandBody, CommandId, ControllerError, ControllerModels,
+        ControllerPendingReason, ControllerRunner, ControllerWorkCustody, CreateWorldIntent,
+        DecisionAction, DecisionInvocation, DecisionOpportunity, KernelError, MailboxError,
+        NarrativeRun, OperationalRun, PrincipalCommandIntent, PrincipalId, SubmissionDisposition,
+        SubmitReceipt, WorldMailbox, WorldSnapshot,
+    },
+};
+use anyhow::{Context, bail};
+use axum::{
+    Json, Router,
+    extract::{Path, Request, State},
+    http::{HeaderMap, HeaderValue, StatusCode, header},
+    middleware::{self, Next},
+    response::{
+        IntoResponse, Response,
+        sse::{Event as SseEvent, KeepAlive, Sse},
+    },
+    routing::{get, post},
+};
+use chrono::{DateTime, Utc};
+use serde::Deserialize;
+use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
+use std::{convert::Infallible, net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
+use tokio::sync::{Mutex, broadcast, mpsc};
+use tower_http::services::ServeDir;
+use tracing_subscriber::EnvFilter;
+
+const COOKIE_NAME: &str = "ghostlight_session";
+
+#[derive(Clone)]
+struct AppState {
+    world: WorldMailbox,
+    controllers: Arc<Mutex<Option<ControllerRunner>>>,
+    sessions: Arc<Mutex<AppSessionOwner>>,
+    heimdall: Arc<HeimdallClient>,
+    mesh: Option<MeshPublisher>,
+    mesh_identity: MeshRuntimeIdentity,
+    revisions: broadcast::Sender<u64>,
+    fatal: mpsc::UnboundedSender<String>,
+    traffic: Option<Arc<GhostlightTrafficAdmissionGate>>,
+}
+
+struct ProductionAdmission {
+    traffic: Arc<GhostlightTrafficAdmissionGate>,
+    health: IdunnHealthPublisher,
+}
+
+#[derive(Clone)]
+struct RequestTrafficAdmission {
+    traffic: Arc<GhostlightTrafficAdmissionGate>,
+    fatal: mpsc::UnboundedSender<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CreatePayload {
+    title: String,
+    subject_label: String,
+    #[serde(default)]
+    narrative_persona_label: Option<String>,
+    #[serde(default)]
+    operational_agent_label: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SpeakPayload {
+    text: String,
+    opportunity: DecisionOpportunity,
+    affordance_id: AffordanceId,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct EmptyPayload {}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CompleteAuthPayload {
+    handle: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ControllerActPayload {
+    opportunity: DecisionOpportunity,
+}
+
+pub(crate) async fn run() -> anyhow::Result<()> {
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
+    let runtime_root = std::env::var_os("GHOSTLIGHT_DUNGEON_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(default_runtime_root);
+    let service_root = runtime_root.join("service");
+    let runtime_id =
+        std::env::var("GHOSTLIGHT_RUNTIME_ID").unwrap_or_else(|_| "ghostlight-dungeon".into());
+    let mesh_identity = MeshRuntimeIdentity {
+        runtime_id: runtime_id.clone(),
+        service_id: std::env::var("GHOSTLIGHT_SERVICE_ID")
+            .unwrap_or_else(|_| "ghostlight-dungeon".into()),
+        located_service: std::env::var("GHOSTLIGHT_LOCATED_SERVICE")
+            .unwrap_or_else(|_| "local".into()),
+    };
+
+    // Production may inspect immutable root activation inputs and the provider
+    // health identity, then publish one warming statement. World, session,
+    // controller, replay, CultMesh, and socket authority remain unopened until
+    // Idunn grants that exact statement.
+    let (fatal, mut fatal_events) = mpsc::unbounded_channel();
+    let production_admission = initialize_production_admission(&mesh_identity).await?;
+    let mut request_admission = None;
+    let mut idunn_health = match production_admission {
+        Some(admission) => {
+            let ProductionAdmission { traffic, health } = admission;
+            traffic
+                .require_current()
+                .context("root traffic admission changed after initial grant")?;
+            request_admission = Some(RequestTrafficAdmission {
+                traffic: traffic.clone(),
+                fatal: fatal.clone(),
+            });
+            let traffic_failure = fatal.clone();
+            tokio::spawn(async move {
+                if let Err(error) = maintain_traffic_admission(traffic).await {
+                    let _ = traffic_failure
+                        .send(format!("root traffic admission was revoked: {error:#}"));
+                }
+            });
+            Some(health)
+        }
+        None => None,
+    };
+
+    tokio::task::yield_now().await;
+    require_no_runtime_custody_failure(&mut fatal_events)?;
+    std::fs::create_dir_all(&service_root)?;
+    let (world, world_owner) = WorldMailbox::open(runtime_root.join("world.cc"))?;
+    require_no_runtime_custody_failure(&mut fatal_events)?;
+    let controllers = match open_controller(&world, &service_root, &runtime_id) {
+        Ok(runner) => Some(runner),
+        Err(error) => {
+            tracing::warn!(%error, "controller cognition is unavailable; world authority remains online");
+            None
+        }
+    };
+    require_no_runtime_custody_failure(&mut fatal_events)?;
+    let wrapping_key = std::env::var_os("GHOSTLIGHT_SESSION_WRAPPING_KEY_FILE")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| runtime_root.join("secrets/session-wrapping.key"));
+    let sessions = AppSessionOwner::open(service_root.join("app-sessions-v2.cc"), wrapping_key)?;
+    let heimdall = Arc::new(HeimdallClient::from_env()?);
+    require_no_runtime_custody_failure(&mut fatal_events)?;
+    let mesh = match open_mesh(&service_root, &mesh_identity) {
+        Ok(mesh) => Some(mesh),
+        Err(error) => {
+            tracing::warn!(%error, "derived CultMesh projection is unavailable; world authority remains online");
+            None
+        }
+    };
+    require_no_runtime_custody_failure(&mut fatal_events)?;
+    let (revisions, _) = broadcast::channel(32);
+    let state = AppState {
+        world,
+        controllers: Arc::new(Mutex::new(controllers)),
+        sessions: Arc::new(Mutex::new(sessions)),
+        heimdall,
+        mesh,
+        mesh_identity: mesh_identity.clone(),
+        revisions,
+        fatal,
+        traffic: request_admission
+            .as_ref()
+            .map(|admission| admission.traffic.clone()),
+    };
+    require_no_runtime_custody_failure(&mut fatal_events)?;
+    publish_projection(&state).await?;
+    tokio::spawn(maintain_mesh_projection(state.clone()));
+
+    let release_web_root = std::env::current_exe()?
+        .parent()
+        .map(|parent| parent.join("web"));
+    let web_root = release_web_root
+        .filter(|path| path.join("index.html").is_file())
+        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/dist"));
+    let app = app_router(state.clone(), web_root);
+    let app = match request_admission.clone() {
+        Some(admission) => app.layer(middleware::from_fn_with_state(
+            admission,
+            enforce_request_traffic_admission,
+        )),
+        None => app,
+    };
+    let address: SocketAddr = std::env::var("GHOSTLIGHT_DUNGEON_BIND")
+        .unwrap_or_else(|_| "127.0.0.1:8831".into())
+        .parse()?;
+    require_no_runtime_custody_failure(&mut fatal_events)?;
+    require_current_traffic_admission(request_admission.as_ref(), "before HTTP bind")?;
+    let listener = tokio::net::TcpListener::bind(address).await?;
+    require_no_runtime_custody_failure(&mut fatal_events)?;
+    require_current_traffic_admission(request_admission.as_ref(), "after HTTP bind")?;
+    canonical_readiness(&state)
+        .await
+        .context("runtime is not ready for active signed health")?;
+    if let Some(publisher) = idunn_health.as_mut() {
+        publisher
+            .publish("active", "world-owner-serving")
+            .context("publishing initial active Idunn health")?;
+    }
+    require_current_traffic_admission(request_admission.as_ref(), "before HTTP serve")?;
+    tracing::info!(%address, "Ghostlight Dungeon world owner serving");
+    let server = axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    );
+    tokio::select! {
+        result = server => result.context("Ghostlight HTTP server stopped"),
+        result = world_owner => {
+            result.context("world-owner task panicked")?;
+            bail!("world-owner task stopped while the daemon was serving")
+        }
+        result = maintain_runtime_health(idunn_health, state.clone()) => {
+            result?;
+            bail!("runtime readiness owner stopped while the daemon was serving")
+        }
+        result = maintain_session_refresh(state.clone()) => {
+            result?;
+            bail!("app-session refresh owner stopped while the daemon was serving")
+        }
+        detail = fatal_events.recv() => {
+            bail!(
+                "runtime custody failed: {}",
+                detail.unwrap_or_else(|| "fatal signal channel closed".into())
+            )
+        }
+    }
+}
+
+fn open_controller(
+    world: &WorldMailbox,
+    service_root: &std::path::Path,
+    runtime_id: &str,
+) -> anyhow::Result<ControllerRunner> {
+    let endpoint: SocketAddr = std::env::var("GHOSTLIGHT_CONTROLLER_CONNECTOR")
+        .unwrap_or_else(|_| "127.0.0.1:4103".into())
+        .parse()
+        .context("GHOSTLIGHT_CONTROLLER_CONNECTOR is not a socket address")?;
+    let credential = std::env::var_os("GHOSTLIGHT_CONTROLLER_CREDENTIAL")
+        .map(PathBuf::from)
+        .context("GHOSTLIGHT_CONTROLLER_CREDENTIAL is required")?;
+    ControllerRunner::open(
+        world.clone(),
+        endpoint,
+        credential,
+        runtime_id.to_owned(),
+        service_root.join("controller-work.cc"),
+        ControllerModels {
+            projector: std::env::var("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL")
+                .unwrap_or_else(|_| "gpt-5.6-luna".into()),
+            persona: std::env::var("GHOSTLIGHT_CONTROLLER_PERSONA_MODEL")
+                .unwrap_or_else(|_| "gpt-5.6-sol".into()),
+            interpreter: std::env::var("GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL")
+                .unwrap_or_else(|_| "gpt-5.6-terra".into()),
+            operational_agent: std::env::var("GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL")
+                .unwrap_or_else(|_| "gpt-5.6-terra".into()),
+        },
+    )
+    .map_err(Into::into)
+}
+
+fn open_mesh(
+    service_root: &std::path::Path,
+    identity: &MeshRuntimeIdentity,
+) -> anyhow::Result<MeshPublisher> {
+    let target = std::env::var("GHOSTLIGHT_ODIN_RUDP")
+        .ok()
+        .map(|value| value.parse())
+        .transpose()
+        .context("GHOSTLIGHT_ODIN_RUDP is not a socket address")?;
+    MeshPublisher::open(service_root.join("mesh-v2.cc"), target, identity.clone())
+}
+
+fn app_router(state: AppState, web_root: PathBuf) -> Router {
+    api_router(state)
+        .fallback_service(ServeDir::new(web_root).append_index_html_on_directories(true))
+}
+
+async fn enforce_request_traffic_admission(
+    State(admission): State<RequestTrafficAdmission>,
+    request: Request,
+    next: Next,
+) -> Response {
+    if let Err(error) = admission.traffic.require_current() {
+        let _ = admission
+            .fatal
+            .send(format!("request traffic admission failed: {error:#}"));
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Ghostlight traffic admission is not current",
+        )
+            .into_response();
+    }
+    next.run(request).await
+}
+
+fn api_router(state: AppState) -> Router {
+    Router::new()
+        .route("/health", get(health))
+        .route("/api/eve/provider", get(eve_provider))
+        .route("/api/eve/surfaces/{surface_id}", get(eve_surface))
+        .route("/api/eve/commands", post(eve_command))
+        .route("/api/eve/events", get(revision_events))
+        .with_state(state)
+}
+
+async fn health(State(state): State<AppState>) -> Response {
+    match runtime_readiness(&state).await {
+        Ok(health) => Json(health).into_response(),
+        Err(error) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"status":"failed","message":error.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+async fn eve_provider(State(state): State<AppState>) -> Response {
+    Json(mesh::provider_advertisement(
+        &state.mesh_identity,
+        &Utc::now().to_rfc3339(),
+    ))
+    .into_response()
+}
+
+async fn eve_surface(
+    Path(surface_id): Path<String>,
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> Response {
+    if surface_id != mesh::SURFACE_ID {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    let Some(principal) = authenticated_principal(&headers, &state).await else {
+        return Json(eve::anonymous_surface()).into_response();
+    };
+    match current_world(&state).await.and_then(|snapshot| {
+        eve::authenticated_surface(principal.account_subject_hash(), snapshot.as_ref())
+    }) {
+        Ok(surface) => Json(surface).into_response(),
+        Err(error) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"message":error.to_string()})),
+        )
+            .into_response(),
+    }
+}
+
+async fn eve_command(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    Json(invocation): Json<EveCommandInvocation>,
+) -> Response {
+    // Axum has now consumed and decoded the complete command. This is the
+    // traffic-to-application transfer point: revocation blocks later commands,
+    // while WorldMailbox owns any consequence accepted below.
+    if let Err(error) = require_command_traffic_admission(&state) {
+        let _ = state
+            .fatal
+            .send(format!("command traffic admission failed: {error:#}"));
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Ghostlight traffic admission is not current",
+        )
+            .into_response();
+    }
+    if let Err(error) = eve::validate_invocation(&invocation, "https-json") {
+        return Json(eve::command_result(
+            &invocation,
+            "denied",
+            error.to_string(),
+            None,
+            None,
+            None,
+        ))
+        .into_response();
+    }
+    match invocation.operation.operation_id.as_str() {
+        "heimdall.auth.begin" => begin_authentication(&state, invocation).await,
+        "heimdall.auth.complete" => complete_authentication(&state, invocation).await,
+        "app.auth.logout" => logout(&headers, &state, invocation).await,
+        _ => {
+            let Some(principal) = authenticated_principal(&headers, &state).await else {
+                return Json(eve::command_result(
+                    &invocation,
+                    "denied",
+                    "Authentication is required.",
+                    None,
+                    None,
+                    None,
+                ))
+                .into_response();
+            };
+            dispatch_world(&state, &principal, invocation).await
+        }
+    }
+}
+
+fn require_command_traffic_admission(state: &AppState) -> anyhow::Result<()> {
+    match state.traffic.as_ref() {
+        Some(traffic) => traffic.require_current(),
+        None => Ok(()),
+    }
+}
+
+async fn begin_authentication(state: &AppState, invocation: EveCommandInvocation) -> Response {
+    if let Err(error) = serde_json::from_value::<EmptyPayload>(invocation.payload.clone()) {
+        return Json(eve::command_result(
+            &invocation,
+            "denied",
+            format!("invalid command payload: {error}"),
+            None,
+            None,
+            None,
+        ))
+        .into_response();
+    }
+    let idempotency = invocation
+        .operation
+        .idempotency_key
+        .as_deref()
+        .unwrap_or("");
+    match state.heimdall.begin(idempotency).await {
+        Ok(receipt)
+            if receipt.status == "pending"
+                && !receipt.handle.is_empty()
+                && receipt
+                    .expires_at
+                    .parse::<DateTime<Utc>>()
+                    .is_ok_and(|expiry| expiry > Utc::now()) =>
+        {
+            Json(eve::command_result(
+                &invocation,
+                "accepted",
+                "Continue authentication with Heimdall.",
+                None,
+                Some(json!({
+                    "pluginId":"gamecult.heimdall.access",
+                    "schemaId":"heimdall.auth_navigation_receipt.v1",
+                    "payload":{
+                        "schema":"heimdall.auth_navigation_receipt.v1",
+                        "handle":receipt.handle,
+                        "navigation":{
+                            "url":receipt.navigation.url,
+                            "allowedOrigins":receipt.navigation.allowed_origins
+                        }
+                    }
+                })),
+                None,
+            ))
+            .into_response()
+        }
+        Ok(_) => Json(eve::command_result(
+            &invocation,
+            "denied",
+            "Heimdall returned an invalid authentication attempt.",
+            None,
+            None,
+            None,
+        ))
+        .into_response(),
+        Err(error) => Json(eve::command_result(
+            &invocation,
+            "denied",
+            error.to_string(),
+            None,
+            None,
+            None,
+        ))
+        .into_response(),
+    }
+}
+
+async fn complete_authentication(state: &AppState, invocation: EveCommandInvocation) -> Response {
+    let payload = match serde_json::from_value::<CompleteAuthPayload>(invocation.payload.clone()) {
+        Ok(payload) => payload,
+        Err(error) => {
+            return Json(eve::command_result(
+                &invocation,
+                "denied",
+                format!("invalid command payload: {error}"),
+                None,
+                None,
+                None,
+            ))
+            .into_response();
+        }
+    };
+    let handle = payload.handle.as_str();
+    if handle.is_empty() {
+        return Json(eve::command_result(
+            &invocation,
+            "denied",
+            "Authentication completion omitted its opaque handle.",
+            None,
+            None,
+            None,
+        ))
+        .into_response();
+    }
+    let idempotency = invocation
+        .operation
+        .idempotency_key
+        .as_deref()
+        .unwrap_or("");
+    let completion = match state.heimdall.complete(handle, idempotency).await {
+        Ok(value) => value,
+        Err(error) => {
+            return Json(eve::command_result(
+                &invocation,
+                "denied",
+                error.to_string(),
+                None,
+                None,
+                None,
+            ))
+            .into_response();
+        }
+    };
+    if completion.status == "pending" {
+        return Json(auth_completion_result(
+            &invocation,
+            "pending",
+            "pending",
+            "Heimdall is waiting for Discord.",
+        ))
+        .into_response();
+    }
+    if completion.status != "authenticated" || completion.handle.as_deref() != Some(handle) {
+        let message = completion
+            .error
+            .clone()
+            .unwrap_or_else(|| "Heimdall denied access.".into());
+        return Json(auth_completion_result(
+            &invocation,
+            "denied",
+            "denied",
+            &message,
+        ))
+        .into_response();
+    }
+    let adopted = match adopt_heimdall_completion(state, completion).await {
+        Ok(value) => value,
+        Err(error) => {
+            return Json(auth_completion_result(
+                &invocation,
+                "denied",
+                "denied",
+                &error.to_string(),
+            ))
+            .into_response();
+        }
+    };
+    let mut response = Json(auth_completion_result(
+        &invocation,
+        "accepted",
+        "authenticated",
+        "Authenticated.",
+    ))
+    .into_response();
+    response.headers_mut().insert(
+        header::SET_COOKIE,
+        session_cookie(&adopted.token, adopted.expires_at, Utc::now()),
+    );
+    response
+}
+
+struct AdoptedSession {
+    token: String,
+    expires_at: DateTime<Utc>,
+}
+
+async fn adopt_heimdall_completion(
+    state: &AppState,
+    completion: heimdall::AuthCompletionReceipt,
+) -> anyhow::Result<AdoptedSession> {
+    let admission = state.heimdall.verify_completion(completion).await?;
+    let expires_at = admission.refresh_expires_at();
+    let token = {
+        let mut sessions = state.sessions.lock().await;
+        let result = sessions.create_session(admission);
+        if result.is_err() && !sessions.is_healthy() {
+            signal_fatal(
+                state,
+                "app-session authentication adoption",
+                result.as_ref().unwrap_err(),
+            );
+        }
+        result?
+    };
+    Ok(AdoptedSession { token, expires_at })
+}
+
+fn auth_completion_result(
+    invocation: &EveCommandInvocation,
+    command_state: &str,
+    auth_state: &str,
+    message: &str,
+) -> Value {
+    eve::command_result(
+        invocation,
+        command_state,
+        message,
+        None,
+        Some(json!({
+            "pluginId":"gamecult.heimdall.access",
+            "schemaId":"heimdall.auth_completion_status.v1",
+            "payload":{"schema":"heimdall.auth_completion_status.v1","status":auth_state}
+        })),
+        None,
+    )
+}
+
+async fn logout(
+    headers: &HeaderMap,
+    state: &AppState,
+    invocation: EveCommandInvocation,
+) -> Response {
+    if let Err(error) = serde_json::from_value::<EmptyPayload>(invocation.payload.clone()) {
+        return Json(eve::command_result(
+            &invocation,
+            "denied",
+            format!("invalid command payload: {error}"),
+            None,
+            None,
+            None,
+        ))
+        .into_response();
+    }
+    let raw_cookie = cookie_value(headers).unwrap_or_default();
+    let local_logout = {
+        let mut sessions = state.sessions.lock().await;
+        match sessions.session_for_logout(raw_cookie) {
+            Ok(remote) => match sessions.revoke_cookie(raw_cookie) {
+                Ok(true) => Ok(remote),
+                Ok(false) => Ok(remote),
+                Err(error) => Err(error),
+            },
+            Err(error) => Err(error),
+        }
+    };
+    let remote = match local_logout {
+        Ok(remote) => remote,
+        Err(error) => {
+            signal_fatal(state, "app-session logout", &error);
+            return Json(auth_completion_result(
+                &invocation,
+                "unknown",
+                "unknown",
+                "Local session revocation was not confirmed.",
+            ))
+            .into_response();
+        }
+    };
+    if let Some(session) = remote {
+        let heimdall = state.heimdall.clone();
+        tokio::spawn(async move {
+            let idempotency = format!(
+                "logout:{}:{}",
+                session.heimdall_session_id, session.access_revision
+            );
+            if let Err(error) = heimdall.logout(&session.refresh_claim, &idempotency).await {
+                tracing::warn!(%error, "local logout succeeded but Heimdall logout was unavailable");
+            }
+        });
+    }
+    let mut response = Json(auth_completion_result(
+        &invocation,
+        "accepted",
+        "anonymous",
+        "Signed out.",
+    ))
+    .into_response();
+    response.headers_mut().insert(
+        header::SET_COOKIE,
+        HeaderValue::from_static(
+            "ghostlight_session=; Max-Age=0; HttpOnly; Secure; SameSite=Lax; Path=/ghostlight/",
+        ),
+    );
+    response
+}
+
+async fn dispatch_world(
+    state: &AppState,
+    principal: &VerifiedPrincipalEvidence,
+    invocation: EveCommandInvocation,
+) -> Response {
+    if invocation.operation.operation_id == "world.controller.act" {
+        return dispatch_controller(state, principal, invocation).await;
+    }
+    let result = execute_world(state, principal, &invocation).await;
+    match result {
+        Ok(receipt) => {
+            let version = match publish_projection(state).await {
+                Ok(version) => Some(version),
+                Err(error) => {
+                    tracing::error!(%error, "world revision could not be read after commit");
+                    current_world(state)
+                        .await
+                        .ok()
+                        .map(|snapshot| eve::surface_version(snapshot.as_ref()))
+                }
+            };
+            Json(eve::command_result(
+                &invocation,
+                "accepted",
+                "World owner accepted the command.",
+                version,
+                None,
+                Some(receipt),
+            ))
+            .into_response()
+        }
+        Err(error) => {
+            let state_name = if matches!(error, RuntimeCommandError::OutcomeUnknown(_)) {
+                "unknown"
+            } else {
+                "denied"
+            };
+            Json(eve::command_result(
+                &invocation,
+                state_name,
+                error.to_string(),
+                current_world(state)
+                    .await
+                    .ok()
+                    .map(|snapshot| eve::surface_version(snapshot.as_ref())),
+                None,
+                None,
+            ))
+            .into_response()
+        }
+    }
+}
+
+async fn dispatch_controller(
+    state: &AppState,
+    principal: &VerifiedPrincipalEvidence,
+    invocation: EveCommandInvocation,
+) -> Response {
+    let admitted = admit_controller_command(state, principal, &invocation).await;
+    let (command_id, opportunity) = match admitted {
+        Ok(admitted) => admitted,
+        Err(error) => {
+            return Json(eve::command_result(
+                &invocation,
+                "denied",
+                error.to_string(),
+                current_world(state)
+                    .await
+                    .ok()
+                    .map(|snapshot| eve::surface_version(snapshot.as_ref())),
+                None,
+                None,
+            ))
+            .into_response();
+        }
+    };
+
+    // Keep the sole runner borrowed from its availability slot for the full
+    // turn. Quarantine therefore has a clean edge: no second runner can cross
+    // another provider boundary after this one loses its local invariant.
+    let mut controller_slot = state.controllers.lock().await;
+    let Some(controller) = controller_slot.as_ref() else {
+        return Json(eve::command_result(
+            &invocation,
+            "unknown",
+            "Controller cognition is unavailable; no world outcome is claimed.",
+            current_world(state)
+                .await
+                .ok()
+                .map(|snapshot| eve::surface_version(snapshot.as_ref())),
+            None,
+            None,
+        ))
+        .into_response();
+    };
+    let result = match opportunity.controller_mode {
+        crate::world::ControllerMode::NarrativePersona => controller
+            .run_narrative(command_id, &opportunity)
+            .await
+            .map(controller_narrative_result),
+        crate::world::ControllerMode::OperationalAgent => controller
+            .run_operational(command_id, &opportunity)
+            .await
+            .map(controller_operational_result),
+        crate::world::ControllerMode::Human => unreachable!("human opportunity was not admitted"),
+    };
+    let quarantine = match &result {
+        Ok(ControllerHttpResult::Pending { quarantine, .. }) => *quarantine,
+        Ok(ControllerHttpResult::Completed { .. }) => false,
+        Err(error) => error.requires_quarantine(),
+    };
+    if quarantine {
+        tracing::error!("controller cognition quarantined after losing its local invariant");
+        controller_slot.take();
+    }
+    drop(controller_slot);
+
+    match result {
+        Ok(ControllerHttpResult::Completed {
+            message,
+            receipt,
+            world_changed,
+        }) => {
+            let version = if world_changed {
+                match publish_projection(state).await {
+                    Ok(version) => Some(version),
+                    Err(error) => {
+                        tracing::error!(%error, "world revision could not be read after controller commit");
+                        current_world(state)
+                            .await
+                            .ok()
+                            .map(|snapshot| eve::surface_version(snapshot.as_ref()))
+                    }
+                }
+            } else {
+                current_world(state)
+                    .await
+                    .ok()
+                    .map(|snapshot| eve::surface_version(snapshot.as_ref()))
+            };
+            Json(eve::command_result(
+                &invocation,
+                "accepted",
+                message,
+                version,
+                None,
+                Some(receipt),
+            ))
+            .into_response()
+        }
+        Ok(ControllerHttpResult::Pending {
+            state_name,
+            message,
+            receipt,
+            ..
+        }) => Json(eve::command_result(
+            &invocation,
+            state_name,
+            message,
+            current_world(state)
+                .await
+                .ok()
+                .map(|snapshot| eve::surface_version(snapshot.as_ref())),
+            None,
+            Some(receipt),
+        ))
+        .into_response(),
+        Err(error) => {
+            let state_name = controller_error_disposition(&error);
+            Json(eve::command_result(
+                &invocation,
+                state_name,
+                error.to_string(),
+                current_world(state)
+                    .await
+                    .ok()
+                    .map(|snapshot| eve::surface_version(snapshot.as_ref())),
+                None,
+                None,
+            ))
+            .into_response()
+        }
+    }
+}
+
+async fn admit_controller_command(
+    state: &AppState,
+    principal: &VerifiedPrincipalEvidence,
+    invocation: &EveCommandInvocation,
+) -> Result<(CommandId, DecisionOpportunity), RuntimeCommandError> {
+    let command_id = CommandId::parse_uuid(
+        invocation
+            .operation
+            .idempotency_key
+            .as_deref()
+            .unwrap_or(""),
+    )?;
+    let payload: ControllerActPayload = serde_json::from_value(invocation.payload.clone())
+        .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
+    if payload.opportunity.controller_mode == crate::world::ControllerMode::Human {
+        return Err(RuntimeCommandError::Payload(
+            "human decisions cannot enter through the controller runner".into(),
+        ));
+    }
+    let source_version = invocation
+        .operation
+        .route_hint
+        .source_version
+        .ok_or_else(|| RuntimeCommandError::Payload("source version is required".into()))?;
+    let opportunity_version =
+        payload.opportunity.revision.checked_add(1).ok_or_else(|| {
+            RuntimeCommandError::Payload("opportunity revision overflowed".into())
+        })?;
+    if source_version != opportunity_version {
+        return Err(RuntimeCommandError::Payload(
+            "opportunity and surface version disagree".into(),
+        ));
+    }
+    let snapshot = current_world(state)
+        .await
+        .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?
+        .ok_or_else(|| RuntimeCommandError::Payload("world has not been created".into()))?;
+    if snapshot.owner != PrincipalId::new(principal.account_subject_hash()) {
+        return Err(RuntimeCommandError::Payload(
+            "only the world owner may ask a controller to act".into(),
+        ));
+    }
+    if payload.opportunity.world_id != snapshot.world_id {
+        return Err(RuntimeCommandError::Payload(
+            "controller opportunity belongs to another world".into(),
+        ));
+    }
+    Ok((command_id, payload.opportunity))
+}
+
+enum ControllerHttpResult {
+    Completed {
+        message: &'static str,
+        receipt: Value,
+        world_changed: bool,
+    },
+    Pending {
+        state_name: &'static str,
+        message: &'static str,
+        receipt: Value,
+        quarantine: bool,
+    },
+}
+
+fn controller_narrative_result(run: NarrativeRun) -> ControllerHttpResult {
+    match run {
+        NarrativeRun::Completed(decision) => {
+            let (turn, capture, disposition) = decision.into_parts();
+            let (submission, world_changed) = controller_submission(disposition);
+            ControllerHttpResult::Completed {
+                message: "Narrative Persona completed its decision.",
+                receipt: json!({
+                    "kind":"narrative_persona",
+                    "personaProse":turn.source_prose(),
+                    "personaSourceDigest":turn.source_digest(),
+                    "personaReceiptDigest":turn.receipt_digest(),
+                    "interpretation":{
+                        "proposal":capture.proposal.as_ref().map(|source| json!({
+                            "startByte":source.start_byte,
+                            "endByte":source.end_byte,
+                        })),
+                        "gaps":capture.gaps.iter().map(|gap| json!({
+                            "kind":gap.kind,
+                            "startByte":gap.source.start_byte,
+                            "endByte":gap.source.end_byte,
+                            "detail":gap.detail,
+                        })).collect::<Vec<_>>(),
+                        "finalization":capture.finalization,
+                        "inferenceReceipts":capture.inference_receipts,
+                    },
+                    "submission":submission,
+                }),
+                world_changed,
+            }
+        }
+        NarrativeRun::Pending(pending) => {
+            controller_pending_result(pending.mode(), pending.reason(), pending.persona_prose())
+        }
+    }
+}
+
+fn controller_operational_result(run: OperationalRun) -> ControllerHttpResult {
+    match run {
+        OperationalRun::Completed(decision) => {
+            let (capture, disposition) = decision.into_parts();
+            let (submission, world_changed) = controller_submission(disposition);
+            ControllerHttpResult::Completed {
+                message: "Operational agent completed its decision.",
+                receipt: json!({
+                    "kind":"operational_agent",
+                    "proposal":capture.proposal,
+                    "needs":capture.needs,
+                    "inferenceReceipts":capture.inference_receipts,
+                    "submission":submission,
+                }),
+                world_changed,
+            }
+        }
+        OperationalRun::Pending(pending) => {
+            controller_pending_result(pending.mode(), pending.reason(), None)
+        }
+    }
+}
+
+fn controller_pending_result(
+    mode: crate::world::ControllerMode,
+    reason: ControllerPendingReason,
+    persona_prose: Option<&str>,
+) -> ControllerHttpResult {
+    let (state_name, message, quarantine) = match reason {
+        ControllerPendingReason::InferenceRetryable => (
+            "pending",
+            "The exact controller inference remains available for connector replay.",
+            false,
+        ),
+        ControllerPendingReason::InferenceRecoveryRequired => (
+            "unknown",
+            "The connector cannot establish an exact outcome for this inference.",
+            false,
+        ),
+        ControllerPendingReason::WorldUnavailable => (
+            "unknown",
+            "The world owner is unavailable; no controller outcome is claimed.",
+            false,
+        ),
+        ControllerPendingReason::WorldOutcomeUnknown => (
+            "unknown",
+            "World commit custody is uncertain; no controller outcome is claimed.",
+            false,
+        ),
+        ControllerPendingReason::StoreReopenRequired => (
+            "unknown",
+            "Controller work-store custody is uncertain; controller cognition has been quarantined.",
+            true,
+        ),
+    };
+    ControllerHttpResult::Pending {
+        state_name,
+        message,
+        receipt: json!({
+            "kind":"controller_pending",
+            "mode":mode,
+            "reason":format!("{reason:?}"),
+            "personaProse":persona_prose,
+        }),
+        quarantine,
+    }
+}
+
+fn controller_submission(disposition: SubmissionDisposition) -> (Value, bool) {
+    match disposition {
+        SubmissionDisposition::NoProposal(receipt) => {
+            let changed = matches!(&receipt, SubmitReceipt::Applied(_));
+            (
+                json!({
+                    "kind":"no_proposal",
+                    "commit":submit_receipt(receipt),
+                }),
+                changed,
+            )
+        }
+        SubmissionDisposition::Completed(receipt) => {
+            let changed = matches!(&receipt, SubmitReceipt::Applied(_));
+            (submit_receipt(receipt), changed)
+        }
+        SubmissionDisposition::PreviouslyConfirmed(confirmation) => (
+            json!({
+                "kind":"previously_confirmed",
+                "commandId":confirmation.command_id,
+                "revision":confirmation.resulting_revision,
+                "stateDigest":confirmation.resulting_state_digest,
+                "commitDigest":confirmation.commit_digest,
+            }),
+            false,
+        ),
+    }
+}
+
+fn controller_error_disposition(error: &ControllerError) -> &'static str {
+    match error {
+        ControllerError::WorkPersistence(_) | ControllerError::Serialization(_) => "unknown",
+        ControllerError::Inference { .. } | ControllerError::ProviderContract { .. } => "unknown",
+        ControllerError::Snapshot(
+            MailboxError::Unavailable | MailboxError::OutcomeUnknown { .. },
+        ) => "unknown",
+        ControllerError::Snapshot(_)
+        | ControllerError::NoOpportunity { .. }
+        | ControllerError::AmbiguousOpportunity
+        | ControllerError::OpportunityMismatch
+        | ControllerError::SpeakUnavailable
+        | ControllerError::CommandMismatch
+        | ControllerError::MissingControllerWork
+        | ControllerError::World(_) => "denied",
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+enum RuntimeCommandError {
+    #[error("invalid command payload: {0}")]
+    Payload(String),
+    #[error("world command outcome is unknown after durable submission: {0}")]
+    OutcomeUnknown(String),
+    #[error(transparent)]
+    Mailbox(#[from] MailboxError),
+    #[error(transparent)]
+    Kernel(#[from] KernelError),
+}
+
+async fn execute_world(
+    state: &AppState,
+    verified_principal: &VerifiedPrincipalEvidence,
+    invocation: &EveCommandInvocation,
+) -> Result<Value, RuntimeCommandError> {
+    let command_id = CommandId::parse_uuid(
+        invocation
+            .operation
+            .idempotency_key
+            .as_deref()
+            .unwrap_or(""),
+    )?;
+    if invocation.operation.operation_id == "world.create" {
+        let payload: CreatePayload = serde_json::from_value(invocation.payload.clone())
+            .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
+        let receipt = state
+            .world
+            .create(
+                CreateWorldIntent {
+                    id: command_id,
+                    title: payload.title,
+                    human_subject_label: payload.subject_label,
+                    narrative_persona_label: payload.narrative_persona_label,
+                    operational_agent_label: payload.operational_agent_label,
+                },
+                verified_principal,
+            )
+            .await
+            .map_err(map_mailbox)?;
+        return Ok(json!({
+            "kind":"created",
+            "commandId":serde_json::to_value(receipt.command_id).unwrap_or(Value::Null),
+            "worldId":serde_json::to_value(receipt.world_id).unwrap_or(Value::Null),
+            "stateDigest":receipt.resulting_state_digest,
+            "commitDigest":receipt.commit_digest
+        }));
+    }
+
+    let snapshot = current_world(state)
+        .await
+        .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?
+        .ok_or_else(|| RuntimeCommandError::Payload("world has not been created".into()))?;
+    let source_version = invocation
+        .operation
+        .route_hint
+        .source_version
+        .ok_or_else(|| RuntimeCommandError::Payload("source version is required".into()))?;
+    let expected_revision = source_version.checked_sub(1).ok_or_else(|| {
+        RuntimeCommandError::Payload("source version does not name a world revision".into())
+    })?;
+    let body = match invocation.operation.operation_id.as_str() {
+        "world.approve" => {
+            serde_json::from_value::<EmptyPayload>(invocation.payload.clone())
+                .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
+            CommandBody::ApproveDraft
+        }
+        "world.activate" => {
+            serde_json::from_value::<EmptyPayload>(invocation.payload.clone())
+                .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
+            CommandBody::ActivateWorld
+        }
+        "world.speak" => {
+            let payload: SpeakPayload = serde_json::from_value(invocation.payload.clone())
+                .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
+            if payload.opportunity.revision != expected_revision {
+                return Err(RuntimeCommandError::Payload(
+                    "opportunity and surface version disagree".into(),
+                ));
+            }
+            CommandBody::ExerciseDecision {
+                opportunity: payload.opportunity,
+                invocation: DecisionInvocation {
+                    affordance_id: payload.affordance_id,
+                    action: DecisionAction::Speak { text: payload.text },
+                },
+            }
+        }
+        operation => {
+            return Err(RuntimeCommandError::Payload(format!(
+                "unknown world operation {operation}"
+            )));
+        }
+    };
+    let receipt = state
+        .world
+        .submit_principal(
+            PrincipalCommandIntent {
+                id: command_id,
+                world_id: snapshot.world_id,
+                expected_revision,
+                body,
+            },
+            verified_principal,
+        )
+        .await
+        .map_err(map_mailbox)?;
+    Ok(submit_receipt(receipt))
+}
+
+fn submit_receipt(receipt: SubmitReceipt) -> Value {
+    match receipt {
+        SubmitReceipt::Applied(receipt) => json!({
+            "kind":"applied",
+            "commandId":serde_json::to_value(receipt.command_id).unwrap_or(Value::Null),
+            "revision":receipt.resulting_revision,
+            "stateDigest":receipt.resulting_state_digest,
+            "commitDigest":receipt.commit_digest
+        }),
+        SubmitReceipt::AlreadyApplied(receipt) => json!({
+            "kind":"already_applied",
+            "commandId":serde_json::to_value(receipt.command_id).unwrap_or(Value::Null),
+            "revision":receipt.resulting_revision,
+            "stateDigest":receipt.resulting_state_digest,
+            "commitDigest":receipt.commit_digest
+        }),
+    }
+}
+
+fn map_mailbox(error: MailboxError) -> RuntimeCommandError {
+    match error {
+        MailboxError::OutcomeUnknown { command_id } => {
+            RuntimeCommandError::OutcomeUnknown(format!("{command_id:?}"))
+        }
+        other => RuntimeCommandError::Mailbox(other),
+    }
+}
+
+async fn current_world(state: &AppState) -> anyhow::Result<Option<WorldSnapshot>> {
+    match state.world.snapshot().await {
+        Ok(snapshot) => Ok(Some(snapshot)),
+        Err(MailboxError::Kernel(KernelError::WorldNotCreated)) => Ok(None),
+        Err(error) => Err(error.into()),
+    }
+}
+
+async fn publish_projection(state: &AppState) -> anyhow::Result<u64> {
+    let snapshot = current_world(state).await?;
+    let version = eve::surface_version(snapshot.as_ref());
+    let _ = state.revisions.send(version);
+    if let Some(mesh) = state.mesh.clone() {
+        let _projection = tokio::task::spawn_blocking(move || {
+            if let Err(error) = mesh.publish(snapshot.as_ref()) {
+                tracing::warn!(%error, "derived CultMesh projection update failed");
+            }
+        });
+    }
+    Ok(version)
+}
+
+async fn refresh_mesh_projection(state: &AppState) -> anyhow::Result<u64> {
+    let snapshot = current_world(state).await?;
+    let version = eve::surface_version(snapshot.as_ref());
+    let Some(mesh) = state.mesh.clone() else {
+        bail!("CultMesh projection is unavailable");
+    };
+    tokio::task::spawn_blocking(move || mesh.publish(snapshot.as_ref()))
+        .await
+        .context("CultMesh projection worker panicked")??;
+    Ok(version)
+}
+
+async fn canonical_readiness(state: &AppState) -> anyhow::Result<Value> {
+    let snapshot = current_world(state)
+        .await
+        .context("world owner is not ready")?;
+    state
+        .sessions
+        .lock()
+        .await
+        .validate_custody()
+        .context("app-session owner is not ready")?;
+    let expected_version = eve::surface_version(snapshot.as_ref());
+    let expected_world_state = eve::world_state(snapshot.as_ref());
+    Ok(json!({
+        "schema":"ghostlight.service_health.v2",
+        "status":"ok",
+        "worldState":expected_world_state,
+        "surfaceVersion":expected_version,
+        "updatedAtUtc":Utc::now().to_rfc3339(),
+        "runtime":state.mesh_identity.runtime_id,
+        "commit":option_env!("GHOSTLIGHT_BUILD_COMMIT").unwrap_or("development"),
+    }))
+}
+
+async fn runtime_readiness(state: &AppState) -> anyhow::Result<Value> {
+    let mut health = canonical_readiness(state).await?;
+    let expected_version = health["surfaceVersion"].as_u64().unwrap_or_default();
+    let expected_world_state = health["worldState"].as_str().unwrap_or("unknown");
+    let projection_status = match &state.mesh {
+        Some(mesh) => match mesh.health() {
+            Ok(health)
+                if health.get("status").and_then(Value::as_str) == Some("ok")
+                    && health.get("surfaceVersion").and_then(Value::as_u64)
+                        == Some(expected_version)
+                    && health.get("worldState").and_then(Value::as_str)
+                        == Some(expected_world_state) =>
+            {
+                "ok"
+            }
+            Ok(_) | Err(_) => "degraded",
+        },
+        None => "unavailable",
+    };
+    let controller_status = match state.controllers.try_lock() {
+        Ok(slot) => match slot.as_ref() {
+            Some(controller) => {
+                match tokio::time::timeout(Duration::from_millis(100), controller.custody_probe())
+                    .await
+                {
+                    Ok(Ok(ControllerWorkCustody::Owned { .. })) => "ok",
+                    Ok(Ok(ControllerWorkCustody::Uncertain { .. })) | Ok(Err(_)) => "degraded",
+                    Err(_) => "busy",
+                }
+            }
+            None => "unavailable",
+        },
+        Err(_) => "active",
+    };
+    health["projectionStatus"] = Value::String(projection_status.into());
+    health["controllerStatus"] = Value::String(controller_status.into());
+    Ok(health)
+}
+
+async fn maintain_mesh_projection(state: AppState) {
+    let mut interval = tokio::time::interval(Duration::from_secs(120));
+    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    // Startup publishes once before serving. Do not wake clients with a duplicate
+    // revision event; this loop only renews derived CultMesh freshness.
+    interval.tick().await;
+    loop {
+        interval.tick().await;
+        if let Err(error) = refresh_mesh_projection(&state).await {
+            tracing::warn!(%error, "derived CultMesh projection remains degraded");
+        }
+    }
+}
+
+async fn revision_events(State(state): State<AppState>) -> impl IntoResponse {
+    let mut revisions = state.revisions.subscribe();
+    let stream = async_stream::stream! {
+        loop {
+            match revisions.recv().await {
+                Ok(version) => yield Ok::<SseEvent, Infallible>(SseEvent::default().event("revision").data(version.to_string())),
+                Err(broadcast::error::RecvError::Lagged(_)) => continue,
+                Err(broadcast::error::RecvError::Closed) => break,
+            }
+        }
+    };
+    Sse::new(stream).keep_alive(KeepAlive::default())
+}
+
+async fn authenticated_principal(
+    headers: &HeaderMap,
+    state: &AppState,
+) -> Option<VerifiedPrincipalEvidence> {
+    let raw = cookie_value(headers)?;
+    match state
+        .sessions
+        .lock()
+        .await
+        .account_for_cookie(raw, Utc::now())
+    {
+        Ok(account) => account,
+        Err(error) => {
+            signal_fatal(state, "app-session custody", &error);
+            None
+        }
+    }
+}
+
+fn signal_fatal(state: &AppState, organ: &str, error: &impl std::fmt::Display) {
+    let detail = format!("{organ}: {error}");
+    tracing::error!(%detail, "runtime owner can no longer uphold its invariant");
+    let _ = state.fatal.send(detail);
+}
+
+fn cookie_value(headers: &HeaderMap) -> Option<&str> {
+    headers
+        .get(header::COOKIE)?
+        .to_str()
+        .ok()?
+        .split(';')
+        .map(str::trim)
+        .find_map(|cookie| cookie.strip_prefix(&format!("{COOKIE_NAME}=")))
+}
+
+fn session_cookie(raw: &str, expires_at: DateTime<Utc>, now: DateTime<Utc>) -> HeaderValue {
+    HeaderValue::from_str(&format!(
+        "{COOKIE_NAME}={raw}; Max-Age={}; HttpOnly; Secure; SameSite=Lax; Path=/ghostlight/",
+        (expires_at - now).num_seconds().max(0)
+    ))
+    .expect("generated session cookie must be valid")
+}
+
+async fn maintain_session_refresh(state: AppState) -> anyhow::Result<()> {
+    let mut interval = tokio::time::interval(Duration::from_secs(60));
+    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    loop {
+        interval.tick().await;
+        let candidates = state
+            .sessions
+            .lock()
+            .await
+            .sessions_due_for_refresh(Utc::now(), chrono::Duration::minutes(2))
+            .context("app-session refresh scan lost custody")?;
+        for candidate in candidates {
+            let idempotency = format!(
+                "refresh:{}:{}",
+                candidate.heimdall_session_id, candidate.access_revision
+            );
+            let completion = match state
+                .heimdall
+                .refresh(&candidate.refresh_claim, &idempotency)
+                .await
+            {
+                Ok(value) => value,
+                Err(error) => {
+                    tracing::warn!(%error, "Heimdall refresh transport unavailable");
+                    continue;
+                }
+            };
+            let verified = match state.heimdall.verify_refresh(completion).await {
+                Ok(value) => value,
+                Err(error) => {
+                    tracing::warn!(%error, "Heimdall refresh receipt was invalid");
+                    let mut sessions = state.sessions.lock().await;
+                    if let Err(revoke_error) = sessions.revoke_cookie_hash(&candidate.cookie_hash) {
+                        return Err(revoke_error)
+                            .context("invalid Heimdall refresh could not revoke local custody");
+                    }
+                    continue;
+                }
+            };
+            if verified.heimdall_session_id() != candidate.heimdall_session_id
+                || crate::app_session::secret_hash(&format!(
+                    "heimdall-account:{}",
+                    verified.account_id()
+                )) != candidate.account_subject_hash
+            {
+                tracing::warn!("Heimdall refresh changed local session custody");
+                let mut sessions = state.sessions.lock().await;
+                if let Err(revoke_error) = sessions.revoke_cookie_hash(&candidate.cookie_hash) {
+                    return Err(revoke_error)
+                        .context("changed Heimdall custody could not revoke local session");
+                }
+                continue;
+            }
+            let mut sessions = state.sessions.lock().await;
+            if let Err(error) =
+                sessions.apply_refresh(&candidate.cookie_hash, candidate.access_revision, verified)
+            {
+                if sessions.is_healthy() {
+                    tracing::warn!(%error, "local app session rejected Heimdall refresh");
+                } else {
+                    return Err(error).context("app-session refresh commit lost custody");
+                }
+            }
+        }
+    }
+}
+
+async fn initialize_production_admission(
+    identity: &MeshRuntimeIdentity,
+) -> anyhow::Result<Option<ProductionAdmission>> {
+    let endpoint = match std::env::var("GHOSTLIGHT_IDUNN_RUDP") {
+        Ok(endpoint) => endpoint,
+        Err(_) => {
+            #[cfg(target_os = "linux")]
+            bail!("GHOSTLIGHT_IDUNN_RUDP is mandatory for the Linux Ghostlight runtime");
+            #[cfg(not(target_os = "linux"))]
+            return Ok(None);
+        }
+    };
+    let identity_store = std::env::var_os("GHOSTLIGHT_IDUNN_HEALTH_IDENTITY")
+        .map(PathBuf::from)
+        .context("GHOSTLIGHT_IDUNN_HEALTH_IDENTITY is required with GHOSTLIGHT_IDUNN_RUDP")?;
+    let daemon_id =
+        std::env::var("GHOSTLIGHT_IDUNN_DAEMON").unwrap_or_else(|_| "yggdrasil-ghostlight".into());
+    if daemon_id != "yggdrasil-ghostlight" {
+        bail!("signed Ghostlight health daemon id is not the canonical Idunn identity");
+    }
+    let release = release_health_binding()?;
+    let activation = active_activation_binding(&release)?;
+    let mut publisher = IdunnHealthPublisher::open(
+        endpoint.parse()?,
+        daemon_id,
+        identity.runtime_id.clone(),
+        std::env::var("GHOSTLIGHT_IDUNN_HEALTH_CONTRACT")
+            .unwrap_or_else(|_| GHOSTLIGHT_IDUNN_HEALTH_CONTRACT.into()),
+        identity_store,
+        release.clone(),
+        activation.clone(),
+    )?;
+    let startup = publisher
+        .publish("warming", "traffic-admission-pending")
+        .context("publishing initial warming Idunn health")?;
+    let traffic =
+        GhostlightTrafficAdmissionGate::from_environment(&release, &activation, &startup)?;
+    traffic.wait_until_granted(Duration::from_secs(120)).await?;
+    Ok(Some(ProductionAdmission {
+        traffic: Arc::new(traffic),
+        health: publisher,
+    }))
+}
+
+fn release_health_binding() -> anyhow::Result<IdunnReleaseBinding> {
+    let executable = std::env::current_exe().context("locating the active Ghostlight binary")?;
+    let release_root = executable
+        .parent()
+        .context("active Ghostlight binary has no release directory")?;
+    let witness_path = release_root.join("DEPLOYMENT");
+    let witness = std::fs::read(&witness_path)
+        .with_context(|| format!("reading sealed release witness {}", witness_path.display()))?;
+    let witness_text = std::str::from_utf8(&witness).context("release witness is not UTF-8")?;
+    let source_commit = exact_release_field(witness_text, "source_commit")?.to_owned();
+    let compiled_commit = option_env!("GHOSTLIGHT_BUILD_COMMIT").unwrap_or("development");
+    if source_commit != compiled_commit || !is_lower_hex(&source_commit, 40) {
+        bail!("release witness does not bind the compiled Ghostlight source commit");
+    }
+    let expected_binary_sha = exact_release_field(witness_text, "binary_sha256")?;
+    let binary_sha = hex(&Sha256::digest(
+        std::fs::read(&executable).context("reading the active Ghostlight binary")?,
+    ));
+    if expected_binary_sha != binary_sha {
+        bail!("release witness does not bind the active Ghostlight executable");
+    }
+    let deployment_id = std::env::var("GHOSTLIGHT_IDUNN_DEPLOYMENT_REQUEST_ID")
+        .context("GHOSTLIGHT_IDUNN_DEPLOYMENT_REQUEST_ID is required for signed health")?;
+    if deployment_id.len() > 256
+        || !deployment_id
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b':' | b'-'))
+    {
+        bail!("Idunn deployment request identity is malformed");
+    }
+    Ok(IdunnReleaseBinding {
+        release_id: source_commit.clone(),
+        release_witness_sha256: format!("sha256-{}", hex(&Sha256::digest(&witness))),
+        source_commit,
+        deployment_id,
+    })
+}
+
+fn exact_release_field<'a>(witness: &'a str, name: &str) -> anyhow::Result<&'a str> {
+    let prefix = format!("{name}=");
+    let mut values = witness
+        .lines()
+        .filter_map(|line| line.strip_prefix(&prefix));
+    let value = values
+        .next()
+        .with_context(|| format!("release witness has no {name}"))?;
+    if value.is_empty()
+        || value.trim() != value
+        || value.chars().any(char::is_control)
+        || values.next().is_some()
+    {
+        bail!("release witness has an invalid or duplicate {name}");
+    }
+    Ok(value)
+}
+
+fn is_lower_hex(value: &str, length: usize) -> bool {
+    value.len() == length
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+}
+
+async fn maintain_runtime_health(
+    publisher: Option<IdunnHealthPublisher>,
+    state: AppState,
+) -> anyhow::Result<()> {
+    let mut publisher = publisher;
+    let mut interval = tokio::time::interval(Duration::from_secs(10));
+    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    loop {
+        interval.tick().await;
+        canonical_readiness(&state)
+            .await
+            .context("runtime is not ready for signed health")?;
+        if let Some(mut owned) = publisher.take() {
+            let published = tokio::task::spawn_blocking(move || {
+                let result = owned.publish("active", "world-owner-serving");
+                (owned, result)
+            })
+            .await;
+            let Ok((returned, result)) = published else {
+                tracing::warn!("signed Idunn health worker panicked; publication is disabled");
+                continue;
+            };
+            publisher = Some(returned);
+            if let Err(error) = result {
+                tracing::warn!(%error, "signed Idunn health publication failed");
+            }
+        }
+    }
+}
+
+async fn maintain_traffic_admission(
+    admission: Arc<GhostlightTrafficAdmissionGate>,
+) -> anyhow::Result<()> {
+    let mut interval = tokio::time::interval(Duration::from_millis(100));
+    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    loop {
+        interval.tick().await;
+        admission
+            .require_current()
+            .context("root traffic admission was revoked or substituted")?;
+    }
+}
+
+fn require_current_traffic_admission(
+    admission: Option<&RequestTrafficAdmission>,
+    phase: &str,
+) -> anyhow::Result<()> {
+    let Some(admission) = admission else {
+        return Ok(());
+    };
+    admission
+        .traffic
+        .require_current()
+        .with_context(|| format!("root traffic admission changed {phase}"))
+}
+
+fn require_no_runtime_custody_failure(
+    failures: &mut mpsc::UnboundedReceiver<String>,
+) -> anyhow::Result<()> {
+    match failures.try_recv() {
+        Ok(detail) => bail!("runtime custody failed before serving: {detail}"),
+        Err(mpsc::error::TryRecvError::Empty) => Ok(()),
+        Err(mpsc::error::TryRecvError::Disconnected) => {
+            bail!("runtime custody signal channel closed before serving")
+        }
+    }
+}
+
+fn default_runtime_root() -> PathBuf {
+    #[cfg(windows)]
+    {
+        PathBuf::from(r"F:\GameCult\GhostlightDungeon")
+    }
+    #[cfg(not(windows))]
+    {
+        PathBuf::from("/var/lib/gamecult/ghostlight-dungeon")
+    }
+}
+
+fn hex(bytes: &[u8]) -> String {
+    const DIGITS: &[u8; 16] = b"0123456789abcdef";
+    let mut output = String::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        output.push(DIGITS[(byte >> 4) as usize] as char);
+        output.push(DIGITS[(byte & 0x0f) as usize] as char);
+    }
+    output
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::{body::Body, http::Request};
+    use tower::ServiceExt;
+
+    fn controller_commit() -> crate::world::CommitReceipt {
+        crate::world::CommitReceipt {
+            command_id: CommandId::new(),
+            resulting_revision: 9,
+            resulting_state_digest: "sha256:declined-state".into(),
+            commit_digest: "sha256:decline-commit".into(),
+        }
+    }
+
+    #[test]
+    fn no_proposal_projection_carries_the_canonical_world_commit() {
+        let commit = controller_commit();
+        let (applied, changed) = controller_submission(SubmissionDisposition::NoProposal(
+            SubmitReceipt::Applied(commit.clone()),
+        ));
+        assert!(changed);
+        assert_eq!(applied["kind"], "no_proposal");
+        assert_eq!(applied["commit"]["kind"], "applied");
+        assert_eq!(applied["commit"]["revision"], 9);
+
+        let (replayed, changed) = controller_submission(SubmissionDisposition::NoProposal(
+            SubmitReceipt::AlreadyApplied(commit),
+        ));
+        assert!(!changed);
+        assert_eq!(replayed["kind"], "no_proposal");
+        assert_eq!(replayed["commit"]["kind"], "already_applied");
+    }
+
+    struct Fixture {
+        _directory: tempfile::TempDir,
+        state: AppState,
+        cookie: String,
+    }
+
+    async fn fixture() -> Fixture {
+        let directory = tempfile::tempdir().unwrap();
+        let key = directory.path().join("session.key");
+        std::fs::write(&key, [17_u8; 32]).unwrap();
+        let mut sessions =
+            AppSessionOwner::open(directory.path().join("sessions.cc"), &key).unwrap();
+        let cookie = sessions
+            .create_session(heimdall::VerifiedSessionAdmission::fixture(
+                "operator-account",
+                "heimdall-session",
+                1,
+                Utc::now() + chrono::Duration::hours(1),
+                Utc::now() + chrono::Duration::days(1),
+                "fixture-refresh",
+            ))
+            .unwrap();
+        let (world, _owner) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let controller_key = directory.path().join("controller.key");
+        std::fs::write(&controller_key, "runtime-test-controller-key").unwrap();
+        let controllers = ControllerRunner::open(
+            world.clone(),
+            "127.0.0.1:9".parse().unwrap(),
+            &controller_key,
+            "ghostlight-runtime-test",
+            directory.path().join("controller-work.cc"),
+            ControllerModels {
+                projector: "gpt-5.6-luna".into(),
+                persona: "gpt-5.6-sol".into(),
+                interpreter: "gpt-5.6-terra".into(),
+                operational_agent: "gpt-5.6-terra".into(),
+            },
+        )
+        .unwrap();
+        let mesh = MeshPublisher::open(
+            directory.path().join("mesh.cc"),
+            None,
+            MeshRuntimeIdentity::default(),
+        )
+        .unwrap();
+        let mesh_identity = MeshRuntimeIdentity::default();
+        let (revisions, _) = broadcast::channel(8);
+        let (fatal, _fatal_events) = mpsc::unbounded_channel();
+        let state = AppState {
+            world,
+            controllers: Arc::new(Mutex::new(Some(controllers))),
+            sessions: Arc::new(Mutex::new(sessions)),
+            heimdall: Arc::new(HeimdallClient::fixture()),
+            mesh: Some(mesh),
+            mesh_identity,
+            revisions,
+            fatal,
+            traffic: None,
+        };
+        publish_projection(&state).await.unwrap();
+        Fixture {
+            _directory: directory,
+            state,
+            cookie,
+        }
+    }
+
+    fn invocation(operation: &str, schema: &str, version: u64, payload: Value, id: &str) -> Value {
+        json!({
+            "schema":"gamecult.eve.command_invocation.v1",
+            "providerId":mesh::PROVIDER_ID,
+            "surfaceId":mesh::SURFACE_ID,
+            "operation":{
+                "operationId":operation,
+                "schemaId":schema,
+                "idempotencyKey":id,
+                "routeHint":{"sourceVersion":version,"transport":"https-json"}
+            },
+            "payload":payload,
+            "issuedAt":Utc::now().to_rfc3339(),
+            "clientId":"runtime-test",
+            "commandBoundary":mesh::COMMAND_BOUNDARY,
+            "receiptSchema":mesh::COMMAND_RESULT_SCHEMA
+        })
+    }
+
+    async fn post(state: &AppState, cookie: &str, body: Value) -> Value {
+        let response = api_router(state.clone())
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/eve/commands")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .header(header::COOKIE, format!("{COOKIE_NAME}={cookie}"))
+                    .body(Body::from(serde_json::to_vec(&body).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let bytes = axum::body::to_bytes(response.into_body(), 1024 * 1024)
+            .await
+            .unwrap();
+        serde_json::from_slice(&bytes).unwrap()
+    }
+
+    #[tokio::test]
+    async fn http_eve_journey_uses_one_world_owner() {
+        let fixture = fixture().await;
+        let created = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.create",
+                "ghostlight.world_create.v1",
+                0,
+                json!({"title":"Cutover World","subject_label":"Operator"}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(created["state"], "accepted");
+        assert_eq!(created["sourceVersion"], 1);
+
+        let approved = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.approve",
+                "ghostlight.world_approve.v0",
+                1,
+                json!({}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(approved["sourceVersion"], 2);
+        let activated = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.activate",
+                "ghostlight.world_activate.v0",
+                2,
+                json!({}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(activated["sourceVersion"], 3);
+
+        let world = current_world(&fixture.state).await.unwrap().unwrap();
+        let opportunity = world.opportunities[0].clone();
+        let affordance = world.subjects[0].affordances[&AffordanceKind::Speak];
+        let spoken = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "world.speak",
+                "ghostlight.world_speak.v0",
+                3,
+                json!({
+                    "text":"The new owner speaks.",
+                    "opportunity":opportunity,
+                    "affordance_id":affordance
+                }),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(spoken["sourceVersion"], 4);
+        let world = current_world(&fixture.state).await.unwrap().unwrap();
+        assert_eq!(world.events.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn exact_stale_retry_returns_journal_receipt_without_app_cache() {
+        let fixture = fixture().await;
+        let id = uuid::Uuid::new_v4().to_string();
+        let command = invocation(
+            "world.create",
+            "ghostlight.world_create.v1",
+            0,
+            json!({"title":"Retry World","subject_label":"Operator"}),
+            &id,
+        );
+        let first = post(&fixture.state, &fixture.cookie, command.clone()).await;
+        let second = post(&fixture.state, &fixture.cookie, command).await;
+        assert_eq!(
+            first["receipt"]["commitDigest"],
+            second["receipt"]["commitDigest"]
+        );
+        assert_eq!(
+            current_world(&fixture.state)
+                .await
+                .unwrap()
+                .unwrap()
+                .revision,
+            0
+        );
+    }
+
+    #[tokio::test]
+    async fn logout_retry_clears_a_revoked_cookie_without_reauthentication() {
+        let fixture = fixture().await;
+        let id = uuid::Uuid::new_v4().to_string();
+        let command = invocation(
+            "app.auth.logout",
+            "ghostlight.app_logout.v2",
+            0,
+            json!({}),
+            &id,
+        );
+        let first = post(&fixture.state, &fixture.cookie, command.clone()).await;
+        let retry = post(&fixture.state, &fixture.cookie, command).await;
+        assert_eq!(first["state"], "accepted");
+        assert_eq!(retry["state"], "accepted");
+        assert_eq!(retry["pluginPayload"]["payload"]["status"], "anonymous");
+    }
+
+    #[tokio::test]
+    async fn removed_legacy_operation_is_denied_before_dispatch() {
+        let fixture = fixture().await;
+        let result = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "session_zero.begin",
+                "ghostlight.session_zero_begin.v1",
+                0,
+                json!({}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(result["state"], "denied");
+        assert!(
+            result["message"]
+                .as_str()
+                .unwrap()
+                .contains("not advertised")
+        );
+    }
+
+    #[tokio::test]
+    async fn authentication_commands_reject_ignored_authority_payloads() {
+        let fixture = fixture().await;
+        let result = post(
+            &fixture.state,
+            &fixture.cookie,
+            invocation(
+                "heimdall.auth.begin",
+                "heimdall.auth_begin_command.v1",
+                0,
+                json!({"caller":{"principal":"legacy-owner"}}),
+                &uuid::Uuid::new_v4().to_string(),
+            ),
+        )
+        .await;
+        assert_eq!(result["state"], "denied");
+        assert!(
+            result["message"]
+                .as_str()
+                .unwrap()
+                .contains("invalid command payload")
+        );
+    }
+}

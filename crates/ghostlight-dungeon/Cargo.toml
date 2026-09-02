@@ -3,6 +3,11 @@ name = "ghostlight-dungeon"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+autobins = false
+
+[[bin]]
+name = "ghostlight-dungeon"
+path = "src/main.rs"
 
 [dependencies]
 anyhow.workspace = true
@@ -17,14 +22,12 @@ cultcache-legacy.workspace = true
 cultcache-rs.workspace = true
 cultnet-rs.workspace = true
 cultmesh-rs.workspace = true
-jsonschema.workspace = true
 jsonwebtoken.workspace = true
 hmac.workspace = true
 ghostlight-persona-projection = { path = "../ghostlight-persona-projection" }
 rand.workspace = true
 reqwest.workspace = true
 rmp-serde.workspace = true
-schemars.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 serde_bytes = "0.11"
@@ -36,9 +39,6 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 uuid.workspace = true
 zeroize.workspace = true
-
-[target.'cfg(windows)'.dependencies]
-windows.workspace = true
 
 [dev-dependencies]
 tempfile = "3"

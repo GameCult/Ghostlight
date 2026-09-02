@@ -5,21 +5,29 @@
 //! Controllers may use models, but models never own lifecycle, scope, affordances,
 //! opportunities, reduction, or persistence.
 
+mod controllers;
 mod journal;
 mod mailbox;
+
+pub(crate) use controllers::{
+    ControllerError, ControllerModels, ControllerOpenError, ControllerPendingReason,
+    ControllerRunner, ControllerWorkCustody, NarrativeCapture, NarrativeDecision, NarrativePending,
+    NarrativeRun, OperationalCapture, OperationalDecision, OperationalPending, OperationalRun,
+    SourceRange, SubmissionDisposition, TranslationGapSummary,
+};
+pub(crate) use mailbox::{MailboxError, WorldMailbox};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    path::Path,
-};
+use std::collections::{BTreeMap, BTreeSet};
+#[cfg(test)]
+use std::path::Path;
 use thiserror::Error;
 use uuid::Uuid;
 
 const STATE_SCHEMA: &str = "ghostlight.world_state.foundation.v0";
-const COMMIT_SCHEMA: &str = "ghostlight.world_commit.foundation.v0";
+const COMMIT_SCHEMA: &str = "ghostlight.world_commit.foundation.v1";
 
 macro_rules! opaque_uuid {
     ($name:ident) => {
@@ -45,6 +53,12 @@ impl CommandId {
 
     pub(crate) fn new() -> Self {
         Self::issue()
+    }
+
+    pub(crate) fn parse_uuid(value: &str) -> Result<Self, KernelError> {
+        Uuid::parse_str(value)
+            .map(Self)
+            .map_err(|_| KernelError::InvalidCommandId)
     }
 
     fn key(self) -> String {
@@ -98,10 +112,10 @@ impl PrincipalId {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(transparent)]
-pub(crate) struct DraftSubjectHandle(String);
+struct DraftSubjectHandle(String);
 
 impl DraftSubjectHandle {
-    pub(crate) fn new(value: impl Into<String>) -> Self {
+    fn new(value: impl Into<String>) -> Self {
         Self(value.into())
     }
 }
@@ -137,44 +151,65 @@ pub(crate) enum AffordanceKind {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
-pub(crate) enum NewController {
+enum NewController {
     Human { principal: PrincipalId },
     NarrativePersona,
     OperationalAgent,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub(crate) struct NewDecisionSubject {
-    pub(crate) handle: DraftSubjectHandle,
-    pub(crate) label: String,
-    pub(crate) kind: SubjectKind,
-    pub(crate) controller: NewController,
-    pub(crate) affordances: BTreeSet<AffordanceKind>,
+struct NewDecisionSubject {
+    handle: DraftSubjectHandle,
+    label: String,
+    kind: SubjectKind,
+    controller: NewController,
+    affordances: BTreeSet<AffordanceKind>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub(crate) struct CreateWorld {
+struct CreateWorld {
+    id: CommandId,
+    owner: PrincipalId,
+    title: String,
+    subjects: Vec<NewDecisionSubject>,
+}
+
+/// Unattributed creation intent. World ingress derives ownership, controller
+/// identity, handles, kinds, and affordances from verified principal evidence.
+#[derive(Clone, Debug)]
+pub(crate) struct CreateWorldIntent {
     pub(crate) id: CommandId,
-    pub(crate) owner: PrincipalId,
     pub(crate) title: String,
-    pub(crate) subjects: Vec<NewDecisionSubject>,
+    pub(crate) human_subject_label: String,
+    pub(crate) narrative_persona_label: Option<String>,
+    pub(crate) operational_agent_label: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", content = "id", rename_all = "snake_case")]
-pub(crate) enum CallerId {
+enum CallerId {
     Principal(PrincipalId),
     Controller(ControllerId),
 }
 
-/// Sealed identity evidence. Production construction belongs to the app-session
-/// identity owner when runtime ingress moves onto this boundary.
 #[derive(Clone, Debug)]
-pub(crate) struct AuthenticatedCaller {
+struct AuthenticatedCaller {
     caller: CallerId,
 }
 
 impl AuthenticatedCaller {
+    fn verified_principal(principal: PrincipalId) -> Self {
+        Self {
+            caller: CallerId::Principal(principal),
+        }
+    }
+
+    fn verified_controller(controller: ControllerId) -> Self {
+        Self {
+            caller: CallerId::Controller(controller),
+        }
+    }
+
     #[cfg(test)]
     fn fixture(caller: CallerId) -> Self {
         Self { caller }
@@ -182,11 +217,13 @@ impl AuthenticatedCaller {
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct DecisionScope {
     pub(crate) subject_id: SubjectId,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct DecisionOpportunity {
     pub(crate) world_id: WorldId,
     pub(crate) revision: u64,
@@ -195,6 +232,12 @@ pub(crate) struct DecisionOpportunity {
     pub(crate) controller_id: ControllerId,
     pub(crate) controller_mode: ControllerMode,
     pub(crate) affordance_ids: Vec<AffordanceId>,
+}
+
+impl DecisionOpportunity {
+    pub(crate) fn digest(&self) -> Result<String, KernelError> {
+        digest(self)
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -212,31 +255,42 @@ impl DecisionAction {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
 pub(crate) struct DecisionInvocation {
     pub(crate) affordance_id: AffordanceId,
     pub(crate) action: DecisionAction,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub(crate) struct CommandEnvelope {
+struct CommandEnvelope {
+    id: CommandId,
+    world_id: WorldId,
+    expected_revision: u64,
+    caller: CallerId,
+    body: CommandBody,
+}
+
+/// Unattributed human command intent. The mailbox derives the caller from
+/// live app-session evidence before the reducer sees an envelope.
+#[derive(Clone, Debug)]
+pub(crate) struct PrincipalCommandIntent {
     pub(crate) id: CommandId,
     pub(crate) world_id: WorldId,
     pub(crate) expected_revision: u64,
-    pub(crate) caller: CallerId,
     pub(crate) body: CommandBody,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub(crate) enum CommandBody {
-    SetTitle {
-        title: String,
-    },
     ApproveDraft,
     ActivateWorld,
     ExerciseDecision {
         opportunity: DecisionOpportunity,
         invocation: DecisionInvocation,
+    },
+    DeclineDecision {
+        opportunity: DecisionOpportunity,
     },
 }
 
@@ -344,10 +398,6 @@ enum WorldEffect {
         title: String,
         bindings: Vec<GenesisSubjectBinding>,
     },
-    TitleChanged {
-        previous_title: String,
-        resulting_title: String,
-    },
     DraftApproved {
         principal: PrincipalId,
     },
@@ -356,20 +406,48 @@ enum WorldEffect {
         opportunity: DecisionOpportunity,
         event: DecisionEvent,
     },
+    DecisionDeclined {
+        opportunity: DecisionOpportunity,
+    },
+}
+
+/// The exact raw command admitted by the world owner. This is the sole
+/// persistent command authority: IDs, callers, retry identity, and effects are
+/// derived from this value rather than copied into independently forgeable
+/// commit fields.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "type", content = "command", rename_all = "snake_case")]
+enum CommittedCommand {
+    CreateWorld(CreateWorld),
+    WorldCommand(CommandEnvelope),
+}
+
+impl CommittedCommand {
+    fn id(&self) -> CommandId {
+        match self {
+            Self::CreateWorld(command) => command.id,
+            Self::WorldCommand(command) => command.id,
+        }
+    }
+
+    fn caller(&self) -> CallerId {
+        match self {
+            Self::CreateWorld(command) => CallerId::Principal(command.owner.clone()),
+            Self::WorldCommand(command) => command.caller.clone(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 struct WorldCommit {
     schema: String,
     world_id: WorldId,
-    command_id: CommandId,
-    command_digest: String,
+    command: CommittedCommand,
     previous_revision: Option<u64>,
     resulting_revision: u64,
     previous_state_digest: Option<String>,
     resulting_state_digest: String,
     previous_commit_digest: Option<String>,
-    caller: CallerId,
     effect: WorldEffect,
     committed_at: DateTime<Utc>,
     digest: String,
@@ -403,14 +481,6 @@ pub(crate) struct WorldSnapshot {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct CreatedSubject {
-    pub(crate) handle: DraftSubjectHandle,
-    pub(crate) subject_id: SubjectId,
-    pub(crate) controller_id: ControllerId,
-    pub(crate) affordances: BTreeMap<AffordanceKind, AffordanceId>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct CommitReceipt {
     pub(crate) command_id: CommandId,
     pub(crate) resulting_revision: u64,
@@ -422,35 +492,25 @@ pub(crate) struct CommitReceipt {
 pub(crate) struct CreationReceipt {
     pub(crate) command_id: CommandId,
     pub(crate) world_id: WorldId,
-    pub(crate) subjects: Vec<CreatedSubject>,
     pub(crate) resulting_state_digest: String,
     pub(crate) commit_digest: String,
 }
 
 impl CreationReceipt {
     fn from_commit(commit: &WorldCommit) -> Result<Self, KernelError> {
-        let WorldEffect::WorldCreated { bindings, .. } = &commit.effect else {
+        let CommittedCommand::CreateWorld(command) = &commit.command else {
+            return Err(KernelError::Invariant(
+                "world genesis receipt does not point to a creation command".into(),
+            ));
+        };
+        let WorldEffect::WorldCreated { .. } = &commit.effect else {
             return Err(KernelError::Invariant(
                 "world genesis receipt does not point to genesis".into(),
             ));
         };
-        let subjects = bindings
-            .iter()
-            .map(|binding| CreatedSubject {
-                handle: binding.handle.clone(),
-                subject_id: binding.subject_id,
-                controller_id: binding.controller.id(),
-                affordances: binding
-                    .affordances
-                    .iter()
-                    .map(|(affordance_id, grant)| (grant.kind, *affordance_id))
-                    .collect(),
-            })
-            .collect();
         Ok(Self {
-            command_id: commit.command_id,
+            command_id: command.id,
             world_id: commit.world_id,
-            subjects,
             resulting_state_digest: commit.resulting_state_digest.clone(),
             commit_digest: commit.digest.clone(),
         })
@@ -460,7 +520,7 @@ impl CreationReceipt {
 impl From<&WorldCommit> for CommitReceipt {
     fn from(commit: &WorldCommit) -> Self {
         Self {
-            command_id: commit.command_id,
+            command_id: commit.command.id(),
             resulting_revision: commit.resulting_revision,
             resulting_state_digest: commit.resulting_state_digest.clone(),
             commit_digest: commit.digest.clone(),
@@ -472,11 +532,12 @@ impl From<&WorldCommit> for CommitReceipt {
 pub(crate) enum SubmitReceipt {
     Applied(CommitReceipt),
     AlreadyApplied(CommitReceipt),
-    NoEffect(WorldSnapshot),
 }
 
 #[derive(Debug, Error)]
 pub(crate) enum KernelError {
+    #[error("command ID must be a UUID")]
+    InvalidCommandId,
     #[error("world title must not be empty")]
     EmptyTitle,
     #[error("world owner or human controller principal must be canonical and nonempty")]
@@ -504,10 +565,10 @@ pub(crate) enum KernelError {
         expected: WorldPhase,
         actual: WorldPhase,
     },
-    #[error("draft title is locked after the first approval")]
-    DraftLocked,
     #[error("caller is not a required draft approver")]
     NotDraftApprover,
+    #[error("caller has already approved this draft")]
+    DraftAlreadyApproved,
     #[error("draft is missing required approvals: {0:?}")]
     MissingApprovals(Vec<PrincipalId>),
     #[error("decision opportunity is stale or does not exactly derive from current state")]
@@ -526,6 +587,8 @@ pub(crate) enum KernelError {
     CreationConflict,
     #[error("world creation target already contains another world")]
     CreationTargetOccupied,
+    #[error("world has not been created")]
+    WorldNotCreated,
     #[error("opened store contains another world")]
     OpenedWorldMismatch,
     #[error("world ownership is uncertain after command {command_id:?}; drop and reopen")]
@@ -542,12 +605,23 @@ pub(crate) enum KernelError {
     Invariant(String),
 }
 
+impl KernelError {
+    fn requires_owner_restart(&self) -> bool {
+        matches!(
+            self,
+            Self::RecoveryRequired { .. }
+                | Self::OwnershipLost
+                | Self::Store(_)
+                | Self::CorruptJournal(_)
+                | Self::Invariant(_)
+        )
+    }
+}
+
 impl From<journal::JournalError> for KernelError {
     fn from(error: journal::JournalError) -> Self {
         match error {
-            journal::JournalError::NotEmpty => Self::CreationTargetOccupied,
             journal::JournalError::WorldMismatch => Self::OpenedWorldMismatch,
-            journal::JournalError::CreationConflict => Self::CreationConflict,
             journal::JournalError::RecoveryRequired { command_id } => {
                 Self::RecoveryRequired { command_id }
             }
@@ -563,61 +637,93 @@ struct WorldKernel {
     journal: journal::WorldJournal,
 }
 
+struct PreparedCreation {
+    command: CreateWorld,
+    owner: PrincipalId,
+    title: String,
+    subjects: Vec<NewDecisionSubject>,
+}
+
+fn prepare_creation(
+    input: CreateWorld,
+    authenticated: &AuthenticatedCaller,
+) -> Result<PreparedCreation, KernelError> {
+    let CallerId::Principal(authenticated_principal) = &authenticated.caller else {
+        return Err(KernelError::AuthenticationMismatch);
+    };
+    validate_principal(&input.owner)?;
+    if &input.owner != authenticated_principal {
+        return Err(KernelError::AuthenticationMismatch);
+    }
+    let subjects = canonicalize_subjects(&input.subjects)?;
+    let title = normalize_title(&input.title)?;
+    Ok(PreparedCreation {
+        owner: input.owner.clone(),
+        title,
+        subjects,
+        command: input,
+    })
+}
+
 impl WorldKernel {
+    fn initialize(
+        empty: journal::EmptyWorldJournal,
+        prepared: PreparedCreation,
+    ) -> Result<(Self, CreationReceipt), KernelError> {
+        let world_id = WorldId::issue();
+        let effect = issue_genesis(prepared.owner, prepared.title, prepared.subjects);
+        let mut state = WorldState::genesis(world_id, &prepared.command, &effect)?;
+        let mut genesis = WorldCommit {
+            schema: COMMIT_SCHEMA.into(),
+            world_id,
+            command: CommittedCommand::CreateWorld(prepared.command),
+            previous_revision: None,
+            resulting_revision: 0,
+            previous_state_digest: None,
+            resulting_state_digest: state.state_digest.clone(),
+            previous_commit_digest: None,
+            effect,
+            committed_at: Utc::now(),
+            digest: String::new(),
+        };
+        genesis.digest = commit_digest(&genesis)?;
+        state.last_commit_digest = Some(genesis.digest.clone());
+        let receipt = CreationReceipt::from_commit(&genesis)?;
+        let journal = empty.initialize(&state, &genesis)?;
+        Ok((Self { state, journal }, receipt))
+    }
+
+    fn retry_creation(&self, prepared: &PreparedCreation) -> Result<CreationReceipt, KernelError> {
+        self.journal.ensure_healthy()?;
+        let Some(commit) = self.journal.commit_for(prepared.command.id) else {
+            return Err(KernelError::CreationTargetOccupied);
+        };
+        if commit.command != CommittedCommand::CreateWorld(prepared.command.clone())
+            || !matches!(&commit.effect, WorldEffect::WorldCreated { .. })
+        {
+            return Err(KernelError::CreationConflict);
+        }
+        CreationReceipt::from_commit(commit)
+    }
+
+    #[cfg(test)]
     fn create(
         path: impl AsRef<Path>,
         input: CreateWorld,
         authenticated: &AuthenticatedCaller,
     ) -> Result<(Self, CreationReceipt), KernelError> {
-        let CallerId::Principal(authenticated_principal) = &authenticated.caller else {
-            return Err(KernelError::AuthenticationMismatch);
-        };
-        validate_principal(&input.owner)?;
-        if &input.owner != authenticated_principal {
-            return Err(KernelError::AuthenticationMismatch);
-        }
-        let canonical_subjects = canonicalize_subjects(&input.subjects)?;
-        let title = normalize_title(&input.title)?;
-        let creation_digest = digest(&input)?;
-        let (journal, state) = match journal::WorldJournal::open_for_creation(
-            path.as_ref(),
-            input.id,
-            &creation_digest,
-        )? {
-            journal::CreationOpen::Existing { journal, state } => (journal, state),
-            journal::CreationOpen::Empty(empty) => {
-                let world_id = WorldId::issue();
-                let caller = CallerId::Principal(input.owner.clone());
-                let effect = issue_genesis(input.owner, title, canonical_subjects);
-                let mut state = WorldState::genesis(world_id, &caller, &effect)?;
-                let mut genesis = WorldCommit {
-                    schema: COMMIT_SCHEMA.into(),
-                    world_id,
-                    command_id: input.id,
-                    command_digest: creation_digest,
-                    previous_revision: None,
-                    resulting_revision: 0,
-                    previous_state_digest: None,
-                    resulting_state_digest: state.state_digest.clone(),
-                    previous_commit_digest: None,
-                    caller,
-                    effect,
-                    committed_at: Utc::now(),
-                    digest: String::new(),
-                };
-                genesis.digest = commit_digest(&genesis)?;
-                state.last_commit_digest = Some(genesis.digest.clone());
-                let journal = empty.initialize(&state, &genesis)?;
-                (journal, state)
+        let prepared = prepare_creation(input, authenticated)?;
+        match journal::WorldJournal::open_owner(path.as_ref())? {
+            journal::JournalOpen::Empty(empty) => Self::initialize(empty, prepared),
+            journal::JournalOpen::Live { journal, state } => {
+                let kernel = Self { state, journal };
+                let receipt = kernel.retry_creation(&prepared)?;
+                Ok((kernel, receipt))
             }
-        };
-        let receipt = journal
-            .commit_for(input.id)
-            .ok_or_else(|| KernelError::Invariant("world genesis receipt is missing".into()))
-            .and_then(CreationReceipt::from_commit)?;
-        Ok((Self { state, journal }, receipt))
+        }
     }
 
+    #[cfg(test)]
     fn open(path: impl AsRef<Path>, expected_world_id: WorldId) -> Result<Self, KernelError> {
         let (journal, state) = journal::WorldJournal::open(path.as_ref(), expected_world_id)?;
         Ok(Self { state, journal })
@@ -641,9 +747,8 @@ impl WorldKernel {
         if command.caller != authenticated.caller {
             return Err(KernelError::AuthenticationMismatch);
         }
-        let command_digest = digest(&command)?;
         if let Some(commit) = self.committed_command(command.id) {
-            return if commit.command_digest == command_digest {
+            return if commit.command == CommittedCommand::WorldCommand(command.clone()) {
                 Ok(SubmitReceipt::AlreadyApplied(CommitReceipt::from(commit)))
             } else {
                 Err(KernelError::CommandIdConflict)
@@ -656,9 +761,7 @@ impl WorldKernel {
             });
         }
 
-        let Reduction::Apply(effect) = reduce(&self.state, &command)? else {
-            return Ok(SubmitReceipt::NoEffect(snapshot(&self.state)?));
-        };
+        let effect = reduce(&self.state, &command)?;
         let mut candidate = self.state.clone();
         apply_effect(&mut candidate, &command.caller, &effect)?;
         candidate.revision = candidate
@@ -670,14 +773,12 @@ impl WorldKernel {
         let mut commit = WorldCommit {
             schema: COMMIT_SCHEMA.into(),
             world_id: self.state.world_id,
-            command_id: command.id,
-            command_digest,
+            command: CommittedCommand::WorldCommand(command),
             previous_revision: Some(self.state.revision),
             resulting_revision: candidate.revision,
             previous_state_digest: Some(self.state.state_digest.clone()),
             resulting_state_digest: candidate.state_digest.clone(),
             previous_commit_digest: self.state.last_commit_digest.clone(),
-            caller: command.caller,
             effect,
             committed_at,
             digest: String::new(),
@@ -693,30 +794,62 @@ impl WorldKernel {
     fn committed_command(&self, command_id: CommandId) -> Option<&WorldCommit> {
         self.journal.commit_for(command_id)
     }
-}
 
-enum Reduction {
-    NoEffect,
-    Apply(WorldEffect),
-}
-
-fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<Reduction, KernelError> {
-    match &command.body {
-        CommandBody::SetTitle { title } => {
-            require_owner(state, &command.caller)?;
-            require_phase(state, WorldPhase::Draft)?;
-            let title = normalize_title(title)?;
-            if title == state.title {
-                return Ok(Reduction::NoEffect);
-            }
-            if !state.draft_approvals.is_empty() {
-                return Err(KernelError::DraftLocked);
-            }
-            Ok(Reduction::Apply(WorldEffect::TitleChanged {
-                previous_title: state.title.clone(),
-                resulting_title: title,
-            }))
+    fn controller_receipt(
+        &self,
+        command_id: CommandId,
+        opportunity: &DecisionOpportunity,
+        invocation: &DecisionInvocation,
+    ) -> Result<Option<CommitReceipt>, KernelError> {
+        self.journal.ensure_healthy()?;
+        let Some(commit) = self.committed_command(command_id) else {
+            return Ok(None);
+        };
+        let CommittedCommand::WorldCommand(CommandEnvelope {
+            body:
+                CommandBody::ExerciseDecision {
+                    opportunity: committed_opportunity,
+                    invocation: committed_invocation,
+                },
+            ..
+        }) = &commit.command
+        else {
+            return Err(KernelError::CommandIdConflict);
+        };
+        if committed_opportunity != opportunity || committed_invocation != invocation {
+            return Err(KernelError::CommandIdConflict);
         }
+        Ok(Some(CommitReceipt::from(commit)))
+    }
+
+    fn controller_decline_receipt(
+        &self,
+        command_id: CommandId,
+        opportunity: &DecisionOpportunity,
+    ) -> Result<Option<CommitReceipt>, KernelError> {
+        self.journal.ensure_healthy()?;
+        let Some(commit) = self.committed_command(command_id) else {
+            return Ok(None);
+        };
+        let CommittedCommand::WorldCommand(CommandEnvelope {
+            body:
+                CommandBody::DeclineDecision {
+                    opportunity: committed_opportunity,
+                },
+            ..
+        }) = &commit.command
+        else {
+            return Err(KernelError::CommandIdConflict);
+        };
+        if committed_opportunity != opportunity {
+            return Err(KernelError::CommandIdConflict);
+        }
+        Ok(Some(CommitReceipt::from(commit)))
+    }
+}
+
+fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, KernelError> {
+    match &command.body {
         CommandBody::ApproveDraft => {
             require_phase(state, WorldPhase::Draft)?;
             let CallerId::Principal(principal) = &command.caller else {
@@ -726,11 +859,11 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<Reduction, Ke
                 return Err(KernelError::NotDraftApprover);
             }
             if state.draft_approvals.contains(principal) {
-                return Ok(Reduction::NoEffect);
+                return Err(KernelError::DraftAlreadyApproved);
             }
-            Ok(Reduction::Apply(WorldEffect::DraftApproved {
+            Ok(WorldEffect::DraftApproved {
                 principal: principal.clone(),
-            }))
+            })
         }
         CommandBody::ActivateWorld => {
             require_owner(state, &command.caller)?;
@@ -742,7 +875,7 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<Reduction, Ke
             if !missing.is_empty() {
                 return Err(KernelError::MissingApprovals(missing));
             }
-            Ok(Reduction::Apply(WorldEffect::WorldActivated))
+            Ok(WorldEffect::WorldActivated)
         }
         CommandBody::ExerciseDecision {
             opportunity,
@@ -768,7 +901,7 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<Reduction, Ke
             if grant.kind != invocation.action.kind() {
                 return Err(KernelError::AffordanceMismatch);
             }
-            let invocation = canonical_invocation(invocation)?;
+            let invocation = validated_invocation(invocation)?;
             let resulting_revision = state
                 .revision
                 .checked_add(1)
@@ -780,10 +913,24 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<Reduction, Ke
                 controller_id: current.controller_id,
                 invocation: invocation.clone(),
             };
-            Ok(Reduction::Apply(WorldEffect::DecisionExercised {
+            Ok(WorldEffect::DecisionExercised {
                 opportunity: current,
                 event,
-            }))
+            })
+        }
+        CommandBody::DeclineDecision { opportunity } => {
+            require_phase(state, WorldPhase::Active)?;
+            let current = exact_opportunity(state, opportunity)?;
+            let assignment = state
+                .controller_assignments
+                .get(&current.scope)
+                .ok_or(KernelError::OpportunityMismatch)?;
+            if assignment.expected_caller() != command.caller {
+                return Err(KernelError::ControllerMismatch);
+            }
+            Ok(WorldEffect::DecisionDeclined {
+                opportunity: current,
+            })
         }
     }
 }
@@ -791,7 +938,7 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<Reduction, Ke
 impl WorldState {
     fn genesis(
         world_id: WorldId,
-        caller: &CallerId,
+        command: &CreateWorld,
         effect: &WorldEffect,
     ) -> Result<Self, KernelError> {
         let WorldEffect::WorldCreated {
@@ -804,19 +951,16 @@ impl WorldState {
                 "genesis state requires a world-created effect".into(),
             ));
         };
-        if caller != &CallerId::Principal(owner.clone()) {
+        validate_principal(&command.owner)?;
+        let expected_title = normalize_title(&command.title)?;
+        let expected_subjects = canonicalize_subjects(&command.subjects)?;
+        if owner != &command.owner
+            || title != &expected_title
+            || bindings.len() != expected_subjects.len()
+        {
             return Err(KernelError::Invariant(
-                "genesis creator does not match owner".into(),
+                "genesis effect does not match the admitted creation command".into(),
             ));
-        }
-        validate_principal(owner)?;
-        if normalize_title(title)? != *title {
-            return Err(KernelError::Invariant(
-                "genesis title is not canonical".into(),
-            ));
-        }
-        if bindings.is_empty() {
-            return Err(KernelError::NoSubjects);
         }
 
         let mut handles = BTreeSet::new();
@@ -825,7 +969,23 @@ impl WorldState {
         let mut controller_ids = BTreeSet::new();
         let mut grants = BTreeMap::new();
         let mut scope_kinds = BTreeSet::new();
-        for binding in bindings {
+        for (binding, expected) in bindings.iter().zip(&expected_subjects) {
+            let affordance_kinds: BTreeSet<_> = binding
+                .affordances
+                .values()
+                .map(|grant| grant.kind)
+                .collect();
+            if binding.handle != expected.handle
+                || binding.subject.label != expected.label
+                || binding.subject.kind != expected.kind
+                || !assignment_matches_new(&binding.controller, &expected.controller)
+                || binding.affordances.len() != expected.affordances.len()
+                || affordance_kinds != expected.affordances
+            {
+                return Err(KernelError::Invariant(
+                    "genesis binding does not derive from its creation subject".into(),
+                ));
+            }
             validate_handle(&binding.handle)?;
             if !handles.insert(binding.handle.clone()) {
                 return Err(KernelError::DuplicateSubjectHandle);
@@ -1113,20 +1273,12 @@ fn normalize_label(value: &str) -> Result<String, KernelError> {
     }
 }
 
-fn normalize_speech(value: &str) -> Result<String, KernelError> {
-    let value = value.trim();
-    if value.is_empty() {
-        Err(KernelError::EmptySpeech)
-    } else {
-        Ok(value.to_owned())
-    }
-}
-
-fn canonical_invocation(value: &DecisionInvocation) -> Result<DecisionInvocation, KernelError> {
+fn validated_invocation(value: &DecisionInvocation) -> Result<DecisionInvocation, KernelError> {
     let action = match &value.action {
-        DecisionAction::Speak { text } => DecisionAction::Speak {
-            text: normalize_speech(text)?,
-        },
+        DecisionAction::Speak { text } if text.trim().is_empty() => {
+            return Err(KernelError::EmptySpeech);
+        }
+        DecisionAction::Speak { text } => DecisionAction::Speak { text: text.clone() },
     };
     Ok(DecisionInvocation {
         affordance_id: value.affordance_id,
@@ -1157,6 +1309,20 @@ fn validate_assignment(value: &ControllerAssignment) -> Result<(), KernelError> 
     Ok(())
 }
 
+fn assignment_matches_new(assignment: &ControllerAssignment, expected: &NewController) -> bool {
+    match (assignment, expected) {
+        (
+            ControllerAssignment::Human { principal, .. },
+            NewController::Human {
+                principal: expected,
+            },
+        ) => principal == expected,
+        (ControllerAssignment::NarrativePersona { .. }, NewController::NarrativePersona)
+        | (ControllerAssignment::OperationalAgent { .. }, NewController::OperationalAgent) => true,
+        _ => false,
+    }
+}
+
 fn apply_effect(
     state: &mut WorldState,
     caller: &CallerId,
@@ -1167,23 +1333,6 @@ fn apply_effect(
             return Err(KernelError::Invariant(
                 "world genesis cannot be applied as a mutable effect".into(),
             ));
-        }
-        WorldEffect::TitleChanged {
-            previous_title,
-            resulting_title,
-        } => {
-            if caller != &CallerId::Principal(state.owner.clone())
-                || state.phase != WorldPhase::Draft
-                || !state.draft_approvals.is_empty()
-                || &state.title != previous_title
-                || previous_title == resulting_title
-                || normalize_title(resulting_title)? != *resulting_title
-            {
-                return Err(KernelError::Invariant(
-                    "title-change effect does not match canonical prior state".into(),
-                ));
-            }
-            state.title = resulting_title.clone();
         }
         WorldEffect::DraftApproved { principal } => {
             if state.phase != WorldPhase::Draft
@@ -1233,13 +1382,27 @@ fn apply_effect(
                     .contains(&event.invocation.affordance_id)
                 || grant.scope != current.scope
                 || grant.kind != event.invocation.action.kind()
-                || canonical_invocation(&event.invocation)? != event.invocation
+                || validated_invocation(&event.invocation)? != event.invocation
             {
                 return Err(KernelError::Invariant(
                     "decision effect does not match exact opportunity authority".into(),
                 ));
             }
             state.events.push(event.clone());
+        }
+        WorldEffect::DecisionDeclined { opportunity } => {
+            let current = exact_opportunity(state, opportunity)?;
+            let assignment = state
+                .controller_assignments
+                .get(&current.scope)
+                .ok_or_else(|| {
+                    KernelError::Invariant("decision scope lost its controller".into())
+                })?;
+            if state.phase != WorldPhase::Active || caller != &assignment.expected_caller() {
+                return Err(KernelError::Invariant(
+                    "decline effect does not match exact opportunity authority".into(),
+                ));
+            }
         }
     }
     Ok(())
@@ -1395,10 +1558,32 @@ mod tests {
     }
 
     #[test]
+    fn external_opportunities_reject_nested_authority_claims() {
+        let opportunity = DecisionOpportunity {
+            world_id: WorldId::issue(),
+            revision: 4,
+            state_digest: "sha256:fixture".into(),
+            scope: DecisionScope {
+                subject_id: SubjectId::issue(),
+            },
+            controller_id: ControllerId::issue(),
+            controller_mode: ControllerMode::NarrativePersona,
+            affordance_ids: vec![AffordanceId::issue()],
+        };
+        let mut nested = serde_json::to_value(&opportunity).unwrap();
+        nested["scope"]["caller"] = serde_json::json!("legacy-owner");
+        assert!(serde_json::from_value::<DecisionOpportunity>(nested).is_err());
+
+        let mut outer = serde_json::to_value(&opportunity).unwrap();
+        outer["callerId"] = serde_json::json!("legacy-controller");
+        assert!(serde_json::from_value::<DecisionOpportunity>(outer).is_err());
+    }
+
+    #[test]
     fn draft_activation_player_and_autonomous_actions_share_one_reducer() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("world.cc");
-        let (mut kernel, receipt) = WorldKernel::create(
+        let (mut kernel, _) = WorldKernel::create(
             &path,
             creation(CommandId::new(), "  Delvehold  "),
             &auth_principal(owner()),
@@ -1407,7 +1592,6 @@ mod tests {
         let genesis = kernel.snapshot().unwrap();
         assert_eq!(genesis.title, "Delvehold");
         assert_eq!(genesis.phase, WorldPhase::Draft);
-        assert_eq!(receipt.subjects.len(), 3);
         assert!(genesis.opportunities.is_empty());
 
         let active = activate(&mut kernel);
@@ -1434,7 +1618,7 @@ mod tests {
         assert_eq!(
             after_player.events[0].invocation.action,
             DecisionAction::Speak {
-                text: "I open the door.".into()
+                text: "  I open the door.  ".into()
             }
         );
 
@@ -1497,9 +1681,7 @@ mod tests {
                     &owner_approved,
                     CommandId::new(),
                     CallerId::Principal(player()),
-                    CommandBody::SetTitle {
-                        title: "Stolen".into()
-                    },
+                    CommandBody::ActivateWorld,
                 ),
                 &auth_principal(player())
             ),
@@ -1511,13 +1693,11 @@ mod tests {
                     &owner_approved,
                     CommandId::new(),
                     CallerId::Principal(owner()),
-                    CommandBody::SetTitle {
-                        title: "Late".into()
-                    },
+                    CommandBody::ApproveDraft,
                 ),
                 &auth_principal(owner())
             ),
-            Err(KernelError::DraftLocked)
+            Err(KernelError::DraftAlreadyApproved)
         ));
         assert_eq!(kernel.journal.commit_count(), 2);
 
@@ -1686,7 +1866,167 @@ mod tests {
     }
 
     #[test]
-    fn no_effect_invalid_and_stale_commands_do_not_commit() {
+    fn controller_receipt_is_bound_to_the_exact_opportunity_and_invocation() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("world.cc");
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            creation(CommandId::new(), "Receipt Scope"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let active = activate(&mut kernel);
+        let decision = opportunity(&active, ControllerMode::OperationalAgent);
+        let other = opportunity(&active, ControllerMode::NarrativePersona);
+        let command_id = CommandId::new();
+        let caller = CallerId::Controller(decision.controller_id);
+        let invocation = speak(&decision, "The record is exact.");
+        kernel
+            .submit(
+                command(
+                    &active,
+                    command_id,
+                    caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        invocation: invocation.clone(),
+                        opportunity: decision.clone(),
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .unwrap();
+
+        let receipt = kernel
+            .controller_receipt(command_id, &decision, &invocation)
+            .unwrap()
+            .expect("committed controller command has a receipt");
+        assert_eq!(receipt.command_id, command_id);
+        assert!(
+            kernel
+                .controller_receipt(CommandId::new(), &decision, &invocation)
+                .unwrap()
+                .is_none()
+        );
+        assert!(matches!(
+            kernel.controller_receipt(command_id, &other, &invocation),
+            Err(KernelError::CommandIdConflict)
+        ));
+        let altered_invocation = speak(&decision, "A different proposal.");
+        assert!(matches!(
+            kernel.controller_receipt(command_id, &decision, &altered_invocation),
+            Err(KernelError::CommandIdConflict)
+        ));
+    }
+
+    #[test]
+    fn controller_decline_consumes_only_its_exact_opportunity() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("world.cc");
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            creation(CommandId::new(), "Decline Scope"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let active = activate(&mut kernel);
+        let decision = opportunity(&active, ControllerMode::OperationalAgent);
+        let other = opportunity(&active, ControllerMode::NarrativePersona);
+        let caller = CallerId::Controller(decision.controller_id);
+
+        assert!(matches!(
+            kernel.submit(
+                command(
+                    &active,
+                    CommandId::new(),
+                    CallerId::Controller(other.controller_id),
+                    CommandBody::DeclineDecision {
+                        opportunity: decision.clone(),
+                    },
+                ),
+                &AuthenticatedCaller::fixture(CallerId::Controller(other.controller_id)),
+            ),
+            Err(KernelError::ControllerMismatch)
+        ));
+        assert_eq!(kernel.snapshot().unwrap(), active);
+
+        let command_id = CommandId::new();
+        let decline = command(
+            &active,
+            command_id,
+            caller.clone(),
+            CommandBody::DeclineDecision {
+                opportunity: decision.clone(),
+            },
+        );
+        let SubmitReceipt::Applied(receipt) = kernel
+            .submit(
+                decline.clone(),
+                &AuthenticatedCaller::fixture(caller.clone()),
+            )
+            .unwrap()
+        else {
+            panic!("exact decline was not applied")
+        };
+        let after = kernel.snapshot().unwrap();
+        assert_eq!(after.revision, active.revision + 1);
+        assert!(after.events.is_empty());
+        let refreshed = opportunity(&after, ControllerMode::OperationalAgent);
+        assert_ne!(refreshed, decision);
+        assert_eq!(
+            kernel
+                .controller_decline_receipt(command_id, &decision)
+                .unwrap(),
+            Some(receipt.clone())
+        );
+        assert!(matches!(
+            kernel.controller_decline_receipt(command_id, &other),
+            Err(KernelError::CommandIdConflict)
+        ));
+        assert!(matches!(
+            kernel.controller_receipt(
+                command_id,
+                &decision,
+                &speak(&decision, "A decline is not speech."),
+            ),
+            Err(KernelError::CommandIdConflict)
+        ));
+        assert_eq!(
+            kernel
+                .submit(decline, &AuthenticatedCaller::fixture(caller.clone()))
+                .unwrap(),
+            SubmitReceipt::AlreadyApplied(receipt.clone())
+        );
+        assert!(matches!(
+            kernel.submit(
+                command(
+                    &after,
+                    CommandId::new(),
+                    caller.clone(),
+                    CommandBody::DeclineDecision {
+                        opportunity: decision,
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            ),
+            Err(KernelError::OpportunityMismatch)
+        ));
+        assert_eq!(kernel.snapshot().unwrap(), after);
+        drop(kernel);
+        let reopened = WorldKernel::open(&path, after.world_id).unwrap();
+        assert_eq!(reopened.snapshot().unwrap(), after);
+        assert_eq!(
+            reopened
+                .controller_decline_receipt(
+                    command_id,
+                    &opportunity(&active, ControllerMode::OperationalAgent),
+                )
+                .unwrap(),
+            Some(receipt)
+        );
+    }
+
+    #[test]
+    fn duplicate_and_stale_commands_do_not_commit() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("world.cc");
         let (mut kernel, _) = WorldKernel::create(
@@ -1697,45 +2037,27 @@ mod tests {
         .unwrap();
         let genesis = kernel.snapshot().unwrap();
         assert!(matches!(
-            submit_owner(
-                &mut kernel,
-                &genesis,
-                CommandBody::SetTitle {
-                    title: " Still ".into()
-                }
-            ),
-            SubmitReceipt::NoEffect(_)
+            submit_owner(&mut kernel, &genesis, CommandBody::ApproveDraft),
+            SubmitReceipt::Applied(_)
         ));
+        let after = kernel.snapshot().unwrap();
         assert!(matches!(
             kernel.submit(
                 command(
-                    &genesis,
+                    &after,
                     CommandId::new(),
                     CallerId::Principal(owner()),
-                    CommandBody::SetTitle { title: " ".into() },
+                    CommandBody::ApproveDraft,
                 ),
                 &auth_principal(owner())
             ),
-            Err(KernelError::EmptyTitle)
+            Err(KernelError::DraftAlreadyApproved)
         ));
-        assert_eq!(kernel.snapshot().unwrap(), genesis);
-        assert_eq!(kernel.journal.commit_count(), 1);
-
-        submit_owner(
-            &mut kernel,
-            &genesis,
-            CommandBody::SetTitle {
-                title: "Changed".into(),
-            },
-        );
-        let after = kernel.snapshot().unwrap();
         let stale = command(
             &genesis,
             CommandId::new(),
             CallerId::Principal(owner()),
-            CommandBody::SetTitle {
-                title: "Stale".into(),
-            },
+            CommandBody::ApproveDraft,
         );
         assert!(matches!(
             kernel.submit(stale, &auth_principal(owner())),
@@ -1761,17 +2083,23 @@ mod tests {
             &genesis,
             id,
             CallerId::Principal(owner()),
-            CommandBody::SetTitle { title: "B".into() },
+            CommandBody::ApproveDraft,
         );
         let first_receipt = kernel
             .submit(first.clone(), &auth_principal(owner()))
             .unwrap();
         let second_snapshot = kernel.snapshot().unwrap();
-        submit_owner(
-            &mut kernel,
-            &second_snapshot,
-            CommandBody::SetTitle { title: "C".into() },
-        );
+        kernel
+            .submit(
+                command(
+                    &second_snapshot,
+                    CommandId::new(),
+                    CallerId::Principal(player()),
+                    CommandBody::ApproveDraft,
+                ),
+                &auth_principal(player()),
+            )
+            .unwrap();
         let after_second = kernel.snapshot().unwrap();
         assert_eq!(
             kernel.submit(first, &auth_principal(owner())).unwrap(),
@@ -1784,15 +2112,37 @@ mod tests {
             &genesis,
             id,
             CallerId::Principal(owner()),
-            CommandBody::SetTitle {
-                title: "Different".into(),
-            },
+            CommandBody::ActivateWorld,
         );
         assert!(matches!(
             kernel.submit(conflict, &auth_principal(owner())),
             Err(KernelError::CommandIdConflict)
         ));
         assert_eq!(kernel.snapshot().unwrap(), after_second);
+    }
+
+    #[test]
+    fn creation_retry_is_bound_to_the_exact_raw_command() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("world.cc");
+        let id = CommandId::new();
+        let raw = creation(id, "  Canonical Result  ");
+        let (kernel, first) =
+            WorldKernel::create(&path, raw.clone(), &auth_principal(owner())).unwrap();
+        assert_eq!(kernel.snapshot().unwrap().title, "Canonical Result");
+        drop(kernel);
+
+        let (kernel, retry) =
+            WorldKernel::create(&path, raw.clone(), &auth_principal(owner())).unwrap();
+        assert_eq!(retry, first);
+        drop(kernel);
+
+        let mut merely_equivalent = raw;
+        merely_equivalent.title = "Canonical Result".into();
+        assert!(matches!(
+            WorldKernel::create(&path, merely_equivalent, &auth_principal(owner())),
+            Err(KernelError::CreationConflict)
+        ));
     }
 
     #[test]
@@ -1856,9 +2206,7 @@ mod tests {
             &genesis,
             uncertain,
             CallerId::Principal(owner()),
-            CommandBody::SetTitle {
-                title: "Durably changed".into(),
-            },
+            CommandBody::ApproveDraft,
         );
         kernel.journal.fail_after_durable_commit_for_test();
         assert!(matches!(
@@ -1874,13 +2222,40 @@ mod tests {
         let mut reopened = WorldKernel::open(&path, genesis.world_id).unwrap();
         let durable = reopened.snapshot().unwrap();
         assert_eq!(durable.revision, 1);
-        assert_eq!(durable.title, "Durably changed");
+        assert_eq!(durable.draft_approvals, BTreeSet::from([owner()]));
         assert!(matches!(
             reopened
                 .submit(attempted, &auth_principal(owner()))
                 .unwrap(),
             SubmitReceipt::AlreadyApplied(_)
         ));
+    }
+
+    #[test]
+    fn lost_genesis_ack_reopens_as_the_same_world_and_exact_receipt() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("world.cc");
+        let command_id = CommandId::new();
+        let input = creation(command_id, "Durable Genesis");
+        let authenticated = auth_principal(owner());
+        let mut empty = match journal::WorldJournal::open_owner(&path).unwrap() {
+            journal::JournalOpen::Empty(empty) => empty,
+            journal::JournalOpen::Live { .. } => panic!("fixture store must be empty"),
+        };
+        empty.fail_after_durable_initialize_for_test();
+        let prepared = prepare_creation(input.clone(), &authenticated).unwrap();
+        assert!(matches!(
+            WorldKernel::initialize(empty, prepared),
+            Err(KernelError::RecoveryRequired { command_id: uncertain })
+                if uncertain == command_id
+        ));
+
+        let (reopened, receipt) = WorldKernel::create(&path, input, &authenticated).unwrap();
+        let snapshot = reopened.snapshot().unwrap();
+        assert_eq!(receipt.command_id, command_id);
+        assert_eq!(receipt.world_id, snapshot.world_id);
+        assert_eq!(snapshot.revision, 0);
+        assert_eq!(snapshot.title, "Durable Genesis");
     }
 
     #[test]
@@ -1904,9 +2279,7 @@ mod tests {
                     &snapshot,
                     CommandId::new(),
                     CallerId::Principal(owner()),
-                    CommandBody::SetTitle {
-                        title: "Detached".into()
-                    },
+                    CommandBody::ApproveDraft,
                 ),
                 &auth_principal(owner())
             ),
@@ -1935,9 +2308,7 @@ mod tests {
             &snapshot,
             CommandId::new(),
             CallerId::Principal(player()),
-            CommandBody::SetTitle {
-                title: "Stolen".into(),
-            },
+            CommandBody::ApproveDraft,
         );
         assert!(matches!(
             kernel.submit(forged, &auth_principal(owner())),

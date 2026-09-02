@@ -3,7 +3,7 @@ use sha2::{Digest, Sha256};
 
 pub const MEMBRANE_SCHEMA: &str = "ghostlight.persona_projection_membrane.v1";
 pub const COGNITION_CONTROLLER_SCHEMA: &str = "ghostlight.decision_controller.v1";
-pub const PERSONA_TURN_RECEIPT_SCHEMA: &str = "ghostlight.persona_turn_receipt.v1";
+pub const PERSONA_TURN_RECEIPT_SCHEMA: &str = "ghostlight.persona_turn_receipt.v2";
 pub const RECORD_GAP_TOOL_NAME: &str = "record_gap";
 pub const RECORD_GAP_TOOL_CONTRACT: &str = "record_gap(kind: ambiguity | missing_reference | missing_affordance | missing_primitive | unresolved, source_start_byte: integer, source_end_byte: integer, detail: string)";
 
@@ -94,7 +94,7 @@ pub fn build_projector_prompt(input: &ProjectorPrompt<'_>) -> String {
 
 pub fn build_persona_prompt(input: &PersonaPrompt<'_>) -> String {
     format!(
-        "<!-- membrane:{MEMBRANE_SCHEMA}:persona -->\nEverything below is prose from inside one person's life. Inhabit that person and respond naturally from what they perceive, remember, want, fear, and believe. Treat asserted perceptions and memories as known. Let anything beyond them appear only as suspicion, imagination, conjecture, or deliberate invention by the character. You may speak, remain silent, wonder, decide, or attempt something. Do not announce an outside consequence as already accomplished. Spend words in proportion to the moment.\n\nVoice and setting guidance:\n{guidance}\n\nWho you are:\n{identity}\n\nWhat this moment is like for you:\n{stream}\n\nUse at most {word_budget} words. Return only the character's natural response in prose.",
+        "Everything below is prose from inside one person's life. Inhabit that person and respond naturally from what they perceive, remember, want, fear, and believe. Treat asserted perceptions and memories as known. Let anything beyond them appear only as suspicion, imagination, conjecture, or deliberate invention by the character. You may speak, remain silent, wonder, decide, or attempt something. Do not announce an outside consequence as already accomplished. Spend words in proportion to the moment.\n\nVoice and setting guidance:\n{guidance}\n\nWho you are:\n{identity}\n\nWhat this moment is like for you:\n{stream}\n\nUse at most {word_budget} words. Return only the character's natural response in prose.",
         identity = input.identity,
         guidance = input.domain_guidance,
         stream = input.lived_stream,
@@ -136,11 +136,14 @@ pub fn build_operational_agent_prompt(input: &OperationalAgentPrompt<'_>) -> Str
 /// Exact authority references supplied by the NarrativePersona runner when it
 /// persists a Persona turn. The world kernel later checks these claims against
 /// its own decision opportunity; this projection membrane cannot grant them.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PersonaTurnBinding {
     pub world_id: String,
     pub controller_id: String,
-    pub opportunity_id: String,
+    /// Digest of the complete canonical decision opportunity supplied to the
+    /// Projector. It binds scope, controller mode, affordances, revision, and
+    /// world state as one value instead of inventing a second opportunity ID.
+    pub opportunity_digest: String,
     pub world_revision: u64,
     pub state_digest: String,
     pub projector_receipt_digest: String,
@@ -159,6 +162,50 @@ pub struct PersonaTurn {
     receipt_digest: String,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PersonaTurnIntegrityError {
+    SourceDigestMismatch,
+    ReceiptDigestMismatch,
+}
+
+impl std::fmt::Display for PersonaTurnIntegrityError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::SourceDigestMismatch => {
+                formatter.write_str("Persona source prose does not match its persisted digest")
+            }
+            Self::ReceiptDigestMismatch => formatter
+                .write_str("Persona turn binding or source does not match its persisted receipt"),
+        }
+    }
+}
+
+impl std::error::Error for PersonaTurnIntegrityError {}
+
+#[derive(Deserialize)]
+struct PersistedPersonaTurn {
+    binding: PersonaTurnBinding,
+    source_prose: String,
+    source_digest: String,
+    receipt_digest: String,
+}
+
+impl<'de> Deserialize<'de> for PersonaTurn {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let persisted = PersistedPersonaTurn::deserialize(deserializer)?;
+        Self::rehydrate(
+            persisted.binding,
+            persisted.source_prose,
+            persisted.source_digest,
+            persisted.receipt_digest,
+        )
+        .map_err(serde::de::Error::custom)
+    }
+}
+
 impl PersonaTurn {
     pub fn record(binding: PersonaTurnBinding, source_prose: impl Into<String>) -> Self {
         let source_prose = source_prose.into();
@@ -170,6 +217,37 @@ impl PersonaTurn {
             source_digest,
             receipt_digest,
         }
+    }
+
+    /// Rehydrates an exact persisted turn while refusing to manufacture a
+    /// trusted receipt from altered prose or altered authority bindings.
+    pub fn rehydrate(
+        binding: PersonaTurnBinding,
+        source_prose: impl Into<String>,
+        source_digest: impl Into<String>,
+        receipt_digest: impl Into<String>,
+    ) -> Result<Self, PersonaTurnIntegrityError> {
+        let source_prose = source_prose.into();
+        let source_digest = source_digest.into();
+        let receipt_digest = receipt_digest.into();
+        if sha256(&source_prose) != source_digest {
+            return Err(PersonaTurnIntegrityError::SourceDigestMismatch);
+        }
+        if persona_turn_receipt_digest(&binding, &source_digest) != receipt_digest {
+            return Err(PersonaTurnIntegrityError::ReceiptDigestMismatch);
+        }
+        Ok(Self {
+            binding,
+            source_prose,
+            source_digest,
+            receipt_digest,
+        })
+    }
+
+    pub fn receipt_is_valid(&self) -> bool {
+        sha256(&self.source_prose) == self.source_digest
+            && persona_turn_receipt_digest(&self.binding, &self.source_digest)
+                == self.receipt_digest
     }
 
     pub fn binding(&self) -> &PersonaTurnBinding {
@@ -456,16 +534,6 @@ impl<T> InterpretationAccumulator<T> {
     }
 }
 
-pub fn narrative_stream_is_clean(value: &str) -> bool {
-    let trimmed = value.trim();
-    !trimmed.is_empty()
-        && !trimmed.starts_with('{')
-        && !trimmed.starts_with('[')
-        && !trimmed.contains("```json")
-        && !trimmed.contains("STATE NOTE")
-        && !trimmed.contains("SAY {")
-}
-
 pub fn sha256(value: &str) -> String {
     format!("sha256:{:x}", Sha256::digest(value.as_bytes()))
 }
@@ -476,7 +544,7 @@ fn persona_turn_receipt_digest(binding: &PersonaTurnBinding, source_digest: &str
         PERSONA_TURN_RECEIPT_SCHEMA.as_bytes(),
         binding.world_id.as_bytes(),
         binding.controller_id.as_bytes(),
-        binding.opportunity_id.as_bytes(),
+        binding.opportunity_digest.as_bytes(),
         binding.state_digest.as_bytes(),
         binding.projector_receipt_digest.as_bytes(),
         binding.persona_inference_receipt_digest.as_bytes(),
@@ -505,7 +573,7 @@ mod tests {
         let binding = PersonaTurnBinding {
             world_id: "world:test".into(),
             controller_id: "controller:mara".into(),
-            opportunity_id: "opportunity:7".into(),
+            opportunity_digest: "sha256:complete-opportunity".into(),
             world_revision: 12,
             state_digest: "sha256:world-state".into(),
             projector_receipt_digest: "sha256:projector-receipt".into(),
@@ -523,11 +591,76 @@ mod tests {
             word_budget: 140,
         });
         let lower = prompt.to_lowercase();
+        let words: Vec<_> = lower
+            .split(|character: char| !character.is_alphanumeric())
+            .filter(|word| !word.is_empty())
+            .collect();
         assert!(prompt.contains("The forge is hot"));
-        assert!(!lower.contains("typed context"));
-        assert!(!lower.contains("schema"));
-        assert!(!lower.contains("json"));
-        assert!(!lower.contains("tool"));
+        for machine_word in [
+            "id",
+            "ids",
+            "identifier",
+            "json",
+            "schema",
+            "tool",
+            "tools",
+            "stage",
+            "membrane",
+            "typed",
+            "contract",
+        ] {
+            assert!(
+                !words.contains(&machine_word),
+                "Persona-visible prompt leaked machine word `{machine_word}`"
+            );
+        }
+        assert!(!prompt.contains("<!--"));
+        assert!(!prompt.contains("world:test"));
+        assert!(!prompt.contains("controller:mara"));
+        assert!(!prompt.contains("sha256:"));
+    }
+
+    #[test]
+    fn persisted_exact_turn_rehydrates_with_the_same_receipt() {
+        let recorded = turn("I tell Mara, \"The western brace is giving way.\"");
+        let restored = PersonaTurn::rehydrate(
+            recorded.binding().clone(),
+            recorded.source_prose(),
+            recorded.source_digest(),
+            recorded.receipt_digest(),
+        )
+        .expect("exact persisted turn must rehydrate");
+
+        assert_eq!(restored, recorded);
+        assert_eq!(restored.receipt_digest(), recorded.receipt_digest());
+        assert!(restored.receipt_is_valid());
+    }
+
+    #[test]
+    fn rehydration_rejects_altered_prose_or_opportunity_binding() {
+        let recorded = turn("I tell Mara the western brace is giving way.");
+
+        assert_eq!(
+            PersonaTurn::rehydrate(
+                recorded.binding().clone(),
+                "I tell Mara the bridge is perfectly safe.",
+                recorded.source_digest(),
+                recorded.receipt_digest(),
+            ),
+            Err(PersonaTurnIntegrityError::SourceDigestMismatch)
+        );
+
+        let mut altered_binding = recorded.binding().clone();
+        altered_binding.opportunity_digest = "sha256:another-complete-opportunity".into();
+        assert_eq!(
+            PersonaTurn::rehydrate(
+                altered_binding,
+                recorded.source_prose(),
+                recorded.source_digest(),
+                recorded.receipt_digest(),
+            ),
+            Err(PersonaTurnIntegrityError::ReceiptDigestMismatch)
+        );
     }
 
     #[test]
@@ -708,12 +841,5 @@ mod tests {
         assert!(prompt.contains("not a Persona"));
         assert!(prompt.contains("Permissioned typed view"));
         assert!(prompt.contains("Available typed tools"));
-    }
-
-    #[test]
-    fn projector_stream_rejects_schema_and_action_leaks() {
-        assert!(narrative_stream_is_clean("The forge smells of coal."));
-        assert!(!narrative_stream_is_clean(r#"{"conditions":[]}"#));
-        assert!(!narrative_stream_is_clean("SAY { channel: room }"));
     }
 }
