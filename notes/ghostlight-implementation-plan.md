@@ -10,22 +10,21 @@ mode additional authority.
 
 ## Current mechanism
 
-The executable still starts the pre-rebuild runtime: separate Session Zero and
-campaign owners, aggregate Campaign and component representations, semantic
-verifier and reconciliation stages, model-owned scheduling decisions, and
-persisted recovery/checkpoint paths. Commit `12ee9f4` has removed the dead
-Elaboration and Mutation ingresses and their component-write helpers; remaining
-legacy paths are live deletion targets, not foundations that must survive.
+Pushed commit `6bb6869` makes the sealed mailbox/kernel architecture the crate
+and executable runtime identity. Pushed commit `13d5136` places app sessions,
+the world journal, and controller custody behind the one vendored CultCache
+implementation and removes the duplicate persistence dependency. The committed
+daemon tree contains no pre-rebuild Session Zero, legacy kernel, scheduler,
+assessor, verifier/reconciliation, or legacy-transition module path.
 
-The projection crate exposes explicit `NarrativePersona` and `OperationalAgent`
-modes plus a total Interpreter report. Commit `66ed2ec` completes the sealed
-private `foundation.v0` authority loop: Draft creation, approval, activation,
-canonical controller assignments and affordance grants, revision-bound
-opportunities, one shared human/autonomous decision reducer, one mailbox, and
-atomic replay. Eighteen focused world tests pass. That module is not yet the
-crate or executable runtime identity. The active move is to expose and wire its
-mailbox boundary, then cut each old startup, Draft, player, autonomous, and
-recovery owner without dual-write.
+Production has not crossed that source boundary. Yggdrasil still runs legacy
+release `a4080d4` under an enabled `Restart=always` unit and a legacy state
+root. The current Idunn path repeats deployment authority across compiled
+target policy, persisted raw shell commands, a privileged dispatcher, and large
+target-specific gamecult-ops programs; it also validates Idunn-owned Git as
+root and stops the incumbent before the candidate is ready. The active move is
+therefore the Idunn recipe/binding/router rebuild and one-way live cutover, not
+more Ghostlight runtime wiring.
 
 ## Authority map
 
@@ -161,27 +160,51 @@ view and tools. Its proposals enter the same command path as narrative
 proposals. It does not bypass projection privacy, authority derivation, or the
 reducer.
 
-### 4. Expose, wire, and cut — active
+### 4. Expose, wire, and cut — landed in source
 
-Expose the replacement facade as the crate's runtime identity while keeping
-mutable state, ID issuance, reduction, journal access, and authenticated-caller
-construction sealed. Startup creates or opens one replacement owner and spawns
-one mailbox; runtime consumers receive only the mailbox-facing command and
-snapshot surface.
+Commits `6bb6869` and `13d5136` expose the replacement facade as the crate and
+executable runtime identity while keeping mutable state, ID issuance,
+reduction, journal access, and authenticated-caller construction sealed.
+Startup creates or opens one replacement owner and spawns one mailbox; runtime
+consumers receive only the mailbox-facing command and snapshot surface.
 
-Route Draft creation, approval, activation, player decisions, and autonomous
-controller proposals through that boundary. Delete or neuter each old
-Session Zero, legacy kernel, Campaign/component, scheduler, verifier,
-reconciliation, and recovery writer before enabling its replacement route. Do
-not dual-write, mirror canonical state, or add a compatibility router.
+Draft creation, approval, activation, player decisions, and autonomous
+controller proposals now enter that boundary. The committed daemon tree no
+longer contains the old Session Zero, legacy kernel, scheduler, verifier,
+reconciliation, or recovery-writer routes. There is no dual-write or live
+compatibility router in source.
 
-Then move resolution, elaboration, transcript/news projection, and external
-publication onto typed commands and derived views as their causal boundaries
-are reached. Retain model transport, Vault retrieval, Heimdall identity,
-Eve/CultMesh projection, Idunn health, and external adapters only where their
-ownership remains clean.
+Resolution, elaboration, transcript/news projection, and external publication
+remain future typed consumers at their causal boundaries. Model transport,
+Vault retrieval, Heimdall identity, Eve/CultMesh projection, Idunn health, and
+external adapters survive only where their ownership remains clean.
 
-### 5. Contract verification
+### 5. Rebuild deployment authority and cut production — active
+
+Each target repository publishes one strict visible recipe and unit template
+covering build, test, package, artifact, health, and state semantics. Idunn
+operator bindings own exact source admission, runner/container selection and
+affordances, host paths, identities, secrets, capabilities, resources, private
+candidate endpoints, stable routing, rollout, retention, and desired replica
+placement. Typed target/action/source/recipe/deployment records replace raw
+executable command state; source work runs as the Idunn identity and the narrow
+privileged boundary consumes only sealed material.
+
+Start each candidate on a private endpoint while the incumbent retains the
+stable route. Signed staged readiness must pass before Idunn revokes the old
+process and write lease, grants the candidate, atomically moves router
+membership, and drains the incumbent. The deployment brake gates body changes;
+same-release continuity remains separately owned and may be stopped only by an
+explicit lifecycle brake.
+
+Deploy CodexConnector first, then Ghostlight. Ghostlight's live cut archives the
+entire legacy state root, creates a clean world-v2 root, and validates a complete
+allowed live layout. After route, health, process, write lease, restart, and
+negative legacy checks agree, delete the old units, releases, state roots,
+acceptance debris, gamecult-ops target deploy programs, and local run
+scaffolding.
+
+### 6. Contract verification
 
 Required black-box proofs:
 
@@ -223,15 +246,19 @@ processes, and tests added or removed.
 
 ## Build budget
 
-- Package: `ghostlight-dungeon`, plus the pinned
-  `ghostlight-persona-projection` crate when its contract changes.
-- Profile/target: Windows MSVC debug test/check, default features only.
-- Focused checks: library checks, named module tests, the rebuild contract test,
-  and the daemon binary check after cutover.
-- No workspace-wide, all-target, release, cross-platform, or clean build during
-  surgery.
-- Existing `target` footprint is roughly 30 GiB; stop before 33 GiB and inspect
-  artifact fan-out before continuing.
+- Build host: Yggdrasil through Idunn-configured pinned Linux containers. Do
+  not build the deployment body on Windows.
+- Control plane: `odin-core` library tests plus `idunn-daemon` library/binary
+  checks; Linux x86_64 release artifacts are `idunn` and `idunn-provision` only.
+- Targets: `codex-connector` library tests with and without `daemon`, then the
+  `codex-connector` release binary with `daemon`; `ghostlight-dungeon` focused
+  tests, then the `ghostlight-dungeon` release binary. Default target features
+  remain unchanged unless the target-owned recipe names an existing required
+  feature.
+- Output roots, container digests, cache mounts, current footprints, retention,
+  and expected deltas are operator-binding inputs and must be measured on
+  Yggdrasil before the first build. No workspace-wide, all-target, clean, or
+  cross-platform build is admitted.
 
 ## Deferred research lanes
 
