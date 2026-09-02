@@ -391,31 +391,15 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
- "cultcache-rs-derive 0.1.0",
+ "cultcache-rs-derive",
  "fs2",
  "pretty_assertions",
- "rmp-serde",
- "serde",
- "serde_bytes",
- "serde_json",
- "tempfile",
- "uuid",
-]
-
-[[package]]
-name = "cultcache-rs"
-version = "0.1.0"
-source = "git+https://github.com/GameCult/cultcache-rs.git?rev=0ba87453115e3d44e8fcb7419866cd7dd70fb096#0ba87453115e3d44e8fcb7419866cd7dd70fb096"
-dependencies = [
- "anyhow",
- "chrono",
- "cultcache-rs-derive 0.1.0 (git+https://github.com/GameCult/cultcache-rs.git?rev=0ba87453115e3d44e8fcb7419866cd7dd70fb096)",
- "fs2",
  "redb",
  "rmp-serde",
  "serde",
  "serde_bytes",
  "serde_json",
+ "tempfile",
  "uuid",
  "windows-sys 0.59.0",
 ]
@@ -430,21 +414,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "cultcache-rs-derive"
-version = "0.1.0"
-source = "git+https://github.com/GameCult/cultcache-rs.git?rev=0ba87453115e3d44e8fcb7419866cd7dd70fb096#0ba87453115e3d44e8fcb7419866cd7dd70fb096"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
 name = "cultmesh-rs"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "cultcache-rs 0.1.0",
+ "cultcache-rs",
  "cultnet-rs",
  "pretty_assertions",
  "rmp-serde",
@@ -460,7 +434,7 @@ dependencies = [
  "anyhow",
  "base64 0.22.1",
  "chrono",
- "cultcache-rs 0.1.0",
+ "cultcache-rs",
  "ed25519-dalek",
  "hmac",
  "pretty_assertions",
@@ -817,8 +791,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "codex-connector",
- "cultcache-rs 0.1.0",
- "cultcache-rs 0.1.0 (git+https://github.com/GameCult/cultcache-rs.git?rev=0ba87453115e3d44e8fcb7419866cd7dd70fb096)",
+ "cultcache-rs",
  "cultmesh-rs",
  "cultnet-rs",
  "ghostlight-persona-projection",

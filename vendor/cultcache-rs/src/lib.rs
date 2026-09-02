@@ -11,9 +11,12 @@ use std::fs::OpenOptions;
 use std::path::Path;
 use std::path::PathBuf;
 
+mod owned_redb;
+
 extern crate self as cultcache_rs;
 
 pub use cultcache_rs_derive::DatabaseEntry;
+pub use owned_redb::OwnedRedbMessagePackBackingStore;
 
 pub trait DatabaseEntry: Serialize + DeserializeOwned + Clone + Send + 'static {
     const TYPE: &'static str;

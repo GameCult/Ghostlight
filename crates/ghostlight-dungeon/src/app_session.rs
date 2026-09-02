@@ -8,7 +8,7 @@ use aes_gcm::{Aes256Gcm, KeyInit, aead::Aead};
 use anyhow::{Context, bail};
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, Utc};
-use cultcache_legacy::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
+use cultcache_rs::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -92,7 +92,7 @@ impl AppSessionOwner {
                     sessions: BTreeMap::new(),
                 };
                 let row = envelope(&state)?;
-                if !store.compare_and_swap_batch(&[], std::slice::from_ref(&row))? {
+                if !store.compare_and_swap_batch(&[], vec![row.clone()])? {
                     bail!("app-session store changed during initialization");
                 }
                 (row, state)
@@ -341,10 +341,9 @@ impl AppSessionOwner {
         self.ensure_owned()?;
         prune_sessions(&mut next, Utc::now());
         let next_row = envelope(&next)?;
-        let swapped = self.store.compare_and_swap_batch(
-            std::slice::from_ref(&self.row),
-            std::slice::from_ref(&next_row),
-        );
+        let swapped = self
+            .store
+            .compare_and_swap_batch(std::slice::from_ref(&self.row), vec![next_row.clone()]);
         if !matches!(swapped, Ok(true)) {
             return self.poison(anyhow::anyhow!(
                 "app-session commit outcome is uncertain; sole ownership was lost"
@@ -561,7 +560,7 @@ mod tests {
             stored_at: Utc::now().to_rfc3339(),
             schema_id: Some(STORE_SCHEMA.into()),
         };
-        assert!(store.compare_and_swap_batch(&[], &[row]).unwrap());
+        assert!(store.compare_and_swap_batch(&[], vec![row]).unwrap());
         drop(store);
         assert!(AppSessionOwner::open(&store_path, &key).is_err());
     }
@@ -646,7 +645,7 @@ mod tests {
             stored_at: Utc::now().to_rfc3339(),
             schema_id: Some("ghostlight.app_session_store.v1".into()),
         };
-        assert!(store.compare_and_swap_batch(&[], &[foreign]).unwrap());
+        assert!(store.compare_and_swap_batch(&[], vec![foreign]).unwrap());
         assert!(AppSessionOwner::open(&store_path, &key).is_err());
     }
 
@@ -724,7 +723,7 @@ mod tests {
             .unwrap()
             .encrypted_refresh_claim = "not-an-encrypted-claim".into();
         let corrupt = envelope(&state).unwrap();
-        assert!(store.compare_and_swap_batch(&rows, &[corrupt]).unwrap());
+        assert!(store.compare_and_swap_batch(&rows, vec![corrupt]).unwrap());
         drop(store);
 
         assert!(AppSessionOwner::open(&path, &key).is_err());

@@ -3,7 +3,7 @@ use super::{
     WorldEffect, WorldId, WorldState, apply_effect, commit_digest, reduce, state_digest,
 };
 use chrono::Utc;
-use cultcache_legacy::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
+use cultcache_rs::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
 use serde::{Serialize, de::DeserializeOwned};
 use std::{
     cell::Cell,

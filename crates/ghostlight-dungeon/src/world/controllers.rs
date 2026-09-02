@@ -19,7 +19,7 @@ use codex_connector::{
     CodexTransportEventPayload, CodexTransportInvocation, CodexTransportOutcome,
     provider_request_sha256,
 };
-use cultcache_legacy::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
+use cultcache_rs::{CacheBackingStore, CultCacheEnvelope, OwnedRedbMessagePackBackingStore};
 use ghostlight_persona_projection::{
     CaptureToolFeedback, InterpretationAccumulator, InterpretationFinalization,
     InterpretationReport, InterpreterPrompt, OperationalAgentPrompt, PersonaPrompt, PersonaTurn,
