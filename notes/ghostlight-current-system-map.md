@@ -830,13 +830,14 @@ Starfire writer is stopped; its process and tunnel are no longer live
 authority. The migration copied campaign and Session Zero stores while
 preserving Yggdrasil's native mesh and provider-health identities.
 
-Local CultMesh publication and HTTP readiness do not wait for Odin. Remote
-replication is coalesced into one asynchronous RUDP batch. Odin's coordinator
-is healthy on Yggdrasil and owns RUDP discovery at `10.77.0.1:17871`; Idunn
-admits signed Ghostlight health and owns same-release continuity independently
-of its deployment brake. VoidBot's canonical MCP service is local to the host
-at `127.0.0.1:17875/mcp`, so live retrieval no longer depends on a Starfire
-reverse tunnel.
+The pre-rebuild hosted body published local CultMesh and HTTP readiness without
+waiting for Odin; that legacy health admission is teardown evidence, not the
+new runtime contract. Under the landed contracts, an activation becomes current
+only after Idunn's workload driver observes the exact native process and
+artifact. Present requires that activation plus service-signed presence health;
+Odin alone correlates Ready. Idunn continuity and deployment actuation have not
+yet been integrated with this contract. VoidBot's canonical MCP service remains
+separately owned and is not a deployment authority.
 
 ### Deployment, discovery, and adjacent capacity
 
@@ -846,12 +847,12 @@ either organ a campaign write path. Current release identity for Idunn, Odin,
 Heimdall, Bifrost, and Epiphany is operational truth in `gamecult-ops`; do not
 copy it here and let it fossilize again.
 
-Release admission is based on the newest executable- or build-affecting commit
-reachable from the admitted ref. Documentation, notes, state receipts, and
-root Markdown are not executable release selectors. The root actuator proves
-that the selected commit is an ancestor of the admitted ref before activation,
-then verifies the exact installed witness. Documentation and state-only commits
-therefore cannot displace the live executable.
+The landed deterministic foundation retains the exact selected commit, source
+tree, recipe blob, and Gitlink facts. Shape validation is not proof of Git
+ancestry, signatures, or object custody. Those proofs belong to the narrow
+Idunn-owned source driver, which must read the canonical ref and exact objects
+as the Idunn identity before compiling a consequential plan. That source driver
+and Idunn main integration remain absent.
 
 Heimdall publishes four redacted typed discovery records to Odin under globally
 unique catalog keys:

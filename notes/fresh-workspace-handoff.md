@@ -136,7 +136,10 @@ releases, and sanitized Expected projections. Idunn's Git, runner, workload,
 lease/fencing, route, CultCache/CultMesh, and main-loop actuation remain absent;
 the legacy deployment seam is still unsafe to invoke.
 
-The adopted cut puts a visible recipe and unit template in each target repo.
+The adopted cut puts a visible recipe with a constrained launch declaration in
+each target repo; raw unit or container-runtime templates are rejected. The
+operator binding selects the workload driver, which alone lowers that launch
+declaration into process-manager configuration.
 Idunn operator bindings own the admitted ref, runner/container image and
 affordances, host paths, secrets, routing endpoint, rollout, retention, and
 desired replica placement. A sealed plan and release publish only Expected.
@@ -159,9 +162,12 @@ Integrate the landed recipe, binding, plan, release, Expected, activation,
 presence, and write-lease contracts into Idunn's main control plane and narrow
 Git, runner, workload, lease/fencing, route, CultCache, and CultMesh drivers.
 Keep target semantics in visible Ghostlight and Connector recipes and fleet
-affordances in Idunn-owned bindings. Require Expected plus Idunn-observed
-activation plus service-signed Present; grant the process lease before writable
-state opens; require Odin-correlated Ready before stable route membership moves.
+affordances in Idunn-owned bindings. The narrow Idunn source driver must prove
+the selected commit, tree, recipe, and Gitlinks; deterministic plan validation
+does not establish ancestry, signatures, or object custody. Require Expected
+plus Idunn-observed activation plus service-signed Present; grant the process
+lease before writable state opens; require Odin-correlated Ready before stable
+route membership moves.
 
 Deploy the Connector and then Ghostlight through that contract. Runtime restart,
 route continuity, signed health, exact receipts, exclusive world-v2 state, and

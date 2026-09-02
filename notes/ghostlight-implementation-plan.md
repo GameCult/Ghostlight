@@ -189,6 +189,13 @@ runtime activation, service-signed Present health, and process-bound write
 leases. Idunn main integration and the Git, runner, workload, lease/fencing,
 route, CultCache, and CultMesh drivers are not implemented yet.
 
+Targets own constrained launch declarations, never raw unit or container
+templates. The operator binding selects the workload driver, which alone lowers
+that declaration into process-manager configuration. Likewise, deterministic
+plan validation retains exact commit, tree, recipe, and Gitlink facts but proves
+neither ancestry, signatures, nor object custody; the narrow Idunn-owned source
+driver must establish those facts before actuation.
+
 The integrated path must publish Expected from the sealed plan and release,
 record Idunn's observation of the exact runtime activation, and require the
 service's signed Present health. A stateful candidate receives its process-bound
