@@ -19,12 +19,13 @@ assessor, verifier/reconciliation, or legacy-transition module path.
 
 Production has not crossed that source boundary. Yggdrasil still runs legacy
 release `a4080d4` under an enabled `Restart=always` unit and a legacy state
-root. The current Idunn path repeats deployment authority across compiled
-target policy, persisted raw shell commands, a privileged dispatcher, and large
-target-specific gamecult-ops programs; it also validates Idunn-owned Git as
-root and stops the incumbent before the candidate is ready. The active move is
-therefore the Idunn recipe/binding/router rebuild and one-way live cutover, not
-more Ghostlight runtime wiring.
+root. CultNet `87d0b0f` lands shared runtime activation, signed presence-health,
+and process-write-lease contracts; Odin `cebe425` lands deterministic recipe and
+operator-binding parsing, compiled plans, sealed releases, and sanitized
+Expected projections. Git materialization, runners, workload and route drivers,
+lease/fencing, CultCache/CultMesh control-plane state, and Idunn main integration
+remain absent. The active move is that actuation integration and one-way live
+cutover, not more Ghostlight runtime wiring.
 
 ## Authority map
 
@@ -179,23 +180,23 @@ remain future typed consumers at their causal boundaries. Model transport,
 Vault retrieval, Heimdall identity, Eve/CultMesh projection, Idunn health, and
 external adapters survive only where their ownership remains clean.
 
-### 5. Rebuild deployment authority and cut production — active
+### 5. Integrate deployment actuation and cut production — active
 
-Each target repository publishes one strict visible recipe and unit template
-covering build, test, package, artifact, health, and state semantics. Idunn
-operator bindings own exact source admission, runner/container selection and
-affordances, host paths, identities, secrets, capabilities, resources, private
-candidate endpoints, stable routing, rollout, retention, and desired replica
-placement. Typed target/action/source/recipe/deployment records replace raw
-executable command state; source work runs as the Idunn identity and the narrow
-privileged boundary consumes only sealed material.
+The deterministic foundation is landed: target recipes and Idunn operator
+bindings compile into private plans and sealed releases, and only a sanitized
+Expected incarnation may leave that control plane. Shared CultNet contracts own
+runtime activation, service-signed Present health, and process-bound write
+leases. Idunn main integration and the Git, runner, workload, lease/fencing,
+route, CultCache, and CultMesh drivers are not implemented yet.
 
-Start each candidate on a private endpoint while the incumbent retains the
-stable route. Signed staged readiness must pass before Idunn revokes the old
-process and write lease, grants the candidate, atomically moves router
-membership, and drains the incumbent. The deployment brake gates body changes;
-same-release continuity remains separately owned and may be stopped only by an
-explicit lifecycle brake.
+The integrated path must publish Expected from the sealed plan and release,
+record Idunn's observation of the exact runtime activation, and require the
+service's signed Present health. A stateful candidate receives its process-bound
+write lease before it opens writable state. Odin alone correlates Expected,
+activation, and Present into Ready. Only after Ready may Idunn change stable
+route membership and drain the incumbent. The deployment brake gates body
+changes; same-release continuity remains separately owned and may be stopped
+only by an explicit lifecycle brake.
 
 Deploy CodexConnector first, then Ghostlight. Ghostlight's live cut archives the
 entire legacy state root, creates a clean world-v2 root, and validates a complete

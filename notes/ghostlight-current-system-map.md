@@ -13,16 +13,15 @@ Yggdrasil systemd body, Idunn continuity target, and Odin discovery crossing
 are the live machine; the older validated artifact seams remain regression
 evidence only.
 
-## Implemented sealed replacement boundary (Phase 2)
+## Landed replacement source owner
 
-`crates/ghostlight-dungeon/src/world/` now contains the private
-`ghostlight.world_state.foundation.v0` owner. It is an implemented and tested
-foundation, not yet the hosted runtime: `lib.rs` still keeps `world` private and
-exports the legacy `kernel::WorldKernel`, while `main.rs` still opens
-`CampaignStore` and runs the legacy Session Zero and campaign paths. Source
-inspection finds no production caller of the replacement types outside the
-private module. The two bodies currently coexist without a state bridge; the
-hosted process still belongs to the legacy body.
+`crates/ghostlight-dungeon/src/world/` contains the sealed
+`ghostlight.world_state.foundation.v0` owner. Commits `6bb6869` and `13d5136`
+make that mailbox/kernel path the crate and executable runtime identity, remove
+the legacy Session Zero/kernel/scheduler/verifier source body, and place app
+sessions, world journal, and controller custody behind one CultCache
+implementation. Production remains on the separately recorded legacy release;
+source cutover is not deployment evidence.
 
 ### Replacement authority map
 
@@ -63,10 +62,9 @@ hosted process still belongs to the legacy body.
   controller implementations, model output, snapshots, derived opportunities,
   replay, and consumers cannot mutate canonical state. The legacy
   `SessionZeroKernel`, public `kernel::WorldKernel`, `CampaignStore` callers,
-  assessor/reconciliation chains, schedulers, and reload repair paths have no
-  admission path into the replacement journal. They remain live authorities in
-  the hosted legacy body and therefore remain on the deletion line rather than
-  becoming compatibility writers.
+  assessor/reconciliation chains, schedulers, and reload repair paths are
+  absent from the committed replacement source and have no admission path into
+  its journal.
 - **Shared paths:** after create or open constructs the owner, `WorldMailbox`
   consumes it and offers only `Submit` and `Snapshot`. Human controllers,
   Narrative Personas, and operational agents all exercise the same
@@ -74,16 +72,12 @@ hosted process still belongs to the legacy body.
   controller-specific mutation API. Draft commands use that same submit
   primitive. Command ID replay is checked before revision so an exact retry can
   recover a known durable result, while reuse with different content fails.
-  Runtime identity construction and controller execution are not wired yet.
-- **Cut line:** make app-session identity the only production constructor of
-  `AuthenticatedCaller`, expose the mailbox as the runtime's world handle, and
-  route creation, Draft activation, player action, Narrative Persona action,
-  and operational-agent action through it. As each complete ingress moves, cut
-  its legacy handler and store writer. Completion requires removal of the
-  public legacy kernel, Session Zero publication split, direct `CampaignStore`
-  mutation surfaces, scheduler/reconciliation writers, reload repairs, and
-  their obsolete modules and binaries; no dual-write or compatibility mode is
-  admitted.
+  Runtime identity and human, Narrative Persona, and OperationalAgent execution
+  are wired to that mailbox boundary in the committed source.
+- **Cut line:** source subtraction is complete. Production cutover now belongs
+  to Idunn's typed deployment path: admit the replacement release and exclusive
+  world-v2 state without a dual-write or compatibility bridge, prove restart
+  and negative legacy authority, then remove the old hosted body and state.
 - **Verification layer:** the reducer checks exact authentication, world,
   revision, lifecycle, approver, controller, opportunity, scope, affordance,
   and action bindings before proposing an effect. `apply_effect` rechecks the

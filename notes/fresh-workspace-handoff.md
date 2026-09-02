@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-09-01
+Updated: 2026-09-02
 
 This is the compact re-entry packet. It carries current authority and the next
 gate. Git owns chronology, the system map owns teardown detail, and evidence
@@ -129,22 +129,23 @@ body. The 1,200 and 2,400 actor profiles are synthetic fixtures only.
 Yggdrasil still serves legacy Ghostlight release `a4080d4` from an enabled
 `Restart=always` unit with health v1, campaign/Session Zero state, and no
 `world.cc` or `app-sessions-v2.cc` witness. The Connector is also still on its
-legacy enabled body. Idunn r21 is live, but its current deploy seam is not safe
-to invoke: target policy is repeated across compiled Rust, raw shell command
-records, a privileged dispatcher, and large gamecult-ops target programs. Its
-root-side source-floor validator cannot inspect correctly Idunn-owned Git
-mirrors, and the current fixed-port scripts stop the incumbent before a fresh
-candidate is green.
+legacy enabled body. CultNet `87d0b0f` now owns the shared runtime-activation,
+signed presence-health, and process-write-lease contracts. Odin `cebe425` owns
+deterministic recipe and operator-binding parsing, compiled plans, sealed
+releases, and sanitized Expected projections. Idunn's Git, runner, workload,
+lease/fencing, route, CultCache/CultMesh, and main-loop actuation remain absent;
+the legacy deployment seam is still unsafe to invoke.
 
 The adopted cut puts a visible recipe and unit template in each target repo.
 Idunn operator bindings own the admitted ref, runner/container image and
 affordances, host paths, secrets, routing endpoint, rollout, retention, and
-desired replica placement. Idunn freezes and materializes source as its own UID,
-executes the configured build/test recipe, seals the candidate, waits for signed
-staged readiness on a private endpoint, then alone revokes the incumbent
-process/write grant, admits the candidate, moves the stable route, and drains
-the old generation. Deployment and continuity remain separate authorities; a
-deployment brake cannot suspend restart of the already-admitted body.
+desired replica placement. A sealed plan and release publish only Expected.
+Idunn observes the exact runtime activation; the service signs Present health.
+For writable state, Idunn grants the process-bound lease before state opens.
+Odin correlates Expected, activation, and Present into Ready, and stable route
+membership moves only after Ready. Deployment and continuity remain separate
+authorities; a deployment brake cannot suspend restart of the already-admitted
+body.
 
 Heimdall owns account identity. Eve owns command invocation and lowering.
 VoidBot owns Vault retrieval and evidence. Idunn owns deployment and daemon
@@ -154,14 +155,13 @@ and proposals but cannot commit on their behalf.
 
 ## Next gate
 
-Rebuild the Idunn deployment seam before releasing another target brake. Define
-one typed target recipe plus operator binding, remove raw executable command
-authority and root Git inspection, and move Ghostlight and Connector build,
-test, package, unit, health, and state semantics into visible target-owned
-recipes. Keep fleet affordances and exact branch admission in Idunn-owned
-configuration. Introduce a stable router data plane whose membership only
-Idunn can change; candidate health must be green before the process/write lease
-and route move.
+Integrate the landed recipe, binding, plan, release, Expected, activation,
+presence, and write-lease contracts into Idunn's main control plane and narrow
+Git, runner, workload, lease/fencing, route, CultCache, and CultMesh drivers.
+Keep target semantics in visible Ghostlight and Connector recipes and fleet
+affordances in Idunn-owned bindings. Require Expected plus Idunn-observed
+activation plus service-signed Present; grant the process lease before writable
+state opens; require Odin-correlated Ready before stable route membership moves.
 
 Deploy the Connector and then Ghostlight through that contract. Runtime restart,
 route continuity, signed health, exact receipts, exclusive world-v2 state, and
