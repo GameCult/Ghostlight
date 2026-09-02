@@ -1,0 +1,184 @@
+schema = "gamecult.idunn.target_declaration.v1"
+target = "ghostlight"
+source_stamp_environment = "GHOSTLIGHT_BUILD_COMMIT"
+required_gitlinks = ["vendor/eve"]
+
+[[steps]]
+id = "test-persona-boundary"
+phase = "test"
+runner = "rust-build"
+argv = ["cargo", "test", "--locked", "-p", "ghostlight-persona-projection"]
+
+[[steps]]
+id = "test-world-owner"
+phase = "test"
+runner = "rust-build"
+argv = ["cargo", "test", "--locked", "-p", "ghostlight-dungeon", "--bin", "ghostlight-dungeon"]
+
+[[steps]]
+id = "build-daemon"
+phase = "build"
+runner = "rust-build"
+argv = ["cargo", "build", "--locked", "--release", "-p", "ghostlight-dungeon", "--bin", "ghostlight-dungeon"]
+
+[[steps]]
+id = "install-web-dependencies"
+phase = "prepare"
+runner = "web-build"
+argv = ["npm", "--prefix", "web", "ci"]
+
+[[steps]]
+id = "test-web"
+phase = "test"
+runner = "web-build"
+argv = ["npm", "--prefix", "web", "test"]
+
+[[steps]]
+id = "build-web"
+phase = "build"
+runner = "web-build"
+argv = ["npm", "--prefix", "web", "run", "build"]
+
+[[steps]]
+id = "accept-real-persona-membrane"
+phase = "acceptance"
+runner = "rust-acceptance"
+argv = [
+  "cargo",
+  "test",
+  "--locked",
+  "-p",
+  "ghostlight-dungeon",
+  "--bin",
+  "ghostlight-dungeon",
+  "world::controllers::tests::real_codex_connector_cognition_modes_commit_speech",
+  "--",
+  "--ignored",
+  "--exact",
+]
+required_environment = [
+  "GHOSTLIGHT_ACCEPTANCE_PERSONA_PROSE_LOG",
+  "GHOSTLIGHT_CONTROLLER_CONNECTOR",
+  "GHOSTLIGHT_CONTROLLER_CREDENTIAL",
+  "GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL",
+  "GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL",
+  "GHOSTLIGHT_CONTROLLER_PERSONA_MODEL",
+  "GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL",
+  "GHOSTLIGHT_RUNTIME_ID",
+]
+
+[[artifacts]]
+id = "ghostlight-dungeon"
+source_kind = "runner-output"
+runner = "rust-build"
+source = "target/release/ghostlight-dungeon"
+destination = "ghostlight-dungeon"
+executable = true
+
+[[artifacts]]
+id = "web"
+source_kind = "runner-output"
+runner = "web-build"
+source = "web/dist"
+destination = "web"
+
+[service]
+executable_artifact = "ghostlight-dungeon"
+required_adjacent_artifacts = ["web"]
+arguments = []
+transport = "http"
+route_required = true
+required_environment = [
+  "GHOSTLIGHT_CONTROLLER_CONNECTOR",
+  "GHOSTLIGHT_CONTROLLER_CREDENTIAL",
+  "GHOSTLIGHT_CONTROLLER_INTERPRETER_MODEL",
+  "GHOSTLIGHT_CONTROLLER_OPERATIONAL_MODEL",
+  "GHOSTLIGHT_CONTROLLER_PERSONA_MODEL",
+  "GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL",
+  "GHOSTLIGHT_DISCORD_GUILD_ID",
+  "GHOSTLIGHT_DISCORD_ROLE_ID",
+  "GHOSTLIGHT_DUNGEON_BIND",
+  "GHOSTLIGHT_DUNGEON_ROOT",
+  "GHOSTLIGHT_HEIMDALL_APP_SECRET_FILE",
+  "GHOSTLIGHT_HEIMDALL_BASE_URL",
+  "GHOSTLIGHT_LOCATED_SERVICE",
+  "GHOSTLIGHT_ODIN_RUDP",
+  "GHOSTLIGHT_PUBLIC_APP_URL",
+  "GHOSTLIGHT_RUNTIME_ID",
+  "GHOSTLIGHT_SERVICE_ID",
+  "GHOSTLIGHT_SESSION_WRAPPING_KEY_FILE",
+]
+optional_environment = ["RUST_LOG"]
+
+[service.health]
+contract = "ghostlight.cultnet-rudp-service-health"
+
+[state]
+schema_generation = "world-v2"
+
+[[state.slots]]
+id = "world"
+relative_path = "world.cc"
+kind = "cultcache-file"
+schema = "ghostlight.world_state.foundation.v0"
+writer = "process-bound-single-writer"
+recovery = "preserve"
+startup = "create-or-open-after-write-lease"
+
+[[state.slots]]
+id = "app-sessions"
+relative_path = "service/app-sessions-v2.cc"
+kind = "cultcache-file"
+schema = "ghostlight.app_session_store.v2"
+writer = "process-bound-single-writer"
+recovery = "preserve"
+startup = "create-or-open-after-write-lease"
+
+[[state.slots]]
+id = "controller-work"
+relative_path = "service/controller-work.cc"
+kind = "cultcache-file"
+schema = "ghostlight.controller_work.v3"
+writer = "process-bound-single-writer"
+recovery = "preserve"
+startup = "create-or-open-after-write-lease"
+
+[[state.slots]]
+id = "mesh-projection"
+relative_path = "service/mesh-v2.cc"
+kind = "cultcache-file"
+schema = "gamecult.eve.surface.v1"
+writer = "process-bound-single-writer"
+recovery = "rebuildable"
+startup = "create-or-open-after-write-lease"
+
+[[provides]]
+capability = "ghostlight.world-service"
+schema = "ghostlight.world_state.foundation.v0"
+compatibility = "foundation-v0"
+
+[[provides]]
+capability = "gamecult.eve.surface-provider"
+schema = "gamecult.eve.surface.v1"
+compatibility = "v1"
+
+[[dependencies]]
+kind = "shared-infrastructure"
+capability = "odin.verse-rendezvous"
+schema = "odin.verse-topology.v1"
+compatibility = "v1"
+startup = "before-promotion"
+
+[[dependencies]]
+kind = "private"
+capability = "gamecult.codex.subscription-inference"
+schema = "gamecult.codex.transport_envelope.v2"
+compatibility = "v2"
+startup = "before-promotion"
+
+[[dependencies]]
+kind = "required"
+capability = "heimdall.command-boundary"
+schema = "heimdall.command_boundary.v1"
+compatibility = "v1"
+startup = "before-promotion"
