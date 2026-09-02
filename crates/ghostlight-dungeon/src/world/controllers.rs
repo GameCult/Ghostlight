@@ -3536,7 +3536,7 @@ mod tests {
             required_approvers: BTreeSet::new(),
             subjects: vec![actor.clone(), speaker],
             events: vec![crate::world::DecisionEvent {
-                id: EventId::issue(),
+                id: EventId::for_command(CommandId::new()),
                 revision: 40,
                 scope: DecisionScope {
                     subject_id: speaker_id,
