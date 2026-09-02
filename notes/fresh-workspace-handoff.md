@@ -6,7 +6,7 @@ This is the compact re-entry packet. It carries current authority and the next
 gate. Git owns chronology, the system map owns teardown detail, and evidence
 records own durable findings.
 
-## Immediate re-entry
+## Immediate Re-entry Instruction
 
 1. Work from `F:\Projects\Ghostlight`.
 2. Run `git status --short`, `git log -1 --oneline`, and
@@ -21,13 +21,17 @@ records own durable findings.
 If the operator asks only to rehydrate, report the current gate and stop. A
 persisted next action is not permission to begin edits.
 
+Do not continue implementation automatically from a rehydrate-only request.
+Do not trust this file for the exact live HEAD. Git and live runtime witnesses
+own volatile identity.
+
 ## Current authority
 
 The operator stopped Run 115 and ordered a whole-machine authority rebuild.
 The adopted target is `docs/architecture/ghostlight-dungeon-mvp.md`.
 
-One per-world `WorldKernel` owns one revisioned `WorldState` across Draft,
-Active, and Archived phases. It alone derives authority, applies the typed
+One per-world `WorldKernel` owns one revisioned `WorldState` across Draft and
+Active phases. It alone derives authority, applies the typed
 ontology reducer, and commits an atomic CultCache revision. Session Zero,
 autonomous turns, player commands, imports, and administrative changes must
 enter through the same `CommandEnvelope` path.
@@ -94,16 +98,18 @@ load or evaluation evidence; none admits ontology or declares a world complete.
   controller and opportunity fail-closed behavior, restart, idempotency,
   one-owner, authentication, non-commit, mailbox cancellation, lost replies,
   immutable genesis, and journal forgery rejection.
-- The replacement remains crate-private. The legacy exported
-  `kernel::WorldKernel`, executable startup, Session Zero, player turn,
-  autonomous scheduling, Campaign/component, verifier/reconciliation, and
-  checkpoint paths remain live deletion targets. The next move exposes and
-  wires only the replacement runtime facade and mailbox, then cuts those owners
-  without dual-write.
+- `6bb6869` makes the replacement mailbox/kernel architecture the crate and
+  executable runtime identity and removes the legacy runtime owner.
+- `13d5136` unifies app sessions, world journal, and controller custody under
+  one vendored CultCache implementation and removes the duplicate legacy
+  dependency. The committed daemon tree contains no old Session Zero, legacy
+  kernel, scheduler, assessor, verifier/reconciliation, or legacy-transition
+  module path.
+- Source subtraction is complete. Production cutover and runtime legacy purge
+  are not.
 
-Do not deploy the rebuild branch or start another acceptance run while the
-legacy executable still owns startup, Draft, player, autonomous, or recovery
-mutation paths.
+Do not start another world acceptance run while Yggdrasil still serves the
+legacy executable and state layout.
 
 ## Immutable failure evidence
 
@@ -120,10 +126,25 @@ body. The 1,200 and 2,400 actor profiles are synthetic fixtures only.
 
 ## Operational boundary
 
-The deployed Yggdrasil service remains the pre-rebuild production body. Exact
-release, service, discovery, and authentication witnesses belong to
-`F:\Projects\gamecult-ops`; the frozen pre-rebuild map records the last
-Ghostlight-side evidence. Do not infer deployed identity from workspace HEAD.
+Yggdrasil still serves legacy Ghostlight release `a4080d4` from an enabled
+`Restart=always` unit with health v1, campaign/Session Zero state, and no
+`world.cc` or `app-sessions-v2.cc` witness. The Connector is also still on its
+legacy enabled body. Idunn r21 is live, but its current deploy seam is not safe
+to invoke: target policy is repeated across compiled Rust, raw shell command
+records, a privileged dispatcher, and large gamecult-ops target programs. Its
+root-side source-floor validator cannot inspect correctly Idunn-owned Git
+mirrors, and the current fixed-port scripts stop the incumbent before a fresh
+candidate is green.
+
+The adopted cut puts a visible recipe and unit template in each target repo.
+Idunn operator bindings own the admitted ref, runner/container image and
+affordances, host paths, secrets, routing endpoint, rollout, retention, and
+desired replica placement. Idunn freezes and materializes source as its own UID,
+executes the configured build/test recipe, seals the candidate, waits for signed
+staged readiness on a private endpoint, then alone revokes the incumbent
+process/write grant, admits the candidate, moves the stable route, and drains
+the old generation. Deployment and continuity remain separate authorities; a
+deployment brake cannot suspend restart of the already-admitted body.
 
 Heimdall owns account identity. Eve owns command invocation and lowering.
 VoidBot owns Vault retrieval and evidence. Idunn owns deployment and daemon
@@ -133,18 +154,19 @@ and proposals but cannot commit on their behalf.
 
 ## Next gate
 
-Expose the sealed replacement as the crate and executable runtime identity,
-with `WorldMailbox` as the only live world command boundary. Bind authenticated
-runtime identity to its sealed caller evidence, make startup create or open one
-owner and spawn one mailbox, then route Draft creation, approval, activation,
-player decisions, and autonomous controller proposals through the existing
-command path.
+Rebuild the Idunn deployment seam before releasing another target brake. Define
+one typed target recipe plus operator binding, remove raw executable command
+authority and root Git inspection, and move Ghostlight and Connector build,
+test, package, unit, health, and state semantics into visible target-owned
+recipes. Keep fleet affordances and exact branch admission in Idunn-owned
+configuration. Introduce a stable router data plane whose membership only
+Idunn can change; candidate health must be green before the process/write lease
+and route move.
 
-Cut each old startup, Session Zero, player, autonomous, Campaign/component, and
-recovery writer before enabling its replacement path. Do not dual-write, mirror
-canonical state, or add a compatibility router. Runtime restart and negative
-checks must prove the old paths cannot mutate or repair the replacement owner
-before any live acceptance run.
+Deploy the Connector and then Ghostlight through that contract. Runtime restart,
+route continuity, signed health, exact receipts, exclusive world-v2 state, and
+negative checks must agree before deleting old services, releases, state,
+acceptance roots, and local run scaffolding.
 
 ## Essential references
 
@@ -168,5 +190,10 @@ before any live acceptance run.
   generic journal handle for the convenience of tests or adapters.
 - Do not append a commit when reduction produces no canonical mutation.
 - Do not resume Run 115.
+- Do not invoke the current bounded Connector or Ghostlight redeploy helpers;
+  they fail at the root/Idunn Git boundary and still embody duplicate target
+  deployment authority.
+- Do not prove world-v2 purity with a short deny list. Archive the complete old
+  state root or validate a complete allowed-path contract.
 - Keep this handoff compact. Move chronology to Git, evidence, or the frozen
   system map.
