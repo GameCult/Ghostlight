@@ -2524,11 +2524,8 @@ impl SelectedDecision {
         serde_json::to_string_pretty(&json!({
             "world": {
                 "title": self.snapshot.title,
-                "revision": self.snapshot.revision,
-                "state_digest": self.snapshot.state_digest,
             },
             "subject": {
-                "id": self.subject.id,
                 "label": self.subject.label,
                 "kind": self.subject.kind,
             },
@@ -2554,17 +2551,17 @@ impl SelectedDecision {
             "permission": {
                 "speak": true,
             },
-            "visible_events": self.visible_events(),
+            "visible_events": self.typed_visible_events(),
         }))
         .map_err(|error| ControllerError::Serialization(error.to_string()))
     }
 
     fn visible_stimulus(&self) -> Result<String, ControllerError> {
-        serde_json::to_string_pretty(&self.visible_events())
+        serde_json::to_string_pretty(&self.projector_visible_events()?)
             .map_err(|error| ControllerError::Serialization(error.to_string()))
     }
 
-    fn visible_events(&self) -> Vec<Value> {
+    fn typed_visible_events(&self) -> Vec<Value> {
         self.snapshot
             .events
             .iter()
@@ -2574,6 +2571,33 @@ impl SelectedDecision {
                     "speaker_subject_id": event.scope.subject_id,
                     "text": text,
                 }),
+            })
+            .collect()
+    }
+
+    fn projector_visible_events(&self) -> Result<Vec<Value>, ControllerError> {
+        self.snapshot
+            .events
+            .iter()
+            .map(|event| match &event.invocation.action {
+                DecisionAction::Speak { text } => {
+                    let speaker = self
+                        .snapshot
+                        .subjects
+                        .iter()
+                        .find(|subject| subject.id == event.scope.subject_id)
+                        .map(|subject| subject.label.as_str())
+                        .ok_or_else(|| {
+                            ControllerError::Serialization(
+                                "visible event speaker is absent from the canonical snapshot"
+                                    .into(),
+                            )
+                        })?;
+                    Ok(json!({
+                        "speaker": speaker,
+                        "text": text,
+                    }))
+                }
             })
             .collect()
     }
@@ -3319,7 +3343,7 @@ mod tests {
     use super::*;
     use crate::world::{
         AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, ControllerId, CreateWorld,
-        DecisionScope, DraftSubjectHandle, NewController, NewDecisionSubject, PrincipalId,
+        DecisionScope, DraftSubjectHandle, EventId, NewController, NewDecisionSubject, PrincipalId,
         SubjectKind, WorldId, WorldPhase,
     };
     use std::{
@@ -3464,6 +3488,103 @@ mod tests {
         ] {
             assert!(!encoded.contains(leak), "Persona request leaked `{leak}`");
         }
+    }
+
+    #[test]
+    fn projector_view_contains_lived_labels_but_no_authority_metadata() {
+        let actor_id = SubjectId::issue();
+        let speaker_id = SubjectId::issue();
+        let actor_controller = ControllerId::issue();
+        let speaker_controller = ControllerId::issue();
+        let speak_affordance = AffordanceId::issue();
+        let opportunity = DecisionOpportunity {
+            world_id: WorldId::issue(),
+            revision: 41,
+            state_digest: "sha256:projector-must-not-see-this-digest".into(),
+            scope: DecisionScope {
+                subject_id: actor_id,
+            },
+            controller_id: actor_controller,
+            controller_mode: ControllerMode::NarrativePersona,
+            affordance_ids: vec![speak_affordance],
+        };
+        let actor = SubjectSnapshot {
+            id: actor_id,
+            label: "Mara at the rain gate".into(),
+            kind: SubjectKind::Person,
+            controller_id: actor_controller,
+            controller_mode: ControllerMode::NarrativePersona,
+            human_controller: None,
+            affordances: BTreeMap::from([(AffordanceKind::Speak, speak_affordance)]),
+        };
+        let speaker = SubjectSnapshot {
+            id: speaker_id,
+            label: "Iris in the tollhouse".into(),
+            kind: SubjectKind::Person,
+            controller_id: speaker_controller,
+            controller_mode: ControllerMode::OperationalAgent,
+            human_controller: None,
+            affordances: BTreeMap::new(),
+        };
+        let snapshot = WorldSnapshot {
+            world_id: opportunity.world_id,
+            revision: opportunity.revision,
+            phase: WorldPhase::Active,
+            owner: PrincipalId::new("projector-fixture-owner"),
+            title: "The Rain Gate".into(),
+            draft_approvals: BTreeSet::new(),
+            required_approvers: BTreeSet::new(),
+            subjects: vec![actor.clone(), speaker],
+            events: vec![crate::world::DecisionEvent {
+                id: EventId::issue(),
+                revision: 40,
+                scope: DecisionScope {
+                    subject_id: speaker_id,
+                },
+                controller_id: speaker_controller,
+                invocation: DecisionInvocation {
+                    affordance_id: AffordanceId::issue(),
+                    action: DecisionAction::Speak {
+                        text: "The lower hinge is flooding.".into(),
+                    },
+                },
+            }],
+            opportunities: vec![opportunity.clone()],
+            state_digest: opportunity.state_digest.clone(),
+            last_commit_digest: Some("sha256:projector-must-not-see-the-commit".into()),
+        };
+        let selected = SelectedDecision {
+            snapshot,
+            subject: actor,
+            opportunity,
+            speak_affordance,
+        };
+
+        let context = selected.projector_context().unwrap();
+        let stimulus = selected.visible_stimulus().unwrap();
+        let projector_surface = format!("{context}\n{stimulus}");
+        let actor_id = encoded_id(&actor_id).unwrap();
+        let speaker_id = encoded_id(&speaker_id).unwrap();
+        for forbidden in [
+            "revision",
+            "state_digest",
+            "speaker_subject_id",
+            "projector-must-not-see",
+            actor_id.as_str(),
+            speaker_id.as_str(),
+        ] {
+            assert!(
+                !projector_surface.contains(forbidden),
+                "Projector surface leaked `{forbidden}`"
+            );
+        }
+        assert!(projector_surface.contains("Mara at the rain gate"));
+        assert!(projector_surface.contains("Iris in the tollhouse"));
+        assert!(projector_surface.contains("The lower hinge is flooding."));
+
+        let operational_surface = selected.typed_view().unwrap();
+        assert!(operational_surface.contains("state_digest"));
+        assert!(operational_surface.contains("speaker_subject_id"));
     }
 
     #[test]
