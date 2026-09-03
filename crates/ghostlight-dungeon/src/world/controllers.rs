@@ -4441,8 +4441,8 @@ mod tests {
             .expect("GHOSTLIGHT_CONTROLLER_CONNECTOR must be a socket address");
         let connector_credential = std::env::var_os("GHOSTLIGHT_CONTROLLER_CREDENTIAL")
             .expect("GHOSTLIGHT_CONTROLLER_CREDENTIAL is required");
-        let runtime_id =
-            std::env::var("GHOSTLIGHT_RUNTIME_ID").expect("GHOSTLIGHT_RUNTIME_ID is required");
+        let runtime_id = std::env::var("GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID")
+            .expect("GHOSTLIGHT_ACCEPTANCE_RUNTIME_ID is required");
         let models = ControllerModels {
             projector: std::env::var("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL")
                 .expect("GHOSTLIGHT_CONTROLLER_PROJECTOR_MODEL is required"),

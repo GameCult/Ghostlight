@@ -5,7 +5,7 @@
 
 use crate::{eve, world::WorldSnapshot};
 use anyhow::Result;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use cultcache_rs::DatabaseEntry;
 use cultmesh_rs::{
     CultMesh, CultMeshNode, CultMeshNodeOptions, CultMeshRudpDocumentPublishOptions,
@@ -384,12 +384,21 @@ mod tests {
         assert_eq!(health["surfaceVersion"], 0);
         assert_eq!(publisher.health().unwrap(), health);
         let node = publisher.node.lock().unwrap();
-        assert_eq!(
-            node.get_required::<EveSurfaceRecord>(SURFACE_KEY)
-                .unwrap()
-                .value,
-            eve::mesh_surface(None)
+        let surface = node
+            .get_required::<EveSurfaceRecord>(SURFACE_KEY)
+            .unwrap()
+            .value;
+        assert_eq!(surface["type"], "surface-state");
+        assert_eq!(surface["schema"], "gamecult.eve.surface.v1");
+        assert_eq!(surface["providerId"], PROVIDER_ID);
+        assert_eq!(surface["version"], 0);
+        assert!(
+            surface["updatedAtUtc"]
+                .as_str()
+                .is_some_and(|value| value.parse::<DateTime<Utc>>().is_ok())
         );
+        assert_eq!(surface["surface"], eve::mesh_surface(None)["surface"]);
+        assert_eq!(surface["commands"], eve::mesh_surface(None)["commands"]);
         assert!(
             node.get_required::<EveProviderAdvertisementRecord>(ADVERTISEMENT_KEY)
                 .is_ok()
