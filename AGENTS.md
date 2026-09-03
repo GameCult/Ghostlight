@@ -20,7 +20,11 @@ inside another project.
   subgoal.
 - Treat `state/evidence.jsonl` and `state/branches.json` as readable export
   surfaces during the persistence migration, not as the long-term direct-write
-  API.
+  API. A direct write to either is silently reverted: every `add-evidence`
+  regenerates `evidence.jsonl` from the CultCache evidence document, so edits
+  and deletions that do not go through `tools/ghostlight_state_store.py` look
+  applied until the next append restores what you removed. Compaction means
+  deleting from the store and letting the export follow.
 - Treat `state/evidence.jsonl` as the distilled durable ledger of what was
   learned, verified, rejected, or accepted.
 - Treat `notes/ghostlight-implementation-plan.md` as the current implementation
