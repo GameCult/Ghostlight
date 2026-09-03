@@ -41,7 +41,7 @@ pub const IDUNN_RUNTIME_BUNDLE_ENVIRONMENT: &str = "GAMECULT_IDUNN_RUNTIME_BUNDL
 pub const IDUNN_RUNTIME_CANDIDATE_BIND_ENVIRONMENT: &str = "GAMECULT_IDUNN_CANDIDATE_BIND";
 pub const IDUNN_PROCESS_WRITE_LEASE_ENVIRONMENT: &str = "GAMECULT_IDUNN_PROCESS_WRITE_LEASE";
 
-const TARGET: &str = "ghostlight";
+pub(crate) const TARGET: &str = "ghostlight";
 const STATE_SCHEMA_GENERATION: &str = "world-v2";
 const STATE_CONTRACT_SHA256: &str =
     "sha256-bf6ec06d885a59ddb237c6224d0abb4ccceac8c7ba23761d1326d7f562a4c21e";
@@ -303,6 +303,32 @@ impl RuntimePresencePublisher {
             .clone()
             .context("runtime has not entered Active")?;
         self.publish("active", "world-owner-serving", Some(lease_sha256))
+    }
+
+    pub(crate) fn route_observation(
+        &mut self,
+        message_id: &str,
+        ready: bool,
+        lease: &ProcessWriteLeaseGuard,
+    ) -> Result<CultNetMessage> {
+        ensure!(
+            !message_id.is_empty(),
+            "route-observation message id is empty"
+        );
+        lease.require_current()?;
+        let lease_sha256 = lease.canonical_sha256();
+        ensure!(
+            self.active_write_lease_sha256.as_deref() == Some(lease_sha256),
+            "route observation does not carry the active process write lease"
+        );
+        let state = if ready { "active" } else { "degraded" };
+        let detail = format!("route-observation:{message_id}");
+        let record = self.signed_record(state, &detail, Some(lease_sha256.into()))?;
+        let payload = canonical_presence_payload(&record)?;
+        Ok(CultNetMessage::SnapshotResponseRaw {
+            message_id: message_id.into(),
+            documents: vec![runtime_presence_document(&record, payload, None)?],
+        })
     }
 
     fn publish(
@@ -953,36 +979,21 @@ fn publish_runtime_presence(
     record: &GameCultRuntimePresenceHealthRecord,
 ) -> Result<String> {
     record.validate()?;
-    let payload = rmp_serde::to_vec(record).context("encoding canonical runtime presence")?;
-    let decoded: GameCultRuntimePresenceHealthRecord = rmp_serde::from_slice(&payload)?;
-    ensure!(
-        decoded == *record && rmp_serde::to_vec(&decoded)? == payload,
-        "runtime presence encoding is noncanonical"
-    );
+    let payload = canonical_presence_payload(record)?;
     let canonical_sha256 = record.canonical_sha256()?;
     let message = CultNetMessage::DocumentPutRaw {
         message_id: format!(
             "runtime-presence:{}:{}:{}",
             record.target, record.runtime_instance_id, record.publisher_sequence
         ),
-        document: CultNetRawDocumentRecord {
-            schema_id: GAMECULT_RUNTIME_PRESENCE_HEALTH_SCHEMA.into(),
-            record_key: record.target.clone(),
-            stored_at: chrono::DateTime::from_timestamp_millis(
-                record.observed_at_unix_millis.try_into()?,
-            )
-            .context("runtime presence timestamp is invalid")?
-            .to_rfc3339(),
-            payload_encoding: CultNetRawPayloadEncoding::Messagepack,
+        document: runtime_presence_document(
+            record,
             payload,
-            source_runtime_id: Some(record.runtime_id.clone()),
-            source_agent_id: Some(record.signer_identity_id.clone()),
-            source_role: Some("runtime-presence-publisher".into()),
-            tags: Some(vec![
+            Some(vec![
                 CULTNET_RUDP_PROTOCOL_ID.into(),
                 "runtime-presence".into(),
             ]),
-        },
+        )?,
     };
     let bind = if endpoint.is_ipv4() {
         "0.0.0.0:0"
@@ -1032,6 +1043,38 @@ fn publish_runtime_presence(
     Ok(canonical_sha256)
 }
 
+fn canonical_presence_payload(record: &GameCultRuntimePresenceHealthRecord) -> Result<Vec<u8>> {
+    let payload = rmp_serde::to_vec(record).context("encoding canonical runtime presence")?;
+    let decoded: GameCultRuntimePresenceHealthRecord = rmp_serde::from_slice(&payload)?;
+    ensure!(
+        decoded == *record && rmp_serde::to_vec(&decoded)? == payload,
+        "runtime presence encoding is noncanonical"
+    );
+    Ok(payload)
+}
+
+fn runtime_presence_document(
+    record: &GameCultRuntimePresenceHealthRecord,
+    payload: Vec<u8>,
+    tags: Option<Vec<String>>,
+) -> Result<CultNetRawDocumentRecord> {
+    Ok(CultNetRawDocumentRecord {
+        schema_id: GAMECULT_RUNTIME_PRESENCE_HEALTH_SCHEMA.into(),
+        record_key: record.target.clone(),
+        stored_at: chrono::DateTime::from_timestamp_millis(
+            record.observed_at_unix_millis.try_into()?,
+        )
+        .context("runtime presence timestamp is invalid")?
+        .to_rfc3339(),
+        payload_encoding: CultNetRawPayloadEncoding::Messagepack,
+        payload,
+        source_runtime_id: Some(record.runtime_id.clone()),
+        source_agent_id: Some(record.signer_identity_id.clone()),
+        source_role: Some("runtime-presence-publisher".into()),
+        tags,
+    })
+}
+
 fn sibling_lock_path(path: &Path) -> PathBuf {
     let mut name = path
         .file_name()
@@ -1042,7 +1085,7 @@ fn sibling_lock_path(path: &Path) -> PathBuf {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use cultnet_rs::{
         GameCultRuntimePresenceHealthPurpose, IdunnExpectedCapability, IdunnExpectedRoute,
@@ -1059,6 +1102,12 @@ mod tests {
         authority: cultnet_rs::VerifiedRuntimeAuthority,
         expected: IdunnExpectedIncarnationRecord,
         activation: IdunnRuntimeActivationRecord,
+    }
+
+    pub(crate) struct RouteObservationFixture {
+        pub(crate) publisher: RuntimePresencePublisher,
+        pub(crate) write_lease: ProcessWriteLeaseGuard,
+        pub(crate) authority: cultnet_rs::VerifiedRuntimeAuthority,
     }
 
     fn managed_dependency(
@@ -1187,6 +1236,51 @@ mod tests {
 
     fn fixture(root: &Path) -> Result<Fixture> {
         fixture_with_state_contract(root, STATE_CONTRACT_SHA256)
+    }
+
+    pub(crate) fn route_observation_fixture(root: &Path) -> Result<RouteObservationFixture> {
+        let mut fixture = fixture(root)?;
+        let warming =
+            fixture
+                .publisher
+                .signed_record("warming", "process-write-lease-pending", None)?;
+        let warming_sha256 = warming.canonical_sha256()?;
+        let lease = IdunnProcessWriteLeaseRecord {
+            schema_version: IDUNN_PROCESS_WRITE_LEASE_SCHEMA.into(),
+            target: fixture.expected.target.clone(),
+            expected_projection_sha256: fixture.expected.canonical_sha256()?,
+            plan_id: fixture.expected.plan_id.clone(),
+            incarnation_id: fixture.expected.incarnation_id.clone(),
+            sealed_release_id: fixture.expected.sealed_release_id.clone(),
+            activation_witness_sha256: fixture.activation.canonical_sha256()?,
+            state_schema_generation: STATE_SCHEMA_GENERATION.into(),
+            state_contract_sha256: fixture.expected.state_contract_sha256.clone().unwrap(),
+            runtime_id: fixture.expected.runtime_id.clone(),
+            runtime_instance_id: fixture.activation.runtime_instance_id.clone(),
+            warming_presence_sha256: warming_sha256.clone(),
+            lease_epoch: 1,
+            issued_at_unix_millis: 200,
+        };
+        let path = root.join("write-lease.cc");
+        SingleFileMessagePackBackingStore::new(&path).push(&CultCacheEnvelope {
+            key: lease.target.clone(),
+            r#type: IdunnProcessWriteLeaseRecord::TYPE.into(),
+            payload: lease.canonical_bytes()?,
+            stored_at: "2026-09-03T00:00:00Z".into(),
+            schema_id: Some(IDUNN_PROCESS_WRITE_LEASE_SCHEMA.into()),
+        })?;
+        let write_lease = ProcessWriteLeaseGuard::acquire_fixture(
+            path,
+            fixture.expected,
+            fixture.activation,
+            warming_sha256,
+        )?;
+        fixture.publisher.active_write_lease_sha256 = Some(write_lease.canonical_sha256().into());
+        Ok(RouteObservationFixture {
+            publisher: fixture.publisher,
+            write_lease,
+            authority: fixture.authority,
+        })
     }
 
     #[cfg(target_os = "linux")]
@@ -1361,6 +1455,55 @@ mod tests {
         )?;
         guard.require_current()?;
         assert_eq!(guard.canonical_sha256(), lease.canonical_sha256()?);
+
+        let lease_sha256 = lease.canonical_sha256()?;
+        fixture.publisher.active_write_lease_sha256 = Some(lease_sha256.clone());
+        let response = fixture
+            .publisher
+            .route_observation("challenge-31", true, &guard)?;
+        let CultNetMessage::SnapshotResponseRaw {
+            message_id,
+            documents,
+        } = response
+        else {
+            panic!("route observation was not a raw snapshot response");
+        };
+        assert_eq!(message_id, "challenge-31");
+        let [document] = documents.as_slice() else {
+            panic!("route observation did not contain exactly one document");
+        };
+        assert_eq!(document.schema_id, GAMECULT_RUNTIME_PRESENCE_HEALTH_SCHEMA);
+        assert_eq!(document.record_key, TARGET);
+        assert_eq!(document.tags, None);
+        let presence: GameCultRuntimePresenceHealthRecord =
+            rmp_serde::from_slice(&document.payload)?;
+        assert_eq!(presence.state, "active");
+        assert_eq!(presence.detail, "route-observation:challenge-31");
+        assert_eq!(
+            presence.write_lease_sha256.as_deref(),
+            Some(lease_sha256.as_str())
+        );
+        let claim = authenticate_runtime_presence_claim(
+            &document.payload,
+            &fixture.authority,
+            RuntimePresenceAuthenticationContext {
+                trusted_received_at_unix_millis: presence.observed_at_unix_millis,
+                maximum_age_millis: 1_000,
+                maximum_future_skew_millis: 10,
+            },
+        )?;
+        assert_eq!(claim.record(), &presence);
+
+        let degraded = fixture
+            .publisher
+            .route_observation("challenge-32", false, &guard)?;
+        let CultNetMessage::SnapshotResponseRaw { documents, .. } = degraded else {
+            panic!("degraded route observation was not a raw snapshot response");
+        };
+        let degraded: GameCultRuntimePresenceHealthRecord =
+            rmp_serde::from_slice(&documents[0].payload)?;
+        assert_eq!(degraded.state, "degraded");
+        assert_eq!(degraded.detail, "route-observation:challenge-32");
         drop(guard);
 
         let mut wrong = lease;

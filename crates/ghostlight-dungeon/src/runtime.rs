@@ -6,6 +6,7 @@ use crate::{
     heimdall::{self, HeimdallClient},
     idunn_health::{
         IDUNN_RUNTIME_CANDIDATE_BIND_ENVIRONMENT, ProcessWriteLeaseGuard, RuntimePresencePublisher,
+        TARGET as GHOSTLIGHT_TARGET,
     },
     mesh::{self, MeshPublisher, MeshRuntimeIdentity},
     world::{
@@ -19,7 +20,8 @@ use crate::{
 use anyhow::{Context, bail, ensure};
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    body::Bytes,
+    extract::{ConnectInfo, DefaultBodyLimit, Path, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
     response::{
         IntoResponse, Response,
@@ -28,6 +30,10 @@ use axum::{
     routing::{get, post},
 };
 use chrono::{DateTime, Utc};
+use cultnet_rs::{
+    CultNetMessage, CultNetWireContract, GAMECULT_RUNTIME_PRESENCE_HEALTH_SCHEMA,
+    decode_cultnet_message_from_slice, encode_cultnet_message_to_vec,
+};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::{convert::Infallible, fs, net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
@@ -36,6 +42,13 @@ use tower_http::services::ServeDir;
 use tracing_subscriber::EnvFilter;
 
 const COOKIE_NAME: &str = "ghostlight_session";
+const CULTNET_SNAPSHOT_BODY_LIMIT: usize = 16 * 1024;
+
+#[derive(Clone)]
+struct RuntimeHealthOwner {
+    publisher: Arc<Mutex<RuntimePresencePublisher>>,
+    write_lease: Arc<ProcessWriteLeaseGuard>,
+}
 
 #[derive(Clone)]
 struct AppState {
@@ -45,6 +58,7 @@ struct AppState {
     heimdall: Arc<HeimdallClient>,
     mesh: Option<MeshPublisher>,
     mesh_identity: MeshRuntimeIdentity,
+    runtime_health: Option<RuntimeHealthOwner>,
     revisions: broadcast::Sender<u64>,
     fatal: mpsc::UnboundedSender<String>,
 }
@@ -191,7 +205,7 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
     };
     require_no_runtime_custody_failure(&mut fatal_events)?;
     let (revisions, _) = broadcast::channel(32);
-    let state = AppState {
+    let mut state = AppState {
         world,
         controllers: Arc::new(Mutex::new(controllers)),
         sessions: Arc::new(Mutex::new(sessions)),
@@ -200,10 +214,10 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
         mesh_identity: mesh_identity.clone(),
         revisions,
         fatal,
+        runtime_health: None,
     };
     require_no_runtime_custody_failure(&mut fatal_events)?;
     publish_projection(&state).await?;
-    tokio::spawn(maintain_mesh_projection(state.clone()));
 
     let release_web_root = std::env::current_exe()?
         .parent()
@@ -211,7 +225,6 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
     let web_root = release_web_root
         .filter(|path| path.join("index.html").is_file())
         .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/dist"));
-    let app = app_router(state.clone(), web_root);
     require_no_runtime_custody_failure(&mut fatal_events)?;
     require_current_write_lease(write_lease_guard.as_ref())?;
     canonical_readiness(&state)
@@ -226,6 +239,16 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
             .context("publishing initial active runtime presence")?;
     }
     require_current_write_lease(write_lease_guard.as_ref())?;
+    state.runtime_health = match (idunn_health, write_lease_guard) {
+        (Some(publisher), Some(write_lease)) => Some(RuntimeHealthOwner {
+            publisher: Arc::new(Mutex::new(publisher)),
+            write_lease: Arc::new(write_lease),
+        }),
+        (None, None) => None,
+        _ => bail!("managed runtime health authority is partial"),
+    };
+    tokio::spawn(maintain_mesh_projection(state.clone()));
+    let app = app_router(state.clone(), web_root);
     tracing::info!(address = %bound_address, "Ghostlight Dungeon world owner serving");
     let server = axum::serve(
         listener,
@@ -237,11 +260,7 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
             result.context("world-owner task panicked")?;
             bail!("world-owner task stopped while the daemon was serving")
         }
-        result = maintain_runtime_health(
-            idunn_health,
-            state.clone(),
-            write_lease_guard.as_ref(),
-        ) => {
+        result = maintain_runtime_health(state.clone()) => {
             result?;
             bail!("runtime readiness owner stopped while the daemon was serving")
         }
@@ -303,11 +322,94 @@ fn app_router(state: AppState, web_root: PathBuf) -> Router {
 fn api_router(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health))
+        .route(
+            "/cultnet/snapshot",
+            post(cultnet_snapshot).layer(DefaultBodyLimit::max(CULTNET_SNAPSHOT_BODY_LIMIT)),
+        )
         .route("/api/eve/provider", get(eve_provider))
         .route("/api/eve/surfaces/{surface_id}", get(eve_surface))
         .route("/api/eve/commands", post(eve_command))
         .route("/api/eve/events", get(revision_events))
         .with_state(state)
+}
+
+async fn cultnet_snapshot(
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    if !peer.ip().is_loopback() {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    if headers.get(header::CONTENT_TYPE) != Some(&HeaderValue::from_static("application/msgpack")) {
+        return StatusCode::UNSUPPORTED_MEDIA_TYPE.into_response();
+    }
+    let message_id = match exact_route_observation_message_id(&body) {
+        Ok(message_id) => message_id,
+        Err(_) => return StatusCode::BAD_REQUEST.into_response(),
+    };
+    let Some(owner) = state.runtime_health.clone() else {
+        return StatusCode::SERVICE_UNAVAILABLE.into_response();
+    };
+
+    // Hold the one publisher across readiness observation and signing so a
+    // periodic publication cannot age the checked state before this challenge
+    // is bound into the signed record.
+    let write_lease = owner.write_lease.clone();
+    let mut publisher = owner.publisher.clone().lock_owned().await;
+    let ready = canonical_readiness(&state).await.is_ok();
+    let response = tokio::task::spawn_blocking(move || {
+        let response = publisher.route_observation(&message_id, ready, &write_lease)?;
+        encode_cultnet_message_to_vec(&response, CultNetWireContract::CultNetSchemaV0)
+    })
+    .await;
+    let Ok(Ok(response)) = response else {
+        return StatusCode::SERVICE_UNAVAILABLE.into_response();
+    };
+    (
+        StatusCode::OK,
+        [(header::CONTENT_TYPE, "application/msgpack")],
+        response,
+    )
+        .into_response()
+}
+
+fn exact_route_observation_message_id(body: &[u8]) -> anyhow::Result<String> {
+    let request = decode_cultnet_message_from_slice(body, CultNetWireContract::CultNetSchemaV0)
+        .context("decoding route-observation request")?;
+    ensure!(
+        encode_cultnet_message_to_vec(&request, CultNetWireContract::CultNetSchemaV0)? == body,
+        "route-observation request is not canonical MessagePack"
+    );
+    let CultNetMessage::SnapshotRequest {
+        message_id,
+        schema_ids,
+        record_keys,
+    } = request
+    else {
+        bail!("route-observation request is not a snapshot request");
+    };
+    ensure!(
+        !message_id.is_empty(),
+        "route-observation message id is empty"
+    );
+    ensure!(
+        matches!(
+            schema_ids.as_deref(),
+            Some([schema_id]) if schema_id == GAMECULT_RUNTIME_PRESENCE_HEALTH_SCHEMA
+        ) && matches!(
+            record_keys.as_deref(),
+            Some([record_key]) if record_key == GHOSTLIGHT_TARGET
+        ),
+        "route-observation request is not the exact Ghostlight presence record"
+    );
+    let detail = format!("route-observation:{message_id}");
+    ensure!(
+        detail.len() <= 512 && !detail.chars().any(char::is_control),
+        "route-observation message id cannot be signed canonically"
+    );
+    Ok(message_id)
 }
 
 async fn health(State(state): State<AppState>) -> Response {
@@ -1464,12 +1566,7 @@ async fn initialize_production_admission(
     }))
 }
 
-async fn maintain_runtime_health(
-    publisher: Option<RuntimePresencePublisher>,
-    state: AppState,
-    write_lease: Option<&ProcessWriteLeaseGuard>,
-) -> anyhow::Result<()> {
-    let mut publisher = publisher;
+async fn maintain_runtime_health(state: AppState) -> anyhow::Result<()> {
     let mut interval = tokio::time::interval(Duration::from_secs(10));
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     loop {
@@ -1477,22 +1574,25 @@ async fn maintain_runtime_health(
         canonical_readiness(&state)
             .await
             .context("runtime is not ready for signed health")?;
-        require_current_write_lease(write_lease)
+        let Some(owner) = state.runtime_health.clone() else {
+            continue;
+        };
+        owner
+            .write_lease
+            .require_current()
             .context("runtime process write lease is not current")?;
-        if let Some(mut owned) = publisher.take() {
-            let published = tokio::task::spawn_blocking(move || {
-                let result = owned.republish_active();
-                (owned, result)
-            })
-            .await;
-            let Ok((returned, result)) = published else {
-                tracing::warn!("runtime-presence worker panicked; publication is disabled");
-                continue;
-            };
-            publisher = Some(returned);
-            if let Err(error) = result {
-                tracing::warn!(%error, "signed runtime-presence publication failed");
-            }
+        let mut publisher = owner.publisher.clone().lock_owned().await;
+        let published = tokio::task::spawn_blocking(move || {
+            publisher.republish_active()?;
+            Ok::<(), anyhow::Error>(())
+        })
+        .await;
+        let Ok(result) = published else {
+            tracing::warn!("runtime-presence worker panicked; publication will retry");
+            continue;
+        };
+        if let Err(error) = result {
+            tracing::warn!(%error, "signed runtime-presence publication failed");
         }
     }
 }
@@ -1658,8 +1758,16 @@ fn sibling_state_lock_path(path: &std::path::Path) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::idunn_health::tests::route_observation_fixture;
     use crate::world::AffordanceKind;
-    use axum::{body::Body, http::Request};
+    use axum::{
+        body::{Body, to_bytes},
+        http::Request,
+    };
+    use cultnet_rs::{
+        GameCultRuntimePresenceHealthRecord, RuntimePresenceAuthenticationContext,
+        authenticate_runtime_presence_claim,
+    };
     use tower::ServiceExt;
 
     #[cfg(target_os = "linux")]
@@ -1789,6 +1897,7 @@ mod tests {
             heimdall: Arc::new(HeimdallClient::fixture()),
             mesh: Some(mesh),
             mesh_identity,
+            runtime_health: None,
             revisions,
             fatal,
         };
@@ -1798,6 +1907,180 @@ mod tests {
             state,
             cookie,
         }
+    }
+
+    fn route_snapshot_request(
+        message_id: &str,
+        schema_ids: Option<Vec<String>>,
+        record_keys: Option<Vec<String>>,
+    ) -> Vec<u8> {
+        encode_cultnet_message_to_vec(
+            &CultNetMessage::SnapshotRequest {
+                message_id: message_id.into(),
+                schema_ids,
+                record_keys,
+            },
+            CultNetWireContract::CultNetSchemaV0,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn route_observation_request_is_one_exact_canonical_record() {
+        let exact = route_snapshot_request(
+            "route-challenge-41",
+            Some(vec![GAMECULT_RUNTIME_PRESENCE_HEALTH_SCHEMA.into()]),
+            Some(vec![GHOSTLIGHT_TARGET.into()]),
+        );
+        assert_eq!(
+            exact_route_observation_message_id(&exact).unwrap(),
+            "route-challenge-41"
+        );
+
+        for refused in [
+            route_snapshot_request("broad", None, None),
+            route_snapshot_request(
+                "foreign-schema",
+                Some(vec!["gamecult.other.v1".into()]),
+                Some(vec![GHOSTLIGHT_TARGET.into()]),
+            ),
+            route_snapshot_request(
+                "foreign-record",
+                Some(vec![GAMECULT_RUNTIME_PRESENCE_HEALTH_SCHEMA.into()]),
+                Some(vec!["other-target".into()]),
+            ),
+        ] {
+            assert!(exact_route_observation_message_id(&refused).is_err());
+        }
+    }
+
+    #[tokio::test]
+    async fn http_route_probe_bypasses_provider_and_enforces_exact_admission() {
+        let mut fixture = fixture().await;
+        let body = route_snapshot_request(
+            "route-challenge-42",
+            Some(vec![GAMECULT_RUNTIME_PRESENCE_HEALTH_SCHEMA.into()]),
+            Some(vec![GHOSTLIGHT_TARGET.into()]),
+        );
+        let request = |peer: &str, content_type: Option<&str>, body: Vec<u8>| {
+            let mut builder = Request::builder()
+                .method("POST")
+                .uri("/cultnet/snapshot")
+                .extension(ConnectInfo(peer.parse::<SocketAddr>().unwrap()));
+            if let Some(content_type) = content_type {
+                builder = builder.header(header::CONTENT_TYPE, content_type);
+            }
+            builder.body(Body::from(body)).unwrap()
+        };
+
+        let unmanaged = api_router(fixture.state.clone())
+            .oneshot(request(
+                "127.0.0.1:39001",
+                Some("application/msgpack"),
+                body.clone(),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(unmanaged.status(), StatusCode::SERVICE_UNAVAILABLE);
+
+        let remote = api_router(fixture.state.clone())
+            .oneshot(request(
+                "192.0.2.9:39001",
+                Some("application/msgpack"),
+                body.clone(),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(remote.status(), StatusCode::FORBIDDEN);
+
+        let wrong_media = api_router(fixture.state.clone())
+            .oneshot(request(
+                "127.0.0.1:39001",
+                Some("application/json"),
+                body.clone(),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(wrong_media.status(), StatusCode::UNSUPPORTED_MEDIA_TYPE);
+
+        let broad = api_router(fixture.state.clone())
+            .oneshot(request(
+                "127.0.0.1:39001",
+                Some("application/msgpack"),
+                route_snapshot_request("broad", None, None),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(broad.status(), StatusCode::BAD_REQUEST);
+
+        let health = route_observation_fixture(fixture._directory.path()).unwrap();
+        let authority = health.authority;
+        let write_lease_sha256 = health.write_lease.canonical_sha256().to_owned();
+        fixture.state.runtime_health = Some(RuntimeHealthOwner {
+            publisher: Arc::new(Mutex::new(health.publisher)),
+            write_lease: Arc::new(health.write_lease),
+        });
+
+        // If this route enters the controller/provider boundary, the held lock
+        // makes the request time out. Route admission and signing need only the
+        // canonical health owner and managed runtime authority.
+        let controllers = fixture.state.controllers.clone();
+        let _provider_execution_barrier = controllers.lock().await;
+        let response = tokio::time::timeout(
+            Duration::from_secs(2),
+            api_router(fixture.state.clone()).oneshot(request(
+                "127.0.0.1:39001",
+                Some("application/msgpack"),
+                body,
+            )),
+        )
+        .await
+        .expect("route observation entered provider execution")
+        .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers().get(header::CONTENT_TYPE),
+            Some(&HeaderValue::from_static("application/msgpack"))
+        );
+        let bytes = to_bytes(response.into_body(), 64 * 1024).await.unwrap();
+        let message =
+            decode_cultnet_message_from_slice(&bytes, CultNetWireContract::CultNetSchemaV0)
+                .unwrap();
+        assert_eq!(
+            encode_cultnet_message_to_vec(&message, CultNetWireContract::CultNetSchemaV0).unwrap(),
+            bytes
+        );
+        let CultNetMessage::SnapshotResponseRaw {
+            message_id,
+            documents,
+        } = message
+        else {
+            panic!("route observation was not a raw snapshot response");
+        };
+        assert_eq!(message_id, "route-challenge-42");
+        let [document] = documents.as_slice() else {
+            panic!("route observation did not contain exactly one document");
+        };
+        assert_eq!(document.schema_id, GAMECULT_RUNTIME_PRESENCE_HEALTH_SCHEMA);
+        assert_eq!(document.record_key, GHOSTLIGHT_TARGET);
+        let presence: GameCultRuntimePresenceHealthRecord =
+            rmp_serde::from_slice(&document.payload).unwrap();
+        assert_eq!(presence.state, "active");
+        assert_eq!(presence.detail, "route-observation:route-challenge-42");
+        assert_eq!(
+            presence.write_lease_sha256.as_deref(),
+            Some(write_lease_sha256.as_str())
+        );
+        authenticate_runtime_presence_claim(
+            &document.payload,
+            &authority,
+            RuntimePresenceAuthenticationContext {
+                trusted_received_at_unix_millis: presence.observed_at_unix_millis,
+                maximum_age_millis: 1_000,
+                maximum_future_skew_millis: 10,
+            },
+        )
+        .unwrap();
     }
 
     fn invocation(operation: &str, schema: &str, version: u64, payload: Value, id: &str) -> Value {
