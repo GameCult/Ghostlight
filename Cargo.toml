@@ -2,10 +2,6 @@
 members = [
   "crates/ghostlight-dungeon",
   "crates/ghostlight-persona-projection",
-  "vendor/cultcache-rs",
-  "vendor/cultcache-rs/cultcache-rs-derive",
-  "vendor/cultnet-rs",
-  "vendor/cultmesh-rs",
 ]
 resolver = "2"
 
@@ -23,9 +19,9 @@ axum = { version = "0.8", features = ["macros"] }
 chrono = { version = "0.4", features = ["serde"] }
 base64 = "0.22"
 codex-connector = { git = "https://github.com/GameCult/CodexConnector.git", rev = "68fe94b9475823de92ed766a97ea962d48723708" }
-cultcache-rs = { path = "vendor/cultcache-rs" }
-cultnet-rs = { path = "vendor/cultnet-rs" }
-cultmesh-rs = { path = "vendor/cultmesh-rs" }
+cultcache-rs = { git = "https://github.com/GameCult/CultLib.git", rev = "85f7024a35ea42cf9f0a0199a064526427150191", package = "cultcache-rs" }
+cultnet-rs = { git = "https://github.com/GameCult/CultLib.git", rev = "85f7024a35ea42cf9f0a0199a064526427150191", package = "cultnet-rs" }
+cultmesh-rs = { git = "https://github.com/GameCult/CultLib.git", rev = "85f7024a35ea42cf9f0a0199a064526427150191", package = "cultmesh-rs" }
 jsonwebtoken = "9"
 hmac = "0.12"
 rand = "0.9"
