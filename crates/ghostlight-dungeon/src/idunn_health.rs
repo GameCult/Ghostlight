@@ -22,6 +22,7 @@ use cultnet_rs::{
     ServiceIdentitySigner, encode_cultnet_message_to_vec, open_service_identity_credential_reader,
 };
 use std::{
+    collections::VecDeque,
     fs::{self, File},
     net::{SocketAddr, UdpSocket},
     path::{Path, PathBuf},
@@ -48,6 +49,8 @@ const STATE_CONTRACT_SHA256: &str =
 const CULTNET_RUDP_PROTOCOL_ID: &str = "cultnet.transport.rudp.v0";
 const ODIN_CULTMESH_CATALOG_CONNECTION_ID: u32 = 0x0d1d_0002;
 const RUNTIME_PRESENCE_IDENTITY_FD_NAME: &str = "gamecult-runtime-presence-identity";
+const WARMING_HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
+const MAX_RECENT_WARMING_PROOFS: usize = 64;
 const ODIN_CAPABILITY: (&str, &str, &str) =
     ("odin.verse-rendezvous", "odin.verse-topology.v1", "v1");
 const CONNECTOR_CAPABILITY: (&str, &str, &str) = (
@@ -256,26 +259,37 @@ impl RuntimePresencePublisher {
     }
 
     pub(crate) async fn wait_for_write_lease(
-        &self,
+        &mut self,
         warming: &PublishedRuntimePresence,
         timeout: Duration,
     ) -> Result<ProcessWriteLeaseGuard> {
         let deadline = Instant::now() + timeout;
+        let mut next_heartbeat = Instant::now() + WARMING_HEARTBEAT_INTERVAL;
+        let mut recent_warming_proofs = VecDeque::new();
+        remember_warming_proof(&mut recent_warming_proofs, warming.canonical_sha256.clone());
         loop {
             if self.write_lease_path.exists() && sibling_lock_path(&self.write_lease_path).exists()
             {
-                return ProcessWriteLeaseGuard::acquire(
+                return ProcessWriteLeaseGuard::acquire_recent(
                     self.write_lease_path.clone(),
                     self.expected.clone(),
                     self.activation.clone(),
-                    warming.canonical_sha256.clone(),
+                    recent_warming_proofs.iter().cloned().collect(),
                 );
             }
-            if Instant::now() >= deadline {
+            let now = Instant::now();
+            if now >= deadline {
                 bail!(
                     "timed out waiting for process write lease {}",
                     self.write_lease_path.display()
                 );
+            }
+            if now >= next_heartbeat {
+                let heartbeat = self
+                    .publish_warming()
+                    .context("publishing Warming heartbeat while awaiting process lease")?;
+                remember_warming_proof(&mut recent_warming_proofs, heartbeat.canonical_sha256);
+                next_heartbeat = now + WARMING_HEARTBEAT_INTERVAL;
             }
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
@@ -769,13 +783,13 @@ pub(crate) struct ProcessWriteLeaseGuard {
 }
 
 impl ProcessWriteLeaseGuard {
-    fn acquire(
+    fn acquire_recent(
         path: PathBuf,
         expected: IdunnExpectedIncarnationRecord,
         activation: IdunnRuntimeActivationRecord,
-        warming_presence_sha256: String,
+        warming_presence_sha256es: Vec<String>,
     ) -> Result<Self> {
-        Self::acquire_inner(path, expected, activation, warming_presence_sha256, true)
+        Self::acquire_inner(path, expected, activation, warming_presence_sha256es, true)
     }
 
     #[cfg(test)]
@@ -785,16 +799,36 @@ impl ProcessWriteLeaseGuard {
         activation: IdunnRuntimeActivationRecord,
         warming_presence_sha256: String,
     ) -> Result<Self> {
-        Self::acquire_inner(path, expected, activation, warming_presence_sha256, false)
+        Self::acquire_inner(
+            path,
+            expected,
+            activation,
+            vec![warming_presence_sha256],
+            false,
+        )
+    }
+
+    #[cfg(test)]
+    fn acquire_recent_fixture(
+        path: PathBuf,
+        expected: IdunnExpectedIncarnationRecord,
+        activation: IdunnRuntimeActivationRecord,
+        warming_presence_sha256es: Vec<String>,
+    ) -> Result<Self> {
+        Self::acquire_inner(path, expected, activation, warming_presence_sha256es, false)
     }
 
     fn acquire_inner(
         path: PathBuf,
         expected: IdunnExpectedIncarnationRecord,
         activation: IdunnRuntimeActivationRecord,
-        warming_presence_sha256: String,
+        warming_presence_sha256es: Vec<String>,
         enforce_custody: bool,
     ) -> Result<Self> {
+        ensure!(
+            !warming_presence_sha256es.is_empty(),
+            "process write lease has no provider-owned Warming proof"
+        );
         if enforce_custody {
             require_process_write_lease_custody(&path)?;
         }
@@ -813,7 +847,7 @@ impl ProcessWriteLeaseGuard {
                         &entries,
                         &expected,
                         &activation,
-                        &warming_presence_sha256,
+                        &warming_presence_sha256es,
                     )?;
                     ready_tx
                         .send(Ok(record))
@@ -937,7 +971,7 @@ fn decode_write_lease(
     entries: &[CultCacheEnvelope],
     expected: &IdunnExpectedIncarnationRecord,
     activation: &IdunnRuntimeActivationRecord,
-    warming_presence_sha256: &str,
+    warming_presence_sha256es: &[String],
 ) -> Result<IdunnProcessWriteLeaseRecord> {
     let [envelope] = entries else {
         bail!("process write-lease store is absent or ambiguous");
@@ -968,10 +1002,19 @@ fn decode_write_lease(
                     .context("Expected has no state contract")?
             && lease.runtime_id == expected.runtime_id
             && lease.runtime_instance_id == activation.runtime_instance_id
-            && lease.warming_presence_sha256 == warming_presence_sha256,
-        "process write lease does not bind this exact warming incarnation"
+            && warming_presence_sha256es
+                .iter()
+                .any(|sha256| sha256 == &lease.warming_presence_sha256),
+        "process write lease does not bind a provider-owned Warming proof for this incarnation"
     );
     Ok(lease)
+}
+
+fn remember_warming_proof(proofs: &mut VecDeque<String>, sha256: String) {
+    proofs.push_back(sha256);
+    while proofs.len() > MAX_RECENT_WARMING_PROOFS {
+        proofs.pop_front();
+    }
 }
 
 fn publish_runtime_presence(
@@ -1417,11 +1460,18 @@ pub(crate) mod tests {
     fn process_write_lease_guard_holds_and_rechecks_the_exact_incarnation() -> Result<()> {
         let root = tempfile::tempdir()?;
         let mut fixture = fixture(root.path())?;
-        let warming =
+        let first_warming =
             fixture
                 .publisher
                 .signed_record("warming", "process-write-lease-pending", None)?;
-        let warming_sha256 = warming.canonical_sha256()?;
+        let first_warming_sha256 = first_warming.canonical_sha256()?;
+        let latest_warming =
+            fixture
+                .publisher
+                .signed_record("warming", "process-write-lease-pending", None)?;
+        let latest_warming_sha256 = latest_warming.canonical_sha256()?;
+        assert!(latest_warming.publisher_sequence > first_warming.publisher_sequence);
+        assert_ne!(latest_warming_sha256, first_warming_sha256);
         let lease = IdunnProcessWriteLeaseRecord {
             schema_version: IDUNN_PROCESS_WRITE_LEASE_SCHEMA.into(),
             target: fixture.expected.target.clone(),
@@ -1434,7 +1484,7 @@ pub(crate) mod tests {
             state_contract_sha256: fixture.expected.state_contract_sha256.clone().unwrap(),
             runtime_id: fixture.expected.runtime_id.clone(),
             runtime_instance_id: fixture.activation.runtime_instance_id.clone(),
-            warming_presence_sha256: warming_sha256.clone(),
+            warming_presence_sha256: first_warming_sha256.clone(),
             lease_epoch: 1,
             issued_at_unix_millis: 200,
         };
@@ -1447,11 +1497,11 @@ pub(crate) mod tests {
             schema_id: Some(IDUNN_PROCESS_WRITE_LEASE_SCHEMA.into()),
         })?;
 
-        let guard = ProcessWriteLeaseGuard::acquire_fixture(
+        let guard = ProcessWriteLeaseGuard::acquire_recent_fixture(
             path.clone(),
             fixture.expected.clone(),
             fixture.activation.clone(),
-            warming_sha256,
+            vec![first_warming_sha256, latest_warming_sha256],
         )?;
         guard.require_current()?;
         assert_eq!(guard.canonical_sha256(), lease.canonical_sha256()?);
