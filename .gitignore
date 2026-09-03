@@ -6,3 +6,11 @@ web/dist/
 state/scratch-compaction-*.md
 experiments/images/
 target/
+
+# Disposable local scaffolding. These accumulated to ~87MB of untracked debris
+# once; the workspace must stay re-enterable, so they never come back.
+.tmp-*
+/tmp/
+--help
+--help.lock
+/acceptance-run*

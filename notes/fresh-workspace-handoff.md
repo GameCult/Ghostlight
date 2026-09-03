@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-09-02
+Updated: 2026-09-03
 
 This is the compact re-entry packet. It carries current authority and the next
 gate. Git owns chronology, the system map owns teardown detail, and evidence
@@ -105,6 +105,9 @@ load or evaluation evidence; none admits ontology or declares a world complete.
   dependency. The committed daemon tree contains no old Session Zero, legacy
   kernel, scheduler, assessor, verifier/reconciliation, or legacy-transition
   module path.
+- `9256648` exposes managed Ghostlight route presence, and `6a79cb0`
+  republishes signed Warming for as long as the write lease is outstanding.
+  With `a0b16b9` these are the whole provider side of the Idunn cut.
 - Source subtraction is complete. Production cutover and runtime legacy purge
   are not.
 
@@ -129,12 +132,23 @@ body. The 1,200 and 2,400 actor profiles are synthetic fixtures only.
 Yggdrasil still serves legacy Ghostlight release `a4080d4` from an enabled
 `Restart=always` unit with health v1, campaign/Session Zero state, and no
 `world.cc` or `app-sessions-v2.cc` witness. The Connector is also still on its
-legacy enabled body. CultNet `87d0b0f` now owns the shared runtime-activation,
-signed presence-health, and process-write-lease contracts. Odin `cebe425` owns
-deterministic recipe and operator-binding parsing, compiled plans, sealed
-releases, and sanitized Expected projections. Idunn's Git, runner, workload,
-lease/fencing, route, CultCache/CultMesh, and main-loop actuation remain absent;
-the legacy deployment seam is still unsafe to invoke.
+legacy enabled body. CultNet through pushed `f4ab237` owns generation-bound
+activation, separate lifecycle brakes, process-write leases, observed
+capabilities, explicit disagreement, and routed RUDP incarnations. Odin through
+pushed `65cf2b2` owns deterministic recipe and binding admission, exact source
+freezing, sealed releases, durable deployment transactions, and the narrow
+native actuator ports. Current uncommitted Odin integration moves Idunn-owned
+projection and multi-session RUDP transport into those live paths.
+
+Ghostlight pushed `6a79cb0` with the provider side of this cut. Its recipe
+requests Idunn's runtime bundle, candidate bind, protected activation and
+provider credentials, process-write-lease path, and admitted state-root
+binding. The runtime validates Expected and activation, publishes signed
+Warming, waits for the exact process lease before opening state, keeps that
+lease current through bind, Active publication, and serving, republishes Warming
+until the lease arrives, and exposes its managed route presence. CodexConnector
+pushed `ede3c30` with the corresponding stateless provider contract. Neither
+service has been admitted through rebuilt Idunn yet.
 
 The adopted cut puts a visible recipe with a constrained launch declaration in
 each target repo; raw unit or container-runtime templates are rejected. The
@@ -142,13 +156,37 @@ operator binding selects the workload driver, which alone lowers that launch
 declaration into process-manager configuration.
 Idunn operator bindings own the admitted ref, runner/container image and
 affordances, host paths, secrets, routing endpoint, rollout, retention, and
-desired replica placement. A sealed plan and release publish only Expected.
-Idunn observes the exact runtime activation; the service signs Present health.
-For writable state, Idunn grants the process-bound lease before state opens.
-Odin correlates Expected, activation, and Present into Ready, and stable route
-membership moves only after Ready. Deployment and continuity remain separate
-authorities; a deployment brake cannot suspend restart of the already-admitted
-body.
+desired replica placement. A sealed plan and release publish only Expected. A
+service owns its signed runtime presence and health claim. Odin alone
+authenticates that observation into Present and derives Ready from exact
+Expected/Present agreement; the three states and any disagreement remain
+distinct. For writable state, Idunn grants the process-bound lease before state
+opens. Stable route membership moves only after Ready. Deployment and
+continuity remain separate authorities; a deployment brake cannot suspend
+restart of the already-admitted body.
+
+The current Nginx driver observes rendered configuration and `nginx -T`
+visibility, not live-worker adoption or packet delivery. A route is not
+acceptance-complete, and the incumbent may not be drained, until an independent
+data-plane probe binds the exact candidate runtime and membership digest.
+
+Idunn is the GameCult-wide deployment, admission, continuity, and future
+swarm-scaling control plane. Systemd, container runtimes, and existing proxies
+remain its replaceable actuators; it does not reimplement generic scheduling,
+networking, container, service-mesh, cryptographic, or consensus machinery.
+Odin owns the discoverable semantic topology; services own their actual signed
+capability, health, capacity, and runtime claims.
+
+Idunn starts and recovers from its own durable admitted state; Odin is its first
+managed daemon and the semantic graph root, not an Idunn bootstrap dependency.
+First-Odin admission still publishes Expected and requires signed Present and
+Ready; only its evidence transport is bootstrapped by querying that exact
+candidate directly. Idunn publishes desired topology before dependent
+promotion. During an Odin outage, it may authenticate private physical evidence
+to replace only the process incarnation inside an existing admitted generation
+and preserve the current route. It freezes graph-changing deployment,
+promotion, scaling, and provider selection; historical Ready cannot authorize
+the replacement process, and Idunn never emits Present or Ready.
 
 Heimdall owns account identity. Eve owns command invocation and lowering.
 VoidBot owns Vault retrieval and evidence. Idunn owns deployment and daemon
@@ -158,16 +196,21 @@ and proposals but cannot commit on their behalf.
 
 ## Next gate
 
-Integrate the landed recipe, binding, plan, release, Expected, activation,
-presence, and write-lease contracts into Idunn's main control plane and narrow
-Git, runner, workload, lease/fencing, route, CultCache, and CultMesh drivers.
-Keep target semantics in visible Ghostlight and Connector recipes and fleet
-affordances in Idunn-owned bindings. The narrow Idunn source driver must prove
-the selected commit, tree, recipe, and Gitlinks; deterministic plan validation
-does not establish ancestry, signatures, or object custody. Require Expected
-plus Idunn-observed activation plus service-signed Present; grant the process
-lease before writable state opens; require Odin-correlated Ready before stable
-route membership moves.
+Review and subtract the uncommitted Idunn-owned Expected/activation/anchor/lease
+projection and bounded multi-session RUDP document transport. Advance Odin to
+CultNet `f4ab237`, add UDP route actuation plus an independently persisted
+post-reload data-plane observation through the existing proxy, and verify that
+focused body on Yggdrasil. Then implement the directly managed Rust Odin that
+alone authenticates runtime observation into Present and derives Ready, plus
+exact capability dependency closure frozen inside the existing deployment
+transaction. Do not add another scheduler, registry, inbox, or shared-file
+correlation owner.
+
+Install rebuilt Idunn and admit Odin first through the same
+Expected/Present/Ready contract, using its exact candidate only to bootstrap the
+evidence transport. Then admit CodexConnector and Ghostlight. Same-generation
+continuity, route preservation, split-brain fencing, signed health, Odin-outage
+freeze, and negative legacy-authority checks must all agree before purge.
 
 Deploy the Connector and then Ghostlight through that contract. Runtime restart,
 route continuity, signed health, exact receipts, exclusive world-v2 state, and
