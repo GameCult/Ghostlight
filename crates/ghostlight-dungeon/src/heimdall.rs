@@ -1,3 +1,4 @@
+use crate::idunn_health::HeimdallDependencyBinding;
 use aes_gcm::{
     Aes256Gcm, KeyInit,
     aead::{Aead, Payload},
@@ -44,7 +45,10 @@ pub struct HeimdallClient {
 
 #[derive(Clone)]
 enum HeimdallBoundaryLocator {
-    Odin(SocketAddr),
+    Odin {
+        endpoint: SocketAddr,
+        expected: Option<HeimdallDependencyBinding>,
+    },
     #[cfg(test)]
     Fixed(ResolvedHeimdallBoundary),
 }
@@ -307,10 +311,14 @@ impl VerifiedSessionAdmission {
 }
 
 impl HeimdallClient {
-    pub fn from_env() -> anyhow::Result<Self> {
-        let odin_endpoint: SocketAddr = required_env("GHOSTLIGHT_ODIN_RUDP")?
-            .parse()
-            .context("GHOSTLIGHT_ODIN_RUDP is not a socket address")?;
+    pub fn from_env(
+        runtime_id: &str,
+        odin_endpoint: SocketAddr,
+        expected: Option<HeimdallDependencyBinding>,
+    ) -> anyhow::Result<Self> {
+        if runtime_id.is_empty() || runtime_id.trim() != runtime_id {
+            bail!("Ghostlight runtime identity is not canonical");
+        }
         let secret_path = std::env::var_os("GHOSTLIGHT_HEIMDALL_APP_SECRET_FILE")
             .map(PathBuf::from)
             .context("GHOSTLIGHT_HEIMDALL_APP_SECRET_FILE is required")?;
@@ -331,9 +339,11 @@ impl HeimdallClient {
                 .unwrap_or_else(|_| "https://yggdrasil.gamecult.org/ghostlight/".into()),
             discord_guild_id: required_env("GHOSTLIGHT_DISCORD_GUILD_ID")?,
             discord_role_id: required_env("GHOSTLIGHT_DISCORD_ROLE_ID")?,
-            boundary_locator: HeimdallBoundaryLocator::Odin(odin_endpoint),
-            runtime_id: std::env::var("GHOSTLIGHT_RUNTIME_ID")
-                .unwrap_or_else(|_| "yggdrasil-ghostlight".into()),
+            boundary_locator: HeimdallBoundaryLocator::Odin {
+                endpoint: odin_endpoint,
+                expected,
+            },
+            runtime_id: runtime_id.into(),
             shared_secret,
         })
     }
@@ -356,7 +366,7 @@ impl HeimdallClient {
                     "heimdall.auth.logout".into(),
                 ],
             }),
-            runtime_id: "yggdrasil-ghostlight".into(),
+            runtime_id: "ghostlight-test-runtime".into(),
             shared_secret: "fixture-secret".into(),
         }
     }
@@ -725,7 +735,13 @@ impl HeimdallBoundaryLocator {
         operation: &str,
     ) -> anyhow::Result<ResolvedHeimdallBoundary> {
         let boundary = match self {
-            Self::Odin(endpoint) => discover_heimdall_boundary(*endpoint, runtime_id)?,
+            Self::Odin { endpoint, expected } => {
+                let boundary = discover_heimdall_boundary(*endpoint, runtime_id)?;
+                if let Some(expected) = expected {
+                    require_expected_heimdall_boundary(&boundary, expected)?;
+                }
+                boundary
+            }
             #[cfg(test)]
             Self::Fixed(boundary) => boundary.clone(),
         };
@@ -738,6 +754,16 @@ impl HeimdallBoundaryLocator {
         }
         Ok(boundary)
     }
+}
+
+fn require_expected_heimdall_boundary(
+    boundary: &ResolvedHeimdallBoundary,
+    expected: &HeimdallDependencyBinding,
+) -> anyhow::Result<()> {
+    if boundary.daemon_id != expected.provider_id || boundary.endpoint != expected.endpoint {
+        bail!("discovered Heimdall boundary differs from Expected");
+    }
+    Ok(())
 }
 
 fn discover_heimdall_boundary(
@@ -1037,6 +1063,17 @@ mod tests {
         assert_eq!(resolved.endpoint, "127.0.0.1:4101".parse().unwrap());
         assert_eq!(resolved.daemon_id, "yggdrasil-heimdall");
         assert_eq!(resolved.operations, vec!["heimdall.auth.begin"]);
+        let expected = HeimdallDependencyBinding {
+            provider_id: "yggdrasil-heimdall".into(),
+            endpoint: "127.0.0.1:4101".parse().unwrap(),
+        };
+        require_expected_heimdall_boundary(&resolved, &expected)
+            .expect("exact Expected Heimdall should match discovery");
+        let substitute = HeimdallDependencyBinding {
+            provider_id: "another-heimdall".into(),
+            endpoint: expected.endpoint,
+        };
+        assert!(require_expected_heimdall_boundary(&resolved, &substitute).is_err());
     }
 
     #[test]

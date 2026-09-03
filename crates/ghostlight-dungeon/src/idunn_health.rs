@@ -1,464 +1,987 @@
-use anyhow::{Context, Result, anyhow, bail};
-use cultcache_rs::{CultCacheEnvelope, SingleFileMessagePackBackingStore};
+//! Service-owned runtime presence at the Idunn/Odin authority boundary.
+//!
+//! Idunn supplies one immutable Expected/activation bundle, an activation-only
+//! signing credential, the candidate bind, and (after Odin observes Warming)
+//! one process write lease. Ghostlight reports what this process actually is;
+//! it never promotes its route or manufactures Ready.
+
+use anyhow::{Context, Result, anyhow, bail, ensure};
+#[cfg(test)]
+use cultcache_rs::CacheBackingStore;
+use cultcache_rs::{CultCacheEnvelope, DatabaseEntry, SingleFileMessagePackBackingStore};
 use cultnet_rs::{
     CultNetMessage, CultNetRawDocumentRecord, CultNetRawPayloadEncoding,
-    CultNetRudpSocketTransportConnection, CultNetRudpSocketTransportOptions, CultNetWireContract,
-    GameCultProviderHealthIdentity, IdunnSignedDaemonHealthPurpose, ServiceIdentitySigner,
-    encode_cultnet_message_to_vec, open_service_identity_at,
+    CultNetRudpReliableSendStatus, CultNetRudpSocketTransportConnection,
+    CultNetRudpSocketTransportOptions, CultNetWireContract,
+    GAMECULT_RUNTIME_PRESENCE_HEALTH_SCHEMA, GameCultProviderHealthIdentity,
+    GameCultRuntimeCapability, GameCultRuntimePresenceHealthPurpose,
+    GameCultRuntimePresenceHealthRecord, IDUNN_EXPECTED_INCARNATION_SCHEMA,
+    IDUNN_PROCESS_WRITE_LEASE_SCHEMA, IDUNN_RUNTIME_ACTIVATION_CREDENTIAL_NAME,
+    IDUNN_RUNTIME_ACTIVATION_SCHEMA, IdunnExpectedDependency, IdunnExpectedIncarnationRecord,
+    IdunnProcessWriteLeaseRecord, IdunnRuntimeActivationRecord, IdunnRuntimeActivationSigner,
+    ServiceIdentitySigner, encode_cultnet_message_to_vec, open_service_identity_credential_reader,
 };
-use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
-#[cfg(target_os = "linux")]
-use std::os::unix::fs::MetadataExt;
 use std::{
+    fs::{self, File},
     net::{SocketAddr, UdpSocket},
     path::{Path, PathBuf},
+    sync::mpsc,
+    thread,
     time::{Duration, Instant},
 };
+#[cfg(target_os = "linux")]
+use std::{
+    os::fd::{AsRawFd, FromRawFd, RawFd},
+    os::unix::fs::{MetadataExt, PermissionsExt},
+};
 
-pub const GHOSTLIGHT_IDUNN_HEALTH_CONTRACT: &str = "ghostlight.cultnet-rudp-service-health";
+pub const GHOSTLIGHT_RUNTIME_PRESENCE_HEALTH_CONTRACT: &str =
+    "ghostlight.cultnet-rudp-service-health";
+pub const IDUNN_RUNTIME_BUNDLE_ENVIRONMENT: &str = "GAMECULT_IDUNN_RUNTIME_BUNDLE";
+pub const IDUNN_RUNTIME_CANDIDATE_BIND_ENVIRONMENT: &str = "GAMECULT_IDUNN_CANDIDATE_BIND";
+pub const IDUNN_PROCESS_WRITE_LEASE_ENVIRONMENT: &str = "GAMECULT_IDUNN_PROCESS_WRITE_LEASE";
+
+const TARGET: &str = "ghostlight";
+const STATE_SCHEMA_GENERATION: &str = "world-v2";
+const STATE_CONTRACT_SHA256: &str =
+    "sha256-bf6ec06d885a59ddb237c6224d0abb4ccceac8c7ba23761d1326d7f562a4c21e";
 const CULTNET_RUDP_PROTOCOL_ID: &str = "cultnet.transport.rudp.v0";
-const IDUNN_HEALTH_RUDP_CONNECTION_ID: u32 = 0x1d0d_0001;
-const GHOSTLIGHT_ACTIVATION_SCHEMA: &str = "gamecult.ghostlight.activation.v1";
-const GHOSTLIGHT_ACTIVATION_PATH: &str = "/etc/gamecult/ghostlight-dungeon/runtime/ACTIVATION";
-const GHOSTLIGHT_UNIT_PATH: &str = "/etc/systemd/system/ghostlight-dungeon.service";
-const GHOSTLIGHT_RUNTIME_ENVIRONMENT_PATH: &str = "/srv/ghostlight/deploy/runtime.env";
-const TRAFFIC_ADMISSION_PATH: &str =
-    "/etc/gamecult/ghostlight-dungeon/runtime/traffic-admission.cc";
-const TRAFFIC_ADMISSION_TYPE: &str = "idunn.runtime_traffic_admission";
-const TRAFFIC_ADMISSION_SCHEMA: &str = "idunn.runtime_traffic_admission.v2";
-const TRAFFIC_ADMISSION_KEY: &str = "yggdrasil-ghostlight";
+const ODIN_CULTMESH_CATALOG_CONNECTION_ID: u32 = 0x0d1d_0002;
+const RUNTIME_PRESENCE_IDENTITY_FD_NAME: &str = "gamecult-runtime-presence-identity";
+const ODIN_CAPABILITY: (&str, &str, &str) =
+    ("odin.verse-rendezvous", "odin.verse-topology.v1", "v1");
+const CONNECTOR_CAPABILITY: (&str, &str, &str) = (
+    "gamecult.codex.subscription-inference",
+    "gamecult.codex.transport_envelope.v2",
+    "v2",
+);
+const HEIMDALL_CAPABILITY: (&str, &str, &str) = (
+    "heimdall.command-boundary",
+    "heimdall.command_boundary.v1",
+    "v1",
+);
+#[cfg(target_os = "linux")]
+const SYSTEMD_LISTEN_FDS_START: RawFd = 3;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct IdunnReleaseBinding {
-    pub(crate) release_id: String,
-    pub(crate) release_witness_sha256: String,
-    pub(crate) source_commit: String,
-    pub(crate) deployment_id: String,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) struct IdunnActivationBinding {
-    activation_witness_sha256: String,
-}
-
-// Idunn owns and writes this CultCache schema. Ghostlight carries only the
-// exact read-side projection required to consume that root traffic grant.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct TrafficAdmissionConsumerProjection {
-    schema_version: String,
-    daemon_id: String,
-    release_id: String,
-    release_witness_sha256: String,
-    source_commit: String,
-    deployment_id: String,
-    activation_witness_sha256: String,
-    signed_health_sha256: String,
-    publisher_incarnation_id: String,
-    publisher_sequence: u64,
-    signer_identity_id: String,
-    runtime_process_id: u32,
-    runtime_process_starttime_ticks: u64,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct RuntimeProcessInstanceBinding {
-    process_id: u32,
-    starttime_ticks: u64,
+pub(crate) struct HeimdallDependencyBinding {
+    pub(crate) provider_id: String,
+    pub(crate) endpoint: SocketAddr,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-struct ActivationWitness {
-    activation_id: String,
-    daemon_id: String,
-    release_id: String,
-    release_witness_sha256: String,
-    source_commit: String,
-    deployment_id: String,
-    unit_path: String,
-    unit_sha256: String,
-    runtime_environment_path: String,
-    runtime_environment_sha256: String,
+pub(crate) struct RuntimeDependencyBindings {
+    pub(crate) odin_rudp: SocketAddr,
+    pub(crate) connector: SocketAddr,
+    pub(crate) heimdall: HeimdallDependencyBinding,
 }
 
-#[derive(Clone)]
-pub(crate) struct GhostlightTrafficAdmissionGate {
-    path: PathBuf,
-    expected: TrafficAdmissionConsumerProjection,
-    ghostlight_gid: u32,
+pub(crate) struct PublishedRuntimePresence {
+    canonical_sha256: String,
 }
 
-pub(crate) struct PublishedHealthStatementIdentity {
-    daemon_id: String,
-    signed_health_sha256: String,
-    publisher_incarnation_id: String,
-    publisher_sequence: u64,
-    signer_identity_id: String,
-}
-
-impl IdunnReleaseBinding {
-    fn validate(&self) -> Result<()> {
-        require_id(&self.release_id, "release id")?;
-        require_id(&self.deployment_id, "deployment id")?;
-        if !self
-            .release_witness_sha256
-            .strip_prefix("sha256-")
-            .is_some_and(|digest| is_lower_hex(digest, 64))
-            || !is_lower_hex(&self.source_commit, 40)
-        {
-            bail!("release health binding is malformed");
-        }
-        Ok(())
+impl PublishedRuntimePresence {
+    pub(crate) fn canonical_sha256(&self) -> &str {
+        &self.canonical_sha256
     }
 }
 
-impl IdunnActivationBinding {
-    fn validate(&self) -> Result<()> {
-        require_sha256(&self.activation_witness_sha256, "activation witness digest")
-    }
+pub(crate) struct RuntimePresencePublisher {
+    endpoint: SocketAddr,
+    bound_endpoint: String,
+    expected: IdunnExpectedIncarnationRecord,
+    activation: IdunnRuntimeActivationRecord,
+    provider_signer: ServiceIdentitySigner<GameCultProviderHealthIdentity>,
+    activation_signer: IdunnRuntimeActivationSigner,
+    capabilities: Vec<GameCultRuntimeCapability>,
+    write_lease_path: PathBuf,
+    dependency_bindings: RuntimeDependencyBindings,
+    publisher_sequence: u64,
+    active_write_lease_sha256: Option<String>,
 }
 
-impl GhostlightTrafficAdmissionGate {
-    pub(crate) fn from_environment(
-        release: &IdunnReleaseBinding,
-        activation: &IdunnActivationBinding,
-        published: &PublishedHealthStatementIdentity,
+impl RuntimePresencePublisher {
+    pub(crate) fn from_environment(observed_bound_endpoint: SocketAddr) -> Result<Option<Self>> {
+        let Some(bundle) = std::env::var_os(IDUNN_RUNTIME_BUNDLE_ENVIRONMENT) else {
+            #[cfg(target_os = "linux")]
+            bail!("{IDUNN_RUNTIME_BUNDLE_ENVIRONMENT} is mandatory on Linux");
+            #[cfg(not(target_os = "linux"))]
+            return Ok(None);
+        };
+        let bundle = PathBuf::from(bundle);
+        require_runtime_bundle(&bundle)?;
+        let expected = read_expected(&bundle.join("expected.cc"))?;
+        let activation = read_activation(&bundle.join("activation.cc"), &expected.target)?;
+
+        let odin_endpoint: SocketAddr = std::env::var("GHOSTLIGHT_ODIN_RUDP")
+            .context("GHOSTLIGHT_ODIN_RUDP is required for runtime presence")?
+            .parse()
+            .context("GHOSTLIGHT_ODIN_RUDP is not a socket address")?;
+        let connector_endpoint: SocketAddr = std::env::var("GHOSTLIGHT_CONTROLLER_CONNECTOR")
+            .context("GHOSTLIGHT_CONTROLLER_CONNECTOR is required for managed runtime")?
+            .parse()
+            .context("GHOSTLIGHT_CONTROLLER_CONNECTOR is not a socket address")?;
+        let write_lease_path = PathBuf::from(
+            std::env::var_os(IDUNN_PROCESS_WRITE_LEASE_ENVIRONMENT)
+                .with_context(|| format!("{IDUNN_PROCESS_WRITE_LEASE_ENVIRONMENT} is required"))?,
+        );
+        require_process_write_lease_parent(&write_lease_path)?;
+        let (activation_credential, provider_credential) = inherited_authority_files()?;
+        let provider_signer = open_service_identity_credential_reader::<
+            GameCultProviderHealthIdentity,
+        >(provider_credential)?;
+        let activation_signer =
+            IdunnRuntimeActivationSigner::from_credential_reader(activation_credential)?;
+        Ok(Some(Self::new(
+            odin_endpoint,
+            connector_endpoint,
+            observed_bound_endpoint,
+            expected,
+            activation,
+            provider_signer,
+            activation_signer,
+            write_lease_path,
+        )?))
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn new(
+        odin_endpoint: SocketAddr,
+        connector_endpoint: SocketAddr,
+        observed_bound_endpoint: SocketAddr,
+        expected: IdunnExpectedIncarnationRecord,
+        activation: IdunnRuntimeActivationRecord,
+        provider_signer: ServiceIdentitySigner<GameCultProviderHealthIdentity>,
+        activation_signer: IdunnRuntimeActivationSigner,
+        write_lease_path: PathBuf,
     ) -> Result<Self> {
-        #[cfg(not(target_os = "linux"))]
-        bail!("signed Ghostlight health and traffic admission require Linux");
+        expected.validate()?;
+        activation.validate()?;
+        ensure!(
+            expected.target == TARGET,
+            "Expected belongs to another target"
+        );
+        ensure!(
+            expected.health_contract == GHOSTLIGHT_RUNTIME_PRESENCE_HEALTH_CONTRACT,
+            "Expected names another Ghostlight health contract"
+        );
+        ensure!(
+            expected.state_schema_generation.as_deref() == Some(STATE_SCHEMA_GENERATION)
+                && expected.state_contract_sha256.as_deref() == Some(STATE_CONTRACT_SHA256)
+                && expected.write_lease_required,
+            "Expected does not name Ghostlight's writable world-v2 state"
+        );
+        ensure!(
+            activation.expected_projection_sha256 == expected.canonical_sha256()?
+                && activation.runtime_id == expected.runtime_id,
+            "activation does not bind the exact Expected incarnation"
+        );
+        ensure!(
+            activation.activation_signer_identity_id == activation_signer.identity_id(),
+            "activation credential does not belong to this launch"
+        );
+        ensure!(
+            expected.expected_signer_identity_id == provider_signer.entry().identity_id,
+            "provider credential is not Idunn's Expected signer"
+        );
+        ensure!(
+            write_lease_path.is_absolute(),
+            "write-lease path is not absolute"
+        );
 
-        let raw_path = std::env::var("GHOSTLIGHT_TRAFFIC_ADMISSION")
-            .context("GHOSTLIGHT_TRAFFIC_ADMISSION is required for signed health")?;
-        if raw_path != TRAFFIC_ADMISSION_PATH {
-            bail!("Ghostlight traffic admission path is not the fixed root policy path");
+        let route = expected
+            .route
+            .as_ref()
+            .context("Ghostlight Expected has no candidate route")?;
+        ensure!(
+            route.transport == "http",
+            "Ghostlight candidate route is not HTTP"
+        );
+        let expected_bind: SocketAddr = route
+            .candidate_endpoint
+            .strip_prefix("http://")
+            .context("Ghostlight candidate endpoint is not plain HTTP")?
+            .parse()
+            .context("Ghostlight candidate endpoint is not a socket address")?;
+        ensure!(
+            observed_bound_endpoint == expected_bind
+                && route.candidate_endpoint == format!("http://{observed_bound_endpoint}"),
+            "observed candidate bind differs from canonical Expected"
+        );
+
+        let capabilities = actual_capabilities();
+        for requirement in &expected.capabilities {
+            ensure!(
+                capabilities.iter().any(|actual| {
+                    actual.capability == requirement.capability
+                        && actual.schema == requirement.schema
+                        && actual.compatibility == requirement.compatibility
+                        && actual.capacity >= requirement.minimum_capacity
+                }),
+                "Expected requires a capability this Ghostlight binary does not provide"
+            );
         }
+        let dependency_bindings =
+            runtime_dependency_bindings(&expected, odin_endpoint, connector_endpoint)?;
+
         Ok(Self {
-            path: PathBuf::from(raw_path),
-            expected: traffic_admission_expectation(release, activation, published)?,
-            ghostlight_gid: local_group_id("ghostlight")?,
+            endpoint: odin_endpoint,
+            bound_endpoint: format!("http://{observed_bound_endpoint}"),
+            expected,
+            activation,
+            provider_signer,
+            activation_signer,
+            capabilities,
+            write_lease_path,
+            dependency_bindings,
+            publisher_sequence: 0,
+            active_write_lease_sha256: None,
         })
     }
 
-    pub(crate) async fn wait_until_granted(&self, timeout: Duration) -> Result<()> {
-        let started = tokio::time::Instant::now();
-        let mut last_invalid_observation = None;
+    pub(crate) fn runtime_id(&self) -> &str {
+        &self.expected.runtime_id
+    }
+
+    pub(crate) fn dependency_bindings(&self) -> &RuntimeDependencyBindings {
+        &self.dependency_bindings
+    }
+
+    pub(crate) fn publish_warming(&mut self) -> Result<PublishedRuntimePresence> {
+        ensure!(
+            self.active_write_lease_sha256.is_none(),
+            "an active runtime cannot return to Warming"
+        );
+        self.publish("warming", "process-write-lease-pending", None)
+    }
+
+    pub(crate) async fn wait_for_write_lease(
+        &self,
+        warming: &PublishedRuntimePresence,
+        timeout: Duration,
+    ) -> Result<ProcessWriteLeaseGuard> {
+        let deadline = Instant::now() + timeout;
         loop {
-            match self.is_current() {
-                Ok(true) => return Ok(()),
-                Ok(false) => last_invalid_observation = None,
-                Err(error) => last_invalid_observation = Some(format!("{error:#}")),
+            if self.write_lease_path.exists() && sibling_lock_path(&self.write_lease_path).exists()
+            {
+                return ProcessWriteLeaseGuard::acquire(
+                    self.write_lease_path.clone(),
+                    self.expected.clone(),
+                    self.activation.clone(),
+                    warming.canonical_sha256.clone(),
+                );
             }
-            if started.elapsed() >= timeout {
-                let detail = last_invalid_observation
-                    .as_deref()
-                    .unwrap_or("the fixed admission record remained absent");
+            if Instant::now() >= deadline {
                 bail!(
-                    "timed out waiting for exact sealed root traffic admission {}: {}",
-                    self.path.display(),
-                    detail,
+                    "timed out waiting for process write lease {}",
+                    self.write_lease_path.display()
                 );
             }
             tokio::time::sleep(Duration::from_millis(100)).await;
         }
     }
 
-    pub(crate) fn require_current(&self) -> Result<()> {
-        if !self.is_current()? {
-            bail!(
-                "root traffic admission disappeared from {}",
-                self.path.display()
-            );
+    pub(crate) fn publish_active(
+        &mut self,
+        lease: &ProcessWriteLeaseGuard,
+    ) -> Result<PublishedRuntimePresence> {
+        lease.require_current()?;
+        let lease_sha256 = lease.canonical_sha256().to_owned();
+        match &self.active_write_lease_sha256 {
+            Some(current) => ensure!(
+                current == &lease_sha256,
+                "runtime attempted to replace its active write lease"
+            ),
+            None => self.active_write_lease_sha256 = Some(lease_sha256.clone()),
         }
-        Ok(())
+        self.publish("active", "world-owner-serving", Some(lease_sha256))
     }
 
-    fn is_current(&self) -> Result<bool> {
-        match std::fs::symlink_metadata(&self.path) {
-            Ok(_) => {}
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
-            Err(error) => {
-                return Err(error).with_context(|| {
-                    format!(
-                        "inspecting Ghostlight traffic admission {}",
-                        self.path.display()
-                    )
-                });
-            }
-        }
-        require_sealed_traffic_admission_files(&self.path, self.ghostlight_gid)?;
-        SingleFileMessagePackBackingStore::new(&self.path).with_read_only_shared_snapshot(
-            |entries| {
-                require_sealed_traffic_admission_files(&self.path, self.ghostlight_gid)?;
-                let admitted = decode_traffic_admission_entries(&entries)?;
-                require_exact_traffic_admission(&admitted, &self.expected)
-            },
-        )?;
-        Ok(true)
-    }
-}
-
-pub(crate) fn active_activation_binding(
-    release: &IdunnReleaseBinding,
-) -> Result<IdunnActivationBinding> {
-    #[cfg(not(target_os = "linux"))]
-    bail!("signed Ghostlight health activation requires Linux");
-
-    release.validate()?;
-    let activation_path = Path::new(GHOSTLIGHT_ACTIVATION_PATH);
-    let unit_path = Path::new(GHOSTLIGHT_UNIT_PATH);
-    let runtime_environment_path = Path::new(GHOSTLIGHT_RUNTIME_ENVIRONMENT_PATH);
-    let activation_bytes = read_root_controlled_file(activation_path, "Ghostlight activation")?;
-    let unit_bytes = read_root_controlled_file(unit_path, "Ghostlight systemd unit")?;
-    let runtime_environment_bytes =
-        read_root_controlled_file(runtime_environment_path, "Ghostlight runtime environment")?;
-    let witness = parse_activation_witness(&activation_bytes)?;
-    let activation_id = std::env::var("GHOSTLIGHT_ACTIVATION_ID")
-        .context("GHOSTLIGHT_ACTIVATION_ID is required for signed health")?;
-    require_safe_token(&activation_id, "activation id")?;
-    let expected = ActivationWitness {
-        activation_id,
-        daemon_id: TRAFFIC_ADMISSION_KEY.into(),
-        release_id: release.release_id.clone(),
-        release_witness_sha256: release.release_witness_sha256.clone(),
-        source_commit: release.source_commit.clone(),
-        deployment_id: release.deployment_id.clone(),
-        unit_path: GHOSTLIGHT_UNIT_PATH.into(),
-        unit_sha256: format!("sha256-{}", hex(&Sha256::digest(&unit_bytes))),
-        runtime_environment_path: GHOSTLIGHT_RUNTIME_ENVIRONMENT_PATH.into(),
-        runtime_environment_sha256: format!(
-            "sha256-{}",
-            hex(&Sha256::digest(&runtime_environment_bytes))
-        ),
-    };
-    validate_activation_witness(&witness)?;
-    if witness != expected {
-        bail!("activation witness does not bind the exact Ghostlight launch inputs");
-    }
-    let binding = IdunnActivationBinding {
-        activation_witness_sha256: format!("sha256-{}", hex(&Sha256::digest(&activation_bytes))),
-    };
-    binding.validate()?;
-    Ok(binding)
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-struct IdunnSignedDaemonHealthRecord {
-    schema_version: String,
-    daemon_id: String,
-    health_contract: String,
-    source_runtime_id: String,
-    state: String,
-    detail: String,
-    signer_identity_id: String,
-    publisher_incarnation_id: String,
-    publisher_sequence: u64,
-    observed_at_unix_millis: u64,
-    release_id: Option<String>,
-    release_witness_sha256: Option<String>,
-    source_commit: Option<String>,
-    deployment_id: Option<String>,
-    signature_algorithm: String,
-    #[serde(with = "serde_bytes")]
-    signature: Vec<u8>,
-    private_state_exposed: bool,
-    activation_witness_sha256: Option<String>,
-}
-
-impl IdunnSignedDaemonHealthRecord {
-    const SCHEMA: &'static str = "idunn.signed_daemon_health.v1";
-
-    fn validate(&self) -> Result<()> {
-        for (value, label) in [
-            (&self.daemon_id, "daemon id"),
-            (&self.health_contract, "health contract"),
-            (&self.source_runtime_id, "source runtime id"),
-            (&self.signer_identity_id, "signer identity id"),
-            (&self.publisher_incarnation_id, "publisher incarnation id"),
-        ] {
-            require_id(value, label)?;
-        }
-        if self.schema_version != Self::SCHEMA
-            || !matches!(
-                self.state.as_str(),
-                "active" | "warming" | "degraded" | "failed"
-            )
-            || self.detail.len() > 512
-            || self.detail.chars().any(char::is_control)
-            || self.publisher_sequence == 0
-            || self.observed_at_unix_millis == 0
-            || self.signature_algorithm != "ed25519"
-            || self.signature.len() != 64
-            || self.private_state_exposed
-        {
-            bail!("signed daemon health shape is invalid");
-        }
-        IdunnReleaseBinding {
-            release_id: self
-                .release_id
-                .clone()
-                .ok_or_else(|| anyhow!("signed health release id is absent"))?,
-            release_witness_sha256: self
-                .release_witness_sha256
-                .clone()
-                .ok_or_else(|| anyhow!("signed health release witness is absent"))?,
-            source_commit: self
-                .source_commit
-                .clone()
-                .ok_or_else(|| anyhow!("signed health source commit is absent"))?,
-            deployment_id: self
-                .deployment_id
-                .clone()
-                .ok_or_else(|| anyhow!("signed health deployment id is absent"))?,
-        }
-        .validate()?;
-        IdunnActivationBinding {
-            activation_witness_sha256: self
-                .activation_witness_sha256
-                .clone()
-                .ok_or_else(|| anyhow!("signed health activation witness is absent"))?,
-        }
-        .validate()?;
-        Ok(())
-    }
-}
-
-pub(crate) struct IdunnHealthPublisher {
-    endpoint: SocketAddr,
-    daemon_id: String,
-    source_runtime_id: String,
-    health_contract: String,
-    signer: ServiceIdentitySigner<GameCultProviderHealthIdentity>,
-    release: IdunnReleaseBinding,
-    activation: IdunnActivationBinding,
-    publisher_incarnation_id: String,
-    publisher_sequence: u64,
-}
-
-impl IdunnHealthPublisher {
-    pub(crate) fn open(
-        endpoint: SocketAddr,
-        daemon_id: impl Into<String>,
-        source_runtime_id: impl Into<String>,
-        health_contract: impl Into<String>,
-        identity_store: impl AsRef<Path>,
-        release: IdunnReleaseBinding,
-        activation: IdunnActivationBinding,
-    ) -> Result<Self> {
-        let daemon_id = daemon_id.into();
-        let source_runtime_id = source_runtime_id.into();
-        let health_contract = health_contract.into();
-        require_id(&daemon_id, "Idunn daemon id")?;
-        require_id(&source_runtime_id, "health source runtime id")?;
-        require_id(&health_contract, "Idunn health contract")?;
-        release.validate()?;
-        activation.validate()?;
-        Ok(Self {
-            endpoint,
-            daemon_id,
-            source_runtime_id,
-            health_contract,
-            signer: open_service_identity_at::<GameCultProviderHealthIdentity>(
-                identity_store.as_ref(),
-            )?,
-            release,
-            activation,
-            publisher_incarnation_id: uuid::Uuid::new_v4().to_string(),
-            publisher_sequence: 0,
-        })
+    pub(crate) fn republish_active(&mut self) -> Result<PublishedRuntimePresence> {
+        let lease_sha256 = self
+            .active_write_lease_sha256
+            .clone()
+            .context("runtime has not entered Active")?;
+        self.publish("active", "world-owner-serving", Some(lease_sha256))
     }
 
-    pub(crate) fn publish(
+    fn publish(
         &mut self,
         state: &str,
         detail: &str,
-    ) -> Result<PublishedHealthStatementIdentity> {
-        if !matches!(state, "active" | "warming" | "degraded" | "failed") {
-            bail!("unsupported Idunn daemon health state");
-        }
-        if detail.len() > 512 || detail.chars().any(char::is_control) {
-            bail!("Idunn daemon health detail is oversized or contains control characters");
-        }
+        write_lease_sha256: Option<String>,
+    ) -> Result<PublishedRuntimePresence> {
+        let record = self.signed_record(state, detail, write_lease_sha256)?;
+        let canonical_sha256 = publish_runtime_presence(self.endpoint, &record)?;
+        Ok(PublishedRuntimePresence { canonical_sha256 })
+    }
+
+    fn signed_record(
+        &mut self,
+        state: &str,
+        detail: &str,
+        write_lease_sha256: Option<String>,
+    ) -> Result<GameCultRuntimePresenceHealthRecord> {
         self.publisher_sequence = self
             .publisher_sequence
             .checked_add(1)
-            .ok_or_else(|| anyhow!("Idunn health publisher sequence overflow"))?;
-        let mut record = IdunnSignedDaemonHealthRecord {
-            schema_version: IdunnSignedDaemonHealthRecord::SCHEMA.into(),
-            daemon_id: self.daemon_id.clone(),
-            health_contract: self.health_contract.clone(),
-            source_runtime_id: self.source_runtime_id.clone(),
+            .ok_or_else(|| anyhow!("runtime presence sequence overflow"))?;
+        let observed_at_unix_millis = u64::try_from(chrono::Utc::now().timestamp_millis())?;
+        let mut record = GameCultRuntimePresenceHealthRecord {
+            schema_version: GAMECULT_RUNTIME_PRESENCE_HEALTH_SCHEMA.into(),
+            target: self.expected.target.clone(),
+            expected_projection_sha256: self.expected.canonical_sha256()?,
+            plan_id: self.expected.plan_id.clone(),
+            incarnation_id: self.expected.incarnation_id.clone(),
+            sealed_release_id: self.expected.sealed_release_id.clone(),
+            activation_witness_sha256: self.activation.canonical_sha256()?,
+            state_schema_generation: self.expected.state_schema_generation.clone(),
+            state_contract_sha256: self.expected.state_contract_sha256.clone(),
+            runtime_id: self.expected.runtime_id.clone(),
+            runtime_instance_id: self.activation.runtime_instance_id.clone(),
+            bound_endpoint: Some(self.bound_endpoint.clone()),
+            capabilities: self.capabilities.clone(),
+            health_contract: GHOSTLIGHT_RUNTIME_PRESENCE_HEALTH_CONTRACT.into(),
             state: state.into(),
             detail: detail.into(),
-            signer_identity_id: self.signer.entry().identity_id.clone(),
-            publisher_incarnation_id: self.publisher_incarnation_id.clone(),
+            write_lease_sha256,
+            signer_identity_id: self.provider_signer.entry().identity_id.clone(),
             publisher_sequence: self.publisher_sequence,
-            observed_at_unix_millis: chrono::Utc::now().timestamp_millis().try_into()?,
-            release_id: Some(self.release.release_id.clone()),
-            release_witness_sha256: Some(self.release.release_witness_sha256.clone()),
-            source_commit: Some(self.release.source_commit.clone()),
-            deployment_id: Some(self.release.deployment_id.clone()),
+            observed_at_unix_millis,
             signature_algorithm: "ed25519".into(),
             signature: Vec::new(),
-            private_state_exposed: false,
-            activation_witness_sha256: Some(self.activation.activation_witness_sha256.clone()),
+            activation_signer_identity_id: self.activation_signer.identity_id(),
+            activation_signature: Vec::new(),
         };
-        let unsigned = canonical_unsigned_record(&record)?;
-        let proof = self
-            .signer
-            .sign::<IdunnSignedDaemonHealthPurpose>(&unsigned);
-        if proof.identity_id != record.signer_identity_id {
-            bail!("provider-health signer identity disagrees with record");
-        }
-        record.signature = proof.signature;
+        let payload = record.canonical_proof_payload()?;
+        let provider_proof = self
+            .provider_signer
+            .sign::<GameCultRuntimePresenceHealthPurpose>(&payload);
+        ensure!(
+            provider_proof.identity_id == record.signer_identity_id,
+            "provider signer identity changed while publishing"
+        );
+        record.signature = provider_proof.signature;
+        record.activation_signature = self.activation_signer.sign_presence_proof(&record)?;
         record.validate()?;
-        let signed_health_sha256 =
-            publish_signed_health(self.endpoint, &self.source_runtime_id, &record)?;
-        Ok(PublishedHealthStatementIdentity {
-            daemon_id: record.daemon_id,
-            signed_health_sha256,
-            publisher_incarnation_id: record.publisher_incarnation_id,
-            publisher_sequence: record.publisher_sequence,
-            signer_identity_id: record.signer_identity_id,
-        })
-    }
-
-    pub(crate) fn public_key(&self) -> &[u8] {
-        &self.signer.entry().public_key
+        Ok(record)
     }
 }
 
-fn publish_signed_health(
-    endpoint: SocketAddr,
-    source_runtime_id: &str,
-    signed: &IdunnSignedDaemonHealthRecord,
-) -> Result<String> {
-    signed.validate()?;
-    let payload = rmp_serde::to_vec(signed).context("encoding canonical signed Idunn health")?;
-    let decoded: IdunnSignedDaemonHealthRecord = rmp_serde::from_slice(&payload)?;
-    if decoded != *signed || rmp_serde::to_vec(&decoded)? != payload {
-        bail!("signed Idunn health encoding is noncanonical");
+fn runtime_dependency_bindings(
+    expected: &IdunnExpectedIncarnationRecord,
+    configured_odin: SocketAddr,
+    configured_connector: SocketAddr,
+) -> Result<RuntimeDependencyBindings> {
+    ensure!(
+        expected.dependencies.len() == 3,
+        "Ghostlight Expected does not carry its exact three dependencies"
+    );
+    let odin = required_managed_dependency(expected, "shared-infrastructure", ODIN_CAPABILITY)?;
+    let connector = required_managed_dependency(expected, "private", CONNECTOR_CAPABILITY)?;
+    let heimdall = required_managed_dependency(expected, "required", HEIMDALL_CAPABILITY)?;
+
+    let odin_endpoint = parse_dependency_socket_endpoint(
+        odin.provider_endpoint
+            .as_deref()
+            .context("Expected Odin dependency has no endpoint")?,
+        &["rudp://", "udp://"],
+        "Odin dependency",
+    )?;
+    ensure!(
+        odin_endpoint == configured_odin,
+        "GHOSTLIGHT_ODIN_RUDP differs from Expected Odin"
+    );
+    let connector_endpoint = parse_dependency_socket_endpoint(
+        connector
+            .provider_endpoint
+            .as_deref()
+            .context("Expected Connector dependency has no endpoint")?,
+        &["tcp://"],
+        "Connector dependency",
+    )?;
+    ensure!(
+        connector_endpoint == configured_connector,
+        "GHOSTLIGHT_CONTROLLER_CONNECTOR differs from Expected Connector"
+    );
+    let heimdall_endpoint = parse_dependency_socket_endpoint(
+        heimdall
+            .provider_endpoint
+            .as_deref()
+            .context("Expected Heimdall dependency has no endpoint")?,
+        &["rudp://", "udp://"],
+        "Heimdall dependency",
+    )?;
+
+    Ok(RuntimeDependencyBindings {
+        odin_rudp: odin_endpoint,
+        connector: connector_endpoint,
+        heimdall: HeimdallDependencyBinding {
+            provider_id: heimdall
+                .provider_id
+                .clone()
+                .context("Expected Heimdall dependency has no provider")?,
+            endpoint: heimdall_endpoint,
+        },
+    })
+}
+
+fn required_managed_dependency<'a>(
+    expected: &'a IdunnExpectedIncarnationRecord,
+    kind: &str,
+    identity: (&str, &str, &str),
+) -> Result<&'a IdunnExpectedDependency> {
+    let dependency = expected
+        .dependencies
+        .iter()
+        .find(|dependency| {
+            dependency.capability == identity.0
+                && dependency.schema == identity.1
+                && dependency.compatibility == identity.2
+        })
+        .with_context(|| format!("Expected omits dependency {}", identity.0))?;
+    ensure!(
+        dependency.kind == kind
+            && dependency.startup == "before-promotion"
+            && dependency.minimum_capacity > 0
+            && dependency.provider_id.is_some()
+            && dependency.provider_authority.as_deref() == Some("managed-incarnation")
+            && dependency.provider_expected_projection_sha256.is_some(),
+        "Expected dependency {} is unresolved or authority-incoherent",
+        identity.0
+    );
+    Ok(dependency)
+}
+
+fn parse_dependency_socket_endpoint(
+    endpoint: &str,
+    allowed_schemes: &[&str],
+    label: &str,
+) -> Result<SocketAddr> {
+    let matched_scheme = allowed_schemes
+        .iter()
+        .copied()
+        .find(|scheme| endpoint.starts_with(scheme));
+    let socket_text = match matched_scheme {
+        Some(scheme) => &endpoint[scheme.len()..],
+        None if !endpoint.contains("://") => endpoint,
+        None => bail!("{label} uses an unsupported endpoint scheme"),
+    };
+    let socket: SocketAddr = socket_text
+        .parse()
+        .with_context(|| format!("{label} endpoint is not a socket address"))?;
+    let canonical = matched_scheme
+        .map(|scheme| format!("{scheme}{socket}"))
+        .unwrap_or_else(|| socket.to_string());
+    ensure!(endpoint == canonical, "{label} endpoint is not canonical");
+    Ok(socket)
+}
+
+fn require_runtime_bundle(bundle: &Path) -> Result<()> {
+    ensure!(
+        bundle.is_absolute(),
+        "Idunn runtime bundle path is not absolute"
+    );
+    #[cfg(target_os = "linux")]
+    {
+        let metadata = fs::symlink_metadata(bundle)
+            .with_context(|| format!("inspecting Idunn runtime bundle {}", bundle.display()))?;
+        ensure!(
+            metadata.is_dir()
+                && !metadata.file_type().is_symlink()
+                && metadata.uid() == 0
+                && metadata.gid() == 0
+                && metadata.permissions().mode() & 0o022 == 0,
+            "Idunn runtime bundle is not a root-owned service-read-only directory"
+        );
+        require_root_controlled_directory_chain(
+            bundle
+                .parent()
+                .context("Idunn runtime bundle has no parent")?,
+            "Idunn runtime bundle parent",
+        )?;
+        for path in [
+            bundle.join("expected.cc"),
+            sibling_lock_path(&bundle.join("expected.cc")),
+            bundle.join("activation.cc"),
+            sibling_lock_path(&bundle.join("activation.cc")),
+        ] {
+            require_root_read_only_file(&path, "Idunn runtime bundle document")?;
+        }
     }
-    let signed_health_sha256 = format!("sha256-{}", hex(&Sha256::digest(&payload)));
+    Ok(())
+}
+
+fn require_process_write_lease_parent(path: &Path) -> Result<()> {
+    ensure!(path.is_absolute(), "write-lease path is not absolute");
+    #[cfg(target_os = "linux")]
+    {
+        let parent = path
+            .parent()
+            .context("process write-lease path has no parent")?;
+        let metadata = fs::symlink_metadata(parent).with_context(|| {
+            format!("inspecting process write-lease parent {}", parent.display())
+        })?;
+        ensure!(
+            metadata.is_dir()
+                && !metadata.file_type().is_symlink()
+                && metadata.uid() == 0
+                && metadata.permissions().mode() & 0o022 == 0,
+            "process write-lease parent is not root-owned and service-nonwritable"
+        );
+        require_root_controlled_directory_chain(
+            parent
+                .parent()
+                .context("process write-lease parent has no parent")?,
+            "process write-lease ancestor",
+        )?;
+    }
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn require_process_write_lease_custody(path: &Path) -> Result<()> {
+    require_process_write_lease_parent(path)?;
+    let parent = path
+        .parent()
+        .context("process write-lease path has no parent")?;
+    let parent_metadata = fs::symlink_metadata(parent)?;
+    for authority_file in [path.to_owned(), sibling_lock_path(path)] {
+        let metadata = fs::symlink_metadata(&authority_file).with_context(|| {
+            format!(
+                "inspecting process write-lease authority {}",
+                authority_file.display()
+            )
+        })?;
+        ensure!(
+            metadata.is_file()
+                && !metadata.file_type().is_symlink()
+                && metadata.uid() == 0
+                && metadata.gid() == parent_metadata.gid()
+                && metadata.permissions().mode() & 0o022 == 0
+                && metadata.nlink() == 1,
+            "process write-lease authority {} is not one root-owned service-nonwritable file",
+            authority_file.display()
+        );
+    }
+    Ok(())
+}
+
+#[cfg(not(target_os = "linux"))]
+fn require_process_write_lease_custody(_path: &Path) -> Result<()> {
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn require_root_read_only_file(path: &Path, label: &str) -> Result<()> {
+    let metadata = fs::symlink_metadata(path)
+        .with_context(|| format!("inspecting {label} {}", path.display()))?;
+    ensure!(
+        metadata.is_file()
+            && !metadata.file_type().is_symlink()
+            && metadata.uid() == 0
+            && metadata.gid() == 0
+            && metadata.permissions().mode() & 0o222 == 0
+            && metadata.nlink() == 1,
+        "{label} is not one root-owned read-only regular file"
+    );
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn require_root_controlled_directory_chain(path: &Path, label: &str) -> Result<()> {
+    for directory in path.ancestors() {
+        let metadata = fs::symlink_metadata(directory)
+            .with_context(|| format!("inspecting {label} {}", directory.display()))?;
+        ensure!(
+            metadata.is_dir()
+                && !metadata.file_type().is_symlink()
+                && metadata.uid() == 0
+                && metadata.permissions().mode() & 0o022 == 0,
+            "{label} contains a non-root-controlled directory"
+        );
+    }
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn inherited_authority_files() -> Result<(File, File)> {
+    let listen_pid = std::env::var("LISTEN_PID").context("systemd did not bind authority FDs")?;
+    let listen_fds = std::env::var("LISTEN_FDS").context("systemd did not bind authority FDs")?;
+    let listen_fd_names =
+        std::env::var("LISTEN_FDNAMES").context("systemd did not name authority FDs")?;
+    authority_fd_layout(
+        std::process::id(),
+        &listen_pid,
+        &listen_fds,
+        &listen_fd_names,
+    )?;
+    ensure_descriptor_is_open(SYSTEMD_LISTEN_FDS_START, "runtime activation signer")?;
+    ensure_descriptor_is_open(
+        SYSTEMD_LISTEN_FDS_START + 1,
+        "stable runtime-presence signer",
+    )?;
+    // SAFETY: the exact systemd LISTEN_* contract above assigns these two
+    // distinct, verified-open descriptors to this PID. This function is their
+    // first consumer and takes sole ownership of both.
+    let activation = unsafe { File::from_raw_fd(SYSTEMD_LISTEN_FDS_START) };
+    // SAFETY: same ownership proof; fd4 is distinct from fd3.
+    let provider = unsafe { File::from_raw_fd(SYSTEMD_LISTEN_FDS_START + 1) };
+    // OpenFile descriptors deliberately arrive without close-on-exec. Seal
+    // both before inspecting either so even a rejected first credential
+    // cannot leave the second signer inheritable on the error path.
+    mark_descriptor_close_on_exec(&activation, "runtime activation signer")?;
+    mark_descriptor_close_on_exec(&provider, "stable runtime-presence signer")?;
+    protect_inherited_authority_file(&activation, Some(32), "runtime activation signer")?;
+    protect_inherited_authority_file(&provider, None, "stable runtime-presence signer")?;
+    Ok((activation, provider))
+}
+
+#[cfg(not(target_os = "linux"))]
+fn inherited_authority_files() -> Result<(File, File)> {
+    bail!("Idunn authority FDs require the managed Linux runtime")
+}
+
+#[cfg(target_os = "linux")]
+fn authority_fd_layout(
+    process_id: u32,
+    listen_pid: &str,
+    listen_fds: &str,
+    listen_fd_names: &str,
+) -> Result<()> {
+    ensure!(
+        listen_pid.parse::<u32>()? == process_id && listen_pid == process_id.to_string(),
+        "systemd authority FDs belong to another process"
+    );
+    ensure!(
+        listen_fds.parse::<usize>()? == 2 && listen_fds == "2",
+        "systemd authority FD count is not exact"
+    );
+    let names = listen_fd_names.split(':').collect::<Vec<_>>();
+    ensure!(
+        names
+            == [
+                IDUNN_RUNTIME_ACTIVATION_CREDENTIAL_NAME,
+                RUNTIME_PRESENCE_IDENTITY_FD_NAME,
+            ],
+        "systemd authority FD names or order differ from the launch contract"
+    );
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn ensure_descriptor_is_open(fd: RawFd, label: &str) -> Result<()> {
+    // SAFETY: F_GETFD observes one integer descriptor and transfers no
+    // ownership. Failure leaves the descriptor untouched.
+    if unsafe { libc::fcntl(fd, libc::F_GETFD) } == -1 {
+        return Err(std::io::Error::last_os_error())
+            .with_context(|| format!("opening inherited {label} descriptor"));
+    }
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn protect_inherited_authority_file(
+    file: &File,
+    exact_size: Option<u64>,
+    label: &str,
+) -> Result<()> {
+    let metadata = file.metadata()?;
+    ensure!(
+        metadata.is_file()
+            && metadata.uid() == 0
+            && metadata.gid() == 0
+            && metadata.permissions().mode() & 0o777 == 0o400
+            && metadata.nlink() == 1
+            && exact_size.map_or(metadata.len() > 0, |size| metadata.len() == size),
+        "inherited {label} descriptor is not one exact root-owned 0400 file"
+    );
+    // SAFETY: F_GETFL observes integer flags on the live descriptor owned by
+    // `file` and transfers no ownership.
+    let status_flags = unsafe { libc::fcntl(file.as_raw_fd(), libc::F_GETFL) };
+    if status_flags == -1 {
+        return Err(std::io::Error::last_os_error())
+            .with_context(|| format!("reading inherited {label} access mode"));
+    }
+    ensure!(
+        status_flags & libc::O_ACCMODE == libc::O_RDONLY,
+        "inherited {label} descriptor is not read-only"
+    );
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn mark_descriptor_close_on_exec(file: &File, label: &str) -> Result<()> {
+    let descriptor_flags = unsafe { libc::fcntl(file.as_raw_fd(), libc::F_GETFD) };
+    if descriptor_flags == -1 {
+        return Err(std::io::Error::last_os_error())
+            .with_context(|| format!("reading inherited {label} descriptor flags"));
+    }
+    // SAFETY: F_SETFD mutates flags on the descriptor owned by `file`; it
+    // transfers no ownership and dereferences no pointer.
+    if unsafe {
+        libc::fcntl(
+            file.as_raw_fd(),
+            libc::F_SETFD,
+            descriptor_flags | libc::FD_CLOEXEC,
+        )
+    } == -1
+    {
+        return Err(std::io::Error::last_os_error())
+            .with_context(|| format!("protecting inherited {label} from child inheritance"));
+    }
+    Ok(())
+}
+
+pub(crate) struct ProcessWriteLeaseGuard {
+    path: PathBuf,
+    record: IdunnProcessWriteLeaseRecord,
+    canonical_sha256: String,
+    enforce_custody: bool,
+    release: Option<mpsc::Sender<()>>,
+    worker: Option<thread::JoinHandle<()>>,
+}
+
+impl ProcessWriteLeaseGuard {
+    fn acquire(
+        path: PathBuf,
+        expected: IdunnExpectedIncarnationRecord,
+        activation: IdunnRuntimeActivationRecord,
+        warming_presence_sha256: String,
+    ) -> Result<Self> {
+        Self::acquire_inner(path, expected, activation, warming_presence_sha256, true)
+    }
+
+    #[cfg(test)]
+    fn acquire_fixture(
+        path: PathBuf,
+        expected: IdunnExpectedIncarnationRecord,
+        activation: IdunnRuntimeActivationRecord,
+        warming_presence_sha256: String,
+    ) -> Result<Self> {
+        Self::acquire_inner(path, expected, activation, warming_presence_sha256, false)
+    }
+
+    fn acquire_inner(
+        path: PathBuf,
+        expected: IdunnExpectedIncarnationRecord,
+        activation: IdunnRuntimeActivationRecord,
+        warming_presence_sha256: String,
+        enforce_custody: bool,
+    ) -> Result<Self> {
+        if enforce_custody {
+            require_process_write_lease_custody(&path)?;
+        }
+        let worker_path = path.clone();
+        let (ready_tx, ready_rx) = mpsc::sync_channel(1);
+        let (release_tx, release_rx) = mpsc::channel();
+        let worker = thread::Builder::new()
+            .name("ghostlight-write-lease".into())
+            .spawn(move || {
+                let store = SingleFileMessagePackBackingStore::new(&worker_path);
+                let result = store.with_read_only_shared_snapshot(|entries| {
+                    if enforce_custody {
+                        require_process_write_lease_custody(&worker_path)?;
+                    }
+                    let record = decode_write_lease(
+                        &entries,
+                        &expected,
+                        &activation,
+                        &warming_presence_sha256,
+                    )?;
+                    ready_tx
+                        .send(Ok(record))
+                        .map_err(|_| anyhow!("write-lease receiver stopped"))?;
+                    let _ = release_rx.recv();
+                    Ok(())
+                });
+                if let Err(error) = result {
+                    let _ = ready_tx.send(Err(format!("{error:#}")));
+                }
+            })?;
+        match ready_rx
+            .recv()
+            .context("write-lease custodian stopped before admission")?
+        {
+            Ok(record) => Ok(Self {
+                canonical_sha256: record.canonical_sha256()?,
+                path,
+                record,
+                enforce_custody,
+                release: Some(release_tx),
+                worker: Some(worker),
+            }),
+            Err(error) => {
+                let _ = worker.join();
+                bail!("process write lease was not admitted: {error}")
+            }
+        }
+    }
+
+    pub(crate) fn canonical_sha256(&self) -> &str {
+        &self.canonical_sha256
+    }
+
+    pub(crate) fn require_current(&self) -> Result<()> {
+        if self.enforce_custody {
+            require_process_write_lease_custody(&self.path)?;
+        }
+        let current =
+            SingleFileMessagePackBackingStore::new(&self.path).pull_all_read_only_snapshot()?;
+        let [envelope] = current.as_slice() else {
+            bail!("process write-lease store is absent or ambiguous");
+        };
+        ensure!(
+            envelope.key == self.record.target
+                && envelope.r#type == IdunnProcessWriteLeaseRecord::TYPE
+                && envelope.schema_id.as_deref() == Some(IDUNN_PROCESS_WRITE_LEASE_SCHEMA)
+                && IdunnProcessWriteLeaseRecord::decode_canonical(&envelope.payload)?
+                    == self.record,
+            "process write lease changed after admission"
+        );
+        Ok(())
+    }
+}
+
+impl Drop for ProcessWriteLeaseGuard {
+    fn drop(&mut self) {
+        if let Some(release) = self.release.take() {
+            let _ = release.send(());
+        }
+        if let Some(worker) = self.worker.take() {
+            let _ = worker.join();
+        }
+    }
+}
+
+fn actual_capabilities() -> Vec<GameCultRuntimeCapability> {
+    vec![
+        GameCultRuntimeCapability {
+            capability: "gamecult.eve.surface-provider".into(),
+            schema: "gamecult.eve.surface.v1".into(),
+            compatibility: "v1".into(),
+            capacity: 1,
+        },
+        GameCultRuntimeCapability {
+            capability: "ghostlight.world-service".into(),
+            schema: "ghostlight.world_state.foundation.v0".into(),
+            compatibility: "foundation-v0".into(),
+            capacity: 1,
+        },
+    ]
+}
+
+fn read_expected(path: &Path) -> Result<IdunnExpectedIncarnationRecord> {
+    let envelope = read_single_envelope(path)?;
+    ensure!(
+        envelope.r#type == IdunnExpectedIncarnationRecord::TYPE
+            && envelope.schema_id.as_deref() == Some(IDUNN_EXPECTED_INCARNATION_SCHEMA),
+        "runtime bundle Expected envelope has the wrong schema"
+    );
+    let expected = IdunnExpectedIncarnationRecord::decode_canonical(&envelope.payload)?;
+    ensure!(
+        envelope.key == expected.target,
+        "Expected envelope key differs from target"
+    );
+    Ok(expected)
+}
+
+fn read_activation(path: &Path, target: &str) -> Result<IdunnRuntimeActivationRecord> {
+    let envelope = read_single_envelope(path)?;
+    ensure!(
+        envelope.key == target
+            && envelope.r#type == IdunnRuntimeActivationRecord::TYPE
+            && envelope.schema_id.as_deref() == Some(IDUNN_RUNTIME_ACTIVATION_SCHEMA),
+        "runtime bundle activation envelope has the wrong identity"
+    );
+    IdunnRuntimeActivationRecord::decode_canonical(&envelope.payload)
+}
+
+fn read_single_envelope(path: &Path) -> Result<CultCacheEnvelope> {
+    let entries = SingleFileMessagePackBackingStore::new(path)
+        .pull_all_read_only_snapshot()
+        .with_context(|| format!("reading immutable runtime document {}", path.display()))?;
+    let [envelope] = entries.as_slice() else {
+        bail!("runtime document {} is absent or ambiguous", path.display());
+    };
+    Ok(envelope.clone())
+}
+
+fn decode_write_lease(
+    entries: &[CultCacheEnvelope],
+    expected: &IdunnExpectedIncarnationRecord,
+    activation: &IdunnRuntimeActivationRecord,
+    warming_presence_sha256: &str,
+) -> Result<IdunnProcessWriteLeaseRecord> {
+    let [envelope] = entries else {
+        bail!("process write-lease store is absent or ambiguous");
+    };
+    ensure!(
+        envelope.key == expected.target
+            && envelope.r#type == IdunnProcessWriteLeaseRecord::TYPE
+            && envelope.schema_id.as_deref() == Some(IDUNN_PROCESS_WRITE_LEASE_SCHEMA),
+        "process write-lease envelope has the wrong identity"
+    );
+    let lease = IdunnProcessWriteLeaseRecord::decode_canonical(&envelope.payload)?;
+    ensure!(
+        lease.target == expected.target
+            && lease.expected_projection_sha256 == expected.canonical_sha256()?
+            && lease.plan_id == expected.plan_id
+            && lease.incarnation_id == expected.incarnation_id
+            && lease.sealed_release_id == expected.sealed_release_id
+            && lease.activation_witness_sha256 == activation.canonical_sha256()?
+            && lease.state_schema_generation
+                == expected
+                    .state_schema_generation
+                    .as_deref()
+                    .context("Expected has no state schema generation")?
+            && lease.state_contract_sha256
+                == expected
+                    .state_contract_sha256
+                    .as_deref()
+                    .context("Expected has no state contract")?
+            && lease.runtime_id == expected.runtime_id
+            && lease.runtime_instance_id == activation.runtime_instance_id
+            && lease.warming_presence_sha256 == warming_presence_sha256,
+        "process write lease does not bind this exact warming incarnation"
+    );
+    Ok(lease)
+}
+
+fn publish_runtime_presence(
+    endpoint: SocketAddr,
+    record: &GameCultRuntimePresenceHealthRecord,
+) -> Result<String> {
+    record.validate()?;
+    let payload = rmp_serde::to_vec(record).context("encoding canonical runtime presence")?;
+    let decoded: GameCultRuntimePresenceHealthRecord = rmp_serde::from_slice(&payload)?;
+    ensure!(
+        decoded == *record && rmp_serde::to_vec(&decoded)? == payload,
+        "runtime presence encoding is noncanonical"
+    );
+    let canonical_sha256 = record.canonical_sha256()?;
     let message = CultNetMessage::DocumentPutRaw {
         message_id: format!(
-            "ghostlight-signed-health:{}:{}:{}",
-            signed.daemon_id, signed.publisher_incarnation_id, signed.publisher_sequence
+            "runtime-presence:{}:{}:{}",
+            record.target, record.runtime_instance_id, record.publisher_sequence
         ),
         document: CultNetRawDocumentRecord {
-            schema_id: IdunnSignedDaemonHealthRecord::SCHEMA.into(),
-            record_key: signed.daemon_id.clone(),
+            schema_id: GAMECULT_RUNTIME_PRESENCE_HEALTH_SCHEMA.into(),
+            record_key: record.target.clone(),
             stored_at: chrono::DateTime::from_timestamp_millis(
-                signed.observed_at_unix_millis.try_into()?,
+                record.observed_at_unix_millis.try_into()?,
             )
-            .context("signed health observation time is invalid")?
+            .context("runtime presence timestamp is invalid")?
             .to_rfc3339(),
             payload_encoding: CultNetRawPayloadEncoding::Messagepack,
             payload,
-            source_runtime_id: Some(source_runtime_id.into()),
-            source_agent_id: Some(signed.signer_identity_id.clone()),
-            source_role: Some("daemon-health-publisher".into()),
-            tags: Some(vec![CULTNET_RUDP_PROTOCOL_ID.into()]),
+            source_runtime_id: Some(record.runtime_id.clone()),
+            source_agent_id: Some(record.signer_identity_id.clone()),
+            source_role: Some("runtime-presence-publisher".into()),
+            tags: Some(vec![
+                CULTNET_RUDP_PROTOCOL_ID.into(),
+                "runtime-presence".into(),
+            ]),
         },
     };
     let bind = if endpoint.is_ipv4() {
@@ -467,14 +990,14 @@ fn publish_signed_health(
         "[::]:0"
     };
     let socket = UdpSocket::bind(bind)
-        .with_context(|| format!("binding Ghostlight Idunn RUDP sender at {bind}"))?;
+        .with_context(|| format!("binding Ghostlight CultNet sender at {bind}"))?;
     socket.set_read_timeout(Some(Duration::from_millis(100)))?;
     let mut transport =
         CultNetRudpSocketTransportConnection::new(CultNetRudpSocketTransportOptions::client(
-            source_runtime_id,
+            &record.runtime_id,
             socket,
             endpoint,
-            IDUNN_HEALTH_RUDP_CONNECTION_ID,
+            ODIN_CULTMESH_CATALOG_CONNECTION_ID,
         ))?;
     transport.connect(Vec::new())?;
     let deadline = Instant::now() + Duration::from_millis(500);
@@ -483,618 +1006,389 @@ fn publish_signed_health(
         transport.poll_resends()?;
         if Instant::now() >= deadline {
             return Err(anyhow!(
-                "timed out connecting Ghostlight health publisher to {endpoint}"
+                "timed out connecting runtime-presence publisher to {endpoint}"
             ));
         }
     }
-    transport.send(
+    let receipt = transport.send_reliable(
         "schema",
         encode_cultnet_message_to_vec(&message, CultNetWireContract::CultNetSchemaV0)?,
     )?;
-    Ok(signed_health_sha256)
-}
-
-fn parse_activation_witness(bytes: &[u8]) -> Result<ActivationWitness> {
-    let text = std::str::from_utf8(bytes).context("Ghostlight activation witness is not UTF-8")?;
-    let body = text
-        .strip_suffix('\n')
-        .ok_or_else(|| anyhow!("Ghostlight activation witness has no canonical final newline"))?;
-    if body.contains('\r') {
-        bail!("Ghostlight activation witness has noncanonical line endings");
-    }
-    let lines = body.split('\n').collect::<Vec<_>>();
-    let [
-        schema,
-        activation_id,
-        daemon_id,
-        release_id,
-        release_witness_sha256,
-        source_commit,
-        deployment_id,
-        unit_path,
-        unit_sha256,
-        runtime_environment_path,
-        runtime_environment_sha256,
-    ] = lines.as_slice()
-    else {
-        bail!("Ghostlight activation witness has an unexpected field set");
-    };
-    if exact_witness_value(schema, "schema_version")? != GHOSTLIGHT_ACTIVATION_SCHEMA {
-        bail!("Ghostlight activation witness schema is not admitted");
-    }
-    let witness = ActivationWitness {
-        activation_id: exact_witness_value(activation_id, "activation_id")?.into(),
-        daemon_id: exact_witness_value(daemon_id, "daemon_id")?.into(),
-        release_id: exact_witness_value(release_id, "release_id")?.into(),
-        release_witness_sha256: exact_witness_value(
-            release_witness_sha256,
-            "release_witness_sha256",
-        )?
-        .into(),
-        source_commit: exact_witness_value(source_commit, "source_commit")?.into(),
-        deployment_id: exact_witness_value(deployment_id, "deployment_id")?.into(),
-        unit_path: exact_witness_value(unit_path, "unit_path")?.into(),
-        unit_sha256: exact_witness_value(unit_sha256, "unit_sha256")?.into(),
-        runtime_environment_path: exact_witness_value(
-            runtime_environment_path,
-            "runtime_environment_path",
-        )?
-        .into(),
-        runtime_environment_sha256: exact_witness_value(
-            runtime_environment_sha256,
-            "runtime_environment_sha256",
-        )?
-        .into(),
-    };
-    validate_activation_witness(&witness)?;
-    Ok(witness)
-}
-
-fn exact_witness_value<'a>(line: &'a str, field: &str) -> Result<&'a str> {
-    let prefix = format!("{field}=");
-    let value = line
-        .strip_prefix(&prefix)
-        .with_context(|| format!("Ghostlight activation witness field {field} is out of order"))?;
-    if value.is_empty() || value.trim() != value || value.chars().any(char::is_control) {
-        bail!("Ghostlight activation witness field {field} is malformed");
-    }
-    Ok(value)
-}
-
-fn validate_activation_witness(witness: &ActivationWitness) -> Result<()> {
-    require_safe_token(&witness.activation_id, "activation id")?;
-    require_safe_token(&witness.deployment_id, "deployment id")?;
-    require_id(&witness.release_id, "release id")?;
-    if witness.daemon_id != TRAFFIC_ADMISSION_KEY
-        || witness.unit_path != GHOSTLIGHT_UNIT_PATH
-        || witness.runtime_environment_path != GHOSTLIGHT_RUNTIME_ENVIRONMENT_PATH
-        || !is_lower_hex(&witness.source_commit, 40)
-    {
-        bail!("Ghostlight activation witness identity is malformed");
-    }
-    require_sha256(&witness.release_witness_sha256, "release witness digest")?;
-    require_sha256(&witness.unit_sha256, "systemd unit digest")?;
-    require_sha256(
-        &witness.runtime_environment_sha256,
-        "runtime environment digest",
-    )?;
-    Ok(())
-}
-
-fn traffic_admission_expectation(
-    release: &IdunnReleaseBinding,
-    activation: &IdunnActivationBinding,
-    published: &PublishedHealthStatementIdentity,
-) -> Result<TrafficAdmissionConsumerProjection> {
-    release.validate()?;
-    activation.validate()?;
-    if published.daemon_id != TRAFFIC_ADMISSION_KEY || published.publisher_sequence != 1 {
-        bail!("signed health identity for traffic admission is malformed");
-    }
-    require_sha256(
-        &published.signed_health_sha256,
-        "signed health statement digest",
-    )?;
-    require_id(
-        &published.signer_identity_id,
-        "traffic admission signer identity",
-    )?;
-    uuid::Uuid::parse_str(&published.publisher_incarnation_id)
-        .context("traffic admission publisher incarnation is malformed")?;
-    let process = current_runtime_process_instance()?;
-    let expected = TrafficAdmissionConsumerProjection {
-        schema_version: TRAFFIC_ADMISSION_SCHEMA.into(),
-        daemon_id: published.daemon_id.clone(),
-        release_id: release.release_id.clone(),
-        release_witness_sha256: release.release_witness_sha256.clone(),
-        source_commit: release.source_commit.clone(),
-        deployment_id: release.deployment_id.clone(),
-        activation_witness_sha256: activation.activation_witness_sha256.clone(),
-        signed_health_sha256: published.signed_health_sha256.clone(),
-        publisher_incarnation_id: published.publisher_incarnation_id.clone(),
-        publisher_sequence: published.publisher_sequence,
-        signer_identity_id: published.signer_identity_id.clone(),
-        runtime_process_id: process.process_id,
-        runtime_process_starttime_ticks: process.starttime_ticks,
-    };
-    validate_traffic_admission_projection(&expected)?;
-    Ok(expected)
-}
-
-fn decode_traffic_admission_entries(
-    entries: &[CultCacheEnvelope],
-) -> Result<TrafficAdmissionConsumerProjection> {
-    let [record] = entries else {
-        bail!("Ghostlight traffic admission store must contain exactly one record");
-    };
-    if record.key != TRAFFIC_ADMISSION_KEY
-        || record.r#type != TRAFFIC_ADMISSION_TYPE
-        || record.schema_id.as_deref() != Some(TRAFFIC_ADMISSION_SCHEMA)
-    {
-        bail!("Ghostlight traffic admission store has the wrong typed envelope");
-    }
-    let admitted: TrafficAdmissionConsumerProjection = rmp_serde::from_slice(&record.payload)
-        .context("decoding typed Ghostlight traffic admission record")?;
-    if rmp_serde::to_vec(&admitted)? != record.payload {
-        bail!("Ghostlight traffic admission payload is not canonical positional MessagePack");
-    }
-    validate_traffic_admission_projection(&admitted)?;
-    Ok(admitted)
-}
-
-fn validate_traffic_admission_projection(
-    admission: &TrafficAdmissionConsumerProjection,
-) -> Result<()> {
-    if admission.schema_version != TRAFFIC_ADMISSION_SCHEMA
-        || admission.daemon_id != TRAFFIC_ADMISSION_KEY
-        || admission.publisher_sequence == 0
-        || admission.runtime_process_id == 0
-        || admission.runtime_process_starttime_ticks == 0
-        || !is_lower_hex(&admission.source_commit, 40)
-    {
-        bail!("Ghostlight traffic admission typed identity is invalid");
-    }
-    require_id(&admission.release_id, "traffic admission release id")?;
-    require_safe_token(&admission.deployment_id, "traffic admission deployment id")?;
-    require_id(
-        &admission.signer_identity_id,
-        "traffic admission signer identity",
-    )?;
-    uuid::Uuid::parse_str(&admission.publisher_incarnation_id)
-        .context("traffic admission publisher incarnation is malformed")?;
-    require_sha256(
-        &admission.release_witness_sha256,
-        "traffic admission release witness digest",
-    )?;
-    require_sha256(
-        &admission.activation_witness_sha256,
-        "traffic admission activation witness digest",
-    )?;
-    require_sha256(
-        &admission.signed_health_sha256,
-        "traffic admission signed health digest",
-    )?;
-    Ok(())
-}
-
-fn current_runtime_process_instance() -> Result<RuntimeProcessInstanceBinding> {
-    let process_id = std::process::id();
-    if process_id == 0 {
-        bail!("current Ghostlight process id is invalid");
-    }
-    let stat = std::fs::read_to_string("/proc/self/stat")
-        .context("reading current Ghostlight /proc starttime")?;
-    Ok(RuntimeProcessInstanceBinding {
-        process_id,
-        starttime_ticks: parse_proc_stat_starttime(&stat, process_id)?,
-    })
-}
-
-fn parse_proc_stat_starttime(stat: &str, expected_process_id: u32) -> Result<u64> {
-    let stat = stat.strip_suffix('\n').unwrap_or(stat);
-    if stat.contains('\r') || stat.contains('\n') {
-        bail!("current Ghostlight /proc stat has noncanonical line endings");
-    }
-    let prefix = format!("{expected_process_id} (");
-    if !stat.starts_with(&prefix) {
-        bail!("current Ghostlight /proc stat has the wrong process id");
-    }
-    let command_end = stat
-        .rfind(") ")
-        .context("current Ghostlight /proc stat has no command terminator")?;
-    let fields = stat[command_end + 2..]
-        .split_ascii_whitespace()
-        .collect::<Vec<_>>();
-    if fields.len() <= 19 || fields[0].len() != 1 {
-        bail!("current Ghostlight /proc stat is missing starttime");
-    }
-    let value = fields[19];
-    let starttime_ticks = value
-        .parse::<u64>()
-        .context("current Ghostlight /proc starttime is malformed")?;
-    if starttime_ticks == 0 || starttime_ticks.to_string() != value {
-        bail!("current Ghostlight /proc starttime is noncanonical");
-    }
-    Ok(starttime_ticks)
-}
-
-fn require_exact_traffic_admission(
-    admitted: &TrafficAdmissionConsumerProjection,
-    expected: &TrafficAdmissionConsumerProjection,
-) -> Result<()> {
-    if admitted != expected {
-        bail!("root traffic admission does not match the exact startup statement");
-    }
-    Ok(())
-}
-
-fn require_sealed_traffic_admission_files(path: &Path, ghostlight_gid: u32) -> Result<()> {
-    #[cfg(not(target_os = "linux"))]
-    bail!("Ghostlight traffic admission sealing requires Linux");
-
-    #[cfg(target_os = "linux")]
-    {
-        if path != Path::new(TRAFFIC_ADMISSION_PATH) {
-            bail!("Ghostlight traffic admission is not at its fixed path");
-        }
-        let parent = path
-            .parent()
-            .context("Ghostlight traffic admission has no parent")?;
-        let expected_parent = Path::new("/etc/gamecult/ghostlight-dungeon/runtime");
-        if parent != expected_parent {
-            bail!("Ghostlight traffic admission parent is not canonical");
-        }
-        require_exact_root_group_mode(
-            parent,
-            "traffic admission directory",
-            ghostlight_gid,
-            0o750,
-            true,
-        )?;
-        require_exact_root_group_mode(
-            path,
-            "traffic admission record",
-            ghostlight_gid,
-            0o640,
-            false,
-        )?;
-        let lock_path = sibling_lock_path(path);
-        require_exact_root_group_mode(
-            &lock_path,
-            "traffic admission shared lock",
-            ghostlight_gid,
-            0o640,
-            false,
-        )?;
-        for ancestor in parent.ancestors().skip(1) {
-            let metadata = std::fs::symlink_metadata(ancestor).with_context(|| {
-                format!(
-                    "inspecting traffic admission ancestor {}",
-                    ancestor.display()
-                )
-            })?;
-            if metadata.file_type().is_symlink()
-                || metadata.uid() != 0
-                || metadata.mode() & 0o022 != 0
-            {
-                bail!("traffic admission ancestor is indirect or mutable outside root");
+    let deadline = Instant::now() + Duration::from_secs(2);
+    loop {
+        match transport.reliable_send_status(&receipt) {
+            CultNetRudpReliableSendStatus::Acknowledged => break,
+            CultNetRudpReliableSendStatus::Invalidated => {
+                bail!("runtime-presence acknowledgement was invalidated")
             }
+            CultNetRudpReliableSendStatus::Pending => {}
         }
-        Ok(())
-    }
-}
-
-#[cfg(target_os = "linux")]
-fn require_exact_root_group_mode(
-    path: &Path,
-    label: &str,
-    group_id: u32,
-    mode: u32,
-    directory: bool,
-) -> Result<()> {
-    let metadata = std::fs::symlink_metadata(path)
-        .with_context(|| format!("inspecting {label} {}", path.display()))?;
-    if metadata.file_type().is_symlink()
-        || metadata.uid() != 0
-        || metadata.gid() != group_id
-        || metadata.mode() & 0o7777 != mode
-        || (directory && !metadata.file_type().is_dir())
-        || (!directory && !metadata.file_type().is_file())
-    {
-        bail!("{label} does not have the exact root:ghostlight sealed shape");
-    }
-    Ok(())
-}
-
-fn local_group_id(name: &str) -> Result<u32> {
-    #[cfg(not(target_os = "linux"))]
-    bail!("local group identity verification requires Linux");
-
-    #[cfg(target_os = "linux")]
-    {
-        let bytes = read_root_controlled_file(Path::new("/etc/group"), "local group database")?;
-        let text = std::str::from_utf8(&bytes).context("local group database is not UTF-8")?;
-        let mut found = None;
-        for line in text.lines() {
-            let fields = line.split(':').collect::<Vec<_>>();
-            if fields.first().copied() != Some(name) {
-                continue;
-            }
-            let value = fields
-                .get(2)
-                .filter(|value| !value.is_empty())
-                .context("local Ghostlight group has no numeric id")?;
-            let group_id = value
-                .parse::<u32>()
-                .context("local Ghostlight group id is malformed")?;
-            if group_id.to_string() != *value || found.replace(group_id).is_some() {
-                bail!("local Ghostlight group identity is noncanonical or duplicate");
-            }
+        let _ = transport.receive_once()?;
+        transport.poll_resends()?;
+        if Instant::now() >= deadline {
+            bail!("timed out awaiting exact runtime-presence acknowledgement from {endpoint}");
         }
-        found.context("local Ghostlight group is absent")
     }
+    Ok(canonical_sha256)
 }
 
 fn sibling_lock_path(path: &Path) -> PathBuf {
-    let mut lock_name = path
+    let mut name = path
         .file_name()
         .map(|value| value.to_os_string())
-        .unwrap_or_else(|| "cultcache.cc".into());
-    lock_name.push(".lock");
-    path.with_file_name(lock_name)
-}
-
-fn read_root_controlled_file(path: &Path, label: &str) -> Result<Vec<u8>> {
-    #[cfg(not(target_os = "linux"))]
-    bail!("{label} root-control verification requires Linux");
-
-    #[cfg(target_os = "linux")]
-    {
-        if !path.is_absolute() {
-            bail!("{label} path is not absolute");
-        }
-        for candidate in path.ancestors() {
-            let metadata = std::fs::symlink_metadata(candidate)
-                .with_context(|| format!("inspecting {label} path {}", candidate.display()))?;
-            if metadata.file_type().is_symlink()
-                || metadata.uid() != 0
-                || metadata.mode() & 0o022 != 0
-            {
-                bail!("{label} path is indirect or mutable outside root");
-            }
-        }
-        let metadata = std::fs::symlink_metadata(path)
-            .with_context(|| format!("inspecting {label} {}", path.display()))?;
-        if !metadata.file_type().is_file() {
-            bail!("{label} is not a regular file");
-        }
-        std::fs::read(path).with_context(|| format!("reading {label} {}", path.display()))
-    }
-}
-
-fn canonical_unsigned_record(record: &IdunnSignedDaemonHealthRecord) -> Result<Vec<u8>> {
-    let mut unsigned = record.clone();
-    unsigned.signature.clear();
-    let mut signed_shape = unsigned.clone();
-    signed_shape.signature = vec![0; 64];
-    signed_shape.validate()?;
-    uuid::Uuid::parse_str(&unsigned.publisher_incarnation_id)
-        .context("publisher incarnation id must be UUID")?;
-    rmp_serde::to_vec(&unsigned).context("encoding canonical unsigned Idunn health")
-}
-
-fn require_id(value: &str, label: &str) -> Result<()> {
-    if value.trim().is_empty() || value.len() > 256 || value.chars().any(char::is_control) {
-        bail!("{label} is empty, oversized, or contains control characters");
-    }
-    Ok(())
-}
-
-fn require_safe_token(value: &str, label: &str) -> Result<()> {
-    if value.is_empty()
-        || value.len() > 256
-        || !value
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b':' | b'-'))
-    {
-        bail!("{label} is malformed");
-    }
-    Ok(())
-}
-
-fn require_sha256(value: &str, label: &str) -> Result<()> {
-    if !value
-        .strip_prefix("sha256-")
-        .is_some_and(|digest| is_lower_hex(digest, 64))
-    {
-        bail!("{label} is malformed");
-    }
-    Ok(())
-}
-
-fn is_lower_hex(value: &str, length: usize) -> bool {
-    value.len() == length
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+        .unwrap_or_else(|| "authority.cc".into());
+    name.push(".lock");
+    path.with_file_name(name)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use cultnet_rs::{
-        GameCultProviderHealthIdentity, IdunnSignedDaemonHealthPurpose, enroll_service_identity_at,
-        verify_service_identity_signature,
+        GameCultRuntimePresenceHealthPurpose, IdunnExpectedCapability, IdunnExpectedRoute,
+        IdunnRuntimeActivationLaunch, IdunnServiceIdentity, RuntimePresenceAuthenticationContext,
+        authenticate_runtime_presence_claim, enroll_service_identity_at, verify_runtime_authority,
     };
 
-    #[test]
-    fn ghostlight_health_is_canonical_private_free_and_release_bound() {
-        let root = tempfile::tempdir().unwrap();
-        let path = root.path().join("provider.cc");
-        let signer = enroll_service_identity_at::<GameCultProviderHealthIdentity>(&path).unwrap();
-        let mut publisher = IdunnHealthPublisher::open(
-            "127.0.0.1:17870".parse().unwrap(),
-            "yggdrasil-ghostlight",
-            "ghostlight-dungeon-yggdrasil",
-            GHOSTLIGHT_IDUNN_HEALTH_CONTRACT,
-            &path,
-            IdunnReleaseBinding {
-                release_id: "release-1".into(),
-                release_witness_sha256: format!("sha256-{}", "a".repeat(64)),
-                source_commit: "b".repeat(40),
-                deployment_id: "deployment-1".into(),
-            },
-            IdunnActivationBinding {
-                activation_witness_sha256: format!("sha256-{}", "c".repeat(64)),
-            },
-        )
-        .unwrap();
-        publisher.publisher_sequence = 7;
-        let mut record = IdunnSignedDaemonHealthRecord {
-            schema_version: IdunnSignedDaemonHealthRecord::SCHEMA.into(),
-            daemon_id: publisher.daemon_id.clone(),
-            health_contract: publisher.health_contract.clone(),
-            source_runtime_id: publisher.source_runtime_id.clone(),
-            state: "active".into(),
-            detail: "world-kernel-serving".into(),
-            signer_identity_id: publisher.signer.entry().identity_id.clone(),
-            publisher_incarnation_id: publisher.publisher_incarnation_id.clone(),
-            publisher_sequence: publisher.publisher_sequence,
-            observed_at_unix_millis: 1_787_315_696_789,
-            release_id: Some(publisher.release.release_id.clone()),
-            release_witness_sha256: Some(publisher.release.release_witness_sha256.clone()),
-            source_commit: Some(publisher.release.source_commit.clone()),
-            deployment_id: Some(publisher.release.deployment_id.clone()),
-            signature_algorithm: "ed25519".into(),
-            signature: Vec::new(),
-            private_state_exposed: false,
-            activation_witness_sha256: Some(publisher.activation.activation_witness_sha256.clone()),
+    fn digest(byte: char) -> String {
+        format!("sha256-{}", byte.to_string().repeat(64))
+    }
+
+    struct Fixture {
+        publisher: RuntimePresencePublisher,
+        authority: cultnet_rs::VerifiedRuntimeAuthority,
+        expected: IdunnExpectedIncarnationRecord,
+        activation: IdunnRuntimeActivationRecord,
+    }
+
+    fn managed_dependency(
+        kind: &str,
+        capability: &str,
+        schema: &str,
+        compatibility: &str,
+        provider_id: &str,
+        endpoint: &str,
+    ) -> IdunnExpectedDependency {
+        IdunnExpectedDependency {
+            kind: kind.into(),
+            capability: capability.into(),
+            schema: schema.into(),
+            compatibility: compatibility.into(),
+            minimum_capacity: 1,
+            startup: "before-promotion".into(),
+            provider_id: Some(provider_id.into()),
+            provider_authority: Some("managed-incarnation".into()),
+            provider_expected_projection_sha256: Some(digest('a')),
+            provider_endpoint: Some(endpoint.into()),
+        }
+    }
+
+    fn fixture_with_state_contract(root: &Path, state_contract_sha256: &str) -> Result<Fixture> {
+        let provider_path = root.join("provider.cc");
+        let provider =
+            enroll_service_identity_at::<GameCultProviderHealthIdentity>(&provider_path)?;
+        let provider_public_key = provider.entry().public_key.clone();
+        let idunn = enroll_service_identity_at::<IdunnServiceIdentity>(&root.join("idunn.cc"))?;
+        let expected = IdunnExpectedIncarnationRecord {
+            schema_version: IDUNN_EXPECTED_INCARNATION_SCHEMA.into(),
+            target: TARGET.into(),
+            plan_id: digest('1'),
+            incarnation_id: "ghostlight-incarnation-1".into(),
+            sealed_release_id: digest('2'),
+            source_repository: "github.com/GameCult/Ghostlight".into(),
+            source_revision: "3".repeat(40),
+            recipe_sha256: digest('4'),
+            runtime_id: "ghostlight-yggdrasil".into(),
+            expected_signer_identity_id: provider.entry().identity_id.clone(),
+            health_contract: GHOSTLIGHT_RUNTIME_PRESENCE_HEALTH_CONTRACT.into(),
+            artifact_sha256: digest('5'),
+            state_schema_generation: Some(STATE_SCHEMA_GENERATION.into()),
+            state_contract_sha256: Some(state_contract_sha256.into()),
+            write_lease_required: true,
+            route: Some(IdunnExpectedRoute {
+                route_id: "ghostlight-http".into(),
+                transport: "http".into(),
+                stable_endpoint: "https://ghostlight.gamecult.org/".into(),
+                candidate_endpoint: "http://127.0.0.1:18831".into(),
+            }),
+            capabilities: vec![
+                IdunnExpectedCapability {
+                    capability: "gamecult.eve.surface-provider".into(),
+                    schema: "gamecult.eve.surface.v1".into(),
+                    compatibility: "v1".into(),
+                    minimum_capacity: 1,
+                },
+                IdunnExpectedCapability {
+                    capability: "ghostlight.world-service".into(),
+                    schema: "ghostlight.world_state.foundation.v0".into(),
+                    compatibility: "foundation-v0".into(),
+                    minimum_capacity: 1,
+                },
+            ],
+            dependencies: vec![
+                managed_dependency(
+                    "private",
+                    CONNECTOR_CAPABILITY.0,
+                    CONNECTOR_CAPABILITY.1,
+                    CONNECTOR_CAPABILITY.2,
+                    "connector-yggdrasil",
+                    "tcp://127.0.0.1:4103",
+                ),
+                managed_dependency(
+                    "required",
+                    HEIMDALL_CAPABILITY.0,
+                    HEIMDALL_CAPABILITY.1,
+                    HEIMDALL_CAPABILITY.2,
+                    "heimdall-yggdrasil",
+                    "rudp://127.0.0.1:4101",
+                ),
+                managed_dependency(
+                    "shared-infrastructure",
+                    ODIN_CAPABILITY.0,
+                    ODIN_CAPABILITY.1,
+                    ODIN_CAPABILITY.2,
+                    "odin-yggdrasil",
+                    "rudp://127.0.0.1:9",
+                ),
+            ],
         };
-        let unsigned = canonical_unsigned_record(&record).unwrap();
-        let proof = publisher
-            .signer
-            .sign::<IdunnSignedDaemonHealthPurpose>(&unsigned);
-        record.signature = proof.signature.clone();
-        record.validate().unwrap();
-        verify_service_identity_signature::<
+        let launch = IdunnRuntimeActivationLaunch::issue(&expected, digest('7'), 100, &idunn)?;
+        let activation = launch.activation().clone();
+        let mut activation_credential = Vec::new();
+        launch.write_credential(&mut activation_credential)?;
+        let activation_signer =
+            IdunnRuntimeActivationSigner::from_credential_reader(&activation_credential[..])?;
+        let provider_signer = open_service_identity_credential_reader::<
             GameCultProviderHealthIdentity,
-            IdunnSignedDaemonHealthPurpose,
-        >(&signer.trust_anchor().unwrap(), &unsigned, &proof)
-        .unwrap();
-        assert_eq!(record.release_id.as_deref(), Some("release-1"));
-        assert!(!record.private_state_exposed);
-        let activation_digest = format!("sha256-{}", "c".repeat(64));
-        assert_eq!(
-            record.activation_witness_sha256.as_deref(),
-            Some(activation_digest.as_str())
-        );
-        assert_eq!(rmp_serde::to_vec(&record).unwrap()[..3], [0xdc, 0, 18]);
+        >(File::open(&provider_path)?)?;
+        let authority = verify_runtime_authority(
+            &expected,
+            &activation,
+            &idunn.trust_anchor()?,
+            &provider_public_key,
+        )?;
+        let publisher = RuntimePresencePublisher::new(
+            "127.0.0.1:9".parse()?,
+            "127.0.0.1:4103".parse()?,
+            "127.0.0.1:18831".parse()?,
+            expected.clone(),
+            activation.clone(),
+            provider_signer,
+            activation_signer,
+            root.join("write-lease.cc"),
+        )?;
+        Ok(Fixture {
+            publisher,
+            authority,
+            expected,
+            activation,
+        })
     }
 
-    #[test]
-    fn activation_witness_is_strict_ordered_and_launch_bound() {
-        let text = format!(
-            "schema_version={GHOSTLIGHT_ACTIVATION_SCHEMA}\n\
-             activation_id=activation-7\n\
-             daemon_id={TRAFFIC_ADMISSION_KEY}\n\
-             release_id={release}\n\
-             release_witness_sha256=sha256-{release_witness}\n\
-             source_commit={source}\n\
-             deployment_id=deployment-9\n\
-             unit_path={GHOSTLIGHT_UNIT_PATH}\n\
-             unit_sha256=sha256-{unit}\n\
-             runtime_environment_path={GHOSTLIGHT_RUNTIME_ENVIRONMENT_PATH}\n\
-             runtime_environment_sha256=sha256-{runtime}\n",
-            release = "a".repeat(40),
-            release_witness = "b".repeat(64),
-            source = "a".repeat(40),
-            unit = "c".repeat(64),
-            runtime = "d".repeat(64),
-        );
-        let parsed = parse_activation_witness(text.as_bytes()).unwrap();
-        assert_eq!(parsed.activation_id, "activation-7");
-        assert_eq!(parsed.daemon_id, TRAFFIC_ADMISSION_KEY);
-
-        let reordered = text.replacen(
-            "activation_id=activation-7\ndaemon_id=yggdrasil-ghostlight",
-            "daemon_id=yggdrasil-ghostlight\nactivation_id=activation-7",
-            1,
-        );
-        assert!(parse_activation_witness(reordered.as_bytes()).is_err());
-        assert!(parse_activation_witness(text.trim_end().as_bytes()).is_err());
+    fn fixture(root: &Path) -> Result<Fixture> {
+        fixture_with_state_contract(root, STATE_CONTRACT_SHA256)
     }
 
+    #[cfg(target_os = "linux")]
     #[test]
-    fn typed_traffic_admission_is_canonical_and_exact_startup_bound() {
-        let release = IdunnReleaseBinding {
-            release_id: "a".repeat(40),
-            release_witness_sha256: format!("sha256-{}", "b".repeat(64)),
-            source_commit: "a".repeat(40),
-            deployment_id: "deployment-9".into(),
-        };
-        let activation = IdunnActivationBinding {
-            activation_witness_sha256: format!("sha256-{}", "c".repeat(64)),
-        };
-        let published = PublishedHealthStatementIdentity {
-            daemon_id: TRAFFIC_ADMISSION_KEY.into(),
-            signed_health_sha256: format!("sha256-{}", "d".repeat(64)),
-            publisher_incarnation_id: uuid::Uuid::new_v4().to_string(),
-            publisher_sequence: 1,
-            signer_identity_id: "signer-1".into(),
-        };
-        let expected = traffic_admission_expectation(&release, &activation, &published).unwrap();
-        let payload = rmp_serde::to_vec(&expected).unwrap();
-        assert_eq!(payload.first().copied(), Some(0x9d));
-        assert_eq!(expected.runtime_process_id, std::process::id());
-        assert!(expected.runtime_process_starttime_ticks > 0);
-        let envelope = CultCacheEnvelope {
-            key: TRAFFIC_ADMISSION_KEY.into(),
-            r#type: TRAFFIC_ADMISSION_TYPE.into(),
-            schema_id: Some(TRAFFIC_ADMISSION_SCHEMA.into()),
-            stored_at: "2026-09-02T00:00:00Z".into(),
-            payload,
-        };
-        assert_eq!(
-            decode_traffic_admission_entries(std::slice::from_ref(&envelope)).unwrap(),
-            expected
+    fn inherited_authority_fd_layout_rejects_substitution_and_extras() -> Result<()> {
+        let pid = std::process::id();
+        let names = format!(
+            "{IDUNN_RUNTIME_ACTIVATION_CREDENTIAL_NAME}:{RUNTIME_PRESENCE_IDENTITY_FD_NAME}"
         );
-
-        let mut substituted = expected.clone();
-        substituted.publisher_sequence += 1;
-        validate_traffic_admission_projection(&substituted).unwrap();
-        assert!(require_exact_traffic_admission(&substituted, &expected).is_err());
-        let mut substituted_process = expected.clone();
-        substituted_process.runtime_process_id += 1;
-        validate_traffic_admission_projection(&substituted_process).unwrap();
-        assert!(require_exact_traffic_admission(&substituted_process, &expected).is_err());
-        let mut substituted_starttime = expected.clone();
-        substituted_starttime.runtime_process_starttime_ticks += 1;
-        validate_traffic_admission_projection(&substituted_starttime).unwrap();
-        assert!(require_exact_traffic_admission(&substituted_starttime, &expected).is_err());
-        let mut stale_schema = expected.clone();
-        stale_schema.schema_version = "idunn.runtime_traffic_admission.v1".into();
-        assert!(validate_traffic_admission_projection(&stale_schema).is_err());
-        let named_payload = rmp_serde::to_vec_named(&expected).unwrap();
-        let named = CultCacheEnvelope {
-            payload: named_payload,
-            ..envelope.clone()
-        };
-        assert!(decode_traffic_admission_entries(&[named]).is_err());
-        assert!(decode_traffic_admission_entries(&[envelope.clone(), envelope.clone()]).is_err());
-    }
-
-    #[test]
-    fn proc_stat_starttime_parser_binds_pid_and_kernel_tick_identity() {
-        let stat =
-            "4242 (ghostlight ) worker) S 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 98765 20\n";
-        assert_eq!(parse_proc_stat_starttime(stat, 4242).unwrap(), 98_765);
-        assert!(parse_proc_stat_starttime(stat, 4243).is_err());
+        authority_fd_layout(pid, &pid.to_string(), "2", &names)?;
+        assert!(authority_fd_layout(pid, &(pid + 1).to_string(), "2", &names).is_err());
+        assert!(authority_fd_layout(pid, &format!("0{pid}"), "2", &names).is_err());
+        assert!(authority_fd_layout(pid, &pid.to_string(), "02", &names).is_err());
+        assert!(authority_fd_layout(pid, &pid.to_string(), "3", &names).is_err());
         assert!(
-            parse_proc_stat_starttime(
-                "4242 (ghostlight) S 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 0",
-                4242,
+            authority_fd_layout(
+                pid,
+                &pid.to_string(),
+                "2",
+                &format!(
+                    "{RUNTIME_PRESENCE_IDENTITY_FD_NAME}:{IDUNN_RUNTIME_ACTIVATION_CREDENTIAL_NAME}"
+                ),
             )
             .is_err()
         );
+        assert!(
+            authority_fd_layout(
+                pid,
+                &pid.to_string(),
+                "2",
+                &format!(
+                    "{IDUNN_RUNTIME_ACTIVATION_CREDENTIAL_NAME}:{IDUNN_RUNTIME_ACTIVATION_CREDENTIAL_NAME}"
+                ),
+            )
+            .is_err()
+        );
+        Ok(())
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn close_on_exec_authority_descriptor_is_not_visible_to_a_child() -> Result<()> {
+        use std::{os::fd::AsRawFd, process::Command};
+
+        let file = tempfile::tempfile()?;
+        mark_descriptor_close_on_exec(&file, "test signer")?;
+        let descriptor = file.as_raw_fd();
+        let status = Command::new("/bin/sh")
+            .arg("-c")
+            .arg(format!("test ! -e /proc/self/fd/{descriptor}"))
+            .status()?;
+        ensure!(status.success(), "child inherited the signer descriptor");
+        Ok(())
+    }
+
+    #[test]
+    fn runtime_rejects_an_expected_projection_for_another_state_contract() {
+        let root = tempfile::tempdir().unwrap();
+        let error = match fixture_with_state_contract(root.path(), &digest('6')) {
+            Ok(_) => panic!("another state contract was admitted"),
+            Err(error) => error,
+        };
+        assert!(
+            error
+                .to_string()
+                .contains("does not name Ghostlight's writable world-v2 state")
+        );
+    }
+
+    #[test]
+    fn warming_presence_is_dual_signed_and_reports_compiled_capabilities() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut fixture = fixture(root.path())?;
+        let record =
+            fixture
+                .publisher
+                .signed_record("warming", "process-write-lease-pending", None)?;
+        let bytes = rmp_serde::to_vec(&record)?;
+        let claim = authenticate_runtime_presence_claim(
+            &bytes,
+            &fixture.authority,
+            RuntimePresenceAuthenticationContext {
+                trusted_received_at_unix_millis: record.observed_at_unix_millis,
+                maximum_age_millis: 1_000,
+                maximum_future_skew_millis: 10,
+            },
+        )?;
+        assert_eq!(claim.record(), &record);
+        assert_eq!(record.capabilities, actual_capabilities());
+        assert_eq!(
+            record.bound_endpoint.as_deref(),
+            Some("http://127.0.0.1:18831")
+        );
+        assert!(record.write_lease_sha256.is_none());
+
+        let wrong_purpose = fixture
+            .publisher
+            .provider_signer
+            .sign::<GameCultRuntimePresenceHealthPurpose>(b"another-record");
+        assert_ne!(wrong_purpose.signature, record.signature);
+        Ok(())
+    }
+
+    #[test]
+    fn dependency_endpoints_fail_closed_without_scheme_coercion() -> Result<()> {
+        assert_eq!(
+            parse_dependency_socket_endpoint(
+                "rudp://127.0.0.1:4100",
+                &["rudp://", "udp://"],
+                "Odin dependency",
+            )?,
+            "127.0.0.1:4100".parse::<SocketAddr>()?
+        );
+        assert!(
+            parse_dependency_socket_endpoint(
+                "tcp://127.0.0.1:4100",
+                &["rudp://", "udp://"],
+                "Odin dependency",
+            )
+            .is_err()
+        );
+        assert!(
+            parse_dependency_socket_endpoint(
+                "http://127.0.0.1:4101",
+                &["rudp://", "udp://"],
+                "Heimdall dependency",
+            )
+            .is_err()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn process_write_lease_guard_holds_and_rechecks_the_exact_incarnation() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let mut fixture = fixture(root.path())?;
+        let warming =
+            fixture
+                .publisher
+                .signed_record("warming", "process-write-lease-pending", None)?;
+        let warming_sha256 = warming.canonical_sha256()?;
+        let lease = IdunnProcessWriteLeaseRecord {
+            schema_version: IDUNN_PROCESS_WRITE_LEASE_SCHEMA.into(),
+            target: fixture.expected.target.clone(),
+            expected_projection_sha256: fixture.expected.canonical_sha256()?,
+            plan_id: fixture.expected.plan_id.clone(),
+            incarnation_id: fixture.expected.incarnation_id.clone(),
+            sealed_release_id: fixture.expected.sealed_release_id.clone(),
+            activation_witness_sha256: fixture.activation.canonical_sha256()?,
+            state_schema_generation: STATE_SCHEMA_GENERATION.into(),
+            state_contract_sha256: fixture.expected.state_contract_sha256.clone().unwrap(),
+            runtime_id: fixture.expected.runtime_id.clone(),
+            runtime_instance_id: fixture.activation.runtime_instance_id.clone(),
+            warming_presence_sha256: warming_sha256.clone(),
+            lease_epoch: 1,
+            issued_at_unix_millis: 200,
+        };
+        let path = root.path().join("write-lease.cc");
+        SingleFileMessagePackBackingStore::new(&path).push(&CultCacheEnvelope {
+            key: lease.target.clone(),
+            r#type: IdunnProcessWriteLeaseRecord::TYPE.into(),
+            payload: lease.canonical_bytes()?,
+            stored_at: "2026-09-03T00:00:00Z".into(),
+            schema_id: Some(IDUNN_PROCESS_WRITE_LEASE_SCHEMA.into()),
+        })?;
+
+        let guard = ProcessWriteLeaseGuard::acquire_fixture(
+            path.clone(),
+            fixture.expected.clone(),
+            fixture.activation.clone(),
+            warming_sha256,
+        )?;
+        guard.require_current()?;
+        assert_eq!(guard.canonical_sha256(), lease.canonical_sha256()?);
+        drop(guard);
+
+        let mut wrong = lease;
+        wrong.runtime_instance_id = digest('8');
+        let entries = SingleFileMessagePackBackingStore::new(&path).pull_all()?;
+        let store = SingleFileMessagePackBackingStore::new(&path);
+        ensure!(
+            store.replace_and_append_if_snapshot_unchanged(
+                &entries,
+                vec![CultCacheEnvelope {
+                    key: wrong.target.clone(),
+                    r#type: IdunnProcessWriteLeaseRecord::TYPE.into(),
+                    payload: wrong.canonical_bytes()?,
+                    stored_at: "2026-09-03T00:00:01Z".into(),
+                    schema_id: Some(IDUNN_PROCESS_WRITE_LEASE_SCHEMA.into()),
+                }],
+            )?,
+            "test lease replacement lost CAS"
+        );
+        assert!(
+            ProcessWriteLeaseGuard::acquire_fixture(
+                path,
+                fixture.expected,
+                fixture.activation,
+                digest('9'),
+            )
+            .is_err()
+        );
+        Ok(())
     }
 }

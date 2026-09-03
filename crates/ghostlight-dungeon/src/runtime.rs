@@ -5,8 +5,7 @@ use crate::{
     eve::{self, EveCommandInvocation},
     heimdall::{self, HeimdallClient},
     idunn_health::{
-        GHOSTLIGHT_IDUNN_HEALTH_CONTRACT, GhostlightTrafficAdmissionGate, IdunnHealthPublisher,
-        IdunnReleaseBinding, active_activation_binding,
+        IDUNN_RUNTIME_CANDIDATE_BIND_ENVIRONMENT, ProcessWriteLeaseGuard, RuntimePresencePublisher,
     },
     mesh::{self, MeshPublisher, MeshRuntimeIdentity},
     world::{
@@ -17,12 +16,11 @@ use crate::{
         SubmitReceipt, WorldMailbox, WorldSnapshot,
     },
 };
-use anyhow::{Context, bail};
+use anyhow::{Context, bail, ensure};
 use axum::{
     Json, Router,
-    extract::{Path, Request, State},
+    extract::{Path, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
-    middleware::{self, Next},
     response::{
         IntoResponse, Response,
         sse::{Event as SseEvent, KeepAlive, Sse},
@@ -32,8 +30,7 @@ use axum::{
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
-use std::{convert::Infallible, net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
+use std::{convert::Infallible, fs, net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
 use tokio::sync::{Mutex, broadcast, mpsc};
 use tower_http::services::ServeDir;
 use tracing_subscriber::EnvFilter;
@@ -50,18 +47,11 @@ struct AppState {
     mesh_identity: MeshRuntimeIdentity,
     revisions: broadcast::Sender<u64>,
     fatal: mpsc::UnboundedSender<String>,
-    traffic: Option<Arc<GhostlightTrafficAdmissionGate>>,
 }
 
 struct ProductionAdmission {
-    traffic: Arc<GhostlightTrafficAdmissionGate>,
-    health: IdunnHealthPublisher,
-}
-
-#[derive(Clone)]
-struct RequestTrafficAdmission {
-    traffic: Arc<GhostlightTrafficAdmissionGate>,
-    fatal: mpsc::UnboundedSender<String>,
+    health: RuntimePresencePublisher,
+    write_lease: ProcessWriteLeaseGuard,
 }
 
 #[derive(Debug, Deserialize)]
@@ -99,16 +89,30 @@ struct ControllerActPayload {
     opportunity: DecisionOpportunity,
 }
 
-pub(crate) async fn run() -> anyhow::Result<()> {
+pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
         .init();
-    let runtime_root = std::env::var_os("GHOSTLIGHT_DUNGEON_ROOT")
-        .map(PathBuf::from)
-        .unwrap_or_else(default_runtime_root);
+    let runtime_root = admitted_runtime_root(state_root_binding)?;
     let service_root = runtime_root.join("service");
-    let runtime_id =
-        std::env::var("GHOSTLIGHT_RUNTIME_ID").unwrap_or_else(|_| "ghostlight-dungeon".into());
+    // The bound socket is service observation, not configuration. Retain it
+    // unopened to application traffic while Warming waits for Idunn's lease.
+    let requested_address = candidate_bind()?;
+    let listener = tokio::net::TcpListener::bind(requested_address).await?;
+    let bound_address = listener.local_addr()?;
+    let (fatal, mut fatal_events) = mpsc::unbounded_channel();
+    let production_admission = initialize_production_admission(bound_address).await?;
+    let dependency_bindings = production_admission
+        .as_ref()
+        .map(|admission| admission.health.dependency_bindings().clone());
+    let runtime_id = match &production_admission {
+        Some(admission) => admission.health.runtime_id().to_owned(),
+        None => std::env::var("GHOSTLIGHT_RUNTIME_ID")
+            .context("GHOSTLIGHT_RUNTIME_ID is required outside managed runtime")?,
+    };
+    if runtime_id.is_empty() || runtime_id.trim() != runtime_id {
+        bail!("GHOSTLIGHT_RUNTIME_ID must be a canonical non-empty identity");
+    }
     let mesh_identity = MeshRuntimeIdentity {
         runtime_id: runtime_id.clone(),
         service_id: std::env::var("GHOSTLIGHT_SERVICE_ID")
@@ -117,30 +121,19 @@ pub(crate) async fn run() -> anyhow::Result<()> {
             .unwrap_or_else(|_| "local".into()),
     };
 
-    // Production may inspect immutable root activation inputs and the provider
-    // health identity, then publish one warming statement. World, session,
-    // controller, replay, CultMesh, and socket authority remain unopened until
-    // Idunn grants that exact statement.
-    let (fatal, mut fatal_events) = mpsc::unbounded_channel();
-    let production_admission = initialize_production_admission(&mesh_identity).await?;
-    let mut request_admission = None;
+    // Production may bind but not serve its candidate socket, inspect immutable
+    // root activation inputs and its provider identity, then publish Warming.
+    // World, session, controller, replay, and CultMesh state remain unopened
+    // until Idunn grants the lease bound to that exact observed process.
+    let mut write_lease_guard = None;
     let mut idunn_health = match production_admission {
         Some(admission) => {
-            let ProductionAdmission { traffic, health } = admission;
-            traffic
-                .require_current()
-                .context("root traffic admission changed after initial grant")?;
-            request_admission = Some(RequestTrafficAdmission {
-                traffic: traffic.clone(),
-                fatal: fatal.clone(),
-            });
-            let traffic_failure = fatal.clone();
-            tokio::spawn(async move {
-                if let Err(error) = maintain_traffic_admission(traffic).await {
-                    let _ = traffic_failure
-                        .send(format!("root traffic admission was revoked: {error:#}"));
-                }
-            });
+            let ProductionAdmission {
+                health,
+                write_lease,
+            } = admission;
+            write_lease.require_current()?;
+            write_lease_guard = Some(write_lease);
             Some(health)
         }
         None => None,
@@ -148,10 +141,22 @@ pub(crate) async fn run() -> anyhow::Result<()> {
 
     tokio::task::yield_now().await;
     require_no_runtime_custody_failure(&mut fatal_events)?;
-    std::fs::create_dir_all(&service_root)?;
+    require_current_write_lease(write_lease_guard.as_ref())?;
+    if write_lease_guard.is_some() {
+        prepare_admitted_state_layout(&runtime_root)?;
+    } else {
+        fs::create_dir_all(&service_root)?;
+    }
+    require_current_write_lease(write_lease_guard.as_ref())?;
     let (world, world_owner) = WorldMailbox::open(runtime_root.join("world.cc"))?;
     require_no_runtime_custody_failure(&mut fatal_events)?;
-    let controllers = match open_controller(&world, &service_root, &runtime_id) {
+    let connector_endpoint = dependency_bindings
+        .as_ref()
+        .map(|bindings| bindings.connector)
+        .map(Ok)
+        .unwrap_or_else(configured_connector_endpoint)?;
+    let controllers = match open_controller(&world, &service_root, &runtime_id, connector_endpoint)
+    {
         Ok(runner) => Some(runner),
         Err(error) => {
             tracing::warn!(%error, "controller cognition is unavailable; world authority remains online");
@@ -163,9 +168,21 @@ pub(crate) async fn run() -> anyhow::Result<()> {
         .map(PathBuf::from)
         .unwrap_or_else(|| runtime_root.join("secrets/session-wrapping.key"));
     let sessions = AppSessionOwner::open(service_root.join("app-sessions-v2.cc"), wrapping_key)?;
-    let heimdall = Arc::new(HeimdallClient::from_env()?);
+    let odin_endpoint = dependency_bindings
+        .as_ref()
+        .map(|bindings| bindings.odin_rudp)
+        .map(Ok)
+        .unwrap_or_else(configured_odin_endpoint)?;
+    let expected_heimdall = dependency_bindings
+        .as_ref()
+        .map(|bindings| bindings.heimdall.clone());
+    let heimdall = Arc::new(HeimdallClient::from_env(
+        &runtime_id,
+        odin_endpoint,
+        expected_heimdall,
+    )?);
     require_no_runtime_custody_failure(&mut fatal_events)?;
-    let mesh = match open_mesh(&service_root, &mesh_identity) {
+    let mesh = match open_mesh(&service_root, &mesh_identity, Some(odin_endpoint)) {
         Ok(mesh) => Some(mesh),
         Err(error) => {
             tracing::warn!(%error, "derived CultMesh projection is unavailable; world authority remains online");
@@ -183,9 +200,6 @@ pub(crate) async fn run() -> anyhow::Result<()> {
         mesh_identity: mesh_identity.clone(),
         revisions,
         fatal,
-        traffic: request_admission
-            .as_ref()
-            .map(|admission| admission.traffic.clone()),
     };
     require_no_runtime_custody_failure(&mut fatal_events)?;
     publish_projection(&state).await?;
@@ -198,31 +212,21 @@ pub(crate) async fn run() -> anyhow::Result<()> {
         .filter(|path| path.join("index.html").is_file())
         .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../web/dist"));
     let app = app_router(state.clone(), web_root);
-    let app = match request_admission.clone() {
-        Some(admission) => app.layer(middleware::from_fn_with_state(
-            admission,
-            enforce_request_traffic_admission,
-        )),
-        None => app,
-    };
-    let address: SocketAddr = std::env::var("GHOSTLIGHT_DUNGEON_BIND")
-        .unwrap_or_else(|_| "127.0.0.1:8831".into())
-        .parse()?;
     require_no_runtime_custody_failure(&mut fatal_events)?;
-    require_current_traffic_admission(request_admission.as_ref(), "before HTTP bind")?;
-    let listener = tokio::net::TcpListener::bind(address).await?;
-    require_no_runtime_custody_failure(&mut fatal_events)?;
-    require_current_traffic_admission(request_admission.as_ref(), "after HTTP bind")?;
+    require_current_write_lease(write_lease_guard.as_ref())?;
     canonical_readiness(&state)
         .await
         .context("runtime is not ready for active signed health")?;
     if let Some(publisher) = idunn_health.as_mut() {
+        let write_lease = write_lease_guard
+            .as_ref()
+            .context("production runtime lost its process write lease")?;
         publisher
-            .publish("active", "world-owner-serving")
-            .context("publishing initial active Idunn health")?;
+            .publish_active(write_lease)
+            .context("publishing initial active runtime presence")?;
     }
-    require_current_traffic_admission(request_admission.as_ref(), "before HTTP serve")?;
-    tracing::info!(%address, "Ghostlight Dungeon world owner serving");
+    require_current_write_lease(write_lease_guard.as_ref())?;
+    tracing::info!(address = %bound_address, "Ghostlight Dungeon world owner serving");
     let server = axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
@@ -233,7 +237,11 @@ pub(crate) async fn run() -> anyhow::Result<()> {
             result.context("world-owner task panicked")?;
             bail!("world-owner task stopped while the daemon was serving")
         }
-        result = maintain_runtime_health(idunn_health, state.clone()) => {
+        result = maintain_runtime_health(
+            idunn_health,
+            state.clone(),
+            write_lease_guard.as_ref(),
+        ) => {
             result?;
             bail!("runtime readiness owner stopped while the daemon was serving")
         }
@@ -254,11 +262,8 @@ fn open_controller(
     world: &WorldMailbox,
     service_root: &std::path::Path,
     runtime_id: &str,
+    endpoint: SocketAddr,
 ) -> anyhow::Result<ControllerRunner> {
-    let endpoint: SocketAddr = std::env::var("GHOSTLIGHT_CONTROLLER_CONNECTOR")
-        .unwrap_or_else(|_| "127.0.0.1:4103".into())
-        .parse()
-        .context("GHOSTLIGHT_CONTROLLER_CONNECTOR is not a socket address")?;
     let credential = std::env::var_os("GHOSTLIGHT_CONTROLLER_CREDENTIAL")
         .map(PathBuf::from)
         .context("GHOSTLIGHT_CONTROLLER_CREDENTIAL is required")?;
@@ -285,36 +290,14 @@ fn open_controller(
 fn open_mesh(
     service_root: &std::path::Path,
     identity: &MeshRuntimeIdentity,
+    target: Option<SocketAddr>,
 ) -> anyhow::Result<MeshPublisher> {
-    let target = std::env::var("GHOSTLIGHT_ODIN_RUDP")
-        .ok()
-        .map(|value| value.parse())
-        .transpose()
-        .context("GHOSTLIGHT_ODIN_RUDP is not a socket address")?;
     MeshPublisher::open(service_root.join("mesh-v2.cc"), target, identity.clone())
 }
 
 fn app_router(state: AppState, web_root: PathBuf) -> Router {
     api_router(state)
         .fallback_service(ServeDir::new(web_root).append_index_html_on_directories(true))
-}
-
-async fn enforce_request_traffic_admission(
-    State(admission): State<RequestTrafficAdmission>,
-    request: Request,
-    next: Next,
-) -> Response {
-    if let Err(error) = admission.traffic.require_current() {
-        let _ = admission
-            .fatal
-            .send(format!("request traffic admission failed: {error:#}"));
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            "Ghostlight traffic admission is not current",
-        )
-            .into_response();
-    }
-    next.run(request).await
 }
 
 fn api_router(state: AppState) -> Router {
@@ -374,19 +357,6 @@ async fn eve_command(
     State(state): State<AppState>,
     Json(invocation): Json<EveCommandInvocation>,
 ) -> Response {
-    // Axum has now consumed and decoded the complete command. This is the
-    // traffic-to-application transfer point: revocation blocks later commands,
-    // while WorldMailbox owns any consequence accepted below.
-    if let Err(error) = require_command_traffic_admission(&state) {
-        let _ = state
-            .fatal
-            .send(format!("command traffic admission failed: {error:#}"));
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            "Ghostlight traffic admission is not current",
-        )
-            .into_response();
-    }
     if let Err(error) = eve::validate_invocation(&invocation, "https-json") {
         return Json(eve::command_result(
             &invocation,
@@ -416,13 +386,6 @@ async fn eve_command(
             };
             dispatch_world(&state, &principal, invocation).await
         }
-    }
-}
-
-fn require_command_traffic_admission(state: &AppState) -> anyhow::Result<()> {
-    match state.traffic.as_ref() {
-        Some(traffic) => traffic.require_current(),
-        None => Ok(()),
     }
 }
 
@@ -1478,115 +1441,33 @@ async fn maintain_session_refresh(state: AppState) -> anyhow::Result<()> {
 }
 
 async fn initialize_production_admission(
-    identity: &MeshRuntimeIdentity,
+    bound_endpoint: SocketAddr,
 ) -> anyhow::Result<Option<ProductionAdmission>> {
-    let endpoint = match std::env::var("GHOSTLIGHT_IDUNN_RUDP") {
-        Ok(endpoint) => endpoint,
-        Err(_) => {
-            #[cfg(target_os = "linux")]
-            bail!("GHOSTLIGHT_IDUNN_RUDP is mandatory for the Linux Ghostlight runtime");
-            #[cfg(not(target_os = "linux"))]
-            return Ok(None);
-        }
+    let Some(mut publisher) = RuntimePresencePublisher::from_environment(bound_endpoint)? else {
+        return Ok(None);
     };
-    let identity_store = std::env::var_os("GHOSTLIGHT_IDUNN_HEALTH_IDENTITY")
-        .map(PathBuf::from)
-        .context("GHOSTLIGHT_IDUNN_HEALTH_IDENTITY is required with GHOSTLIGHT_IDUNN_RUDP")?;
-    let daemon_id =
-        std::env::var("GHOSTLIGHT_IDUNN_DAEMON").unwrap_or_else(|_| "yggdrasil-ghostlight".into());
-    if daemon_id != "yggdrasil-ghostlight" {
-        bail!("signed Ghostlight health daemon id is not the canonical Idunn identity");
-    }
-    let release = release_health_binding()?;
-    let activation = active_activation_binding(&release)?;
-    let mut publisher = IdunnHealthPublisher::open(
-        endpoint.parse()?,
-        daemon_id,
-        identity.runtime_id.clone(),
-        std::env::var("GHOSTLIGHT_IDUNN_HEALTH_CONTRACT")
-            .unwrap_or_else(|_| GHOSTLIGHT_IDUNN_HEALTH_CONTRACT.into()),
-        identity_store,
-        release.clone(),
-        activation.clone(),
-    )?;
-    let startup = publisher
-        .publish("warming", "traffic-admission-pending")
-        .context("publishing initial warming Idunn health")?;
-    let traffic =
-        GhostlightTrafficAdmissionGate::from_environment(&release, &activation, &startup)?;
-    traffic.wait_until_granted(Duration::from_secs(120)).await?;
+    let warming = publisher
+        .publish_warming()
+        .context("publishing initial Warming runtime presence")?;
+    let write_lease = publisher
+        .wait_for_write_lease(&warming, Duration::from_secs(120))
+        .await
+        .with_context(|| {
+            format!(
+                "waiting for process lease bound to Warming {}",
+                warming.canonical_sha256()
+            )
+        })?;
     Ok(Some(ProductionAdmission {
-        traffic: Arc::new(traffic),
         health: publisher,
+        write_lease,
     }))
 }
 
-fn release_health_binding() -> anyhow::Result<IdunnReleaseBinding> {
-    let executable = std::env::current_exe().context("locating the active Ghostlight binary")?;
-    let release_root = executable
-        .parent()
-        .context("active Ghostlight binary has no release directory")?;
-    let witness_path = release_root.join("DEPLOYMENT");
-    let witness = std::fs::read(&witness_path)
-        .with_context(|| format!("reading sealed release witness {}", witness_path.display()))?;
-    let witness_text = std::str::from_utf8(&witness).context("release witness is not UTF-8")?;
-    let source_commit = exact_release_field(witness_text, "source_commit")?.to_owned();
-    let compiled_commit = option_env!("GHOSTLIGHT_BUILD_COMMIT").unwrap_or("development");
-    if source_commit != compiled_commit || !is_lower_hex(&source_commit, 40) {
-        bail!("release witness does not bind the compiled Ghostlight source commit");
-    }
-    let expected_binary_sha = exact_release_field(witness_text, "binary_sha256")?;
-    let binary_sha = hex(&Sha256::digest(
-        std::fs::read(&executable).context("reading the active Ghostlight binary")?,
-    ));
-    if expected_binary_sha != binary_sha {
-        bail!("release witness does not bind the active Ghostlight executable");
-    }
-    let deployment_id = std::env::var("GHOSTLIGHT_IDUNN_DEPLOYMENT_REQUEST_ID")
-        .context("GHOSTLIGHT_IDUNN_DEPLOYMENT_REQUEST_ID is required for signed health")?;
-    if deployment_id.len() > 256
-        || !deployment_id
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b':' | b'-'))
-    {
-        bail!("Idunn deployment request identity is malformed");
-    }
-    Ok(IdunnReleaseBinding {
-        release_id: source_commit.clone(),
-        release_witness_sha256: format!("sha256-{}", hex(&Sha256::digest(&witness))),
-        source_commit,
-        deployment_id,
-    })
-}
-
-fn exact_release_field<'a>(witness: &'a str, name: &str) -> anyhow::Result<&'a str> {
-    let prefix = format!("{name}=");
-    let mut values = witness
-        .lines()
-        .filter_map(|line| line.strip_prefix(&prefix));
-    let value = values
-        .next()
-        .with_context(|| format!("release witness has no {name}"))?;
-    if value.is_empty()
-        || value.trim() != value
-        || value.chars().any(char::is_control)
-        || values.next().is_some()
-    {
-        bail!("release witness has an invalid or duplicate {name}");
-    }
-    Ok(value)
-}
-
-fn is_lower_hex(value: &str, length: usize) -> bool {
-    value.len() == length
-        && value
-            .bytes()
-            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
-}
-
 async fn maintain_runtime_health(
-    publisher: Option<IdunnHealthPublisher>,
+    publisher: Option<RuntimePresencePublisher>,
     state: AppState,
+    write_lease: Option<&ProcessWriteLeaseGuard>,
 ) -> anyhow::Result<()> {
     let mut publisher = publisher;
     let mut interval = tokio::time::interval(Duration::from_secs(10));
@@ -1596,48 +1477,59 @@ async fn maintain_runtime_health(
         canonical_readiness(&state)
             .await
             .context("runtime is not ready for signed health")?;
+        require_current_write_lease(write_lease)
+            .context("runtime process write lease is not current")?;
         if let Some(mut owned) = publisher.take() {
             let published = tokio::task::spawn_blocking(move || {
-                let result = owned.publish("active", "world-owner-serving");
+                let result = owned.republish_active();
                 (owned, result)
             })
             .await;
             let Ok((returned, result)) = published else {
-                tracing::warn!("signed Idunn health worker panicked; publication is disabled");
+                tracing::warn!("runtime-presence worker panicked; publication is disabled");
                 continue;
             };
             publisher = Some(returned);
             if let Err(error) = result {
-                tracing::warn!(%error, "signed Idunn health publication failed");
+                tracing::warn!(%error, "signed runtime-presence publication failed");
             }
         }
     }
 }
 
-async fn maintain_traffic_admission(
-    admission: Arc<GhostlightTrafficAdmissionGate>,
-) -> anyhow::Result<()> {
-    let mut interval = tokio::time::interval(Duration::from_millis(100));
-    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-    loop {
-        interval.tick().await;
-        admission
-            .require_current()
-            .context("root traffic admission was revoked or substituted")?;
+fn candidate_bind() -> anyhow::Result<SocketAddr> {
+    match std::env::var(IDUNN_RUNTIME_CANDIDATE_BIND_ENVIRONMENT) {
+        Ok(value) => value
+            .parse()
+            .context("Idunn candidate bind is not a socket address"),
+        Err(_) => {
+            #[cfg(target_os = "linux")]
+            bail!("{IDUNN_RUNTIME_CANDIDATE_BIND_ENVIRONMENT} is mandatory on Linux");
+            #[cfg(not(target_os = "linux"))]
+            return Ok("127.0.0.1:8831".parse()?);
+        }
     }
 }
 
-fn require_current_traffic_admission(
-    admission: Option<&RequestTrafficAdmission>,
-    phase: &str,
-) -> anyhow::Result<()> {
-    let Some(admission) = admission else {
-        return Ok(());
-    };
-    admission
-        .traffic
-        .require_current()
-        .with_context(|| format!("root traffic admission changed {phase}"))
+fn configured_connector_endpoint() -> anyhow::Result<SocketAddr> {
+    std::env::var("GHOSTLIGHT_CONTROLLER_CONNECTOR")
+        .unwrap_or_else(|_| "127.0.0.1:4103".into())
+        .parse()
+        .context("GHOSTLIGHT_CONTROLLER_CONNECTOR is not a socket address")
+}
+
+fn configured_odin_endpoint() -> anyhow::Result<SocketAddr> {
+    std::env::var("GHOSTLIGHT_ODIN_RUDP")
+        .context("GHOSTLIGHT_ODIN_RUDP is required")?
+        .parse()
+        .context("GHOSTLIGHT_ODIN_RUDP is not a socket address")
+}
+
+fn require_current_write_lease(lease: Option<&ProcessWriteLeaseGuard>) -> anyhow::Result<()> {
+    match lease {
+        Some(lease) => lease.require_current(),
+        None => Ok(()),
+    }
 }
 
 fn require_no_runtime_custody_failure(
@@ -1663,21 +1555,156 @@ fn default_runtime_root() -> PathBuf {
     }
 }
 
-fn hex(bytes: &[u8]) -> String {
-    const DIGITS: &[u8; 16] = b"0123456789abcdef";
-    let mut output = String::with_capacity(bytes.len() * 2);
-    for byte in bytes {
-        output.push(DIGITS[(byte >> 4) as usize] as char);
-        output.push(DIGITS[(byte & 0x0f) as usize] as char);
+fn admitted_runtime_root(binding: Option<PathBuf>) -> anyhow::Result<PathBuf> {
+    let Some(binding) = binding else {
+        #[cfg(target_os = "linux")]
+        bail!("--state-root is mandatory for the managed Linux runtime");
+        #[cfg(not(target_os = "linux"))]
+        return Ok(default_runtime_root());
+    };
+    ensure!(binding.is_absolute(), "state-root binding is not absolute");
+    let metadata = fs::symlink_metadata(&binding)
+        .with_context(|| format!("inspecting state-root binding {}", binding.display()))?;
+    ensure!(
+        metadata.is_dir() && !metadata.file_type().is_symlink(),
+        "state-root binding is not a direct directory"
+    );
+    let canonical = fs::canonicalize(&binding)
+        .with_context(|| format!("canonicalizing state-root binding {}", binding.display()))?;
+    ensure!(
+        canonical == binding,
+        "state-root binding is indirect or non-canonical"
+    );
+    Ok(binding)
+}
+
+fn prepare_admitted_state_layout(runtime_root: &std::path::Path) -> anyhow::Result<()> {
+    let rebound = admitted_runtime_root(Some(runtime_root.to_owned()))?;
+    ensure!(
+        rebound == runtime_root,
+        "state-root binding changed after process-write-lease admission"
+    );
+    let service_root = runtime_root.join("service");
+    match fs::symlink_metadata(&service_root) {
+        Ok(metadata) => ensure!(
+            metadata.is_dir() && !metadata.file_type().is_symlink(),
+            "service state directory is indirect or not a directory"
+        ),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            fs::create_dir(&service_root).with_context(|| {
+                format!(
+                    "creating direct service state directory {}",
+                    service_root.display()
+                )
+            })?;
+        }
+        Err(error) => return Err(error).context("inspecting service state directory"),
     }
-    output
+    ensure_direct_state_directory(&service_root, "service state directory")?;
+    for path in [
+        runtime_root.join("world.cc"),
+        service_root.join("app-sessions-v2.cc"),
+        service_root.join("controller-work.cc"),
+        service_root.join("mesh-v2.cc"),
+    ] {
+        require_direct_state_file_or_absent(&path)?;
+        require_direct_state_file_or_absent(&sibling_state_lock_path(&path))?;
+    }
+    Ok(())
+}
+
+fn ensure_direct_state_directory(path: &std::path::Path, label: &str) -> anyhow::Result<()> {
+    let metadata = fs::symlink_metadata(path)
+        .with_context(|| format!("inspecting {label} {}", path.display()))?;
+    ensure!(
+        metadata.is_dir() && !metadata.file_type().is_symlink(),
+        "{label} is indirect or not a directory"
+    );
+    Ok(())
+}
+
+fn require_direct_state_file_or_absent(path: &std::path::Path) -> anyhow::Result<()> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) => {
+            ensure!(
+                metadata.is_file() && !metadata.file_type().is_symlink(),
+                "declared state path {} is indirect or not a regular file",
+                path.display()
+            );
+            #[cfg(target_os = "linux")]
+            ensure!(
+                std::os::unix::fs::MetadataExt::nlink(&metadata) == 1,
+                "declared state path {} is multiply linked",
+                path.display()
+            );
+            Ok(())
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => {
+            Err(error).with_context(|| format!("inspecting declared state path {}", path.display()))
+        }
+    }
+}
+
+fn sibling_state_lock_path(path: &std::path::Path) -> PathBuf {
+    let mut name = path
+        .file_name()
+        .map(|value| value.to_os_string())
+        .unwrap_or_else(|| "state.cc".into());
+    name.push(".lock");
+    path.with_file_name(name)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::world::AffordanceKind;
     use axum::{body::Body, http::Request};
     use tower::ServiceExt;
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn managed_linux_runtime_requires_the_admitted_state_root_binding() {
+        assert!(admitted_runtime_root(None).is_err());
+    }
+
+    #[test]
+    fn admitted_state_root_must_name_the_direct_canonical_directory() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = fs::canonicalize(directory.path()).unwrap();
+        assert_eq!(admitted_runtime_root(Some(root.clone())).unwrap(), root);
+        assert!(admitted_runtime_root(Some(directory.path().join("missing"))).is_err());
+    }
+
+    #[test]
+    fn post_lease_state_layout_creates_only_the_direct_declared_directory() {
+        let directory = tempfile::tempdir().unwrap();
+        let root = fs::canonicalize(directory.path()).unwrap();
+        prepare_admitted_state_layout(&root).unwrap();
+        let service = fs::symlink_metadata(root.join("service")).unwrap();
+        assert!(service.is_dir());
+        assert!(!service.file_type().is_symlink());
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn post_lease_state_layout_rejects_symlinks_and_hardlinks() {
+        use std::os::unix::fs::symlink;
+
+        let symlink_directory = tempfile::tempdir().unwrap();
+        let symlink_root = fs::canonicalize(symlink_directory.path()).unwrap();
+        let target = symlink_root.join("other.cc");
+        fs::write(&target, b"not-world").unwrap();
+        symlink(&target, symlink_root.join("world.cc")).unwrap();
+        assert!(prepare_admitted_state_layout(&symlink_root).is_err());
+
+        let hardlink_directory = tempfile::tempdir().unwrap();
+        let hardlink_root = fs::canonicalize(hardlink_directory.path()).unwrap();
+        let target = hardlink_root.join("other.cc");
+        fs::write(&target, b"not-world").unwrap();
+        fs::hard_link(&target, hardlink_root.join("world.cc")).unwrap();
+        assert!(prepare_admitted_state_layout(&hardlink_root).is_err());
+    }
 
     fn controller_commit() -> crate::world::CommitReceipt {
         crate::world::CommitReceipt {
@@ -1764,7 +1791,6 @@ mod tests {
             mesh_identity,
             revisions,
             fatal,
-            traffic: None,
         };
         publish_projection(&state).await.unwrap();
         Fixture {
@@ -1970,7 +1996,7 @@ mod tests {
             result["message"]
                 .as_str()
                 .unwrap()
-                .contains("invalid command payload")
+                .contains("payload may not supply caller authority")
         );
     }
 }

@@ -798,6 +798,7 @@ dependencies = [
  "hmac",
  "jsonschema",
  "jsonwebtoken",
+ "libc",
  "rand 0.9.5",
  "reqwest",
  "rmp-serde",
