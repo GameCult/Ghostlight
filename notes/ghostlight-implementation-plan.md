@@ -19,13 +19,15 @@ assessor, verifier/reconciliation, or legacy-transition module path.
 
 Production has not crossed that source boundary. Yggdrasil still runs legacy
 release `a4080d4` under an enabled `Restart=always` unit and a legacy state
-root. CultNet `87d0b0f` lands shared runtime activation, signed presence-health,
-and process-write-lease contracts; Odin `cebe425` lands deterministic recipe and
-operator-binding parsing, compiled plans, sealed releases, and sanitized
-Expected projections. Git materialization, runners, workload and route drivers,
-lease/fencing, CultCache/CultMesh control-plane state, and Idunn main integration
-remain absent. The active move is that actuation integration and one-way live
-cutover, not more Ghostlight runtime wiring.
+root. CultNet through pushed `f4ab237` owns generation-bound activation,
+separate lifecycle-brake, process-write-lease, observed-capability, explicit
+disagreement, and routed RUDP incarnation admission contracts. Odin through
+pushed `65cf2b2` owns deterministic recipe and binding admission, exact source
+freezing, sealed releases, Expected projection, the narrow native actuator
+ports, and the durable three-record transaction and admitted-generation engine.
+Remaining Odin work is Idunn projection, bounded RUDP transport, and stable-route
+integration; the active move is to finish and prove those before one-way live
+cutover.
 
 ## Authority map
 
@@ -185,9 +187,21 @@ external adapters survive only where their ownership remains clean.
 The deterministic foundation is landed: target recipes and Idunn operator
 bindings compile into private plans and sealed releases, and only a sanitized
 Expected incarnation may leave that control plane. Shared CultNet contracts own
-runtime activation, service-signed Present health, and process-bound write
-leases. Idunn main integration and the Git, runner, workload, lease/fencing,
-route, CultCache, and CultMesh drivers are not implemented yet.
+generation-bound activation, service-signed Present health, observed
+capabilities, explicit disagreement, and process-bound write leases. Odin
+through pushed `65cf2b2` lands the exact source path, the narrow actuator ports,
+dynamic systemd isolation, Ready-provider selection, protected activation
+delivery, and the deployment engine that replaced the command-owner stub.
+
+That engine persists exactly three control record types: one command with
+a frozen target order, one crash-resumable transaction per target, and one
+CAS-owned admitted generation per target. The transaction phases are Sealing,
+Starting, Warming, Fencing, Leasing, AwaitingReady, Routing, Committing, and
+Complete; stateless targets skip only fencing and leasing. Activation is
+prepared without starting a process, its public identity is persisted, and only
+then may the prepared process start. A credential or unit with no persisted
+activation owner is an orphan and cannot be adopted. Committing atomically
+replaces the exact incumbent and completes the transaction.
 
 Targets own constrained launch declarations, never raw unit or container
 templates. The operator binding selects the workload driver, which alone lowers
@@ -204,6 +218,14 @@ activation, and Present into Ready. Only after Ready may Idunn change stable
 route membership and drain the incumbent. The deployment brake gates body
 changes; same-release continuity remains separately owned and may be stopped
 only by an explicit lifecycle brake.
+
+Idunn starts and recovers from its own durable admitted state. Odin is the first
+managed semantic daemon, never an Idunn bootstrap dependency; initial Odin
+admission is the sole graph-bootstrap exception and begins from a root-admitted
+local binding. During an Odin outage, Idunn may preserve already-admitted
+continuity and routes, but it may not start a graph-changing transaction or
+promote without the exact frozen Odin Ready receipt for that runtime instance
+and presence digest. Idunn never manufactures Ready locally.
 
 Deploy CodexConnector first, then Ghostlight. Ghostlight's live cut archives the
 entire legacy state root, creates a clean world-v2 root, and validates a complete

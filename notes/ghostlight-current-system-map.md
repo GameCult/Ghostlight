@@ -835,9 +835,22 @@ waiting for Odin; that legacy health admission is teardown evidence, not the
 new runtime contract. Under the landed contracts, an activation becomes current
 only after Idunn's workload driver observes the exact native process and
 artifact. Present requires that activation plus service-signed presence health;
-Odin alone correlates Ready. Idunn continuity and deployment actuation have not
-yet been integrated with this contract. VoidBot's canonical MCP service remains
-separately owned and is not a deployment authority.
+Odin alone correlates Ready. CultNet through pushed `f4ab237` carries the
+generation-bound activation, lifecycle-brake, write-lease, observed-capability,
+and disagreement contracts plus routed RUDP incarnation admission. Odin through
+pushed `65cf2b2` carries exact source actuation, the narrow driver body, and the
+durable three-record deployment transaction. Remaining Odin work is Idunn
+projection, bounded RUDP transport, and stable-route integration. VoidBot's
+canonical MCP service remains separately owned and is not a deployment
+authority.
+
+Idunn starts and recovers from its own durable admitted state. Odin is the first
+managed semantic daemon, never an Idunn bootstrap dependency; its initial
+admission is the sole graph-bootstrap exception and begins from a root-admitted
+local binding. During an Odin outage, Idunn may preserve already-admitted
+continuity and routes, but it may not start a graph-changing transaction or
+promote without the exact frozen Odin Ready receipt for that runtime instance
+and presence digest. Idunn never manufactures Ready locally.
 
 ### Deployment, discovery, and adjacent capacity
 
@@ -851,8 +864,9 @@ The landed deterministic foundation retains the exact selected commit, source
 tree, recipe blob, and Gitlink facts. Shape validation is not proof of Git
 ancestry, signatures, or object custody. Those proofs belong to the narrow
 Idunn-owned source driver, which must read the canonical ref and exact objects
-as the Idunn identity before compiling a consequential plan. That source driver
-and Idunn main integration remain absent.
+as the Idunn identity before compiling a consequential plan. Odin through pushed
+`65cf2b2` lands that source driver and the crash-resumable transaction owner
+that replaced the command-owner loop.
 
 Heimdall publishes four redacted typed discovery records to Odin under globally
 unique catalog keys:
