@@ -835,7 +835,7 @@ waiting for Odin; that legacy health admission is teardown evidence, not the
 new runtime contract. Under the landed contracts, an activation becomes current
 only after Idunn's workload driver observes the exact native process and
 artifact. Present requires that activation plus service-signed presence health;
-Odin alone correlates Ready. CultNet through pushed `f4ab237` carries the
+Odin alone correlates Ready. CultNet through CultLib `85f7024` carries the
 generation-bound activation, lifecycle-brake, write-lease, observed-capability,
 and disagreement contracts plus routed RUDP incarnation admission. Odin through
 pushed `65cf2b2` carries exact source actuation, the narrow driver body, and the

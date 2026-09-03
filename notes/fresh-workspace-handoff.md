@@ -132,7 +132,7 @@ body. The 1,200 and 2,400 actor profiles are synthetic fixtures only.
 Yggdrasil still serves legacy Ghostlight release `a4080d4` from an enabled
 `Restart=always` unit with health v1, campaign/Session Zero state, and no
 `world.cc` or `app-sessions-v2.cc` witness. The Connector is also still on its
-legacy enabled body. CultNet through pushed `f4ab237` owns generation-bound
+legacy enabled body. CultNet through CultLib `85f7024` owns generation-bound
 activation, separate lifecycle brakes, process-write leases, observed
 capabilities, explicit disagreement, and routed RUDP incarnations. Odin through
 pushed `65cf2b2` owns deterministic recipe and binding admission, exact source
@@ -197,10 +197,11 @@ and proposals but cannot commit on their behalf.
 ## Next gate
 
 Review and subtract the uncommitted Idunn-owned Expected/activation/anchor/lease
-projection and bounded multi-session RUDP document transport. Advance Odin to
-CultNet `f4ab237`, add UDP route actuation plus an independently persisted
-post-reload data-plane observation through the existing proxy, and verify that
-focused body on Yggdrasil. Then implement the directly managed Rust Odin that
+projection and bounded multi-session RUDP document transport. Repoint Odin off
+its vendored CultNet fork onto CultLib `85f7024` as Ghostlight did, add UDP
+route actuation plus an independently persisted post-reload data-plane
+observation through the existing proxy, and verify that focused body on
+Yggdrasil. Then implement the directly managed Rust Odin that
 alone authenticates runtime observation into Present and derives Ready, plus
 exact capability dependency closure frozen inside the existing deployment
 transaction. Do not add another scheduler, registry, inbox, or shared-file

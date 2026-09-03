@@ -19,7 +19,7 @@ assessor, verifier/reconciliation, or legacy-transition module path.
 
 Production has not crossed that source boundary. Yggdrasil still runs legacy
 release `a4080d4` under an enabled `Restart=always` unit and a legacy state
-root. CultNet through pushed `f4ab237` owns generation-bound activation,
+root. CultNet through CultLib `85f7024` owns generation-bound activation,
 separate lifecycle-brake, process-write-lease, observed-capability, explicit
 disagreement, and routed RUDP incarnation admission contracts. Odin through
 pushed `65cf2b2` owns deterministic recipe and binding admission, exact source
