@@ -1,0 +1,461 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "ember-convoy-default-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/aetheria/ember-convoy-default-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/aetheria/ember-convoy-default-v0.v0.json",
+  "visual_plan_ref": "examples/visual/aetheria/ember-convoy-default-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "ember-convoy-default-v0.mare-crisium-continuity-default",
+  "protagonist_agent_id": "sera_madani",
+  "npc_agent_ids": [
+    "mika_osei",
+    "davin_rook",
+    "nara_venn",
+    "gray_bay_residents"
+  ],
+  "purpose": "Interactive Fiction Weaver draft for the 2091 Mare Crisium continuity default. Tonal mode: workplace black comedy turning into procedural dread, with a warm and strictly material mutual-aid countercurrent.",
+  "local_awareness_summary": [
+    {
+      "text": "Sera Madani is a baseline human seal technician classified as continuity labor. She knows Transfer Gallery Two, Hatch MCR-2's worn lower dog, the honest pressure gauge, local paper cuffs, and dock cycling; she does not control credit, insurance, or Horizon's occupancy classifications.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/ember-convoy-default-v0.v0.json",
+        "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Defunct/Horizon Ventures.md"
+      ]
+    },
+    {
+      "text": "Sera sees Mika's gray credential, Davin's remaining manifest fields, Nara's launch conditions, the physical queue, and any skill or resource she personally transfers. She cannot infer hidden office motives or future merger history.",
+      "source_refs": [
+        "examples/ink/aetheria/ember-convoy-default-v0.branch-and-fold.v0.ink",
+        "prompts/interactive-fiction-weaver.md"
+      ]
+    },
+    {
+      "text": "The immediate clock is a nineteen-minute final gallery cycle inside a thirty-six-hour default window. The player must decide how to spend air, mass, time, evidence, skill, and contract exposure before separate offices close the available exits.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/ember-convoy-default-v0.v0.json",
+        "examples/ink/aetheria/ember-convoy-default-v0.branch-and-fold.v0.ink"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Sera's embodied, work-local viewpoint in one pressurized lunar transfer gallery. Choices use cuff entries, tools, the dog handle, pressure bypass, manifest bargaining, resource transfer, teaching, and physical route control.",
+        "source_refs": ["prompts/interactive-fiction-weaver.md", "examples/ink/aetheria/ember-convoy-default-v0.branch-and-fold.v0.ink"]
+      },
+      {
+        "text": "Routine gets three visual beats before the default: place, hatch practice, and breakfast relationships. Administrative pressure arrives only after those dependencies are legible.",
+        "source_refs": ["prompts/narrative-quality-reviewer.md"]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Sera owns the physical hatch operation during her watch. Nara owns insured departure continuation and can require a test. Davin owns only unlocked manifest fields. Horizon's default procedure owns resident classifications; no one present owns the whole cascade.",
+        "source_refs": ["examples/lore-grounding/aetheria/ember-convoy-default-v0.v0.json"]
+      },
+      {
+        "text": "Material aid can buy hours or passage but cannot erase debt, restore cargo finance, or guarantee that another carrier accepts the route.",
+        "source_refs": ["Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Defunct/Horizon Ventures.md", "Aetheria/Narrative Themes.md"]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Hatch MCR-2, its dog handle, the honest gauge, Sera's paper cuff, Mika's food-loop manuals, oxygen allotments, personal mass credit, Davin's manifest key, and the food cart each change who can act or leave.",
+        "source_refs": ["examples/ink/aetheria/ember-convoy-default-v0.branch-and-fold.v0.ink"]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every material choice must change a later gate, callback, visible state, authority response, resource condition, or ending.",
+        "source_refs": ["docs/architecture/ink-branching-scenes.md"]
+      },
+      {
+        "text": "The hopeful path remains quiet and infrastructural: pooled oxygen, copied knowledge, shared seal work, and one additional day for nine people.",
+        "source_refs": ["Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Defunct/Horizon Ventures.md", "Aetheria/Narrative Themes.md"]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make Nara a universal regulator, Davin a secret sovereign, or Sera able to cancel debt by exposing one defect.",
+        "source_refs": ["examples/lore-grounding/aetheria/ember-convoy-default-v0.v0.json"]
+      },
+      {
+        "text": "Do not turn the nine-person escape into a mature movement, a clean victory, or proof that material margin no longer matters.",
+        "source_refs": ["Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Defunct/Horizon Ventures.md"]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through ordinary maintenance, default classification, the false-green hatch failure, and a final contraction priority, then select one of eight state-gated endings.",
+    "choice_layers": [
+      "morning_maintenance",
+      "continuity_default_response",
+      "false_green_hatch",
+      "contraction_priority"
+    ],
+    "variables": [
+      "mutual_aid",
+      "hatch_state",
+      "seal_margin",
+      "departure_margin",
+      "unsupported_air",
+      "manifest_leverage",
+      "mass_credit",
+      "audit_exposure",
+      "contract_debt",
+      "mika_seal_skill",
+      "davin_trust",
+      "queue_crossed"
+    ],
+    "ending_gates": [
+      "ending_ferry_success",
+      "ending_ferry_cost",
+      "ending_bay_success",
+      "ending_bay_cost",
+      "ending_record_success",
+      "ending_record_cost",
+      "ending_insurance_success",
+      "ending_insurance_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "log_second_stroke",
+      "ink_path": "routine_choice",
+      "action_type": "record_evidence",
+      "actor_intent": "Make the physical two-stroke seal truth auditable before the default arrives.",
+      "state_basis": ["Sera has observed the panel becoming green before the lower dog seats and owns the maintenance cuff entry."],
+      "reviewed_consequences": ["Raises seal_margin and audit_exposure while spending departure margin on inspection; the evidence later unlocks the physical-test challenge."],
+      "training_hooks": ["physical_truth_vs_dashboard", "maintenance_evidence", "safety_schedule_tradeoff"]
+    },
+    {
+      "branch_id": "teach_mika_hatch",
+      "ink_path": "routine_choice",
+      "action_type": "teach_physical_skill",
+      "actor_intent": "Make the second-stroke procedure shared rather than credential-bound.",
+      "state_basis": ["Mika is present at the hatch and can physically brace and pull the waist-high handle."],
+      "reviewed_consequences": ["Raises mutual_aid, mika_seal_skill, audit_exposure, and seal_margin; later unlocks delegated seal work and the bay-success gate."],
+      "training_hooks": ["portable_operating_knowledge", "shared_authority", "routine_mutual_aid"]
+    },
+    {
+      "branch_id": "pool_oxygen_scrip",
+      "ink_path": "routine_choice",
+      "action_type": "transfer_resource",
+      "actor_intent": "Buy Mika's household one additional sleep cycle before anyone knows default has been declared.",
+      "state_basis": ["Sera's maintenance bonus can be converted to household oxygen allotments through Davin's desk."],
+      "reviewed_consequences": ["Raises unsupported_air and mutual_aid; later changes bay viability."],
+      "training_hooks": ["air_as_wage", "care_has_a_ledger_cost", "quiet_foresight"]
+    },
+    {
+      "branch_id": "protect_departure_margin",
+      "ink_path": "routine_choice",
+      "action_type": "move_objects",
+      "actor_intent": "Stage outbound tools before mass codes freeze and preserve launch minutes.",
+      "state_basis": ["Sera can move and lock the tool crates inside the dockside manifest grid."],
+      "reviewed_consequences": ["Raises departure_margin and davin_trust while lowering mutual_aid through visible priority of coded cargo over food-loop spares."],
+      "training_hooks": ["logistics_as_power", "time_margin", "routine_social_cost"]
+    },
+    {
+      "branch_id": "bargain_for_mika",
+      "ink_path": "default_response",
+      "action_type": "bargain",
+      "actor_intent": "Use Sera's own amended service as leverage to dispute Mika's gray classification.",
+      "state_basis": ["Davin can open a labor-code appeal; Sera can sign a continuity amendment but cannot order reclassification."],
+      "reviewed_consequences": ["Raises contract_debt, manifest_leverage, davin_trust, and audit_exposure; Mika's code becomes disputed, not automatically green."],
+      "training_hooks": ["debt_as_bargaining_chip", "classification_dispute", "bounded_clerk_authority"]
+    },
+    {
+      "branch_id": "transfer_mass_allowance",
+      "ink_path": "default_response",
+      "action_type": "transfer_resource",
+      "actor_intent": "Convert Sera's personal kilograms into Mika's passage and preserve food-loop manuals as clothing.",
+      "state_basis": ["Sera has personal mass credit; Davin can code the manuals while his fields remain unlocked."],
+      "reviewed_consequences": ["Raises mass_credit and davin_trust while spending departure margin; enables the ferry-success gate."],
+      "training_hooks": ["body_as_mass", "clerical_fiction_for_survival", "departure_cost"]
+    },
+    {
+      "branch_id": "copy_scrubber_rotation",
+      "ink_path": "default_response",
+      "action_type": "share_operating_knowledge",
+      "actor_intent": "Give gray-bay residents the schedule required to maintain air after official service withdrawal.",
+      "state_basis": ["Sera knows local cartridge timing and the honest gauge; Mika can carry a paper copy habitatward."],
+      "reviewed_consequences": ["Raises mutual_aid, unsupported_air, and audit_exposure; later supports the bay ending."],
+      "training_hooks": ["knowledge_as_exit_infrastructure", "unpaid_maintenance", "paper_under_lockout"]
+    },
+    {
+      "branch_id": "force_physical_test",
+      "ink_path": "default_response",
+      "action_type": "show_evidence",
+      "actor_intent": "Bind the departure clock to a physical pressure test using Sera's handwritten record.",
+      "state_basis": ["Available only after audit_exposure makes the two-stroke discrepancy legible to Nara."],
+      "reviewed_consequences": ["Raises audit_exposure and manifest_leverage while spending departure margin; joins physical and occupancy disputes in one file."],
+      "training_hooks": ["evidence_forces_clock", "coupled_failure_record", "audit_backfire"]
+    },
+    {
+      "branch_id": "drive_second_stroke",
+      "ink_path": "hatch_response",
+      "action_type": "repair_under_pressure",
+      "actor_intent": "Make the seal physically true before the gallery cycles.",
+      "state_basis": ["Sera knows the brace point and second stroke."],
+      "reviewed_consequences": ["Sets hatch_state to seated and raises seal_margin while spending departure margin; leaves the gray queue habitatward."],
+      "training_hooks": ["embodied_maintenance", "safety_closes_route", "true_green_state"]
+    },
+    {
+      "branch_id": "cross_gray_queue",
+      "ink_path": "hatch_response",
+      "action_type": "hold_route",
+      "actor_intent": "Put unsupported residents dockward before the route closes.",
+      "state_basis": ["The queue is immediately habitatward and Sera physically controls the handle."],
+      "reviewed_consequences": ["Sets queue_crossed and leaves the hatch at false-green after the queue passes, raises mutual_aid, and spends departure and seal margin; makes residents visible through the collar."],
+      "training_hooks": ["route_control", "people_as_freight", "air_spent_on_access"]
+    },
+    {
+      "branch_id": "share_seal_authority",
+      "ink_path": "hatch_response",
+      "action_type": "delegate_skill",
+      "actor_intent": "Let Mika seat the hatch while Sera works the manual bypass.",
+      "state_basis": ["Available only if Sera taught Mika the second stroke during routine."],
+      "reviewed_consequences": ["Sets hatch_state to seated and raises mutual_aid, unsupported_air, and audit_exposure; exposes credentialed work done by an unauthorized operator."],
+      "training_hooks": ["shared_skill_callback", "unauthorized_competence", "two_person_safety"]
+    },
+    {
+      "branch_id": "mask_pressure_loss",
+      "ink_path": "hatch_response",
+      "action_type": "falsify_signal",
+      "actor_intent": "Preserve launch time by making the system trust the panel instead of the falling gauge.",
+      "state_basis": ["Sera can reach the old panel contacts and understands the difference between indicator and seal."],
+      "reviewed_consequences": ["Raises departure_margin and lowers audit_exposure and seal_margin while leaving hatch_state false-green; increases breach risk in later gates."],
+      "training_hooks": ["dangerous_signal_spoof", "time_bought_with_air", "dashboard_lie"]
+    },
+    {
+      "branch_id": "prioritize_ferry",
+      "ink_path": "final_choice",
+      "action_type": "dispatch_people",
+      "actor_intent": "Spend remaining time, mass, and manifest discretion on immediate departure.",
+      "state_basis": ["Success requires mass_credit, departure_margin, and a usable hatch state."],
+      "reviewed_consequences": ["Routes to ferry success or closure cost; queue_crossed, manifest_leverage, and Davin's remaining trust alter the ending texture."],
+      "training_hooks": ["state_gated_exodus", "body_before_property", "window_closes"]
+    },
+    {
+      "branch_id": "prioritize_bay",
+      "ink_path": "final_choice",
+      "action_type": "sustain_shelter",
+      "actor_intent": "Use shared air, skill, and watch labor to buy one additional day for refusal and another ferry.",
+      "state_basis": ["Success requires mutual_aid, unsupported_air, and Mika's learned seal skill."],
+      "reviewed_consequences": ["Routes to the nine-person quiet mutual-aid success or forced enrollment after material insufficiency."],
+      "training_hooks": ["mutual_aid_that_works", "care_buys_time", "no_movement_yet"]
+    },
+    {
+      "branch_id": "prioritize_record",
+      "ink_path": "final_choice",
+      "action_type": "publish_evidence",
+      "actor_intent": "Make the physical seal failure and administrative gray classification one creditor-visible causal record.",
+      "state_basis": ["Success requires high audit exposure and a witnessed hatch discrepancy."],
+      "reviewed_consequences": ["Routes to a durable coupled-failure record or evidence fragments that do not rescue anyone during the current window."],
+      "training_hooks": ["administrative_causality", "evidence_is_not_rescue", "later_default_pressure"]
+    },
+    {
+      "branch_id": "prioritize_insurance",
+      "ink_path": "final_choice",
+      "action_type": "preserve_infrastructure",
+      "actor_intent": "Keep the cylinder and shuttle inside coverage through a safe seal and enough signed occupancy amendments.",
+      "state_basis": ["Success requires high seal margin, seated hatch state, and contract debt accepted by residents."],
+      "reviewed_consequences": ["Routes to an orderly harmful contraction or to lost coverage after insufficient margin."],
+      "training_hooks": ["infrastructure_survives", "coercion_through_function", "orderly_contraction"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Choice availability and ending gate selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Any durable relationship or memory updates for Sera, Mika, Davin, or Nara",
+      "Any generalization of Mare Crisium's classification labels to other Horizon habitats",
+      "Any economy-schema treatment of oxygen allotments, transport debt, mass credit, filter hours, or insurance windows",
+      "Any promotion of branch-specific outcomes beyond the authored nine-person historical fact"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Aetheria Ember worker using the four required Ghostlight reviewer prompts as separate passes",
+    "review_status": "accepted_with_visual_blockout_deferred",
+    "review_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "artifact_ref": "examples/ink/aetheria/ember-convoy-default-v0.branch-and-fold.v0.ink",
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 4,
+        "voice_score": 5,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "detected_tonal_mode": "Workplace black comedy turning into procedural dread, with a warm and strictly material mutual-aid countercurrent.",
+        "major_findings": [],
+        "minor_findings": [],
+        "path_specific_failures": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "lore_context_bridges_needed": [],
+        "character_introduction_fixes": [],
+        "branch_fold_fixes": [],
+        "voice_and_prose_fixes": [],
+        "training_labels": [
+          "strong_contextual_onboarding",
+          "strong_branch_callback",
+          "strong_tonal_control",
+          "strong_wit_with_stakes",
+          "strong_material_lore",
+          "strong_domestic_worldbuilding"
+        ],
+        "acceptance_notes": [
+          "The first pass found that contract_debt conflated oxygen or mass transfers with an actual signed continuity amendment, letting the insurance ending misread private cost as occupancy consent. Those increments were removed; only the explicit bargain creates amendment debt.",
+          "The first pass also found hatch_state leaking from morning maintenance into a later closure cycle. The false-green beat now resets the live hatch state before the player's pressure response, and every resulting state receives conditional prose.",
+          "The opening establishes lunar locality, gallery geometry, the faulty-hatch routine, breakfast, all four roles, and each authority boundary before the default notice. All sixteen branches change a later gate, callback, risk, or ending."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "artifact_ref": "examples/ink/aetheria/ember-convoy-default-v0.branch-and-fold.v0.ink",
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 5,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 5,
+        "sources_checked": [
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Defunct/Horizon Ventures.md", "reason_checked": "Primary institution, 2091 failures, Mare Crisium authored elaboration, default procedure, hatch defect, and merger consequence.", "used_for": "canon check and owning backfill target"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Corporate Exodus.md", "reason_checked": "Era, Horizon transport spine, company law, food leverage, and replenishment dependence.", "used_for": "canon check"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Colonizing Sol.md", "reason_checked": "Transport debt, habitat rent, oxygen fees, employer scrip, and company-settlement coercion.", "used_for": "canon check"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Soliton Drive.md", "reason_checked": "Convoy schedules, cargo finance, habitat provisioning, maintenance burdens, and rescue coverage.", "used_for": "canon check"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Defunct/TerraCore Industries.md", "reason_checked": "Lunar life-support administration and audit culture inherited by SolEx.", "used_for": "canon check"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Ewan Hart.md", "reason_checked": "Closed-loop food ecology and proprietary dependence after convoy failure.", "used_for": "canon check"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/SolEx.md", "reason_checked": "Downstream merger and inherited transport, audit, and contract logic.", "used_for": "continuity check"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Reference/Institutional Lineage.md", "reason_checked": "Founder history and exact 2095 succession timing.", "used_for": "timeline contradiction check"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md", "reason_checked": "Territory as overlapping control of life support, docks, food, maintenance, and records; lunar context.", "used_for": "context and authority check"},
+          {"source_ref": "Aetheria/Narrative Themes.md", "reason_checked": "Administrative cascades, material exit, care, and mutual aid as infrastructural counter-pressure.", "used_for": "theme and hope-scale check"}
+        ],
+        "source_gaps": [],
+        "canon_drift_findings": [],
+        "unsupported_claims": [],
+        "stale_or_conflicting_lore": [],
+        "vault_backfill_candidates": [],
+        "required_story_revisions": [],
+        "required_lore_patches": [],
+        "suggested_story_revisions": [],
+        "suggested_lore_patches": [],
+        "training_labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_faction_pressure",
+          "strong_infrastructure_grounding",
+          "vault_backfill_candidate"
+        ],
+        "acceptance_notes": [
+          "The durable incident-level gap was patched in the owning Horizon Ventures note before fixture drafting; the fixture dramatizes that patch instead of asking prompt text to carry canon.",
+          "The three classification names are explicitly bounded to Mare Crisium. The grounding digest leaves wider Horizon standardization open rather than silently universalizing a local procedure.",
+          "Immediate ferry, failed ferry, record, and insurance endings remain branch-local possibilities. Only the small nine-person next-day mutual-aid result is asserted as the authored historical fact."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "artifact_ref": "examples/visual/aetheria/ember-convoy-default-v0.branch-and-fold.v0.visual.json",
+        "overall_status": "needs_revision",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 5,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 3,
+        "major_findings": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "The repeated multi-angle transfer gallery has a detailed textual scene-set specification but no rendered plan view or 3D blockout.",
+            "why_it_matters": "Text-only generation cannot reliably preserve the hatch-to-collar axis, facing desk and booth, occlusion through the hatch window, queue side, and branch movement across eighteen images.",
+            "evidence": "The fixture uses seven camera slots and makes hatch state, booth sightline, queue position, and dock access consequential.",
+            "fix_direction": "Before website rendering, build a camera-specific blockout from the declared fixed zones, routes, occluders, camera slots, staging slots, and branch-state anchors."
+          }
+        ],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "missing_visual_scenes": [],
+        "weak_image_prompts": [],
+        "missing_scene_set_needs": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "A textual layout is not a durable geometry input for high-consistency multi-angle rendering.",
+            "why_it_matters": "Generated art would otherwise be asked to remember the room and preserve branch routes from prose alone.",
+            "evidence": "Eighteen concept frames reuse Transfer Gallery Two from several directions, with one separate gray-bay aftermath.",
+            "fix_direction": "Use a plan view or 3D blockout as the painterly input for each declared camera slot."
+          }
+        ],
+        "missing_branch_modifiers": [],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity",
+          "missing_scene_set"
+        ],
+        "acceptance_notes": [
+          "The first visual pass split the exterior and interior opening into separate Ink screens, added a dedicated classification anchor before the second choice layer, and removed a negative construction from the exterior prompt.",
+          "All eighteen visual scenes have complete standalone base prompts, visible-character allowlists, stable refs, and eighteen matching BFL concept prompts. Branch consequences alter cuffs, gauge state, hatch alignment, route position, evidence brackets, oxygen bars, or departure lighting.",
+          "Verdict accepts the manifest and visual plan as concept-ready collateral. High-consistency website replay remains blocked on the declared external blockout, which is outside this pass's allowed artifact paths and unnecessary for deferred rendering."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "artifact_ref": "examples/ink/aetheria/ember-convoy-default-v0.branch-and-fold.v0.ink",
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 5,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "inferred_layout_summary": "Mare Crisium is a low horizontal lunar surface habitat. Transfer Gallery Two is one straight pressurized corridor: Hatch MCR-2 and its gauge, pipe, bypass, handle, and chalk brace are habitatward; the shuttle collar and yellow grid are dockward; Davin's recessed desk is gallery-right and Nara's sealed glass booth faces it from gallery-left. Mika's food cart and the resident queue approach from habitatward. The hatch body occludes that queue except through a reinforced window. Crossing places residents dockward in the yellow grid. The gray sleeping bay is a separate ending locality inside the habitat.",
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "spatial_questions": [],
+        "diagram_or_visual_plan_needs": [
+          {
+            "priority": "high",
+            "needed_artifact": "camera-specific plan view or 3D blockout",
+            "reason": "Generated multi-angle art needs geometry authority stronger than text for the gallery axis, facing alcoves, hatch occlusion, and crossed-queue position.",
+            "minimum_required_detail": "Use the declared seven fixed zones, three routes, two occluders, seven camera slots, six staging slots, two sightlines, and five branch-state anchors."
+          }
+        ],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_branch_spatial_state",
+          "diagram_needed"
+        ],
+        "acceptance_notes": [
+          "The first spatial pass caught live hatch state carrying across two separate closure cycles and the cross-queue action leaving the route permanently open in state. The false-green knot now resets hatch_state, and crossing residents ends at explicit false-green state 2.",
+          "Every role has a route and reachable interface: Sera and trained Mika can operate the waist-high handle; Sera reaches the bypass; Davin stays at the right-wall desk; Nara observes from the facing glass booth; residents move along the single habitatward-to-dockward axis.",
+          "Folded scenes conditionally preserve hatch seating, leak, countdown, queue side, mass, cuffs, and shared-skill state."
+        ]
+      }
+    ],
+    "review_notes": [
+      "One-shot authoring is bootstrap scaffolding for the fixture corpus and does not claim to be a runtime responder capture.",
+      "The four required reviewer prompts were applied as separate narrative, lore, visual, and spatial passes after the first complete artifact draft; every in-scope finding was repaired before these verdicts were recorded.",
+      "No Ink compiler was installed or run. Syntax received static structure checks only, as required by the swarm contract.",
+      "Rendering is deferred. No images were generated."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

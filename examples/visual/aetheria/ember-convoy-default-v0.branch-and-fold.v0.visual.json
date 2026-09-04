@@ -1,0 +1,431 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "ember-convoy-default-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/aetheria/ember-convoy-default-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/ember-convoy-default-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ember-convoy-default-v0.mare-crisium-continuity-default",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a 2091 Horizon Ventures habitat default at Mare Crisium Receiving Cylinder.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for the lunar cylinder, ordinary seal and breakfast work, four routine choices, continuity-default classification, the false-green hatch failure, final priority, and four ending families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for exterior locality, gallery layout, hatch closeup, breakfast relationships, each routine branch, ordinary fold, amber default notice, classified queue, false-green pressure failure, final threshold, and each ending family. The default notice and falling pressure gauge stand as separate pivotal replay beats.",
+    "prompting_rule": "Each base image prompt is a complete visible frame for a general image model: camera, lunar or interior geometry, materials, practical lighting, bodies, clothing, tools, interfaces, and consequential objects are stated directly. Character refs are assembled only for people visible in the frame.",
+    "global_style_cue": "Humane retro-industrial science-fiction storybook illustration, precise dark ink linework under thin gouache color, cold lunar grays and hard white dock light interrupted by amber alarms and warm food-cart steam, readable silhouettes and mechanical interfaces, tactile worn materials, restrained facial acting, cinematic composition for bleak workplace drama.",
+    "prompt_assembly_rule": "Assemble each prompt from global_style_cue, the selected scene base_image_prompt, visual refs only for named characters or groups listed as visible in that frame, and triggered state_image_modifiers or global_branch_image_modifiers. Continuity notes remain tooling constraints. Camera-specific blockout input is required for high-consistency multi-angle renders.",
+    "scene_set_guidance": {
+      "current_mode": "textual_scene_set_specification",
+      "scope_reason": "The fixture returns to one narrow transfer gallery from several angles and makes hatch state, booth sightlines, queue position, and dock access consequential. The textual set is enough for concept prompts and review, while generated replay requires a durable plan view or 3D blockout.",
+      "future_scene_set_need": "Build a camera-specific blockout for Transfer Gallery Two using the declared fixed zones, role routes, occluders, camera slots, staging slots, hatch states, and branch-visible anchors before website-quality image generation."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "ember_crisium_exterior",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide exterior view on the lunar surface in 2091: Mare Crisium Receiving Cylinder is a long horizontal pressurized metal habitat half-buried in pale regolith, with ribbed pressure sections, radiator panels, cable trenches, repair sheds, and a compact landing pad attached to one end. A small insured shuttle waits under hard white floodlights beside cargo pallets. Black sky, harsh shadows, dust-scoured gray plating, tiny suited workers, and a low compact silhouette establish a sparse industrial facility.",
+        "visible_characters": [
+          {
+            "agent_id": "exterior_workers",
+            "default_stance": "tiny suited figures tending cargo pallets and pad connections",
+            "visual_ref": "visual_character_refs.groups.exterior_workers"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The cylinder is a lunar surface habitat with one attached transfer gallery and pad, not a rotating orbital habitat.",
+          "The shuttle remains physically outside the dockward collar throughout the gallery scene."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_gallery_establishing",
+        "ink_anchor": "gallery_establishing",
+        "base_image_prompt": "Wide interior view down Transfer Gallery Two inside a lunar freight habitat: gray floor grating runs in a straight line from a heavy habitatward pressure hatch in the near wall to a circular dockward collar and pad window at the far end. A recessed manifest desk occupies the right wall; a sealed glass audit booth occupies the left wall facing it. Yellow cargo-grid paint marks the dock end. Exposed red pressure pipes, a waist-high bypass cabinet, analog gauge, overhead cable trays, and amber-white work lamps make every system reachable and worn. The waiting shuttle is visible through the far window.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Habitatward and dockward form one stable straight coordinate axis.",
+          "Manifest desk remains gallery-right; glass audit booth remains gallery-left; bypass cabinet and honest gauge remain beside Hatch MCR-2."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_hatch_routine",
+        "ink_anchor": "routine_hatch",
+        "base_image_prompt": "Close-medium maintenance view at the habitatward end of Transfer Gallery Two: Sera Madani, a lean brown-skinned baseline human woman in her late thirties with tightly braided black hair, orange-gray seal-technician coveralls, paper credential cuff, tool belt, and heavy low-gravity work boots, braces one boot on a chalk mark over gray floor grating. She drives a waist-high steel dog handle through a second closure stroke on a thick pressure hatch labeled MCR-2. The electronic panel already glows green while an analog needle beside the red pressure pipe is still settling. Scuffed seals, worn lower linkage, amber work lamp, and paper checklist make the discrepancy visible.",
+        "visible_characters": [
+          {
+            "agent_id": "sera_madani",
+            "default_stance": "boot on chalk brace, both hands driving the second stroke",
+            "visual_ref": "visual_character_refs.characters.sera_madani"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The dog handle is waist-high and operated by bracing against the floor, not by kicking the hatch panel.",
+          "The green indicator can precede the physical seating of the worn lower dog."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_breakfast_routine",
+        "ink_anchor": "routine_people",
+        "base_image_prompt": "Medium-wide workplace breakfast in Transfer Gallery Two: the straight gray-grated corridor runs between the heavy habitatward hatch and distant dock collar. Sera Madani stands beside the hatch in orange-gray technician coveralls. Mika Osei, a broad dark-skinned baseline human woman in her early forties with short coiled hair, moss-green food-loop jacket, clear sleeve patches, gray paper cuff, and scuffed cart gloves, pushes a compact stainless food cart carrying two steaming lentil cakes under mesh and sealed microbial-bed canisters. Davin Rook, a narrow pale baseline human man in his fifties with thinning sandy hair, ink-stained fingers, rumpled blue manifest vest, and rectangular paper cuff, leans over the recessed right-wall desk. Nara Venn, a light-brown baseline human woman in her forties with a silver-streaked black bob and charcoal creditor coat, watches from the left glass booth holding a dark slate. Warm cart steam crosses cold dock light.",
+        "visible_characters": [
+          {"agent_id": "sera_madani", "default_stance": "standing beside hatch after inspection", "visual_ref": "visual_character_refs.characters.sera_madani"},
+          {"agent_id": "mika_osei", "default_stance": "pushing food cart habitatward to dockward", "visual_ref": "visual_character_refs.characters.mika_osei"},
+          {"agent_id": "davin_rook", "default_stance": "leaning over recessed manifest desk", "visual_ref": "visual_character_refs.characters.davin_rook"},
+          {"agent_id": "nara_venn", "default_stance": "inside glass booth with slate at chest height", "visual_ref": "visual_character_refs.characters.nara_venn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_log_second_stroke",
+        "ink_anchor": "routine_choice.log_second_stroke",
+        "base_image_prompt": "Object-focused frame beside Hatch MCR-2 in Transfer Gallery Two: Sera Madani's brown hand writes a second square and initials on a white paper credential cuff while the official checklist offers one printed box. Her orange-gray sleeve and tool belt edge frame the foreground. The thick steel hatch, green electronic indicator, honest analog pressure gauge, chalk boot mark, and worn lower dog fill the background. Through the left glass audit booth, Nara Venn in a charcoal coat raises a dark slate as a small amber inspection bracket lights.",
+        "visible_characters": [
+          {"agent_id": "sera_madani", "default_stance": "hand writing a second box on cuff", "visual_ref": "visual_character_refs.characters.sera_madani"},
+          {"agent_id": "nara_venn", "default_stance": "behind glass noticing the entry", "visual_ref": "visual_character_refs.characters.nara_venn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_teach_mika_hatch",
+        "ink_anchor": "routine_choice.teach_mika_hatch",
+        "base_image_prompt": "Low-angle work lesson at the habitatward hatch of Transfer Gallery Two: Mika Osei, broad and dark-skinned in a moss-green food-loop jacket, gray paper cuff, and heavy work shoes, braces one boot on a chalk mark and leans both gloved hands into the waist-high steel dog handle. Sera Madani, lean with braided black hair in orange-gray seal coveralls, points to the worn lower linkage and analog gauge. The thick hatch panel glows premature green under amber light; Mika's stainless food cart with mesh-covered lentil cakes waits against the red pressure pipe.",
+        "visible_characters": [
+          {"agent_id": "sera_madani", "default_stance": "pointing from lower linkage to gauge", "visual_ref": "visual_character_refs.characters.sera_madani"},
+          {"agent_id": "mika_osei", "default_stance": "braced into the second handle stroke", "visual_ref": "visual_character_refs.characters.mika_osei"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_pool_oxygen",
+        "ink_anchor": "routine_choice.pool_oxygen_scrip",
+        "base_image_prompt": "Close human transaction at the recessed right-wall manifest desk in Transfer Gallery Two: Sera Madani in orange-gray seal coveralls touches her white paper cuff to Davin Rook's reader. Davin, pale and narrow in a rumpled blue manifest vest, watches two small oxygen-allotment bars move from Sera's maintenance bonus to Mika Osei's gray household line. Mika, broad and dark-skinned in a moss-green food-loop jacket, tears a warm lentil cake beside her stainless cart. The heavy hatch and analog pressure gauge remain visible down the straight gallery under white and amber work lights.",
+        "visible_characters": [
+          {"agent_id": "sera_madani", "default_stance": "cuff touching reader", "visual_ref": "visual_character_refs.characters.sera_madani"},
+          {"agent_id": "davin_rook", "default_stance": "seated behind manifest desk watching allotment bars", "visual_ref": "visual_character_refs.characters.davin_rook"},
+          {"agent_id": "mika_osei", "default_stance": "beside food cart dividing breakfast", "visual_ref": "visual_character_refs.characters.mika_osei"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_stage_crates",
+        "ink_anchor": "routine_choice.protect_departure_margin",
+        "base_image_prompt": "Dockward logistics frame inside Transfer Gallery Two: Sera Madani in orange-gray coveralls pushes two low wheeled tool crates across gray floor grating into a yellow painted manifest grid before the circular collar window. She locks the crate wheels while Davin Rook at the recessed right-wall desk approves the sequence with one hand. Farther habitatward, Mika Osei stands beside a stainless food cart whose sealed microbial-bed canisters remain outside the yellow grid. Hard white pad light silhouettes the waiting shuttle through the collar window; amber interior lamps mark the hatch at the opposite end.",
+        "visible_characters": [
+          {"agent_id": "sera_madani", "default_stance": "locking crate wheels inside yellow grid", "visual_ref": "visual_character_refs.characters.sera_madani"},
+          {"agent_id": "davin_rook", "default_stance": "approving from right-wall desk", "visual_ref": "visual_character_refs.characters.davin_rook"},
+          {"agent_id": "mika_osei", "default_stance": "habitatward beside unstaged food cart", "visual_ref": "visual_character_refs.characters.mika_osei"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide ordinary-work frame down Transfer Gallery Two: Sera Madani eats a lentil cake standing beside the heavy habitatward hatch because the wall has tool hooks and no chair; Mika Osei checks moisture under the food cart's mesh cover; Davin Rook clears paper-cuff berth fees at the recessed right-wall desk; Nara Venn studies her slate inside the facing left glass booth. Gray floor grating leads to the far circular collar and waiting shuttle. Red pressure pipe, analog gauge, bypass cabinet, yellow cargo grid, cold dock light, warm food steam, and amber lamps keep the room material and legible.",
+        "visible_characters": [
+          {"agent_id": "sera_madani", "default_stance": "standing by hatch eating", "visual_ref": "visual_character_refs.characters.sera_madani"},
+          {"agent_id": "mika_osei", "default_stance": "checking food-cart condensation", "visual_ref": "visual_character_refs.characters.mika_osei"},
+          {"agent_id": "davin_rook", "default_stance": "processing cuffs at desk", "visual_ref": "visual_character_refs.characters.davin_rook"},
+          {"agent_id": "nara_venn", "default_stance": "behind booth glass reading slate", "visual_ref": "visual_character_refs.characters.nara_venn"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "audit_exposure >= 3", "modifier_prompt": "A yellow inspection bracket glows beside Sera's handwritten second checklist box."},
+          {"trigger": "mika_seal_skill >= 1", "modifier_prompt": "Mika places one boot on the chalk brace point and tests the dog-handle movement."},
+          {"trigger": "unsupported_air >= 3", "modifier_prompt": "Mika's gray cuff display carries two fresh blue oxygen-allotment bars."},
+          {"trigger": "departure_margin >= 5", "modifier_prompt": "Two tool crates sit locked inside the dockward yellow manifest grid."},
+          {"trigger": "mutual_aid <= 0", "modifier_prompt": "Mika closes the food-cart mesh and keeps the breakfast portions to herself with a guarded stance."}
+        ]
+      },
+      {
+        "visual_scene_id": "ember_default_notice",
+        "ink_anchor": "default_notice",
+        "base_image_prompt": "Pivotal wide frame inside Transfer Gallery Two as every practical lamp turns amber: the heavy habitatward hatch, straight gray floor grating, recessed right manifest desk, left glass audit booth, red pressure pipe, bypass cabinet, and far circular dock collar are flooded in warning color. A large wall panel shows three blunt blocks and a descending clock through abstract corporate interface glyphs. Sera Madani, Mika Osei, Davin Rook, and Nara Venn all stop mid-routine in distinct positions; warm food-cart steam crosses the amber light while the shuttle remains visible under white pad lamps.",
+        "visible_characters": [
+          {"agent_id": "sera_madani", "default_stance": "frozen beside hatch", "visual_ref": "visual_character_refs.characters.sera_madani"},
+          {"agent_id": "mika_osei", "default_stance": "hands on food cart", "visual_ref": "visual_character_refs.characters.mika_osei"},
+          {"agent_id": "davin_rook", "default_stance": "upright behind desk", "visual_ref": "visual_character_refs.characters.davin_rook"},
+          {"agent_id": "nara_venn", "default_stance": "inside booth with slate raised", "visual_ref": "visual_character_refs.characters.nara_venn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_classification",
+        "ink_anchor": "classification",
+        "base_image_prompt": "Medium-wide authority frame across Transfer Gallery Two: Davin Rook, a narrow pale man with reading lenses, ink-stained fingers, cream shirt, and rumpled blue manifest vest, stands behind the recessed right-wall desk as its display divides occupancy into green, white, and gray columns. Sera Madani in orange-gray seal coveralls holds a green paper cuff beside Hatch MCR-2. Mika Osei in a moss-green food-loop jacket holds a gray cuff and stainless cart. Nara Venn, silver-streaked black bob and charcoal coat, speaks from the facing left glass booth with a dark slate and amber launch clock. The straight gray-grated route to the circular collar and waiting shuttle remains visible between them.",
+        "visible_characters": [
+          {"agent_id": "sera_madani", "default_stance": "beside hatch reading green cuff", "visual_ref": "visual_character_refs.characters.sera_madani"},
+          {"agent_id": "mika_osei", "default_stance": "at food cart reading gray cuff", "visual_ref": "visual_character_refs.characters.mika_osei"},
+          {"agent_id": "davin_rook", "default_stance": "behind desk facing three classification columns", "visual_ref": "visual_character_refs.characters.davin_rook"},
+          {"agent_id": "nara_venn", "default_stance": "behind booth glass beside launch clock", "visual_ref": "visual_character_refs.characters.nara_venn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_classified_queue",
+        "ink_anchor": "queue_fold",
+        "base_image_prompt": "Medium-wide pressure geometry in Transfer Gallery Two after default: a queue of baseline human residents in patched work layers stands habitatward of the heavy hatch carrying sleep bags, pressure masks, family tools, and compact bundles. Their paper cuffs glow gray. Sera Madani stands at the hatch in orange-gray seal coveralls; Mika Osei holds the stainless food cart and gray cuff; Davin Rook works rapidly at the recessed right-wall manifest desk; Nara Venn watches from the facing left glass booth. The straight dockward route, yellow cargo grid, circular collar window, and waiting shuttle remain visible beyond the hatch. Amber lights divide people from the exit.",
+        "visible_characters": [
+          {"agent_id": "sera_madani", "default_stance": "at hatch between queue and dock", "visual_ref": "visual_character_refs.characters.sera_madani"},
+          {"agent_id": "mika_osei", "default_stance": "at front of gray queue with food cart", "visual_ref": "visual_character_refs.characters.mika_osei"},
+          {"agent_id": "davin_rook", "default_stance": "at manifest desk with hand near final key", "visual_ref": "visual_character_refs.characters.davin_rook"},
+          {"agent_id": "nara_venn", "default_stance": "behind glass monitoring clock", "visual_ref": "visual_character_refs.characters.nara_venn"},
+          {"agent_id": "gray_bay_residents", "default_stance": "queued habitatward with compressed belongings", "visual_ref": "visual_character_refs.groups.gray_bay_residents"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "manifest_leverage >= 3", "modifier_prompt": "Mika's gray labor line gains an amber dispute bracket on Davin's screen."},
+          {"trigger": "mass_credit >= 3", "modifier_prompt": "Mika's cuff shows one complete white passenger-mass bar beside two bound paper manuals."},
+          {"trigger": "unsupported_air >= 3", "modifier_prompt": "Several gray cuffs carry blue oxygen bars and residents hold paper scrubber schedules."},
+          {"trigger": "contract_debt >= 2", "modifier_prompt": "Sera's cuff displays a long green service-amendment band."},
+          {"trigger": "davin_trust >= 2", "modifier_prompt": "Davin covers the manifest-lock key with his ink-stained hand while looking toward Sera."},
+          {"trigger": "audit_exposure >= 4", "modifier_prompt": "Nara's slate links a hatch diagram and the gray occupancy table inside one bright amber bracket."}
+        ]
+      },
+      {
+        "visual_scene_id": "ember_false_green",
+        "ink_anchor": "hatch_false_green",
+        "base_image_prompt": "Tight alarm frame at Hatch MCR-2: Sera Madani in orange-gray seal coveralls grips the waist-high dog handle after one stroke. The electronic panel shines green while the analog pressure-gauge needle visibly falls and pale condensation streams toward the worn lower dog. Behind the small reinforced hatch window, Mika Osei and gray-cuffed residents react to the hiss from the habitatward queue. Davin Rook looks up from the right manifest desk; Nara Venn's charcoal silhouette stands behind left booth glass with slate raised. Amber emergency light catches grit moving across gray floor grating.",
+        "visible_characters": [
+          {"agent_id": "sera_madani", "default_stance": "holding the dog handle after first stroke", "visual_ref": "visual_character_refs.characters.sera_madani"},
+          {"agent_id": "mika_osei", "default_stance": "visible through hatch window at front of queue", "visual_ref": "visual_character_refs.characters.mika_osei"},
+          {"agent_id": "davin_rook", "default_stance": "looking from desk toward honest gauge", "visual_ref": "visual_character_refs.characters.davin_rook"},
+          {"agent_id": "nara_venn", "default_stance": "behind booth glass with slate raised", "visual_ref": "visual_character_refs.characters.nara_venn"},
+          {"agent_id": "gray_bay_residents", "default_stance": "compressed behind Mika habitatward", "visual_ref": "visual_character_refs.groups.gray_bay_residents"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_final_threshold",
+        "ink_anchor": "pressure_fold",
+        "base_image_prompt": "Wide final-threshold view down Transfer Gallery Two: the heavy habitatward Hatch MCR-2 and its waist-high dog handle dominate the near end beside red pressure piping, bypass cabinet, chalk boot mark, green panel, and honest analog gauge. Gray floor grating leads between the recessed right manifest desk and left glass audit booth to the dockward yellow cargo grid, circular collar window, and floodlit shuttle. Sera Madani stands at the hatch, Mika Osei beside the food cart, Davin Rook at the manifest key, Nara Venn behind glass, and gray-cuffed residents grouped according to hatch state. Amber clocks and cold white pad light make air, mass, and time visible as competing routes.",
+        "visible_characters": [
+          {"agent_id": "sera_madani", "default_stance": "centered at hatch and bypass", "visual_ref": "visual_character_refs.characters.sera_madani"},
+          {"agent_id": "mika_osei", "default_stance": "near hatch with cart and paper manuals", "visual_ref": "visual_character_refs.characters.mika_osei"},
+          {"agent_id": "davin_rook", "default_stance": "hand on manifest key", "visual_ref": "visual_character_refs.characters.davin_rook"},
+          {"agent_id": "nara_venn", "default_stance": "inside booth watching gauge and clock", "visual_ref": "visual_character_refs.characters.nara_venn"},
+          {"agent_id": "gray_bay_residents", "default_stance": "group position controlled by queue_crossed", "visual_ref": "visual_character_refs.groups.gray_bay_residents"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "hatch_state >= 3", "modifier_prompt": "The dog handle is fully seated on its second stroke, the analog gauge is steady, and the green panel finally matches the physical seal."},
+          {"trigger": "hatch_state == 2", "modifier_prompt": "The panel glows green while the handle remains short of its chalked second position and fine condensation trails toward the lower dog."},
+          {"trigger": "seal_margin <= 1", "modifier_prompt": "Pale airflow pulls dust across the grating toward the lower dog; residents tighten pressure masks and loose paper lifts."},
+          {"trigger": "departure_margin >= 4", "modifier_prompt": "The amber shuttle countdown retains several bright segments and staged crates sit neatly inside the yellow grid."},
+          {"trigger": "departure_margin <= 1", "modifier_prompt": "The amber shuttle countdown shows one final segment while the collar warning lamps begin to close."},
+          {"trigger": "queue_crossed == 1", "modifier_prompt": "Gray-cuffed residents stand dockward of Hatch MCR-2 beside the yellow grid, plainly visible through the collar window."},
+          {"trigger": "queue_crossed == 0", "modifier_prompt": "Gray-cuffed residents remain compressed habitatward behind the reinforced hatch window."}
+        ]
+      },
+      {
+        "visual_scene_id": "ember_ending_ferry",
+        "ink_anchor": "ending_ferry_success|ending_ferry_cost",
+        "base_image_prompt": "Dockward aftermath in Transfer Gallery Two: hard white pad light pours through the circular collar window over the yellow cargo grid and low tool crates. Mika Osei in a moss-green food-loop jacket stands with two bound paper manuals and a passenger-mass cuff; gray-cuffed residents cluster near the collar; Davin Rook works the recessed right-wall manifest desk; Sera Madani watches from the hatch axis. The insured shuttle beyond the window is either receiving passengers or sealing for departure according to the modifier. Amber interior light keeps the heavy hatch, analog gauge, and left audit booth visible behind them.",
+        "visible_characters": [
+          {"agent_id": "sera_madani", "default_stance": "watching from hatch axis", "visual_ref": "visual_character_refs.characters.sera_madani"},
+          {"agent_id": "mika_osei", "default_stance": "at collar with manuals and cuff", "visual_ref": "visual_character_refs.characters.mika_osei"},
+          {"agent_id": "davin_rook", "default_stance": "spending final manifest field", "visual_ref": "visual_character_refs.characters.davin_rook"},
+          {"agent_id": "gray_bay_residents", "default_stance": "near collar or stranded behind hatch by ending state", "visual_ref": "visual_character_refs.groups.gray_bay_residents"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_ending_bay",
+        "ink_anchor": "ending_bay_success|ending_bay_cost",
+        "base_image_prompt": "Interior of one de-funded sleeping bay in Mare Crisium Receiving Cylinder: a narrow curved pressure compartment has stacked bunks, exposed blue oxygen lines, removable scrubber cartridges, a small honest analog gauge, hand-copied paper rotation sheets, patched blankets, and amber emergency lamps. Mika Osei in a moss-green food-loop jacket works beside Sera Madani in orange-gray seal coveralls while gray-cuffed residents pass cartridges and mark watches. The scene is practical mutual maintenance under scarcity; the modifier determines whether oxygen bars remain blue for another sleep cycle or the bay cools toward forced enrollment.",
+        "visible_characters": [
+          {"agent_id": "sera_madani", "default_stance": "at gauge or oxygen ledger", "visual_ref": "visual_character_refs.characters.sera_madani"},
+          {"agent_id": "mika_osei", "default_stance": "leading cartridge rotation from paper schedule", "visual_ref": "visual_character_refs.characters.mika_osei"},
+          {"agent_id": "gray_bay_residents", "default_stance": "working a shared seal and scrubber watch", "visual_ref": "visual_character_refs.groups.gray_bay_residents"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_ending_record",
+        "ink_anchor": "ending_record_success|ending_record_cost",
+        "base_image_prompt": "Evidence closeup across the glass audit booth in Transfer Gallery Two: Sera Madani holds the honest analog pressure gauge and handwritten two-stroke cuff in one sightline; Davin Rook appends a gray occupancy table from the recessed manifest desk; Mika Osei presses a soil-smudged food-loop dependency sheet against the glass; Nara Venn in a charcoal creditor coat receives the combined record on her dark slate. The heavy hatch, premature green panel, straight gallery, and waiting shuttle appear through layered reflections. The modifier determines whether one bright bracket binds every item or separate dim files fragment them.",
+        "visible_characters": [
+          {"agent_id": "sera_madani", "default_stance": "holding cuff beside honest gauge", "visual_ref": "visual_character_refs.characters.sera_madani"},
+          {"agent_id": "mika_osei", "default_stance": "holding soil-smudged dependency sheet", "visual_ref": "visual_character_refs.characters.mika_osei"},
+          {"agent_id": "davin_rook", "default_stance": "appending occupancy table", "visual_ref": "visual_character_refs.characters.davin_rook"},
+          {"agent_id": "nara_venn", "default_stance": "behind booth glass receiving record", "visual_ref": "visual_character_refs.characters.nara_venn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_ending_insurance",
+        "ink_anchor": "ending_insurance_success|ending_insurance_cost",
+        "base_image_prompt": "Orderly-contraction aftermath in Transfer Gallery Two: Hatch MCR-2, its dog handle, green panel, analog gauge, red pressure pipe, straight gray-grated route, right manifest desk, left glass audit booth, dockward yellow grid, collar window, and shuttle form one clean industrial corridor. Sera Madani stands at the seated or uncertain handle; Davin Rook has stacks of green service-amendment cuffs at the desk; Nara Venn watches the coverage display from behind glass; gray-cuffed residents face the desk with belongings. The modifier determines whether pressure holds for a supplied contraction or coverage closes over an empty pad.",
+        "visible_characters": [
+          {"agent_id": "sera_madani", "default_stance": "at hatch handle", "visual_ref": "visual_character_refs.characters.sera_madani"},
+          {"agent_id": "davin_rook", "default_stance": "printing service amendments", "visual_ref": "visual_character_refs.characters.davin_rook"},
+          {"agent_id": "nara_venn", "default_stance": "behind glass at coverage display", "visual_ref": "visual_character_refs.characters.nara_venn"},
+          {"agent_id": "gray_bay_residents", "default_stance": "queued before manifest desk with belongings", "visual_ref": "visual_character_refs.groups.gray_bay_residents"}
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "bargain_for_mika_visual",
+        "trigger": "branch_label == bargain_for_mika",
+        "apply_to_visual_scene_ids": ["ember_classified_queue", "ember_final_threshold"],
+        "modifier_prompt": "Sera's cuff carries a long green service band while Mika's gray food-loop labor line gains an amber dispute bracket on Davin's screen."
+      },
+      {
+        "modifier_id": "transfer_mass_visual",
+        "trigger": "branch_label == transfer_mass_allowance",
+        "apply_to_visual_scene_ids": ["ember_classified_queue", "ember_ending_ferry"],
+        "modifier_prompt": "Mika carries two paper manuals bound flat against her jacket and a complete white passenger-mass bar glows on her cuff."
+      },
+      {
+        "modifier_id": "copy_scrubber_visual",
+        "trigger": "branch_label == copy_scrubber_rotation",
+        "apply_to_visual_scene_ids": ["ember_classified_queue", "ember_ending_bay"],
+        "modifier_prompt": "Residents hold hand-copied cartridge schedules with valve order and watch marks written across food wrappers."
+      },
+      {
+        "modifier_id": "force_test_visual",
+        "trigger": "branch_label == force_physical_test",
+        "apply_to_visual_scene_ids": ["ember_classified_queue", "ember_false_green", "ember_ending_record"],
+        "modifier_prompt": "Nara's slate displays a bright physical-test bracket linking Sera's two-stroke cuff to the honest analog gauge."
+      },
+      {
+        "modifier_id": "drive_second_stroke_visual",
+        "trigger": "branch_label == drive_second_stroke",
+        "apply_to_visual_scene_ids": ["ember_final_threshold", "ember_ending_insurance"],
+        "modifier_prompt": "Sera braces at the chalk mark; the handle sits fully through its second stroke and the analog gauge steadies."
+      },
+      {
+        "modifier_id": "cross_queue_visual",
+        "trigger": "branch_label == cross_gray_queue",
+        "apply_to_visual_scene_ids": ["ember_final_threshold", "ember_ending_ferry"],
+        "modifier_prompt": "Gray-cuffed residents and Mika's food cart occupy the dockward yellow grid while loose paper lifts in pale airflow near the open hatch."
+      },
+      {
+        "modifier_id": "share_seal_visual",
+        "trigger": "branch_label == share_seal_authority",
+        "apply_to_visual_scene_ids": ["ember_final_threshold", "ember_ending_bay"],
+        "modifier_prompt": "Mika works the dog handle from the chalk brace while Sera kneels at the open waist-high bypass cabinet; both watch the honest gauge."
+      },
+      {
+        "modifier_id": "mask_pressure_visual",
+        "trigger": "branch_label == mask_pressure_loss",
+        "apply_to_visual_scene_ids": ["ember_final_threshold", "ember_ending_insurance"],
+        "modifier_prompt": "A thin test lead bridges the old panel contacts; the green indicator shines while the analog needle falls and condensation streams toward the lower dog."
+      },
+      {
+        "modifier_id": "ending_ferry_success_visual",
+        "trigger": "ending_label == ferry_success",
+        "apply_to_visual_scene_ids": ["ember_ending_ferry"],
+        "modifier_prompt": "The shuttle collar stands open under white light; Mika and several gray-cuffed residents pass aboard while Davin's manifest shows disputed cargo supervision."
+      },
+      {
+        "modifier_id": "ending_ferry_cost_visual",
+        "trigger": "ending_label == ferry_cost",
+        "apply_to_visual_scene_ids": ["ember_ending_ferry"],
+        "modifier_prompt": "The shuttle collar is sealed and the pad vehicle lifts beyond glass while residents remain behind amber closure lamps."
+      },
+      {
+        "modifier_id": "ending_bay_success_visual",
+        "trigger": "ending_label == bay_success",
+        "apply_to_visual_scene_ids": ["ember_ending_bay"],
+        "modifier_prompt": "Blue oxygen bars remain lit; residents rotate fresh cartridges, mark a complete watch schedule, and prepare nine compact departure bundles."
+      },
+      {
+        "modifier_id": "ending_bay_cost_visual",
+        "trigger": "ending_label == bay_cost",
+        "apply_to_visual_scene_ids": ["ember_ending_bay"],
+        "modifier_prompt": "Blue oxygen bars extinguish one by one; the bay lamps dim cold while residents queue at a portable reader to sign green amendments."
+      },
+      {
+        "modifier_id": "ending_record_success_visual",
+        "trigger": "ending_label == record_success",
+        "apply_to_visual_scene_ids": ["ember_ending_record"],
+        "modifier_prompt": "One bright amber bracket on Nara's slate visibly links the two-stroke cuff, falling gauge, gray occupancy table, and food-loop dependency sheet."
+      },
+      {
+        "modifier_id": "ending_record_cost_visual",
+        "trigger": "ending_label == record_cost",
+        "apply_to_visual_scene_ids": ["ember_ending_record"],
+        "modifier_prompt": "Nara's slate displays four separate dim file tiles with broken link marks between pressure, occupancy, manifest, and food-loop evidence."
+      },
+      {
+        "modifier_id": "ending_insurance_success_visual",
+        "trigger": "ending_label == insurance_success",
+        "apply_to_visual_scene_ids": ["ember_ending_insurance"],
+        "modifier_prompt": "The analog gauge is steady, the shuttle and habitat coverage indicators are green, supply canisters roll through the collar, and residents hold signed green amendments."
+      },
+      {
+        "modifier_id": "ending_insurance_cost_visual",
+        "trigger": "ending_label == insurance_cost",
+        "apply_to_visual_scene_ids": ["ember_ending_insurance"],
+        "modifier_prompt": "The coverage display is amber-closed, the pad beyond the collar is empty, the gauge remains uncertain, and residents stand among idle cargo grids."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "mare_crisium_transfer_gallery_two.scene_set.draft",
+      "geometry_authority_level": "textual_layout_not_rendered_blockout",
+      "room_model": "One straight rectangular pressure gallery on the lunar surface, connecting a habitatward hatch to a dockward collar, with facing clerk and audit alcoves at midpoint.",
+      "fixed_zones": [
+        {"zone_id": "habitatward_hatch_mcr2", "visible_form": "heavy rectangular pressure hatch with waist-high dog handle, worn lower linkage, reinforced window, green panel, chalk brace mark, analog gauge, red pressure pipe, and bypass cabinet", "used_for": "routine seal work, queue boundary, false-green failure, final physical state"},
+        {"zone_id": "gallery_centerline", "visible_form": "straight gray floor grating and overhead cable trays between hatch and collar", "used_for": "resident movement, food-cart travel, tool-crate travel, coordinate axis"},
+        {"zone_id": "manifest_desk_right", "visible_form": "recessed right-wall desk with cuff reader, manifest fields, final-lock key, and low counter", "used_for": "Davin's bounded edits, resource transfer, classification display"},
+        {"zone_id": "audit_booth_left", "visible_form": "sealed left-wall glass booth facing the desk, with slate dock and speaker", "used_for": "Nara's sightline, test authority, creditor record custody"},
+        {"zone_id": "dockward_manifest_grid", "visible_form": "yellow painted floor grid for staged crates before the collar", "used_for": "mass coding, queue crossing, departure staging"},
+        {"zone_id": "dockward_collar_window", "visible_form": "circular sealed collar and broad pad window under hard white exterior light", "used_for": "visible shuttle state and final exit"},
+        {"zone_id": "gray_bay_offstage", "visible_form": "curved sleeping compartment with stacked bunks, blue oxygen lines, scrubber rack, honest gauge, and paper watch schedule", "used_for": "bay-ending-only locality"}
+      ],
+      "routes": [
+        {"route_id": "resident_departure_route", "path": "gray sleeping bays -> habitatward approach -> Hatch MCR-2 -> gallery centerline -> yellow manifest grid -> dockward collar -> shuttle", "permissions": "Controlled physically by Sera's hatch watch and administratively by cuffs, manifest, and insured collar state."},
+        {"route_id": "food_cart_route", "path": "food loop -> habitatward approach -> Hatch MCR-2 -> gallery centerline -> dockward cargo area", "permissions": "Mika may push the cart while her subcontract credential remains readable; gray classification interrupts the route at the hatch."},
+        {"route_id": "examiner_route", "path": "dockward staff access -> audit booth left", "permissions": "Nara remains inside the sealed booth during the fixture and observes the hatch, desk, gallery, and collar through glass and instruments."}
+      ],
+      "occluders": [
+        {"occluder_id": "hatch_body", "effect": "When closed, the thick hatch blocks direct body view between habitatward queue and gallery except through the small reinforced window."},
+        {"occluder_id": "manifest_counter", "effect": "The low desk hides Davin's hands and cuff transfers from residents at floor level but remains visible to Nara's facing booth."}
+      ],
+      "camera_slots": [
+        {"camera_id": "lunar_exterior_wide", "supports_visual_scene_ids": ["ember_crisium_exterior"]},
+        {"camera_id": "gallery_axis_wide", "supports_visual_scene_ids": ["ember_gallery_establishing", "ember_routine_fold", "ember_default_notice", "ember_final_threshold", "ember_ending_insurance"]},
+        {"camera_id": "hatch_close_habitatward", "supports_visual_scene_ids": ["ember_hatch_routine", "ember_teach_mika_hatch", "ember_false_green"]},
+        {"camera_id": "desk_to_booth_medium", "supports_visual_scene_ids": ["ember_breakfast_routine", "ember_pool_oxygen", "ember_classification", "ember_ending_record"]},
+        {"camera_id": "dockward_grid_wide", "supports_visual_scene_ids": ["ember_stage_crates", "ember_ending_ferry"]},
+        {"camera_id": "queue_through_hatch", "supports_visual_scene_ids": ["ember_log_second_stroke", "ember_classified_queue"]},
+        {"camera_id": "gray_bay_interior", "supports_visual_scene_ids": ["ember_ending_bay"]}
+      ],
+      "staging_slots": [
+        {"slot_id": "sera_hatch_operator", "zone_id": "habitatward_hatch_mcr2", "allowed_agents": ["sera_madani", "mika_osei"]},
+        {"slot_id": "mika_food_cart", "zone_id": "gallery_centerline", "allowed_agents": ["mika_osei"]},
+        {"slot_id": "davin_manifest", "zone_id": "manifest_desk_right", "allowed_agents": ["davin_rook"]},
+        {"slot_id": "nara_audit", "zone_id": "audit_booth_left", "allowed_agents": ["nara_venn"]},
+        {"slot_id": "resident_queue_habitatward", "zone_id": "habitatward_hatch_mcr2", "allowed_agents": ["gray_bay_residents"]},
+        {"slot_id": "resident_queue_dockward", "zone_id": "dockward_manifest_grid", "allowed_agents": ["gray_bay_residents"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "nara_hatch_desk_collar", "path": "audit booth glass -> manifest desk -> gallery centerline -> Hatch MCR-2 and dock collar instruments", "supports": ["force_physical_test", "record_success", "insured_departure_decision"]},
+        {"lane_id": "hatch_window_queue", "path": "gallery side of Hatch MCR-2 -> reinforced hatch window -> habitatward queue", "supports": ["false_green_hiss", "cross_gray_queue", "queue_position_callbacks"]}
+      ],
+      "branch_state_anchors": [
+        {"state": "hatch_state == 1", "visible_form": "handle at first stop, green panel, falling analog gauge, closed route"},
+        {"state": "hatch_state == 2", "visible_form": "green panel and incomplete chalk alignment with a narrow uncertain seal"},
+        {"state": "hatch_state >= 3", "visible_form": "handle at second chalk mark, steady analog gauge, seated lower dog"},
+        {"state": "queue_crossed == 0", "visible_form": "gray cuffs visible habitatward through reinforced hatch window"},
+        {"state": "queue_crossed == 1", "visible_form": "gray cuffs and food cart occupy the dockward yellow grid"}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for characters visible in a scene.",
+    "characters": {
+      "sera_madani": "Sera Madani: lean brown-skinned baseline human woman in her late thirties, tightly braided black hair secured at the nape, alert tired eyes, orange-gray seal-technician coveralls with black knee panels, white paper credential cuff on left wrist, compact steel tool belt, heavy low-gravity work boots, practical stance that checks gauges before faces. Keep the braids, orange-gray coveralls, white cuff, tool belt, and heavy boots consistent.",
+      "mika_osei": "Mika Osei: broad dark-skinned baseline human woman in her early forties, short coiled black hair, expressive round face, moss-green food-loop jacket with clear sleeve patches, gray paper credential cuff, dark work trousers, scuffed cart gloves, sturdy shoes, posture shaped by pushing a stainless food cart and handling delicate ecology canisters. Keep the short coils, moss-green jacket, clear patches, gray cuff, and cart gloves consistent.",
+      "davin_rook": "Davin Rook: narrow pale baseline human man in his fifties, thinning sandy hair, rectangular reading lenses, ink-stained fingers, rumpled blue manifest vest over a cream work shirt, rectangular paper cuff, seated or stooped desk silhouette, dry expression and small precise hand movements. Keep the lenses, blue vest, cream shirt, paper cuff, and ink-stained fingers consistent.",
+      "nara_venn": "Nara Venn: light-brown baseline human woman in her forties, straight black bob with one silver streak, composed angular face, charcoal creditor coat with narrow amber piping, dark slate held at chest height, clean black boots, upright still posture behind glass. Keep the silver streak, charcoal coat, amber piping, dark slate, and booth-separated silhouette consistent."
+    },
+    "groups": {
+      "gray_bay_residents": "Gray-bay residents: baseline human adults and children in patched thermal work layers, mixed skin tones and ages, gray paper cuffs, pressure masks hanging at chest or belt, compact sleep bags, family tools, food tins, and small bundles held close; tired queue posture that becomes coordinated work posture when mutual aid is strong.",
+      "exterior_workers": "Lunar exterior workers: tiny baseline human figures in bulky pale pressure suits with dark visors, backpack life-support units, tether reels, and slow low-gravity stances beside cargo pallets and pad cables."
+    }
+  },
+  "review_notes": [
+    "The textual scene-set specification owns concept-stage geometry and staging. A rendered plan view or 3D blockout remains required before high-consistency multi-angle image generation.",
+    "Every base prompt restates visible geometry and named-character appearance sufficiently for standalone concept generation.",
+    "Branch and ending modifiers describe visible object, position, light, gauge, cuff, route, or posture deltas tied to explicit Ink state."
+  ]
+}

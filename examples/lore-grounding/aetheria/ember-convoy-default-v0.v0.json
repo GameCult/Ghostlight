@@ -1,0 +1,323 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.ember-convoy-default-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "horizon-ventures",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Defunct/Horizon Ventures.md",
+      "title": "Horizon Ventures",
+      "line_start": 1,
+      "line_end": 17,
+      "relevance": "Primary owner and authored elaboration for the 2091 Mare Crisium continuity default, convoy failure pressure, resident classifications, hatch defect, mutual-aid interval, and merger consequence."
+    },
+    {
+      "source_id": "corporate-exodus",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Corporate Exodus.md",
+      "title": "Corporate Exodus",
+      "line_start": 1,
+      "line_end": 23,
+      "relevance": "Grounds the era, bundled launch-mining-habitat-debt authority, Horizon transport spine, company law, and replenishment dependence."
+    },
+    {
+      "source_id": "colonizing-sol",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Colonizing Sol.md",
+      "title": "Colonizing Sol",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds transport debt, habitat rent, oxygen fees, employer scrip, and nominal resignation inside a company-owned physical plant."
+    },
+    {
+      "source_id": "soliton-drive",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Soliton Drive.md",
+      "title": "Soliton Drive",
+      "line_start": 1,
+      "line_end": 19,
+      "relevance": "Grounds convoy schedules, cargo finance, habitat provisioning, specialist maintenance, fuel, rescue coverage, and transport fragility."
+    },
+    {
+      "source_id": "terracore-industries",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Defunct/TerraCore Industries.md",
+      "title": "TerraCore Industries",
+      "line_start": 1,
+      "line_end": 5,
+      "relevance": "Grounds lunar life-support administration, closed-loop water systems, audit culture, and the institutional logic inherited by SolEx."
+    },
+    {
+      "source_id": "ewan-hart",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Ewan Hart.md",
+      "title": "Ewan Hart",
+      "line_start": 1,
+      "line_end": 5,
+      "relevance": "Grounds seed architectures, microbial food systems, closed-loop habitat ecology, and proprietary food dependence after convoy failure."
+    },
+    {
+      "source_id": "solex",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/SolEx.md",
+      "title": "SolEx",
+      "line_start": 1,
+      "line_end": 5,
+      "relevance": "Grounds the downstream merger of Horizon transport with TerraCore audit and life-support administration."
+    },
+    {
+      "source_id": "institutional-lineage",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Reference/Institutional Lineage.md",
+      "title": "Institutional Lineage",
+      "line_start": 1,
+      "line_end": 45,
+      "relevance": "Checks dates, founders, 2095 merger timing, and the inheritance of Horizon infrastructure and TerraCore contracts."
+    },
+    {
+      "source_id": "territories",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+      "title": "Territories",
+      "line_start": 1,
+      "line_end": 61,
+      "relevance": "Grounds territory as overlapping custody of life support, docks, routes, food, power, maintenance, and records; confirms lunar company infrastructure."
+    },
+    {
+      "source_id": "narrative-themes",
+      "path": "Aetheria/Narrative Themes.md",
+      "title": "Narrative Themes",
+      "line_start": 1,
+      "line_end": 53,
+      "relevance": "Grounds administrative cascades, material care, meaningful exit, and mutual aid as small infrastructural counter-pressure."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Corporate Exodus era, Mare Crisium continuity default in 2091",
+    "location": "Transfer Gallery Two inside Mare Crisium Receiving Cylinder, a Horizon Ventures lunar freight and repair habitat.",
+    "summary": "A convoy-linked insurance and credit failure turns an ordinary hatch watch into a thirty-six-hour contraction: residents must be classified, transferred, contracted, or left in de-funded volume while a worn pressure hatch threatens the final insured launch.",
+    "public_facts": [
+      {
+        "text": "Horizon Ventures joined launch capacity, fuel, cargo finance, debt contracts, and habitat provisioning into one transport economy.",
+        "source_refs": ["horizon-ventures", "corporate-exodus", "soliton-drive"]
+      },
+      {
+        "text": "The 2091 convoy failures brought shipping insurers and lunar creditors down on Horizon and contributed to its 2095 merger with TerraCore.",
+        "source_refs": ["horizon-ventures", "institutional-lineage"]
+      },
+      {
+        "text": "At Mare Crisium, continuity default sorted residents into continuity labor, financed transfer, and unsupported occupancy while separate offices withdrew credentials, scrip recognition, or maintained pressure volume.",
+        "source_refs": ["horizon-ventures", "colonizing-sol"]
+      },
+      {
+        "text": "Residents pooled oxygen, copied scrubber rotations, and staffed seals long enough for nine people to reach an independent ferry without signing revised contracts.",
+        "source_refs": ["horizon-ventures", "narrative-themes"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "The insurer can close launch coverage, lunar creditors can refuse cargo finance, Horizon can classify labor and occupancy, and local workers alone know whether the physical seal is true.",
+        "source_refs": ["horizon-ventures", "soliton-drive", "terracore-industries"]
+      },
+      {
+        "text": "The food loop and life-support plant depend on subcontract labor whose credentials can vanish before their material usefulness does.",
+        "source_refs": ["horizon-ventures", "ewan-hart", "colonizing-sol"]
+      },
+      {
+        "text": "A thirty-six-hour exodus window makes every kilogram, filter hour, manual skill, and verified seal part of the same departure bargain.",
+        "source_refs": ["horizon-ventures", "soliton-drive"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "horizon-continuity-staff",
+      "label": "Horizon continuity staff",
+      "group_type": "corporate_habitat_workforce",
+      "institutional_logic": ["Keep the insured habitat, transfer gallery, manifests, and departure sequence operating through default."],
+      "material_incentives": ["Retain air, wages, assigned housing, and green continuity credentials while avoiding blame for an impossible contraction."],
+      "internal_virtues": ["Physical competence", "Clean manifests", "A seal verified by the body, not merely the panel"],
+      "internal_shames": ["Missing an insured launch", "Trusting a false indicator", "Being reclassified after making oneself replaceable"],
+      "prestige_markers": ["Minutes recovered", "A dock cycle without lost air", "Knowing which checklist line lies"],
+      "taboo_triggers": ["Calling preventable abandonment orderly", "Letting an auditor discover a defect before the shift does"],
+      "emotional_display_norms": ["Fear becomes maintenance jokes, clipped timing calls, and over-careful paperwork."],
+      "trust_defaults": ["Trusts practiced workers and physical gauges more than remote classifications; still depends on credentials."],
+      "speech_register_cues": ["Dry work humor", "Short physical instructions", "Mass, air, time, and seal language"],
+      "source_refs": ["horizon-ventures", "colonizing-sol", "soliton-drive"]
+    },
+    {
+      "group_id": "lunar-credit-and-insurance",
+      "label": "Lunar creditor and insurer offices",
+      "group_type": "financial_gatekeepers",
+      "institutional_logic": ["Keep loans, cargoes, launches, and insured occupancy inside a risk envelope the office can price."],
+      "material_incentives": ["Preserve the habitat asset and later ore receipts without financing open-ended rescue or unsupported air."],
+      "internal_virtues": ["Verified seals", "Bounded exposure", "A manifest that matches covered bodies and cargo"],
+      "internal_shames": ["Funding a stranded loss", "Launching through an undocumented pressure fault", "Accepting unpriced occupancy"],
+      "prestige_markers": ["A clean contraction", "No disputed kilograms", "Risk separated into administrable files"],
+      "taboo_triggers": ["Treating human need as authority to spend creditor margin", "Joining physical and administrative failures into one liability chain"],
+      "emotional_display_norms": ["Urgency is translated into clocks, coverage conditions, and narrow statements of authority."],
+      "trust_defaults": ["Trusts instrumented tests and sealed records; treats local testimony as a claim requiring a cost owner."],
+      "speech_register_cues": ["Coverage language", "Window timing", "Conditionals", "Exact limits on what the office can authorize"],
+      "source_refs": ["horizon-ventures", "soliton-drive", "territories"]
+    },
+    {
+      "group_id": "gray-bay-residents",
+      "label": "Unsupported residents and subcontract workers",
+      "group_type": "defaulted_households",
+      "institutional_logic": ["Keep one another breathing long enough for refusal or departure to remain physically possible."],
+      "material_incentives": ["Pool oxygen, preserve food-loop knowledge, retain tools, and reach transport without inheriting more work debt."],
+      "internal_virtues": ["Shared watch schedules", "Portable knowledge", "Care that creates time"],
+      "internal_shames": ["Leaving a neighbor outside a pressure plan", "Confusing a live credential with safety"],
+      "prestige_markers": ["A copied schedule that works", "A person moved through a cargo field", "An extra sleep cycle bought collectively"],
+      "taboo_triggers": ["A contract calling forced enrollment voluntary", "A food worker classified as unrelated to survival"],
+      "emotional_display_norms": ["Humor and practical sharing carry fear; nobody has spare time for a manifesto."],
+      "trust_defaults": ["Trusts witnessed skill and shared material cost; distrusts promises that arrive without air, mass, or access."],
+      "speech_register_cues": ["Domestic work detail", "Understatement", "Bitter jokes about forms and bodily needs"],
+      "source_refs": ["horizon-ventures", "ewan-hart", "narrative-themes"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "horizon-continuity-staff.keep-the-asset-breathing",
+      "applies_to": ["horizon-continuity-staff"],
+      "pressure_type": "labor_and_liability",
+      "summary": "Workers retain air and housing by preserving the same contraction machinery that can expel their neighbors.",
+      "projection_use": "Choices should make competence materially valuable while exposing who receives its protection.",
+      "source_refs": ["horizon-ventures", "colonizing-sol"]
+    },
+    {
+      "field_id": "lunar-credit-and-insurance.separate-prudent-files",
+      "applies_to": ["lunar-credit-and-insurance"],
+      "pressure_type": "financial_risk",
+      "summary": "The offices preserve legitimacy by treating occupancy, seal integrity, cargo finance, and departure coverage as separate prudent decisions.",
+      "projection_use": "Keep Nara's authority narrow and real; evidence becomes dangerous when it binds separate files into one causal chain.",
+      "source_refs": ["horizon-ventures", "territories", "narrative-themes"]
+    },
+    {
+      "field_id": "gray-bay-residents.care-buys-hours",
+      "applies_to": ["gray-bay-residents"],
+      "pressure_type": "mutual_aid",
+      "summary": "Shared oxygen, copied maintenance knowledge, and unpaid watches can create a small exit interval without abolishing the default.",
+      "projection_use": "Hope must appear as people, air, skill, and time rather than future movement rhetoric.",
+      "source_refs": ["horizon-ventures", "narrative-themes"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "lunar-credit-and-insurance",
+      "target_group_id": "gray-bay-residents",
+      "observer_read": ["Unsupported occupancy", "Unpriced filter demand", "Manifest variance"],
+      "target_self_read": ["Food-loop workers", "Families", "People keeping one another alive until transport exists"],
+      "misread_patterns": ["Treats material care as an unfunded extension of liability", "Treats shared skill as unauthorized operation"],
+      "likely_insults": ["unsupported", "unmanifested", "unpriced"],
+      "projection_use": "Nara can perceive the physical danger accurately while still reducing residents to a coverage problem.",
+      "source_refs": ["horizon-ventures", "colonizing-sol"]
+    },
+    {
+      "observer_group_id": "gray-bay-residents",
+      "target_group_id": "horizon-continuity-staff",
+      "observer_read": ["Neighbors wearing the credential that closes the door", "Potential helpers with keys"],
+      "target_self_read": ["Workers preventing immediate decompression", "People with no authority over the default"],
+      "misread_patterns": ["Residents can mistake constrained competence for full authority", "Credentialed workers can mistake continued usefulness for safety"],
+      "likely_insults": ["green cuff", "door owner", "paid lung"],
+      "projection_use": "Make solidarity costly and local rather than automatic across classification lines.",
+      "source_refs": ["horizon-ventures", "narrative-themes"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "seal-technician",
+      "summary": "A continuity-classified worker who alone knows the worn hatch's second-stroke truth at the start of the scene.",
+      "obligations": ["Keep gallery pressure", "Protect the departure cycle", "Record or conceal the fault", "Decide who may share the skill"],
+      "available_masks": ["Routine competence", "Checklist compliance", "Maintenance humor", "Narrow technical refusal"],
+      "failure_modes": ["Trusting the green panel", "Saving the schedule with air", "Letting personal indispensability become another contract"],
+      "source_refs": ["horizon-ventures", "soliton-drive"]
+    },
+    {
+      "role_id": "food-loop-subcontractor",
+      "summary": "A materially essential ecology worker rendered unsupported when her firm's contract is suspended.",
+      "obligations": ["Preserve microbial beds", "Carry food-loop manuals", "Protect household air", "Learn portable maintenance"],
+      "available_masks": ["Breakfast routine", "Subcontract humility", "Dry jokes", "Useful cargo"],
+      "failure_modes": ["Being reclassified after the manifest closes", "Losing manuals to mass limits", "Keeping food alive while people are removed"],
+      "source_refs": ["ewan-hart", "horizon-ventures"]
+    },
+    {
+      "role_id": "manifest-clerk",
+      "summary": "A Horizon clerk who can edit live fields until creditor locks arrive, but cannot finance air or launch a shuttle.",
+      "obligations": ["Keep manifest mass balanced", "Apply occupancy codes", "Preserve an auditable record", "Avoid an uninsured departure"],
+      "available_masks": ["Clerical neutrality", "Jokes about arithmetic", "Literal cargo coding", "Procedural delay"],
+      "failure_modes": ["Mistaking a field for a fact", "Losing desk access", "Saving a person by falsifying property"],
+      "source_refs": ["horizon-ventures", "colonizing-sol"]
+    },
+    {
+      "role_id": "creditor-examiner",
+      "summary": "A risk officer who can continue or close insured departure and require physical tests, but cannot make Horizon's classifications humane.",
+      "obligations": ["Verify seals", "Bound launch exposure", "Record defects", "Keep authority scoped"],
+      "available_masks": ["Clock language", "Technical neutrality", "Exact jurisdiction", "Conditional permission"],
+      "failure_modes": ["A clean file preserving a dirty outcome", "Closing the only exit because the hatch is unsafe", "Pricing a coupled failure after it harms people"],
+      "source_refs": ["horizon-ventures", "soliton-drive", "territories"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "sera_madani",
+      "known_context": [
+        {"text": "Sera knows Transfer Gallery Two, Hatch MCR-2, the honest gauge, the second stroke, local cuffs, and the immediate departure sequence.", "source_refs": ["horizon-ventures"]}
+      ],
+      "beliefs": [
+        {"text": "Sera believes a formal right to depart is useless unless air, mass, a working seal, and an accepting vehicle exist together.", "source_refs": ["horizon-ventures", "narrative-themes"]}
+      ],
+      "misreads": [
+        {"text": "She may overestimate how far technical indispensability lets her pressure creditor or manifest authority.", "source_refs": ["horizon-ventures"]}
+      ],
+      "must_not_know": [
+        {"text": "Sera cannot know that the 2095 SolEx merger will inherit this procedure; the ending may foreshadow only through arriving TerraCore auditors.", "source_refs": ["institutional-lineage"]}
+      ]
+    },
+    {
+      "speaker_id": "mika_osei",
+      "known_context": [
+        {"text": "Mika knows the food loop, her gray credential, her household's air balance, and any seal or scrubber procedure Sera visibly teaches her.", "source_refs": ["ewan-hart", "horizon-ventures"]}
+      ],
+      "beliefs": [
+        {"text": "Mika treats copied working knowledge as more portable than a subcontract credential.", "source_refs": ["horizon-ventures", "narrative-themes"]}
+      ],
+      "misreads": [
+        {"text": "She may treat Davin's discretion as broader than the manifest fields he still controls.", "source_refs": ["horizon-ventures"]}
+      ],
+      "must_not_know": [
+        {"text": "Mika cannot use the second-stroke hatch procedure unless the chosen branch teaches or reveals it.", "source_refs": ["horizon-ventures"]}
+      ]
+    },
+    {
+      "speaker_id": "nara_venn",
+      "known_context": [
+        {"text": "Nara knows the insured launch conditions, creditor exposure, instrument readings, and evidence presented to her booth.", "source_refs": ["horizon-ventures", "soliton-drive"]}
+      ],
+      "beliefs": [
+        {"text": "She believes a bounded unsafe departure can destroy the remaining asset and make every household worse off.", "source_refs": ["horizon-ventures", "soliton-drive"]}
+      ],
+      "misreads": [
+        {"text": "She can correctly diagnose pressure risk while misreading unpaid mutual aid as unpriced occupancy rather than survival capacity.", "source_refs": ["horizon-ventures", "narrative-themes"]}
+      ],
+      "must_not_know": [
+        {"text": "Nara cannot know hidden transfers, copied schedules, or shared skills unless the gallery, cuff records, or participants expose them.", "source_refs": ["horizon-ventures"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The Mare Crisium default contributes to creditor pressure that culminates in Horizon's 2095 merger with TerraCore, but participants in 2091 do not know that outcome.",
+      "source_refs": ["horizon-ventures", "institutional-lineage"]
+    },
+    {
+      "text": "The nine-person mutual-aid success is a small historical fact, not the founding of Aya or another mature movement.",
+      "source_refs": ["horizon-ventures", "narrative-themes"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Did Horizon reuse the continuity-default classification names unchanged at other habitats before the SolEx merger?",
+      "blocks_training": false,
+      "notes": "This fixture treats the three classifications as the Mare Crisium procedure; broader standardization requires another source-backed pass."
+    },
+    {
+      "question": "Which independent cislunar carrier accepted the nine residents after the extra day?",
+      "blocks_training": false,
+      "notes": "The owning note leaves the carrier unnamed; naming it would found unnecessary connective lore outside this pressure pass."
+    }
+  ]
+}

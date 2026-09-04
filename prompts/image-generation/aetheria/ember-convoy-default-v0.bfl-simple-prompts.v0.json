@@ -1,0 +1,84 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "ember-convoy-default-v0.bfl-simple-v0",
+  "fixture_id": "ember-convoy-default-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Humane retro-industrial science-fiction storybook illustration, precise dark ink linework under thin gouache color, cold lunar grays and hard white dock light interrupted by amber alarms and warm food-cart steam, readable silhouettes and mechanical interfaces, tactile worn materials, restrained facial acting, cinematic composition for bleak workplace drama.",
+  "prompts": [
+    {
+      "id": "01_crisium_exterior",
+      "prompt": "Wide 2091 lunar surface view of a long horizontal pressurized freight habitat half-buried in pale regolith, ribbed metal sections, radiator panels, repair sheds, cable trenches, compact landing pad, cargo pallets, tiny pale-suited workers, and one insured shuttle under hard white floodlights."
+    },
+    {
+      "id": "02_gallery_establishing",
+      "prompt": "Straight lunar transfer gallery with gray floor grating between a heavy habitatward pressure hatch and circular dock collar; recessed manifest desk on the right, sealed glass audit booth on the left, red pressure pipes, analog gauge, bypass cabinet, overhead cables, yellow cargo grid, and shuttle visible through the far window."
+    },
+    {
+      "id": "03_hatch_routine",
+      "prompt": "Close brown-skinned woman seal technician with tight black braids and orange-gray coveralls braces a heavy boot on a chalk mark and drives a waist-high steel hatch handle through its second stroke; green panel already lit, analog pressure needle still settling, worn lower linkage and red pipe under amber work light."
+    },
+    {
+      "id": "04_breakfast_routine",
+      "prompt": "Lunar workplace breakfast in a narrow transfer gallery: braided seal technician by the hatch; broad dark-skinned food-loop worker in moss-green jacket pushing a stainless cart with steaming lentil cakes; pale thin manifest clerk in blue vest at right-wall desk; silver-streaked creditor examiner in charcoal coat behind left glass booth."
+    },
+    {
+      "id": "05_log_second_stroke",
+      "prompt": "Object closeup beside a worn pressure hatch: brown hand in orange-gray sleeve draws and initials a second checklist box on a paper cuff; green hatch panel, falling analog gauge, chalk boot mark, steel dog handle, and creditor examiner raising a dark slate behind glass."
+    },
+    {
+      "id": "06_teach_mika_hatch",
+      "prompt": "Dark-skinned food-loop worker in moss-green jacket braces at a chalk floor mark and pulls a waist-high hatch handle through its second stroke while a braided seal technician points from worn lower linkage to analog gauge; stainless food cart and warm lentil cakes wait beside red pressure pipe."
+    },
+    {
+      "id": "07_pool_oxygen",
+      "prompt": "At a recessed manifest desk, braided seal technician touches paper cuff to reader while thin clerk with lenses and blue vest transfers two blue oxygen bars to a gray household line; broad food-loop worker divides a lentil cake beside stainless cart; heavy hatch and honest gauge visible down the gallery."
+    },
+    {
+      "id": "08_stage_crates",
+      "prompt": "Dockward gallery view: braided technician in orange-gray coveralls locks wheeled tool crates inside a yellow manifest grid; blue-vested clerk approves from right-wall desk; food-loop worker and microbial canisters remain habitatward; waiting shuttle silhouettes through circular collar window in hard white light."
+    },
+    {
+      "id": "09_routine_fold",
+      "prompt": "Wide ordinary work in a straight lunar transfer gallery: seal technician eats standing by hatch, food-loop worker checks cart condensation, manifest clerk clears paper cuffs, creditor examiner reads slate behind glass; red pressure pipe, analog gauge, yellow cargo grid, waiting shuttle, warm steam, cold dock light."
+    },
+    {
+      "id": "10_default_notice",
+      "prompt": "Pivotal amber alarm floods the entire transfer gallery; hatch, floor grating, manifest desk, glass audit booth, red pipe, bypass cabinet, collar, and waiting shuttle remain visible while four workers freeze mid-routine and a wall display becomes three blunt classification blocks above a descending clock."
+    },
+    {
+      "id": "11_classification",
+      "prompt": "Authority frame across lunar transfer gallery: thin manifest clerk in blue vest faces green, white, and gray occupancy columns; braided seal technician reads green cuff beside hatch; food-loop worker in moss jacket reads gray cuff beside cart; silver-streaked creditor examiner speaks behind glass beside amber launch clock."
+    },
+    {
+      "id": "12_classified_queue",
+      "prompt": "Gray-cuffed lunar residents in patched thermal layers queue habitatward of a heavy hatch with sleep bags, pressure masks, family tools, and bundles; braided technician guards the handle, food-loop worker holds stainless cart, blue-vested clerk works manifest desk, charcoal-coated examiner watches behind glass, shuttle visible down the exit axis."
+    },
+    {
+      "id": "13_false_green",
+      "prompt": "Tight pressure failure at a heavy hatch: electronic panel shines green while analog gauge needle falls, condensation streams toward worn lower dog, and grit moves over floor grating; braided technician grips handle, food-loop worker and gray queue show through reinforced window, manifest clerk and creditor examiner react across amber-lit gallery."
+    },
+    {
+      "id": "14_final_threshold",
+      "prompt": "Wide final threshold in one straight lunar gallery: heavy hatch with dog handle, green panel, analog gauge, red pipe and bypass at near end; right manifest desk, left glass booth, yellow cargo grid, far collar and shuttle; technician, food worker, clerk, examiner, and gray residents positioned between air, mass, and time."
+    },
+    {
+      "id": "15_ferry_aftermath",
+      "prompt": "Dockward aftermath under hard white pad light: circular shuttle collar, yellow cargo grid, tool crates, food-loop worker with two paper manuals and passenger-mass cuff, gray residents near exit, manifest clerk spending a final field, and seal technician watching from the hatch axis under amber interior lamps."
+    },
+    {
+      "id": "16_bay_aftermath",
+      "prompt": "Narrow curved de-funded sleeping bay with stacked bunks, blue oxygen lines, removable scrubber cartridges, honest analog gauge, paper rotation sheets, patched blankets, and amber emergency lamps; food-loop worker and seal technician guide gray-cuffed residents through a shared maintenance watch."
+    },
+    {
+      "id": "17_record_aftermath",
+      "prompt": "Evidence sightline across a glass audit booth: seal technician holds handwritten two-stroke cuff beside analog gauge; manifest clerk appends gray occupancy table; food-loop worker presents soil-smudged dependency sheet; silver-streaked creditor examiner receives all on dark slate with hatch and shuttle reflected behind."
+    },
+    {
+      "id": "18_insurance_aftermath",
+      "prompt": "Orderly-contraction view down lunar transfer gallery: seated or uncertain hatch handle and gauge, manifest desk stacked with green service-amendment cuffs, creditor examiner behind glass, gray residents with belongings, yellow grid and collar window; supply canisters or empty pad state expressed through lighting and equipment position."
+    }
+  ]
+}
