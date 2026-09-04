@@ -5834,17 +5834,17 @@ fn composite_schema(shape: CompositeShape) -> Value {
             "target",
             "ref",
             vec![
-                ("resource", tool_schema::reference("resource")),
-                ("route", tool_schema::reference("route")),
-                ("subject", subject_ref_schema()),
+                ("resource", Some(tool_schema::reference("resource"))),
+                ("route", Some(tool_schema::reference("route"))),
+                ("subject", Some(subject_ref_schema())),
             ],
         ),
         CompositeShape::AuthorityTargetRef => tool_schema::variant_content(
             "over",
             "ref",
             vec![
-                ("subject", subject_ref_schema()),
-                ("place_subtree", tool_schema::reference("place")),
+                ("subject", Some(subject_ref_schema())),
+                ("place_subtree", Some(tool_schema::reference("place"))),
             ],
         ),
         CompositeShape::AuthorityGrantRef => tool_schema::object(vec![
@@ -5861,8 +5861,8 @@ fn composite_schema(shape: CompositeShape) -> Value {
             "reach",
             "of",
             vec![
-                ("subjects", tool_schema::list(subject_ref_schema())),
-                ("place", tool_schema::reference("place")),
+                ("subjects", Some(tool_schema::list(subject_ref_schema()))),
+                ("place", Some(tool_schema::reference("place"))),
             ],
         ),
         CompositeShape::FactStandingRef => tool_schema::variant(
@@ -5891,19 +5891,19 @@ fn composite_schema(shape: CompositeShape) -> Value {
             vec![
                 (
                     "commitment",
-                    tool_schema::object(vec![
+                    Some(tool_schema::object(vec![
                         ("subject".to_owned(), subject_ref_schema()),
                         (
                             "key".to_owned(),
                             composite_schema(CompositeShape::CommitmentKey),
                         ),
-                    ]),
+                    ])),
                 ),
                 (
                     "dependency",
-                    composite_schema(CompositeShape::DependencyRef),
+                    Some(composite_schema(CompositeShape::DependencyRef)),
                 ),
-                ("subject", subject_ref_schema()),
+                ("subject", Some(subject_ref_schema())),
             ],
         ),
         CompositeShape::CommitmentKey => tool_schema::object(vec![
@@ -5937,10 +5937,11 @@ fn composite_schema(shape: CompositeShape) -> Value {
                     "bound",
                     "max",
                     vec![
-                        ("quantity", tool_schema::bounded_integer(1, u64::MAX)),
+                        ("none", None),
+                        ("quantity", Some(tool_schema::bounded_integer(1, u64::MAX))),
                         (
                             "cost",
-                            tool_schema::bounded_integer(1, u64::from(MAX_ROUTE_COST)),
+                            Some(tool_schema::bounded_integer(1, u64::from(MAX_ROUTE_COST))),
                         ),
                     ],
                 ),
@@ -5966,13 +5967,15 @@ fn ref_kind_schema() -> Value {
         vec![
             (
                 "subject",
-                tool_schema::nullable(tool_schema::name_enum(SUBJECT_KINDS)),
+                Some(tool_schema::nullable(tool_schema::name_enum(SUBJECT_KINDS))),
             ),
             (
                 "entity",
-                tool_schema::name_enum(&["place", "resource", "fact", "channel"]),
+                Some(tool_schema::name_enum(&[
+                    "place", "resource", "fact", "channel",
+                ])),
             ),
-            ("edge", tool_schema::name_enum(&["route"])),
+            ("edge", Some(tool_schema::name_enum(&["route"]))),
         ],
     )
 }
@@ -6232,40 +6235,51 @@ pub(super) fn field_example(kind: PatchFieldKind) -> Value {
     }
 }
 
+/// A fixed canonical string that also decodes as a canonical id: valid as any
+/// plain string field and, spelled as the nil UUID, valid wherever a field is
+/// actually typed as a command or entity id.
+#[cfg(test)]
+const ANY_STRING: &str = "00000000-0000-0000-0000-000000000000";
+
 #[cfg(test)]
 fn composite_example(shape: CompositeShape) -> Value {
-    let subject = json!({"ref": "draft", "value": "subject"});
-    match shape {
-        CompositeShape::NewController => json!({"type": "narrative_persona"}),
-        CompositeShape::AccessKind => json!({"access": "public"}),
-        CompositeShape::DependencyRef => {
-            json!({"target": "subject", "ref": subject})
-        }
-        CompositeShape::AuthorityTargetRef => json!({"over": "subject", "ref": subject}),
-        CompositeShape::AuthorityGrantRef => {
-            json!({"kind": "command", "over": {"over": "subject", "ref": subject}})
-        }
-        CompositeShape::ReachRef => json!({"reach": "subjects", "of": [subject]}),
-        CompositeShape::FactStandingRef => json!({"standing": "claimed", "by": subject}),
-        CompositeShape::AudienceRef => json!("colocated"),
-        CompositeShape::Precondition => json!({"precondition": "present", "at": "target"}),
-        CompositeShape::AuthoredSource => json!({"source": "witnessed"}),
-        CompositeShape::PressureSourceRef => json!({"from": "subject", "of": subject}),
-        CompositeShape::CommitmentKey => {
-            json!({"command": "00000000-0000-0000-0000-000000000000", "index": 0})
-        }
-        CompositeShape::PreconditionRef => {
-            json!({"precondition": "committed", "to": subject, "kind": "goal"})
-        }
-        CompositeShape::RoleSpec => {
-            json!({"role": "target", "kind": {"namespace": "subject", "kind": null}})
-        }
-        CompositeShape::EffectSlot => json!({
-            "op_kind": {"op": "forget"},
-            "roles": ["target", "fact"],
-            "bounds": {"bound": "none"},
-        }),
-        CompositeShape::OutcomeBand => json!({"weight": 1, "effects": [0]}),
+    schema_derived_example(&composite_schema(shape))
+}
+
+/// The one derivation of an example value from an emitted schema fragment:
+/// the first branch of every sum, the minimum of every bounded integer, a
+/// fixed canonical string, and an empty list wherever the schema allows one.
+/// `composite_example` is a projection of this over `composite_schema`
+/// rather than a hand-written third spelling of the same vocabulary.
+#[cfg(test)]
+fn schema_derived_example(schema: &Value) -> Value {
+    if let Some(alternatives) = schema.get("oneOf").and_then(Value::as_array) {
+        return schema_derived_example(alternatives.first().unwrap_or(&Value::Null));
+    }
+    if let Some(constant) = schema.get("const") {
+        return constant.clone();
+    }
+    if let Some(values) = schema.get("enum").and_then(Value::as_array) {
+        return values.first().cloned().unwrap_or(Value::Null);
+    }
+    match schema.get("type").and_then(Value::as_str) {
+        Some("object") => Value::Object(
+            schema
+                .get("properties")
+                .and_then(Value::as_object)
+                .map(|properties| {
+                    properties
+                        .iter()
+                        .map(|(name, property)| (name.clone(), schema_derived_example(property)))
+                        .collect()
+                })
+                .unwrap_or_default(),
+        ),
+        Some("array") => Value::Array(Vec::new()),
+        Some("integer") => schema.get("minimum").cloned().unwrap_or_else(|| json!(0)),
+        Some("boolean") => json!(false),
+        Some("string") => json!(ANY_STRING),
+        _ => Value::Null,
     }
 }
 
@@ -6308,10 +6322,22 @@ mod catalog_tests {
 
     /// Serde is the only decoder, so a field name the const list gets wrong
     /// cannot survive this. It pins the catalog's argument names and shapes to
-    /// the real struct fields, in both directions.
+    /// the real struct fields, in both directions. Each field's example is
+    /// itself a projection of the emitted schema (`schema_derived_example`),
+    /// so checking it against `field_schema` here proves the schema-derived
+    /// example against serde in one place, for every tool.
     #[test]
     fn patch_tool_arguments_round_trip_into_the_vocabulary() {
         for entry in PATCH_TOOLS {
+            for field in entry.fields {
+                let example = field_example(field.kind);
+                assert!(
+                    admits(&field_schema(field.kind), &example),
+                    "{} field {}: the schema-derived example does not satisfy its own schema: {example}",
+                    entry.name,
+                    field.name
+                );
+            }
             let arguments = arguments_for(entry);
             match entry.shape {
                 PatchToolShape::Declare { variant, fixed } => {
@@ -6394,25 +6420,44 @@ mod catalog_tests {
         );
     }
 
-    /// The forcing function. These carry no data and their only job is to break
-    /// the build when a variant is added, which sends the author to the count
-    /// assertions above and then to `PATCH_TOOLS`.
-    #[test]
-    fn patch_vocabulary_exemplars_are_exhaustive() {
-        #[expect(dead_code, reason = "the match arms are the assertion")]
-        fn assert_declarations_exhaustive(declaration: &Declaration) -> &'static str {
+    /// One `Declaration` per declare-shaped `PATCH_TOOLS` entry, decoded the
+    /// same way the round-trip test decodes it. The nested match is the
+    /// forcing function: it is exhaustive over `Declaration`'s variants, so a
+    /// new variant fails to compile here before it can reach `PATCH_TOOLS`
+    /// unlabeled. `Entity` names two tools because it is the one variant the
+    /// catalog splits by fixed `kind`; every other variant names exactly one.
+    fn every_declaration() -> Vec<Declaration> {
+        fn tool_names(declaration: &Declaration) -> &'static [&'static str] {
             match declaration {
-                Declaration::Subject(_) => "declare_subject",
-                Declaration::Entity(_) => "declare_place or declare_resource",
-                Declaration::Route(_) => "declare_route",
-                Declaration::Affordance(_) => "declare_affordance",
-                Declaration::Fact(_) => "declare_fact",
-                Declaration::Channel(_) => "declare_channel",
+                Declaration::Subject(_) => &["declare_subject"],
+                Declaration::Entity(_) => &["declare_place", "declare_resource"],
+                Declaration::Route(_) => &["declare_route"],
+                Declaration::Affordance(_) => &["declare_affordance"],
+                Declaration::Fact(_) => &["declare_fact"],
+                Declaration::Channel(_) => &["declare_channel"],
             }
         }
+        PATCH_TOOLS
+            .iter()
+            .filter(|entry| matches!(entry.shape, PatchToolShape::Declare { .. }))
+            .map(|entry| {
+                let declaration: Declaration =
+                    serde_json::from_value(arguments_for(entry)).expect("the entry decodes");
+                assert!(
+                    tool_names(&declaration).contains(&entry.name),
+                    "{} decoded a declaration its own exhaustive match does not name",
+                    entry.name
+                );
+                declaration
+            })
+            .collect()
+    }
 
-        #[expect(dead_code, reason = "the match arms are the assertion")]
-        fn assert_operations_exhaustive(operation: &ComponentOp) -> &'static str {
+    /// The `ComponentOp` sibling of `every_declaration`: one instance per
+    /// operate-shaped `PATCH_TOOLS` entry, with the same exhaustive-match
+    /// forcing function. Every `ComponentOp` variant names exactly one tool.
+    fn every_component_op() -> Vec<ComponentOp> {
+        fn tool_name(operation: &ComponentOp) -> &'static str {
             match operation {
                 ComponentOp::Relocate { .. } => "relocate",
                 ComponentOp::OpenRoute { .. } => "open_route",
@@ -6444,15 +6489,88 @@ mod catalog_tests {
                 ComponentOp::ResolvePressure { .. } => "resolve_pressure",
             }
         }
-
-        // Every entry that names an operation names one this match knows, which
-        // is the same set the decoder walks.
-        for entry in PATCH_TOOLS {
-            if let PatchToolShape::Operate { variant } = entry.shape {
+        PATCH_TOOLS
+            .iter()
+            .filter(|entry| matches!(entry.shape, PatchToolShape::Operate { .. }))
+            .map(|entry| {
                 let operation: ComponentOp =
                     serde_json::from_value(arguments_for(entry)).expect("the entry decodes");
-                assert_eq!(assert_operations_exhaustive(&operation), variant);
+                assert_eq!(tool_name(&operation), entry.name);
+                operation
+            })
+            .collect()
+    }
+
+    /// Whether `entry`'s catalog shape names the encoded value: its serde tag
+    /// matches `entry`'s variant and, for a `Declare` entry, every one of its
+    /// fixed pairs matches too. This is the acceptance rule
+    /// `every_vocabulary_variant_maps_to_exactly_one_patch_tool` uses to prove
+    /// each exemplar belongs to exactly one tool.
+    fn names(entry: &PatchTool, value: &Value) -> bool {
+        match entry.shape {
+            PatchToolShape::Declare { variant, fixed } => {
+                value.get("type").and_then(Value::as_str) == Some(variant)
+                    && fixed.iter().all(|(key, expected)| {
+                        value.get(*key).and_then(Value::as_str) == Some(*expected)
+                    })
             }
+            PatchToolShape::Operate { variant } => {
+                value.get("op").and_then(Value::as_str) == Some(variant)
+            }
+            PatchToolShape::Session => false,
+        }
+    }
+
+    /// The forcing function: every declaration and operation the vocabulary
+    /// can construct is accepted by exactly one `PATCH_TOOLS` entry, and the
+    /// exemplar counts equal the tool counts. A new variant that maps onto an
+    /// existing tool's name, rather than earning its own, fails here even
+    /// though it compiles.
+    #[test]
+    fn every_vocabulary_variant_maps_to_exactly_one_patch_tool() {
+        let declare_tools = PATCH_TOOLS
+            .iter()
+            .filter(|entry| matches!(entry.shape, PatchToolShape::Declare { .. }))
+            .count();
+        let operate_tools = PATCH_TOOLS
+            .iter()
+            .filter(|entry| matches!(entry.shape, PatchToolShape::Operate { .. }))
+            .count();
+        assert_eq!(
+            (declare_tools, operate_tools, PATCH_TOOLS.len()),
+            (7, 28, 37)
+        );
+
+        let declarations = every_declaration();
+        assert_eq!(declarations.len(), declare_tools);
+        for declaration in &declarations {
+            let value = serde_json::to_value(declaration).expect("a declaration encodes");
+            let accepting: Vec<&str> = PATCH_TOOLS
+                .iter()
+                .filter(|entry| names(entry, &value))
+                .map(|entry| entry.name)
+                .collect();
+            assert_eq!(
+                accepting.len(),
+                1,
+                "{value} is accepted by {accepting:?}, not exactly one tool"
+            );
+        }
+
+        let operations = every_component_op();
+        assert_eq!(operations.len(), operate_tools);
+        for operation in &operations {
+            let value = serde_json::to_value(operation).expect("an operation encodes");
+            let accepting: Vec<&str> = PATCH_TOOLS
+                .iter()
+                .filter(|entry| names(entry, &value))
+                .map(|entry| entry.name)
+                .collect();
+            assert_eq!(
+                accepting.len(),
+                1,
+                "{value} is accepted by {accepting:?}, not exactly one tool"
+            );
         }
     }
 
@@ -6522,14 +6640,12 @@ mod catalog_tests {
 
     // ---- Soul: the emitter against the decoder -------------------------
     //
-    // `patch_tool_arguments_round_trip_into_the_vocabulary` proves that a
-    // hand-written *example* decodes. It never checks that example against the
-    // *emitted schema*, so `composite_example` is a third spelling of the same
-    // vocabulary beside `composite_schema` and serde. The tests below close the
-    // direction that matters for a model: an instance built from the emitted
-    // schema must decode, for every branch of every sum the schema offers.
-
-    const ANY_STRING: &str = "00000000-0000-0000-0000-000000000000";
+    // `composite_example` is a projection of `composite_schema` (see
+    // `schema_derived_example` above), so `patch_tool_arguments_round_trip_into_the_vocabulary`
+    // checks the schema-derived example against serde directly. The tests
+    // below close the complementary direction that matters for a model: an
+    // instance built from the emitted schema must decode, for every branch of
+    // every sum the schema offers, not only the one branch the example picks.
 
     /// One instance of `schema`, taking `branch` at the top-level `oneOf` and
     /// the first alternative everywhere below it. Nothing here reads the const
@@ -6708,34 +6824,13 @@ mod catalog_tests {
         }
     }
 
-    /// The round-trip test's examples are a third spelling, not a projection of
-    /// the schema. This pins the exact place where the two disagree today, so a
-    /// fix removes an entry here and a new drift adds one.
-    #[test]
-    fn soul_the_round_trip_examples_are_a_second_spelling_of_the_emitted_schema() {
-        let mut disagree: Vec<&str> = Vec::new();
-        for entry in PATCH_TOOLS {
-            for field in entry.fields {
-                if !admits(&field_schema(field.kind), &field_example(field.kind)) {
-                    disagree.push(field.name);
-                }
-            }
-        }
-        disagree.sort_unstable();
-        disagree.dedup();
-        assert_eq!(
-            disagree,
-            vec!["effect_slots"],
-            "the example/schema disagreement set moved"
-        );
-    }
-
     /// `Bounds::None` is a live variant of the vocabulary — an effect slot with
-    /// no ceiling — and `variant_content` cannot spell a unit variant, so the
-    /// emitted schema offers only `quantity` and `cost`. A world author using
-    /// the catalog cannot declare an unbounded effect slot.
+    /// no ceiling. `variant_content` now spells a payload-less branch the way
+    /// its doc comment always promised, so the emitted schema offers `none`
+    /// alongside `quantity` and `cost`, and a world author can declare an
+    /// unbounded effect slot.
     #[test]
-    fn soul_the_catalog_cannot_express_an_unbounded_effect_slot() {
+    fn the_catalog_can_declare_an_unbounded_effect_slot() {
         let unbounded = serde_json::to_value(Bounds::None).expect("bounds encode");
         assert_eq!(unbounded, json!({"bound": "none"}));
         let slot = field_schema(PatchFieldKind::CompositeList(CompositeShape::EffectSlot));
@@ -6745,9 +6840,12 @@ mod catalog_tests {
             "the bounded spelling is offered"
         );
         assert!(
-            !admits(&bounds, &unbounded),
-            "the unbounded spelling is now offered; delete this test"
+            admits(&bounds, &unbounded),
+            "the unbounded spelling is offered"
         );
+        let decoded: Bounds =
+            serde_json::from_value(unbounded).expect("the unbounded spelling decodes");
+        assert_eq!(decoded, Bounds::None);
     }
 }
 

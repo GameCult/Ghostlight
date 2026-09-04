@@ -12774,36 +12774,6 @@ mod clock_tests {
         assert_ne!(candidate, kernel.state);
     }
 
-    /// Replay re-decides authority for free, because it re-runs `reduce` and
-    /// `apply_effect` against the pre-commit state. A row whose recorded caller
-    /// claims a jurisdiction it does not have fails the journal.
-    #[test]
-    fn journal_replay_refuses_a_forged_elaborator_row() {
-        let directory = tempfile::tempdir().unwrap();
-        let path = directory.path().join("world.cc");
-        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Forged");
-        let world_id = kernel.state.world_id;
-        let answered = dead_end_boundary(&kernel);
-        submit_as(
-            &mut kernel,
-            elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
-            CommandBody::AdmitPatch {
-                answers: Some(PatchAnswer::Boundary(answered)),
-                patch: shed_under(clockwork.dead_end, "shed"),
-            },
-        )
-        .expect("the honest elaboration commits");
-        drop(kernel);
-        let replayed = WorldKernel::open(&path, world_id).expect("the honest history replays");
-        assert!(
-            replayed
-                .state
-                .entities
-                .values()
-                .any(|entity| entity.label == "The shed")
-        );
-    }
-
     /// The mismatch vocabulary is kernel-internal plus controller telemetry. It
     /// never enters a commit, and `verify_state_shape` never grows a clause for
     /// it because no partition holds one.

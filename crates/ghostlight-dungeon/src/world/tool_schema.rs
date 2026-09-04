@@ -94,16 +94,21 @@ pub(super) fn reference(referent: &str) -> Value {
 }
 
 /// An adjacently tagged sum: `{"<tag>": "<variant>", "<content>": <payload>}`.
-/// A variant with no payload omits the content field entirely, which is what
-/// serde emits for a unit variant in an adjacently tagged enum.
-pub(super) fn variant_content(tag: &str, content: &str, variants: Vec<(&str, Value)>) -> Value {
+/// A variant with no payload (`None`) omits the content field entirely, which
+/// is what serde emits for a unit variant in an adjacently tagged enum.
+pub(super) fn variant_content(
+    tag: &str,
+    content: &str,
+    variants: Vec<(&str, Option<Value>)>,
+) -> Value {
     let branches: Vec<Value> = variants
         .into_iter()
         .map(|(name, payload)| {
-            object(vec![
-                (tag.to_owned(), json!({"const": name})),
-                (content.to_owned(), payload),
-            ])
+            let mut properties = vec![(tag.to_owned(), json!({"const": name}))];
+            if let Some(inner) = payload {
+                properties.push((content.to_owned(), inner));
+            }
+            object(properties)
         })
         .collect();
     json!({ "oneOf": branches })
