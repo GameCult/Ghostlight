@@ -1,0 +1,64 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "hearth-brood-ring-v0.bfl-simple-v0",
+  "fixture_id": "hearth-brood-ring-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Painterly speculative-ecology storybook frame, restrained gouache and ink texture, readable alien anatomy, tactile root-grown civic spaces, low-energy bioluminescence, translucent heat-bearing tissue, deep eclipse blues with copper warmth and muted amber, domestic tenderness under real logistical pressure, cinematic interactive-fiction composition.",
+  "prompts": [
+    {
+      "id": "01_brood_hollow_establishing",
+      "prompt": "Wide elevated view of a shallow oval care hollow made of dark root-bound stone: one broad low nursery ramp enters at the inner end, twin waist-low arches of pale intertwined roots open at the outer end, the left arch leading to a packed-earth glassback calving lane and the right to a Sa'ueia family path, both edged by paired amber fungal candles and curving toward a possible join after the first bend; curved lantern trees hang cold blue knots along both long sides, and a central dark mineral-sand bed holds broad low-slung grazing animals with copper-glowing translucent dorsal plates beside long-bodied six-limbed caretakers and children. An enormous fixed dark planet eclipses a dim red-orange sun."
+    },
+    {
+      "id": "02_brood_ring_people",
+      "prompt": "Medium-wide view in an oval root-stone care hollow: an older rust-fibered alien hexapod with four tall running legs, two small three-digit chest hands, wedge head, and paired facial fans holds a soft mineral comb beside a dark sand bed; a smaller cream-and-charcoal hexapod child cleans a plate seam on a low broad charcoal calf with translucent copper dorsal plates; a dark ochre hexapod route adult waits by the inner ramp with a woven flank frame and layered archive; a large blue-gray glassback adult stands broadside beyond twin root arches before a herd, tall translucent plates carrying blue and amber bands under blue lantern knots and a planetary eclipse."
+    },
+    {
+      "id": "03_routine_care_hub",
+      "prompt": "Overhead three-quarter view of four ordinary care tasks around an oval mineral-sand bed: a rust-fibered alien hexapod caretaker and pale striped hexapod child hold a soft comb near a copper-glowing calf's dorsal plate seams; a dark ochre hexapod route adult opens small chest hands for a facial-fan refusal exercise; folded rest cloths mark a shared resting place; and an empty woven flank frame with route cords points through twin root arches toward amber fungal candles. A tall-plated glassback adult watches from the calving lane under cold blue lantern knots."
+    },
+    {
+      "id": "04_routine_care_fold",
+      "prompt": "Domestic eclipse care in an oval root-stone hollow: a low broad charcoal calf rests in dark mineral sand with translucent dorsal plates glowing copper, a small cream-and-charcoal six-limbed child folds against the warm plate line, an older rust-fibered six-limbed caretaker passes a soft grooming comb, rest cloths, and flexible layered archive membranes to a dark ochre route adult, and a large blue-gray glassback adult with a herd waits beyond twin root arches on an amber-candle calving lane under cold blue lantern knots."
+    },
+    {
+      "id": "05_herd_departure_pulse",
+      "prompt": "Pivotal departure beat in an oval root-stone care hollow: beyond the left pale root arch, a large blue-gray glassback adult sends a blue-to-amber pulse down tall translucent dorsal plates and through an aligned herd; at the center, a small cream-and-charcoal alien hexapod child rises toward a dark ochre route adult waiting with a flank frame at the right family arch while a low charcoal calf rises and follows the child, presses a warm copper plate edge against the child's flank, and darkens every dorsal plate; a rust-fibered elder caretaker watches beside amber fungal candles and cold blue lantern knots during eclipse egress."
+    },
+    {
+      "id": "06_departure_action_hub",
+      "prompt": "Medium-wide departure-choice frame in an oval root-stone care hollow: a rust-fibered alien hexapod caretaker folds low beside a cream-and-charcoal hexapod child with open facial fans; an empty woven flank frame rests at calf height by a loop through twin root arches; a soft grooming comb sits on a low shelf between the arches within muzzle reach of a tall-plated glassback adult; and separate amber-candle family and calving routes remain visible through the right and left arches. A copper-plated calf stays beside the child while a dark ochre route adult waits at the right and several broad low-slung dark glassbacks with translucent dorsal plates wait behind the adult glassback at the left."
+    },
+    {
+      "id": "07_two_routes_one_kinship",
+      "prompt": "Wide frontal view toward the outer end of an oval root-stone hollow: a broad blue-lit nursery ramp remains in the rear background; the right pale root arch opens onto an amber-candle Sa'ueia family branch with a dark ochre route adult, flank frame, and layered archive; the left arch opens onto an amber-candle glassback calving lane with a large translucent-plated adult and herd; a small cream-and-charcoal six-limbed child and copper-plated low calf stand together at the center; and a rust-fibered elder caretaker stands off the centerline with access to both routes under a fixed planetary eclipse."
+    },
+    {
+      "id": "08_obligation_shape_hub",
+      "prompt": "Overhead obligation-choice view of an oval root-stone care hollow: braided route cords can join a dark ochre alien hexapod's flank frame to a large tall-plated glassback adult toward an amber fungal road; a cream-and-charcoal hexapod child can walk beside a copper-plated calf through the left root arch while adults wait; a soft comb and flexible layered archive can be divided between a rust-fibered elder caretaker and the route adult; and cold-blue nursery light and amber calving candles define two formal route bands around the central mineral-sand bed."
+    },
+    {
+      "id": "09_first_route_threshold",
+      "prompt": "Wide eye-level threshold facing the outer end of an oval root-stone care hollow during eclipse egress: a rust-fibered elder alien hexapod stands at center with chest hands open; a dark ochre hexapod route adult waits at the right family arch with layered archive and balanced flank frame beside a small cream-and-charcoal child; a large blue-gray glassback adult waits at the left calving arch before a herd beside a low charcoal calf with copper translucent plates; every adult leaves open floor around the young; the inner nursery ramp, blue lantern knots, amber fungal candles, dark mineral sand, route cords, grooming comb, and a red-orange rim around an enormous fixed dark planet make all routes legible."
+    },
+    {
+      "id": "10_shared_route_aftermath",
+      "prompt": "Shared-route aftermath on a packed-earth road curving between low root ridges and paired amber fungal candles toward a distant honest-water hollow: a herd of broad low-slung dark grazers with translucent heat plates moves in a warm line behind a large blue-gray leader; a cream-and-charcoal six-limbed child and copper-plated calf travel side by side inside the herd flank; a dark ochre alien hexapod adult guards the exposed outer side with a woven flank frame and visible braided debt cord; a rust-fibered elder caretaker watches from twin root arches under blue lantern knots and returning eclipse light."
+    },
+    {
+      "id": "11_child_escort_aftermath",
+      "prompt": "Child-escort aftermath at twin pale root arches: a small cream-and-charcoal alien hexapod child walks beside a broad charcoal calf with copper translucent plates through the left arch toward a lowered blue-gray glassback adult and open herd ring on an amber-candle calving lane; a dark ochre hexapod route adult waits deliberately beside the right family arch with an empty woven flank frame; a rust-fibered elder caretaker holds the central mineral-sand floor clear under cold blue lantern knots and red-orange eclipse light."
+    },
+    {
+      "id": "12_split_care_aftermath",
+      "prompt": "Divided-care aftermath at the outer end of an oval root-stone hollow: at the right family arch, a dark ochre six-limbed route adult receives a small cream-and-charcoal hexapod child beside open flexible archive membranes and folded rest cloths; at the left calving arch, a rust-fibered elder hexapod caretaker walks a copper-plated low calf toward a lowered blue-gray glassback adult and open herd ring while holding a soft mineral comb; the dark central sand bed lies behind both handovers under returning eclipse light."
+    },
+    {
+      "id": "13_clean_separation_aftermath",
+      "prompt": "Clean-separation aftermath inside an oval root-stone care hollow: a small cream-and-charcoal alien hexapod child moves toward a dark ochre route adult at the right family arch while keeping one large facial fan turned toward the center; a charcoal calf with translucent copper dorsal plates moves toward a blue-gray herd adult at the left calving arch while keeping the nearest plate turned toward the child; a rust-fibered elder caretaker stands at the central mineral-sand bed, with the broad inner nursery ramp behind; blue lantern knots, amber fungal candles, and a red-orange eclipse rim illuminate the open distance between the two outer routes."
+    }
+  ]
+}

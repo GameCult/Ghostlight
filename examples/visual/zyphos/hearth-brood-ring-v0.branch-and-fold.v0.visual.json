@@ -1,0 +1,823 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "hearth-brood-ring-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/zyphos/hearth-brood-ring-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/hearth-brood-ring-v0.branch-and-fold.v0.training.json",
+  "scene_id": "hearth-brood-ring-v0.lantern-side-first-route",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a Sa'ueia and glassback brood-ring handover during the daily Umbros eclipse.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary shared care, incoming family and herd introduction, the departure conflict, obligation shaping, the final threshold, and four success-or-cost ending families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the warm-hollow establishing view, participant introduction, routine care hub, routine fold, herd departure pulse, departure action hub, obligation fold, obligation hub, first-route threshold, and each ending family. The calf and child rising together after opposite departure calls receives its own pivotal frame.",
+    "prompting_rule": "Each base image prompt stands alone, explains fictional anatomy and living infrastructure in visible terms, and names only characters or groups visible in frame. Continuity notes remain tooling constraints; prompt assembly uses visible geometry in the base prompt or triggered modifier.",
+    "global_style_cue": "Style: painterly speculative-ecology storybook frame, restrained gouache and ink texture, readable alien anatomy, tactile root-grown civic spaces, low-energy bioluminescence, translucent heat-bearing tissue, deep eclipse blues with copper warmth and muted amber, domestic tenderness under real logistical pressure, cinematic interactive-fiction composition.",
+    "prompt_assembly_rule": "Assemble each image prompt from the global_style_cue, the scene base_image_prompt, visual refs only for named characters and groups visible in that frame, and triggered state_image_modifiers or global_branch_image_modifiers. Exclude continuity notes and absent character refs. Every text-only render receives complete visible geometry.",
+    "scene_set_guidance": {
+      "current_mode": "textual_scene_set_map_draft",
+      "scope_reason": "The fixture reuses one oval hollow from several camera slots and moves bodies through two arches, a nursery ramp, and a calving lane. The textual map supports review and prompt-manifest preparation; it is not a durable spatial render source.",
+      "future_scene_set_need": "Before high-consistency website illustration, build a plan view or simple 3D blockout with the oval rest bed, inner nursery ramp, twin outer root arches, outer work shelf, calving lane, fungal candle edges, lantern-tree rim, staging slots, and all named camera slots."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "zyphos_brood_hollow_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide elevated view of a shallow oval care hollow made of dark root-bound stone at the edge of an alien reproductive commons. A broad low nursery ramp enters at the inner end. Two waist-low arches grown from pale intertwined roots open at the outer end: the left leads onto a packed-earth glassback calving lane and the right onto a Sa'ueia family path, both edged by paired amber fungal candles and curving toward a possible join after the first bend. Curved lantern trees line both long sides, their cold blue knots hanging below the canopies. A central oval bed of dark mineral sand holds several broad low-slung grazing animals with translucent copper-glowing dorsal plates and several long-bodied six-limbed caretakers and children resting beside them. An enormous fixed dark planet begins to eclipse a dim red-orange sun.",
+        "visible_characters": [
+          {
+            "agent_id": "warm_hollow_occupants",
+            "default_stance": "mixed Sa'ueia and glassback bodies resting around the central mineral-sand bed",
+            "visual_ref": "visual_character_refs.groups.warm_hollow_occupants"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The hollow keeps one stable coordinate frame: nursery ramp at the inner end, left calving arch and right family arch at the outer end, lantern trees along the long sides, work shelf between the arches, mineral-sand rest bed in the center.",
+          "Sa'ueia anatomy remains long-bodied and hexapodal: four tall digitigrade running legs plus two smaller three-digit chest manipulators, wedge head, paired facial fans, short body fibers, and bare throat or flank patches.",
+          "Glassback exact limb count remains unresolved; visual refs use a broad low-slung grazer body, hooflike feet, muzzle interaction, and a row of translucent dorsal heat plates."
+        ]
+      },
+      {
+        "visual_scene_id": "zyphos_brood_ring_people",
+        "ink_anchor": "ring_people",
+        "base_image_prompt": "Medium-wide participant introduction in the oval root-stone care hollow during eclipse ingress. At the center, a rust-fibered long-bodied alien caretaker folds four running legs beside a mineral-sand bed and holds a soft mineral grooming comb in two small chest hands. A smaller pale-fibered six-limbed child cleans grit from the plate seam of a broad low-slung calf whose translucent dorsal plates glow copper. At the inner nursery ramp, a dark ochre six-limbed route adult waits with a balanced flank frame, folded rest cloths, and a layered portable archive. Beyond the twin outer root arches, a large glassback adult stands broadside before a herd, tall translucent dorsal plates carrying slow blue and amber bands. Cold blue lantern knots and amber fungal candles divide the space under a planet-sized eclipse.",
+        "visible_characters": [
+          {
+            "agent_id": "pera_outgoing_caretaker",
+            "default_stance": "folded beside the calf with grooming comb ready",
+            "visual_ref": "visual_character_refs.characters.pera_outgoing_caretaker"
+          },
+          {
+            "agent_id": "doro_incoming_family",
+            "default_stance": "waiting at the inner nursery ramp with flank frame",
+            "visual_ref": "visual_character_refs.characters.doro_incoming_family"
+          },
+          {
+            "agent_id": "tavi_young_route_taker",
+            "default_stance": "beside Low Ember, chest fingers at a plate seam",
+            "visual_ref": "visual_character_refs.characters.tavi_young_route_taker"
+          },
+          {
+            "agent_id": "low_ember_glassback_calf",
+            "default_stance": "resting in the central bed against Tavi",
+            "visual_ref": "visual_character_refs.characters.low_ember_glassback_calf"
+          },
+          {
+            "agent_id": "broad_rain_herd_adult",
+            "default_stance": "broadside beyond the outer arches",
+            "visual_ref": "visual_character_refs.characters.broad_rain_herd_adult"
+          },
+          {
+            "agent_id": "returning_glassback_herd",
+            "default_stance": "aligned behind Broad Rain along the calving lane",
+            "visual_ref": "visual_character_refs.groups.returning_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Doro begins at the inner ramp, Broad Rain and herd begin outside the twin arches, and both young begin in the central rest bed."
+        ]
+      },
+      {
+        "visual_scene_id": "zyphos_routine_care_hub",
+        "ink_anchor": "routine_care_choice",
+        "base_image_prompt": "Overhead three-quarter view of four ordinary care tasks staged around the central mineral-sand bed in an oval root-stone hollow: a rust-fibered six-limbed caretaker and pale-fibered child hold a soft comb near a copper-glowing calf's dorsal plate seams; the dark ochre route adult waits by the child with chest hands open for a facial-fan refusal exercise; two folded rest cloths mark a shared resting interval; and an empty balanced flank frame with route cords can be carried through twin outer root arches toward amber fungal candles. A large glassback adult watches from the calving lane under cold blue lantern knots.",
+        "visible_characters": [
+          {
+            "agent_id": "pera_outgoing_caretaker",
+            "default_stance": "centered beside comb, child, calf, and route objects",
+            "visual_ref": "visual_character_refs.characters.pera_outgoing_caretaker"
+          },
+          {
+            "agent_id": "doro_incoming_family",
+            "default_stance": "near Tavi with chest hands open and empty flank frame nearby",
+            "visual_ref": "visual_character_refs.characters.doro_incoming_family"
+          },
+          {
+            "agent_id": "tavi_young_route_taker",
+            "default_stance": "beside Low Ember with facial fans visible",
+            "visual_ref": "visual_character_refs.characters.tavi_young_route_taker"
+          },
+          {
+            "agent_id": "low_ember_glassback_calf",
+            "default_stance": "resting with one plate seam exposed for gentle care",
+            "visual_ref": "visual_character_refs.characters.low_ember_glassback_calf"
+          },
+          {
+            "agent_id": "broad_rain_herd_adult",
+            "default_stance": "watching from beyond the outer arches",
+            "visual_ref": "visual_character_refs.characters.broad_rain_herd_adult"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_routine_care_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Domestic eclipse care in the oval root-stone hollow: a copper-plated glassback calf rests in dark mineral sand with a pale-fibered six-limbed child folded against the warm plate line; a rust-fibered elder caretaker passes a soft grooming comb, folded rest cloths, and layered flexible archive membranes to a dark ochre route adult. Beyond twin root arches, a large glassback adult and herd wait along the amber-candle calving lane. Cold blue lantern knots illuminate familiar low body positions, plate seams, chest-hand tools, and the open routes between nursery and herd.",
+        "visible_characters": [
+          {
+            "agent_id": "pera_outgoing_caretaker",
+            "default_stance": "passing care objects beside the central bed",
+            "visual_ref": "visual_character_refs.characters.pera_outgoing_caretaker"
+          },
+          {
+            "agent_id": "doro_incoming_family",
+            "default_stance": "folded low to receive tools and observe signals",
+            "visual_ref": "visual_character_refs.characters.doro_incoming_family"
+          },
+          {
+            "agent_id": "tavi_young_route_taker",
+            "default_stance": "resting beside the calf's warm plates",
+            "visual_ref": "visual_character_refs.characters.tavi_young_route_taker"
+          },
+          {
+            "agent_id": "low_ember_glassback_calf",
+            "default_stance": "resting with steady copper plate glow",
+            "visual_ref": "visual_character_refs.characters.low_ember_glassback_calf"
+          },
+          {
+            "agent_id": "broad_rain_herd_adult",
+            "default_stance": "near the outer arches with blue and amber plate bands",
+            "visual_ref": "visual_character_refs.characters.broad_rain_herd_adult"
+          },
+          {
+            "agent_id": "returning_glassback_herd",
+            "default_stance": "waiting in a loose heat line along the calving lane",
+            "visual_ref": "visual_character_refs.groups.returning_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "brood_trust >= 4",
+            "modifier_prompt": "Tavi and Low Ember rest in easy side contact, each changing posture in response to the other before an adult intervenes."
+          },
+          {
+            "trigger": "family_readiness >= 3",
+            "modifier_prompt": "Doro watches Tavi and Low Ember directly while holding chest hands still and the archive open at ground level."
+          },
+          {
+            "trigger": "herd_consent >= 3",
+            "modifier_prompt": "Broad Rain stands close to the outer arches with a calm blue welcome band visible beneath amber departure color."
+          },
+          {
+            "trigger": "plate_calm >= 3",
+            "modifier_prompt": "Low Ember's translucent plates hold an even copper glow with clear relaxed seams."
+          },
+          {
+            "trigger": "escort_prepared >= 2",
+            "modifier_prompt": "One amber fungal candle marks a possible shared line beside Doro's flank frame and a clean rest cloth."
+          },
+          {
+            "trigger": "route_time <= 2",
+            "modifier_prompt": "A red-orange rim of returning sunlight appears around the fixed dark planet while amber road candles lean toward departure traffic."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "zyphos_herd_departure_pulse",
+        "ink_anchor": "departure_pressure",
+        "base_image_prompt": "Pivotal departure beat in an oval root-stone care hollow. Beyond the left outer root arch, a large broad glassback adult sends a blue-to-amber pulse down tall translucent dorsal plates and through an aligned herd on the calving lane. At the center, a pale-fibered six-limbed child rises from dark mineral sand and steps toward a dark ochre route adult waiting with a flank frame at the right family arch, while a copper-plated low-slung calf rises and follows the child instead of the herd. The calf presses one warm plate edge against the child's flank and darkens the readable plates. A rust-fibered elder caretaker watches from the bed edge. Amber fungal candles brighten under cold lantern knots as eclipse totality begins to loosen.",
+        "visible_characters": [
+          {
+            "agent_id": "pera_outgoing_caretaker",
+            "default_stance": "at the central bed edge, attention on both young",
+            "visual_ref": "visual_character_refs.characters.pera_outgoing_caretaker"
+          },
+          {
+            "agent_id": "doro_incoming_family",
+            "default_stance": "near the right family arch with flank frame lifted",
+            "visual_ref": "visual_character_refs.characters.doro_incoming_family"
+          },
+          {
+            "agent_id": "tavi_young_route_taker",
+            "default_stance": "one step toward the right family arch, stopped beside the calf",
+            "visual_ref": "visual_character_refs.characters.tavi_young_route_taker"
+          },
+          {
+            "agent_id": "low_ember_glassback_calf",
+            "default_stance": "standing against Tavi with plates darkened",
+            "visual_ref": "visual_character_refs.characters.low_ember_glassback_calf"
+          },
+          {
+            "agent_id": "broad_rain_herd_adult",
+            "default_stance": "broadside outside the arches with departure pulse active",
+            "visual_ref": "visual_character_refs.characters.broad_rain_herd_adult"
+          },
+          {
+            "agent_id": "returning_glassback_herd",
+            "default_stance": "aligned behind Broad Rain for movement",
+            "visual_ref": "visual_character_refs.groups.returning_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "This frame isolates the power-geometry change: both receiving adults call outward in opposite directions while both young occupy the center together."
+        ]
+      },
+      {
+        "visual_scene_id": "zyphos_departure_action_hub",
+        "ink_anchor": "departure_choice",
+        "base_image_prompt": "Medium-wide four-affordance departure frame in the oval care hollow: a rust-fibered six-limbed caretaker folds low beside a pale-fibered child with open facial fans; an empty balanced flank frame rests at calf height near a practice loop through the twin root arches; a soft mineral grooming comb sits on the outer work shelf within muzzle reach of the large glassback adult; and separate amber-candle family and calving routes are visible through the right and left arches for a possible separation rehearsal. The copper-plated calf remains beside the child while the dark ochre route adult waits at the right arch and several broad low-slung dark glassbacks with translucent dorsal plates wait behind the adult at the left.",
+        "visible_characters": [
+          {
+            "agent_id": "pera_outgoing_caretaker",
+            "default_stance": "folded low at the center with clear reach to route objects",
+            "visual_ref": "visual_character_refs.characters.pera_outgoing_caretaker"
+          },
+          {
+            "agent_id": "doro_incoming_family",
+            "default_stance": "waiting between the child and right family arch",
+            "visual_ref": "visual_character_refs.characters.doro_incoming_family"
+          },
+          {
+            "agent_id": "tavi_young_route_taker",
+            "default_stance": "beside the calf with facial fans visible",
+            "visual_ref": "visual_character_refs.characters.tavi_young_route_taker"
+          },
+          {
+            "agent_id": "low_ember_glassback_calf",
+            "default_stance": "pressed near Tavi at the center",
+            "visual_ref": "visual_character_refs.characters.low_ember_glassback_calf"
+          },
+          {
+            "agent_id": "broad_rain_herd_adult",
+            "default_stance": "outside the root arches near work shelf",
+            "visual_ref": "visual_character_refs.characters.broad_rain_herd_adult"
+          },
+          {
+            "agent_id": "returning_glassback_herd",
+            "default_stance": "waiting behind Broad Rain at the left calving arch",
+            "visual_ref": "visual_character_refs.groups.returning_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_two_routes_one_kinship",
+        "ink_anchor": "obligation_fold",
+        "base_image_prompt": "Wide frontal view toward the outer end of an oval root-stone care hollow. A broad blue-lit nursery ramp remains in the rear background. Two pale root arches fill the foreground: the right opens onto an amber-candle Sa'ueia family branch with a dark ochre route adult, flank frame, and layered archive; the left opens onto an amber-candle glassback calving lane with a large translucent-plated adult and herd. At the center, a small pale-fibered six-limbed child and a copper-plated low-slung calf stand together on dark mineral sand. A rust-fibered elder caretaker stands slightly to the side with chest hands free, able to address either route. The composition makes two legitimate exits and one cross-species bond readable under a fixed planetary eclipse.",
+        "visible_characters": [
+          {
+            "agent_id": "pera_outgoing_caretaker",
+            "default_stance": "off the centerline with access to both routes",
+            "visual_ref": "visual_character_refs.characters.pera_outgoing_caretaker"
+          },
+          {
+            "agent_id": "doro_incoming_family",
+            "default_stance": "at the right family arch",
+            "visual_ref": "visual_character_refs.characters.doro_incoming_family"
+          },
+          {
+            "agent_id": "tavi_young_route_taker",
+            "default_stance": "centered beside Low Ember",
+            "visual_ref": "visual_character_refs.characters.tavi_young_route_taker"
+          },
+          {
+            "agent_id": "low_ember_glassback_calf",
+            "default_stance": "centered beside Tavi",
+            "visual_ref": "visual_character_refs.characters.low_ember_glassback_calf"
+          },
+          {
+            "agent_id": "broad_rain_herd_adult",
+            "default_stance": "at the left calving arch",
+            "visual_ref": "visual_character_refs.characters.broad_rain_herd_adult"
+          },
+          {
+            "agent_id": "returning_glassback_herd",
+            "default_stance": "arrayed along the calving lane",
+            "visual_ref": "visual_character_refs.groups.returning_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "child_voice >= 3",
+            "modifier_prompt": "Tavi stands with both facial fans open toward Doro and Low Ember, making the child's signal visible across the hollow."
+          },
+          {
+            "trigger": "escort_prepared >= 2",
+            "modifier_prompt": "Doro's empty flank frame and a clean rest cloth sit beside one open amber candle on a physically continuous shared line through the left root arch."
+          },
+          {
+            "trigger": "herd_consent >= 4",
+            "modifier_prompt": "Broad Rain lowers beside the outer arch with calm blue plate bands and leaves an open receiving space before the herd."
+          },
+          {
+            "trigger": "separation_pressure >= 2",
+            "modifier_prompt": "Tavi and Low Ember press flank to plate at the center with braced posture toward both approaching adults."
+          },
+          {
+            "trigger": "care_debt >= 2",
+            "modifier_prompt": "The soft grooming comb rests in Broad Rain's custody on the outer shelf, and an added calving-lane cord hangs visibly from Doro's frame."
+          },
+          {
+            "trigger": "route_time <= 1",
+            "modifier_prompt": "Returning red-orange sunlight rims Umbros and the amber fungal candles lean strongly toward outward feeding traffic."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "zyphos_obligation_shape_hub",
+        "ink_anchor": "obligation_choice",
+        "base_image_prompt": "Overhead obligation-choice view of an oval root-stone care hollow under eclipse: two route cords can join a dark ochre adult's flank frame and a large glassback adult toward an amber-candle road; a pale-fibered child can walk through the left root arch beside a copper-plated calf while the adults wait; a soft grooming comb and layered archive can be divided between the rust-fibered elder caretaker and incoming route adult; and separate amber-candle family and calving branches can be lit through the right and left outer arches as a formal split. The twin root arches, central mineral-sand bed, work shelf between the arches, inner nursery ramp, and both outbound lanes remain fully visible.",
+        "visible_characters": [
+          {
+            "agent_id": "pera_outgoing_caretaker",
+            "default_stance": "centered with route cords, comb, and archive within chest-hand reach",
+            "visual_ref": "visual_character_refs.characters.pera_outgoing_caretaker"
+          },
+          {
+            "agent_id": "doro_incoming_family",
+            "default_stance": "beside the flank frame near the right family arch",
+            "visual_ref": "visual_character_refs.characters.doro_incoming_family"
+          },
+          {
+            "agent_id": "tavi_young_route_taker",
+            "default_stance": "beside Low Ember between both routes",
+            "visual_ref": "visual_character_refs.characters.tavi_young_route_taker"
+          },
+          {
+            "agent_id": "low_ember_glassback_calf",
+            "default_stance": "beside Tavi between both routes",
+            "visual_ref": "visual_character_refs.characters.low_ember_glassback_calf"
+          },
+          {
+            "agent_id": "broad_rain_herd_adult",
+            "default_stance": "at the outer arches beside the route cord endpoint",
+            "visual_ref": "visual_character_refs.characters.broad_rain_herd_adult"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_first_route_threshold",
+        "ink_anchor": "final_threshold",
+        "base_image_prompt": "Wide eye-level threshold frame facing the outer end of an oval root-stone care hollow during eclipse egress. A rust-fibered elder six-limbed caretaker stands at center. A dark ochre route adult waits near the right family arch with a layered archive and balanced flank frame. A large glassback adult waits near the left calving arch before the herd. A pale-fibered child and copper-plated calf stand between them on the mineral-sand bed. Every adult leaves open floor around the two young. Cold blue lantern knots edge both long sides while red-orange sunlight rims the enormous fixed dark planet. Grooming comb, rest cloth, route cords, work shelf between the arches, inner nursery ramp, and both outer exits are clearly placed.",
+        "visible_characters": [
+          {
+            "agent_id": "pera_outgoing_caretaker",
+            "default_stance": "at center with chest hands open and paths unobstructed",
+            "visual_ref": "visual_character_refs.characters.pera_outgoing_caretaker"
+          },
+          {
+            "agent_id": "doro_incoming_family",
+            "default_stance": "at the right family arch with archive and flank frame",
+            "visual_ref": "visual_character_refs.characters.doro_incoming_family"
+          },
+          {
+            "agent_id": "tavi_young_route_taker",
+            "default_stance": "between Pera and Doro with facial fans visible",
+            "visual_ref": "visual_character_refs.characters.tavi_young_route_taker"
+          },
+          {
+            "agent_id": "low_ember_glassback_calf",
+            "default_stance": "between Pera and Broad Rain with plates readable",
+            "visual_ref": "visual_character_refs.characters.low_ember_glassback_calf"
+          },
+          {
+            "agent_id": "broad_rain_herd_adult",
+            "default_stance": "at the left calving arch with an open receiving space",
+            "visual_ref": "visual_character_refs.characters.broad_rain_herd_adult"
+          },
+          {
+            "agent_id": "returning_glassback_herd",
+            "default_stance": "waiting along the calving lane behind Broad Rain",
+            "visual_ref": "visual_character_refs.groups.returning_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "shared_route == 1",
+            "modifier_prompt": "One clean route cord crosses Doro's frame and continues beside Broad Rain toward an open amber fungal candle on the honest-water line."
+          },
+          {
+            "trigger": "brood_trust >= 4",
+            "modifier_prompt": "Tavi and Low Ember stand one body-length apart with relaxed posture and a clear mutual sightline."
+          },
+          {
+            "trigger": "brood_trust <= 1",
+            "modifier_prompt": "Tavi and Low Ember crowd the exact center, bodies braced and reading both exits as threats."
+          },
+          {
+            "trigger": "family_readiness >= 3",
+            "modifier_prompt": "Doro carries the archive open at chest height and keeps both small manipulator hands visibly clear for Tavi's signals."
+          },
+          {
+            "trigger": "herd_consent >= 4",
+            "modifier_prompt": "Broad Rain holds a calm blue welcome band beneath amber departure bands and remains lowered at the outer arch."
+          },
+          {
+            "trigger": "child_voice >= 3",
+            "modifier_prompt": "Tavi faces both routes with paired facial fans open and bare throat patch visible."
+          },
+          {
+            "trigger": "separation_pressure >= 3",
+            "modifier_prompt": "The two young brace closer whenever either receiving adult shifts weight, while Pera holds the central floor open."
+          },
+          {
+            "trigger": "care_debt >= 3",
+            "modifier_prompt": "An added braided calving-lane cord hangs prominently from Doro's flank frame as visible future labor."
+          },
+          {
+            "trigger": "handover_witness >= 3",
+            "modifier_prompt": "The soft comb, open archive, clean rest cloth, and demonstrated route cords form a visible practiced-care record around the central bed."
+          },
+          {
+            "trigger": "route_time <= 0",
+            "modifier_prompt": "Returning red-orange light is strong, amber fungal candles point toward active feeding traffic, and the shared movement window is visibly closing."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "zyphos_ending_shared_route",
+        "ink_anchor": "ending_shared_route_success|ending_shared_route_cost",
+        "base_image_prompt": "Shared-route aftermath beyond twin pale root arches: a packed-earth route curves between low root ridges and paired amber fungal candles toward a distant dark honest-water hollow. A glassback herd of broad low-slung bodies with translucent heat plates begins along the route; a dark ochre six-limbed Sa'ueia adult with balanced flank frame occupies the exposed outer line; a pale-fibered child and copper-plated calf stand near the herd's warm flank; the rust-fibered elder caretaker remains at the root arch under blue lantern knots. Red-orange light rims the fixed dark planet above.",
+        "visible_characters": [
+          {
+            "agent_id": "pera_outgoing_caretaker",
+            "default_stance": "at the hollow entrance watching the route",
+            "visual_ref": "visual_character_refs.characters.pera_outgoing_caretaker"
+          },
+          {
+            "agent_id": "doro_incoming_family",
+            "default_stance": "on the exposed outer side of the mixed route group",
+            "visual_ref": "visual_character_refs.characters.doro_incoming_family"
+          },
+          {
+            "agent_id": "tavi_young_route_taker",
+            "default_stance": "beside Low Ember near the herd flank",
+            "visual_ref": "visual_character_refs.characters.tavi_young_route_taker"
+          },
+          {
+            "agent_id": "low_ember_glassback_calf",
+            "default_stance": "beside Tavi inside the moving heat line",
+            "visual_ref": "visual_character_refs.characters.low_ember_glassback_calf"
+          },
+          {
+            "agent_id": "broad_rain_herd_adult",
+            "default_stance": "setting pace at the front",
+            "visual_ref": "visual_character_refs.characters.broad_rain_herd_adult"
+          },
+          {
+            "agent_id": "returning_glassback_herd",
+            "default_stance": "moving as a warm line on the road",
+            "visual_ref": "visual_character_refs.groups.returning_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_ending_child_escort",
+        "ink_anchor": "ending_child_escort_success|ending_child_escort_cost",
+        "base_image_prompt": "Child-escort aftermath at the outer root arches of an oval care hollow: a pale-fibered long-bodied six-limbed child walks beside a broad copper-plated calf through the left arch toward a lowered adult glassback and waiting herd on the amber-candle calving lane. A dark ochre route adult waits deliberately beside the right family arch with an empty flank frame. A rust-fibered elder caretaker holds position at the mineral-sand bed and keeps every route clear. Cold blue lantern knots meet returning red-orange eclipse light across the calf's translucent plates.",
+        "visible_characters": [
+          {
+            "agent_id": "pera_outgoing_caretaker",
+            "default_stance": "at the central bed holding both routes open",
+            "visual_ref": "visual_character_refs.characters.pera_outgoing_caretaker"
+          },
+          {
+            "agent_id": "doro_incoming_family",
+            "default_stance": "waiting by the right family arch with empty frame",
+            "visual_ref": "visual_character_refs.characters.doro_incoming_family"
+          },
+          {
+            "agent_id": "tavi_young_route_taker",
+            "default_stance": "escorting Low Ember through the outer arch",
+            "visual_ref": "visual_character_refs.characters.tavi_young_route_taker"
+          },
+          {
+            "agent_id": "low_ember_glassback_calf",
+            "default_stance": "walking beside Tavi toward Broad Rain",
+            "visual_ref": "visual_character_refs.characters.low_ember_glassback_calf"
+          },
+          {
+            "agent_id": "broad_rain_herd_adult",
+            "default_stance": "lowered in receiving posture outside the arch",
+            "visual_ref": "visual_character_refs.characters.broad_rain_herd_adult"
+          },
+          {
+            "agent_id": "returning_glassback_herd",
+            "default_stance": "open calf ring behind Broad Rain",
+            "visual_ref": "visual_character_refs.groups.returning_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_ending_split_care",
+        "ink_anchor": "ending_split_care_success|ending_split_care_cost",
+        "base_image_prompt": "Divided-care aftermath at the outer end of an oval root-stone hollow. At the right family arch, a dark ochre six-limbed route adult receives a pale-fibered child beside an open layered archive and folded rest cloths. At the left calving arch, a rust-fibered elder caretaker walks a copper-plated low-slung calf toward a large glassback adult and herd while holding a soft mineral grooming comb. The central mineral-sand bed lies behind both handovers under blue lantern knots and returning eclipse light.",
+        "visible_characters": [
+          {
+            "agent_id": "pera_outgoing_caretaker",
+            "default_stance": "walking outward beside Low Ember with comb",
+            "visual_ref": "visual_character_refs.characters.pera_outgoing_caretaker"
+          },
+          {
+            "agent_id": "doro_incoming_family",
+            "default_stance": "receiving Tavi at the right family arch with archive",
+            "visual_ref": "visual_character_refs.characters.doro_incoming_family"
+          },
+          {
+            "agent_id": "tavi_young_route_taker",
+            "default_stance": "beside Doro at the right family arch",
+            "visual_ref": "visual_character_refs.characters.tavi_young_route_taker"
+          },
+          {
+            "agent_id": "low_ember_glassback_calf",
+            "default_stance": "walking beside Pera through the outer arch",
+            "visual_ref": "visual_character_refs.characters.low_ember_glassback_calf"
+          },
+          {
+            "agent_id": "broad_rain_herd_adult",
+            "default_stance": "receiving outside the outer arches",
+            "visual_ref": "visual_character_refs.characters.broad_rain_herd_adult"
+          },
+          {
+            "agent_id": "returning_glassback_herd",
+            "default_stance": "holding an open edge in the calf ring",
+            "visual_ref": "visual_character_refs.groups.returning_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_ending_clean_separation",
+        "ink_anchor": "ending_clean_separation_success|ending_clean_separation_cost",
+        "base_image_prompt": "Clean-separation aftermath inside an oval root-stone care hollow: a pale-fibered six-limbed child moves toward a dark ochre route adult at the right family arch; a copper-plated low-slung calf moves toward a large blue-gray glassback adult and several broad dark herd bodies with translucent dorsal plates at the left calving arch. The rust-fibered elder caretaker stands at the central mineral-sand bed after giving a final rest call. The child keeps one paired facial fan visible toward the calf, and the calf keeps the nearest translucent plate visible toward the child. The broad inner nursery ramp remains behind them while blue lantern knots, amber fungal candles, and a red-orange eclipse rim illuminate the open distance between the two outer routes.",
+        "visible_characters": [
+          {
+            "agent_id": "pera_outgoing_caretaker",
+            "default_stance": "at the central bed after the departure call",
+            "visual_ref": "visual_character_refs.characters.pera_outgoing_caretaker"
+          },
+          {
+            "agent_id": "doro_incoming_family",
+            "default_stance": "receiving Tavi at the right family arch",
+            "visual_ref": "visual_character_refs.characters.doro_incoming_family"
+          },
+          {
+            "agent_id": "tavi_young_route_taker",
+            "default_stance": "moving inward while keeping one facial fan turned toward Low Ember",
+            "visual_ref": "visual_character_refs.characters.tavi_young_route_taker"
+          },
+          {
+            "agent_id": "low_ember_glassback_calf",
+            "default_stance": "moving outward while keeping one plate turned toward Tavi",
+            "visual_ref": "visual_character_refs.characters.low_ember_glassback_calf"
+          },
+          {
+            "agent_id": "broad_rain_herd_adult",
+            "default_stance": "receiving Low Ember beyond the outer arches",
+            "visual_ref": "visual_character_refs.characters.broad_rain_herd_adult"
+          },
+          {
+            "agent_id": "returning_glassback_herd",
+            "default_stance": "opening a receiving ring behind Broad Rain",
+            "visual_ref": "visual_character_refs.groups.returning_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prepare_calf_care_visual",
+        "trigger": "branch_label == prepare_calf_care",
+        "apply_to_visual_scene_ids": ["zyphos_routine_care_fold", "zyphos_first_route_threshold"],
+        "modifier_prompt": "A soft mineral comb and three curled pale parasites sit in an open disposal cup on the outer work shelf; Low Ember's nearest plate seam is clean and copper-bright."
+      },
+      {
+        "modifier_id": "rehearse_child_refusal_visual",
+        "trigger": "branch_label == rehearse_child_refusal",
+        "apply_to_visual_scene_ids": ["zyphos_routine_care_fold", "zyphos_first_route_threshold"],
+        "modifier_prompt": "Tavi closes the left facial fan and turns the bare throat patch away while Doro visibly stops with one chest hand suspended before contact."
+      },
+      {
+        "modifier_id": "rehearse_shared_rest_visual",
+        "trigger": "branch_label == rehearse_shared_rest",
+        "apply_to_visual_scene_ids": ["zyphos_routine_care_fold"],
+        "modifier_prompt": "Tavi and Low Ember rest together in the mineral sand while Doro waits one body-length away from the calf's fogged privacy plate."
+      },
+      {
+        "modifier_id": "prepare_shared_escort_visual",
+        "trigger": "branch_label == prepare_shared_escort",
+        "apply_to_visual_scene_ids": ["zyphos_routine_care_fold", "zyphos_two_routes_one_kinship"],
+        "modifier_prompt": "Doro's balanced flank frame, a clean rest cloth, two route cords, and one open amber candle define a possible shared first-leg line through the left root arch."
+      },
+      {
+        "modifier_id": "hear_child_choice_visual",
+        "trigger": "branch_label == hear_child_choice",
+        "apply_to_visual_scene_ids": ["zyphos_two_routes_one_kinship", "zyphos_first_route_threshold"],
+        "modifier_prompt": "Pera folds low and still while Tavi stands between routes with both facial fans open; Doro and Broad Rain hold their positions and visibly wait."
+      },
+      {
+        "modifier_id": "stage_joint_departure_visual",
+        "trigger": "branch_label == stage_joint_departure",
+        "apply_to_visual_scene_ids": ["zyphos_two_routes_one_kinship", "zyphos_first_route_threshold"],
+        "modifier_prompt": "The empty flank frame rests at calf height beside a visible practice loop through both root arches; Doro occupies the outside guarding turn beside Tavi and Low Ember."
+      },
+      {
+        "modifier_id": "witness_herd_care_visual",
+        "trigger": "branch_label == witness_herd_care",
+        "apply_to_visual_scene_ids": ["zyphos_two_routes_one_kinship", "zyphos_first_route_threshold"],
+        "modifier_prompt": "Broad Rain holds the wrapped grooming comb gently at the muzzle while Low Ember's nearest plate clears after a respected fogged-plate pause."
+      },
+      {
+        "modifier_id": "rehearse_separation_visual",
+        "trigger": "branch_label == rehearse_separation",
+        "apply_to_visual_scene_ids": ["zyphos_two_routes_one_kinship", "zyphos_first_route_threshold"],
+        "modifier_prompt": "Tavi clamps both facial fans, Low Ember flashes yellow through the plates, and both young turn back toward the central bed after three separate steps."
+      },
+      {
+        "modifier_id": "accept_shared_route_debt_visual",
+        "trigger": "branch_label == accept_shared_route_debt",
+        "apply_to_visual_scene_ids": ["zyphos_first_route_threshold", "zyphos_ending_shared_route"],
+        "modifier_prompt": "Two braided route cords join Doro's frame and Broad Rain's route line toward one open amber candle; an added calving-lane cord hangs from the frame as visible debt."
+      },
+      {
+        "modifier_id": "give_child_departure_order_visual",
+        "trigger": "branch_label == give_child_departure_order",
+        "apply_to_visual_scene_ids": ["zyphos_first_route_threshold", "zyphos_ending_child_escort"],
+            "modifier_prompt": "Tavi touches Low Ember's warm plate edge with one small chest hand while Doro folds and waits beside the right family arch."
+      },
+      {
+        "modifier_id": "extend_caretaker_watch_visual",
+        "trigger": "branch_label == extend_caretaker_watch",
+        "apply_to_visual_scene_ids": ["zyphos_first_route_threshold", "zyphos_ending_split_care"],
+            "modifier_prompt": "Pera holds the grooming comb and turns toward the left calving arch with Low Ember; Doro holds the open archive and turns toward the right family arch with Tavi."
+      },
+      {
+        "modifier_id": "formalize_clean_split_visual",
+        "trigger": "branch_label == formalize_clean_split",
+        "apply_to_visual_scene_ids": ["zyphos_first_route_threshold", "zyphos_ending_clean_separation"],
+            "modifier_prompt": "Paired amber fungal candles strongly illuminate the right family branch and left calving lane while cold blue lantern knots illuminate the central hollow, creating two formal route bands through the outer arches."
+      },
+      {
+        "modifier_id": "shared_route_success_visual",
+        "trigger": "ending_label == shared_first_leg_success",
+        "apply_to_visual_scene_ids": ["zyphos_ending_shared_route"],
+        "modifier_prompt": "Broad Rain leads a moving mixed group; Low Ember and Tavi travel side by side inside the herd's warm flank while Doro guards the exposed outer edge with the debt cord visible."
+      },
+      {
+        "modifier_id": "shared_route_cost_visual",
+        "trigger": "ending_label == shared_first_leg_cost",
+        "apply_to_visual_scene_ids": ["zyphos_ending_shared_route"],
+        "modifier_prompt": "Low Ember and Tavi stop beneath the root arch, the herd compresses into a hot line behind them, Doro is blocked beside a darkened joining candle, and the route visibly closes."
+      },
+      {
+        "modifier_id": "child_escort_success_visual",
+        "trigger": "ending_label == child_escort_success",
+        "apply_to_visual_scene_ids": ["zyphos_ending_child_escort"],
+        "modifier_prompt": "Low Ember touches plates with lowered Broad Rain inside an open calf ring; Tavi has turned back toward the patiently waiting Doro on their own path."
+      },
+      {
+        "modifier_id": "child_escort_cost_visual",
+        "trigger": "ending_label == child_escort_cost",
+        "apply_to_visual_scene_ids": ["zyphos_ending_child_escort"],
+        "modifier_prompt": "Low Ember flashes yellow under bright returning light, Tavi freezes between Broad Rain and Doro's calls, and Pera moves from the central bed to retrieve both young."
+      },
+      {
+        "modifier_id": "split_care_success_visual",
+        "trigger": "ending_label == split_adult_care_success",
+        "apply_to_visual_scene_ids": ["zyphos_ending_split_care"],
+        "modifier_prompt": "Doro receives Tavi with chest hands still beside the open archive; Pera and Low Ember enter the herd's open heat line after Broad Rain repeats the privacy pause."
+      },
+      {
+        "modifier_id": "split_care_cost_visual",
+        "trigger": "ending_label == split_adult_care_cost",
+        "apply_to_visual_scene_ids": ["zyphos_ending_split_care"],
+        "modifier_prompt": "Doro reaches after Tavi's fast stop signal, Low Ember flares yellow across every plate, Broad Rain closes the herd into a tight calf ring, and Pera stands between two failing handovers."
+      },
+      {
+        "modifier_id": "clean_separation_success_visual",
+        "trigger": "ending_label == clean_separation_success",
+        "apply_to_visual_scene_ids": ["zyphos_ending_clean_separation"],
+        "modifier_prompt": "Tavi opens one facial fan toward Low Ember while the calf clears the plate facing Tavi; both young move calmly toward distinct receiving adults with open floor between them."
+      },
+      {
+        "modifier_id": "clean_separation_cost_visual",
+        "trigger": "ending_label == forced_separation_cost",
+        "apply_to_visual_scene_ids": ["zyphos_ending_clean_separation"],
+        "modifier_prompt": "Tavi clamps both facial fans, Low Ember flashes panic into a closing calf ring, Doro and Broad Rain become body barriers on opposite routes, and amber candles darken at Doro's feet."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "zyphos_lantern_side_warm_hollow.scene_set.draft",
+      "geometry_authority_level": "textual_plan_view_not_3d_blockout",
+      "room_model": "One shallow outdoor oval hollow with a stable inner-to-outer long axis: nursery ramp inward, central mineral-sand rest bed, then twin outer root arches. The left arch opens to the glassback calving lane; the right opens to the Sa'ueia family branch; both fungal-road branches may join after the first bend. Lantern trees define both long sides.",
+      "fixed_zones": [
+        {
+          "zone_id": "inner_nursery_ramp",
+          "visible_form": "one broad shallow ramp of root-bound stone descending toward warm communal nursery hollows",
+          "used_for": "Doro arrival, nursery access, ordinary movement into the hollow"
+        },
+        {
+          "zone_id": "central_mineral_sand_bed",
+          "visible_form": "low oval of dark mineral sand large enough for several folded Sa'ueia and resting glassbacks",
+          "used_for": "routine grooming, shared rest, refusal, final separation center"
+        },
+        {
+          "zone_id": "twin_outer_root_arches",
+          "visible_form": "two waist-low arches grown from pale intertwined roots with one body-width of stone between them; left marks the calving lane and right marks the family branch",
+          "used_for": "practice loop, outward escort, family departure, threshold framing"
+        },
+        {
+          "zone_id": "outer_work_shelf",
+          "visible_form": "low root-grown shelf between the outer arches, reachable by Sa'ueia chest hands and a glassback muzzle",
+          "used_for": "grooming comb, parasite cup, rest cloth, route cords"
+        },
+        {
+          "zone_id": "calving_lane_and_fungal_road",
+          "visible_form": "packed-earth lane beyond the left arch bordered by paired amber fungal candles and low root ridges",
+          "used_for": "herd arrival, feeding-window departure, honest-water shared route"
+        },
+        {
+          "zone_id": "family_branch_and_fungal_road",
+          "visible_form": "packed-earth Sa'ueia route beyond the right arch bordered by paired amber fungal candles and curving toward the calving-lane join",
+          "used_for": "family departure, shared-route join, shelter obligations"
+        },
+        {
+          "zone_id": "lantern_tree_rim",
+          "visible_form": "curved rows of producer trees along both long sides with blue bioluminescent knots hanging beneath canopies",
+          "used_for": "eclipse light, nursery shelter, formal route signaling"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_elevated_hollow",
+          "supports_visual_scene_ids": ["zyphos_brood_hollow_establishing", "zyphos_routine_care_hub", "zyphos_obligation_shape_hub"]
+        },
+        {
+          "camera_id": "inner_ramp_three_quarter",
+          "supports_visual_scene_ids": ["zyphos_brood_ring_people", "zyphos_routine_care_fold", "zyphos_departure_action_hub"]
+        },
+        {
+          "camera_id": "outer_arch_departure",
+          "supports_visual_scene_ids": ["zyphos_herd_departure_pulse", "zyphos_ending_child_escort", "zyphos_ending_split_care"]
+        },
+        {
+          "camera_id": "long_axis_threshold",
+          "supports_visual_scene_ids": ["zyphos_two_routes_one_kinship", "zyphos_first_route_threshold", "zyphos_ending_clean_separation"]
+        },
+        {
+          "camera_id": "road_bend_aftermath",
+          "supports_visual_scene_ids": ["zyphos_ending_shared_route"]
+        }
+      ],
+      "movement_routes": [
+        {
+          "route_id": "right_family_route",
+          "path": "central_mineral_sand_bed -> right outer root arch -> family_branch_and_fungal_road",
+          "supports": ["commit_split_adult_care", "commit_clean_separation"]
+        },
+        {
+          "route_id": "outward_calf_route",
+          "path": "central_mineral_sand_bed -> left outer root arch -> calving_lane_and_fungal_road",
+          "supports": ["commit_child_escort", "commit_split_adult_care", "commit_clean_separation"]
+        },
+        {
+          "route_id": "two_arch_practice_loop",
+          "path": "central_mineral_sand_bed -> left outer arch -> short calving-lane turn -> right outer arch -> central_mineral_sand_bed",
+          "supports": ["stage_joint_departure"]
+        },
+        {
+          "route_id": "shared_honest_water_leg",
+          "path": "central_mineral_sand_bed -> both outer branches -> joined fungal road after first bend -> off-frame honest-water hollow",
+          "supports": ["accept_shared_route_debt", "commit_shared_first_leg"]
+        }
+      ],
+      "staging_slots": [
+        {"slot_id": "pera_center", "zone": "central_mineral_sand_bed", "allowed_movement": "inner ramp edge, both arch mouths, outer work shelf"},
+        {"slot_id": "doro_family_arch", "zone": "family_branch_and_fungal_road", "allowed_movement": "right arch, central bed, and practice loop"},
+        {"slot_id": "tavi_center_familyward", "zone": "central_mineral_sand_bed", "allowed_movement": "right family arch, both arches, herd edge during escort"},
+        {"slot_id": "low_ember_center_outward", "zone": "central_mineral_sand_bed", "allowed_movement": "both arches and herd receiving edge"},
+        {"slot_id": "broad_rain_outward", "zone": "calving_lane_and_fungal_road", "allowed_movement": "outer arch mouth and herd front"}
+      ],
+      "branch_state_anchors": [
+        {"anchor_id": "comb_custody", "states": ["outer shelf", "Broad Rain muzzle", "Pera chest hand"]},
+        {"anchor_id": "flank_frame_position", "states": ["Doro body", "calf-height practice loop", "shared-route outer line"]},
+        {"anchor_id": "route_join", "states": ["absent", "one tentative amber candle", "two cords and open shared candle", "extinguished congestion"]},
+        {"anchor_id": "young_spacing", "states": ["resting contact", "braced contact", "one body-length calm", "separate routes"]}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly; include only refs for bodies visible in each frame.",
+    "characters": {
+      "pera_outgoing_caretaker": "Pera: older Sa'ueia caretaker, long-bodied alien hexapod with four tall digitigrade running legs and two smaller three-digit chest manipulators, wedge-shaped head, paired chemical-sensing facial fans, short rust-red body fibers silvering around the muzzle, dark bare throat patch, one facial fan with a bite-shaped notch, low folded working posture, soft mineral grooming comb often within reach.",
+      "doro_incoming_family": "Doro: adult Sa'ueia route member, long-bodied alien hexapod with four tall digitigrade running legs and two smaller three-digit chest manipulators, wedge-shaped head, paired facial fans, short dark ochre body fibers, balanced woven flank frame holding folded rest cloths and flexible layered archive membranes, alert route-focused posture that becomes deliberately still when receiving refusal.",
+      "tavi_young_route_taker": "Tavi: young Sa'ueia, smaller long-bodied alien hexapod with four slim digitigrade running legs and two small three-digit chest manipulators, wedge-shaped head, large paired facial fans, pale cream body fibers with charcoal stripes, visible bare throat patch, quick precise posture, one blue braided route cord at the flank, body language through fan opening, clamping, touch distance, and running-leg stance.",
+      "low_ember_glassback_calf": "Low Ember: young glassback calf, broad low-slung grazing body, soft charcoal hide, sturdy hooflike feet, blunt mobile muzzle, a row of translucent dorsal plates from shoulders toward rump over living heat tissue, plates glowing warm copper when calm, fogging milky for privacy, darkening under refusal, and flashing yellow under fear; calf scale reaches the lower flank of an adult Sa'ueia.",
+      "broad_rain_herd_adult": "Broad Rain: large adult glassback, broad low-slung grazing body with dark blue-gray hide, sturdy hooflike feet, blunt mobile muzzle able to take a wrapped grooming comb, tall translucent dorsal plates from shoulders toward rump carrying readable blue welcome, amber departure, copper heat, fogged privacy, or yellow alarm bands; protective broadside posture and a calm lowered receiving stance."
+    },
+    "groups": {
+      "returning_glassback_herd": "Returning glassback herd: several adult and juvenile broad low-slung grazing animals of varied size with dark hides, sturdy hooflike feet, blunt muzzles, and translucent dorsal heat plates; bodies align flank-to-flank for heat sharing, open around a calf for welcome, or compress into a tight protective ring under alarm.",
+      "warm_hollow_occupants": "Warm-hollow occupants: small mixed care group of long-bodied Sa'ueia adults and children with four tall running legs, two small chest hands, facial fans, short body fibers, low tools and woven flank frames, resting beside broad low-slung glassback adults and calves with translucent copper heat plates around an oval mineral-sand bed."
+    }
+  },
+  "review_notes": [
+    "The training annotation records completed narrative, lore, visual, and spatial reviewer passes; visual replay remains gated on a durable scene_set.",
+    "The textual scene_set map defines fixed zones, camera slots, movement routes, staging slots, and branch-state anchors for review and prompt-manifest preparation.",
+    "A durable plan view or 3D blockout remains required before high-consistency multi-angle website rendering; this draft does not claim replay-ready spatial authority."
+  ]
+}

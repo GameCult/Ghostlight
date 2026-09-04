@@ -1,0 +1,397 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "hearth-brood-ring-v0-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/zyphos/hearth-brood-ring-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/hearth-brood-ring-v0.v0.json",
+  "visual_plan_ref": "examples/visual/zyphos/hearth-brood-ring-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "hearth-brood-ring-v0.lantern-side-first-route",
+  "protagonist_agent_id": "pera_outgoing_caretaker",
+  "npc_agent_ids": [
+    "doro_incoming_family",
+    "tavi_young_route_taker",
+    "low_ember_glassback_calf",
+    "broad_rain_herd_adult",
+    "returning_glassback_herd",
+    "warm_hollow_ecology"
+  ],
+  "purpose": "Source-grounded Hearth fixture in deliberate domestic warmth with ritual tension and dry comic precision, testing whether a cross-species brood bond survives handover as practiced care, route obligation, escort, or trusted separation.",
+  "local_awareness_summary": [
+    {
+      "text": "Pera is the outgoing Sa'ueia brood-ring caretaker in a low warm hollow with one nursery ramp, two outer root arches, a glassback calving lane, lantern trees, and an amber candle fungal road.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/hearth-brood-ring-v0.v0.json",
+        "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md",
+        "Eusocial Interbeing/Ecology/Breeding Grounds.md"
+      ]
+    },
+    {
+      "text": "Pera can use four running legs, two smaller three-digit chest manipulators, facial-fan signals, grooming tools, route cords, and caretaker authority over the departure manner, but cannot own the young or command the herd, road, or grove.",
+      "source_refs": [
+        "Eusocial Interbeing/Species/Sa'ueia.md",
+        "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md"
+      ]
+    },
+    {
+      "text": "Tavi is due to join Doro's mobile family while Low Ember is due to rejoin Broad Rain's herd; both receiving groups need the same limited post-eclipse route window, and the young resist being separated before care has become portable.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/hearth-brood-ring-v0.v0.json",
+        "Eusocial Interbeing/Biosphere/Grazers and Browsers/Glassback Grazers.md",
+        "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Pera's embodied caretaker viewpoint. Choices use grooming, waiting, gesture, object placement, demonstrated care, route proposals, and bounded authorization rather than omniscient ecological command.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/zyphos/hearth-brood-ring-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Routine care occupies the opening before departure pressure. The tonal mode is domestic warmth with ritual tension and dry comic precision; humor reveals adult schedule pressure and care labor without dissolving the young bodies' stakes.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "AGENTS.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Pera can shape the first departure leg and attest to care competence, but Tavi can refuse contact, Low Ember can refuse approach, Broad Rain's herd controls herd reception, and the road and lantern grove keep their own route and shelter signals.",
+        "source_refs": [
+          "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md",
+          "Eusocial Interbeing/Biosphere/Grazers and Browsers/Glassback Grazers.md",
+          "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+          "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md"
+        ]
+      },
+      {
+        "text": "Glassback plate displays are public signals but not complete inner-state telemetry. The Ink narrates only visible heat, color, fogging, posture, and movement plus Pera's bounded interpretation.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Grazers and Browsers/Glassback Grazers.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The mineral comb, portable archive, empty flank frame, route cords, rest cloths, disposal cup, and open fungal candle make care transfer, debt, and route readiness materially visible.",
+        "source_refs": [
+          "examples/ink/zyphos/hearth-brood-ring-v0.branch-and-fold.v0.ink",
+          "Eusocial Interbeing/Technologies/Sa'auei'a Mobile Technologies.md"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every successful resolution must preserve both the Sa'ueia child's agency and the glassback calf's body signals while naming the labor, delay, detour, or future debt that care requires.",
+        "source_refs": [
+          "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md"
+        ]
+      },
+      {
+        "text": "A prepared clean separation is a valid good ending because the brood-ring invariant is portable belonging, not permanent custody.",
+        "source_refs": [
+          "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not resolve the scene by declaring one species the owner, natural parent, pet, mount, or moral superior of the other.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md",
+          "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md"
+        ]
+      },
+      {
+        "text": "Do not make road or lantern signals decorative approval, and do not let archive possession substitute for practiced care or received refusal.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+          "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+          "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through routine care, a two-route departure conflict, an obligation-shaping decision, and four state-gated ending families with success and cost variants.",
+    "choice_layers": [
+      "routine_care",
+      "departure_pressure",
+      "obligation_shape",
+      "first_route_commit"
+    ],
+    "variables": [
+      "brood_trust",
+      "herd_consent",
+      "family_readiness",
+      "child_voice",
+      "escort_prepared",
+      "route_time",
+      "care_debt",
+      "separation_pressure",
+      "plate_calm",
+      "shared_route",
+      "handover_witness"
+    ],
+    "ending_gates": [
+      "ending_shared_route_success",
+      "ending_shared_route_cost",
+      "ending_child_escort_success",
+      "ending_child_escort_cost",
+      "ending_split_care_success",
+      "ending_split_care_cost",
+      "ending_clean_separation_success",
+      "ending_clean_separation_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prepare_calf_care",
+      "ink_path": "routine_care_choice",
+      "action_type": "groom",
+      "actor_intent": "Demonstrate familiar calf care and let the returning herd inspect the result.",
+      "state_basis": ["Sa'ueia prune glassback parasites and glassbacks respond to respectful plate care."],
+      "reviewed_consequences": ["Raises herd_consent, plate_calm, and handover_witness; later folds and ending gates read all three."],
+      "training_hooks": ["cross_species_grooming", "care_as_public_witness", "nonhuman_privacy"]
+    },
+    {
+      "branch_id": "rehearse_child_refusal",
+      "ink_path": "routine_care_choice",
+      "action_type": "gesture",
+      "actor_intent": "Make Doro practice stopping when Tavi gives the body-specific refusal signal.",
+      "state_basis": ["Sa'ueia facial fans carry readable social state; brood handover requires receiving refusal."],
+      "reviewed_consequences": ["Raises child_voice, family_readiness, and brood_trust, enabling later child-controlled and clean-separation outcomes."],
+      "training_hooks": ["consent_as_care_skill", "child_agency", "embodied_signal"]
+    },
+    {
+      "branch_id": "rehearse_shared_rest",
+      "ink_path": "routine_care_choice",
+      "action_type": "wait",
+      "actor_intent": "Teach Doro where Low Ember and Tavi accept another adult during a familiar rest routine.",
+      "state_basis": ["Glassbacks exchange heat and can fog plates for privacy; Sa'ueia work and rest close to low surfaces."],
+      "reviewed_consequences": ["Raises brood_trust and family_readiness while spending route_time; the fold shows Doro responding to the calf's privacy signal."],
+      "training_hooks": ["wait_as_action", "privacy_received", "route_time_cost"]
+    },
+    {
+      "branch_id": "prepare_shared_escort",
+      "ink_path": "routine_care_choice",
+      "action_type": "move_object",
+      "actor_intent": "Test whether family, herd, and living road will entertain a shared first leg.",
+      "state_basis": ["Sa'ueia equipment rides in flank frames; glassbacks and fungal roads can support negotiated shared routes."],
+      "reviewed_consequences": ["Raises escort_prepared, family_readiness, and herd_consent while spending route_time; later gates require the prepared route."],
+      "training_hooks": ["route_as_relationship", "object_staging", "consent_not_assumed"]
+    },
+    {
+      "branch_id": "hear_child_choice",
+      "ink_path": "departure_choice",
+      "action_type": "wait",
+      "actor_intent": "Prevent adults from explaining Tavi's refusal before Tavi can speak for themself.",
+      "state_basis": ["The brood-ring elaboration makes young participants rather than cargo."],
+      "reviewed_consequences": ["Raises child_voice and brood_trust while spending route_time, unlocking the child-controlled departure order."],
+      "training_hooks": ["silence_creates_agency", "young_person_not_cargo", "time_cost"]
+    },
+    {
+      "branch_id": "stage_joint_departure",
+      "ink_path": "departure_choice",
+      "action_type": "move_object",
+      "actor_intent": "Use the empty flank frame and two root arches to rehearse a shared route without claiming commitment.",
+      "state_basis": ["The warm hollow has a bounded practice loop and Doro's frame is not carrying a child."],
+      "reviewed_consequences": ["Raises escort_prepared, family_readiness, and plate_calm while spending route_time; visual modifiers preserve the frame at calf height."],
+      "training_hooks": ["practice_before_commit", "spatial_care", "empty_frame_not_cargo"]
+    },
+    {
+      "branch_id": "witness_herd_care",
+      "ink_path": "departure_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Give Broad Rain the grooming comb and demonstrate Low Ember's privacy signal.",
+      "state_basis": ["Glassback cooperation follows respectful approach and parasite removal; fogging plates is a readable action."],
+      "reviewed_consequences": ["Raises herd_consent, handover_witness, and care_debt; the comb changes custody and later proves care was practiced."],
+      "training_hooks": ["object_custody", "herd_as_caretaker", "future_debt"]
+    },
+    {
+      "branch_id": "rehearse_separation",
+      "ink_path": "departure_choice",
+      "action_type": "gesture",
+      "actor_intent": "Test a fast species-route split and expose whether the young can carry it.",
+      "state_basis": ["Both family and herd have legitimate separate futures; forced separation is a glassback defection trigger."],
+      "reviewed_consequences": ["Raises separation_pressure and family_readiness, restores route_time, and lowers brood_trust; later prose and endings preserve the social cost."],
+      "training_hooks": ["orderly_wrong_option", "separation_pressure", "schedule_incentive"]
+    },
+    {
+      "branch_id": "accept_shared_route_debt",
+      "ink_path": "obligation_choice",
+      "action_type": "propose",
+      "actor_intent": "Ask family and herd to travel together to honest water while assigning pace, guard position, and detour cost.",
+      "state_basis": ["Available only after an escort route is prepared; glassbacks may guide families to honest water."],
+      "reviewed_consequences": ["Sets shared_route, raises care_debt, herd_consent, and family_readiness, and spends route_time; the final shared route succeeds only with adequate readiness and consent."],
+      "training_hooks": ["debt_owns_delay", "shared_route", "ecological_escort"]
+    },
+    {
+      "branch_id": "give_child_departure_order",
+      "ink_path": "obligation_choice",
+      "action_type": "authorize",
+      "actor_intent": "Let Tavi choose which goodbye occurs first and which adult must wait.",
+      "state_basis": ["Available only after child_voice is high enough to make the choice legible."],
+      "reviewed_consequences": ["Raises brood_trust and plate_calm, lowers separation_pressure, and spends route_time; the child escort ending later requires remaining time."],
+      "training_hooks": ["agency_controls_sequence", "adult_waiting", "calm_separation"]
+    },
+    {
+      "branch_id": "extend_caretaker_watch",
+      "ink_path": "obligation_choice",
+      "action_type": "divide_labor",
+      "actor_intent": "Transfer Tavi's care to Doro while Pera personally completes Low Ember's herd return.",
+      "state_basis": ["Available after witnessed care; breeding-ground caretakers can extend labor but incur a real sleep and staffing cost."],
+      "reviewed_consequences": ["Raises handover_witness, family_readiness, and care_debt while spending route_time, enabling the split-adult-care ending."],
+      "training_hooks": ["caretaker_sleep_cost", "divided_labor", "handover_not_abandonment"]
+    },
+    {
+      "branch_id": "formalize_clean_split",
+      "ink_path": "obligation_choice",
+      "action_type": "gesture",
+      "actor_intent": "Ask the grove and road to witness two distinct routes without pretending witness creates kindness.",
+      "state_basis": ["Lantern trees and fungal roads signal routes and remember conduct but do not own the young."],
+      "reviewed_consequences": ["Raises separation_pressure, handover_witness, and route_time; later success still depends on trust, voice, plate calm, and low pressure."],
+      "training_hooks": ["witness_not_authority", "clean_split_test", "living_infrastructure"]
+    },
+    {
+      "branch_id": "commit_shared_first_leg",
+      "ink_path": "final_choice",
+      "action_type": "authorize",
+      "actor_intent": "Make cross-species kinship temporarily spatial by sending family and herd together.",
+      "state_basis": ["Success requires shared_route, family_readiness, and herd_consent."],
+      "reviewed_consequences": ["Routes to shared-route success or congestion cost; both endings name detour, grazing, shelter, or route effects."],
+      "training_hooks": ["kinship_as_route", "state_gated_ending"]
+    },
+    {
+      "branch_id": "commit_child_escort",
+      "ink_path": "final_choice",
+      "action_type": "move",
+      "actor_intent": "Let Tavi control the separation order by escorting Low Ember to the herd and returning by choice.",
+      "state_basis": ["Success requires child_voice, plate_calm, and enough route_time."],
+      "reviewed_consequences": ["Routes to a two-departure success or a failed escort that costs both groups time and teaches that nominal choice needs viable conditions."],
+      "training_hooks": ["child_controlled_goodbye", "agency_requires_conditions"]
+    },
+    {
+      "branch_id": "commit_split_adult_care",
+      "ink_path": "final_choice",
+      "action_type": "divide_labor",
+      "actor_intent": "Give each departing young body one prepared adult without keeping the young together.",
+      "state_basis": ["Success requires witnessed care, family readiness, and manageable separation pressure."],
+      "reviewed_consequences": ["Routes to a caretaker-exhaustion success or a failed double handover where object transfer outruns received care."],
+      "training_hooks": ["care_labor_cost", "separate_routes", "record_not_relationship"]
+    },
+    {
+      "branch_id": "commit_clean_separation",
+      "ink_path": "final_choice",
+      "action_type": "separate",
+      "actor_intent": "End the shared physical circuit and trust practiced signals to preserve belonging across distance.",
+      "state_basis": ["Success requires brood_trust, child_voice, plate_calm, and low separation pressure."],
+      "reviewed_consequences": ["Routes to a reciprocal privacy-signal success or forced-separation cost with calf panic, child distrust, and road refusal."],
+      "training_hooks": ["belonging_without_custody", "portable_refusal", "forced_separation_cost"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Any durable memory or relationship update for Pera, Doro, Tavi, Low Ember, Broad Rain, the herd, road, or grove",
+      "Promotion of story-local names, locality labels, or branch events into Zyphos canon",
+      "Any universal duration, court, naming, or caste rule for brood rings",
+      "Website replay readiness before a durable warm-hollow scene_set exists"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex world worker applying the four named Ghostlight reviewer prompts as separate passes",
+    "review_status": "accepted_as_if_fixture_visual_replay_requires_scene_set",
+    "reviewer_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 5,
+          "pacing": 4,
+          "voice": 5,
+          "tonal_fit": 5,
+          "if_playability": 4
+        },
+        "findings_resolved": [
+          "Removed an unstaged off-frame family crowd and made Doro's route-window pressure belong to the character actually present.",
+          "Replaced an unsupported generational claim with a current material rule and assigned missed-shelter cost to Doro and Tavi.",
+          "Kept ordinary grooming, rest, and refusal ahead of the departure pulse while preserving four material choice layers and eight state-gated endings."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 4,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "findings_resolved": [
+          "Added the Zyphos-Umbros orbital baseline as authority for the fixed planet, regular eclipse, and light-window pressure.",
+          "Placed brood-ring care, handover, ongoing debt, forced-separation failure, and anti-custody limits in the existing family-unit owner note with a plain Ghostlight elaboration marker.",
+          "Kept exact glassback limb geometry, story-local names, and branch events outside canon; the unresolved species silhouette remains an explicit open visual-design question."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "verdict": "needs_revision_for_replay_ready_status",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompts": 4,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 3
+        },
+        "findings_resolved": [
+          "Added a drawable returning-herd group ref to every frame that visibly includes the herd and removed the living environment from the character-ref table.",
+          "Restated left calving arch, right family arch, post-bend join, work shelf, body anatomy, lighting, and object placement in standalone base prompts and the BFL batch.",
+          "Added branch and ending modifiers for practiced refusal, comb custody, frame position, route join, young spacing, and success-or-cost aftermath."
+        ],
+        "remaining_condition": "A durable plan view or 3D scene_set is required before spatially consistent multi-angle website rendering; this manifest-only pass does not claim replay-ready status."
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "verdict": "accepted_with_scene_set_requirement",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightlines": 4,
+          "body_affordance": 5,
+          "movement_access": 5,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "findings_resolved": [
+          "Kept the nursery ramp inward and assigned the paired outer arches to the right family branch and left calving lane, with a negotiated join only after the first bend.",
+          "Established the low work shelf between the arches before any character reaches for it and preserved comb, frame, archive, route-cord, and young-spacing state.",
+          "Moved the failed shared-route blockage to the actual post-arch join instead of placing Doro on the herd lane."
+        ],
+        "remaining_condition": "The textual map is coherent enough for IF staging and prompt review; high-consistency multi-angle art still requires the declared durable scene_set."
+      }
+    ],
+    "review_notes": [
+      "Narrative review accepted the ordinary-care opening, body-scale stakes, deliberate domestic warmth with ritual tension, four meaningful choice layers, and eight state-sensitive outcomes after onboarding and ownership repairs.",
+      "Lore review inspected every cited source and accepted the fixture after adding the orbital timing authority and keeping scene-local visual anatomy out of canon.",
+      "Visual review accepted segmentation, affirmative standalone prompts, visible-character refs, BFL coverage, and branch modifiers as a manifest scaffold while withholding replay-ready status until a durable scene_set exists.",
+      "Spatial review accepted the inner nursery access, paired outer departure arches, post-bend join, stable object positions, body reach, movement routes, and folded spatial callbacks with the same scene_set limit."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "zyphos_lore_content_readable": true
+    }
+  }
+}

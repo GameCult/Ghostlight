@@ -1,0 +1,319 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "zyphos.hearth-brood-ring-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "source_grounded_authored_elaboration",
+  "source_refs": [
+    {
+      "source_id": "saueia-family-units",
+      "path": "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md",
+      "title": "Sa'ueia Family Units",
+      "line_start": 1,
+      "line_end": 21,
+      "relevance": "Primary owner for mobile family structure, remembered ecological status, and the fixture-authored brood-ring care and handover rule."
+    },
+    {
+      "source_id": "breeding-grounds",
+      "path": "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+      "title": "Breeding Grounds",
+      "line_start": 1,
+      "line_end": 21,
+      "relevance": "Grounds the locality as a reproductive commons occupied by young, caretakers, infirm adults, specialists, and allied organisms; also bounds it against ownership and capital formation."
+    },
+    {
+      "source_id": "saueia-species",
+      "path": "Eusocial Interbeing/Species/Sa'ueia.md",
+      "title": "Sa'ueia",
+      "line_start": 1,
+      "line_end": 31,
+      "relevance": "Grounds Sa'ueia body plan, chest manipulators, facial fans, low work geometry, family mobility, breeding-ground care, and ecological prestige."
+    },
+    {
+      "source_id": "glassback-grazers",
+      "path": "Eusocial Interbeing/Biosphere/Grazers and Browsers/Glassback Grazers.md",
+      "title": "Glassback Grazers",
+      "line_start": 1,
+      "line_end": 43,
+      "relevance": "Grounds glassback heat-storage plates, readable plate states, calf protection, privacy fogging, herd route refusal, and reciprocal calving-lane and honest-water contracts with Sa'ueia."
+    },
+    {
+      "source_id": "lantern-trees",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+      "title": "Umbros-Facing Lantern Trees",
+      "line_start": 1,
+      "line_end": 48,
+      "relevance": "Grounds cold eclipse lighting, infant shelter, route signaling, neighborhood taxation, and the grove as an interested witness rather than scenery."
+    },
+    {
+      "source_id": "zyphos-umbros-system",
+      "path": "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+      "title": "Zyphos Umbros Binary System",
+      "line_start": 1,
+      "line_end": 104,
+      "relevance": "Grounds the mutually locked terrestrial binary, enormous fixed Umbros, roughly hour-long regular eclipses, low-energy ecology, and route pressure around light and heat windows."
+    },
+    {
+      "source_id": "candle-fungal-roads",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+      "title": "Candle Fungal Roads",
+      "line_start": 1,
+      "line_end": 45,
+      "relevance": "Grounds amber route candles, time-sensitive logistics, remembered payment and sickness, breeding-ground links, and route refusal when travelers mishandle obligations."
+    },
+    {
+      "source_id": "reciprocal-ecologies",
+      "path": "Eusocial Interbeing/Ecology/Reciprocal Ecologies.md",
+      "title": "Reciprocal Ecologies",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds conduct remembered as future access, guidance, nourishment, shelter, warning, or refusal."
+    },
+    {
+      "source_id": "fractal-eusocial-web",
+      "path": "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md",
+      "title": "Fractal Eusocial Web",
+      "line_start": 1,
+      "line_end": 142,
+      "relevance": "Grounds bodies, herds, routes, breeding-ground commons, and other organisms as political actors connected by stored memory, feeding, reporting, routing, boundaries, and reproductive continuity."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Contemporary Sa'ueia nomadic cycle; one daily Umbros eclipse",
+    "location": "The lantern-side warm hollow of a Sa'ueia breeding ground, beside a glassback calving lane and candle fungal road.",
+    "summary": "An outgoing caretaker transfers a Sa'ueia child and a glassback calf from a shared brood ring into a mobile family and returning herd. The scene tests whether kinship survives separation as portable care, reciprocal route obligation, or a jointly paid escort rather than becoming custody.",
+    "public_facts": [
+      {
+        "text": "Sa'ueia breeding grounds hold infancy, infirm care, reproductive continuity, legal memory, and ecological partnership without becoming permanent capitals.",
+        "source_refs": ["breeding-grounds", "saueia-species"]
+      },
+      {
+        "text": "Sa'ueia family units are small mobile kin, care, craft, defense, education, and diplomatic bodies whose status depends on ecological partners remembering them as beneficial.",
+        "source_refs": ["saueia-family-units", "saueia-species", "reciprocal-ecologies"]
+      },
+      {
+        "text": "Glassbacks exchange heat and low-grade memory gradients through translucent dorsal plates, protect calves, and can fog or darken plates, refuse routes, or form calf rings under pressure.",
+        "source_refs": ["glassback-grazers"]
+      },
+      {
+        "text": "Brood rings make reciprocal care between young Sa'ueia and allied young organisms into obligations that continue after their routes separate.",
+        "source_refs": ["saueia-family-units"]
+      },
+      {
+        "text": "Umbros is an enormous fixed world in the sky, and regular eclipses create local light, heat, movement, and ecological timing pressure.",
+        "source_refs": ["zyphos-umbros-system", "lantern-trees"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Family and herd both need a limited post-eclipse movement window, so waiting, escorting, and detouring spend real route time and nourishment opportunity.",
+        "source_refs": ["candle-fungal-roads", "glassback-grazers", "lantern-trees"]
+      },
+      {
+        "text": "A care record is useful testimony but does not replace a receiving adult's ability to read refusal and perform body-specific care.",
+        "source_refs": ["saueia-family-units", "saueia-species", "glassback-grazers"]
+      },
+      {
+        "text": "Keeping young together forever would be as coercive as forcing them apart early; the live obligation is to make eventual separation survivable without erasing either future.",
+        "source_refs": ["saueia-family-units", "glassback-grazers"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "lantern-side-brood-ring",
+      "label": "Lantern-side brood ring",
+      "group_type": "cross_species_care_circle",
+      "institutional_logic": ["Teach young bodies one another's care and refusal signals, then convert that familiarity into portable obligations before their routes separate."],
+      "material_incentives": ["Share glassback heat during eclipse, protect calves and children, distribute grooming labor, and leave each young traveler with more than one ecology able to recognize distress."],
+      "internal_virtues": ["Received refusal", "Body-specific competence", "Care that names its cost", "Separation without abandonment"],
+      "internal_shames": ["Treating a care record as competence", "Favoring the Sa'ueia child over the allied calf", "Keeping a maturing young body as proof of generosity"],
+      "prestige_markers": ["A calm first separation", "A later route obligation honored without supervision", "A young person whose stop signal survives handover"],
+      "taboo_triggers": ["Forced grooming", "Adult schedules presented as natural law", "Calling allied young owned dependents"],
+      "emotional_display_norms": ["Affection appears through warmth, grooming, waiting, rest calls, tolerated proximity, and remembered routes more often than formal declarations."],
+      "trust_defaults": ["Trusts practiced care and received refusal over archive recital; expects both family and herd to pay ongoing costs."],
+      "speech_register_cues": ["Short care instructions", "Dry caretaker humor", "Route and body metaphors", "Silence used to make room for a young person's signal"],
+      "source_refs": ["saueia-family-units", "breeding-grounds", "glassback-grazers"]
+    },
+    {
+      "group_id": "incoming-mobile-family",
+      "label": "Incoming Sa'ueia mobile family unit",
+      "group_type": "mobile_household",
+      "institutional_logic": ["Receive a young traveler without severing the ecological relationships that helped raise them."],
+      "material_incentives": ["Leave within the route window, reach owed shelters, gain a route-capable young member, and preserve standing with herd, road, and breeding ground."],
+      "internal_virtues": ["Portable care", "Detours honestly paid", "Tools and archives balanced on the body", "Young travelers moving by their own capacity"],
+      "internal_shames": ["Packing a child as cargo", "Missing a refusal signal", "Claiming kinship while exporting its labor"],
+      "prestige_markers": ["Returning to a breeding ground in good standing", "Carrying visible care debts", "Being recognized by distant ecologies"],
+      "taboo_triggers": ["A caretaker implying the family owns the breeding ground", "A route adult treating ecological obligations as nursery sentiment"],
+      "emotional_display_norms": ["Urgency is compressed into route calculations; affection remains practical and visible in pacing, load, posture, and who is allowed to refuse contact."],
+      "trust_defaults": ["Trusts route history and repeated acts, but must learn the exact care relationship held by this brood ring."],
+      "speech_register_cues": ["Compact route timing", "Practical objections", "Care promises stated as who will do what and where"],
+      "source_refs": ["saueia-family-units", "saueia-species", "reciprocal-ecologies"]
+    },
+    {
+      "group_id": "returning-glassback-herd",
+      "label": "Returning glassback herd",
+      "group_type": "sentient_herd_partner",
+      "institutional_logic": ["Receive a calf into herd heat and route life while testing whether Sa'ueia care has respected glassback signals."],
+      "material_incentives": ["Protect calves, reach feeding access, preserve heat, avoid panic contagion, and maintain profitable routes with Sa'ueia partners."],
+      "internal_virtues": ["Calm readable plates", "Heat shared under trusted conditions", "A protected calving lane", "Privacy honored"],
+      "internal_shames": ["A calf's panic made public", "Being read without consent", "Allowing schedule pressure to fracture herd calm"],
+      "prestige_markers": ["Clear route memory", "Steady calf ring", "Honest-water guidance repaid by Sa'ueia defense and grooming"],
+      "taboo_triggers": ["Forced separation", "Plate scraping", "Using readable plate states for ambush or status extraction"],
+      "emotional_display_norms": ["Heat, color, fogging, broadside stance, spacing, and route movement carry public feeling and boundary signals."],
+      "trust_defaults": ["Cooperates after calm approach, parasite removal, calf rescue, and respectful distance during plate exchange."],
+      "speech_register_cues": ["No Sa'ueia dialogue assigned; scene interpretation stays with visible plate patterns, movement, heat transfer, and route response."],
+      "source_refs": ["glassback-grazers"]
+    },
+    {
+      "group_id": "warm-hollow-ecology",
+      "label": "Warm-hollow road and lantern partners",
+      "group_type": "living_neighborhood_infrastructure",
+      "institutional_logic": ["Keep eclipse movement and infant shelter viable while remembering whether travelers feed, protect, contaminate, or overrun local boundaries."],
+      "material_incentives": ["Receive clean organic matter, route discipline, pollen and spore movement, protected roots, and traffic that does not endanger the commons."],
+      "internal_virtues": ["Legible paths", "Timely warnings", "Reciprocal traffic", "Local authority over passage"],
+      "internal_shames": ["A bright path that leads into harm", "Shelter granted to someone who damages the nursery", "Route testimony ignored"],
+      "prestige_markers": ["Reliable eclipse light", "A road remembered as honest", "A sheltered young body returned safely"],
+      "taboo_triggers": ["Forced passage", "Root injury", "Hidden sickness", "Travelers treating living signals as inert signage"],
+      "emotional_display_norms": ["Approval and refusal appear as lantern color, fungal brightness, darkness, route opening, and route closure."],
+      "trust_defaults": ["Rewards repeated conduct; withholds access when obligations are broken."],
+      "speech_register_cues": ["No verbal dialogue; signals remain colored light, route geometry, taste, and timing."],
+      "source_refs": ["lantern-trees", "candle-fungal-roads", "reciprocal-ecologies"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "brood-ring.received-refusal",
+      "applies_to": ["lantern-side-brood-ring", "incoming-mobile-family", "returning-glassback-herd"],
+      "pressure_type": "care_legitimacy",
+      "summary": "Kinship is tested by whether incoming caretakers can recognize and obey the young body's refusal, not whether they possess the correct record.",
+      "projection_use": "Make choices turn on waiting, touch distance, fogged plates, facial-fan signals, and demonstrated care rather than abstract declarations of love.",
+      "source_refs": ["saueia-family-units", "glassback-grazers"]
+    },
+    {
+      "field_id": "family-and-herd.route-window",
+      "applies_to": ["incoming-mobile-family", "returning-glassback-herd", "warm-hollow-ecology"],
+      "pressure_type": "time_and_nourishment",
+      "summary": "A shared escort or patient handover spends feeding light, shelter timing, and caretaker stamina; delay is care only when someone owns its bill.",
+      "projection_use": "Every patient option must name who arrives late, works longer, grazes later, or acquires a future care debt.",
+      "source_refs": ["candle-fungal-roads", "glassback-grazers", "saueia-family-units"]
+    },
+    {
+      "field_id": "brood-ring.separation-without-custody",
+      "applies_to": ["lantern-side-brood-ring"],
+      "pressure_type": "belonging",
+      "summary": "The ring succeeds when belonging survives distinct futures; permanent physical togetherness is not the measure and can become custody.",
+      "projection_use": "Allow a well-prepared clean separation to be a genuine good ending, while premature separation remains materially harmful.",
+      "source_refs": ["saueia-family-units"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "incoming-mobile-family",
+      "target_group_id": "lantern-side-brood-ring",
+      "observer_read": ["A nursery attachment that should yield to route life", "Useful care history already captured by the archive"],
+      "target_self_read": ["A real kin relation", "Body knowledge that must be practiced", "Future obligations extending beyond the hollow"],
+      "misread_patterns": ["Treats schedule as maturity", "Treats record transfer as care transfer", "Reads a young person's refusal as fear to overcome"],
+      "likely_insults": ["nursery-soft", "route-unready", "still in the hollow"],
+      "projection_use": "Keep Doro competent but initially tempted to compress care into a portable record and departure time.",
+      "source_refs": ["saueia-family-units", "breeding-grounds"]
+    },
+    {
+      "observer_group_id": "returning-glassback-herd",
+      "target_group_id": "incoming-mobile-family",
+      "observer_read": ["Fast-moving partner with a schedule", "Potential calf defender", "Potential source of forced separation"],
+      "target_self_read": ["Responsible family receiving a young traveler", "Route debtor with legitimate timing pressure"],
+      "misread_patterns": ["Herd alarm can flatten individual Sa'ueia intent", "Sa'ueia can read public plate states as complete consent"],
+      "likely_insults": ["No translated verbal insults; refusal appears as fogged plates, calf-ring closure, and denied route cooperation."],
+      "projection_use": "Let glassback response remain visibly agentic without translating it into omniscient human-like dialogue.",
+      "source_refs": ["glassback-grazers"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "outgoing-brood-ring-caretaker",
+      "summary": "A Sa'ueia caretaker ending a long watch while holding temporary authority over the manner, not the ownership, of departure.",
+      "obligations": ["Make refusal legible", "Transfer practical care", "Protect both young bodies", "Name schedule and labor costs", "Permit eventual separation"],
+      "available_masks": ["Dry competence", "Ritual formality", "Nursery humor", "Silence that leaves room for a young signal"],
+      "failure_modes": ["Using authority to force a tidy split", "Hiding caretaker exhaustion", "Treating ecological witnesses as decorative approval"],
+      "source_refs": ["saueia-family-units", "breeding-grounds", "saueia-species"]
+    },
+    {
+      "role_id": "incoming-family-route-adult",
+      "summary": "A mobile-family adult who must receive a young Sa'ueia as an agent with existing more-than-species kinship, not as transferable cargo.",
+      "obligations": ["Learn stop signals", "Carry archive and care debt", "Keep route promises", "Leave room for the child's chosen body distance"],
+      "available_masks": ["Practical readiness", "Schedule discipline", "Deference to caretaker expertise", "Quiet waiting"],
+      "failure_modes": ["Reaching after refusal", "Treating delay as childishness", "Accepting the object while missing the care"],
+      "source_refs": ["saueia-family-units", "saueia-species"]
+    },
+    {
+      "role_id": "young-route-taker",
+      "summary": "A young Sa'ueia leaving the breeding ground with enough agency to signal refusal, choose departure order, and preserve a cross-species bond.",
+      "obligations": ["No adult-authored duty beyond what the scene makes observable; the young person's role is to signal needs and participate in departure."],
+      "available_masks": ["Humor", "Exact correction of adult grammar", "Physical closeness", "Open or clamped facial fans"],
+      "failure_modes": ["Freezing between competing calls", "Having refusal translated away", "Being treated as the proof that adults handled the ritual well"],
+      "source_refs": ["saueia-family-units", "saueia-species"]
+    },
+    {
+      "role_id": "returning-herd-adult",
+      "summary": "A glassback adult receiving a calf through visible heat, plate, spacing, and route signals while protecting herd feeding and calm.",
+      "obligations": ["Protect the calf", "Maintain herd heat", "Reach feeding access", "Respond to learned privacy and grooming signals"],
+      "available_masks": ["Broadside plate display", "Lowered receiving posture", "Calf-ring closure", "Route movement or refusal"],
+      "failure_modes": ["Panic contagion", "Schedule pressure overpowering calf signals", "Sa'ueia observers mistaking readable plates for total transparency"],
+      "source_refs": ["glassback-grazers"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "pera_outgoing_caretaker",
+      "known_context": [
+        {"text": "Pera knows the shared grooming, rest, privacy, and distress signals practiced by Tavi and Low Ember, plus the breeding ground's routes and current eclipse window.", "source_refs": ["saueia-family-units", "breeding-grounds", "saueia-species", "glassback-grazers"]}
+      ],
+      "beliefs": [
+        {"text": "Pera believes care has transferred only when an incoming adult can receive refusal and perform the relevant body-specific routine.", "source_refs": ["saueia-family-units"]}
+      ],
+      "misreads": [
+        {"text": "Pera may overestimate how much patient ritual the route window and tired bodies can afford.", "source_refs": ["candle-fungal-roads", "saueia-family-units"]}
+      ],
+      "must_not_know": [
+        {"text": "Pera cannot know the future behavior of Doro's family, Broad Rain's herd, or the living road beyond what current signals and remembered obligations support.", "source_refs": ["reciprocal-ecologies", "glassback-grazers"]}
+      ]
+    },
+    {
+      "speaker_id": "doro_incoming_family",
+      "known_context": [
+        {"text": "Doro knows the family's route obligations, the departure window, and the archive contents offered during handover.", "source_refs": ["saueia-family-units", "candle-fungal-roads"]}
+      ],
+      "beliefs": [
+        {"text": "Doro initially believes a good archive and practical competence may be enough to make the transition clean.", "source_refs": ["saueia-family-units"]}
+      ],
+      "misreads": [
+        {"text": "Doro may read a cross-species brood bond as temporary nursery attachment rather than a source of lasting route debt.", "source_refs": ["saueia-family-units"]}
+      ],
+      "must_not_know": [
+        {"text": "Doro cannot treat glassback plate states as complete inner truth or assign Sa'ueia speech to the herd.", "source_refs": ["glassback-grazers"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Pera, Doro, Tavi, Low Ember, Broad Rain, and the exact warm-hollow event are story-local names and events, not promoted Zyphos canon.",
+      "source_refs": ["saueia-family-units"]
+    },
+    {
+      "text": "The authored brood-ring rule is canonical only as the plainly marked Ghostlight elaboration in the family-unit note; scene-specific dialogue, route timing, and outcomes remain fixture branches.",
+      "source_refs": ["saueia-family-units"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "What exact adult and juvenile glassback silhouette should become the durable species visual reference?",
+      "blocks_training": false,
+      "notes": "The fixture stays within low broad grazer bodies, translucent dorsal heat plates, muzzle interaction, and herd spacing. A later visual-design pass should establish exact limb count, joints, and scale before high-consistency rendering."
+    },
+    {
+      "question": "How long do brood-ring obligations typically persist, and who arbitrates competing claims between a mobile family and herd?",
+      "blocks_training": false,
+      "notes": "This bounded pass establishes that the obligations persist into later routes without fixing a universal term, duration, or court."
+    }
+  ]
+}
