@@ -281,7 +281,7 @@
     {
       "branch_id": "spend_route_testimony",
       "ink_path": "pressure_choice",
-      "action_type": "show_object",
+      "action_type": "speak",
       "actor_intent": "Use the archive to distinguish where a signal began from who carried it.",
       "state_basis": [
         "Available only with strong route testimony."
@@ -424,26 +424,81 @@
   },
   "audit": {
     "reviewer": "Codex world worker applying the four named Ghostlight reviewer prompts as separate passes",
-    "review_status": "pending",
+    "review_status": "accepted_as_if_fixture_visual_replay_requires_scene_set",
     "reviewer_passes": [
       {
         "reviewer_id": "ghostlight_narrative_quality_reviewer",
-        "verdict": "pending"
+        "verdict": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 4,
+          "pacing": 4,
+          "voice": 4,
+          "tonal_fit": 5,
+          "if_playability": 4
+        },
+        "findings_resolved": [
+          "Added explicit flower-custody state so folded prose cannot handwave its location.",
+          "Gated the returning-threadwing payoff on actually sending a comparison packet.",
+          "Classified the archive-trace choice as speech so the fixture carries both speech and non-speech player actions."
+        ]
       },
       {
         "reviewer_id": "ghostlight_lore_grounding_reviewer",
-        "verdict": "pending"
+        "verdict": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 4,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "findings_resolved": [
+          "Backfilled the portable archive's physical interface and selective-testimony boundary in the owning technology note.",
+          "Kept the exact contaminant unresolved and marked story-local names as non-canonical."
+        ]
       },
       {
         "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
-        "verdict": "pending"
+        "verdict": "needs_revision_for_replay_ready_status",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompts": 4,
+          "character_visibility": 4,
+          "branch_visual_continuity": 4,
+          "website_replay": 3
+        },
+        "findings_resolved": [
+          "Split the second-witness success and cost frames so an absent threadwing ref cannot leak into the cost image.",
+          "Added flower_cupped modifiers that place the burden flower concretely after every folded branch.",
+          "Restated the boundary-straddling cradle geometry in standalone prompts."
+        ],
+        "remaining_condition": "A durable plan view or 3D scene_set is required before spatially consistent website rendering; this artifact does not claim replay-ready status."
       },
       {
         "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
-        "verdict": "pending"
+        "verdict": "accepted_with_scene_set_requirement",
+        "scores": {
+          "layout_cohesion": 4,
+          "sightlines": 4,
+          "body_affordance": 5,
+          "movement_access": 4,
+          "object_system_geometry": 4,
+          "branch_spatial_state": 4
+        },
+        "findings_resolved": [
+          "Moved the low work cradle onto the fungal boundary so Nara can participate without crossing it.",
+          "Separated flower custody from isolation-route state and preserved both with independent Ink variables.",
+          "Named fixed zones, route arcs, camera slots, and success/cost route deltas."
+        ],
+        "remaining_condition": "The textual layout is coherent enough for IF staging and concept prompts, while high-consistency multi-angle art still requires the declared scene_set."
       }
     ],
-    "review_notes": [],
+    "review_notes": [
+      "Narrative review accepted the ordinary-work opening, local stakes, four meaningful choice layers, branch callbacks, distinct outcomes, and warm ecological-bureaucracy tone after two false-fold repairs.",
+      "Lore review inspected every cited source and accepted the fixture after the portable archive interface was promoted to the technology note.",
+      "Visual review accepted segmentation, affirmative prompt detail, character refs, and branch modifiers as a plan scaffold but withheld replay-ready status because the required terrace scene_set does not yet exist.",
+      "Spatial review accepted the boundary-straddling cradle, fixed terrace coordinate frame, body reach, routes, and object custody, with the same durable scene_set requirement for multi-angle rendering."
+    ],
     "checks": {
       "uses_standard_branching_format": true,
       "actor_local_context_only": true,

@@ -232,7 +232,7 @@ Seyr reads a proposal: separate the doubtful material, keep testimony moving, pr
 === pressure_choice ===
 // ghostlight.choice_layer: witness_and_route
 + {route_testimony >= 3} [Trace the violet signal through the archive and name the suspect graft station aloud.]
-    // ghostlight.action_label: show_object
+    // ghostlight.action_label: speak
     // ghostlight.branch_label: spend_route_testimony
     ~ route_testimony = route_testimony - 1
     ~ nursery_trust = nursery_trust + 1
@@ -299,7 +299,15 @@ Umbros is no wandering moon. It hangs fixed and enormous above the lantern grove
 {eclipse_time <= 1: The threadwings have gone quiet. There will be little time to finish the handover before returning light changes every signal.}
 {isolation_lane >= 2: Blue-white lantern light and sparse amber candles define a clean outer route to the isolation shelter.}
 
-Nara waits outside the nursery. The children wait inside it. {flower_cupped == 1: Mottled Echo waits in the mineral cup on the cradle's routeward rail.|Mottled Echo remains on Nara's bare left flank.} In either position it continues being, in its small botanical way, extremely available for consultation.
+Nara waits outside the nursery. The children wait inside it.
+
+{flower_cupped == 1:
+Mottled Echo waits in the mineral cup on the cradle's routeward rail.
+- else:
+Mottled Echo remains on Nara's bare left flank.
+}
+
+In either position it continues being, in its small botanical way, extremely available for consultation.
 
 The handover needs a decision that does not pretend uncertainty has disappeared.
 
@@ -437,7 +445,15 @@ No witness wins. Their overlap becomes enough to act.
 // ghostlight.training_hook: waiting_spends_light_and_body_capacity
 Seyr waits.
 
-Totality thins. Returning light opens the wrong fungal candles first, and route traffic begins to gather behind Nara. {external_witness_sent == 1: The threadwing does not return.|No threadwing carries a comparison packet; the road is the only second witness still working.} Mottled Echo repeats red-violet until the pattern stops adding information and starts becoming reputation.
+Totality thins. Returning light opens the wrong fungal candles first, and route traffic begins to gather behind Nara.
+
+{external_witness_sent == 1:
+The threadwing does not return.
+- else:
+No threadwing carries a comparison packet; the road is the only second witness still working.
+}
+
+Mottled Echo repeats red-violet until the pattern stops adding information and starts becoming reputation.
 
 By the time the road offers an isolation lane, Nara is too exhausted to carry the graft frame and Seyr's replacement watch has not begun.
 

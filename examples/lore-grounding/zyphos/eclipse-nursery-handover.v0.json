@@ -89,7 +89,7 @@
       "path": "Eusocial Interbeing/Technologies/Sa'auei'a Mobile Technologies.md",
       "title": "Sa'auei'a Mobile Technologies",
       "line_start": 1,
-      "line_end": 15,
+      "line_end": 21,
       "relevance": "Grounds portable archives, route-memory instruments, medical grafts, pattern languages, repairability, and relationship-aware technology."
     },
     {
@@ -540,11 +540,6 @@
       "question": "What exact pathogens or incompatible memory states most often trigger breeding-ground quarantine?",
       "blocks_training": false,
       "notes": "The fixture leaves the disputed violet trace unidentified to avoid inventing a disease taxonomy."
-    },
-    {
-      "question": "Does a standard Sa'ueia portable archive have a durable physical form beyond relationship-aware route-memory storage?",
-      "blocks_training": false,
-      "notes": "This fixture uses flexible memory membranes as a bounded local visual elaboration; recurrence should trigger a dedicated technology backfill."
     }
   ]
 }

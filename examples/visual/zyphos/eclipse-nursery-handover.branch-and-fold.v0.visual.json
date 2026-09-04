@@ -186,7 +186,7 @@
       {
         "visual_scene_id": "zyphos_multiwitness_fold",
         "ink_anchor": "quarantine_fold",
-        "base_image_prompt": "Wide low-angle view of four disputed testimonies on an eclipse-dark nursery terrace. Nara waits routeward inside a ring of bitter amber-red fungal beads. Seyr stands at the central pale-rib cradle where a portable archive displays translucent violet-edged route membranes beside individually sealed medical graft trays. Mottled Echo shows red-violet leaves either on Nara's left flank or in a clear mineral cup on the cradle's outer rail according to state. A threadwing courier circles above the lantern canopy, its ribbonlike sensory vanes silver in the last light. White lantern knots point toward the crescent isolation shelter along the outer rim; three nursery ramps remain visible on the broad inner edge.",
+        "base_image_prompt": "Wide low-angle view of disputed testimonies on an eclipse-dark nursery terrace. Nara waits routeward inside a ring of bitter amber-red fungal beads. Seyr stands at the pale-rib cradle straddling the fungal boundary, where a portable archive displays translucent violet-edged route membranes beside individually sealed medical graft trays. A threadwing courier circles above the lantern canopy, its ribbonlike sensory vanes silver in the last light. White lantern knots point toward the crescent isolation shelter along the outer rim; three nursery ramps remain visible on the broad inner edge.",
         "visible_characters": [
           {
             "agent_id": "seyr_outgoing_caretaker",
@@ -200,7 +200,7 @@
           },
           {
             "agent_id": "mottled_echo_burden_flower",
-            "default_stance": "showing a restrained red-violet display on host or in mineral cup according to branch state",
+            "default_stance": "showing a restrained red-violet display at the position selected by flower_cupped",
             "visual_ref": "visual_character_refs.characters.mottled_echo_burden_flower"
           },
           {
@@ -273,7 +273,7 @@
           },
           {
             "agent_id": "mottled_echo_burden_flower",
-            "default_stance": "on Nara or in the mineral cup according to branch state",
+            "default_stance": "at the position selected by flower_cupped",
             "visual_ref": "visual_character_refs.characters.mottled_echo_burden_flower"
           }
         ],
@@ -303,7 +303,7 @@
       {
         "visual_scene_id": "zyphos_ending_admission",
         "ink_anchor": "ending_admission_success|ending_admission_cost",
-        "base_image_prompt": "Admission aftermath on the eclipse-lit nursery terrace. Nara and Seyr stand near a narrow amber clean lane between the routeward fungal boundary and the first nursery ramp. The central cradle holds a sealed suspect graft tray on its outer rail while clean grafts and the portable archive remain nearer the nursery side. Ili waits at the first ramp under cold blue lantern knots. Mottled Echo displays yellow-violet from Nara's flank or the mineral cup according to prior custody.",
+        "base_image_prompt": "Admission aftermath on the eclipse-lit nursery terrace. Nara and Seyr stand near a narrow amber clean lane between the routeward fungal boundary and the first nursery ramp. The boundary-straddling cradle holds a sealed suspect graft tray on its routeward rail while clean grafts and the portable archive remain on the nurseryward rail. Ili waits at the first ramp under cold blue lantern knots.",
         "visible_characters": [
           {
             "agent_id": "seyr_outgoing_caretaker",
@@ -322,7 +322,7 @@
           },
           {
             "agent_id": "mottled_echo_burden_flower",
-            "default_stance": "yellow-violet display on host or in cup",
+            "default_stance": "yellow-violet display at the position selected by flower_cupped",
             "visual_ref": "visual_character_refs.characters.mottled_echo_burden_flower"
           }
         ],
@@ -368,7 +368,7 @@
           },
           {
             "agent_id": "mottled_echo_burden_flower",
-            "default_stance": "yellow display on Nara's flank or in a nearby cup",
+            "default_stance": "yellow display at the position selected by flower_cupped",
             "visual_ref": "visual_character_refs.characters.mottled_echo_burden_flower"
           }
         ],
@@ -377,7 +377,7 @@
       {
         "visual_scene_id": "zyphos_ending_witness_success",
         "ink_anchor": "ending_witness_success",
-        "base_image_prompt": "Successful second-witness aftermath outside the fungal boundary of a nursery terrace. Seyr and Nara rest folded on the routeward ground with the portable archive between their open chemical-sensing facial fans. Mottled Echo shows a restrained yellow-violet pattern on Nara's flank or in a mineral cup. A threadwing courier with silver ribbonlike vanes lands on the archive case carrying a tiny knotted fiber sample. Amber fungal candles open toward the isolation shelter and cold blue-white lantern knots answer while the last eclipse darkness holds.",
+        "base_image_prompt": "Successful second-witness aftermath outside the fungal boundary of a nursery terrace. Seyr and Nara rest folded on the routeward ground with the portable archive between their open chemical-sensing facial fans. A threadwing courier with silver ribbonlike vanes lands on the archive case carrying a tiny knotted fiber sample. Amber fungal candles open toward the isolation shelter and cold blue-white lantern knots answer while the last eclipse darkness holds.",
         "visible_characters": [
           {
             "agent_id": "seyr_outgoing_caretaker",
@@ -391,7 +391,7 @@
           },
           {
             "agent_id": "mottled_echo_burden_flower",
-            "default_stance": "displaying testimony on host or in cup",
+            "default_stance": "displaying testimony at the position selected by flower_cupped",
             "visual_ref": "visual_character_refs.characters.mottled_echo_burden_flower"
           },
           {
@@ -405,7 +405,7 @@
       {
         "visual_scene_id": "zyphos_ending_witness_cost",
         "ink_anchor": "ending_witness_cost",
-        "base_image_prompt": "Failed-wait aftermath outside the fungal boundary of a nursery terrace during returning light. Seyr and Nara rest folded on the routeward ground with the portable archive between them. Nara's long body sags with fatigue. Mottled Echo repeats a harsh red-violet display on Nara's flank or in a mineral cup. Route travelers gather behind Nara, amber fungal candles open in an unrelated traffic line, and the disputed boundary stays dark beneath cold lantern knots. A red-orange rim of sunlight appears around the enormous fixed black planet.",
+        "base_image_prompt": "Failed-wait aftermath outside the fungal boundary of a nursery terrace during returning light. Seyr and Nara rest folded on the routeward ground with the portable archive between them. Nara's long body sags with fatigue. Route travelers gather behind Nara, amber fungal candles open in an unrelated traffic line, and the disputed boundary stays dark beneath cold lantern knots. A red-orange rim of sunlight appears around the enormous fixed black planet.",
         "visible_characters": [
           {
             "agent_id": "seyr_outgoing_caretaker",
@@ -419,7 +419,7 @@
           },
           {
             "agent_id": "mottled_echo_burden_flower",
-            "default_stance": "repeating a harsh red-violet display on host or in cup",
+            "default_stance": "repeating a harsh red-violet display at the position selected by flower_cupped",
             "visual_ref": "visual_character_refs.characters.mottled_echo_burden_flower"
           }
         ],
@@ -482,14 +482,33 @@
         "modifier_prompt": "Nara folds inside the bitter ring, exposes a darkened bare throat patch, and opens graft trays with two small chest hands; one tray shows a faint violet seam."
       },
       {
-        "modifier_id": "isolate_flower_visual",
-        "trigger": "branch_label == isolate_flower_witness",
+        "modifier_id": "flower_cupped_visual",
+        "trigger": "flower_cupped == 1",
         "apply_to_visual_scene_ids": [
           "zyphos_quarantine_action_hub",
           "zyphos_multiwitness_fold",
-          "zyphos_totality_threshold"
+          "zyphos_witness_route_hub",
+          "zyphos_totality_threshold",
+          "zyphos_ending_admission",
+          "zyphos_ending_defer",
+          "zyphos_ending_witness_success",
+          "zyphos_ending_witness_cost"
         ],
-        "modifier_prompt": "Mottled Echo sits in a clear shallow mineral cup on the cradle's outer rail, visibly separated from Nara's bare flank."
+        "modifier_prompt": "Mottled Echo sits in a clear shallow mineral cup on the cradle's routeward rail; Nara's left flank patch is bare with small released rootlet marks."
+      },
+      {
+        "modifier_id": "flower_attached_visual",
+        "trigger": "flower_cupped == 0",
+        "apply_to_visual_scene_ids": [
+          "zyphos_multiwitness_fold",
+          "zyphos_witness_route_hub",
+          "zyphos_totality_threshold",
+          "zyphos_ending_admission",
+          "zyphos_ending_defer",
+          "zyphos_ending_witness_success",
+          "zyphos_ending_witness_cost"
+        ],
+        "modifier_prompt": "Mottled Echo grips Nara's bare left flank patch with clasping rootlets and displays its current color pattern against her dark hide."
       },
       {
         "modifier_id": "road_sampling_visual",
@@ -535,7 +554,7 @@
         "trigger": "branch_label == seek_external_witness",
         "apply_to_visual_scene_ids": [
           "zyphos_witness_route_hub",
-          "zyphos_ending_witness"
+          "zyphos_ending_witness_success"
         ],
         "modifier_prompt": "A threadwing grips a tiny clean knotted-fiber packet in its mouthparts, silver ribbon vanes spread for routeward flight."
       },
@@ -591,7 +610,7 @@
         "modifier_id": "witness_success_visual",
         "trigger": "ending_label == second_witness_success",
         "apply_to_visual_scene_ids": [
-          "zyphos_ending_witness"
+          "zyphos_ending_witness_success"
         ],
         "modifier_prompt": "The returning threadwing lands on the archive with a fiber sample, the fungal road opens amber candles toward isolation, and the lantern grove answers blue-white."
       },
@@ -599,7 +618,7 @@
         "modifier_id": "witness_cost_visual",
         "trigger": "ending_label == second_witness_cost",
         "apply_to_visual_scene_ids": [
-          "zyphos_ending_witness"
+          "zyphos_ending_witness_cost"
         ],
         "modifier_prompt": "The sky brightens with returning light, route travelers gather behind exhausted Nara, the threadwing remains absent, and Mottled Echo repeats a harsh red-violet display."
       }
@@ -660,7 +679,8 @@
             "zyphos_multiwitness_fold",
             "zyphos_ending_admission",
             "zyphos_ending_defer",
-            "zyphos_ending_witness"
+            "zyphos_ending_witness_success",
+            "zyphos_ending_witness_cost"
           ]
         },
         {
@@ -697,7 +717,7 @@
       "seyr_outgoing_caretaker": "Seyr: adult Sa'ueia caretaker, long horizontal hexapod body covered in short pale ochre insulating fibers over dark hide, four tall digitigrade locomotor legs in two pairs, smaller anterior chest pair ending in three soft opposing digits, flexible neck, wedge-shaped head, paired fanlike chemical sensors on the cheeks, bare throat and flank signaling patches, balanced empty flank frame, deliberate low working posture.",
       "nara_incoming_specialist": "Nara: adult Sa'ueia medical specialist, long horizontal hexapod body with charcoal-brown insulating fibers, four tall digitigrade running legs, two smaller three-digit chest manipulators, flexible neck, wedge-shaped head, broad paired chemical-sensing facial fans, bare throat and left flank signaling patches, balanced flank frame carrying pale sealed medical graft trays, road dust on lower legs, fatigue visible as dark warmth across bare skin.",
       "ili_archive_keeper": "Ili: elderly Sa'ueia archive keeper, smaller long-bodied hexapod with silver-brown short fibers, four folded digitigrade legs, two fine three-digit chest hands, wedge head, one facial chemical-sensing fan healed visibly crooked, bare throat signaling patch, old woven route cords around the balanced flank frame, dry watchful posture.",
-      "mottled_echo_burden_flower": "Mottled Echo: hand-sized mobile plant analogue with clasping rootlets, flat gray-green photosynthetic leaves, a central cup of fine sensory filaments, and color patterns that shift through yellow strain, violet immune memory, and red alarm; usually attached to Nara's bare left flank or resting in a shallow clear mineral cup.",
+      "mottled_echo_burden_flower": "Mottled Echo: hand-sized mobile plant analogue with clasping rootlets, flat gray-green photosynthetic leaves, a central cup of fine sensory filaments, and color patterns that shift through yellow strain, violet immune memory, and red alarm.",
       "witness_threadwing": "Witness threadwing: lean gliding courier animal with two broad membrane wings, a compact dark body, and long silver ribbonlike sensory vanes streaming from wing and tail edges; the vanes read chemical, pressure, heat, and memory traces; capable of carrying a tiny knotted fiber packet in delicate mouthparts."
     },
     "groups": {
