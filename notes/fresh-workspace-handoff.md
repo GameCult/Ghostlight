@@ -225,41 +225,60 @@ outcome bands, four derived `CausalBoundary` kinds, scope-digest binding, one
 are teardown evidence. Plan step 6 is nine implementation passes; pass 1 is
 landed, passes 2 through 9 are not.
 
-1. Ontology tip is `6a4f42a` on `codex/ghostlight-dungeon-mvp`, pushed: pass 3
-   (`db8eb0b` pass-2 follow-ups, Hands `48de96b`, Soul `d2805fe`) plus the
-   boundary-doc commit `6a4f42a`, over passes 1 and 2 (`5e53beb`, `e99af63`).
-   Pass 3 adds subject-keyed `holdings: BTreeMap<SubjectId, BTreeMap<EntityId,
-   Quantity>>` and `dependencies` partitions; `Quantity(u64)` with absence
-   meaning zero at every layer, checked arithmetic, and u128 ledger
-   accumulators; `ComponentOp`/`ResolvedOp` `Transfer`, `Transform` (1:1, no
-   unit, rate, or recipe field anywhere), `Consume`, `Admit` (evidence must be
-   present in the same patch and is recorded in the commit effect), `Bind`,
-   `Release`; `DependencyTarget { Resource, Route, Subject }`; conservation
-   owner `patch::check_ledger`, structurally dead by construction of the
-   closed op set but kept as the single named check site; one
-   `scope_components` owner feeding both the scope digest and the snapshot
-   (`typed_incident_routes` deleted); `ScopePreimage` includes own holdings
-   and dependencies. `EvidenceRef::new` is `#[cfg(test)]` because no patch
-   ingress exists yet: the whole ten-op surface has no production author
-   today, `EvidenceRef` deserializes, and the real gate is that nothing
-   deserializes a `WorldPatch`. Watch that gate when an ingress lands.
-   Schemas are `world_state.custody.v1` and `world_commit.custody.v1`; earlier
-   stores are refused. `docs/architecture/delvehold-forced-ontology-integration.md`
-   now states that Ghostlight owns a conserved narrative ledger and Delvehold
-   owns the economy. The action vocabulary is still `AffordanceKind::Speak`
-   and `DecisionAction::Speak`. Baseline for pass 4 at `6a4f42a`: 98 test
-   functions in `world/*.rs`, 137 across the crate source, plus one
-   integration test. Pass 4 (affordance catalog, `action.rs`,
-   `ActionMismatch`, kernel-entropy band draw, derived `OperationalAgent` tool
-   catalog; deletes `DecisionAction`, `AffordanceKind`, and three hard-coded
-   permission surfaces) is with Hands in the locked worktree
-   `.claude/worktrees/agent-a8828a054fe108277` (branched from `6a4f42a`) from
-   the session-scratchpad spec `imagination-pass4.md`; its first commit
-   extracts `apply_operations` as the one owner of operation application and
-   conservation. Pass 5 (`Authority`, `Selection`, `Redress`, institutional
-   affordances) is specifying: `modeling-pass5.md` landed, `imagination-pass5.md`
-   in flight, both in the session scratchpad. Nothing from pass 4 or 5 is in
-   the main tree; `git log` past `6a4f42a` is the witness.
+1. No pass beyond 3 is integrated. `codex/ghostlight-dungeon-mvp` tip is
+   `bec8004` (steering record) over `6a4f42a`; passes 1 through 3 landed at
+   `5e53beb`, `e99af63`, `d2805fe`. Pass 3 gave the kernel subject-keyed
+   `holdings` and `dependencies`, `Quantity(u64)` with absence meaning zero,
+   checked arithmetic, ops `Transfer`, `Transform` (1:1, no unit/rate/recipe),
+   `Consume`, `Admit` (same-patch evidence), `Bind`, `Release`,
+   `DependencyTarget { Resource, Route, Subject }`, conservation at the single
+   `patch::check_ledger` site, one `scope_components` owner for scope digest
+   and snapshot, schemas `world_state.custody.v1` / `world_commit.custody.v1`.
+   `EvidenceRef::new` is `#[cfg(test)]` because no production ingress authors
+   a `WorldPatch`; the real gate is that nothing deserializes one. The action
+   vocabulary is still `AffordanceKind::Speak` / `DecisionAction::Speak`.
+   Baseline at `6a4f42a`: 98 test functions in `world/*.rs`, 137 crate
+   source, plus one integration test.
+
+   Pass 4 (affordance catalog, `action.rs`, `ActionMismatch`, kernel-entropy
+   band draw, derived `OperationalAgent` tool catalog; deletes
+   `DecisionAction`, `AffordanceKind`, and three hard-coded permission
+   surfaces) is mid-cut with Hands in the locked worktree
+   `.claude/worktrees/agent-a8828a054fe108277`: commit `c9fd9bf` "Extract
+   apply_operations as the one owner of operation application and
+   conservation" is landed there, and `action.rs` is being written with
+   uncommitted edits in `eve.rs`, `runtime.rs`, `world/controllers.rs`,
+   `world/journal.rs`, `world/mailbox.rs`. Soul verifies in that tree; the
+   coordinator integrates. Witness: `git log` on the main branch past
+   `bec8004`.
+
+   Specs and maps live in the session scratchpad, not `state/`:
+   `imagination-pass4.md` through `imagination-pass8.md` and
+   `modeling-pass4.md` through `modeling-pass8.md` are on disk; Modeling pass
+   9 is running. Adopted design decisions from those specs that change
+   steering: pass 7 gives the world its first clock, `WorldState.now`,
+   advanced only by `CommandBody::AdvanceTime` from
+   `CallerId::System(SystemCapability::Clock)` minted by the mailbox, and cuts
+   the operation set from 30 to 27 (`Commitment` stake/fulfill/default/release
+   and `Pressure.create` removed; `Routine.period` required). Pressure is
+   stored with two writer families, ops and the tick, never derived at read
+   time. Ordering is a pure re-ordering by pressure then debt
+   (`last_opportunity_at`), never a filter. Only `UnelaboratedDestination` and
+   `MissingStructure` boundaries are derivable; `PolityInCausalRange` and
+   `IndividuationRequired` wait for relations and population slices, and
+   Verification 13 is explicitly deferred. Pass 8 replaces the pass-1 Active
+   declaration ban with "declarations in Active only inside a patch whose
+   `PatchAnswer` is currently derived and proven satisfied", adds
+   `SystemCapability::Elaborator { jurisdiction }`, the in-process
+   `ElaborationRunner`, and a derived elaborator tool catalog sharing one
+   property emitter with pass 4. The typed CultNet consumer ingress is a newly
+   named pass 10, "consumer ingress"; step 6 is ten passes, and the plan doc
+   still lists nine.
+
+   Queued doc edits, owned by the coordinator, to land with pass 7: four
+   `ghostlight-dungeon-mvp.md` sentences naming subject readiness as owned
+   state (lines 65, 153, 211, 433) and the ontology doc's "Twenty-nine
+   operations" count (lines 222, 276, 537) to 27.
 2. First-generation world fixtures are banked and pushed, one per world, each
    with Ink, training sidecar, visual plan, lore grounding, and BFL manifest,
    reviewer-accepted except visual replay, which waits on a scene-set

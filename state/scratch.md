@@ -2,10 +2,10 @@
 
 ## Current Subgoal
 
-Plan step 6 pass 4 (affordance catalog, `action.rs`, band draw, derived tool
-catalog) with Hands in `.claude/worktrees/agent-a8828a054fe108277` from
-scratchpad `imagination-pass4.md`; pass 5 specifying; tip `6a4f42a` carries
-passes 1 through 3.
+Plan step 6 pass 4 mid-cut in `.claude/worktrees/agent-a8828a054fe108277`
+(`c9fd9bf` landed there, `action.rs` in progress). Specs `imagination-pass4..8.md`
+and maps `modeling-pass4..8.md` in the session scratchpad; Modeling pass 9
+running. Main tip `bec8004`; nothing beyond pass 3 integrated.
 
 ## Working Notes
 

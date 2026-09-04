@@ -278,6 +278,10 @@ Implementation order, each pass landing tests before the next begins:
    singleton detail focus, grouped coarse cells with partitioned views and
    per-constituent attribution, debt rotation. Scheduler-owned; the kernel
    never sees a cell.
+10. Consumer ingress: the typed CultNet ingress through which an external
+    consumer submits a `WorldPatch` or proposal to the sealed kernel. Until
+    this lands no production path deserializes a `WorldPatch`;
+    `EvidenceRef::new` stays `#[cfg(test)]`.
 
 The deployment cutover (step 5) is deferred behind this stage, not cancelled. No
 world acceptance run may start while Yggdrasil serves the legacy body.
