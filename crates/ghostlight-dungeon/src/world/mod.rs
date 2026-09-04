@@ -11270,4 +11270,472 @@ mod clock_tests {
             }
         }
     }
+
+    /// Soul falsification: the attention order is total on `SubjectId` when
+    /// pressure and debt tie, and it is the same order for every input
+    /// permutation. `sort_by_key` is stable, so an order that leaned on its
+    /// input's order would pass a single-vector test and drift with map
+    /// iteration.
+    #[test]
+    fn soul_the_attention_order_is_id_total_under_every_input_permutation() {
+        let directory = tempfile::tempdir().unwrap();
+        let (kernel, clockwork, _) = clock_kernel(directory.path(), "Ties");
+        let mut state = kernel.state.clone();
+        state.now = FictionalMinutes(5_000);
+        // Equal pressure and an equal stamp on every subject: only the id can
+        // decide.
+        for subject_id in state.subjects.keys().copied().collect::<Vec<_>>() {
+            state.pressures.insert(
+                subject_id,
+                BTreeMap::from([(
+                    PressureSource::Subject(clockwork.reeve),
+                    PressureMagnitude(7),
+                )]),
+            );
+            state
+                .last_opportunity_at
+                .insert(subject_id, FictionalMinutes(400));
+        }
+        let derived = derive_opportunities(&state).unwrap();
+        assert!(
+            derived.len() >= 3,
+            "the fixture ties at least three subjects"
+        );
+        let expected: Vec<SubjectId> = order_opportunities(&state, derived.clone())
+            .into_iter()
+            .map(|opportunity| opportunity.scope.subject_id)
+            .collect();
+        let mut ascending = expected.clone();
+        ascending.sort_unstable();
+        assert_eq!(expected, ascending, "an equal-key tie is broken by id");
+
+        // Every rotation and the full reversal produce the same order.
+        for shift in 0..derived.len() {
+            let mut permuted = derived.clone();
+            permuted.rotate_left(shift);
+            let mut reversed = permuted.clone();
+            reversed.reverse();
+            for candidate in [permuted, reversed] {
+                let ordered: Vec<SubjectId> = order_opportunities(&state, candidate)
+                    .into_iter()
+                    .map(|opportunity| opportunity.scope.subject_id)
+                    .collect();
+                assert_eq!(ordered, expected, "the order read its input's order");
+            }
+        }
+    }
+
+    /// Soul falsification of the admission ruling: in Active a patch that only
+    /// changes components answers nothing, a patch that declares or admits
+    /// evidence must answer, and the answer gate closes before the resolver
+    /// ever runs.
+    #[test]
+    fn soul_an_active_patch_answers_only_when_it_elaborates() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Elaborate");
+
+        // Component-only, no answer: admitted.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::AdvancePressure {
+                source: PressureSourceRef::Subject(Ref::Existing(clockwork.reeve)),
+                target: Ref::Existing(clockwork.farmer),
+                by: PressureMagnitude(2),
+            }]),
+        );
+        assert_eq!(
+            pressure(
+                &kernel,
+                clockwork.farmer,
+                PressureSource::Subject(clockwork.reeve)
+            ),
+            2
+        );
+
+        let refuse = |kernel: &mut WorldKernel, body: CommandBody| {
+            let snapshot = kernel.snapshot().unwrap();
+            kernel
+                .submit(
+                    command(
+                        &snapshot,
+                        CommandId::new(),
+                        CallerId::Principal(owner()),
+                        body,
+                    ),
+                    &auth_principal(owner()),
+                )
+                .unwrap_err()
+        };
+
+        // Evidence alone is elaboration too, so it answers.
+        let evidence_only = CommandBody::AdmitPatch {
+            answers: None,
+            patch: WorldPatch {
+                declarations: Vec::new(),
+                operations: Vec::new(),
+                evidence: vec![EvidenceRef::new("soul://evidence-only")],
+            },
+        };
+        assert!(matches!(
+            refuse(&mut kernel, evidence_only),
+            KernelError::AnswerRequired
+        ));
+
+        // The gate is ahead of the resolver: a declaring patch that is also
+        // structurally broken is refused for the missing answer, not for the
+        // mismatch it would otherwise return.
+        let broken = CommandBody::AdmitPatch {
+            answers: None,
+            patch: WorldPatch {
+                declarations: vec![Declaration::Entity(EntityDeclaration {
+                    handle: DraftHandle::new("orphan"),
+                    label: "An Orphan Room".into(),
+                    kind: EntityKind::Place,
+                    container: Some(Ref::Draft(DraftHandle::new("nowhere"))),
+                })],
+                operations: Vec::new(),
+                evidence: Vec::new(),
+            },
+        };
+        assert!(
+            matches!(refuse(&mut kernel, broken), KernelError::AnswerRequired),
+            "the resolver ran before the answer gate"
+        );
+
+        // A derived answer that the patch satisfies commits, and the boundary
+        // is gone afterwards.
+        let answered = derive_boundaries(&kernel.state)
+            .unwrap()
+            .into_iter()
+            .find(|boundary| matches!(boundary, CausalBoundary::UnelaboratedDestination { .. }))
+            .expect("the dead end");
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered.clone())),
+                patch: WorldPatch {
+                    declarations: vec![Declaration::Entity(EntityDeclaration {
+                        handle: DraftHandle::new("cairn"),
+                        label: "A Roadside Cairn".into(),
+                        kind: EntityKind::Place,
+                        container: Some(Ref::Existing(clockwork.dead_end)),
+                    })],
+                    operations: Vec::new(),
+                    evidence: Vec::new(),
+                },
+            },
+        );
+        assert!(
+            !derive_boundaries(&kernel.state)
+                .unwrap()
+                .contains(&answered),
+            "the answered boundary is still derived"
+        );
+    }
+
+    /// Soul falsification: pressure magnitude cannot overflow or go negative,
+    /// and zero is spelled by absence at both ends.
+    #[test]
+    fn soul_pressure_saturates_and_never_underflows() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Saturate");
+        let sourced = PressureSource::Commitment {
+            subject: clockwork.farmer,
+            key: clockwork.obligation,
+        };
+
+        // A tick over a magnitude already at the ceiling saturates rather than
+        // wrapping.
+        let mut brimming = kernel.state.clone();
+        brimming.pressures.insert(
+            clockwork.farmer,
+            BTreeMap::from([(sourced, PressureMagnitude(u32::MAX))]),
+        );
+        let motion = clock::derive_motion(&brimming, FictionalMinutes(LATE_DUE));
+        let written = motion
+            .pressed
+            .iter()
+            .find(|written| written.source == sourced)
+            .expect("the past-due obligation pressed");
+        assert_eq!(written.magnitude, PressureMagnitude(u32::MAX));
+
+        // Reducing by more than the row holds removes it instead of wrapping.
+        tick(&mut kernel, u32::try_from(LATE_DUE).unwrap()).expect("the tick commits");
+        assert_eq!(pressure(&kernel, clockwork.farmer, sourced), 1);
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::ReducePressure {
+                source: PressureSourceRef::Commitment {
+                    subject: Ref::Existing(clockwork.farmer),
+                    key: clockwork.obligation,
+                },
+                target: Ref::Existing(clockwork.farmer),
+                by: PressureMagnitude(9),
+            }]),
+        );
+        assert_eq!(pressure(&kernel, clockwork.farmer, sourced), 0);
+        assert!(
+            !kernel.state.pressures.contains_key(&clockwork.farmer),
+            "an emptied target keeps no empty inner map"
+        );
+
+        // `pressure_total` and `attention_debt` are derived, never stored.
+        assert_eq!(pressure_total(&kernel.state, clockwork.farmer), 0);
+        assert_eq!(
+            attention_debt(&kernel.state, clockwork.treasury),
+            u64::MAX,
+            "a subject never attended carries the whole debt"
+        );
+
+        // Resolving an absent row changes nothing and is refused.
+        let snapshot = kernel.snapshot().unwrap();
+        let mismatches = reject_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::ResolvePressure {
+                source: PressureSourceRef::Commitment {
+                    subject: Ref::Existing(clockwork.farmer),
+                    key: clockwork.obligation,
+                },
+                target: Ref::Existing(clockwork.farmer),
+            }]),
+        );
+        assert_eq!(
+            mismatches,
+            vec![Mismatch::NoOperationEffect { operation: 0 }]
+        );
+    }
+
+    /// Soul falsification: `now` is in no scope preimage. A tick with nothing
+    /// due moves the clock and not one subject's digest.
+    #[test]
+    fn soul_a_clock_only_tick_moves_no_scope_digest() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, _, _) = clock_kernel(directory.path(), "ClockOnly");
+        let digests = |kernel: &WorldKernel| -> BTreeMap<SubjectId, ScopeDigest> {
+            derive_opportunities(&kernel.state)
+                .unwrap()
+                .into_iter()
+                .map(|opportunity| (opportunity.scope.subject_id, opportunity.scope_digest))
+                .collect()
+        };
+        let before = digests(&kernel);
+        let before_now = kernel.state.now;
+
+        // Short of every due date in the fixture.
+        tick(&mut kernel, 10).expect("the tick commits");
+        assert_eq!(kernel.state.now, FictionalMinutes(before_now.0 + 10));
+        assert!(kernel.state.pressures.is_empty());
+        assert_eq!(digests(&kernel), before, "the clock entered a scope digest");
+    }
+
+    /// Soul falsification: the authored scale target is written once by genesis
+    /// and by no Active lane. `AdmitPatch` resolves with no intent at all, so
+    /// there is no shape for an Active rewrite to take.
+    #[test]
+    fn soul_the_scale_intent_is_written_once_by_genesis() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation_with_intent(
+                CommandId::new(),
+                "WriteOnce",
+                intent(super::tests::COMMONS, 3, 1000),
+            ),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let active = activate(&mut kernel);
+        let authored = kernel.state.scale_intent.clone();
+        assert!(!authored.jurisdictions.is_empty());
+
+        let subject = active
+            .subjects
+            .iter()
+            .find(|subject| subject.kind == SubjectKind::Person)
+            .expect("a person")
+            .id;
+        let body = operations(vec![ComponentOp::CreateCommitment {
+            subject: Ref::Existing(subject),
+            counterparty: None,
+            kind: CommitmentKind::Goal,
+            due: FictionalMinutes(500),
+            period: None,
+            checks: Vec::new(),
+        }]);
+        // The Active resolver is handed no intent, so the resolved patch cannot
+        // carry one.
+        let CommandBody::AdmitPatch { patch, .. } = &body else {
+            panic!("the operations helper builds an admitted patch");
+        };
+        let resolved =
+            patch::resolve_patch(&kernel.state, CommandId::new(), patch, None).expect("resolves");
+        assert!(
+            resolved.scale_intent.is_none(),
+            "an Active patch resolved a scale intent"
+        );
+
+        submit_owner(&mut kernel, &active, body);
+        assert_eq!(kernel.state.scale_intent, authored);
+    }
+
+    /// Soul falsification: a discharge names one subject's own live key.
+    #[test]
+    fn soul_discharging_a_foreign_or_already_discharged_commitment_is_refused() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Discharge");
+
+        // The farmer's obligation, claimed by the reeve.
+        let snapshot = kernel.snapshot().unwrap();
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &snapshot,
+                operations(vec![ComponentOp::DischargeCommitment {
+                    subject: Ref::Existing(clockwork.reeve),
+                    key: clockwork.obligation,
+                }]),
+            ),
+            vec![Mismatch::UnknownCommitment { operation: 0 }]
+        );
+
+        // Discharged once, and then not again.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::DischargeCommitment {
+                subject: Ref::Existing(clockwork.farmer),
+                key: clockwork.obligation,
+            }]),
+        );
+        let snapshot = kernel.snapshot().unwrap();
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &snapshot,
+                operations(vec![ComponentOp::DischargeCommitment {
+                    subject: Ref::Existing(clockwork.farmer),
+                    key: clockwork.obligation,
+                }]),
+            ),
+            vec![Mismatch::UnknownCommitment { operation: 0 }]
+        );
+    }
+
+    /// Soul falsification: a routine re-arms by exactly one period per command,
+    /// whatever the span, and a non-routine cannot carry checks.
+    #[test]
+    fn soul_a_routine_re_arms_exactly_one_period_per_command() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Rearm");
+        let period = u64::from(
+            kernel.state.commitments[&clockwork.farmer][&clockwork.routine]
+                .period
+                .expect("a routine carries a period")
+                .minutes(),
+        );
+        let start = due(&kernel, clockwork.farmer, clockwork.routine);
+
+        // One roll per command, even for a span that clears many periods.
+        tick(&mut kernel, u32::try_from(period * 10).unwrap()).expect("the long tick commits");
+        assert_eq!(
+            due(&kernel, clockwork.farmer, clockwork.routine),
+            FictionalMinutes(start.0 + period)
+        );
+        tick(&mut kernel, 1).expect("the short tick commits");
+        assert_eq!(
+            due(&kernel, clockwork.farmer, clockwork.routine),
+            FictionalMinutes(start.0 + 2 * period)
+        );
+
+        // Checks belong to routines alone.
+        let snapshot = kernel.snapshot().unwrap();
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &snapshot,
+                operations(vec![ComponentOp::CreateCommitment {
+                    subject: Ref::Existing(clockwork.reeve),
+                    counterparty: None,
+                    kind: CommitmentKind::Goal,
+                    due: FictionalMinutes(100_000),
+                    period: None,
+                    checks: vec![PreconditionRef::Present {
+                        at: Ref::Existing(clockwork.yard),
+                    }],
+                }]),
+            ),
+            vec![Mismatch::ChecksOnNonRoutine { operation: 0 }]
+        );
+    }
+
+    /// Soul falsification: `derive_motion` is a function of state and span
+    /// alone, and the committed effect is exactly what `reduce` re-derives for
+    /// a tick that fulfils a routine, presses past-due promises, and presses a
+    /// failing dependency at once.
+    #[test]
+    fn soul_derive_motion_is_pure_and_the_tick_replays_exactly() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Pure");
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::CloseRoute {
+                route: Ref::Existing(clockwork.gate),
+            }]),
+        );
+
+        // The same state and the same span, twenty times: one answer.
+        let span = u32::try_from(LATE_DUE + 10).unwrap();
+        let to = FictionalMinutes(LATE_DUE + 10);
+        let first = clock::derive_motion(&kernel.state, to);
+        assert!(!first.fulfilled.is_empty(), "the routine is due");
+        assert!(
+            first.pressed.len() >= 2,
+            "past-due promises and the closed route all press"
+        );
+        for _ in 0..20 {
+            assert_eq!(clock::derive_motion(&kernel.state, to), first);
+        }
+
+        // And the commit carries exactly that motion.
+        let snapshot = kernel.snapshot().unwrap();
+        let ticking = command(
+            &snapshot,
+            CommandId::new(),
+            clock_caller(),
+            CommandBody::AdvanceTime {
+                minutes: minutes(span),
+            },
+        );
+        let expected = reduce(&kernel.state, &ticking).expect("the tick reduces");
+        assert_eq!(
+            expected,
+            WorldEffect::TimeAdvanced {
+                minutes: minutes(span),
+                to,
+                motion: first,
+            }
+        );
+        // Applying the re-derived effect to a copy reproduces the committed
+        // state exactly, which is the replay identity the journal relies on.
+        let mut replayed = kernel.state.clone();
+        apply_effect(&mut replayed, ticking.id, &clock_caller(), &expected)
+            .expect("the re-derived effect applies");
+        kernel
+            .submit(ticking, &AuthenticatedCaller::fixture(clock_caller()))
+            .expect("the tick commits");
+        assert_eq!(replayed.now, kernel.state.now);
+        assert_eq!(replayed.commitments, kernel.state.commitments);
+        assert_eq!(replayed.pressures, kernel.state.pressures);
+    }
 }

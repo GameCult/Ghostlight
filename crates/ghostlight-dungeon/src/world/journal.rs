@@ -2289,4 +2289,183 @@ mod custody_tests {
             Err(JournalError::Corrupt(_))
         ));
     }
+
+    /// A world with one routine, one past-due goal, and a commit chain that
+    /// reaches them: the fixture the two clock-forgery checks below need.
+    fn ticking_world(path: &std::path::Path) -> (WorldKernel, super::super::SubjectId, CommandId) {
+        use crate::world::tests::{activate, auth_principal, command, operations, owner};
+        use crate::world::{
+            AuthenticatedCaller, CallerId, CommandBody, CommitmentKind, ComponentOp,
+            FictionalMinutes, Ref, SystemCapability, TickMinutes,
+        };
+
+        let authenticated = auth_principal(owner());
+        let (mut kernel, _) = WorldKernel::create(
+            path,
+            crate::world::tests::creation(CommandId::new(), "Ticking"),
+            &authenticated,
+        )
+        .unwrap();
+        let active = activate(&mut kernel);
+        let subject = active.subjects.first().expect("a seeded subject").id;
+        let snapshot = kernel.snapshot().unwrap();
+        kernel
+            .submit(
+                command(
+                    &snapshot,
+                    CommandId::new(),
+                    CallerId::Principal(owner()),
+                    operations(vec![
+                        ComponentOp::CreateCommitment {
+                            subject: Ref::Existing(subject),
+                            counterparty: None,
+                            kind: CommitmentKind::Routine,
+                            due: FictionalMinutes(10),
+                            period: Some(TickMinutes::new(10).unwrap()),
+                            checks: Vec::new(),
+                        },
+                        ComponentOp::CreateCommitment {
+                            subject: Ref::Existing(subject),
+                            counterparty: None,
+                            kind: CommitmentKind::Goal,
+                            due: FictionalMinutes(20),
+                            period: None,
+                            checks: Vec::new(),
+                        },
+                    ]),
+                ),
+                &authenticated,
+            )
+            .unwrap();
+
+        let tick_id = CommandId::new();
+        let caller = CallerId::System(SystemCapability::Clock);
+        let snapshot = kernel.snapshot().unwrap();
+        kernel
+            .submit(
+                command(
+                    &snapshot,
+                    tick_id,
+                    caller.clone(),
+                    CommandBody::AdvanceTime {
+                        minutes: TickMinutes::new(30).unwrap(),
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .unwrap();
+        (kernel, subject, tick_id)
+    }
+
+    /// Soul falsification: the replay gate and the `apply_effect` gate are two
+    /// independent re-derivations. This one exercises the replay side over a
+    /// motion that actually moved commitments and pressure — a rewritten
+    /// magnitude, a rewritten roll, and a fabricated row each stop replaying.
+    #[test]
+    fn soul_a_forged_tick_motion_does_not_replay() {
+        use crate::world::{FictionalMinutes, PressureMagnitude, PressureSource};
+
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (kernel, subject, tick_id) = ticking_world(&path);
+        let WorldEffect::TimeAdvanced { motion, .. } = &kernel
+            .journal
+            .commits
+            .get(&tick_id)
+            .expect("the tick's commit")
+            .effect
+        else {
+            panic!("expected a time-advanced effect");
+        };
+        assert!(!motion.fulfilled.is_empty(), "the routine rolled");
+        assert!(!motion.pressed.is_empty(), "the past-due goal pressed");
+
+        let forge = |rewrite: fn(&mut crate::world::Motion)| {
+            let mut forged_head = kernel.state.clone();
+            let mut forged_commits = kernel.journal.commits.clone();
+            let forged = forged_commits.get_mut(&tick_id).unwrap();
+            let WorldEffect::TimeAdvanced { motion, .. } = &mut forged.effect else {
+                panic!("expected a time-advanced effect");
+            };
+            rewrite(motion);
+            forged.digest = commit_digest(forged).unwrap();
+            forged_head.last_commit_digest = Some(forged.digest.clone());
+            verify_history(&forged_head, &forged_commits)
+        };
+
+        let rewrites: [fn(&mut crate::world::Motion); 4] = [
+            // A magnitude the tick never wrote.
+            |motion| motion.pressed[0].magnitude = PressureMagnitude(42),
+            // A roll to a date the period does not reach.
+            |motion| motion.fulfilled[0].next_due = FictionalMinutes(9_999),
+            // A row for a source nothing derived.
+            |motion| {
+                let mut row = motion.pressed[0].clone();
+                row.source = PressureSource::Subject(row.target);
+                motion.pressed.push(row);
+            },
+            // A fulfilment dropped on the floor.
+            |motion| motion.fulfilled.clear(),
+        ];
+        for rewrite in rewrites {
+            assert!(
+                matches!(forge(rewrite), Err(JournalError::Corrupt(_))),
+                "a forged motion replayed"
+            );
+        }
+        let _ = subject;
+    }
+
+    /// Soul falsification, reported as a bounded gap: `TickMinutes` is
+    /// `#[serde(transparent)]`, so a hand-written store row can carry a period
+    /// of zero — a routine that re-arms on the same minute forever — and
+    /// `verify_state_shape` admits it, because the shape check reads
+    /// `period.is_some()` and never the span bound the constructor enforces.
+    /// The commit chain still refuses the row, so the gap is bounded to a store
+    /// whose commits were forged to match.
+    #[test]
+    fn soul_a_zero_period_passes_the_shape_check_and_is_caught_only_by_the_chain() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (kernel, subject, _) = ticking_world(&path);
+
+        // The forgery an in-crate caller cannot write: `TickMinutes::new`
+        // refuses zero, and the field is private, so the only door is serde.
+        assert!(crate::world::TickMinutes::new(0).is_none());
+        let zero: crate::world::TickMinutes =
+            rmp_serde::from_slice(&rmp_serde::to_vec(&0u32).unwrap()).expect("a transparent span");
+
+        let mut forged = kernel.state.clone();
+        let key = *forged.commitments[&subject]
+            .iter()
+            .find(|(_, commitment)| commitment.period.is_some())
+            .expect("the routine")
+            .0;
+        forged
+            .commitments
+            .get_mut(&subject)
+            .unwrap()
+            .get_mut(&key)
+            .unwrap()
+            .period = Some(zero);
+
+        // The gap: the shape check admits it.
+        assert!(
+            verify_state_shape(&forged).is_ok(),
+            "verify_state_shape gained a span bound"
+        );
+
+        // The bound: the commit chain does not.
+        let commits: Vec<CultCacheEnvelope> = kernel
+            .journal
+            .commits
+            .values()
+            .map(|commit| {
+                envelope(COMMIT_ROW, COMMIT_SCHEMA, commit.command.id().key(), commit).unwrap()
+            })
+            .collect();
+        let mut rows = commits;
+        rows.push(envelope(STATE_ROW, STATE_SCHEMA, forged.world_id.key(), &forged).unwrap());
+        assert!(matches!(recover(rows, None), Err(JournalError::Corrupt(_))));
+    }
 }
