@@ -8126,3 +8126,621 @@ mod knowledge_tests {
         );
     }
 }
+
+/// Soul's pass-6 falsification set. Each test names the claim it attacks and,
+/// where the landed behaviour differs from the specified one, pins the actual
+/// behaviour so the difference is visible rather than assumed.
+#[cfg(test)]
+mod soul_knowledge_tests {
+    use super::tests::{
+        FLOOD_STATEMENT, Speech, affordance_named, auth_principal, command, creation, operations,
+        opportunity_for, owner, speech_world, submit_owner,
+    };
+    use super::*;
+    use std::path::Path;
+
+    fn speech_kernel(path: &Path, title: &str) -> (WorldKernel, Speech, WorldSnapshot) {
+        let mut kernel = WorldKernel::create(
+            path.join("world.cc"),
+            creation(CommandId::new(), title),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let (speech, active) = speech_world(&mut kernel);
+        (kernel, speech, active)
+    }
+
+    fn say(affordance: AffordanceId, bindings: Vec<RoleBinding>, text: &str) -> DecisionInvocation {
+        DecisionInvocation {
+            affordance,
+            bindings,
+            proposed: Vec::new(),
+            speech: Some(Statement::new(text).unwrap()),
+        }
+    }
+
+    fn binding(role: &str, target: Target) -> RoleBinding {
+        RoleBinding {
+            role: Role(role.into()),
+            target,
+        }
+    }
+
+    fn utter(
+        kernel: &mut WorldKernel,
+        snapshot: &WorldSnapshot,
+        actor: SubjectId,
+        invocation: DecisionInvocation,
+    ) -> Result<SubmitReceipt, KernelError> {
+        let opportunity = opportunity_for(snapshot, actor);
+        let caller = CallerId::Controller(opportunity.controller_id);
+        kernel.submit(
+            command(
+                snapshot,
+                CommandId::new(),
+                caller.clone(),
+                CommandBody::ExerciseDecision {
+                    opportunity,
+                    invocation,
+                },
+            ),
+            &AuthenticatedCaller::fixture(caller),
+        )
+    }
+
+    fn knows(kernel: &WorldKernel, subject: SubjectId, fact: EntityId) -> Option<Knowledge> {
+        kernel
+            .state
+            .knowledge
+            .get(&subject)
+            .and_then(|held| held.get(&fact))
+            .copied()
+    }
+
+    fn digest_of(kernel: &WorldKernel, subject_id: SubjectId) -> ScopeDigest {
+        scope_digest(&kernel.state, DecisionScope { subject_id }).unwrap()
+    }
+
+    fn minted_claim(kernel: &WorldKernel) -> EntityId {
+        kernel
+            .state
+            .events
+            .last()
+            .expect("the committed event")
+            .speech
+            .expect("a speech act names its claim")
+    }
+
+    /// A channel's controller is folded into `audience` itself rather than only
+    /// into the `CanBroadcast` check, so it is a recipient of every telling on
+    /// its own channel and not merely a permitted speaker. A controller standing
+    /// outside its channel's reach therefore learns what is broadcast there.
+    ///
+    /// This test does not endorse that reach; it pins it, because the widening
+    /// is a knowledge path the declared reach does not describe.
+    #[test]
+    fn soul_a_channel_controller_hears_what_it_is_out_of_reach_of() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "ControllerHears");
+        // The horn now reaches exactly one subject. The speaker controls it and
+        // is not in that set.
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::SetReach {
+                channel: Ref::Existing(speech.horn),
+                reach: ReachRef::Subjects(BTreeSet::from([Ref::Existing(speech.listener)])),
+            }]),
+        );
+        let active = kernel.snapshot().unwrap();
+        assert_eq!(
+            kernel.state.channels[&speech.horn].reach,
+            Reach::Subjects(BTreeSet::from([speech.listener]))
+        );
+
+        utter(
+            &mut kernel,
+            &active,
+            speech.listener,
+            say(
+                speech.proclaim,
+                vec![binding("channel", Target::Entity(speech.horn))],
+                "The horn is mine tonight.",
+            ),
+        )
+        .expect("a subject inside the reach may broadcast");
+        let claim = minted_claim(&kernel);
+
+        // The declared reach names the listener alone, and the listener spoke,
+        // so the declared fan-out is empty. The controller learns it anyway.
+        assert_eq!(
+            knows(&kernel, speech.speaker, claim),
+            Some(Knowledge {
+                confidence: Confidence::Believed,
+                source: KnowledgeSource::Told {
+                    by: speech.listener,
+                    via: Some(speech.horn),
+                },
+            }),
+            "the controller is a recipient, not only a permitted speaker"
+        );
+        assert_eq!(knows(&kernel, speech.bystander, claim), None);
+        assert_eq!(knows(&kernel, speech.stranger, claim), None);
+        assert_eq!(knows(&kernel, speech.listener, claim), None);
+    }
+
+    /// Every speech precondition fails at `exercise`, before the band draw and
+    /// before the speech lowering, so a refused utterance mints no claim and
+    /// leaves the whole committed state byte-identical. Nothing here reaches
+    /// replay to be caught later.
+    #[test]
+    fn soul_a_refused_utterance_dies_at_the_gate_and_allocates_nothing() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "GateNotReplay");
+        let speak = affordance_named(&active, "speak");
+        let before = kernel.state.clone();
+
+        let cases: Vec<(SubjectId, DecisionInvocation, Vec<ActionMismatch>)> = vec![
+            // Unplaced: no co-location audience at all.
+            (
+                speech.stranger,
+                say(speak, Vec::new(), "Anyone?"),
+                vec![ActionMismatch::NoAudience { precondition: 0 }],
+            ),
+            // Addressed at a subject one containment level down.
+            (
+                speech.speaker,
+                say(
+                    speech.whisper,
+                    vec![binding("target", Target::Subject(speech.bystander))],
+                    "Down there.",
+                ),
+                vec![ActionMismatch::CannotReach { precondition: 0 }],
+            ),
+            // `recant` requires `Knows { at_least: Certain }` of the bound fact.
+            // Its unproposed slot names itself beside the precondition; the
+            // point is that the complete set lands at the gate, in one pass.
+            (
+                speech.speaker,
+                DecisionInvocation {
+                    affordance: speech.recant,
+                    bindings: vec![binding("fact", Target::Entity(speech.flood))],
+                    proposed: Vec::new(),
+                    speech: None,
+                },
+                vec![
+                    ActionMismatch::SlotNotProposed { slot: 0 },
+                    ActionMismatch::FactUnknown { precondition: 0 },
+                ],
+            ),
+        ];
+
+        for (actor, invocation, expected) in cases {
+            let error = utter(&mut kernel, &active, actor, invocation).unwrap_err();
+            let KernelError::ActionRejected(mismatches) = error else {
+                panic!("expected an action rejection, got {error:?}");
+            };
+            assert_eq!(mismatches, expected);
+            // No claim, no entity row, no event, no revision: the gate ran
+            // before anything was drawn or lowered.
+            assert_eq!(kernel.state, before);
+        }
+    }
+
+    /// Fan-out is the sole way knowledge enters another subject from speech, and
+    /// it is not carried by the effect. A forged `DecisionExercised` that widens
+    /// the audience, appends a second telling, or tells a foreign fact is refused
+    /// by `apply_effect` itself, so replay is never the first reader to notice.
+    #[test]
+    fn soul_a_forged_wider_audience_does_not_apply() {
+        let directory = tempfile::tempdir().unwrap();
+        let (kernel, speech, active) = speech_kernel(directory.path(), "WiderAudience");
+        let command_id = CommandId::new();
+        let opportunity = opportunity_for(&active, speech.speaker);
+        let caller = CallerId::Controller(opportunity.controller_id);
+        let invocation = say(
+            speech.whisper,
+            vec![binding("target", Target::Subject(speech.listener))],
+            "Only the hall.",
+        );
+        let granted = require_granted(&kernel.state, &opportunity, invocation.affordance).unwrap();
+        let honest = action::exercise(
+            &kernel.state,
+            command_id,
+            &opportunity,
+            &granted,
+            &invocation,
+        )
+        .expect("the honest event derives");
+        let fact = honest.speech.expect("the honest claim");
+        assert_eq!(
+            honest.effects[1],
+            ResolvedOp::Communicate {
+                speaker: speech.speaker,
+                fact,
+                to: Audience::Colocated,
+            }
+        );
+
+        // Widened to the horn, which covers the yard through `covers_place`.
+        let mut widened = honest.clone();
+        widened.effects[1] = ResolvedOp::Communicate {
+            speaker: speech.speaker,
+            fact,
+            to: Audience::Channel(speech.horn),
+        };
+        // A second telling appended to the same event.
+        let mut doubled = honest.clone();
+        doubled.effects.push(ResolvedOp::Communicate {
+            speaker: speech.speaker,
+            fact: speech.flood,
+            to: Audience::Colocated,
+        });
+        // A telling of a fact this act did not mint.
+        let mut foreign = honest.clone();
+        foreign.effects[1] = ResolvedOp::Communicate {
+            speaker: speech.speaker,
+            fact: speech.flood,
+            to: Audience::Colocated,
+        };
+
+        for forged in [widened, doubled, foreign] {
+            let mut candidate = kernel.state.clone();
+            let error = apply_effect(
+                &mut candidate,
+                command_id,
+                &caller,
+                &WorldEffect::DecisionExercised {
+                    opportunity: opportunity.clone(),
+                    invocation: invocation.clone(),
+                    event: forged,
+                },
+            )
+            .unwrap_err();
+            assert!(matches!(error, KernelError::Invariant(_)));
+            assert_eq!(candidate, kernel.state);
+        }
+    }
+
+    /// A speech act that lands nothing moves no digest at all, the speaker's own
+    /// included. `AssertClaim` writes `entities` and `facts`, and neither is a
+    /// scope component, so an in-flight proposal held by anyone in the world
+    /// survives an utterance nobody heard.
+    #[test]
+    fn soul_speech_that_lands_nothing_moves_no_digest_including_the_speakers() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "NoDigestMove");
+        let speak = affordance_named(&active, "speak");
+        let everyone = [
+            speech.speaker,
+            speech.listener,
+            speech.bystander,
+            speech.stranger,
+        ];
+        let before: Vec<ScopeDigest> = everyone
+            .iter()
+            .map(|subject| digest_of(&kernel, *subject))
+            .collect();
+        let facts_before = kernel.state.facts.len();
+
+        // The bystander stands alone in the yard.
+        utter(
+            &mut kernel,
+            &active,
+            speech.bystander,
+            say(speak, Vec::new(), "Nobody is here."),
+        )
+        .expect("speaking into an empty room commits");
+
+        assert_eq!(kernel.state.facts.len(), facts_before + 1);
+        assert_eq!(kernel.state.events.len(), 1);
+        assert!(kernel.state.knowledge.is_empty());
+        for (subject, digest) in everyone.iter().zip(before) {
+            assert_eq!(
+                digest_of(&kernel, *subject),
+                digest,
+                "an utterance nobody heard moved a scope digest"
+            );
+        }
+    }
+
+    /// The resolver does not model a `Communicate`'s fan-out, so a same-patch
+    /// telling followed by a `Forget` of what that telling would have landed is
+    /// refused at resolve although apply would accept it. The asymmetry is
+    /// fail-closed, and it does not refuse the order that must work: forgetting
+    /// first and being told again in the same patch commits, and the telling is
+    /// what the subject ends up holding.
+    #[test]
+    fn soul_a_same_patch_telling_then_forget_fails_closed_only() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "SamePatchOrder");
+        let tell = ComponentOp::Communicate {
+            speaker: Ref::Existing(speech.speaker),
+            fact: Ref::Existing(speech.flood),
+            to: AudienceRef::Colocated,
+        };
+        let forget = ComponentOp::Forget {
+            subject: Ref::Existing(speech.listener),
+            fact: Ref::Existing(speech.flood),
+        };
+
+        let error = kernel
+            .submit(
+                command(
+                    &active,
+                    CommandId::new(),
+                    CallerId::Principal(owner()),
+                    operations(vec![tell.clone(), forget.clone()]),
+                ),
+                &auth_principal(owner()),
+            )
+            .unwrap_err();
+        let KernelError::PatchRejected(mismatches) = error else {
+            panic!("expected a rejected patch, got {error:?}");
+        };
+        assert_eq!(
+            mismatches,
+            vec![Mismatch::NoOperationEffect { operation: 1 }]
+        );
+
+        // The legitimate order. The listener holds the fact first, forgets it,
+        // and the telling in the same patch lands it again as a telling, which
+        // is what the committed state carries.
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::AcquireKnowledge {
+                subject: Ref::Existing(speech.listener),
+                fact: Ref::Existing(speech.flood),
+                source: AuthoredSource::Witnessed,
+                confidence: Confidence::Certain,
+            }]),
+        );
+        let active = kernel.snapshot().unwrap();
+        submit_owner(&mut kernel, &active, operations(vec![forget, tell]));
+        assert_eq!(
+            knows(&kernel, speech.listener, speech.flood),
+            Some(Knowledge {
+                confidence: Confidence::Believed,
+                source: KnowledgeSource::Told {
+                    by: speech.speaker,
+                    via: None,
+                },
+            })
+        );
+    }
+
+    /// `verify_state_shape` checks the forward speech direction only: an event's
+    /// claim is asserted by the acting subject and named by no other event. The
+    /// reverse, that every claim is named by some event, is deliberately absent,
+    /// because a world may declare a claim in Draft with no event behind it.
+    /// That gap is not a hole: active admission refuses every declaration, so
+    /// `AssertClaim` is the only way a claim enters an active world and it is
+    /// synthesized with its event.
+    #[test]
+    fn soul_an_orphan_claim_is_a_draft_shape_and_unreachable_in_active() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "OrphanClaim");
+        // The Draft-declared fact is an orphan by construction: no event names
+        // it. Reopening runs the shape verifier over the replayed state.
+        assert!(kernel.state.facts.contains_key(&speech.flood));
+        assert!(
+            kernel
+                .state
+                .events
+                .iter()
+                .all(|event| event.speech.is_none())
+        );
+        let world_id = kernel.state.world_id;
+
+        let before = kernel.state.clone();
+        let error = kernel
+            .submit(
+                command(
+                    &active,
+                    CommandId::new(),
+                    CallerId::Principal(owner()),
+                    CommandBody::AdmitPatch {
+                        answers: None,
+                        patch: WorldPatch {
+                            declarations: vec![Declaration::Fact(FactDeclaration {
+                                handle: DraftHandle::new("rumour"),
+                                label: "a rumour".into(),
+                                statement: Statement::new("The gate is unguarded.").unwrap(),
+                                standing: FactStandingRef::Claimed {
+                                    by: Ref::Existing(speech.speaker),
+                                },
+                            })],
+                            operations: Vec::new(),
+                            evidence: Vec::new(),
+                        },
+                    },
+                ),
+                &auth_principal(owner()),
+            )
+            .unwrap_err();
+        assert!(
+            matches!(
+                error,
+                KernelError::WrongPhase {
+                    expected: WorldPhase::Draft,
+                    actual: WorldPhase::Active,
+                }
+            ),
+            "an active world admitted a declaration: {error:?}"
+        );
+        assert_eq!(kernel.state, before);
+        drop(kernel);
+        let replayed = WorldKernel::open(&path, world_id).expect("the orphan store is healthy");
+        assert_eq!(replayed.state.facts, before.facts);
+    }
+
+    /// Replay equality across every new arm, twice, with no RNG and no clock in
+    /// any of them: a speech act, a telling, an authored acquisition, a forget,
+    /// a reach change, and a controller change all reproduce byte-identically
+    /// from the journal, and reopening again reproduces the same state.
+    #[test]
+    fn soul_replay_is_exact_across_every_new_arm() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (world_id, expected) = {
+            let (mut kernel, speech, active) = speech_kernel(directory.path(), "ReplayArms");
+            utter(
+                &mut kernel,
+                &active,
+                speech.speaker,
+                say(
+                    speech.proclaim,
+                    vec![binding("channel", Target::Entity(speech.horn))],
+                    "The hinge is flooding.",
+                ),
+            )
+            .expect("the proclamation commits");
+            let active = kernel.snapshot().unwrap();
+            submit_owner(
+                &mut kernel,
+                &active,
+                operations(vec![
+                    ComponentOp::AcquireKnowledge {
+                        subject: Ref::Existing(speech.stranger),
+                        fact: Ref::Existing(speech.flood),
+                        source: AuthoredSource::Evidenced,
+                        confidence: Confidence::Certain,
+                    },
+                    ComponentOp::Communicate {
+                        speaker: Ref::Existing(speech.speaker),
+                        fact: Ref::Existing(speech.flood),
+                        to: AudienceRef::Colocated,
+                    },
+                    ComponentOp::SetController {
+                        channel: Ref::Existing(speech.horn),
+                        controller: Some(Ref::Existing(speech.listener)),
+                    },
+                    ComponentOp::SetReach {
+                        channel: Ref::Existing(speech.horn),
+                        reach: ReachRef::Place(Ref::Existing(speech.yard)),
+                    },
+                ]),
+            );
+            let active = kernel.snapshot().unwrap();
+            submit_owner(
+                &mut kernel,
+                &active,
+                operations(vec![ComponentOp::Forget {
+                    subject: Ref::Existing(speech.stranger),
+                    fact: Ref::Existing(speech.flood),
+                }]),
+            );
+            assert!(!kernel.state.knowledge.is_empty());
+            assert!(!kernel.state.facts.is_empty());
+            (kernel.state.world_id, kernel.state.clone())
+        };
+
+        for _ in 0..2 {
+            let replayed = WorldKernel::open(&path, world_id).expect("the store replays");
+            assert_eq!(replayed.state.facts, expected.facts);
+            assert_eq!(replayed.state.channels, expected.channels);
+            assert_eq!(replayed.state.knowledge, expected.knowledge);
+            assert_eq!(replayed.state.entities, expected.entities);
+            assert_eq!(replayed.state.events, expected.events);
+            assert_eq!(replayed.state, expected);
+        }
+    }
+
+    /// The utterance does not have exactly one home in `WorldState`. It is the
+    /// minted claim's statement in `facts`, and it is also stored a second time
+    /// inside the committed event's own `AssertClaim` effect. Those two are the
+    /// whole of it, and neither reaches a subject-facing surface, but the
+    /// "one home" claim is false as written.
+    #[test]
+    fn soul_the_utterance_is_stored_in_facts_and_in_the_committed_effect() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "OneHome");
+        let speak = affordance_named(&active, "speak");
+        let text = "A statement that appears nowhere else.";
+        utter(
+            &mut kernel,
+            &active,
+            speech.speaker,
+            say(speak, Vec::new(), text),
+        )
+        .expect("the kernel speak commits");
+        let claim = minted_claim(&kernel);
+
+        assert_eq!(kernel.state.facts[&claim].statement.as_str(), text);
+        assert_eq!(
+            kernel.state.entities[&claim].label, CLAIM_LABEL,
+            "the label is a name, not a transcript"
+        );
+        // The event no longer embeds the invocation, and its `speech` field is
+        // the fact id. The bytes still appear in the event, inside the committed
+        // `AssertClaim` effect.
+        let event = kernel.state.events.last().unwrap();
+        assert_eq!(event.speech, Some(claim));
+        assert_eq!(
+            event.effects[0],
+            ResolvedOp::AssertClaim {
+                fact: claim,
+                statement: Statement::new(text).unwrap(),
+                by: speech.speaker,
+            },
+            "the committed event stores the statement a second time"
+        );
+        // Those two are the whole of it: strip `facts` and `events` and the
+        // rest of the state is silent.
+        let mut stripped = kernel.state.clone();
+        stripped.facts.clear();
+        stripped.events.clear();
+        let encoded = rmp_serde::to_vec_named(&stripped).unwrap();
+        assert!(
+            !encoded
+                .windows(text.len())
+                .any(|window| window == text.as_bytes())
+        );
+        // The statement declared in Draft is untouched by any of it.
+        assert_eq!(
+            kernel.state.facts[&speech.flood].statement.as_str(),
+            FLOOD_STATEMENT
+        );
+    }
+
+    /// `operator_log` is unscoped by construction: it renders every committed
+    /// act's utterance regardless of who holds knowledge of it. That is correct
+    /// for the human operator's story feed and is exactly why it must never
+    /// become reachable from a controller lane. `ControllerRunner` owns a
+    /// `WorldMailbox`, and `WorldMailbox::operator_log` is `pub(crate)`, so the
+    /// separation is a convention about who calls it, not a type boundary.
+    #[test]
+    fn soul_the_operator_log_is_unscoped_and_must_stay_owner_only() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "OperatorLog");
+        let text = "Nobody in this room but me.";
+        utter(
+            &mut kernel,
+            &active,
+            speech.bystander,
+            say(affordance_named(&active, "speak"), Vec::new(), text),
+        )
+        .expect("speaking alone in the yard commits");
+
+        // Nobody holds it.
+        assert!(kernel.state.knowledge.is_empty());
+        // The operator reads it anyway, with the speaker resolved by label.
+        let log = operator_log(&kernel.state).unwrap();
+        assert_eq!(
+            log,
+            vec![OperatorEvent {
+                revision: kernel.state.revision,
+                speaker: speech.bystander,
+                speaker_label: "The Yard Bystander".into(),
+                speech: Some(Statement::new(text).unwrap()),
+            }]
+        );
+        // And no subject snapshot carries it.
+        for subject in kernel.snapshot().unwrap().subjects {
+            assert!(subject.knowledge.is_empty());
+        }
+    }
+}
