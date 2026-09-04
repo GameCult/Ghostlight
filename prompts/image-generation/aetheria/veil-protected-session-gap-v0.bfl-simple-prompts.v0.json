@@ -1,0 +1,76 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "veil-protected-session-gap-v0.bfl-simple-v0",
+  "fixture_id": "veil-protected-session-gap-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Moody illustrated science-fiction workplace noir, ink-wash shadows, restrained teal cream amber and steel-blue palette, expressive humane faces, precise readable industrial objects, cinematic square composition, purely pictorial interface symbols.",
+  "prompts": [
+    {
+      "id": "01_stillwater_establishing",
+      "prompt": "Wide crescent-shaped corporate clinic inside a rotating transfer habitat: six cream recovery-room doors, carpeted waiting bay, bright white privacy arc across the floor, curved glass entry doors, teal light strips, staff alcove, gray service doorway, compact brown-skinned shaved-headed worker in pale gray uniform resetting a linen cart."
+    },
+    {
+      "id": "02_room_c_reset",
+      "prompt": "Small rectangular neural-care room: padded contact couch and segmented crown, precise leaf-fold blanket, mineral-water cup, scent-wafer slot, teal wall light; compact brown-skinned shaved-headed hospitality worker in pale gray wrap uniform wipes the couch, square bruise behind her left ear."
+    },
+    {
+      "id": "03_split_records",
+      "prompt": "Narrow gray service corridor behind clinic rooms: exposed ducts and cable trays, waist-high event counter with four amber pulse marks, red interlock symbol and shrinking white ring; older stocky technician in orange-blue coveralls works beside a black filter case while a shaved-headed worker holds a thin route foil."
+    },
+    {
+      "id": "04_privacy_line",
+      "prompt": "Clinic authority tableau divided by a bright white floor arc: cleaner with linen cart, polished pale clinician in cream tunic and tall braided coworker on the room side; dark-skinned silver-curled auditor in navy jacket waits on the public side holding a transparent seal tray."
+    },
+    {
+      "id": "05_routine_choice",
+      "prompt": "Worker at linen cart chooses among four physical levers: blanket seam for a route foil, service doorway with technician and counter printer, braided coworker holding two work slates, or cream-clad clinic lead extending a hand for the receipt; six doors and white privacy arc remain visible."
+    },
+    {
+      "id": "06_auditor_arrival",
+      "prompt": "Silver-curled auditor in navy jacket enters curved glass doors and stops beyond the white floor arc; cream-clad clinician meets her, shaved-headed cleaner waits by Room C, braided coworker carries extra towels, older technician watches from gray service doorway."
+    },
+    {
+      "id": "07_clean_shell",
+      "prompt": "Transparent seal tray holds one neat green-marked disposition at the white privacy arc; polished cream-clad clinician gestures toward six closed treatment rooms, silver-curled auditor reads twice, cleaner with a square bruise watches beside a linen cart."
+    },
+    {
+      "id": "08_audit_response",
+      "prompt": "Choice frame at clinic privacy arc: cleaner stands between a seal tray with one green disposition and two open narrow slots, Room C, older technician waiting through the service doorway, and cream-clad clinic lead guarding a shrinking purge control."
+    },
+    {
+      "id": "09_purge_order",
+      "prompt": "Close service-doorway alarm beat: waist-high counter shows four amber pulse marks, one red interlock and a bright white ring contracting toward zero; older technician reads it, cleaner watches, clinic lead reaches for purge control, auditor holds seal tray beyond floor arc."
+    },
+    {
+      "id": "10_purge_choice",
+      "prompt": "Four-affordance purge scene: technician credential near event counter, cleaner hand near metal cart rail, auditor ready to seal a limited hold, clinic lead guarding Room C control; shrinking white ring cuts through soft teal clinic lighting."
+    },
+    {
+      "id": "11_disclosure_threshold",
+      "prompt": "Diagonal wide view of final disclosure threshold: white floor arc divides cleaner and clinic lead from auditor with clear seal tray and open record slots; technician holds black filter case, braided coworker carries two slates, Room C event counter remains visible through the service doorway."
+    },
+    {
+      "id": "12_raw_disclosure_end",
+      "prompt": "Raw-session aftermath at privacy arc: optical cable joins Room C service port to auditor's clear tray, cleaner stands alone with square bruise visible, clinic lead holds green disposition, amber machine marks interrupt the soothing teal clinic."
+    },
+    {
+      "id": "13_joined_records_end",
+      "prompt": "Auditor seals thin supervisor route foil and narrow four-pulse maintenance strip beside a contradictory green disposition; cleaner keeps hands outside the tray, technician stands with filter case, clinic lead faces the joined objects across the white arc."
+    },
+    {
+      "id": "14_public_witness_end",
+      "prompt": "Clinic waiting bay turns into a witness: cleaner speaks across white arc, braided coworker raises work slate, technician raises maintenance strip, pilgrims lower calming headsets, cream-clad clinic lead stands by spotless rooms, soft-gray security waits behind curved doors."
+    },
+    {
+      "id": "15_worker_custody_end",
+      "prompt": "Quiet three-worker staff-alcove aftermath: brushed steel cabinets, towels, linen cart and gray service doorway; older technician opens a black filter case, braided coworker holds an active work slate, cleaner helps lift the case with visibly empty hands."
+    },
+    {
+      "id": "16_isolated_end",
+      "prompt": "Isolated staff-alcove aftermath: shaved-headed cleaner folds a cream blanket alone beside an inactive slate rack and leaves one corner sharply wrong while the spotless teal clinic and white privacy arc wait beyond."
+    }
+  ]
+}

@@ -1,0 +1,775 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "veil-protected-session-gap-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/aetheria/veil-protected-session-gap-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/veil-protected-session-gap-v0.branch-and-fold.v0.training.json",
+  "scene_id": "veil-protected-session-gap-v0.stillwater-six-review",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for the Stillwater Six protected-session disclosure fixture.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary clinic-reset labor, split record custody, the white clinical privacy line, the clean audit shell, the purge clock, four disclosure routes, and eight state-gated outcomes.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the transfer-clinic establishing view, Room C reset routine, route and hardware evidence, authority positions at the privacy line, the clean disposition, audit response, purge order, disclosure threshold, and each ending family. The white purge ring beginning to contract is a pivotal beat and receives its own replay screen.",
+    "prompting_rule": "Each base image prompt stands alone for a general image model. It restates the visible room geometry, materials, lighting, bodies, clothing, tools, and evidence. Prompt assembly includes visual refs only for named characters and groups visible in that frame. Continuity notes remain tooling constraints and are excluded from assembled prompts.",
+    "global_style_cue": "Style: moody illustrated science-fiction workplace noir, ink-wash shadows with restrained teal, cream, amber, and steel-blue color, precise readable industrial objects, humane facial expression, quiet corporate absurdity, cinematic composition designed for click-through interactive fiction, purely pictorial interface marks rendered as simple bars, rings, and symbols.",
+    "prompt_assembly_rule": "Assemble each generated prompt from global_style_cue, the scene base_image_prompt, visual refs only for visible named characters or groups, and triggered state_image_modifiers or global_branch_image_modifiers. Each base_image_prompt is independently complete and does not rely on previous images or private lore.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture returns to one clinic bay from multiple angles and uses sightlines, a legal floor boundary, object custody, and a service route as branch mechanics. A draft plan map defines those relationships for B-level replay planning.",
+      "future_scene_set_need": "Before high-consistency website rendering, build a plan view or simple 3D blockout for the Stillwater Six public bay, Room C, service spine, staff alcove, curved entry doors, white privacy arc, maintenance counter, and auditor position. Use camera-specific blockout renders as image-model geometry input."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "stillwater_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of Stillwater Six, a compact corporate alignment clinic built into one crescent of a rotating transfer habitat on an Enceladus pilgrimage route. Six cream recovery-room doors face a carpeted public waiting bay. A bright white arc crosses the floor as a clinical privacy boundary. Curved transparent entry doors show a dim transit concourse beyond. Brushed steel wall panels, teal calming light strips, a slow abstract wall display, towel shelves, drink cabinets, and a rolling linen cart make the clinic look soothing and heavily serviced. An open staff alcove occupies one end; a narrow gray service-spine doorway sits behind the recovery rooms. Esi Tan, a compact baseline-human hospitality worker in her early thirties with medium-brown skin, closely shaved black hair, pale gray wrap uniform, teal cleaning tab, and a rolling linen cart, resets Room C near the middle of the crescent.",
+        "visible_characters": [
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "beside the linen cart at Room C, working before the audit",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Stillwater Six is one compact crescent clinic bay. Six recovery-room doors face the public carpet. The white privacy arc lies between the rooms and curved entry doors. The staff alcove and service-spine doorway occupy opposite ends.",
+          "Room C is the third door from the staff alcove. Its service counter is reached from the narrow spine behind the room, not from the public bay."
+        ]
+      },
+      {
+        "visual_scene_id": "stillwater_room_c_reset",
+        "ink_anchor": "start",
+        "base_image_prompt": "Medium interior view of Recovery Room C in a corporate neural-care clinic. The small rectangular room contains a low padded neural-contact couch with a segmented crown resting above the head support, a cream blanket folded into a precise leaf shape, a side table with one cup of sweet mineral water, a small scent-wafer slot, soft teal wall light, and a sliding service panel on the back wall. Esi Tan, a compact baseline-human woman in her early thirties with medium-brown skin, closely shaved black hair, pale gray wrap uniform, teal cleaning tab, and a faint square contact-crown bruise behind her left ear, wipes the couch while holding the folded blanket against her hip. Her rolling cart waits in the open doorway, stacked with towels and cleaning bottles.",
+        "visible_characters": [
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "wiping the contact couch with one hand and holding the blanket with the other",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The contact crown is a usable therapeutic interface suspended over a padded couch, not a restraint chair.",
+          "The square bruise remains behind Esi's left ear in every later close frame."
+        ]
+      },
+      {
+        "visual_scene_id": "stillwater_split_records",
+        "ink_anchor": "routine_people",
+        "base_image_prompt": "Medium two-person view in the narrow gray service spine behind Recovery Room C. Exposed cable trays, ventilation ducts, filter housings, and numbered service panels replace the clinic's cream decorative surfaces. A waist-high NeuroSyn maintenance counter has a circular indicator made of four amber pulse marks, one red interlock symbol, and a shrinking white purge ring. Esi Tan, compact baseline-human hospitality worker with medium-brown skin, shaved black hair, pale gray wrap uniform, teal cleaning tab, square bruise behind her left ear, and a thin route foil in one hand, braces a black filter case. Jon Alis, a stocky baseline-human maintenance technician in his late fifties with light-brown skin, bald crown, gray side hair, heavy eyebrows, orange-and-blue coveralls, and a rectangular service credential, reseats a cartridge and studies the counter. The closed metal back of Room C fills one wall.",
+        "visible_characters": [
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "bracing Jon's filter case and holding her route receipt",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          },
+          {
+            "agent_id": "jon_alis",
+            "default_stance": "kneeling at the waist-high service counter with cartridge and credential",
+            "visual_ref": "visual_character_refs.characters.jon_alis"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The counter displays hardware event symbols only. It has no patient imagery or readable thought content.",
+          "The service spine is physically behind the recovery rooms and connects to the public bay through one staff doorway."
+        ]
+      },
+      {
+        "visual_scene_id": "stillwater_privacy_line",
+        "ink_anchor": "routine_authority",
+        "base_image_prompt": "Medium-wide staging view across the Stillwater Six public bay. A bright white arc crosses the carpet from wall to wall. On the clinic side stand Esi Tan with linen cart and thin route foil, Dr. Sel Varo in his forties with pale skin, swept silver-black hair, cream high-collared clinician tunic and soft dark shoes, and Deka Morn, a tall baseline-human hospitality worker in her forties with deep-brown skin, long dark braid, pale gray wrap uniform, yellow towel cord, and two work slates beside the open staff alcove. Beyond the arc near the curved transparent entry doors waits Kira Doss, a baseline-human insurer auditor in her mid-forties with dark skin, short silver curls, navy structured audit jacket, plain slate, and a transparent-lidded portable seal tray. Six recovery-room doors form a crescent behind the clinic staff; the service-spine doorway is visible at the far end.",
+        "visible_characters": [
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "beside cart on clinic side of privacy arc",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          },
+          {
+            "agent_id": "sel_varo",
+            "default_stance": "approaching Esi's cart with open professional posture",
+            "visual_ref": "visual_character_refs.characters.sel_varo"
+          },
+          {
+            "agent_id": "deka_morn",
+            "default_stance": "at staff alcove watching through cabinet reflection",
+            "visual_ref": "visual_character_refs.characters.deka_morn"
+          },
+          {
+            "agent_id": "kira_doss",
+            "default_stance": "waiting outside the white arc with seal tray",
+            "visual_ref": "visual_character_refs.characters.kira_doss"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Kira begins on the public side of the white arc. Sel, Esi, Deka, the rooms, cart, and service access begin on the clinic side.",
+          "The white arc is a floor marking and authority boundary, not a physical barrier."
+        ]
+      },
+      {
+        "visual_scene_id": "stillwater_routine_choice",
+        "ink_anchor": "routine_choice",
+        "base_image_prompt": "Choice tableau in the Stillwater Six clinic bay with four physical affordances readable at once. Esi Tan, compact medium-brown baseline-human hospitality worker with shaved black hair, pale gray wrap uniform, teal cleaning tab, and square bruise behind her left ear, stands beside a linen cart holding a thin route foil. The top blanket has a stitched hem large enough to hide the foil. Through the open service-spine doorway, Jon Alis in orange-and-blue maintenance coveralls works beside a black filter case and waist-high event counter. Deka Morn, tall deep-brown worker with long braid, matching pale gray uniform and yellow towel cord, holds two work slates at the staff alcove. Dr. Sel Varo, pale clinician-manager in cream tunic, approaches across the carpet with one hand extended for the receipt. Six room doors and the white floor arc remain visible.",
+        "visible_characters": [
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "at cart with route foil, able to choose linen, service spine, Deka, or Sel",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          },
+          {
+            "agent_id": "jon_alis",
+            "default_stance": "visible through service doorway at filter case",
+            "visual_ref": "visual_character_refs.characters.jon_alis"
+          },
+          {
+            "agent_id": "deka_morn",
+            "default_stance": "at staff alcove with two slates",
+            "visual_ref": "visual_character_refs.characters.deka_morn"
+          },
+          {
+            "agent_id": "sel_varo",
+            "default_stance": "approaching with hand extended",
+            "visual_ref": "visual_character_refs.characters.sel_varo"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "stillwater_auditor_arrival",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide clinic-bay view as Kira Doss enters through curved transparent doors. Kira is a dark-skinned baseline-human auditor in her mid-forties with short silver curls, navy structured jacket, plain slate, and transparent-lidded seal tray. She stops on the public side of a bright white floor arc. Dr. Sel Varo, pale man in a cream high-collared clinician tunic with swept silver-black hair, meets her from the clinic side. Esi Tan, compact medium-brown hospitality worker with shaved hair, pale gray wrap uniform, teal cleaning tab and rolling linen cart, stands near Room C. Deka Morn, tall deep-brown worker with long braid and two slates, works at the staff alcove. Jon Alis, stocky older technician in orange-and-blue coveralls, is visible through the service-spine doorway beside a black filter case. Cream rooms, brushed steel, teal lights, and the transit concourse frame the authority split.",
+        "visible_characters": [
+          {
+            "agent_id": "kira_doss",
+            "default_stance": "just inside entry doors on public side of arc",
+            "visual_ref": "visual_character_refs.characters.kira_doss"
+          },
+          {
+            "agent_id": "sel_varo",
+            "default_stance": "meeting Kira from clinic side",
+            "visual_ref": "visual_character_refs.characters.sel_varo"
+          },
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "near Room C with linen cart",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          },
+          {
+            "agent_id": "deka_morn",
+            "default_stance": "at staff alcove carrying extra work",
+            "visual_ref": "visual_character_refs.characters.deka_morn"
+          },
+          {
+            "agent_id": "jon_alis",
+            "default_stance": "through service doorway at filter case",
+            "visual_ref": "visual_character_refs.characters.jon_alis"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "route_receipt",
+            "modifier_prompt": "A straight thin shape presses under the stitched hem of the top clean blanket on Esi's cart."
+          },
+          {
+            "trigger": "counter_receipt",
+            "modifier_prompt": "A narrow maintenance print strip is tucked beneath the black filter-case handle beside Jon."
+          },
+          {
+            "trigger": "coworker_cover",
+            "modifier_prompt": "Deka carries two active work slates and an overfilled towel stack, visibly covering both rotas."
+          },
+          {
+            "trigger": "sel_control >= 3",
+            "modifier_prompt": "Sel holds Esi's archived route foil between two fingers beside the seal tray."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "stillwater_clean_shell",
+        "ink_anchor": "audit_shell",
+        "base_image_prompt": "Medium close staging at the white privacy arc in Stillwater Six. Kira Doss, dark-skinned auditor with short silver curls and navy structured jacket, holds a transparent-lidded seal tray containing one neat disposition foil marked by simple green bars and Sel's seal. Dr. Sel Varo, pale clinician-manager with swept silver-black hair and cream tunic, stands on the clinic side with a warm controlled smile and one palm open toward six closed recovery-room doors. Esi Tan, compact medium-brown worker with shaved hair, pale gray wrap uniform, teal cleaning tab, square bruise behind her left ear, and linen cart, watches from beside Room C. The white arc visibly separates Kira from the rooms and the service-spine doorway; the slow calming wall loop glows teal behind her.",
+        "visible_characters": [
+          {
+            "agent_id": "kira_doss",
+            "default_stance": "reading the clean disposition in her seal tray",
+            "visual_ref": "visual_character_refs.characters.kira_doss"
+          },
+          {
+            "agent_id": "sel_varo",
+            "default_stance": "open-palm reassurance on clinic side",
+            "visual_ref": "visual_character_refs.characters.sel_varo"
+          },
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "watching beside Room C and cart",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "stillwater_audit_response",
+        "ink_anchor": "audit_response_choice|audit_response_fold",
+        "base_image_prompt": "Medium-wide choice frame around the white privacy arc. Esi Tan, compact medium-brown hospitality worker with shaved black hair, pale gray wrap uniform, teal cleaning tab, square bruise behind her left ear and linen cart, stands between Room C and Kira's transparent-lidded seal tray. Kira Doss, dark-skinned auditor with short silver curls and navy jacket, has moved the tray closer to Esi's side while remaining beyond the arc. Dr. Sel Varo, pale silver-black-haired clinician in cream tunic, stands beside the Room C purge control. Through the open service doorway, Jon Alis, stocky older technician in orange-and-blue coveralls, waits by the black filter case and event counter. Sel's green-marked disposition foil rests in one tray slot; the other narrow slots are open. A cleaning cloth lies on Esi's cart.",
+        "visible_characters": [
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "between Room C, cart, and audit tray",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          },
+          {
+            "agent_id": "kira_doss",
+            "default_stance": "beyond arc with tray angled toward Esi",
+            "visual_ref": "visual_character_refs.characters.kira_doss"
+          },
+          {
+            "agent_id": "sel_varo",
+            "default_stance": "beside Room C purge control",
+            "visual_ref": "visual_character_refs.characters.sel_varo"
+          },
+          {
+            "agent_id": "jon_alis",
+            "default_stance": "through service doorway near counter",
+            "visual_ref": "visual_character_refs.characters.jon_alis"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "auditor_attention >= 3",
+            "modifier_prompt": "Kira places the transparent seal tray close to the white arc and angles her slate toward Esi."
+          },
+          {
+            "trigger": "privacy_intact >= 3",
+            "modifier_prompt": "Kira's slate displays four simple locked field symbols beside the still-sealed disposition."
+          },
+          {
+            "trigger": "sel_control <= 1",
+            "modifier_prompt": "Sel's open-palm clinician stance hardens into squared managerial posture aimed at Esi."
+          },
+          {
+            "trigger": "sel_control >= 3",
+            "modifier_prompt": "Sel keeps one hand immediately beside the shrinking white purge-ring control."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "stillwater_purge_order",
+        "ink_anchor": "purge_order",
+        "base_image_prompt": "Pivotal close-medium alarm beat in the service doorway behind Room C. A waist-high maintenance counter shows four amber pulse marks, one red interlock symbol, and a bright white ring contracting toward zero. Jon Alis, stocky baseline-human technician in his late fifties with light-brown skin, gray side hair, orange-and-blue coveralls, rectangular credential, and black filter case, reads the counter. Esi Tan, compact medium-brown worker with shaved hair, pale gray uniform, teal cleaning tab and square bruise behind her left ear, stands in the doorway facing the shrinking ring. Dr. Sel Varo, pale silver-black-haired clinician in cream tunic, reaches toward the public-side purge control. Kira Doss, dark-skinned auditor with short silver curls, navy jacket and seal tray, watches from beyond the white floor arc. Hard amber service light cuts through the clinic's teal calm.",
+        "visible_characters": [
+          {
+            "agent_id": "jon_alis",
+            "default_stance": "at counter reading shrinking ring",
+            "visual_ref": "visual_character_refs.characters.jon_alis"
+          },
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "in service doorway watching ring",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          },
+          {
+            "agent_id": "sel_varo",
+            "default_stance": "reaching toward purge control",
+            "visual_ref": "visual_character_refs.characters.sel_varo"
+          },
+          {
+            "agent_id": "kira_doss",
+            "default_stance": "beyond arc with tray raised",
+            "visual_ref": "visual_character_refs.characters.kira_doss"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "stillwater_purge_choice",
+        "ink_anchor": "purge_choice",
+        "base_image_prompt": "Four-affordance purge choice composition joining clinic bay and service spine. Esi Tan, compact medium-brown hospitality worker with shaved hair, pale gray wrap uniform, teal cleaning tab and square bruise behind her left ear, stands at the service doorway with one hand near her cart rail. Jon Alis, stocky older technician in orange-and-blue coveralls with a rectangular credential, faces the waist-high event counter and its shrinking white ring. Kira Doss, dark-skinned silver-curled auditor in navy jacket, holds a clear-lidded seal tray just beyond the white floor arc. Dr. Sel Varo, pale clinician in cream tunic, guards the Room C control. The frame makes four actions physically legible: Jon can press his credential to the counter, Esi can speak limits to Kira, Esi can let the ring close, or Esi can tap a code on the metal cart rail.",
+        "visible_characters": [
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "at service doorway with hand near cart rail",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          },
+          {
+            "agent_id": "jon_alis",
+            "default_stance": "credential ready beside counter",
+            "visual_ref": "visual_character_refs.characters.jon_alis"
+          },
+          {
+            "agent_id": "kira_doss",
+            "default_stance": "beyond arc holding seal tray",
+            "visual_ref": "visual_character_refs.characters.kira_doss"
+          },
+          {
+            "agent_id": "sel_varo",
+            "default_stance": "guarding Room C control",
+            "visual_ref": "visual_character_refs.characters.sel_varo"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "stillwater_disclosure_threshold",
+        "ink_anchor": "disclosure_threshold|final_choice",
+        "base_image_prompt": "Final disclosure threshold in the Stillwater Six public bay, seen diagonally from the staff alcove toward the curved entry doors. The bright white privacy arc divides the frame. Esi Tan, compact medium-brown worker with shaved black hair, pale gray wrap uniform, teal cleaning tab and square bruise behind her left ear, stands at the arc beside her linen cart. Kira Doss, dark-skinned auditor with short silver curls and navy jacket, holds a transparent seal tray containing Sel's neat disposition and open slots for narrow receipts. Dr. Sel Varo, pale silver-black-haired clinician in cream tunic, stands near Room C and its purge control. Jon Alis, stocky older technician in orange-and-blue coveralls, holds his black filter case at the open service doorway. Deka Morn, tall deep-brown hospitality worker with long braid, yellow towel cord and work slates, stands near the staff alcove. Six room doors, teal wall loop, waiting seats, drink cabinet, service-counter sightline, and entry doors remain readable.",
+        "visible_characters": [
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "at white arc deciding disclosure scope",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          },
+          {
+            "agent_id": "kira_doss",
+            "default_stance": "public side with seal tray",
+            "visual_ref": "visual_character_refs.characters.kira_doss"
+          },
+          {
+            "agent_id": "sel_varo",
+            "default_stance": "clinic side near Room C control",
+            "visual_ref": "visual_character_refs.characters.sel_varo"
+          },
+          {
+            "agent_id": "jon_alis",
+            "default_stance": "at service doorway with filter case",
+            "visual_ref": "visual_character_refs.characters.jon_alis"
+          },
+          {
+            "agent_id": "deka_morn",
+            "default_stance": "at staff alcove with work slates",
+            "visual_ref": "visual_character_refs.characters.deka_morn"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "buffer_window > 0",
+            "modifier_prompt": "The Room C service counter shows a bright white ring paused open around four amber pulse marks."
+          },
+          {
+            "trigger": "buffer_window <= 0",
+            "modifier_prompt": "The Room C service counter shows a closed white ring and cleared center while the hardware print strip remains a separate possible object."
+          },
+          {
+            "trigger": "route_receipt",
+            "modifier_prompt": "A thin supervisor route foil is visible in Esi's hand or sealed beside the disposition."
+          },
+          {
+            "trigger": "counter_receipt",
+            "modifier_prompt": "A narrow maintenance strip showing four amber marks and one red interlock symbol is visible beneath Jon's filter-case handle or in the seal tray."
+          },
+          {
+            "trigger": "coworker_cover",
+            "modifier_prompt": "Deka carries two active work slates and an overfilled towel stack, visibly paying for Esi's time."
+          },
+          {
+            "trigger": "public_witnesses >= 2",
+            "modifier_prompt": "Several waiting pilgrims in borrowed cream retreat robes and two gray-uniformed hospitality workers turn away from the calming wall loop to watch the white arc."
+          },
+          {
+            "trigger": "clinic_suspicion >= 4",
+            "modifier_prompt": "Two contract security workers in soft gray jackets appear behind the curved entry doors, hands visible and posture controlled."
+          },
+          {
+            "trigger": "jon_trust >= 2",
+            "modifier_prompt": "Jon holds the black filter case open beside Esi's cart, revealing an empty false-bottom compartment sized for narrow receipt strips."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "stillwater_ending_raw",
+        "ink_anchor": "ending_raw_proof|ending_raw_lost",
+        "base_image_prompt": "Raw-disclosure aftermath at the white privacy arc. Esi Tan, compact medium-brown hospitality worker with shaved black hair, pale gray uniform, teal cleaning tab and visible square bruise behind her left ear, stands alone on the clinic side. Kira Doss, dark-skinned silver-curled auditor in navy jacket, holds a transparent seal tray connected by a thin optical cable to the Room C service port. Dr. Sel Varo, pale silver-black-haired clinician in cream tunic, stands behind the closed Room C door beside a neat disposition foil. The clinic's teal wall loop is interrupted by amber service light; the white floor arc and Esi's physical distance from both officials remain prominent.",
+        "visible_characters": [
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "alone at arc after choosing raw disclosure",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          },
+          {
+            "agent_id": "kira_doss",
+            "default_stance": "holding cabled seal tray on public side",
+            "visual_ref": "visual_character_refs.characters.kira_doss"
+          },
+          {
+            "agent_id": "sel_varo",
+            "default_stance": "near Room C with disposition",
+            "visual_ref": "visual_character_refs.characters.sel_varo"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "stillwater_ending_join",
+        "ink_anchor": "ending_join_success|ending_join_thin",
+        "base_image_prompt": "Joined-record aftermath at the white privacy arc. Kira Doss, a dark-skinned baseline-human auditor with short silver curls and navy structured jacket, holds one transparent-lidded tray divided into three narrow record slots beside Sel's green-marked disposition. Esi Tan, compact medium-brown worker with shaved hair, pale gray wrap uniform, teal cleaning tab and square bruise behind her left ear, keeps both hands outside the tray. Jon Alis, stocky older technician with gray side hair and orange-and-blue coveralls, stands by the open service doorway holding a black filter case. Dr. Sel Varo, pale clinician in cream tunic, faces the tray from the clinic side. Six closed room doors and the white arc make the record separation visible.",
+        "visible_characters": [
+          {
+            "agent_id": "kira_doss",
+            "default_stance": "sealing separate records into one tray",
+            "visual_ref": "visual_character_refs.characters.kira_doss"
+          },
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "hands outside tray, privacy retained",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          },
+          {
+            "agent_id": "jon_alis",
+            "default_stance": "at service doorway with filter case",
+            "visual_ref": "visual_character_refs.characters.jon_alis"
+          },
+          {
+            "agent_id": "sel_varo",
+            "default_stance": "facing the joined evidence",
+            "visual_ref": "visual_character_refs.characters.sel_varo"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "stillwater_ending_public",
+        "ink_anchor": "ending_public_witness|ending_public_reframed",
+        "base_image_prompt": "Public-testimony aftermath in the Stillwater Six waiting bay. Esi Tan, compact medium-brown worker with shaved black hair, pale gray wrap uniform, teal cleaning tab and square bruise behind her left ear, stands across the white privacy arc facing the public seats. Deka Morn, tall deep-brown hospitality worker with long dark braid, matching pale gray uniform, yellow towel cord and two slates, stands behind her with an overfilled towel stack. Jon Alis, stocky older technician in orange-and-blue coveralls, holds a black filter case near the service doorway. Dr. Sel Varo, pale clinician in cream tunic, stands near Room C. Kira Doss, dark-skinned silver-curled auditor in navy jacket, records from beside her transparent seal tray. Waiting pilgrims in borrowed cream retreat robes lower simple calming headsets and turn toward the workers; curved entry doors frame soft-gray contract security outside.",
+        "visible_characters": [
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "across arc speaking toward public seats",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          },
+          {
+            "agent_id": "deka_morn",
+            "default_stance": "behind Esi with two slates and towels",
+            "visual_ref": "visual_character_refs.characters.deka_morn"
+          },
+          {
+            "agent_id": "jon_alis",
+            "default_stance": "holding maintenance strip near service door",
+            "visual_ref": "visual_character_refs.characters.jon_alis"
+          },
+          {
+            "agent_id": "sel_varo",
+            "default_stance": "near Room C preparing a response",
+            "visual_ref": "visual_character_refs.characters.sel_varo"
+          },
+          {
+            "agent_id": "kira_doss",
+            "default_stance": "recording beside seal tray",
+            "visual_ref": "visual_character_refs.characters.kira_doss"
+          },
+          {
+            "agent_id": "stillwater_waiting_public",
+            "default_stance": "pilgrims and hospitality workers turning toward the white arc",
+            "visual_ref": "visual_character_refs.groups.stillwater_waiting_public"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "coworker_cover",
+            "modifier_prompt": "Deka raises one active work slate above the overfilled towel stack and steps close behind Esi."
+          },
+          {
+            "trigger": "counter_receipt",
+            "modifier_prompt": "Jon raises a narrow maintenance strip marked by four amber bars and one red interlock symbol above the black filter case."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "stillwater_ending_mutual_aid",
+        "ink_anchor": "ending_mutual_aid",
+        "base_image_prompt": "Quiet three-worker custody aftermath in the Stillwater Six staff alcove after the auditor leaves. Brushed steel cabinets, towel shelves, two work slates, a rolling linen cart, and the open gray service-spine doorway fill the narrow space. Esi Tan, compact medium-brown hospitality worker with shaved black hair, pale gray wrap uniform, teal cleaning tab and square bruise behind her left ear, stands beside the cart. Jon Alis, stocky older technician with gray side hair, orange-and-blue coveralls and rectangular credential, holds open a black filter case with a shallow false-bottom compartment. Deka Morn, tall deep-brown hospitality worker with long braid, matching uniform and yellow towel cord, holds one work slate against her chest. The alcove opening frames an empty section of public bay and the bright white privacy arc.",
+        "visible_characters": [
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "beside cart, hands free of receipts",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          },
+          {
+            "agent_id": "jon_alis",
+            "default_stance": "holding open filter case",
+            "visual_ref": "visual_character_refs.characters.jon_alis"
+          },
+          {
+            "agent_id": "deka_morn",
+            "default_stance": "holding route foil behind work slate",
+            "visual_ref": "visual_character_refs.characters.deka_morn"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "counter_receipt",
+            "modifier_prompt": "Jon places a narrow maintenance strip marked by four amber bars and one red interlock into the black filter-case false bottom."
+          },
+          {
+            "trigger": "route_receipt",
+            "modifier_prompt": "Deka slides a thin supervisor route foil behind her active work slate."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "stillwater_ending_isolated",
+        "ink_anchor": "ending_isolated",
+        "base_image_prompt": "Quiet isolated aftermath in the Stillwater Six staff alcove. Brushed steel cabinets, towel shelves, an inactive work-slate rack, a rolling linen cart, and the open gray service-spine doorway fill the narrow space. Esi Tan, a compact baseline-human hospitality worker in her early thirties with medium-brown skin, closely shaved black hair, pale gray wrap uniform, teal cleaning tab and faint square bruise behind her left ear, folds a cream blanket alone and leaves one corner visibly misaligned. The alcove opening frames the spotless clinic bay, six closed doors, teal calming wall loop, and bright white privacy arc.",
+        "visible_characters": [
+          {
+            "agent_id": "esi_tan",
+            "default_stance": "alone at cart folding one deliberately imperfect blanket",
+            "visual_ref": "visual_character_refs.characters.esi_tan"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Jon and Deka are absent on this ending route; prompt assembly includes only Esi's visual ref.",
+          "The one misaligned blanket corner is the visible callback to Esi's final signal."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "keep_route_receipt_visual",
+        "trigger": "branch_label == keep_route_receipt",
+        "apply_to_visual_scene_ids": ["stillwater_routine_choice", "stillwater_auditor_arrival"],
+        "modifier_prompt": "Esi slides the thin route foil beneath the stitched hem of the top cream blanket while Sel watches her hand leave the linen."
+      },
+      {
+        "modifier_id": "keep_counter_receipt_visual",
+        "trigger": "branch_label == keep_counter_receipt",
+        "apply_to_visual_scene_ids": ["stillwater_routine_choice", "stillwater_split_records"],
+        "modifier_prompt": "Esi braces the black filter case while Jon prints a narrow strip marked by four amber bars and one red interlock symbol."
+      },
+      {
+        "modifier_id": "make_coworker_witness_visual",
+        "trigger": "branch_label == make_coworker_witness",
+        "apply_to_visual_scene_ids": ["stillwater_routine_choice", "stillwater_auditor_arrival"],
+        "modifier_prompt": "Deka accepts Esi's second active work slate and overfilled towel stack, meeting Esi's gaze with grave attention."
+      },
+      {
+        "modifier_id": "preserve_routine_cover_visual",
+        "trigger": "branch_label == preserve_routine_cover",
+        "apply_to_visual_scene_ids": ["stillwater_routine_choice", "stillwater_auditor_arrival"],
+        "modifier_prompt": "Sel holds the archived route foil while Esi aligns the mineral-water cup precisely with the table edge."
+      },
+      {
+        "modifier_id": "submit_route_receipt_visual",
+        "trigger": "branch_label == submit_route_receipt",
+        "apply_to_visual_scene_ids": ["stillwater_audit_response", "stillwater_disclosure_threshold"],
+        "modifier_prompt": "The thin route foil lies sealed beside Sel's disposition while Esi steps back with empty hands."
+      },
+      {
+        "modifier_id": "name_counter_anomaly_visual",
+        "trigger": "branch_label == name_counter_anomaly",
+        "apply_to_visual_scene_ids": ["stillwater_audit_response"],
+        "modifier_prompt": "Jon holds the narrow maintenance strip upright from the service doorway; Kira compares its four amber bars and red symbol to the green disposition."
+      },
+      {
+        "modifier_id": "expose_audit_boundary_visual",
+        "trigger": "branch_label == expose_audit_boundary",
+        "apply_to_visual_scene_ids": ["stillwater_audit_response"],
+        "modifier_prompt": "Kira's slate shows four locked field symbols while her free hand traces the bright white privacy arc on the floor."
+      },
+      {
+        "modifier_id": "wait_under_clean_shell_visual",
+        "trigger": "branch_label == wait_under_clean_shell",
+        "apply_to_visual_scene_ids": ["stillwater_audit_response"],
+        "modifier_prompt": "Esi wipes an already clean side table while Sel leans comfortably toward Kira and the service counter's white ring grows thinner."
+      },
+      {
+        "modifier_id": "freeze_with_maintenance_visual",
+        "trigger": "branch_label == freeze_with_maintenance",
+        "apply_to_visual_scene_ids": ["stillwater_purge_choice", "stillwater_disclosure_threshold"],
+        "modifier_prompt": "Jon presses his rectangular credential to the event counter; the white ring stops open and an amber credential mark appears beside it."
+      },
+      {
+        "modifier_id": "patient_limited_hold_visual",
+        "trigger": "branch_label == patient_limited_hold",
+        "apply_to_visual_scene_ids": ["stillwater_purge_choice", "stillwater_disclosure_threshold"],
+        "modifier_prompt": "Esi raises one open palm toward Kira; Kira repeats the limit into her slate while the white ring pauses and the clear seal tray remains closed."
+      },
+      {
+        "modifier_id": "permit_private_purge_visual",
+        "trigger": "branch_label == permit_private_purge",
+        "apply_to_visual_scene_ids": ["stillwater_purge_choice", "stillwater_disclosure_threshold"],
+        "modifier_prompt": "The white ring closes to a blank center; Esi stands between the cleared counter and Kira's sealed tray with both hands lowered."
+      },
+      {
+        "modifier_id": "copy_counter_purge_content_visual",
+        "trigger": "branch_label == copy_counter_purge_content",
+        "apply_to_visual_scene_ids": ["stillwater_purge_choice", "stillwater_disclosure_threshold"],
+        "modifier_prompt": "Esi taps the brushed-steel cart rail while Jon catches a fresh maintenance strip from the printer and the counter's white ring closes."
+      },
+      {
+        "modifier_id": "ending_raw_proof_visual",
+        "trigger": "ending_label == raw_session_proof",
+        "apply_to_visual_scene_ids": ["stillwater_ending_raw"],
+        "modifier_prompt": "Kira's cabled seal tray glows with four amber pulse bars, a red interlock, and a sequence of simple operator-command marks; Sel's green disposition lies beside the contradictory stream while Esi is reflected repeatedly in the tray lid."
+      },
+      {
+        "modifier_id": "ending_raw_lost_visual",
+        "trigger": "ending_label == raw_session_lost",
+        "apply_to_visual_scene_ids": ["stillwater_ending_raw"],
+        "modifier_prompt": "The optical cable leads to a blank closed-ring service port; Kira's tray contains Esi's consent mark beside an empty buffer symbol and Sel's intact disposition."
+      },
+      {
+        "modifier_id": "ending_join_success_visual",
+        "trigger": "ending_label == joined_nonclinical_proof",
+        "apply_to_visual_scene_ids": ["stillwater_ending_join"],
+        "modifier_prompt": "The route foil, maintenance strip, and green disposition are aligned as three visibly contradictory objects inside one sealed tray; Kira points to the join while Esi's hands remain outside."
+      },
+      {
+        "modifier_id": "ending_join_thin_visual",
+        "trigger": "ending_label == joined_proof_incomplete",
+        "apply_to_visual_scene_ids": ["stillwater_ending_join"],
+        "modifier_prompt": "One empty slot separates a lone route foil or lone maintenance strip from Sel's complete green disposition; Kira seals the incomplete pair with a small amber comparison mark."
+      },
+      {
+        "modifier_id": "ending_public_witness_visual",
+        "trigger": "ending_label == public_worker_witness",
+        "apply_to_visual_scene_ids": ["stillwater_ending_public"],
+        "modifier_prompt": "Several pilgrims lower their calming headsets and turn toward Esi while hospitality workers step away from their room-reset tasks; Sel is visually outnumbered beside spotless rooms."
+      },
+      {
+        "modifier_id": "ending_public_reframed_visual",
+        "trigger": "ending_label == public_testimony_reframed",
+        "apply_to_visual_scene_ids": ["stillwater_ending_public"],
+        "modifier_prompt": "Two soft-gray security workers carry a folding privacy screen toward Esi while waiting pilgrims turn their faces away and Sel gestures toward care protocol."
+      },
+      {
+        "modifier_id": "ending_mutual_aid_visual",
+        "trigger": "ending_label == distributed_worker_custody",
+        "apply_to_visual_scene_ids": ["stillwater_ending_mutual_aid"],
+        "modifier_prompt": "Jon, Deka, and Esi cluster around the open filter case and active work slate; Esi keeps both hands visibly empty and helps lift the case."
+      },
+      {
+        "modifier_id": "ending_isolated_visual",
+        "trigger": "ending_label == private_but_isolated",
+        "apply_to_visual_scene_ids": ["stillwater_ending_isolated"],
+        "modifier_prompt": "Esi leaves one blanket corner sharply misaligned, then turns the small visible imperfection toward the staff-alcove doorway."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "stillwater_six_clinic.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "One crescent-shaped public clinic bay with six recovery-room doors along the inner curve, a curved transparent entry wall along the outer curve, a bright white privacy arc between them, a staff alcove at the counterspin end, and one service-spine doorway at the spinward end leading behind the rooms.",
+      "fixed_zones": [
+        {
+          "zone_id": "recovery_room_c",
+          "visible_form": "third cream recovery-room door from the staff alcove; small rectangular room with padded contact couch, segmented crown, side table, scent-wafer slot, and back service panel",
+          "used_for": "Esi's session history, ordinary reset work, protected buffer custody"
+        },
+        {
+          "zone_id": "public_waiting_bay",
+          "visible_form": "carpeted crescent with low seats, drink cabinet, abstract teal wall loop, towel shelves, and room-facing sightlines",
+          "used_for": "routine hospitality work, public testimony, waiting witnesses"
+        },
+        {
+          "zone_id": "white_privacy_arc",
+          "visible_form": "bright white floor stripe from wall to wall between recovery-room work zone and public entry zone",
+          "used_for": "auditor authority boundary, sealed object transfer, final disclosure staging"
+        },
+        {
+          "zone_id": "curved_entry_doors",
+          "visible_form": "transparent outer-curve doors opening to dim transfer-habitat concourse",
+          "used_for": "Kira's arrival, security visibility, public exit"
+        },
+        {
+          "zone_id": "staff_alcove",
+          "visible_form": "open brushed-steel nook with towel shelves, work-slate rack, cleaning supplies, and reflective drinks cabinet",
+          "used_for": "Deka's rota work, indirect sightline, distributed custody aftermath"
+        },
+        {
+          "zone_id": "service_spine",
+          "visible_form": "narrow gray corridor behind recovery rooms with exposed cable trays, ducts, filter housings, and numbered panels",
+          "used_for": "Jon's maintenance work and bounded machine access"
+        },
+        {
+          "zone_id": "room_c_event_counter",
+          "visible_form": "waist-high maintenance panel behind Room C with four amber pulse marks, red interlock symbol, white purge ring, strip printer, and credential pad",
+          "used_for": "hardware evidence, purge timing, maintenance hold"
+        },
+        {
+          "zone_id": "esi_linen_cart",
+          "visible_form": "rolling waist-high cart with cream blankets, stitched hems, towels, bottles, cup ledger dock, and brushed-steel rail",
+          "used_for": "room reset, route-receipt concealment, nonverbal worker signal"
+        },
+        {
+          "zone_id": "kira_seal_tray",
+          "visible_form": "portable shallow tray with transparent locking lid and space for several narrow record foils",
+          "used_for": "audit custody and visible record joins"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_crescent_establishing",
+          "supports_visual_scene_ids": ["stillwater_establishing", "stillwater_auditor_arrival"]
+        },
+        {
+          "camera_id": "room_c_medium",
+          "supports_visual_scene_ids": ["stillwater_room_c_reset"]
+        },
+        {
+          "camera_id": "service_counter_medium",
+          "supports_visual_scene_ids": ["stillwater_split_records", "stillwater_purge_order", "stillwater_purge_choice"]
+        },
+        {
+          "camera_id": "privacy_arc_diagonal",
+          "supports_visual_scene_ids": ["stillwater_privacy_line", "stillwater_routine_choice", "stillwater_clean_shell", "stillwater_audit_response", "stillwater_disclosure_threshold"]
+        },
+        {
+          "camera_id": "public_bay_reverse",
+          "supports_visual_scene_ids": ["stillwater_ending_raw", "stillwater_ending_join", "stillwater_ending_public"]
+        },
+        {
+          "camera_id": "staff_alcove_close",
+          "supports_visual_scene_ids": ["stillwater_ending_mutual_aid", "stillwater_ending_isolated"]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "alcove_reflection_to_sel",
+          "path": "staff_alcove -> brushed-steel drinks cabinet reflection -> Room C and privacy arc",
+          "supports": ["make_coworker_witness", "disclose_public_testimony"]
+        },
+        {
+          "lane_id": "audit_arc_to_service_door",
+          "path": "Kira public position -> white privacy arc -> open service-spine doorway -> Jon and filter case",
+          "supports": ["name_counter_anomaly", "freeze_with_maintenance", "copy_counter_purge_content"]
+        },
+        {
+          "lane_id": "room_c_to_public_waiting",
+          "path": "Room C door -> white privacy arc -> waiting seats -> curved entry doors",
+          "supports": ["disclose_public_testimony", "public_worker_witness", "public_testimony_reframed"]
+        }
+      ],
+      "record_custody_states": [
+        {
+          "record_id": "route_receipt",
+          "possible_locations": ["Esi's hand", "linen-cart blanket seam", "Sel's archive", "Kira's seal tray", "Deka's work slate"]
+        },
+        {
+          "record_id": "counter_receipt",
+          "possible_locations": ["event-counter printer", "Jon's filter-case handle", "Kira's seal tray", "filter-case false bottom"]
+        },
+        {
+          "record_id": "protected_buffer",
+          "possible_locations": ["Room C local clinical system under live hold", "opened into Kira's cabled seal tray by Esi's consent", "purged and absent"]
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for characters visible in a scene.",
+    "characters": {
+      "esi_tan": "Esi Tan: baseline-human hospitality reset worker in her early thirties, compact tired build, medium-brown skin, closely shaved black hair, dark eyes, pale gray wrap uniform with a teal cleaning tab, practical soft shoes, faint square contact-crown bruise behind her left ear, usually beside a waist-high linen cart. Posture is economical and guarded; hands return to work objects when attention becomes dangerous. Keep the bruise behind the left ear, teal tab, shaved hair, and compact silhouette consistent.",
+      "jon_alis": "Jon Alis: baseline-human NeuroSyn interface maintenance technician in his late fifties, stocky build, light-brown skin, bald crown with short gray side hair, heavy eyebrows, orange-and-blue industrial coveralls, rectangular service credential at the chest, black hard filter case with hidden shallow false bottom, small strip printer and cartridge tools. Posture is grounded, tool-focused, and dryly wary.",
+      "deka_morn": "Deka Morn: baseline-human hospitality reset worker in her forties, tall lean build, deep-brown skin, long dark braid, pale gray wrap uniform with a yellow towel cord, practical soft shoes, often carrying two thin work slates or an overfilled towel stack. Posture is steady and observant; she looks through reflective surfaces before turning her head.",
+      "sel_varo": "Dr. Sel Varo: baseline-human clinic alignment lead in his forties, slim polished build, pale skin, swept silver-black hair, smooth clean-shaven face, cream high-collared clinician tunic, dark soft shoes, small gold clinic seal at the throat. Open palms and gentle forward lean become square managerial stillness under threat. Keep his cream silhouette and gold throat seal consistent.",
+      "kira_doss": "Kira Doss: baseline-human PSC insurer auditor in her mid-forties, dark skin, short silver curls, angular attentive face, navy structured audit jacket over charcoal clothing, plain slate, transparent-lidded portable seal tray. Posture is upright and bounded; she uses tray placement, repeated reading, and exact hand positions instead of dramatic gestures."
+    },
+    "groups": {
+      "stillwater_waiting_public": "Stillwater Six waiting public: a small mixed group of baseline-human transport pilgrims in borrowed cream retreat robes with simple ear-and-temple calming headsets, plus hospitality workers in pale gray wrap uniforms with colored task tabs. They sit in low waiting seats or stand near the drink cabinet; attention shifts visibly through lowered headsets, turned faces, raised work slates, and distance from the white privacy arc."
+    }
+  },
+  "review_notes": [
+    "Draft scene_set map supplies fixed zones, camera slots, sightline lanes, and record-custody states for a multi-angle single-location fixture.",
+    "Every base prompt repeats enough geometry and appearance detail to stand alone; visual refs are included only for characters declared visible in that frame.",
+    "Prompts use affirmative visible directions and translate the protected buffer, event counter, privacy line, seal tray, route receipt, and maintenance strip into drawable forms.",
+    "Four formal reviewer verdicts will be added to the training sidecar after self-review and any required repairs."
+  ]
+}

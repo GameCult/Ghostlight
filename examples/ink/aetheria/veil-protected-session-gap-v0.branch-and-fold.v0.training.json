@@ -1,0 +1,567 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "veil-protected-session-gap-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/aetheria/veil-protected-session-gap-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/aetheria/veil-protected-session-gap-v0.v0.json",
+  "visual_plan_ref": "examples/visual/aetheria/veil-protected-session-gap-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "veil-protected-session-gap-v0.stillwater-six-review",
+  "protagonist_agent_id": "esi_tan",
+  "npc_agent_ids": [
+    "jon_alis",
+    "deka_morn",
+    "sel_varo",
+    "kira_doss",
+    "stillwater_waiting_public"
+  ],
+  "purpose": "Authored branch-and-fold fixture in workplace-noir, dry-comic, quiet-mutual-aid mode. It dramatizes how a real clinical privacy boundary can conceal a coercive alignment session and how workers can prove a false disposition without first exposing the patient's mind.",
+  "local_awareness_summary": [
+    {
+      "text": "Esi is a baseline-human hospitality reset worker at Stillwater Six. She can clean and move through the public bay, Room C, staff alcove, and white privacy line, handle her own route receipt, speak to coworkers and the auditor, and grant or withhold consent over her protected session.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/veil-protected-session-gap-v0.v0.json",
+        "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Framgång.md"
+      ]
+    },
+    {
+      "text": "Esi knows Sel ordered Room C after she refused a third double shift and remembers her refusal losing force during the session. She does not know the counter's four-pulse total until Jon shows or describes it and does not know Kira's exact audit boundary until Kira states it.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/veil-protected-session-gap-v0.v0.json",
+        "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Internal Serenity Review.md"
+      ]
+    },
+    {
+      "text": "Esi's leverage is split among objects and people: her supervisor route receipt, Jon's maintenance counter, Deka's witnessed rota change, Kira's sealed audit custody, and the still-live protected buffer.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/veil-protected-session-gap-v0.v0.json",
+        "examples/ink/aetheria/veil-protected-session-gap-v0.branch-and-fold.v0.ink"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Esi's embodied, low-authority worker viewpoint. Choices use cleaning access, carried receipts, speech, consent, waiting, object transfer, coworker task-sharing, and public witness rather than terminal omnipotence.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/aetheria/veil-protected-session-gap-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Tonal mode is workplace noir with dry comic precision and quiet mutual aid. Routine room reset precedes audit pressure; jokes expose labor and institutional absurdity without dissolving the cost of coerced neural care.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Framgång.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Esi alone authorizes disclosure of her protected session. Sel controls clinic custody and scheduled purge but does not own her consent. Kira can seal records and request a hold only within stated authority. Jon can freeze local machine state under his maintenance credential but cannot open or interpret session content.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Internal Serenity Review.md",
+          "examples/lore-grounding/aetheria/veil-protected-session-gap-v0.v0.json"
+        ]
+      },
+      {
+        "text": "No single participant may infer the whole event from one surface: the route receipt proves ordered attendance, the counter proves hardware events, testimony proves a remembered command, and the raw buffer proves session content only if Esi authorizes it before purge.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Internal Serenity Review.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The route receipt begins in Esi's hand and can move to Sel's archive, the linen seam, Kira's seal tray, or divided worker custody. The maintenance strip begins at Jon's service counter and can be printed under his credential. The protected buffer remains inside Room C's local clinic system until held, opened by Esi, or purged.",
+        "source_refs": [
+          "examples/ink/aetheria/veil-protected-session-gap-v0.branch-and-fold.v0.ink",
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Internal Serenity Review.md"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Privacy must remain a real protection, not a fake rule invented only to hide abuse. The strongest nonclinical evidence route proves contradiction without disclosing Esi's subjective stream.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Internal Serenity Review.md"
+        ]
+      },
+      {
+        "text": "Endings must differ by disclosure scope: complete raw proof at privacy cost, joined nonclinical proof, public testimony, or quiet distributed custody. Each family includes a success or cost state determined by prior choices.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "examples/ink/aetheria/veil-protected-session-gap-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make Kira an omnipotent rescuer, make the insurer repair Esi's job or debt, or let the audit cross the privacy line without Esi's consent.",
+        "source_refs": [
+          "examples/lore-grounding/aetheria/veil-protected-session-gap-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Do not let a maintenance counter reveal Esi's thoughts or prove coercive intent by itself. Do not turn the three workers into a mature movement in 2779.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Internal Serenity Review.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Enceladus Cooperative Schism.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through routine, audit-shell challenge, purge control, and disclosure scope before selecting one of eight state-gated endings.",
+    "choice_layers": [
+      "routine_evidence_custody",
+      "answer_the_clean_shell",
+      "preserve_or_release_buffer",
+      "disclosure_path"
+    ],
+    "variables": [
+      "route_receipt",
+      "counter_receipt",
+      "coworker_cover",
+      "audit_hold",
+      "clinic_suspicion",
+      "auditor_attention",
+      "privacy_intact",
+      "buffer_window",
+      "sel_control",
+      "jon_trust",
+      "public_witnesses"
+    ],
+    "ending_gates": [
+      "ending_raw_proof",
+      "ending_raw_lost",
+      "ending_join_success",
+      "ending_join_thin",
+      "ending_public_witness",
+      "ending_public_reframed",
+      "ending_mutual_aid",
+      "ending_isolated"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "keep_route_receipt",
+      "ink_path": "routine_choice",
+      "action_type": "conceal_object",
+      "actor_intent": "Keep the supervisor route order outside Sel's archive long enough to decide its disclosure scope.",
+      "state_basis": [
+        "Esi physically holds her own route receipt while resetting Room C.",
+        "Her linen cart provides ordinary low-status concealment within her work access."
+      ],
+      "reviewed_consequences": [
+        "Sets route_receipt, raises clinic_suspicion, enables the sealed route-submission branch, and supplies one half of the joined-proof ending."
+      ],
+      "training_hooks": ["worker_object_custody", "concealment_inside_routine", "evidence_scope_choice"]
+    },
+    {
+      "branch_id": "keep_counter_receipt",
+      "ink_path": "routine_choice",
+      "action_type": "use_object",
+      "actor_intent": "Help Jon perform routine maintenance while preserving the nonclinical event counter before purge.",
+      "state_basis": [
+        "Esi can brace the filter case but cannot operate the credentialed counter.",
+        "Jon can print machine events without opening patient content."
+      ],
+      "reviewed_consequences": [
+        "Sets counter_receipt, raises jon_trust and buffer_window, allows Sel to archive the unhidden route receipt, enables counter questioning, and supplies only the hardware half of the joined-proof ending until another branch can recover route evidence."
+      ],
+      "training_hooks": ["bounded_technical_witness", "mutual_work_affordance", "nonclinical_evidence"]
+    },
+    {
+      "branch_id": "make_coworker_witness",
+      "ink_path": "routine_choice",
+      "action_type": "speak",
+      "actor_intent": "Tell Deka the supervisor order and obtain voluntary shift cover before confronting the audit.",
+      "state_basis": [
+        "Deka can cover public-room reset work and witness the rota impact but cannot access the maintenance counter or session buffer."
+      ],
+      "reviewed_consequences": [
+        "Sets coworker_cover, raises public_witnesses and clinic_suspicion, allows Sel to archive the route receipt, adds visible workload cost, and enables distributed custody through Deka's witnessed rota change."
+      ],
+      "training_hooks": ["quiet_mutual_aid", "witness_without_mind_access", "labor_cost_visible"]
+    },
+    {
+      "branch_id": "preserve_routine_cover",
+      "ink_path": "routine_choice",
+      "action_type": "comply",
+      "actor_intent": "Reduce immediate suspicion and keep working rather than making Esi the audit's exhibit.",
+      "state_basis": [
+        "Esi can return the receipt and complete the reset checklist without agreeing that Sel's disposition is true."
+      ],
+      "reviewed_consequences": [
+        "Raises sel_control, lowers clinic_suspicion, removes the independent route receipt, and changes later testimony and isolation costs."
+      ],
+      "training_hooks": ["compliance_not_consent", "routine_cover", "evidence_opportunity_cost"]
+    },
+    {
+      "branch_id": "submit_route_receipt",
+      "ink_path": "audit_response_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Put ordered attendance and unpaid rest into Kira's sealed custody without disclosing session content.",
+      "state_basis": ["Available only if Esi kept the route receipt."],
+      "reviewed_consequences": [
+        "Raises auditor_attention and clinic_suspicion, lowers sel_control, and makes the route order an audit-held surface."
+      ],
+      "training_hooks": ["sealed_evidence_transfer", "scope_limited_disclosure", "audit_attention"]
+    },
+    {
+      "branch_id": "name_counter_anomaly",
+      "ink_path": "audit_response_choice",
+      "action_type": "speak",
+      "actor_intent": "Make Jon state the hardware facts in public and force Sel's no-escalation disposition beside them.",
+      "state_basis": ["Available only if the service counter was printed during routine maintenance."],
+      "reviewed_consequences": [
+        "Raises auditor_attention and public_witnesses, lowers sel_control, and preserves Jon's boundary between hardware fact and clinical meaning."
+      ],
+      "training_hooks": ["technical_claim_boundary", "public_contradiction", "worker_witness"]
+    },
+    {
+      "branch_id": "expose_audit_boundary",
+      "ink_path": "audit_response_choice",
+      "action_type": "speak",
+      "actor_intent": "Make Kira state the forbidden fields so privacy becomes a visible boundary rather than Sel's private excuse.",
+      "state_basis": ["Esi can ask the auditor to state her own authority limits."],
+      "reviewed_consequences": [
+        "Raises auditor_attention and privacy_intact while spending buffer_window; later prose records the exclusion without filling it with patient content."
+      ],
+      "training_hooks": ["authority_boundary_named", "privacy_as_protection", "time_cost"]
+    },
+    {
+      "branch_id": "wait_under_clean_shell",
+      "ink_path": "audit_response_choice",
+      "action_type": "wait",
+      "actor_intent": "Avoid immediate exhibition and let the auditor test Sel's summary without Esi's intervention.",
+      "state_basis": ["Esi can continue ordinary work while the purge window advances."],
+      "reviewed_consequences": [
+        "Lowers clinic_suspicion, raises sel_control, spends buffer_window, and makes the later audit depend more heavily on other actors."
+      ],
+      "training_hooks": ["waiting_as_protection", "silence_costs_time", "no_as_unavailable_evidence"]
+    },
+    {
+      "branch_id": "freeze_with_maintenance",
+      "ink_path": "purge_choice",
+      "action_type": "speak",
+      "actor_intent": "Ask Jon to use his credential and preserve local state under a safety exception.",
+      "state_basis": [
+        "Jon owns the maintenance exception, not Esi; Esi can request but cannot execute it.",
+        "The exception preserves the buffer without opening it."
+      ],
+      "reviewed_consequences": [
+        "Sets counter_receipt and audit_hold, extends buffer_window, raises jon_trust and clinic_suspicion, and puts Jon's employability into the evidence chain."
+      ],
+      "training_hooks": ["credential_as_cost", "maintenance_hold", "worker_requested_not_worker_owned"]
+    },
+    {
+      "branch_id": "patient_limited_hold",
+      "ink_path": "purge_choice",
+      "action_type": "authorize",
+      "actor_intent": "Use Esi's consent authority to preserve the buffer sealed and unopened.",
+      "state_basis": ["Kira may request a hold only after Esi defines it."],
+      "reviewed_consequences": [
+        "Sets audit_hold, extends buffer_window, raises auditor_attention and clinic_suspicion, and preserves later disclosure choice."
+      ],
+      "training_hooks": ["consent_scoped_hold", "privacy_with_witness", "patient_authority"]
+    },
+    {
+      "branch_id": "permit_private_purge",
+      "ink_path": "purge_choice",
+      "action_type": "withhold_object",
+      "actor_intent": "Let the raw session disappear so the audit cannot turn Esi's subjective stream into its demonstration.",
+      "state_basis": ["Privacy can be protected by refusing preservation even when that weakens direct proof."],
+      "reviewed_consequences": [
+        "Sets buffer_window to zero, raises privacy_intact and sel_control, closes raw-proof success, and leaves nonclinical joins available."
+      ],
+      "training_hooks": ["withholding_as_agency", "privacy_truth_tradeoff", "raw_proof_closed"]
+    },
+    {
+      "branch_id": "copy_counter_purge_content",
+      "ink_path": "purge_choice",
+      "action_type": "signal",
+      "actor_intent": "Use a quiet work signal to preserve hardware events while allowing patient content to clear.",
+      "state_basis": [
+        "Esi and Jon share visible access to cart rail and filter case.",
+        "Jon alone operates the credentialed service counter."
+      ],
+      "reviewed_consequences": [
+        "Sets counter_receipt, raises jon_trust, privacy_intact, and clinic_suspicion, sets buffer_window to zero, and enables the counter half of later disclosure."
+      ],
+      "training_hooks": ["nonverbal_worker_signal", "selective_preservation", "distributed_understanding"]
+    },
+    {
+      "branch_id": "disclose_raw_session",
+      "ink_path": "final_choice",
+      "action_type": "disclose_object",
+      "actor_intent": "Trade privacy for direct proof by authorizing the raw stream.",
+      "state_basis": ["Success depends on buffer_window remaining above zero."],
+      "reviewed_consequences": [
+        "Sets privacy_intact to zero and routes to complete proof or consent-after-purge loss."
+      ],
+      "training_hooks": ["direct_truth_privacy_cost", "state_gated_evidence", "patient_authorized_disclosure"]
+    },
+    {
+      "branch_id": "disclose_join_only",
+      "ink_path": "final_choice",
+      "action_type": "authorize",
+      "actor_intent": "Authorize a joined finding from records that contain no thought content.",
+      "state_basis": ["Strong success requires route_receipt, counter_receipt, and auditor_attention of at least two."],
+      "reviewed_consequences": [
+        "Routes to joined nonclinical proof or an incomplete contradiction while leaving privacy_intact unchanged."
+      ],
+      "training_hooks": ["disclosure_without_mind_exposure", "independent_record_join", "state_gated_ending"]
+    },
+    {
+      "branch_id": "disclose_public_testimony",
+      "ink_path": "final_choice",
+      "action_type": "speak",
+      "actor_intent": "Move the supervisor order from protected administration into a shared public fact.",
+      "state_basis": ["Success requires at least one prior public witness and sel_control no higher than two."],
+      "reviewed_consequences": [
+        "Routes to shared testimony with immediate labor retaliation or to clinic reframing of isolated disclosure as a care episode."
+      ],
+      "training_hooks": ["public_witness_threshold", "testimony_reframing_risk", "labor_retaliation"]
+    },
+    {
+      "branch_id": "defer_to_worker_custody",
+      "ink_path": "final_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Keep session content from the audit and split narrow evidence so no single frightened worker is the point of failure.",
+      "state_basis": ["Success requires jon_trust of at least two or coworker_cover."],
+      "reviewed_consequences": [
+        "Routes to distributed worker custody and a later cross-site pattern or to privacy preserved in isolation."
+      ],
+      "training_hooks": ["quiet_mutual_aid", "distributed_evidence_custody", "deferred_disclosure"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Durable history for Esi, Jon, Deka, Sel, Kira, or Stillwater Six beyond this fixture",
+      "Any claim that a particular ending is canonical history",
+      "Promotion of clinic layout or buffer timing into a universal Framgång standard",
+      "Accepted corpus coverage and future character memory updates"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex titled elaborator using the four mandated reviewer prompts",
+    "review_status": "accepted",
+    "review_notes": [
+      "Draft assembled directly from the authored lore elaboration and the reference branch-and-fold fixture shape.",
+      "Narrative review repaired implicit route-receipt custody and made public, mutual-aid, and isolated endings conditional on records and witnesses actually established by the playthrough.",
+      "Lore review checked every faction, institution, technology, locality, era, and movement used by the fixture against the exact vault sources listed in the lore-grounding digest.",
+      "Visual review removed conditional evidence from reusable base prompts, added state modifiers for record visibility, and split the three-worker and isolated aftermaths into separate visual scenes.",
+      "Spatial review confirmed the public bay, Room C, service spine, staff alcove, privacy arc, entry doors, sightline lanes, and object transfers form one stageable layout.",
+      "Ink was not compiled because the pass explicitly forbids installing or running an Ink compiler. Read-only structural checks found 20 knots, 4 choice layers, 16 choices, balanced braces, and no undefined divert targets."
+    ],
+    "review_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "artifact_ref": "examples/ink/aetheria/veil-protected-session-gap-v0.branch-and-fold.v0.ink",
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 4,
+        "voice_score": 5,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "detected_tonal_mode": "Workplace noir with dry comic precision, embodied institutional pressure, and quiet mutual aid.",
+        "major_findings": [],
+        "minor_findings": [],
+        "path_specific_failures": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "lore_context_bridges_needed": [],
+        "character_introduction_fixes": [],
+        "branch_fold_fixes": [],
+        "voice_and_prose_fixes": [],
+        "resolved_findings": [
+          {
+            "severity": "major",
+            "location": "routine_choice and ending_mutual_aid",
+            "problem": "Two opening branches left the unchosen route receipt's custody implicit, and the mutual-aid ending assumed both records existed on every successful route.",
+            "why_it_matters": "Folded scenes and endings would otherwise pay off evidence the player never retained.",
+            "evidence": "Counter-first and coworker-first routes set route_receipt false while the first draft still gave Deka a route receipt in the ending.",
+            "fix_direction": "Archive the unhidden route receipt explicitly and condition each worker's later custody on route_receipt and counter_receipt.",
+            "resolution": "applied"
+          },
+          {
+            "severity": "minor",
+            "location": "ending_public_witness and ending_isolated",
+            "problem": "The first draft assumed Jon always held a print strip and that Esi always retained a receipt.",
+            "why_it_matters": "Branch-specific props would appear without setup.",
+            "evidence": "Both endings were reachable from routes where those records had cleared or been archived.",
+            "fix_direction": "Use conditional testimony and object prose; make the isolated ending object-neutral.",
+            "resolution": "applied"
+          }
+        ],
+        "training_labels": [
+          "strong_contextual_onboarding",
+          "strong_branch_callback",
+          "strong_character_voice",
+          "strong_material_lore",
+          "strong_wit_with_stakes",
+          "strong_quiet_scene"
+        ],
+        "acceptance_notes": [
+          "Routine room-reset work establishes role, place, body, money, and relationships before the audit arrives.",
+          "Every material choice changes later evidence, time, authority, witness, privacy, or ending state."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "artifact_ref": "examples/lore-grounding/aetheria/veil-protected-session-gap-v0.v0.json",
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 5,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 5,
+        "sources_checked": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Internal Serenity Review.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Framgång.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/NeuroSyn.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Technology/Brain-Computer Interfaces.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Existential Collapse.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Free Neural Network.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Enceladus Cooperative Schism.md"
+        ],
+        "source_gaps": [],
+        "canon_drift_findings": [],
+        "unsupported_claims": [],
+        "stale_or_conflicting_lore": [],
+        "vault_backfill_candidates": [],
+        "required_story_revisions": [],
+        "required_lore_patches": [],
+        "suggested_story_revisions": [],
+        "suggested_lore_patches": [],
+        "resolved_findings": [
+          {
+            "severity": "minor",
+            "artifact_location": "local_awareness_summary",
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Internal Serenity Review.md",
+            "problem": "The first sidecar draft let Esi know the counter's four-pulse total before Jon disclosed it.",
+            "why_it_matters": "It collapsed separately owned knowledge and weakened the disclosure join.",
+            "evidence": "Esi witnesses her subjective loss of refusal; Jon owns the hardware event count.",
+            "fix_direction": "Separate Esi's remembered experience from Jon's later counter disclosure.",
+            "resolution": "applied"
+          }
+        ],
+        "training_labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_faction_pressure",
+          "strong_infrastructure_grounding",
+          "vault_backfill_candidate"
+        ],
+        "acceptance_notes": [
+          "The lore patch defines the durable protected-session mechanism; the fixture dramatizes rather than enlarges it.",
+          "Stillwater Six's exact layout and buffer timing remain local, avoiding an unsupported universal Framgång standard."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "artifact_ref": "examples/visual/aetheria/veil-protected-session-gap-v0.branch-and-fold.v0.visual.json",
+        "overall_status": "accepted",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 5,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 4,
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "missing_visual_scenes": [],
+        "weak_image_prompts": [],
+        "missing_scene_set_needs": [],
+        "missing_branch_modifiers": [],
+        "resolved_findings": [
+          {
+            "severity": "major",
+            "location": "stillwater_ending_mutual_aid",
+            "problem": "The first visual plan combined a three-worker custody ending with an isolated ending while including all three character refs.",
+            "why_it_matters": "An image model would draw absent coworkers on the isolation route.",
+            "evidence": "One visual_scene_id covered ending_mutual_aid and ending_isolated.",
+            "fix_direction": "Split the routes into distinct visual scenes and keep only Esi's ref on the isolated frame.",
+            "resolution": "applied"
+          },
+          {
+            "severity": "minor",
+            "location": "stillwater_audit_response, stillwater_disclosure_threshold, stillwater_ending_join",
+            "problem": "Several first-draft base prompts named conditional receipts or alternate counter states.",
+            "why_it_matters": "Base images would pre-decide branch state instead of letting explicit modifiers own the visible delta.",
+            "evidence": "Prompts used possible receipts, stopped-or-cleared counter state, and both records in the joined-proof family base.",
+            "fix_direction": "Make base prompts state-neutral and move record presence, holds, and complete or incomplete joins into trigger-bound modifiers.",
+            "resolution": "applied"
+          }
+        ],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity"
+        ],
+        "acceptance_notes": [
+          "All 16 Ink branch ids are represented: 12 pre-ending branches by branch modifiers and 4 final choices by eight ending-label modifiers.",
+          "The included draft scene-set map is adequate for B-level replay planning; high-consistency website art still warrants the declared camera-specific blockout."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "artifact_ref": "examples/visual/aetheria/veil-protected-session-gap-v0.branch-and-fold.v0.visual.json",
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 5,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "inferred_layout_summary": "One crescent public clinic bay places six recovery-room doors along the inner curve and transparent entry doors along the outer curve. A white floor arc separates clinical and public authority zones. Room C connects to a narrow service spine through the staff-side doorway; the staff alcove at the opposite end has a reflective sightline across the bay. Esi's cart, Jon's event counter, Kira's tray, and every receipt transfer remain reachable along those routes.",
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "spatial_questions": [],
+        "diagram_or_visual_plan_needs": [],
+        "resolved_findings": [
+          {
+            "severity": "minor",
+            "location": "purge_order",
+            "problem": "The first prose draft said the white indicator contracted around the service counter, implying a room-scale ring rather than a panel display.",
+            "why_it_matters": "The visual plan and action geometry depend on a waist-high local counter.",
+            "evidence": "The counter is a bounded maintenance interface behind Room C.",
+            "inferred_geometry": "A circular white purge indicator surrounds the event marks on the panel face.",
+            "fix_direction": "Name the event marks as the ring's center.",
+            "resolution": "applied"
+          }
+        ],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_branch_spatial_state"
+        ],
+        "acceptance_notes": [
+          "The scene-set draft identifies all zones, camera slots, sightline lanes, and record-custody states needed to stage every route.",
+          "The privacy arc is consistently a legal floor boundary rather than a physical wall; object transfer and movement remain plausible."
+        ]
+      }
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

@@ -1,0 +1,359 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.veil-protected-session-gap-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "internal-serenity-review",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Internal Serenity Review.md",
+      "title": "Internal Serenity Review",
+      "line_start": 1,
+      "line_end": 23,
+      "relevance": "Primary event and authored elaboration: grounds the 2779 review, the protected-session gap, Stillwater Six, split record custody, and the nonclinical disclosure join."
+    },
+    {
+      "source_id": "framgang",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Framgång.md",
+      "title": "Framgång",
+      "line_start": 1,
+      "line_end": 33,
+      "relevance": "Grounds employer-funded alignment care, insurer involvement, Enceladus clinics, hospitality labor, debt, advancement pressure, and the Internal Serenity Review."
+    },
+    {
+      "source_id": "neurosyn",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/NeuroSyn.md",
+      "title": "NeuroSyn",
+      "line_start": 1,
+      "line_end": 31,
+      "relevance": "Grounds managed neural interfaces, workplace telemetry, safety records, affect shaping, insurer use, credential dependence, and the later NeuroPulse split."
+    },
+    {
+      "source_id": "brain-computer-interfaces",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Brain-Computer Interfaces.md",
+      "title": "Brain-Computer Interfaces",
+      "line_start": 1,
+      "line_end": 27,
+      "relevance": "Grounds BCI maintenance, vendor compatibility, neural telemetry, mood adjustment under safety provisions, and privacy politics."
+    },
+    {
+      "source_id": "territories",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+      "title": "Territories",
+      "line_start": 35,
+      "line_end": 40,
+      "relevance": "Grounds Saturn as overlapping pilgrimage, labor, refuge, and corporate infrastructure, with Framgång concentrated around Enceladus and ring-linked routes."
+    },
+    {
+      "source_id": "pan-solar-consortium",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md",
+      "title": "Pan-Solar Consortium",
+      "line_start": 1,
+      "line_end": 23,
+      "relevance": "Grounds the supraterritorial insurer and audit shell, narrow administrable categories, and dependence on records that remain interoperable across corporate jurisdictions."
+    },
+    {
+      "source_id": "existential-collapse",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Existential Collapse.md",
+      "title": "Existential Collapse",
+      "line_start": 1,
+      "line_end": 40,
+      "relevance": "Grounds the 2779 period, NeuroPulse's reward-loop market, shrinking institutional slack, and mutual-aid response networks."
+    },
+    {
+      "source_id": "free-neural-network",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Free Neural Network.md",
+      "title": "Free Neural Network",
+      "line_start": 1,
+      "line_end": 5,
+      "relevance": "Grounds cooperative clinics, practical neural privacy, repair schematics, and worker-controlled interface alternatives used only as an off-site disclosure route."
+    },
+    {
+      "source_id": "enceladus-cooperative-schism",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Enceladus Cooperative Schism.md",
+      "title": "Enceladus Cooperative Schism",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Future context only: confirms later worker-pilgrim and debtor-organizing pressure around Framgång's Enceladus economy without making that later movement available to 2779 participants."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Existential Collapse era, during the 2779 Internal Serenity Review",
+    "location": "Stillwater Six, a Framgång alignment clinic in an Enceladus ring-pilgrimage transfer habitat.",
+    "summary": "A hospitality worker subjected to a mandatory alignment session must decide whether to expose her protected neural stream, prove the clinic lead's false disposition through separately owned nonclinical records, make the order public, or distribute evidence through quiet worker custody.",
+    "public_facts": [
+      {
+        "text": "Framgång sold therapeutic alignment services to individuals, employers, and insurers, and maintained its strongest territorial presence around Enceladus and Saturn's ring-linked pilgrimage routes.",
+        "source_refs": ["framgang", "territories"]
+      },
+      {
+        "text": "NeuroSyn systems measured affect, attention, safety, and compliance while providing useful workplace and clinical interface functions.",
+        "source_refs": ["neurosyn", "brain-computer-interfaces"]
+      },
+      {
+        "text": "The Internal Serenity Review found therapeutic affect shaping, compliance architecture, and coercive reward loops technically inseparable in some flagship products.",
+        "source_refs": ["internal-serenity-review", "framgang", "neurosyn"]
+      },
+      {
+        "text": "The Review redistributed openly coercive work into harder markets rather than abolishing the underlying systems.",
+        "source_refs": ["internal-serenity-review", "neurosyn", "existential-collapse"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Protected-session privacy keeps employer-funded care usable but allows clinic management to publish a clean administrative shell around coercive interface events.",
+        "source_refs": ["internal-serenity-review", "framgang"]
+      },
+      {
+        "text": "Workers' employment, debt, care eligibility, shifts, and technical credentials make disclosure materially costly even when no single authority can lawfully inspect all relevant records.",
+        "source_refs": ["internal-serenity-review", "framgang", "neurosyn", "brain-computer-interfaces"]
+      },
+      {
+        "text": "A disclosure can preserve patient privacy by joining a supervisor route order with hardware maintenance events; neither surface contains the patient's thoughts.",
+        "source_refs": ["internal-serenity-review"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "stillwater-hospitality-workers",
+      "label": "Stillwater Six hospitality and reset workers",
+      "group_type": "contract_labor",
+      "institutional_logic": ["Keep rooms, guests, and clinic routines functioning while remaining eligible for wages, housing-linked debt terms, and employer-funded care."],
+      "material_incentives": ["Protect rest time", "Keep care access", "Avoid punitive rota changes", "Preserve evidence without making one patient carry it alone"],
+      "internal_virtues": ["Covering a shift with consent", "Remembering route changes", "Small practical witness", "Not demanding another worker's private account"],
+      "internal_shames": ["Turning a coworker into a public exhibit", "Leaving one worker as the only witness", "Mistaking a clean room for a harmless clinic"],
+      "prestige_markers": ["A rota covered without surrendering leverage", "A receipt kept past routine collection", "Knowing which imperfection another worker will read"],
+      "taboo_triggers": ["Therapeutic language used to erase ordered labor", "Management calling coerced attendance voluntary", "Being asked to perform calm for customers"],
+      "emotional_display_norms": ["Fear and care travel through task-sharing, jokes, carried objects, and quiet corrections more safely than through formal declarations."],
+      "trust_defaults": ["Trusts coworkers in bounded tasks; distrusts records owned entirely by clinic management; protects patient-specific content unless the patient chooses otherwise."],
+      "speech_register_cues": ["Dry workplace jokes", "Rota language", "Short witness statements", "Concrete descriptions of who ordered what"],
+      "source_refs": ["framgang", "internal-serenity-review"]
+    },
+    {
+      "group_id": "framgang-clinic-management",
+      "label": "Framgång clinic management",
+      "group_type": "therapeutic_corporate_franchise",
+      "institutional_logic": ["Sell useful care, preserve the privacy promise, produce comparable dispositions, and keep employer clients from seeing coercion as liability."],
+      "material_incentives": ["Clean audit", "Continued insurer recognition", "Renewed employer contracts", "Patient throughput", "Control of protected-session custody"],
+      "internal_virtues": ["Calm presentation", "Completed recovery", "Protected confidentiality", "Standard dispositions"],
+      "internal_shames": ["Undeclared reward escalation", "A worker refusing recovery", "Conflicting records joined outside clinic custody", "Visible labor behind therapeutic atmosphere"],
+      "prestige_markers": ["High completion rate", "Low reportable incident count", "Smooth room turnover", "Patients returned to duty"],
+      "taboo_triggers": ["Calling an alignment intervention discipline", "Asking whether voluntary care was ordered", "Separating privacy from management custody"],
+      "emotional_display_norms": ["Concern must remain polished; anger is translated into patient safety, privacy, or staff fitness language."],
+      "trust_defaults": ["Trusts signed dispositions, clinical custody, and customer-facing calm; treats worker-held receipts as contaminated context."],
+      "speech_register_cues": ["Warm procedural assurance", "Patient-centered euphemism", "Privacy invocation", "Recovery metrics"],
+      "source_refs": ["framgang", "internal-serenity-review"]
+    },
+    {
+      "group_id": "neurosyn-maintenance-contractors",
+      "label": "NeuroSyn interface maintenance contractors",
+      "group_type": "credentialed_technical_labor",
+      "institutional_logic": ["Keep clinical interfaces within safety and compatibility tolerances while remaining outside clinical interpretation authority."],
+      "material_incentives": ["Keep vendor credential", "Document hardware events", "Avoid clinical liability", "Preserve employability across managed-interface sites"],
+      "internal_virtues": ["Accurate counters", "Bounded technical claims", "A maintenance exception used only when a machine state requires it"],
+      "internal_shames": ["Claiming to know patient content", "Clearing an unexplained interlock", "Letting management turn a hardware event into a therapeutic opinion"],
+      "prestige_markers": ["Reliable repair", "Portable credential", "A service record that survives vendor dispute"],
+      "taboo_triggers": ["Pressure to falsify a counter", "Being told a safety interlock is merely emotional", "Clinical managers claiming ownership of maintenance facts"],
+      "emotional_display_norms": ["Alarm is compressed into dry diagnosis and equipment jokes."],
+      "trust_defaults": ["Trusts device counters within their narrow scope; does not treat counters as proof of motive or subjective state."],
+      "speech_register_cues": ["Event counts", "Interlock language", "Credential risk", "Sparse sarcasm"],
+      "source_refs": ["neurosyn", "brain-computer-interfaces", "internal-serenity-review"]
+    },
+    {
+      "group_id": "psc-insurer-auditors",
+      "label": "PSC insurer auditors",
+      "group_type": "supraterritorial_risk_review",
+      "institutional_logic": ["Make incompatible corporate records comparable enough to price risk without assuming authority over every underlying system."],
+      "material_incentives": ["Preserve admissible evidence", "Avoid unlawful clinical access", "Find repeatable risk patterns", "Keep insurers from inheriting undisclosed coercion"],
+      "internal_virtues": ["Narrow questions", "Sealed custody", "Independent record joins", "Comparable findings"],
+      "internal_shames": ["Becoming a vendor's reassurance audience", "Destroying privacy to prove concern", "Accepting one institution's summary as the whole event"],
+      "prestige_markers": ["A finding that survives cross-jurisdiction challenge", "A contradiction proved without excess disclosure"],
+      "taboo_triggers": ["Contaminated custody", "Unauthorized neural access", "An insurer paying for risk hidden behind incomparable categories"],
+      "emotional_display_norms": ["Concern appears as exact scope, repeated wording, sealed objects, and refusal to infer beyond the evidence."],
+      "trust_defaults": ["Trusts separately owned records more when their contradiction survives without one owner interpreting all of them."],
+      "speech_register_cues": ["Scope limits", "Record custody", "Authorization", "Comparability"],
+      "source_refs": ["pan-solar-consortium", "internal-serenity-review"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "stillwater-workers.care-without-exhibition",
+      "applies_to": ["stillwater-hospitality-workers"],
+      "pressure_type": "mutual_aid",
+      "summary": "Workers need evidence strong enough to survive management while refusing to make a coworker's exposed mind the price of being believed.",
+      "projection_use": "Offer actions that share shifts, split receipts, hold narrow witness, and preserve patient choice instead of defaulting to total disclosure.",
+      "source_refs": ["internal-serenity-review", "framgang"]
+    },
+    {
+      "field_id": "framgang-management.privacy-as-custody",
+      "applies_to": ["framgang-clinic-management"],
+      "pressure_type": "liability",
+      "summary": "Clinic management treats a real privacy boundary as proof that its own signed disposition should remain the only readable account.",
+      "projection_use": "Management dialogue should defend custody and clean summaries without claiming the privacy rule itself is fake.",
+      "source_refs": ["internal-serenity-review", "framgang"]
+    },
+    {
+      "field_id": "psc-audit.contradiction-without-overreach",
+      "applies_to": ["psc-insurer-auditors"],
+      "pressure_type": "evidence",
+      "summary": "The auditor gains legitimate leverage by joining narrow records, not by demanding a patient's complete neural stream.",
+      "projection_use": "Keep Kira's actions inside consent, sealing, comparison, and exact questions; she is an auditor, not a rescuer or mind reader.",
+      "source_refs": ["internal-serenity-review", "pan-solar-consortium"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "framgang-clinic-management",
+      "target_group_id": "stillwater-hospitality-workers",
+      "observer_read": ["Fatigued staff", "Resistance to care", "Poor recovery engagement", "Risk to patient atmosphere"],
+      "target_self_read": ["Workers ordered into unpaid treatment after refusing dangerous scheduling", "Witnesses holding different parts of the same event"],
+      "misread_patterns": ["Treats refusal as a symptom", "Treats shared evidence custody as contagion or gossip", "Treats returned-to-duty status as recovery"],
+      "likely_insults": ["misaligned", "unready for duty", "privacy-compromising", "not yet receptive"],
+      "projection_use": "Let Sel sincerely value care while using its language to erase the employment order and the interface escalation.",
+      "source_refs": ["framgang", "internal-serenity-review"]
+    },
+    {
+      "observer_group_id": "psc-insurer-auditors",
+      "target_group_id": "stillwater-hospitality-workers",
+      "observer_read": ["Potential witnesses", "Possible contamination risk", "Sources of nonclinical records"],
+      "target_self_read": ["People whose jobs, care, rest, and housing pressure are part of the event"],
+      "misread_patterns": ["May value a worker only when the worker becomes admissible evidence", "May preserve privacy while ignoring retaliation after the finding"],
+      "likely_insults": ["source", "subject", "unverified complainant"],
+      "projection_use": "Keep Kira useful and bounded; her finding can expose a contradiction without repairing Esi's rota, debt, or employment.",
+      "source_refs": ["pan-solar-consortium", "internal-serenity-review"]
+    },
+    {
+      "observer_group_id": "stillwater-hospitality-workers",
+      "target_group_id": "neurosyn-maintenance-contractors",
+      "observer_read": ["Workers with privileged machine access", "Possible witnesses who can still retreat into technical neutrality"],
+      "target_self_read": ["Credentialed technicians authorized to describe hardware events, not clinical meaning"],
+      "misread_patterns": ["Workers may expect a counter to prove coercion by itself", "Technicians may understate how their silence protects a false disposition"],
+      "likely_insults": ["vendor hands", "green-light priest"],
+      "projection_use": "Jon must state what the counter proves and what it cannot prove, then choose whether his credential becomes part of the evidence.",
+      "source_refs": ["neurosyn", "brain-computer-interfaces", "internal-serenity-review"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "hospitality-reset-worker-and-patient",
+      "summary": "A low-status clinic worker whose body and route order carry knowledge that the audit shell excludes.",
+      "obligations": ["Finish room turnover", "Protect wages and care eligibility", "Choose the scope of disclosure", "Avoid making coworkers responsible for her mind"],
+      "available_masks": ["Routine compliance", "Workplace humor", "Fatigue", "Cleaning movement that looks beneath notice"],
+      "failure_modes": ["Becoming isolated evidence", "Authorizing more disclosure than intended", "Letting management archive the only route receipt", "Mistaking secrecy for shared safety"],
+      "source_refs": ["framgang", "internal-serenity-review"]
+    },
+    {
+      "role_id": "interface-maintenance-technician",
+      "summary": "A credentialed technician who can preserve hardware events while lacking authority over clinical interpretation or patient content.",
+      "obligations": ["Maintain the couch", "Record interlocks", "Protect credential", "Stay inside consent and technical scope"],
+      "available_masks": ["Routine service", "Dry equipment joke", "Accidental printout", "Maintenance exception"],
+      "failure_modes": ["Claiming the counter reveals motive", "Letting purge erase the only independent event record", "Turning helpful access into control over Esi's choice"],
+      "source_refs": ["neurosyn", "brain-computer-interfaces", "internal-serenity-review"]
+    },
+    {
+      "role_id": "clinic-alignment-lead",
+      "summary": "A clinician-manager whose care authority, contract performance, and audit exposure converge in one signed disposition.",
+      "obligations": ["Protect clinical privacy", "Return workers to duty", "Keep insurer recognition", "Maintain room throughput"],
+      "available_masks": ["Warm concern", "Privacy defense", "Staff-fitness framing", "Routine retention policy"],
+      "failure_modes": ["A separately owned record contradicts the disposition", "A public waiting room becomes a witness", "Privacy is separated from management custody"],
+      "source_refs": ["framgang", "internal-serenity-review"]
+    },
+    {
+      "role_id": "insurer-auditor",
+      "summary": "A bounded auditor who can seal nonclinical evidence and request a patient-limited hold but cannot cross the privacy line on her own authority.",
+      "obligations": ["Preserve custody", "Respect consent", "Find repeatable risk", "Avoid accepting vendor self-certification"],
+      "available_masks": ["Neutral scope statement", "Repeated question", "Silent seal-tray placement", "Comparative review"],
+      "failure_modes": ["Overreaching into patient content", "Leaving the clean shell unchallenged", "Treating a finding as repair"],
+      "source_refs": ["pan-solar-consortium", "internal-serenity-review"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "esi_tan",
+      "known_context": [
+        {"text": "Esi knows she was ordered into Room C after refusing a double shift, remembers the reward-shaped loss of importance around her refusal, and can read her own route receipt.", "source_refs": ["internal-serenity-review", "framgang"]}
+      ],
+      "beliefs": [
+        {"text": "Esi believes privacy matters and that being believed should not automatically require giving an institution her complete session stream.", "source_refs": ["internal-serenity-review", "brain-computer-interfaces"]}
+      ],
+      "misreads": [
+        {"text": "Esi may overestimate what one receipt or one public statement can force an insurer to do.", "source_refs": ["pan-solar-consortium", "internal-serenity-review"]}
+      ],
+      "must_not_know": [
+        {"text": "Esi must not know the full Review pattern beyond Stillwater Six before Kira joins or compares records.", "source_refs": ["internal-serenity-review"]}
+      ]
+    },
+    {
+      "speaker_id": "jon_alis",
+      "known_context": [
+        {"text": "Jon knows the maintenance counter recorded four reward pulses, one interlock, and a scheduled purge; he cannot see session content or infer the patient's exact subjective experience.", "source_refs": ["internal-serenity-review", "neurosyn"]}
+      ],
+      "beliefs": [
+        {"text": "Jon believes a hardware event should remain a hardware fact even when management has a cleaner clinical interpretation.", "source_refs": ["neurosyn", "brain-computer-interfaces"]}
+      ],
+      "misreads": [
+        {"text": "Jon may treat credential loss as the main cost because technical labor is the pressure he understands most directly.", "source_refs": ["neurosyn"]}
+      ],
+      "must_not_know": [
+        {"text": "Jon must not narrate Esi's thoughts, refusal details, or clinical state beyond what she tells or visibly shows him.", "source_refs": ["internal-serenity-review"]}
+      ]
+    },
+    {
+      "speaker_id": "kira_doss",
+      "known_context": [
+        {"text": "Kira knows her audit authority, the shell fields, the privacy exclusion, and how to seal separately owned records.", "source_refs": ["internal-serenity-review", "pan-solar-consortium"]}
+      ],
+      "beliefs": [
+        {"text": "Kira believes contradictions among narrow records can justify comparison without treating broad access as care.", "source_refs": ["internal-serenity-review", "pan-solar-consortium"]}
+      ],
+      "misreads": [
+        {"text": "Kira may underestimate retaliation that arrives as rota, credential, care, or debt administration after she leaves.", "source_refs": ["framgang", "internal-serenity-review"]}
+      ],
+      "must_not_know": [
+        {"text": "Kira must not know the session stream, supervisor order, or counter values until Esi, Jon, or a sealed record makes them available.", "source_refs": ["internal-serenity-review"]}
+      ]
+    },
+    {
+      "speaker_id": "sel_varo",
+      "known_context": [
+        {"text": "Sel knows he ordered and operated the session, signed the clean disposition, and can invoke protected-session custody and routine purge policy.", "source_refs": ["internal-serenity-review", "framgang"]}
+      ],
+      "beliefs": [
+        {"text": "Sel treats returning a worker to duty and preserving clinic legitimacy as compatible with care.", "source_refs": ["framgang"]}
+      ],
+      "misreads": [
+        {"text": "Sel reads distributed worker custody as contamination because no single authorized professional controls the joined story.", "source_refs": ["internal-serenity-review", "framgang"]}
+      ],
+      "must_not_know": [
+        {"text": "Sel must not know which evidence workers have retained until their observable actions reveal it.", "source_refs": ["internal-serenity-review"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The Review will contribute to the NeuroPulse spinout, but no Stillwater Six participant should speak as if the future administrative split is already settled.",
+      "source_refs": ["internal-serenity-review", "neurosyn", "existential-collapse"]
+    },
+    {
+      "text": "The later Enceladus Cooperative Schism confirms persistent worker-pilgrim pressure in Framgång's Saturn economy; this 2779 fixture may show mutual aid but not a mature cooperative movement at Stillwater Six.",
+      "source_refs": ["enceladus-cooperative-schism", "framgang"]
+    },
+    {
+      "text": "A cooperative neural-repair clinic can receive narrowly consented records through Free Neural Network practice, but it does not gain authority over Esi's clinical content or turn the scene into movement recruitment.",
+      "source_refs": ["free-neural-network", "internal-serenity-review"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Does Stillwater Six recur as a named clinic in later Aetheria stories?",
+      "blocks_training": false,
+      "notes": "Treat it as the local site of this authored elaboration unless another fixture promotes its exact staff or layout."
+    },
+    {
+      "question": "How standardized were protected-session buffer timings across Framgång franchises?",
+      "blocks_training": false,
+      "notes": "The fixture uses one local maintenance tick and does not claim a universal retention interval."
+    }
+  ]
+}
