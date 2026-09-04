@@ -12,9 +12,9 @@ use crate::{
     world::{
         AffordanceId, CommandBody, CommandId, ControllerError, ControllerModels,
         ControllerPendingReason, ControllerRunner, ControllerWorkCustody, CreateWorldIntent,
-        DecisionAction, DecisionInvocation, DecisionOpportunity, KernelError, MailboxError,
-        NarrativeRun, OperationalRun, PrincipalCommandIntent, PrincipalId, SubmissionDisposition,
-        SubmitReceipt, WorldMailbox, WorldSnapshot,
+        DecisionInvocation, DecisionOpportunity, KernelError, MailboxError, NarrativeRun,
+        OperationalRun, PrincipalCommandIntent, PrincipalId, SubmissionDisposition, SubmitReceipt,
+        Utterance, WorldMailbox, WorldSnapshot,
     },
 };
 use anyhow::{Context, bail, ensure};
@@ -1149,6 +1149,7 @@ fn controller_error_disposition(error: &ControllerError) -> &'static str {
         | ControllerError::AmbiguousOpportunity
         | ControllerError::OpportunityMismatch
         | ControllerError::SpeakUnavailable
+        | ControllerError::NoGrantedAffordance
         | ControllerError::CommandMismatch
         | ControllerError::MissingControllerWork
         | ControllerError::World(_) => "denied",
@@ -1231,11 +1232,18 @@ async fn execute_world(
         "world.speak" => {
             let payload: SpeakPayload = serde_json::from_value(invocation.payload.clone())
                 .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
+            // `world.speak` stays an ingress for the Speak entry specifically.
+            // A generic `world.act` is only useful beside per-affordance Eve
+            // controls derived from the catalog, and that is a projection pass.
             CommandBody::ExerciseDecision {
                 opportunity: payload.opportunity,
                 invocation: DecisionInvocation {
-                    affordance_id: payload.affordance_id,
-                    action: DecisionAction::Speak { text: payload.text },
+                    affordance: payload.affordance_id,
+                    bindings: Vec::new(),
+                    proposed: Vec::new(),
+                    speech: Some(Utterance::new(payload.text).ok_or_else(|| {
+                        RuntimeCommandError::Payload("spoken text is not canonical".into())
+                    })?),
                 },
             }
         }
@@ -1740,7 +1748,6 @@ fn sibling_state_lock_path(path: &std::path::Path) -> PathBuf {
 mod tests {
     use super::*;
     use crate::idunn_health::tests::route_observation_fixture;
-    use crate::world::AffordanceKind;
     use axum::{
         body::{Body, to_bytes},
         http::Request,
@@ -2149,7 +2156,14 @@ mod tests {
 
         let world = current_world(&fixture.state).await.unwrap().unwrap();
         let opportunity = world.opportunities[0].clone();
-        let affordance = world.subjects[0].affordances[&AffordanceKind::Speak];
+        let affordance = *world
+            .affordances
+            .iter()
+            .find(|entry| {
+                entry.entry.kind.0 == "speak" && world.subjects[0].affordances.contains(&entry.id)
+            })
+            .map(|entry| &entry.id)
+            .unwrap();
         let spoken = post(
             &fixture.state,
             &fixture.cookie,

@@ -12,8 +12,8 @@ use std::{
 };
 use thiserror::Error;
 
-const STATE_ROW: &str = "world_state.custody.v1";
-const COMMIT_ROW: &str = "world_commit.custody.v1";
+const STATE_ROW: &str = "world_state.affordance.v1";
+const COMMIT_ROW: &str = "world_commit.affordance.v1";
 
 #[derive(Debug, Error)]
 pub(super) enum JournalError {
@@ -557,26 +557,35 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
             "controller assignment references an unknown subject".into(),
         ));
     }
-    let mut scope_kinds = BTreeSet::new();
-    let mut scopes_with_grants = BTreeSet::new();
-    for grant in state.affordance_grants.values() {
-        if !state.controller_assignments.contains_key(&grant.scope)
-            || !scope_kinds.insert((grant.scope, grant.kind))
+    for (scope, granted) in &state.affordance_grants {
+        if !state.controller_assignments.contains_key(scope)
+            || granted.is_empty()
+            || granted
+                .iter()
+                .any(|affordance_id| !state.affordance_catalog.contains_key(affordance_id))
         {
             return Err(JournalError::Corrupt(
-                "affordance grant is duplicated or unscoped".into(),
+                "affordance grant is empty, unscoped, or names no catalog entry".into(),
             ));
         }
-        scopes_with_grants.insert(grant.scope);
     }
     if state
         .controller_assignments
         .keys()
-        .any(|scope| !scopes_with_grants.contains(scope))
+        .any(|scope| !state.affordance_grants.contains_key(scope))
     {
         return Err(JournalError::Corrupt(
             "decision scope has no affordance grant".into(),
         ));
+    }
+    // Every stored entry still passes the declaration validator, so a forged
+    // catalog row cannot install an entry the resolver would have refused.
+    for entry in state.affordance_catalog.values() {
+        if !super::patch::entry_is_admissible(entry) {
+            return Err(JournalError::Corrupt(
+                "stored affordance entry is not admissible".into(),
+            ));
+        }
     }
     let required = super::required_approvers(state);
     if !state.draft_approvals.is_subset(&required)
@@ -593,19 +602,21 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
             .controller_assignments
             .get(&event.scope)
             .ok_or_else(|| JournalError::Corrupt("event references an unknown scope".into()))?;
-        let grant = state
-            .affordance_grants
-            .get(&event.invocation.affordance_id)
+        let entry = state
+            .affordance_catalog
+            .get(&event.invocation.affordance)
             .ok_or_else(|| JournalError::Corrupt("event uses an unknown affordance".into()))?;
         if !event_ids.insert(event.id)
             || event.revision == 0
             || event.revision > state.revision
             || event.revision <= previous_event_revision
             || event.controller_id != assignment.id()
-            || grant.scope != event.scope
-            || grant.kind != event.invocation.action.kind()
-            || super::validated_invocation(&event.invocation).map_err(kernel_error)?
-                != event.invocation
+            || !state
+                .affordance_grants
+                .get(&event.scope)
+                .is_some_and(|granted| granted.contains(&event.invocation.affordance))
+            || event.band >= entry.outcome_bands.len()
+            || (entry.outcome_bands[event.band].effects.is_empty() && !event.effects.is_empty())
         {
             return Err(JournalError::Corrupt(
                 "decision event is noncanonical or violates controller scope".into(),
@@ -636,7 +647,13 @@ fn apply_committed_command(
             "committed effect is not the deterministic reduction of its command".into(),
         ));
     }
-    apply_effect(state, &commit.command.caller(), &expected_effect).map_err(kernel_error)
+    apply_effect(
+        state,
+        command.id,
+        &commit.command.caller(),
+        &expected_effect,
+    )
+    .map_err(kernel_error)
 }
 
 fn require_schema(row: &CultCacheEnvelope, schema: &str) -> Result<(), JournalError> {
@@ -691,10 +708,12 @@ fn kernel_error(error: KernelError) -> JournalError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::world::patch::kernel_speak_grant;
+    use crate::world::tests::speak_entry;
     use crate::world::{
-        AffordanceKind, AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, CreateWorld,
-        Declaration, DraftHandle, EntityDeclaration, EntityId, EntityKind, NewController, Position,
-        PrincipalId, Ref, SubjectDeclaration, SubjectKind, WorldKernel, WorldPatch,
+        AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, CreateWorld, Declaration,
+        DraftHandle, EntityDeclaration, EntityId, EntityKind, NewController, Position, PrincipalId,
+        Ref, SubjectDeclaration, SubjectKind, WorldKernel, WorldPatch,
     };
 
     #[derive(serde::Serialize, serde::Deserialize)]
@@ -739,7 +758,7 @@ mod tests {
                 controller: NewController::Human {
                     principal: owner.clone(),
                 },
-                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                affordances: kernel_speak_grant(),
                 position: None,
             }),
         };
@@ -819,7 +838,7 @@ mod tests {
                 controller: NewController::Human {
                     principal: owner.clone(),
                 },
-                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                affordances: kernel_speak_grant(),
                 position: None,
             }),
         };
@@ -848,7 +867,7 @@ mod tests {
                                     label: "The Rhythm Authority".into(),
                                     kind: SubjectKind::Institution,
                                     controller: NewController::OperationalAgent,
-                                    affordances: BTreeSet::from([AffordanceKind::Speak]),
+                                    affordances: BTreeSet::from([speak_entry(&kernel)]),
                                     position: Some(Ref::Draft(DraftHandle::new("rhythm-road"))),
                                 }),
                             ],
@@ -955,7 +974,7 @@ mod tests {
                 label: "Owner".into(),
                 kind: SubjectKind::Person,
                 controller: NewController::Human { principal: owner },
-                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                affordances: kernel_speak_grant(),
                 position: None,
             }),
         };
@@ -1179,6 +1198,88 @@ mod custody_tests {
         assert_eq!(reopened.snapshot().unwrap(), accepted);
         assert_eq!(
             reopened.submit(envelope, &authenticated).unwrap(),
+            SubmitReceipt::AlreadyApplied(receipt)
+        );
+    }
+
+    /// Replay recomputes `reduce`, so the band and the lowered operations are
+    /// re-derived rather than trusted: a stored event whose band or effects the
+    /// seed does not reproduce fails effect equality on the way back in.
+    #[test]
+    fn restart_replay_after_an_action_is_exact() {
+        use crate::world::tests::affordance_named;
+        use crate::world::{AuthenticatedCaller, Magnitude, ProposedEffect, RoleBinding, Target};
+
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let authenticated = auth_principal(owner());
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            creation(CommandId::new(), "ActionReplay"),
+            &authenticated,
+        )
+        .unwrap();
+        let topology = admit_topology(&mut kernel);
+        let custody = admit_custody(&mut kernel, &topology);
+        let active = crate::world::tests::activate(&mut kernel);
+        let carry = affordance_named(&active, "carry");
+        let opportunity = crate::world::tests::opportunity_for(&active, custody.holder);
+        let caller = CallerId::Controller(opportunity.controller_id);
+
+        let role = |name: &str, target| RoleBinding {
+            role: crate::world::Role(name.into()),
+            target,
+        };
+        let envelope = command(
+            &active,
+            CommandId::new(),
+            caller.clone(),
+            CommandBody::ExerciseDecision {
+                opportunity: opportunity.clone(),
+                invocation: crate::world::DecisionInvocation {
+                    affordance: carry,
+                    bindings: vec![
+                        role("from", Target::Subject(custody.holder)),
+                        role("recipient", Target::Subject(custody.counterparty)),
+                        role("place", Target::Entity(topology.yard)),
+                        role("resource", Target::Entity(custody.tithe)),
+                    ],
+                    proposed: vec![ProposedEffect {
+                        slot: 0,
+                        magnitude: Magnitude::Quantity(Quantity(2)),
+                    }],
+                    speech: None,
+                },
+            },
+        );
+        let authenticated_controller = AuthenticatedCaller::fixture(caller);
+        let SubmitReceipt::Applied(receipt) = kernel
+            .submit(envelope.clone(), &authenticated_controller)
+            .unwrap()
+        else {
+            panic!("expected an applied invocation");
+        };
+        let accepted = kernel.snapshot().unwrap();
+        let committed = accepted.events.last().expect("the committed event").clone();
+        assert!(!committed.effects.is_empty());
+        let world_id = accepted.world_id;
+        drop(kernel);
+
+        let mut reopened = WorldKernel::open(&path, world_id).unwrap();
+        assert_eq!(reopened.snapshot().unwrap(), accepted);
+        assert_eq!(
+            reopened
+                .snapshot()
+                .unwrap()
+                .events
+                .last()
+                .expect("the replayed event"),
+            &committed
+        );
+        assert_eq!(
+            reopened
+                .submit(envelope, &authenticated_controller)
+                .unwrap(),
             SubmitReceipt::AlreadyApplied(receipt)
         );
     }

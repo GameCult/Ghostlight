@@ -1,12 +1,11 @@
 use super::{
-    AffordanceKind, AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, CommandId,
-    CreateWorld, CreateWorldIntent, CreationReceipt, DecisionInvocation, DecisionOpportunity,
-    Declaration, DraftHandle, KernelError, NewController, PrincipalCommandIntent, PrincipalId,
+    AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, CommandId, CreateWorld,
+    CreateWorldIntent, CreationReceipt, DecisionInvocation, DecisionOpportunity, Declaration,
+    DraftHandle, KernelError, NewController, PrincipalCommandIntent, PrincipalId,
     SubjectDeclaration, SubjectKind, SubmitReceipt, WorldKernel, WorldPatch, WorldSnapshot,
-    journal, prepare_creation,
+    journal, patch::kernel_speak_grant, prepare_creation,
 };
 use crate::app_session::VerifiedPrincipalEvidence;
-use std::collections::BTreeSet;
 use std::path::Path;
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot};
@@ -99,7 +98,7 @@ impl WorldMailbox {
                 label: label.trim().to_owned(),
                 kind,
                 controller,
-                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                affordances: kernel_speak_grant(),
                 position: None,
             })
         };
@@ -520,8 +519,8 @@ async fn run_owner(mut owned: OwnedWorld, mut receiver: mpsc::Receiver<Request>)
 mod tests {
     use super::*;
     use crate::world::{
-        AffordanceKind, CallerId, CommandBody, Declaration, DraftHandle, EntityDeclaration,
-        EntityKind, Mismatch, NewController, PrincipalId, SubjectDeclaration, SubjectKind, WorldId,
+        CallerId, CommandBody, Declaration, DraftHandle, EntityDeclaration, EntityKind, Mismatch,
+        NewController, PrincipalId, SubjectDeclaration, SubjectKind, WorldId,
     };
     use std::{collections::BTreeSet, path::PathBuf};
     use tempfile::TempDir;
@@ -543,7 +542,7 @@ mod tests {
                     controller: NewController::Human {
                         principal: PrincipalId::new("owner"),
                     },
-                    affordances: BTreeSet::from([AffordanceKind::Speak]),
+                    affordances: kernel_speak_grant(),
                     position: None,
                 })],
                 operations: Vec::new(),
@@ -926,7 +925,7 @@ mod tests {
                 label: label.into(),
                 kind: SubjectKind::Person,
                 controller,
-                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                affordances: kernel_speak_grant(),
                 position: None,
             })
         };
@@ -978,8 +977,10 @@ mod tests {
         let unrelated = pick(crate::world::ControllerMode::NarrativePersona);
 
         let speak = |opportunity: &DecisionOpportunity, text: &str| DecisionInvocation {
-            affordance_id: opportunity.affordance_ids[0],
-            action: crate::world::DecisionAction::Speak { text: text.into() },
+            affordance: opportunity.affordance_ids[0],
+            bindings: Vec::new(),
+            proposed: Vec::new(),
+            speech: Some(crate::world::Utterance::new(text).unwrap()),
         };
         mailbox
             .submit_controller(
@@ -1043,10 +1044,10 @@ mod tests {
                 CommandId::new(),
                 &forged,
                 DecisionInvocation {
-                    affordance_id: forged.affordance_ids[0],
-                    action: crate::world::DecisionAction::Speak {
-                        text: "Let me in.".into(),
-                    },
+                    affordance: forged.affordance_ids[0],
+                    bindings: Vec::new(),
+                    proposed: Vec::new(),
+                    speech: Some(crate::world::Utterance::new("Let me in.").unwrap()),
                 },
             )
             .await;

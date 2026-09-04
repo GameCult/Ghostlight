@@ -7,8 +7,8 @@
 //! after that set is empty, so a rejected patch never mints an ID.
 
 use super::{
-    AffordanceGrant, AffordanceId, AffordanceKind, CommandId, ControllerAssignment, ControllerId,
-    DecisionScope, EdgeId, EntityId, NewController, SubjectId, SubjectKind, SubjectState, WorldId,
+    AffordanceId, CommandId, ControllerAssignment, ControllerId, EdgeId, EntityId, NewController,
+    SubjectId, SubjectKind, SubjectState, WorldId,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -96,14 +96,17 @@ pub(crate) struct Position {
 /// expectation carries `None` where the referring position constrains the
 /// namespace but not the kind.
 ///
-/// Not serializable: a `RefKind` is never persisted. It lives in `Mismatch`, in
-/// the resolution index, and in the three constants below, all of which stay in
-/// memory for the length of one reduction.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+/// It is one predicate serving three readers: the resolution index, `Mismatch`,
+/// and an affordance's `RoleSpec`, which persists inside the catalog and so
+/// requires the serde derives. `Affordance` names the catalog namespace, which
+/// carries no components and can never be a role's target.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "namespace", content = "kind", rename_all = "snake_case")]
 pub(crate) enum RefKind {
     Subject(Option<SubjectKind>),
     Entity(EntityKind),
     Edge(EdgeKind),
+    Affordance,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -125,12 +128,186 @@ pub(crate) enum Ref<Id> {
     Draft(DraftHandle),
 }
 
-/// A referent in any of the three namespaces.
+/// A referent in any of the three referent namespaces, or in the catalog.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum RefName {
     Subject(Ref<SubjectId>),
     Entity(Ref<EntityId>),
     Edge(Ref<EdgeId>),
+    Affordance(Ref<AffordanceId>),
+}
+
+/// A world-declared affordance name. Canonical text, `[a-z][a-z0-9_]{0,47}`,
+/// because it becomes a generated tool name and a tool name must be stable,
+/// unique, and safe. The kernel carries it and branches on it nowhere; that is
+/// what keeps genre out of the reducer.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(transparent)]
+pub(crate) struct AffordanceKindName(pub(crate) String);
+
+/// A named slot in one affordance, bound to a referent at invocation time.
+/// Canonical text, `[a-z][a-z0-9_]{0,31}` — it becomes a tool parameter name.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(transparent)]
+pub(crate) struct Role(pub(crate) String);
+
+/// What a role must be bound to. `RefKind` is reused rather than mirrored: it
+/// already spells subject, entity kind, and edge kind, so the binding kind-check
+/// and the declaration kind-check are one predicate.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct RoleSpec {
+    pub(crate) role: Role,
+    pub(crate) kind: RefKind,
+}
+
+/// What must already be true of committed state before an invocation is
+/// admitted. Only the three whose components exist: `Authorized`, `Knows`,
+/// `CanReach`, and `Committed` land in the pass that adds `Authority`,
+/// `Knowledge`, `Channel`, and `Commitment`. A variant whose only behaviour
+/// would be to be refused is a placeholder wearing a check.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "precondition", rename_all = "snake_case")]
+pub(crate) enum Precondition {
+    /// The acting subject's Position names the place bound to `at`.
+    Present { at: Role },
+    /// A path exists from the actor's place to the place bound to `to`, over
+    /// open public routes, with summed cost at most `within`.
+    Reachable { to: Role, within: Cost },
+    /// The acting subject's own holding of the resource bound to `resource` is
+    /// at least `at_least`.
+    Holds { resource: Role, at_least: Quantity },
+}
+
+/// Exactly the operations an affordance may propose. Nine, not the resolver's
+/// ten: `Admit` is absent because minting quantity requires an `EvidenceRef` and
+/// an invocation carries no evidence list, so admitting it here would be a
+/// second creation path beside the single evidenced one.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum ComponentOpKind {
+    Relocate,
+    OpenRoute,
+    CloseRoute,
+    AlterCost,
+    Transfer,
+    Transform,
+    Consume,
+    Bind,
+    Release,
+}
+
+/// The referent shape of one operation: the single source of both the
+/// declaration check and the lowering.
+pub(super) enum RoleKindRule {
+    Exact(RefKind),
+    AnyDependencyTarget,
+}
+
+/// Which magnitude, if any, an operation carries.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum BoundsDimension {
+    None,
+    Quantity,
+    Cost,
+}
+
+impl ComponentOpKind {
+    pub(super) fn arity(self) -> Vec<RoleKindRule> {
+        let subject = RoleKindRule::Exact(ANY_SUBJECT);
+        let route = || RoleKindRule::Exact(ROUTE);
+        let resource = || RoleKindRule::Exact(RefKind::Entity(EntityKind::Resource));
+        match self {
+            Self::Relocate => vec![subject, route()],
+            Self::OpenRoute | Self::CloseRoute | Self::AlterCost => vec![route()],
+            Self::Transfer => vec![subject, RoleKindRule::Exact(ANY_SUBJECT), resource()],
+            Self::Transform => vec![subject, resource(), resource()],
+            Self::Consume => vec![subject, resource()],
+            Self::Bind | Self::Release => vec![subject, RoleKindRule::AnyDependencyTarget],
+        }
+    }
+
+    pub(super) fn dimension(self) -> BoundsDimension {
+        match self {
+            Self::Relocate | Self::OpenRoute | Self::CloseRoute | Self::Bind | Self::Release => {
+                BoundsDimension::None
+            }
+            Self::Transfer | Self::Transform | Self::Consume => BoundsDimension::Quantity,
+            Self::AlterCost => BoundsDimension::Cost,
+        }
+    }
+}
+
+/// Whether a declared role kind can serve a position governed by this rule.
+pub(super) fn role_kind_fits(rule: &RoleKindRule, declared: RefKind) -> bool {
+    match rule {
+        RoleKindRule::Exact(RefKind::Subject(_)) => matches!(declared, RefKind::Subject(_)),
+        RoleKindRule::Exact(expected) => *expected == declared,
+        RoleKindRule::AnyDependencyTarget => matches!(
+            declared,
+            RefKind::Subject(_) | RefKind::Entity(EntityKind::Resource) | RefKind::Edge(_)
+        ),
+    }
+}
+
+/// The magnitude ceiling for one slot. A closed enum matched to the operation's
+/// dimension rather than a struct of optional ceilings: an `Option` ceiling that
+/// is `None` is not a ceiling, and a struct admits the nonsense of a cost
+/// ceiling on a `Transfer`.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "bound", content = "max", rename_all = "snake_case")]
+pub(crate) enum Bounds {
+    None,
+    Quantity(Quantity),
+    Cost(Cost),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct EffectSlot {
+    pub(crate) op_kind: ComponentOpKind,
+    /// Positional: exactly the referents `op_kind` takes, in `arity()` order.
+    pub(crate) roles: Vec<Role>,
+    pub(crate) bounds: Bounds,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct OutcomeBand {
+    /// At least 1. A zero-weight band is a branch that can never be selected.
+    pub(crate) weight: u32,
+    /// Indices into `effect_slots`, strictly increasing. Empty is legal and is
+    /// how a world expresses "the attempt does nothing".
+    pub(crate) effects: Vec<usize>,
+}
+
+/// One catalog entry: what an affordance *is*. Who may use it is
+/// `affordance_grants` and nothing else, so an entry carries no audience.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Affordance {
+    pub(crate) kind: AffordanceKindName,
+    /// Ordered, so the generated tool's parameters are stable across builds.
+    pub(crate) roles: Vec<RoleSpec>,
+    pub(crate) preconditions: Vec<Precondition>,
+    pub(crate) effect_slots: Vec<EffectSlot>,
+    pub(crate) outcome_bands: Vec<OutcomeBand>,
+    /// Every invocation of this entry carries exactly one utterance. The
+    /// kernel's only behaviour is to record it in the event; any world may
+    /// declare a speaking affordance, so this is not a Speak special case.
+    pub(crate) carries_speech: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct AffordanceDeclaration {
+    pub(crate) handle: DraftHandle,
+    pub(crate) kind: AffordanceKindName,
+    pub(crate) roles: Vec<RoleSpec>,
+    pub(crate) preconditions: Vec<Precondition>,
+    pub(crate) effect_slots: Vec<EffectSlot>,
+    pub(crate) outcome_bands: Vec<OutcomeBand>,
+    pub(crate) carries_speech: bool,
 }
 
 /// Where a failed check appeared. One way to say it, for declarations and
@@ -164,7 +341,10 @@ pub(crate) struct SubjectDeclaration {
     pub(crate) label: String,
     pub(crate) kind: SubjectKind,
     pub(crate) controller: NewController,
-    pub(crate) affordances: BTreeSet<AffordanceKind>,
+    /// The catalog entries this subject may exercise. Every entry is a
+    /// reference, so a genesis patch declares a catalog and grants from it
+    /// atomically.
+    pub(crate) affordances: BTreeSet<Ref<AffordanceId>>,
     pub(crate) position: Option<Ref<EntityId>>,
 }
 
@@ -197,6 +377,7 @@ pub(crate) enum Declaration {
     Subject(SubjectDeclaration),
     Entity(EntityDeclaration),
     Route(RouteDeclaration),
+    Affordance(AffordanceDeclaration),
 }
 
 /// The operations that change a component of an already canonical structure.
@@ -371,6 +552,62 @@ pub(crate) enum Mismatch {
     CustodyNotConserved {
         resource: RefName,
     },
+    /// `kind` is not `[a-z][a-z0-9_]{0,47}`, or a `Role` is not
+    /// `[a-z][a-z0-9_]{0,31}`. Tool and parameter names must be safe.
+    InvalidAffordanceName {
+        handle: DraftHandle,
+    },
+    /// Two entries in the candidate graph share one kind name; the generated
+    /// tool catalog would have two tools with one name.
+    DuplicateAffordanceKind {
+        handle: DraftHandle,
+    },
+    DuplicateRole {
+        handle: DraftHandle,
+        role: Role,
+    },
+    /// A precondition or a slot names a role the entry does not declare.
+    UnknownRole {
+        handle: DraftHandle,
+        role: Role,
+    },
+    /// A declared role's `RefKind` cannot serve the position that reads it, or
+    /// names a namespace no invocation target can bind.
+    RoleKindUnfit {
+        handle: DraftHandle,
+        role: Role,
+    },
+    SlotRoleArity {
+        handle: DraftHandle,
+        slot: usize,
+    },
+    /// The slot's `Bounds` variant does not match its `op_kind`'s dimension, or
+    /// the ceiling is zero, or a cost ceiling is outside `1..=MAX_ROUTE_COST`.
+    SlotBoundMismatch {
+        handle: DraftHandle,
+        slot: usize,
+    },
+    NoOutcomeBand {
+        handle: DraftHandle,
+    },
+    ZeroBandWeight {
+        handle: DraftHandle,
+        band: usize,
+    },
+    /// A band names a slot index the entry does not have.
+    DanglingBandEffect {
+        handle: DraftHandle,
+        band: usize,
+    },
+    /// A band's `effects` are not strictly increasing.
+    BandEffectsNotCanonical {
+        handle: DraftHandle,
+        band: usize,
+    },
+    /// No effect slots and no speech: the entry can never change anything.
+    InertAffordance {
+        handle: DraftHandle,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -448,7 +685,7 @@ pub(super) struct ResolvedSubject {
     pub(super) subject_id: SubjectId,
     pub(super) subject: SubjectState,
     pub(super) controller: ControllerAssignment,
-    pub(super) affordances: BTreeMap<AffordanceId, AffordanceGrant>,
+    pub(super) affordances: BTreeSet<AffordanceId>,
     pub(super) position: Option<Position>,
 }
 
@@ -457,6 +694,14 @@ pub(super) struct ResolvedEntity {
     pub(super) handle: DraftHandle,
     pub(super) entity_id: EntityId,
     pub(super) entity: EntityRecord,
+}
+
+/// The handle-to-ID binding for one catalog entry.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub(super) struct ResolvedAffordance {
+    pub(super) handle: DraftHandle,
+    pub(super) affordance_id: AffordanceId,
+    pub(super) affordance: Affordance,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -471,7 +716,7 @@ pub(super) struct ResolvedRoute {
 /// does not have.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "op", rename_all = "snake_case")]
-pub(super) enum ResolvedOp {
+pub(crate) enum ResolvedOp {
     Relocate {
         subject_id: SubjectId,
         edge_id: EdgeId,
@@ -563,6 +808,7 @@ pub(super) struct ResolvedPatch {
     pub(super) subjects: Vec<ResolvedSubject>,
     pub(super) entities: Vec<ResolvedEntity>,
     pub(super) routes: Vec<ResolvedRoute>,
+    pub(super) affordances: Vec<ResolvedAffordance>,
     pub(super) operations: Vec<ResolvedOp>,
     pub(super) evidence: Vec<EvidenceRef>,
 }
@@ -572,6 +818,7 @@ impl ResolvedPatch {
         self.subjects.is_empty()
             && self.entities.is_empty()
             && self.routes.is_empty()
+            && self.affordances.is_empty()
             && self.evidence.is_empty()
     }
 }
@@ -645,18 +892,252 @@ fn derive_id(
     Uuid::from_bytes(bytes)
 }
 
-fn affordance_slug(kind: AffordanceKind) -> &'static str {
-    match kind {
-        AffordanceKind::Speak => "speak",
-    }
-}
-
 pub(super) fn is_canonical_text(value: &str) -> bool {
     !value.trim().is_empty() && value.trim() == value
 }
 
 pub(super) fn is_valid_cost(cost: Cost) -> bool {
     (1..=MAX_ROUTE_COST).contains(&cost.0)
+}
+
+/// `[a-z][a-z0-9_]{0,max-1}`. Affordance kinds and roles become generated tool
+/// and parameter names, so the alphabet is the safe one and the bound is stated
+/// rather than assumed.
+fn is_tool_name(value: &str, max: usize) -> bool {
+    let mut characters = value.chars();
+    characters
+        .next()
+        .is_some_and(|first| first.is_ascii_lowercase())
+        && value.len() <= max
+        && value.chars().all(|character| {
+            character.is_ascii_lowercase() || character.is_ascii_digit() || character == '_'
+        })
+}
+
+/// The handle of the kernel-built Speak entry. It is indexed in the same draft
+/// index as world-declared entries, so a genesis subject grants it with an
+/// ordinary `Ref::Draft` and there is no second grant path.
+pub(super) const KERNEL_SPEAK_HANDLE: &str = "ghostlight.affordance.speak";
+
+/// The grant every genesis subject carries: a draft reference to the
+/// kernel-built entry, resolved by the ordinary handle index. World ingress and
+/// every fixture name this rather than repeating the handle literal.
+pub(super) fn kernel_speak_grant() -> BTreeSet<Ref<AffordanceId>> {
+    BTreeSet::from([Ref::Draft(DraftHandle::new(KERNEL_SPEAK_HANDLE))])
+}
+
+/// Zero preconditions, zero slots, one empty band, one utterance. Speech reaches
+/// everyone because `Channel` does not exist yet; a reach check that always
+/// passed would look like the invariant is enforced.
+pub(super) fn kernel_speak_entry() -> Affordance {
+    Affordance {
+        kind: AffordanceKindName("speak".into()),
+        roles: Vec::new(),
+        preconditions: Vec::new(),
+        effect_slots: Vec::new(),
+        outcome_bands: vec![OutcomeBand {
+            weight: 1,
+            effects: Vec::new(),
+        }],
+        carries_speech: true,
+    }
+}
+
+/// Whether a stored catalog entry would still be admitted by the declaration
+/// validator. One validator, two readers: the resolver rejects a bad entry, and
+/// journal recovery refuses a store that already holds one.
+pub(super) fn entry_is_admissible(entry: &Affordance) -> bool {
+    let mut mismatches = Vec::new();
+    validate_affordance(
+        &DraftHandle::new(""),
+        &entry.kind,
+        &entry.roles,
+        &entry.preconditions,
+        &entry.effect_slots,
+        &entry.outcome_bands,
+        entry.carries_speech,
+        &mut mismatches,
+    );
+    mismatches.is_empty()
+}
+
+/// The catalog-entry resolver, beside `resolve_entity`/`_subject`/`_route`. An
+/// entry carries no components, so there is nothing to check past namespace
+/// agreement.
+fn resolve_affordance(
+    site: Site,
+    reference: &Ref<AffordanceId>,
+    index: &BTreeMap<DraftHandle, RefKind>,
+    catalog: &BTreeMap<AffordanceId, Affordance>,
+    mismatches: &mut Vec<Mismatch>,
+) -> Option<Key<AffordanceId>> {
+    match reference {
+        Ref::Draft(named) => match index.get(named) {
+            None => {
+                mismatches.push(Mismatch::UnresolvedDraft {
+                    site,
+                    referent: named.clone(),
+                    expected: RefKind::Affordance,
+                });
+                None
+            }
+            Some(kind) if *kind != RefKind::Affordance => {
+                mismatches.push(Mismatch::WrongKind {
+                    site,
+                    referent: RefName::Affordance(reference.clone()),
+                    expected: RefKind::Affordance,
+                    actual: *kind,
+                });
+                None
+            }
+            Some(_) => Some(Key::Draft(named.clone())),
+        },
+        Ref::Existing(affordance_id) => {
+            if catalog.contains_key(affordance_id) {
+                Some(Key::Existing(*affordance_id))
+            } else {
+                mismatches.push(Mismatch::UnknownCanonical {
+                    site,
+                    expected: RefKind::Affordance,
+                });
+                None
+            }
+        }
+    }
+}
+
+/// The one validator of a catalog entry, run per declared entry in declaration
+/// order inside the resolver's accumulate-then-gate loop.
+fn validate_affordance(
+    handle: &DraftHandle,
+    kind: &AffordanceKindName,
+    roles: &[RoleSpec],
+    preconditions: &[Precondition],
+    effect_slots: &[EffectSlot],
+    outcome_bands: &[OutcomeBand],
+    carries_speech: bool,
+    mismatches: &mut Vec<Mismatch>,
+) {
+    let site = || Site::Declaration(handle.clone());
+    if !is_tool_name(&kind.0, 48) || roles.iter().any(|spec| !is_tool_name(&spec.role.0, 32)) {
+        mismatches.push(Mismatch::InvalidAffordanceName {
+            handle: handle.clone(),
+        });
+    }
+    let mut declared: BTreeMap<Role, RefKind> = BTreeMap::new();
+    for spec in roles {
+        match declared.entry(spec.role.clone()) {
+            Entry::Vacant(slot) => {
+                slot.insert(spec.kind);
+            }
+            Entry::Occupied(_) => mismatches.push(Mismatch::DuplicateRole {
+                handle: handle.clone(),
+                role: spec.role.clone(),
+            }),
+        }
+        // No `Target` names the catalog namespace, so a role of that kind could
+        // never be bound.
+        if spec.kind == RefKind::Affordance {
+            mismatches.push(Mismatch::RoleKindUnfit {
+                handle: handle.clone(),
+                role: spec.role.clone(),
+            });
+        }
+    }
+    let require =
+        |role: &Role, expected: RefKind, mismatches: &mut Vec<Mismatch>| match declared.get(role) {
+            None => mismatches.push(Mismatch::UnknownRole {
+                handle: handle.clone(),
+                role: role.clone(),
+            }),
+            Some(actual) if *actual != expected => mismatches.push(Mismatch::RoleKindUnfit {
+                handle: handle.clone(),
+                role: role.clone(),
+            }),
+            Some(_) => {}
+        };
+    for precondition in preconditions {
+        match precondition {
+            Precondition::Present { at } => {
+                require(at, RefKind::Entity(EntityKind::Place), mismatches);
+            }
+            Precondition::Reachable { to, within } => {
+                require(to, RefKind::Entity(EntityKind::Place), mismatches);
+                if !is_valid_cost(*within) {
+                    mismatches.push(Mismatch::InvalidCost { site: site() });
+                }
+            }
+            Precondition::Holds { resource, .. } => {
+                require(resource, RefKind::Entity(EntityKind::Resource), mismatches);
+            }
+        }
+    }
+    for (index, slot) in effect_slots.iter().enumerate() {
+        let arity = slot.op_kind.arity();
+        if slot.roles.len() != arity.len() {
+            mismatches.push(Mismatch::SlotRoleArity {
+                handle: handle.clone(),
+                slot: index,
+            });
+        }
+        for (role, rule) in slot.roles.iter().zip(arity.iter()) {
+            match declared.get(role) {
+                None => mismatches.push(Mismatch::UnknownRole {
+                    handle: handle.clone(),
+                    role: role.clone(),
+                }),
+                Some(declared_kind) if !role_kind_fits(rule, *declared_kind) => {
+                    mismatches.push(Mismatch::RoleKindUnfit {
+                        handle: handle.clone(),
+                        role: role.clone(),
+                    });
+                }
+                Some(_) => {}
+            }
+        }
+        let fits = match (slot.op_kind.dimension(), slot.bounds) {
+            (BoundsDimension::None, Bounds::None) => true,
+            (BoundsDimension::Quantity, Bounds::Quantity(ceiling)) => ceiling.0 >= 1,
+            (BoundsDimension::Cost, Bounds::Cost(ceiling)) => is_valid_cost(ceiling),
+            _ => false,
+        };
+        if !fits {
+            mismatches.push(Mismatch::SlotBoundMismatch {
+                handle: handle.clone(),
+                slot: index,
+            });
+        }
+    }
+    if outcome_bands.is_empty() {
+        mismatches.push(Mismatch::NoOutcomeBand {
+            handle: handle.clone(),
+        });
+    }
+    for (index, band) in outcome_bands.iter().enumerate() {
+        if band.weight == 0 {
+            mismatches.push(Mismatch::ZeroBandWeight {
+                handle: handle.clone(),
+                band: index,
+            });
+        }
+        if band.effects.iter().any(|slot| *slot >= effect_slots.len()) {
+            mismatches.push(Mismatch::DanglingBandEffect {
+                handle: handle.clone(),
+                band: index,
+            });
+        }
+        if band.effects.windows(2).any(|pair| pair[0] >= pair[1]) {
+            mismatches.push(Mismatch::BandEffectsNotCanonical {
+                handle: handle.clone(),
+                band: index,
+            });
+        }
+    }
+    if effect_slots.is_empty() && !carries_speech {
+        mismatches.push(Mismatch::InertAffordance {
+            handle: handle.clone(),
+        });
+    }
 }
 
 /// The one entity resolver. `expected` names the kind the referring site
@@ -861,23 +1342,45 @@ pub(super) fn resolve_patch(
     let mut mismatches = Vec::new();
     let mut index: BTreeMap<DraftHandle, RefKind> = BTreeMap::new();
 
+    // The kernel-built Speak entry enters the same index as a world-declared
+    // one, before the declaration loop, so a world reusing its handle collides
+    // as a duplicate handle rather than through a reserved-name check.
+    let speak_handle = DraftHandle::new(KERNEL_SPEAK_HANDLE);
+    if admits_human {
+        index.insert(speak_handle.clone(), RefKind::Affordance);
+    }
+    let mut kind_names: BTreeSet<AffordanceKindName> = state
+        .affordance_catalog
+        .values()
+        .map(|entry| entry.kind.clone())
+        .collect();
+    if admits_human {
+        kind_names.insert(kernel_speak_entry().kind);
+    }
+
     for (position, declaration) in patch.declarations.iter().enumerate() {
         let (handle, label, kind) = match declaration {
             Declaration::Subject(subject) => (
                 &subject.handle,
-                &subject.label,
+                Some(&subject.label),
                 RefKind::Subject(Some(subject.kind)),
             ),
-            Declaration::Entity(entity) => {
-                (&entity.handle, &entity.label, RefKind::Entity(entity.kind))
-            }
-            Declaration::Route(route) => (&route.handle, &route.label, ROUTE),
+            Declaration::Entity(entity) => (
+                &entity.handle,
+                Some(&entity.label),
+                RefKind::Entity(entity.kind),
+            ),
+            Declaration::Route(route) => (&route.handle, Some(&route.label), ROUTE),
+            // A catalog entry's name is its `kind`, checked by the entry
+            // validator against the tool-name alphabet rather than against the
+            // label rule.
+            Declaration::Affordance(affordance) => (&affordance.handle, None, RefKind::Affordance),
         };
         let named = is_canonical_text(&handle.0);
         if !named {
             mismatches.push(Mismatch::EmptyHandle { position });
         }
-        if !is_canonical_text(label) {
+        if label.is_some_and(|label| !is_canonical_text(label)) {
             mismatches.push(Mismatch::EmptyLabel {
                 handle: handle.clone(),
             });
@@ -890,6 +1393,23 @@ pub(super) fn resolve_patch(
                 Entry::Occupied(_) => mismatches.push(Mismatch::DuplicateHandle {
                     handle: handle.clone(),
                 }),
+            }
+        }
+        if let Declaration::Affordance(affordance) = declaration {
+            validate_affordance(
+                &affordance.handle,
+                &affordance.kind,
+                &affordance.roles,
+                &affordance.preconditions,
+                &affordance.effect_slots,
+                &affordance.outcome_bands,
+                affordance.carries_speech,
+                &mut mismatches,
+            );
+            if !kind_names.insert(affordance.kind.clone()) {
+                mismatches.push(Mismatch::DuplicateAffordanceKind {
+                    handle: affordance.handle.clone(),
+                });
             }
         }
         if let Declaration::Subject(subject) = declaration {
@@ -1006,7 +1526,17 @@ pub(super) fn resolve_patch(
                     }
                 }
             }
+            Declaration::Affordance(_) => {}
             Declaration::Subject(subject) => {
+                for reference in &subject.affordances {
+                    resolve_affordance(
+                        Site::Declaration(subject.handle.clone()),
+                        reference,
+                        &index,
+                        &state.affordance_catalog,
+                        &mut mismatches,
+                    );
+                }
                 if let Some(reference) = &subject.position
                     && let Some(place) = resolve_entity(
                         Site::Declaration(subject.handle.clone()),
@@ -1578,6 +2108,69 @@ pub(super) fn resolve_patch(
         });
     }
 
+    let mut allocated_affordances: BTreeMap<DraftHandle, AffordanceId> = BTreeMap::new();
+    let mut affordances = Vec::new();
+    let allocate_affordance = |handle: &DraftHandle,
+                               entry: Affordance,
+                               affordances: &mut Vec<ResolvedAffordance>,
+                               allocated: &mut BTreeMap<DraftHandle, AffordanceId>,
+                               collisions: &mut Vec<Mismatch>| {
+        let affordance_id = AffordanceId(derive_id(
+            AFFORDANCE_NAMESPACE,
+            world_id,
+            command_id,
+            handle,
+            None,
+        ));
+        if state.affordance_catalog.contains_key(&affordance_id) {
+            collisions.push(Mismatch::CanonicalCollision {
+                handle: handle.clone(),
+            });
+        }
+        allocated.insert(handle.clone(), affordance_id);
+        affordances.push(ResolvedAffordance {
+            handle: handle.clone(),
+            affordance_id,
+            affordance: entry,
+        });
+    };
+    if admits_human {
+        allocate_affordance(
+            &speak_handle,
+            kernel_speak_entry(),
+            &mut affordances,
+            &mut allocated_affordances,
+            &mut collisions,
+        );
+    }
+    for declaration in &patch.declarations {
+        let Declaration::Affordance(input) = declaration else {
+            continue;
+        };
+        allocate_affordance(
+            &input.handle,
+            Affordance {
+                kind: input.kind.clone(),
+                roles: input.roles.clone(),
+                preconditions: input.preconditions.clone(),
+                effect_slots: input.effect_slots.clone(),
+                outcome_bands: input.outcome_bands.clone(),
+                carries_speech: input.carries_speech,
+            },
+            &mut affordances,
+            &mut allocated_affordances,
+            &mut collisions,
+        );
+    }
+    let affordance_id_of = |key: &Key<AffordanceId>| -> AffordanceId {
+        match key {
+            Key::Existing(affordance_id) => *affordance_id,
+            Key::Draft(handle) => *allocated_affordances
+                .get(handle)
+                .expect("a draft affordance reference resolved above"),
+        }
+    };
+
     let mut allocated_subjects: BTreeMap<DraftHandle, SubjectId> = BTreeMap::new();
     let mut subjects = Vec::new();
     for declaration in &patch.declarations {
@@ -1597,7 +2190,6 @@ pub(super) fn resolve_patch(
             });
         }
         allocated_subjects.insert(input.handle.clone(), subject_id);
-        let scope = DecisionScope { subject_id };
         let controller_id = ControllerId(derive_id(
             CONTROLLER_NAMESPACE,
             world_id,
@@ -1617,19 +2209,10 @@ pub(super) fn resolve_patch(
                 ControllerAssignment::OperationalAgent { controller_id }
             }
         };
-        let affordances = input
+        let granted = input
             .affordances
             .iter()
-            .map(|kind| {
-                let affordance_id = AffordanceId(derive_id(
-                    AFFORDANCE_NAMESPACE,
-                    world_id,
-                    command_id,
-                    &input.handle,
-                    Some(affordance_slug(*kind)),
-                ));
-                (affordance_id, AffordanceGrant { scope, kind: *kind })
-            })
+            .map(|reference| affordance_id_of(&key_of(reference)))
             .collect();
         subjects.push(ResolvedSubject {
             handle: input.handle.clone(),
@@ -1639,7 +2222,7 @@ pub(super) fn resolve_patch(
                 kind: input.kind,
             },
             controller,
-            affordances,
+            affordances: granted,
             position: input.position.as_ref().map(|reference| Position {
                 place: entity_id_of(&key_of(reference)),
             }),
@@ -1755,6 +2338,7 @@ pub(super) fn resolve_patch(
         subjects,
         entities,
         routes,
+        affordances,
         operations,
         evidence: patch.evidence.clone(),
     })
@@ -1800,7 +2384,8 @@ pub(super) fn containment_terminates(
 mod tests {
     use super::*;
     use crate::world::tests::{
-        activate, admit_topology, auth_principal, command, creation, owner, player, submit_owner,
+        activate, admit_topology, auth_principal, command, creation, owner, player, reject_owner,
+        speak_entry, submit_owner,
     };
     use crate::world::{
         CallerId, CommandBody, CommandId, KernelError, SubmitReceipt, WorldKernel, WorldPhase,
@@ -1835,13 +2420,22 @@ mod tests {
         })
     }
 
-    fn institution(handle: &str, label: &str, position: Option<Ref<EntityId>>) -> Declaration {
+    /// Every fixture institution is declared by a post-genesis `AdmitPatch`, so
+    /// it grants the committed Speak entry by canonical reference: the kernel
+    /// synthesizes that entry once, at genesis, and a later patch names it like
+    /// any other structure a previous commit allocated.
+    fn institution(
+        kernel: &WorldKernel,
+        handle: &str,
+        label: &str,
+        position: Option<Ref<EntityId>>,
+    ) -> Declaration {
         Declaration::Subject(SubjectDeclaration {
             handle: DraftHandle::new(handle),
             label: label.into(),
             kind: SubjectKind::Institution,
             controller: NewController::OperationalAgent,
-            affordances: BTreeSet::from([AffordanceKind::Speak]),
+            affordances: BTreeSet::from([speak_entry(kernel)]),
             position,
         })
     }
@@ -1877,6 +2471,348 @@ mod tests {
         }
     }
 
+    /// A minimal admissible entry, so a validation test changes exactly one
+    /// thing and names exactly one rejection.
+    fn catalog_entry(
+        handle: &str,
+        kind: &str,
+        roles: Vec<RoleSpec>,
+        effect_slots: Vec<EffectSlot>,
+        outcome_bands: Vec<OutcomeBand>,
+    ) -> Declaration {
+        Declaration::Affordance(AffordanceDeclaration {
+            handle: DraftHandle::new(handle),
+            kind: AffordanceKindName(kind.into()),
+            roles,
+            preconditions: Vec::new(),
+            effect_slots,
+            outcome_bands,
+            carries_speech: false,
+        })
+    }
+
+    fn role_spec(role: &str, kind: RefKind) -> RoleSpec {
+        RoleSpec {
+            role: Role(role.into()),
+            kind,
+        }
+    }
+
+    fn transfer_slot(roles: Vec<&str>, bounds: Bounds) -> EffectSlot {
+        EffectSlot {
+            op_kind: ComponentOpKind::Transfer,
+            roles: roles.into_iter().map(|role| Role(role.into())).collect(),
+            bounds,
+        }
+    }
+
+    fn transfer_roles() -> Vec<RoleSpec> {
+        vec![
+            role_spec("from", RefKind::Subject(None)),
+            role_spec("to", RefKind::Subject(None)),
+            role_spec("goods", RefKind::Entity(EntityKind::Resource)),
+        ]
+    }
+
+    fn band(effects: Vec<usize>) -> OutcomeBand {
+        OutcomeBand { weight: 1, effects }
+    }
+
+    #[test]
+    fn a_catalog_entry_with_a_dangling_or_noncanonical_band_is_rejected() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = draft_world(directory.path());
+        let before = kernel.snapshot().unwrap();
+        let slots = vec![
+            transfer_slot(vec!["from", "to", "goods"], Bounds::Quantity(Quantity(2))),
+            transfer_slot(vec!["from", "to", "goods"], Bounds::Quantity(Quantity(2))),
+        ];
+        let handle = DraftHandle::new("verb");
+
+        for (bands, expected) in [
+            (
+                vec![band(vec![2])],
+                Mismatch::DanglingBandEffect {
+                    handle: handle.clone(),
+                    band: 0,
+                },
+            ),
+            (
+                vec![band(vec![1, 0])],
+                Mismatch::BandEffectsNotCanonical {
+                    handle: handle.clone(),
+                    band: 0,
+                },
+            ),
+            (
+                vec![OutcomeBand {
+                    weight: 0,
+                    effects: vec![0],
+                }],
+                Mismatch::ZeroBandWeight {
+                    handle: handle.clone(),
+                    band: 0,
+                },
+            ),
+            (
+                Vec::new(),
+                Mismatch::NoOutcomeBand {
+                    handle: handle.clone(),
+                },
+            ),
+        ] {
+            let rejected = reject_owner(
+                &mut kernel,
+                &before,
+                admit(patch_of(vec![catalog_entry(
+                    "verb",
+                    "verb",
+                    transfer_roles(),
+                    slots.clone(),
+                    bands,
+                )])),
+            );
+            assert_eq!(rejected, vec![expected]);
+            assert!(kernel.state.affordance_catalog.len() == before.affordances.len());
+        }
+
+        // No effect slots and no speech: the entry could never change anything.
+        let rejected = reject_owner(
+            &mut kernel,
+            &before,
+            admit(patch_of(vec![catalog_entry(
+                "verb",
+                "verb",
+                Vec::new(),
+                Vec::new(),
+                vec![band(Vec::new())],
+            )])),
+        );
+        assert_eq!(rejected, vec![Mismatch::InertAffordance { handle }]);
+    }
+
+    #[test]
+    fn a_slot_whose_roles_do_not_match_its_operation_is_rejected() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = draft_world(directory.path());
+        let before = kernel.snapshot().unwrap();
+        let handle = DraftHandle::new("verb");
+
+        // A `Transfer` takes three referents, not two.
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &before,
+                admit(patch_of(vec![catalog_entry(
+                    "verb",
+                    "verb",
+                    transfer_roles(),
+                    vec![transfer_slot(
+                        vec!["from", "to"],
+                        Bounds::Quantity(Quantity(2))
+                    )],
+                    vec![band(vec![0])],
+                )])),
+            ),
+            vec![Mismatch::SlotRoleArity {
+                handle: handle.clone(),
+                slot: 0
+            }]
+        );
+
+        // Its third referent is a resource, not a place.
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &before,
+                admit(patch_of(vec![catalog_entry(
+                    "verb",
+                    "verb",
+                    vec![
+                        role_spec("from", RefKind::Subject(None)),
+                        role_spec("to", RefKind::Subject(None)),
+                        role_spec("goods", RefKind::Entity(EntityKind::Place)),
+                    ],
+                    vec![transfer_slot(
+                        vec!["from", "to", "goods"],
+                        Bounds::Quantity(Quantity(2))
+                    )],
+                    vec![band(vec![0])],
+                )])),
+            ),
+            vec![Mismatch::RoleKindUnfit {
+                handle: handle.clone(),
+                role: Role("goods".into())
+            }]
+        );
+
+        // A `Transfer` carries a quantity, so an unbounded slot has no ceiling.
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &before,
+                admit(patch_of(vec![catalog_entry(
+                    "verb",
+                    "verb",
+                    transfer_roles(),
+                    vec![transfer_slot(vec!["from", "to", "goods"], Bounds::None)],
+                    vec![band(vec![0])],
+                )])),
+            ),
+            vec![Mismatch::SlotBoundMismatch {
+                handle: handle.clone(),
+                slot: 0
+            }]
+        );
+
+        // A slot naming a role the entry does not declare.
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &before,
+                admit(patch_of(vec![catalog_entry(
+                    "verb",
+                    "verb",
+                    transfer_roles(),
+                    vec![transfer_slot(
+                        vec!["from", "to", "cargo"],
+                        Bounds::Quantity(Quantity(2))
+                    )],
+                    vec![band(vec![0])],
+                )])),
+            ),
+            vec![Mismatch::UnknownRole {
+                handle,
+                role: Role("cargo".into())
+            }]
+        );
+    }
+
+    #[test]
+    fn a_grant_naming_an_undeclared_affordance_is_rejected_and_the_same_patch_commits() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = draft_world(directory.path());
+        let before = kernel.snapshot().unwrap();
+        let entries_before = kernel.state.affordance_catalog.len();
+        let subjects_before = kernel.state.subjects.len();
+
+        let granting = |handle: &str| {
+            Declaration::Subject(SubjectDeclaration {
+                handle: DraftHandle::new("late-arrival"),
+                label: "A Late Arrival".into(),
+                kind: SubjectKind::Person,
+                controller: NewController::NarrativePersona,
+                affordances: BTreeSet::from([Ref::Draft(DraftHandle::new(handle))]),
+                position: None,
+            })
+        };
+
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &before,
+                admit(patch_of(vec![granting("verb")]))
+            ),
+            vec![Mismatch::UnresolvedDraft {
+                site: Site::Declaration(DraftHandle::new("late-arrival")),
+                referent: DraftHandle::new("verb"),
+                expected: RefKind::Affordance,
+            }]
+        );
+        assert_eq!(kernel.state.affordance_catalog.len(), entries_before);
+        assert_eq!(kernel.state.subjects.len(), subjects_before);
+
+        // Declaring the entry in the same patch commits both atomically.
+        let receipt = submit_owner(
+            &mut kernel,
+            &before,
+            admit(patch_of(vec![
+                catalog_entry(
+                    "verb",
+                    "verb",
+                    transfer_roles(),
+                    vec![transfer_slot(
+                        vec!["from", "to", "goods"],
+                        Bounds::Quantity(Quantity(2)),
+                    )],
+                    vec![band(vec![0])],
+                ),
+                granting("verb"),
+            ])),
+        );
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+        assert_eq!(kernel.state.affordance_catalog.len(), entries_before + 1);
+        assert_eq!(kernel.state.subjects.len(), subjects_before + 1);
+        let granted = kernel
+            .state
+            .affordance_grants
+            .values()
+            .find(|entries| entries.len() == 1)
+            .expect("the new subject's grant set");
+        assert!(
+            granted
+                .iter()
+                .all(|id| kernel.state.affordance_catalog.contains_key(id))
+        );
+    }
+
+    #[test]
+    fn two_entries_cannot_share_one_kind_name() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = draft_world(directory.path());
+        let before = kernel.snapshot().unwrap();
+        let slot = transfer_slot(vec!["from", "to", "goods"], Bounds::Quantity(Quantity(2)));
+        let rejected = reject_owner(
+            &mut kernel,
+            &before,
+            admit(patch_of(vec![
+                catalog_entry(
+                    "first",
+                    "haul",
+                    transfer_roles(),
+                    vec![slot.clone()],
+                    vec![band(vec![0])],
+                ),
+                catalog_entry(
+                    "second",
+                    "haul",
+                    transfer_roles(),
+                    vec![slot],
+                    vec![band(vec![0])],
+                ),
+            ])),
+        );
+        assert_eq!(
+            rejected,
+            vec![Mismatch::DuplicateAffordanceKind {
+                handle: DraftHandle::new("second")
+            }]
+        );
+
+        // A kind name outside the tool-name alphabet is refused for the same
+        // reason: it becomes a generated tool name.
+        let rejected = reject_owner(
+            &mut kernel,
+            &before,
+            admit(patch_of(vec![catalog_entry(
+                "loud",
+                "Haul It",
+                transfer_roles(),
+                vec![transfer_slot(
+                    vec!["from", "to", "goods"],
+                    Bounds::Quantity(Quantity(2)),
+                )],
+                vec![band(vec![0])],
+            )])),
+        );
+        assert_eq!(
+            rejected,
+            vec![Mismatch::InvalidAffordanceName {
+                handle: DraftHandle::new("loud")
+            }]
+        );
+    }
+
     fn draft_world(directory: &std::path::Path) -> WorldKernel {
         WorldKernel::create(
             directory.join("world.cc"),
@@ -1903,6 +2839,7 @@ mod tests {
                     CommandId::new(),
                     CallerId::Principal(owner()),
                     admit(patch_of(vec![institution(
+                        &kernel,
                         "rhythm-authority",
                         "The Rhythm Authority",
                         Some(Ref::Draft(DraftHandle::new("kharad-rhythm-road"))),
@@ -1938,26 +2875,24 @@ mod tests {
         let before = kernel.snapshot().unwrap();
         let commits_before = kernel.journal.commit_count();
 
-        let receipt = submit_owner(
-            &mut kernel,
-            &before,
-            admit(patch_of(vec![
-                entity("cavity-yard", "The Cavity Yard", EntityKind::Place),
-                entity("kharad-rhythm-road", "The Rhythm Road", EntityKind::Place),
-                route(
-                    "yard-road",
-                    "The Yard Ramp",
-                    "cavity-yard",
-                    "kharad-rhythm-road",
-                    12,
-                ),
-                institution(
-                    "rhythm-authority",
-                    "The Rhythm Authority",
-                    Some(Ref::Draft(draft("kharad-rhythm-road"))),
-                ),
-            ])),
-        );
+        let patch = patch_of(vec![
+            entity("cavity-yard", "The Cavity Yard", EntityKind::Place),
+            entity("kharad-rhythm-road", "The Rhythm Road", EntityKind::Place),
+            route(
+                "yard-road",
+                "The Yard Ramp",
+                "cavity-yard",
+                "kharad-rhythm-road",
+                12,
+            ),
+            institution(
+                &kernel,
+                "rhythm-authority",
+                "The Rhythm Authority",
+                Some(Ref::Draft(draft("kharad-rhythm-road"))),
+            ),
+        ]);
+        let receipt = submit_owner(&mut kernel, &before, admit(patch));
         assert!(matches!(receipt, SubmitReceipt::Applied(_)));
 
         let after = kernel.snapshot().unwrap();
@@ -2016,6 +2951,7 @@ mod tests {
                     admit(patch_of(vec![
                         entity("rhythm-tithe", "The Rhythm Tithe", EntityKind::Resource),
                         institution(
+                            &kernel,
                             "rhythm-authority",
                             "The Rhythm Authority",
                             Some(Ref::Draft(DraftHandle::new("rhythm-tithe"))),
@@ -2054,6 +2990,7 @@ mod tests {
             entity("rhythm-road", "The Rhythm Road", EntityKind::Place),
             entity("rhythm-road", "  ", EntityKind::Place),
             institution(
+                &kernel,
                 "rhythm-authority",
                 "The Rhythm Authority",
                 Some(Ref::Draft(DraftHandle::new("cavity-yard"))),
@@ -2065,7 +3002,7 @@ mod tests {
                 controller: NewController::Human {
                     principal: player(),
                 },
-                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                affordances: BTreeSet::from([speak_entry(&kernel)]),
                 position: None,
             }),
         ]);
@@ -2107,6 +3044,7 @@ mod tests {
             entity("rhythm-road", "The Rhythm Road", EntityKind::Place),
             entity("cavity-yard", "The Cavity Yard", EntityKind::Place),
             institution(
+                &kernel,
                 "rhythm-authority",
                 "The Rhythm Authority",
                 Some(Ref::Draft(DraftHandle::new("cavity-yard"))),
@@ -2116,7 +3054,7 @@ mod tests {
                 label: "A Late Arrival".into(),
                 kind: SubjectKind::Person,
                 controller: NewController::NarrativePersona,
-                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                affordances: BTreeSet::from([speak_entry(&kernel)]),
                 position: None,
             }),
         ]);
@@ -2541,6 +3479,7 @@ mod tests {
             admit(patch_of(vec![
                 entity("rhythm-road", "The Rhythm Road", EntityKind::Place),
                 institution(
+                    &kernel,
                     "rhythm-authority",
                     "The Rhythm Authority",
                     Some(Ref::Draft(DraftHandle::new("rhythm-road"))),
@@ -2582,7 +3521,7 @@ mod tests {
             label: "Another Player".into(),
             kind: SubjectKind::Person,
             controller: NewController::NarrativePersona,
-            affordances: BTreeSet::from([AffordanceKind::Speak]),
+            affordances: BTreeSet::from([speak_entry(&kernel)]),
             position: None,
         })]);
         submit_owner(&mut kernel, &before, admit(patch.clone()));
@@ -2625,6 +3564,7 @@ mod tests {
                     command_id,
                     CallerId::Principal(owner()),
                     admit(patch_of(vec![institution(
+                        &kernel,
                         "rhythm-authority",
                         "The Rhythm Authority",
                         Some(Ref::Draft(DraftHandle::new("kharad-rhythm-road"))),
@@ -2692,6 +3632,7 @@ mod tests {
         let patch = patch_of(vec![
             entity("rhythm-road", "The Rhythm Road", EntityKind::Place),
             institution(
+                &kernel,
                 "rhythm-authority",
                 "The Rhythm Authority",
                 Some(Ref::Draft(DraftHandle::new("rhythm-road"))),
@@ -2712,6 +3653,7 @@ mod tests {
         let mut candidate = kernel.state.clone();
         let forged_error = super::super::apply_effect(
             &mut candidate,
+            CommandId::issue(),
             &CallerId::Principal(owner()),
             &super::super::WorldEffect::PatchAdmitted { resolved: forged },
         )
@@ -2720,17 +3662,31 @@ mod tests {
 
         // Stale: the honest effect applied twice collides on its own IDs.
         let mut candidate = kernel.state.clone();
-        super::super::apply_effect(&mut candidate, &CallerId::Principal(owner()), &honest).unwrap();
-        let stale_error =
-            super::super::apply_effect(&mut candidate, &CallerId::Principal(owner()), &honest)
-                .unwrap_err();
+        super::super::apply_effect(
+            &mut candidate,
+            CommandId::issue(),
+            &CallerId::Principal(owner()),
+            &honest,
+        )
+        .unwrap();
+        let stale_error = super::super::apply_effect(
+            &mut candidate,
+            CommandId::issue(),
+            &CallerId::Principal(owner()),
+            &honest,
+        )
+        .unwrap_err();
         assert!(matches!(stale_error, KernelError::Invariant(_)));
 
         // A non-owner caller never reaches admission.
         let mut candidate = kernel.state.clone();
-        let unauthorized =
-            super::super::apply_effect(&mut candidate, &CallerId::Principal(player()), &honest)
-                .unwrap_err();
+        let unauthorized = super::super::apply_effect(
+            &mut candidate,
+            CommandId::issue(),
+            &CallerId::Principal(player()),
+            &honest,
+        )
+        .unwrap_err();
         assert!(matches!(unauthorized, KernelError::Invariant(_)));
         assert_eq!(candidate, kernel.state);
 
@@ -2738,9 +3694,13 @@ mod tests {
         let active = activate(&mut kernel);
         assert_eq!(active.revision, before.revision + 3);
         let mut candidate = kernel.state.clone();
-        let wrong_phase =
-            super::super::apply_effect(&mut candidate, &CallerId::Principal(owner()), &honest)
-                .unwrap_err();
+        let wrong_phase = super::super::apply_effect(
+            &mut candidate,
+            CommandId::issue(),
+            &CallerId::Principal(owner()),
+            &honest,
+        )
+        .unwrap_err();
         assert!(matches!(wrong_phase, KernelError::Invariant(_)));
         assert_eq!(candidate, kernel.state);
     }
@@ -2863,6 +3823,7 @@ mod tests {
                     subjects: Vec::new(),
                     entities: Vec::new(),
                     routes: Vec::new(),
+                    affordances: Vec::new(),
                     operations: vec![ResolvedOp::Relocate {
                         subject_id: topology.walker,
                         edge_id,
@@ -2871,9 +3832,13 @@ mod tests {
                 },
             };
             let mut candidate = kernel.state.clone();
-            let error =
-                super::super::apply_effect(&mut candidate, &CallerId::Principal(owner()), &forged)
-                    .unwrap_err();
+            let error = super::super::apply_effect(
+                &mut candidate,
+                CommandId::issue(),
+                &CallerId::Principal(owner()),
+                &forged,
+            )
+            .unwrap_err();
             assert!(matches!(error, KernelError::Invariant(_)));
             assert_eq!(candidate, kernel.state);
         }

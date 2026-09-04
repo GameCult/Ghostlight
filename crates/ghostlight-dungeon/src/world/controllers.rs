@@ -7,9 +7,10 @@
 //! affordance fields.
 
 use crate::world::{
-    AffordanceId, AffordanceKind, CommandId, CommitReceipt, ControllerMode, DecisionAction,
-    DecisionInvocation, DecisionOpportunity, DependencyTarget, KernelError, MailboxError,
-    SubjectId, SubjectSnapshot, SubmitReceipt, WorldMailbox, WorldSnapshot,
+    AffordanceId, AffordanceSnapshot, Bounds, CommandId, CommitReceipt, ControllerMode, Cost,
+    DecisionInvocation, DecisionOpportunity, DependencyTarget, EdgeId, EntityId, EntityKind,
+    KernelError, Magnitude, MailboxError, ProposedEffect, Quantity, RefKind, RoleBinding,
+    SubjectId, SubjectSnapshot, SubmitReceipt, Target, Utterance, WorldMailbox, WorldSnapshot,
 };
 use async_trait::async_trait;
 use chrono::Utc;
@@ -44,10 +45,18 @@ const MAX_CONNECTOR_FRAME_BYTES: usize = 1_052_672;
 const REQUEST_EXPIRY: Duration = Duration::from_secs(300);
 const TOOL_STEP_BUDGET: usize = 4;
 const PERSONA_WORD_BUDGET: usize = 180;
-const CONTROLLER_WORK_ROW: &str = "controller_work.v3";
-const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v3";
+const CONTROLLER_WORK_ROW: &str = "controller_work.v4";
+const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v4";
 
-const SPEAK_TOOL: &str = "speak";
+/// The Interpreter's byte-span capture tool. It is not the generated `speak`
+/// affordance tool: one captures an utterance out of preserved prose, the other
+/// is a projection of a catalog entry.
+const INTERPRETER_SPEAK_TOOL: &str = "speak";
+
+/// The kind name the narrative lane looks for among its granted entries. The
+/// kernel carries the name and branches on it nowhere; matching on it here is a
+/// consumer reading data, which is where genre belongs.
+const SPEAK_KIND: &str = "speak";
 const RECORD_GAP_TOOL: &str = "record_gap";
 const RECORD_NEED_TOOL: &str = "record_need";
 const FINISH_INTERPRETATION_TOOL: &str = "finish_interpretation";
@@ -359,7 +368,7 @@ enum NarrativeCheckpoint {
         persona_model: String,
         interpreter_model: String,
         opportunity: DecisionOpportunity,
-        speak_affordance: AffordanceId,
+        granted: Vec<AffordanceSnapshot>,
         invocation: PreparedInference,
     },
     Persona {
@@ -368,7 +377,7 @@ enum NarrativeCheckpoint {
         typed_view: String,
         interpreter_model: String,
         opportunity: DecisionOpportunity,
-        speak_affordance: AffordanceId,
+        granted: Vec<AffordanceSnapshot>,
         projector_output: InferenceOutput,
         invocation: PreparedInference,
     },
@@ -377,7 +386,7 @@ enum NarrativeCheckpoint {
         turn: PersonaTurn,
         interpreter_prompt: String,
         opportunity: DecisionOpportunity,
-        speak_affordance: AffordanceId,
+        granted: Vec<AffordanceSnapshot>,
         completed: Vec<InferenceOutput>,
         invocation: PreparedInference,
     },
@@ -386,7 +395,7 @@ enum NarrativeCheckpoint {
         turn: PersonaTurn,
         interpreter_prompt: String,
         opportunity: DecisionOpportunity,
-        speak_affordance: AffordanceId,
+        granted: Vec<AffordanceSnapshot>,
         completed: Vec<InferenceOutput>,
     },
     NoProposal {
@@ -405,7 +414,7 @@ enum OperationalCheckpoint {
         command_id: CommandId,
         agent_prompt: String,
         opportunity: DecisionOpportunity,
-        speak_affordance: AffordanceId,
+        granted: Vec<AffordanceSnapshot>,
         completed: Vec<InferenceOutput>,
         invocation: PreparedInference,
     },
@@ -413,7 +422,7 @@ enum OperationalCheckpoint {
         command_id: CommandId,
         agent_prompt: String,
         opportunity: DecisionOpportunity,
-        speak_affordance: AffordanceId,
+        granted: Vec<AffordanceSnapshot>,
         completed: Vec<InferenceOutput>,
     },
     NoProposal {
@@ -496,14 +505,14 @@ impl NarrativeCheckpoint {
                 persona_model,
                 interpreter_model,
                 opportunity,
-                speak_affordance,
+                granted,
                 invocation,
             } => {
                 base_checkpoint_is_valid(
                     identity,
                     typed_view,
                     opportunity,
-                    *speak_affordance,
+                    granted,
                     ControllerMode::NarrativePersona,
                 ) && canonical_model(persona_model)
                     && canonical_model(interpreter_model)
@@ -521,7 +530,7 @@ impl NarrativeCheckpoint {
                 typed_view,
                 interpreter_model,
                 opportunity,
-                speak_affordance,
+                granted,
                 projector_output,
                 invocation,
             } => {
@@ -541,7 +550,7 @@ impl NarrativeCheckpoint {
                     identity,
                     typed_view,
                     opportunity,
-                    *speak_affordance,
+                    granted,
                     ControllerMode::NarrativePersona,
                 ) && canonical_model(interpreter_model)
                     && canonical_model(&invocation.invocation.request.model)
@@ -556,13 +565,13 @@ impl NarrativeCheckpoint {
                 turn,
                 interpreter_prompt,
                 opportunity,
-                speak_affordance,
+                granted,
                 completed,
                 invocation,
             } => {
                 turn_matches_opportunity(turn, opportunity)
                     && opportunity.controller_mode == ControllerMode::NarrativePersona
-                    && opportunity.affordance_ids.contains(speak_affordance)
+                    && granted_matches_opportunity(granted, opportunity)
                     && !interpreter_prompt.is_empty()
                     && canonical_model(&invocation.invocation.request.model)
                     && match evaluate_interpreter_loop(turn, interpreter_prompt, completed) {
@@ -589,13 +598,13 @@ impl NarrativeCheckpoint {
                 turn,
                 interpreter_prompt,
                 opportunity,
-                speak_affordance,
+                granted,
                 completed,
                 ..
             } => {
                 turn_matches_opportunity(turn, opportunity)
                     && opportunity.controller_mode == ControllerMode::NarrativePersona
-                    && opportunity.affordance_ids.contains(speak_affordance)
+                    && granted_matches_opportunity(granted, opportunity)
                     && derive_narrative_capture(turn, interpreter_prompt, completed)
                         .is_ok_and(|capture| capture.proposal.is_some())
             }
@@ -638,20 +647,21 @@ impl OperationalCheckpoint {
                 command_id,
                 agent_prompt,
                 opportunity,
-                speak_affordance,
+                granted,
                 completed,
                 invocation,
             } => {
                 opportunity.controller_mode == ControllerMode::OperationalAgent
-                    && opportunity.affordance_ids.contains(speak_affordance)
+                    && granted_matches_opportunity(granted, opportunity)
                     && !agent_prompt.is_empty()
                     && canonical_model(&invocation.invocation.request.model)
-                    && match evaluate_operational_loop(agent_prompt, completed) {
+                    && match evaluate_operational_loop(agent_prompt, granted, completed) {
                         Ok(OperationalLoopEvaluation::Continue { conversation }) => {
                             operational_request(
                                 *command_id,
                                 completed.len(),
                                 &invocation.invocation.request.model,
+                                granted,
                                 conversation,
                             )
                             .is_ok_and(|expected| {
@@ -669,13 +679,13 @@ impl OperationalCheckpoint {
             Self::ReadyToSubmit {
                 agent_prompt,
                 opportunity,
-                speak_affordance,
+                granted,
                 completed,
                 ..
             } => {
                 opportunity.controller_mode == ControllerMode::OperationalAgent
-                    && opportunity.affordance_ids.contains(speak_affordance)
-                    && derive_operational_capture(agent_prompt, completed)
+                    && granted_matches_opportunity(granted, opportunity)
+                    && derive_operational_capture(agent_prompt, granted, completed)
                         .is_ok_and(|capture| capture.proposal.is_some())
             }
             Self::NoProposal {
@@ -685,7 +695,7 @@ impl OperationalCheckpoint {
                 ..
             } => {
                 opportunity.controller_mode == ControllerMode::OperationalAgent
-                    && derive_operational_capture(agent_prompt, completed)
+                    && derive_operational_capture(agent_prompt, &[], completed)
                         .is_ok_and(|capture| capture.proposal.is_none())
             }
         }
@@ -715,7 +725,7 @@ pub(crate) struct TranslationGapSummary {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct OperationalCapture {
-    pub(crate) proposal: Option<String>,
+    pub(crate) proposal: Option<DecisionInvocation>,
     pub(crate) needs: Vec<ControllerNeed>,
     pub(crate) inference_receipts: Vec<String>,
 }
@@ -724,14 +734,26 @@ fn base_checkpoint_is_valid(
     identity: &str,
     typed_view: &str,
     opportunity: &DecisionOpportunity,
-    speak_affordance: AffordanceId,
+    granted: &[AffordanceSnapshot],
     mode: ControllerMode,
 ) -> bool {
     !identity.is_empty()
         && identity.trim() == identity
         && !typed_view.is_empty()
         && opportunity.controller_mode == mode
-        && opportunity.affordance_ids.contains(&speak_affordance)
+        && granted_matches_opportunity(granted, opportunity)
+}
+
+/// A resumed run rebuilds byte-identical tool schemas only if it still holds the
+/// same entries the opportunity grants.
+fn granted_matches_opportunity(
+    granted: &[AffordanceSnapshot],
+    opportunity: &DecisionOpportunity,
+) -> bool {
+    !granted.is_empty()
+        && granted
+            .iter()
+            .all(|entry| opportunity.affordance_ids.contains(&entry.id))
 }
 
 fn turn_matches_opportunity(turn: &PersonaTurn, opportunity: &DecisionOpportunity) -> bool {
@@ -770,9 +792,10 @@ fn derive_narrative_capture(
 
 fn derive_operational_capture(
     agent_prompt: &str,
+    granted: &[AffordanceSnapshot],
     completed: &[InferenceOutput],
 ) -> Result<OperationalCapture, ControllerError> {
-    match evaluate_operational_loop(agent_prompt, completed)? {
+    match evaluate_operational_loop(agent_prompt, granted, completed)? {
         OperationalLoopEvaluation::Complete { capture } => Ok(capture),
         OperationalLoopEvaluation::Continue { .. } => Err(ControllerError::Serialization(
             "terminal operational checkpoint has unfinished evidence".into(),
@@ -1149,7 +1172,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 persona_model,
                 interpreter_model,
                 opportunity,
-                speak_affordance,
+                granted,
                 invocation: existing_invocation,
             },
             NarrativeCheckpoint::Persona {
@@ -1158,7 +1181,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 typed_view: next_typed_view,
                 interpreter_model: next_interpreter_model,
                 opportunity: next_opportunity,
-                speak_affordance: next_speak_affordance,
+                granted: next_granted,
                 invocation,
                 ..
             },
@@ -1168,7 +1191,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 && typed_view == next_typed_view
                 && interpreter_model == next_interpreter_model
                 && opportunity == next_opportunity
-                && speak_affordance == next_speak_affordance
+                && granted == next_granted
                 && &invocation.invocation.request.model == persona_model
                 && invocation.invocation.caller_runtime_id
                     == existing_invocation.invocation.caller_runtime_id
@@ -1180,7 +1203,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 typed_view,
                 interpreter_model,
                 opportunity,
-                speak_affordance,
+                granted,
                 projector_output,
                 invocation: existing_invocation,
             },
@@ -1189,7 +1212,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 turn,
                 interpreter_prompt,
                 opportunity: next_opportunity,
-                speak_affordance: next_speak_affordance,
+                granted: next_granted,
                 completed,
                 invocation,
             },
@@ -1210,7 +1233,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
             });
             command_id == next_command_id
                 && opportunity == next_opportunity
-                && speak_affordance == next_speak_affordance
+                && granted == next_granted
                 && completed.is_empty()
                 && interpreter_prompt == &expected_prompt
                 && turn.binding().projector_receipt_digest == projector_receipt
@@ -1224,7 +1247,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 turn,
                 interpreter_prompt,
                 opportunity,
-                speak_affordance,
+                granted,
                 completed,
                 invocation: existing_invocation,
             },
@@ -1233,7 +1256,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 turn: next_turn,
                 interpreter_prompt: next_interpreter_prompt,
                 opportunity: next_opportunity,
-                speak_affordance: next_speak_affordance,
+                granted: next_granted,
                 completed: next_completed,
                 invocation: next_invocation,
             },
@@ -1242,7 +1265,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 && turn == next_turn
                 && interpreter_prompt == next_interpreter_prompt
                 && opportunity == next_opportunity
-                && speak_affordance == next_speak_affordance
+                && granted == next_granted
                 && completed_advances(completed, next_completed)
                 && existing_invocation.invocation.request.model
                     == next_invocation.invocation.request.model
@@ -1255,7 +1278,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 turn,
                 interpreter_prompt,
                 opportunity,
-                speak_affordance,
+                granted,
                 completed,
                 ..
             },
@@ -1264,7 +1287,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 turn: next_turn,
                 interpreter_prompt: next_interpreter_prompt,
                 opportunity: next_opportunity,
-                speak_affordance: next_speak_affordance,
+                granted: next_granted,
                 completed: next_completed,
             },
         ) => {
@@ -1272,7 +1295,7 @@ fn valid_narrative_progression(existing: &NarrativeCheckpoint, next: &NarrativeC
                 && turn == next_turn
                 && interpreter_prompt == next_interpreter_prompt
                 && opportunity == next_opportunity
-                && speak_affordance == next_speak_affordance
+                && granted == next_granted
                 && completed_advances(completed, next_completed)
         }
         (
@@ -1312,7 +1335,7 @@ fn valid_operational_progression(
                 command_id,
                 agent_prompt,
                 opportunity,
-                speak_affordance,
+                granted,
                 completed,
                 invocation: existing_invocation,
             },
@@ -1320,7 +1343,7 @@ fn valid_operational_progression(
                 command_id: next_command_id,
                 agent_prompt: next_agent_prompt,
                 opportunity: next_opportunity,
-                speak_affordance: next_speak_affordance,
+                granted: next_granted,
                 completed: next_completed,
                 invocation: next_invocation,
             },
@@ -1328,7 +1351,7 @@ fn valid_operational_progression(
             command_id == next_command_id
                 && agent_prompt == next_agent_prompt
                 && opportunity == next_opportunity
-                && speak_affordance == next_speak_affordance
+                && granted == next_granted
                 && completed_advances(completed, next_completed)
                 && existing_invocation.invocation.request.model
                     == next_invocation.invocation.request.model
@@ -1340,7 +1363,7 @@ fn valid_operational_progression(
                 command_id,
                 agent_prompt,
                 opportunity,
-                speak_affordance,
+                granted,
                 completed,
                 ..
             },
@@ -1348,14 +1371,14 @@ fn valid_operational_progression(
                 command_id: next_command_id,
                 agent_prompt: next_agent_prompt,
                 opportunity: next_opportunity,
-                speak_affordance: next_speak_affordance,
+                granted: next_granted,
                 completed: next_completed,
             },
         ) => {
             command_id == next_command_id
                 && agent_prompt == next_agent_prompt
                 && opportunity == next_opportunity
-                && speak_affordance == next_speak_affordance
+                && granted == next_granted
                 && completed_advances(completed, next_completed)
         }
         (
@@ -1591,6 +1614,8 @@ pub(crate) enum ControllerError {
     OpportunityMismatch,
     #[error("controller opportunity has no Speak affordance")]
     SpeakUnavailable,
+    #[error("controller opportunity grants no affordance")]
+    NoGrantedAffordance,
     #[error("Eve command ID does not match persisted controller work")]
     CommandMismatch,
     #[error("no persisted controller work exists for this Eve command")]
@@ -1757,7 +1782,7 @@ impl ControllerRunner {
             persona_model: self.models.persona.clone(),
             interpreter_model: self.models.interpreter.clone(),
             opportunity: selected.opportunity,
-            speak_affordance: selected.speak_affordance,
+            granted: selected.granted.clone(),
             invocation: self.prepare(projector_request(
                 command_id,
                 &self.models.projector,
@@ -1819,29 +1844,31 @@ impl ControllerRunner {
         let agent_prompt = build_operational_agent_prompt(&OperationalAgentPrompt {
             identity: &identity,
             typed_view: &typed_view,
-            available_tools: "speak(text), record_need(detail), finish_without_proposal()",
+            available_tools: &catalog_signatures(&selected.granted),
             decision_pressure: "Choose whether this decision owner should speak now.",
             domain_guidance: "",
             step_budget: TOOL_STEP_BUDGET,
         });
-        let initial_conversation = match evaluate_operational_loop(&agent_prompt, &[])? {
-            OperationalLoopEvaluation::Continue { conversation } => conversation,
-            OperationalLoopEvaluation::Complete { .. } => {
-                return Err(ControllerError::Serialization(
-                    "empty operational evidence unexpectedly finalized".into(),
-                ));
-            }
-        };
+        let initial_conversation =
+            match evaluate_operational_loop(&agent_prompt, &selected.granted, &[])? {
+                OperationalLoopEvaluation::Continue { conversation } => conversation,
+                OperationalLoopEvaluation::Complete { .. } => {
+                    return Err(ControllerError::Serialization(
+                        "empty operational evidence unexpectedly finalized".into(),
+                    ));
+                }
+            };
         let checkpoint = OperationalCheckpoint::AgentInFlight {
             command_id,
             agent_prompt,
             opportunity: selected.opportunity,
-            speak_affordance: selected.speak_affordance,
+            granted: selected.granted.clone(),
             completed: Vec::new(),
             invocation: self.prepare(operational_request(
                 command_id,
                 0,
                 &self.models.operational_agent,
+                &selected.granted,
                 initial_conversation,
             )?)?,
         };
@@ -1889,7 +1916,7 @@ impl ControllerRunner {
                 command_id,
                 agent_prompt,
                 opportunity,
-                speak_affordance,
+                granted,
                 mut completed,
                 invocation,
             } = checkpoint.clone()
@@ -1908,14 +1935,14 @@ impl ControllerRunner {
                 },
             };
             completed.push(output);
-            match evaluate_operational_loop(&agent_prompt, &completed) {
+            match evaluate_operational_loop(&agent_prompt, &granted, &completed) {
                 Ok(OperationalLoopEvaluation::Complete { capture }) => {
                     let next = if capture.proposal.is_some() {
                         OperationalCheckpoint::ReadyToSubmit {
                             command_id,
                             agent_prompt,
                             opportunity,
-                            speak_affordance,
+                            granted,
                             completed,
                         }
                     } else {
@@ -1944,14 +1971,15 @@ impl ControllerRunner {
                         command_id,
                         agent_prompt,
                         opportunity,
-                        speak_affordance,
                         completed,
                         invocation: self.prepare(operational_request(
                             command_id,
                             round,
                             &model,
+                            &granted,
                             conversation,
                         )?)?,
+                        granted,
                     };
                     match self
                         .persist(ControllerWork::Operational(next.clone()))
@@ -2035,19 +2063,25 @@ impl ControllerRunner {
                 Err(ControllerError::AmbiguousOpportunity)
             };
         };
-        let speak_affordance = subject
+        let granted: Vec<AffordanceSnapshot> = snapshot
             .affordances
-            .get(&AffordanceKind::Speak)
-            .copied()
-            .filter(|id| opportunity.affordance_ids.contains(id))
-            .ok_or(ControllerError::SpeakUnavailable)?;
+            .iter()
+            .filter(|entry| {
+                subject.affordances.contains(&entry.id)
+                    && opportunity.affordance_ids.contains(&entry.id)
+            })
+            .cloned()
+            .collect();
+        if granted.is_empty() {
+            return Err(ControllerError::NoGrantedAffordance);
+        }
         Ok(SelectedDecision {
             snapshot,
             subject,
             // The run's own bound value, not the fresh snapshot's: one run binds
             // one opportunity, persists it, and submits it unchanged.
             opportunity: exact_opportunity.clone(),
-            speak_affordance,
+            granted,
         })
     }
 
@@ -2102,7 +2136,7 @@ impl ControllerRunner {
             persona_model,
             interpreter_model,
             opportunity,
-            speak_affordance,
+            granted,
             invocation,
         } = checkpoint.clone()
         else {
@@ -2140,7 +2174,7 @@ impl ControllerRunner {
             typed_view,
             interpreter_model,
             opportunity,
-            speak_affordance,
+            granted,
             projector_output,
             invocation: self.prepare(persona_request(
                 command_id,
@@ -2172,7 +2206,7 @@ impl ControllerRunner {
             typed_view,
             interpreter_model,
             opportunity,
-            speak_affordance,
+            granted,
             projector_output,
             invocation,
         } = checkpoint.clone()
@@ -2230,7 +2264,7 @@ impl ControllerRunner {
             turn,
             interpreter_prompt,
             opportunity,
-            speak_affordance,
+            granted,
             completed: Vec::new(),
             invocation: self.prepare(interpreter_request(
                 command_id,
@@ -2263,7 +2297,7 @@ impl ControllerRunner {
                 turn,
                 interpreter_prompt,
                 opportunity,
-                speak_affordance,
+                granted,
                 mut completed,
                 invocation,
             } = checkpoint.clone()
@@ -2290,7 +2324,7 @@ impl ControllerRunner {
                             turn,
                             interpreter_prompt,
                             opportunity,
-                            speak_affordance,
+                            granted,
                             completed,
                         }
                     } else {
@@ -2321,7 +2355,7 @@ impl ControllerRunner {
                         turn,
                         interpreter_prompt,
                         opportunity,
-                        speak_affordance,
+                        granted,
                         completed,
                         invocation: self.prepare(interpreter_request(
                             command_id,
@@ -2531,7 +2565,9 @@ struct SelectedDecision {
     snapshot: WorldSnapshot,
     subject: SubjectSnapshot,
     opportunity: DecisionOpportunity,
-    speak_affordance: AffordanceId,
+    /// The entries this opportunity grants, in `AffordanceId` order. Every
+    /// model-facing surface is a projection of exactly this list.
+    granted: Vec<AffordanceSnapshot>,
 }
 
 impl SelectedDecision {
@@ -2544,9 +2580,7 @@ impl SelectedDecision {
                 "label": self.subject.label,
                 "kind": self.subject.kind,
             },
-            "permission": {
-                "speak": true,
-            },
+            "permission": catalog_permissions(&self.granted),
         }))
         .map_err(|error| ControllerError::Serialization(error.to_string()))
     }
@@ -2564,9 +2598,7 @@ impl SelectedDecision {
                 "kind": self.subject.kind,
                 "place": self.typed_place(),
             },
-            "permission": {
-                "speak": true,
-            },
+            "permission": catalog_permissions(&self.granted),
             "routes": self.typed_routes(),
             "holdings": self.typed_holdings(),
             "dependencies": self.typed_dependencies(),
@@ -2663,16 +2695,21 @@ impl SelectedDecision {
             .map_err(|error| ControllerError::Serialization(error.to_string()))
     }
 
+    /// Only spoken events. What one subject perceives of another's action is a
+    /// `Knowledge` question and has no component yet; rendering every action
+    /// here would decide that every subject perceives everything.
     fn typed_visible_events(&self) -> Vec<Value> {
         self.snapshot
             .events
             .iter()
-            .map(|event| match &event.invocation.action {
-                DecisionAction::Speak { text } => json!({
-                    "revision": event.revision,
-                    "speaker_subject_id": event.scope.subject_id,
-                    "text": text,
-                }),
+            .filter_map(|event| {
+                event.invocation.speech.as_ref().map(|text| {
+                    json!({
+                        "revision": event.revision,
+                        "speaker_subject_id": event.scope.subject_id,
+                        "text": text.as_str(),
+                    })
+                })
             })
             .collect()
     }
@@ -2681,35 +2718,47 @@ impl SelectedDecision {
         self.snapshot
             .events
             .iter()
-            .map(|event| match &event.invocation.action {
-                DecisionAction::Speak { text } => {
-                    let speaker = self
-                        .snapshot
-                        .subjects
-                        .iter()
-                        .find(|subject| subject.id == event.scope.subject_id)
-                        .map(|subject| subject.label.as_str())
-                        .ok_or_else(|| {
-                            ControllerError::Serialization(
-                                "visible event speaker is absent from the canonical snapshot"
-                                    .into(),
-                            )
-                        })?;
-                    Ok(json!({
-                        "speaker": speaker,
-                        "text": text,
-                    }))
-                }
+            .filter_map(|event| event.invocation.speech.as_ref().map(|text| (event, text)))
+            .map(|(event, text)| {
+                let speaker = self
+                    .snapshot
+                    .subjects
+                    .iter()
+                    .find(|subject| subject.id == event.scope.subject_id)
+                    .map(|subject| subject.label.as_str())
+                    .ok_or_else(|| {
+                        ControllerError::Serialization(
+                            "visible event speaker is absent from the canonical snapshot".into(),
+                        )
+                    })?;
+                Ok(json!({
+                    "speaker": speaker,
+                    "text": text.as_str(),
+                }))
             })
             .collect()
     }
 }
 
-fn speak_invocation(speak_affordance: AffordanceId, text: String) -> DecisionInvocation {
-    DecisionInvocation {
-        affordance_id: speak_affordance,
-        action: DecisionAction::Speak { text },
-    }
+/// The narrative lane speaks and does nothing else, so it finds its entry by
+/// kind name among the entries the kernel granted this opportunity.
+fn speak_invocation(
+    granted: &[AffordanceSnapshot],
+    text: String,
+) -> Result<DecisionInvocation, ControllerError> {
+    let entry = granted
+        .iter()
+        .find(|entry| entry.entry.kind.0 == SPEAK_KIND)
+        .ok_or(ControllerError::SpeakUnavailable)?;
+    let speech = Utterance::new(text).ok_or_else(|| {
+        ControllerError::Serialization("Persona proposal is not canonical utterance text".into())
+    })?;
+    Ok(DecisionInvocation {
+        affordance: entry.id,
+        bindings: Vec::new(),
+        proposed: Vec::new(),
+        speech: Some(speech),
+    })
 }
 
 fn narrative_invocation(
@@ -2718,7 +2767,7 @@ fn narrative_invocation(
     let NarrativeCheckpoint::ReadyToSubmit {
         turn,
         interpreter_prompt,
-        speak_affordance,
+        granted,
         completed,
         ..
     } = checkpoint
@@ -2737,7 +2786,7 @@ fn narrative_invocation(
         .get(span.start_byte..span.end_byte)
         .ok_or_else(|| ControllerError::Serialization("Persona proposal span is not exact".into()))?
         .to_owned();
-    Ok(speak_invocation(*speak_affordance, text))
+    speak_invocation(granted, text)
 }
 
 fn operational_invocation(
@@ -2745,7 +2794,7 @@ fn operational_invocation(
 ) -> Result<DecisionInvocation, ControllerError> {
     let OperationalCheckpoint::ReadyToSubmit {
         agent_prompt,
-        speak_affordance,
+        granted,
         completed,
         ..
     } = checkpoint
@@ -2754,12 +2803,11 @@ fn operational_invocation(
             "operational work is not ready to submit".into(),
         ));
     };
-    let text = derive_operational_capture(agent_prompt, completed)?
+    derive_operational_capture(agent_prompt, granted, completed)?
         .proposal
         .ok_or_else(|| {
             ControllerError::Serialization("operational work has no exact proposal".into())
-        })?;
-    Ok(speak_invocation(*speak_affordance, text))
+        })
 }
 
 fn narrative_capture(
@@ -2826,17 +2874,21 @@ fn completed_operational(
     checkpoint: &OperationalCheckpoint,
     submission: SubmissionDisposition,
 ) -> Result<OperationalRun, ControllerError> {
-    let (agent_prompt, completed) = match checkpoint {
+    // A `NoProposal` checkpoint holds no granted catalog: it reached the end of
+    // its turn without one, so the empty set is what its capture re-derives
+    // against.
+    let (agent_prompt, granted, completed) = match checkpoint {
         OperationalCheckpoint::ReadyToSubmit {
             agent_prompt,
+            granted,
             completed,
             ..
-        }
-        | OperationalCheckpoint::NoProposal {
+        } => (agent_prompt, granted.as_slice(), completed),
+        OperationalCheckpoint::NoProposal {
             agent_prompt,
             completed,
             ..
-        } => (agent_prompt, completed),
+        } => (agent_prompt, [].as_slice(), completed),
         OperationalCheckpoint::AgentInFlight { .. } => {
             return Err(ControllerError::Serialization(
                 "completed operational work is not terminal".into(),
@@ -2844,7 +2896,7 @@ fn completed_operational(
         }
     };
     Ok(OperationalRun::Completed(OperationalDecision {
-        capture: derive_operational_capture(agent_prompt, completed)?,
+        capture: derive_operational_capture(agent_prompt, granted, completed)?,
         submission,
     }))
 }
@@ -2921,40 +2973,41 @@ fn evaluate_interpreter_loop(
                         arguments: arguments.clone(),
                     });
                     let result = match name.as_str() {
-                        SPEAK_TOOL => match serde_json::from_str::<InterpreterSpeakCall>(arguments)
-                        {
-                            Ok(call) if !captured_speech => {
-                                let derived_text = source
-                                    .source_prose()
-                                    .get(call.source_start_byte..call.source_end_byte)
-                                    .unwrap_or_default()
-                                    .to_owned();
-                                let feedback = accumulator.capture_proposal(
-                                    SpeakProposal { text: derived_text },
-                                    call.source_start_byte,
-                                    call.source_end_byte,
-                                );
-                                captured_speech = feedback == CaptureToolFeedback::Accepted;
-                                format!("{feedback:?}")
-                            }
-                            Ok(call) => {
-                                let feedback = accumulator.record_gap(RecordGapToolCall {
+                        INTERPRETER_SPEAK_TOOL => {
+                            match serde_json::from_str::<InterpreterSpeakCall>(arguments) {
+                                Ok(call) if !captured_speech => {
+                                    let derived_text = source
+                                        .source_prose()
+                                        .get(call.source_start_byte..call.source_end_byte)
+                                        .unwrap_or_default()
+                                        .to_owned();
+                                    let feedback = accumulator.capture_proposal(
+                                        SpeakProposal { text: derived_text },
+                                        call.source_start_byte,
+                                        call.source_end_byte,
+                                    );
+                                    captured_speech = feedback == CaptureToolFeedback::Accepted;
+                                    format!("{feedback:?}")
+                                }
+                                Ok(call) => {
+                                    let feedback = accumulator.record_gap(RecordGapToolCall {
                                     kind: TranslationGapKind::Ambiguity,
                                     source_start_byte: call.source_start_byte,
                                     source_end_byte: call.source_end_byte,
                                     detail: "More than one speech proposal was offered; this runner permits one decision invocation per opportunity.".into(),
                                 });
-                                format!("{feedback:?}")
+                                    format!("{feedback:?}")
+                                }
+                                Err(error) => format!(
+                                    "{:?}",
+                                    accumulator.record_tool_decode_failure(
+                                        name,
+                                        arguments,
+                                        &error.to_string(),
+                                    )
+                                ),
                             }
-                            Err(error) => format!(
-                                "{:?}",
-                                accumulator.record_tool_decode_failure(
-                                    name,
-                                    arguments,
-                                    &error.to_string(),
-                                )
-                            ),
-                        },
+                        }
                         RECORD_GAP_TOOL => {
                             match serde_json::from_str::<RecordGapToolCall>(arguments) {
                                 Ok(call) => format!("{:?}", accumulator.record_gap(call)),
@@ -3036,6 +3089,7 @@ enum OperationalLoopEvaluation {
 
 fn evaluate_operational_loop(
     prompt: &str,
+    granted: &[AffordanceSnapshot],
     completed: &[InferenceOutput],
 ) -> Result<OperationalLoopEvaluation, ControllerError> {
     let mut conversation = vec![CodexInputItem::UserText {
@@ -3074,13 +3128,16 @@ fn evaluate_operational_loop(
                         name: name.clone(),
                         arguments: arguments.clone(),
                     });
+                    let entry = granted.iter().find(|entry| entry.entry.kind.0 == *name);
                     let result = match name.as_str() {
-                        SPEAK_TOOL => match serde_json::from_str::<OperationalSpeakCall>(arguments)
-                        {
-                            Ok(call) if terminal_choice.is_none() => {
-                                proposal = Some(call.text);
-                                terminal_choice = Some(SPEAK_TOOL);
-                                "speech proposal captured".into()
+                        _ if entry.is_some() => match decode_catalog_call(
+                            entry.expect("the entry matched above"),
+                            arguments,
+                        ) {
+                            Ok(invocation) if terminal_choice.is_none() => {
+                                proposal = Some(invocation);
+                                terminal_choice = Some(name.clone());
+                                "invocation captured".into()
                             }
                             Ok(_) => {
                                 needs.push(ControllerNeed {
@@ -3088,8 +3145,8 @@ fn evaluate_operational_loop(
                                 });
                                 "one terminal choice is already captured".into()
                             }
-                            Err(error) => {
-                                needs.push(tool_decode_need(name, arguments, &error.to_string()));
+                            Err(detail) => {
+                                needs.push(tool_decode_need(name, arguments, &detail));
                                 "arguments recorded as a need".into()
                             }
                         },
@@ -3115,7 +3172,7 @@ fn evaluate_operational_loop(
                                             detail: "finish_without_proposal contradicted an existing terminal choice".into(),
                                         });
                                     }
-                                    terminal_choice = Some(FINISH_WITHOUT_PROPOSAL_TOOL);
+                                    terminal_choice = Some(FINISH_WITHOUT_PROPOSAL_TOOL.to_owned());
                                     "decision finished without a proposal".into()
                                 }
                                 Err(error) => {
@@ -3287,6 +3344,7 @@ fn operational_request(
     command_id: CommandId,
     round: usize,
     model: &str,
+    granted: &[AffordanceSnapshot],
     input: Vec<CodexInputItem>,
 ) -> Result<InferenceRequest, ControllerError> {
     tool_request(
@@ -3296,7 +3354,7 @@ fn operational_request(
         model,
         "Use only the supplied tools for this permissioned decision. Returning no proposal is valid.",
         input,
-        operational_tools(),
+        catalog_tools(granted),
     )
 }
 
@@ -3329,7 +3387,7 @@ fn tool_request(
 fn interpreter_tools() -> Vec<CodexToolDefinition> {
     vec![
         tool(
-            SPEAK_TOOL,
+            INTERPRETER_SPEAK_TOOL,
             "Capture one exact spoken utterance by byte span in the preserved Persona prose; the harness derives the utterance verbatim.",
             json!({
                 "type":"object",
@@ -3364,34 +3422,217 @@ fn interpreter_tools() -> Vec<CodexToolDefinition> {
     ]
 }
 
-fn operational_tools() -> Vec<CodexToolDefinition> {
-    vec![
-        tool(
-            SPEAK_TOOL,
-            "Propose one exact utterance for this decision owner.",
-            json!({
-                "type":"object",
-                "additionalProperties":false,
-                "properties":{"text":{"type":"string"}},
-                "required":["text"]
-            }),
-        ),
-        tool(
-            RECORD_NEED_TOOL,
-            "Record information or capability the agent would need but does not currently have.",
-            json!({
-                "type":"object",
-                "additionalProperties":false,
-                "properties":{"detail":{"type":"string"}},
-                "required":["detail"]
-            }),
-        ),
-        tool(
-            FINISH_WITHOUT_PROPOSAL_TOOL,
-            "Finish this opportunity without proposing an action.",
-            empty_schema(),
-        ),
-    ]
+/// One generated tool per granted entry, plus the two turn-enders. There is no
+/// hand-written claim about what a subject may do anywhere: the model-facing
+/// catalog, its prose signature line, and the typed view's permission block are
+/// three projections of `granted` and cannot drift.
+///
+/// A schema carries the affordance *name*, its role parameters, and its bounded
+/// slots — never an affordance id, an opportunity, a revision, a world, a
+/// controller, or a caller. `record_need` and `finish_without_proposal` survive
+/// because they are not world operations: they end a turn without proposing.
+fn catalog_tools(granted: &[AffordanceSnapshot]) -> Vec<CodexToolDefinition> {
+    let mut tools: Vec<CodexToolDefinition> = granted
+        .iter()
+        .map(|entry| {
+            let mut properties = serde_json::Map::new();
+            let mut required = Vec::new();
+            for spec in &entry.entry.roles {
+                properties.insert(
+                    spec.role.0.clone(),
+                    json!({"type": "string", "description": role_description(spec.kind)}),
+                );
+                required.push(Value::String(spec.role.0.clone()));
+            }
+            for (index, slot) in entry.entry.effect_slots.iter().enumerate() {
+                // The ceiling is in the schema, so the model is told the bound
+                // rather than discovering it through a rejection.
+                let (name, ceiling) = match slot.bounds {
+                    Bounds::None => continue,
+                    Bounds::Quantity(max) => (slot_property(index, "qty"), u64::from(max.0)),
+                    Bounds::Cost(max) => (slot_property(index, "cost"), u64::from(max.0)),
+                };
+                properties.insert(
+                    name.clone(),
+                    json!({"type": "integer", "minimum": 1, "maximum": ceiling}),
+                );
+                required.push(Value::String(name));
+            }
+            if entry.entry.carries_speech {
+                properties.insert("text".into(), json!({"type": "string"}));
+                required.push(Value::String("text".into()));
+            }
+            tool(
+                &entry.entry.kind.0,
+                &format!("Invoke the {} affordance.", entry.entry.kind.0),
+                json!({
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": required,
+                    "properties": Value::Object(properties),
+                }),
+            )
+        })
+        .collect();
+    tools.push(tool(
+        RECORD_NEED_TOOL,
+        "Record information or capability the agent would need but does not currently have.",
+        json!({
+            "type":"object",
+            "additionalProperties":false,
+            "properties":{"detail":{"type":"string"}},
+            "required":["detail"]
+        }),
+    ));
+    tools.push(tool(
+        FINISH_WITHOUT_PROPOSAL_TOOL,
+        "Finish this opportunity without proposing an action.",
+        empty_schema(),
+    ));
+    tools
+}
+
+/// The same iteration rendered as one prose line, so the prompt's tool list and
+/// the schemas have one owner.
+fn catalog_signatures(granted: &[AffordanceSnapshot]) -> String {
+    let mut signatures: Vec<String> = granted
+        .iter()
+        .map(|entry| {
+            let mut parameters: Vec<String> = entry
+                .entry
+                .roles
+                .iter()
+                .map(|spec| spec.role.0.clone())
+                .collect();
+            for (index, slot) in entry.entry.effect_slots.iter().enumerate() {
+                match slot.bounds {
+                    Bounds::None => {}
+                    Bounds::Quantity(_) => parameters.push(slot_property(index, "qty")),
+                    Bounds::Cost(_) => parameters.push(slot_property(index, "cost")),
+                }
+            }
+            if entry.entry.carries_speech {
+                parameters.push("text".into());
+            }
+            format!("{}({})", entry.entry.kind.0, parameters.join(", "))
+        })
+        .collect();
+    signatures.push("record_need(detail)".into());
+    signatures.push("finish_without_proposal()".into());
+    signatures.join(", ")
+}
+
+/// The typed view's permission block: the granted entries by name, derived from
+/// the same list the schemas come from.
+fn catalog_permissions(granted: &[AffordanceSnapshot]) -> Value {
+    Value::Object(
+        granted
+            .iter()
+            .map(|entry| (entry.entry.kind.0.clone(), Value::Bool(true)))
+            .collect(),
+    )
+}
+
+fn slot_property(index: usize, dimension: &str) -> String {
+    format!("slot_{index}_{dimension}")
+}
+
+fn role_description(kind: RefKind) -> &'static str {
+    match kind {
+        RefKind::Subject(_) => "a subject id",
+        RefKind::Entity(EntityKind::Place) => "a place id",
+        RefKind::Entity(EntityKind::Resource) => "a resource id",
+        RefKind::Entity(EntityKind::Fact) => "a fact id",
+        RefKind::Entity(EntityKind::Channel) => "a channel id",
+        RefKind::Edge(_) => "a route id",
+        RefKind::Affordance => "an affordance name",
+    }
+}
+
+/// A catalog tool call lowered to an invocation. A property that will not parse
+/// becomes a `ControllerNeed` through the existing accumulator, never a kernel
+/// round trip.
+fn decode_catalog_call(
+    entry: &AffordanceSnapshot,
+    arguments: &str,
+) -> Result<DecisionInvocation, String> {
+    let Ok(Value::Object(fields)) = serde_json::from_str::<Value>(arguments) else {
+        return Err("arguments are not a JSON object".into());
+    };
+    let mut bindings = Vec::new();
+    for spec in &entry.entry.roles {
+        let raw = fields
+            .get(&spec.role.0)
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("role `{}` is missing or not a string", spec.role.0))?;
+        // The id newtypes are serde-transparent over `Uuid`, so the one
+        // deserializer parses them and no caller reaches inside them.
+        let id = Value::String(raw.to_owned());
+        let unparsed = || format!("role `{}` is not a UUID", spec.role.0);
+        let target = match spec.kind {
+            RefKind::Subject(_) => {
+                Target::Subject(serde_json::from_value::<SubjectId>(id).map_err(|_| unparsed())?)
+            }
+            RefKind::Entity(_) => {
+                Target::Entity(serde_json::from_value::<EntityId>(id).map_err(|_| unparsed())?)
+            }
+            RefKind::Edge(_) => {
+                Target::Edge(serde_json::from_value::<EdgeId>(id).map_err(|_| unparsed())?)
+            }
+            RefKind::Affordance => {
+                return Err(format!(
+                    "role `{}` names no bindable namespace",
+                    spec.role.0
+                ));
+            }
+        };
+        bindings.push(RoleBinding {
+            role: spec.role.clone(),
+            target,
+        });
+    }
+    let mut proposed = Vec::new();
+    for (index, slot) in entry.entry.effect_slots.iter().enumerate() {
+        let magnitude = match slot.bounds {
+            Bounds::None => Magnitude::None,
+            Bounds::Quantity(_) => {
+                let name = slot_property(index, "qty");
+                let value = fields
+                    .get(&name)
+                    .and_then(Value::as_u64)
+                    .ok_or_else(|| format!("`{name}` is missing or not a positive integer"))?;
+                Magnitude::Quantity(Quantity(value))
+            }
+            Bounds::Cost(_) => {
+                let name = slot_property(index, "cost");
+                let value = fields
+                    .get(&name)
+                    .and_then(Value::as_u64)
+                    .and_then(|value| u32::try_from(value).ok())
+                    .ok_or_else(|| format!("`{name}` is missing or out of range"))?;
+                Magnitude::Cost(Cost(value))
+            }
+        };
+        proposed.push(ProposedEffect {
+            slot: index,
+            magnitude,
+        });
+    }
+    let speech = if entry.entry.carries_speech {
+        let text = fields
+            .get("text")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "`text` is missing or not a string".to_owned())?;
+        Some(Utterance::new(text).ok_or_else(|| "`text` is not canonical".to_owned())?)
+    } else {
+        None
+    };
+    Ok(DecisionInvocation {
+        affordance: entry.id,
+        bindings,
+        proposed,
+        speech,
+    })
 }
 
 fn empty_schema() -> Value {
@@ -3443,6 +3684,16 @@ fn purpose_name(purpose: InferencePurpose) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::world::patch::{kernel_speak_entry, kernel_speak_grant};
+
+    /// The granted catalog every controller fixture works against: the
+    /// kernel-built Speak entry under a fixture id.
+    fn speak_snapshot(id: AffordanceId) -> AffordanceSnapshot {
+        AffordanceSnapshot {
+            id,
+            entry: kernel_speak_entry(),
+        }
+    }
     use crate::world::{
         AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, ControllerId, CreateWorld,
         DecisionScope, Declaration, DraftHandle, EventId, NewController, PrincipalId, ScopeDigest,
@@ -3617,7 +3868,7 @@ mod tests {
             controller_id: actor_controller,
             controller_mode: ControllerMode::NarrativePersona,
             human_controller: None,
-            affordances: BTreeMap::from([(AffordanceKind::Speak, speak_affordance)]),
+            affordances: BTreeSet::from([speak_affordance]),
             position: None,
             holdings: BTreeMap::new(),
             dependencies: BTreeSet::new(),
@@ -3630,7 +3881,7 @@ mod tests {
             controller_id: speaker_controller,
             controller_mode: ControllerMode::OperationalAgent,
             human_controller: None,
-            affordances: BTreeMap::new(),
+            affordances: BTreeSet::new(),
             position: None,
             holdings: BTreeMap::new(),
             dependencies: BTreeSet::new(),
@@ -3645,6 +3896,7 @@ mod tests {
             draft_approvals: BTreeSet::new(),
             required_approvers: BTreeSet::new(),
             subjects: vec![actor.clone(), speaker],
+            affordances: vec![speak_snapshot(speak_affordance)],
             places: Vec::new(),
             resources: Vec::new(),
             routes: Vec::new(),
@@ -3656,11 +3908,13 @@ mod tests {
                 },
                 controller_id: speaker_controller,
                 invocation: DecisionInvocation {
-                    affordance_id: AffordanceId::issue(),
-                    action: DecisionAction::Speak {
-                        text: "The lower hinge is flooding.".into(),
-                    },
+                    affordance: AffordanceId::issue(),
+                    bindings: Vec::new(),
+                    proposed: Vec::new(),
+                    speech: Some(Utterance::new("The lower hinge is flooding.").unwrap()),
                 },
+                band: 0,
+                effects: Vec::new(),
             }],
             opportunities: vec![opportunity.clone()],
             state_digest: "sha256:projector-must-not-see-this-digest".into(),
@@ -3670,7 +3924,7 @@ mod tests {
             snapshot,
             subject: actor,
             opportunity,
-            speak_affordance,
+            granted: vec![speak_snapshot(speak_affordance)],
         };
 
         let context = selected.projector_context().unwrap();
@@ -3746,7 +4000,7 @@ mod tests {
             controller_id: actor_controller,
             controller_mode: ControllerMode::OperationalAgent,
             human_controller: None,
-            affordances: BTreeMap::from([(AffordanceKind::Speak, speak_affordance)]),
+            affordances: BTreeSet::from([speak_affordance]),
             position: Some(yard),
             holdings: BTreeMap::new(),
             dependencies: BTreeSet::new(),
@@ -3759,7 +4013,7 @@ mod tests {
             controller_id: other_controller,
             controller_mode: ControllerMode::OperationalAgent,
             human_controller: None,
-            affordances: BTreeMap::new(),
+            affordances: BTreeSet::new(),
             position: Some(vault),
             holdings: BTreeMap::new(),
             dependencies: BTreeSet::new(),
@@ -3783,6 +4037,7 @@ mod tests {
             world_id: opportunity.world_id,
             revision: opportunity.revision,
             phase: WorldPhase::Active,
+            affordances: vec![speak_snapshot(opportunity.affordance_ids[0])],
             owner: PrincipalId::new("scope-fixture-owner"),
             title: "Kharad".into(),
             draft_approvals: BTreeSet::new(),
@@ -3807,7 +4062,7 @@ mod tests {
             snapshot,
             subject: actor,
             opportunity,
-            speak_affordance,
+            granted: vec![speak_snapshot(speak_affordance)],
         };
 
         let view = selected.typed_view().unwrap();
@@ -3862,7 +4117,11 @@ mod tests {
 
     #[test]
     fn controller_tool_schemas_cannot_claim_authority_or_envelopes() {
-        for definition in interpreter_tools().into_iter().chain(operational_tools()) {
+        let granted = vec![speak_snapshot(AffordanceId::issue())];
+        for definition in interpreter_tools()
+            .into_iter()
+            .chain(catalog_tools(&granted))
+        {
             let schema: Value = serde_json::from_str(&definition.parameters_json).unwrap();
             assert_eq!(schema["additionalProperties"], false);
             let properties = schema["properties"].as_object().unwrap();
@@ -3881,15 +4140,15 @@ mod tests {
             }
         }
         assert_eq!(
-            operational_tools()
+            catalog_tools(&granted)
                 .iter()
                 .map(|tool| tool.name.as_str())
                 .collect::<Vec<_>>(),
-            vec![SPEAK_TOOL, RECORD_NEED_TOOL, FINISH_WITHOUT_PROPOSAL_TOOL]
+            vec![SPEAK_KIND, RECORD_NEED_TOOL, FINISH_WITHOUT_PROPOSAL_TOOL]
         );
         let interpreter_speak = interpreter_tools()
             .into_iter()
-            .find(|tool| tool.name == SPEAK_TOOL)
+            .find(|tool| tool.name == INTERPRETER_SPEAK_TOOL)
             .unwrap();
         let schema: Value = serde_json::from_str(&interpreter_speak.parameters_json).unwrap();
         assert!(
@@ -3905,6 +4164,140 @@ mod tests {
             .is_err(),
             "Interpreter speech cannot carry text independent of its source span"
         );
+    }
+
+    #[test]
+    fn the_generated_tool_catalog_equals_the_granted_catalog() {
+        use crate::world::{
+            Affordance, AffordanceKindName, Bounds, ComponentOpKind, EffectSlot, OutcomeBand,
+            Quantity, RefKind, Role, RoleSpec,
+        };
+
+        let carry = AffordanceSnapshot {
+            id: AffordanceId::issue(),
+            entry: Affordance {
+                kind: AffordanceKindName("carry".into()),
+                roles: vec![
+                    RoleSpec {
+                        role: Role("recipient".into()),
+                        kind: RefKind::Subject(None),
+                    },
+                    RoleSpec {
+                        role: Role("resource".into()),
+                        kind: RefKind::Entity(crate::world::EntityKind::Resource),
+                    },
+                ],
+                preconditions: Vec::new(),
+                effect_slots: vec![EffectSlot {
+                    op_kind: ComponentOpKind::Transfer,
+                    roles: vec![
+                        Role("recipient".into()),
+                        Role("recipient".into()),
+                        Role("resource".into()),
+                    ],
+                    bounds: Bounds::Quantity(Quantity(3)),
+                }],
+                outcome_bands: vec![OutcomeBand {
+                    weight: 1,
+                    effects: vec![0],
+                }],
+                carries_speech: false,
+            },
+        };
+        let speak = speak_snapshot(AffordanceId::issue());
+        let granted = vec![carry.clone(), speak.clone()];
+
+        // The tool names are exactly the granted entries' kind names plus the
+        // two turn-enders, in that order.
+        assert_eq!(
+            catalog_tools(&granted)
+                .iter()
+                .map(|tool| tool.name.as_str())
+                .collect::<Vec<_>>(),
+            vec![
+                "carry",
+                SPEAK_KIND,
+                RECORD_NEED_TOOL,
+                FINISH_WITHOUT_PROPOSAL_TOOL
+            ]
+        );
+
+        // Each tool requires exactly its roles, its bounded slots, and `text`
+        // where the entry carries speech, and each bounded slot states its own
+        // ceiling.
+        let tools = catalog_tools(&granted);
+        let schema_of = |name: &str| -> Value {
+            serde_json::from_str(
+                &tools
+                    .iter()
+                    .find(|tool| tool.name == name)
+                    .expect("a generated tool")
+                    .parameters_json,
+            )
+            .unwrap()
+        };
+        let carry_schema = schema_of("carry");
+        assert_eq!(
+            carry_schema["required"],
+            json!(["recipient", "resource", "slot_0_qty"])
+        );
+        assert_eq!(
+            carry_schema["properties"]["slot_0_qty"]["maximum"],
+            json!(3)
+        );
+        assert_eq!(
+            carry_schema["properties"]["slot_0_qty"]["minimum"],
+            json!(1)
+        );
+        assert_eq!(schema_of(SPEAK_KIND)["required"], json!(["text"]));
+
+        // The three model-facing surfaces name the same entries in the same
+        // order, so none of them can drift from the kernel's grant.
+        assert_eq!(
+            catalog_signatures(&granted),
+            "carry(recipient, resource, slot_0_qty), speak(text), record_need(detail), finish_without_proposal()"
+        );
+        assert_eq!(
+            catalog_permissions(&granted),
+            json!({"carry": true, "speak": true})
+        );
+
+        // A subject granted nothing gets no world tools, only the turn-enders.
+        assert_eq!(
+            catalog_tools(&[])
+                .iter()
+                .map(|tool| tool.name.as_str())
+                .collect::<Vec<_>>(),
+            vec![RECORD_NEED_TOOL, FINISH_WITHOUT_PROPOSAL_TOOL]
+        );
+
+        // No generated schema carries an affordance id or an authority envelope.
+        for tool in catalog_tools(&granted) {
+            let schema: Value = serde_json::from_str(&tool.parameters_json).unwrap();
+            let properties = schema["properties"].as_object().unwrap();
+            for forbidden in [
+                "affordance",
+                "affordance_id",
+                "opportunity",
+                "revision",
+                "world_id",
+                "controller_id",
+                "caller",
+                "command_id",
+            ] {
+                assert!(!properties.contains_key(forbidden));
+            }
+            assert!(
+                !tool
+                    .parameters_json
+                    .contains(&encoded_id(&carry.id).unwrap())
+            );
+            assert!(
+                !tool
+                    .parameters_json
+                    .contains(&encoded_id(&speak.id).unwrap())
+            );
+        }
     }
 
     #[test]
@@ -4028,18 +4421,20 @@ mod tests {
         model: &str,
         completed: Vec<InferenceOutput>,
     ) -> ControllerWork {
+        let granted = vec![speak_snapshot(opportunity.affordance_ids[0])];
         let OperationalLoopEvaluation::Continue { conversation } =
-            evaluate_operational_loop(agent_prompt, &completed).unwrap()
+            evaluate_operational_loop(agent_prompt, &granted, &completed).unwrap()
         else {
             panic!("operational fixture unexpectedly finalized")
         };
         let request =
-            operational_request(command_id, completed.len(), model, conversation).unwrap();
+            operational_request(command_id, completed.len(), model, &granted, conversation)
+                .unwrap();
         ControllerWork::Operational(OperationalCheckpoint::AgentInFlight {
             command_id,
             agent_prompt: agent_prompt.into(),
             opportunity: opportunity.clone(),
-            speak_affordance: opportunity.affordance_ids[0],
+            granted,
             completed,
             invocation: fixture_prepared(request).unwrap(),
         })
@@ -4080,7 +4475,7 @@ mod tests {
             turn: turn.clone(),
             interpreter_prompt: interpreter_prompt.into(),
             opportunity: opportunity.clone(),
-            speak_affordance: opportunity.affordance_ids[0],
+            granted: vec![speak_snapshot(opportunity.affordance_ids[0])],
             completed,
             invocation: fixture_prepared(request).unwrap(),
         })
@@ -4177,7 +4572,7 @@ mod tests {
                             label: "Subject".into(),
                             kind: SubjectKind::Person,
                             controller,
-                            affordances: BTreeSet::from([AffordanceKind::Speak]),
+                            affordances: kernel_speak_grant(),
                             position: None,
                         })],
                         operations: Vec::new(),
@@ -4248,7 +4643,7 @@ mod tests {
                     vec![
                         InferenceEvent::ToolCall {
                             call_id: "call_bad_span".into(),
-                            name: SPEAK_TOOL.into(),
+                            name: INTERPRETER_SPEAK_TOOL.into(),
                             arguments: json!({
                                 "source_start_byte":source.len() + 10,
                                 "source_end_byte":source.len() + 20
@@ -4257,7 +4652,7 @@ mod tests {
                         },
                         InferenceEvent::ToolCall {
                             call_id: "call_speak".into(),
-                            name: SPEAK_TOOL.into(),
+                            name: INTERPRETER_SPEAK_TOOL.into(),
                             arguments: json!({
                                 "source_start_byte":start,
                                 "source_end_byte":start + speech.len()
@@ -4349,7 +4744,7 @@ mod tests {
                     },
                     InferenceEvent::ToolCall {
                         call_id: "speak".into(),
-                        name: SPEAK_TOOL.into(),
+                        name: INTERPRETER_SPEAK_TOOL.into(),
                         arguments: json!({"text":"Close the western span."}).to_string(),
                     },
                 ],
@@ -4640,7 +5035,7 @@ mod tests {
                 vec![
                     InferenceEvent::ToolCall {
                         call_id: "bad-span".into(),
-                        name: SPEAK_TOOL.into(),
+                        name: INTERPRETER_SPEAK_TOOL.into(),
                         arguments: json!({
                             "source_start_byte": source.len() + 1,
                             "source_end_byte": source.len() + 2
@@ -4649,7 +5044,7 @@ mod tests {
                     },
                     InferenceEvent::ToolCall {
                         call_id: "exact-span".into(),
-                        name: SPEAK_TOOL.into(),
+                        name: INTERPRETER_SPEAK_TOOL.into(),
                         arguments: json!({
                             "source_start_byte": start,
                             "source_end_byte": start + speech.len()
@@ -4719,10 +5114,12 @@ mod tests {
         let snapshot = mailbox.snapshot().await.unwrap();
         assert_eq!(snapshot.events.len(), 1);
         assert_eq!(
-            snapshot.events[0].invocation.action,
-            DecisionAction::Speak {
-                text: speech.into()
-            }
+            snapshot.events[0]
+                .invocation
+                .speech
+                .as_ref()
+                .map(Utterance::as_str),
+            Some(speech)
         );
 
         drop(reopened_terminal);
@@ -4775,7 +5172,7 @@ mod tests {
                                 controller: NewController::Human {
                                     principal: human.clone(),
                                 },
-                                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                                affordances: kernel_speak_grant(),
                                 position: None,
                             }),
                             Declaration::Subject(SubjectDeclaration {
@@ -4783,7 +5180,7 @@ mod tests {
                                 label: "Mara, a watch officer who answers direct roll calls aloud in one short sentence".into(),
                                 kind: SubjectKind::Person,
                                 controller: NewController::NarrativePersona,
-                                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                                affordances: kernel_speak_grant(),
                                 position: None,
                             }),
                             Declaration::Subject(SubjectDeclaration {
@@ -4791,7 +5188,7 @@ mod tests {
                                 label: "The Signal Council, which answers direct roll calls aloud with one short operational sentence".into(),
                                 kind: SubjectKind::Institution,
                                 controller: NewController::OperationalAgent,
-                                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                                affordances: kernel_speak_grant(),
                                 position: None,
                             }),
                         ],
@@ -4861,9 +5258,13 @@ mod tests {
             .find(|opportunity| opportunity.controller_id == human_subject.controller_id)
             .cloned()
             .unwrap();
-        let human_speak = *human_subject
+        let human_speak = *snapshot
             .affordances
-            .get(&AffordanceKind::Speak)
+            .iter()
+            .find(|entry| {
+                entry.entry.kind.0 == SPEAK_KIND && human_subject.affordances.contains(&entry.id)
+            })
+            .map(|entry| &entry.id)
             .unwrap();
         let seed = "Mara and the Signal Council, answer the midnight roll call aloud now. Each of you, say in one short sentence that you hear me.";
         let seed_command = CommandId::new();
@@ -4877,8 +5278,10 @@ mod tests {
                     body: CommandBody::ExerciseDecision {
                         opportunity: human_opportunity,
                         invocation: DecisionInvocation {
-                            affordance_id: human_speak,
-                            action: DecisionAction::Speak { text: seed.into() },
+                            affordance: human_speak,
+                            bindings: Vec::new(),
+                            proposed: Vec::new(),
+                            speech: Some(Utterance::new(seed).unwrap()),
                         },
                     },
                 },
@@ -4900,8 +5303,8 @@ mod tests {
 
         snapshot = mailbox.snapshot().await.unwrap();
         assert!(snapshot.events.len() == 1);
-        let DecisionAction::Speak { text: seeded_text } = &snapshot.events[0].invocation.action;
-        assert!(seeded_text.as_bytes() == seed.as_bytes());
+        let seeded_text = snapshot.events[0].invocation.speech.as_ref().unwrap();
+        assert!(seeded_text.as_str().as_bytes() == seed.as_bytes());
         let narrative_subject = snapshot
             .subjects
             .iter()
@@ -4985,7 +5388,7 @@ mod tests {
             .filter_map(|event| match event {
                 InferenceEvent::ToolCall {
                     name, arguments, ..
-                } if name == SPEAK_TOOL => {
+                } if name == INTERPRETER_SPEAK_TOOL => {
                     serde_json::from_str::<InterpreterSpeakCall>(arguments).ok()
                 }
                 InferenceEvent::Text(_) | InferenceEvent::ToolCall { .. } => None,
@@ -5006,10 +5409,8 @@ mod tests {
             .iter()
             .find(|event| event.controller_id == narrative_subject.controller_id)
             .unwrap();
-        let DecisionAction::Speak {
-            text: committed_narrative_speech,
-        } = &narrative_event.invocation.action;
-        assert!(committed_narrative_speech.as_bytes() == narrative_speech.as_bytes());
+        let committed_narrative_speech = narrative_event.invocation.speech.as_ref().unwrap();
+        assert!(committed_narrative_speech.as_str().as_bytes() == narrative_speech.as_bytes());
 
         let operational_subject = snapshot
             .subjects
@@ -5044,7 +5445,9 @@ mod tests {
             .capture()
             .proposal
             .as_ref()
+            .and_then(|invocation| invocation.speech.as_ref())
             .unwrap()
+            .as_str()
             .to_owned();
         assert!(!operational_speech.trim().is_empty());
         let ControllerWorkLookup::Confirmed(ControllerWork::Operational(
@@ -5062,7 +5465,7 @@ mod tests {
             .find_map(|event| match event {
                 InferenceEvent::ToolCall {
                     name, arguments, ..
-                } if name == SPEAK_TOOL => {
+                } if name == SPEAK_KIND => {
                     serde_json::from_str::<OperationalSpeakCall>(arguments).ok()
                 }
                 InferenceEvent::Text(_) | InferenceEvent::ToolCall { .. } => None,
@@ -5078,10 +5481,8 @@ mod tests {
             .iter()
             .find(|event| event.controller_id == operational_subject.controller_id)
             .unwrap();
-        let DecisionAction::Speak {
-            text: committed_operational_speech,
-        } = &operational_event.invocation.action;
-        assert!(committed_operational_speech.as_bytes() == operational_speech.as_bytes());
+        let committed_operational_speech = operational_event.invocation.speech.as_ref().unwrap();
+        assert!(committed_operational_speech.as_str().as_bytes() == operational_speech.as_bytes());
 
         drop(runner);
         drop(mailbox);

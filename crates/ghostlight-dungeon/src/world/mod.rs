@@ -5,11 +5,13 @@
 //! Controllers may use models, but models never own lifecycle, scope, affordances,
 //! opportunities, reduction, or persistence.
 
+mod action;
 mod controllers;
 mod journal;
 mod mailbox;
 mod patch;
 
+pub(crate) use action::ActionMismatch;
 pub(crate) use controllers::{
     ControllerError, ControllerModels, ControllerOpenError, ControllerPendingReason,
     ControllerRunner, ControllerWorkCustody, NarrativeCapture, NarrativeDecision, NarrativePending,
@@ -18,11 +20,13 @@ pub(crate) use controllers::{
 };
 pub(crate) use mailbox::{MailboxError, WorldMailbox};
 pub(crate) use patch::{
-    AccessKind, Cost, Declaration, DependencyTarget, DraftHandle, EntityDeclaration, EntityKind,
-    EvidenceRef, Mismatch, PatchAnswer, Position, Quantity, Ref, SubjectDeclaration, WorldPatch,
+    AccessKind, Affordance, AffordanceKindName, Bounds, ComponentOpKind, Cost, Declaration,
+    DependencyTarget, DraftHandle, EffectSlot, EntityDeclaration, EntityKind, EvidenceRef,
+    Mismatch, OutcomeBand, PatchAnswer, Position, Precondition, Quantity, Ref, RefKind, Role,
+    RoleSpec, SubjectDeclaration, WorldPatch,
 };
 #[cfg(test)]
-use patch::{ComponentOp, DependencyRef, RouteDeclaration};
+use patch::{AffordanceDeclaration, ComponentOp, DependencyRef, RouteDeclaration};
 use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch};
 
 use chrono::{DateTime, Utc};
@@ -34,8 +38,8 @@ use std::path::Path;
 use thiserror::Error;
 use uuid::Uuid;
 
-pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.custody.v1";
-pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.custody.v1";
+pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.affordance.v1";
+pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.affordance.v1";
 
 /// Compatibility tag derived from [`STATE_SCHEMA`]: the trailing
 /// `<family>-<version>` pair (e.g. `foundation-v1`). Callers that publish a
@@ -167,12 +171,6 @@ pub(crate) enum ControllerMode {
     OperationalAgent,
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(rename_all = "snake_case")]
-pub(crate) enum AffordanceKind {
-    Speak,
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub(crate) enum NewController {
@@ -261,7 +259,10 @@ struct ScopePreimage<'a> {
     world_id: WorldId,
     subject_id: SubjectId,
     controller: &'a ControllerAssignment,
-    affordances: BTreeMap<AffordanceId, &'a AffordanceGrant>,
+    /// The granted entries *and their definitions*: preconditions and ceilings
+    /// are what admission reads, so a change to a granted entry must change the
+    /// digest.
+    affordances: BTreeMap<AffordanceId, &'a Affordance>,
     components: &'a ScopeComponents,
 }
 
@@ -283,25 +284,72 @@ impl DecisionOpportunity {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub(crate) enum DecisionAction {
-    Speak { text: String },
+/// The referent a role is bound to. Canonical IDs only: an invocation happens
+/// in Active, where no declaration exists, so a draft reference is
+/// unrepresentable here and the action lane runs no draft resolution.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "target", content = "id", rename_all = "snake_case")]
+pub(crate) enum Target {
+    Subject(SubjectId),
+    Entity(EntityId),
+    Edge(EdgeId),
 }
 
-impl DecisionAction {
-    fn kind(&self) -> AffordanceKind {
-        match self {
-            Self::Speak { .. } => AffordanceKind::Speak,
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct RoleBinding {
+    pub(crate) role: Role,
+    pub(crate) target: Target,
+}
+
+/// Canonical nonempty text. Emptiness is one `ActionMismatch` inside the
+/// complete set, not a kernel error of its own.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(transparent)]
+pub(crate) struct Utterance(String);
+
+impl Utterance {
+    pub(crate) fn new(value: impl Into<String>) -> Option<Self> {
+        let value = value.into();
+        if patch::is_canonical_text(&value) {
+            Some(Self(value))
+        } else {
+            None
         }
     }
+
+    pub(crate) fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "magnitude", content = "value", rename_all = "snake_case")]
+pub(crate) enum Magnitude {
+    None,
+    Quantity(Quantity),
+    Cost(Cost),
+}
+
+/// One proposal against one effect slot. It carries no referents: they all come
+/// from the slot's roles resolved through the invocation's bindings, so an
+/// invocation cannot name a target its affordance declared no role for and the
+/// ceiling check is a comparison rather than a graph walk.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ProposedEffect {
+    pub(crate) slot: usize,
+    pub(crate) magnitude: Magnitude,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct DecisionInvocation {
-    pub(crate) affordance_id: AffordanceId,
-    pub(crate) action: DecisionAction,
+    pub(crate) affordance: AffordanceId,
+    pub(crate) bindings: Vec<RoleBinding>,
+    /// Exactly one entry per slot in the entry, in any order.
+    pub(crate) proposed: Vec<ProposedEffect>,
+    pub(crate) speech: Option<Utterance>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -399,18 +447,18 @@ impl ControllerAssignment {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-struct AffordanceGrant {
-    scope: DecisionScope,
-    kind: AffordanceKind,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub(crate) struct DecisionEvent {
     pub(crate) id: EventId,
     pub(crate) revision: u64,
     pub(crate) scope: DecisionScope,
     pub(crate) controller_id: ControllerId,
     pub(crate) invocation: DecisionInvocation,
+    /// Index into the entry's `outcome_bands`. Re-derived and compared at apply
+    /// and at replay, never trusted.
+    pub(crate) band: usize,
+    /// The selected band's slots, lowered through the invocation's bindings.
+    /// Empty when the selected band names no effects.
+    pub(crate) effects: Vec<ResolvedOp>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -433,7 +481,12 @@ struct WorldState {
     /// What each subject depends on. Never empty for a present key.
     dependencies: BTreeMap<SubjectId, BTreeSet<DependencyTarget>>,
     controller_assignments: BTreeMap<DecisionScope, ControllerAssignment>,
-    affordance_grants: BTreeMap<AffordanceId, AffordanceGrant>,
+    /// What an affordance *is*. World-authored, Draft-only, written by
+    /// `admit_resolved` alone.
+    affordance_catalog: BTreeMap<AffordanceId, Affordance>,
+    /// Who may exercise which entry. A grant carries no payload, so a duplicate
+    /// grant is unrepresentable rather than checked.
+    affordance_grants: BTreeMap<DecisionScope, BTreeSet<AffordanceId>>,
     events: Vec<DecisionEvent>,
     state_digest: String,
     last_commit_digest: Option<String>,
@@ -513,7 +566,7 @@ pub(crate) struct SubjectSnapshot {
     pub(crate) controller_id: ControllerId,
     pub(crate) controller_mode: ControllerMode,
     pub(crate) human_controller: Option<PrincipalId>,
-    pub(crate) affordances: BTreeMap<AffordanceKind, AffordanceId>,
+    pub(crate) affordances: BTreeSet<AffordanceId>,
     pub(crate) position: Option<EntityId>,
     /// This subject's own holdings and dependencies, and the routes incident to
     /// its place: exactly what its scope digest reads, lowered from the one
@@ -521,6 +574,16 @@ pub(crate) struct SubjectSnapshot {
     pub(crate) holdings: BTreeMap<EntityId, Quantity>,
     pub(crate) dependencies: BTreeSet<DependencyTarget>,
     pub(crate) incident_routes: Vec<EdgeId>,
+}
+
+/// One catalog entry as consumers read it. The whole entry, because every
+/// derived surface — tool schemas, signature prose, the typed view's permission
+/// block — is a projection of it and a narrower snapshot would be a second
+/// vocabulary to keep in step.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub(crate) struct AffordanceSnapshot {
+    pub(crate) id: AffordanceId,
+    pub(crate) entry: Affordance,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -557,6 +620,7 @@ pub(crate) struct WorldSnapshot {
     pub(crate) draft_approvals: BTreeSet<PrincipalId>,
     pub(crate) required_approvers: BTreeSet<PrincipalId>,
     pub(crate) subjects: Vec<SubjectSnapshot>,
+    pub(crate) affordances: Vec<AffordanceSnapshot>,
     pub(crate) places: Vec<PlaceSnapshot>,
     pub(crate) resources: Vec<ResourceSnapshot>,
     pub(crate) routes: Vec<RouteSnapshot>,
@@ -630,8 +694,8 @@ pub(crate) enum KernelError {
     EmptyPrincipal,
     #[error("patch rejected: {0:?}")]
     PatchRejected(Vec<Mismatch>),
-    #[error("spoken action must not be empty")]
-    EmptySpeech,
+    #[error("action rejected: {0:?}")]
+    ActionRejected(Vec<ActionMismatch>),
     #[error("command targets another world")]
     WorldMismatch,
     #[error("authenticated caller does not match the command")]
@@ -661,8 +725,6 @@ pub(crate) enum KernelError {
     ControllerMismatch,
     #[error("decision affordance is not granted by the opportunity")]
     AffordanceDenied,
-    #[error("decision action does not match its affordance")]
-    AffordanceMismatch,
     #[error("expected revision {expected}, current revision {actual}")]
     RevisionMismatch { expected: u64, actual: u64 },
     #[error("command ID was reused with different content")]
@@ -867,7 +929,7 @@ impl WorldKernel {
 
         let effect = reduce(&self.state, &command)?;
         let mut candidate = self.state.clone();
-        apply_effect(&mut candidate, &command.caller, &effect)?;
+        apply_effect(&mut candidate, command.id, &command.caller, &effect)?;
         candidate.revision = candidate
             .revision
             .checked_add(1)
@@ -994,29 +1056,8 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
             if assignment.expected_caller() != command.caller {
                 return Err(KernelError::ControllerMismatch);
             }
-            if !current.affordance_ids.contains(&invocation.affordance_id) {
-                return Err(KernelError::AffordanceDenied);
-            }
-            let grant = state
-                .affordance_grants
-                .get(&invocation.affordance_id)
-                .filter(|grant| grant.scope == current.scope)
-                .ok_or(KernelError::AffordanceDenied)?;
-            if grant.kind != invocation.action.kind() {
-                return Err(KernelError::AffordanceMismatch);
-            }
-            let invocation = validated_invocation(invocation)?;
-            let resulting_revision = state
-                .revision
-                .checked_add(1)
-                .ok_or_else(|| KernelError::Serialization("world revision overflow".into()))?;
-            let event = DecisionEvent {
-                id: EventId::for_command(command.id),
-                revision: resulting_revision,
-                scope: current.scope,
-                controller_id: current.controller_id,
-                invocation: invocation.clone(),
-            };
+            require_granted(state, &current, invocation.affordance)?;
+            let event = action::exercise(state, command.id, &current, invocation)?;
             Ok(WorldEffect::DecisionExercised {
                 opportunity: current,
                 event,
@@ -1085,6 +1126,7 @@ impl WorldState {
             holdings: BTreeMap::new(),
             dependencies: BTreeMap::new(),
             controller_assignments: BTreeMap::new(),
+            affordance_catalog: BTreeMap::new(),
             affordance_grants: BTreeMap::new(),
             events: Vec::new(),
             state_digest: String::new(),
@@ -1205,11 +1247,17 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
         .values()
         .map(ControllerAssignment::id)
         .collect();
-    let mut scope_kinds: BTreeSet<(DecisionScope, AffordanceKind)> = state
-        .affordance_grants
-        .values()
-        .map(|grant| (grant.scope, grant.kind))
-        .collect();
+    for entry in &resolved.affordances {
+        if state
+            .affordance_catalog
+            .insert(entry.affordance_id, entry.affordance.clone())
+            .is_some()
+        {
+            return Err(KernelError::Invariant(
+                "admitted affordance ID collision".into(),
+            ));
+        }
+    }
     for subject in &resolved.subjects {
         let scope = DecisionScope {
             subject_id: subject.subject_id,
@@ -1268,18 +1316,17 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
                 "admitted position collides with an existing one".into(),
             ));
         }
-        for (affordance_id, grant) in &subject.affordances {
-            if grant.scope != scope
-                || !scope_kinds.insert((scope, grant.kind))
-                || state
-                    .affordance_grants
-                    .insert(*affordance_id, grant.clone())
-                    .is_some()
-            {
+        for affordance_id in &subject.affordances {
+            if !state.affordance_catalog.contains_key(affordance_id) {
                 return Err(KernelError::Invariant(
-                    "admitted affordance is unscoped or collides".into(),
+                    "admitted grant names no catalog entry".into(),
                 ));
             }
+            state
+                .affordance_grants
+                .entry(scope)
+                .or_default()
+                .insert(*affordance_id);
         }
     }
     apply_operations(state, &resolved.operations, &resolved.evidence)
@@ -1653,10 +1700,9 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
             })?;
             let affordances = state
                 .affordance_grants
-                .iter()
-                .filter(|(_, grant)| grant.scope == scope)
-                .map(|(affordance_id, grant)| (grant.kind, *affordance_id))
-                .collect();
+                .get(&scope)
+                .cloned()
+                .unwrap_or_default();
             let components = scope_components(state, *subject_id);
             Ok(SubjectSnapshot {
                 id: *subject_id,
@@ -1717,6 +1763,14 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
         draft_approvals: state.draft_approvals.clone(),
         required_approvers: required_approvers(state),
         subjects,
+        affordances: state
+            .affordance_catalog
+            .iter()
+            .map(|(affordance_id, entry)| AffordanceSnapshot {
+                id: *affordance_id,
+                entry: entry.clone(),
+            })
+            .collect(),
         places,
         resources,
         routes,
@@ -1737,9 +1791,10 @@ fn derive_opportunities(state: &WorldState) -> Result<Vec<DecisionOpportunity>, 
         .map(|(scope, controller)| {
             let affordance_ids: Vec<_> = state
                 .affordance_grants
-                .iter()
-                .filter(|(_, grant)| grant.scope == *scope)
-                .map(|(affordance_id, _)| *affordance_id)
+                .get(scope)
+                .into_iter()
+                .flatten()
+                .copied()
                 .collect();
             if affordance_ids.is_empty() {
                 return Err(KernelError::Invariant(
@@ -1759,6 +1814,47 @@ fn derive_opportunities(state: &WorldState) -> Result<Vec<DecisionOpportunity>, 
         .collect()
 }
 
+/// The entries one scope is granted, paired with their definitions. A grant
+/// naming no catalog entry is a corrupt kernel rather than a rejection: one
+/// owner writes both partitions in one commit.
+fn granted_entries(
+    state: &WorldState,
+    scope: DecisionScope,
+) -> Result<BTreeMap<AffordanceId, &Affordance>, KernelError> {
+    state
+        .affordance_grants
+        .get(&scope)
+        .into_iter()
+        .flatten()
+        .map(|affordance_id| {
+            state
+                .affordance_catalog
+                .get(affordance_id)
+                .map(|entry| (*affordance_id, entry))
+                .ok_or_else(|| KernelError::Invariant("granted affordance has no entry".into()))
+        })
+        .collect()
+}
+
+/// The membership half of the affordance check, shared by `reduce` and
+/// `apply_effect`: the opportunity offers the entry and the scope holds it.
+fn require_granted(
+    state: &WorldState,
+    current: &DecisionOpportunity,
+    affordance: AffordanceId,
+) -> Result<(), KernelError> {
+    if current.affordance_ids.contains(&affordance)
+        && state
+            .affordance_grants
+            .get(&current.scope)
+            .is_some_and(|granted| granted.contains(&affordance))
+    {
+        Ok(())
+    } else {
+        Err(KernelError::AffordanceDenied)
+    }
+}
+
 /// The sole producer of a `ScopeDigest`. The components it reads come from
 /// `scope_components`, which the snapshot reads too.
 fn scope_digest(state: &WorldState, scope: DecisionScope) -> Result<ScopeDigest, KernelError> {
@@ -1766,12 +1862,7 @@ fn scope_digest(state: &WorldState, scope: DecisionScope) -> Result<ScopeDigest,
         .controller_assignments
         .get(&scope)
         .ok_or_else(|| KernelError::Invariant("decision scope has no controller".into()))?;
-    let affordances = state
-        .affordance_grants
-        .iter()
-        .filter(|(_, grant)| grant.scope == scope)
-        .map(|(affordance_id, grant)| (*affordance_id, grant))
-        .collect();
+    let affordances = granted_entries(state, scope)?;
     let components = scope_components(state, scope.subject_id);
     digest(&ScopePreimage {
         world_id: state.world_id,
@@ -1783,8 +1874,13 @@ fn scope_digest(state: &WorldState, scope: DecisionScope) -> Result<ScopeDigest,
     .map(ScopeDigest)
 }
 
-/// The one validity check for a bound proposal. Controller, mode, and affordance
-/// IDs are inside the preimage, so the digest comparison is the whole check.
+/// Binding, which is one of the two checks a committed invocation passes.
+/// Binding is scope-digest equality: has what the proposal was made against
+/// moved? Admission — preconditions, effect ceilings, and the band draw, all in
+/// `action::exercise` — is the other, and it runs at commit against the same
+/// revision the digest was verified at. A component that admission reads but
+/// binding does not is therefore fail-closed by re-check at commit rather than
+/// by rejecting the proposal when it changes.
 fn exact_opportunity(
     state: &WorldState,
     claimed: &DecisionOpportunity,
@@ -1849,19 +1945,6 @@ fn normalize_title(value: &str) -> Result<String, KernelError> {
     }
 }
 
-fn validated_invocation(value: &DecisionInvocation) -> Result<DecisionInvocation, KernelError> {
-    let action = match &value.action {
-        DecisionAction::Speak { text } if text.trim().is_empty() => {
-            return Err(KernelError::EmptySpeech);
-        }
-        DecisionAction::Speak { text } => DecisionAction::Speak { text: text.clone() },
-    };
-    Ok(DecisionInvocation {
-        affordance_id: value.affordance_id,
-        action,
-    })
-}
-
 fn validate_principal(value: &PrincipalId) -> Result<(), KernelError> {
     if value.0.trim().is_empty() || value.0.trim() != value.0 {
         Err(KernelError::EmptyPrincipal)
@@ -1877,8 +1960,11 @@ fn validate_assignment(value: &ControllerAssignment) -> Result<(), KernelError> 
     Ok(())
 }
 
+/// `command_id` is the band draw's only per-command term, so the arm that
+/// re-derives an exercised decision needs the same one `reduce` drew from.
 fn apply_effect(
     state: &mut WorldState,
+    command_id: CommandId,
     caller: &CallerId,
     effect: &WorldEffect,
 ) -> Result<(), KernelError> {
@@ -1928,31 +2014,25 @@ fn apply_effect(
                 .ok_or_else(|| {
                     KernelError::Invariant("decision scope lost its controller".into())
                 })?;
-            let grant = state
-                .affordance_grants
-                .get(&event.invocation.affordance_id)
-                .ok_or(KernelError::AffordanceDenied)?;
-            let expected_revision = state
-                .revision
-                .checked_add(1)
-                .ok_or_else(|| KernelError::Serialization("world revision overflow".into()))?;
-            if state.phase != WorldPhase::Active
-                || caller != &assignment.expected_caller()
-                || event.revision != expected_revision
-                || event.scope != current.scope
-                || event.controller_id != current.controller_id
-                || !current
-                    .affordance_ids
-                    .contains(&event.invocation.affordance_id)
-                || grant.scope != current.scope
-                || grant.kind != event.invocation.action.kind()
-                || validated_invocation(&event.invocation)? != event.invocation
-            {
+            if state.phase != WorldPhase::Active || caller != &assignment.expected_caller() {
                 return Err(KernelError::Invariant(
                     "decision effect does not match exact opportunity authority".into(),
                 ));
             }
+            require_granted(state, &current, event.invocation.affordance)?;
+            // The whole event is re-derived by the function that produced the
+            // honest one, so a forged band, operation, magnitude, or utterance
+            // is one comparison rather than a clause apiece.
+            let derived = action::exercise(state, command_id, &current, &event.invocation)?;
+            if derived != *event {
+                return Err(KernelError::Invariant(
+                    "decision effect does not derive from its opportunity".into(),
+                ));
+            }
             state.events.push(event.clone());
+            if !event.effects.is_empty() {
+                apply_operations(state, &event.effects, &[])?;
+            }
         }
         WorldEffect::DecisionDeclined { opportunity } => {
             let current = exact_opportunity(state, opportunity)?;
@@ -1993,6 +2073,7 @@ fn commit_digest(commit: &WorldCommit) -> Result<String, KernelError> {
 
 #[cfg(test)]
 mod tests {
+    use super::patch::kernel_speak_grant;
     use super::*;
 
     pub(super) fn owner() -> PrincipalId {
@@ -2018,9 +2099,36 @@ mod tests {
             label: label.into(),
             kind,
             controller,
-            affordances: BTreeSet::from([AffordanceKind::Speak]),
+            affordances: kernel_speak_grant(),
             position: None,
         })
+    }
+
+    /// The committed Speak entry. A post-genesis declaration grants it by
+    /// canonical reference, like every other structure a previous commit
+    /// allocated: the kernel synthesizes the entry once, at genesis.
+    pub(super) fn speak_entry(kernel: &WorldKernel) -> Ref<AffordanceId> {
+        Ref::Existing(
+            *kernel
+                .state
+                .affordance_catalog
+                .iter()
+                .find(|(_, entry)| entry.kind.0 == "speak")
+                .map(|(affordance_id, _)| affordance_id)
+                .expect("genesis admits the kernel Speak entry"),
+        )
+    }
+
+    /// A catalog entry by kind name. An affordance id names an entry, not a
+    /// subject's copy of one, so a test that needs an entry a scope does not
+    /// hold asks for it by name rather than by list position.
+    pub(super) fn affordance_named(snapshot: &WorldSnapshot, kind: &str) -> AffordanceId {
+        snapshot
+            .affordances
+            .iter()
+            .find(|entry| entry.entry.kind.0 == kind)
+            .map(|entry| entry.id)
+            .expect("the fixture world declares this affordance")
     }
 
     pub(super) fn creation(id: CommandId, title: &str) -> CreateWorld {
@@ -2032,6 +2140,21 @@ mod tests {
                 operations: Vec::new(),
                 evidence: Vec::new(),
                 declarations: vec![
+                    // A second, world-declared entry granted to exactly one
+                    // subject, so the fixture world has more than one verb and
+                    // grant sets differ between scopes.
+                    Declaration::Affordance(AffordanceDeclaration {
+                        handle: DraftHandle::new("convene"),
+                        kind: AffordanceKindName("convene".into()),
+                        roles: Vec::new(),
+                        preconditions: Vec::new(),
+                        effect_slots: Vec::new(),
+                        outcome_bands: vec![OutcomeBand {
+                            weight: 1,
+                            effects: Vec::new(),
+                        }],
+                        carries_speech: true,
+                    }),
                     subject(
                         "player",
                         "The Player",
@@ -2046,12 +2169,17 @@ mod tests {
                         SubjectKind::Person,
                         NewController::NarrativePersona,
                     ),
-                    subject(
-                        "operator",
-                        "The Council",
-                        SubjectKind::Institution,
-                        NewController::OperationalAgent,
-                    ),
+                    Declaration::Subject(SubjectDeclaration {
+                        handle: DraftHandle::new("operator"),
+                        label: "The Council".into(),
+                        kind: SubjectKind::Institution,
+                        controller: NewController::OperationalAgent,
+                        affordances: kernel_speak_grant()
+                            .into_iter()
+                            .chain(std::iter::once(Ref::Draft(DraftHandle::new("convene"))))
+                            .collect(),
+                        position: None,
+                    }),
                 ],
             },
         }
@@ -2151,7 +2279,7 @@ mod tests {
         })
     }
 
-    pub(super) fn topology_patch() -> WorldPatch {
+    pub(super) fn topology_patch(speak: Ref<AffordanceId>) -> WorldPatch {
         WorldPatch {
             declarations: vec![
                 place("yard", "The Cavity Yard"),
@@ -2194,7 +2322,7 @@ mod tests {
                     label: "The Walker".into(),
                     kind: SubjectKind::Person,
                     controller: NewController::OperationalAgent,
-                    affordances: BTreeSet::from([AffordanceKind::Speak]),
+                    affordances: BTreeSet::from([speak]),
                     position: Some(Ref::Draft(DraftHandle::new("yard"))),
                 }),
             ],
@@ -2214,7 +2342,7 @@ mod tests {
             &before,
             CommandBody::AdmitPatch {
                 answers: None,
-                patch: topology_patch(),
+                patch: topology_patch(speak_entry(kernel)),
             },
         );
         assert!(matches!(receipt, SubmitReceipt::Applied(_)));
@@ -2276,29 +2404,192 @@ mod tests {
         })
     }
 
-    fn holder(handle: &str, label: &str, place: EntityId) -> Declaration {
+    fn holder(handle: &str, label: &str, place: EntityId, speak: Ref<AffordanceId>) -> Declaration {
         Declaration::Subject(SubjectDeclaration {
             handle: DraftHandle::new(handle),
             label: label.into(),
             kind: SubjectKind::Institution,
             controller: NewController::OperationalAgent,
-            affordances: BTreeSet::from([AffordanceKind::Speak]),
+            affordances: std::iter::once(speak)
+                .chain(carry_affordances().into_iter().map(|declaration| {
+                    let Declaration::Affordance(entry) = declaration else {
+                        unreachable!("carry_affordances declares only affordances")
+                    };
+                    Ref::Draft(entry.handle)
+                }))
+                .collect(),
             position: Some(Ref::Existing(place)),
         })
     }
+
+    pub(super) const CARRY_HANDLE: &str = "carry";
+
+    /// The worked affordances for the action lane. Every one carries the same
+    /// four roles and the same bounded `Transfer` slot, so a test varies exactly
+    /// one thing — a precondition or a band table — by naming a different entry
+    /// rather than by reaching into a committed catalog. The catalog is
+    /// Draft-only, so authoring it is how a world gets a verb.
+    fn carry_variant(
+        handle: &str,
+        kind: &str,
+        preconditions: Vec<Precondition>,
+        outcome_bands: Vec<OutcomeBand>,
+    ) -> Declaration {
+        Declaration::Affordance(AffordanceDeclaration {
+            handle: DraftHandle::new(handle),
+            kind: AffordanceKindName(kind.into()),
+            roles: vec![
+                RoleSpec {
+                    role: Role("from".into()),
+                    kind: RefKind::Subject(None),
+                },
+                RoleSpec {
+                    role: Role("recipient".into()),
+                    kind: RefKind::Subject(None),
+                },
+                RoleSpec {
+                    role: Role("place".into()),
+                    kind: RefKind::Entity(EntityKind::Place),
+                },
+                RoleSpec {
+                    role: Role("resource".into()),
+                    kind: RefKind::Entity(EntityKind::Resource),
+                },
+            ],
+            preconditions,
+            effect_slots: vec![EffectSlot {
+                op_kind: ComponentOpKind::Transfer,
+                roles: vec![
+                    Role("from".into()),
+                    Role("recipient".into()),
+                    Role("resource".into()),
+                ],
+                bounds: Bounds::Quantity(Quantity(3)),
+            }],
+            outcome_bands,
+            carries_speech: false,
+        })
+    }
+
+    fn certain_band() -> Vec<OutcomeBand> {
+        vec![OutcomeBand {
+            weight: 1,
+            effects: vec![0],
+        }]
+    }
+
+    fn place_role() -> Role {
+        Role("place".into())
+    }
+
+    /// Carry, and five variants that each move one dial: a holding demand above
+    /// the opening balance, a reach budget short of the two-hop path, one that
+    /// covers it, a band that names no effect, and three equally weighted bands.
+    pub(super) fn carry_affordances() -> Vec<Declaration> {
+        vec![
+            carry_variant(
+                CARRY_HANDLE,
+                "carry",
+                vec![
+                    Precondition::Present { at: place_role() },
+                    Precondition::Holds {
+                        resource: Role("resource".into()),
+                        at_least: Quantity(1),
+                    },
+                ],
+                certain_band(),
+            ),
+            carry_variant(
+                "carry-greedy",
+                "carry_greedy",
+                vec![
+                    Precondition::Present { at: place_role() },
+                    Precondition::Holds {
+                        resource: Role("resource".into()),
+                        at_least: Quantity(OPENING_BALANCE + 1),
+                    },
+                ],
+                certain_band(),
+            ),
+            carry_variant(
+                "carry-holds",
+                "carry_holds",
+                vec![Precondition::Holds {
+                    resource: Role("resource".into()),
+                    at_least: Quantity(1),
+                }],
+                certain_band(),
+            ),
+            carry_variant(
+                "carry-near",
+                "carry_near",
+                vec![Precondition::Reachable {
+                    to: place_role(),
+                    within: Cost(NEAR_REACH),
+                }],
+                certain_band(),
+            ),
+            carry_variant(
+                "carry-far",
+                "carry_far",
+                vec![Precondition::Reachable {
+                    to: place_role(),
+                    within: Cost(FAR_REACH),
+                }],
+                certain_band(),
+            ),
+            carry_variant(
+                "carry-idle",
+                "carry_idle",
+                Vec::new(),
+                vec![OutcomeBand {
+                    weight: 1,
+                    effects: Vec::new(),
+                }],
+            ),
+            carry_variant(
+                "carry-chance",
+                "carry_chance",
+                Vec::new(),
+                vec![
+                    OutcomeBand {
+                        weight: 1,
+                        effects: vec![0],
+                    },
+                    OutcomeBand {
+                        weight: 1,
+                        effects: Vec::new(),
+                    },
+                    OutcomeBand {
+                        weight: 1,
+                        effects: Vec::new(),
+                    },
+                ],
+            ),
+        ]
+    }
+
+    /// Yard to gate over the open shutter alone.
+    pub(super) const NEAR_REACH: u32 = 5;
+    /// Yard to gate over the ramp and the span, which is the only open public
+    /// path while the shutter is closed.
+    pub(super) const FAR_REACH: u32 = 19;
 
     /// Declarations and evidence are Draft-only, so the resources, the holders,
     /// and the one evidenced `Admit` that creates the opening balance all land
     /// before activation. There is no holdings declaration field: quantity is
     /// created by `Admit` and by nothing else, in this lane as in every other.
-    pub(super) fn custody_patch(topology: &Topology) -> WorldPatch {
+    pub(super) fn custody_patch(topology: &Topology, speak: Ref<AffordanceId>) -> WorldPatch {
         WorldPatch {
-            declarations: vec![
-                resource("tithe", "The Rhythm Tithe"),
-                resource("ingot", "The Cut Ingot"),
-                holder("clerk", "The Ledger Clerk", topology.yard),
-                holder("keeper", "The Gate Keeper", topology.gate),
-            ],
+            declarations: carry_affordances()
+                .into_iter()
+                .chain([
+                    resource("tithe", "The Rhythm Tithe"),
+                    resource("ingot", "The Cut Ingot"),
+                    holder("clerk", "The Ledger Clerk", topology.yard, speak.clone()),
+                    holder("keeper", "The Gate Keeper", topology.gate, speak),
+                ])
+                .collect(),
             operations: vec![ComponentOp::Admit {
                 holder: Ref::Draft(DraftHandle::new("clerk")),
                 resource: Ref::Draft(DraftHandle::new("tithe")),
@@ -2316,7 +2607,7 @@ mod tests {
             &before,
             CommandBody::AdmitPatch {
                 answers: None,
-                patch: custody_patch(topology),
+                patch: custody_patch(topology, speak_entry(kernel)),
             },
         );
         assert!(matches!(receipt, SubmitReceipt::Applied(_)));
@@ -2412,8 +2703,10 @@ mod tests {
 
     fn speak(opportunity: &DecisionOpportunity, text: &str) -> DecisionInvocation {
         DecisionInvocation {
-            affordance_id: opportunity.affordance_ids[0],
-            action: DecisionAction::Speak { text: text.into() },
+            affordance: opportunity.affordance_ids[0],
+            bindings: Vec::new(),
+            proposed: Vec::new(),
+            speech: Some(Utterance::new(text).unwrap()),
         }
     }
 
@@ -2582,14 +2875,28 @@ mod tests {
         assert_ne!(scope_digest(&changed_controller, scope).unwrap(), base);
 
         let mut changed_grants = kernel.state.clone();
-        changed_grants.affordance_grants.insert(
-            AffordanceId::issue(),
-            AffordanceGrant {
-                scope,
-                kind: AffordanceKind::Speak,
-            },
-        );
+        let extra = AffordanceId::issue();
+        changed_grants
+            .affordance_catalog
+            .insert(extra, patch::kernel_speak_entry());
+        changed_grants
+            .affordance_grants
+            .entry(scope)
+            .or_default()
+            .insert(extra);
         assert_ne!(scope_digest(&changed_grants, scope).unwrap(), base);
+
+        // The digest reads the granted entries' definitions, not only their
+        // ids: admission reads preconditions and ceilings, so altering an entry
+        // must move the digest.
+        let mut changed_entry = kernel.state.clone();
+        let granted = *kernel.state.affordance_grants[&scope].first().unwrap();
+        changed_entry
+            .affordance_catalog
+            .get_mut(&granted)
+            .unwrap()
+            .carries_speech = false;
+        assert_ne!(scope_digest(&changed_entry, scope).unwrap(), base);
 
         let mut changed_position = kernel.state.clone();
         changed_position.positions.insert(
@@ -2665,7 +2972,7 @@ mod tests {
                     CommandId::new(),
                     CallerId::Principal(player()),
                     CommandBody::ExerciseDecision {
-                        invocation: speak(&player_opportunity, "  I open the door.  "),
+                        invocation: speak(&player_opportunity, "I open the door."),
                         opportunity: player_opportunity,
                     },
                 ),
@@ -2675,10 +2982,12 @@ mod tests {
         let after_player = kernel.snapshot().unwrap();
         assert_eq!(after_player.events.len(), 1);
         assert_eq!(
-            after_player.events[0].invocation.action,
-            DecisionAction::Speak {
-                text: "  I open the door.  ".into()
-            }
+            after_player.events[0]
+                .invocation
+                .speech
+                .as_ref()
+                .map(Utterance::as_str),
+            Some("I open the door.")
         );
 
         let persona_opportunity = opportunity(&after_player, ControllerMode::NarrativePersona);
@@ -2807,12 +3116,14 @@ mod tests {
         .unwrap();
         let active = activate(&mut kernel);
         let original = opportunity(&active, ControllerMode::Human);
-        let other_scope = opportunity(&active, ControllerMode::NarrativePersona);
+        // An entry only the operational subject is granted: the human's scope
+        // does not hold it, which is what denial means now that an affordance id
+        // names a catalog entry rather than one subject's copy of one.
         let denied_invocation = DecisionInvocation {
-            affordance_id: other_scope.affordance_ids[0],
-            action: DecisionAction::Speak {
-                text: "No grant".into(),
-            },
+            affordance: affordance_named(&active, "convene"),
+            bindings: Vec::new(),
+            proposed: Vec::new(),
+            speech: Some(Utterance::new("No grant").unwrap()),
         };
         assert!(matches!(
             kernel.submit(
@@ -2842,10 +3153,10 @@ mod tests {
                     CallerId::Principal(player()),
                     CommandBody::ExerciseDecision {
                         invocation: DecisionInvocation {
-                            affordance_id: forged_affordance,
-                            action: DecisionAction::Speak {
-                                text: "Forged".into()
-                            },
+                            affordance: forged_affordance,
+                            bindings: Vec::new(),
+                            proposed: Vec::new(),
+                            speech: Some(Utterance::new("Forged").unwrap()),
                         },
                         opportunity: tampered,
                     },
@@ -3216,7 +3527,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("world.cc");
         let mut invalid = creation(CommandId::new(), "Nope");
-        invalid.patch.declarations[1] = invalid.patch.declarations[0].clone();
+        invalid.patch.declarations[2] = invalid.patch.declarations[1].clone();
         let Err(KernelError::PatchRejected(rejected)) =
             WorldKernel::create(&path, invalid, &auth_principal(owner()))
         else {
@@ -3411,6 +3722,7 @@ mod tests {
 
         // A new place elsewhere, a route that touches neither the walker's
         // place nor it, and a second placed subject: all outside the scope.
+        let speak = speak_entry(&kernel);
         let before = kernel.snapshot().unwrap();
         submit_owner(
             &mut kernel,
@@ -3438,7 +3750,7 @@ mod tests {
                             label: "The Runner".into(),
                             kind: SubjectKind::Person,
                             controller: NewController::OperationalAgent,
-                            affordances: BTreeSet::from([AffordanceKind::Speak]),
+                            affordances: BTreeSet::from([speak.clone()]),
                             position: Some(Ref::Existing(topology.road)),
                         }),
                     ],
@@ -3536,9 +3848,12 @@ mod tests {
         let persona = opportunity(&active, ControllerMode::NarrativePersona);
         let operator = opportunity(&active, ControllerMode::OperationalAgent);
 
-        // The persona claims the operator's affordance and lists it as its own.
+        // The persona claims the operator's entry and lists it as its own.
+        let convened = affordance_named(&active, "convene");
+        assert!(operator.affordance_ids.contains(&convened));
+        assert!(!persona.affordance_ids.contains(&convened));
         let mut forged = persona.clone();
-        forged.affordance_ids = vec![operator.affordance_ids[0], persona.affordance_ids[0]];
+        forged.affordance_ids = vec![convened, persona.affordance_ids[0]];
         let caller = CallerId::Controller(persona.controller_id);
         let error = kernel
             .submit(
@@ -3549,10 +3864,10 @@ mod tests {
                     CommandBody::ExerciseDecision {
                         opportunity: forged,
                         invocation: DecisionInvocation {
-                            affordance_id: operator.affordance_ids[0],
-                            action: DecisionAction::Speak {
-                                text: "Not my grant.".into(),
-                            },
+                            affordance: convened,
+                            bindings: Vec::new(),
+                            proposed: Vec::new(),
+                            speech: Some(Utterance::new("Not my grant.").unwrap()),
                         },
                     },
                 ),
@@ -3562,6 +3877,76 @@ mod tests {
         assert!(matches!(error, KernelError::AffordanceDenied));
         assert_eq!(kernel.snapshot().unwrap(), active);
     }
+
+    #[test]
+    fn a_stale_grant_rejects_but_a_distant_route_reaches_admission_instead() {
+        let dir = tempfile::tempdir().unwrap();
+        let (mut kernel, _) = WorldKernel::create(
+            dir.path().join("world.cc"),
+            creation(CommandId::new(), "BindingAndAdmission"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let topology = admit_topology(&mut kernel);
+        let active = activate(&mut kernel);
+        let bound = opportunity_for(&active, topology.walker);
+        let speak = affordance_named(&active, "speak");
+
+        // Binding is scope-digest equality, and the digest reads the granted
+        // entries' definitions: altering one moves the digest, so a proposal
+        // bound before that change no longer binds.
+        let mut altered = kernel.state.clone();
+        altered
+            .affordance_catalog
+            .get_mut(&speak)
+            .expect("the Speak entry")
+            .carries_speech = false;
+        assert_ne!(
+            scope_digest(&altered, bound.scope).unwrap(),
+            scope_digest(&kernel.state, bound.scope).unwrap()
+        );
+
+        // A route the actor does not stand beside is outside the digest, so
+        // closing it leaves the binding intact. That is deliberate: admission
+        // re-reads the live graph at commit, so nothing commits on stale
+        // topology and a proposal is not invalidated by distant traffic.
+        let before_digest = scope_digest(&kernel.state, bound.scope).unwrap();
+        let before = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &before,
+            operations(vec![ComponentOp::CloseRoute {
+                route: Ref::Existing(topology.span),
+            }]),
+        );
+        assert_eq!(
+            scope_digest(&kernel.state, bound.scope).unwrap(),
+            before_digest,
+            "a route outside the actor's incident set does not rebind the proposal"
+        );
+
+        let snapshot = kernel.snapshot().unwrap();
+        let receipt = kernel
+            .submit(
+                command(
+                    &snapshot,
+                    CommandId::new(),
+                    CallerId::Controller(bound.controller_id),
+                    CommandBody::ExerciseDecision {
+                        opportunity: bound.clone(),
+                        invocation: DecisionInvocation {
+                            affordance: speak,
+                            bindings: Vec::new(),
+                            proposed: Vec::new(),
+                            speech: Some(Utterance::new("Still here.").unwrap()),
+                        },
+                    },
+                ),
+                &AuthenticatedCaller::fixture(CallerId::Controller(bound.controller_id)),
+            )
+            .expect("a distant route closing does not rebind this proposal");
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+    }
 }
 
 #[cfg(test)]
@@ -3569,11 +3954,11 @@ mod custody_tests {
     use super::tests::{
         OPENING_BALANCE, TITHE_RECEIPT, activate, admit_custody, admit_topology, auth_principal,
         command, creation, custody_world, operations, opportunity_for, owner, reject_owner,
-        submit_owner,
+        speak_entry, submit_owner,
     };
     use super::*;
 
-    fn custody_kernel(path: &Path, title: &str) -> WorldKernel {
+    pub(super) fn custody_kernel(path: &Path, title: &str) -> WorldKernel {
         WorldKernel::create(
             path.join("world.cc"),
             creation(CommandId::new(), title),
@@ -3609,6 +3994,7 @@ mod custody_tests {
                 subjects: Vec::new(),
                 entities: Vec::new(),
                 routes: Vec::new(),
+                affordances: Vec::new(),
                 operations: vec![ResolvedOp::Transfer {
                     from: custody.holder,
                     to: custody.counterparty,
@@ -3618,8 +4004,13 @@ mod custody_tests {
                 evidence: Vec::new(),
             },
         };
-        let error =
-            apply_effect(&mut candidate, &CallerId::Principal(owner()), &forged).unwrap_err();
+        let error = apply_effect(
+            &mut candidate,
+            CommandId::issue(),
+            &CallerId::Principal(owner()),
+            &forged,
+        )
+        .unwrap_err();
         assert!(matches!(error, KernelError::Invariant(_)));
         assert_eq!(candidate.holdings, before);
 
@@ -3654,6 +4045,7 @@ mod custody_tests {
         let directory = tempfile::tempdir().unwrap();
         let mut kernel = custody_kernel(directory.path(), "Unevidenced");
         let topology = admit_topology(&mut kernel);
+        let speak = speak_entry(&kernel);
         let before = kernel.snapshot().unwrap();
         let commits = kernel.journal.commit_count();
 
@@ -3675,7 +4067,7 @@ mod custody_tests {
                             label: "The Ledger Clerk".into(),
                             kind: SubjectKind::Institution,
                             controller: NewController::OperationalAgent,
-                            affordances: BTreeSet::from([AffordanceKind::Speak]),
+                            affordances: BTreeSet::from([speak.clone()]),
                             position: Some(Ref::Existing(topology.yard)),
                         }),
                     ],
@@ -4091,10 +4483,10 @@ mod custody_tests {
                     CommandBody::ExerciseDecision {
                         opportunity: bound.clone(),
                         invocation: DecisionInvocation {
-                            affordance_id: bound.affordance_ids[0],
-                            action: DecisionAction::Speak {
-                                text: "The tithe is short.".into(),
-                            },
+                            affordance: bound.affordance_ids[0],
+                            bindings: Vec::new(),
+                            proposed: Vec::new(),
+                            speech: Some(Utterance::new("The tithe is short.").unwrap()),
                         },
                     },
                 ),
@@ -4191,6 +4583,7 @@ mod custody_tests {
                 subjects: Vec::new(),
                 entities: Vec::new(),
                 routes: Vec::new(),
+                affordances: Vec::new(),
                 operations,
                 evidence: Vec::new(),
             },
@@ -4207,6 +4600,7 @@ mod custody_tests {
         let mut candidate = kernel.state.clone();
         let error = apply_effect(
             &mut candidate,
+            CommandId::issue(),
             &CallerId::Principal(owner()),
             &forge(vec![transfer(5), transfer(5)]),
         )
@@ -4223,6 +4617,7 @@ mod custody_tests {
         let mut conserving = kernel.state.clone();
         apply_effect(
             &mut conserving,
+            CommandId::issue(),
             &CallerId::Principal(owner()),
             &forge(vec![
                 transfer(5),
@@ -4256,6 +4651,7 @@ mod custody_tests {
             let mut candidate = kernel.state.clone();
             let error = apply_effect(
                 &mut candidate,
+                CommandId::issue(),
                 &CallerId::Principal(owner()),
                 &forge(vec![degenerate]),
             )
@@ -4271,6 +4667,7 @@ mod custody_tests {
         let mut unevidenced = kernel.state.clone();
         let error = apply_effect(
             &mut unevidenced,
+            CommandId::issue(),
             &CallerId::Principal(owner()),
             &forge(vec![ResolvedOp::Admit {
                 holder: custody.holder,
@@ -4295,6 +4692,7 @@ mod custody_tests {
         let directory = tempfile::tempdir().unwrap();
         let mut kernel = custody_kernel(directory.path(), "Overflow");
         let topology = admit_topology(&mut kernel);
+        let speak = speak_entry(&kernel);
         let before = kernel.snapshot().unwrap();
         let commits = kernel.journal.commit_count();
 
@@ -4322,7 +4720,7 @@ mod custody_tests {
                             label: "The Ledger Clerk".into(),
                             kind: SubjectKind::Institution,
                             controller: NewController::OperationalAgent,
-                            affordances: BTreeSet::from([AffordanceKind::Speak]),
+                            affordances: BTreeSet::from([speak.clone()]),
                             position: Some(Ref::Existing(topology.yard)),
                         }),
                     ],
@@ -4368,10 +4766,10 @@ mod custody_tests {
         let exercise = |opportunity: &DecisionOpportunity| CommandBody::ExerciseDecision {
             opportunity: opportunity.clone(),
             invocation: DecisionInvocation {
-                affordance_id: opportunity.affordance_ids[0],
-                action: DecisionAction::Speak {
-                    text: "Counted before the tithe arrived.".into(),
-                },
+                affordance: opportunity.affordance_ids[0],
+                bindings: Vec::new(),
+                proposed: Vec::new(),
+                speech: Some(Utterance::new("Counted before the tithe arrived.").unwrap()),
             },
         };
 

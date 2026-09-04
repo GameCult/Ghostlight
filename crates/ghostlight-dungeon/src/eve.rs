@@ -2,7 +2,7 @@
 
 use crate::{
     mesh::{COMMAND_BOUNDARY, COMMAND_RESULT_SCHEMA, PROVIDER_ID, SURFACE_ID},
-    world::{AffordanceKind, ControllerMode, DecisionAction, WorldPhase, WorldSnapshot},
+    world::{ControllerMode, WorldPhase, WorldSnapshot},
 };
 use anyhow::{Context, bail};
 use chrono::{DateTime, Utc};
@@ -231,13 +231,15 @@ pub(crate) fn authenticated_surface(
                     let story = world
                         .events
                         .iter()
-                        .map(|event| match &event.invocation.action {
-                            DecisionAction::Speak { text } => json!({
-                                "id":format!("world.event.{}", event.revision),
-                                "kind":"text",
-                                "props":{"value":text},
-                                "children":[]
-                            }),
+                        .filter_map(|event| {
+                            event.invocation.speech.as_ref().map(|text| {
+                                json!({
+                                    "id":format!("world.event.{}", event.revision),
+                                    "kind":"text",
+                                    "props":{"value":text.as_str()},
+                                    "children":[]
+                                })
+                            })
                         })
                         .collect::<Vec<_>>();
                     children.push(json!({
@@ -250,10 +252,20 @@ pub(crate) fn authenticated_surface(
                     let principal = crate::world::PrincipalId::new(account);
                     let opportunity = world.opportunities.iter().find_map(|opportunity| {
                         world.subjects.iter().find_map(|subject| {
-                            let affordance_id = subject.affordances.get(&AffordanceKind::Speak)?;
+                            // The catalog entry is found by kind name among the
+                            // subject's granted entries: the control is a
+                            // projection of state, not a second vocabulary.
+                            let affordance_id = world
+                                .affordances
+                                .iter()
+                                .find(|entry| {
+                                    entry.entry.kind.0 == "speak"
+                                        && subject.affordances.contains(&entry.id)
+                                })
+                                .map(|entry| entry.id)?;
                             (subject.id == opportunity.scope.subject_id
                                 && subject.human_controller.as_ref() == Some(&principal)
-                                && opportunity.affordance_ids.contains(affordance_id))
+                                && opportunity.affordance_ids.contains(&affordance_id))
                             .then_some((opportunity, affordance_id))
                         })
                     });
