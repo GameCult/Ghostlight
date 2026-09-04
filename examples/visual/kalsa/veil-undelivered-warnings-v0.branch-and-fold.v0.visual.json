@@ -1,0 +1,374 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "kalsa-veil-undelivered-warnings-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/kalsa/veil-undelivered-warnings-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/kalsa/veil-undelivered-warnings-v0.branch-and-fold.v0.training.json",
+  "scene_id": "veil-undelivered-warnings-v0.custodian-gallery-disclosure",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for discovery, preservation, copying, and dangerous delivery of the Ashen Intake's two undelivered notices.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for ordinary archive work in the Custodian Gallery, the two physical notices, their changing evidence state, the two exits, courier choices, and branch-specific survival or death.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for room orientation, routine work, chest opening, seal handling, text revelation, copy selection, route comparison, courier commitment, and each ending family. The empty chest opening and each carrier's arrival, refusal, injury, or death receive distinct replay beats.",
+    "prompting_rule": "Every base prompt describes a complete drawable frame with explicit room geometry, light, material, bodies, tools, routes, and positions. Character refs are assembled only for visible characters. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Hand-painted high-fantasy interactive-fiction illustration, gouache and soot-black ink on textured paper, strong readable silhouettes, dry ochre stone and ash-grey cloth against furnace amber and shutter-pale light, restrained supernatural ambiguity, tactile archive materials, mortal institutional pressure.",
+    "prompt_assembly_rule": "Assemble the global_style_cue, one complete scene base_image_prompt, visual refs only for named characters or groups listed as visible in that scene, then triggered state_image_modifiers and global_branch_image_modifiers. Generated images are presentation collateral; the embedded scene_set map owns draft geometry.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The story reuses one room from several angles and sends carriers through two distinct exits, so the visual plan fixes zones, camera slots, routes, occluders, and evidence anchors for B-level staging.",
+      "future_scene_set_need": "For high-consistency website art, build a simple plan-view or 3D blockout of the rectangular Custodian Gallery and camera-specific views of the archive crawl, Memorial Sump junction, Eight Screens return, and Cistern House threshold before image generation."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "veil_gallery_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide corner view of a rectangular underground high-fantasy service archive, roughly four paces wide and seven long, built from dry ochre stone under a buried hot-water work. The east wall carries sagging folio shelves, a black calibration chest beneath three octal wheels, a two-arc pressure gauge with two pale shutter marks, and a wall diagram of seven operating baffles around one black shutter. The west wall has a narrow iron return door; the north wall has a low square archive-crawl hatch; the south wall has a heavy service door. Amber oil lamps and a hot ceiling vent cast hard shadows. Sera Venn, a lean young adult custodian in layered grey work robes with an eight-tooth iron spindle at her belt, kneels at the chest. A broad middle-aged priest-engineer in patched dark-red layers, a compact shaved-headed mortuary witness in soot-black clothes with two pale name cloths, and a heat-weary recorder in padded grey-brown delving clothes occupy the open copying floor.",
+        "visible_characters": [
+          {"agent_id": "sera_venn", "default_stance": "kneeling at the octal chest wheels", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "standing beside the pressure gauge", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "tavi_kes", "default_stance": "near the low archive-crawl hatch with two name cloths", "visual_ref": "visual_character_refs.characters.tavi_kes"},
+          {"agent_id": "expedition_recorder", "default_stance": "seated at the clear floor with pack frame and charcoal", "visual_ref": "visual_character_refs.groups.expedition_recorder"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "pale_shutters == 2", "modifier_prompt": "The pressure repeater displays exactly two small pale marks on the dark gauge arc."}
+        ],
+        "visual_continuity_notes": [
+          "The east chest wall, west return door, north crawl hatch, south Crown door, and central copying floor keep fixed relative positions.",
+          "The Gallery is dry because of hidden heat, not comfortable or cool."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_gallery_routine",
+        "ink_anchor": "gallery_routine",
+        "base_image_prompt": "Medium interior frame in a dry ochre-stone archive lit by amber lamps: Sera Venn kneels at a black chest and copies a two-arc pressure reading onto three toothed octal wheels; Ressa Orr, a broad middle-aged itinerant priest-engineer in patched dark-red work layers, watches the alignment with folded arms; Tavi Kes, a compact adult mortuary witness in soot-black layered clothing, stretches two pale name cloths across a wooden pack frame; an unnamed expedition recorder in practical padded delving clothes sharpens charcoal over blank cloth sheets. Folio shelves line the east wall, a low crawl hatch opens in the north wall, and heat shimmer bends the lamp shadows beneath the ceiling vent.",
+        "visible_characters": [
+          {"agent_id": "sera_venn", "default_stance": "copying the gauge reading onto the wheels", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "watching the wheel teeth", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "tavi_kes", "default_stance": "drying two name cloths on the pack frame", "visual_ref": "visual_character_refs.characters.tavi_kes"},
+          {"agent_id": "expedition_recorder", "default_stance": "seated with charcoal and blank copy cloth", "visual_ref": "visual_character_refs.groups.expedition_recorder"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["This frame establishes all four workers and the ordinary tasks each body performs before the notices appear."]
+      },
+      {
+        "visual_scene_id": "veil_chest_reveal",
+        "ink_anchor": "chest_open",
+        "base_image_prompt": "Close overhead view into an open black calibration chest on the east wall of an underground stone archive. Inside rest a black ceramic comb with six long teeth, one hooked tooth, and one solid edge; a thick stained handoff folio; a pouch of small calibration beads; and two palm-sized folds of ashproof grey service cloth. Each folded notice is sealed with cheap grey wax threaded through a brittle split-reed routing tag. One tag bears a water-witness routing mark and the other a lower-feed mark; both carry a darker later counterseal. Sera Venn's work-scarred fingers hover at the chest edge while Ressa's square hand, Tavi's two pale name cloths, and the recorder's charcoal enter the frame from three separate sides.",
+        "visible_characters": [
+          {"agent_id": "sera_venn", "default_stance": "hands at the chest edge", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "one hand near the wax folds", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "tavi_kes", "default_stance": "name cloths held beside the chest", "visual_ref": "visual_character_refs.characters.tavi_kes"},
+          {"agent_id": "expedition_recorder", "default_stance": "charcoal poised beside blank cloth", "visual_ref": "visual_character_refs.groups.expedition_recorder"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The notices are small folded service cloths, not books, tablets, scrolls, or magical glowing messages."]
+      },
+      {
+        "visual_scene_id": "veil_seal_choice",
+        "ink_anchor": "seal_choice",
+        "base_image_prompt": "Overhead decision frame on the central copying floor of a hot underground archive. Two sealed ashproof cloth notices lie between four concrete actions: a thin blank cloth and charcoal prepared to rub the split-reed routing tags; the thumbnail of lean young custodian Sera Venn poised beneath a grey wax thread; two pale name cloths from compact shaved-headed mortuary witness Tavi Kes arranged to bind the seals; and broad middle-aged priest-engineer Ressa Orr's small bronze comparison blade and lamp held near layered wax. The black chest, ceramic calibration comb, stained folio, pressure gauge with two pale marks, north crawl hatch, and amber heat haze remain visible around the evidence table formed on the floor.",
+        "visible_characters": [
+          {"agent_id": "sera_venn", "default_stance": "kneeling with hand poised over wax", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "holding comparison blade and lamp", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "tavi_kes", "default_stance": "placing name cloths beside the seals", "visual_ref": "visual_character_refs.characters.tavi_kes"},
+          {"agent_id": "expedition_recorder", "default_stance": "holding rubbing cloth and charcoal ready", "visual_ref": "visual_character_refs.groups.expedition_recorder"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["All four affordances are physically reachable from the central copying floor."]
+      },
+      {
+        "visual_scene_id": "veil_notices_read",
+        "ink_anchor": "notices_read",
+        "base_image_prompt": "Medium close view of two opened ashproof cloth notices on the central floor of a dry hot archive. One sheet carries an abstract unlettered diagram of a hooked seventh relief baffle, a first-hammer mark, and a crossed household watch symbol; the other carries an abstract unlettered lower-feed closure mark, three stepped water lines, a raised sleeping pallet, sample bowls, and folded burn cloth. Brittle split-reed tags and layered grey wax rest at the edges. Lean young custodian Sera Venn in ash-grey work robes reads from one sheet; broad middle-aged priest-engineer Ressa Orr in patched dark-red layers studies the wax; compact shaved-headed mortuary witness Tavi Kes in soot-black clothes pins two pale name cloths beside the injury notice; a heat-weary recorder in padded grey-brown delving clothes prepares separate copies. Amber lamplight, folio shelves, black chest, pressure gauge, and the low north crawl hatch establish the room.",
+        "visible_characters": [
+          {"agent_id": "sera_venn", "default_stance": "reading the opened notices", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "studying wax and routing fibres", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "tavi_kes", "default_stance": "holding names beside the injury sheet", "visual_ref": "visual_character_refs.characters.tavi_kes"},
+          {"agent_id": "expedition_recorder", "default_stance": "ready to copy", "visual_ref": "visual_character_refs.groups.expedition_recorder"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "seal_integrity >= 4", "modifier_prompt": "Place crisp charcoal rubbings of both complete split-reed routes beside intact layered wax fragments."},
+          {"trigger": "seal_integrity <= 1", "modifier_prompt": "Show one routing reed snapped through its interception point, with loose fibres and fractured wax obscuring part of the path."},
+          {"trigger": "mortuary_context >= 2", "modifier_prompt": "Thread the two pale name cloths visibly under the notice edges, keeping names materially attached to the injury instruction."},
+          {"trigger": "technical_context >= 2", "modifier_prompt": "Arrange the older wax, later dark counterseal, bronze comparison blade, and lamp into a clear layered-material comparison."}
+        ],
+        "visual_continuity_notes": ["All written content is represented as abstract unlettered marks and diagrams suitable for illustration."]
+      },
+      {
+        "visual_scene_id": "veil_record_choice",
+        "ink_anchor": "record_choice",
+        "base_image_prompt": "Wide overhead view of the central copying floor in a rectangular underground service archive. The two opened grey notices sit above three blank ashproof copy cloths; charcoal sticks, rubbing sheets, two pale name cloths, the stained handoff folio, and a wooden pack frame form separate evidence stations. Lean young custodian Sera Venn in ash-grey work robes kneels at the center deciding what to dictate; broad middle-aged priest-engineer Ressa Orr in patched dark-red layers holds the technical sheet; compact shaved-headed mortuary witness Tavi Kes in soot-black clothes guards the care sheet; a heat-weary recorder in padded grey-brown delving clothes waits with charcoal. The east-wall gauge shows pale shutter marks under amber lamp glow; hot dry air ripples beneath a ceiling vent; west return door, north crawl hatch, and south Crown door are each visible.",
+        "visible_characters": [
+          {"agent_id": "sera_venn", "default_stance": "centered between the two notices and three blanks", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "holding the platform-clearance sheet", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "tavi_kes", "default_stance": "guarding the lower-step care sheet", "visual_ref": "visual_character_refs.characters.tavi_kes"},
+          {"agent_id": "expedition_recorder", "default_stance": "charcoal ready at blank copies", "visual_ref": "visual_character_refs.groups.expedition_recorder"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "crew_heat >= 3", "modifier_prompt": "Show dark sweat at collars, reddened hands, a tipped water cup, and stronger heat shimmer around the workers."},
+          {"trigger": "pale_shutters <= 1", "modifier_prompt": "Reduce the pressure gauge to one weak pale mark and add a thin steam line at the south service-door seam."}
+        ],
+        "visual_continuity_notes": ["Copies stay spatially separate so later branch states can show one, two, or three completed sheets."]
+      },
+      {
+        "visual_scene_id": "veil_disclosure_fold",
+        "ink_anchor": "disclosure_fold",
+        "base_image_prompt": "Medium-wide threshold composition inside the dry Custodian Gallery. The north wall's low square archive-crawl hatch stands open toward a dark stone tunnel; the west wall's narrow iron return door shows mist and the vertical ribs of the Eight Screens route; the south service door toward the Intake Crown is shut under a hammering pipe. Lean young custodian Sera Venn in ash-grey work robes stands between these three directions with the black ceramic Measure at her belt. Broad middle-aged priest-engineer Ressa Orr in patched dark-red layers, compact shaved-headed mortuary witness Tavi Kes in soot-black clothes with two pale name cloths, and a heat-weary recorder in padded grey-brown delving clothes each hold or guard part of the evidence. Copies, rubbings, grey wax, split reeds, and name cloths are laid in distinct piles on the central floor under amber lamps.",
+        "visible_characters": [
+          {"agent_id": "sera_venn", "default_stance": "standing at the center of three routes", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "nearest the west return door", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "tavi_kes", "default_stance": "nearest the north archive crawl", "visual_ref": "visual_character_refs.characters.tavi_kes"},
+          {"agent_id": "expedition_recorder", "default_stance": "beside the separated copy piles", "visual_ref": "visual_character_refs.groups.expedition_recorder"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "copy_count == 1", "modifier_prompt": "Show one blunt route copy strapped to the wooden pack frame while both originals stay beside the black chest."},
+          {"trigger": "copy_count == 2", "modifier_prompt": "Show two completed copy cloths separated between two workers, with one original notice still covered."},
+          {"trigger": "copy_count >= 3", "modifier_prompt": "Show three complete copy cloths visibly separated near Sera, Ressa, and the recorder."},
+          {"trigger": "route_braced >= 1", "modifier_prompt": "Place a compact iron wedge firmly in the north archive-crawl hatch latch."}
+        ],
+        "visual_continuity_notes": ["The west return and north crawl are distinct exits; the south Crown door is the onward repair route."]
+      },
+      {
+        "visual_scene_id": "veil_courier_choice",
+        "ink_anchor": "courier_choice",
+        "base_image_prompt": "Low wide decision frame from the south Crown door looking across the Custodian Gallery. A low square archive crawl in the north wall leads toward a dark memorial sump and hot relief passage; a narrow west return door leads toward misty filter screens and a corroded settling bridge; the central floor holds divided notice copies and routing rubbings. Lean young custodian Sera Venn in ash-grey work robes stands at the center holding the black ceramic calibration comb. Compact shaved-headed mortuary witness Tavi Kes in soot-black clothes waits by the crawl with two pale name cloths; broad middle-aged priest-engineer Ressa Orr in patched dark-red layers waits by the west return with a wrapped rubbing; a heat-weary recorder in padded grey-brown delving clothes tests a copy strapped flat beneath a wooden pack frame. The pressure gauge on the east wall and steam at the door seams make time visible.",
+        "visible_characters": [
+          {"agent_id": "sera_venn", "default_stance": "centered with the Measure", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "at the west return door", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "tavi_kes", "default_stance": "at the north archive crawl", "visual_ref": "visual_character_refs.characters.tavi_kes"},
+          {"agent_id": "expedition_recorder", "default_stance": "testing the pack-mounted copy", "visual_ref": "visual_character_refs.groups.expedition_recorder"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "pale_shutters == 1", "modifier_prompt": "Show exactly one pale gauge mark, stronger steam at the route seams, and workers braced for a pressure knock."},
+          {"trigger": "pale_shutters <= 0", "modifier_prompt": "Show the gauge fully dark, hot grey water beading under the south door, and sharp amber emergency light across the floor."}
+        ],
+        "visual_continuity_notes": ["Every courier begins from a visible exit compatible with their stated route."]
+      },
+      {
+        "visual_scene_id": "veil_ending_tavi",
+        "ink_anchor": "ending_tavi_delivery|ending_tavi_cost",
+        "base_image_prompt": "High-fantasy underground memorial-route frame: a narrow square archive crawl opens above a mineral-ash sump behind an iron grate; two pale name cloths hang from Tavi Kes's compact soot-black figure; a folded grey notice copy is knotted between them; warm pipes cross a cramped upward relief passage beyond the sump. Amber lamp light meets grey steam, mineral crust, and brief human-shaped ash posture at the edge of visibility. The route is sized for one crawling person with a pack, and the nearest pressure seam points toward the carrier's torso.",
+        "visible_characters": [
+          {"agent_id": "tavi_kes", "default_stance": "alone at the sump junction carrying names and copy", "visual_ref": "visual_character_refs.characters.tavi_kes"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The ash posture stays ambiguous and anatomically incomplete; it is not a confirmed portrait of Jori or Pell."]
+      },
+      {
+        "visual_scene_id": "veil_ending_ressa",
+        "ink_anchor": "ending_ressa_delivery|ending_ressa_cost",
+        "base_image_prompt": "Long-route frame through the Ashen Intake's filter works: Ressa Orr, a broad middle-aged priest-engineer in patched dark-red work layers, stands at a narrow iron return door beside eight tall filter frames, six grey with use, one scorched, one black and clean. Beyond them a corroded gridded bridge crosses three misty ash-settling chambers. She carries a wrapped charcoal rubbing and one folded notice copy inside her coat. Pale gauge light catches her bronze comparison blade while hot mist erases the far end of the bridge.",
+        "visible_characters": [
+          {"agent_id": "ressa_orr", "default_stance": "alone at the Eight Screens return holding the comparison copy", "visual_ref": "visual_character_refs.characters.ressa_orr"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The Eight Screens and Settling Walk form the longer west route, distinct from the Memorial Sump crawl."]
+      },
+      {
+        "visual_scene_id": "veil_ending_recorder",
+        "ink_anchor": "ending_recorder_delivery|ending_recorder_cost",
+        "base_image_prompt": "Cramped relief-crawl action frame under Low Sere: an unnamed expedition recorder in practical padded delving clothes crawls through a one-person hot stone passage with a wooden pack frame close to the ceiling. One folded ashproof notice copy is strapped flat beneath the pack; an iron latch wedge holds the square archive hatch behind them; white mineral scale makes pressure seams visible along the wall; the passage rises toward the black pressure door. A sudden furnace-amber steam line forms ahead at torso height, turning record delivery into a bodily hazard.",
+        "visible_characters": [
+          {"agent_id": "expedition_recorder", "default_stance": "crawling alone toward the surface with one strapped copy", "visual_ref": "visual_character_refs.groups.expedition_recorder"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "route_braced >= 1", "modifier_prompt": "Show the compact iron wedge holding the archive hatch securely and the mineral pressure seam quiet near the carrier."},
+          {"trigger": "route_braced < 1", "modifier_prompt": "Show the archive hatch vibrating loose and a concentrated amber-grey steam pulse crossing the carrier's route."}
+        ],
+        "visual_continuity_notes": ["The copy is under the pack frame in every recorder-route image; success or destruction changes its condition through ending modifiers."]
+      },
+      {
+        "visual_scene_id": "veil_ending_surface_or_rupture",
+        "ink_anchor": "ending_tavi_delivery|ending_ressa_delivery|ending_recorder_delivery|ending_repair_first|ending_disclosure_too_late",
+        "base_image_prompt": "Wide high-fantasy threshold view inside Low Sere's timber-and-stone Cistern House above two settling basins. Warm grey mist beads on heavy beams; water marks, ration boards, sampling bowls, tools, and duplicate warning cloths cover the walls; the drained west basin exposes an iron grate and black pressure door below. Bel Orra, an adult lower-step water witness in a coarse dark wool coat with wet hem and ash-cracked hands, stands at the broad stone basin lip ready to receive a folded notice copy. Maro Seln, a sturdy older cistern reeve in water-stained layered work clothes with a large iron drain key, stands beside the feed wheel. Lower-step residents carry rolled bedding and water vessels behind them.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "at the basin lip receiving or waiting for a usable copy", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "maro_seln", "default_stance": "at the feed wheel with the drain key", "visual_ref": "visual_character_refs.characters.maro_seln"},
+          {"agent_id": "lower_step_households", "default_stance": "moving bedding and vessels through the Cistern House", "visual_ref": "visual_character_refs.groups.lower_step_households"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The Cistern House is above the Gallery and visually distinct: wet timber beams, broad stone basin lip, feed wheel, iron grate, and household movement."]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "preserved_tag_rubbings",
+        "trigger": "branch_label == preserve_interception_marks",
+        "apply_to_visual_scene_ids": ["veil_notices_read", "veil_record_choice", "veil_disclosure_fold", "veil_courier_choice"],
+        "modifier_prompt": "Add two crisp charcoal rubbings that preserve the full split-reed routes, Cistern House notch, dry-store hold stroke, custodian-review slit, and missing lower-step receipt."
+      },
+      {
+        "modifier_id": "broken_route_tag",
+        "trigger": "branch_label == break_seals_for_speed",
+        "apply_to_visual_scene_ids": ["veil_notices_read", "veil_record_choice", "veil_disclosure_fold"],
+        "modifier_prompt": "Show one snapped split-reed tag and fragmented grey wax obscuring the exact interception point while both cloth notices lie open and readable as diagrams."
+      },
+      {
+        "modifier_id": "name_cloths_attached",
+        "trigger": "branch_label == attach_mortuary_witness",
+        "apply_to_visual_scene_ids": ["veil_notices_read", "veil_record_choice", "veil_disclosure_fold", "veil_ending_tavi"],
+        "modifier_prompt": "Thread two pale name cloths beneath the wax and notice edges so the death and care context travels visibly with the record."
+      },
+      {
+        "modifier_id": "wax_layers_compared",
+        "trigger": "branch_label == attach_technical_witness",
+        "apply_to_visual_scene_ids": ["veil_notices_read", "veil_record_choice", "veil_disclosure_fold", "veil_ending_ressa"],
+        "modifier_prompt": "Arrange older pale wax, darker later counterseal, bronze comparison blade, and lamplight as a readable material sequence."
+      },
+      {
+        "modifier_id": "three_copies_distributed",
+        "trigger": "branch_label == copy_both_notices",
+        "apply_to_visual_scene_ids": ["veil_disclosure_fold", "veil_courier_choice", "veil_ending_recorder"],
+        "modifier_prompt": "Show three complete ashproof copies in separate custody: one at Sera's chest, one with Ressa, and one strapped beneath the recorder's pack frame."
+      },
+      {
+        "modifier_id": "technical_notice_first",
+        "trigger": "branch_label == privilege_technical_warning",
+        "apply_to_visual_scene_ids": ["veil_record_choice", "veil_disclosure_fold", "veil_ending_ressa"],
+        "modifier_prompt": "Place the hooked seventh-baffle and first-hammer copy in bright lamplight while the lower-step care sheet stays folded under Tavi's guarded hand."
+      },
+      {
+        "modifier_id": "household_notice_first",
+        "trigger": "branch_label == privilege_household_warning",
+        "apply_to_visual_scene_ids": ["veil_record_choice", "veil_disclosure_fold", "veil_ending_surface_or_rupture"],
+        "modifier_prompt": "Place the lower-feed, third-water-mark, raised-pallet, sample-bowl, and burn-cloth copy in the foreground as the actionable household warning."
+      },
+      {
+        "modifier_id": "route_copy_and_wedge",
+        "trigger": "branch_label == make_route_copy_only",
+        "apply_to_visual_scene_ids": ["veil_disclosure_fold", "veil_courier_choice", "veil_ending_recorder"],
+        "modifier_prompt": "Show one blunt route copy strapped under the wooden pack frame and a compact iron wedge set firmly in the archive-crawl latch."
+      },
+      {
+        "modifier_id": "tavi_delivery_success_visual",
+        "trigger": "ending_label == mortuary_delivery_success",
+        "apply_to_visual_scene_ids": ["veil_ending_tavi"],
+        "modifier_prompt": "Tavi climbs upright into the warm relief passage with damp soot-black clothes and both pale name cloths tied around an intact copy; the pressure seam lies quiet behind the carrier."
+      },
+      {
+        "modifier_id": "tavi_notice_received_visual",
+        "trigger": "ending_label == mortuary_delivery_success",
+        "apply_to_visual_scene_ids": ["veil_ending_surface_or_rupture"],
+        "modifier_prompt": "An intact copy tied between two pale name cloths rests in Bel's hands while lower-step residents lift bedding above painted water marks."
+      },
+      {
+        "modifier_id": "tavi_delivery_death_visual",
+        "trigger": "ending_label == mortuary_delivery_death",
+        "apply_to_visual_scene_ids": ["veil_ending_tavi"],
+        "modifier_prompt": "A violent amber-grey relief pulse fills the one-person passage; two name cloths and the folded copy blow toward the upper hatch while Tavi's body lies below the sump grate, separated from the delivered record."
+      },
+      {
+        "modifier_id": "ressa_delivery_success_visual",
+        "trigger": "ending_label == technical_delivery_success",
+        "apply_to_visual_scene_ids": ["veil_ending_ressa"],
+        "modifier_prompt": "Ressa crosses the corroded bridge upright with the wrapped rubbing dry inside the coat and one pale route marker visible beyond the filter frames."
+      },
+      {
+        "modifier_id": "ressa_notice_received_visual",
+        "trigger": "ending_label == technical_delivery_success",
+        "apply_to_visual_scene_ids": ["veil_ending_surface_or_rupture"],
+        "modifier_prompt": "An intact wrapped rubbing and usable copy lie open in Bel's hands while Maro closes the lower-step feed wheel and residents move bedding."
+      },
+      {
+        "modifier_id": "ressa_refusal_visual",
+        "trigger": "ending_label == technical_delivery_refused",
+        "apply_to_visual_scene_ids": ["veil_ending_ressa", "veil_disclosure_fold"],
+        "modifier_prompt": "Ressa sets the wrapped rubbing back between Sera and Tavi, palms open in refusal, while the west return door fills with hotter mist."
+      },
+      {
+        "modifier_id": "recorder_delivery_success_visual",
+        "trigger": "ending_label == distributed_record_delivery_success",
+        "apply_to_visual_scene_ids": ["veil_ending_recorder"],
+        "modifier_prompt": "The recorder climbs alive toward the black pressure door with one intact copy beneath the pack frame; the braced hatch and quiet pressure seam stay visible behind the carrier."
+      },
+      {
+        "modifier_id": "recorder_notice_received_visual",
+        "trigger": "ending_label == distributed_record_delivery_success",
+        "apply_to_visual_scene_ids": ["veil_ending_surface_or_rupture"],
+        "modifier_prompt": "One intact notice copy and a wooden pack frame rest at Bel's feet while Bel reads and Maro turns the lower-step feed wheel."
+      },
+      {
+        "modifier_id": "recorder_death_visual",
+        "trigger": "ending_label == record_carrier_death",
+        "apply_to_visual_scene_ids": ["veil_ending_recorder"],
+        "modifier_prompt": "A concentrated steam pulse lifts the recorder against the crawl wall; the pack-mounted copy curls black, charcoal runs across the stone, and the body blocks the route toward the surface."
+      },
+      {
+        "modifier_id": "repair_first_visual",
+        "trigger": "ending_label == repair_first_bounded_success",
+        "apply_to_visual_scene_ids": ["veil_disclosure_fold", "veil_ending_surface_or_rupture"],
+        "modifier_prompt": "The surface pressure marks stabilize while Bel receives the notices late; lower-step residents carry full water vessels and wet bedding past an intact but delayed archive copy."
+      },
+      {
+        "modifier_id": "rupture_before_disclosure_visual",
+        "trigger": "ending_label == disclosure_after_rupture",
+        "apply_to_visual_scene_ids": ["veil_disclosure_fold", "veil_ending_surface_or_rupture"],
+        "modifier_prompt": "Hot grey water surges into the lower basin and Warm Steps; residents scramble with bedding and water vessels while the black pressure door vents steam and Bel still holds an empty hand where a warning copy should be."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "ashen_intake_custodian_gallery.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Rectangular dry service room roughly four paces east-west by seven paces north-south, with evidence work in the center and three distinct route thresholds on west, north, and south walls.",
+      "fixed_zones": [
+        {"zone_id": "east_chest_wall", "visible_form": "sagging folio shelves, black calibration chest, three octal wheels, two-arc pressure gauge, baffle diagram, amber wall lamp", "used_for": "gauge copying, chest opening, Measure and notice recovery"},
+        {"zone_id": "central_copying_floor", "visible_form": "clear ochre flagstones large enough for four kneeling workers, three copy cloths, rubbings, name cloths, and separated evidence piles", "used_for": "seal work, dictation, copy custody, folded choices"},
+        {"zone_id": "north_archive_crawl", "visible_form": "low square iron-framed hatch entering a one-person stone crawl toward the Memorial Sump and Relief Crawl", "used_for": "Tavi and recorder courier route"},
+        {"zone_id": "west_eight_screens_return", "visible_form": "narrow iron service door opening toward mist, filter-frame ribs, and the Settling Walk", "used_for": "Ressa's longer return route"},
+        {"zone_id": "south_intake_crown_door", "visible_form": "heavy service door with hammering pipe and heat-darkened seams", "used_for": "onward repair route retained by the full party"},
+        {"zone_id": "overhead_dry_vent", "visible_form": "narrow stone-and-metal ceiling vent casting heat shimmer and moving lamp shadows", "used_for": "crew heat state and deceptive room hazard"}
+      ],
+      "routes": [
+        {"route_id": "sump_relief_fast_route", "path": "north_archive_crawl -> Memorial Sump upper junction -> Relief Crawl -> Meter Stair -> black pressure door -> Cistern House", "capacity": "one burdened person at a time", "hazards": ["ambiguous manifestations", "scalding pressure pulse", "heat", "loss of carrier and copy"]},
+        {"route_id": "screens_settling_long_route", "path": "west return door -> Eight Screens -> Settling Walk -> Meter Stair -> black pressure door -> Cistern House", "capacity": "single file through screens, broader on Settling Walk", "hazards": ["hot mist", "corroded grid", "longer travel time", "removal of technical witness from Crown"]},
+        {"route_id": "crown_repair_route", "path": "south service door -> Intake Crown", "capacity": "working party with tools", "hazards": ["pressure clock", "loss of surface warning time"]}
+      ],
+      "occluders": [
+        {"occluder_id": "chest_lid", "effect": "Blocks the chest contents until fully released and opened."},
+        {"occluder_id": "west_return_door", "effect": "Blocks sight beyond the first Eight Screens ribs; route condition must be inspected or carried by a traveler."},
+        {"occluder_id": "north_crawl_turn", "effect": "Prevents Gallery occupants from seeing the Memorial Sump or a courier after the first body length."},
+        {"occluder_id": "south_crown_door", "effect": "Prevents the Gallery from seeing the Intake Crown and isolates its hammering sound from direct observation."}
+      ],
+      "camera_slots": [
+        {"camera_id": "southwest_room_wide", "supports_visual_scene_ids": ["veil_gallery_establishing", "veil_gallery_routine", "veil_record_choice"]},
+        {"camera_id": "east_chest_overhead", "supports_visual_scene_ids": ["veil_chest_reveal", "veil_seal_choice", "veil_notices_read"]},
+        {"camera_id": "south_to_routes_wide", "supports_visual_scene_ids": ["veil_disclosure_fold", "veil_courier_choice"]},
+        {"camera_id": "north_sump_route", "supports_visual_scene_ids": ["veil_ending_tavi"]},
+        {"camera_id": "west_filter_route", "supports_visual_scene_ids": ["veil_ending_ressa"]},
+        {"camera_id": "relief_crawl_close", "supports_visual_scene_ids": ["veil_ending_recorder"]},
+        {"camera_id": "cistern_house_threshold", "supports_visual_scene_ids": ["veil_ending_surface_or_rupture"]}
+      ],
+      "staging_slots": [
+        {"slot_id": "chest_operator", "zone_id": "east_chest_wall", "allowed_agents": ["sera_venn", "ressa_orr"]},
+        {"slot_id": "mortuary_edge", "zone_id": "central_copying_floor", "allowed_agents": ["tavi_kes"]},
+        {"slot_id": "record_station", "zone_id": "central_copying_floor", "allowed_agents": ["expedition_recorder"]},
+        {"slot_id": "crawl_departure", "zone_id": "north_archive_crawl", "allowed_agents": ["tavi_kes", "expedition_recorder"]},
+        {"slot_id": "return_departure", "zone_id": "west_eight_screens_return", "allowed_agents": ["ressa_orr"]}
+      ],
+      "state_anchors": [
+        {"anchor_id": "pale_shutter_gauge", "values": ["two pale marks", "one pale mark", "fully dark"]},
+        {"anchor_id": "notice_seal_state", "values": ["sealed tags", "complete rubbings and opened wax", "snapped reed and broken wax"]},
+        {"anchor_id": "copy_distribution", "values": ["one pack-mounted route copy", "two separated partial copies", "three separated full copies"]},
+        {"anchor_id": "archive_crawl_latch", "values": ["unbraced", "wedged"]},
+        {"anchor_id": "courier_state", "values": ["present in Gallery", "departed", "arrived above", "refused", "dead on route"]}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for bodies visible in a scene.",
+    "characters": {
+      "sera_venn": "Sera Venn: lean young adult human intake custodian with medium-brown skin, close-cropped dark hair damp at the temples, narrow tired face, layered ash-grey wool work robes over a leather heat apron, fingerless work gloves, eight-tooth iron spindle at the belt, soot and mineral scale at cuffs, posture economical and watchful.",
+      "ressa_orr": "Ressa Orr: broad middle-aged human itinerant priest-engineer with weathered umber skin, iron-grey hair in a short wrapped braid, square hands, patched dark-red and charcoal work layers, ceramic eye shields raised on the brow, bronze comparison blade and small lamp, posture deliberate and difficult to hurry.",
+      "tavi_kes": "Tavi Kes: compact adult human mortuary witness with olive-brown skin, shaved head, soot-black layered coat over practical delving wraps, two pale woven name cloths knotted at the wrist or pack, mineral-ash marks across the fingers, posture quiet and braced around grief.",
+      "bel_orra": "Bel Orra: adult human lower-step water witness with dark skin, coarse dark wool coat with wet hem, layered work tunic, cracked hands stained by grey ash, one marked sampling cup tied at the waist, posture tired, direct, and forward-leaning with sleeves ready for carrying work.",
+      "maro_seln": "Maro Seln: sturdy older human cistern reeve with tan weathered skin, cropped grey beard, water-stained brown and blue layered work clothes, heavy apron, large iron drain key and feed-wheel gloves, posture planted beside public machinery and uneasy around disputed paper."
+    },
+    "groups": {
+      "expedition_recorder": "Expedition recorder: one adult human working record carrier in practical padded grey-brown clothing, leather knee and forearm guards, compact wooden pack frame, charcoal case, blank and copied ashproof cloth sheets in separate wraps, water flask, plain hood, light protective gear, attentive posture, and physically heat-weary body language.",
+      "lower_step_households": "Lower-step households: adults and older children in coarse layered wool with wet hems, ash-stained shawls, work aprons, simple boots, and cracked hands, carrying rolled sleeping pallets, blankets, marked water vessels, sample bowls, and small household bundles in an urgent uneven line."
+    }
+  },
+  "review_notes": [
+    "Visual-continuity review accepted twelve click-through anchors after prompt-local character description and off-frame courier-reference repairs; the full verdict is recorded in the training sidecar.",
+    "Spatial review accepted the embedded scene_set as the durable B-level geometry authority. High-consistency final art should still receive a camera-specific plan view or blockout at render time.",
+    "All image generation and rendering are deferred."
+  ]
+}

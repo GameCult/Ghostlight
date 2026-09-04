@@ -1,0 +1,415 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "kalsa-veil-undelivered-warnings-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/kalsa/veil-undelivered-warnings-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/kalsa/veil-undelivered-warnings-v0.v0.json",
+  "visual_plan_ref": "examples/visual/kalsa/veil-undelivered-warnings-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "veil-undelivered-warnings-v0.custodian-gallery-disclosure",
+  "protagonist_agent_id": "sera_venn",
+  "npc_agent_ids": [
+    "ressa_orr",
+    "tavi_kes",
+    "expedition_recorder",
+    "bel_orra",
+    "maro_seln"
+  ],
+  "purpose": "Interactive Fiction Weaver draft of Sera Venn's discovery of two undelivered Grey Scald notices, with preservation, copying, and courier choices that expose how disclosure consumes time, expertise, witnesses, and bodies.",
+  "tonal_mode": "Procedural mystery with dry workplace gallows wit and rising mortuary dread.",
+  "artifact_role": "Playable illustrated-fiction website collateral and lore stress test; not canonical play outcome, simulation state, or core model-training signal.",
+  "local_awareness_summary": [
+    {
+      "text": "Sera is Low Sere's provisional intake custodian. She knows degraded operation, the pressure clock, Teren's formation, the known route, and what the recovered documents visibly contain; she does not know who made the earlier hold marks or whether the sump manifestations are the named dead.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/veil-undelivered-warnings-v0.v0.json",
+        "Kalsa/Spoilers/Places/Low Sere.md",
+        "Kalsa/Spoilers/Dungeons/The Ashen Intake.md"
+      ]
+    },
+    {
+      "text": "Ressa can compare technical marks and holds an independent stop at the Intake Crown. Tavi carries kin and mortuary authority around Jori, Pell, and the Memorial Sump. Either can leave as a courier, but their departure removes that authority from the remaining repair party.",
+      "source_refs": [
+        "Kalsa/Spoilers/Dungeons/The Ashen Intake.md",
+        "Kalsa/Spoilers/Institutions/Relic Custody.md",
+        "Kalsa/Spoilers/Institutions/Death and Binding Law.md"
+      ]
+    },
+    {
+      "text": "The expedition recorder can preserve and carry copies but owns no technical, mortuary, or settlement decision. Bel Orra can receive an intelligible lower-step copy above ground; Maro can order surface evacuation or feed closure but may not own every record.",
+      "source_refs": [
+        "Kalsa/Public/Sources/At the Basin Table.md",
+        "Kalsa/Spoilers/Dungeons/The Ashen Intake.md",
+        "Kalsa/Spoilers/Institutions/Delving Compacts.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Sera's embodied position in the hot, dry Custodian Gallery. She can inspect, speak, copy, transfer, wait, and ask another person to carry a record; she cannot know the absent surface response before a courier arrives.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md"
+        ]
+      },
+      {
+        "text": "The opening establishes gauge copying, heat management, name-cloth care, charcoal preparation, room geometry, and the already-spent shutter before the sealed notices become a crisis.",
+        "source_refs": [
+          "AGENTS.md",
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "The Ashen Intake owns the notices as physical evidence and the present routes. The Grey Scald note owns adopted historical facts. The fixture may stage branch outcomes but may not turn an accusation inferred from a tag into settled history.",
+        "source_refs": [
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md",
+          "Kalsa/Spoilers/Events/The Grey Scald.md",
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md"
+        ]
+      },
+      {
+        "text": "Ressa's comparison, Tavi's mortuary witness, the recorder's copies, Bel's receipt, and Maro's surface order remain separate acts. Possession or delivery of a notice grants none of the other offices.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Relic Custody.md",
+          "Kalsa/Spoilers/Institutions/Death and Binding Law.md",
+          "Kalsa/Spoilers/Institutions/Delving Compacts.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The two ashproof notices, brittle split-reed tags, grey wax and counterseals, rubbings, compact copies, name cloths, charcoal, Ashen Measure, handoff folio, pack frame, chest wheels, and archive-crawl wedge retain visible custody and condition throughout the scene.",
+        "source_refs": [
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md",
+          "examples/ink/kalsa/veil-undelivered-warnings-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every material choice must trade disclosure against at least one of time, seal provenance, technical comparison, mortuary context, redundant copies, route safety, or specialist presence at the Intake Crown.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md"
+        ]
+      },
+      {
+        "text": "No branch makes the notices a verdict. Their force comes from comparison with other records, receipt by an affected witness, and action by the office that owns the threatened surface system.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Measures, Formulae, and Machine Speech.md",
+          "Kalsa/Spoilers/Institutions/Relic Custody.md"
+        ]
+      },
+      {
+        "text": "Courier endings must name what authority leaves the gallery, which physical route is used, what hazard reaches the carrier, and whether the warning becomes usable above ground.",
+        "source_refs": [
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md",
+          "prompts/spatial-geometric-cohesion-reviewer.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not identify the hand that made either unsigned hold, exonerate or condemn Teren, resolve Sera's appointment, or declare one formula translation pure.",
+        "source_refs": [
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md",
+          "Kalsa/Spoilers/Events/The Grey Scald.md"
+        ]
+      },
+      {
+        "text": "Do not identify manifestations in the Memorial Sump as Jori or Pell merely because names alter the encounter.",
+        "source_refs": [
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md",
+          "Kalsa/Spoilers/Institutions/Death and Binding Law.md"
+        ]
+      },
+      {
+        "text": "Do not universalize this notice material, room plan, courier procedure, appearance design, or branch outcome beyond the fixture-bounded Ashen Intake elaboration.",
+        "source_refs": [
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through seal handling, record scope, and courier selection, then split only where a carrier's death, refusal, or removal of a specialist makes convergence false.",
+    "choice_layers": [
+      "preserve_or_open",
+      "choose_the_record",
+      "choose_the_disclosure_path"
+    ],
+    "variables": [
+      "pale_shutters",
+      "seal_integrity",
+      "technical_context",
+      "mortuary_context",
+      "copy_count",
+      "shared_record",
+      "crew_heat",
+      "warning_scope",
+      "route_braced"
+    ],
+    "ending_gates": [
+      "ending_tavi_delivery",
+      "ending_tavi_cost",
+      "ending_ressa_delivery",
+      "ending_ressa_cost",
+      "ending_recorder_delivery",
+      "ending_recorder_cost",
+      "ending_repair_first",
+      "ending_disclosure_too_late"
+    ],
+    "major_route_split_reasons": [
+      "Tavi or the recorder may die on a courier route.",
+      "Ressa may leave the repair party or refuse to become sole witness.",
+      "Keeping the party together may preserve repair authority or let the surface warning arrive after rupture."
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "preserve_interception_marks",
+      "ink_path": "seal_choice",
+      "action_type": "use_object",
+      "actor_intent": "Preserve the physical interception route before breaking the seals.",
+      "state_basis": ["The wax threads through brittle routing tags, so opening can destroy evidence."],
+      "reviewed_consequences": ["Raises seal_integrity and shared_record, raises crew_heat, and spends one pale shutter; later courier and public-proof gates read those values."],
+      "training_hooks": ["provenance_before_content", "time_cost", "object_evidence"]
+    },
+    {
+      "branch_id": "break_seals_for_speed",
+      "ink_path": "seal_choice",
+      "action_type": "break_object",
+      "actor_intent": "Reach actionable words without spending another pressure interval.",
+      "state_basis": ["Sera can physically break the wax and read the cloth immediately."],
+      "reviewed_consequences": ["Lowers seal_integrity while raising warning_scope; later branches retain the words but lose strong evidence of where delivery stopped."],
+      "training_hooks": ["speed_provenance_tradeoff", "destructive_read"]
+    },
+    {
+      "branch_id": "attach_mortuary_witness",
+      "ink_path": "seal_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Keep the names and delayed-care claim attached to the notice before it travels.",
+      "state_basis": ["Tavi carries two name cloths and mortuary authority around the Grey Scald dead."],
+      "reviewed_consequences": ["Raises mortuary_context, seal_integrity, and crew_heat; Tavi's route later succeeds only when the mortuary context and time remain sufficient."],
+      "training_hooks": ["death_context", "kin_witness", "care_not_footnote"]
+    },
+    {
+      "branch_id": "attach_technical_witness",
+      "ink_path": "seal_choice",
+      "action_type": "show_object",
+      "actor_intent": "Distinguish the original holds from Teren's later counterseal without claiming to identify their makers.",
+      "state_basis": ["Ressa can compare the intake practice and retains bounded technical stop authority."],
+      "reviewed_consequences": ["Raises technical_context, seal_integrity, and crew_heat; later repair and Ressa-delivery gates depend on this comparison."],
+      "training_hooks": ["bounded_expertise", "comparison_not_verdict"]
+    },
+    {
+      "branch_id": "copy_both_notices",
+      "ink_path": "record_choice",
+      "action_type": "speak",
+      "actor_intent": "Create three complete copies before anyone carries the evidence away.",
+      "state_basis": ["The Ashen Intake compact requires Low Sere, custodian-review, and crew copies."],
+      "reviewed_consequences": ["Sets copy_count to three, raises shared_record and warning_scope, raises crew_heat, and spends a pale shutter; strong recorder delivery becomes possible while rupture approaches."],
+      "training_hooks": ["redundant_records", "disclosure_delay", "pressure_clock"]
+    },
+    {
+      "branch_id": "privilege_technical_warning",
+      "ink_path": "record_choice",
+      "action_type": "speak",
+      "actor_intent": "Preserve the platform-clearance and first-hammer distinction first.",
+      "state_basis": ["The first notice speaks directly to the formula error that can recur at the Intake Crown."],
+      "reviewed_consequences": ["Creates two copies and raises technical_context, but warning_scope remains partial and Tavi names the cost of omitting later care."],
+      "training_hooks": ["technical_priority", "care_omission"]
+    },
+    {
+      "branch_id": "privilege_household_warning",
+      "ink_path": "record_choice",
+      "action_type": "speak",
+      "actor_intent": "Give exposed households an actionable closure and care instruction first.",
+      "state_basis": ["Lower-step households are first exposed and require intelligible notice."],
+      "reviewed_consequences": ["Creates two copies and raises mortuary_context and warning_scope, while the first-hammer technical notice remains less available for repair."],
+      "training_hooks": ["affected_people_first", "technical_context_cost"]
+    },
+    {
+      "branch_id": "make_route_copy_only",
+      "ink_path": "record_choice",
+      "action_type": "withhold_judgment",
+      "actor_intent": "Make one light actionable copy and use the saved time to brace the archive crawl.",
+      "state_basis": ["A single copy can carry surface instructions while the originals remain below."],
+      "reviewed_consequences": ["Sets copy_count to one, lowers shared_record, raises route_braced and warning_scope; delivery becomes physically safer but institutionally fragile."],
+      "training_hooks": ["actionable_summary", "thin_provenance", "route_preparation"]
+    },
+    {
+      "branch_id": "send_tavi_with_names",
+      "ink_path": "courier_choice",
+      "action_type": "speak",
+      "actor_intent": "Send the warning through the Memorial Sump with kin context visibly attached.",
+      "state_basis": ["Tavi knows the mortuary claim and can carry name cloths, but the route crosses the hazardous sump and removes the kin witness from the Crown."],
+      "reviewed_consequences": ["Routes to delivery if mortuary_context and a pale shutter remain; otherwise Tavi dies in the relief pulse. Either ending removes mortuary authority from the repair party."],
+      "training_hooks": ["courier_consent", "mortuary_route", "death_route_split"]
+    },
+    {
+      "branch_id": "send_ressa_with_comparison",
+      "ink_path": "courier_choice",
+      "action_type": "speak",
+      "actor_intent": "Send a technically defensible copy by the longer return route.",
+      "state_basis": ["Ressa can compare marks, but departure removes the independent Crown stop and risks making her sole witness."],
+      "reviewed_consequences": ["Routes to delivery only with technical_context, seal_integrity, and time; otherwise Ressa refuses and the opened evidence remains undisclosed."],
+      "training_hooks": ["technical_courier", "refusal_of_monopoly", "authority_cost"]
+    },
+    {
+      "branch_id": "send_recorder_fast",
+      "ink_path": "courier_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Keep specialist authorities below while the recorder carries one redundant copy upward.",
+      "state_basis": ["The recorder owns copies and route testimony but no technical or mortuary judgment."],
+      "reviewed_consequences": ["Routes to delivery only when at least one copy, usable seal evidence, and the route brace exist; otherwise a pressure pulse kills the recorder and destroys the carried copy. Redundant copies preserve the record below but do not deliver the warning."],
+      "training_hooks": ["record_custody", "redundancy", "carrier_not_plot_armored"]
+    },
+    {
+      "branch_id": "keep_disclosure_with_repair",
+      "ink_path": "courier_choice",
+      "action_type": "wait",
+      "actor_intent": "Preserve every specialist and record for the Intake Crown, accepting delayed surface notice.",
+      "state_basis": ["The Crown still requires qualified operation, independent stop, mortuary hold, and an expedition record."],
+      "reviewed_consequences": ["Routes to bounded repair when a shutter and technical context remain; otherwise the lower cistern ruptures while the archive survives."],
+      "training_hooks": ["repair_disclosure_tradeoff", "intact_archive_too_late", "collective_capacity"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for this local playthrough",
+      "Conditional prose and option gates",
+      "Ending selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Any durable claim about the hold marks' authorship",
+      "Any canonical survival, injury, death, appointment, appeal, or repair outcome",
+      "Any durable relationship or memory update for named participants",
+      "Any generalization of this room, notice form, route procedure, or visual identity beyond the fixture"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Veil elaborator applying four repository reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative review accepted the repaired fixture: roles arrive before stakes, routine precedes pressure, every state variable reaches prose, visuals, a gate, or an ending, and all courier branches retain their chosen authority cost.",
+      "Lore review accepted the fixture against all listed Public and Spoilers sources. The Ashen Intake remains owner of the local notice objects and routes; The Grey Scald remains owner of adopted history; play outcomes remain noncanonical.",
+      "Visual-continuity review accepted twelve click-through anchors after recurring bodies received prompt-local visible descriptions and courier-success modifiers were split between route frames and object-only surface receipt frames.",
+      "Spatial review accepted the fixed east chest wall, west return, north crawl, south Crown door, central copy floor, route capacities, occluders, camera slots, and branch-carried object states. The lore wording now distinguishes a lone long-route courier from a group return.",
+      "Ink compilation was deliberately not run under the swarm task contract; validation is static and the compiled check remains false."
+    ],
+    "review_passes": {
+      "narrative_quality": {
+        "verdict": "accepted",
+        "scores": {
+          "reader_orientation_score": 5,
+          "coherence_score": 5,
+          "pacing_score": 4,
+          "voice_score": 5,
+          "tonal_fit_score": 5,
+          "if_playability_score": 5
+        },
+        "findings": [
+          {
+            "severity": "major",
+            "location": "courier_choice/send_recorder_fast",
+            "problem": "The first recorder-success gate required both three copies and the route brace even though those values came from mutually exclusive choices.",
+            "why_it_matters": "A visibly offered success path was mechanically impossible.",
+            "evidence": "copy_both_notices set copy_count to three while make_route_copy_only alone set route_braced.",
+            "fix_direction": "Gate the recorder on one carried copy, usable seal evidence, and the brace; make redundant-copy prose conditional.",
+            "resolution": "fixed"
+          },
+          {
+            "severity": "minor",
+            "location": "gallery_routine and disclosure_fold",
+            "problem": "The first draft depended on several offices before giving a new reader their scene-local functions, and warning_scope was recorded but unread.",
+            "why_it_matters": "Dense office language and decorative state would weaken onboarding and player trust.",
+            "evidence": "Bel and Maro first mattered at delivery; warning_scope changed during copying without a folded callback.",
+            "fix_direction": "Introduce each role before the courier choice and add scope-specific disclosure prose.",
+            "resolution": "fixed"
+          }
+        ],
+        "training_labels": ["strong_contextual_onboarding", "strong_branch_callback", "strong_character_voice", "strong_material_lore", "strong_wit_with_stakes"]
+      },
+      "lore_grounding": {
+        "verdict": "accepted",
+        "scores": {
+          "source_coverage_score": 5,
+          "canon_fit_score": 5,
+          "grounding_quality_score": 5,
+          "vault_backfill_value_score": 5
+        },
+        "findings": [
+          {
+            "severity": "minor",
+            "location": "Kalsa/Spoilers/Dungeons/The Ashen Intake.md, fixture elaboration",
+            "problem": "The initial long-route sentence conflated a courier taking that route with the whole crew returning together.",
+            "why_it_matters": "The vault would otherwise contradict Ressa's solo courier branch and blur which capacity the route preserves.",
+            "evidence": "The sentence said the Eight Screens return keeps the crew together without making group travel conditional.",
+            "fix_direction": "State the route's lower pressure exposure and time cost separately from the effect of taking it as a group.",
+            "resolution": "fixed"
+          }
+        ],
+        "acceptance_notes": ["Public facts, Spoilers facts, fixture-authored local canon, unresolved accusations, and noncanonical branch outcomes remain explicitly separated."]
+      },
+      "visual_continuity": {
+        "verdict": "accepted",
+        "scores": {
+          "segmentation_score": 5,
+          "visual_prompt_score": 5,
+          "character_visibility_score": 5,
+          "branch_visual_continuity_score": 5,
+          "website_replay_score": 4
+        },
+        "findings": [
+          {
+            "severity": "major",
+            "location": "global_branch_image_modifiers, courier success states",
+            "problem": "The first surface-success modifiers named couriers absent from the Cistern House frame.",
+            "why_it_matters": "Image assembly could draw an off-frame character at the surface and break the route-to-receipt handoff.",
+            "evidence": "One modifier tried to cover both the courier route and Bel's surface receipt.",
+            "fix_direction": "Split each success into a carrier-visible route delta and an object-only receipt delta.",
+            "resolution": "fixed"
+          },
+          {
+            "severity": "minor",
+            "location": "visual_scene_plan.scenes",
+            "problem": "Several first-draft base prompts used recurring names where prompt-local body and clothing cues were needed.",
+            "why_it_matters": "A general image model needs a complete drawable frame rather than private character-name context.",
+            "evidence": "The record and route-choice prompts initially named Sera, Ressa, and Tavi without restating their visible distinctions.",
+            "fix_direction": "Add concise physical, clothing, tool, and posture cues to every affected base prompt while retaining stable visual refs.",
+            "resolution": "fixed"
+          }
+        ],
+        "review_labels": ["strong_scene_segmentation", "strong_imagegen_ready_prompt", "strong_character_stance_control", "strong_branch_visual_continuity"]
+      },
+      "spatial_cohesion": {
+        "verdict": "accepted",
+        "scores": {
+          "layout_cohesion_score": 5,
+          "sightline_score": 5,
+          "body_affordance_score": 5,
+          "movement_access_score": 5,
+          "object_system_geometry_score": 5,
+          "branch_spatial_state_score": 5
+        },
+        "findings": [],
+        "inferred_layout_summary": "A dry four-by-seven-pace Gallery places chest and gauge east, Eight Screens return west, archive crawl north, Intake Crown door south, and four-person evidence work centrally. The north crawl joins the Sump and Relief Crawl; the west route joins the Screens and Settling Walk; both rise to the Cistern House through the black pressure door.",
+        "review_labels": ["strong_layout_cohesion", "strong_sightline_control", "strong_body_affordance_staging", "strong_branch_spatial_state"]
+      }
+    },
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true,
+      "compiled": false
+    }
+  }
+}

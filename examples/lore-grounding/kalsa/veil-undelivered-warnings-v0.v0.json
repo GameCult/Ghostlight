@@ -1,0 +1,334 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "kalsa.veil-undelivered-warnings-v0",
+  "source_status": "canonical_plus_fixture_elaboration",
+  "fixture_status": "grounded_draft",
+  "source_refs": [
+    {
+      "source_id": "public-low-sere",
+      "path": "Kalsa/Public/Places/Low Sere.md",
+      "title": "Low Sere",
+      "canon_tier": "Public/situated",
+      "line_start": 1,
+      "line_end": 47,
+      "relevance": "Reader-facing settlement dependency, unequal notice, Grey Scald losses, and the current threshold dispute."
+    },
+    {
+      "source_id": "public-basin-table",
+      "path": "Kalsa/Public/Sources/At the Basin Table.md",
+      "title": "At the Basin Table",
+      "canon_tier": "Public/situated",
+      "line_start": 1,
+      "line_end": 74,
+      "relevance": "Reader-facing voices for Sera, Ressa, Tavi, Maro, Teren, and lower-step water witness Bel Orra."
+    },
+    {
+      "source_id": "ashen-intake",
+      "path": "Kalsa/Spoilers/Dungeons/The Ashen Intake.md",
+      "title": "The Ashen Intake",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 445,
+      "relevance": "Primary site owner for the Custodian Gallery, notices, routes, pressure clock, evidence, named claimants, and fixture-authored disclosure paths."
+    },
+    {
+      "source_id": "grey-scald",
+      "path": "Kalsa/Spoilers/Events/The Grey Scald.md",
+      "title": "The Grey Scald",
+      "canon_tier": "Spoilers/adopted-history",
+      "line_start": 1,
+      "line_end": 38,
+      "relevance": "Exclusive owner of the prior failure, deaths, suspension, withheld Measure and folio, and unresolved historical conclusions."
+    },
+    {
+      "source_id": "author-low-sere",
+      "path": "Kalsa/Spoilers/Places/Low Sere.md",
+      "title": "Low Sere",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 133,
+      "relevance": "Owns settlement work, class exposure, current actors, basin-table authority, lower-step dependence, and present consequences."
+    },
+    {
+      "source_id": "relic-custody",
+      "path": "Kalsa/Spoilers/Institutions/Relic Custody.md",
+      "title": "Relic Custody",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 197,
+      "relevance": "Separates possession, technical operation, output dependence, record custody, discipline, emergency action, and appeal."
+    },
+    {
+      "source_id": "formula-practice",
+      "path": "Kalsa/Spoilers/Institutions/Measures, Formulae, and Machine Speech.md",
+      "title": "Measures, Formulae, and Machine Speech",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 156,
+      "relevance": "Requires usable public notice, bounded technical comparison, provenance, and separation of machine response from political judgment."
+    },
+    {
+      "source_id": "death-binding",
+      "path": "Kalsa/Spoilers/Institutions/Death and Binding Law.md",
+      "title": "Death and Binding Law",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 287,
+      "relevance": "Grounds Tavi's mortuary claim, names and manifests, evidence custody, safe access, and refusal to identify the dead from ambiguous phenomena."
+    },
+    {
+      "source_id": "delving-compacts",
+      "path": "Kalsa/Spoilers/Institutions/Delving Compacts.md",
+      "title": "Delving Compacts",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 134,
+      "relevance": "Grounds three-copy recording, specialist stops, route and withdrawal authority, casualty notice, worker care, and record survival."
+    },
+    {
+      "source_id": "canon-policy",
+      "path": "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+      "title": "Canon and Provenance",
+      "canon_tier": "Spoilers/canonical-policy",
+      "line_start": 1,
+      "line_end": 129,
+      "relevance": "Protects tier separation, situated knowledge, in-world belief, adopted history, and unresolved claims from fixture overreach."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Kalsa's standing present during the commissioned Ashen Intake descent; the exact date remains unresolved.",
+    "location": "The dry Custodian Gallery beneath Low Sere, with one return toward the Eight Screens and one archive crawl through the Memorial Sump to the Relief Crawl.",
+    "summary": "Sera Venn opens Teren's calibration chest and discovers two notices that could have changed the Grey Scald's warning and aftercare. The party must decide how much provenance to preserve, what to copy first, and which specialist or recorder may risk the route back to lower-step households while the intake pressure clock continues.",
+    "public_facts": [
+      {
+        "text": "Low Sere's forty-one hearths depend on warm water from an old intake; lower-step rooms are wetter, poorer, and first harmed when ash enters the channels.",
+        "source_refs": ["public-low-sere"]
+      },
+      {
+        "text": "The Grey Scald killed Jori Kes and Pell Am and injured three other workers after public and inherited warnings disagreed about an interval.",
+        "source_refs": ["public-low-sere", "public-basin-table"]
+      },
+      {
+        "text": "Sera holds technical threshold authority, Ressa offers independent comparison, Tavi carries a kin claim, Maro speaks for surface admission and basin action, and Bel Orra speaks as a lower-step water witness.",
+        "source_refs": ["public-low-sere", "public-basin-table"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Two notices contain actionable platform-clearance and lower-step aftercare instructions, but their damaged routing tags support accusations without identifying who made either original hold.",
+        "source_refs": ["ashen-intake"]
+      },
+      {
+        "text": "Preserving the brittle tags and making three copies consumes time under a pressure clock; rushing preserves actionability while degrading the evidence needed to contest the offices that withheld notice.",
+        "source_refs": ["ashen-intake", "delving-compacts", "formula-practice"]
+      },
+      {
+        "text": "Every fast disclosure route removes a bounded authority from the repair party or exposes a record carrier to heat, unstable passage, and ambiguous manifestations.",
+        "source_refs": ["ashen-intake", "death-binding", "relic-custody"]
+      },
+      {
+        "text": "Teren's counterseal proves later preservation and withholding, not authorship of the earlier holds or innocence in the wider failure.",
+        "source_refs": ["ashen-intake", "grey-scald", "canon-policy"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "gallery-review-party",
+      "label": "Custodian Gallery review party",
+      "group_type": "bounded_dungeon_work_group",
+      "institutional_logic": ["Recover and preserve evidence while retaining the technical, mortuary, movement, and record authorities needed to survive the Intake Crown."],
+      "material_incentives": ["Keep pale shutters from closing", "Return living workers", "Preserve copies and sealed objects", "Avoid repeating the Grey Scald"],
+      "internal_virtues": ["Named limits", "Separate custody", "Usable copies", "Warnings that reach exposed people"],
+      "internal_shames": ["A beautiful record delivered after the casualty", "One witness owning every copy", "Calling route loss an archival accident"],
+      "prestige_markers": ["A copy that survives independent comparison", "A stop obeyed before machinery accepts a bad act", "A courier plan that names what leaves with the courier"],
+      "taboo_triggers": ["Treating the notices as a verdict", "Calling manifestations witnesses without a mortuary record", "Using urgency to erase the compact's copy owners"],
+      "emotional_display_norms": ["Fear is compressed into counts, corrections, dry jokes, contested hands on documents, and arguments over who has to walk the hot route."],
+      "trust_defaults": ["Trusts separated copies, visible marks, material comparison, and bounded testimony more than confident office or a convenient confession."],
+      "speech_register_cues": ["Concrete route names", "Evidence limits", "Short technical correction", "Dry heat-work humor", "Names spoken with restraint"],
+      "source_refs": ["ashen-intake", "relic-custody", "delving-compacts"]
+    },
+    {
+      "group_id": "lower-step-households",
+      "label": "Lower-step households and water witnesses",
+      "group_type": "affected_settlement_dependents",
+      "institutional_logic": ["Receive usable warning, move vulnerable bodies and goods, preserve injury evidence, and force distant decisions to answer the people first exposed."],
+      "material_incentives": ["Keep heat and drinking water", "Move sleeping pallets before a surge", "Preserve care and compensation claims", "Avoid losing bed work and housing together"],
+      "internal_virtues": ["Warnings spoken in usable terms", "Household copies", "Remembering who carried water while offices argued"],
+      "internal_shames": ["A patron accepting notice on behalf of rooms that stay wet", "Technical vindication without injury care"],
+      "prestige_markers": ["A water witness whose mark cannot be omitted", "A warning repeated house to house before the basin table finishes debating"],
+      "taboo_triggers": ["Being called informed because an office filed a sealed copy", "Being asked to trade bodily safety for the settlement's clean record"],
+      "emotional_display_norms": ["Anger travels through water carrying, wet bedding, missing bed shifts, copied marks, and blunt demands for an actionable answer."],
+      "trust_defaults": ["Trusts witnessed delivery and material action more than archive custody or a later corrected record."],
+      "speech_register_cues": ["Rooms and water marks", "Who received what", "Work lost today", "Care and evacuation in plain terms"],
+      "source_refs": ["public-low-sere", "public-basin-table", "author-low-sere"]
+    },
+    {
+      "group_id": "basin-table-offices",
+      "label": "Basin table and intake offices",
+      "group_type": "overlapping_local_authorities",
+      "institutional_logic": ["Keep Low Sere supplied while separating surface allocation, technical operation, record custody, mortuary claim, and review."],
+      "material_incentives": ["Avoid evacuation", "Preserve the warm-water economy", "Prevent blame from closing the intake", "Retain enough evidence for later legitimacy"],
+      "internal_virtues": ["Continuity", "Recorded intervention", "Witnessed limits", "A review that does not disable survival"],
+      "internal_shames": ["A premature alarm blamed for lost stores", "An old warning proving a present office knew less than it claimed"],
+      "prestige_markers": ["Service maintained", "A hold that can be defended", "A clean handoff with no missing copy"],
+      "taboo_triggers": ["Public accusation before technical comparison", "Lower-step witnesses bypassing the table", "A removed custodian controlling the only archive"],
+      "emotional_display_norms": ["Panic becomes a stop, tally, hold stroke, sealed record, or demand to finish the machine work first."],
+      "trust_defaults": ["Trusts office records and operational continuity, while underestimating how sealed correctness appears to people never warned."],
+      "speech_register_cues": ["Named office scope", "Stores and shutter counts", "Review after stabilization", "Careful passive voice around old holds"],
+      "source_refs": ["author-low-sere", "relic-custody", "formula-practice"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "gallery-review-party.disclosure-spends-capacity",
+      "applies_to": ["gallery-review-party"],
+      "pressure_type": "evidence_and_survival",
+      "summary": "A warning becomes socially real only by spending scarce time, copies, route safety, and the presence of people whose bounded authority is still needed below.",
+      "projection_use": "Make every disclosure option name the body, office, route, evidence quality, and repair capacity it spends.",
+      "source_refs": ["ashen-intake", "delving-compacts"]
+    },
+    {
+      "field_id": "lower-step-households.receipt-before-correction",
+      "applies_to": ["lower-step-households"],
+      "pressure_type": "unequal_notice",
+      "summary": "A corrected archive does not protect households that never received instructions in time to move, close a feed, or preserve injury evidence.",
+      "projection_use": "Treat Bel's receipt and the resulting physical action as distinct from recovery, interpretation, or later vindication.",
+      "source_refs": ["public-low-sere", "ashen-intake", "formula-practice"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "lower-step-households",
+      "target_group_id": "basin-table-offices",
+      "observer_read": ["People who call a withheld warning caution because their own rooms stay dry", "An archive that learned how to survive its workers"],
+      "target_self_read": ["Officials preventing panic, unsafe operation, and premature accusation while keeping a public work alive"],
+      "misread_patterns": ["May treat every hold as one conspiracy", "May underweight the real cost of a false evacuation"],
+      "likely_insults": ["dry-room witnesses", "wax mouths", "table warmers"],
+      "projection_use": "Keep the grievance materially grounded while preserving uncertainty about which office stopped which notice.",
+      "source_refs": ["public-low-sere", "author-low-sere", "ashen-intake"]
+    },
+    {
+      "observer_group_id": "basin-table-offices",
+      "target_group_id": "lower-step-households",
+      "observer_read": ["Necessary witnesses whose urgent demands can force an unaffordable precaution", "People collapsing technical and political blame because they bear both harms"],
+      "target_self_read": ["The people who must move, carry water, lose work, preserve injuries, and bury the result when notice fails"],
+      "misread_patterns": ["Can confuse absence from the receipt chain with lack of competence", "Can call delayed warning orderly because the archive remains intact"],
+      "likely_insults": ["panic marks", "wet testimony", "unreviewed mouths"],
+      "projection_use": "Let office language become evasive without making every officeholder consciously malicious.",
+      "source_refs": ["author-low-sere", "relic-custody", "formula-practice"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "provisional-intake-custodian",
+      "summary": "Sera must preserve degraded operation and evidence while deciding whether a living warning outranks the comparison needed for safe repair.",
+      "obligations": ["Maintain a technical stop", "Preserve the Measure and folio", "Warn affected people", "Record what each courier removes"],
+      "available_masks": ["Competent dryness", "Apprentice caution", "Impatience with ceremonial certainty", "A joke made to keep panic measurable"],
+      "failure_modes": ["Repeating Teren's withholding for better reasons", "Treating actionability as proof", "Sending away the authority she later needs"],
+      "source_refs": ["ashen-intake", "author-low-sere", "relic-custody"]
+    },
+    {
+      "role_id": "eighth-baffle-witness",
+      "summary": "Ressa can compare marks and stop unsafe Crown work without becoming the owner of the settlement, event, or only record.",
+      "obligations": ["Name comparison limits", "Retain independent stop authority", "Refuse sole-witness capture", "Keep machine response separate from verdict"],
+      "available_masks": ["Dry precision", "Lineage confidence", "Refusal phrased as a narrower claim"],
+      "failure_modes": ["Leaving repair without a comparator", "Turning scarcity of expertise into custody", "Protecting provenance past the point of useful warning"],
+      "source_refs": ["ashen-intake", "formula-practice", "relic-custody"]
+    },
+    {
+      "role_id": "ash-names-witness",
+      "summary": "Tavi keeps the dead, injured, names, and mortuary limits attached to records that technical offices would prefer to separate from operation.",
+      "obligations": ["Carry the names without inventing testimony", "Protect the sump", "Preserve delayed care as part of the harm", "Refuse concentrated miracle work"],
+      "available_masks": ["Ritual quiet", "Kin anger", "Literal correction", "Refusal to complete an exculpatory sentence"],
+      "failure_modes": ["Accepting manifestation as identity", "Dying with the only mortuary context", "Letting grief become a universal veto"],
+      "source_refs": ["ashen-intake", "death-binding", "public-basin-table"]
+    },
+    {
+      "role_id": "expedition-recorder",
+      "summary": "An unnamed working recorder whose value comes from copies, route testimony, and surviving to return, not from authority over what the evidence means.",
+      "obligations": ["Make and separate copies", "Record custody and casualties", "Carry actionable language accurately", "Refuse to let one office absorb the expedition record"],
+      "available_masks": ["Black humor", "Literal inventory", "Professional invisibility"],
+      "failure_modes": ["Becoming the single fragile copy", "Destroying context for speed", "Being treated as expendable because specialists remain below"],
+      "source_refs": ["delving-compacts", "ashen-intake"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "sera_venn",
+      "known_context": [
+        {"text": "Sera knows the gallery, gauge, chest mechanism, current shutter count, Teren's later counterseal, and the words and visible marks on the notices after opening.", "source_refs": ["ashen-intake", "author-low-sere"]}
+      ],
+      "beliefs": [
+        {"text": "Sera believes recovery must make her appointment and Teren's appeal separately reviewable rather than handing either side a single decisive paper.", "source_refs": ["ashen-intake", "grey-scald"]}
+      ],
+      "misreads": [
+        {"text": "Sera may call a delay technically necessary when Bel experiences it as another office choosing which household may remain uninformed.", "source_refs": ["public-basin-table", "author-low-sere"]}
+      ],
+      "must_not_know": [
+        {"text": "Sera must not know who made the unsigned holds, whether Teren's emergency act was justified, or the identity of any sump manifestation.", "source_refs": ["ashen-intake", "grey-scald", "canon-policy"]}
+      ]
+    },
+    {
+      "speaker_id": "ressa_orr",
+      "known_context": [
+        {"text": "Ressa can compare wax layers, routing marks, formula terms, Sera's formation, and the live intake configuration within her lineage's scope.", "source_refs": ["ashen-intake", "formula-practice"]}
+      ],
+      "beliefs": [
+        {"text": "Ressa believes a comparison loses legitimacy when it removes every other witness and leaves her the only authority carrying the record.", "source_refs": ["relic-custody", "formula-practice"]}
+      ],
+      "misreads": [
+        {"text": "Ressa may underestimate how a bounded refusal sounds to lower-step households whose usable warning has already been delayed.", "source_refs": ["author-low-sere", "formula-practice"]}
+      ],
+      "must_not_know": [
+        {"text": "Ressa must not identify the makers of unsigned hold marks or treat the machine's acceptance as a legal judgment.", "source_refs": ["ashen-intake", "formula-practice"]}
+      ]
+    },
+    {
+      "speaker_id": "tavi_kes",
+      "known_context": [
+        {"text": "Tavi knows the Ash Names' record, Jori and Pell's names, the compact's mortuary limits, the delayed-care language, and the observed behavior of the sump.", "source_refs": ["ashen-intake", "public-basin-table", "death-binding"]}
+      ],
+      "beliefs": [
+        {"text": "Tavi believes a warning or technical comparison that omits the dead and injured is another way to consume them for repair.", "source_refs": ["public-basin-table", "death-binding"]}
+      ],
+      "misreads": [
+        {"text": "Grief may make Tavi hear technical delay as deliberate sacrifice even when the current hazard is real.", "source_refs": ["ashen-intake", "relic-custody"]}
+      ],
+      "must_not_know": [
+        {"text": "Tavi must not know whether the knocking or ash postures are Jori, Pell, other dead, thaumavores, pressure effects, or several causes.", "source_refs": ["ashen-intake", "death-binding", "canon-policy"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The Grey Scald event note alone owns the adopted failure facts. The fixture elaboration adds present physical evidence and possible play outcomes, not a retroactive verdict.",
+      "source_refs": ["grey-scald", "ashen-intake", "canon-policy"]
+    },
+    {
+      "text": "The notices' exact material, contents, routing marks, and disclosure routes are fixture-authored local canon in the Ashen Intake. They are not a continent-wide office form or notice law.",
+      "source_refs": ["ashen-intake", "canon-policy"]
+    },
+    {
+      "text": "Courier deaths, successful deliveries, surface closures, repair outcomes, and Bel's actions are branch-local possibilities and do not become standing Kalsa history without separate adoption.",
+      "source_refs": ["canon-policy"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Who made the unsigned dry-store hold on the first notice?",
+      "blocks_training": false,
+      "notes": "The fixture protects this as a live accusation. The hold may implicate basin-table handling but does not identify a person."
+    },
+    {
+      "question": "Who slit the routing tag at custodian review on the aftercare notice?",
+      "blocks_training": false,
+      "notes": "Teren's later counterseal proves custody after the fact, not authorship of the earlier interception."
+    },
+    {
+      "question": "Which courier route, if any, becomes canonical play?",
+      "blocks_training": false,
+      "notes": "No route outcome is adopted. The fixture exists to make the cost surface playable."
+    }
+  ]
+}

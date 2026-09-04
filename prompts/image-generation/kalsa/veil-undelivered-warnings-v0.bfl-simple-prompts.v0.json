@@ -1,0 +1,60 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "kalsa-veil-undelivered-warnings-v0.bfl-simple-v0",
+  "fixture_id": "veil-undelivered-warnings-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Hand-painted high-fantasy interactive-fiction illustration, gouache and soot-black ink on textured paper, strong readable silhouettes, dry ochre stone and ash-grey cloth, furnace amber and shutter-pale light, restrained supernatural ambiguity, tactile archive materials, mortal institutional pressure.",
+  "prompts": [
+    {
+      "id": "01_gallery_establishing",
+      "prompt": "Rectangular buried service archive: ochre stone, sagging folio shelves, black calibration chest under octal wheels and a two-arc pressure gauge, three distinct doors, amber lamps, heat shimmer, four tired workers on a clear copying floor."
+    },
+    {
+      "id": "02_gallery_routine",
+      "prompt": "Ordinary archive work under heat: lean grey-robed custodian copies gauge marks onto chest wheels, broad red-layered priest-engineer watches, soot-black mortuary witness dries two pale name cloths, padded recorder sharpens charcoal."
+    },
+    {
+      "id": "03_chest_reveal",
+      "prompt": "Open black chest seen from above: black ceramic calibration comb, stained handoff folio, bead pouch, two folded ashproof cloth notices with grey wax and brittle split-reed routing tags, four workers' hands poised around the evidence."
+    },
+    {
+      "id": "04_seal_choice",
+      "prompt": "Evidence decision on hot stone floor: sealed cloth notices surrounded by charcoal rubbing cloth, thumbnail at wax thread, two pale name cloths, bronze comparison blade, small lamp, pressure gauge with two pale marks."
+    },
+    {
+      "id": "05_notices_read",
+      "prompt": "Two opened service-cloth notices with abstract unlettered diagrams: hooked seventh baffle and first hammer on one, lower-feed closure, raised pallet, sample bowls and burn cloth on the other; wax, reeds, rubbings, names, and witnesses surround them."
+    },
+    {
+      "id": "06_record_choice",
+      "prompt": "Three blank ashproof copy cloths between a technical witness, mortuary witness, exhausted custodian, and charcoal recorder; hot dry archive, open chest, dim pressure gauge, three route doors visible."
+    },
+    {
+      "id": "07_disclosure_routes",
+      "prompt": "Custodian Gallery with three distinct paths: low north crawl into memorial darkness, narrow west door toward misty vertical filters, heavy south door toward hammering machinery; divided copies and four workers staged between routes."
+    },
+    {
+      "id": "08_courier_choice",
+      "prompt": "Custodian holds black ceramic comb at center; mortuary witness with name cloths waits at low crawl, priest-engineer with rubbing waits at filter door, recorder tests copy beneath pack frame; shutter gauge darkens above them."
+    },
+    {
+      "id": "09_tavi_route",
+      "prompt": "One-person memorial route above mineral-ash sump: soot-black mortuary witness carries two pale name cloths and folded warning toward hot relief passage while ambiguous human-shaped ash and a pressure seam gather in amber-grey steam."
+    },
+    {
+      "id": "10_ressa_route",
+      "prompt": "Broad priest-engineer at eight tall filter frames, six grey, one scorched, one black; wrapped rubbing and notice inside patched red coat; corroded settling bridge disappears into hot mineral mist."
+    },
+    {
+      "id": "11_recorder_route",
+      "prompt": "Padded expedition recorder crawls through cramped hot stone relief passage with one cloth copy strapped under wooden pack frame; mineral scale outlines pressure seams, iron wedge braces hatch, furnace steam threatens the route."
+    },
+    {
+      "id": "12_surface_or_rupture",
+      "prompt": "Low Sere Cistern House: wet timber beams above two stone basins, black pressure door below an iron grate, lower-step water witness reaching for a folded warning, older cistern reeve gripping the feed wheel, households carrying bedding above painted water marks."
+    }
+  ]
+}
