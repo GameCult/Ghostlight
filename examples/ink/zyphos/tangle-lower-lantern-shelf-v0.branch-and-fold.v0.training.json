@@ -1,0 +1,364 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "tangle-lower-lantern-shelf-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/zyphos/tangle-lower-lantern-shelf-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/tangle-lower-lantern-shelf-v0.v0.json",
+  "scene_id": "tangle-lower-lantern-shelf-v0.birth-route-compact",
+  "protagonist_agent_id": "reed_in_crosswind",
+  "npc_agent_ids": [
+    "tavi_split_resin",
+    "lowwater_blue",
+    "lower_shelf_matriarch",
+    "lower_shelf_roosts",
+    "lower_shelf_lantern_arcade",
+    "lower_shelf_fungal_road"
+  ],
+  "purpose": "Interactive Fiction Weaver compilation of a Zyphos ecological power dispute from threadwing courier Reed-in-Crosswind's local perspective, using a ritual workplace-comedy tone with political stakes.",
+  "local_awareness_summary": [
+    {
+      "text": "Reed knows the Lower Lantern Shelf's roost compact, flight gaps, nectar wells, lantern signals, fungal payments, gamete-cradle routine, cargo chemistry, and current courier reputations.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/tangle-lower-lantern-shelf-v0.v0.json",
+        "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md"
+      ]
+    },
+    {
+      "text": "Reed can taste pressure, static, heat, chemical gradients, and memory residue through ribbonlike sensory vanes, but cannot read the Matriarch's private intent or guarantee how another ecological party will answer.",
+      "source_refs": [
+        "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md",
+        "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md"
+      ]
+    },
+    {
+      "text": "The disputed Lowwater packet is viable but time-sensitive; full route closure also removes pollination and disease reporting because those functions share the same courier path.",
+      "source_refs": [
+        "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md",
+        "Eusocial Interbeing/Species/Airawa.md",
+        "Eusocial Interbeing/Species/Matriarch Trees.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective stays with Reed's embodied threadwing perception. Choices use flight, landing, vane display, tasting, route song, gripping feet, and cargo placement rather than Airawa-style speech or omniscient network control.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md"
+        ]
+      },
+      {
+        "text": "The opening establishes routine compact work before the Matriarch presents a lineage refusal disguised as quarantine.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "The Shelf Matriarch controls root warmth, nectar wells, cradle access, and its own gestation permission; it does not own courier decisions, lantern route light, fungal testimony, or Lowwater cargo custody.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md",
+          "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+          "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md"
+        ]
+      },
+      {
+        "text": "Tavi can braid public contract terms and witness ecological signals, but cannot turn a tree request into courier consent or seize Lowwater's packet through narration.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Airawa.md",
+          "Eusocial Interbeing/Civilizations/Pre-Imperial Airawa Tribes.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The violet closure braid begins on the center contract table; Lowwater-Blue retains the gamete-packet sling unless a final successful relay explicitly transfers it to Reed; salt grit, shed fibers, and narrow quarantine strands stay where the Ink places them.",
+        "source_refs": [
+          "examples/ink/zyphos/tangle-lower-lantern-shelf-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every settlement must expose the linked reproductive, pollination, nourishment, warning, nest-shelter, and route-reputation consequences of ecological leverage.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md",
+          "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md"
+        ]
+      },
+      {
+        "text": "Endings distinguish narrow quarantine, courier withdrawal, full embargo, and rival relay, each with a state-gated success or cost outcome.",
+        "source_refs": [
+          "examples/ink/zyphos/tangle-lower-lantern-shelf-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let the Matriarch command every species as one mind or make any biological signal an infallible diagnosis.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+          "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md"
+        ]
+      },
+      {
+        "text": "Do not treat a full birth-route embargo as affecting reproduction alone; the shared route must carry food-web and warning losses.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through routine, closure pressure, coalition formation, and one of eight state-gated political-ecological endings.",
+    "choice_layers": [
+      "routine_compact_work",
+      "closure_custody",
+      "build_or_break_coalition",
+      "birth_route_settlement"
+    ],
+    "variables": [
+      "roost_cohesion",
+      "route_reputation",
+      "nest_safety",
+      "disease_evidence",
+      "lantern_consent",
+      "fungal_credit",
+      "gamete_viability",
+      "public_witness",
+      "matriarch_pressure",
+      "embargo_scope",
+      "rival_access"
+    ],
+    "ending_gates": [
+      "ending_narrow_compact",
+      "ending_narrow_cost",
+      "ending_courier_compact",
+      "ending_courier_cost",
+      "ending_embargo_compact",
+      "ending_embargo_cost",
+      "ending_rival_relay",
+      "ending_rival_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_roost_cohesion",
+      "ink_path": "routine_hub",
+      "action_type": "use_body",
+      "actor_intent": "Bind all three nursery roosts into one visible constituency before pressure arrives.",
+      "state_basis": ["Threadwing shed fibers retain route testimony and can be braided into warning or social markers."],
+      "reviewed_consequences": ["Raises roost_cohesion and nest_safety while time spent preening lowers gamete_viability; later assembly and packet outcomes read all three."],
+      "training_hooks": ["nonhuman_grooming_as_politics", "care_costs_time"]
+    },
+    {
+      "branch_id": "prime_disease_evidence",
+      "ink_path": "routine_hub",
+      "action_type": "inspect_object",
+      "actor_intent": "Compare Matriarch nectar chemistry with sealed gestation cargo before accepting a later quarantine claim.",
+      "state_basis": ["Threadwing vanes read chemistry and memory residues; the Matriarch supplies nectar under the compact."],
+      "reviewed_consequences": ["Raises disease_evidence and matriarch_pressure; later closure prose and narrow-settlement gates read the comparison."],
+      "training_hooks": ["sensory_evidence", "inspection_alerts_authority"]
+    },
+    {
+      "branch_id": "prime_fungal_credit",
+      "ink_path": "routine_hub",
+      "action_type": "transfer_object",
+      "actor_intent": "Pay the fungal road for an independent route-health report.",
+      "state_basis": ["Candle roads exchange testimony for minerals and remembered credit."],
+      "reviewed_consequences": ["Raises fungal_credit and disease_evidence; later diagnosis choices and visible amber lines read both."],
+      "training_hooks": ["testimony_requires_payment", "road_as_party"]
+    },
+    {
+      "branch_id": "prime_lantern_consent",
+      "ink_path": "routine_hub",
+      "action_type": "move",
+      "actor_intent": "Perform pollination service and establish standing with the route-lighting trees.",
+      "state_basis": ["Threadwings pollinate lantern trees; lantern knots signal route permission and closure."],
+      "reviewed_consequences": ["Raises lantern_consent and route_reputation; later witness, route-light, and relay gates read both."],
+      "training_hooks": ["flight_as_service", "pollination_as_diplomacy"]
+    },
+    {
+      "branch_id": "publish_closure_terms",
+      "ink_path": "first_pressure_hub",
+      "action_type": "carry_object",
+      "actor_intent": "Make the closure braid's disease claim and lineage refusal legible to all three roosts.",
+      "state_basis": ["Courier vanes and shed-fiber routes can carry a message's chemical and social residues."],
+      "reviewed_consequences": ["Raises public_witness, route_reputation, matriarch_pressure, and limited embargo_scope; the folded scene makes the threatened nest cost visible."],
+      "training_hooks": ["publish_coercive_terms", "witness_invites_retaliation"]
+    },
+    {
+      "branch_id": "stand_with_lowwater",
+      "ink_path": "first_pressure_hub",
+      "action_type": "signal",
+      "actor_intent": "Recognize Lowwater-Blue as a protected courier and expose the packet's clean seal.",
+      "state_basis": ["Threadwings can land only on one faction's marker and use vane display as political testimony."],
+      "reviewed_consequences": ["Raises rival_access and public_witness while lowering nest_safety and sharply raising matriarch_pressure."],
+      "training_hooks": ["courier_solidarity", "shelter_retaliation"]
+    },
+    {
+      "branch_id": "seek_lantern_witness",
+      "ink_path": "first_pressure_hub",
+      "action_type": "move",
+      "actor_intent": "Ask lantern partners to distinguish a cargo hold from closure of nourishment and warning traffic.",
+      "state_basis": ["Available only after lantern service has established consent."],
+      "reviewed_consequences": ["Spends lantern_consent, raises public_witness, sets a narrow embargo scope, and lowers gamete_viability through delay."],
+      "training_hooks": ["partner_witness", "route_channel_separation"]
+    },
+    {
+      "branch_id": "seek_road_diagnosis",
+      "ink_path": "first_pressure_hub",
+      "action_type": "place_object",
+      "actor_intent": "Ask the paid fungal road whether the closure's sickness claim has material evidence.",
+      "state_basis": ["Available only with sufficient fungal credit; roads remember disease and traffic."],
+      "reviewed_consequences": ["Spends fungal_credit, raises disease_evidence and public_witness, and lowers gamete_viability through diagnostic delay."],
+      "training_hooks": ["diagnosis_without_ownership", "delay_is_reproductive_policy"]
+    },
+    {
+      "branch_id": "rally_roost_assembly",
+      "ink_path": "coalition_hub",
+      "action_type": "speak",
+      "actor_intent": "Make nest keepers and long-route couriers answer as one visible assembly.",
+      "state_basis": ["Threadwings maintain route songs, roost obligations, preferences, rivalries, and grudges."],
+      "reviewed_consequences": ["Raises roost_cohesion and public_witness while lowering nest_safety and gamete_viability as bodies leave warming work."],
+      "training_hooks": ["constituency_formation", "assembly_has_metabolic_cost"]
+    },
+    {
+      "branch_id": "draft_narrow_quarantine",
+      "ink_path": "coalition_hub",
+      "action_type": "speak",
+      "actor_intent": "Ask Tavi to bind only the disputed cargo while keeping every other route channel open.",
+      "state_basis": ["Airawa contract craft makes ecological obligations publicly legible."],
+      "reviewed_consequences": ["Sets narrow embargo_scope, raises public_witness and route_reputation, and increases matriarch_pressure."],
+      "training_hooks": ["contract_craft_as_boundary", "narrow_authority"]
+    },
+    {
+      "branch_id": "diagnose_without_seizure",
+      "ink_path": "coalition_hub",
+      "action_type": "guide_movement",
+      "actor_intent": "Move the packet to a diagnostic edge without transferring custody from Lowwater-Blue.",
+      "state_basis": ["Requires evidence and road standing; fungal roads can diagnose traffic while couriers own cargo decisions."],
+      "reviewed_consequences": ["Raises disease_evidence and rival_access, spends fungal_credit and gamete_viability, and preserves explicit packet custody."],
+      "training_hooks": ["custody_preserved_during_test", "bounded_diagnostic_access"]
+    },
+    {
+      "branch_id": "accept_full_embargo",
+      "ink_path": "coalition_hub",
+      "action_type": "consent",
+      "actor_intent": "Trade full closure of Lowwater traffic for immediate warming of the three nesting hollows.",
+      "state_basis": ["The Matriarch controls nest shelter and has requested closure; the shared courier route also carries pollination and reports."],
+      "reviewed_consequences": ["Sets full embargo_scope, raises nest_safety, lowers route_reputation and rival_access, and temporarily lowers matriarch_pressure."],
+      "training_hooks": ["engineered_dependency", "food_web_as_leverage"]
+    },
+    {
+      "branch_id": "settle_narrow_quarantine",
+      "ink_path": "final_choice",
+      "action_type": "mixed",
+      "actor_intent": "Quarantine one cargo under plural witness without starving the shared route.",
+      "state_basis": ["Success requires narrow scope, credible evidence, public witness, and remaining packet viability."],
+      "reviewed_consequences": ["Routes to a plural compact or a procedural-delay cost ending based on accumulated state."],
+      "training_hooks": ["plural_witness", "state_gated_quarantine"]
+    },
+    {
+      "branch_id": "found_courier_refusal",
+      "ink_path": "final_choice",
+      "action_type": "withdraw",
+      "actor_intent": "Reject the false quarantine by moving all courier nests and services away from the Shelf.",
+      "state_basis": ["Success requires coherent roosts and route reputation sufficient to carry the refusal."],
+      "reviewed_consequences": ["Routes to a new courier alliance or a split-roost cost ending."],
+      "training_hooks": ["coercion_creates_counter_alliance", "strike_capacity"]
+    },
+    {
+      "branch_id": "settle_full_embargo",
+      "ink_path": "final_choice",
+      "action_type": "consent",
+      "actor_intent": "Honor the Matriarch's full route embargo for a nesting season in exchange for shelter.",
+      "state_basis": ["Success requires explicit full scope, secured nests, and Matriarch pressure low enough to honor the exchange."],
+      "reviewed_consequences": ["Routes to a materially stable but harmful alliance or to a coercive bargain that fails to buy shelter."],
+      "training_hooks": ["gray_success", "dependency_bargain"]
+    },
+    {
+      "branch_id": "relay_lowwater_packet",
+      "ink_path": "final_choice",
+      "action_type": "carry_object",
+      "actor_intent": "Move viable reproductive cargo through the eastern gap so Lowwater can seek another gestator.",
+      "state_basis": ["Success requires rival access, packet viability, and lantern route consent."],
+      "reviewed_consequences": ["Routes to a counter-alliance seed or a packet-loss cost ending."],
+      "training_hooks": ["reproductive_route_escape", "custody_transfer"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Branch and state visual modifier triggers"
+    ],
+    "manual_review_required": [
+      "Any durable character memory or relationship update",
+      "Promotion of fixture-local translated names into Zyphos canon",
+      "Any claim that one biological signal proves private intent",
+      "Website-quality rendering before a hand-built Lower Lantern Shelf blockout exists"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Tangle elaborator applying the four named Ghostlight reviewer prompts as separate self-review passes",
+    "review_status": "accepted_as_if_fixture_visual_replay_requires_scene_set",
+    "reviewer_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "verdict": "accepted",
+        "scores": {"reader_orientation": 5, "coherence": 5, "pacing": 4, "voice": 4, "tonal_fit": 5, "if_playability": 5},
+        "findings_resolved": [
+          "Clarified that each Airawa lower hand has four soft digits.",
+          "Verified that all eleven variables alter later prose, options, visual state, or ending gates."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "verdict": "accepted",
+        "scores": {"source_coverage": 5, "canon_fit": 4, "grounding_quality": 5, "vault_backfill_value": 5},
+        "findings_resolved": [
+          "Backfilled the compact, constituencies, leverage, costs, and narrow settlement into the owning Threadwing note.",
+          "Marked translated names and unsolved Threadwing anatomy as fixture-local rather than canon."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "verdict": "needs_revision_for_replay_ready_status",
+        "scores": {"segmentation": 5, "visual_prompts": 5, "character_visibility": 5, "branch_visual_continuity": 5, "website_replay": 3},
+        "findings_resolved": [
+          "Split courier-withdrawal success and cost so Lowwater-Blue appears only where visible.",
+          "Expanded standalone character descriptions and verified zero negative prompt constructions and zero missing visual refs."
+        ],
+        "remaining_condition": "A hand-built plan view or 3D blockout is required before high-consistency multi-angle website rendering."
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "verdict": "accepted_with_scene_set_requirement",
+        "scores": {"layout_cohesion": 5, "sightlines": 4, "body_affordance": 4, "movement_access": 5, "object_system_geometry": 5, "branch_spatial_state": 5},
+        "findings_resolved": [
+          "Fixed the terrace coordinate frame and kept Lowwater packet custody explicit until the successful relay.",
+          "Added fixed zones, camera slots, sightline lanes, and branch-persistent embargo states."
+        ],
+        "remaining_condition": "The textual map is sufficient for IF staging; high-consistency multi-angle art still requires the declared blockout."
+      }
+    ],
+    "review_notes": [
+      "Narrative review accepted the ritual workplace-comedy opening, four material choice layers, callbacks, and state-gated endings after one anatomy clarification.",
+      "Lore review checked every cited Zyphos source and accepted the mechanism after provenance boundaries were made explicit.",
+      "Visual review accepted the plan scaffold but withheld replay-ready status until a durable blockout exists.",
+      "Spatial review accepted body reach, routes, custody, and embargo geometry with the same future blockout condition."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "zyphos_lore_content_readable": true
+    }
+  }
+}

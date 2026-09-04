@@ -1,0 +1,68 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "tangle-lower-lantern-shelf-v0.bfl-simple-v0",
+  "fixture_id": "tangle-lower-lantern-shelf-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Style: intricate ecological science-fantasy storybook illustration, luminous ink and mineral pigments, restrained cold blue and amber bioluminescence, tactile bark resin fungus and translucent membranes, clear nonhuman silhouettes, humane dry wit beneath political tension, cinematic composition designed for interactive-fiction replay.",
+  "prompts": [
+    {
+      "id": "01_shelf_establishing",
+      "prompt": "Wide crescent terrace between colossal buttress roots: three warm nesting hollows high on the root wall, resin contract table and translucent gestation cradle at center, amber fungal road and cold blue lantern trees downhill, eastern valley flight gap, western ridge gap, ribbon-vaned courier gliders circling under an eclipse."
+    },
+    {
+      "id": "02_routine_people",
+      "prompt": "Six-limbed fine-scaled Airawa contract keeper braces large clawed upper limbs on a resin table while four soft lower digits sort glowing sealed gamete membranes; small dark courier glider with silver ribbon sensory vanes tastes a carved salt comb beside the cradle."
+    },
+    {
+      "id": "03_routine_choices",
+      "prompt": "Overhead ecological work hub with four visible tasks around a root terrace: juvenile ribbon-vaned gliders in warm hollows, bitter nectar well and sealed gamete cargo, salt grain beside amber fungal beads, blue-white lantern pollination route; one courier poised at center."
+    },
+    {
+      "id": "04_routine_fold",
+      "prompt": "Busy negotiated routine at deepening eclipse: threadwing roosts, sealed translucent gestation membranes, blue-resin contract braids, paid amber fungal route, and cold lantern arcade all exchanging work around a crescent root terrace."
+    },
+    {
+      "id": "05_closure_arrival",
+      "prompt": "Violet closure braid with red refusal stain rises from a resin contract table as a blue-ribbon-vaned courier lands on the eastern rail carrying one luminous gestation packet; dark silver-vaned courier and six-limbed Airawa witness under tightening roots."
+    },
+    {
+      "id": "06_first_pressure",
+      "prompt": "Overhead political choice web: violet braid at center, three warm roost mouths above, rival courier with glowing packet east, blue-white lantern arcade downhill, paid amber fungal line; pale roots begin closing shelter around watching ribbon-vaned gliders."
+    },
+    {
+      "id": "07_ecological_retaliation",
+      "prompt": "Low-angle root power: nectar wells shut, one egg hollow cools, pale roots climb the contract table, rival courier keeps its packet sling on the eastern rail, six-limbed Airawa anchors with talons, lantern and fungal witnesses remain separately lit."
+    },
+    {
+      "id": "08_coalition_hub",
+      "prompt": "Coalition choice at near-total eclipse: roost assembly space above, Airawa hands ready to braid a narrow violet cargo loop, rival packet held over amber diagnostic beads, warm hollows offered against a full dark eastern route."
+    },
+    {
+      "id": "09_totality_threshold",
+      "prompt": "Full terrace under totality: black world over dim sun, three root hollows, central violet closure braid and translucent cradle, amber fungal road, cold blue-white lantern arcade, eastern and western flight gaps, two ribbon-vaned couriers and one six-limbed Airawa around a fading gamete packet."
+    },
+    {
+      "id": "10_narrow_quarantine",
+      "prompt": "Single violet strand loops only around a center gamete cradle while rival courier retains the luminous packet sling, fungal diagnostic beads glow clean below, and lantern light keeps the eastern nourishment and warning route open."
+    },
+    {
+      "id": "11_courier_withdrawal",
+      "prompt": "Ribbon-vaned courier gliders carry eggs in pale fiber slings through a western ridge gap; three warm root hollows empty behind them, lantern pollination fades, and an amber fungal road bends away from the powerful abandoned contract terrace."
+    },
+    {
+      "id": "12_courier_split",
+      "prompt": "One ribbon-vaned courier group leaves west with a few egg slings, one remains in a warm root hollow, a third circles between them, and a blue-vaned rival courier departs east alone with a fading gestation packet."
+    },
+    {
+      "id": "13_full_embargo",
+      "prompt": "Warm root hollows protect courier eggs while a silver-vaned glider folds every sensory ribbon on the violet braid; continuous darkness runs from center gestation cradle through eastern lantern trees and fungal road to the rival valley."
+    },
+    {
+      "id": "14_rival_relay",
+      "prompt": "Two small alien courier gliders cross an eastern valley gap in staggered flight, one carrying a pale-green gestation packet in gripping feet and the other broadcasting custody with blue ribbon vanes; lantern lights and amber fungal beads mark the descent."
+    }
+  ]
+}

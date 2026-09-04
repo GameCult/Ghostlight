@@ -1,0 +1,655 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "tangle-lower-lantern-shelf-v0-branch-and-fold-visual",
+  "ink_ref": "examples/ink/zyphos/tangle-lower-lantern-shelf-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/tangle-lower-lantern-shelf-v0.branch-and-fold.v0.training.json",
+  "scene_id": "tangle-lower-lantern-shelf-v0.birth-route-compact",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a Threadwing birth-route embargo dispute at the Lower Lantern Shelf.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for routine compact work, arrival of a false quarantine order, ecological coalition choices, the totality threshold, and four state-gated settlement families.",
+    "segmentation_rule": "Use separate anchors for the shelf establishing frame, participant routine, routine choice hub, routine fold, closure arrival, first response hub, visible ecological retaliation, coalition hub, totality threshold, and each ending family. The violet closure braid and Lowwater packet arrival form their own pivotal screen.",
+    "prompting_rule": "Every base image prompt describes a complete frame with visible geometry, lighting, bodies, interfaces, and props for a general image model. Character refs are assembled only for characters visible in that frame. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Style: intricate ecological science-fantasy storybook illustration, luminous ink and mineral pigments, restrained cold blue and amber bioluminescence, tactile bark resin fungus and translucent membranes, clear nonhuman silhouettes, humane dry wit beneath political tension, cinematic composition designed for interactive-fiction replay.",
+    "prompt_assembly_rule": "Assemble every render prompt from global_style_cue, that scene's base_image_prompt, visual refs for only the named characters or groups listed as visible, and triggered state_image_modifiers plus global_branch_image_modifiers. A fresh render receives the full assembled prompt and does not depend on prior image memory.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture revisits one crescent terrace from several camera slots and makes flight gaps, root hollows, route light, cargo position, and branch-created closures mechanically important. The embedded scene_set map is sufficient for draft staging.",
+      "future_scene_set_need": "Before high-consistency website rendering, build a plan view or 3D blockout with the high rootward wall and three roost hollows, central resin contract table and shallow gamete cradle, downhill fungal road and lantern arcade, eastern Lowwater flight gap, western ridge flight gap, fixed staging slots, and occluding buttress roots."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "tangle_shelf_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide elevated establishing view of an alien crescent terrace grown between colossal buttress roots at eclipse ingress. Three warm oval nesting hollows open in the high rootward wall. A waist-high resin-topped contract table with a shallow translucent gamete cradle stands at center. Along the downhill edge, two rows of faint amber fungal fruiting beads form a living road beneath slender lantern trees whose low canopy knots glow cold blue-white. An eastern flight gap overlooks a wet low valley; a narrower western gap opens toward broken ridges. Small flying courier animals with broad gliding wing planes and dozens of ribbonlike sensory vanes circle between roosts and lanterns. A vast fixed dark world begins crossing a dim red-orange sun.",
+        "visible_characters": [
+          {
+            "agent_id": "lower_shelf_roosts",
+            "default_stance": "scattered between the three root hollows, lantern arcade, and open flight gaps",
+            "visual_ref": "visual_character_refs.groups.lower_shelf_roosts"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The stable coordinate frame is rootward high wall, center contract table, downhill fungal road, eastern Lowwater gap, and western ridge gap.",
+          "The terrace is outdoors beneath a Matriarch canopy and remains one local shelf, not a city or whole forest."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_routine_people",
+        "ink_anchor": "routine_people",
+        "base_image_prompt": "Medium-wide eye-level view of the central resin contract table on an alien crescent root terrace. Tavi Split-Resin, a long-bodied six-limbed Airawa with fine soft scales, grown plate sections traced by dim bioluminescent seams, two large clawed upper climbing limbs, two smaller lower hands with four blunt digits in opposing pairs, long digitigrade legs, and four-toed grasping feet with hooked climbing talons, braces against the table while sorting sealed greenish gamete membranes in a shallow cradle. Tavi wears a blue-resin climbing harness braided with fungal thread and pale shed courier fibers. Reed-in-Crosswind, a small dark flying courier animal with broad gliding wing planes, grasping feet, and many silver-edged ribbonlike sensory vanes in place of feathers, lands beside a carved salt comb. Three warm roost hollows rise behind them; amber fungal beads and cold lantern knots line the downhill edge.",
+        "visible_characters": [
+          {
+            "agent_id": "reed_in_crosswind",
+            "default_stance": "landing beside the salt comb with sensory vanes half-open",
+            "visual_ref": "visual_character_refs.characters.reed_in_crosswind"
+          },
+          {
+            "agent_id": "tavi_split_resin",
+            "default_stance": "upper claws braced, lower hands sorting sealed membranes",
+            "visual_ref": "visual_character_refs.characters.tavi_split_resin"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Tavi's upper limbs handle load and anchoring; the lower blunt hands perform fine sorting.",
+          "The salt comb begins on the center table beside the gamete cradle."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_routine_hub",
+        "ink_anchor": "routine_hub",
+        "base_image_prompt": "Overhead work-choice view of a crescent root terrace at eclipse ingress. The central resin table and shallow gamete cradle sit between four readable tasks: three juvenile courier animals in warm high root hollows needing ribbon-vane preening; a dark nectar well in the buttress root beside sealed pale-green gamete membranes; a carved salt comb beside two rows of amber fungal road beads downhill; and a cold blue-white lantern arcade leading to the eastern flight gap. Reed-in-Crosswind, a small dark glider with silver-edged ribbonlike sensory vanes and gripping feet, perches at the center table poised to choose one task. Tavi Split-Resin, a six-limbed fine-scaled Airawa in a blue-resin harness, watches while keeping lower hands near the cargo seals.",
+        "visible_characters": [
+          {
+            "agent_id": "reed_in_crosswind",
+            "default_stance": "center table, body aimed among roosts, nectar, road, and lantern route",
+            "visual_ref": "visual_character_refs.characters.reed_in_crosswind"
+          },
+          {
+            "agent_id": "tavi_split_resin",
+            "default_stance": "beside the cradle, lower hands near sealed cargo",
+            "visual_ref": "visual_character_refs.characters.tavi_split_resin"
+          },
+          {
+            "agent_id": "lower_shelf_roosts",
+            "default_stance": "juveniles and nest keepers occupying the three high root hollows",
+            "visual_ref": "visual_character_refs.groups.lower_shelf_roosts"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide workplace-routine frame across an alien crescent terrace under deepening eclipse. Three rootward nesting hollows hold small threadwing couriers with broad gliding wing planes and ribbon sensory vanes; the center resin table supports a shallow cradle of sealed translucent green gamete membranes and a carved salt comb; amber fungal beads mark the downhill road; cold blue-white lantern knots illuminate the eastern Lowwater flight gap. Reed-in-Crosswind moves among these compact stations while Tavi Split-Resin anchors a six-limbed Airawa body at the table and records obligations in blue-resin braids. The setting is busy, negotiated, and ordinary.",
+        "visible_characters": [
+          {
+            "agent_id": "reed_in_crosswind",
+            "default_stance": "moving between compact work stations",
+            "visual_ref": "visual_character_refs.characters.reed_in_crosswind"
+          },
+          {
+            "agent_id": "tavi_split_resin",
+            "default_stance": "anchored at the resin table, braiding contract strands",
+            "visual_ref": "visual_character_refs.characters.tavi_split_resin"
+          },
+          {
+            "agent_id": "lower_shelf_roosts",
+            "default_stance": "nest keepers and juveniles distributed among all three hollows",
+            "visual_ref": "visual_character_refs.groups.lower_shelf_roosts"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "roost_cohesion >= 4",
+            "modifier_prompt": "One continuous ring of pale shed sensory fibers binds all three roost mouths, and juveniles cross freely between hollows."
+          },
+          {
+            "trigger": "disease_evidence >= 3",
+            "modifier_prompt": "Reed holds one sensory vane between the bitter dark nectar well and clean sealed cargo, making the chemical comparison visible."
+          },
+          {
+            "trigger": "fungal_credit >= 4",
+            "modifier_prompt": "A second bright amber fungal line appears beside the downhill road as paid diagnostic attention."
+          },
+          {
+            "trigger": "lantern_consent >= 3",
+            "modifier_prompt": "A continuous blue-white sequence lights the lantern arcade and eastern flight gap."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_closure_arrives",
+        "ink_anchor": "closure_arrives",
+        "base_image_prompt": "Pivotal medium-wide political arrival on an alien crescent root terrace during eclipse. A violet resin closure braid rises through a slit in the center contract table, its fibers carrying a visible red refusal stain. Tavi Split-Resin, a six-limbed fine-scaled Airawa in a blue-resin harness, holds all four working limbs clear of it. Reed-in-Crosswind, a small dark glider with silver ribbonlike sensory vanes, faces east. Lowwater-Blue lands on the eastern rail: a smaller flying courier animal with broad gliding wing planes, long blue-stained sensory ribbons, and gripping feet supporting a sling that contains one softly glowing pale-green gestation packet. Cold lantern knots still light the east gap; amber fungal beads remain open downhill; huge buttress roots frame the tense center.",
+        "visible_characters": [
+          {
+            "agent_id": "reed_in_crosswind",
+            "default_stance": "on the center table facing the closure braid and eastern arrival",
+            "visual_ref": "visual_character_refs.characters.reed_in_crosswind"
+          },
+          {
+            "agent_id": "tavi_split_resin",
+            "default_stance": "braced at the table with all hands clear of the braid",
+            "visual_ref": "visual_character_refs.characters.tavi_split_resin"
+          },
+          {
+            "agent_id": "lowwater_blue",
+            "default_stance": "on the eastern rail outside the cradle, retaining the packet sling",
+            "visual_ref": "visual_character_refs.characters.lowwater_blue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "disease_evidence >= 3",
+            "modifier_prompt": "Reed's sensory vanes angle between the bitter-edited nectar trace and the clean packet seal while the red lineage-refusal stain remains visible in the violet braid."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Lowwater-Blue begins on the eastern rail and retains the gamete sling.",
+          "The closure braid begins in the center table slit."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_first_pressure_hub",
+        "ink_anchor": "first_pressure_hub",
+        "base_image_prompt": "Overhead action-choice frame of an alien crescent root terrace beneath a darkening sky. At center, a violet closure braid with red refusal stain lies on a resin table beside a shallow gamete cradle. Reed-in-Crosswind, a small dark flying courier with silver ribbon sensory vanes and gripping feet, can reach four visible routes: three high roost mouths occupied by varied dark ribbon-vaned courier gliders; Lowwater-Blue, a smaller blue-ribbon-vaned glider retaining a glowing packet sling on the eastern rail; the cold blue-white lantern arcade; and the paid amber fungal line downhill. Tavi Split-Resin, a fine-scaled six-limbed Airawa with large upper claws, small lower hands, long digitigrade taloned legs, and a blue-resin harness, remains braced at the table. Fine roots around the roost hollows begin to tighten, turning shelter into pressure.",
+        "visible_characters": [
+          {
+            "agent_id": "reed_in_crosswind",
+            "default_stance": "center table, poised among braid, roost circuit, east rail, lanterns, and road",
+            "visual_ref": "visual_character_refs.characters.reed_in_crosswind"
+          },
+          {
+            "agent_id": "tavi_split_resin",
+            "default_stance": "anchored beside the table",
+            "visual_ref": "visual_character_refs.characters.tavi_split_resin"
+          },
+          {
+            "agent_id": "lowwater_blue",
+            "default_stance": "eastern rail with packet sling sealed",
+            "visual_ref": "visual_character_refs.characters.lowwater_blue"
+          },
+          {
+            "agent_id": "lower_shelf_roosts",
+            "default_stance": "watching from three high hollows as root membranes tighten",
+            "visual_ref": "visual_character_refs.groups.lower_shelf_roosts"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_pressure_fold",
+        "ink_anchor": "pressure_fold",
+        "base_image_prompt": "Wide low-angle view of ecological retaliation on an alien crescent root terrace at near-total eclipse. Dark nectar wells close in the high buttress wall; one warm roost hollow visibly contracts around clustered threadwing eggs; fine pale roots climb the legs of the center resin contract table and shallow gamete cradle. Reed-in-Crosswind, a dark ribbon-vaned courier glider, stands between the violet closure braid and the eastern rail. Lowwater-Blue holds the softly glowing packet sling outside the cradle. Tavi Split-Resin plants hooked climbing talons in the terrace and spreads two large upper claws for balance while four blunt lower digits rest on the table. Cold lantern lights and amber fungal beads preserve separate route lines along the downhill edge.",
+        "visible_characters": [
+          {
+            "agent_id": "reed_in_crosswind",
+            "default_stance": "between closure braid and eastern rail with vanes open",
+            "visual_ref": "visual_character_refs.characters.reed_in_crosswind"
+          },
+          {
+            "agent_id": "tavi_split_resin",
+            "default_stance": "talons anchored, upper claws braced, lower hands flat on table",
+            "visual_ref": "visual_character_refs.characters.tavi_split_resin"
+          },
+          {
+            "agent_id": "lowwater_blue",
+            "default_stance": "retaining the packet sling on the eastern rail",
+            "visual_ref": "visual_character_refs.characters.lowwater_blue"
+          },
+          {
+            "agent_id": "lower_shelf_roosts",
+            "default_stance": "eggs and nest keepers compressed by one cooling hollow",
+            "visual_ref": "visual_character_refs.groups.lower_shelf_roosts"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "public_witness >= 2",
+            "modifier_prompt": "Threadwing couriers line all three roost mouths with sensory vanes aimed at the violet braid."
+          },
+          {
+            "trigger": "rival_access >= 3",
+            "modifier_prompt": "Reed stands beside Lowwater-Blue on the eastern rail, two sets of open ribbon vanes framing the clean packet seal."
+          },
+          {
+            "trigger": "nest_safety <= 1",
+            "modifier_prompt": "Eggs cluster tightly in a cooling root hollow while nest keepers press their bodies around them."
+          },
+          {
+            "trigger": "matriarch_pressure >= 5",
+            "modifier_prompt": "Thick bark membranes begin sealing the easternmost roost mouth and fine roots rise higher around the table legs."
+          },
+          {
+            "trigger": "embargo_scope == 1",
+            "modifier_prompt": "The lantern path to the center gamete cradle is dark while the eastern flight gap and downhill fungal road remain illuminated."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_coalition_hub",
+        "ink_anchor": "coalition_hub",
+        "base_image_prompt": "Medium overhead coalition-choice frame on an alien crescent root terrace during near-total eclipse. The central resin table holds the violet closure braid beside a shallow empty diagnostic edge and a gamete cradle. Reed-in-Crosswind, a dark gliding courier animal with silver ribbon sensory vanes and gripping feet, is positioned among four visible coalition actions: three roost mouths occupied by varied dark ribbon-vaned courier gliders for a circling assembly; Tavi Split-Resin, a fine-scaled six-limbed Airawa with large upper claws, small lower hands, digitigrade taloned legs, and a blue-resin harness, holding contract strands at center for a narrow cargo knot; Lowwater-Blue, a smaller blue-ribbon-vaned glider retaining a softly glowing packet sling beside paid amber fungal beads downhill for diagnosis; and the violet braid beneath closing warm root hollows for a full embargo bargain. Cold lantern knots trace the eastern route.",
+        "visible_characters": [
+          {
+            "agent_id": "reed_in_crosswind",
+            "default_stance": "center, poised among roosts, Tavi's braid, Lowwater cargo, and Matriarch closure",
+            "visual_ref": "visual_character_refs.characters.reed_in_crosswind"
+          },
+          {
+            "agent_id": "tavi_split_resin",
+            "default_stance": "lower hands ready to cut and rebraid the violet contract",
+            "visual_ref": "visual_character_refs.characters.tavi_split_resin"
+          },
+          {
+            "agent_id": "lowwater_blue",
+            "default_stance": "eastern rail with packet sling in its own custody",
+            "visual_ref": "visual_character_refs.characters.lowwater_blue"
+          },
+          {
+            "agent_id": "lower_shelf_roosts",
+            "default_stance": "nest keepers visible at the three high hollows",
+            "visual_ref": "visual_character_refs.groups.lower_shelf_roosts"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_compact_threshold",
+        "ink_anchor": "compact_threshold",
+        "base_image_prompt": "Wide frontal totality frame of an alien crescent terrace beneath a colossal rooted canopy. A fixed black world covers the dim red-orange sun. Three high roost hollows hold eggs and small dark courier animals with broad gliding surfaces, gripping feet, and ribbonlike sensory vanes. The center resin table supports a violet closure braid, shallow gestation cradle, and blue-resin contract strands while fine roots climb its legs. Along the downhill edge, amber fungal beads run beneath cold blue-white lantern knots. The eastern Lowwater flight gap and western ridge gap remain visible. Reed-in-Crosswind, a dark courier glider with silver ribbon vanes, stands on the table between the two routes; Tavi Split-Resin, a fine-scaled six-limbed Airawa with upper claws, lower tool hands, digitigrade taloned legs, and blue-resin harness, anchors beside the cradle; Lowwater-Blue, a smaller blue-ribbon-vaned glider, waits on the eastern rail with a packet sling whose translucent membrane still carries pale inner color.",
+        "visible_characters": [
+          {
+            "agent_id": "reed_in_crosswind",
+            "default_stance": "center table facing both flight gaps",
+            "visual_ref": "visual_character_refs.characters.reed_in_crosswind"
+          },
+          {
+            "agent_id": "tavi_split_resin",
+            "default_stance": "anchored beside the cradle and contract strands",
+            "visual_ref": "visual_character_refs.characters.tavi_split_resin"
+          },
+          {
+            "agent_id": "lowwater_blue",
+            "default_stance": "eastern rail retaining the packet sling",
+            "visual_ref": "visual_character_refs.characters.lowwater_blue"
+          },
+          {
+            "agent_id": "lower_shelf_roosts",
+            "default_stance": "distributed among the three hollows or one shared aerial circle according to state",
+            "visual_ref": "visual_character_refs.groups.lower_shelf_roosts"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "gamete_viability <= 1",
+            "modifier_prompt": "One edge of the packet membrane fades from pale green to dull gray-green."
+          },
+          {
+            "trigger": "roost_cohesion >= 4",
+            "modifier_prompt": "Couriers from all three hollows form one tight circular flight beneath the canopy."
+          },
+          {
+            "trigger": "route_reputation <= 1",
+            "modifier_prompt": "Couriers at the western gap turn their ribbon vanes away from Reed."
+          },
+          {
+            "trigger": "lantern_consent >= 3",
+            "modifier_prompt": "A continuous cold blue-white lantern sequence illuminates the eastern flight gap and first descending route."
+          },
+          {
+            "trigger": "fungal_credit >= 3",
+            "modifier_prompt": "A healthy paid amber diagnostic line waits directly below the cradle."
+          },
+          {
+            "trigger": "embargo_scope >= 3",
+            "modifier_prompt": "A single continuous darkness joins the center cradle, eastern flight gap, and visible Lowwater road."
+          },
+          {
+            "trigger": "embargo_scope == 1",
+            "modifier_prompt": "Only the center cradle is dark; amber warning traffic and blue-white route light remain open east."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_ending_narrow",
+        "ink_anchor": "ending_narrow_compact|ending_narrow_cost",
+        "base_image_prompt": "Narrow-quarantine aftermath at totality on an alien crescent root terrace. A single violet resin strand loops only around the shallow center gamete cradle. Lowwater-Blue, a small blue-ribbon-vaned courier glider, remains on the eastern rail retaining the softly glowing packet sling. Reed-in-Crosswind perches on the cradle rim with silver sensory vanes open. Tavi Split-Resin, a six-limbed fine-scaled Airawa in a blue-resin harness, holds the quarantine knot with two small lower hands while upper claws brace against root pressure. Cold lantern light and amber fungal beads keep the eastern nourishment and warning route visibly open.",
+        "visible_characters": [
+          {
+            "agent_id": "reed_in_crosswind",
+            "default_stance": "on the cradle rim witnessing the narrow strand",
+            "visual_ref": "visual_character_refs.characters.reed_in_crosswind"
+          },
+          {
+            "agent_id": "tavi_split_resin",
+            "default_stance": "holding the narrow knot while braced against root pressure",
+            "visual_ref": "visual_character_refs.characters.tavi_split_resin"
+          },
+          {
+            "agent_id": "lowwater_blue",
+            "default_stance": "eastern rail retaining packet custody",
+            "visual_ref": "visual_character_refs.characters.lowwater_blue"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_ending_courier_success",
+        "ink_anchor": "ending_courier_compact",
+        "base_image_prompt": "Successful courier-withdrawal aftermath above an alien crescent root terrace at returning eclipse light. Small dark flying and gliding animals with broad wing planes, gripping feet, eggs secured in pale fiber slings, and long ribbonlike sensory vanes stream toward the narrow western ridge gap. Reed-in-Crosswind flies at the route front. Behind them, all three high root hollows cool and empty; the lantern arcade loses pollen-bearing visitors; the amber fungal road begins bending away from the center contract table. Colossal buttress roots remain powerful and suddenly underused.",
+        "visible_characters": [
+          {
+            "agent_id": "reed_in_crosswind",
+            "default_stance": "at the western departure front",
+            "visual_ref": "visual_character_refs.characters.reed_in_crosswind"
+          },
+          {
+            "agent_id": "lower_shelf_roosts",
+            "default_stance": "all three roost groups departing west with egg slings",
+            "visual_ref": "visual_character_refs.groups.lower_shelf_roosts"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_ending_courier_cost",
+        "ink_anchor": "ending_courier_cost",
+        "base_image_prompt": "Failed courier-withdrawal aftermath on an alien crescent root terrace at returning eclipse light. Reed-in-Crosswind leads one small group of dark ribbon-vaned courier gliders toward the narrow western ridge gap with a few eggs in pale fiber slings. A second group remains packed inside one warm high root hollow. A third group circles uncertainly between the two. Lowwater-Blue, a smaller blue-ribbon-vaned glider, departs alone through the eastern valley gap carrying a gestation packet whose translucent membrane fades gray-green at one edge. The lantern arcade and amber fungal road split toward opposite routes below the center contract table.",
+        "visible_characters": [
+          {
+            "agent_id": "reed_in_crosswind",
+            "default_stance": "leading one partial group toward the western gap",
+            "visual_ref": "visual_character_refs.characters.reed_in_crosswind"
+          },
+          {
+            "agent_id": "lowwater_blue",
+            "default_stance": "departing east alone with the fading packet sling",
+            "visual_ref": "visual_character_refs.characters.lowwater_blue"
+          },
+          {
+            "agent_id": "lower_shelf_roosts",
+            "default_stance": "split among western departure, one warm hollow, and an uncertain circle",
+            "visual_ref": "visual_character_refs.groups.lower_shelf_roosts"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_ending_embargo",
+        "ink_anchor": "ending_embargo_compact|ending_embargo_cost",
+        "base_image_prompt": "Full-embargo aftermath on an alien crescent root terrace during eclipse egress. Threadwing eggs rest inside reopened high root hollows under warm amber membranes while Reed-in-Crosswind, a small dark courier glider with folded silver ribbon vanes, perches on the violet closure braid at the center resin table. The entire eastern side is dark from gamete cradle through lantern arcade to Lowwater flight gap. Downhill fungal beads extinguish one by one eastward. The western ridge gap and local nectar wells remain lit, making the bargain's beneficiaries and victims spatially readable.",
+        "visible_characters": [
+          {
+            "agent_id": "reed_in_crosswind",
+            "default_stance": "perched on the violet braid with sensory vanes folded",
+            "visual_ref": "visual_character_refs.characters.reed_in_crosswind"
+          },
+          {
+            "agent_id": "lower_shelf_roosts",
+            "default_stance": "eggs and nest keepers inside reopened warm hollows",
+            "visual_ref": "visual_character_refs.groups.lower_shelf_roosts"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_ending_rival",
+        "ink_anchor": "ending_rival_relay|ending_rival_cost",
+        "base_image_prompt": "Rival-relay aftermath over the eastern flight gap below an alien crescent root terrace. Reed-in-Crosswind and Lowwater-Blue, two small flying courier animals with broad gliding wing planes, gripping feet, and long silver or blue-stained ribbonlike sensory vanes, cross in staggered formation above a wet low valley. Reed carries a translucent pale-green gestation packet in a fiber sling while Lowwater-Blue flies close enough to preserve custody testimony through open vanes. A blue-white lantern sequence marks the first descent; amber fungal beads trace the road below; high buttress roots and three cooling roost hollows recede behind them.",
+        "visible_characters": [
+          {
+            "agent_id": "reed_in_crosswind",
+            "default_stance": "leading the first ridge crossing with transferred packet sling",
+            "visual_ref": "visual_character_refs.characters.reed_in_crosswind"
+          },
+          {
+            "agent_id": "lowwater_blue",
+            "default_stance": "staggered beside Reed with vanes carrying the custody song",
+            "visual_ref": "visual_character_refs.characters.lowwater_blue"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_roost_cohesion_visual",
+        "trigger": "branch_label == prime_roost_cohesion",
+        "apply_to_visual_scene_ids": ["tangle_routine_hub", "tangle_routine_fold"],
+        "modifier_prompt": "Reed combs frayed vane fibers from juveniles and binds one pale shared marker around all three roost mouths; one cradle membrane begins paling from delay."
+      },
+      {
+        "modifier_id": "prime_disease_evidence_visual",
+        "trigger": "branch_label == prime_disease_evidence",
+        "apply_to_visual_scene_ids": ["tangle_routine_hub", "tangle_routine_fold", "tangle_closure_arrives"],
+        "modifier_prompt": "Reed holds one silver sensory ribbon between the dark nectar well's bitter trace and the clean sealed gamete membranes while a faint pressure pulse travels through the root table."
+      },
+      {
+        "modifier_id": "prime_fungal_credit_visual",
+        "trigger": "branch_label == prime_fungal_credit",
+        "apply_to_visual_scene_ids": ["tangle_routine_hub", "tangle_routine_fold"],
+        "modifier_prompt": "A salt grain dissolves between amber fungal beads and a clean second route line brightens toward the eastern valley."
+      },
+      {
+        "modifier_id": "prime_lantern_consent_visual",
+        "trigger": "branch_label == prime_lantern_consent",
+        "apply_to_visual_scene_ids": ["tangle_routine_hub", "tangle_routine_fold"],
+        "modifier_prompt": "Reed carries fine pollen dust in the outer ribbon vanes through a continuous blue-white lantern sequence toward the eastern gap."
+      },
+      {
+        "modifier_id": "publish_closure_terms_visual",
+        "trigger": "branch_label == publish_closure_terms",
+        "apply_to_visual_scene_ids": ["tangle_first_pressure_hub", "tangle_pressure_fold"],
+        "modifier_prompt": "Reed carries the violet braid around all three roost mouths in gripping feet while ribbon vanes expose both the red refusal stain and official closure chemistry; root membranes tighten behind the circuit."
+      },
+      {
+        "modifier_id": "stand_with_lowwater_visual",
+        "trigger": "branch_label == stand_with_lowwater",
+        "apply_to_visual_scene_ids": ["tangle_first_pressure_hub", "tangle_pressure_fold"],
+        "modifier_prompt": "Reed lands beside Lowwater-Blue on the eastern rail; both couriers open ribbon vanes toward the clean packet seal while the nearest roost hollow visibly cools."
+      },
+      {
+        "modifier_id": "seek_lantern_witness_visual",
+        "trigger": "branch_label == seek_lantern_witness",
+        "apply_to_visual_scene_ids": ["tangle_first_pressure_hub", "tangle_pressure_fold"],
+        "modifier_prompt": "Reed flies the lantern crescent carrying the violet braid; blue-white knots keep the eastern gap bright while darkening only the path into the center cradle."
+      },
+      {
+        "modifier_id": "seek_road_diagnosis_visual",
+        "trigger": "branch_label == seek_road_diagnosis",
+        "apply_to_visual_scene_ids": ["tangle_first_pressure_hub", "tangle_pressure_fold"],
+        "modifier_prompt": "The violet braid rests across a paid amber fungal line; one bead opens toward Lowwater's packet and another toward Tavi's blue contract bands, forming two visible witness directions."
+      },
+      {
+        "modifier_id": "rally_roost_assembly_visual",
+        "trigger": "branch_label == rally_roost_assembly",
+        "apply_to_visual_scene_ids": ["tangle_coalition_hub", "tangle_compact_threshold"],
+        "modifier_prompt": "Threadwing couriers from all three hollows form one circling assembly under the canopy while unattended egg clusters lose the orange glow of shared body warmth."
+      },
+      {
+        "modifier_id": "draft_narrow_quarantine_visual",
+        "trigger": "branch_label == draft_narrow_quarantine",
+        "apply_to_visual_scene_ids": ["tangle_coalition_hub", "tangle_compact_threshold", "tangle_ending_narrow"],
+        "modifier_prompt": "Tavi's lower hands cut a clean violet strand and loop it only around the center cradle; the eastern lantern and fungal lines stay visibly outside the knot."
+      },
+      {
+        "modifier_id": "diagnose_without_seizure_visual",
+        "trigger": "branch_label == diagnose_without_seizure",
+        "apply_to_visual_scene_ids": ["tangle_coalition_hub", "tangle_compact_threshold", "tangle_ending_narrow"],
+        "modifier_prompt": "Lowwater-Blue suspends the sealed packet sling directly above clean amber diagnostic beads while keeping both gripping feet on the sling cords; Reed guides from one body length away."
+      },
+      {
+        "modifier_id": "accept_full_embargo_visual",
+        "trigger": "branch_label == accept_full_embargo",
+        "apply_to_visual_scene_ids": ["tangle_coalition_hub", "tangle_compact_threshold", "tangle_ending_embargo"],
+        "modifier_prompt": "Reed lands on the violet braid with sensory vanes folded; all three root hollows glow warm while darkness spreads east across cradle, lantern arcade, and fungal road."
+      },
+      {
+        "modifier_id": "narrow_quarantine_success_visual",
+        "trigger": "ending_label == narrow_quarantine_success",
+        "apply_to_visual_scene_ids": ["tangle_ending_narrow"],
+        "modifier_prompt": "The packet remains pale green in Lowwater-Blue's sling, clean amber fungal beads rise beneath it, and cold blue-white route lights stay open east beyond the single violet cradle strand."
+      },
+      {
+        "modifier_id": "narrow_quarantine_cost_visual",
+        "trigger": "ending_label == narrow_quarantine_cost",
+        "apply_to_visual_scene_ids": ["tangle_ending_narrow"],
+        "modifier_prompt": "The packet membrane turns gray-green at one seam while the fungal diagnostic line stays dark and the open eastern route shows bare rails and empty light."
+      },
+      {
+        "modifier_id": "courier_refusal_success_visual",
+        "trigger": "ending_label == courier_refusal_success",
+        "apply_to_visual_scene_ids": ["tangle_ending_courier_success"],
+        "modifier_prompt": "All three roost groups fly west in one organized stream with eggs secured in fiber slings; every high root hollow is empty and the downhill road visibly bends away from the Shelf."
+      },
+      {
+        "modifier_id": "courier_refusal_cost_visual",
+        "trigger": "ending_label == courier_refusal_cost",
+        "apply_to_visual_scene_ids": ["tangle_ending_courier_cost"],
+        "modifier_prompt": "One courier group flies west, one remains packed inside a warm hollow, and a third circles between them while Lowwater-Blue departs east with a fading packet."
+      },
+      {
+        "modifier_id": "full_embargo_success_visual",
+        "trigger": "ending_label == full_embargo_success",
+        "apply_to_visual_scene_ids": ["tangle_ending_embargo"],
+        "modifier_prompt": "Every roost hollow glows warm around protected eggs while the entire eastern lantern and fungal network remains dark beyond Reed's folded vanes."
+      },
+      {
+        "modifier_id": "full_embargo_cost_visual",
+        "trigger": "ending_label == full_embargo_cost",
+        "apply_to_visual_scene_ids": ["tangle_ending_embargo"],
+        "modifier_prompt": "Only two roost hollows reopen; the third stays cold, eastern routes remain dark, and the fungal beads directly beneath the contract table extinguish."
+      },
+      {
+        "modifier_id": "rival_relay_success_visual",
+        "trigger": "ending_label == rival_relay_success",
+        "apply_to_visual_scene_ids": ["tangle_ending_rival"],
+        "modifier_prompt": "The packet remains luminous pale green in Reed's sling while a continuous blue-white lantern path and amber fungal line mark the first eastern descent."
+      },
+      {
+        "modifier_id": "rival_relay_cost_visual",
+        "trigger": "ending_label == rival_relay_cost",
+        "apply_to_visual_scene_ids": ["tangle_ending_rival"],
+        "modifier_prompt": "The blue-white route lights end halfway down the eastern gap, the packet membrane fades gray in Reed's gripping feet, and Lowwater-Blue's vanes fold into a mourning route."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "lower_lantern_shelf.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Outdoor crescent terrace nested between Matriarch buttress roots, with a high rootward roost wall, central contract-work zone, downhill lantern-and-fungal logistics edge, eastern Lowwater flight gap, and western ridge flight gap.",
+      "fixed_zones": [
+        {
+          "zone_id": "rootward_roost_wall",
+          "visible_form": "high buttress-root wall containing three warm oval nesting hollows and nearby nectar wells",
+          "used_for": "egg shelter, nest leverage, roost assembly, and western withdrawal"
+        },
+        {
+          "zone_id": "central_contract_table",
+          "visible_form": "waist-high resin table with braid slit, shallow translucent gamete cradle, salt comb, and contract strands",
+          "used_for": "cargo handling, closure presentation, quarantine braid, and Airawa work"
+        },
+        {
+          "zone_id": "downhill_fungal_road",
+          "visible_form": "two rows of faint amber fruiting beads following the lower crescent edge",
+          "used_for": "mineral payment, disease testimony, cargo diagnosis, and route closure"
+        },
+        {
+          "zone_id": "downhill_lantern_arcade",
+          "visible_form": "slender trees above the fungal road with low cold blue-white luminous knots",
+          "used_for": "route light, pollination service, witness, and eastern relay"
+        },
+        {
+          "zone_id": "eastern_lowwater_gap",
+          "visible_form": "open flight gap descending toward a wet low valley, framed by two buttress roots and the lantern arcade",
+          "used_for": "Lowwater arrival, open traffic, full embargo, and rival packet relay"
+        },
+        {
+          "zone_id": "western_ridge_gap",
+          "visible_form": "narrow flight gap opening toward dark broken ridges beyond the roost wall",
+          "used_for": "courier withdrawal and alternate routes"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_shelf_elevated",
+          "supports_visual_scene_ids": ["tangle_shelf_establishing", "tangle_routine_fold", "tangle_compact_threshold"]
+        },
+        {
+          "camera_id": "center_table_eye_level",
+          "supports_visual_scene_ids": ["tangle_routine_people", "tangle_closure_arrives", "tangle_ending_narrow"]
+        },
+        {
+          "camera_id": "choice_overhead",
+          "supports_visual_scene_ids": ["tangle_routine_hub", "tangle_first_pressure_hub", "tangle_coalition_hub"]
+        },
+        {
+          "camera_id": "root_pressure_low_angle",
+          "supports_visual_scene_ids": ["tangle_pressure_fold", "tangle_ending_embargo"]
+        },
+        {
+          "camera_id": "western_departure",
+          "supports_visual_scene_ids": ["tangle_ending_courier_success", "tangle_ending_courier_cost"]
+        },
+        {
+          "camera_id": "eastern_gap_aerial",
+          "supports_visual_scene_ids": ["tangle_ending_rival"]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "roosts_to_center_braid",
+          "path": "three rootward roost mouths -> central contract table braid slit",
+          "supports": ["publish_closure_terms", "rally_roost_assembly", "accept_full_embargo"]
+        },
+        {
+          "lane_id": "center_to_lowwater",
+          "path": "central contract table -> eastern rail -> lantern-lit Lowwater flight gap",
+          "supports": ["stand_with_lowwater", "diagnose_without_seizure", "relay_lowwater_packet"]
+        },
+        {
+          "lane_id": "cradle_to_route_witnesses",
+          "path": "central gamete cradle -> downhill fungal road -> lantern arcade",
+          "supports": ["seek_lantern_witness", "seek_road_diagnosis", "draft_narrow_quarantine"]
+        }
+      ],
+      "embargo_states": [
+        {
+          "value": 0,
+          "label": "route_open",
+          "visible_form": "cradle, fungal road, and eastern flight gap all retain distinct cold or amber illumination"
+        },
+        {
+          "value": 1,
+          "label": "cargo_only_hold",
+          "visible_form": "violet strand and darkness isolate only the center gamete cradle while eastern warning and nourishment routes stay lit"
+        },
+        {
+          "value": 3,
+          "label": "full_ecological_embargo",
+          "visible_form": "continuous darkness joins the center cradle, eastern lantern arcade, fungal road, and Lowwater gap"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group identities for prompt assembly. Include only refs listed as visible in the selected scene.",
+    "characters": {
+      "reed_in_crosswind": "Reed-in-Crosswind: small alien flying and gliding courier animal with a narrow dark charcoal torso, two broad flexible wing planes, dozens of long silver-edged ribbonlike sensory vanes in place of feathers, two black gripping feet suited to perches and light cargo, bright round eyes, quick precise head movements, and posture expressed through vane fan, wing angle, landing choice, and route circling.",
+      "tavi_split_resin": "Tavi Split-Resin: mature Airawa with a long six-limbed reptilian-adjacent body, tiny soft umber scales, minimal slit-like nose and ears, grown shoulder and flank plates with dim blue bioluminescent seams, two large clawed upper climbing limbs, two smaller lower tool hands with four soft blunt digits arranged as opposing pairs, long digitigrade legs, four-toed grasping feet with hooked climbing talons, and a blue-resin harness braided with pale courier fibers and amber fungal thread.",
+      "lowwater_blue": "Lowwater-Blue: small alien flying and gliding courier animal, slightly smaller than Reed, with a narrow blue-black torso, two broad flexible wing planes, long ribbonlike sensory vanes stained cobalt at the tips by Lowwater resin, two gripping feet, bright watchful eyes, and a pale woven belly sling sized for one translucent gestation packet."
+    },
+    "groups": {
+      "lower_shelf_roosts": "Lower Shelf roosts: small alien flying and gliding courier animals of varied size with dark narrow bodies, two broad flexible wing planes, dozens of ribbonlike sensory vanes in charcoal silver rust and pale amber, gripping feet, bright eyes, and eggs held in warm oval root hollows or pale woven fiber slings; cohesion appears through shared circles and touching vane fans, division through separate hollows and averted vanes."
+    }
+  },
+  "review_notes": [
+    "Narrative and lore review accepted the fixture after Airawa hand anatomy and Threadwing visual-provenance clarifications.",
+    "Visual review split courier-withdrawal success and cost frames, expanded standalone character descriptions, and found zero negative prompt constructions or missing visual refs.",
+    "Spatial review accepted the fixed terrace frame, packet custody, movement routes, camera slots, and embargo states.",
+    "The embedded scene_set map is a draft geometry authority for IF staging; a hand-built plan view or 3D blockout remains required before high-consistency multi-angle rendering.",
+    "Every base prompt restates visible geometry and body affordances for a fresh render."
+  ]
+}

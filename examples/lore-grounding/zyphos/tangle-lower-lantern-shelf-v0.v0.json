@@ -1,0 +1,356 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "zyphos.tangle-lower-lantern-shelf-v0",
+  "source_status": "draft",
+  "fixture_status": "grounded_elaboration",
+  "source_refs": [
+    {
+      "source_id": "threadwing-couriers",
+      "path": "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md",
+      "title": "Threadwing Couriers",
+      "line_start": 1,
+      "line_end": 58,
+      "relevance": "Primary subject and authored elaboration: threadwing senses, contracts, route testimony, gestation traffic, roost constituencies, and the Lower Lantern Shelf birth-route leverage mechanism."
+    },
+    {
+      "source_id": "matriarch-trees",
+      "path": "Eusocial Interbeing/Species/Matriarch Trees.md",
+      "title": "Matriarch Trees",
+      "line_start": 1,
+      "line_end": 27,
+      "relevance": "Grounds Matriarch archival power, gestation authority, ecological obligations, coercive dependency, and contracted pollinator carriage."
+    },
+    {
+      "source_id": "airawa",
+      "path": "Eusocial Interbeing/Species/Airawa.md",
+      "title": "Airawa",
+      "line_start": 1,
+      "line_end": 96,
+      "relevance": "Grounds Airawa six-limbed anatomy, public gestation contracts, pollinator leverage, contract craft, and imperial heredity pressure."
+    },
+    {
+      "source_id": "mother-tree-networks",
+      "path": "Eusocial Interbeing/Ecology/Mother Tree Networks.md",
+      "title": "Mother Tree Networks",
+      "line_start": 1,
+      "line_end": 15,
+      "relevance": "Grounds mother-tree connections to organisms, archives, signaling paths, obligations, and access to continuity."
+    },
+    {
+      "source_id": "lantern-trees",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+      "title": "Umbros-Facing Lantern Trees",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds route-light signals, pollinator payment, infant shelter, fungal exchange, selective path closure, and independent treaty interests."
+    },
+    {
+      "source_id": "candle-fungal-roads",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+      "title": "Candle Fungal Roads",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds amber route beacons, mineral and sugar exchange, disease reporting, remembered credit, quarantine, and route refusal."
+    },
+    {
+      "source_id": "pre-imperial-airawa-tribes",
+      "path": "Eusocial Interbeing/Civilizations/Pre-Imperial Airawa Tribes.md",
+      "title": "Pre-Imperial Airawa Tribes",
+      "line_start": 1,
+      "line_end": 34,
+      "relevance": "Grounds ecological political dependency and contract dress as public records of tree, pollinator, fungal, and other obligations."
+    },
+    {
+      "source_id": "fractal-eusocial-web",
+      "path": "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md",
+      "title": "Fractal Eusocial Web",
+      "line_start": 1,
+      "line_end": 146,
+      "relevance": "Grounds nested political scales, plural memory channels, granular borders, negotiated native ecologies, and courier/road/tree relation types."
+    },
+    {
+      "source_id": "mutable-memory-endosymbiosis",
+      "path": "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+      "title": "Mutable Memory Endosymbiosis",
+      "line_start": 1,
+      "line_end": 123,
+      "relevance": "Grounds partial agency, reproduction as memory negotiation, immunity as boundary politics, and the ban on one omniscient ecological mind."
+    },
+    {
+      "source_id": "airawa-home-continent",
+      "path": "Eusocial Interbeing/World/Airawa Home Continent.md",
+      "title": "Airawa Home Continent",
+      "line_start": 1,
+      "line_end": 28,
+      "relevance": "Grounds regional Matriarch agreements with pollinators, fungal archives, and Airawa communities inside a patchwork of native nation-scale beings."
+    },
+    {
+      "source_id": "zyphos-simulation-brief",
+      "path": "Eusocial Interbeing/World/Zyphos Simulation Brief.md",
+      "title": "Zyphos Simulation Brief",
+      "line_start": 1,
+      "line_end": 110,
+      "relevance": "Grounds Airawa-continent visual pressure, low-energy ecology, fixed Umbros direction, and roughly hour-long daily eclipses only in relevant tracks."
+    },
+    {
+      "source_id": "zyphos-umbros-binary-system",
+      "path": "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+      "title": "Zyphos Umbros Binary System",
+      "line_start": 1,
+      "line_end": 104,
+      "relevance": "Grounds the enormous fixed twin world, eclipse ingress and egress, returning-light pressure, and scarcity of light and warmth."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Present post-imperial-rupture era; exact date unstated",
+    "location": "The Lower Lantern Shelf, a provisional translated name for a gestation terrace chain in a native mother-tree archival polity within one reliable daily eclipse track on the Airawa home continent.",
+    "summary": "Three threadwing roosts, an Airawa contract keeper, lantern trees, and a fungal road must answer a Matriarch's attempt to disguise a lineage embargo as disease quarantine while a viable rival gamete packet waits at the route edge.",
+    "public_facts": [
+      {
+        "text": "Matriarch Trees gestate Airawa young and depend on contracted pollinators to move compatible gametes.",
+        "source_refs": ["matriarch-trees", "airawa"]
+      },
+      {
+        "text": "Threadwings carry pollen analogues, symbionts, wound scents, route memory, and social injury; their payments and defection triggers make them negotiating parties rather than passive carriers.",
+        "source_refs": ["threadwing-couriers"]
+      },
+      {
+        "text": "Lantern trees and fungal roads have independent route, nourishment, disease, and accounting interests that can align with or resist a Matriarch request.",
+        "source_refs": ["lantern-trees", "candle-fungal-roads", "fractal-eusocial-web"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "A full courier refusal affects Airawa births, lantern pollination, fungal-road sugars, route light, and disease warning through one shared ecological path.",
+        "source_refs": ["threadwing-couriers", "lantern-trees", "candle-fungal-roads"]
+      },
+      {
+        "text": "The Shelf Matriarch can condition nectar, nest warmth, and gestation access, but sustained coercion gives courier, lantern, road, Airawa, and rival-tree constituencies reason to form a counter-alliance.",
+        "source_refs": ["threadwing-couriers", "matriarch-trees", "fractal-eusocial-web"]
+      },
+      {
+        "text": "The disputed packet loses viability while parties seek testimony, so delay is reproductive policy even when every route remains formally open.",
+        "source_refs": ["matriarch-trees", "airawa", "threadwing-couriers"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "lower-shelf-threadwing-roosts",
+      "label": "Three Lower Lantern Shelf threadwing roosts",
+      "group_type": "courier_pollinator_compact",
+      "institutional_logic": ["Protect nests and eggs while preserving the route reputation that makes cargo accepted across ecologies."],
+      "material_incentives": ["Warm root hollows, nectar, salt, parasite grooming, reliable lantern light, viable cargo exchange, and varied symbiont routes."],
+      "internal_virtues": ["Accurate carriage", "Nest solidarity", "Cargo custody", "Refusal to carry a false message invisibly"],
+      "internal_shames": ["Spending another roost's eggs", "Letting shelter purchase a permanent lie", "Losing a viable reproductive packet through display"],
+      "prestige_markers": ["A route accepted by rival ecologies", "A grievance delivered with its evidence intact", "Eggs warmed without selling the next generation's road"],
+      "taboo_triggers": ["Stolen eggs", "Poisoned nectar", "False route light", "Forced gut-memory editing", "Cargo seizure"],
+      "emotional_display_norms": ["Fear appears as flock silence, tight circling, folded vanes, nest clustering, or abrupt refusal to land."],
+      "trust_defaults": ["Trusts tested cargo, paid witnesses, known route songs, and partners who distinguish shelter from ownership."],
+      "speech_register_cues": ["Route-song phrases", "Vane display", "Landing choices", "Fiber testimony", "Short translated clauses"],
+      "source_refs": ["threadwing-couriers"]
+    },
+    {
+      "group_id": "lower-shelf-matriarch-polity",
+      "label": "Lower Lantern Shelf Matriarch and Airawa contract keepers",
+      "group_type": "mother_tree_archival_polity",
+      "institutional_logic": ["Preserve local lineage continuity and political advantage by deciding which reproductive and memory traffic enters the gestation web."],
+      "material_incentives": ["Selected gametes, reliable pollination, disease news, Airawa tending, protected roots, and courier traffic that remains legible."],
+      "internal_virtues": ["Continuity", "Credible protection", "Publicly legible obligations", "Deep archive stewardship"],
+      "internal_shames": ["A refused command", "A false quarantine exposed", "Couriers moving the future to another gestator"],
+      "prestige_markers": ["Warm occupied roosts", "Accepted gestation petitions", "Lantern and fungal partners that still answer"],
+      "taboo_triggers": ["Unwitnessed lineage claims", "Foreign reproductive tissue reaching deep gestation layers", "Partners treating root shelter as replaceable"],
+      "emotional_display_norms": ["Pressure appears through tightened root membranes, changed warmth, bitter nectar, cradle growth, and altered access rather than human facial display."],
+      "trust_defaults": ["Trusts long-standing contracts but tests whether dependency can convert negotiation into compliance."],
+      "speech_register_cues": ["Root pulses", "Resin chemistry", "Grown closure braids", "Airawa witness translation"],
+      "source_refs": ["matriarch-trees", "mother-tree-networks", "pre-imperial-airawa-tribes"]
+    },
+    {
+      "group_id": "lowwater-rival-grove",
+      "label": "Lowwater rival gestation grove and its courier delegate",
+      "group_type": "rival_mother_tree_polity",
+      "institutional_logic": ["Keep reciprocal gestation and pollination traffic open enough to prevent the Shelf from making its lineage locally irrelevant."],
+      "material_incentives": ["Successful gamete delivery, route light, pollination, disease warning, and proof that its cargo remains trustworthy."],
+      "internal_virtues": ["Clean custody", "Reciprocity", "Visible patience at another polity's border"],
+      "internal_shames": ["Cargo confiscation", "Begging a rival for recognition", "Allowing quarantine language to erase a lineage"],
+      "prestige_markers": ["A packet accepted under rival witness", "A courier protected beyond its home route"],
+      "taboo_triggers": ["Lineage embargo disguised as sickness", "Forced surrender of reproductive cargo", "Pollinator punishment for a tree conflict"],
+      "emotional_display_norms": ["The delegate displays offense through vane angle, landing distance, sealed custody, and route-song compression."],
+      "trust_defaults": ["Trusts shared ecological witnesses more than a rival Matriarch's private assurances."],
+      "speech_register_cues": ["Clean-seal display", "Custody song", "Translated route maxims"],
+      "source_refs": ["threadwing-couriers", "matriarch-trees", "airawa"]
+    },
+    {
+      "group_id": "lower-shelf-route-witnesses",
+      "label": "Lower Shelf lantern arcade and candle fungal road",
+      "group_type": "producer_logistics_witness_alliance",
+      "institutional_logic": ["Keep traffic, pollination, sugar, minerals, and disease reporting useful by refusing claims that destroy the value of testimony."],
+      "material_incentives": ["Pollination", "Route use", "Sugar-mineral exchange", "Truthful sickness disclosure", "Protected fruiting bodies and roots"],
+      "internal_virtues": ["Granular closure", "Paid attention", "Route continuity", "Evidence attached to warning"],
+      "internal_shames": ["Lighting a false route", "Certifying sickness without residue", "Closing until traffic permanently reroutes"],
+      "prestige_markers": ["A warning others heed", "A route that survives dispute", "A diagnostic result that does not become seizure"],
+      "taboo_triggers": ["Forced standardization", "False quarantine", "Trampled beacons", "Withheld pollination"],
+      "emotional_display_norms": ["Lanterns pulse, dim, or illuminate selectively; roads brighten, darken, raise bitter rings, or open paid diagnostic lines."],
+      "trust_defaults": ["Trusts repeated material exchange and specific evidence, not status claims."],
+      "speech_register_cues": ["Blue-white lantern sequences", "Amber fungal beads", "Route darkness", "Selective illumination"],
+      "source_refs": ["lantern-trees", "candle-fungal-roads"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "lower-shelf-threadwing-roosts.shelter-versus-route-truth",
+      "applies_to": ["lower-shelf-threadwing-roosts"],
+      "pressure_type": "engineered_dependency",
+      "summary": "Courier nests need Matriarch warmth while courier legitimacy depends on not laundering a tree's lineage conflict as disease testimony.",
+      "projection_use": "Offer Reed choices that spend nest safety, public credibility, time, and route access in different combinations.",
+      "source_refs": ["threadwing-couriers"]
+    },
+    {
+      "field_id": "lower-shelf-matriarch-polity.quarantine-as-lineage-policy",
+      "applies_to": ["lower-shelf-matriarch-polity"],
+      "pressure_type": "reproductive_sovereignty",
+      "summary": "The Matriarch can make a rival lineage less real locally by converting gestation permission into a broad ecological closure.",
+      "projection_use": "Express power through roots, warmth, nectar, cradle access, and closure braids rather than abstract decree alone.",
+      "source_refs": ["matriarch-trees", "airawa", "mother-tree-networks"]
+    },
+    {
+      "field_id": "lower-shelf-route-witnesses.channel-separation",
+      "applies_to": ["lower-shelf-route-witnesses"],
+      "pressure_type": "network_integrity",
+      "summary": "Lantern and fungal partners lose value if every cargo dispute automatically closes nourishment and warning traffic.",
+      "projection_use": "Let non-Airawa parties support narrow quarantine while resisting a full food-web embargo.",
+      "source_refs": ["lantern-trees", "candle-fungal-roads", "fractal-eusocial-web"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "lower-shelf-matriarch-polity",
+      "target_group_id": "lower-shelf-threadwing-roosts",
+      "observer_read": ["Dependent nest tenants", "Replaceable pollination labor", "A message channel whose objections can be priced"],
+      "target_self_read": ["Cargo custodians", "Route owners", "Pollination partners", "A constituency with exit"],
+      "misread_patterns": ["Mistakes immediate egg warmth for long-term loyalty", "Treats separate roosts as permanently separable bargaining units"],
+      "likely_insults": ["unreliable carrier", "contaminated route", "ungrateful nest guest"],
+      "projection_use": "Make Matriarch leverage materially credible while preserving the possibility that coercion consolidates the roosts against it.",
+      "source_refs": ["threadwing-couriers", "matriarch-trees"]
+    },
+    {
+      "observer_group_id": "lower-shelf-threadwing-roosts",
+      "target_group_id": "lower-shelf-matriarch-polity",
+      "observer_read": ["Warm roots with a long memory", "A useful gestator", "A shelter provider that confuses dependency with ownership"],
+      "target_self_read": ["Archive guardian", "Gestation authority", "Protector of local continuity"],
+      "misread_patterns": ["Couriers may underestimate how quickly the tree can cool nests and close the cradle", "The tree may underestimate how quickly route reputation moves to other partners"],
+      "likely_insults": ["hollow-owner", "false healer", "root that eats its own road"],
+      "projection_use": "Keep courier wit operational and vulnerable; the Matriarch can impose immediate bodily costs even when its strategy is self-defeating.",
+      "source_refs": ["threadwing-couriers", "matriarch-trees"]
+    },
+    {
+      "observer_group_id": "lowwater-rival-grove",
+      "target_group_id": "lower-shelf-route-witnesses",
+      "observer_read": ["Potential neutral witnesses", "Partners exposed to Shelf pressure"],
+      "target_self_read": ["Independent producers and logistics bodies protecting their own exchange value"],
+      "misread_patterns": ["Lowwater may interpret material self-interest as solidarity", "Witnesses may keep traffic open without endorsing Lowwater's lineage claim"],
+      "likely_insults": ["bought light", "hungry road"],
+      "projection_use": "Prevent ecological witnesses from becoming moral judges; their support remains specific, conditional, and metabolically interested.",
+      "source_refs": ["lantern-trees", "candle-fungal-roads"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "threadwing-route-broker",
+      "summary": "A courier whose body can inspect and carry the disputed message while nest dependents and distant route partners judge the choice.",
+      "obligations": ["Keep cargo viable", "Protect nests", "Preserve route truth", "Do not surrender another courier's custody"],
+      "available_masks": ["Routine pollinator", "Distractible feeder", "Neutral message carrier", "Silent refusal to land"],
+      "failure_modes": ["Trading future route trust for immediate warmth", "Spending packet viability on procedure", "Calling an assembly the roosts cannot sustain"],
+      "source_refs": ["threadwing-couriers"]
+    },
+    {
+      "role_id": "airawa-contract-keeper",
+      "summary": "An Airawa worker who makes multispecies obligations publicly readable without owning every party's decision.",
+      "obligations": ["Preserve cargo seals", "Record who asked for closure", "Keep contract scope legible", "Avoid translating tree pressure into fake consensus"],
+      "available_masks": ["Dry procedural humor", "Deference to the Matriarch", "Literal craft work", "Public witness"],
+      "failure_modes": ["Treating witness as authority", "Letting a narrow braid become a total border", "Losing bodily footing under root pressure"],
+      "source_refs": ["airawa", "pre-imperial-airawa-tribes"]
+    },
+    {
+      "role_id": "rival-courier-delegate",
+      "summary": "A visiting threadwing who must protect a time-sensitive reproductive packet inside a rival polity's route geometry.",
+      "obligations": ["Retain custody", "Display the seal", "Avoid contaminating local roosts", "Carry any refusal home accurately"],
+      "available_masks": ["Formal patience", "Minimal route song", "Exact landing distance", "Open-vane testimony"],
+      "failure_modes": ["Surrendering custody for speed", "Mistaking sympathy for accepted access", "Letting packet viability expire during argument"],
+      "source_refs": ["threadwing-couriers", "matriarch-trees"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "reed_in_crosswind",
+      "known_context": [
+        {"text": "Reed knows local compact payments, flight geometry, roost needs, cargo seals, route songs, and the sensory contents of objects Reed directly tastes.", "source_refs": ["threadwing-couriers"]}
+      ],
+      "beliefs": [
+        {"text": "Reed believes route reputation and nest safety are both survival infrastructure, and neither can be treated as decorative morality.", "source_refs": ["threadwing-couriers"]}
+      ],
+      "misreads": [
+        {"text": "Reed may overestimate roost willingness to lose immediate warmth or mistake lantern and fungal self-interest for permanent alliance.", "source_refs": ["threadwing-couriers", "lantern-trees", "candle-fungal-roads"]}
+      ],
+      "must_not_know": [
+        {"text": "Reed must not know the Matriarch's private motive beyond the observable lineage-refusal trace and material pressure.", "source_refs": ["mutable-memory-endosymbiosis"]}
+      ]
+    },
+    {
+      "speaker_id": "tavi_split_resin",
+      "known_context": [
+        {"text": "Tavi knows Airawa gestation handling, local contract craft, the terrace layout, and the public meanings of courier, lantern, fungal, and Matriarch signals.", "source_refs": ["airawa", "pre-imperial-airawa-tribes", "matriarch-trees"]}
+      ],
+      "beliefs": [
+        {"text": "Tavi believes a closure should expose which traffic it restricts and which party pays for that restriction.", "source_refs": ["pre-imperial-airawa-tribes", "fractal-eusocial-web"]}
+      ],
+      "misreads": [
+        {"text": "Tavi may read courier assembly as more coherent than the nests can afford under cooling pressure.", "source_refs": ["threadwing-couriers"]}
+      ],
+      "must_not_know": [
+        {"text": "Tavi must not decide whether the road or lantern arcade will consent before their visible signals change.", "source_refs": ["lantern-trees", "candle-fungal-roads"]}
+      ]
+    },
+    {
+      "speaker_id": "lowwater_blue",
+      "known_context": [
+        {"text": "Lowwater-Blue knows its own route, the packet seal and viability, custody obligations, and the fact that the Shelf has requested closure.", "source_refs": ["threadwing-couriers", "matriarch-trees"]}
+      ],
+      "beliefs": [
+        {"text": "Lowwater-Blue believes a courier that carries a hidden lineage refusal has become part of the weapon.", "source_refs": ["threadwing-couriers"]}
+      ],
+      "misreads": [
+        {"text": "Lowwater-Blue may mistake Reed's diagnostic delay for cowardice when Reed is preserving witness quality.", "source_refs": ["threadwing-couriers"]}
+      ],
+      "must_not_know": [
+        {"text": "Lowwater-Blue must not know whether another gestator will accept the packet after escape from the Shelf.", "source_refs": ["matriarch-trees", "fractal-eusocial-web"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The fixture-local names Reed-in-Crosswind, Tavi Split-Resin, Lowwater-Blue, Lower Lantern Shelf, and Lowwater are translated scene handles, not promoted Weksa canon names.",
+      "source_refs": ["airawa-home-continent"]
+    },
+    {
+      "text": "The Matriarch's deeper strategic motive remains unresolved; the scene establishes an observable lineage embargo and its ecological leverage, not a private villain monologue.",
+      "source_refs": ["mutable-memory-endosymbiosis", "fractal-eusocial-web"]
+    },
+    {
+      "text": "The visual plan's broad gliding surfaces and gripping feet are a stable fixture-local rendering interpretation. Only flight, gliding, ribbonlike sensory vanes, landing, and cargo carriage are source-grounded species-wide traits.",
+      "source_refs": ["threadwing-couriers"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "How do other Airawa regions distinguish ordinary, elite, resistance, and surveillance pollinator lineages?",
+      "blocks_training": false,
+      "notes": "This fixture defines one local compact and should not become a universal Threadwing caste system."
+    },
+    {
+      "question": "Can the Biological Memetic Engine counterfeit credible courier, lantern, or fungal sickness testimony outside imperial borders?",
+      "blocks_training": false,
+      "notes": "This pass stays with native Matriarch rivalry; imperial signal forgery is a future Tangle lead, not an assumed mechanism here."
+    }
+  ]
+}
