@@ -1,0 +1,64 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "patina-borrowed-names-v0.bfl-simple-v0",
+  "fixture_id": "patina-borrowed-names-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Humane retro-industrial science-fiction storybook illustration, precise ink linework under restrained translucent gouache, graphite and blue-gray habitat metal, amber work lamps, cold blue inventory light, worn tactile materials, dry workplace comedy inside bleak corporate order, readable silhouettes and interfaces, cinematic square composition; interfaces use simple color blocks, serial bars, and abstract inventory glyphs.",
+  "prompts": [
+    {
+      "id": "01_issue_alcove_establishing",
+      "prompt": "Compact Pallas habitat line-issue alcove: muster door left, route hatch and segmented clock right, bolted counter across the room, caged gray body-interface fittings behind it, tactile return board hidden under the lip; gray-suited engineered humanoid worker, dark-skinned clerk, older rigger with anchor hook, blue-gray cephalopod in open mobile work harness."
+    },
+    {
+      "id": "02_issue_liturgy",
+      "prompt": "Medium issue-counter ritual: slender pale gray-brown engineered humanoid in numbered gray skinsuit offers one wrist; compact dark-skinned clerk with amber spectacles taps four green fields; older rigger with hook and harness-supported blue-gray cephalopod share a restrained joke behind the yellow line."
+    },
+    {
+      "id": "03_private_name_mark",
+      "prompt": "Close engineered hand presses a chipped blue tactile disk into a grease-dark return board under a steel counter lip; a clerk's fingerless-gloved hand turns the board away from a ceiling camera; numbered gray couplers hang above in locked cages."
+    },
+    {
+      "id": "04_wrong_coupler_closeup",
+      "prompt": "Close left neck fitting on pale gray-brown engineered worker: precise fingers hold a smooth silent gray coupler away from skin; peg fourteen in the background holds a diagonally scratched coupler with chipped blue marker; green issue bar and four-segment amber clock disagree with the body."
+    },
+    {
+      "id": "05_trace_private_name",
+      "prompt": "Gray-suited engineered worker compares diagonal repair scratch, chipped blue tactile disk, short-short knot, and coupler catch at peg fourteen while dark-skinned clerk watches behind supplier cages and one amber clock segment goes dark."
+    },
+    {
+      "id": "06_trace_with_teth",
+      "prompt": "Mottled blue-gray uplifted cephalopod rotates in an open mobile dry-operation work harness with humidity ring and oxygen tubes; two tentacle tips align a short-short return knot, blue chip, and supplier peg for a gray-suited engineered coworker."
+    },
+    {
+      "id": "07_trace_with_orrin",
+      "prompt": "Broad older human rigger with jaw frost scar and patched brown-orange jacket braces an old anchor hook in a floor slot and witnesses two coupler rims, one smooth and one diagonally scratched; engineered worker holds them apart while clerk opens a witness field."
+    },
+    {
+      "id": "08_test_official_match",
+      "prompt": "Pale gray-brown engineered worker closes smooth coupler below left ear; pale pressure crescent forms and left fingers lag visibly; issue slate stays green while dark-skinned clerk and blue-gray cephalopod coworker watch."
+    },
+    {
+      "id": "09_route_clock_threshold",
+      "prompt": "Issue-counter decision frame: two different gray couplers on steel counter, tactile chips and knots under lip, gray-suited engineered worker at yellow line, clerk behind cages, rigger by hook slot, cephalopod in harness-side lane, route hatch clock burning down and camera eye turning blue."
+    },
+    {
+      "id": "10_named_record_aftermath",
+      "prompt": "Two couplers turned toward a blue recording eye while engineered worker names their scratch and click history; dark-skinned clerk enters a fifth identifier beside abstract serial bars; route hatch closes and a cephalopod tentacle quietly moves one tactile chip under the counter lip."
+    },
+    {
+      "id": "11_quiet_exchange_aftermath",
+      "prompt": "Diagonally scratched coupler sits flat below engineered worker's left ear; clerk looks only at route clock; blue-gray cephalopod tentacles align chips and knots beneath camera line; older rigger lifts anchor hook; official slate remains clean green."
+    },
+    {
+      "id": "12_narrow_witness_aftermath",
+      "prompt": "Older rigger presses witness plate beside smooth and scratched metal rims, hook braced at yellow line; gray-suited engineered worker wears correct fitting; clerk corrects one duplicate serial while private tactile board stays hidden below counter lip."
+    },
+    {
+      "id": "13_spare_body_cost",
+      "prompt": "Restrained split frame: gray-suited engineered worker on a shallow manifold route with dark pressure crescent below left ear and delayed hand; at nearby issue counter during break, blue-gray cephalopod in open harness places chipped blue marker in lowest hidden board row beneath a clean slate and gray camera eye."
+    }
+  ]
+}

@@ -1,0 +1,356 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "patina-borrowed-names-v0-branch-and-fold-visual",
+  "ink_ref": "examples/ink/aetheria/patina-borrowed-names-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/patina-borrowed-names-v0.branch-and-fold.v0.training.json",
+  "scene_id": "patina-borrowed-names-v0.kappa-line-issue",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for one ordinary BioDrone Standard line-kit mismatch at Pallas Yard Twelve.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for the line-issue alcove, corporate liturgy, Rain-Again's physical identity, cross-body tracing, route-clock pressure, and six low-stakes aftermath states.",
+    "segmentation_rule": "Use distinct visual_scene_id anchors for the establishing alcove, issue liturgy, wrong-coupler reveal, each materially different tracing action, the route-clock fold, and each ending family. The silent-coupler realization receives an object closeup before the second choice layer.",
+    "prompting_rule": "Every base prompt is a complete visible frame for a general image model. It describes the alcove geometry, materials, light, bodies, support equipment, objects, and positions needed for that beat. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Style: humane retro-industrial science-fiction storybook illustration, precise ink linework under restrained translucent gouache, graphite and blue-gray habitat metal, amber work lamps, cold blue inventory light, worn tactile materials, dry workplace comedy held inside bleak corporate order, readable silhouettes and interfaces, cinematic interactive-fiction framing; interface graphics use simple color blocks, serial bars, and abstract inventory glyphs.",
+    "prompt_assembly_rule": "Assemble every rendered prompt from the global_style_cue, the selected scene base_image_prompt, visual refs only for named characters visible in that frame, and triggered state_image_modifiers or global_branch_image_modifiers. Each base prompt already carries enough identity and geometry to stand alone. Keep visual_continuity_notes out of assembled prompt text.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "All beats occupy one compact issue alcove from six camera slots, and counter occlusion, object custody, character reach, and the camera blind strip affect branch meaning. The embedded scene_set is sufficient for draft staging but not a rendered geometry source.",
+      "future_scene_set_need": "Before high-consistency website rendering, build a plan view or simple 3D blockout from the fixed zones, routes, occluders, camera slots, staging slots, and state anchors specified below."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "patina_issue_alcove_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of a compact industrial line-issue alcove off Service Ring Kappa inside a rotating manufactured Bloom habitat at Pallas Yard Twelve. A muster-corridor door enters from frame left; a sliding route hatch to the curved service ring exits frame right beneath an amber four-minute clock. A bolted waist-high counter divides the scuffed worker lane from caged supplier lockers filled with gray limiter couplers, audit seals, belt recorders, and diagnostic adapters. A small secondary return board sits under the worker-side counter lip, carrying blue and yellow tactile chips, grease slashes, and short string knots. Overhead amber work lamps meet cold blue inventory lights; ribbed shell supports, dark TCS substrate, consolidated asteroid aggregate behind service panels, pipe trunks, cable trays, and worn yellow floor lines make the habitat visibly engineered. Nara-7, a slender pale gray-brown engineered humanoid seal technician in a numbered gray skinsuit, waits at the yellow line. Eli Venn, a compact dark-skinned human issue clerk in a green-gray counter jacket, stands behind the counter. Orrin Dax, a broad older human rigger in a patched brown-orange jacket, waits with an old anchor hook. Teth Inkwise, a mottled blue-gray uplifted cephalopod in an open mobile dry-operation harness with oxygenation tubes and support loops, rests beside the harness rack.",
+        "visible_characters": [
+          {"agent_id": "nara_7", "default_stance": "upright at the yellow issue line with left ear fitting visible", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "eli_venn", "default_stance": "behind the counter between slate and supplier cages", "visual_ref": "visual_character_refs.characters.eli_venn"},
+          {"agent_id": "orrin_dax", "default_stance": "in the queue with anchor hook across one shoulder", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "teth_inkwise", "default_stance": "supported horizontally in the mobile harness beside the rack", "visual_ref": "visual_character_refs.characters.teth_inkwise"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The alcove is a side room, not Service Ring Kappa itself. The worker route runs muster door to yellow line to route hatch.",
+          "The supplier cages remain behind Eli. The second board remains below the worker-side counter lip and outside the overhead camera's direct view."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_issue_liturgy",
+        "ink_anchor": "ordinary_issue|ritual_choice",
+        "base_image_prompt": "Medium counter view during an ordinary shift call-and-response. Nara-7, a slender engineered humanoid with pale gray-brown skin, close-cropped dark hair, faint interface lines at neck and wrists, and a numbered gray VitaForge seal-technician skinsuit, offers one wrist across the bolted counter. Eli Venn, a compact middle-aged dark-skinned human with shaved head, rectangular amber spectacles, green-gray issue jacket, fingerless inventory gloves, and a scuffed slate tethered to the counter, taps four green issue fields. Behind Nara, Orrin Dax, a broad older light-brown human rigger with graying hair, jaw frost scar, patched brown-orange work jacket, and old anchor hook, delivers a deadpan aside. Teth Inkwise, a mottled blue-gray cephalopod with multiple tentacles arranged through an open mobile harness, dark expressive eyes, padded support loops, humidity ring, and translucent oxygenation tubes, angles the harness translator toward the joke. Numbered fittings hang in cold blue rows behind Eli; the amber route clock and yellow floor line remain visible.",
+        "visible_characters": [
+          {"agent_id": "nara_7", "default_stance": "wrist offered across counter, precise and still", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "eli_venn", "default_stance": "tapping four green fields on tethered slate", "visual_ref": "visual_character_refs.characters.eli_venn"},
+          {"agent_id": "orrin_dax", "default_stance": "waiting behind Nara with anchor hook", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "teth_inkwise", "default_stance": "harness translator angled toward the counter", "visual_ref": "visual_character_refs.characters.teth_inkwise"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "name_chain >= 2", "modifier_prompt": "Orrin and Teth angle visibly toward Nara in shared recognition while Eli's mouth shows a restrained almost-smile."},
+          {"trigger": "public_exposure >= 1", "modifier_prompt": "The ceiling camera status eye shifts from idle gray toward a faint recording blue."}
+        ],
+        "visual_continuity_notes": [
+          "The official slate owns four green fields. The worker joke has no fifth field on the display."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_private_name_mark",
+        "ink_anchor": "ritual_choice.mark_private_name",
+        "base_image_prompt": "Close hand-and-object frame at the worker-side counter lip. Nara-7's pale gray-brown engineered hand with faint wrist interface lines presses a chipped blue tactile disk into a palm-sized secondary return board made of grease-dark composite. Short string knots and shallow grease slashes connect the colored chips to the lower edges of numbered supplier pegs. Eli Venn's fingerless-gloved hand turns the board a little farther beneath the counter lip. Above it, caged gray limiter couplers hang under cold blue inventory bars; the overhead camera sees the clean counter surface while the lip occludes the named return board.",
+        "visible_characters": [
+          {"agent_id": "nara_7", "default_stance": "only hand and wrist visible pressing the blue chip", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "eli_venn", "default_stance": "only gloved hand visible rotating the board", "visual_ref": "visual_character_refs.characters.eli_venn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Rain-Again's private identifiers are a chipped blue tactile disk, short-short return knot, diagonal rim scratch, and double click."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_wrong_coupler_closeup",
+        "ink_anchor": "kit_handoff",
+        "base_image_prompt": "Pivotal closeup of a wrong limiter bus coupler at Nara-7's left neck fitting. Nara is a slender pale gray-brown engineered humanoid with close-cropped dark hair, faint subdermal interface lines, and a numbered gray skinsuit collar opened around the fitting. Her precise fingers hold a smooth gray coupler catch just away from the skin. The inner metal rim is clean and smooth; a second coupler hanging on supplier peg fourteen in the background has a diagonal repair scratch and a chipped blue tactile marker. A cold blue issue slate at the edge of frame shows an abstract green match bar while the amber route clock reads visually as four remaining segments.",
+        "visible_characters": [
+          {"agent_id": "nara_7", "default_stance": "fingers holding the silent coupler open below left ear", "visual_ref": "visual_character_refs.characters.nara_7"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The wrong coupler has a smooth rim and silent catch. Rain-Again has a diagonal scratch, double click, and chipped blue marker."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_trace_private_name",
+        "ink_anchor": "trace_choice.trace_by_private_name",
+        "base_image_prompt": "Object-tracing medium closeup at the Kappa issue counter. Nara-7, a slender engineered humanoid in a gray numbered VitaForge skinsuit, compares three visible identifiers: the diagonal scratch on a gray coupler hanging at peg fourteen, the broken corner of a blue tactile chip on the return board below the counter lip, and two small movement marks beside the coupler catch suggesting its double click. Her left neck fitting remains open. Eli Venn watches from behind the caged supplier row with his green-gray jacket and tethered slate. The amber route clock loses one segment while the official inventory bar stays green.",
+        "visible_characters": [
+          {"agent_id": "nara_7", "default_stance": "comparing scratched rim, blue chip, and fitting", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "eli_venn", "default_stance": "watching from behind supplier row", "visual_ref": "visual_character_refs.characters.eli_venn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Peg fourteen is reachable from Eli's side of the counter and visible from Nara's yellow-line position."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_trace_with_teth",
+        "ink_anchor": "trace_choice.trace_with_teth",
+        "base_image_prompt": "Harness-side medium shot across the issue alcove. Teth Inkwise, a large mottled blue-gray uplifted cephalopod with expressive dark eyes and multiple flexible tentacles, rotates autonomously in a compact open dry-operation work harness with padded body loops, humidity ring, translucent oxygenation tubes, utility socket, and curved tool rail. From this side angle, two tentacle tips indicate a short-short string knot aligned with the chipped blue tactile marker and supplier peg fourteen. Nara-7, a slender gray-suited engineered humanoid, follows the line with one finger. The equipment reads as mobile work support in a scuffed industrial alcove; the bolted counter, caged couplers, route hatch, and amber clock remain visible.",
+        "visible_characters": [
+          {"agent_id": "teth_inkwise", "default_stance": "rotated in mobile harness with two tentacle tips indicating the knot", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "nara_7", "default_stance": "following the knot-to-peg alignment with one finger", "visual_ref": "visual_character_refs.characters.nara_7"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Teth's harness is open mobile support equipment. Tentacles, not human hands or arms, point to the return strings."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_trace_with_orrin",
+        "ink_anchor": "trace_choice.trace_with_baseline_witness",
+        "base_image_prompt": "Medium witness frame at the yellow issue line. Orrin Dax, a broad older baseline human with weathered light-brown skin, close graying hair, rough stubble, pale frost scar along his jaw, patched brown-orange anchor jacket, heavy gloves, and magnetic boots, braces his old dark anchor hook in a floor slot and leans toward two gray couplers on the counter. One rim is smooth; the other has a diagonal repair scratch. Nara-7 stands opposite in a numbered gray skinsuit with her left neck fitting open. Eli Venn adds a blank witness field to the tethered slate. The secondary return board remains hidden under the counter lip; the ceiling camera status eye is faint blue.",
+        "visible_characters": [
+          {"agent_id": "orrin_dax", "default_stance": "hook braced in floor slot, leaning toward the two rims", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "nara_7", "default_stance": "holding two couplers apart for inspection", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "eli_venn", "default_stance": "adding blank witness field behind counter", "visual_ref": "visual_character_refs.characters.eli_venn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Orrin does not cross the bolted counter. The floor slot lets him rest the hook and lean within viewing distance."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_test_official_match",
+        "ink_anchor": "trace_choice.test_official_match",
+        "base_image_prompt": "Tight bodily test frame under cold inventory light. Nara-7, a slender pale gray-brown engineered humanoid with close dark hair, faint neck and wrist interface lines, and a numbered gray skinsuit, closes the smooth silent coupler below her left ear. A pale pressure crescent forms under the fitting. Her left hand opens half a beat behind the right, fingers visibly delayed. Eli Venn watches from behind the counter; Teth Inkwise's dark cephalopod eyes and open support harness are visible from the side. The issue slate glows green while the body posture says the match is wrong.",
+        "visible_characters": [
+          {"agent_id": "nara_7", "default_stance": "testing the coupler, left fingers delayed", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "eli_venn", "default_stance": "watching the hand lag from behind counter", "visual_ref": "visual_character_refs.characters.eli_venn"},
+          {"agent_id": "teth_inkwise", "default_stance": "watching from harness-side", "visual_ref": "visual_character_refs.characters.teth_inkwise"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The pale pressure crescent begins below Nara's left ear and darkens only in the spare ending."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_route_clock",
+        "ink_anchor": "clock_fold|commit_choice",
+        "base_image_prompt": "Decision-threshold wide-medium view of the compact issue alcove. The bolted counter holds two gray limiter couplers with different metal rims. The caged supplier row behind the clerk includes a clearly visible peg fourteen. The secondary return board of blue and yellow tactile chips, short string knots, and grease marks sits below the worker-side counter lip. A slender pale gray-brown engineered humanoid worker in a numbered gray skinsuit waits at the yellow line with the left neck fitting open; a compact dark-skinned human clerk with shaved head, amber spectacles, and green-gray jacket stands between the tethered issue slate and caged supplier rows; a broad older human rigger in a patched brown-orange jacket waits by the floor hook slot; a mottled blue-gray cephalopod worker occupies an open mobile harness in the harness-side lane. The sliding route hatch to the curved service ring and its segmented amber clock dominate frame right; the ceiling camera above the counter has a visible gray status eye.",
+        "visible_characters": [
+          {"agent_id": "nara_7", "default_stance": "at yellow line between two fittings and route hatch", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "eli_venn", "default_stance": "behind counter with slate lowered", "visual_ref": "visual_character_refs.characters.eli_venn"},
+          {"agent_id": "orrin_dax", "default_stance": "beside hook slot, available as witness", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "teth_inkwise", "default_stance": "in harness-side lane facing the second board", "visual_ref": "visual_character_refs.characters.teth_inkwise"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "rain_again_found", "modifier_prompt": "Show the diagonally scratched gray coupler at peg fourteen aligned with the chipped blue tactile marker and short-short knot."},
+          {"trigger": "not rain_again_found", "modifier_prompt": "Show the smooth coupler closed at Nara's left ear with a pale pressure crescent; peg fourteen carries a generic clean-rimmed gray fitting, and the tactile chips sit in scattered positions."},
+          {"trigger": "orrin_witness", "modifier_prompt": "Show Orrin's old anchor hook braced in the floor slot and a blank witness field glowing on Eli's slate."},
+          {"trigger": "name_chain >= 3", "modifier_prompt": "Make the blue chip, short-short knot, and grease slash visibly align as three redundant marks on the secondary board."},
+          {"trigger": "public_exposure >= 2", "modifier_prompt": "Turn the overhead counter camera status eye a clear recording blue."},
+          {"trigger": "route_minutes <= 2", "modifier_prompt": "Reduce the route clock to two red-amber segments, casting urgent warm light across the yellow line."}
+        ],
+        "visual_continuity_notes": [
+          "The camera cannot see the board under the lip, but it can see faces, hands, couplers placed on top of the counter, and Orrin's witness position."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_ending_named_record",
+        "ink_anchor": "ending_record_protects|ending_record_cost",
+        "base_image_prompt": "Incident-record aftermath at a bolted steel-composite issue counter inside a compact Pallas habitat alcove. Caged rows of gray fittings glow cold blue behind the clerk; a yellow worker line, amber route hatch clock, overhead blue recording eye, and grease-dark tactile board beneath the counter lip define the frame. Nara-7, a slender gray-suited engineered humanoid worker, places two gray couplers under the recording eye: one smooth-rimmed and one with a diagonal repair scratch and chipped blue marker. Eli Venn, a compact dark-skinned human clerk in a green-gray jacket and amber spectacles, enters an extra local term into the tethered slate beside abstract serial bars, scratch and click glyphs, and a witness field. Teth Inkwise, a mottled blue-gray cephalopod in an open mobile dry-operation harness, reaches one tentacle beneath the counter lip toward a tactile chip.",
+        "visible_characters": [
+          {"agent_id": "nara_7", "default_stance": "two couplers turned toward the recording eye", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "eli_venn", "default_stance": "entering the named physical chain on slate", "visual_ref": "visual_character_refs.characters.eli_venn"},
+          {"agent_id": "teth_inkwise", "default_stance": "one tentacle moving a tactile chip beneath the lip", "visual_ref": "visual_character_refs.characters.teth_inkwise"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "ending_label == named_record_protects_worker", "modifier_prompt": "Show the scratched coupler, chipped blue marker, double-click glyph, and witness field joined in one coherent incident row while the route hatch closes for Nara."},
+          {"trigger": "ending_label == named_record_exposes_chain", "modifier_prompt": "Show three gray couplers sealed inside amber quarantine sleeves and an empty origin field blinking on the slate as the queue bunches behind the yellow line."},
+          {"trigger": "orrin_witness", "modifier_prompt": "Add Orrin's gloved signature press on the witness plate beside his braced old anchor hook."}
+        ],
+        "visual_continuity_notes": [
+          "Teth can reach the lowest tactile chip from the harness-side lane while remaining outside the caged supplier area."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_ending_quiet_exchange",
+        "ink_anchor": "ending_quiet_chain_holds|ending_quiet_chain_frays",
+        "base_image_prompt": "Quiet exchange aftermath below the counter's camera line. Nara-7 wears the diagonally scratched gray coupler below her left ear; the fitting sits flat and its catch is pictured at the second click. Eli Venn faces the amber route clock while his hands remain visibly still above the clean counter. Teth Inkwise uses two cephalopod tentacle tips to align colored tactile chips and short string knots on the secondary return board under the lip. Orrin Dax collects his old anchor hook from the floor slot. The official issue slate stays green; the worker-side board carries the physical continuity.",
+        "visible_characters": [
+          {"agent_id": "nara_7", "default_stance": "correct scratched coupler fitted flat below left ear", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "eli_venn", "default_stance": "watching the route clock, hands above counter", "visual_ref": "visual_character_refs.characters.eli_venn"},
+          {"agent_id": "teth_inkwise", "default_stance": "two tentacle tips aligning return marks beneath lip", "visual_ref": "visual_character_refs.characters.teth_inkwise"},
+          {"agent_id": "orrin_dax", "default_stance": "lifting anchor hook from floor slot", "visual_ref": "visual_character_refs.characters.orrin_dax"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "ending_label == quiet_named_mutual_aid", "modifier_prompt": "Show a complete grease slash connecting the prior serial position to peg fourteen, with blue chip and short-short knot aligned; the route hatch remains open."},
+          {"trigger": "ending_label == quiet_exchange_without_durable_mark", "modifier_prompt": "Show Rain-Again correctly fitted while another coupler hangs above an incomplete knot; Teth adds one new short-short knot as the route hatch begins to close."}
+        ],
+        "visual_continuity_notes": [
+          "The official slate has no private name. Eli's useful inattention is visible as posture, not a secret terminal action."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_ending_narrow_witness",
+        "ink_anchor": "ending_narrow_witness",
+        "base_image_prompt": "Narrow correction aftermath at the yellow line. Orrin Dax, a broad weathered human rigger in a patched brown-orange jacket, presses a gloved signature plate beside two couplers displayed rim-up: one smooth and one diagonally scratched. His old anchor hook remains braced in the floor slot. Nara-7 stands beside him in the gray numbered VitaForge skinsuit with the scratched coupler fitted below her left ear. Eli Venn corrects one abstract duplicate-serial row on the tethered slate. The secondary return board stays below the counter lip, physically present and absent from the clean correction frame; the route hatch shows one remaining amber segment.",
+        "visible_characters": [
+          {"agent_id": "orrin_dax", "default_stance": "pressing witness plate beside two rims", "visual_ref": "visual_character_refs.characters.orrin_dax"},
+          {"agent_id": "nara_7", "default_stance": "beside Orrin with correct coupler fitted", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "eli_venn", "default_stance": "correcting duplicate serial row", "visual_ref": "visual_character_refs.characters.eli_venn"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "public_exposure >= 2", "modifier_prompt": "Turn the camera status eye recording blue and frame both metal rims and Orrin's witness press."},
+          {"trigger": "route_minutes <= 2", "modifier_prompt": "Show one red-amber route-clock segment and Nara remaining behind the yellow line as the main queue clears."}
+        ],
+        "visual_continuity_notes": [
+          "The witness covers only the physical mismatch. No visible private names appear on the official slate."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_ending_spare_cost",
+        "ink_anchor": "ending_spare_body_cost",
+        "base_image_prompt": "Two-beat aftermath composed as a restrained split frame. On the left, Nara-7 works the shallow loop-inner manifold face just beyond Service Ring Kappa's route hatch, wearing a numbered gray VitaForge skinsuit and a smooth gray coupler that presses a darkening crescent below her left ear; one hand moves slightly late as amber pipework, gauges, patch plates, and ribbed shell supports surround the shorter route. On the right, back at the compact issue counter during break, Teth Inkwise in a mottled blue-gray cephalopod body and open mobile dry-operation harness places Rain-Again's chipped blue tactile marker into the lowest row beneath the counter lip. The clean issue slate and gray camera eye remain above the hidden board.",
+        "visible_characters": [
+          {"agent_id": "nara_7", "default_stance": "working the short manifold route with darkened pressure crescent", "visual_ref": "visual_character_refs.characters.nara_7"},
+          {"agent_id": "teth_inkwise", "default_stance": "placing blue tactile marker with one tentacle beneath counter lip", "visual_ref": "visual_character_refs.characters.teth_inkwise"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "public_exposure <= 0", "modifier_prompt": "Keep the counter camera eye idle gray while the hidden blue chip sits in the lowest return-board row."},
+          {"trigger": "public_exposure > 0", "modifier_prompt": "Turn the counter camera eye recording blue toward the clean route-change slate while the counter lip occludes Teth's blue chip."}
+        ],
+        "visual_continuity_notes": [
+          "This is an explicit split-frame montage across the line-issue counter and the nearby short manifold route, not one co-located view.",
+          "Nara's pressure crescent is below the left ear; Teth remains cephalopod and uses a tentacle to place the chip."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "worker_fifth_line",
+        "trigger": "branch_label == answer_shift_joke",
+        "apply_to_visual_scene_ids": ["patina_issue_liturgy"],
+        "modifier_prompt": "Nara turns slightly toward Orrin's deadpan answer; Teth's translator points toward the exchange; Eli holds a tightly restrained almost-smile while the four official fields stay green."
+      },
+      {
+        "modifier_id": "private_blue_chip",
+        "trigger": "branch_label == mark_private_name",
+        "apply_to_visual_scene_ids": ["patina_private_name_mark", "patina_route_clock"],
+        "modifier_prompt": "Place the chipped blue tactile disk firmly in the grease-dark second board below the counter lip."
+      },
+      {
+        "modifier_id": "teth_harness_side_trace",
+        "trigger": "branch_label == trace_with_teth",
+        "apply_to_visual_scene_ids": ["patina_trace_with_teth", "patina_route_clock"],
+        "modifier_prompt": "Align Teth's two pointing tentacle tips with the short-short knot, blue chip, and peg fourteen sightline."
+      },
+      {
+        "modifier_id": "orrin_physical_witness",
+        "trigger": "orrin_witness",
+        "apply_to_visual_scene_ids": ["patina_route_clock", "patina_ending_named_record", "patina_ending_narrow_witness"],
+        "modifier_prompt": "Show Orrin's old anchor hook braced in the floor slot and his blank or signed witness field beside the two distinct metal rims."
+      },
+      {
+        "modifier_id": "rain_again_located",
+        "trigger": "rain_again_found",
+        "apply_to_visual_scene_ids": ["patina_route_clock", "patina_ending_named_record", "patina_ending_quiet_exchange", "patina_ending_narrow_witness"],
+        "modifier_prompt": "Show the familiar coupler through its diagonal repair scratch, chipped blue tactile marker, and flat fit below Nara's left ear when worn."
+      },
+      {
+        "modifier_id": "red_route_minute",
+        "trigger": "route_minutes <= 2",
+        "apply_to_visual_scene_ids": ["patina_route_clock", "patina_ending_named_record", "patina_ending_quiet_exchange", "patina_ending_narrow_witness"],
+        "modifier_prompt": "Reduce the segmented route clock to one or two red-amber bars and cast their warm warning light across the yellow issue line."
+      },
+      {
+        "modifier_id": "blue_camera_exposure",
+        "trigger": "public_exposure >= 2",
+        "apply_to_visual_scene_ids": ["patina_route_clock", "patina_ending_named_record", "patina_ending_narrow_witness"],
+        "modifier_prompt": "Turn the overhead camera status eye clear blue and aim its visible field at hands, faces, witness plate, and couplers above the counter."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "pallas_yard_twelve_kappa_line_issue_alcove.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Compact rectangular issue alcove on the loop-outer worker staging side of Service Ring Kappa, with one linear worker route and a counter dividing public issue space from supplier inventory space.",
+      "fixed_zones": [
+        {"zone_id": "muster_entry", "visible_form": "scuffed pressure door at frame-left end of worker lane", "used_for": "queue arrival from timekeeping and muster corridor"},
+        {"zone_id": "yellow_issue_line", "visible_form": "worn transverse yellow stripe one arm's reach from counter", "used_for": "Nara and witness staging"},
+        {"zone_id": "bolted_issue_counter", "visible_form": "waist-high steel-composite counter fixed across room width with one clerk opening", "used_for": "kit handoff, object comparison, witness plate, and incident record"},
+        {"zone_id": "supplier_cages", "visible_form": "locked mesh-and-glass cabinets behind Eli with numbered gray fitting pegs and cold blue inventory bars", "used_for": "supplier custody and peg fourteen"},
+        {"zone_id": "second_return_board", "visible_form": "palm-high grease-dark board with tactile chips, knots, and grease marks below worker-side counter lip", "used_for": "private object continuity and quiet exchange"},
+        {"zone_id": "harness_side_lane", "visible_form": "wide clear strip beside counter with floor clips and an open rack of humidity rings, tubes, and support loops", "used_for": "Teth's mobile harness rotation and board sightline"},
+        {"zone_id": "anchor_hook_slot", "visible_form": "reinforced floor slot beside the yellow line", "used_for": "Orrin's hook rest and stable witness reach"},
+        {"zone_id": "kappa_route_hatch", "visible_form": "sliding industrial hatch at frame-right end with segmented amber route clock above it", "used_for": "shift release into Service Ring Kappa"},
+        {"zone_id": "counter_camera", "visible_form": "small ceiling camera above worker line with gray or blue status eye", "used_for": "public exposure state"}
+      ],
+      "routes": [
+        {"route_id": "worker_flow", "path": "muster_entry -> yellow_issue_line -> kappa_route_hatch", "users": ["nara_7", "orrin_dax"]},
+        {"route_id": "clerk_inventory", "path": "clerk opening -> bolted_issue_counter -> supplier_cages", "users": ["eli_venn"]},
+        {"route_id": "harness_side_access", "path": "muster_entry wide turn -> harness_side_lane -> kappa_route_hatch", "users": ["teth_inkwise"]}
+      ],
+      "occluders": [
+        {"occluder_id": "counter_lip", "blocks": "counter_camera direct view of second_return_board", "does_not_block": "Nara, Eli, or Teth at close range"},
+        {"occluder_id": "supplier_cage_bank", "blocks": "worker access to clerk-side fittings", "does_not_block": "worker sightline to numbered pegs through mesh and glass"}
+      ],
+      "camera_slots": [
+        {"camera_id": "wide_worker_route", "supports_visual_scene_ids": ["patina_issue_alcove_establishing", "patina_route_clock"]},
+        {"camera_id": "counter_medium", "supports_visual_scene_ids": ["patina_issue_liturgy", "patina_trace_with_orrin", "patina_ending_named_record", "patina_ending_narrow_witness"]},
+        {"camera_id": "object_macro", "supports_visual_scene_ids": ["patina_private_name_mark", "patina_wrong_coupler_closeup", "patina_trace_private_name"]},
+        {"camera_id": "harness_side", "supports_visual_scene_ids": ["patina_trace_with_teth", "patina_ending_quiet_exchange"]},
+        {"camera_id": "body_test_close", "supports_visual_scene_ids": ["patina_test_official_match"]},
+        {"camera_id": "split_aftermath", "supports_visual_scene_ids": ["patina_ending_spare_cost"]}
+      ],
+      "staging_slots": [
+        {"slot_id": "nara_issue", "zone_id": "yellow_issue_line", "allowed_movement": "counter reach, left-ear fitting inspection, route-hatch exit"},
+        {"slot_id": "eli_clerk", "zone_id": "bolted_issue_counter", "allowed_movement": "slate, witness plate, supplier peg, and board reach"},
+        {"slot_id": "orrin_queue", "zone_id": "anchor_hook_slot", "allowed_movement": "brace hook, lean to inspect counter rims, sign witness plate"},
+        {"slot_id": "teth_harness", "zone_id": "harness_side_lane", "allowed_movement": "rotate mobile harness, read return strings, reach lowest board row with tentacle"}
+      ],
+      "state_anchors": [
+        {"anchor_id": "rain_again_identity", "states": ["unlocated", "peg_fourteen", "fitted_to_nara"], "visible_form": "diagonal rim scratch, chipped blue marker, short-short knot, flat fit"},
+        {"anchor_id": "route_clock", "states": ["four_amber", "two_red_amber", "one_red_amber", "closed"], "visible_form": "segmented light bar above Kappa route hatch"},
+        {"anchor_id": "camera_exposure", "states": ["idle_gray", "recording_blue"], "visible_form": "single colored status eye above counter"},
+        {"anchor_id": "nara_pressure_mark", "states": ["absent", "pale_crescent", "darkened_crescent"], "visible_form": "curved pressure mark below left ear"}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character identities for prompt assembly. Include only refs for characters visible in a selected scene.",
+    "prompt_assembly_rule": "Use the matching character objects only for visible_characters listed by the selected scene; the standalone base prompt remains sufficient if refs are unavailable.",
+    "characters": {
+      "nara_7": {
+        "display_name": "Nara-7",
+        "species_or_body": "engineered humanoid seal technician, VitaForge BioDrone Standard labor line",
+        "stable_visual_description": "Slender engineered humanoid worker with smooth androgynous features, close-cropped dark hair, pale gray-brown skin with faint subdermal route-interface lines at wrists and neck, and a clean gray numbered seal-technician skinsuit with a small VitaForge BioDrone Standard batch tag. The left-side interface fitting sits below the ear. Movements are precise and economical; hands frequently inspect rims, catches, and tactile marks.",
+        "silhouette_notes": "Still, narrow, controlled humanoid silhouette; gray suit and left neck fitting remain easy to read against the counter and amber hatch light.",
+        "do_not_change": ["gray numbered skinsuit", "VitaForge batch tag", "faint wrist and neck interface lines", "left-ear fitting", "slender engineered humanoid silhouette"]
+      },
+      "eli_venn": {
+        "display_name": "Eli Venn",
+        "species_or_body": "baseline human issue clerk",
+        "stable_visual_description": "Compact middle-aged baseline human with deep-brown skin, shaved head, rectangular amber spectacles, tired eyes, and a green-gray AU issue-counter jacket with reinforced elbows. Wears fingerless inventory gloves and keeps a scuffed rectangular slate tethered to the counter by a short black cable. His care appears as small changes in hand position and where he aims his attention.",
+        "silhouette_notes": "Compact clerk silhouette behind a waist-high counter, one hand near slate and one near supplier pegs.",
+        "do_not_change": ["deep-brown skin", "shaved head", "amber rectangular spectacles", "green-gray issue jacket", "tethered scuffed slate", "fingerless inventory gloves"]
+      },
+      "orrin_dax": {
+        "display_name": "Orrin Dax",
+        "species_or_body": "baseline human anchor rigger",
+        "stable_visual_description": "Broad-shouldered baseline human rigger in his late working years, light-brown weathered skin, close-cropped graying hair, rough stubble, and a pale frost scar along one side of his jaw. Wears a patched brown-and-orange anchor-crew work jacket, heavy gloves, magnetic boots, and carries an old dark metal anchor hook.",
+        "silhouette_notes": "Solid, guarded, slightly hunched from rail work; visually tied to the anchor hook and floor slot.",
+        "do_not_change": ["frost scar along jaw", "patched brown-orange jacket", "old anchor hook", "broad baseline human build", "heavy gloves"]
+      },
+      "teth_inkwise": {
+        "display_name": "Teth Inkwise",
+        "species_or_body": "uplifted cephalopod dry-operation shell-artery maintenance specialist",
+        "stable_visual_description": "Large uplifted cephalopod worker with mottled blue-gray skin, expressive dark eyes, and multiple flexible tentacles supported in a compact low-gravity mobile dry-operation harness. The open work-support frame has padded body loops, a bare-minimum humidity ring, translucent oxygenation tubes, utility socket, valve clusters, and curved tool rails. Teth rotates and points with tentacles while the harness remains mobile equipment for dry industrial work.",
+        "silhouette_notes": "Horizontal or suspended nonhuman silhouette in an open mobile harness, with tentacles arranged around support loops and tool rail.",
+        "do_not_change": ["mottled blue-gray cephalopod body", "multiple flexible tentacles", "open mobile dry-operation harness", "humidity ring and oxygenation tubes", "dark expressive eyes"]
+      }
+    }
+  },
+  "review_notes": [
+    "The embedded scene_set preserves one linear worker route, counter authority boundary, camera occlusion, harness-side sightline, and all object state anchors.",
+    "The line-issue alcove is story-local infrastructure attached to the established Service Ring Kappa worker route; it does not redefine the whole ring.",
+    "Prompts use affirmative visible descriptions and preserve VitaForge biodrone provenance separately from Teth's BioElevate uplift support ecology.",
+    "A rendered plan view or blockout remains required before high-consistency multi-angle website images are generated."
+  ]
+}

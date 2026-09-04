@@ -1,0 +1,305 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.patina-borrowed-names-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "biodrone",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md",
+      "title": "Biodrone",
+      "line_start": 1,
+      "line_end": 43,
+      "relevance": "Primary owner of BioDrone Standard provenance, distributed control, supplier dependence, administrative misreading, and the Patina-authored Pallas line-kit naming practice."
+    },
+    {
+      "source_id": "vitaforge",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/VitaForge.md",
+      "title": "VitaForge",
+      "line_start": 1,
+      "line_end": 7,
+      "relevance": "Grounds VitaForge as the supplier of BioDrone Standard labor lines and preserves its authority boundary from BioElevate."
+    },
+    {
+      "source_id": "pallas-species-strikes",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Pallas Species Strikes.md",
+      "title": "Pallas Species Strikes",
+      "line_start": 1,
+      "line_end": 15,
+      "relevance": "Grounds the 2719-2724 Pallas Bloom Cluster, mixed AU supplier ecology, distinct liability channels, technical chokepoints, and cross-category worker coordination."
+    },
+    {
+      "source_id": "aeronautics-unlimited",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+      "title": "Aeronautics Unlimited",
+      "line_start": 1,
+      "line_end": 29,
+      "relevance": "Grounds ramps, shift assignment, claimshares, supplier-separated labor, maintenance budgets, and AU's authority through access and schedule."
+    },
+    {
+      "source_id": "bioelevate",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/BioElevate.md",
+      "title": "BioElevate",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds Teth's dry-operation uplift support ecology while preventing BioElevate from owning Nara's VitaForge product line."
+    },
+    {
+      "source_id": "uplift",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+      "title": "Uplift",
+      "line_start": 1,
+      "line_end": 13,
+      "relevance": "Grounds the difference between uplift and biodrone provenance, employer-bound support interfaces, and Pallas cross-category coordination."
+    },
+    {
+      "source_id": "awakened-labor-front",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Awakened Labor Front.md",
+      "title": "Awakened Labor Front",
+      "line_start": 1,
+      "line_end": 5,
+      "relevance": "Grounds the later convergence of biodrone rights, workplace sabotage, and labor organizing without making this morning routine a mature movement."
+    },
+    {
+      "source_id": "pallas-maintenance-assemblies",
+      "path": "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+      "title": "Pallas Strike Maintenance Assemblies",
+      "line_start": 1,
+      "line_end": 108,
+      "relevance": "Grounds the limiter bus coupler, audit-port seal, compliance recorder, diagnostic adapter, dry-operation harness, and Kappa maintenance object classes."
+    },
+    {
+      "source_id": "bloom-systems-walkthroughs",
+      "path": "Aetheria/Brainstorming/Technology/Bloom Habitat Systems Walkthroughs.md",
+      "title": "Bloom Habitat Systems Walkthroughs",
+      "line_start": 1,
+      "line_end": 234,
+      "relevance": "Brainstorming geometry for the worker route through shift gate, equipment issue, muster corridor, Service Ring Kappa, and the distinct supervisor and cephalopod support paths."
+    },
+    {
+      "source_id": "narrative-themes",
+      "path": "Aetheria/Narrative Themes.md",
+      "title": "Narrative Themes",
+      "line_start": 1,
+      "line_end": 53,
+      "relevance": "Grounds administrative personhood, mutable-body maintenance dependence, institutions without one mind, and quiet care that increases agency."
+    },
+    {
+      "source_id": "pallas-existing-fixture",
+      "path": "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
+      "title": "Pallas Species Strikes Branch-and-Fold Fixture",
+      "line_start": 1,
+      "line_end": 511,
+      "relevance": "Ghostlight draft continuity for Yard Twelve, Service Ring Kappa, Nara-7, Orrin Dax, Teth Inkwise, and the established local geometry reused by this bounded pre-pressure fixture."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Early Pallas Species Strikes era, 2719-2724; one ordinary morning before Kappa route release",
+    "location": "Pallas Yard Twelve, the line-issue alcove off the loop-outer worker staging side of Service Ring Kappa",
+    "summary": "A BioDrone Standard worker discovers that the official serial matches while the physical limiter coupler does not. The shift must choose whether a private object name becomes evidence, stays inside a quiet return practice, or yields to a clean issue record that exports the cost into the worker's body.",
+    "public_facts": [
+      {
+        "text": "AU Pallas yards place VitaForge biodrones, BioElevate uplift lines, baseline workers, supervisors, and local contractors inside one maintenance ecology while administering them through separate liability categories.",
+        "source_refs": ["pallas-species-strikes", "aeronautics-unlimited", "biodrone"]
+      },
+      {
+        "text": "BioDrone Standard interfaces can carry instruction, authorization, diagnostic information, compliance enforcement, legal exposure, and memory-continuity risk.",
+        "source_refs": ["biodrone", "pallas-maintenance-assemblies"]
+      },
+      {
+        "text": "Pallas line kits are individually fitted but remain split among AU route control, VitaForge interface records, and contractor maintenance; workers use private names and secondary return marks to catch physical mismatches that serial ledgers miss.",
+        "source_refs": ["biodrone"]
+      },
+      {
+        "text": "Service Ring Kappa receives workers through a shift gate, timekeeping, equipment issue, and muster corridor; authority reaches the ring by a cleaner gallery route.",
+        "source_refs": ["bloom-systems-walkthroughs", "aeronautics-unlimited"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "A route clock converts careful fitting and mutual aid into lost minutes, claimshare pressure, and an answerable worker name.",
+        "source_refs": ["aeronautics-unlimited", "biodrone"]
+      },
+      {
+        "text": "An official incident can protect Nara from a behavioral-drift interpretation while exposing the workers and clerk who maintained the unofficial continuity layer.",
+        "source_refs": ["biodrone", "pallas-species-strikes"]
+      },
+      {
+        "text": "Teth and Orrin can help from their own bodily and labor positions without collapsing uplift, baseline, and biodrone categories into one legal status.",
+        "source_refs": ["uplift", "pallas-species-strikes", "bioelevate"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "vitaforge-biodrone-shift",
+      "label": "VitaForge BioDrone Standard seal technicians",
+      "group_type": "subcontracted_engineered_labor",
+      "institutional_logic": ["Arrive as individually tagged supplier capacity and clear AU route release through fitted interface hardware."],
+      "material_incentives": ["Receive the familiar fitting", "Keep work clearance", "Avoid bodily discomfort", "Preserve shift credit", "Keep helpers out of supplier discipline"],
+      "internal_virtues": ["Object memory", "Precise naming", "Quiet correction", "Returning a fitting to its usual wearer"],
+      "internal_shames": ["Trusting a green ledger over a known body", "Letting a helper carry all audit exposure"],
+      "prestige_markers": ["Recognizing a part by sound or scratch", "Catching a swap before route release", "Leaving a useful return mark"],
+      "taboo_triggers": ["Calling fitted hardware interchangeable", "Treating pain as product behavior"],
+      "emotional_display_norms": ["Concern travels through object inspection, clipped correction, shared marks, and work jokes more readily than confession."],
+      "trust_defaults": ["Trusts repeated physical fit and cross-shift return memory before supplier serial cleanliness."],
+      "speech_register_cues": ["Short literal statements", "Private object names", "Dry answers to corporate call-and-response", "Tactile demonstration"],
+      "source_refs": ["biodrone", "vitaforge", "pallas-species-strikes"]
+    },
+    {
+      "group_id": "au-line-issue",
+      "label": "AU line-issue and timekeeping staff",
+      "group_type": "ramp_operations",
+      "institutional_logic": ["Release only bodies, kits, routes, and return obligations that agree on the shift slate."],
+      "material_incentives": ["Clear the queue", "Avoid supplier disputes", "Keep incident ownership narrow", "Protect route throughput"],
+      "internal_virtues": ["Clean issue rows", "Fast release", "No unexplained inventory", "Bounded local correction"],
+      "internal_shames": ["A red queue", "A duplicate serial", "An unofficial board visible on camera"],
+      "prestige_markers": ["A green shift slate", "A correction that does not travel upward"],
+      "taboo_triggers": ["Worker terminology entering inventory authority", "A local kindness becoming an auditable network"],
+      "emotional_display_norms": ["Care is compressed into moving a board, lowering a voice, or failing to notice one useful act."],
+      "trust_defaults": ["Trusts official tags publicly and experienced clerks' physical memory privately."],
+      "speech_register_cues": ["Four-part issue liturgy", "Inventory nouns", "Time warnings", "Dry understatement"],
+      "source_refs": ["aeronautics-unlimited", "biodrone", "bloom-systems-walkthroughs"]
+    },
+    {
+      "group_id": "kappa-mixed-shift",
+      "label": "Service Ring Kappa mixed maintenance shift",
+      "group_type": "cross_category_work_ecology",
+      "institutional_logic": ["Keep one pressure-and-thermal service circuit working through distinct bodies, contracts, and technical authorities."],
+      "material_incentives": ["Send correctly fitted workers through safe routes", "Preserve claimshare", "Avoid a preventable stoppage", "Keep return knowledge available next shift"],
+      "internal_virtues": ["Competent witness", "Body-specific route judgment", "Useful jokes", "Mutual aid too ordinary to announce"],
+      "internal_shames": ["Leaving another body to pay for a clean schedule", "Turning help into ownership"],
+      "prestige_markers": ["An old tool kept working", "A support rig understood by its wearer", "A queue cleared without sacrificing fit"],
+      "taboo_triggers": ["A supervisor treating distinct support needs as one supplier problem"],
+      "emotional_display_norms": ["Solidarity appears first as a witness signature, a return knot, or a tool placed within reach."],
+      "trust_defaults": ["Trusts shift competence locally while legal categories remain divided."],
+      "speech_register_cues": ["Shift jokes", "Tool names", "Route language", "Supplier-specific correction"],
+      "source_refs": ["pallas-species-strikes", "pallas-existing-fixture", "narrative-themes"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "vitaforge-biodrone-shift.named-but-not-owned",
+      "applies_to": ["vitaforge-biodrone-shift"],
+      "pressure_type": "continuity",
+      "summary": "Workers name calibrated fittings they cannot own because the name preserves a material history the supplier ledger can overwrite.",
+      "projection_use": "Keep names tied to visible scratches, sounds, fit, and custody instead of treating naming as mystical personhood proof.",
+      "source_refs": ["biodrone"]
+    },
+    {
+      "field_id": "au-line-issue.clean-release",
+      "applies_to": ["au-line-issue"],
+      "pressure_type": "throughput",
+      "summary": "The issue counter rewards agreement among tags, kit, route, and return fields even when physical fit contradicts the slate.",
+      "projection_use": "Make administrative pressure visible through the clock, camera, hatch, and limited correction options.",
+      "source_refs": ["aeronautics-unlimited", "bloom-systems-walkthroughs"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "au-line-issue",
+      "target_group_id": "vitaforge-biodrone-shift",
+      "observer_read": ["Useful worker slang", "Potential transfer violation", "Behavior attached to an inventory discrepancy"],
+      "target_self_read": ["A known fitting", "A body-specific warning", "Cross-shift memory"],
+      "misread_patterns": ["Treats object identity as whatever the active serial says", "Treats a fit report as behavior until a baseline witness names the metal"],
+      "likely_insults": ["interchangeable", "clean spare", "product preference"],
+      "projection_use": "Let the same private name protect bodily fit and increase audit exposure.",
+      "source_refs": ["biodrone", "pallas-species-strikes"]
+    },
+    {
+      "observer_group_id": "vitaforge-biodrone-shift",
+      "target_group_id": "au-line-issue",
+      "observer_read": ["A gate that worships agreement", "A clerk who can sometimes misplace his attention usefully"],
+      "target_self_read": ["Neutral issue control", "Local steward of supplier inventory and route readiness"],
+      "misread_patterns": ["Workers may overestimate how long a sympathetic clerk can keep a second board off-camera"],
+      "likely_insults": ["green believer", "fifth-line clerk"],
+      "projection_use": "Keep Eli's help bounded by his counter authority and career exposure.",
+      "source_refs": ["aeronautics-unlimited", "biodrone"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "biodrone-seal-technician",
+      "summary": "A VitaForge engineered worker who knows one familiar coupler through repeated bodily fit and must decide whether that knowledge becomes evidence.",
+      "obligations": ["Clear the Kappa route", "Protect bodily function", "Avoid exposing helpers casually", "Leave the next shift a usable return trail"],
+      "available_masks": ["Exact compliance", "Shift joke", "Object inspection", "Request for narrow correction"],
+      "failure_modes": ["Accepting serial authority over pain", "Publishing an incomplete helper chain", "Quietly fixing one object while losing the next"],
+      "source_refs": ["biodrone", "pallas-existing-fixture"]
+    },
+    {
+      "role_id": "issue-clerk",
+      "summary": "A baseline worker who controls local kit release but not supplier title, AU claimshare policy, or later incident review.",
+      "obligations": ["Clear the queue", "Match tag and kit", "Preserve inventory custody", "Keep local corrections legible"],
+      "available_masks": ["Ritual neutrality", "Clock warning", "Disciplined inattention", "Narrow witness field"],
+      "failure_modes": ["Letting speed override fit", "Making helper names the incident instead of the mismatch", "Pretending the counter has no discretion"],
+      "source_refs": ["aeronautics-unlimited", "biodrone"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "nara_7",
+      "known_context": [
+        {"text": "Nara knows Rain-Again through repeated fit, sound, scratch, and the private return board; she knows the Kappa shift route and the cost of missing release.", "source_refs": ["biodrone", "pallas-existing-fixture"]}
+      ],
+      "beliefs": [
+        {"text": "Nara treats object naming as a practical continuity claim, not as formal title or a complete political program.", "source_refs": ["biodrone"]}
+      ],
+      "misreads": [
+        {"text": "Nara may underestimate how quickly an incident record can turn a mutual-aid trace into a list of helpers.", "source_refs": ["biodrone", "aeronautics-unlimited"]}
+      ],
+      "must_not_know": [
+        {"text": "Nara must not speak as if the later Awakened Labor Front has already interpreted this counter practice for her.", "source_refs": ["awakened-labor-front"]}
+      ]
+    },
+    {
+      "speaker_id": "eli_venn",
+      "known_context": [
+        {"text": "Eli can see the official issue slate, physical fittings at his counter, route clock, camera state, and the local second board.", "source_refs": ["bloom-systems-walkthroughs", "biodrone"]}
+      ],
+      "beliefs": [
+        {"text": "Eli believes a bounded correction is survivable when it does not force the counter to own the whole personhood dispute.", "source_refs": ["narrative-themes"]}
+      ],
+      "misreads": [
+        {"text": "Eli may treat private names as unusually accurate inventory slang while missing their social meaning to the workers who use them.", "source_refs": ["biodrone"]}
+      ],
+      "must_not_know": [
+        {"text": "Eli must not know whether every named fitting practice elsewhere on Pallas has the same meaning or participants.", "source_refs": ["pallas-species-strikes"]}
+      ]
+    },
+    {
+      "speaker_id": "teth_inkwise",
+      "known_context": [
+        {"text": "Teth knows harness-side sightlines, tactile return knots, and the bodily stakes of supplier-owned support equipment, but not VitaForge's private diagnostic record.", "source_refs": ["bioelevate", "pallas-existing-fixture"]}
+      ],
+      "beliefs": [
+        {"text": "Teth treats the right fitting as a shift safety fact across supplier categories.", "source_refs": ["pallas-species-strikes"]}
+      ],
+      "misreads": [],
+      "must_not_know": [
+        {"text": "Teth must not be flattened into a generic biodrone or made subject to VitaForge BioDrone Standard provenance.", "source_refs": ["bioelevate", "uplift"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The routine may foreshadow later Pallas coordination, but the characters do not know it will matter historically and do not call it a movement.",
+      "source_refs": ["pallas-species-strikes", "awakened-labor-front"]
+    },
+    {
+      "text": "Nara's engineered humanoid form is fixture-local continuity from the existing Pallas draft, not a universal BioDrone Standard body plan.",
+      "source_refs": ["biodrone", "pallas-existing-fixture"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "How portable are Pallas private line-kit names across yards and VitaForge service contractors?",
+      "blocks_training": false,
+      "notes": "The lore patch establishes the practice at Pallas ramps and leaves its exact spread, vocabulary, and later formalization open."
+    },
+    {
+      "question": "What exact contract form governs AU's use of a BioDrone Standard worker's body in this yard?",
+      "blocks_training": false,
+      "notes": "The fixture says AU rents the shift from VitaForge, not that one universal lease form owns all biodrone bodies. Supplier title and administrative personhood remain broader setting questions."
+    }
+  ]
+}

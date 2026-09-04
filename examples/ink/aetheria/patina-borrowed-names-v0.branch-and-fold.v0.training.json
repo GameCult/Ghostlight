@@ -1,0 +1,571 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "patina-borrowed-names-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/aetheria/patina-borrowed-names-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/aetheria/patina-borrowed-names-v0.v0.json",
+  "visual_plan_ref": "examples/visual/aetheria/patina-borrowed-names-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "patina-borrowed-names-v0.kappa-line-issue",
+  "protagonist_agent_id": "nara_7",
+  "npc_agent_ids": [
+    "eli_venn",
+    "orrin_dax",
+    "teth_inkwise"
+  ],
+  "purpose": "Interactive Fiction Weaver draft about private names for supplier-owned BioDrone Standard line-kit fittings at Pallas Yard Twelve. Tonal mode: dry shift comedy, tactile workplace intimacy, and low-stakes administrative pressure.",
+  "local_awareness_summary": [
+    {
+      "text": "Nara-7 is one VitaForge BioDrone Standard seal technician with an engineered humanoid body and a fitted interface below her left ear. Her individual body plan is fixture-local, not a universal biodrone template.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/patina-borrowed-names-v0.v0.json",
+        "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md"
+      ]
+    },
+    {
+      "text": "Nara can inspect scratches, catches, sounds, pressure fit, tactile chips, and the counter slate. She cannot inspect VitaForge's remote interface record or know why the serial mismatch occurred.",
+      "source_refs": [
+        "examples/ink/aetheria/patina-borrowed-names-v0.branch-and-fold.v0.ink",
+        "prompts/interactive-fiction-weaver.md"
+      ]
+    },
+    {
+      "text": "The scene begins with ordinary issue-counter liturgy and a familiar shift joke before a wrong coupler creates a bounded conflict among fit, time, evidence, and helper exposure.",
+      "source_refs": [
+        "AGENTS.md",
+        "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective stays with Nara's bodily fit, local sightlines, counter objects, known coworkers, and the four-minute route-release clock.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/aetheria/patina-borrowed-names-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Comedy comes from AU's issue ritual, worker answers, and object-specific knowledge; it must keep the bodily and wage costs legible.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "Aetheria/Narrative Themes.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Eli can release a local kit, open an incident, and accept a witness. He cannot transfer supplier title, settle Nara's legal personhood, or control later VitaForge review.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md"
+        ]
+      },
+      {
+        "text": "Orrin can witness physical metal and sign from baseline labor status. Teth can read the harness-side board and assist with tactile marks. Neither owns Nara's fit decision.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Pallas Species Strikes.md",
+          "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Rain-Again is a supplier-owned limiter bus coupler identified locally by double click, diagonal repair scratch, and blue chipped marker. The official serial, private name, tactile chip, return knot, and physical fitting remain separate claim surfaces.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md",
+          "examples/ink/aetheria/patina-borrowed-names-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every branch changes later fit confidence, route time, name-chain durability, witness strength, evidence exposure, options, or ending texture.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      },
+      {
+        "text": "The smallest hopeful outcome is a usable shared return practice, not a declared movement, rescued worker class, or benevolent corporate reform.",
+        "source_refs": [
+          "Aetheria/Narrative Themes.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Awakened Labor Front.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not treat private naming as legal ownership, metaphysical proof, or a universal BioDrone Standard culture.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md"
+        ]
+      },
+      {
+        "text": "Do not collapse VitaForge biodrone provenance into BioElevate uplift support, or make Teth's harness and Nara's line kit one product family.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/VitaForge.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/BioElevate.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three morning-liturgy responses fold into the kit handoff; four tracing responses fold into the route clock; four final custody choices select six state-gated endings.",
+    "choice_layers": [
+      "morning_liturgy",
+      "trace_the_fitting",
+      "name_or_hide_the_mismatch"
+    ],
+    "variables": [
+      "name_chain",
+      "route_minutes",
+      "fit_confidence",
+      "public_exposure",
+      "orrin_witness",
+      "rain_again_found"
+    ],
+    "ending_gates": [
+      "ending_record_protects",
+      "ending_record_cost",
+      "ending_quiet_chain_holds",
+      "ending_quiet_chain_frays",
+      "ending_narrow_witness",
+      "ending_spare_body_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "answer_official_liturgy",
+      "ink_path": "ritual_choice",
+      "action_type": "speak",
+      "actor_intent": "Preserve route time and keep the worker joke outside the record.",
+      "state_basis": [
+        "Nara knows the required four-part issue response.",
+        "The issue counter can release the queue faster when no local correction is raised."
+      ],
+      "reviewed_consequences": [
+        "Leaves the full four-minute route margin intact while name-chain strength and public exposure remain unchanged; later clock prose and endings read the retained margin."
+      ],
+      "training_hooks": [
+        "corporate_liturgy",
+        "silence_preserves_time"
+      ]
+    },
+    {
+      "branch_id": "answer_shift_joke",
+      "ink_path": "ritual_choice",
+      "action_type": "speak",
+      "actor_intent": "Acknowledge the worker-owned fifth line while accepting minor visibility and delay.",
+      "state_basis": [
+        "Orrin and Teth know the same local fifth-line joke.",
+        "Eli can hear it without entering it in the issue fields."
+      ],
+      "reviewed_consequences": [
+        "Raises name_chain and public_exposure while spending one route minute; later board legibility and camera state change."
+      ],
+      "training_hooks": [
+        "shift_joke_as_social_probe",
+        "wit_with_material_cost"
+      ]
+    },
+    {
+      "branch_id": "mark_private_name",
+      "ink_path": "ritual_choice",
+      "action_type": "touch_object",
+      "actor_intent": "Refresh Rain-Again's private return marker before accepting the fitting.",
+      "state_basis": [
+        "Nara can reach the second board from the yellow line.",
+        "The blue tactile chip identifies a physical history the serial does not preserve."
+      ],
+      "reviewed_consequences": [
+        "Raises name_chain and fit confidence while spending one route minute; later tracing and the quiet-exchange gate become stronger."
+      ],
+      "training_hooks": [
+        "non_speech_continuity_action",
+        "object_name_as_material_memory"
+      ]
+    },
+    {
+      "branch_id": "trace_by_private_name",
+      "ink_path": "trace_choice",
+      "action_type": "inspect_object",
+      "actor_intent": "Use scratch, sound, and tactile marker to locate Rain-Again independently of the active serial.",
+      "state_basis": [
+        "Nara has repeated bodily familiarity with Rain-Again.",
+        "The second board maps private marks to supplier pegs."
+      ],
+      "reviewed_consequences": [
+        "Finds Rain-Again, raises fit confidence and name-chain strength, and spends one route minute; it opens the quiet-exchange option and strengthens the named-record gate."
+      ],
+      "training_hooks": [
+        "embodied_object_recognition",
+        "serial_contradiction"
+      ]
+    },
+    {
+      "branch_id": "trace_with_teth",
+      "ink_path": "trace_choice",
+      "action_type": "request_help",
+      "actor_intent": "Use Teth's harness-side angle and tactile fluency to trace the return marks.",
+      "state_basis": [
+        "Teth can rotate in the mobile dry-operation harness and read the return strings from a different sightline.",
+        "Teth does not need VitaForge ownership to recognize a physical mismatch."
+      ],
+      "reviewed_consequences": [
+        "Finds Rain-Again, raises name-chain strength, and spends one route minute; later prose preserves uplift/biodrone distinction while showing cross-body help."
+      ],
+      "training_hooks": [
+        "cross_body_mutual_aid",
+        "supplier_boundaries_preserved"
+      ]
+    },
+    {
+      "branch_id": "trace_with_baseline_witness",
+      "ink_path": "trace_choice",
+      "action_type": "set_condition",
+      "actor_intent": "Create a baseline witness to the two physical rims before any object changes custody.",
+      "state_basis": [
+        "Orrin can see and touch the fittings from the yellow line.",
+        "A baseline witness changes the available administrative interpretation."
+      ],
+      "reviewed_consequences": [
+        "Finds Rain-Again, creates Orrin's witness, raises public exposure and fit confidence, and spends one route minute; the witness changes later record and narrow-correction prose."
+      ],
+      "training_hooks": [
+        "bounded_witness",
+        "physical_fact_before_identity_claim"
+      ]
+    },
+    {
+      "branch_id": "test_official_match",
+      "ink_path": "trace_choice",
+      "action_type": "use_object",
+      "actor_intent": "Test whether the officially correct coupler is physically usable before delaying the queue.",
+      "state_basis": [
+        "The slate shows green despite Nara's tactile doubt.",
+        "The wrong fit produces a local hand-lag and visible pressure mark."
+      ],
+      "reviewed_consequences": [
+        "Lowers fit confidence while leaving route time intact and Rain-Again unlocated; later clock prose, final option availability, and the named-record gate reflect the weak chain."
+      ],
+      "training_hooks": [
+        "administrative_truth_tested_on_body",
+        "time_bought_with_discomfort"
+      ]
+    },
+    {
+      "branch_id": "record_borrowed_name",
+      "ink_path": "commit_choice",
+      "action_type": "commit_record",
+      "actor_intent": "Use the private name and physical identifiers as formal evidence that the serial ledger is wrong.",
+      "state_basis": [
+        "A strong record needs Rain-Again located and fit confidence at three or above.",
+        "The incident can protect Nara while exposing the second board and helpers."
+      ],
+      "reviewed_consequences": [
+        "Raises public exposure, spends two route minutes, and selects a protected or exposed-chain ending based on the prior object evidence."
+      ],
+      "training_hooks": [
+        "private_name_enters_record",
+        "evidence_exposes_helpers",
+        "state_gated_ending"
+      ]
+    },
+    {
+      "branch_id": "quiet_named_exchange",
+      "ink_path": "commit_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Return the correct fittings by the second board while withholding the private continuity layer from the official ledger.",
+      "state_basis": [
+        "This choice is available only after Rain-Again is found.",
+        "A strong name chain can preserve the next shift as well as the current one."
+      ],
+      "reviewed_consequences": [
+        "Spends one route minute and selects a durable or frayed quiet-mutual-aid ending based on name_chain."
+      ],
+      "training_hooks": [
+        "quiet_mutual_aid",
+        "memory_surface_matters",
+        "state_gated_ending"
+      ]
+    },
+    {
+      "branch_id": "narrow_witness_correction",
+      "ink_path": "commit_choice",
+      "action_type": "request_witness",
+      "actor_intent": "Correct only the physical serial mismatch while keeping the private names and helper network outside the form.",
+      "state_basis": [
+        "This choice is available only after Rain-Again has been located.",
+        "Orrin can witness two distinct metal rims without claiming authority over Nara's identity.",
+        "Eli can correct the local issue row."
+      ],
+      "reviewed_consequences": [
+        "Creates a baseline witness, raises exposure, spends one route minute, and yields an ending that protects the helper practice while permitting a clerical explanation."
+      ],
+      "training_hooks": [
+        "narrow_fact_witness",
+        "bounded_cross_category_help"
+      ]
+    },
+    {
+      "branch_id": "accept_clean_spare",
+      "ink_path": "commit_choice",
+      "action_type": "accept_cost",
+      "actor_intent": "Preserve the private return board by accepting bodily discomfort and a shorter, lower-paid route.",
+      "state_basis": [
+        "Eli can authorize the short manifold route.",
+        "The spare clears the official slate while pressing Nara's old pressure line."
+      ],
+      "reviewed_consequences": [
+        "Lowers public exposure, preserves the remaining route time, and yields the clean-ledger/body-cost ending with visible pressure and claimshare consequences."
+      ],
+      "training_hooks": [
+        "clean_record_exports_body_cost",
+        "quiet_protection_is_not_free"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Any durable relationship or memory update for Nara, Eli, Orrin, or Teth",
+      "Any claim that this one issue-counter practice caused the Pallas Species Strikes",
+      "Any generalization of Nara's humanoid body to BioDrone Standard as a whole",
+      "Any economy-schema promotion of named fittings, route minutes, or claimshare loss"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Aetheria Patina worker using the four required Ghostlight reviewer prompts as separate passes",
+    "review_status": "accepted_with_visual_blockout_deferred",
+    "review_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 5,
+        "voice_score": 5,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "detected_tonal_mode": "Dry shift comedy and tactile workplace intimacy under low-stakes administrative pressure.",
+        "major_findings": [],
+        "minor_findings": [],
+        "path_specific_failures": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "lore_context_bridges_needed": [],
+        "character_introduction_fixes": [],
+        "branch_fold_fixes": [],
+        "voice_and_prose_fixes": [],
+        "training_labels": [
+          "strong_contextual_onboarding",
+          "strong_branch_callback",
+          "strong_tonal_control",
+          "strong_wit_with_stakes",
+          "strong_material_lore"
+        ],
+        "acceptance_notes": [
+          "A first pass found that literal route-clock prose ignored the opening branch, the narrow witness path did not require Rain-Again to have been located, and two object transfers blurred who could reach behind the counter.",
+          "The repaired artifact carries one four-minute route margin through every choice, gates both exchange and witness correction on the located fitting, and assigns supplier-peg movement to Eli while workers handle the reachable return board.",
+          "Routine, locality, body affordances, the counter authority boundary, and all four participants are established before the first consequential choice."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 5,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 5,
+        "sources_checked": [
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md",
+            "reason_checked": "Primary ownership, interface, maintenance, labor, and authored line-kit practice.",
+            "used_for": "canon check and backfill target"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/VitaForge.md",
+            "reason_checked": "Supplier provenance and biodrone labor positioning.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Pallas Species Strikes.md",
+            "reason_checked": "Pallas labor categories, body-specific work, witnesses, and later organizing pressure.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+            "reason_checked": "Pallas maintenance ecology, field modifications, provenance, and recurring tools.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+            "reason_checked": "Pallas operating authority, fleet logistics, and labor pressure.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/BioElevate.md",
+            "reason_checked": "Supplier boundary between BioElevate uplift support and VitaForge biodrone hardware.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+            "reason_checked": "Engineered-body diversity and nonhuman interface constraints.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Awakened Labor Front.md",
+            "reason_checked": "Boundary against turning local mutual aid into a mature movement.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Brainstorming/Technology/Bloom Habitat Systems Walkthroughs.md",
+            "reason_checked": "Pallas ring, yard, cavity, and checkpoint spatial vocabulary.",
+            "used_for": "context only"
+          },
+          {
+            "source_ref": "Aetheria/Narrative Themes.md",
+            "reason_checked": "Institutional cost, asymmetric knowledge, mutual aid, and ordinary-life tone.",
+            "used_for": "context only"
+          },
+          {
+            "source_ref": "examples/ink/pallas-species-strikes.branch-and-fold.v0.ink",
+            "reason_checked": "Existing Ghostlight continuity for Service Ring Kappa, Yard Twelve, Nara-7, Orrin Dax, and Teth Inkwise.",
+            "used_for": "fixture continuity only"
+          }
+        ],
+        "source_gaps": [],
+        "canon_drift_findings": [],
+        "unsupported_claims": [],
+        "stale_or_conflicting_lore": [],
+        "vault_backfill_candidates": [
+          {
+            "priority": "high",
+            "target_source": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md",
+            "candidate_fact": "Pallas crews receive supplier-owned line kits at the shift gate and maintain a second, worker-readable return board keyed to physical quirks and private names.",
+            "artifact_origin": "Yard Twelve issue liturgy, Rain-Again tracing, and the six custody endings.",
+            "why_it_belongs": "It supplies durable body-object texture, split maintenance authority, economic cost, and a small mutual-aid practice for biodrone labor.",
+            "how_to_add_without_bloat": "Already added as one fixture-marked subsection; the scheduler will create the lore commit after this diff-only pass."
+          }
+        ],
+        "required_story_revisions": [],
+        "required_lore_patches": [],
+        "suggested_story_revisions": [],
+        "suggested_lore_patches": [],
+        "training_labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_faction_pressure",
+          "strong_body_affordance_grounding",
+          "strong_infrastructure_grounding",
+          "vault_backfill_candidate"
+        ],
+        "acceptance_notes": [
+          "The fixture treats Nara's engineered humanoid body as one local VitaForge body plan and does not generalize it to all BioDrone Standard workers.",
+          "VitaForge biodrone provenance remains distinct from BioElevate uplift support; Teth's harness and Nara's line kit are materially and institutionally separate.",
+          "Private naming carries fit knowledge and return continuity but grants no title, legal personhood, or movement-scale solidarity."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "overall_status": "needs_revision",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 5,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 3,
+        "major_findings": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "The textual Yard Twelve scene-set specification has no rendered plan view or 3D blockout for the repeated multi-angle alcove.",
+            "why_it_matters": "Text prompts alone cannot reliably preserve counter depth, the yellow boundary, supplier pegs, return-board reach, camera sightlines, and four body positions across thirteen frames.",
+            "evidence": "The fixture returns to one compact room from six camera slots, and several branches depend on which side of the counter can touch each object.",
+            "fix_direction": "Before website rendering, build a durable camera-specific blockout from the supplied fixed zones, routes, occluders, camera slots, staging slots, and state anchors."
+          }
+        ],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "missing_visual_scenes": [],
+        "weak_image_prompts": [],
+        "missing_scene_set_needs": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "The textual Yard Twelve scene-set specification has no rendered plan view or 3D blockout for the repeated multi-angle alcove.",
+            "why_it_matters": "Text prompts alone cannot reliably preserve counter depth, the yellow boundary, supplier pegs, return-board reach, camera sightlines, and four body positions across thirteen frames.",
+            "evidence": "The fixture returns to one compact room from six camera slots, and several branches depend on which side of the counter can touch each object.",
+            "fix_direction": "Before website rendering, build a durable camera-specific blockout from the supplied fixed zones, routes, occluders, camera slots, staging slots, and state anchors."
+          }
+        ],
+        "missing_branch_modifiers": [],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity",
+          "missing_scene_set"
+        ],
+        "acceptance_notes": [
+          "A first pass replaced a memory-dependent room reference, rewrote a negative branch prompt as an affirmative visible state, and made behind-counter transfers Eli's action rather than Nara's.",
+          "All thirteen Ink visual ids map one-to-one to standalone base prompts, every visible named character has a stable visual reference, and the BFL manifest contains thirteen matching prompts.",
+          "The plan and manifest are concept-ready collateral only. High-consistency replay remains blocked on the declared blockout, which is outside this manifest-only pass."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 5,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "inferred_layout_summary": "A shallow rectangular issue alcove opens south onto Service Ring Kappa. A waist-high bolted counter divides the worker queue in the south from Eli's narrow supplier aisle and numbered peg wall in the north. The second return board hangs on the counter's worker-facing front within Nara's and Teth's reach; supplier fittings remain behind the counter within Eli's reach. Orrin stands at the yellow queue line, while the ceiling camera sees the official slate and counter surface but not the underside return board.",
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "spatial_questions": [],
+        "diagram_or_visual_plan_needs": [
+          {
+            "priority": "high",
+            "needed_artifact": "camera-specific plan view or 3D blockout",
+            "reason": "Generated multi-angle art needs a geometry source stronger than text to preserve counter custody, reachable faces, and camera occlusion.",
+            "minimum_required_detail": "Use the declared nine fixed zones, three movement routes, two occluders, six camera slots, four staging slots, and four branch-state anchors."
+          }
+        ],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_branch_spatial_state",
+          "diagram_needed"
+        ],
+        "acceptance_notes": [
+          "The prose and plan keep one coordinate frame and a stable custody boundary: workers touch the queue-side board, Eli moves objects among the supplier pegs, and each character has a viable staging position.",
+          "Folded scenes preserve clock, camera, fitting location, tactile-board, witness, pressure-mark, and custody states through Ink conditions or visual modifiers.",
+          "The textual layout is sufficient for IF review; the declared blockout remains required for generated replay continuity."
+        ]
+      }
+    ],
+    "review_notes": [
+      "One-shot authoring is bootstrap scaffolding for the fixture corpus and does not claim to be a runtime responder capture.",
+      "The four reviewer prompts were applied as separate narrative, lore, visual, and spatial passes after artifact drafting.",
+      "Ink compilation is forbidden for this swarm pass; syntax received static structure checks only and no compiled Ink JSON was produced.",
+      "Image rendering is forbidden for this swarm pass; the BFL batch is a prompt manifest only."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}
