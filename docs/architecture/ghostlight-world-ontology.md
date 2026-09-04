@@ -136,7 +136,7 @@ which noun a component is; it cares what it constrains.
 | `Redress` | grievance kind → forum, standing | where conflict goes when it cannot be fought |
 | `Knowledge` | subject → fact: confidence, source | what a subject may act on at all |
 | `Channel` | channel: reach set, latency, controller | how facts travel; who can be silenced |
-| `Commitment` | subject → counterparty: kind, due, stake | obligation with a clock; autonomous motion |
+| `Commitment` | subject → counterparty: kind (`Routine`, `Obligation`, `Goal`), due, stake | obligation with a clock; autonomous motion |
 | `Pressure` | source → target: magnitude, unresolved | the causal boundary trigger |
 | `PersonaMaterial` | subject: values, voice, memories, reads | lived meaning; never authority |
 
@@ -389,6 +389,38 @@ A translation gap never mints a boundary. Gaps are non-fictional inference
 evidence that may inform a later human decision to extend this vocabulary, and
 that extension is a code change, not a world patch.
 
+## Scale: many subjects, few inferences
+
+A world may hold thousands of subjects while a tick affords a few hundred
+inferences. Four mechanisms carry that, none of which is a second identity
+layer:
+
+1. **Coarse by construction.** Populations and institutions are subjects. A
+   realm is a handful of deciding subjects until `IndividuationRequired`
+   fires, and it fires only when a pressure needs a person to bear it.
+   Individuals are not manufactured toward a count and then compressed back.
+2. **Zero-inference motion.** `Time.advance` applies every due clock
+   deterministically: a `Routine` commitment whose preconditions hold
+   auto-fulfills, so ordinary life proceeds for unattended subjects; an
+   `Obligation` or `Goal` past due advances `Pressure` on its subject. The
+   quiet world moves without being looked at and without inventing spurious
+   crisis.
+3. **Ordered attention.** The scheduler is a pure planner over one revision.
+   It orders opportunities by unresolved pressure, causal exposure,
+   readiness, and time since last opportunity, so every subject receives
+   direct attention within bounded ticks absent a mandatory foreground
+   override.
+4. **Batched representation.** The runner may present several
+   `OperationalAgent` opportunities that share a place or pressure to one
+   inference. Each returned proposal is attributed to its own controller and
+   verified separately by the action pipeline. The batch is derived,
+   disposable, and invisible to the kernel; it changes representation, never
+   authority, and can emit no batch-owned mutation.
+
+A `NarrativePersona` subject not selected for attention does not act this
+tick; its collective acts at the collective level and reaches it through
+typed commitments. No subject is ever spoken for by an arena.
+
 ## What stays open
 
 The ontology does not bound the stories a world can hold, for three reasons
@@ -505,3 +537,9 @@ Beyond the existing kernel proofs, focused tests must prove:
 17. Seed admission and boundary elaboration reach the same reducer and CAS.
 18. A structurally sparse world — few subjects, complete references — activates
     and runs; no count or ratio blocks it.
+19. `Time.advance` auto-fulfills a due `Routine` whose preconditions hold and
+    advances pressure for a due `Obligation`, with no inference and no
+    spurious pressure on unattended subjects.
+20. A batched inference returning proposals for several controllers commits
+    only those that pass their own precondition and effect checks; a proposal
+    attributed to a controller outside the batch is rejected.
