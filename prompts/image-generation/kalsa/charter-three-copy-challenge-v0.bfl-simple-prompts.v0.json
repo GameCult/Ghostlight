@@ -1,0 +1,68 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "charter-three-copy-challenge-v0.bfl-simple-v0",
+  "fixture_id": "charter-three-copy-challenge-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "High-fantasy civic storybook illustration in textured gouache and fine ink, permanent-twilight blue shadows, warm mineral steam, ash-grey stone, worn iron and cloth, expressive restrained faces, legible tools and records, humane dry wit under material danger, cinematic interactive-fiction composition.",
+  "prompts": [
+    {
+      "id": "01_cistern_house_establishing",
+      "prompt": "Wide view from a damp stone doorway into a compact cistern hall: steaming live east basin on the left, drained sloped inspection basin on the right, broad central stone lip, iron grate and short stair to a black pressure door, wall ration and service boards, pottery ash buckets, tools, textured repair and memorial cloths on separate roof beams. A compact brown-skinned adult in a patched ochre coat enters with a water yoke and three shallow sample bowls."
+    },
+    {
+      "id": "02_routine_watch",
+      "prompt": "Ordinary maintenance inside the two-basin stone hall: two cloth-masked workers scrape grey ash into pottery buckets at the steaming east screen; a lean custodian with long wrapped braid and charcoal robe marks a service board, eight-tooth spindle at the belt; a broad grey-bearded reeve turns the west drain wheel; a tall shaved-headed traveler in a blue-black mantle lays three record sheets on the stone lip; a gaunt white-haired former keeper waits behind a doorway cord."
+    },
+    {
+      "id": "03_filing_choice",
+      "prompt": "Medium civic-choice frame at the central lip between a steaming east basin and drained west basin. A compact brown-skinned petitioner in patched ochre wool stands beside three bowls of visibly different water. Four reachable actions surround them: three blank service sheets beside a tall traveler with brass measures, an open doorway toward wet crop workers, a grey-bearded reeve and drain wheel, and a chalk ration board."
+    },
+    {
+      "id": "04_filing_action",
+      "prompt": "A commoner opens a technical challenge inside a compact stone cistern hall. Three water bowls, three service sheets, wall ration board, west drain wheel, outer doorway, and black pressure-door stair remain legible. The petitioner acts between evidence and public authority while a braided custodian watches the service board, a shaved-headed comparer guards the sheets, and a broad reeve holds the wheel."
+    },
+    {
+      "id": "05_three_copies",
+      "prompt": "Close-medium view of three matching handwritten service sheets laid in a row on a wet stone basin lip beside three water bowls, one holding sharp black sediment. A tall shaved-headed technical traveler points to three custody destinations with a brass rod; a lean braided custodian holds one copy; a patched-coat petitioner guards the grit bowl; a broad reeve rests one hand near a large wet seal."
+    },
+    {
+      "id": "06_shutter_dims",
+      "prompt": "Pivotal close-up of a dark wall service board: three inset pale ceramic shutter marks in one row, the left mark freshly dimmed to ash-grey while two glow faint cream. Concentric ripples cross three water bowls on a stone lip below. A chalk-stained brown hand stops beside the board and a weathered hand grips an iron wheel at frame edge; warm steam catches blue twilight."
+    },
+    {
+      "id": "07_pressure_choice",
+      "prompt": "Medium-wide pressure frame inside the cistern hall after one shutter mark dims. A broad reeve grips the west drain wheel; a lean custodian touches the eight-tooth spindle at the belt; a tall traveler stands beside three copies and brass measures; a patched-coat petitioner stands between a black-grit bowl and the outer doorway; a rangy crop worker with water pole waits outside. The low sample-flow handle and black-door stair are visible."
+    },
+    {
+      "id": "08_preservation_action",
+      "prompt": "Action inside a compact two-basin stone cistern: the petitioner moves between three official sheets, a low iron sample-flow handle, a tall comparer's open tools, and the reeve's west drain wheel. The braided custodian guards the service boundary. Two pale shutter marks and one ash-grey mark glow on the back wall above warm steam and black sediment."
+    },
+    {
+      "id": "09_bounded_comparison",
+      "prompt": "Improvised technical hearing on a broad stone lip between two basins. A tall shaved-headed comparer in blue-black mantle stands over brass rods, service sheets, public warning, and black-grit bowls. A lean braided custodian remains on the east-basin side with spindle belted; a patched-coat commoner stands by the sample; a grey-bearded reeve holds the west wheel; a gaunt former keeper speaks from behind the doorway cord."
+    },
+    {
+      "id": "10_remedy_choice",
+      "prompt": "Wide civic-decision frame inside the cistern hall. A patched-coat petitioner stands between four material remedies: braided custodian with belted spindle at the east basin, shaved-headed comparer and brass tools on the lip, evacuation baskets and an oilcloth record packet at the outer doorway, and grey-bearded reeve at the drain wheel with a signed-sheet space. Damp residents wait beyond the door; two pale and one grey shutter marks show above."
+    },
+    {
+      "id": "11_bounded_review_ending",
+      "prompt": "Bounded-review aftermath: the braided custodian retains the spindle beside the east basin; the shaved-headed comparer holds brass measures with hands clear of the spindle; the patched-coat petitioner and a rangy crop worker carry an oilcloth-wrapped outside copy toward the doorway; the reeve marks reduced flow at the drain wheel. Three sample bowls and the black-grit line remain visible."
+    },
+    {
+      "id": "12_evacuation_ending",
+      "prompt": "Evacuation viewed from inside the cistern toward wet stone steps. The east basin cools under thin steam. A braided custodian wraps an eight-tooth spindle at the stone lip; a shaved-headed traveler seals a service sheet; the patched-coat petitioner organizes residents carrying bedding, water vessels, baskets, and walking sticks uphill; crop workers use long water poles as carrying bars."
+    },
+    {
+      "id": "13_replacement_ending",
+      "prompt": "Provisional succession at the central basin lip: a tall shaved-headed traveler in blue-black mantle holds an eight-tooth iron spindle in both open hands; the lean former custodian stands beside the service board with her own sheet and an empty tool-sash place; the commoner stands between them beside three bowls and copies; the reeve marks a temporary grant; the removed former keeper watches from behind the cord."
+    },
+    {
+      "id": "14_override_ending",
+      "prompt": "Emergency override beside the west basin: the broad grey-bearded reeve braces an iron drain wheel with a marked override sheet pinned under one hand; the braided custodian closes a low sample catch with spindle still belted; the shaved-headed comparer raises a brass stop rod; the patched-coat petitioner drags three evidence bowls clear. Dark water traces the drained stone toward the grate and black-door stair."
+    }
+  ]
+}

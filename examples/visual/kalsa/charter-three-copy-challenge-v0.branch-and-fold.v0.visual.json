@@ -1,0 +1,420 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "charter-three-copy-challenge-v0-visual",
+  "ink_ref": "examples/ink/kalsa/charter-three-copy-challenge-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/kalsa/charter-three-copy-challenge-v0.branch-and-fold.v0.training.json",
+  "scene_id": "charter-three-copy-challenge-v0.cistern-house-review",
+  "purpose": "Illustrated Ink replay segmentation, camera-map geometry, character continuity, and branch-visible redress state for Low Sere's three-copy challenge.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary Cistern House work, Bel's petition, the three separated copies, a shutter loss, bounded comparison, remedy choice, and four institutionally distinct ending families.",
+    "segmentation_rule": "Use separate anchors for the establishing space, routine work, petition affordances, chosen filing action, seated copies, pivotal shutter loss, preservation affordances, chosen preservation action, comparison, remedy choice, and each ending family. The shutter mark dimming stands alone as a one-sentence visual beat.",
+    "prompting_rule": "Every base prompt restates visible Cistern House geometry, materials, lighting, bodies, tools, and records for a general image model. Branch prompts describe additive visible deltas. Character refs are assembled only for people visible in that frame; continuity notes remain tooling constraints.",
+    "global_style_cue": "Style: high-fantasy civic storybook illustration in textured gouache and fine ink, permanent-twilight blue shadows, warm mineral steam, ash-grey stone, worn iron and cloth, expressive restrained faces, legible tools and records, humane dry wit under material danger, cinematic composition built for interactive-fiction replay.",
+    "prompt_assembly_rule": "Assemble each prompt from the global_style_cue, one complete scene base_image_prompt, visual refs only for named characters visible in that scene, and every triggered state or global branch modifier. Keep visual_continuity_notes out of the generated prompt.",
+    "scene_set_guidance": {
+      "current_mode": "structured_camera_map",
+      "scope_reason": "All beats remain inside one compact Cistern House and depend on stable positions for two basins, stone lip, drain wheel, service board, outer doorway, pressure-door stair, and separated record custody. The structured scene_set below is the durable text-and-camera geometry authority for this deferred-render fixture.",
+      "future_scene_set_need": "If promoted to high-consistency website art, lower the structured camera map into a simple plan-view or 3D blockout before generating multi-angle images. Generated frames remain painterly output, never room geometry authority."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "charter_cistern_house_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide view from the outer doorway into a compact stone Cistern House in a high-fantasy twilight settlement. A steaming live east basin fills the left half; a drained west inspection basin slopes down on the right toward an iron grate and a short stair ending at a black pressure door. A broad waist-high stone lip divides the basins. Iron screens, pottery ash buckets, three shallow water bowls, wall-mounted ration boards, a service board with three pale shutter marks, drain wheels, and damp tools make the room visibly functional. Warm mist beads on dark roof beams. Rough repair cloths hang from the western beam and two textured memorial cloths hang from the eastern beam. Bel Orra, a compact brown-skinned adult with close-cropped black hair, patched ochre wool coat, water yoke, and cracked work gloves, enters carrying three sample bowls.",
+        "visible_characters": [
+          {
+            "agent_id": "bel_orra",
+            "default_stance": "entering from the outer doorway with a water yoke and three bowls",
+            "visual_ref": "visual_character_refs.characters.bel_orra"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Camera faces inward from the outer doorway. The east basin is left, west basin right, dividing lip center, service board on the back wall, and pressure-door stair below the west grate.",
+          "Memorial and repair cloths remain on separate beams and are visibly distinguished by texture because mineral mist has faded their colors."
+        ]
+      },
+      {
+        "visual_scene_id": "charter_routine_watch",
+        "ink_anchor": "routine_watch",
+        "base_image_prompt": "Medium-wide view across Low Sere's Cistern House during ordinary maintenance. The live east basin steams beside Iven, a rangy dark-brown-skinned Grey Bed worker with shaved sides, short braided crown, moss-green patched work layers and ash-raw hands, and Tal, a short sturdy light-brown-skinned Grey Bed worker with dense curls under a green headcloth and a patched apron; they scrape grey mineral ash from an iron screen into pottery buckets. Sera Venn, a lean young adult with medium-brown skin, long dark braid wrapped in grey cloth, charcoal maintenance robe, leather tool sash, and an eight-tooth iron spindle at the belt, marks intake knocks on a wall service board. Maro Seln, a broad older man with weathered tan skin, iron-grey beard, layered blue wool vest, and wet forearms, turns the west-basin drain wheel. Ressa Orr, a tall dark-skinned adult with shaved head, blue-black traveling mantle, brass measuring rods, and an octagonal tool case, spreads three blank service sheets on the central stone lip. Teren Vey, a gaunt older light-brown-skinned man with cropped white hair, worn rust-red keeper coat, empty tool loops, and a scarred left palm, waits behind a waist-high cord at the outer doorway. Bel Orra sets three water bowls on the stone. Warm steam, ash, worn iron, and routine concentration dominate the frame.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "setting three bowls on the central lip", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "marking the service board beside the east basin", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "laying blank sheets on the central lip", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "maro_seln", "default_stance": "turning the west-basin drain wheel", "visual_ref": "visual_character_refs.characters.maro_seln"},
+          {"agent_id": "teren_vey", "default_stance": "waiting behind the cord at the doorway", "visual_ref": "visual_character_refs.characters.teren_vey"},
+          {"agent_id": "iven_grey_bed_worker", "default_stance": "scraping the east-basin screen", "visual_ref": "visual_character_refs.characters.iven_grey_bed_worker"},
+          {"agent_id": "tal_grey_bed_worker", "default_stance": "steadying an ash bucket beside the east-basin screen", "visual_ref": "visual_character_refs.characters.tal_grey_bed_worker"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Teren stays beyond the doorway cord and cannot reach the basin lip, drain wheel, service board, or Sera's spindle.",
+          "Sera's spindle remains visibly attached to her belt until an ending modifier changes custody."
+        ]
+      },
+      {
+        "visual_scene_id": "charter_filing_choice",
+        "ink_anchor": "filing_choice",
+        "base_image_prompt": "Medium shot centered on Bel Orra at the stone lip between the steaming east basin and drained west basin. Bel, a compact brown-skinned adult with close-cropped black hair, patched ochre wool coat, water yoke, and cracked gloves, stands beside three visibly different water bowls: clear warm drinking water, grey crop water, and lower-room water with black grit settling at the bottom. Behind Bel are four readable physical routes for action: Ressa Orr's three blank sheets on the lip, the open outer doorway leading to Grey Bed workers, Maro Seln beside the west drain wheel and basin seal, and a chalked ration board near the doorway. Sera Venn watches from the service board. Warm mineral steam and permanent-twilight blue light cross over the room.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "centered beside the three sample bowls", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "watching from the service board", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "waiting behind three blank sheets", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "maro_seln", "default_stance": "standing beside the drain wheel", "visual_ref": "visual_character_refs.characters.maro_seln"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The choice hub keeps bowls, blank sheets, doorway, drain wheel, and ration board visible at once so each option has a spatial affordance."
+        ]
+      },
+      {
+        "visual_scene_id": "charter_filing_action",
+        "ink_anchor": "filing_choice.*",
+        "base_image_prompt": "Action frame inside the compact stone Cistern House, centered on the central lip between the steaming east basin and drained west basin. Three water bowls and one service sheet rest on the stone; two blank sheets wait beside Ressa Orr. The wall ration board, a chalk stick beneath it, west drain wheel, outer doorway, and back black pressure-door stair are all legible. Bel Orra, compact and brown-skinned in a patched ochre wool coat with close-cropped black hair and cracked gloves, stands beside the sample bowls while Sera Venn watches from the service board, Ressa guards the records, and Maro Seln holds position at the drain wheel. At the far-left east screen, two Grey Bed workers in moss-green patched layers scrape mineral ash into pottery buckets.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "acting between bowls, sheets, doorway, seal, and ration board", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "watching from the service board", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "beside the three record sheets", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "maro_seln", "default_stance": "at the west drain wheel", "visual_ref": "visual_character_refs.characters.maro_seln"},
+          {"agent_id": "iven_grey_bed_worker", "default_stance": "scraping the east screen in the background", "visual_ref": "visual_character_refs.characters.iven_grey_bed_worker"},
+          {"agent_id": "tal_grey_bed_worker", "default_stance": "steadying an ash bucket at the east screen", "visual_ref": "visual_character_refs.characters.tal_grey_bed_worker"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Iven and Tal remain at the east screen on other branches; file_worker_chain moves them to the central lip as witnesses."
+        ]
+      },
+      {
+        "visual_scene_id": "charter_copies_seated",
+        "ink_anchor": "copies_fold",
+        "base_image_prompt": "Close-medium composition on the broad wet stone lip between Low Sere's two basins. Three matching service sheets lie in a row beside three water bowls; each sheet bears the same compact blocks of dark handwriting and distinct custody marks. Ressa Orr, tall and shaved-headed in a blue-black traveling mantle with brass measuring rods, points to the three destinations. Sera Venn holds one sheet against her charcoal maintenance robe. Bel Orra keeps one gloved hand beside the black-grit bowl. Maro Seln's sealed sheet lies near his drain-wheel hand. Behind them, a wall service board shows three pale shutter marks and the drained west basin slopes to the grate and black door.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "hand beside the black-grit sample", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "holding the keeper copy", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "seating the copies with one measuring rod", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "maro_seln", "default_stance": "one hand near the sealed basin-table copy", "visual_ref": "visual_character_refs.characters.maro_seln"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "record_strength >= 3", "modifier_prompt": "Place the black-grit bowl directly beside the copied claim, with the dark sediment line sharply visible."},
+          {"trigger": "worker_support >= 3", "modifier_prompt": "Add two Grey Bed workers at the outer edge of the frame: one rangy dark-brown-skinned adult with shaved sides and a short braided crown, one short sturdy light-brown-skinned adult with dense curls under a green headcloth; both wear damp moss-green patched layers, carry sheathed reed knives, and ground long water poles on the stone while watching the copies."},
+          {"trigger": "copies_distributed >= 1", "modifier_prompt": "Show a clear chalk copy of the petition on the wall ration board beyond the steam."},
+          {"trigger": "comparison_independence <= 0", "modifier_prompt": "Maro's fresh seal occupies the largest mark on the sheets while Ressa studies it with guarded posture."}
+        ],
+        "visual_continuity_notes": [
+          "Exactly three official service sheets remain visually distinguishable even when an unofficial chalk copy exists."
+        ]
+      },
+      {
+        "visual_scene_id": "charter_shutter_dims",
+        "ink_anchor": "copies_fold.shutter_loss",
+        "base_image_prompt": "Pivotal close-up of Low Sere's wall service board above the two basins. Three inset pale ceramic shutter marks sit in a horizontal row; the left mark has just dimmed to ash-grey while two still glow faint cream. Concentric ripples tremble through three water bowls on the stone lip below. Sera Venn's brown hand stops beside the board chalk. Maro Seln's weathered hand grips the drain-wheel spoke at frame edge. Warm steam catches permanent-twilight blue light. The image centers lost safe margin and the physical cost of delay.",
+        "visible_characters": [
+          {"agent_id": "sera_venn", "default_stance": "only her hand and charcoal sleeve visible beside the service board", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "maro_seln", "default_stance": "only his hand and blue wool sleeve visible on the drain wheel", "visual_ref": "visual_character_refs.characters.maro_seln"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "After this beat, every later scene shows two pale shutter marks and one ash-grey mark."
+        ]
+      },
+      {
+        "visual_scene_id": "charter_pressure_choice",
+        "ink_anchor": "pressure_response",
+        "base_image_prompt": "Medium-wide pressure frame inside Low Sere's Cistern House after one shutter mark dims. Two pale marks and one ash-grey mark show on the back-wall service board. Maro Seln grips the west drain wheel; Sera Venn touches the eight-tooth spindle on her belt; Ressa Orr stands beside three official service sheets on the central lip; Bel Orra stands between the black-grit bowl and the outer doorway. The low sample-flow handle is reachable beside the west basin. Iven, a rangy dark-brown-skinned Grey Bed worker in moss-green patched layers with a water pole and reed knife, waits just outside the doorway. Every option has a visible object: independent copy, sample-flow handle, comparer's tools and fee line, or drain wheel.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "between sample bowl and outer doorway", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "hand touching the spindle at her belt", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "beside the three copies and measuring rods", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "maro_seln", "default_stance": "gripping the drain wheel", "visual_ref": "visual_character_refs.characters.maro_seln"},
+          {"agent_id": "iven_grey_bed_worker", "default_stance": "waiting beyond the outer doorway with water pole", "visual_ref": "visual_character_refs.characters.iven_grey_bed_worker"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Bel can reach the lip, doorway, ration board, and low sample-flow handle. She cannot reach the pressure door or Sera's belted spindle without crossing the west basin and grate."
+        ]
+      },
+      {
+        "visual_scene_id": "charter_preservation_action",
+        "ink_anchor": "pressure_response.*",
+        "base_image_prompt": "Action frame in the Cistern House after one of three shutter marks has dimmed. The two basins, central stone lip, three official service sheets, wall service board, west drain wheel, low sample-flow handle, outer doorway, and black pressure-door stair remain legible. Bel Orra stands between an oilcloth record packet and a long iron service hook while Sera Venn holds the technical boundary near the service board, Ressa Orr watches the evidence and open tools, and Maro Seln remains braced at the drain wheel.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "moving between the central lip and one reachable civic or work surface", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "guarding the technical boundary near the service board", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "watching sheets, bowls, and tools", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "maro_seln", "default_stance": "holding the drain-wheel station", "visual_ref": "visual_character_refs.characters.maro_seln"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Branch modifiers own the changed posture, copy location, sample-flow state, declared fee, or override mark."
+        ]
+      },
+      {
+        "visual_scene_id": "charter_bounded_comparison",
+        "ink_anchor": "comparison_fold",
+        "base_image_prompt": "Formal but improvised technical comparison at the Cistern House's central stone lip. Ressa Orr, tall and dark-skinned with shaved head, blue-black traveling mantle, brass measuring rods, and octagonal tool case, stands at the comparison place over Sera's service sheet, a public warning, three water bowls, and the black-grit sediment line. Sera Venn, lean with long wrapped braid, charcoal robe, tool sash, and eight-tooth spindle, stands on the east-basin side. Bel Orra stands on the public side beside the sample bowls. Maro Seln remains at the west drain wheel. Teren Vey leans forward behind the waist-high doorway cord, visually separated from every control. Two pale shutter marks and one ash-grey mark remain on the service board. Steam, worn stone, iron, and paper make authority visible as separated custody inside a working basin hall.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "beside the samples on the public side of the lip", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "east-basin side with spindle still belted", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "at the comparison place over records and measures", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "maro_seln", "default_stance": "at the west drain wheel", "visual_ref": "visual_character_refs.characters.maro_seln"},
+          {"agent_id": "teren_vey", "default_stance": "behind the doorway cord, leaning forward to speak", "visual_ref": "visual_character_refs.characters.teren_vey"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "copies_distributed >= 3", "modifier_prompt": "Leave a visible empty place where the independent sheet lay and show a rangy dark-brown-skinned Grey Bed worker in moss-green patched layers carrying its oilcloth packet beyond the doorway."},
+          {"trigger": "record_strength >= 3", "modifier_prompt": "Align the black-grit sediment line, service warning, and two-pale-one-grey shutter board in one readable evidence triangle."},
+          {"trigger": "record_strength <= 2", "modifier_prompt": "Keep the bowls and sheets sparse, with large gaps between claims and reproducible material evidence."},
+          {"trigger": "comparison_independence >= 3", "modifier_prompt": "Place Ressa's written fee and declared-interest line openly beside her brass measures."},
+          {"trigger": "comparison_independence <= 0", "modifier_prompt": "Maro's large wet seal visibly overlaps the comparison margin on the basin-table copy."},
+          {"trigger": "sera_trust >= 3", "modifier_prompt": "Sera has handed Bel the long iron service hook; Bel braces it at the isolated sample-flow handle under Sera's direction."},
+          {"trigger": "service_margin <= 1", "modifier_prompt": "Make both remaining pale shutter marks flicker weakly while the drain wheel and pipes visibly tremble."}
+        ],
+        "visual_continuity_notes": [
+          "Teren's sightline reaches the lip and service board through the doorway, but the cord and basin geometry keep every tool and control out of his reach."
+        ]
+      },
+      {
+        "visual_scene_id": "charter_remedy_choice",
+        "ink_anchor": "remedy_choice",
+        "base_image_prompt": "Wide civic-decision frame in the compact Cistern House. Bel Orra stands at the center of four visible remedy surfaces: Sera Venn with the spindle still at her belt on the east-basin side; Ressa Orr's comparison tools and one record sheet on the stone lip; a folded oilcloth packet and evacuation baskets near the outer doorway; and Maro Seln holding the west drain wheel with space for a signed override sheet. Teren Vey remains behind the doorway cord. Two pale shutter marks and one ash-grey mark show above them. Lower-step residents wait beyond the door in damp layered clothes. The composition makes appointment, comparison, evacuation, and political override readable as different material paths.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "centered between the four remedy surfaces", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "east-basin side with spindle at belt", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "behind comparison tools on the lip", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "maro_seln", "default_stance": "at drain wheel beside blank override space", "visual_ref": "visual_character_refs.characters.maro_seln"},
+          {"agent_id": "teren_vey", "default_stance": "behind the doorway cord", "visual_ref": "visual_character_refs.characters.teren_vey"},
+          {"agent_id": "low_sere_dependants", "default_stance": "waiting beyond the doorway with baskets, water poles, and rolled bedding", "visual_ref": "visual_character_refs.groups.low_sere_dependants"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The four remedy surfaces occupy stable zones already introduced; no new route or control appears for the final choice."
+        ]
+      },
+      {
+        "visual_scene_id": "charter_ending_bounded_review",
+        "ink_anchor": "ending_bounded_review|ending_bounded_review_cost",
+        "base_image_prompt": "Bounded-review aftermath in Low Sere's Cistern House. Sera Venn stands beside the east basin with the eight-tooth spindle still at her belt. Ressa Orr stands at the central lip with brass measures and an inspection sheet, her hands clear of the spindle. Bel Orra and Iven carry an oilcloth-wrapped independent copy toward the outer doorway and descending Warm Steps. Maro Seln marks reduced flow at the west drain wheel. Two pale shutter marks and one ash-grey mark remain on the service board. Three sample bowls and the black-grit line stay visible, preserving the commoner's evidence.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "walking toward the doorway with the outside copy", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "iven_grey_bed_worker", "default_stance": "sharing custody of the oilcloth packet", "visual_ref": "visual_character_refs.characters.iven_grey_bed_worker"},
+          {"agent_id": "sera_venn", "default_stance": "beside east basin with spindle belted", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "at comparison lip with measures, hands clear of spindle", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "maro_seln", "default_stance": "marking reduced flow at drain wheel", "visual_ref": "visual_character_refs.characters.maro_seln"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Sera visibly retains spindle custody in both bounded-review endings; the branch modifier changes evidence strength and crowd posture, not appointment."
+        ]
+      },
+      {
+        "visual_scene_id": "charter_ending_evacuation",
+        "ink_anchor": "ending_evacuation_with_standing|ending_evacuation_cost",
+        "base_image_prompt": "Evacuation aftermath viewed from inside the Cistern House toward Low Sere's wet stone steps. The live east basin has cooled and emits thin steam. Sera Venn wraps the eight-tooth spindle in dark cloth at the central lip. Ressa Orr seals one service sheet with her measuring rods laid aside. Bel Orra stands at the doorway beside rolled bedding, water vessels, carrying poles, and lower-step residents in damp layered clothes moving uphill. Grey Bed workers in moss-green patched layers use water poles as carrying bars. Two pale shutter marks and one ash-grey mark remain on the service board behind them.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "at doorway organizing people and record custody", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "wrapping the spindle at the lip", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "sealing a record sheet", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "iven_grey_bed_worker", "default_stance": "using a water pole as a carrying bar", "visual_ref": "visual_character_refs.characters.iven_grey_bed_worker"},
+          {"agent_id": "tal_grey_bed_worker", "default_stance": "carrying rolled bedding with another resident", "visual_ref": "visual_character_refs.characters.tal_grey_bed_worker"},
+          {"agent_id": "low_sere_dependants", "default_stance": "moving uphill with bedding, baskets, and water vessels", "visual_ref": "visual_character_refs.groups.low_sere_dependants"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Evacuation route goes outward through the established doorway to the Warm Steps; nobody exits through the basin grate or pressure door."
+        ]
+      },
+      {
+        "visual_scene_id": "charter_ending_replacement",
+        "ink_anchor": "ending_recorded_replacement|ending_lineage_capture",
+        "base_image_prompt": "Provisional-succession aftermath at the Cistern House's central stone lip. Ressa Orr, tall and shaved-headed in a blue-black traveling mantle with brass measuring tools, now holds the eight-tooth iron spindle in both open hands. Sera Venn stands beside the service board with her own service sheet against her charcoal robe and an empty place on her tool sash. Bel Orra stands between them beside the three bowls and copied challenge. Maro Seln marks a temporary grant at the west drain wheel. Teren Vey remains behind the doorway cord, watching the transfer. Two pale shutter marks and one ash-grey mark show above the divided room.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "between Ressa and Sera beside records and bowls", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "beside service board holding her copy, tool sash empty", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "holding the transferred spindle at the central lip", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "maro_seln", "default_stance": "marking the temporary grant at the drain wheel", "visual_ref": "visual_character_refs.characters.maro_seln"},
+          {"agent_id": "teren_vey", "default_stance": "watching from behind the cord", "visual_ref": "visual_character_refs.characters.teren_vey"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The spindle visibly changes custody only in replacement endings. Sera always retains her own service sheet."
+        ]
+      },
+      {
+        "visual_scene_id": "charter_ending_override",
+        "ink_anchor": "ending_owned_override|ending_override_cost",
+        "base_image_prompt": "Emergency-override aftermath beside the west basin in Low Sere's Cistern House. Maro Seln braces the large iron drain wheel with a marked override sheet pinned under his weathered hand. Sera Venn closes the low sample-flow catch with the eight-tooth spindle still at her belt. Ressa Orr raises one brass stop rod beside the central stone lip. Bel Orra drags three water bowls and their black-grit evidence away from the basin edge. One shutter mark is ash-grey and two remain pale on the wall board. The drained west basin, iron grate, and black pressure-door stair remain visible behind a wet mineral flow path on the stone.",
+        "visible_characters": [
+          {"agent_id": "bel_orra", "default_stance": "pulling the evidence bowls clear of the west basin edge", "visual_ref": "visual_character_refs.characters.bel_orra"},
+          {"agent_id": "sera_venn", "default_stance": "closing the sample-flow catch, spindle belted", "visual_ref": "visual_character_refs.characters.sera_venn"},
+          {"agent_id": "ressa_orr", "default_stance": "raising a brass stop rod at the lip", "visual_ref": "visual_character_refs.characters.ressa_orr"},
+          {"agent_id": "maro_seln", "default_stance": "braced at the drain wheel with override sheet under his hand", "visual_ref": "visual_character_refs.characters.maro_seln"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Branch modifier determines whether the west flow clears or throws black water. In both endings, Maro visibly owns the override sheet and Sera retains the spindle."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "file_material_sample_visual",
+        "trigger": "branch_label == file_material_sample",
+        "apply_to_visual_scene_ids": ["charter_filing_action"],
+        "modifier_prompt": "Bel aligns all three bowls on matching wall marks; Ressa turns the bowls toward witnesses; black grit settles visibly in the lower-room sample."
+      },
+      {
+        "modifier_id": "file_worker_chain_visual",
+        "trigger": "branch_label == file_worker_chain",
+        "apply_to_visual_scene_ids": ["charter_filing_action"],
+        "modifier_prompt": "Move Iven and Tal from the east screen to stand behind Bel at the central lip; their ash scrapers rest by the pottery buckets, reed knives stay sheathed, and water poles lean beside the doorway."
+      },
+      {
+        "modifier_id": "file_through_reeve_visual",
+        "trigger": "branch_label == file_through_reeve",
+        "apply_to_visual_scene_ids": ["charter_filing_action"],
+        "modifier_prompt": "Maro presses a large wet basin-table seal onto the petition while keeping his other hand on the drain wheel; Bel watches the speed with guarded posture."
+      },
+      {
+        "modifier_id": "file_in_public_visual",
+        "trigger": "branch_label == file_in_public",
+        "apply_to_visual_scene_ids": ["charter_filing_action"],
+        "modifier_prompt": "Bel writes the petition in clear chalk blocks around ration marks on the wall board; wet workers gather at the doorway to read it."
+      },
+      {
+        "modifier_id": "distribute_outside_copy_visual",
+        "trigger": "branch_label == distribute_outside_copy",
+        "apply_to_visual_scene_ids": ["charter_preservation_action", "charter_bounded_comparison"],
+        "modifier_prompt": "Bel transfers an oilcloth-wrapped service sheet at the outer doorway to a rangy dark-brown-skinned Grey Bed worker in moss-green patched layers; his ash-raw hands close around the packet beyond the central lip."
+      },
+      {
+        "modifier_id": "preserve_live_state_visual",
+        "trigger": "branch_label == preserve_live_state",
+        "apply_to_visual_scene_ids": ["charter_preservation_action", "charter_bounded_comparison"],
+        "modifier_prompt": "Bel braces the low iron sample-flow handle with a long service hook while Sera turns the upper catch; black grit gathers in a clean line against the west basin stone."
+      },
+      {
+        "modifier_id": "expose_comparer_conflict_visual",
+        "trigger": "branch_label == expose_comparer_conflict",
+        "apply_to_visual_scene_ids": ["charter_preservation_action", "charter_bounded_comparison"],
+        "modifier_prompt": "Ressa lays out brass measuring rods, an octagonal tool case, a written fee line, and a declared future-support interest in open view beside the comparison sheet."
+      },
+      {
+        "modifier_id": "record_the_override_visual",
+        "trigger": "branch_label == record_the_override",
+        "apply_to_visual_scene_ids": ["charter_preservation_action", "charter_bounded_comparison"],
+        "modifier_prompt": "Maro signs and holds the override sheet against the drain wheel; Ressa points to the written boundary while Sera's spindle remains belted."
+      },
+      {
+        "modifier_id": "bounded_review_success_visual",
+        "trigger": "ending_label == bounded_review_holds",
+        "apply_to_visual_scene_ids": ["charter_ending_bounded_review"],
+        "modifier_prompt": "The black-grit evidence, three distinct custody marks, and Ressa's declared-interest line remain sharply legible; Bel and Iven carry the outside copy together while Sera stands upright with the spindle."
+      },
+      {
+        "modifier_id": "bounded_review_cost_visual",
+        "trigger": "ending_label == bounded_review_thin_evidence",
+        "apply_to_visual_scene_ids": ["charter_ending_bounded_review"],
+        "modifier_prompt": "The official headings remain neat while the evidence area is sparse; Ressa's hands are open in uncertainty, Maro marks a ration cut, and Sera's guarded posture stays tight around the belted spindle."
+      },
+      {
+        "modifier_id": "evacuation_record_visual",
+        "trigger": "ending_label == evacuation_with_record",
+        "apply_to_visual_scene_ids": ["charter_ending_evacuation"],
+        "modifier_prompt": "Evacuees move by named hearth in an orderly line; Bel holds the visible outside copy while Grey Bed workers carry an elderly resident and rolled bedding with their water poles."
+      },
+      {
+        "modifier_id": "evacuation_cost_visual",
+        "trigger": "ending_label == evacuation_without_leverage",
+        "apply_to_visual_scene_ids": ["charter_ending_evacuation"],
+        "modifier_prompt": "Upper-hearth residents carry store chests first while lower renters cluster with wet bedding; Bel stands alone with one copy and Grey Bed workers bear most of the loads."
+      },
+      {
+        "modifier_id": "recorded_replacement_visual",
+        "trigger": "ending_label == provisional_replacement_recorded",
+        "apply_to_visual_scene_ids": ["charter_ending_replacement"],
+        "modifier_prompt": "Three separated custody marks, one-work-watch limit, and Ressa's crossed-out neutral-comparer line are visibly recorded; Sera holds her own copy in full view."
+      },
+      {
+        "modifier_id": "lineage_capture_visual",
+        "trigger": "ending_label == provisional_replacement_capture",
+        "apply_to_visual_scene_ids": ["charter_ending_replacement"],
+        "modifier_prompt": "The only complete official copy remains on the central lip beside Eighth Baffle tools; Ressa holds the spindle while Sera stands isolated by the service board and damp workers watch from the doorway."
+      },
+      {
+        "modifier_id": "owned_override_success_visual",
+        "trigger": "ending_label == override_buys_interval",
+        "apply_to_visual_scene_ids": ["charter_ending_override"],
+        "modifier_prompt": "The west sample flow runs clearer around the dark sediment line; Maro's signed override stays pinned under his wheel hand while Sera and Ressa keep separate refusal sheets visible."
+      },
+      {
+        "modifier_id": "owned_override_cost_visual",
+        "trigger": "ending_label == override_spends_the_hearing",
+        "apply_to_visual_scene_ids": ["charter_ending_override"],
+        "modifier_prompt": "A burst of black water splashes across the west basin stone; Bel drags the three bowls clear, Sera closes the catch, and Ressa's raised stop rod catches the warm light."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "low_sere_cistern_house.charter.scene_set.v0",
+      "geometry_authority_level": "structured_camera_map",
+      "room_model": "Compact rectangular stone hall aligned from the outer Warm Steps doorway toward a back service wall. The live east basin occupies the left half, the drainable west inspection basin the right half, and a broad waist-high stone lip divides them. The west basin slopes to a grate and short descending stair ending at the black pressure door.",
+      "fixed_zones": [
+        {"zone_id": "outer_doorway_and_cord", "visible_form": "wide damp stone doorway to descending Warm Steps with a waist-high cord across the interior threshold", "used_for": "public audience, worker arrival, outside-copy transfer, Teren's exclusion, and evacuation"},
+        {"zone_id": "east_live_basin", "visible_form": "steaming rectangular stone basin with iron intake screen, pottery ash buckets, and scraper workspace", "used_for": "ordinary service, screen labor, Sera's working side, and cooling during evacuation"},
+        {"zone_id": "west_inspection_basin", "visible_form": "drainable sloped stone basin with sample-flow handle, iron grate, and sightline to a short stair and black pressure door", "used_for": "drain work, material isolation, override result, and visible dungeon threshold"},
+        {"zone_id": "central_basin_lip", "visible_form": "broad wet waist-high stone divider safe for bowls, service sheets, measures, and public comparison", "used_for": "basin table, three-copy seating, comparison, and spindle handoff"},
+        {"zone_id": "west_drain_wheel", "visible_form": "large iron hand wheel fixed at the western wall beside the inspection basin", "used_for": "Maro's bounded access and signed public override"},
+        {"zone_id": "back_service_board", "visible_form": "dark wall board with chalk service marks and three inset pale ceramic shutter indicators", "used_for": "Sera's knock record, visible clock loss, and appointment copy staging"},
+        {"zone_id": "ration_board", "visible_form": "chalked wall board beside the outer doorway carrying water shares, work debts, bed-flow notes, and public notices", "used_for": "public petition copy and worker audience"},
+        {"zone_id": "roof_beams_and_cloths", "visible_form": "dark damp beams above the basins with rough repair cloths on the west beam and two textured memorial cloths on the east beam", "used_for": "ordinary continuity, Grey Scald memory, and visual orientation"}
+      ],
+      "routes": [
+        {"route_id": "warm_steps_entry", "path": "Warm Steps -> outer_doorway_and_cord -> public side of central_basin_lip", "access": "residents, workers, and witnesses; Teren stops at the cord"},
+        {"route_id": "east_work_route", "path": "outer doorway -> public side of central lip -> east_live_basin screen workspace", "access": "maintainers and workers under current basin work"},
+        {"route_id": "west_inspection_route", "path": "public side of central lip -> west_inspection_basin edge -> iron grate -> pressure-door stair", "access": "basin edge is reachable; descent beyond grate requires Maro's drain access and Sera's spindle"},
+        {"route_id": "evacuation_route", "path": "Cistern House public side -> outer doorway -> uphill Warm Steps", "access": "residents carrying bedding, water, and tools"}
+      ],
+      "camera_slots": [
+        {"camera_id": "doorway_wide", "supports_visual_scene_ids": ["charter_cistern_house_establishing", "charter_remedy_choice"]},
+        {"camera_id": "east_work_medium", "supports_visual_scene_ids": ["charter_routine_watch", "charter_ending_bounded_review"]},
+        {"camera_id": "lip_evidence_medium", "supports_visual_scene_ids": ["charter_filing_choice", "charter_filing_action", "charter_copies_seated", "charter_bounded_comparison"]},
+        {"camera_id": "service_board_close", "supports_visual_scene_ids": ["charter_shutter_dims"]},
+        {"camera_id": "west_pressure_wide", "supports_visual_scene_ids": ["charter_pressure_choice", "charter_preservation_action", "charter_ending_override"]},
+        {"camera_id": "doorway_outward", "supports_visual_scene_ids": ["charter_ending_evacuation"]},
+        {"camera_id": "spindle_transfer_medium", "supports_visual_scene_ids": ["charter_ending_replacement"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "public_to_shutter_board", "path": "outer doorway and public lip -> over central lip -> back_service_board", "supports": ["seeing the pale shutter loss", "publicly checking service margin"]},
+        {"lane_id": "teren_to_hearing", "path": "behind doorway cord -> public side of central lip -> sheets, bowls, and service board", "supports": ["Teren hearing and challenging the comparison while controls remain unreachable"]},
+        {"lane_id": "sample_to_comparer", "path": "three bowls on central lip -> Ressa's comparison place -> back service record", "supports": ["material sample comparison", "evidence triangle"]},
+        {"lane_id": "outside_copy_route", "path": "central lip -> Bel's hands -> Iven beyond outer doorway", "supports": ["record custody leaving immediate office control"]}
+      ],
+      "persistent_state_anchors": [
+        {"state_id": "shutter_board_after_loss", "visible_form": "two pale ceramic marks and one ash-grey mark", "persists_from": "charter_shutter_dims"},
+        {"state_id": "spindle_custody", "visible_form": "eight-tooth iron spindle at Sera's belt, wrapped under seal, or held by Ressa", "persists_from": "routine_watch", "changed_by": ["suspend_and_evacuate", "make_quiet_replacement_legible"]},
+        {"state_id": "official_copy_custody", "visible_form": "three matching service sheets at distinct holders or one missing place showing outside custody", "persists_from": "copies_fold", "changed_by": ["distribute_outside_copy", "ending routes"]},
+        {"state_id": "black_grit_sample", "visible_form": "dark sediment in lower-room bowl or a preserved line against west basin stone", "persists_from": "start", "changed_by": ["preserve_live_state"]}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable fixture-level visual identities. These appearances are branch-local art direction, not broader Kalsan ethnic or institutional canon. Assemble only refs for characters visible in a frame.",
+    "characters": {
+      "bel_orra": "Bel Orra: compact brown-skinned adult human, close-cropped black hair silvering at the temples, broad tired face, patched ochre wool coat over grey work layers, water yoke, three shallow pottery sample bowls, cracked dark work gloves, practical grounded posture, dry humor visible in a sideways mouth and steady gaze.",
+      "sera_venn": "Sera Venn: lean young adult human with medium-brown skin, long dark braid wrapped in faded grey cloth, charcoal maintenance robe over close work trousers, leather tool sash, eight-tooth iron spindle at the belt, chalk-stained fingers, sleepless eyes, exact guarded posture.",
+      "ressa_orr": "Ressa Orr: tall dark-skinned adult human with shaved head, blue-black traveling mantle over fitted layered work clothes, brass measuring rods, octagonal leather-and-wood tool case, clean narrow gloves, upright still posture, open direct gaze.",
+      "maro_seln": "Maro Seln: broad older human man with weathered tan skin, iron-grey beard cut short, layered blue wool vest over rolled linen sleeves, wet forearms, basin-table seal at the neck, large hands accustomed to the iron drain wheel, forward urgent posture.",
+      "teren_vey": "Teren Vey: gaunt older human man with light-brown skin, cropped white hair, worn rust-red keeper coat with empty tool loops, bare belt, scarred left palm, posture held behind the doorway cord with contained injured pride.",
+      "iven_grey_bed_worker": "Iven: rangy dark-brown-skinned adult human Grey Bed worker, shaved sides with a short braided crown, moss-green patched work layers, reed knife in a safe belt sheath, long wooden water pole, ash-raw hands, skeptical level gaze.",
+      "tal_grey_bed_worker": "Tal: short sturdy light-brown-skinned adult human Grey Bed worker, dense dark curls under a wrapped green headcloth, moss-green patched apron over layered work clothes, reed knife in a safe belt sheath, long wooden water pole, alert stance angled toward other workers."
+    },
+    "groups": {
+      "low_sere_dependants": "Low Sere dependants: a small mixed-age group of human residents in damp layered wool, linen, leather, and patched work clothes; some carry pottery water vessels, baskets, rolled bedding, walking sticks, or children; tired practical faces and varied bodies; clustered at the Cistern House doorway and Warm Steps rather than posed as soldiers."
+    }
+  },
+  "review_notes": [
+    "No images were generated. The visual plan and BFL prompt batch are the complete deferred-render deliverables.",
+    "The structured scene_set is a durable camera map for this one-room fixture; a plan-view or 3D blockout remains the next step for high-consistency multi-angle website art.",
+    "All prompts use affirmative visible direction and explain Cistern House geometry, Techpriest tools, records, work clothes, and branch deltas in general image-model language.",
+    "Character appearances are fixture-stable visual design only; they do not establish regional body, gender, class, or lineage universals."
+  ]
+}

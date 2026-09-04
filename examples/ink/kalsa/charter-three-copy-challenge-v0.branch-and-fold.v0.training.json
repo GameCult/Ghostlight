@@ -1,0 +1,456 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "charter-three-copy-challenge-v0-training",
+  "ink_ref": "examples/ink/kalsa/charter-three-copy-challenge-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/kalsa/charter-three-copy-challenge-v0.v0.json",
+  "visual_plan_ref": "examples/visual/kalsa/charter-three-copy-challenge-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "charter-three-copy-challenge-v0.cistern-house-review",
+  "protagonist_agent_id": "bel_orra",
+  "npc_agent_ids": [
+    "sera_venn",
+    "ressa_orr",
+    "maro_seln",
+    "teren_vey",
+    "iven_grey_bed_worker",
+    "tal_grey_bed_worker"
+  ],
+  "purpose": "Charter elaboration fixture testing whether a water-dependent commoner can open technical review, preserve evidence, constrain a comparer, and make provisional succession legible while the Ashen Intake loses safe margin.",
+  "tonal_mode": "Dry civic wit with domestic warmth and approaching infrastructural dread.",
+  "artifact_role": "Spoiler-grounded branch-local dramatization; no ending promotes its outcome into Kalsa's standing history.",
+  "local_awareness_summary": [
+    {
+      "text": "Bel knows lower-step water, wet walls, Grey Bed work loss, the Cistern House routine, and the visible split among Maro's drain wheel, Sera's spindle, Ressa's comparison, and Teren's excluded testimony.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/charter-three-copy-challenge-v0.v0.json",
+        "Kalsa/Public/Sources/At the Basin Table.md",
+        "Kalsa/Spoilers/Places/Low Sere.md"
+      ]
+    },
+    {
+      "text": "Bel can carry samples, copy a petition, call workers, brace reachable basin hardware under Sera's direction, transfer records, request or condition public action, and help organize evacuation. She cannot diagnose the Intake Crown or appoint a custodian alone.",
+      "source_refs": [
+        "Kalsa/Spoilers/Institutions/The Techpriesthoods.md",
+        "Kalsa/Spoilers/Institutions/Relic Custody.md",
+        "Kalsa/Spoilers/Places/Low Sere.md"
+      ]
+    },
+    {
+      "text": "The fixture begins during ordinary sampling, screen scraping, ration work, and drain preparation before one pale shutter mark dims and turns the hearing into a timed material decision.",
+      "source_refs": [
+        "Kalsa/Public/Places/Low Sere.md",
+        "Kalsa/Spoilers/Places/Low Sere.md",
+        "Kalsa/Spoilers/Dungeons/The Ashen Intake.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Bel's commoner-scale perception inside the Cistern House. The narration may clarify institutional consequences but does not give Bel hidden dungeon knowledge.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/kalsa/charter-three-copy-challenge-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Routine must precede pressure: water bowls, ash scraping, work jokes, beams, cloths, and ordinary office fatigue establish what failure costs before the shutter dims.",
+        "source_refs": [
+          "AGENTS.md#Aetheria-Grounding-Doctrine",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Bel's petition can force a record and proposed remedy but cannot itself decide technical safety, political allocation, land, relic title, or cult standing.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/The Techpriesthoods.md",
+          "Kalsa/Spoilers/Institutions/Relic Custody.md"
+        ]
+      },
+      {
+        "text": "Ressa may compare and stop inside her proven scope. If she accepts provisional operation, her comparison is demoted to interested testimony rather than remaining a neutral verdict.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/The Techpriesthoods.md",
+          "Kalsa/Spoilers/Institutions/Measures, Formulae, and Machine Speech.md"
+        ]
+      },
+      {
+        "text": "Maro owns the drain wheel and public emergency decision he records; Sera owns the spindle and technical boundary of her current appointment. Neither key creates the other's authority.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Three service sheets, three water bowls, the service board, ration board, drain wheel, spindle, and outside cord are stable material objects whose location and custody affect branches and endings.",
+        "source_refs": [
+          "examples/ink/kalsa/charter-three-copy-challenge-v0.branch-and-fold.v0.ink",
+          "Kalsa/Public/Places/Low Sere.md",
+          "Kalsa/Spoilers/Places/Low Sere.md"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every remedy must keep technical comparison, appointment, public override, record custody, and commoner standing separable even when one person temporarily changes roles.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/The Techpriesthoods.md",
+          "Kalsa/Spoilers/Institutions/Relic Custody.md",
+          "Kalsa/Spoilers/Events/The Grey Scald.md"
+        ]
+      },
+      {
+        "text": "No ending grants clean rescue: procedure may buy interval, preserve standing, or expose capture, while missing evidence and the intake descent remain live.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not settle Teren's appeal, Sera's permanent appointment, Eighth Baffle succession, or the canonical fate of the Ashen Intake.",
+        "source_refs": [
+          "Kalsa/Spoilers/Events/The Grey Scald.md",
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md"
+        ]
+      },
+      {
+        "text": "Do not turn the three-copy challenge into a universal Techpriest hierarchy or let any machine response decide human jurisdiction.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/The Techpriesthoods.md",
+          "Kalsa/Spoilers/Institutions/Measures, Formulae, and Machine Speech.md"
+        ]
+      },
+      {
+        "text": "Do not explain whether knocks or other intake phenomena are mechanical, mortuary, divine, or mixed.",
+        "source_refs": [
+          "Kalsa/Public/Sources/At the Basin Table.md",
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three four-way choice layers fold through copy seating and bounded comparison, then route to eight state-gated endings about review, evacuation, provisional succession, and emergency override.",
+    "choice_layers": [
+      "opening_the_challenge",
+      "preserving_the_hearing",
+      "remedy_and_succession"
+    ],
+    "variables": [
+      "record_strength",
+      "worker_support",
+      "service_margin",
+      "table_pressure",
+      "comparison_independence",
+      "copies_distributed",
+      "override_owned",
+      "sera_trust"
+    ],
+    "ending_gates": [
+      "ending_bounded_review",
+      "ending_bounded_review_cost",
+      "ending_evacuation_with_standing",
+      "ending_evacuation_cost",
+      "ending_recorded_replacement",
+      "ending_lineage_capture",
+      "ending_owned_override",
+      "ending_override_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "file_material_sample",
+      "ink_path": "filing_choice",
+      "action_type": "show_object",
+      "actor_intent": "Make the material difference harder to dismiss than Bel's social status.",
+      "state_basis": [
+        "Bel carries samples from drinking, Grey Bed, and lower-room flows.",
+        "Ressa can compare observed material state without diagnosing the hidden Intake Crown."
+      ],
+      "reviewed_consequences": [
+        "Raises record_strength and comparison_independence while spending one service interval."
+      ],
+      "training_hooks": ["material_evidence_over_rank", "commoner_petition_costs_time"]
+    },
+    {
+      "branch_id": "file_worker_chain",
+      "ink_path": "filing_choice",
+      "action_type": "speak",
+      "actor_intent": "Make unranked work and loss survive as named testimony.",
+      "state_basis": [
+        "Grey Bed workers observe flow and crop stress and have been diverted to water carrying."
+      ],
+      "reviewed_consequences": [
+        "Raises worker_support and table_pressure while spending one service interval."
+      ],
+      "training_hooks": ["worker_testimony", "collective_standing"]
+    },
+    {
+      "branch_id": "file_through_reeve",
+      "ink_path": "filing_choice",
+      "action_type": "request",
+      "actor_intent": "Borrow the reeve's speed and formal seal to preserve immediate work time.",
+      "state_basis": [
+        "Maro records basin-table action and controls the west-basin drain wheel."
+      ],
+      "reviewed_consequences": [
+        "Raises service_margin and table_pressure while lowering comparison_independence."
+      ],
+      "training_hooks": ["borrowed_authority", "fast_admission_capture_risk"]
+    },
+    {
+      "branch_id": "file_in_public",
+      "ink_path": "filing_choice",
+      "action_type": "use_object",
+      "actor_intent": "Make a refused or altered petition visible to water carriers outside the hearing.",
+      "state_basis": [
+        "The Cistern House has ration boards and duplicate warnings visible to settlement workers."
+      ],
+      "reviewed_consequences": [
+        "Raises copies_distributed, record_strength, worker_support, and table_pressure."
+      ],
+      "training_hooks": ["public_copy", "non_speech_redress"]
+    },
+    {
+      "branch_id": "distribute_outside_copy",
+      "ink_path": "pressure_response",
+      "action_type": "transfer_object",
+      "actor_intent": "Place the independent copy beyond the immediate appointment and basin-table lines.",
+      "state_basis": [
+        "The three-copy challenge requires separated record custody.",
+        "Iven is physically at the Cistern House outer doorway."
+      ],
+      "reviewed_consequences": [
+        "Raises copies_distributed and worker_support while spending one service interval."
+      ],
+      "training_hooks": ["separated_record_custody", "outside_copy"]
+    },
+    {
+      "branch_id": "preserve_live_state",
+      "ink_path": "pressure_response",
+      "action_type": "manipulate_object",
+      "actor_intent": "Help Sera isolate a reachable sample flow while preserving both service and evidence.",
+      "state_basis": [
+        "Local workers know reachable basin hardware while Sera retains technical command of the isolation.",
+        "Bel is beside the west-basin gate."
+      ],
+      "reviewed_consequences": [
+        "Raises service_margin, record_strength, and sera_trust."
+      ],
+      "training_hooks": ["local_material_knowledge", "work_as_evidence"]
+    },
+    {
+      "branch_id": "expose_comparer_conflict",
+      "ink_path": "pressure_response",
+      "action_type": "speak",
+      "actor_intent": "Put Ressa's competence, fee, and future institutional interest into the record before her finding.",
+      "state_basis": [
+        "Independent comparison requires bounded competence and exposed material conflict."
+      ],
+      "reviewed_consequences": [
+        "Raises comparison_independence and table_pressure while spending one service interval."
+      ],
+      "training_hooks": ["declared_interest", "neutrality_as_procedure"]
+    },
+    {
+      "branch_id": "record_the_override",
+      "ink_path": "pressure_response",
+      "action_type": "authorize",
+      "actor_intent": "Allow one public drain act while making Maro own its risk and preserving technical refusals.",
+      "state_basis": [
+        "Maro controls the drain wheel but not the pressure door or spindle.",
+        "Emergency political action must remain distinct from technical certification."
+      ],
+      "reviewed_consequences": [
+        "Sets override_owned, raises service_margin and table_pressure, and lowers comparison_independence."
+      ],
+      "training_hooks": ["owned_override", "emergency_authority_boundary"]
+    },
+    {
+      "branch_id": "preserve_bounded_appointment",
+      "ink_path": "remedy_choice",
+      "action_type": "speak",
+      "actor_intent": "Keep Sera's spindle while limiting Ressa to comparison and stop authority during this hearing.",
+      "state_basis": [
+        "Bel can demand a remedy but the basin table and appointment parties decide the office.",
+        "Outcome quality depends on record_strength and comparison_independence."
+      ],
+      "reviewed_consequences": [
+        "Raises comparison_independence and routes to strong or thin bounded-review ending."
+      ],
+      "training_hooks": ["separate_comparison_from_succession", "state_gated_redress"]
+    },
+    {
+      "branch_id": "suspend_and_evacuate",
+      "ink_path": "remedy_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Seal spindle and records while moving lower households before procedure consumes the remaining interval.",
+      "state_basis": [
+        "A material stop can survive appeal; collective support and outside copies determine whether evacuees retain usable standing."
+      ],
+      "reviewed_consequences": [
+        "Spends service_margin and routes by worker_support or copies_distributed."
+      ],
+      "training_hooks": ["formal_right_needs_social_body", "evidence_preserving_evacuation"]
+    },
+    {
+      "branch_id": "make_quiet_replacement_legible",
+      "ink_path": "remedy_choice",
+      "action_type": "authorize",
+      "actor_intent": "Seat Ressa for one isolation while demoting her neutral comparison to interested testimony and preserving Sera's appeal.",
+      "state_basis": [
+        "A comparer who accepts the spindle changes roles and cannot keep neutral finding authority.",
+        "Separated copies and material evidence determine whether the handoff remains reviewable."
+      ],
+      "reviewed_consequences": [
+        "Raises service_margin, lowers comparison_independence, and routes to recorded replacement or lineage capture."
+      ],
+      "training_hooks": ["role_demotion_on_handoff", "quiet_replacement_made_visible"]
+    },
+    {
+      "branch_id": "force_owned_override",
+      "ink_path": "remedy_choice",
+      "action_type": "conditionally_comply",
+      "actor_intent": "Let public urgency act only under Maro's name while preserving Sera's and Ressa's refusals.",
+      "state_basis": [
+        "Political override cannot compel a safety certification.",
+        "Service margin and record strength determine whether the act buys time or merely fails legibly."
+      ],
+      "reviewed_consequences": [
+        "Sets override_owned, raises table_pressure, and routes to interval or failure ending based on service_margin and record_strength."
+      ],
+      "training_hooks": ["political_authority_owns_risk", "machine_response_not_verdict"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Branch and visual modifier handle validation"
+    ],
+    "manual_review_required": [
+      "Any promotion of an ending into Kalsa's standing history",
+      "Durable character memory, relationship, office, or custody changes",
+      "Acceptance into the training corpus",
+      "Any extension of the three-copy challenge beyond Low Sere"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Charter elaborator applying four repository reviewer prompts as separate passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative review repaired branch-only introduction of Iven and Tal and an unreachable strong replacement ending; all eight endings are now reachable across the sixteen pre-remedy state combinations.",
+      "Lore review kept the three-copy challenge local to Low Sere, marked every source tier, and retained Teren's appeal, Sera's appointment, Eighth Baffle succession, intake outcome, and knock causation as unresolved.",
+      "Visual review removed a state-conditional object from a base prompt, added complete worker descriptions to conditional modifiers, removed an unsupported opening crowd, and separated the override base state from its failure delta.",
+      "Spatial review verified one stable Cistern House coordinate frame, Teren's occluded access boundary, reachable player affordances, an outward evacuation route, and persistent spindle, shutter, copy, and sample states.",
+      "Static checks parsed all four JSON artifacts, matched twelve Ink branches to twelve sidecar branches, matched eight ending labels to eight visual ending modifiers, resolved every visual character ref, and found fourteen visual scenes with fourteen BFL prompts.",
+      "Ink was not compiled, as required by the swarm contract; structure was checked against the reference fixture and with read-only cross-artifact audits."
+    ],
+    "review_passes": {
+      "narrative_quality": {
+        "verdict": "accepted",
+        "scores": {
+          "reader_orientation_score": 5,
+          "coherence_score": 5,
+          "pacing_score": 4,
+          "voice_score": 5,
+          "tonal_fit_score": 5,
+          "if_playability_score": 5
+        },
+        "findings": [
+          {
+            "severity": "major",
+            "location": "routine_watch -> filing_choice -> pressure_response",
+            "problem": "The first draft introduced Iven and Tal only on one optional filing branch, then used Iven after the fold.",
+            "resolution": "Introduced both Grey Bed workers during ordinary screen work and changed the optional branch to move already-known people into the witness position."
+          },
+          {
+            "severity": "major",
+            "location": "remedy_choice.make_quiet_replacement_legible",
+            "problem": "The first strong recorded-replacement threshold could not be reached by any earlier branch combination.",
+            "resolution": "Adjusted the evidence-and-copy gate and enumerated all sixteen pre-remedy combinations; every strong and cost ending is reachable."
+          }
+        ],
+        "review_labels": ["strong_contextual_onboarding", "strong_wit_with_stakes", "strong_branch_callback", "strong_material_lore"]
+      },
+      "lore_grounding": {
+        "verdict": "accepted",
+        "scores": {
+          "source_coverage_score": 5,
+          "canon_fit_score": 5,
+          "grounding_quality_score": 5,
+          "vault_backfill_value_score": 5
+        },
+        "findings": [
+          {
+            "severity": "minor",
+            "location": "lore digest and visual_character_refs",
+            "problem": "Fixture-local worker names and character appearances could be mistaken for broader Kalsan canon.",
+            "resolution": "Marked the artifact branch-local, described visual identities as fixture-level art direction, and kept durable canon backfill limited to the Low Sere procedure."
+          }
+        ],
+        "review_labels": ["source_grounded", "strong_material_lore", "strong_infrastructure_grounding", "vault_backfill_candidate"]
+      },
+      "visual_continuity": {
+        "verdict": "accepted",
+        "scores": {
+          "segmentation_score": 5,
+          "visual_prompt_score": 5,
+          "character_visibility_score": 5,
+          "branch_visual_continuity_score": 5,
+          "website_replay_score": 4
+        },
+        "findings": [
+          {
+            "severity": "major",
+            "location": "charter_bounded_comparison.base_image_prompt",
+            "problem": "The draft base prompt placed the service hook in Bel's hands even though that object depends on sera_trust.",
+            "resolution": "Removed the hook from the base frame and left it solely in the triggered sera_trust modifier."
+          },
+          {
+            "severity": "major",
+            "location": "conditional worker modifiers and charter_cistern_house_establishing",
+            "problem": "Conditional worker appearances lacked complete visible descriptions, while the opening frame added a crowd the Ink had not introduced.",
+            "resolution": "Added standalone worker anatomy, clothing, tools, and posture to modifiers and removed the opening crowd and its off-frame ref."
+          },
+          {
+            "severity": "minor",
+            "location": "charter_ending_override.base_image_prompt",
+            "problem": "The draft base frame baked a failure burst into both override outcomes.",
+            "resolution": "Made the base flow path neutral and kept the black-water burst in the failure modifier."
+          }
+        ],
+        "review_labels": ["strong_scene_segmentation", "strong_imagegen_ready_prompt", "strong_character_stance_control", "strong_branch_visual_continuity"]
+      },
+      "spatial_cohesion": {
+        "verdict": "accepted",
+        "scores": {
+          "layout_cohesion_score": 5,
+          "sightline_score": 5,
+          "body_affordance_score": 5,
+          "movement_access_score": 5,
+          "object_system_geometry_score": 5,
+          "branch_spatial_state_score": 5
+        },
+        "findings": [],
+        "inferred_layout_summary": "A compact rectangular Cistern House runs from the Warm Steps doorway to a back service wall. The live east basin lies left, drained west inspection basin right, and central lip between. The west basin slopes to a grate and short pressure-door stair; the drain wheel, service board, ration board, doorway cord, and public-side handles remain fixed. Teren can see the hearing from behind the cord but cannot reach any control.",
+        "review_labels": ["strong_layout_cohesion", "strong_sightline_control", "strong_body_affordance_staging", "strong_branch_spatial_state"]
+      }
+    },
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

@@ -1,0 +1,388 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "kalsa.charter-three-copy-challenge-v0",
+  "source_status": "canonical_plus_authored_elaboration",
+  "fixture_status": "spoiler_grounded_branch_local",
+  "source_refs": [
+    {
+      "source_id": "public-low-sere",
+      "path": "Kalsa/Public/Places/Low Sere.md",
+      "title": "Low Sere",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 47,
+      "relevance": "Reader-facing locality, forty-one hearths, Cistern House geometry, basin table, current actors, ordinary dependence, and the unresolved intake failure."
+    },
+    {
+      "source_id": "public-basin-table",
+      "path": "Kalsa/Public/Sources/At the Basin Table.md",
+      "title": "At the Basin Table",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 74,
+      "relevance": "Reader-facing voices and positions for Bel, Sera, Ressa, Maro, Teren, the split threshold keys, three-copy demand, wages, and unresolved appeal."
+    },
+    {
+      "source_id": "public-relics",
+      "path": "Kalsa/Public/World/Relics and Ruins.md",
+      "title": "Relics and Ruins",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 75,
+      "relevance": "Reader-facing distinction among technical competence, land, output, service dependence, custody, and rival-lineage hearing pressure."
+    },
+    {
+      "source_id": "canon-policy",
+      "path": "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+      "title": "Canon and Provenance",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 129,
+      "relevance": "Controls authored-repair provenance, knowledge layers, and the requirement that unresolved claims remain unresolved."
+    },
+    {
+      "source_id": "institutions-index",
+      "path": "Kalsa/Spoilers/Institutions/index.md",
+      "title": "Institutions",
+      "canon_tier": "Spoilers/navigation",
+      "line_start": 1,
+      "line_end": 42,
+      "relevance": "Routes technical operation, relic custody, local law, court authority, and dependence to separate institutional owners."
+    },
+    {
+      "source_id": "techpriesthoods",
+      "path": "Kalsa/Spoilers/Institutions/The Techpriesthoods.md",
+      "title": "The Techpriesthoods",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 189,
+      "relevance": "Primary owner for plural lineages, bounded operational custody, formation, records, support, succession, failure protocol, and the authored Low Sere three-copy challenge."
+    },
+    {
+      "source_id": "relic-custody",
+      "path": "Kalsa/Spoilers/Institutions/Relic Custody.md",
+      "title": "Relic Custody",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 197,
+      "relevance": "Owns appointment, support, discipline, removal, provisional succession, independent comparison, and layer-specific appeal."
+    },
+    {
+      "source_id": "machine-speech",
+      "path": "Kalsa/Spoilers/Institutions/Measures, Formulae, and Machine Speech.md",
+      "title": "Measures, Formulae, and Machine Speech",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 156,
+      "relevance": "Owns witnessed comparison, declared conversion, bounded technical certification, stop authority, and the rule that machine response is not legal approval."
+    },
+    {
+      "source_id": "spoiler-low-sere",
+      "path": "Kalsa/Spoilers/Places/Low Sere.md",
+      "title": "Low Sere",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 133,
+      "relevance": "Owns detailed Cistern House layout, actor authority, ordinary work, class burden, three pale shutters, and the unresolved appointment and appeal."
+    },
+    {
+      "source_id": "grey-scald",
+      "path": "Kalsa/Spoilers/Events/The Grey Scald.md",
+      "title": "The Grey Scald",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 38,
+      "relevance": "Owns the adopted disaster and the failure caused by collapsing suspension, technical comparison, mortuary claim, removal, and succession."
+    },
+    {
+      "source_id": "ashen-intake",
+      "path": "Kalsa/Spoilers/Dungeons/The Ashen Intake.md",
+      "title": "The Ashen Intake",
+      "canon_tier": "Spoilers/GM",
+      "line_start": 1,
+      "line_end": 396,
+      "relevance": "Owns the active shutter clock, split threshold authority, physical formula evidence, missing Ashen Measure and folio, outcome pressures, and the fact that no present appeal is settled."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Kalsa's standing present; the exact date and calendar remain unresolved.",
+    "location": "The Cistern House at Low Sere, centered on the stone lip between the live east basin and drained west inspection basin above the Ashen Intake pressure door.",
+    "summary": "A lower-step water witness opens Low Sere's first three-copy technical challenge during an ordinary intake watch. A failing shutter turns record custody, neutral comparison, emergency authority, and provisional succession into immediate choices.",
+    "public_facts": [
+      {
+        "text": "Low Sere is a forty-one-hearth settlement whose warmth, drinking water, crops, craft, and trade depend on an old intake beneath the Cistern House.",
+        "source_refs": ["public-low-sere"]
+      },
+      {
+        "text": "The basin table joins water witnesses, Grey Bed workers, maintainers, and the intake custodian without becoming a universal village government.",
+        "source_refs": ["public-low-sere"]
+      },
+      {
+        "text": "Sera holds the technical spindle, Maro controls the settlement's drain access, Ressa can make a bounded comparison, and Teren's removal and appeal remain disputed.",
+        "source_refs": ["public-low-sere", "public-basin-table"]
+      },
+      {
+        "text": "Techpriest lineages carry practical memory and real leverage, but technical competence does not automatically grant land, water, or political rule.",
+        "source_refs": ["public-relics"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "A technical challenge consumes specialist travel, food, work time, and remaining safe interval; redress must therefore preserve petitioners materially as well as on paper.",
+        "source_refs": ["techpriesthoods", "relic-custody", "spoiler-low-sere"]
+      },
+      {
+        "text": "An independent comparer can have future institutional interests. Declared conflict narrows authority; it does not make interests disappear.",
+        "source_refs": ["techpriesthoods", "spoiler-low-sere"]
+      },
+      {
+        "text": "Emergency political action may continue only as a named override within split keys and material stops; it cannot convert a machine response into a verdict.",
+        "source_refs": ["techpriesthoods", "machine-speech", "ashen-intake"]
+      },
+      {
+        "text": "Teren's appeal, Sera's permanent appointment, and any future Eighth Baffle role remain unresolved across all branch outcomes.",
+        "source_refs": ["grey-scald", "relic-custody", "spoiler-low-sere", "ashen-intake"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "low-sere-lower-step-dependants",
+      "label": "Lower-step households and Grey Bed workers",
+      "group_type": "service_dependants",
+      "institutional_logic": ["Make water, heat, crop flow, work loss, and unsafe notice visible before upper-hearth priority turns them into private hardship."],
+      "material_incentives": ["Keep minimum water and warmth, preserve crop labor, receive wages or replacement for hearing time, and keep an outside copy of any claim."],
+      "internal_virtues": ["Named witness", "Practical observation", "Mutual carrying", "Evidence that remains attached to the harmed place"],
+      "internal_shames": ["Letting patron representation erase renters", "Allowing Grey Bed work to become nonessential only when rationing begins"],
+      "prestige_markers": ["A warning entered before failure", "A work chain that survives elite retelling", "Water carried for households with no private vessels"],
+      "taboo_triggers": ["Being treated as raw data for a specialist's conclusion", "Losing standing after evacuation"],
+      "emotional_display_norms": ["Anger arrives as concrete comparison, dry jokes, named labor, and refusal to let the bowl leave the table."],
+      "trust_defaults": ["Trusts duplicated records, visible samples, other workers, and specialists who declare their limits."],
+      "speech_register_cues": ["Short material claims", "Workplace wit", "Household consequence", "Suspicion of clean procedural language"],
+      "source_refs": ["public-low-sere", "public-basin-table", "spoiler-low-sere", "techpriesthoods"]
+    },
+    {
+      "group_id": "low-sere-basin-table",
+      "label": "Low Sere basin table",
+      "group_type": "bounded_local_compact",
+      "institutional_logic": ["Coordinate water, shared stores, maintenance labor, threshold admission, and emergency basin action without absorbing unrelated household or technical authority."],
+      "material_incentives": ["Keep the settlement habitable, preserve a functioning operator, ration scarce flow, and prevent review from consuming the final safe interval."],
+      "internal_virtues": ["Continuity", "Recorded work", "Split keys", "Decisions that name who must carry them"],
+      "internal_shames": ["A public work stopped by indecision", "A stranger acquiring the intake through procedure", "Another preventable worker death"],
+      "prestige_markers": ["A basin kept warm", "Stores that cover a failed intervention", "A decision that survives the next work-watch"],
+      "taboo_triggers": ["A custodian using safety as hereditary monopoly", "A petitioner consuming time without visible evidence"],
+      "emotional_display_norms": ["Fear becomes scheduling, ration marks, and urgency; guilt prefers to call itself continuity."],
+      "trust_defaults": ["Trusts the people already keeping service alive, then worries that this is exactly how permanent provisional power happens."],
+      "speech_register_cues": ["Work-watch arithmetic", "Settlement-first urgency", "Conditional acknowledgement", "Compressed responsibility"],
+      "source_refs": ["public-low-sere", "spoiler-low-sere", "grey-scald"]
+    },
+    {
+      "group_id": "intake-custody-line",
+      "label": "Low Sere's intake custodians",
+      "group_type": "local_technical_office",
+      "institutional_logic": ["Preserve bounded operational competence, material stops, service records, and a safe handoff for one named configuration."],
+      "material_incentives": ["Keep access to the spindle, receive household support, recover missing tools and records, and avoid being made liable for political overrides."],
+      "internal_virtues": ["Knowing when to stop", "A complete failure record", "Refusal that names its boundary", "Teaching relief"],
+      "internal_shames": ["Certifying beyond evidence", "Letting a public system fail through private custody", "A provisional office mistaken for incompetence"],
+      "prestige_markers": ["Stable reduced service", "A safe isolation", "A successor who can explain the changed machine"],
+      "taboo_triggers": ["A council taking the spindle as if access created competence", "A rival lineage treating comparison as succession"],
+      "emotional_display_norms": ["Fear is narrowed into system boundaries; resentment appears as exact statements of what the office does not own."],
+      "trust_defaults": ["Trusts material state and witnessed practice; distrusts universal titles and retrospective certainty."],
+      "speech_register_cues": ["Bounded claims", "Configuration detail", "Dry refusal", "Corrections to political paraphrase"],
+      "source_refs": ["techpriesthoods", "relic-custody", "machine-speech", "spoiler-low-sere"]
+    },
+    {
+      "group_id": "eighth-baffle-comparison",
+      "label": "Eighth Baffle comparison practice",
+      "group_type": "itinerant_technical_lineage",
+      "institutional_logic": ["Trade portable competence and cross-site records for passage, support, recognition, and future work while keeping findings inside proven scope."],
+      "material_incentives": ["Receive travel costs, lodging, fees, copied records, and possibly a later support compact without acquiring title through one hearing."],
+      "internal_virtues": ["Declared uncertainty", "Comparable records", "Independent stop", "Surviving the patron who dislikes the finding"],
+      "internal_shames": ["A bought verdict", "Using neutral witness status to inherit an appointment", "Certifying a system from prestigious words alone"],
+      "prestige_markers": ["A diagnosis another lineage can reproduce", "A public limit kept under pressure", "A handoff that preserves adverse evidence"],
+      "taboo_triggers": ["Being ordered to call a political act safe", "Having specialist work treated as free devotion"],
+      "emotional_display_norms": ["Self-interest is safer when named; professional anger appears as refusal to let machine response settle human jurisdiction."],
+      "trust_defaults": ["Trusts three-handed records and specific competencies; expects hosts to want a verdict faster than the evidence permits."],
+      "speech_register_cues": ["Explicit scope", "Conflict disclosure", "Comparison rather than proclamation", "Named fee and review point"],
+      "source_refs": ["techpriesthoods", "machine-speech", "spoiler-low-sere"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "low-sere.survival-makes-provisional-power-sticky",
+      "applies_to": ["low-sere-basin-table", "intake-custody-line"],
+      "pressure_type": "institutional_continuity",
+      "summary": "Every delayed appointment risks the water, while every emergency handoff risks becoming permanent through use.",
+      "projection_use": "Make succession choices transfer specific keys, support, copies, and duties; never let the word temporary do the work alone.",
+      "source_refs": ["relic-custody", "grey-scald", "spoiler-low-sere"]
+    },
+    {
+      "field_id": "low-sere.commoner-standing-needs-material-support",
+      "applies_to": ["low-sere-lower-step-dependants", "low-sere-basin-table"],
+      "pressure_type": "redress_access",
+      "summary": "A hearing that costs a work-watch, water, food, or shelter can exclude the people most exposed to failure while remaining formally open.",
+      "projection_use": "Tie copies, witnesses, ration standing, hearing time, and evacuation membership to later options and endings.",
+      "source_refs": ["techpriesthoods", "relic-custody", "spoiler-low-sere"]
+    },
+    {
+      "field_id": "techpriesthoods.neutrality-has-a-support-base",
+      "applies_to": ["eighth-baffle-comparison", "low-sere-basin-table"],
+      "pressure_type": "declared_interest",
+      "summary": "An itinerant comparer needs fees, lodging, route access, and future work; independence is produced by disclosed limits and separated custody, not purity.",
+      "projection_use": "Let Ressa state her material interests plainly and make the player decide how those interests narrow her seat.",
+      "source_refs": ["techpriesthoods", "relic-custody"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "low-sere-basin-table",
+      "target_group_id": "intake-custody-line",
+      "observer_read": ["Necessary operator", "Possible hereditary bottleneck", "Person whose caution consumes the settlement's safe interval"],
+      "target_self_read": ["Bounded custodian", "Last person required to refuse an unsupported operation", "Office carrying missing records and support failures"],
+      "misread_patterns": ["Treats technical narrowing as delay", "Treats provisional tenure as proof that replacement is overdue"],
+      "likely_insults": ["keeper of waiting", "spindle heir", "half-appointed priest"],
+      "projection_use": "Keep Maro's urgency real while preventing it from becoming technical knowledge.",
+      "source_refs": ["public-basin-table", "spoiler-low-sere", "relic-custody"]
+    },
+    {
+      "observer_group_id": "intake-custody-line",
+      "target_group_id": "low-sere-lower-step-dependants",
+      "observer_read": ["Essential local observers", "People exposed to warnings they may not interpret technically", "Possible pressure arm of the basin table"],
+      "target_self_read": ["People carrying water and injury before specialists name the problem", "Claimants to a service they materially sustain"],
+      "misread_patterns": ["Turns worker observation into anonymous input", "Mistakes lack of technical vocabulary for lack of causal knowledge"],
+      "likely_insults": ["anecdote", "unqualified witness", "basin noise"],
+      "projection_use": "Keep Bel's evidence concrete and bounded rather than overclocking her into a hidden engineer.",
+      "source_refs": ["techpriesthoods", "spoiler-low-sere"]
+    },
+    {
+      "observer_group_id": "low-sere-lower-step-dependants",
+      "target_group_id": "eighth-baffle-comparison",
+      "observer_read": ["Necessary stranger", "Possible successor arriving in the clothes of neutrality", "Route by which a local record may escape local pressure"],
+      "target_self_read": ["Bounded comparer", "Paid specialist", "Witness able to say what the record cannot establish"],
+      "misread_patterns": ["Petitioners may treat disclosed interest as corruption", "The lineage may treat declared scope as sufficient protection against future capture"],
+      "likely_insults": ["traveling heir", "fee-priest", "third hand with two pockets"],
+      "projection_use": "Make declared conflict improve legibility without magically removing suspicion.",
+      "source_refs": ["techpriesthoods", "spoiler-low-sere"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "lower-step-water-witness",
+      "summary": "Bel Orra carries material observations and household loss into a forum that can record them but may prefer a faster specialist answer.",
+      "obligations": ["Preserve the black-grit sample", "Keep lower-step water and standing visible", "Choose who holds the outside copy"],
+      "available_masks": ["Dry workplace humor", "Helpful basin labor", "Deference to expertise", "Public stubbornness"],
+      "failure_modes": ["Borrowing Maro's authority until he owns the petition", "Winning a record after her household can no longer use it", "Being treated as evidence rather than a claimant"],
+      "source_refs": ["public-basin-table", "spoiler-low-sere", "techpriesthoods"]
+    },
+    {
+      "role_id": "provisional-intake-custodian",
+      "summary": "Sera Venn preserves reduced service with incomplete formation records and a deliberately bounded grant.",
+      "obligations": ["Keep minimum service", "Refuse the Intake Crown beyond evidence", "Surrender copies and specific access under review", "Seek an honest appointment or replacement"],
+      "available_masks": ["Exact technical scope", "Exhausted competence", "Apprentice humility", "Custodial refusal"],
+      "failure_modes": ["Clinging to access because no successor is safe", "Letting the table translate degraded service into full competence", "Treating local workers as nontechnical scenery"],
+      "source_refs": ["public-low-sere", "spoiler-low-sere", "relic-custody"]
+    },
+    {
+      "role_id": "independent-technical-comparer",
+      "summary": "Ressa Orr can compare part of the intake practice, but her fee and lineage's possible future compact create visible interests.",
+      "obligations": ["Declare scope and conflicts", "Preserve three copies", "Separate machine evidence from verdict", "Stop unsafe opening"],
+      "available_masks": ["Professional plainness", "Ritual precision", "Outsider neutrality", "Explicit self-interest"],
+      "failure_modes": ["Sliding from comparison into appointment", "Letting urgency shrink the stated boundary", "Confusing transborder reputation with local jurisdiction"],
+      "source_refs": ["public-basin-table", "techpriesthoods", "machine-speech", "spoiler-low-sere"]
+    },
+    {
+      "role_id": "cistern-reeve",
+      "summary": "Maro Seln owns basin access, schedules, and emergency settlement action while lacking technical authority over the pressure seal.",
+      "obligations": ["Keep the settlement supplied", "Fund the challenge", "Name political overrides", "Preserve split keys"],
+      "available_masks": ["Continuity", "Public urgency", "Fast record admission", "Practical impatience"],
+      "failure_modes": ["Using speed to own the petition", "Laundering an override through Sera", "Making lower-step loss disappear inside settlement survival"],
+      "source_refs": ["public-low-sere", "public-basin-table", "spoiler-low-sere", "ashen-intake"]
+    },
+    {
+      "role_id": "removed-custodian-appellant",
+      "summary": "Teren Vey has relevant technical memory, no threshold control, a disputed removal, and a self-created evidence hostage below.",
+      "obligations": ["Answer for the Grey Scald intervention", "Surrender or enable review of withheld records", "Remain outside the live appointment"],
+      "available_masks": ["Necessary expert", "Punished whistleblower", "Bounded refuser", "Aggrieved predecessor"],
+      "failure_modes": ["Making every valid criticism serve reinstatement", "Using the missing folio to starve review", "Calling technical ambiguity complete innocence"],
+      "source_refs": ["public-basin-table", "grey-scald", "spoiler-low-sere", "ashen-intake"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "bel_orra",
+      "known_context": [
+        {"text": "Bel knows lower-step water, wet walls, work loss, basin routine, and the visible authority of the people at the lip.", "source_refs": ["public-basin-table", "spoiler-low-sere"]}
+      ],
+      "beliefs": [
+        {"text": "Bel believes a claim must remain in more than one hand if it is to survive urgency.", "source_refs": ["techpriesthoods"]}
+      ],
+      "misreads": [
+        {"text": "Bel may treat an itinerant lineage's future interest as present capture before the appointment actually moves.", "source_refs": ["spoiler-low-sere", "techpriesthoods"]}
+      ],
+      "must_not_know": [
+        {"text": "Bel does not know the Ashen Intake's hidden formula solution, the cause of its knocks, or the result of any future descent.", "source_refs": ["ashen-intake", "canon-policy"]}
+      ]
+    },
+    {
+      "speaker_id": "sera_venn",
+      "known_context": [
+        {"text": "Sera knows degraded service above the pressure door, the limits of her grant, Teren's surviving practice, and which missing objects prevent Crown comparison.", "source_refs": ["spoiler-low-sere", "ashen-intake"]}
+      ],
+      "beliefs": [
+        {"text": "Sera believes a provisional office should end in a bounded appointment or an honest replacement, not indefinite liability.", "source_refs": ["spoiler-low-sere"]}
+      ],
+      "misreads": [
+        {"text": "Sera may hear a commoner's demand for outside copies as the basin table preparing her replacement.", "source_refs": ["relic-custody", "spoiler-low-sere"]}
+      ],
+      "must_not_know": [
+        {"text": "Sera cannot certify the Intake Crown without recovering and comparing the Ashen Measure and handoff folio.", "source_refs": ["spoiler-low-sere", "ashen-intake"]}
+      ]
+    },
+    {
+      "speaker_id": "ressa_orr",
+      "known_context": [
+        {"text": "Ressa knows part of the intake's filter and pressure practice and can compare Sera's formation and Teren's act only inside that scope.", "source_refs": ["public-basin-table", "spoiler-low-sere"]}
+      ],
+      "beliefs": [
+        {"text": "Ressa believes declared interest and reproducible comparison are stronger than claims of disinterested purity.", "source_refs": ["techpriesthoods"]}
+      ],
+      "misreads": [
+        {"text": "Ressa may underestimate how quickly paid comparison can become foreign succession in a frightened settlement.", "source_refs": ["techpriesthoods", "relic-custody"]}
+      ],
+      "must_not_know": [
+        {"text": "Ressa cannot treat an accepted formula, lineage reputation, or isolated success as proof of legal authority or full intake competence.", "source_refs": ["machine-speech", "ashen-intake"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The three-copy challenge is an authored local elaboration for Low Sere, not a universal Techpriest court, rank, or transborder law.",
+      "source_refs": ["techpriesthoods", "canon-policy"]
+    },
+    {
+      "text": "All endings are branch-local fixture outcomes. None settles Teren's appeal, Sera's permanent appointment, Eighth Baffle succession, or the Ashen Intake's canonical future.",
+      "source_refs": ["grey-scald", "relic-custody", "spoiler-low-sere", "ashen-intake"]
+    },
+    {
+      "text": "The fixture may show knocks, grit, pressure, and human interpretation but must not decide whether the dead, a divine presence, or machinery caused any answer.",
+      "source_refs": ["public-basin-table", "ashen-intake", "canon-policy"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which other Techpriest lineages recognize Low Sere's three-copy challenge or an analogous procedure?",
+      "blocks_training": false,
+      "notes": "Leave regional and common forms unresolved; a later Charter pass can deepen one named route or lineage only after the vault supplies it."
+    },
+    {
+      "question": "What durable visual medium does Low Sere use for wet-room service copies?",
+      "blocks_training": false,
+      "notes": "The fixture uses folded service sheets protected by oilcloth as scene-bounded material detail. Backfill only if record media recur across Low Sere fixtures."
+    },
+    {
+      "question": "Can an unrelated comparer arrive before the two remaining pale shutters close?",
+      "blocks_training": false,
+      "notes": "This is branch pressure, not settled canon; the fixture ends before the wider route and scheduling question is answered."
+    }
+  ]
+}
