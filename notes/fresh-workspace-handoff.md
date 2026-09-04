@@ -225,40 +225,49 @@ outcome bands, four derived `CausalBoundary` kinds, scope-digest binding, one
 are teardown evidence. Plan step 6 is nine implementation passes; pass 1 is
 landed, passes 2 through 9 are not.
 
-1. Passes 1 through 5 are integrated and pushed; nothing beyond pass 5 is.
-   `codex/ghostlight-dungeon-mvp` tip is `dbe176d` (Soul) over `fa3d95d`
-   (pass 5: `Authority`, `Selection`, `Redress` subgraph) and `40e4efc`
-   (grant made structural in `exercise`, the pass-4 follow-up), on `d589ea0`
-   (ontology doc "Current mechanism" for pass 4 and plan invariant 10 moved
-   to scope-digest wording). Earlier passes: `5e53beb`, `e99af63`, `d2805fe`,
-   `0f21a49`. Run `git status -sb` before trusting any tip written here.
+1. Passes 1 through 6 are integrated; nothing beyond pass 6 is.
+   `codex/ghostlight-dungeon-mvp` tip is `cb6a126` (Soul) over `b8ff182`
+   (pass 6: `Knowledge`, `Channel`, `Fact` standing), `43e8042` (pass-5 doc
+   and handoff), and `65ee2be` (pass-5 follow-ups: overlap admission, revoke
+   envelope, deploy coverage). Earlier passes: `5e53beb`, `e99af63`,
+   `d2805fe`, `0f21a49`, `dbe176d`. The push followed a background crate
+   test; `git status -sb` is the witness for whether origin has the tip.
 
-   Pass 5 facts: schemas are `world_state.authority.v1` /
-   `world_commit.authority.v1`, earlier stores refused. `world/action.rs`
-   carries `check_delegation` under `exercise`, the `ActionMismatch` variant
-   `DelegationNotMonotone` (name kept), and `ComponentOpKind::RevokeAuthority`.
-   Rulings adopted in pass 5: overlap is checked at admission only and is
-   structural in `verify_state_shape`; revoke is gated exactly like grant
-   through `check_delegation`. Baseline at `dbe176d`: 150 test functions in
-   `world/*.rs`, 189 crate source, plus one integration test (the focused
-   `world::` run reports 149 / 184; the two counts use different rules, so
-   the next pass must compare like with like). `EvidenceRef::new` is still
-   `#[cfg(test)]`; nothing deserializes a `WorldPatch` before pass 10.
+   Pass 6 facts: schemas are `world_state.knowledge.v1` /
+   `world_commit.knowledge.v1` and the controller work row is
+   `controller_work.v5`; earlier stores refused. `Precondition` gained
+   `HasStanding`, `CanBroadcast`, and `CanReach` beside `Present`,
+   `Reachable`, `Holds`. `WorldMailbox::create` declares the genesis place
+   `commons` (`GENESIS_PLACE` in `world/mailbox.rs`) and stands genesis
+   subjects there, a product-path change that goes through `derive_id`.
+   `WorldSnapshot.events` is deleted; `operator_log` is the story-feed
+   projection. Rulings adopted in pass 6: audience means declared reach;
+   controller privilege is broadcast-only; a statement has two homes, the
+   fact and the committed `AssertClaim` as replay witness, and that is the
+   rule rather than a leak; `operator_log` becomes owner-only by type once
+   the controller port lands. Baseline at `cb6a126`: 179 test functions in
+   `world/*.rs`, 218 crate source, plus one integration test (the focused
+   `world::` run reports 178 / 213; different counting rules, compare like
+   with like). `EvidenceRef::new` is still `#[cfg(test)]`; nothing
+   deserializes a `WorldPatch` before pass 10.
 
-   In flight, not landed, both branched from `dbe176d` with no commits yet at
+   In flight, not landed, both branched from `cb6a126` with no commits yet at
    the time of writing:
-   - `hands/pass5-followups` in the worktree `F:\Projects\Ghostlight-pass5fu`:
-     admission-time `Subject`/`PlaceSubtree` nesting check, `RevokeAuthority`
-     under `check_delegation`, and a deploy test.
-   - `hands/pass6` in the worktree `F:\Projects\Ghostlight-pass6`:
-     `Knowledge`, `Channel`, `Fact` standing, scoped-projection non-leakage,
-     from `imagination-pass6.md`.
+   - `hands/pass6-followups` in the worktree `F:\Projects\Ghostlight-pass6fu`:
+     audience equals declared reach with the controller no longer folded into
+     the audience; a `ControllerPort` narrowing the mailbox access of
+     `ControllerRunner`; a length-prefixed `derive_id` discriminator, so
+     derived IDs change; comment fixes; a v4 controller-work refusal test; a
+     resolver blind-spot comment plus a no-`Told`-writer test.
+   - `hands/pass7` in the worktree `F:\Projects\Ghostlight-pass7`: the clock
+     and pressure flow, from `imagination-pass7.md`.
    The main tree also holds an uncommitted coordinator edit to
-   `docs/architecture/ghostlight-world-ontology.md` describing pass 5; it
+   `docs/architecture/ghostlight-world-ontology.md` (the `Channel` row and the
+   `Precondition` block with `HasStanding`, `CanBroadcast`, `CanReach`); it
    lands with the follow-ups. Witness for any later pass: main-branch
-   `git log` past `dbe176d`, and `git worktree list` for the two trees.
+   `git log` past `cb6a126`, and `git worktree list` for the two trees.
 
-   Pipeline for passes 6 through 9: specs `imagination-pass1.md` through
+   Pipeline for passes 7 through 9: specs `imagination-pass1.md` through
    `imagination-pass9.md` and maps `modeling-pass1.md` through
    `modeling-pass9.md` are on disk in the session scratchpad
    `C:\Users\Meta\AppData\Local\Temp\claude\F--Projects-Ghostlight\2fd50f5e-f7ba-4e5d-82bc-c7033e6074d2\scratchpad`,

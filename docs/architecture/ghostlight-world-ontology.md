@@ -35,8 +35,8 @@ not from a model agreeing that the world is deep.
 
 ## Current mechanism
 
-Passes 1 through 5 of the widening are landed (`5e53beb`, `e99af63`,
-`d2805fe`, `0f21a49`, `dbe176d`). The sealed kernel holds subjects with a label and a
+Passes 1 through 6 of the widening are landed (`5e53beb`, `e99af63`,
+`d2805fe`, `0f21a49`, `dbe176d`, `cb6a126`). The sealed kernel holds subjects with a label and a
 kind (`Person | Institution | Population`); a `positions` partition with
 `Position`; entities with `container` under containment acyclicity; `Route`
 as an `EdgeRecord` variant carrying `AccessKind { Public, Restricted }`, a
@@ -44,9 +44,9 @@ minute `Cost` in `1..=525_600`, and an open flag; subject-keyed `holdings` of
 `Quantity(u64)` per entity, absence meaning zero, checked arithmetic with
 u128 ledger accumulators; subject-keyed `dependencies` on
 `DependencyTarget { Resource, Route, Subject }`; and an `affordance_catalog`
-partition of world-authored entries; and `authority`, `selection`, and
-`redress` partitions. There is no relation, fact, commitment, pressure, or
-clock yet.
+partition of world-authored entries; `authority`, `selection`, and
+`redress` partitions; and `facts`, `channels`, and `knowledge` partitions.
+There is no relation, commitment, pressure, or clock yet.
 
 `world/patch.rs` owns typed `SubjectId`/`EntityId`/`EdgeId`/`AffordanceId`
 namespaces, `Ref<Id>` with `DraftHandle` (adjacently tagged `RefKind`), and a
@@ -95,16 +95,36 @@ petitions from subjects with standing. Authority-writing slots (`grant`,
 `revoke`) are gated by one rule: the actor's own authority must cover the
 target, otherwise `ActionMismatch::DelegationNotMonotone`.
 
+A `Fact` is an entity with a `Statement` and a `FactStanding`: `Canonical`
+with evidence, or `Claimed { by }`. `Knowledge` is subject-keyed per fact with
+a `Confidence` and a `KnowledgeSource { Witnessed, Told { by, via }, Evidenced }`;
+a telling never overwrites a holder. A `Channel` is an entity with a
+`Reach { Subjects, Place }` and a controller. Speech is an affordance whose
+entry declares exactly one `Audience { Colocated, Channel }`: `exercise`
+mints the `Claimed` fact through `derive_id` (the second of its two call
+sites, the first being `resolve_patch`) and lowers a `Communicate` whose
+recipients are re-derived by one pure `fan_out` over `audience` at apply
+time. Audience means the declared reach; a channel's controller may broadcast
+from outside it (`can_broadcast`) but receives nothing unless inside it.
+Preconditions `Knows`, `CanBroadcast`, and `CanReach` gate at `exercise` with
+`ActionMismatch::{FactUnknown, NoAudience, CannotReach}`. The statement lives
+in `facts[fact].statement`; the copy inside the committed `AssertClaim` is
+the replay witness and nothing reads it. `WorldSnapshot` carries no event
+log; the story feed is `operator_log`, an owner-only projection that the
+controller lane cannot name because `ControllerRunner` holds a
+`ControllerPort`, not the mailbox. `WorldMailbox::create` declares the genesis
+place `commons` and stands genesis subjects there.
+
 Opportunities bind to a `ScopeDigest` over one `scope_components` owner
 (controller assignment, grants, delegated grants, own authority, position,
-incident routes, own holdings, own dependencies; never occupancy or forum
-state); a proposal commits at any later revision with unchanged scope and is
+incident routes, own holdings, own dependencies, known fact ids, controlled
+channels; never occupancy, forum state, or another subject's knowledge); a proposal commits at any later revision with unchanged scope and is
 rejected with `KernelError::ScopeChanged` otherwise. State schema is
-`world_state.authority.v1`, commit schema `world_commit.authority.v1`;
-earlier stores are refused. Ghostlight owns a conserved narrative ledger;
+`world_state.knowledge.v1`, commit schema `world_commit.knowledge.v1`,
+controller work `controller_work.v5`; earlier stores are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
-Passes 6 through 9 add knowledge, the clock and pressure flow, boundary
-elaboration, and the budgeted cover; pass 10 adds the consumer ingress.
+Passes 7 through 9 add the clock and pressure flow, boundary elaboration,
+and the budgeted cover; pass 10 adds the consumer ingress.
 
 ## The failure this vocabulary is designed against
 
@@ -199,7 +219,7 @@ which noun a component is; it cares what it constrains.
 | `Selection` | office → method, incumbent, term | how power is lost; succession pressure |
 | `Redress` | grievance kind → forum, standing | where conflict goes when it cannot be fought |
 | `Knowledge` | subject → fact: confidence, source | what a subject may act on at all |
-| `Channel` | channel: reach set, latency, controller | how facts travel; who can be silenced |
+| `Channel` | channel: reach set, controller (latency arrives with the clock, pass 7) | how facts travel; who can be silenced |
 | `Commitment` | subject → counterparty: kind (`Routine`, `Obligation`, `Goal`), due, stake | obligation with a clock; autonomous motion |
 | `Pressure` | source → target: magnitude, unresolved | the causal boundary trigger |
 | `PersonaMaterial` | subject: values, voice, memories, reads | lived meaning; never authority |
@@ -314,8 +334,10 @@ Precondition
   Reachable { to: Role, within: Cost }          // a Route path exists under access and cost
   Holds { resource: Role, at_least: Qty }       // Custody
   Authorized { over: Role, kind }               // Authority covers the target scope
+  HasStanding { forum: Role }                   // Redress: the forum admits the actor
   Knows { fact: Role, at_least: Confidence }    // Knowledge
-  CanReach { subject: Role, via: Channel }      // channel reach
+  CanBroadcast { via: Audience }                // the actor is inside the audience
+  CanReach { subject: Role, via: Audience }     // the subject is inside the audience
   Committed { to: Role, kind }                  // an existing Commitment
 ```
 
