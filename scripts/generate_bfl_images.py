@@ -6,7 +6,7 @@ writes a run manifest beside the images. API key lookup order:
 
 1. --api-key
 2. BFL_API_KEY environment variable
-3. E:/Projects/gamecult-ops/bfl-api.txt
+3. F:/Projects/gamecult-ops/bfl-api.txt (absent since drive E: was lost; missing key is an error)
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-DEFAULT_KEY_PATH = Path(r"E:\Projects\gamecult-ops\bfl-api.txt")
+DEFAULT_KEY_PATH = Path(r"F:\Projects\gamecult-ops\bfl-api.txt")
 DEFAULT_BASE_URL = "https://api.bfl.ai/v1"
 
 

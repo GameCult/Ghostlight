@@ -1,6 +1,6 @@
 # Ghostlight Fresh Workspace Handoff
 
-Updated: 2026-09-03
+Updated: 2026-09-04
 
 This is the compact re-entry packet. It carries current authority and the next
 gate. Git owns chronology, the system map owns teardown detail, and evidence
@@ -196,19 +196,34 @@ and proposals but cannot commit on their behalf.
 
 ## Next gate
 
-The operator has ordered design of an elaboration ontology for the sealed
-WorldKernel before further deployment work. The kernel ontology is Speak-only
-today: `SubjectKind` is Person/Institution/Population, `AffordanceKind` has one
-variant `Speak`, and `DecisionAction` has one variant `Speak { text }`, all in
-`crates/ghostlight-dungeon/src/world/mod.rs`. The legacy elaboration machine is
-gone from source; `12ee9f4` removed its kernel ingresses and component-write
-helpers with no compatibility path, and it is not a design input. Sparse causal
-sufficiency governs elaboration: counts, cover ratios, and qualitative review
-stay evaluation evidence and cannot admit ontology. Elaboration enters at a
-typed causal boundary through the same mutation vocabulary as seed creation,
-action, import, individuation, and time.
+Two live operator orders, both ahead of the deployment gate. Commit `9c662bd`
+landed the closed vocabulary at `docs/architecture/ghostlight-world-ontology.md`
+and implementation-plan step 6 (ontology widening, seven passes); the kernel
+source is still Speak-only (`SubjectKind` Person/Institution/Population,
+`AffordanceKind::Speak`, `DecisionAction::Speak` in
+`crates/ghostlight-dungeon/src/world/mod.rs`). Run 115's root cause is recorded
+as vocabulary-shaped in `state/evidence.jsonl`; `12ee9f4` removed the legacy
+elaboration ingresses with no compatibility path and they are not a design input.
 
-The deployment gate below is deferred behind that design, not cancelled:
+1. Revise the ontology so deterministic correctness verification covers both
+   world elaboration and character action, general enough for sprawling worlds
+   with layered institutional agency. Eight elaborators are looping agents whose
+   tools are exactly the ontology's permitted mutations; no elaborator gets a
+   tool the reducer cannot validate. Sparse causal sufficiency still governs:
+   counts, cover ratios, and qualitative review are evaluation evidence only.
+2. Fan out four detached Codex CLI workers on the prose plus illustration Ink
+   fixture path, one each against AetheriaLore, Delvehold lore, Kalsa, and
+   Zyphos. Planned layout, not yet present on disk at the time of writing:
+   launcher under `C:\Users\Meta\.claude\worlds\`; Ghostlight worktrees at
+   `F:\Projects\Ghostlight-worlds\<world>` on branches `codex/world-<world>`;
+   lore worktrees at `F:\Projects\<Lore>-worktrees\ghostlight-worlds`. On
+   re-entry, `git worktree list` and `git branch --list 'codex/world-*'` are
+   the witnesses; if they are empty, the fan-out has not launched. Image
+   rendering is deferred: the BFL key at `E:\Projects\gamecult-ops\bfl-api.txt`
+   is gone with drive E:, so workers emit imagegen-ready prompts only and
+   `scripts/generate_bfl_images.py` must not be run against its default key path.
+
+The deployment gate below is deferred behind both orders, not cancelled:
 
 Review and subtract the uncommitted Idunn-owned Expected/activation/anchor/lease
 projection and bounded multi-session RUDP document transport. Repoint Odin off
@@ -261,3 +276,9 @@ acceptance roots, and local run scaffolding.
   state root or validate a complete allowed-path contract.
 - Keep this handoff compact. Move chronology to Git, evidence, or the frozen
   system map.
+- `docs/architecture/ghostlight-world-consumer-api.md` is drift: it names
+  `CampaignRegistry`, `WorldSeed`, and `publish_session_zero`, none of which
+  exist in the sealed kernel. Pending rewrite against
+  `ghostlight-world-ontology.md`; do not design from it.
+- `docs/architecture/ghostlight-transition-algebra.md` is teardown evidence,
+  not vocabulary authority.

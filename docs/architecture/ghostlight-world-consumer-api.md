@@ -1,5 +1,10 @@
 # Ghostlight World Consumer API
 
+Status: drift. Names `CampaignRegistry`, `WorldSeed`, and `publish_session_zero`,
+which do not exist in the sealed kernel. Pending rewrite against
+`docs/architecture/ghostlight-world-ontology.md`; read for consumer-boundary
+intent only.
+
 ## Objective
 
 Let a consumer supply and observe one persistent Ghostlight world without
