@@ -233,15 +233,23 @@ the last two records in `state/evidence.jsonl`.
    `OperationalAgent` loop whose tool catalog is a projection of the operation
    set; no elaborator gets a tool the reducer cannot validate.
 2. Four detached Codex CLI world workers are live on the prose plus
-   illustration Ink fixture path (started 2026-09-04T15:56). PIDs:
-   `C:\Users\Meta\.claude\worlds\logs\pids-worlds.csv`. Poll from
+   illustration Ink fixture path (relaunched 2026-09-04T16:17:56 local). PIDs
+   and per-run stderr paths: `C:\Users\Meta\.claude\worlds\logs\pids-worlds.csv`
+   (stderr logs are timestamped `world-<w>.<stamp>.stderr.log`). Poll from
    `C:\Users\Meta\.claude\worlds\` with `.\Invoke-Worlds.ps1 -Phase Status`.
    Ledgers: `F:\Projects\Ghostlight-worlds\<world>\examples\ink\<world>\RUN.md`
-   for aetheria, delvehold, kalsa, zyphos. Worktrees branch from `9c662bd` on
-   `codex/world-<world>`; `git worktree list` lists them. Lore worktrees at
-   `F:\Projects\<Lore>-worktrees\ghostlight-worlds`. Image rendering is
-   deferred: the BFL key drive E: is gone, workers emit imagegen-ready prompts
-   only, and `scripts/generate_bfl_images.py` has no working default key path.
+   for aetheria, delvehold, kalsa, zyphos, on branches `codex/world-<world>`.
+   Lore output lands on `codex/ghostlight-worlds` in each vault clone at
+   `F:\Projects\<Lore>-worktrees\ghostlight-worlds`. Every one of those eight
+   paths is a full clone, not a linked worktree: a linked worktree's `.git` is
+   a file pointing into the parent repo's `.git/worktrees/`, outside the Codex
+   sandbox's writable roots, so `git commit` fails with `index.lock Permission
+   denied`. The directory name still says worktrees; `.git` is a directory.
+   `git worktree list` in this repo shows only the main tree. The launcher
+   passes `-c sandbox_workspace_write.network_access=true` so workers can push.
+   Image rendering is deferred: the BFL key drive E: is gone, workers emit
+   imagegen-ready prompts only, and `scripts/generate_bfl_images.py` has no
+   working default key path.
 
 The deployment gate below is deferred behind both orders, not cancelled:
 
