@@ -1,0 +1,379 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "kalsa.veil-marriage-rumor-v0.v0",
+  "source_status": "reviewed",
+  "fixture_status": "procedural_branch",
+  "source_refs": [
+    {
+      "source_id": "public-kalsa",
+      "path": "Kalsa/Public/World/Kalsa.md",
+      "title": "Kalsa",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 42,
+      "relevance": "Reader-facing permanent twilight, Sunwall light privilege, Crown City infrastructure, and ordinary clerical life around magical decisions."
+    },
+    {
+      "source_id": "public-peoples",
+      "path": "Kalsa/Public/World/Peoples and Polities.md",
+      "title": "Peoples and Polities",
+      "canon_tier": "Public",
+      "line_start": 101,
+      "line_end": 121,
+      "relevance": "Reader-facing Divided City condominium, civic allocation, Sunwall operation, Prophetic Houses, and the rule that sponsors disclose intended actions."
+    },
+    {
+      "source_id": "public-magic",
+      "path": "Kalsa/Public/World/Magic and Miracles.md",
+      "title": "Magic and Miracles",
+      "canon_tier": "Public",
+      "line_start": 55,
+      "line_end": 75,
+      "relevance": "Reader-facing account of forecasts changing when announced and of intended sponsor interventions traveling with court evidence."
+    },
+    {
+      "source_id": "public-closed-lift",
+      "path": "Kalsa/Public/Sources/The Closed Lift Appeal.md",
+      "title": "The Closed Lift Appeal",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 77,
+      "relevance": "Situated public precedent for omitted sponsor actions, lift material inspection, reversible movement, record correction, and harms surviving an appeal."
+    },
+    {
+      "source_id": "canon-policy",
+      "path": "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+      "title": "Canon and Provenance",
+      "canon_tier": "Spoilers/policy",
+      "line_start": 1,
+      "line_end": 129,
+      "relevance": "Controls canon status, Public/Spoilers knowledge layers, restricted evidence, backstage constraints, and unresolved ontology."
+    },
+    {
+      "source_id": "magic-styles",
+      "path": "Kalsa/Spoilers/Foundations/Magic Styles.md",
+      "title": "Magic Styles",
+      "canon_tier": "Spoilers/backstage",
+      "line_start": 1,
+      "line_end": 83,
+      "relevance": "Backstage boundary that Prophecy sees possible futures while inheritance remains threshold expression, not proof supplied by house purity claims or a forecast about a child."
+    },
+    {
+      "source_id": "divided-city",
+      "path": "Kalsa/Spoilers/Polities/Prophecy - The Divided City.md",
+      "title": "Prophecy — The Divided City",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 156,
+      "relevance": "Primary polity context for the lower-shadow ward, Sunwall lifts and light allocation, divided sovereignty, civic clerks, house power, lineage coercion, and marriage rumors as ordinary prophetic pressure."
+    },
+    {
+      "source_id": "prophetic-houses",
+      "path": "Kalsa/Spoilers/Institutions/Prophetic Houses.md",
+      "title": "Prophetic Houses",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 236,
+      "relevance": "Primary institution owner for house archives, assignments, sponsor disclosure, marriage and bodily consent, lineage coercion, dependent labor, record custody, and the authored marriage-rumor disclosure path."
+    },
+    {
+      "source_id": "forecast-courts",
+      "path": "Kalsa/Spoilers/Institutions/Forecast Evidence and Courts.md",
+      "title": "Forecast Evidence and Courts",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 227,
+      "relevance": "Owns usable forecast disclosure, secrecy limits, civic record copies, reversible precaution, court and clerk authority, material-system actuation, appeal, and remedy."
+    },
+    {
+      "source_id": "closed-lift-event",
+      "path": "Kalsa/Spoilers/Events/The Closed Lift Appeal.md",
+      "title": "The Closed Lift Appeal",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 69,
+      "relevance": "Adopted historical owner showing sponsors hiding planned interventions, a court separating forecast from material failure, a Sunwall Stewardship executing limits, and correction failing to restore every loss."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Kalsa's standing present; the exact date, calendar, city name, house roster, and sector boundaries remain unresolved.",
+    "location": "One fixture-bounded lower-shadow marriage and tenancy desk beneath a Sunwall cargo landing in the Divided City.",
+    "summary": "A civic clerk registering a marriage receives a house forecast packet after an anonymous fatal-lift rumor has already removed work and threatened residence. The scene tests whether consent, intimate privacy, public correction, material lift safety, record custody, and support during review can remain separate when a sponsor presents its own retaliation as fate.",
+    "public_facts": [
+      {
+        "text": "The Divided City's civic offices, imperial claims, Prophetic Houses, and Sunwall workers hold different authorities that cannot cheaply replace one another.",
+        "source_refs": ["public-peoples", "divided-city"]
+      },
+      {
+        "text": "Forecasts change when disclosed and acted upon; a sponsor's intended response must travel with a forecast used as evidence.",
+        "source_refs": ["public-magic", "public-closed-lift"]
+      },
+      {
+        "text": "Sunwall lifts carry food and work through an inhabited vertical hierarchy; operational stewards, not prophets or judges, execute material load limits.",
+        "source_refs": ["public-kalsa", "public-peoples", "closed-lift-event"]
+      },
+      {
+        "text": "A corrected record can stop one abuse while leaving lost work, housing, care, standing, or delayed remedy unresolved.",
+        "source_refs": ["public-closed-lift", "forecast-courts"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "A house can turn residence, training, employment, archive access, and patron protection into leverage over marriage without acquiring authority over consent.",
+        "source_refs": ["prophetic-houses"]
+      },
+      {
+        "text": "A vivid rumor can contain a real forecast image while omitting the sponsor action that helps produce it; secrecy and misinformation therefore share a record boundary rather than forming simple opposites.",
+        "source_refs": ["prophetic-houses", "forecast-courts"]
+      },
+      {
+        "text": "Usable disclosure must expose the claim and planned interventions without automatically exposing unrelated intimate branches from a raw forecast.",
+        "source_refs": ["forecast-courts", "prophetic-houses"]
+      },
+      {
+        "text": "A safety warning changes bodies only when it reaches the office that owns the lift, while a correction changes social pressure only when it reaches the offices that carried the rumor's burden.",
+        "source_refs": ["prophetic-houses", "forecast-courts", "closed-lift-event"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "lower-shadow-civic-desk",
+      "label": "Lower-shadow civic marriage and tenancy desk",
+      "group_type": "ward_record_and_notice_office",
+      "institutional_logic": ["Keep consent, tenancy, work notices, support holds, sealed evidence, and review routes legible without taking authority from the people or offices that own them."],
+      "material_incentives": ["Preserve an independent civic copy", "Keep the public queue moving", "Avoid house or imperial seizure", "Make delay survivable"],
+      "internal_virtues": ["Separate leaves for separate authority", "Witnessed seals", "Scoped refusal", "Correction sent to the office that acted"],
+      "internal_shames": ["One docket made to impersonate consent, tenancy, work, and prophecy", "A sealed claim enforced without a usable answer", "A remedy that exists only in the archive"],
+      "prestige_markers": ["A record that survives hostile custody", "A burden stayed before support vanishes", "An act routed to its real owner"],
+      "taboo_triggers": ["Treating a clerk's stamp as marriage consent", "Reading intimate forecast branches aloud for administrative convenience"],
+      "emotional_display_norms": ["Anxiety is compressed into dry procedure, careful object placement, witnessed jokes, and exact naming of who can do what."],
+      "trust_defaults": ["Trusts witnessed copies, material traces, separate seals, and corrected notices more than house prestige or unsigned certainty."],
+      "speech_register_cues": ["Plain office language", "Dry local humor", "Named scope", "Short refusals"],
+      "source_refs": ["divided-city", "forecast-courts", "prophetic-houses"]
+    },
+    {
+      "group_id": "prophetic-house-service-and-archive",
+      "label": "Interested Prophetic House service and archive offices",
+      "group_type": "lineage_corporation",
+      "institutional_logic": ["Preserve prophetic expertise and house continuity while controlling assignments, archives, residence, and the interpretation of threats to lineage."],
+      "material_incentives": ["Keep Ari in house residence and training", "Retain forecast labor", "Prevent a civic precedent that exposes internal intervention plans"],
+      "internal_virtues": ["Method continuity", "Sealed intimate evidence", "Complete briefing records", "Service reliability"],
+      "internal_shames": ["An omitted sponsor action", "A forecast exposed as a patron threat", "A courier producing a civic copy against instruction"],
+      "prestige_markers": ["A warning accepted before public challenge", "An archive whose corrections remain under house custody"],
+      "taboo_triggers": ["House pedigree treated as irrelevant to consent", "A non-house clerk opening a review path"],
+      "emotional_display_norms": ["Fear of lost control appears as grave concern for continuity, safety, privacy, and the future child."],
+      "trust_defaults": ["Trusts house training and archive control; distrusts public copies that separate forecast from house action."],
+      "speech_register_cues": ["Lineage continuity", "Safety inevitability", "Archive privilege", "Protective delay"],
+      "source_refs": ["prophetic-houses", "divided-city"]
+    },
+    {
+      "group_id": "sunwall-lift-workers-and-users",
+      "label": "Sunwall lift workers and dependent ward users",
+      "group_type": "infrastructure_workers_and_dependents",
+      "institutional_logic": ["Move grain and people within material limits while answering to civic allocation, house forecasts, imperial pressure, and the operating owner's safety decisions."],
+      "material_incentives": ["Keep the brake serviceable", "Keep experienced crew on the roster", "Move the harvest", "Avoid becoming proof in someone else's forecast"],
+      "internal_virtues": ["Material inspection", "Load limits", "A stop issued by the person who owns the mechanism"],
+      "internal_shames": ["A full load accepted to make a sponsor's warning look right", "A worker removed because a rumor reached the roster first"],
+      "prestige_markers": ["A load stopped before failure", "A maintenance strip that survives court and shift change"],
+      "taboo_triggers": ["Forecast prestige substituting for brake inspection", "Calling preventable overload fate"],
+      "emotional_display_norms": ["Fear becomes load numbers, component limits, clipped reports, and impatience with people who discover matter after the hearing."],
+      "trust_defaults": ["Trusts the operating steward and material record; treats prophecy as relevant pressure, not a wrench."],
+      "speech_register_cues": ["Load, pawl, brake, roster, bell, stop"],
+      "source_refs": ["divided-city", "forecast-courts", "closed-lift-event"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "lower-shadow-civic-desk.separate-authorities-under-speed",
+      "applies_to": ["lower-shadow-civic-desk"],
+      "pressure_type": "record_custody",
+      "summary": "The desk must keep several owners legible while a lift, marriage, residence, rumor, and review move on different clocks.",
+      "projection_use": "Give Pera choices among copying, refusing, opening, sealing, publishing, ringing, and transferring; each action must move only the authority its object can reach.",
+      "source_refs": ["forecast-courts", "prophetic-houses"]
+    },
+    {
+      "field_id": "prophetic-house-service-and-archive.threat-laundered-as-fate",
+      "applies_to": ["prophetic-house-service-and-archive"],
+      "pressure_type": "misinformation",
+      "summary": "The house gains leverage when its planned withdrawal appears as a consequence revealed by prophecy instead of an interested action.",
+      "projection_use": "Let the house packet be procedurally sophisticated and genuinely privacy-protective while still hiding the action that makes the rumor coercive.",
+      "source_refs": ["prophetic-houses", "forecast-courts"]
+    },
+    {
+      "field_id": "sunwall-lift-workers-and-users.material-warning-before-verdict",
+      "applies_to": ["sunwall-lift-workers-and-users"],
+      "pressure_type": "infrastructure_safety",
+      "summary": "People above the desk need an actionable brake limit before the court can resolve why the fatal branch appeared.",
+      "projection_use": "Allow lift safety to improve only when material evidence reaches the Sunwall operating owner, not when the clerk wins an argument about prophecy.",
+      "source_refs": ["closed-lift-event", "forecast-courts"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "prophetic-house-service-and-archive",
+      "target_group_id": "lower-shadow-civic-desk",
+      "observer_read": ["Untrained clerks exposing intimate futures", "Procedure endangering a lift and a lineage"],
+      "target_self_read": ["A civic office separating evidence, action, consent, safety, and remedy"],
+      "misread_patterns": ["Treats disclosure of sponsor action as publication of the raw forecast", "Treats refusal to stamp as denial of prophetic risk"],
+      "likely_insults": ["ink judge", "shadow registrar", "future-blind clerk"],
+      "projection_use": "Keep house criticism partly justified by real privacy and future-change risks while exposing its custody interest.",
+      "source_refs": ["prophetic-houses", "forecast-courts"]
+    },
+    {
+      "observer_group_id": "sunwall-lift-workers-and-users",
+      "target_group_id": "prophetic-house-service-and-archive",
+      "observer_read": ["A patron arranging a failure and selling the warning", "A house that knows the bell only as a metaphor"],
+      "target_self_read": ["Experts preventing a fatal branch under hostile civic delay"],
+      "misread_patterns": ["Workers may reduce a real forecast-space danger to sponsor fraud", "House officers may treat material inspection as a subordinate detail"],
+      "likely_insults": ["balcony seer", "sealed-rope safety"],
+      "projection_use": "Preserve conflict between real prophetic evidence and the material system without making either group omniscient.",
+      "source_refs": ["divided-city", "closed-lift-event"]
+    },
+    {
+      "observer_group_id": "lower-shadow-civic-desk",
+      "target_group_id": "sunwall-lift-workers-and-users",
+      "observer_read": ["The people who can stop the lift and may refuse to explain the stop in civic terms"],
+      "target_self_read": ["Workers keeping a loaded machine within a component's actual limit"],
+      "misread_patterns": ["Clerks may assume receipt equals action", "Workers may treat record correction as irrelevant because it does not turn a brake"],
+      "likely_insults": ["bell worshipper", "paper brake"],
+      "projection_use": "Make the barred handoff box and acknowledgment bell useful without allowing them to guarantee compliance.",
+      "source_refs": ["forecast-courts", "closed-lift-event"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "civic-copy-clerk",
+      "summary": "A ward clerk who owns record separation, custody, witnessed notice, and routing while several stronger institutions try to make a stamp impersonate consent or verdict.",
+      "obligations": ["Preserve independent copies", "Keep intimate branches bounded", "Route safety evidence to the operating owner", "Name the office carrying each burden"],
+      "available_masks": ["Dry procedural patience", "Literal reading", "Deference to seals", "Administrative smallness"],
+      "failure_modes": ["Publishing raw intimacy to defeat secrecy", "Sealing the only usable answer", "Treating receipt as enforcement", "Letting one docket collapse several owners"],
+      "source_refs": ["forecast-courts", "prophetic-houses"]
+    },
+    {
+      "role_id": "house-candidate-leaving-residence",
+      "summary": "A person whose training and residence give the house leverage over a marriage it does not own.",
+      "obligations": ["Settle entrusted work and records", "Speak their own consent", "Protect private branches that concern other people"],
+      "available_masks": ["Well-trained composure", "House vocabulary", "Strategic silence"],
+      "failure_modes": ["Mistaking archive privilege for care", "Letting fear of lost training become consent", "Using a possible child as bargaining property"],
+      "source_refs": ["prophetic-houses", "magic-styles"]
+    },
+    {
+      "role_id": "sunwall-brake-fitter",
+      "summary": "A worker whose maintenance evidence and roster status become pieces in a house forecast about their own marriage.",
+      "obligations": ["State the component limit", "Preserve the strip", "Avoid claiming forecast expertise", "Keep the load from erasing the worker dispute"],
+      "available_masks": ["Workroom sarcasm", "Load arithmetic", "Refusal to dignify rumor"],
+      "failure_modes": ["Assuming material evidence travels by itself", "Dismissing every forecast because the sponsor lied", "Spending relationship privacy for faster safety"],
+      "source_refs": ["divided-city", "closed-lift-event"]
+    },
+    {
+      "role_id": "house-archive-courier",
+      "summary": "A copyist carrying separately sealed records whose safety and standing depend on what reaches civic custody.",
+      "obligations": ["Preserve seals", "Deliver what was assigned", "Witness transfer", "Avoid rewriting the prophet's report"],
+      "available_masks": ["Exact obedience", "Literal distinction among instructions", "Professional concern for privacy"],
+      "failure_modes": ["Returning the only independent path", "Opening raw evidence for drama", "Letting courier fear become archive suppression"],
+      "source_refs": ["prophetic-houses", "forecast-courts"]
+    },
+    {
+      "role_id": "ward-provision-clerk",
+      "summary": "The local owner of a temporary room and light allotment hold, able to make review survivable without deciding the underlying dispute.",
+      "obligations": ["Record the support hold", "Keep support distinct from judgment", "Name when the ward's authority ends"],
+      "available_masks": ["Tray discipline", "Domestic practicality", "Refusal to let policy starve the queue"],
+      "failure_modes": ["Turning temporary support into leverage", "Claiming the ward can restore a house benefit it does not own"],
+      "source_refs": ["divided-city", "forecast-courts"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "pera_sen",
+      "known_context": [
+        {"text": "Pera knows local record custody, witnessed consent, the offices named by the rumor, the visible lift load, and the limits of the desk's authority.", "source_refs": ["forecast-courts", "prophetic-houses"]}
+      ],
+      "beliefs": [
+        {"text": "Pera believes separate records are useful because powerful parties prefer one ambiguous paper they can interpret later.", "source_refs": ["forecast-courts"]}
+      ],
+      "misreads": [
+        {"text": "Pera may overestimate how quickly a correct civic notice changes house residence or a lift roster outside the desk's direct control.", "source_refs": ["divided-city", "forecast-courts"]}
+      ],
+      "must_not_know": [
+        {"text": "Pera must not know the objective future, the full raw forecast while it is sealed, or whether any child will express Prophecy.", "source_refs": ["magic-styles", "canon-policy"]}
+      ]
+    },
+    {
+      "speaker_id": "ari_venn",
+      "known_context": [
+        {"text": "Ari knows their own training, house residence pressure, consent, and the portions of the packet read in their presence.", "source_refs": ["prophetic-houses"]}
+      ],
+      "beliefs": [
+        {"text": "Ari suspects the house calls coercion continuity because both words fit neatly in an archive margin.", "source_refs": ["prophetic-houses"]}
+      ],
+      "misreads": [
+        {"text": "Ari may treat every privacy claim as house leverage even when raw disclosure would expose real intimate harm.", "source_refs": ["forecast-courts"]}
+      ],
+      "must_not_know": [
+        {"text": "Ari must not know which forecast branch is author truth or how Prophecy inheritance would express in a future child.", "source_refs": ["magic-styles"]}
+      ]
+    },
+    {
+      "speaker_id": "dema_kor",
+      "known_context": [
+        {"text": "Dema knows the brake strip, load board, roster removal, consent, and office actions visible at the desk.", "source_refs": ["closed-lift-event", "divided-city"]}
+      ],
+      "beliefs": [
+        {"text": "Dema believes the lift danger should be answered first through material inspection without letting the house own the marriage.", "source_refs": ["closed-lift-event"]}
+      ],
+      "misreads": [
+        {"text": "Dema may dismiss genuine forecast uncertainty because the sponsor used one branch coercively.", "source_refs": ["forecast-courts"]}
+      ],
+      "must_not_know": [
+        {"text": "Dema must not infer the complete future from a component limit or the house's omission.", "source_refs": ["forecast-courts", "canon-policy"]}
+      ]
+    },
+    {
+      "speaker_id": "tir_osa",
+      "known_context": [
+        {"text": "Tir knows packet custody, cord separation, delivery instructions, and the service steward's request, but not the prophet's unsealed observations.", "source_refs": ["prophetic-houses"]}
+      ],
+      "beliefs": [
+        {"text": "Tir believes literal compliance can create a narrow disclosure route without requiring heroic confession.", "source_refs": ["prophetic-houses", "forecast-courts"]}
+      ],
+      "misreads": [
+        {"text": "Tir may treat exact delivery as enough protection when the house can still discipline archive access, residence, or employment.", "source_refs": ["prophetic-houses"]}
+      ],
+      "must_not_know": [
+        {"text": "Tir must not know the raw future merely because they carry its sealed record.", "source_refs": ["canon-policy"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The fixture does not establish which possible lift outcome is true. It establishes only the visible rumor, material brake limit, recorded sponsor actions, office responses, and state-gated consequences inside the scene.",
+      "source_refs": ["canon-policy", "forecast-courts"]
+    },
+    {
+      "text": "Pera, Ari, Dema, Mira, Tir, the packet cord colors, hold-ring, gallery layout, and exact bell usage are fixture-local elaborations and do not settle unresolved Divided City names, house constitutions, or universal procedures.",
+      "source_refs": ["divided-city", "prophetic-houses", "forecast-courts"]
+    },
+    {
+      "text": "The durable canon backfill is only the authored marriage-rumor path in Prophetic Houses: separate working, usable disclosure, and enforcing notice; rumor as a stripped consequence; correction following the offices that acted.",
+      "source_refs": ["prophetic-houses"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which Divided City houses use which physical custody marks, record bundles, or disclosure formats?",
+      "blocks_training": false,
+      "notes": "The fixture uses black, white, and red cords for one unnamed house only. The visual distinction is local and must not become universal canon."
+    },
+    {
+      "question": "What durations and cross-sector recognition attach to emergency holds on room, light, work, or care during forecast review?",
+      "blocks_training": false,
+      "notes": "Mira's hold lasts until the next duty sitting inside this ward. Regional standards remain unresolved."
+    },
+    {
+      "question": "What durable blockout should own the lower-shadow marriage-desk geometry if this fixture is promoted to multi-angle website replay?",
+      "blocks_training": false,
+      "notes": "The visual plan contains a textual scene-set map and camera slots, but no image or 3D geometry asset."
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "kalsa-veil-marriage-rumor-v0.bfl-simple-v0",
+  "fixture_id": "veil-marriage-rumor-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, crisp readable silhouettes, immense worn stone infrastructure, warm ochre lamplight against blue-violet permanent twilight, restrained prophetic strangeness, intimate civic detail, abstract unlettered record marks, dry humane visual wit.",
+  "prompts": [
+    {
+      "id": "01_desk_establishing",
+      "prompt": "Long stone civic marriage gallery beneath an immense cargo-lift landing: broad twilight stair at one end, central copying rail and chained register, west provision wicket with brass light tokens, north barred lift handoff and chalk load board, rear stair with review bell and iron safe, cargo chains trembling overhead."
+    },
+    {
+      "id": "02_couple_routine",
+      "prompt": "Warm ordinary wedding paperwork under cargo chains: russet-robed clerk behind a wood rail, slim gray-coated house candidate beside broad-shouldered blue-gray lift fitter, older provision clerk sorting brass tokens, two witnesses holding a lopsided sun-shaped loaf."
+    },
+    {
+      "id": "03_rumor_leaf",
+      "prompt": "Close evidence view: torn cream rumor sheet with charcoal joined cords beneath a falling cargo cradle and a copied angular seal; strong worker hand points beside a waxed brake strip whose safe notch sits below the chalked harvest load."
+    },
+    {
+      "id": "04_routine_choice",
+      "prompt": "Civic clerk poised among four visible preparations: separate marriage and tenancy leaves, waxed brake strip below a load board, rumor sheet and evidence sleeve, brass hold-ring above tenancy slates and sun-court tokens; waiting couple and wedding loaf at the rail."
+    },
+    {
+      "id": "05_routine_fold",
+      "prompt": "Whole lower-shadow office after preparation: separated record stacks, brake strip, rumor sleeve, provision trays, waiting couple, witnesses and loaf under ochre lamps while cargo dust falls from dark ceiling ribs."
+    },
+    {
+      "id": "06_courier_arrival",
+      "prompt": "Rain-dark house archive courier climbs from a blue-violet shadow stair holding a lacquered record case with black, white, and red cord bundles; clerk, couple, and provisioner turn toward the arrival in a warm stone gallery."
+    },
+    {
+      "id": "07_packet_choice",
+      "prompt": "Lacquered forecast case at a waist-high rail: red action request displayed, white civic disclosure and black working forecast separately sealed; clerk near safe keys, courier hand over white cord, couple and two witnesses watching."
+    },
+    {
+      "id": "08_disclosure_closeup",
+      "prompt": "Overhead record puzzle under one lamp: black-cord sealed forecast, white civic leaf linking house key, prophetic eye, cargo cradle and brake pawl, red action request, marriage register, tenancy leaves, brake strip, civic copy, witness cords, four sets of hands at the edges."
+    },
+    {
+      "id": "09_lift_bell",
+      "prompt": "Heavy bronze lift bell vibrates beneath hidden machinery; overhead chains take harvest weight and stone dust falls through lamplight; broad-shouldered brake fitter looks up with wax record while clerk stands between lift hatch and marriage register."
+    },
+    {
+      "id": "10_disclosure_routes",
+      "prompt": "Four-route civic choice in one long gallery: north barred lift handoff and bell, south public notice rail and twilight stair, rear review stair and iron safe, courier holding house case at central rail; clerk and couple stand between all routes."
+    },
+    {
+      "id": "11_final_threshold",
+      "prompt": "Whole lower-shadow gallery at commitment: marriage register and separated records on central rail, provision wicket and support ring, lift handoff and brake evidence, notice rail and rumor, staff stair and safe, five adults and two witnesses under straining cargo chains."
+    },
+    {
+      "id": "12_registration_end",
+      "prompt": "Wedding registration aftermath: two partners sign together, witnesses cross simple cords over a partly eaten sun-shaped loaf, clerk keeps house request, tenancy, roster, and lift warning in separate stacks while the provision wicket and lift bell remain visible."
+    },
+    {
+      "id": "13_lift_end",
+      "prompt": "North-wall safety aftermath: clerk and brake fitter hold wax strip and civic copy at a barred handoff; one greased gloved steward hand receives them from the hidden lift landing; overhead chains slacken or remain taut beside the chalk load board."
+    },
+    {
+      "id": "14_correction_end",
+      "prompt": "Public notice aftermath above a twilight ward stair: clerk pins a bounded civic correction beside the sleeved falling-lift rumor, couple reads close by, rain-dark courier watches, separate route copies wait for roster, house room, and landlord."
+    },
+    {
+      "id": "15_privacy_end",
+      "prompt": "Sealed-review aftermath: clerk locks black-cord forecast in iron safe, white and red leaves enter a tray up the staff stair, older provisioner holds tenancy slates and brass tokens, couple waits under warm light while rumor remains on the blue-lit public rail."
+    }
+  ]
+}

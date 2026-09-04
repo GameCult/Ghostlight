@@ -1,0 +1,434 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "kalsa-veil-marriage-rumor-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/kalsa/veil-marriage-rumor-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/kalsa/veil-marriage-rumor-v0.branch-and-fold.v0.training.json",
+  "scene_id": "veil-marriage-rumor-v0.lower-shadow-marriage-desk",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a Divided City marriage-rumor disclosure path beneath a working Sunwall cargo lift.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary civic marriage work, a captured rumor, a house archive packet, omitted sponsor actions, a loaded lift, four disclosure routes, and four state-gated aftermath families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the gallery establishing view, couple and office routine, rumor-sheet closeup, preparation choice, routine fold, courier arrival, sealed-packet choice, disclosure closeup, lift-bell turn, disclosure-path choice, final threshold, and each ending family. The courier arrival and first lift bell stand as their own replay beats because each changes the active power geometry.",
+    "prompting_rule": "Each base image prompt describes a complete visible frame in ordinary image-model language. It names geometry, materials, lighting, objects, bodies, and staging. Continuity notes remain tooling constraints; prompt assembly sends only the style cue, visible character refs, base prompt, and triggered modifiers.",
+    "global_style_cue": "Style: hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, crisp readable silhouettes, immense worn stone infrastructure, warm ochre lamplight against blue-violet permanent twilight, restrained prophetic strangeness, intimate civic detail, abstract unlettered record marks, dry humane visual wit.",
+    "prompt_assembly_rule": "Assemble every generation prompt from global_style_cue, the selected scene base_image_prompt, visual refs only for named characters and groups visible in that frame, and triggered state_image_modifiers or global_branch_image_modifiers. Use a camera-specific blockout as visual input before high-consistency multi-angle replay rendering.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_text_map_draft",
+      "scope_reason": "The fixture returns to one long gallery from wide, desk, object-closeup, stair, and lift-hatch angles. The textual map below supports staging review and prompt-manifest work; it is not a renderable geometry asset.",
+      "future_scene_set_need": "Before website-quality multi-angle rendering, build a plan view or simple 3D blockout with the south shadow stair, central copying rail, west provision wicket, north lift-service hatch, load board, rear staff stair, review bell, wall safe, notice rail, overhead cargo ribs, and fixed camera slots."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "veil_desk_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of a long narrow civic gallery built from dark worn stone beneath a colossal vertical cargo-lift landing. Heavy ceiling ribs and chains shiver with grain moving overhead. Blue-violet permanent twilight enters from a broad stair descending to a crowded lower ward at the south end. A waist-high wooden copying rail and chained open register occupy the center. A barred lift-service handoff box and chalked load board sit on the north wall. A west-side provision wicket contains slate trays and brass sun-court tokens. A narrow rear staff stair rises beside a bronze review bell and a black iron record safe. Small ochre lamps pool light over ink, wax, stone dust, and a partly eaten sun-shaped loaf.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The gallery is one rectangular civic room beneath the lift landing. The shadow stair, copying rail, provision wicket, lift handoff, load board, staff stair, bell, safe, and notice rail keep fixed relative positions.",
+          "Permanent twilight enters from the south stair. Ochre civic lamps provide the main interior light. Overhead load movement appears through chain vibration and falling dust, not an open view into the shaft."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_couple_routine",
+        "ink_anchor": "morning_couple",
+        "base_image_prompt": "Medium-wide civic desk scene under warm ochre lamps. Pera Sen, a medium-brown-skinned clerk with cropped coiled hair, ink-stained fingers, layered russet civic robe, and brass keys, stands behind a waist-high copying rail over a chained register and two separate leaves. Ari Venn, a slim young adult with pale olive skin, large dark eyes, shaved temples, a braided dark crown, and a mended fine gray house coat, stands beside Dema Kor, a broad-shouldered brown-skinned lift fitter with short copper curls, blue-gray work wrap, leather tool strap, and a waxed brake strip. Two wedding witnesses in plain work wraps hold a partly eaten sun-shaped loaf. Mira Tesh, a stocky older clerk with a gray braid and green ward apron, sorts slate trays and brass tokens behind the west provision wicket. Massive ceiling ribs and chains tremble above the intimate paperwork.",
+        "visible_characters": [
+          {"agent_id": "pera_sen", "default_stance": "behind copying rail with hands on two separate leaves", "visual_ref": "visual_character_refs.characters.pera_sen"},
+          {"agent_id": "ari_venn", "default_stance": "on the public side beside Dema, composed and attentive", "visual_ref": "visual_character_refs.characters.ari_venn"},
+          {"agent_id": "dema_kor", "default_stance": "beside Ari with brake strip and work strap", "visual_ref": "visual_character_refs.characters.dema_kor"},
+          {"agent_id": "mira_tesh", "default_stance": "behind provision wicket sorting trays", "visual_ref": "visual_character_refs.characters.mira_tesh"},
+          {"agent_id": "wedding_witnesses", "default_stance": "two adults beside the couple with loaf and witness cords", "visual_ref": "visual_character_refs.groups.wedding_witnesses"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "This frame establishes the five recurring bodies and the ordinary marriage, tenancy, provision, and lift-maintenance objects before the house courier enters."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_rumor_leaf",
+        "ink_anchor": "rumor_leaf",
+        "base_image_prompt": "Object closeup at the public copying rail. A cheap cream paper sheet torn from a wall nail shows a bold charcoal drawing of two joined witness cords beneath a falling cargo cradle, plus a badly copied house seal made from angular black shapes. Dema Kor's strong brown hand points to the sheet; her other hand holds a narrow waxed brake strip scored with a lower safe-load notch. Behind the rail, Pera Sen's ink-stained fingers hover over an empty evidence sleeve. The chalked harvest load on the north wall rises visibly beyond the brake strip's notch. Warm lamp glow catches wax, charcoal grit, and the torn nail hole.",
+        "visible_characters": [
+          {"agent_id": "pera_sen", "default_stance": "hands behind rail poised over evidence sleeve", "visual_ref": "visual_character_refs.characters.pera_sen"},
+          {"agent_id": "dema_kor", "default_stance": "hands comparing rumor sheet and brake strip", "visual_ref": "visual_character_refs.characters.dema_kor"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The rumor sheet remains cream paper with a nail tear, charcoal falling-lift image, joined-cord symbol, and copied angular seal throughout the fixture.",
+          "The brake strip remains a narrow waxed work record with a safe-load notch below the chalked harvest tally."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_routine_choice",
+        "ink_anchor": "routine_choice",
+        "base_image_prompt": "Medium overhead choice composition around the central copying rail. Pera Sen stands behind the chained marriage register. Four practical actions form distinct visual stations: two clean record leaves and separate inkstones at the register; Dema Kor's waxed brake strip aligned beneath the chalked harvest-load board; the torn charcoal rumor sheet beside a transparent evidence sleeve; and Mira Tesh's brass hold-ring poised over two tenancy slates and a tray of sun-court tokens at the west wicket. Ari Venn and two work-clothed witnesses wait on the public side with a sun-shaped loaf. Dark stone, ochre lamps, blue-violet stair light, and shaking ceiling chains keep the high-fantasy office grounded in working infrastructure.",
+        "visible_characters": [
+          {"agent_id": "pera_sen", "default_stance": "center behind register considering four preparations", "visual_ref": "visual_character_refs.characters.pera_sen"},
+          {"agent_id": "ari_venn", "default_stance": "public side beside Dema and witnesses", "visual_ref": "visual_character_refs.characters.ari_venn"},
+          {"agent_id": "dema_kor", "default_stance": "holding brake strip near load board", "visual_ref": "visual_character_refs.characters.dema_kor"},
+          {"agent_id": "mira_tesh", "default_stance": "behind provision wicket with hold-ring", "visual_ref": "visual_character_refs.characters.mira_tesh"},
+          {"agent_id": "wedding_witnesses", "default_stance": "flanking the couple with loaf and cords", "visual_ref": "visual_character_refs.groups.wedding_witnesses"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide routine-after-preparation view of the stone marriage gallery. Pera Sen works behind the central rail; Ari Venn and Dema Kor wait with two witnesses and the diminished sun-shaped loaf; Mira Tesh watches from the provision wicket. The north wall displays the barred lift handoff and chalk load board. The rear wall holds the narrow staff stair, bronze review bell, and iron safe. The public notice rail near the south shadow stair is visible. Dust falls from ceiling ribs as cargo chains take strain overhead. Record leaves, brake strip, rumor sleeve, and provision trays remain visibly distinct on their owning surfaces.",
+        "visible_characters": [
+          {"agent_id": "pera_sen", "default_stance": "behind rail reviewing separated work", "visual_ref": "visual_character_refs.characters.pera_sen"},
+          {"agent_id": "ari_venn", "default_stance": "beside Dema at public rail", "visual_ref": "visual_character_refs.characters.ari_venn"},
+          {"agent_id": "dema_kor", "default_stance": "watching load board and brake strip", "visual_ref": "visual_character_refs.characters.dema_kor"},
+          {"agent_id": "mira_tesh", "default_stance": "at provision wicket", "visual_ref": "visual_character_refs.characters.mira_tesh"},
+          {"agent_id": "wedding_witnesses", "default_stance": "waiting with loaf", "visual_ref": "visual_character_refs.groups.wedding_witnesses"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "record_integrity >= 3", "modifier_prompt": "Show separate marriage, tenancy, maintenance, and rumor leaves arranged in four clearly divided stacks with different witness marks."},
+          {"trigger": "rumor_trace >= 3", "modifier_prompt": "Show the rumor inside a clear evidence sleeve with three small office-route marks on its cover."},
+          {"trigger": "lift_safety >= 3", "modifier_prompt": "Show Dema's brake strip pinned directly below the chalked harvest-load tally, with the safe notch visibly lower."},
+          {"trigger": "support_hold >= 3", "modifier_prompt": "Show a plain brass hold-ring lying across two face-down tenancy slates beside bright brass sun-court tokens."},
+          {"trigger": "privacy_guard <= 1", "modifier_prompt": "Show several public-side eyes and pointing hands focused on the couple's names and rumor sleeve."}
+        ]
+      },
+      {
+        "visual_scene_id": "veil_courier_arrival",
+        "ink_anchor": "courier_arrival",
+        "base_image_prompt": "Arrival frame facing the broad south shadow stair. Tir Osa, a lean middle-aged courier with light-brown skin, straight black hair tied low, rain-dark charcoal house coat, inked fingers, and a lacquered record case clutched to her chest, climbs into the gallery from blue-violet twilight. Pera Sen turns behind the central copying rail. Ari Venn and Dema Kor face the stair; Mira Tesh looks out from the west provision wicket. The case displays three separate cord bundles in black, white, and red wax. Warm interior lamps meet cold stair light across Tir's wet shoulders, making the delivery change the room before anyone speaks.",
+        "visible_characters": [
+          {"agent_id": "tir_osa", "default_stance": "climbing from shadow stair with case held against chest", "visual_ref": "visual_character_refs.characters.tir_osa"},
+          {"agent_id": "pera_sen", "default_stance": "turning behind rail toward arrival", "visual_ref": "visual_character_refs.characters.pera_sen"},
+          {"agent_id": "ari_venn", "default_stance": "public side facing courier", "visual_ref": "visual_character_refs.characters.ari_venn"},
+          {"agent_id": "dema_kor", "default_stance": "beside Ari facing courier", "visual_ref": "visual_character_refs.characters.dema_kor"},
+          {"agent_id": "mira_tesh", "default_stance": "watching from provision wicket", "visual_ref": "visual_character_refs.characters.mira_tesh"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Tir enters only through the south shadow stair and initially carries the lacquered case.",
+          "Black, white, and red cords distinguish one unnamed house's working forecast, civic disclosure, and requested action. They remain fixture-local visual marks."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_packet_choice",
+        "ink_anchor": "packet_choice",
+        "base_image_prompt": "Medium desk-level view of the lacquered house case between Pera Sen and Tir Osa at the copying rail. A red-cord action leaf lies displayed on top; a white-cord civic disclosure and black-cord working forecast remain separately bound inside. Pera's brass safe keys, the rear iron wall safe, and the bronze review-bell rope form one route behind the clerk. Ari Venn and Dema Kor stand shoulder to shoulder on the public side with two witnesses visible behind them. Tir's inked hand covers the white cord. Ochre light sharpens wax seals, cord fibers, worried faces, and the narrow distance across the rail.",
+        "visible_characters": [
+          {"agent_id": "pera_sen", "default_stance": "behind rail with one hand near case and one near safe keys", "visual_ref": "visual_character_refs.characters.pera_sen"},
+          {"agent_id": "tir_osa", "default_stance": "public side with inked hand covering white cord", "visual_ref": "visual_character_refs.characters.tir_osa"},
+          {"agent_id": "ari_venn", "default_stance": "beside Dema reading visible red leaf", "visual_ref": "visual_character_refs.characters.ari_venn"},
+          {"agent_id": "dema_kor", "default_stance": "beside Ari watching packet", "visual_ref": "visual_character_refs.characters.dema_kor"},
+          {"agent_id": "wedding_witnesses", "default_stance": "behind couple with witness cords", "visual_ref": "visual_character_refs.groups.wedding_witnesses"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_disclosure_closeup",
+        "ink_anchor": "packet_fold",
+        "base_image_prompt": "Overhead evidence closeup on the copying rail under one ochre lamp. The lacquered case contains a black-cord sealed packet, a white-cord civic leaf with abstract diagrams linking a house residence, a prophetic eye symbol, a cargo-lift cradle, and a brake pawl, plus a red-cord action request stamped with angular house marks. A chained marriage register, separate tenancy leaves, Dema Kor's waxed brake strip, Pera Sen's civic copy, and witness cords surround the case in distinct zones. Ink-stained hands from Pera and Tir frame the upper edge; Ari and Dema's hands rest together at the lower edge. The composition makes omitted intervention a visible missing link between marriage and falling lift.",
+        "visible_characters": [
+          {"agent_id": "pera_sen", "default_stance": "ink-stained hands at upper edge of records", "visual_ref": "visual_character_refs.characters.pera_sen"},
+          {"agent_id": "tir_osa", "default_stance": "inked hand beside cord seals", "visual_ref": "visual_character_refs.characters.tir_osa"},
+          {"agent_id": "ari_venn", "default_stance": "one hand beside Dema at lower edge", "visual_ref": "visual_character_refs.characters.ari_venn"},
+          {"agent_id": "dema_kor", "default_stance": "one broad hand beside Ari and brake strip", "visual_ref": "visual_character_refs.characters.dema_kor"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "disclosure_quality >= 3", "modifier_prompt": "Show the white civic leaf open with three connected sponsor-action symbols: a residence key crossed out, a prophetic eye moved away from the cargo cradle, and Dema's roster mark removed; keep the black packet closed."},
+          {"trigger": "disclosure_quality >= 1 && disclosure_quality < 3", "modifier_prompt": "Show partial copied fragments and one broken diagram between the house seal and cargo cradle while the white leaf remains partly folded."},
+          {"trigger": "disclosure_quality <= 0", "modifier_prompt": "Show only the red request exposed, with white and black cord packets fully sealed beneath it."},
+          {"trigger": "privacy_guard <= 0", "modifier_prompt": "Show the black-cord packet opened into many intimate branch diagrams—children, separation, illness, reconciliation, and an ambiguous funeral—spreading beyond the desk's record zones."},
+          {"trigger": "record_integrity >= 4", "modifier_prompt": "Show a second civic copy with matching seal-break and four clear witness marks beside the house originals."}
+        ]
+      },
+      {
+        "visual_scene_id": "veil_lift_bell",
+        "ink_anchor": "lift_bell",
+        "base_image_prompt": "Pivotal upward-looking frame inside the lower-shadow gallery. A heavy bronze bell fixed beside the barred north-wall lift handoff vibrates under an overhead cargo chain taking harvest weight. Fine stone dust falls through warm lamp beams from massive ceiling ribs. Dema Kor stands beneath the chalked load board, broad body turned upward, waxed brake strip held at chest height. Pera Sen stands behind the copying rail between the lift hatch and the marriage register. Ari Venn, Mira Tesh, and Tir Osa form a tense line from public rail to provision wicket to shadow stair. The machinery above remains hidden by stone; its weight is visible in chain strain, bell motion, dust, and every raised face.",
+        "visible_characters": [
+          {"agent_id": "dema_kor", "default_stance": "beneath load board looking up with brake strip", "visual_ref": "visual_character_refs.characters.dema_kor"},
+          {"agent_id": "pera_sen", "default_stance": "behind rail between lift hatch and register", "visual_ref": "visual_character_refs.characters.pera_sen"},
+          {"agent_id": "ari_venn", "default_stance": "beside public rail watching Dema", "visual_ref": "visual_character_refs.characters.ari_venn"},
+          {"agent_id": "mira_tesh", "default_stance": "at provision wicket looking toward bell", "visual_ref": "visual_character_refs.characters.mira_tesh"},
+          {"agent_id": "tir_osa", "default_stance": "near shadow stair holding or watching the case", "visual_ref": "visual_character_refs.characters.tir_osa"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "house_pressure >= 4", "modifier_prompt": "Show Tir glancing toward the shadow stair while two distant charcoal-coated figures wait at its bottom edge in blue-violet twilight."}
+        ],
+        "visual_continuity_notes": [
+          "The lift machinery is occluded above the stone ceiling. Characters infer load through the bell, chain strain, chalk board, vibration, and Dema's work knowledge."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_disclosure_path_choice",
+        "ink_anchor": "disclosure_action",
+        "base_image_prompt": "Wide choice composition from the public rail toward four office routes in the long stone gallery. Pera Sen stands at the center with the civic docket. North, a barred lift-service handoff box and bronze bell wait beneath the load board for Dema Kor's brake strip and a disclosure copy. South, the public notice rail near the blue-violet shadow stair holds space beside the sleeved rumor. Rearward, the narrow staff stair and review bell lead toward sealed review. At the rail, Tir Osa grips the lacquered house case for a possible return. Ari Venn and Dema Kor stand together between marriage register and lift hatch; Mira Tesh waits beside the provision trays. Ochre lamp pools separate each route while overhead chains strain.",
+        "visible_characters": [
+          {"agent_id": "pera_sen", "default_stance": "center behind rail with docket poised among four routes", "visual_ref": "visual_character_refs.characters.pera_sen"},
+          {"agent_id": "ari_venn", "default_stance": "between register and Dema", "visual_ref": "visual_character_refs.characters.ari_venn"},
+          {"agent_id": "dema_kor", "default_stance": "between marriage desk and lift hatch with brake strip", "visual_ref": "visual_character_refs.characters.dema_kor"},
+          {"agent_id": "mira_tesh", "default_stance": "at provision wicket with trays", "visual_ref": "visual_character_refs.characters.mira_tesh"},
+          {"agent_id": "tir_osa", "default_stance": "at public rail holding lacquered case", "visual_ref": "visual_character_refs.characters.tir_osa"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_final_threshold",
+        "ink_anchor": "action_fold|final_choice",
+        "base_image_prompt": "Whole-gallery final-threshold view from the south shadow stair. The central copying rail holds a chained marriage register, separated record leaves, a partially eaten sun-shaped loaf, and house packet components controlled by branch state. The west provision wicket shows tenancy slates, brass sun-court tokens, and a possible hold-ring. The north lift wall shows the barred handoff box, heavy service bell, brake strip or empty hook, and chalked harvest load. The rear staff stair, bronze review bell, and black iron safe remain visible. Pera Sen stands at the central decision point; Ari Venn and Dema Kor wait on the public side; Mira Tesh owns the provision wicket; Tir Osa stands near the shadow stair or case according to custody. Two wedding witnesses hold their cords. Overhead chains strain while ochre lamplight and blue-violet twilight divide the room into four actionable routes.",
+        "visible_characters": [
+          {"agent_id": "pera_sen", "default_stance": "center behind rail at final decision", "visual_ref": "visual_character_refs.characters.pera_sen"},
+          {"agent_id": "ari_venn", "default_stance": "public side beside Dema facing register", "visual_ref": "visual_character_refs.characters.ari_venn"},
+          {"agent_id": "dema_kor", "default_stance": "beside Ari angled toward lift hatch", "visual_ref": "visual_character_refs.characters.dema_kor"},
+          {"agent_id": "mira_tesh", "default_stance": "at provision wicket", "visual_ref": "visual_character_refs.characters.mira_tesh"},
+          {"agent_id": "tir_osa", "default_stance": "near shadow stair watching case custody", "visual_ref": "visual_character_refs.characters.tir_osa"},
+          {"agent_id": "wedding_witnesses", "default_stance": "near couple with witness cords and loaf", "visual_ref": "visual_character_refs.groups.wedding_witnesses"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "lift_safety >= 4", "modifier_prompt": "Show the brake strip and a white disclosure copy inside the north-wall barred handoff box; the lift bell rope is pulled taut and the overhead chain strain begins to slacken."},
+          {"trigger": "lift_safety <= 2", "modifier_prompt": "Show the brake strip still near the central desk while overhead cargo chains remain taut and dust continues falling."},
+          {"trigger": "rumor_trace >= 4", "modifier_prompt": "Show the sleeved rumor and a bounded civic correction side by side on the south public notice rail, each carrying route marks for roster, residence, and landlord."},
+          {"trigger": "record_integrity >= 4", "modifier_prompt": "Show marriage, tenancy, safety, house request, and review copies in separate witnessed stacks across the central rail and wall safe."},
+          {"trigger": "support_hold >= 3", "modifier_prompt": "Show Mira's brass hold-ring across two face-down tenancy slates beside the sun-court token tray."},
+          {"trigger": "support_hold == 0", "modifier_prompt": "Show both tenancy slates face-up and exposed beside an untouched brass token tray."},
+          {"trigger": "house_pressure >= 5", "modifier_prompt": "Show two charcoal-coated house retainers waiting at the bottom of the south stair, hands visible and posture rigid, using stillness as pressure."}
+        ],
+        "visual_continuity_notes": [
+          "The final frame must carry packet custody, rumor/correction rail state, brake-strip route, hold-ring state, and record separation from earlier branches.",
+          "A camera-specific blockout is required for this wide composite before high-consistency rendering."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_ending_registration",
+        "ink_anchor": "ending_registration_success|ending_registration_cost",
+        "base_image_prompt": "Marriage-registration aftermath at the central copying rail. Ari Venn and Dema Kor stand close together over the chained register with two work-clothed witnesses holding cords and the partly eaten sun-shaped loaf. Pera Sen stands behind the rail with pen, separate civic leaves, and house request. Mira Tesh is visible at the provision wicket with tenancy slates and brass tokens. The north lift bell and load board remain in the background under vibrating ceiling ribs. Warm ochre light centers the consent marks while blue-violet stair light keeps house pressure present at the edge.",
+        "visible_characters": [
+          {"agent_id": "pera_sen", "default_stance": "behind rail recording final marks", "visual_ref": "visual_character_refs.characters.pera_sen"},
+          {"agent_id": "ari_venn", "default_stance": "signing beside Dema", "visual_ref": "visual_character_refs.characters.ari_venn"},
+          {"agent_id": "dema_kor", "default_stance": "signing beside Ari", "visual_ref": "visual_character_refs.characters.dema_kor"},
+          {"agent_id": "mira_tesh", "default_stance": "at provision wicket with support objects", "visual_ref": "visual_character_refs.characters.mira_tesh"},
+          {"agent_id": "wedding_witnesses", "default_stance": "flanking couple with cords and loaf", "visual_ref": "visual_character_refs.groups.wedding_witnesses"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_ending_lift",
+        "ink_anchor": "ending_lift_success|ending_lift_cost",
+        "base_image_prompt": "Lift-safety aftermath at the north wall of the stone civic gallery. The barred handoff box stands open on the landing side, framed by a heavy bronze bell, chalked harvest-load board, and massive overhead chains. Pera Sen holds the civic copy at the inner bars. Dema Kor stands beside Pera with her leather tool strap and waxed brake record. Ari Venn waits back at the still-open marriage register. A Sunwall steward's practical gloved hand and dark work sleeve appear through the small landing-side opening as the only visible part of the operating office. Warm lamps strike iron bars, chain links, wax, chalk, and strained faces.",
+        "visible_characters": [
+          {"agent_id": "pera_sen", "default_stance": "at civic side of barred handoff with copy", "visual_ref": "visual_character_refs.characters.pera_sen"},
+          {"agent_id": "dema_kor", "default_stance": "beside Pera with brake record", "visual_ref": "visual_character_refs.characters.dema_kor"},
+          {"agent_id": "ari_venn", "default_stance": "background beside open marriage register", "visual_ref": "visual_character_refs.characters.ari_venn"},
+          {"agent_id": "sunwall_steward_hand", "default_stance": "gloved hand receiving evidence through landing-side bars", "visual_ref": "visual_character_refs.groups.sunwall_steward_hand"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The Sunwall steward remains mostly occluded by the barred handoff; the fixture establishes operating response, not a new recurring named character."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_ending_correction",
+        "ink_anchor": "ending_correction_success|ending_correction_cost",
+        "base_image_prompt": "Public-correction aftermath at the south notice rail above the blue-violet ward stair. Pera Sen pins a bounded civic sheet beside the sleeved charcoal rumor of joined cords beneath a falling lift. Ari Venn and Dema Kor stand close enough to see their names represented by abstract seal shapes. Several separate copy leaves sit in a rack marked by pictorial symbols for a lift roster, house residence, and landlord door. Tir Osa waits a few steps away in her rain-dark coat, watching the correction acquire a public audience. Ochre lamps make the two rival sheets equally visible while people lower on the stair pause as silhouettes.",
+        "visible_characters": [
+          {"agent_id": "pera_sen", "default_stance": "pinning civic correction beside rumor", "visual_ref": "visual_character_refs.characters.pera_sen"},
+          {"agent_id": "ari_venn", "default_stance": "beside Dema facing notice rail", "visual_ref": "visual_character_refs.characters.ari_venn"},
+          {"agent_id": "dema_kor", "default_stance": "beside Ari facing notice rail", "visual_ref": "visual_character_refs.characters.dema_kor"},
+          {"agent_id": "tir_osa", "default_stance": "several steps away watching the public rail", "visual_ref": "visual_character_refs.characters.tir_osa"},
+          {"agent_id": "ward_stair_readers", "default_stance": "small silhouettes pausing lower on the stair", "visual_ref": "visual_character_refs.groups.ward_stair_readers"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_ending_privacy",
+        "ink_anchor": "ending_privacy_success|ending_privacy_cost",
+        "base_image_prompt": "Sealed-review aftermath across the rear of the stone civic gallery. Pera Sen turns two brass keys in a black iron wall safe holding the black-cord working forecast. A white civic disclosure and red action request sit in a narrow sealed tray leading up the staff stair beside the bronze review bell. Mira Tesh stands at the west provision wicket with two tenancy slates, brass sun-court tokens, and a hold-ring controlled by outcome state. Ari Venn and Dema Kor wait together at the copying rail under warm ochre light. The south public notice rail remains visible in blue-violet twilight with the charcoal rumor still hanging there.",
+        "visible_characters": [
+          {"agent_id": "pera_sen", "default_stance": "locking black-cord packet in iron safe", "visual_ref": "visual_character_refs.characters.pera_sen"},
+          {"agent_id": "mira_tesh", "default_stance": "at provision wicket with tenancy and light records", "visual_ref": "visual_character_refs.characters.mira_tesh"},
+          {"agent_id": "ari_venn", "default_stance": "waiting beside Dema at copying rail", "visual_ref": "visual_character_refs.characters.ari_venn"},
+          {"agent_id": "dema_kor", "default_stance": "waiting beside Ari at copying rail", "visual_ref": "visual_character_refs.characters.dema_kor"}
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "separate_consent_and_tenancy_visual",
+        "trigger": "branch_label == separate_consent_and_tenancy",
+        "apply_to_visual_scene_ids": ["veil_routine_choice", "veil_routine_fold", "veil_final_threshold"],
+        "modifier_prompt": "Show Pera placing marriage and tenancy leaves into separate stacks with separate inkstones and witness marks; Ari and Dema watch the separation closely."
+      },
+      {
+        "modifier_id": "preserve_material_warning_visual",
+        "trigger": "branch_label == preserve_material_warning",
+        "apply_to_visual_scene_ids": ["veil_routine_choice", "veil_routine_fold", "veil_final_threshold"],
+        "modifier_prompt": "Show Dema's narrow waxed brake strip aligned below the north-wall chalk load board, its safe notch visibly lower than the harvest tally."
+      },
+      {
+        "modifier_id": "trace_the_rumor_visual",
+        "trigger": "branch_label == trace_the_rumor",
+        "apply_to_visual_scene_ids": ["veil_rumor_leaf", "veil_routine_fold", "veil_final_threshold"],
+        "modifier_prompt": "Show the torn rumor flattened inside a clear evidence sleeve carrying three small route symbols for lift roster, house room, and landlord door."
+      },
+      {
+        "modifier_id": "hold_material_support_visual",
+        "trigger": "branch_label == hold_material_support",
+        "apply_to_visual_scene_ids": ["veil_routine_choice", "veil_routine_fold", "veil_final_threshold"],
+        "modifier_prompt": "Show Mira laying a plain brass hold-ring across two face-down tenancy slates beside the sun-court token tray."
+      },
+      {
+        "modifier_id": "refuse_undisclosed_burden_visual",
+        "trigger": "branch_label == refuse_undisclosed_burden",
+        "apply_to_visual_scene_ids": ["veil_packet_choice", "veil_disclosure_closeup"],
+        "modifier_prompt": "Show Pera pushing the red-cord request back across the rail while the black and white packets remain in Tir's open case."
+      },
+      {
+        "modifier_id": "open_usable_disclosure_visual",
+        "trigger": "branch_label == open_usable_disclosure",
+        "apply_to_visual_scene_ids": ["veil_packet_choice", "veil_disclosure_closeup", "veil_final_threshold"],
+        "modifier_prompt": "Show the white wax broken before Pera, Tir, Ari, Dema, and two witness cords; the black-cord working remains closed."
+      },
+      {
+        "modifier_id": "expose_raw_forecast_visual",
+        "trigger": "branch_label == expose_raw_forecast",
+        "apply_to_visual_scene_ids": ["veil_packet_choice", "veil_disclosure_closeup", "veil_final_threshold"],
+        "modifier_prompt": "Show black cord and wax broken, with many intimate branch diagrams spreading across the public desk while Ari withdraws and Dema shields the wedding loaf."
+      },
+      {
+        "modifier_id": "secure_case_for_review_visual",
+        "trigger": "branch_label == secure_case_for_review",
+        "apply_to_visual_scene_ids": ["veil_packet_choice", "veil_lift_bell", "veil_final_threshold"],
+        "modifier_prompt": "Show the lacquered case inside the rear iron safe with both keys turned and the bronze review-bell rope still moving."
+      },
+      {
+        "modifier_id": "route_material_warning_visual",
+        "trigger": "branch_label == route_material_warning",
+        "apply_to_visual_scene_ids": ["veil_disclosure_path_choice", "veil_final_threshold", "veil_ending_lift"],
+        "modifier_prompt": "Show Dema's brake strip and a house disclosure or marked missing-disclosure cover inside the north barred handoff box while Pera pulls the heavy service bell."
+      },
+      {
+        "modifier_id": "correct_the_public_path_visual",
+        "trigger": "branch_label == correct_the_public_path",
+        "apply_to_visual_scene_ids": ["veil_disclosure_path_choice", "veil_final_threshold", "veil_ending_correction"],
+        "modifier_prompt": "Show Pera pinning a bounded civic correction beside the sleeved rumor on the south notice rail while stair readers pause below."
+      },
+      {
+        "modifier_id": "seek_sealed_review_visual",
+        "trigger": "branch_label == seek_sealed_review",
+        "apply_to_visual_scene_ids": ["veil_disclosure_path_choice", "veil_final_threshold", "veil_ending_privacy"],
+        "modifier_prompt": "Show the white and red civic copies in a narrow sealed tray ascending the rear staff stair while the black packet stays locked and Mira witnesses the support hold."
+      },
+      {
+        "modifier_id": "preserve_minimum_copy_visual",
+        "trigger": "branch_label == preserve_minimum_copy",
+        "apply_to_visual_scene_ids": ["veil_disclosure_path_choice", "veil_final_threshold"],
+        "modifier_prompt": "Show Tir tying the lacquered case beneath her coat while Pera keeps two witnessed civic copies: the red request and Dema's brake strip."
+      },
+      {
+        "modifier_id": "ending_registration_success_visual",
+        "trigger": "ending_label == marriage_registered_with_separate_burdens",
+        "apply_to_visual_scene_ids": ["veil_ending_registration"],
+        "modifier_prompt": "Show Ari and Dema's final marks together in the marriage register while red house request, tenancy, roster, and lift warning remain in four separate stacks; witnesses cross their cords above the loaf."
+      },
+      {
+        "modifier_id": "ending_registration_cost_visual",
+        "trigger": "ending_label == marriage_record_collapses_under_shared_custody",
+        "apply_to_visual_scene_ids": ["veil_ending_registration"],
+        "modifier_prompt": "Show one crowded docket with red request, tenancy slate, roster mark, and marriage line overlapping; a fresh house challenge leaf enters from the blue-lit stair as Mira searches exposed provision trays."
+      },
+      {
+        "modifier_id": "ending_lift_success_visual",
+        "trigger": "ending_label == material_owner_stops_the_load",
+        "apply_to_visual_scene_ids": ["veil_ending_lift"],
+        "modifier_prompt": "Show the Sunwall steward's gloved hand pulling a heavy iron stop lever beyond the bars; overhead chains visibly slacken and Dema's brake strip sits beside the white disclosure."
+      },
+      {
+        "modifier_id": "ending_lift_cost_visual",
+        "trigger": "ending_label == warning_arrives_without_usable_path",
+        "apply_to_visual_scene_ids": ["veil_ending_lift"],
+        "modifier_prompt": "Show one empty grain cradle resting briefly beyond the bars while taut chains and a new crew shadow indicate continued loading; the handoff box contains incomplete, mismatched papers."
+      },
+      {
+        "modifier_id": "ending_correction_success_visual",
+        "trigger": "ending_label == sponsor_action_follows_rumor_path",
+        "apply_to_visual_scene_ids": ["veil_ending_correction"],
+        "modifier_prompt": "Show four matched civic copies placed in pictorial racks for lift roster, house residence, landlord door, and public notice; the black working packet remains closed at the distant desk."
+      },
+      {
+        "modifier_id": "ending_correction_cost_visual",
+        "trigger": "ending_label == public_answer_without_complete_trace",
+        "apply_to_visual_scene_ids": ["veil_ending_correction"],
+        "modifier_prompt": "Show the public correction isolated beside several fresh hand-copied rumor sheets multiplying down the stair, while the office-route copy rack remains mostly empty."
+      },
+      {
+        "modifier_id": "ending_privacy_success_visual",
+        "trigger": "ending_label == sealed_working_with_supported_challenge",
+        "apply_to_visual_scene_ids": ["veil_ending_privacy"],
+        "modifier_prompt": "Show the black packet locked in the safe, white and red leaves traveling up the staff tray, Mira's brass hold-ring across face-down tenancy slates, and duplicate civic copies beside Ari and Dema."
+      },
+      {
+        "modifier_id": "ending_privacy_cost_visual",
+        "trigger": "ending_label == sealed_record_protects_the_sponsor",
+        "apply_to_visual_scene_ids": ["veil_ending_privacy"],
+        "modifier_prompt": "Show the black packet safely locked while exposed tenancy slates, an empty sun-token place, a blank civic-copy space, and the untouched rumor on the public rail leave Ari and Dema materially unprotected."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "lower_shadow_marriage_desk.scene_set.draft",
+      "geometry_authority_level": "draft_text_map_not_renderable_blockout",
+      "room_model": "One long rectangular stone gallery beneath a cargo-lift landing, with the central copying rail dividing public and clerk zones, a south shadow stair, north lift wall, west provision wicket, and narrow rear staff stair.",
+      "fixed_zones": [
+        {"zone_id": "south_shadow_stair", "visible_form": "broad descending stone stair filled with blue-violet permanent twilight and lower-ward silhouettes", "used_for": "public arrival, courier entry, rumor audience, house pressure"},
+        {"zone_id": "central_copying_rail", "visible_form": "waist-high worn wood rail with chained register, two inkstones, evidence sleeve, copy leaves, and loaf space", "used_for": "marriage consent, record separation, packet review, final registration"},
+        {"zone_id": "west_provision_wicket", "visible_form": "barred clerk opening with tenancy slate trays, brass sun-court tokens, and a plain brass hold-ring", "used_for": "room and light support during review"},
+        {"zone_id": "north_lift_handoff", "visible_form": "barred two-sided document box beside heavy bronze bell and chalk load board under cargo chains", "used_for": "transfer of brake and disclosure evidence to Sunwall operating owner"},
+        {"zone_id": "rear_staff_review_route", "visible_form": "narrow stair rising behind the civic side beside a review-bell rope, sealed tray, and black iron two-key safe", "used_for": "forecast review, sealed custody, independent civic copy"},
+        {"zone_id": "south_notice_rail", "visible_form": "public wooden notice bar at the top of the shadow stair with nail holes, copy racks, and lamp", "used_for": "rumor capture, bounded correction, public readership"},
+        {"zone_id": "overhead_cargo_structure", "visible_form": "massive stone ceiling ribs, chain runs, dust seams, and vibration from an occluded cargo lift above", "used_for": "material clock and lift-load pressure"}
+      ],
+      "camera_slots": [
+        {"camera_id": "wide_gallery_from_south", "supports_visual_scene_ids": ["veil_desk_establishing", "veil_final_threshold"]},
+        {"camera_id": "medium_central_rail", "supports_visual_scene_ids": ["veil_couple_routine", "veil_routine_choice", "veil_routine_fold", "veil_packet_choice", "veil_ending_registration"]},
+        {"camera_id": "object_overhead_rail", "supports_visual_scene_ids": ["veil_rumor_leaf", "veil_disclosure_closeup"]},
+        {"camera_id": "south_stair_arrival", "supports_visual_scene_ids": ["veil_courier_arrival", "veil_ending_correction"]},
+        {"camera_id": "north_lift_wall", "supports_visual_scene_ids": ["veil_lift_bell", "veil_ending_lift"]},
+        {"camera_id": "wide_route_cross", "supports_visual_scene_ids": ["veil_disclosure_path_choice"]},
+        {"camera_id": "rear_safe_and_wicket", "supports_visual_scene_ids": ["veil_ending_privacy"]}
+      ],
+      "movement_routes": [
+        {"route_id": "public_to_rail", "path": "south_shadow_stair -> south_notice_rail -> public side of central_copying_rail", "users": ["ari_venn", "dema_kor", "tir_osa", "wedding_witnesses", "ward_stair_readers"]},
+        {"route_id": "clerk_work_route", "path": "central_copying_rail clerk side -> west_provision_wicket -> north_lift_handoff -> rear_staff_review_route", "users": ["pera_sen", "mira_tesh"]},
+        {"route_id": "sealed_review_route", "path": "central_copying_rail -> rear iron safe or sealed staff tray -> rear_staff_review_route", "users": ["pera_sen", "tir_osa as witness"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "rail_to_load_board", "path": "central copying rail -> north wall chalk load board and lift bell", "supports": ["preserve_material_warning", "route_material_warning", "prioritize_lift_safety"]},
+        {"lane_id": "rail_to_notice", "path": "central copying rail -> south notice rail -> shadow stair readers", "supports": ["trace_the_rumor", "correct_the_public_path", "prioritize_public_correction"]},
+        {"lane_id": "rail_to_review", "path": "central copying rail -> rear safe, review bell, and staff stair", "supports": ["secure_case_for_review", "seek_sealed_review", "prioritize_bounded_privacy"]}
+      ],
+      "occlusion_rules": [
+        "The cargo lift and its operating steward remain beyond the north wall and stone ceiling; only the barred handoff, a gloved hand, bells, chalk, chains, and vibration are visible from the gallery.",
+        "People below the south stair cannot read desk records until they reach the notice rail or public side of the copying rail.",
+        "The iron safe hides packet contents after closure; visible cord colors before closure do not reveal written contents."
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable fixture-local character and group visual identities for prompt assembly. Include only refs for bodies visible in the selected frame.",
+    "characters": {
+      "pera_sen": "Pera Sen: adult human civic copy clerk, medium-brown skin, cropped coiled black hair, compact attentive face, ink-stained fingertips, layered russet-and-brown civic robe over practical clothes, narrow brass key ring at the belt, posture precise behind a waist-high rail, hands usually separating papers or holding a pen.",
+      "ari_venn": "Ari Venn: slim young adult human Prophetic House candidate, pale olive skin, large dark eyes, shaved temples with a braided dark crown, fine gray house coat repeatedly mended at cuffs, narrow archive sash, controlled upright posture that tightens when house custody enters the room.",
+      "dema_kor": "Dema Kor: broad-shouldered young adult human Sunwall brake fitter, warm brown skin, short copper-brown curls, blue-gray wrapped work coat with rolled sleeves, leather tool strap across chest, waxed brake strip often in one hand, grounded stance with attention pulled toward load sounds and machinery.",
+      "mira_tesh": "Mira Tesh: stocky older human ward provision clerk, deep brown skin, long gray braid, square green apron over layered ochre clothing, brass token trays and slate dust around both hands, dry watchful expression, solid posture behind a barred provision wicket.",
+      "tir_osa": "Tir Osa: lean middle-aged human house archive courier and copyist, light-brown skin, straight black hair tied low, charcoal-gray house coat darkened by rain, ink staining fingers to the first knuckle, lacquered rectangular record case carried close to the chest, exact careful posture with frequent glances toward the public stair."
+    },
+    "groups": {
+      "wedding_witnesses": "Two adult human ward residents in plain layered work wraps, one carrying a lopsided partly eaten sun-shaped bread loaf and the other carrying two simple witness cords; relaxed familiar posture during routine, guarded close stance under house pressure.",
+      "sunwall_steward_hand": "A single practical gloved human hand and dark indigo work sleeve visible through a barred lift-service opening, marked with chalk dust and iron grease, representing the occluded Sunwall operating steward receiving evidence or pulling a stop lever.",
+      "ward_stair_readers": "A small mixed-age group of human lower-ward residents paused on a broad twilight stair, layered work clothes, baskets and tool rolls, faces turned toward the public notice rail, bodies clustered in quiet reading rather than a riot."
+    }
+  },
+  "review_notes": [
+    "The visual plan contains a textual scene-set map with fixed zones, camera slots, routes, sightlines, and occlusion rules. A renderable plan view or 3D blockout remains required before high-consistency multi-angle website art.",
+    "Every base prompt uses affirmative visible description and restates the relevant gallery geometry, light, materials, bodies, and props.",
+    "House cord colors, hold-ring, exact bell use, character appearances, and room layout remain fixture-local; the visual artifact does not promote them into universal Divided City procedure.",
+    "Branch and ending modifiers carry packet custody, record separation, brake-strip route, rumor/correction route, support state, house pressure, and lift-chain state into later frames."
+  ]
+}

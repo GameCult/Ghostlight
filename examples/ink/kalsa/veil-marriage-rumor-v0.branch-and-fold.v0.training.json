@@ -1,0 +1,382 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "kalsa-veil-marriage-rumor-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/kalsa/veil-marriage-rumor-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/kalsa/veil-marriage-rumor-v0.v0.json",
+  "visual_plan_ref": "examples/visual/kalsa/veil-marriage-rumor-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "veil-marriage-rumor-v0.lower-shadow-marriage-desk",
+  "protagonist_agent_id": "pera_sen",
+  "npc_agent_ids": [
+    "ari_venn",
+    "dema_kor",
+    "mira_tesh",
+    "tir_osa"
+  ],
+  "purpose": "Interactive Fiction Weaver fixture for a Kalsa civic clerk separating a marriage rumor, a house forecast, sponsor actions, material lift risk, and household support inside one lower-shadow ward office.",
+  "tonal_mode": "Dry civic comedy and domestic warmth tightening into procedural noir.",
+  "artifact_role": "Playable illustrated-fiction website collateral and lore stress test; not canonical history, simulation state, or core model-training signal.",
+  "local_awareness_summary": [
+    {
+      "text": "Pera is a civic copy clerk who can receive and separate records, preserve seals and witnesses, ring for review, serve or refuse unsupported notice, use the barred lift handoff, and register consent. Pera cannot see futures, decide an appeal, operate the lift, or consent for Ari and Dema.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/veil-marriage-rumor-v0.v0.json",
+        "Kalsa/Spoilers/Institutions/Forecast Evidence and Courts.md"
+      ]
+    },
+    {
+      "text": "Ari and Dema have already spoken consent. Pera can observe their words, signatures, work records, residence notices, and reactions; their private intentions and any future child's expression remain outside the clerk's knowledge.",
+      "source_refs": [
+        "Kalsa/Spoilers/Institutions/Prophetic Houses.md",
+        "Kalsa/Spoilers/Foundations/Magic Styles.md"
+      ]
+    },
+    {
+      "text": "The rumor sheet, red action request, white civic disclosure, black working forecast, marriage register, tenancy leaves, brake strip, load board, support hold-ring, review bell, and lift-service handoff box are separate evidence and actuation surfaces.",
+      "source_refs": [
+        "Kalsa/Spoilers/Institutions/Prophetic Houses.md",
+        "Kalsa/Spoilers/Institutions/Forecast Evidence and Courts.md",
+        "examples/ink/kalsa/veil-marriage-rumor-v0.branch-and-fold.v0.ink"
+      ]
+    },
+    {
+      "text": "The lower-lift bell and visible load chalk establish immediate material pressure. Only the Sunwall operating owner can stop or load the lift; Pera can carry evidence to that owner but cannot substitute paperwork for brake authority.",
+      "source_refs": [
+        "Kalsa/Spoilers/Polities/Prophecy - The Divided City.md",
+        "Kalsa/Spoilers/Institutions/Forecast Evidence and Courts.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Pera's embodied position behind the copying rail. Information enters through visible sheets, seals, spoken statements, bells, chalk marks, and office handoffs rather than backstage narration.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md"
+        ]
+      },
+      {
+        "text": "The opening establishes ordinary marriage registration, breakfast, tenancy work, lift vibration, room geometry, and scoped office authority before the house packet creates acute pressure.",
+        "source_refs": [
+          "AGENTS.md",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Pera owns the civic docket and copying acts, not the forecast, marriage consent, house discipline, provision decision, lift machinery, or court judgment.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Forecast Evidence and Courts.md",
+          "Kalsa/Spoilers/Institutions/Prophetic Houses.md"
+        ]
+      },
+      {
+        "text": "Mira can place a fixture-bounded hold on ward-administered room and light allotment during review. The hold does not settle the marriage, restore house residence, or decide forecast truth.",
+        "source_refs": [
+          "Kalsa/Spoilers/Polities/Prophecy - The Divided City.md",
+          "examples/lore-grounding/kalsa/veil-marriage-rumor-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Tir carries and witnesses the house case but does not own the prophet's report or the service steward's action; returning, opening, or securing the case changes remise and custody rather than future truth.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Prophetic Houses.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Pera controls the civic register, evidence sleeve, locked case, review bell, and civic side of the lift handoff box; Ari and Dema control consent and their copies; Dema begins with the brake strip; Mira controls the provision trays and hold-ring; Tir begins with the lacquered house case.",
+        "source_refs": [
+          "examples/ink/kalsa/veil-marriage-rumor-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "The artifact must distinguish an observed or reported future, an interested sponsor's planned intervention, a rumor, a material warning, an office notice, and the people whose consent is at stake.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Prophetic Houses.md",
+          "Kalsa/Spoilers/Institutions/Forecast Evidence and Courts.md"
+        ]
+      },
+      {
+        "text": "Every final priority must preserve a real tradeoff among marriage registration, lift safety, public correction, intimate privacy, record custody, and material support.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      },
+      {
+        "text": "Correction must reach the offices that acted on the rumor; changing a sealed archive alone cannot restore work, residence, light access, or reputation.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Prophetic Houses.md",
+          "Kalsa/Spoilers/Institutions/Forecast Evidence and Courts.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not establish whether the marriage causes harm, whether any possible child will express Prophecy, or whether the fatal lift branch would occur after a different set of interventions.",
+        "source_refs": [
+          "Kalsa/Spoilers/Foundations/Magic Styles.md",
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md"
+        ]
+      },
+      {
+        "text": "Do not name a canonical Prophetic House, city, sector, charter, native office, standard cord code, fixed review duration, or universal ward layout from this fixture-local scene.",
+        "source_refs": [
+          "Kalsa/Spoilers/Polities/Prophecy - The Divided City.md",
+          "Kalsa/Spoilers/Institutions/Prophetic Houses.md",
+          "Kalsa/Spoilers/Institutions/Forecast Evidence and Courts.md"
+        ]
+      },
+      {
+        "text": "Do not let a clerk, prophet, sponsor, rumor, or court order operate the lift in place of the Sunwall Stewardship's material authority.",
+        "source_refs": [
+          "Kalsa/Spoilers/Polities/Prophecy - The Divided City.md",
+          "Kalsa/Spoilers/Institutions/Forecast Evidence and Courts.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through ordinary record preparation, a sealed house packet, divergent disclosure and actuation routes, and four state-gated ending families.",
+    "choice_layers": [
+      "ordinary_record_preparation",
+      "sealed_house_packet",
+      "disclosure_path_under_load",
+      "office_priority"
+    ],
+    "variables": [
+      "record_integrity",
+      "disclosure_quality",
+      "rumor_trace",
+      "marriage_momentum",
+      "lift_safety",
+      "house_pressure",
+      "privacy_guard",
+      "support_hold"
+    ],
+    "ending_gates": [
+      "ending_registration_success",
+      "ending_registration_cost",
+      "ending_lift_success",
+      "ending_lift_cost",
+      "ending_correction_success",
+      "ending_correction_cost",
+      "ending_privacy_success",
+      "ending_privacy_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "separate_consent_and_tenancy",
+      "ink_path": "routine_choice",
+      "action_type": "write",
+      "actor_intent": "Keep marriage consent and tenancy transfer from becoming one house-controlled decision.",
+      "state_basis": ["Pera controls the civic copy structure and already has both witnessed statements."],
+      "reviewed_consequences": ["Raises record_integrity, privacy_guard, and marriage_momentum; later folds preserve separate authorities and strengthen the registration and privacy endings."],
+      "training_hooks": ["separate_authority_records", "consent_boundary", "ordinary_clerk_action"]
+    },
+    {
+      "branch_id": "preserve_material_warning",
+      "ink_path": "routine_choice",
+      "action_type": "use_object",
+      "actor_intent": "Place Dema's brake strip beside the planned harvest load before prophecy dominates the docket.",
+      "state_basis": ["Dema has a material maintenance strip; Pera can copy the visible mismatch but cannot certify the brake."],
+      "reviewed_consequences": ["Raises lift_safety and record_integrity while increasing house_pressure; the later lift route gains material evidence."],
+      "training_hooks": ["material_trace_before_forecast", "actuation_owner_boundary"]
+    },
+    {
+      "branch_id": "trace_the_rumor",
+      "ink_path": "routine_choice",
+      "action_type": "preserve_object",
+      "actor_intent": "Keep the anonymous sheet and trace which offices acted on it.",
+      "state_basis": ["The rumor sheet is physically present and Dema can name the roster, residence, and landlord consequences."],
+      "reviewed_consequences": ["Raises rumor_trace while lowering privacy_guard; later correction can follow the material path at a personal exposure cost, but tracing recipients does not disclose the sponsor's omitted action."],
+      "training_hooks": ["misinformation_custody", "privacy_truth_tradeoff"]
+    },
+    {
+      "branch_id": "hold_material_support",
+      "ink_path": "routine_choice",
+      "action_type": "speak",
+      "actor_intent": "Ask the provision owner to protect present room and light access while review remains possible.",
+      "state_basis": ["Mira owns the ward support trays and can witness a local hold without deciding marriage or house residence."],
+      "reviewed_consequences": ["Raises support_hold and house_pressure while lowering marriage_momentum; later privacy and registration outcomes reflect whether delay has a material bearer."],
+      "training_hooks": ["support_as_due_process", "office_scope"]
+    },
+    {
+      "branch_id": "refuse_undisclosed_burden",
+      "ink_path": "packet_choice",
+      "action_type": "refuse",
+      "actor_intent": "Refuse to stamp a marriage, residence, and work burden that cites only sealed evidence.",
+      "state_basis": ["Forecast court rules require usable disclosure before a sealed forecast can support an irreversible or broad burden."],
+      "reviewed_consequences": ["Raises marriage_momentum, record_integrity, and house_pressure; registration becomes stronger while conflict moves to the office threshold."],
+      "training_hooks": ["bounded_refusal", "sealed_evidence_limit"]
+    },
+    {
+      "branch_id": "open_usable_disclosure",
+      "ink_path": "packet_choice",
+      "action_type": "open_object",
+      "actor_intent": "Open only the civic disclosure with the affected people and witnesses.",
+      "state_basis": ["The house packet visibly separates the working forecast from the civic disclosure and requested act."],
+      "reviewed_consequences": ["Raises disclosure_quality, record_integrity, privacy_guard, and house_pressure; the sponsor's planned withdrawals enter later folds while intimate branches remain sealed."],
+      "training_hooks": ["minimum_usable_disclosure", "affected_party_access"]
+    },
+    {
+      "branch_id": "expose_raw_forecast",
+      "ink_path": "packet_choice",
+      "action_type": "open_object",
+      "actor_intent": "Seek certainty by opening every branch in the public office.",
+      "state_basis": ["Pera can physically open the packet but lacks authority to make unrelated intimate branches public without cost."],
+      "reviewed_consequences": ["Raises disclosure_quality, rumor_trace, and house_pressure while sharply lowering privacy_guard; later correction may work while exposing the couple."],
+      "training_hooks": ["overdisclosure_harm", "future_changes_when_read"]
+    },
+    {
+      "branch_id": "secure_case_for_review",
+      "ink_path": "packet_choice",
+      "action_type": "secure_object",
+      "actor_intent": "Preserve every seal and transfer the interpretive dispute to a forecast reviewer.",
+      "state_basis": ["Pera controls a two-key wall safe and review bell but cannot perform the review."],
+      "reviewed_consequences": ["Raises record_integrity, support_hold, and house_pressure while slowing marriage_momentum; custody improves before disclosure does."],
+      "training_hooks": ["custody_before_interpretation", "delay_cost"]
+    },
+    {
+      "branch_id": "route_material_warning",
+      "ink_path": "disclosure_action",
+      "action_type": "transfer_object",
+      "actor_intent": "Deliver the brake limit and available sponsor disclosure to the Sunwall operating owner.",
+      "state_basis": ["The barred handoff box and bell connect the civic desk to the lift landing while preserving distinct authority."],
+      "reviewed_consequences": ["Raises lift_safety and disclosure_quality while lowering marriage_momentum; the lift ending can reach a material stop."],
+      "training_hooks": ["evidence_to_actuation_owner", "safety_spends_time"]
+    },
+    {
+      "branch_id": "correct_the_public_path",
+      "ink_path": "disclosure_action",
+      "action_type": "publish",
+      "actor_intent": "Attach the sponsor's planned acts to the same public path that carried the fatal marriage rumor.",
+      "state_basis": ["Pera can publish a bounded civic notice but cannot publish future truth or marriage judgment."],
+      "reviewed_consequences": ["Raises rumor_trace, disclosure_quality, and house_pressure while lowering privacy_guard; later public correction becomes effective but personally costly."],
+      "training_hooks": ["correction_follows_rumor", "publicity_cost"]
+    },
+    {
+      "branch_id": "seek_sealed_review",
+      "ink_path": "disclosure_action",
+      "action_type": "transfer_object",
+      "actor_intent": "Carry the dispute to the duty bench while keeping the public rail free of intimate branches.",
+      "state_basis": ["The staff stair, review bell, civic copy, and support hold create a private institutional route."],
+      "reviewed_consequences": ["Raises record_integrity, privacy_guard, and support_hold while lowering marriage_momentum; the privacy ending gains a real support path."],
+      "training_hooks": ["private_review_route", "support_bears_delay"]
+    },
+    {
+      "branch_id": "preserve_minimum_copy",
+      "ink_path": "disclosure_action",
+      "action_type": "transfer_object",
+      "actor_intent": "Reduce carrier danger by returning the house case while keeping enough civic evidence to prove action and material risk.",
+      "state_basis": ["Tir can return the original; Pera and witnesses can retain copies of the red request and brake strip."],
+      "reviewed_consequences": ["Raises record_integrity and lift_safety, lowers house_pressure and disclosure_quality; the courier is safer while the omission is harder to prove."],
+      "training_hooks": ["carrier_risk_tradeoff", "minimum_copy"]
+    },
+    {
+      "branch_id": "prioritize_marriage_registration",
+      "ink_path": "final_choice",
+      "action_type": "write",
+      "actor_intent": "Complete the witnessed consent while preserving house requests as separate contested acts.",
+      "state_basis": ["Success depends on marriage_momentum and record_integrity."],
+      "reviewed_consequences": ["Routes to a registered marriage with separate burdens or a weak record in which house, tenancy, roster, and consent collapse together."],
+      "training_hooks": ["consent_owner", "state_gated_ending"]
+    },
+    {
+      "branch_id": "prioritize_lift_safety",
+      "ink_path": "final_choice",
+      "action_type": "use_object",
+      "actor_intent": "Use the final bell interval to get both material and sponsor-action evidence to the lift owner.",
+      "state_basis": ["Success depends on lift_safety and disclosure_quality."],
+      "reviewed_consequences": ["Routes to a material stop by the Sunwall steward or a limited pause under thin evidence; the marriage waits."],
+      "training_hooks": ["material_owner_actuation", "safety_over_completion"]
+    },
+    {
+      "branch_id": "prioritize_public_correction",
+      "ink_path": "final_choice",
+      "action_type": "publish",
+      "actor_intent": "Send the omitted sponsor action through the offices that already acted on the rumor.",
+      "state_basis": ["Success depends on rumor_trace and disclosure_quality."],
+      "reviewed_consequences": ["Routes to an office-specific correction or to an unsupported denial that gives the rumor another life."],
+      "training_hooks": ["disclosure_path", "misinformation_rebound"]
+    },
+    {
+      "branch_id": "prioritize_bounded_privacy",
+      "ink_path": "final_choice",
+      "action_type": "secure_object",
+      "actor_intent": "Keep intimate branches sealed while preserving an independent challenge and support during delay.",
+      "state_basis": ["Success depends on record_integrity, privacy_guard, and support_hold."],
+      "reviewed_consequences": ["Routes to bounded disclosure carried by civic records and material support, or to secrecy that leaves the sponsor's public account uncontested."],
+      "training_hooks": ["privacy_not_sponsor_secrecy", "support_as_invariant"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose and option gates",
+      "Ending selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Any durable relationship or memory update for Pera, Ari, Dema, Mira, or Tir",
+      "Any promotion of this fixture into Kalsa historical canon",
+      "Any universalization of the office layout, house cord colors, support hold-ring, lift bell meanings, character bodies, or review timing",
+      "Any use of this fixture as core model-training signal rather than reviewed illustrated-fiction collateral and lore stress-test material"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Veil elaborator applying four repository reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative review found and repaired a false disclosure credit: trace_the_rumor no longer increases disclosure_quality, so recipient tracing cannot substitute for revealing the sponsor's omitted action.",
+      "Narrative review also made the lift-route choice branch-honest by naming the available house record; sealed and opened packet paths no longer receive the same player-facing description.",
+      "Lore review accepted the artifact after checking every cited Kalsa source and the authored Prophetic Houses backfill. Public, Spoilers/author, Spoilers/backstage, and Spoilers/policy tiers are explicit, while packet colors, characters, room procedure, and exact office props remain fixture-local.",
+      "Visual review accepted segmentation, affirmative standalone prompts, visible-character refs, and material branch deltas. It returned needs_revision for website replay because a durable camera-specific blockout is absent; the visual plan names that missing scene-set authority instead of asking image generation to remember room geometry.",
+      "Spatial review accepted the IF scaffold: south public stair, central rail, west provision wicket, north lift handoff, rear review stair, sightlines, custody routes, and occlusion rules form one stageable gallery.",
+      "All 64 pre-ending branch combinations were evaluated. Every success gate is both reachable and fallible, and all three states with a traced rumor but insufficient sponsor disclosure are blocked from the correction-success ending.",
+      "Ink compilation was not run because the task forbids installing an Ink compiler. JSON parsing, branch/knot cross-reference checks, variable-use checks, ending reachability, visual-scene uniqueness, modifier targets, character refs, affirmative prompt checks, and the 15-scene BFL manifest match passed."
+    ],
+    "review_passes": {
+      "narrative_quality": {
+        "verdict": "accepted",
+        "scores": {"reader_orientation": 5, "coherence": 5, "pacing": 4, "voice": 5, "tonal_fit": 5, "if_playability": 5},
+        "findings": [
+          "Removed the trace_the_rumor disclosure credit that could falsely satisfy the public-correction gate.",
+          "Reworded the lift-route choice so it remains accurate whether the white disclosure is open, sealed, or missing."
+        ],
+        "labels": ["strong_contextual_onboarding", "strong_wit_with_stakes", "strong_branch_callback", "strong_character_voice", "strong_material_lore"]
+      },
+      "lore_grounding": {
+        "verdict": "accepted",
+        "scores": {"source_coverage": 5, "canon_fit": 5, "grounding_quality": 5, "vault_backfill_value": 5},
+        "findings": [],
+        "labels": ["source_grounded", "strong_material_lore", "strong_infrastructure_grounding", "disclosure_path_grounded", "tier_boundary_explicit"]
+      },
+      "visual_continuity": {
+        "verdict": "needs_revision",
+        "scores": {"segmentation": 5, "visual_prompt": 5, "character_visibility": 5, "branch_visual_continuity": 5, "website_replay": 3},
+        "findings": ["A durable camera-specific scene-set blockout is required before multi-angle illustrated replay can be called ready; the current textual map is planning data only."],
+        "labels": ["strong_scene_segmentation", "strong_imagegen_ready_prompt", "strong_character_stance_control", "strong_branch_visual_continuity", "missing_scene_set"]
+      },
+      "spatial_cohesion": {
+        "verdict": "accepted",
+        "scores": {"layout_cohesion": 5, "sightline": 5, "body_affordance": 5, "movement_access": 5, "object_system_geometry": 5, "branch_spatial_state": 5},
+        "findings": ["The prose and textual map are stageable; replay promotion still requires the scene-set blockout already identified by visual review."],
+        "labels": ["strong_layout_cohesion", "strong_sightline_control", "strong_body_affordance_staging", "strong_branch_spatial_state", "diagram_needed"]
+      }
+    },
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "kalsa_lore_content_readable": true
+    }
+  }
+}
