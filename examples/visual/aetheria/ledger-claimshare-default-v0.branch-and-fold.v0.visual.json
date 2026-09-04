@@ -1,0 +1,809 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "ledger-claimshare-default-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/aetheria/ledger-claimshare-default-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/ledger-claimshare-default-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ledger-claimshare-default-v0.kappa-settlement-freeze",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for an AU claimshare default cascade at Service Ring Kappa.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for Kappa's shift-gate routine, four preparation actions, the contract cascade, four freeze responses, Kara's arrival, the settlement threshold, and three state-gated ending families.",
+    "segmentation_rule": "Give the ordinary queue, each chosen material action, the first default notice, the junior-claim freeze, the superintendent's arrival, the final authority choice, and each aftermath family its own visual_scene_id.",
+    "prompting_rule": "Each base prompt restates the visible room geometry, materials, light, interfaces, bodies, equipment, and staging for a general image model. Modifiers add only explicit state or branch deltas.",
+    "global_style_cue": "Style: humane retro-industrial science-fiction storybook illustration, precise dark ink linework under translucent gouache, rust-orange work lamps and pale cyan interface light, tactile worn metal and polymer, readable silhouettes, restrained facial expression, dry workplace comedy under administrative dread, cinematic square composition.",
+    "prompt_assembly_rule": "Assemble global_style_cue plus the scene base_image_prompt, then include visual refs only for named characters or groups declared visible in that frame, followed by triggered state_image_modifiers and global_branch_image_modifiers. Continuity notes remain tooling constraints.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture reuses one curved work ring across several angles and branches. The included fixed-zone, route, sightline, camera, and state-anchor map is the geometry authority for draft replay planning.",
+      "future_scene_set_need": "Before high-consistency website art, build a hand-authored plan view or 3D blockout from this map and give each image pass its camera-specific render."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "ledger_kappa_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide view of a curved human-height maintenance gallery inside the rotating manufactured shell of an asteroid habitat. Gray shell plates and ribbed supports form the outward floor and wall. Thick labeled air and coolant pipes, valve housings, condensate drains, pressure gauges, and sensor panels make a continuous manifold face. Two dark oval crawl throats open into deeper shell machinery. A waist-high mesh rail on the inward edge overlooks a broad pressurized industrial yard with distant cranes beneath a pale axial light spine. At the spoke-side end stand a worker shift gate, tool lockers, a low claim counter with amber screen and paper printer, a rack of compact mobile cephalopod work-support harnesses, an elevated glass operations gallery, and a protected metal badge stair. Mixed maintenance workers queue in gray skinsuits, patched brown work jackets, magnetic boots, and mobile cephalopod support rigs.",
+        "visible_characters": [
+          {
+            "agent_id": "kappa_mixed_shift",
+            "default_stance": "separated into supplier-marked queue lanes near the shift gate and rig rack",
+            "visual_ref": "visual_character_refs.groups.kappa_mixed_shift"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Inward is toward the open industrial atmosphere and pale light spine; outward is into shell plates, manifolds, crawl throats, and shielding.",
+          "The settlement kiosk faces the worker queue and has a clear sightline to Kappa-7, the rig rack, badge stair, and lower half of the operations gallery."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_queue_routine",
+        "ink_anchor": "ordinary_queue",
+        "base_image_prompt": "Medium view at a low claimshare counter beside a worker shift gate in a curved industrial maintenance ring. Miri Dan, a short baseline human woman with medium-brown skin, cropped black curls, a worn slate-gray clerk jacket, orange seam tabs, magnetic shoes, and ink-stained fingers, sits behind an amber queue screen and stubborn slot printer. Oru Loopwise, an uplifted cephalopod with a rust-red mantle, two bright lateral eyes, and multiple flexible tentacles, stands independently in a compact mobile dry-operation harness with clear humidity film, padded pressure cuffs, braided oxygenation tubes, a small pump, traction pads, and tool clips; one cartridge line visibly whistles. Sef Anwar, a lean older baseline human man with warm-brown skin, gray beard, patched brown anchor-rigger jacket, heavy gloves, magnetic boots, and tool belt, waits with a grease-marked household book. Tool lockers, the harness rack, the manifold wall, two oval crawl throats, inward mesh rail, pale industrial air, glass operations gallery, and badge stair remain visible.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "seated behind the low counter with one hand near the queue screen",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          },
+          {
+            "agent_id": "oru_loopwise",
+            "default_stance": "at the counter with several tentacles braced on harness and floor",
+            "visual_ref": "visual_character_refs.characters.oru_loopwise"
+          },
+          {
+            "agent_id": "sef_anwar",
+            "default_stance": "one place back with the household book held against his tool belt",
+            "visual_ref": "visual_character_refs.characters.sef_anwar"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Oru's equipment always reads as autonomous mobile work support: flexible body loops, humidity film, oxygenation circuit, pressure cuffs, traction points, and tool clips."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_prepare_cartridge",
+        "ink_anchor": "preparation_choice.prepare_cartridge",
+        "base_image_prompt": "Close-medium view at an industrial claim counter beside a curved manifold gallery. Miri Dan, short brown-skinned human clerk with cropped black curls, slate-gray jacket, orange seam tabs, and ink-stained fingers, turns a physical local-store key and slides a sealed palm-sized oxygenation pump cartridge into a named metal tray. Oru Loopwise, rust-red uplifted cephalopod with bright lateral eyes and multiple tentacles, touches the tray seal while standing in a mobile dry-operation harness of clear humidity film, padded cuffs, braided oxygen tubes, compact pump, traction pads, and tool rail. The amber terminal shows three simple category icons. Behind them are gray shell ribs, air and coolant pipes, tool lockers, the rig rack, and one dark oval crawl throat.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "turning the store key and pushing the cartridge tray forward",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          },
+          {
+            "agent_id": "oru_loopwise",
+            "default_stance": "one tentacle tip on the sealed tray, other tentacles supporting the harness",
+            "visual_ref": "visual_character_refs.characters.oru_loopwise"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The replacement cartridge is a palm-sized pump-and-filter module for Oru's oxygenation loop."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_inspect_lease",
+        "ink_anchor": "preparation_choice.inspect_lease_receipt",
+        "base_image_prompt": "Close view of Miri Dan at the Kappa claim kiosk, a short brown-skinned human clerk with cropped black curls, worn slate-gray jacket, orange seam tabs, and ink-stained fingers. Her amber screen holds three side-by-side geometric status panes: a green physical actuator inspection, an amber pending payment receipt, and a green supplier service line. She stamps a narrow paper strip with a mechanical date seal. The low counter, paper printer, tool lockers, gray ribbed shell, thick air and coolant manifold pipes, dark Kappa-7 crawl throat, elevated glass operations gallery, and metal badge stair establish the industrial habitat setting.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "leaning over the screen while stamping a local paper copy",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The local paper receipt is narrow, date-stamped, and distinct from the later long frozen-queue strips."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_balance_household_book",
+        "ink_anchor": "preparation_choice.balance_household_book",
+        "base_image_prompt": "Medium close view across a low claim counter in a curved maintenance ring. Sef Anwar, lean older warm-brown-skinned human rigger with short gray beard, patched brown work jacket, heavy gloves, magnetic boots, and tool belt, opens a grease-marked stitched paper book. Its blunt ruled columns contain small meal, clinic, power, cartridge, and repair-hour symbols with names beside them. Miri Dan, short brown-skinned human clerk with cropped black curls, slate-gray jacket, orange seam tabs, and ink-stained fingers, checks the book against an amber ramp queue screen. Tool lockers, a cephalopod rig rack, thick manifold pipes, gray shell ribs, and the worker shift gate frame the domestic accounting inside industrial infrastructure.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "one finger on the amber queue, the other following a household column",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          },
+          {
+            "agent_id": "sef_anwar",
+            "default_stance": "leaning on the counter with the book open under both hands",
+            "visual_ref": "visual_character_refs.characters.sef_anwar"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The household book is grease-marked paper with stitched binding and remains visually distinct from AU screens and printer rolls."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_protect_queue",
+        "ink_anchor": "preparation_choice.protect_queue_time",
+        "base_image_prompt": "Medium-wide queue view inside a curved shell maintenance gallery. Miri Dan, short human clerk in worn slate-gray jacket, clears an amber screen with rapid practiced gestures behind the low counter. A bright shift clock gains a minute above her. Oru Loopwise, rust-red uplifted cephalopod in a clear humidity-skin harness with braided oxygen tubes, compact pump, padded cuffs, traction pads, and tool clips, remains in line with a visibly strained old cartridge. Sef Anwar, older human rigger in patched brown jacket and magnetic boots, closes a grease-marked book. Supplier-marked lanes lead from the worker shift gate past tool lockers and rig rack toward the manifold wall and two crawl throats; the glass operations gallery watches from above.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "working quickly at the queue screen",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          },
+          {
+            "agent_id": "oru_loopwise",
+            "default_stance": "waiting in the marked queue lane with pump line taut",
+            "visual_ref": "visual_character_refs.characters.oru_loopwise"
+          },
+          {
+            "agent_id": "sef_anwar",
+            "default_stance": "closing the household book behind Oru",
+            "visual_ref": "visual_character_refs.characters.sef_anwar"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ledger_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide routine shift-preparation view along a curved human-height service ring built into a manufactured asteroid habitat shell. Gray ribs, thick air and coolant pipes, valve blocks, condensate drains, pressure gauges, two dark oval crawl throats, inward mesh rail, distant cranes, and pale axial light define the space. At the spoke-side shift gate, baseline riggers in patched brown jackets count anchor hooks, engineered humanoid VitaForge workers in numbered gray skinsuits stand at limiter diagnostic contacts, and uplifted cephalopod technicians in compact clear-humidity mobile support harnesses check braided oxygenation loops and tool clips. Miri Dan works at the low amber claim kiosk while Oru Loopwise and Sef Anwar wait nearby; the elevated glass operations gallery overlooks the ring.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "behind the kiosk amid the morning queue",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          },
+          {
+            "agent_id": "oru_loopwise",
+            "default_stance": "near the mobile harness rack checking pump tubing",
+            "visual_ref": "visual_character_refs.characters.oru_loopwise"
+          },
+          {
+            "agent_id": "sef_anwar",
+            "default_stance": "near anchor riggers with book at his belt",
+            "visual_ref": "visual_character_refs.characters.sef_anwar"
+          },
+          {
+            "agent_id": "kappa_mixed_shift",
+            "default_stance": "preparing tools and body-support equipment in supplier-marked lanes",
+            "visual_ref": "visual_character_refs.groups.kappa_mixed_shift"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "cartridge_reserved == true",
+            "modifier_prompt": "A sealed green-marked replacement oxygenation cartridge waits in Oru's named metal tray at the claim counter."
+          },
+          {
+            "trigger": "lease_receipt_checked == true",
+            "modifier_prompt": "A narrow mechanically stamped lease receipt sits under Miri's palm."
+          },
+          {
+            "trigger": "mutual_book_live == true",
+            "modifier_prompt": "Sef's grease-marked stitched household book lies open at the counter."
+          },
+          {
+            "trigger": "queue_minutes >= 5",
+            "modifier_prompt": "The shift clock shows a generous bright interval while the physical queue remains crowded."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_actuator_default",
+        "ink_anchor": "default_cascade",
+        "base_image_prompt": "Pivotal close frame at the Kappa claim kiosk inside a ribbed industrial shell gallery. One amber notice dominates Miri Dan's screen beside a small schematic of a pressure-equalization actuator and a broken lease-payment link. Miri, short brown-skinned human clerk with cropped black curls, worn slate-gray jacket, orange seam tabs, and ink-stained fingers, holds a narrow stamped receipt beside the screen. In shallow background, thick air and coolant pipes cross the manifold wall, the Kappa-7 throat is dark, the inward rail opens to pale industrial air, and the glass operations gallery begins changing to blue-white command tint.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "still behind the counter, stamped receipt held beside the amber notice",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "lease_receipt_checked == false",
+            "modifier_prompt": "Miri's hand reaches toward an already read-only diagnostic pane; the paper receipt is absent."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The default is first shown as an administrative state change while the actuator and manifold remain physically intact."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_claimshare_freeze",
+        "ink_anchor": "claimshare_freeze",
+        "base_image_prompt": "Medium-wide view of the Kappa claim counter at the instant junior claimshares freeze. Miri Dan sits behind an amber screen where many queue lines turn flat gray. Oru Loopwise, rust-red cephalopod in a clear humidity mobile work harness with padded cuffs, braided tubes, compact pump, traction pads, and tool rail, faces a sealed cartridge tray whose custody light changes from green to amber. Sef Anwar, older baseline rigger in patched brown jacket and magnetic boots, sees food and berth-power symbols fade on his grease-marked household page. The curved ring's manifold pipes, two crawl throats, shift gate, tool lockers, rig rack, inward mesh rail, pale industrial yard, blue-white glass operations gallery, and descending badge stair remain readable.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "frozen over the gray queue lines",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          },
+          {
+            "agent_id": "oru_loopwise",
+            "default_stance": "several tentacles angled toward the amber cartridge tray",
+            "visual_ref": "visual_character_refs.characters.oru_loopwise"
+          },
+          {
+            "agent_id": "sef_anwar",
+            "default_stance": "holding the household book beside the grayed ramp screen",
+            "visual_ref": "visual_character_refs.characters.sef_anwar"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "mutual_book_live == true",
+            "modifier_prompt": "The household book remains open with dark handwritten amounts beside the ramp screen's gray frozen lines."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_release_body_support",
+        "ink_anchor": "freeze_response.release_body_support",
+        "base_image_prompt": "Close action at a low claim counter in a curved shell maintenance ring. Miri Dan, short brown-skinned human clerk with cropped black curls and slate-gray jacket, breaks a small green-marked cartridge seal and pushes the compact pump module forward. Oru Loopwise, rust-red uplifted cephalopod with bright lateral eyes, uses three tentacles to unclip a whistling tube and two to brace a mobile dry-operation harness of clear humidity film, padded cuffs, braided oxygen tubes, traction pads, and tool rail. Two clinic packs open beside the tray. Gray queue lines glow on the amber screen; shell ribs, manifold pipes, rig rack, and a dark crawl throat frame the bodily stakes.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "breaking the cartridge seal and pushing clinic packs forward",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          },
+          {
+            "agent_id": "oru_loopwise",
+            "default_stance": "replacing the pump cartridge with five tentacles in distinct support and tool roles",
+            "visual_ref": "visual_character_refs.characters.oru_loopwise"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ledger_mirror_claims",
+        "ink_anchor": "freeze_response.mirror_claims_locally",
+        "base_image_prompt": "Object-centered medium frame at the Kappa kiosk. A stubborn slot printer has its tray open while a long white claim roll feeds by hand across the low counter. Miri Dan, short human clerk in worn slate-gray jacket with ink-stained fingers, guides the paper. Sef Anwar, older warm-brown-skinned rigger in patched brown jacket, heavy gloves, magnetic boots, and tool belt, tears the roll at two marked witness lines and places three copies into separate grease-marked stitched household books held by different workers. Amber frozen queue lines glow behind the paper; tool lockers, harness rack, gray shell ribs, thick manifold pipes, and worker shift gate locate the scene.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "feeding the claim roll by hand through the open printer",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          },
+          {
+            "agent_id": "sef_anwar",
+            "default_stance": "tearing the roll into witnessed copies",
+            "visual_ref": "visual_character_refs.characters.sef_anwar"
+          },
+          {
+            "agent_id": "kappa_mixed_shift",
+            "default_stance": "two nearby workers hold separate books ready to receive copies",
+            "visual_ref": "visual_character_refs.groups.kappa_mixed_shift"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ledger_name_default_chain",
+        "ink_anchor": "freeze_response.name_default_chain",
+        "base_image_prompt": "Wide work-channel moment along a curved industrial service ring. Miri Dan, short brown-skinned clerk in worn slate-gray jacket, leans over the kiosk microphone while her amber screen shows a vertical chain of six geometric status blocks: lease, diagnostics, replacement, certificate, coverage, freight, and frozen claims. Tool noise stops in visible sections. Baseline riggers in patched brown jackets, numbered gray-skinsuit VitaForge workers, and uplifted cephalopods in clear-humidity mobile harnesses turn toward the counter from the manifold wall, anchor rail, rig rack, and two oval crawl throats. Oru Loopwise, rust-red cephalopod with bright lateral eyes and braided oxygen tubes, raises one tentacle toward the speaker. The glass operations gallery glows blue-white above.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "reading the cascade into the kiosk microphone",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          },
+          {
+            "agent_id": "oru_loopwise",
+            "default_stance": "one tentacle raised toward the work-channel speaker",
+            "visual_ref": "visual_character_refs.characters.oru_loopwise"
+          },
+          {
+            "agent_id": "kappa_mixed_shift",
+            "default_stance": "turning toward the kiosk as tool noise stops by work zone",
+            "visual_ref": "visual_character_refs.groups.kappa_mixed_shift"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ledger_publish_hazard_priority",
+        "ink_anchor": "freeze_response.publish_hazard_priority",
+        "base_image_prompt": "Medium view of the Kappa claim counter and queue clock. Miri Dan, short human clerk with cropped black curls, slate-gray jacket, orange seam tabs, and ink-stained fingers, presses a physical authentication pad. Her amber screen promotes a bright senior hazard row above many gray junior household rows; the shift clock gains one cyan minute. Oru Loopwise waits in a rust-red cephalopod body inside a clear humidity mobile work harness with padded cuffs, braided oxygen tubes, compact pump, traction pads, and tool clips. Sef Anwar holds a closed grease-marked book. The shift gate, lockers, manifold pipes, crawl throats, inward rail, operations gallery, and badge stair make the altered priority visibly part of the same industrial room.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "palm on the authentication pad while watching senior priority rise",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          },
+          {
+            "agent_id": "oru_loopwise",
+            "default_stance": "waiting at the edge of the promoted hazard lane",
+            "visual_ref": "visual_character_refs.characters.oru_loopwise"
+          },
+          {
+            "agent_id": "sef_anwar",
+            "default_stance": "holding the closed household book below the gray junior rows",
+            "visual_ref": "visual_character_refs.characters.sef_anwar"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ledger_kara_arrival",
+        "ink_anchor": "kara_arrives",
+        "base_image_prompt": "Power-geometry frame inside a curved manufactured-shell maintenance ring. Kara Mott, a tall pale baseline human woman with silver-brown hair pinned tight, clean charcoal AU coat with pale cyan piping, polished magnetic boots, and a slim supervisor cuff, descends a protected metal badge stair from an elevated blue-white glass operations gallery. Below, Miri Dan stands behind the low amber claim kiosk; Oru Loopwise waits in a rust-red cephalopod body supported by a clear humidity mobile harness with braided oxygen tubes and padded cuffs; Sef Anwar stands with his grease-marked book. Gray shell ribs, manifold pipes, two oval crawl throats, rig rack, shift gate, inward mesh rail, distant cranes, and pale axial light remain visible. Mixed workers occupy the ring between the counter and Kappa-7.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "behind the counter facing the stair",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          },
+          {
+            "agent_id": "oru_loopwise",
+            "default_stance": "beside the rig rack with tentacles braced low",
+            "visual_ref": "visual_character_refs.characters.oru_loopwise"
+          },
+          {
+            "agent_id": "sef_anwar",
+            "default_stance": "at the counter edge with household book visible",
+            "visual_ref": "visual_character_refs.characters.sef_anwar"
+          },
+          {
+            "agent_id": "kara_mott",
+            "default_stance": "descending the badge stair from the operations gallery",
+            "visual_ref": "visual_character_refs.characters.kara_mott"
+          },
+          {
+            "agent_id": "kappa_mixed_shift",
+            "default_stance": "occupying queue and work lanes between the kiosk and manifold",
+            "visual_ref": "visual_character_refs.groups.kappa_mixed_shift"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "claims_custody >= 3",
+            "modifier_prompt": "Three long authenticated paper strips are held by three workers in separate positions around the kiosk."
+          },
+          {
+            "trigger": "body_margin >= 3",
+            "modifier_prompt": "Oru's compact oxygenation pump glows steady green and the braided tube rests evenly along the harness."
+          },
+          {
+            "trigger": "body_margin < 3",
+            "modifier_prompt": "Oru's old pump flashes amber and the oxygenation tube trembles visibly with each breath."
+          },
+          {
+            "trigger": "supervisor_pressure >= 4",
+            "modifier_prompt": "Two compact blue-lit security drones settle at the far worker shift gate with sensor heads aimed down the queue lanes."
+          },
+          {
+            "trigger": "worker_cohesion >= 3",
+            "modifier_prompt": "Baseline riggers, numbered gray-skinsuit VitaForge workers, and cephalopod crews stand intermingled across former supplier lane markings."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Kara's route is always operations gallery to badge stair to the ring; she does not appear through the worker shift gate."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_settlement_threshold",
+        "ink_anchor": "settlement_threshold",
+        "base_image_prompt": "Symmetrical final-decision frame at the Kappa claim kiosk inside a curved industrial shell gallery. Miri Dan, short brown-skinned clerk with cropped black curls and slate-gray jacket, holds one palm above a physical authentication pad. To her left, an amber ramp screen shows gray frozen claim rows and a shrinking certificate clock. To her right, Sef Anwar's grease-marked household book and several long paper queue copies lie open. Oru Loopwise, rust-red cephalopod in a clear humidity mobile support harness with padded cuffs, braided oxygen tubes, compact pump, traction pads, and tool rail, waits by the rig rack. Kara Mott, tall pale superintendent in clean charcoal coat, stands at the foot of the badge stair. Behind them, manifold pipes, valve housings, Kappa-7 and Kappa-8 crawl throats, inward mesh rail, pale industrial air, and mixed workers make the physical consequence readable.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "palm hovering above the local authentication pad",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          },
+          {
+            "agent_id": "oru_loopwise",
+            "default_stance": "at the rig rack facing Miri and Kappa-7",
+            "visual_ref": "visual_character_refs.characters.oru_loopwise"
+          },
+          {
+            "agent_id": "sef_anwar",
+            "default_stance": "beside the open household book and paper copies",
+            "visual_ref": "visual_character_refs.characters.sef_anwar"
+          },
+          {
+            "agent_id": "kara_mott",
+            "default_stance": "at the badge stair foot, supervisor cuff bright",
+            "visual_ref": "visual_character_refs.characters.kara_mott"
+          },
+          {
+            "agent_id": "kappa_mixed_shift",
+            "default_stance": "waiting across the ring with tools lowered",
+            "visual_ref": "visual_character_refs.groups.kappa_mixed_shift"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "default_evidence >= 2",
+            "modifier_prompt": "The stamped lease receipt sits first in a visible left-to-right evidence chain before the later contract notices."
+          },
+          {
+            "trigger": "mutual_book_live == true",
+            "modifier_prompt": "The grease-marked household book is open to meal, clinic, cartridge, and repair-hour columns."
+          },
+          {
+            "trigger": "queue_minutes <= 1",
+            "modifier_prompt": "The certificate clock shows one red segment and throws hard red light across Miri's hovering palm."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_certificate_ending",
+        "ink_anchor": "ending_certificate_holds|ending_certificate_cost",
+        "base_image_prompt": "Aftermath inside Service Ring Kappa during an attempted production cycle. The curved gallery shows gray shell ribs, thick air and coolant manifold pipes, valve housings, pressure gauges, condensate drains, Kappa-7 and Kappa-8 crawl throats, inward mesh rail, distant cranes, pale axial light, claim kiosk, rig rack, blue-white operations gallery, and badge stair. Miri Dan watches from the low amber counter. Oru Loopwise returns from the Kappa-7 threshold in a rust-red cephalopod body and clear humidity mobile support harness with padded cuffs, braided oxygen tubes, compact pump, traction pads, and tool rail. Sef Anwar writes in a grease-marked book. Kara Mott stands near the badge stair in a clean charcoal coat while mixed crews hold manual bypass tools.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "behind the kiosk watching the certificate state",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          },
+          {
+            "agent_id": "oru_loopwise",
+            "default_stance": "returning from Kappa-7 with tentacles low around the harness",
+            "visual_ref": "visual_character_refs.characters.oru_loopwise"
+          },
+          {
+            "agent_id": "sef_anwar",
+            "default_stance": "writing cleared lease and unpaid meals in separate lines",
+            "visual_ref": "visual_character_refs.characters.sef_anwar"
+          },
+          {
+            "agent_id": "kara_mott",
+            "default_stance": "near the badge stair watching the output display",
+            "visual_ref": "visual_character_refs.characters.kara_mott"
+          },
+          {
+            "agent_id": "kappa_mixed_shift",
+            "default_stance": "holding bypass tools near the manifold and crawl throats",
+            "visual_ref": "visual_character_refs.groups.kappa_mixed_shift"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == certificate_holds",
+            "modifier_prompt": "Pressure gauges settle green, the production display certifies one bright output block, senior claim rows clear, and junior rows remain gray; Oru's pump is green beside a fresh pressure-cuff abrasion."
+          },
+          {
+            "trigger": "ending_label == certificate_cost",
+            "modifier_prompt": "Pressure gauges pulse amber, workers pull a manual bypass lever, the output block fractures into an uncertified warning, freight and junior claim icons remain locked, and Oru is supported back toward the rig rack."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_record_ending",
+        "ink_anchor": "ending_default_recorded|ending_refusal_scattered",
+        "base_image_prompt": "Evidence-and-exit aftermath inside the curved Kappa service ring. The low claim kiosk, amber frozen queue, slot printer, worker shift gate, support-rig prep route, spoke-transit sign, tool lockers, rig rack, manifold pipes, two crawl throats, inward mesh rail, pale industrial air, glass operations gallery, and badge stair remain visible in one wide frame. Miri Dan stands at the counter with a stamped lease receipt. Sef Anwar holds a grease-marked stitched book and long paper queue strip. Oru Loopwise, rust-red cephalopod in a clear humidity mobile work harness, faces the support-rig route. Kara Mott stands at the stair foot in a clean charcoal AU coat.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "at the counter with stamped receipt",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          },
+          {
+            "agent_id": "oru_loopwise",
+            "default_stance": "near the support-rig prep route",
+            "visual_ref": "visual_character_refs.characters.oru_loopwise"
+          },
+          {
+            "agent_id": "sef_anwar",
+            "default_stance": "holding household book and claim strip",
+            "visual_ref": "visual_character_refs.characters.sef_anwar"
+          },
+          {
+            "agent_id": "kara_mott",
+            "default_stance": "at the badge stair foot with supervisor cuff active",
+            "visual_ref": "visual_character_refs.characters.kara_mott"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == default_chain_preserved",
+            "modifier_prompt": "Three authenticated claim strips travel through three separate visible routes: one with Sef through the worker gate, one clipped to Oru's support-rig route packet, and one in another worker's hand at spoke transit; the stamped lease receipt heads the chain."
+          },
+          {
+            "trigger": "ending_label == refusal_without_custody",
+            "modifier_prompt": "Kara's clean blue-white report leaves by the badge stair while Miri holds one partial paper packet at the kiosk and Sef's book contains amounts with an empty first-cause line."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_household_ending",
+        "ink_anchor": "ending_household_bridge|ending_household_cost",
+        "base_image_prompt": "Maintenance-only aftermath along Service Ring Kappa. The curved human-height gallery contains gray shell ribs, thick air and coolant manifold pipes, valve blocks, pressure gauges, condensate drains, two dark oval crawl throats, inward mesh rail, distant industrial cranes, pale axial light, worker shift gate, claim kiosk, tool lockers, mobile harness rack, blue-white operations gallery, and badge stair. Oru Loopwise, rust-red uplifted cephalopod in a clear humidity mobile support harness, indicates safe limits from the human-scale ring with several tentacles while baseline riggers hold a manual bypass and numbered gray-skinsuit VitaForge workers relay sensor lights. Miri Dan authenticates custody at the low counter. Sef Anwar opens a grease-marked household book beside food, clinic, and cartridge objects. Kara Mott watches from the badge stair.",
+        "visible_characters": [
+          {
+            "agent_id": "miri_dan",
+            "default_stance": "at the kiosk authenticating custody rather than output",
+            "visual_ref": "visual_character_refs.characters.miri_dan"
+          },
+          {
+            "agent_id": "oru_loopwise",
+            "default_stance": "on the human-scale ring, tentacles indicating crawl-throat limits",
+            "visual_ref": "visual_character_refs.characters.oru_loopwise"
+          },
+          {
+            "agent_id": "sef_anwar",
+            "default_stance": "beside open household book and small necessities",
+            "visual_ref": "visual_character_refs.characters.sef_anwar"
+          },
+          {
+            "agent_id": "kara_mott",
+            "default_stance": "watching from the first badge-stair landing",
+            "visual_ref": "visual_character_refs.characters.kara_mott"
+          },
+          {
+            "agent_id": "kappa_mixed_shift",
+            "default_stance": "intermixed around the manual bypass and sensor panels",
+            "visual_ref": "visual_character_refs.groups.kappa_mixed_shift"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == household_safety_bridge",
+            "modifier_prompt": "Pressure gauges hold steady amber-green, every crawl throat remains closed, a food allotment, two clinic tokens, and one green cartridge sit beside six household signatures, and workers hold a calm safety perimeter around the manual bypass."
+          },
+          {
+            "trigger": "ending_label == household_safety_cost",
+            "modifier_prompt": "Deeper sensor panels go dark, pressure gauges lose margin, evacuation arrows light toward the inward civic decks, Oru stays at the ring threshold, and six households cluster together with fewer stores than listed needs."
+          }
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "strong_claims_custody",
+        "trigger": "claims_custody >= 3",
+        "apply_to_visual_scene_ids": [
+          "ledger_kara_arrival",
+          "ledger_settlement_threshold",
+          "ledger_record_ending"
+        ],
+        "modifier_prompt": "Show three long authenticated paper queue strips in three separate workers' custody."
+      },
+      {
+        "modifier_id": "high_worker_cohesion",
+        "trigger": "worker_cohesion >= 3",
+        "apply_to_visual_scene_ids": [
+          "ledger_kara_arrival",
+          "ledger_settlement_threshold",
+          "ledger_household_ending"
+        ],
+        "modifier_prompt": "Intermix patched brown-jacket baseline riggers, numbered gray-skinsuit VitaForge workers, and cephalopod harness crews across faded supplier lane markings."
+      },
+      {
+        "modifier_id": "low_body_margin",
+        "trigger": "body_margin < 3",
+        "apply_to_visual_scene_ids": [
+          "ledger_kara_arrival",
+          "ledger_settlement_threshold",
+          "ledger_certificate_ending",
+          "ledger_household_ending"
+        ],
+        "modifier_prompt": "Oru's compact pump flashes amber; braided oxygen tubing trembles and nearby tentacles brace the mobile harness close to the rig rack."
+      },
+      {
+        "modifier_id": "high_supervisor_pressure",
+        "trigger": "supervisor_pressure >= 4",
+        "apply_to_visual_scene_ids": [
+          "ledger_kara_arrival",
+          "ledger_settlement_threshold"
+        ],
+        "modifier_prompt": "Add two compact blue-lit security drones at the far worker shift gate, sensor heads aligned down the queue lanes."
+      },
+      {
+        "modifier_id": "named_default_chain_visible",
+        "trigger": "branch_label == name_default_chain",
+        "apply_to_visual_scene_ids": [
+          "ledger_name_default_chain",
+          "ledger_kara_arrival",
+          "ledger_settlement_threshold"
+        ],
+        "modifier_prompt": "The kiosk screen preserves a left-to-right causal chain beginning with the stamped lease default and ending with gray frozen claims."
+      },
+      {
+        "modifier_id": "hazard_priority_visible",
+        "trigger": "branch_label == publish_hazard_priority",
+        "apply_to_visual_scene_ids": [
+          "ledger_publish_hazard_priority",
+          "ledger_kara_arrival",
+          "ledger_settlement_threshold"
+        ],
+        "modifier_prompt": "A bright senior hazard row sits above many gray junior household rows while the shift clock carries one added cyan segment."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "pallas_service_ring_kappa_claim_kiosk.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "A curved human-height gallery following one shell segment. The outward manifold face and crawl throats occupy the deep-shell side; the inward mesh rail overlooks open industrial atmosphere; the spoke-side shift gate and kiosk anchor one end; the operations gallery overlooks the ring through glass and reaches it by a protected badge stair.",
+      "coordinate_frame": {
+        "inward": "Across the mesh rail toward open industrial air, distant cranes, civic decks, and the pale axial light spine.",
+        "outward": "Into manufactured shell plates, support ribs, manifold machinery, crawl throats, pressure structure, and shielding.",
+        "spinward_counterspinward": "Along the curved service ring in either direction.",
+        "spoke_side": "Toward the worker shift gate, tool lockers, claim kiosk, support-rig prep route, and transit connection."
+      },
+      "fixed_zones": [
+        {
+          "zone_id": "claimshare_kiosk",
+          "visible_form": "low counter with amber queue screen, physical authentication pad, slot printer, local-store key, named cartridge trays, and overhead shift clock",
+          "used_for": "Miri's custody, authentication, record inspection, printing, and final decision"
+        },
+        {
+          "zone_id": "worker_shift_gate",
+          "visible_form": "wide spoke-side gate with supplier lane markings, badge lights, tool lockers, and route toward service housing and transit",
+          "used_for": "mixed crew arrival, queueing, security pressure, evacuation, and one record exit"
+        },
+        {
+          "zone_id": "outward_manifold_face",
+          "visible_form": "gray shell ribs crossed by thick air and coolant pipes, valve housings, pressure gauges, condensate drains, sensor panels, and removable patch plates",
+          "used_for": "seal-lung and bypass monitoring"
+        },
+        {
+          "zone_id": "kappa_7_crawl_throat",
+          "visible_form": "dark oval specialist access mouth with pressure cuff, sensor lights, tool hardpoints, and numbered rim",
+          "used_for": "hazardous deep-shell entry and refusal"
+        },
+        {
+          "zone_id": "kappa_8_crawl_throat",
+          "visible_form": "second dark oval access mouth farther spinward behind manifold equipment",
+          "used_for": "spatial proof that Kappa is a route cluster rather than one tunnel"
+        },
+        {
+          "zone_id": "support_rig_rack",
+          "visible_form": "low rack of clear humidity skins, braided oxygen lines, padded cuffs, compact pump cartridges, traction pads, and tool clips",
+          "used_for": "Oru's preparation, body support, and support-rig prep exit"
+        },
+        {
+          "zone_id": "inward_mesh_rail",
+          "visible_form": "waist-high metal mesh safety rail opening sightlines to broad industrial air, distant cranes, and pale axial light",
+          "used_for": "orientation, atmosphere scale, and evacuation direction"
+        },
+        {
+          "zone_id": "operations_gallery",
+          "visible_form": "elevated glass booth with blue-white screens overlooking kiosk, queue, manifold, rig rack, and both throats",
+          "used_for": "Kara's observation and command route"
+        },
+        {
+          "zone_id": "badge_stair",
+          "visible_form": "protected metal stair running from operations gallery to the ring beside the manifold",
+          "used_for": "Kara's fast arrival"
+        }
+      ],
+      "movement_routes": [
+        {
+          "route_id": "worker_commute",
+          "path": "service housing and spoke transit -> worker shift gate -> claim kiosk and tool lockers -> ring work zones",
+          "users": ["miri_dan", "sef_anwar", "kappa_mixed_shift"]
+        },
+        {
+          "route_id": "cephalopod_prep",
+          "path": "support-rig prep corridor -> support rig rack -> claim kiosk -> ring work station -> selected crawl throat",
+          "users": ["oru_loopwise"]
+        },
+        {
+          "route_id": "supervisor_arrival",
+          "path": "spoke-base control deck -> operations gallery -> badge stair -> service ring",
+          "users": ["kara_mott"]
+        },
+        {
+          "route_id": "record_distribution",
+          "path": "claim kiosk -> worker shift gate, support-rig prep corridor, and spoke transit as three separate exits",
+          "users": ["miri_dan", "oru_loopwise", "sef_anwar", "kappa_mixed_shift"]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "kiosk_to_kappa_7",
+          "path": "Miri behind low counter -> across queue lane -> support rig rack edge -> Kappa-7 rim",
+          "supports": ["body-support decisions", "safety-watch limit", "final authentication"]
+        },
+        {
+          "lane_id": "gallery_to_ring",
+          "path": "operations gallery glass -> badge stair -> kiosk, queue, rig rack, manifold, Kappa-7 and Kappa-8",
+          "supports": ["Kara's observation", "command tint", "fast arrival"]
+        },
+        {
+          "lane_id": "ring_to_open_air",
+          "path": "manifold work lane -> inward mesh rail -> industrial yard -> pale axial light",
+          "supports": ["radial orientation", "evacuation inward", "open-atmosphere stakes"]
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_ring_establishing",
+          "supports_visual_scene_ids": ["ledger_kappa_establishing", "ledger_routine_fold", "ledger_name_default_chain"]
+        },
+        {
+          "camera_id": "kiosk_medium",
+          "supports_visual_scene_ids": ["ledger_queue_routine", "ledger_balance_household_book", "ledger_protect_queue", "ledger_claimshare_freeze", "ledger_publish_hazard_priority"]
+        },
+        {
+          "camera_id": "kiosk_object_close",
+          "supports_visual_scene_ids": ["ledger_prepare_cartridge", "ledger_inspect_lease", "ledger_actuator_default", "ledger_release_body_support", "ledger_mirror_claims"]
+        },
+        {
+          "camera_id": "badge_stair_power_geometry",
+          "supports_visual_scene_ids": ["ledger_kara_arrival"]
+        },
+        {
+          "camera_id": "decision_centerline",
+          "supports_visual_scene_ids": ["ledger_settlement_threshold"]
+        },
+        {
+          "camera_id": "ring_aftermath_wide",
+          "supports_visual_scene_ids": ["ledger_certificate_ending", "ledger_record_ending", "ledger_household_ending"]
+        }
+      ],
+      "branch_state_anchors": [
+        {
+          "state": "cartridge_reserved/body_margin",
+          "visible_anchor": "named cartridge tray and Oru's pump light/tube motion"
+        },
+        {
+          "state": "claims_custody",
+          "visible_anchor": "number and distribution of long authenticated paper strips"
+        },
+        {
+          "state": "worker_cohesion",
+          "visible_anchor": "supplier lane separation or intermingled mixed crews"
+        },
+        {
+          "state": "supervisor_pressure",
+          "visible_anchor": "open gate or blue-lit security drones at far gate"
+        },
+        {
+          "state": "queue_minutes/certificate_margin",
+          "visible_anchor": "overhead clock segments and certificate color"
+        },
+        {
+          "state": "mutual_book_live",
+          "visible_anchor": "Sef's grease-marked stitched household book open beside ramp records"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable identities for prompt assembly. Include a ref only when the character or group is declared visible in the scene.",
+    "characters": {
+      "miri_dan": {
+        "display_name": "Miri Dan",
+        "species_or_body": "baseline human adult",
+        "stable_visual_description": "Short adult woman with medium-brown skin, compact build, cropped black curls, tired dark eyes, and ink-stained fingers. Wears a worn slate-gray AU settlement-clerk jacket with orange seam tabs, dark utility trousers, and low magnetic work shoes; usually carries a mechanical stamp or narrow claim strip.",
+        "silhouette_notes": "Compact seated or counter-braced silhouette, quick hands, eyes moving between people, paper, and amber screens.",
+        "do_not_change": ["cropped black curls", "slate-gray jacket with orange seam tabs", "ink-stained fingers", "short compact build"]
+      },
+      "oru_loopwise": {
+        "display_name": "Oru Loopwise",
+        "species_or_body": "uplifted cephalopod maintenance worker",
+        "stable_visual_description": "Rust-red cephalopod with rounded mantle, two bright lateral eyes, multiple flexible tentacles with visible suckers, and deliberate distributed posture. Moves autonomously in compact industrial dry-operation support: clear humidity film over mantle and upper body, flexible dark support bands, padded pressure cuffs on several tentacles, braided oxygenation tubing to a small pump cartridge, low traction pads, and a clip-on tool rail.",
+        "silhouette_notes": "Low wide mantle-and-tentacle silhouette; several tentacles brace, manipulate tools, or signal independently while the mobile harness supports movement.",
+        "do_not_change": ["rust-red mantle", "bright lateral eyes", "visible tentacles and suckers", "clear humidity film", "braided oxygenation tubes", "compact mobile work-support harness"]
+      },
+      "sef_anwar": {
+        "display_name": "Sef Anwar",
+        "species_or_body": "baseline human anchor rigger",
+        "stable_visual_description": "Lean older man with warm-brown skin, short gray beard, deep-set eyes, and work-worn hands. Wears a patched brown anchor-rigger jacket with faded orange shoulders, heavy gloves, magnetic boots, and tool belt; carries a grease-marked stitched household book.",
+        "silhouette_notes": "Slight forward lean, book held close to tool belt, practical stance shaped by rail and anchor work.",
+        "do_not_change": ["short gray beard", "patched brown jacket with faded orange shoulders", "magnetic boots", "grease-marked stitched book"]
+      },
+      "kara_mott": {
+        "display_name": "Kara Mott",
+        "species_or_body": "baseline human AU ramp superintendent",
+        "stable_visual_description": "Tall woman with pale skin, severe silver-brown hair pinned tight, sharp cheekbones, and controlled expression. Wears a clean charcoal AU superintendent coat with pale cyan piping, polished magnetic boots, and a slim blue-white supervisor cuff.",
+        "silhouette_notes": "Vertical polished silhouette, descending or standing near the badge stair with one forearm raised to read the supervisor cuff.",
+        "do_not_change": ["pinned silver-brown hair", "charcoal coat with pale cyan piping", "polished magnetic boots", "slim supervisor cuff"]
+      }
+    },
+    "groups": {
+      "kappa_mixed_shift": {
+        "display_name": "Kappa mixed maintenance shift",
+        "stable_visual_description": "A small mixed industrial crew: baseline riggers in patched brown jackets, heavy gloves, magnetic boots, and tool belts; slender engineered humanoid VitaForge workers in clean numbered gray seal-technician skinsuits with small limiter contacts at wrist and neck; uplifted cephalopod technicians with visible mantles, eyes, tentacles, suckers, clear humidity film, braided oxygen loops, padded cuffs, compact pumps, traction pads, and clip-on tool rails.",
+        "silhouette_notes": "Supplier-separated lanes when cohesion is low; intermingled work positions and shared tools when cohesion is high.",
+        "do_not_change": ["brown-jacket baseline riggers", "numbered gray-skinsuit VitaForge workers", "cephalopod mobile dry-operation harnesses"]
+      }
+    }
+  },
+  "review_notes": [
+    "The visual plan includes a draft geometry authority with fixed zones, coordinate frame, movement routes, sightlines, camera slots, and branch-state anchors.",
+    "Every recurring named character has a stable visual reference, and every scene includes refs only for characters visible in that frame.",
+    "Oru's equipment is described as autonomous mobile industrial work support with body-specific affordances.",
+    "High-consistency website rendering still requires a camera-specific blockout; image generation remains deferred."
+  ]
+}

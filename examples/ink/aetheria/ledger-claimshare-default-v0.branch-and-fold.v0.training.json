@@ -1,0 +1,490 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "ledger-claimshare-default-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/aetheria/ledger-claimshare-default-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/aetheria/ledger-claimshare-default-v0.v0.json",
+  "visual_plan_ref": "examples/visual/aetheria/ledger-claimshare-default-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "ledger-claimshare-default-v0.kappa-settlement-freeze",
+  "protagonist_agent_id": "miri_dan",
+  "npc_agent_ids": [
+    "oru_loopwise",
+    "sef_anwar",
+    "kara_mott",
+    "kappa_mixed_shift"
+  ],
+  "purpose": "Interactive Fiction Weaver draft about an AU claimshare default cascade at Pallas Service Ring Kappa. Tonal mode: dry workplace comedy with domestic warmth under administrative dread.",
+  "local_awareness_summary": [
+    {
+      "text": "Miri is a low-status ramp settlement clerk at Kappa's spoke-side shift gate. She can allocate local stores, authenticate work and custody, inspect notices, print records, and speak over the local work channel.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/ledger-claimshare-default-v0.v0.json",
+        "examples/ink/aetheria/ledger-claimshare-default-v0.branch-and-fold.v0.ink"
+      ]
+    },
+    {
+      "text": "Miri cannot create cash, renew the operating certificate, change insurer or freight terms, import the withheld actuator, command Kara, or consent on behalf of the crews.",
+      "source_refs": [
+        "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+        "prompts/interactive-fiction-weaver.md"
+      ]
+    },
+    {
+      "text": "Miri sees Oru's pump state, Sef's offered household book, the queue, the lease and status notices, the shift clock, and Kara's arrival route; private motives remain unavailable.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/ledger-claimshare-default-v0.v0.json",
+        "examples/ink/aetheria/ledger-claimshare-default-v0.branch-and-fold.v0.ink"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains local to Miri's kiosk, authority, debt exposure, visible records, and sightlines inside Service Ring Kappa.",
+        "source_refs": ["prompts/interactive-fiction-weaver.md"]
+      },
+      {
+        "text": "The scene establishes an ordinary claimshare queue, cartridge replacement, household arithmetic, and shift preparation before the lease default cascades.",
+        "source_refs": ["AGENTS.md"]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Miri owns local work authentication and custody decisions only. Kara owns the ramp order; crews own bodily refusal; external counterparties own their lease, certificate, coverage, and freight terms.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+          "examples/lore-grounding/aetheria/ledger-claimshare-default-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The household book can move local goods and time but cannot settle AU debt, import the actuator, or restore certification.",
+        "source_refs": ["Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md"]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The sealed oxygenation cartridge begins in local-store custody, can enter Oru's bodily support through Miri's release, and never becomes evidence that Oru consented to production.",
+        "source_refs": [
+          "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+          "examples/ink/aetheria/ledger-claimshare-default-v0.branch-and-fold.v0.ink"
+        ]
+      },
+      {
+        "text": "The stamped lease receipt and printed queue copies preserve causal order only when independently held; the ramp screen remains a separate owner-controlled record.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+          "examples/ink/aetheria/ledger-claimshare-default-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "One lease default must visibly alter supplier diagnostics, replacement custody, certification, coverage, freight terms, and claimshare access before labor refusal occurs.",
+        "source_refs": ["Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md"]
+      },
+      {
+        "text": "Every preparation and freeze-response choice must change a later callback, ending gate, visual modifier, material margin, or evidence state.",
+        "source_refs": ["docs/architecture/ink-branching-scenes.md"]
+      },
+      {
+        "text": "The mutual-aid route must preserve concrete bodies and necessities without being narrated as systemic victory.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+          "Aetheria/Narrative Themes.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not treat claimshares as equity, a portable universal currency, or ownership of the ramp.",
+        "source_refs": ["Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md"]
+      },
+      {
+        "text": "Do not merge BioElevate uplift workers and VitaForge BioDrone Standard workers into one supplier category.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/BioElevate.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/VitaForge.md"
+        ]
+      },
+      {
+        "text": "Do not let a clerk's record, a household book, or worker solidarity repair an absent imported assembly by moral force.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four ordinary queue choices fold into the lease default; four freeze responses fold into Kara's arrival; three final commitments select six state-gated endings.",
+    "choice_layers": [
+      "morning_settlement_routine",
+      "freeze_response",
+      "settlement_authority"
+    ],
+    "variables": [
+      "body_margin",
+      "worker_cohesion",
+      "default_evidence",
+      "queue_minutes",
+      "supervisor_pressure",
+      "claims_custody",
+      "certificate_margin",
+      "mutual_book_live",
+      "cartridge_reserved",
+      "lease_receipt_checked"
+    ],
+    "ending_gates": [
+      "ending_certificate_holds",
+      "ending_certificate_cost",
+      "ending_default_recorded",
+      "ending_refusal_scattered",
+      "ending_household_bridge",
+      "ending_household_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prepare_cartridge",
+      "ink_path": "preparation_choice",
+      "action_type": "allocate_object",
+      "actor_intent": "Reserve body support before general settlement order consumes the local stock.",
+      "state_basis": ["Miri owns local-store custody and can see Oru's pump whistle."],
+      "reviewed_consequences": ["Raises body_margin, sets cartridge_reserved, spends queue time, and increases supervisor pressure; later folds and production or mutual-aid endings read the body state."],
+      "training_hooks": ["body_support_before_productivity", "custody_is_not_consent"]
+    },
+    {
+      "branch_id": "inspect_lease_receipt",
+      "ink_path": "preparation_choice",
+      "action_type": "inspect_record",
+      "actor_intent": "Preserve the physical-maintenance and payment states before the supplier changes access.",
+      "state_basis": ["The kiosk exposes local inspection, lease receipt, and supplier service panes."],
+      "reviewed_consequences": ["Sets lease_receipt_checked, raises default_evidence, and spends queue time; the default and refusal endings read preserved causal order."],
+      "training_hooks": ["causal_order_as_evidence", "maintenance_state_not_payment_state"]
+    },
+    {
+      "branch_id": "balance_household_book",
+      "ink_path": "preparation_choice",
+      "action_type": "compare_records",
+      "actor_intent": "Reconcile local mutual obligations without marking corporate debt paid.",
+      "state_basis": ["Sef offers a grease-marked book covering three households."],
+      "reviewed_consequences": ["Sets mutual_book_live, raises worker_cohesion and claims_custody, and spends time; later scene and endings read the alternate account."],
+      "training_hooks": ["bounded_mutual_aid", "care_does_not_forgive_debt"]
+    },
+    {
+      "branch_id": "protect_queue_time",
+      "ink_path": "preparation_choice",
+      "action_type": "authenticate_queue",
+      "actor_intent": "Preserve certificate time by accepting ramp priority order.",
+      "state_basis": ["Miri can clear the morning queue in screen order."],
+      "reviewed_consequences": ["Raises queue_minutes and certificate_margin while reducing supervisor pressure; leaves body support and household custody weaker."],
+      "training_hooks": ["administrative_speed_tradeoff", "hidden_emergency"]
+    },
+    {
+      "branch_id": "release_body_support",
+      "ink_path": "freeze_response",
+      "action_type": "open_custody",
+      "actor_intent": "Move cartridge and clinic stock into bodily use before the freeze reaches local stores.",
+      "state_basis": ["Miri has one local action before Kara arrives."],
+      "reviewed_consequences": ["Raises body_margin, sets cartridge_reserved, increases supervisor pressure, and spends time; Oru's later pump state and two ending families read it."],
+      "training_hooks": ["body_state_over_asset_state", "local_discretion_cost"]
+    },
+    {
+      "branch_id": "mirror_claims_locally",
+      "ink_path": "freeze_response",
+      "action_type": "transfer_records",
+      "actor_intent": "Move the frozen queue into several witnessed household copies.",
+      "state_basis": ["The printer can produce local paper even after claim settlement freezes."],
+      "reviewed_consequences": ["Raises claims_custody and worker_cohesion, sets mutual_book_live, and spends two minutes; record custody gates the strong refusal ending."],
+      "training_hooks": ["distributed_record_custody", "printer_as_material_interface"]
+    },
+    {
+      "branch_id": "name_default_chain",
+      "ink_path": "freeze_response",
+      "action_type": "speak",
+      "actor_intent": "Make the first cause audible before management can begin with labor delay.",
+      "state_basis": ["Miri can read received notices over the local work channel."],
+      "reviewed_consequences": ["Raises default_evidence, worker_cohesion, and supervisor pressure while spending time; later prose and refusal outcomes read the stronger chain."],
+      "training_hooks": ["cause_before_blame", "work_channel_as_shared_context"]
+    },
+    {
+      "branch_id": "publish_hazard_priority",
+      "ink_path": "freeze_response",
+      "action_type": "publish_order",
+      "actor_intent": "Keep the shift window alive through Kara's proposed senior settlement priority.",
+      "state_basis": ["The instruction is waiting in Miri's kiosk queue before Kara arrives."],
+      "reviewed_consequences": ["Raises certificate margin and queue time while lowering claims custody and supervisor pressure; later callbacks show junior claims losing position."],
+      "training_hooks": ["priority_as_soft_compulsion", "continuity_buys_time"]
+    },
+    {
+      "branch_id": "certify_hazard_cycle",
+      "ink_path": "final_choice",
+      "action_type": "authenticate_work",
+      "actor_intent": "Release production under senior hazard priority to restore settlement.",
+      "state_basis": ["Miri owns local authentication but not worker consent."],
+      "reviewed_consequences": ["Routes to certificate_holds only with sufficient certificate, body, and clock margin; otherwise the attempted cycle compounds failure."],
+      "training_hooks": ["production_restores_claim_value", "state_gated_hazard_cost"]
+    },
+    {
+      "branch_id": "record_first_cause",
+      "ink_path": "final_choice",
+      "action_type": "refuse_and_seal",
+      "actor_intent": "Refuse production and preserve lease default before labor refusal.",
+      "state_basis": ["Miri can refuse local authentication and seal records she actually holds."],
+      "reviewed_consequences": ["Routes to default_chain_preserved only with enough evidence and distributed custody; otherwise refusal remains materially correct but narratively vulnerable."],
+      "training_hooks": ["first_cause_survives", "correct_refusal_can_still_lose"]
+    },
+    {
+      "branch_id": "household_safety_watch",
+      "ink_path": "final_choice",
+      "action_type": "limit_work",
+      "actor_intent": "Authorize safety-only maintenance while households move immediate necessities outside frozen ramp priority.",
+      "state_basis": ["Safety maintenance, production authentication, crew consent, and household custody remain separate authorities."],
+      "reviewed_consequences": ["Routes to a bounded household bridge only with live local books, cross-category cohesion, and body margin; otherwise the effort preserves less than the habitat needs."],
+      "training_hooks": ["mutual_aid_without_victory", "safety_work_not_production_consent"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose and option callbacks",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Any durable memory or relationship update for Miri, Oru, Sef, or Kara",
+      "Any promotion of a branch outcome into Pallas history",
+      "Any universal economy schema for claimshares",
+      "Any claim that household books have standing outside their local ramp"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Ledger elaborator using the four required reviewer prompts",
+    "review_status": "accepted_with_visual_blockout_deferred",
+    "review_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 5,
+        "voice_score": 5,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "detected_tonal_mode": "Dry workplace comedy with domestic warmth under administrative dread.",
+        "major_findings": [],
+        "minor_findings": [],
+        "path_specific_failures": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "lore_context_bridges_needed": [],
+        "character_introduction_fixes": [],
+        "branch_fold_fixes": [],
+        "voice_and_prose_fixes": [],
+        "training_labels": [
+          "strong_contextual_onboarding",
+          "strong_branch_callback",
+          "strong_tonal_control",
+          "strong_wit_with_stakes",
+          "strong_material_lore"
+        ],
+        "acceptance_notes": [
+          "The ordinary queue, cartridge routine, household arithmetic, roles, and local authority limits are established before the lease default.",
+          "Each preparation and freeze-response choice changes later prose, a state gate, material margin, custody, or visual modifier; all ten Ink variables are read.",
+          "The six endings preserve consequence: production can restore claim value at bodily cost, refusal can lose the account of first cause, and mutual aid can protect people without solving the missing import."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 5,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 5,
+        "sources_checked": [
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+            "reason_checked": "Primary owner of ramps, claimshares, project access, failure allocation, and the authored cascade.",
+            "used_for": "canon check and backfill target"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Pallas Species Strikes.md",
+            "reason_checked": "Pallas chronology, mixed supplier ecology, chokepoints, and liability classifications.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom.md",
+            "reason_checked": "Manufactured rotating habitats, certification, imported parts, and divided maintenance responsibility.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom Habitat Anatomy.md",
+            "reason_checked": "Open atmosphere, spoke interfaces, utilities, pressure and thermal chokepoints, and fault propagation.",
+            "used_for": "canon and spatial check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+            "reason_checked": "Employer-bound support interfaces and cross-category recognition pressure.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/BioElevate.md",
+            "reason_checked": "Cephalopod dry-yard bodies and mobile support rigs.",
+            "used_for": "body-affordance check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/VitaForge.md",
+            "reason_checked": "Distinct engineered-worker provenance and liability category.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cephalopod Syndicate.md",
+            "reason_checked": "Cephalopod maintenance expertise, dry-operation equipment, and service-artery leverage.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+            "reason_checked": "Visible harness, cartridge, seal, limiter, and bypass candidates.",
+            "used_for": "material and visual check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Colonizing Sol.md",
+            "reason_checked": "Employer-linked rent, oxygen, scrip, and company-town dependency.",
+            "used_for": "context check"
+          },
+          {
+            "source_ref": "Aetheria/Narrative Themes.md",
+            "reason_checked": "Material care, maintenance, exit, and locally defensible institutional harm.",
+            "used_for": "tone and resolution check"
+          }
+        ],
+        "source_gaps": [],
+        "canon_drift_findings": [],
+        "unsupported_claims": [],
+        "stale_or_conflicting_lore": [],
+        "vault_backfill_candidates": [
+          {
+            "priority": "high",
+            "target_source": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+            "candidate_fact": "Ramp claimshare value depends on a contract stack whose defaults can cascade through diagnostics, replacement terms, certification, insurance, freight, and local settlement; small household books can preserve necessities while retaining AU debt.",
+            "artifact_origin": "Service Ring Kappa default and household-book branches.",
+            "why_it_belongs": "It makes the existing claimshare abstraction causally usable without turning claimshares into equity or universal currency.",
+            "how_to_add_without_bloat": "Added as one fixture-marked subsection in the owning AU note; scheduler commit remains pending."
+          }
+        ],
+        "required_story_revisions": [],
+        "required_lore_patches": [],
+        "suggested_story_revisions": [],
+        "suggested_lore_patches": [],
+        "training_labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_faction_pressure",
+          "strong_body_affordance_grounding",
+          "strong_infrastructure_grounding",
+          "vault_backfill_candidate"
+        ],
+        "acceptance_notes": [
+          "Claimshares remain explicitly non-equity, project-local priority rather than ownership or portable money.",
+          "The exact cast, shift, actuator default, thresholds, and outcomes are identified as fixture-local draft elements.",
+          "Separate counterparties make locally defensible moves whose combined cost reaches worker bodies and households before any labor refusal."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "overall_status": "needs_revision",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 5,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 3,
+        "major_findings": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set",
+            "problem": "The repeated multi-angle ring has a detailed textual plan but no rendered plan view or camera-specific 3D blockout.",
+            "why_it_matters": "Image generation cannot reliably preserve manifold topology, crawl-throat positions, sightlines, routes, and body-scale access across eighteen frames from prose alone.",
+            "evidence": "The fixture reuses one room through six camera slots and makes location, reach, exit, and object custody part of branch meaning.",
+            "fix_direction": "Before website rendering, build a durable blockout from the supplied coordinate frame, fixed zones, routes, sightlines, camera slots, and state anchors."
+          }
+        ],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "missing_visual_scenes": [],
+        "weak_image_prompts": [],
+        "missing_scene_set_needs": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set",
+            "problem": "A renderer-owned plan view or 3D blockout is absent.",
+            "why_it_matters": "Textual geometry is sufficient for concept review but not high-consistency illustrated replay.",
+            "evidence": "Eighteen scenes revisit the same curved gallery from six camera positions.",
+            "fix_direction": "Lower the declared draft scene set into a camera-specific spatial asset before rendering."
+          }
+        ],
+        "missing_branch_modifiers": [],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity",
+          "missing_scene_set"
+        ],
+        "acceptance_notes": [
+          "A first pass corrected BFL cartridge color, removed extra or wrong per-frame characters, and replaced name-only renderer cues with stable visible descriptions.",
+          "All eighteen Ink visual moments map one-to-one to standalone base prompts and an eighteen-prompt BFL manifest.",
+          "The current files are accepted as concept-ready collateral; the deferred blockout remains required for high-consistency replay."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 5,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "inferred_layout_summary": "Service Ring Kappa is one curved human-height shell gallery. Its outward face contains ribs, manifolds, and Kappa-7/Kappa-8 crawl throats; its inward mesh rail overlooks industrial air and the axial light. The spoke-side gate, kiosk, lockers, support-rig prep route, and transit anchor one end. A glass operations gallery overlooks the full ring and reaches it by a protected badge stair.",
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "spatial_questions": [],
+        "diagram_or_visual_plan_needs": [
+          {
+            "priority": "high",
+            "needed_artifact": "camera-specific plan view or 3D blockout",
+            "reason": "Generated multi-angle replay needs a geometry authority stronger than text.",
+            "minimum_required_detail": "Use the declared coordinate frame, nine fixed zones, four movement routes, three sightlines, six camera slots, and six branch-state anchors."
+          }
+        ],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_branch_spatial_state",
+          "diagram_needed"
+        ],
+        "acceptance_notes": [
+          "Prose and visual plan preserve one coordinate frame, three distinct exit routes, compatible body reach, and stable locations for every consequential object.",
+          "The rig is autonomous mobile work support with visible body-specific affordances, never a tank or containment prop.",
+          "Branch state stays visible through cartridge, paper-copy, queue-lane, security, clock, certificate, and household-book anchors."
+        ]
+      }
+    ],
+    "review_notes": [
+      "The four reviewer prompts were applied as separate narrative, lore, visual-continuity, and spatial-cohesion passes after drafting.",
+      "JSON parsing, source-path existence, visual-cast declarations, prompt counts, unique IDs, variable reads, branch count, ending count, and git diff whitespace checks passed.",
+      "Ink syntax was authored from the accepted reference shape. The task forbids installing or running an Ink compiler, so no compiled Ink JSON was produced.",
+      "Image generation is deferred by contract; no images were rendered."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

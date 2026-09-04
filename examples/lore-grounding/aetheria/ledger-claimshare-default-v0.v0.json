@@ -1,0 +1,301 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.ledger-claimshare-default-v0",
+  "source_status": "draft",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "aeronautics-unlimited",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+      "title": "Aeronautics Unlimited",
+      "line_start": 1,
+      "line_end": 39,
+      "relevance": "Primary owner of ramps, non-equity claimshares, project access, failure allocation, and the authored settlement/default cascade."
+    },
+    {
+      "source_id": "pallas-species-strikes",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Pallas Species Strikes.md",
+      "title": "Pallas Species Strikes",
+      "line_start": 1,
+      "line_end": 15,
+      "relevance": "Grounds the 2719-2724 Pallas Bloom Cluster, mixed supplier ecology, technical chokepoints, and liability classifications."
+    },
+    {
+      "source_id": "bloom",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom.md",
+      "title": "Bloom",
+      "line_start": 1,
+      "line_end": 47,
+      "relevance": "Grounds manufactured rotating habitats, recurring certification, imported parts, AU ramp control, and divided maintenance responsibility."
+    },
+    {
+      "source_id": "bloom-habitat-anatomy",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom Habitat Anatomy.md",
+      "title": "Bloom Habitat Anatomy",
+      "line_start": 1,
+      "line_end": 59,
+      "relevance": "Grounds open atmosphere, spoke interfaces, utility routes, pressure and thermal chokepoints, and fault propagation."
+    },
+    {
+      "source_id": "uplift",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+      "title": "Uplift",
+      "line_start": 1,
+      "line_end": 13,
+      "relevance": "Grounds employer-bound support interfaces, disputed recognition, and cross-category coordination at Pallas."
+    },
+    {
+      "source_id": "bioelevate",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/BioElevate.md",
+      "title": "BioElevate",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds dry-yard cephalopod bodies, mobile support rigs, and adaptation language that displaces agency."
+    },
+    {
+      "source_id": "vitaforge",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/VitaForge.md",
+      "title": "VitaForge",
+      "line_start": 1,
+      "line_end": 7,
+      "relevance": "Grounds BioDrone Standard provenance and distinct supplier liability."
+    },
+    {
+      "source_id": "cephalopod-syndicate",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cephalopod Syndicate.md",
+      "title": "Cephalopod Syndicate",
+      "line_start": 1,
+      "line_end": 7,
+      "relevance": "Grounds cephalopod maintenance expertise, dry-operation equipment, and service-artery leverage."
+    },
+    {
+      "source_id": "pallas-maintenance-assemblies",
+      "path": "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+      "title": "Pallas Strike Maintenance Assemblies",
+      "line_start": 1,
+      "line_end": 108,
+      "relevance": "Grounds visible harness, seal assembly, limiter, and bypass candidates without treating them as finalized commodities."
+    },
+    {
+      "source_id": "colonizing-sol",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Colonizing Sol.md",
+      "title": "Colonizing Sol",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds employer-linked rent, oxygen, scrip, and the company-town dependency inherited by ramps."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Pallas Species Strikes era, 2719-2724; the exact shift is story-local.",
+    "location": "The claimshare kiosk at the spoke-side shift gate of Service Ring Kappa, Pallas Bloom Cluster.",
+    "summary": "A missed actuator lease payment moves through diagnostics, certification, insurance, freight, and claimshare access before AU asks the same workers to restore the value of their compensation through another hazardous cycle.",
+    "public_facts": [
+      {
+        "text": "AU ramps bind future-production claims, maintenance budgets, berths, shifts, freight, and recognition under temporary administration.",
+        "source_refs": ["aeronautics-unlimited", "bloom"]
+      },
+      {
+        "text": "Claimshares create project-local priority but are not equity; their usefulness depends on the ramp remaining recognized, supplied, and open.",
+        "source_refs": ["aeronautics-unlimited"]
+      },
+      {
+        "text": "Kappa's seal-lung and bypass maintenance protects industrial open air through a mixed labor ecology whose suppliers retain separate liability categories.",
+        "source_refs": ["aeronautics-unlimited", "pallas-species-strikes", "bioelevate", "vitaforge"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Separate counterparties can each protect one contract while workers and households absorb their combined status changes.",
+        "source_refs": ["aeronautics-unlimited", "bloom"]
+      },
+      {
+        "text": "A cephalopod support cartridge can be body support, work equipment, supplier property, and a frozen settlement claim at once.",
+        "source_refs": ["aeronautics-unlimited", "bioelevate", "pallas-maintenance-assemblies"]
+      },
+      {
+        "text": "Cross-category household books can preserve food, clinic accompaniment, cartridges, and repair time without importing machinery or forgiving AU's debt.",
+        "source_refs": ["aeronautics-unlimited"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "au-kappa-ramp-administration",
+      "label": "Kappa Ramp Administration",
+      "group_type": "temporary_corporate_government",
+      "institutional_logic": ["Keep Kappa recognized and producing while liability remains divided among contracts."],
+      "material_incentives": ["Preserve certification, settle the lease, retain freight credit, and turn another work cycle into claim revenue."],
+      "internal_virtues": ["Continuous output", "A live certificate", "Auditable priority"],
+      "internal_shames": ["A default visible before labor refusal", "Independent copies of the frozen queue"],
+      "prestige_markers": ["A crisis compressed into one supervised shift"],
+      "taboo_triggers": ["Calling claimshares ownership", "Treating authentication as worker control"],
+      "emotional_display_norms": ["Fear appears as clock discipline and continuity language."],
+      "trust_defaults": ["Trusts certified output and seniority order; distrusts records held outside the ramp screen."],
+      "speech_register_cues": ["Continuity", "Settlement priority", "Functional status"],
+      "source_refs": ["aeronautics-unlimited", "bloom"]
+    },
+    {
+      "group_id": "kappa-mixed-shift",
+      "label": "Service Ring Kappa mixed maintenance shift",
+      "group_type": "cross_category_labor_ecology",
+      "institutional_logic": ["Keep air, pressure, cooling, and access safe through knowledge distributed across bodies and supplier categories."],
+      "material_incentives": ["Body-support consumables", "Spendable claims", "Food", "Clinic time", "Berth power", "A safe route home"],
+      "internal_virtues": ["Correct withdrawal", "Body-specific route knowledge", "A usable next-shift record"],
+      "internal_shames": ["Becoming replacement labor against another category", "Spending another body to protect one's own balance"],
+      "prestige_markers": ["A safe manual bypass", "A route refusal proven right"],
+      "taboo_triggers": ["Pain classified as product variance", "Body support treated as a reward"],
+      "emotional_display_norms": ["Alarm travels through tool silence, body position, and exact work limits."],
+      "trust_defaults": ["Trusts work knowledge and independently held records; wider solidarity remains fragile."],
+      "speech_register_cues": ["Route names", "Pump behavior", "Dry humor", "Short refusals"],
+      "source_refs": ["pallas-species-strikes", "uplift", "bioelevate", "vitaforge", "cephalopod-syndicate"]
+    },
+    {
+      "group_id": "kappa-household-books",
+      "label": "Kappa cross-category household books",
+      "group_type": "small_scale_mutual_aid",
+      "institutional_logic": ["Keep immediate necessities moving through inspectable local promises when ramp settlement freezes."],
+      "material_incentives": ["Share food, accompaniment, cartridges, and repair time while retaining AU's debt."],
+      "internal_virtues": ["Several witnessed copies", "Small inspectable promises"],
+      "internal_shames": ["Erasing corporate debt because households covered one night", "Making care conditional on allegiance"],
+      "prestige_markers": ["A needed object delivered before settlement"],
+      "taboo_triggers": ["Calling mutual aid settlement", "Turning help into custody"],
+      "emotional_display_norms": ["Care appears as blunt columns, jokes about totals, and objects changing hands."],
+      "trust_defaults": ["Trusts named local acts but cannot replace imports, certification, or capital."],
+      "speech_register_cues": ["Names", "Meals", "Cartridges", "Repair hours"],
+      "source_refs": ["aeronautics-unlimited", "colonizing-sol"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "au-kappa.production-restores-value",
+      "applies_to": ["au-kappa-ramp-administration", "kappa-mixed-shift"],
+      "pressure_type": "claimshare_dependency",
+      "summary": "Workers are asked to restore the certificate that makes their already-earned compensation spendable.",
+      "projection_use": "Make management offer priority while every option names who absorbs the body, food, freight, or evidence cost.",
+      "source_refs": ["aeronautics-unlimited"]
+    },
+    {
+      "field_id": "kappa.separate-contracts-combined-harm",
+      "applies_to": ["au-kappa-ramp-administration"],
+      "pressure_type": "distributed_liability",
+      "summary": "Locally defensible contract changes combine into loss of necessities.",
+      "projection_use": "Stage the cascade as sequential notices rather than a single villain switch.",
+      "source_refs": ["aeronautics-unlimited", "bloom"]
+    },
+    {
+      "field_id": "kappa-households.care-does-not-settle-debt",
+      "applies_to": ["kappa-household-books", "kappa-mixed-shift"],
+      "pressure_type": "bounded_mutual_aid",
+      "summary": "Household cooperation can preserve bodies tonight without making the ramp solvent.",
+      "projection_use": "Move concrete goods and time while withheld machinery and future scarcity remain visible.",
+      "source_refs": ["aeronautics-unlimited"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "au-kappa-ramp-administration",
+      "target_group_id": "kappa-mixed-shift",
+      "observer_read": ["Separate labor inputs", "A hazard cycle capable of releasing settlement"],
+      "target_self_read": ["Workers sharing one pressure wall", "Holders of earned claims", "People able to refuse a route"],
+      "misread_patterns": ["Treats safety readiness as production consent", "Begins the account with labor delay instead of lease default"],
+      "likely_insults": ["junior claimant", "adaptation variance", "incomplete labor performance"],
+      "projection_use": "Kara may be competent about machinery while compressing worker authority into availability.",
+      "source_refs": ["aeronautics-unlimited", "pallas-species-strikes", "bioelevate", "vitaforge"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "ramp-settlement-clerk",
+      "summary": "A low-status clerk who can authenticate local work and custody but cannot create cash, renew coverage, import assemblies, or command bodies.",
+      "obligations": ["Keep the queue legible", "Preserve who is owed", "Do not let authentication impersonate consent"],
+      "available_masks": ["Procedural humor", "Screen-order neutrality", "Clerkly exactness"],
+      "failure_modes": ["Letting the ramp screen become the only record", "Certifying work because her own balance depends on it"],
+      "source_refs": ["aeronautics-unlimited", "colonizing-sol"]
+    },
+    {
+      "role_id": "uplifted-cephalopod-seal-technician",
+      "summary": "A cephalopod worker whose mobile dry-operation rig makes maintenance possible while administrative changes reach the body directly.",
+      "obligations": ["Name safe limits", "Maintain body support", "Carry route knowledge"],
+      "available_masks": ["Equipment humor", "Exact maintenance speech", "Tentacle touch on rails and seals"],
+      "failure_modes": ["A cartridge treated as optional equipment", "Consent inferred from competence"],
+      "source_refs": ["bioelevate", "cephalopod-syndicate", "pallas-maintenance-assemblies"]
+    },
+    {
+      "role_id": "baseline-household-rigger",
+      "summary": "A rigger carrying several households' reciprocal obligations without capital, certification, or supplier authority.",
+      "obligations": ["Keep totals honest", "Preserve AU's outstanding debt", "Do not spend another labor category"],
+      "available_masks": ["Grease-marked arithmetic", "Domestic jokes", "Paper custody"],
+      "failure_modes": ["Holding the only copy", "Letting mutual aid become invisible subsidy"],
+      "source_refs": ["aeronautics-unlimited", "pallas-species-strikes", "colonizing-sol"]
+    },
+    {
+      "role_id": "au-ramp-superintendent",
+      "summary": "A superintendent who owns the ramp order and certificate strategy but not clerk authentication or crew bodies.",
+      "obligations": ["Preserve recognition", "Restore settlement", "Keep Kappa available"],
+      "available_masks": ["Functional status", "Priority offer", "Clock urgency"],
+      "failure_modes": ["Treating safety work as output consent", "Erasing the first default"],
+      "source_refs": ["aeronautics-unlimited", "bloom", "pallas-species-strikes"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "miri_dan",
+      "known_context": [{"text": "Miri knows the local queue, store custody, work authentication, shift clock, notices, and her own household balance.", "source_refs": ["aeronautics-unlimited"]}],
+      "beliefs": [{"text": "Causal order and duplicate custody limit later blame shifting.", "source_refs": ["aeronautics-unlimited", "bloom"]}],
+      "misreads": [{"text": "A complete local ledger can feel like capacity, but records cannot import the actuator.", "source_refs": ["bloom"]}],
+      "must_not_know": [{"text": "Miri cannot know counterparty motives beyond visible terms and actions.", "source_refs": ["aeronautics-unlimited"]}]
+    },
+    {
+      "speaker_id": "oru_loopwise",
+      "known_context": [{"text": "Oru knows the harness, cartridge, seal-lung behavior, throats, and embodied work limits.", "source_refs": ["bioelevate", "cephalopod-syndicate"]}],
+      "beliefs": [{"text": "Steady breathing and a withdrawal route precede consent to work.", "source_refs": ["bioelevate"]}],
+      "misreads": [{"text": "Oru may read custody caution as ownership until action clarifies it.", "source_refs": ["aeronautics-unlimited"]}],
+      "must_not_know": [{"text": "Oru knows the contract stack only through notices and Miri's account.", "source_refs": ["aeronautics-unlimited"]}]
+    },
+    {
+      "speaker_id": "sef_anwar",
+      "known_context": [{"text": "Sef knows three households' promises and Kappa anchor conditions.", "source_refs": ["aeronautics-unlimited", "colonizing-sol"]}],
+      "beliefs": [{"text": "A household book must preserve both reciprocity and AU's unpaid amount.", "source_refs": ["aeronautics-unlimited"]}],
+      "misreads": [{"text": "Local cohesion cannot substitute for imported parts and certification.", "source_refs": ["bloom"]}],
+      "must_not_know": [{"text": "Sef learns external settlement decisions only when notices arrive.", "source_refs": ["aeronautics-unlimited"]}]
+    },
+    {
+      "speaker_id": "kara_mott",
+      "known_context": [{"text": "Kara knows the narrowed certificate, ramp order, priority terms, and need for a Kappa cycle.", "source_refs": ["aeronautics-unlimited", "bloom"]}],
+      "beliefs": [{"text": "Certified output is the fastest available route to settlement.", "source_refs": ["aeronautics-unlimited"]}],
+      "misreads": [{"text": "Kara may treat readiness for safety maintenance as availability for production.", "source_refs": ["pallas-species-strikes", "bioelevate"]}],
+      "must_not_know": [{"text": "Kara cannot know private household promises until records or acts expose them.", "source_refs": ["aeronautics-unlimited"]}]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Miri, Oru, Sef, Kara, the exact actuator default, and every branch outcome are fixture-local draft elements.",
+      "source_refs": ["aeronautics-unlimited", "pallas-species-strikes"]
+    },
+    {
+      "text": "The lore patch establishes the cascade and household books but not universal priority thresholds, notice language, or external enforceability.",
+      "source_refs": ["aeronautics-unlimited"]
+    },
+    {
+      "text": "The scene is hard pre-Elysium institutional science fiction; no post-Elysium physics enters it.",
+      "source_refs": ["bloom", "pallas-species-strikes"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "What data model will represent claimshare priority, portability, and settlement?",
+      "blocks_training": false,
+      "notes": "The fixture uses coarse local state and does not define equity or a universal currency."
+    },
+    {
+      "question": "What standing do cross-category household books have outside their ramp?",
+      "blocks_training": false,
+      "notes": "The elaboration establishes practical local honoring, not external enforceability."
+    },
+    {
+      "question": "What are Kappa's exact dimensions, rotation rate, and actuator specifications?",
+      "blocks_training": false,
+      "notes": "The visual plan supplies staging geometry while leaving engineering numbers uncanonized."
+    }
+  ]
+}
