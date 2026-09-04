@@ -1,0 +1,502 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "kalsa-ledger-stormshield-provisions-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/kalsa/ledger-stormshield-provisions-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/kalsa/ledger-stormshield-provisions-v0.v0.json",
+  "visual_plan_ref": "examples/visual/kalsa/ledger-stormshield-provisions-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "ledger-stormshield-provisions-v0.outer-road-provision-recall",
+  "protagonist_agent_id": "seni_var",
+  "npc_agent_ids": [
+    "pera_oth",
+    "kalo_rei",
+    "aru_venn",
+    "landing_witnesses"
+  ],
+  "purpose": "Interactive Fiction Weaver-shaped compile of a Kalsa outer-road Stormshield provisioning dispute from the station witness's bounded perspective, with ordinary issue work preceding a central recall.",
+  "tonal_mode": "Dry workplace comedy and domestic warmth tightening into material and class pressure.",
+  "artifact_role": "Playable illustrated-fiction website collateral and lore stress test; not simulation state and not core model-training signal.",
+  "local_awareness_summary": [
+    {
+      "text": "Seni can inspect grain, match paired tallies, move loads among the landing's fixed bays, bar or open the local dry store, and strike the shortage clapper. She cannot command tribal stores, set the Stormshield target, or know the storm's objective future.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/ledger-stormshield-provisions-v0.v0.json",
+        "Kalsa/Spoilers/Institutions/Stormshield Circles.md"
+      ]
+    },
+    {
+      "text": "Pera's bowls and reports expose current recovery and support needs; Kalo's cart, grain, household name, and contributor half expose the source and promised return; neither gives Seni complete knowledge of central need.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/ledger-stormshield-provisions-v0.v0.json"
+      ]
+    },
+    {
+      "text": "Aru's order and report establish a genuine central shortage and traveling allocation claim, but the broad phrase station grain reserve does not by itself identify which of the four local uses it includes.",
+      "source_refs": [
+        "Kalsa/Spoilers/Events/The Narrow Shield.md",
+        "Kalsa/Spoilers/Events/The Shield Levy Winter.md"
+      ]
+    },
+    {
+      "text": "The tally halves, peg board, store bar, sacks, drying tray, bowls, hand measure, stair shelf, cart arch, and clapper are material affordances and evidence. None directly controls the shield.",
+      "source_refs": [
+        "Kalsa/Spoilers/Institutions/Stormshield Circles.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Seni's embodied provision-witness viewpoint on one roofed landing. Narration may make dependencies legible but cannot disclose an optimal timeline or another character's private motive.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/kalsa/ledger-stormshield-provisions-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes cart unloading, meal issue, load inspection, paired records, worker banter, and the four store uses before Aru brings the recall.",
+        "source_refs": [
+          "AGENTS.md",
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Seni owns local acceptance, condition notation, the dry-store bar, and whether a taking is marked disputed. She does not own Circle operations, citywide allocation, tribal assessment, or household seed classification beyond the evidence presented.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md"
+        ]
+      },
+      {
+        "text": "Aru can move the loads supported by her order and leave a receipt; she cannot make an omitted use ownerless or turn grain into surplus by naming a broad category.",
+        "source_refs": [
+          "Kalsa/Spoilers/Events/The Shield Levy Winter.md",
+          "Kalsa/Spoilers/Events/The Narrow Shield.md"
+        ]
+      },
+      {
+        "text": "Pera and Kalo can testify to care work, carriage, source, and household cost. They cannot certify the active magical target or the central store's full condition.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md",
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Seni controls the station tally halves, peg board, store bar, local issue, and shortage clapper; Kalo initially controls his household's contributor half; Aru controls the central order-board and outgoing receipts; Pera controls the bowls and immediate recovery issue.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md",
+          "examples/ink/kalsa/ledger-stormshield-provisions-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every branch must keep current-watch issue, relief readiness, attendant issue, contributor return, physical condition, record strength, and public pressure distinct.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md",
+          "Kalsa/Spoilers/Events/The Shield Levy Winter.md"
+        ]
+      },
+      {
+        "text": "The central shortage remains real. Aru must be wrong only where the traveling category exceeds the evidence or erases later dependencies, not because all central allocation is inherently false.",
+        "source_refs": [
+          "Kalsa/Spoilers/Events/The Narrow Shield.md",
+          "Kalsa/Spoilers/Polities/Shamanism - Papsenai.md"
+        ]
+      },
+      {
+        "text": "Endings must distinguish immediate active-watch food, relief arrival, support labor, household return, record survival, and public standing rather than presenting one allocation as costless justice.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make the paired tallies a currency, universal Circle practice, transferable title, or magic interface.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md"
+        ]
+      },
+      {
+        "text": "Do not establish a permanent city store office, universal measure, fixed ration interval, station blueprint, or exact shield staffing ratio.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Stormshield Circles.md",
+          "Kalsa/Spoilers/Polities/Shamanism - Papsenai.md"
+        ]
+      },
+      {
+        "text": "Do not let Seni, Aru, Kalo, or Pera know which allocation produces the objectively best future. Each acts through bounded records, bodies, routes, and responsibilities.",
+        "source_refs": [
+          "Kalsa/Spoilers/Foundations/Kaos.md",
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through ordinary issue, a central reserve recall, a labor-and-promise classification dispute, and final material release, then select one of eight state-gated endings.",
+    "choice_layers": [
+      "ordinary_morning_issue",
+      "reserve_recall",
+      "labor_and_promise_classification",
+      "material_release"
+    ],
+    "variables": [
+      "paired_record",
+      "worker_scope",
+      "current_watch_issue",
+      "relief_readiness",
+      "attendant_issue",
+      "central_pressure",
+      "shortage_signal",
+      "wet_loss_known",
+      "kalo_standing",
+      "aru_confidence",
+      "central_transfer"
+    ],
+    "ending_gates": [
+      "ending_bounded_release_success",
+      "ending_bounded_release_cost",
+      "ending_immediate_watch_success",
+      "ending_immediate_watch_cost",
+      "ending_support_web_success",
+      "ending_support_web_cost",
+      "ending_total_recall_clean",
+      "ending_total_recall_contested"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "pair_contributor_tally",
+      "ink_path": "morning_issue_choice",
+      "action_type": "use_object",
+      "actor_intent": "Match the contributor's carried half to the station half before the grain enters the dry store.",
+      "state_basis": [
+        "Paired local tallies record source, load, condition, use, and promised return.",
+        "Kalo carries the contributor half for his aunt's household."
+      ],
+      "reviewed_consequences": [
+        "Raises paired_record and kalo_standing; later folds display the joined copies, strengthen bounded-release gates, and make contributor return harder to recite as ownerless reserve."
+      ],
+      "training_hooks": ["paired_evidence", "household_standing", "record_before_storage"]
+    },
+    {
+      "branch_id": "inspect_load_condition",
+      "ink_path": "morning_issue_choice",
+      "action_type": "touch_object",
+      "actor_intent": "Test the sack's lowest grain for storm damp before accepting it as sound.",
+      "state_basis": [
+        "Seni can physically inspect an arriving load and mark condition.",
+        "Magic and an order cannot turn wet grain into sound food."
+      ],
+      "reviewed_consequences": [
+        "Raises wet_loss_known and paired_record; later folds show a separate drying tray and immediate-watch endings can choose sound grain rather than mixing hidden loss."
+      ],
+      "training_hooks": ["material_condition", "embodied_inspection", "loss_visibility"]
+    },
+    {
+      "branch_id": "feed_support_workers",
+      "ink_path": "morning_issue_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Issue meals to the tender and porter while their work is present and nameable.",
+      "state_basis": [
+        "Tenders and porters materially sustain shield continuity.",
+        "The attendant bay contains a finite local issue."
+      ],
+      "reviewed_consequences": [
+        "Raises worker_scope and kalo_standing while reducing attendant_issue; later scenes show empty bowls as labor evidence and the reduced bay as a real resource cost."
+      ],
+      "training_hooks": ["support_labor_counted", "meal_as_infrastructure", "finite_issue"]
+    },
+    {
+      "branch_id": "stage_relief_ration",
+      "ink_path": "morning_issue_choice",
+      "action_type": "move",
+      "actor_intent": "Shorten the next cohort's route to its sealed ration before pressure arrives.",
+      "state_basis": [
+        "Relief workers use the dry stair and need food to arrive capable of overlap.",
+        "The stair shelf makes the ration accessible and visible."
+      ],
+      "reviewed_consequences": [
+        "Raises relief_readiness and central_pressure; later choices can preserve future capacity, while Aru can see and claim the useful sack immediately."
+      ],
+      "training_hooks": ["future_capacity", "visibility_leverage", "route_preparation"]
+    },
+    {
+      "branch_id": "compare_recall_scope",
+      "ink_path": "recall_order_choice",
+      "action_type": "use_object",
+      "actor_intent": "Align the broad central order with all four local uses before releasing a bay.",
+      "state_basis": [
+        "The central order names station reserve but omits local use categories.",
+        "Seni can compare traveling and station records without deciding the storm target."
+      ],
+      "reviewed_consequences": [
+        "Raises paired_record, wet_loss_known, and central_pressure while lowering aru_confidence; later prose shows the order gaining visible edges at the cost of delay."
+      ],
+      "training_hooks": ["scope_comparison", "traveling_category", "delay_cost"]
+    },
+    {
+      "branch_id": "send_current_issue",
+      "ink_path": "recall_order_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Meet immediate central hunger with one sound sack from the current-watch bay.",
+      "state_basis": [
+        "The central watches have a reported extended overlap.",
+        "The current-watch bay is the closest local use to the stated need."
+      ],
+      "reviewed_consequences": [
+        "Reduces current_watch_issue, raises central_transfer and aru_confidence, and lowers central_pressure; later folds show the receipted sack and leave less local recovery depth."
+      ],
+      "training_hooks": ["immediate_provision", "local_depth_spent", "receipt"]
+    },
+    {
+      "branch_id": "hold_and_signal_shortage",
+      "ink_path": "recall_order_choice",
+      "action_type": "use_object",
+      "actor_intent": "Keep the bar closed and make the disputed shortage audible to people beyond the two record holders.",
+      "state_basis": [
+        "Seni may refuse an unmarked release and operate the local shortage clapper.",
+        "Public warning increases standing and pressure without producing food."
+      ],
+      "reviewed_consequences": [
+        "Raises shortage_signal and central_pressure while lowering aru_confidence; later gates can use public standing, and later prose shows witnesses gathering around visible grain."
+      ],
+      "training_hooks": ["public_shortage_signal", "bar_as_action", "authority_pressure"]
+    },
+    {
+      "branch_id": "count_supporting_bodies",
+      "ink_path": "recall_order_choice",
+      "action_type": "speak",
+      "actor_intent": "Put every current and approaching support body into the local count before accepting the phrase shield provision.",
+      "state_basis": [
+        "Pera knows the station care body and Kalo knows the contributing household.",
+        "Active shamans are not the complete shield workforce."
+      ],
+      "reviewed_consequences": [
+        "Raises worker_scope, kalo_standing, and central_pressure while lowering aru_confidence; later scenes materialize the count through bowls, measures, and named people."
+      ],
+      "training_hooks": ["body_count", "support_labor", "classification_pressure"]
+    },
+    {
+      "branch_id": "establish_household_claim",
+      "ink_path": "who_counts_choice",
+      "action_type": "show_object",
+      "actor_intent": "Make the central delegate read the paired household promise aloud.",
+      "state_basis": [
+        "Kalo's household copy matches the station copy.",
+        "A paired record strengthens standing but does not guarantee restoration."
+      ],
+      "reviewed_consequences": [
+        "Raises paired_record, kalo_standing, and central_pressure; later folds preserve Kalo at the bench as a named claimant and strengthen bounded release."
+      ],
+      "training_hooks": ["household_claim", "copy_custody", "speech_from_object"]
+    },
+    {
+      "branch_id": "count_support_as_shield_work",
+      "ink_path": "who_counts_choice",
+      "action_type": "move",
+      "actor_intent": "Place visible care and carriage evidence under the attendant peg.",
+      "state_basis": [
+        "Bowls, hand measures, and runner ration tokens trace support work.",
+        "Seni can arrange the local record without commanding Aru's interpretation."
+      ],
+      "reviewed_consequences": [
+        "Raises worker_scope and kalo_standing while lowering aru_confidence; later folds show the support body's material anatomy and unlock the support-web ending gate."
+      ],
+      "training_hooks": ["object_based_labor_claim", "care_visibility", "class_boundary"]
+    },
+    {
+      "branch_id": "spend_relief_ration",
+      "ink_path": "who_counts_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Feed the central active holders by reassigning the approaching relief cohort's prepared ration.",
+      "state_basis": [
+        "The relief sack is sound grain that can meet the central shortage.",
+        "The replacement cohort's route and capacity depend on that same ration."
+      ],
+      "reviewed_consequences": [
+        "Raises central_transfer and aru_confidence, lowers central_pressure, and sharply lowers relief_readiness; later scenes show an empty stair shelf and a relief tally explicitly crossed as spent."
+      ],
+      "training_hooks": ["future_capacity_spent", "clean_reassignment", "relief_cost"]
+    },
+    {
+      "branch_id": "escalate_shortage_signal",
+      "ink_path": "who_counts_choice",
+      "action_type": "use_object",
+      "actor_intent": "Preserve every use long enough to force the unresolved allocation into public witness.",
+      "state_basis": [
+        "A repeated signal can gather witnesses and ownership review.",
+        "Signaling does not meet the current central need by itself."
+      ],
+      "reviewed_consequences": [
+        "Raises shortage_signal and central_pressure while lowering aru_confidence; later folds show gathered witnesses and allow the support-web branch to survive institutional challenge."
+      ],
+      "training_hooks": ["escalation_without_force", "public_witness", "time_pressure"]
+    },
+    {
+      "branch_id": "prioritize_bounded_release",
+      "ink_path": "final_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Release only the use closest to the named immediate need while preserving three separate future obligations.",
+      "state_basis": [
+        "Success depends on adequate paired evidence, visible worker scope, and remaining current-watch issue."
+      ],
+      "reviewed_consequences": [
+        "Routes to a bounded release whose narrower uses survive, or a cost ending in which the local distinction lacks enough traveling evidence to survive the cart route."
+      ],
+      "training_hooks": ["bounded_material_release", "state_gated_ending", "promise_separation"]
+    },
+    {
+      "branch_id": "prioritize_immediate_watch",
+      "ink_path": "final_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Protect the active watches now by spending current issue and a household's promised return.",
+      "state_basis": [
+        "Success depends on known grain condition and enough current and contributor stock."
+      ],
+      "reviewed_consequences": [
+        "Routes to a sound immediate transfer with explicit household debt, or a cost ending where damp loss and weak depth contaminate the claim."
+      ],
+      "training_hooks": ["current_safety", "household_debt", "condition_gate"]
+    },
+    {
+      "branch_id": "prioritize_support_web",
+      "ink_path": "final_choice",
+      "action_type": "use_object",
+      "actor_intent": "Preserve relief and support labor while making the reduced current issue and its risk public.",
+      "state_basis": [
+        "Success depends on staged relief, visible support work, and an existing shortage signal."
+      ],
+      "reviewed_consequences": [
+        "Routes to preservation of a credible replacement-and-care body, or a cost ending in which unsupported local distinctions retreat into hidden food and withheld carts."
+      ],
+      "training_hooks": ["support_web", "future_capacity", "public_shortfall"]
+    },
+    {
+      "branch_id": "prioritize_total_recall",
+      "ink_path": "final_choice",
+      "action_type": "open_object",
+      "actor_intent": "Consolidate every bay into the central load under the traveling order.",
+      "state_basis": [
+        "The outcome depends on Aru's remaining authority confidence and whether pressure has already made the classification publicly contested."
+      ],
+      "reviewed_consequences": [
+        "Routes to an administratively clean immediate rescue that empties future capacity, or a public contested transfer that feeds the center while strengthening later refusal."
+      ],
+      "training_hooks": ["total_recall", "administrative_cleanliness", "later_supply_failure"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose and option gates",
+      "Ending selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Any durable relationship or memory update for Seni, Pera, Kalo, or Aru",
+      "Any promotion of the fictional recall or its outcomes into adopted Kalsa history",
+      "Any universalization of the four-bay landing, paired tally medium, ration uses, measurements, or office roles",
+      "Any use of the fixture as core social-model training signal rather than reviewed illustrated-fiction collateral and lore stress-test material"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Ledger elaborator applying the four repository reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative review removed a constant contributor_return variable, made current_watch_issue genuinely expendable, and widened the support-web success from one to two coherent preparation paths.",
+      "Lore review found the provisioning landing consistent with Public and Spoilers canon because the new mechanism is explicitly fixture-bounded, locally owned, and does not settle universal measures, offices, or shield mechanics.",
+      "Visual review expanded every later base prompt with drawable character identity, removed negative prompt constructions, and added the missing classification-fold entry to the BFL batch.",
+      "Spatial review routed the incoming load around the tally bench, corrected camera positions, replaced an impossible two-step clapper distance, and added Aru's east-bench staging slot.",
+      "Static branch simulation covered all 64 pre-ending state combinations and reached all eight ending knots. The Ink was not compiled because this pass explicitly forbids installing or running an Ink compiler."
+    ],
+    "review_passes": {
+      "narrative_quality": {
+        "verdict": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 5,
+          "pacing": 4,
+          "voice": 4,
+          "tonal_fit": 5,
+          "if_playability": 5
+        },
+        "detected_tonal_mode": "Dry workplace comedy and domestic warmth tightening into material and class pressure.",
+        "findings": [],
+        "resolved_findings": [
+          "Removed a Potemkin contributor_return variable and changed current_watch_issue so an early transfer materially closes later options.",
+          "Adjusted the support-web ending gate so either of two legible evidence paths can support success while still requiring staged relief and a public shortage signal."
+        ]
+      },
+      "lore_grounding": {
+        "verdict": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 5,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "findings": [],
+        "resolved_findings": [],
+        "acceptance_notes": [
+          "The fixture uses source-backed shield dependence, reserve separation, emergency receipts, support labor, and narrowing pressure.",
+          "The paired clay tallies, four-use landing, characters, failed carts, and recall remain explicitly local authored elaboration or branch possibility.",
+          "Public and Spoilers source tiers are recorded independently in the grounding digest."
+        ]
+      },
+      "visual_continuity": {
+        "verdict": "accepted",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompt": 5,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 4
+        },
+        "findings": [],
+        "resolved_findings": [
+          "Expanded later base prompts so named characters carry concrete visible identity in each standalone frame.",
+          "Removed negative constructions from prompt-visible text.",
+          "Added one BFL prompt for the classification fold so all fourteen visual scenes have a manifest prompt.",
+          "Made conditional witness refs trigger-bound and preserved off-frame exclusion."
+        ],
+        "acceptance_notes": [
+          "Fourteen click-through visual scenes, fourteen BFL prompts, twenty branch or ending modifiers, and one global style cue cover the playable artifact.",
+          "The embedded measured scene_set is the layout authority; a matching blockout is an optional higher-consistency rendering step."
+        ]
+      },
+      "spatial_cohesion": {
+        "verdict": "accepted",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightline": 4,
+          "body_affordance": 4,
+          "movement_access": 5,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "inferred_layout_summary": "A 9 by 6 metre rectangular landing with the cart arch east, wet intake southeast, four-bay store north, station stair northwest, central tally bench, and clear routes around the bench between intake, store, stair, and outgoing cart.",
+        "findings": [],
+        "resolved_findings": [
+          "Moved the cart-to-store route around the east end of the tally bench.",
+          "Corrected the arrival, final-threshold, immediate-watch, and empty-bay camera sightlines.",
+          "Replaced the clapper's false two-step distance with a short clear eastward walk.",
+          "Added a delegate staging slot at the east edge of the bench for the peg-classification action."
+        ]
+      }
+    },
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

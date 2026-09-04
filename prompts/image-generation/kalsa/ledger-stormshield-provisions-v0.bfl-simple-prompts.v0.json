@@ -1,0 +1,68 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "kalsa-ledger-stormshield-provisions-v0.bfl-simple-v0",
+  "fixture_id": "ledger-stormshield-provisions-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, strong readable silhouettes, storm-muted blue-gray stone and cloth, warm amber lamplight, restrained magical ambiguity, expressive work-worn faces and hands, abstract unlettered record marks.",
+  "prompts": [
+    {
+      "id": "01_landing_establishing",
+      "prompt": "Wide empty roofed stone provision landing beneath a storm station: broad east cart arch with waxed curtain, southeast grated drain and slatted wet rack, central timber tally bench with paired clay pieces, four barred north-wall store bays with different geometric markers, northwest dry stair and raised ration shelf, small iron clapper on the arch jamb."
+    },
+    {
+      "id": "02_morning_people",
+      "prompt": "Ordinary morning provisioning: sturdy tally witness sorts clay halves at the center bench, older tender descends the northwest stair with three empty bowls, lean young porter shoulders a grain sack beside the east wet rack, four barred bays and a storm-lit cart arch framing their workplace banter."
+    },
+    {
+      "id": "03_morning_choice",
+      "prompt": "One worker poised among four physical supply tasks: join matching clay tally halves on the bench, inspect dark damp grain at the rack, issue bowls beneath the attendant marker, or lift a sealed relief ration onto the stair shelf; compact stone landing geometry fully visible."
+    },
+    {
+      "id": "04_morning_fold",
+      "prompt": "Calm store routine after a choice: tally witness hangs separate clay marks, tender washes bowls at the drain, porter brushes loose grain into a hand measure, paired records, drying tray, support bowls, or staged relief sack appearing as branch-visible details."
+    },
+    {
+      "id": "05_recall_arrival",
+      "prompt": "Tall city store delegate enters through cold storm light carrying a square clay order-board; local tally witness faces her across the bench while tender and porter pause between northwest stair and southeast rack; one broad order enters a room divided into four supply uses."
+    },
+    {
+      "id": "06_recall_choice",
+      "prompt": "High view over a tally bench: broad recall board beneath four smaller use tallies, one current grain sack near the bar, iron shortage clapper at the east arch, bowls and hand measure beside two workers, sealed relief ration at the northwest stair; four competing actions made visually legible."
+    },
+    {
+      "id": "07_recall_fold",
+      "prompt": "Wide view toward four barred store bays: local witness guards the bar, city delegate stands beside any outgoing sacks, tender holds empty bowls, porter keeps household packet and hand measure; abstract tallies, clapper, storm arch, and relief shelf reveal the branch state."
+    },
+    {
+      "id": "08_who_counts",
+      "prompt": "Material class dispute around a timber bench: matching household tally packet, empty recovery bowls, grain hand measure, runner ration token, sealed relief sack, city order-board, and shortage clapper form four visible levers between witness, tender, porter, and store delegate."
+    },
+    {
+      "id": "09_classification_fold",
+      "prompt": "Wide diagonal from northwest stair to east cart arch: four barred bays, joined or separated clay halves, support bowls and tools, sealed or missing relief ration, sound outgoing sacks, damp-grain tray, city order-board, and conditional witnesses make the full branch state readable around four work-worn characters."
+    },
+    {
+      "id": "10_final_release",
+      "prompt": "Final threshold between tally bench and horizontal bar across four store bays: local witness reaches between records and bar, city delegate waits at outgoing cart route, tender guards stair ration and bowls, porter holds household copy, cold storm light dividing immediate transfer from future capacity."
+    },
+    {
+      "id": "11_bounded_release_end",
+      "prompt": "One sound grain sack leaves through the east arch under a narrow receipt while three north-wall bays remain barred, relief ration stays on the stair shelf, tender keeps support bowls, and porter carries a matched household tally home."
+    },
+    {
+      "id": "12_immediate_watch_end",
+      "prompt": "Current-watch and contributor-return bays opened together: tally witness marks two sources, city delegate receives grain, porter holds an empty-return copy, tender guards a thin bowl issue, and a drying tray reveals whether damp grain was honestly separated."
+    },
+    {
+      "id": "13_support_web_end",
+      "prompt": "Sealed relief sack and support-work objects remain beside the northwest stair while a reduced current sack leaves; iron shortage clapper swings, witnesses line both routes, and the city delegate stands beside a visibly short outgoing load."
+    },
+    {
+      "id": "14_total_recall_end",
+      "prompt": "All four north-wall bays and the relief shelf stand empty while a cart beyond the storm arch carries grain, dry cloth, lamp-fat jars, and ration bundles; witness holds lifted bar, tender holds empty bowl, porter keeps a clay half, delegate owns the broad traveling order."
+    }
+  ]
+}

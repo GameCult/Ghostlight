@@ -1,0 +1,366 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "kalsa.ledger-stormshield-provisions-v0.v0",
+  "source_status": "reviewed",
+  "fixture_status": "procedural_branch",
+  "source_refs": [
+    {
+      "source_id": "public-kalsa",
+      "path": "Kalsa/Public/World/Kalsa.md",
+      "title": "Kalsa",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 42,
+      "relevance": "Reader-facing permanent twilight, southern-gulf storm geography, road dependence, and the material limits of miracles."
+    },
+    {
+      "source_id": "public-peoples",
+      "path": "Kalsa/Public/World/Peoples and Polities.md",
+      "title": "Peoples and Polities",
+      "canon_tier": "Public",
+      "line_start": 48,
+      "line_end": 76,
+      "relevance": "Reader-facing Papsenai agriculture, reserve separation, overlapping shield watches, and relief supplied by protected households."
+    },
+    {
+      "source_id": "public-missing-relief",
+      "path": "Kalsa/Public/Sources/The Missing Relief Cohort.md",
+      "title": "The Missing Relief Cohort",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 78,
+      "relevance": "Public history of grain extraction, missing relief, store marks, household claims, and the later requirement for reviewable emergency receipts."
+    },
+    {
+      "source_id": "public-narrow-shield",
+      "path": "Kalsa/Public/Sources/The Narrow Shield.md",
+      "title": "The Narrow Shield",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 62,
+      "relevance": "Public history of a one-watch central reassignment of cohorts, attendants, stores, and shelter access with outer losses."
+    },
+    {
+      "source_id": "canon-policy",
+      "path": "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+      "title": "Canon and Provenance",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 129,
+      "relevance": "Controls canon status, knowledge layers, authored elaboration, and unresolved claims."
+    },
+    {
+      "source_id": "world-foundation",
+      "path": "Kalsa/Spoilers/Foundations/World.md",
+      "title": "World",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 41,
+      "relevance": "Owns the tidally locked world, the southern-gulf storm front, and the rule that climate and infrastructure constrain power."
+    },
+    {
+      "source_id": "kaos-foundation",
+      "path": "Kalsa/Spoilers/Foundations/Kaos.md",
+      "title": "Kaos",
+      "canon_tier": "Spoilers/backstage",
+      "line_start": 1,
+      "line_end": 126,
+      "relevance": "Backstage constraint that magic creates neither matter nor energy; workers, grain, shelter, routes, and time remain causal inputs."
+    },
+    {
+      "source_id": "institutions-index",
+      "path": "Kalsa/Spoilers/Institutions/index.md",
+      "title": "Institutions",
+      "canon_tier": "Spoilers/navigation",
+      "line_start": 1,
+      "line_end": 42,
+      "relevance": "Routes shield labor to the Stormshield Circles and separates operational, material, political, and evidentiary authority."
+    },
+    {
+      "source_id": "stormshield-circles",
+      "path": "Kalsa/Spoilers/Institutions/Stormshield Circles.md",
+      "title": "Stormshield Circles",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 242,
+      "relevance": "Primary institution owner for shield labor, material support, the outer-road station, and the authored provisioning-landing elaboration at lines 84-143."
+    },
+    {
+      "source_id": "papsenai-polity",
+      "path": "Kalsa/Spoilers/Polities/Shamanism - Papsenai.md",
+      "title": "Shamanism — Papsenai",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 126,
+      "relevance": "Owns Papsenai agricultural material life, household and tribal pressure, seed and subsistence separation, and Ti'asantatca's concentrated shield burden."
+    },
+    {
+      "source_id": "shield-levy-event",
+      "path": "Kalsa/Spoilers/Events/The Shield Levy Winter.md",
+      "title": "The Shield Levy Winter",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 62,
+      "relevance": "Owns the adopted history that joined grain taking to relief diversion and established paired contribution, return, reserve, and review pressure."
+    },
+    {
+      "source_id": "narrow-shield-event",
+      "path": "Kalsa/Spoilers/Events/The Narrow Shield.md",
+      "title": "The Narrow Shield",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 110,
+      "relevance": "Owns the adopted one-watch narrowing order that reallocated named stores while preserving expiry, transferred harm, and record custody."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Kalsa's standing present; the exact date, calendar, and relation to adopted histories remain unresolved.",
+    "location": "The roofed provisioning landing below one fixture-bounded outer-road Stormshield station at Ti'asantatca.",
+    "summary": "During an ordinary morning issue, a central shortage recall reaches a local store whose four bays support different bodies and promises. The station witness must decide what can leave before institutional shorthand converts current food, relief capacity, support labor, and household return into one ownerless reserve.",
+    "public_facts": [
+      {
+        "text": "Ti'asantatca remains habitable through overlapping Stormshield watches provisioned by the same households and fields the barrier protects.",
+        "source_refs": ["public-kalsa", "public-peoples"]
+      },
+      {
+        "text": "Papsenai households distinguish seed and subsistence from negotiable surplus because magical protection cannot create food from nothing.",
+        "source_refs": ["public-peoples", "kaos-foundation"]
+      },
+      {
+        "text": "The Shield Levy Winter joined food extraction and relief diversion in one failure, leaving store marks and household testimony as separate evidence.",
+        "source_refs": ["public-missing-relief", "shield-levy-event"]
+      },
+      {
+        "text": "A temporary central shield order can protect current refuges while moving stores, attendants, and future losses toward outer people.",
+        "source_refs": ["public-narrow-shield", "narrow-shield-event"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Shield capacity depends on current food, relief travel, attendants, observers, porters, caregivers, dry clothing, and household willingness to contribute again.",
+        "source_refs": ["stormshield-circles", "papsenai-polity"]
+      },
+      {
+        "text": "Paired tallies make source, load, use, condition, and return inspectable, but they are not coins, ownership, or proof that the original assessment was fair.",
+        "source_refs": ["stormshield-circles", "shield-levy-event"]
+      },
+      {
+        "text": "A central shortage can be real while its store category erases the distinct future capacities it consumes.",
+        "source_refs": ["stormshield-circles", "narrow-shield-event"]
+      },
+      {
+        "text": "People with recognized household witnesses, carts, and duplicate records can contest a recall more effectively than land-poor growers, migrants, hired carriers, and attendants.",
+        "source_refs": ["stormshield-circles", "papsenai-polity"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "outer-road-provision-watch",
+      "label": "Outer-road station provision workers",
+      "group_type": "infrastructure_supply_cell",
+      "institutional_logic": ["Keep different material uses and promises legible while moving food and care supplies fast enough for a continuous shield."],
+      "material_incentives": ["Feed current holders", "Preserve a viable relief arrival", "Sustain support workers", "Keep contributors willing and able to supply the next watch"],
+      "internal_virtues": ["Named use", "Condition checked by hand", "Paired copies", "Support labor counted"],
+      "internal_shames": ["Wet grain passed as sound", "A body erased from the count", "A household promise consumed without a surviving copy"],
+      "prestige_markers": ["A relief sack ready before arrival", "A disputed taking that remains reviewable", "An empty bowl that still counts as work evidence"],
+      "taboo_triggers": ["Calling every bay spare grain", "Treating support food as charity", "Changing a peg to make seed negotiable"],
+      "emotional_display_norms": ["Pressure becomes dry jokes, exact object placement, lowered voices, and arguments over which body a mark permits others to forget."],
+      "trust_defaults": ["Trusts matched copies, touched grain, named carriers, visible bowls, and bounded releases more than broad category words."],
+      "speech_register_cues": ["Short material descriptions", "Household names", "Bay uses", "Deadpan storehouse humor"],
+      "source_refs": ["stormshield-circles", "shield-levy-event", "papsenai-polity"]
+    },
+    {
+      "group_id": "central-store-recall",
+      "label": "Central store recall pressure",
+      "group_type": "temporary_civic_allocation",
+      "institutional_logic": ["Move enough sound grain to active central watches before an extended overlap becomes collapse."],
+      "material_incentives": ["Shorten delivery delay", "Combine small stores into usable loads", "Keep the current central barrier fed"],
+      "internal_virtues": ["Fast receipt", "Sound load", "Named immediate need", "Order that can travel"],
+      "internal_shames": ["An active watch starved while grain remained barred", "A delegate returning with categories instead of food"],
+      "prestige_markers": ["A full cart dispatched under one reviewable order", "No wet sack entering the central issue"],
+      "taboo_triggers": ["Local distinctions used to hide a genuine surplus", "A shortage warning raised after preventable delay"],
+      "emotional_display_norms": ["Urgency is compressed into broad store categories, clipped claims, and confidence that the center's current need is the common need."],
+      "trust_defaults": ["Trusts issued orders and consolidated loads; suspects local labels can conceal preferential retention."],
+      "speech_register_cues": ["Immediate watches", "Station reserve", "Sound sacks", "Dispatch time"],
+      "source_refs": ["narrow-shield-event", "shield-levy-event", "stormshield-circles"]
+    },
+    {
+      "group_id": "contributing-households",
+      "label": "Contributing and land-poor households",
+      "group_type": "distributed_producers_and_dependents",
+      "institutional_logic": ["Supply grain and workers while preserving seed, subsistence, household continuity, and a claim on promised return."],
+      "material_incentives": ["Keep planting capacity", "Feed dependants", "Recover a missing worker's contribution", "Retain proof when a central store changes the category"],
+      "internal_virtues": ["A copy carried home", "A named source", "Refusal to let patronage swallow labor"],
+      "internal_shames": ["Seed consumed after being called surplus", "A carrier leaving with no household named"],
+      "prestige_markers": ["Dry grain honestly weighed", "A worker and load entered under their actual household"],
+      "taboo_triggers": ["A patron taking authorship of another household's contribution", "Repayment called private generosity after the work is done"],
+      "emotional_display_norms": ["Anxiety appears as checking tally halves, watching bars and cart wheels, and deciding whether the next load should remain hidden."],
+      "trust_defaults": ["Trusts copies and known carriers; distrusts promises whose evidence remains at the destination."],
+      "speech_register_cues": ["Who supplied", "Who is absent from the field", "What was seed", "What returns"],
+      "source_refs": ["papsenai-polity", "shield-levy-event", "stormshield-circles"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "outer-road-provision-watch.one-shield-four-uses",
+      "applies_to": ["outer-road-provision-watch"],
+      "pressure_type": "material_dependency",
+      "summary": "The station must feed the present watch without consuming the relief, care, and contributor relationships that make a later watch possible.",
+      "projection_use": "Give Seni choices that move specific sacks, tallies, bowls, bars, and signals; every immediate rescue must expose the future capacity it spends.",
+      "source_refs": ["stormshield-circles", "shield-levy-event"]
+    },
+    {
+      "field_id": "central-store-recall.category-as-leverage",
+      "applies_to": ["central-store-recall", "contributing-households"],
+      "pressure_type": "class_and_allocation",
+      "summary": "Calling several store uses one reserve lets the current center claim material quickly while pushing future loss toward people with weaker copies, standing, and transport.",
+      "projection_use": "Let Aru's urgent need remain real while showing how her broad category erases support workers and contributor return.",
+      "source_refs": ["narrow-shield-event", "papsenai-polity", "stormshield-circles"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "central-store-recall",
+      "target_group_id": "outer-road-provision-watch",
+      "observer_read": ["Local clerks protecting four labels while active holders go hungry", "Possible hidden surplus behind a station bar"],
+      "target_self_read": ["Workers preserving the distinct present and future capacities contained in one physical store"],
+      "misread_patterns": ["Treats use separation as delay", "Treats contributor return as optional repayment", "Counts trance while erasing carriage and recovery"],
+      "likely_insults": ["peg keepers", "four-bay philosophers", "dry-store saints"],
+      "projection_use": "Keep Aru materially serious and bounded; she can be wrong about scope without becoming a cartoon thief.",
+      "source_refs": ["stormshield-circles", "shield-levy-event"]
+    },
+    {
+      "observer_group_id": "contributing-households",
+      "target_group_id": "central-store-recall",
+      "observer_read": ["A city need that becomes universal by owning the order-board", "The current watch feeding itself from someone else's next season"],
+      "target_self_read": ["A delegate consolidating sound grain before an extended overlap becomes bodily collapse"],
+      "misread_patterns": ["May treat every recall as theft after earlier extractions", "May hide a real surplus because return has failed before"],
+      "likely_insults": ["one-board hunger", "cloak account", "central mouth"],
+      "projection_use": "Let Kalo defend household evidence without granting him complete knowledge of central need or the storm.",
+      "source_refs": ["papsenai-polity", "shield-levy-event", "narrow-shield-event"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "station-provision-witness",
+      "summary": "A local store witness who can accept loads, preserve paired tallies, stop an unmarked release, and record a disputed taking without owning shield operations or city allocation.",
+      "obligations": ["Check condition", "Keep uses separate", "Name the source and recipient", "Make coercive release reviewable"],
+      "available_masks": ["Literal clerk", "Dry humor", "Physical busyness", "Deference limited to the named order"],
+      "failure_modes": ["Procedure delays urgent food", "A correct local category lacks standing beyond the station", "A clean receipt launders an excessive taking"],
+      "source_refs": ["stormshield-circles", "shield-levy-event"]
+    },
+    {
+      "role_id": "station-tender",
+      "summary": "A care worker who knows which food, water, clothing, and privacy turn release into recovery.",
+      "obligations": ["Feed active and released workers", "Notice absent support", "Protect future capacity", "Keep care from becoming invisible household labor"],
+      "available_masks": ["Domestic authority", "Empty bowls", "Practical jokes", "A pleasantly blank face"],
+      "failure_modes": ["Hiding food becomes the only durable care system", "Immediate need eclipses the approaching relief body"],
+      "source_refs": ["stormshield-circles"]
+    },
+    {
+      "role_id": "household-carrier",
+      "summary": "A porter who carries grain, a household copy, and knowledge of which worker is missing from which field.",
+      "obligations": ["Deliver a recognizable load", "Carry the contributor half home", "Name the actual household", "Keep the next route viable"],
+      "available_masks": ["Workplace jokes", "Physical compliance", "Quiet repetition of a recorded promise"],
+      "failure_modes": ["Work entered under a patron", "No standing without the matching half", "Next contribution withheld after an unpaid return"],
+      "source_refs": ["papsenai-polity", "stormshield-circles"]
+    },
+    {
+      "role_id": "city-store-delegate",
+      "summary": "A temporary delegate whose real central shortage and broad order create leverage over several locally separated uses.",
+      "obligations": ["Move sound grain quickly", "Leave a receipt", "Stay within the loads named", "Return a disputed classification to review"],
+      "available_masks": ["Compressed urgency", "Broad common-interest language", "Confidence in the traveling copy"],
+      "failure_modes": ["Current protection consumes future relief", "A broad category erases classed labor", "Public dispute weakens a necessary release"],
+      "source_refs": ["shield-levy-event", "narrow-shield-event", "stormshield-circles"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "seni_var",
+      "known_context": [
+        {"text": "Seni knows the landing geometry, store condition, local tallies, visible bodies, Aru's order, and the operational message carried down the stair.", "source_refs": ["stormshield-circles"]}
+      ],
+      "beliefs": [
+        {"text": "Seni believes each use must keep its own name long enough for later review to find the body or promise spent.", "source_refs": ["stormshield-circles", "shield-levy-event"]}
+      ],
+      "misreads": [
+        {"text": "Seni may treat a reviewable shortage as survivable when the central active holders experience delay as immediate bodily danger.", "source_refs": ["narrow-shield-event"]}
+      ],
+      "must_not_know": [
+        {"text": "Seni must not know the storm's objective future, the active holders' private state, or whether a different allocation would save more people.", "source_refs": ["kaos-foundation", "canon-policy"]}
+      ]
+    },
+    {
+      "speaker_id": "pera_oth",
+      "known_context": [
+        {"text": "Pera knows current bowls, recovery needs, people expected on the stair, and which support work will go undone if the bay empties.", "source_refs": ["stormshield-circles"]}
+      ],
+      "beliefs": [
+        {"text": "Pera believes food for tenders, carriers, and recovery is shield provision rather than private kindness.", "source_refs": ["stormshield-circles"]}
+      ],
+      "misreads": [
+        {"text": "Pera may hear any central recall as contempt for care work even when the immediate central shortage is genuine.", "source_refs": ["shield-levy-event"]}
+      ],
+      "must_not_know": [
+        {"text": "Pera must not know the central store's complete condition or the future of the barrier from bells and bowls alone.", "source_refs": ["canon-policy"]}
+      ]
+    },
+    {
+      "speaker_id": "kalo_rei",
+      "known_context": [
+        {"text": "Kalo knows the delivered load, its source household, the missing field worker, the cart route, and the contributor half he carries.", "source_refs": ["papsenai-polity", "stormshield-circles"]}
+      ],
+      "beliefs": [
+        {"text": "Kalo believes an unnamed household will lose both return and standing once its copy leaves the room.", "source_refs": ["stormshield-circles"]}
+      ],
+      "misreads": [
+        {"text": "Kalo may treat the city center as one appetite and underweight the separate bodies in its active watches.", "source_refs": ["narrow-shield-event"]}
+      ],
+      "must_not_know": [
+        {"text": "Kalo must not know whether the central request is strategically optimal or which shield section will fail.", "source_refs": ["canon-policy", "narrow-shield-event"]}
+      ]
+    },
+    {
+      "speaker_id": "aru_venn",
+      "known_context": [
+        {"text": "Aru knows the failed central carts, the issued order-board, the active central need reported to her, and the loads Seni exposes.", "source_refs": ["stormshield-circles", "narrow-shield-event"]}
+      ],
+      "beliefs": [
+        {"text": "Aru believes a broad station-reserve category is justified when several small stores must become one timely load.", "source_refs": ["narrow-shield-event"]}
+      ],
+      "misreads": [
+        {"text": "Aru may treat attendant issue and contributor return as postponable because their failures arrive later than hunger in the current watch.", "source_refs": ["stormshield-circles", "shield-levy-event"]}
+      ],
+      "must_not_know": [
+        {"text": "Aru must not infer unrecorded household surplus, worker consent, or seed status from the physical presence of grain.", "source_refs": ["papsenai-polity", "shield-levy-event"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The paired fired-clay tallies and four-bay landing are one authored local practice, not a universal Circle currency, citywide office, or standard building plan.",
+      "source_refs": ["stormshield-circles"]
+    },
+    {
+      "text": "The fixture's central recall, failed carts, characters, and outcome branches are playable possibilities rather than adopted Kalsa history.",
+      "source_refs": ["canon-policy"]
+    },
+    {
+      "text": "The narration may show that different allocations consume different capacities, but no character or ending proves the globally optimal shield future.",
+      "source_refs": ["kaos-foundation", "narrow-shield-event"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which Ti'asantatca authorities normally mediate disputes between city store allocation, tribal contribution, and Circle operational need?",
+      "blocks_training": false,
+      "notes": "The fixture uses a temporary delivery delegate, station witness, and offscreen Circle lead without canonizing a permanent city office."
+    },
+    {
+      "question": "What measures, ration intervals, and common staple forms are used across Papsenai stores?",
+      "blocks_training": false,
+      "notes": "The fixture stays with recognizable sacks, bowls, loads, condition, and use rather than naming a universal measure or currency."
+    }
+  ]
+}

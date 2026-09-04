@@ -1,0 +1,543 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "kalsa-ledger-stormshield-provisions-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/kalsa/ledger-stormshield-provisions-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/kalsa/ledger-stormshield-provisions-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ledger-stormshield-provisions-v0.outer-road-provision-recall",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a material-allocation dispute below Ti'asantatca's outer-road Stormshield station.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for the provisioning landing, ordinary issue work, the central recall, the labor-and-promise classification dispute, final release, and four ending families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the empty landing geometry, worker introductions, each choice layer, the arriving order, each fold that changes the visible account, the final threshold, and each ending family. The order-board arrival and the moment the Circle's narrower operational message reaches the stair receive distinct frames.",
+    "prompting_rule": "Each base image prompt restates the visible landing geometry, materials, light, people, and props needed for that frame. Specialized objects are described in ordinary visual language. Continuity notes remain tooling constraints and are excluded from assembled prompts.",
+    "global_style_cue": "Style: hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, strong readable silhouettes, storm-muted blue-gray stone and cloth, warm amber lamplight, restrained magical ambiguity, expressive work-worn faces and hands, abstract unlettered record marks, cinematic framing designed for playable story screens.",
+    "prompt_assembly_rule": "Assemble every image prompt from the global_style_cue, the scene base_image_prompt, visual refs only for named characters or groups actually visible under the current trigger, and triggered state_image_modifiers or global_branch_image_modifiers. Exclude absent refs and all visual_continuity_notes. Use the scene_set camera and staging coordinates as geometry authority.",
+    "scene_set_guidance": {
+      "current_mode": "structured_layout_authority",
+      "scope_reason": "The fixture returns to one landing from several controlled angles and moves sacks, tally halves, the store bar, bowls, and witnesses across folds. The embedded measured layout defines fixed geometry, cameras, routes, and staging slots for every frame.",
+      "future_scene_set_need": "For higher visual consistency than the structured layout diagram alone provides, translate these coordinates into a simple blockout with the same camera ids and use image generation as the painterly pass."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "ledger_landing_establishing",
+        "ink_anchor": "start",
+        "camera_id": "cart_arch_wide",
+        "base_image_prompt": "Wide empty establishing view of a roofed stone provisioning landing beneath a high-fantasy storm station. A broad arched cart entrance fills the east wall, hung with a heavy waxed storm curtain breathing inward. Immediately south of the arch, a grated floor drain and raised wooden slat rack hold dark wet marks. Four barred dry-store bays line the north wall, each with a different simple geometric clay marker above it. A waist-high timber tally bench stands in the center between arch and store, covered with paired fired-clay pieces on pegs. A narrow dry stair rises from the northwest corner to a warm recovery room above. A small iron shortage clapper hangs on the arch jamb. Cold blue-gray storm light enters from the arch and meets amber oil-lamp light over the bench; sacks, folded stormcloth, lamp-fat jars, bowls, and one raised stair shelf make the supply uses physically distinct.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The landing is a 9 by 6 metre rectangle: east cart arch, southeast drain and rack, north four-bay store, northwest dry stair, central bench, clapper on the east arch jamb.",
+          "Clay marks are abstract impressed shapes and not readable modern writing.",
+          "The Stormshield itself is not shown as a visible glowing dome."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_morning_people",
+        "ink_anchor": "morning_people",
+        "camera_id": "bench_three_quarter",
+        "base_image_prompt": "Medium-wide morning work frame inside the stone provision landing. The east cart arch and wet rack remain behind the workers; four barred bays line the north wall; the central tally bench separates cart from store; the narrow dry stair rises at northwest. Seni Var, a sturdy umber-skinned human woman in her late thirties with a square face, two short blunt horn nubs, dark hair wrapped close, a moss-brown wool work coat, clay-red tally sash, and wax-stained hands, stands behind the bench sorting paired clay pieces. Pera Oth, a stocky older human woman with deep brown skin, silver hair under a cream head wrap, saffron quilted vest, green apron, and three empty clay broth bowls, descends the stair. Kalo Rei, a lean copper-brown human man in his twenties with one small horn nub, rain-dark curls, a slate-blue shoulder cloth, grain-dusted tunic, wrapped calves, and work boots, shoulders a dry grain sack just inside the arch; a waxed packet holding his household tally hangs at his belt. Warm lamp light centers their ordinary work while cold storm light rims the cart route.",
+        "visible_characters": [
+          {"agent_id": "seni_var", "default_stance": "upright behind the tally bench, sorting clay halves", "visual_ref": "visual_character_refs.characters.seni_var"},
+          {"agent_id": "pera_oth", "default_stance": "descending the dry stair with three empty bowls", "visual_ref": "visual_character_refs.characters.pera_oth"},
+          {"agent_id": "kalo_rei", "default_stance": "inside the cart arch with a grain sack on one shoulder", "visual_ref": "visual_character_refs.characters.kalo_rei"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Introduce Seni, Pera, Kalo, the household copy, and all fixed routes before the first choice.",
+          "Character bovine-associated features are individualized and remain fully human."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_morning_issue_choice",
+        "ink_anchor": "morning_issue_choice",
+        "camera_id": "bench_choice_overview",
+        "base_image_prompt": "Readable choice composition inside a rectangular stone provision landing: the central tally bench offers two matching geometric clay halves; the southeast wet rack holds Kalo's tied grain sack within Seni's reach; Pera presents empty broth bowls beside the attendant bay; the raised shelf at the northwest stair holds a sealed relief ration. Four barred store bays line the north wall, the east cart arch shows cold storm light, and an iron clapper hangs on its jamb. Seni Var, sturdy umber-skinned woman with short horn nubs, wrapped dark hair, moss-brown work coat and red tally sash, stands between the four physical tasks. Pera Oth, stocky older woman in saffron vest and green apron, waits with bowls near the stair. Kalo Rei, lean young man in grain-dusted work clothes and blue shoulder cloth, stands by the sack with a waxed tally packet at his belt.",
+        "visible_characters": [
+          {"agent_id": "seni_var", "default_stance": "centered behind the bench with hands poised between tally, sack, bowls, and relief shelf", "visual_ref": "visual_character_refs.characters.seni_var"},
+          {"agent_id": "pera_oth", "default_stance": "near the stair holding empty bowls", "visual_ref": "visual_character_refs.characters.pera_oth"},
+          {"agent_id": "kalo_rei", "default_stance": "beside the grain sack at the wet rack", "visual_ref": "visual_character_refs.characters.kalo_rei"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "All four opening affordances are visible from one camera without changing the room layout."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_morning_fold",
+        "ink_anchor": "morning_fold",
+        "camera_id": "bench_three_quarter",
+        "base_image_prompt": "Ordinary provision work after the first issue inside a rectangular stone landing: east cart arch with storm curtain; southeast drain and wet rack; north wall with four barred bays; central tally bench; northwest dry stair and raised relief shelf. Seni Var, a sturdy umber-skinned woman with short horn nubs, wrapped dark hair, moss-brown work coat, and clay-red tally sash, hangs abstract clay tallies over separate bays. Pera Oth, a stocky older woman in a cream head wrap, saffron vest, and green apron, washes broth bowls at the grated drain. Kalo Rei, a lean copper-brown young man with rain-dark curls, one small horn nub, a slate-blue shoulder cloth, and grain-dusted tunic, brushes loose grain from the cart bed into a hand measure. Warm amber work light and cold blue storm light divide the calm morning rhythm.",
+        "visible_characters": [
+          {"agent_id": "seni_var", "default_stance": "at the bench hanging tallies over separate bays", "visual_ref": "visual_character_refs.characters.seni_var"},
+          {"agent_id": "pera_oth", "default_stance": "at the southeast drain washing bowls", "visual_ref": "visual_character_refs.characters.pera_oth"},
+          {"agent_id": "kalo_rei", "default_stance": "at the east cart edge brushing grain into a measure", "visual_ref": "visual_character_refs.characters.kalo_rei"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "paired_record >= 3", "modifier_prompt": "Two matching fired-clay halves lie joined on the tally bench, their abstract notches and impressed shapes visibly aligned."},
+          {"trigger": "wet_loss_known >= 2", "modifier_prompt": "A shallow drying tray on the slatted rack holds one separated patch of darker clumped grain beside sound loose grain."},
+          {"trigger": "worker_scope >= 3", "modifier_prompt": "Two empty bowls hang from pegs directly beneath the attendant-bay marker as visible work evidence."},
+          {"trigger": "attendant_issue <= 1", "modifier_prompt": "The attendant bay contains visibly fewer grain scoops after two meals have been issued."},
+          {"trigger": "relief_readiness >= 3", "modifier_prompt": "A tightly sealed grain ration sits on the raised shelf beside the dry stair, ready for an arriving cohort."}
+        ],
+        "visual_continuity_notes": [
+          "Opening branch effects appear as additive object changes, not rearranged architecture.",
+          "The following entrance must preserve the pre-arrival room before Aru appears."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_recall_arrival",
+        "ink_anchor": "recall_arrival",
+        "camera_id": "arch_inward_medium",
+        "base_image_prompt": "A central store delegate arrives through the broad east cart arch of a roofed stone provision landing. Aru Venn, a tall dark-brown-skinned human woman in her forties with a smooth hairline, long black braid, narrow tired face, indigo waxed storm cloak, fitted ochre store coat, and square fired-clay order-board held to her chest, stands in cold storm light at the threshold. Across the central timber tally bench, Seni Var in moss-brown coat and red tally sash faces her. Pera Oth pauses near the northwest stair with empty bowls; Kalo Rei stands beside the southeast rack and grain sack. Four barred store bays line the north wall behind Seni. The frame centers the broad unlettered order-board entering a room already divided into four uses.",
+        "visible_characters": [
+          {"agent_id": "seni_var", "default_stance": "behind the bench facing the arriving order", "visual_ref": "visual_character_refs.characters.seni_var"},
+          {"agent_id": "pera_oth", "default_stance": "paused near the dry stair with bowls", "visual_ref": "visual_character_refs.characters.pera_oth"},
+          {"agent_id": "kalo_rei", "default_stance": "beside the rack and delivered sack", "visual_ref": "visual_character_refs.characters.kalo_rei"},
+          {"agent_id": "aru_venn", "default_stance": "inside the cart arch holding the order-board to her chest", "visual_ref": "visual_character_refs.characters.aru_venn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Aru enters only after the morning fold; earlier frames exclude her.",
+          "The order-board uses broad abstract impressed geometry, not readable script."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_recall_order_choice",
+        "ink_anchor": "recall_order_choice",
+        "camera_id": "bench_order_overhead",
+        "base_image_prompt": "High three-quarter view over the central tally bench in a stone provision landing. A square clay order-board lies beneath four smaller station tally pegs corresponding to current watch, relief stair ration, attendant issue, and contributor return. The barred store bays occupy the north wall; the east arch and iron shortage clapper lie to the right; the southeast wet rack and grain sack lie below; the northwest stair shelf and sealed relief ration lie to the left. Seni Var, sturdy umber-skinned woman with wrapped dark hair, short horn nubs, moss-brown work coat, red tally sash, and wax-stained hands, hovers between records and store bar. Aru Venn, tall dark-brown-skinned woman with long black braid, indigo storm cloak, ochre store coat, and clay order-board, stands on the arch side. Pera Oth, stocky older woman with cream head wrap, saffron vest, green apron, and bowls, and Kalo Rei, lean copper-brown young man with slate-blue shoulder cloth, grain-dusted tunic, household packet, and hand measure, flank the two routes. The composition offers record comparison, one-sack transfer, barred refusal with clapper, and a count of supporting bodies as four visible actions.",
+        "visible_characters": [
+          {"agent_id": "seni_var", "default_stance": "north side of bench, hands between order and store bar", "visual_ref": "visual_character_refs.characters.seni_var"},
+          {"agent_id": "pera_oth", "default_stance": "northwest near stair and bowls", "visual_ref": "visual_character_refs.characters.pera_oth"},
+          {"agent_id": "kalo_rei", "default_stance": "southeast near rack and hand measure", "visual_ref": "visual_character_refs.characters.kalo_rei"},
+          {"agent_id": "aru_venn", "default_stance": "east side of bench beside cart route", "visual_ref": "visual_character_refs.characters.aru_venn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The camera preserves the east-to-north load route and both the stair and cart exits."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_recall_fold",
+        "ink_anchor": "recall_fold",
+        "camera_id": "store_wall_wide",
+        "base_image_prompt": "Wide view from the south wall toward four barred dry-store bays on the north wall of a 9 by 6 metre stone landing. The central tally bench holds a broad clay recall board and several smaller geometric tallies. Seni Var, sturdy umber-skinned woman with wrapped dark hair, short horn nubs, moss-brown coat, and red tally sash, stands between bench and store bar. Aru Venn, tall dark-brown-skinned woman with long black braid, indigo storm cloak, ochre store coat, and square order-board, occupies the east cart side. Pera Oth, stocky older woman with cream head wrap, saffron vest, green apron, and bowls, waits near the northwest dry stair. Kalo Rei, lean copper-brown young man with one small horn nub, slate-blue shoulder cloth, grain-dusted tunic, hand measure, and waxed household packet, stands near the southeast rack. The four bays remain physically distinct under warm lamps while cold storm light enters through the east arch.",
+        "visible_characters": [
+          {"agent_id": "seni_var", "default_stance": "between tally bench and barred store", "visual_ref": "visual_character_refs.characters.seni_var"},
+          {"agent_id": "pera_oth", "default_stance": "near the stair with bowls", "visual_ref": "visual_character_refs.characters.pera_oth"},
+          {"agent_id": "kalo_rei", "default_stance": "near the wet rack with measure and household packet", "visual_ref": "visual_character_refs.characters.kalo_rei"},
+          {"agent_id": "aru_venn", "default_stance": "east cart side of the bench", "visual_ref": "visual_character_refs.characters.aru_venn"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "central_transfer >= 2", "modifier_prompt": "One receipted sound grain sack stands beside Aru at the cart arch, separated from the remaining bays."},
+          {"trigger": "shortage_signal >= 2", "modifier_prompt": "The small iron clapper swings on the arch jamb and two distant silhouettes turn toward the landing routes."},
+          {"trigger": "paired_record >= 3", "modifier_prompt": "The broad recall board lies beneath several narrower paired clay tallies whose different geometric marks remain visibly separate."},
+          {"trigger": "aru_confidence >= 3", "modifier_prompt": "Aru stands square to the store bar with one hand extended toward the bays and the order-board held high."},
+          {"trigger": "aru_confidence <= 1", "modifier_prompt": "Aru bends over her order-board, rereading its sparse marks with a tightened, uncertain posture."},
+          {"trigger": "worker_scope >= 3", "modifier_prompt": "Empty bowls, a grain hand measure, and a small runner ration token are arranged on the bench under the attendant marker."}
+        ],
+        "visual_continuity_notes": [
+          "Aru's touch targets the attendant and contributor pegs while the four bays remain barred unless a branch transferred a sack."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_who_counts_choice",
+        "ink_anchor": "who_counts_choice",
+        "camera_id": "bench_people_medium",
+        "base_image_prompt": "Medium ensemble frame across the tally bench toward the north store wall. Seni Var, sturdy umber-skinned woman with short horn nubs, wrapped dark hair, moss-brown coat, red tally sash, and wax-stained hands, stands behind the bench with one hand open. Kalo Rei, lean copper-brown young man with rain-dark curls, one horn nub, blue shoulder cloth, grain-dusted tunic, hand measure, and waxed household tally packet, faces her from the southeast side. Pera Oth, stocky older woman with deep brown skin, cream head wrap, saffron vest, green apron, empty bowls, and a small runner token, stands by the northwest stair. Aru Venn, tall dark-brown-skinned woman with smooth hairline, long black braid, indigo storm cloak, ochre store coat, and square clay order-board, stands on the east cart side with one hand near the attendant and contributor pegs. The bench offers four visible actions: join matching clay halves, hang bowls and tools beneath the support marker, roll the sealed relief sack from the stair shelf toward the cart, or reach the iron clapper on the arch jamb. Warm lamp light isolates the objects while storm light sharpens the institutional distance.",
+        "visible_characters": [
+          {"agent_id": "seni_var", "default_stance": "behind the bench with open hand toward Kalo's packet", "visual_ref": "visual_character_refs.characters.seni_var"},
+          {"agent_id": "pera_oth", "default_stance": "near stair with bowls and ration token", "visual_ref": "visual_character_refs.characters.pera_oth"},
+          {"agent_id": "kalo_rei", "default_stance": "southeast side of bench with hand measure", "visual_ref": "visual_character_refs.characters.kalo_rei"},
+          {"agent_id": "aru_venn", "default_stance": "east side with order-board and hand near two pegs", "visual_ref": "visual_character_refs.characters.aru_venn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "All labor-classification actions are staged within arm's reach of Seni from her bench position except the clapper, reached by a short clear walk east."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_classification_fold",
+        "ink_anchor": "classification_fold",
+        "camera_id": "stair_to_arch_wide",
+        "base_image_prompt": "Wide diagonal view from the northwest dry stair across a rectangular stone provisioning landing to the broad east cart arch. Four barred bays run along the north wall; the central timber bench holds a broad central order and several smaller tallies; the southeast drain and slatted wet rack hold sacks and a shallow tray; the iron shortage clapper hangs on the far arch jamb. Seni Var, sturdy umber-skinned woman with short horn nubs, wrapped dark hair, moss coat, and red tally sash, stands at the center bench. Pera Oth, stocky older woman in cream head wrap, saffron vest, and green apron, stands beside the stair. Kalo Rei, lean copper-brown young man with blue shoulder cloth, grain-dusted tunic, and household packet, occupies the contributor side. Aru Venn, tall dark-brown-skinned woman with long braid, indigo cloak, ochre coat, and square order-board, occupies the outgoing cart side. Warm stair light, amber bench lamps, and cold storm light create three depth planes. The frame shows whether relief remains on the shelf, how many sacks wait at the arch, whether clay halves are joined, and whether witnesses have entered either route.",
+        "visible_characters": [
+          {"agent_id": "seni_var", "default_stance": "centered at the tally bench", "visual_ref": "visual_character_refs.characters.seni_var"},
+          {"agent_id": "pera_oth", "default_stance": "northwest by the dry stair", "visual_ref": "visual_character_refs.characters.pera_oth"},
+          {"agent_id": "kalo_rei", "default_stance": "south side of bench near contributor evidence", "visual_ref": "visual_character_refs.characters.kalo_rei"},
+          {"agent_id": "aru_venn", "default_stance": "east side beside outgoing sacks", "visual_ref": "visual_character_refs.characters.aru_venn"},
+          {"agent_id": "landing_witnesses", "default_stance": "absent unless the shortage signal trigger gathers them at the stair and cart arch", "visibility_trigger": "shortage_signal >= 3", "visual_ref": "visual_character_refs.groups.landing_witnesses"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "paired_record >= 5", "modifier_prompt": "Kalo's matching clay halves sit joined above the contributor-return marker in the center of the bench."},
+          {"trigger": "kalo_standing >= 4", "modifier_prompt": "Kalo stands level with the bench, one hand beside the paired household record; the cart remains behind him at the arch."},
+          {"trigger": "worker_scope >= 4", "modifier_prompt": "Bowls, hand measure, and ration token form a clear row beneath the attendant marker."},
+          {"trigger": "relief_readiness >= 3", "modifier_prompt": "The sealed relief sack remains high and dry on the raised stair shelf."},
+          {"trigger": "relief_readiness <= 0", "modifier_prompt": "The stair shelf is bare and a crossed geometric tally hangs beneath it."},
+          {"trigger": "central_transfer >= 4", "modifier_prompt": "Two sound grain sacks stand in an orderly outgoing row at the east cart arch."},
+          {"trigger": "shortage_signal >= 3", "modifier_prompt": "Several work-worn household witnesses gather at both the dry stair and cart arch, keeping clear of the load route while watching the bench."},
+          {"trigger": "wet_loss_known >= 2", "modifier_prompt": "A shallow drying tray separates visibly dark clumped grain from sound pale grain on the southeast rack."}
+        ],
+        "visual_continuity_notes": [
+          "Conditional witness refs are included only when shortage_signal >= 3.",
+          "The Circle lead remains off-frame above; the operational message arrives by a runner's voice from the stair."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_final_release",
+        "ink_anchor": "final_choice",
+        "camera_id": "store_bar_threshold",
+        "base_image_prompt": "Final material threshold inside a 9 by 6 metre stone provisioning landing. The camera faces Seni Var, sturdy umber-skinned woman with short horn nubs, wrapped dark hair, moss coat, and red tally sash, in profile between the central bench and horizontal wooden bar securing four north-wall bays. To her east, Aru Venn, tall dark-brown-skinned woman with long braid, indigo cloak, ochre store coat, and square order-board, waits beside the cart arch and any outgoing sacks. To the northwest, Pera Oth, stocky older woman in cream head wrap, saffron vest, and green apron, stands below the dry stair near the sealed relief shelf and bowls. Kalo Rei, lean copper-brown young man with one horn nub, blue shoulder cloth, grain-dusted tunic, and household packet, holds his waxed copy at the south side of the bench. The iron shortage clapper hangs along a clear east aisle from Seni. A broad order, paired or separated household halves, support objects, wet-loss tray, and distinct bay markers make the choice readable. Amber light on the bar and cold storm light on the outgoing route divide present need from future capacity.",
+        "visible_characters": [
+          {"agent_id": "seni_var", "default_stance": "in profile with one hand near the store bar and one near the tally bench", "visual_ref": "visual_character_refs.characters.seni_var"},
+          {"agent_id": "pera_oth", "default_stance": "below the dry stair near bowls and relief shelf", "visual_ref": "visual_character_refs.characters.pera_oth"},
+          {"agent_id": "kalo_rei", "default_stance": "south of bench holding the household copy", "visual_ref": "visual_character_refs.characters.kalo_rei"},
+          {"agent_id": "aru_venn", "default_stance": "east beside outgoing cart route and order-board", "visual_ref": "visual_character_refs.characters.aru_venn"},
+          {"agent_id": "landing_witnesses", "default_stance": "at both routes only when a public shortage signal has gathered them", "visibility_trigger": "shortage_signal >= 3", "visual_ref": "visual_character_refs.groups.landing_witnesses"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "central_transfer >= 4", "modifier_prompt": "Two receipted grain sacks already stand beyond the bench on the outgoing cart route."},
+          {"trigger": "shortage_signal >= 3", "modifier_prompt": "Witnesses line both routes at a respectful distance and the iron clapper still swings."},
+          {"trigger": "relief_readiness <= 0", "modifier_prompt": "The raised stair shelf is empty, leaving only a crossed relief tally."},
+          {"trigger": "paired_record >= 5", "modifier_prompt": "The matched contributor halves occupy the center of the bench beside Kalo's steady hand."}
+        ],
+        "visual_continuity_notes": [
+          "The bar opens all four bays together physically; Seni can still release individual sacks while keeping the bar attended and rehung.",
+          "Ending prompts use the same object positions and camera coordinate system."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_ending_bounded_release",
+        "ink_anchor": "ending_bounded_release_success|ending_bounded_release_cost",
+        "camera_id": "arch_outgoing_medium",
+        "base_image_prompt": "Bounded-release aftermath viewed from the east cart arch into a rectangular stone landing. One sound grain sack crosses the threshold toward Aru Venn, tall dark-brown-skinned woman with long braid, indigo storm cloak, ochre coat, and clay order-board. Seni Var, sturdy umber-skinned woman with short horn nubs, wrapped dark hair, moss coat, and red tally sash, rehanges the wooden bar across three preserved north-wall bays. Pera Oth, stocky older woman in cream head wrap, saffron vest, and green apron, remains beside a sealed relief sack on the northwest stair shelf. Kalo Rei, lean copper-brown young man with one horn nub, blue shoulder cloth, grain-dusted tunic, and waxed household packet, stands beside the contributor-return marker. The broad order-board and smaller clay tallies lie on the central bench under amber light; the southeast wet rack and drain remain clear of the dry route.",
+        "visible_characters": [
+          {"agent_id": "seni_var", "default_stance": "rehanging the store bar after one bounded sack leaves", "visual_ref": "visual_character_refs.characters.seni_var"},
+          {"agent_id": "pera_oth", "default_stance": "beside the preserved relief sack and bowls", "visual_ref": "visual_character_refs.characters.pera_oth"},
+          {"agent_id": "kalo_rei", "default_stance": "at contributor peg with household copy", "visual_ref": "visual_character_refs.characters.kalo_rei"},
+          {"agent_id": "aru_venn", "default_stance": "at the cart threshold receiving one sack", "visual_ref": "visual_character_refs.characters.aru_venn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Success shows matched copies traveling with the bounded receipt; cost shows only the station board holding the narrower classification."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_ending_immediate_watch",
+        "ink_anchor": "ending_immediate_watch_success|ending_immediate_watch_cost",
+        "camera_id": "rack_to_cart_medium",
+        "base_image_prompt": "Immediate-watch transfer aftermath across the southeast rack toward the east cart arch of a rectangular stone landing. Seni Var, sturdy umber-skinned woman with short horn nubs, wrapped dark hair, moss coat, and red tally sash, selects grain from an open current-watch bay and an open contributor-return bay. Aru Venn, tall dark-brown-skinned woman with long braid, indigo cloak, ochre store coat, and clay order-board, receives the load. Kalo Rei, lean copper-brown young man with one horn nub, blue shoulder cloth, grain-dusted tunic, and household copy, stands at the central bench beside an empty return space. Pera Oth, stocky older woman in cream head wrap, saffron vest, and green apron, guards a small remaining bowl issue near the northwest stair. A shallow drying tray, sealed relief shelf, geometric receipts, and two distinct source markers remain visible in warm and storm light.",
+        "visible_characters": [
+          {"agent_id": "seni_var", "default_stance": "between two opened bays marking both sources", "visual_ref": "visual_character_refs.characters.seni_var"},
+          {"agent_id": "pera_oth", "default_stance": "near stair holding the remaining bowl issue", "visual_ref": "visual_character_refs.characters.pera_oth"},
+          {"agent_id": "kalo_rei", "default_stance": "beside an empty contributor-return position with household copy", "visual_ref": "visual_character_refs.characters.kalo_rei"},
+          {"agent_id": "aru_venn", "default_stance": "at arch receiving a two-source load", "visual_ref": "visual_character_refs.characters.aru_venn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Success keeps damp grain isolated; cost visibly mixes a dark clumped portion into a sound sack."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_ending_support_web",
+        "ink_anchor": "ending_support_web_success|ending_support_web_cost",
+        "camera_id": "stair_support_medium",
+        "base_image_prompt": "Support-web aftermath viewed from the northwest dry stair toward the central bench and east cart arch. A sealed relief sack remains on the raised shelf beside Pera Oth, stocky older deep-brown-skinned woman in cream head wrap, saffron vest, and green apron. Bowls, hand measure, and runner token hang under the attendant marker. Seni Var, sturdy umber-skinned woman with short horn nubs, wrapped dark hair, moss coat, and red tally sash, stands at the iron shortage clapper while a reduced current grain sack rests on the outgoing route. Kalo Rei, lean copper-brown young man with one horn nub, blue shoulder cloth, grain-dusted tunic, and household packet, remains beside the contributor tally. Aru Venn, tall dark-brown-skinned woman with long braid, indigo cloak, ochre store coat, and square order-board, waits at the arch with a short load. Four north-wall bays, central bench, southeast drain, and clear carrying routes remain visible.",
+        "visible_characters": [
+          {"agent_id": "seni_var", "default_stance": "near the shortage clapper after releasing a reduced current sack", "visual_ref": "visual_character_refs.characters.seni_var"},
+          {"agent_id": "pera_oth", "default_stance": "guarding relief shelf and support issue", "visual_ref": "visual_character_refs.characters.pera_oth"},
+          {"agent_id": "kalo_rei", "default_stance": "beside contributor tally at the bench", "visual_ref": "visual_character_refs.characters.kalo_rei"},
+          {"agent_id": "aru_venn", "default_stance": "at arch beside a visibly short outgoing load", "visual_ref": "visual_character_refs.characters.aru_venn"},
+          {"agent_id": "landing_witnesses", "default_stance": "lined at stair and arch under successful public signal", "visibility_trigger": "ending_label == support_web_success", "visual_ref": "visual_character_refs.groups.landing_witnesses"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Success includes witnesses, sealed relief, and full support evidence; cost thins the witness line and shows Pera beginning a hidden bowl cache."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_ending_total_recall",
+        "ink_anchor": "ending_total_recall_clean|ending_total_recall_contested",
+        "camera_id": "empty_bays_wide",
+        "base_image_prompt": "Total-recall aftermath in a roofed stone provisioning landing. All four north-wall bays stand open and empty. A cart beyond the broad east arch carries grain sacks, folded dry cloth, lamp-fat jars, and sealed ration bundles beneath Aru Venn, a tall dark-brown-skinned woman with long black braid, indigo cloak, ochre store coat, and square order-board. Seni Var, sturdy umber-skinned woman with short horn nubs, wrapped dark hair, moss coat, and red tally sash, stands beside the lifted wooden bar and bare central bench. Pera Oth, stocky older woman in cream head wrap, saffron vest, and green apron, holds one empty bowl below a bare northwest stair shelf. Kalo Rei, lean copper-brown young man with one horn nub, blue shoulder cloth, grain-dusted tunic, and waxed tally half, stands near the arch; the return position beside him is empty. Cold storm light dominates while one amber lamp remains over the records.",
+        "visible_characters": [
+          {"agent_id": "seni_var", "default_stance": "beside lifted bar and emptied store", "visual_ref": "visual_character_refs.characters.seni_var"},
+          {"agent_id": "pera_oth", "default_stance": "under bare relief shelf with empty bowl", "visual_ref": "visual_character_refs.characters.pera_oth"},
+          {"agent_id": "kalo_rei", "default_stance": "near arch holding the household half beside an empty return position", "visual_ref": "visual_character_refs.characters.kalo_rei"},
+          {"agent_id": "aru_venn", "default_stance": "at the loaded outgoing cart with order-board", "visual_ref": "visual_character_refs.characters.aru_venn"},
+          {"agent_id": "landing_witnesses", "default_stance": "present at both routes only in the contested ending", "visibility_trigger": "ending_label == total_recall_contested", "visual_ref": "visual_character_refs.groups.landing_witnesses"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Clean and contested variants share the same emptied material result; only public witness, retained copies, and posture differ."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "pair_tally_visual",
+        "trigger": "branch_label == pair_contributor_tally",
+        "apply_to_visual_scene_ids": ["ledger_morning_issue_choice", "ledger_morning_fold", "ledger_recall_fold"],
+        "modifier_prompt": "Seni aligns two matching fired-clay halves on the bench while Kalo's hand remains beside the waxed carrying cloth."
+      },
+      {
+        "modifier_id": "inspect_condition_visual",
+        "trigger": "branch_label == inspect_load_condition",
+        "apply_to_visual_scene_ids": ["ledger_morning_issue_choice", "ledger_morning_fold", "ledger_ending_immediate_watch"],
+        "modifier_prompt": "Seni's fingers separate dark clumped damp grain into a shallow drying tray beside pale free-running grain."
+      },
+      {
+        "modifier_id": "feed_support_visual",
+        "trigger": "branch_label == feed_support_workers",
+        "apply_to_visual_scene_ids": ["ledger_morning_issue_choice", "ledger_morning_fold", "ledger_recall_fold"],
+        "modifier_prompt": "Pera and Kalo hold newly emptied bowls while their meal marks hang under the attendant-bay symbol."
+      },
+      {
+        "modifier_id": "stage_relief_visual",
+        "trigger": "branch_label == stage_relief_ration",
+        "apply_to_visual_scene_ids": ["ledger_morning_issue_choice", "ledger_morning_fold", "ledger_recall_arrival"],
+        "modifier_prompt": "The sealed relief ration sits prominently on the raised shelf beside the dry stair, clearly visible from the east arch."
+      },
+      {
+        "modifier_id": "compare_recall_visual",
+        "trigger": "branch_label == compare_recall_scope",
+        "apply_to_visual_scene_ids": ["ledger_recall_order_choice", "ledger_recall_fold"],
+        "modifier_prompt": "Aru's broad square order-board lies beneath four smaller tallies while Seni points to each omitted use and Aru bends closer to reread."
+      },
+      {
+        "modifier_id": "send_current_visual",
+        "trigger": "branch_label == send_current_issue",
+        "apply_to_visual_scene_ids": ["ledger_recall_order_choice", "ledger_recall_fold", "ledger_final_release"],
+        "modifier_prompt": "One sound sack with a fresh clay receipt stands on the outgoing cart route beside Aru, and the current-watch bay is visibly shallower."
+      },
+      {
+        "modifier_id": "hold_signal_visual",
+        "trigger": "branch_label == hold_and_signal_shortage",
+        "apply_to_visual_scene_ids": ["ledger_recall_order_choice", "ledger_recall_fold", "ledger_classification_fold"],
+        "modifier_prompt": "Seni keeps the horizontal store bar in place while the small iron clapper swings on the arch jamb and nearby workers turn toward the sound."
+      },
+      {
+        "modifier_id": "count_bodies_visual",
+        "trigger": "branch_label == count_supporting_bodies",
+        "apply_to_visual_scene_ids": ["ledger_recall_order_choice", "ledger_recall_fold", "ledger_classification_fold"],
+        "modifier_prompt": "Pera places bowls and a runner token on the bench while Kalo adds his hand measure and household packet beside the four bay markers."
+      },
+      {
+        "modifier_id": "household_claim_visual",
+        "trigger": "branch_label == establish_household_claim",
+        "apply_to_visual_scene_ids": ["ledger_who_counts_choice", "ledger_classification_fold", "ledger_final_release"],
+        "modifier_prompt": "The matching contributor halves sit joined in the bench center; Kalo stands level with Aru and keeps one hand beside the household copy."
+      },
+      {
+        "modifier_id": "support_work_visual",
+        "trigger": "branch_label == count_support_as_shield_work",
+        "apply_to_visual_scene_ids": ["ledger_who_counts_choice", "ledger_classification_fold", "ledger_final_release"],
+        "modifier_prompt": "Bowls, grain measure, and runner ration token hang in a visible row beneath the attendant marker while Pera faces Aru squarely."
+      },
+      {
+        "modifier_id": "spend_relief_visual",
+        "trigger": "branch_label == spend_relief_ration",
+        "apply_to_visual_scene_ids": ["ledger_who_counts_choice", "ledger_classification_fold", "ledger_final_release"],
+        "modifier_prompt": "The raised stair shelf is bare; its relief tally bears one crossed line, and the sealed ration stands beside Aru's outgoing sacks."
+      },
+      {
+        "modifier_id": "escalate_signal_visual",
+        "trigger": "branch_label == escalate_shortage_signal",
+        "apply_to_visual_scene_ids": ["ledger_who_counts_choice", "ledger_classification_fold", "ledger_final_release"],
+        "modifier_prompt": "The iron clapper swings a second time as work-worn household witnesses gather at the stair and cart arch while keeping the carrying lane open."
+      },
+      {
+        "modifier_id": "bounded_release_success_visual",
+        "trigger": "ending_label == bounded_release_success",
+        "apply_to_visual_scene_ids": ["ledger_ending_bounded_release"],
+        "modifier_prompt": "Three bays remain barred with distinct markers; the sealed relief sack stays on its shelf; Kalo's household copy and Aru's bounded receipt visibly match the one departing sack."
+      },
+      {
+        "modifier_id": "bounded_release_cost_visual",
+        "trigger": "ending_label == bounded_release_cost",
+        "apply_to_visual_scene_ids": ["ledger_ending_bounded_release"],
+        "modifier_prompt": "Aru's outgoing receipt carries the broad order shape while every narrower local tally remains alone on Seni's bench."
+      },
+      {
+        "modifier_id": "immediate_watch_success_visual",
+        "trigger": "ending_label == immediate_watch_success",
+        "apply_to_visual_scene_ids": ["ledger_ending_immediate_watch"],
+        "modifier_prompt": "The damp portion remains isolated in its drying tray; two source markers travel with sound sacks, and Kalo holds a clean copy naming the consumed household return."
+      },
+      {
+        "modifier_id": "immediate_watch_cost_visual",
+        "trigger": "ending_label == immediate_watch_cost",
+        "apply_to_visual_scene_ids": ["ledger_ending_immediate_watch"],
+        "modifier_prompt": "Dark clumped grain slumps into a sound sack on the outgoing route while Pera guards one thin bowl and the source marks lie unaligned."
+      },
+      {
+        "modifier_id": "support_web_success_visual",
+        "trigger": "ending_label == support_web_success",
+        "apply_to_visual_scene_ids": ["ledger_ending_support_web"],
+        "modifier_prompt": "The relief ration remains sealed on the stair shelf, support-work objects form a complete row, witnesses line both routes, and Aru's outgoing load is visibly short."
+      },
+      {
+        "modifier_id": "support_web_cost_visual",
+        "trigger": "ending_label == support_web_cost",
+        "apply_to_visual_scene_ids": ["ledger_ending_support_web"],
+        "modifier_prompt": "Only a few witnesses remain; Pera slides one small covered grain bowl behind folded stormcloth while the cart route fills with a returning authority silhouette."
+      },
+      {
+        "modifier_id": "total_recall_clean_visual",
+        "trigger": "ending_label == total_recall_clean",
+        "apply_to_visual_scene_ids": ["ledger_ending_total_recall"],
+        "modifier_prompt": "The outgoing cart is neatly loaded under one broad order-board; the landing is quiet, every bay and shelf empty, and Pera's bowl contains only hot water."
+      },
+      {
+        "modifier_id": "total_recall_contested_visual",
+        "trigger": "ending_label == total_recall_contested",
+        "apply_to_visual_scene_ids": ["ledger_ending_total_recall"],
+        "modifier_prompt": "Witnesses occupy both routes; Kalo raises the retained household half; Pera leaves the empty bowls on the bench; the full cart departs under visible dispute."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "kalsa_outer_road_provision_landing.scene_set.v0",
+      "geometry_authority_level": "structured_measured_layout_diagram",
+      "coordinate_frame": {
+        "origin": "southwest floor corner",
+        "x_axis": "east toward the cityward cart arch",
+        "y_axis": "north toward the four dry-store bays",
+        "z_axis": "up toward the handoff and recovery floor",
+        "room_dimensions_metres": {"x": 9, "y": 6, "z": 3.2}
+      },
+      "room_model": "Rectangular roofed stone landing beneath the station recovery side. Goods enter at the east cart arch, stop at the southeast drain and rack for condition inspection, cross the central tally bench, enter four north-wall bays, and leave for the station by the northwest dry stair.",
+      "fixed_zones": [
+        {
+          "zone_id": "cityward_cart_arch",
+          "bounds_metres": {"x_min": 8.5, "x_max": 9, "y_min": 1.5, "y_max": 4.5},
+          "visible_form": "broad stone arch with waxed storm curtain and cart stopping line outside",
+          "used_for": "Aru's arrival, outgoing transfers, cart-side witnesses"
+        },
+        {
+          "zone_id": "wet_intake_rack",
+          "bounds_metres": {"x_min": 6.5, "x_max": 8.5, "y_min": 0.3, "y_max": 1.5},
+          "visible_form": "grated stone drain, raised wooden slat rack, drying trays, wet-cloth hooks",
+          "used_for": "condition inspection and isolation of damp grain"
+        },
+        {
+          "zone_id": "tally_bench",
+          "bounds_metres": {"x_min": 3.5, "x_max": 6.2, "y_min": 2.2, "y_max": 3.4},
+          "visible_form": "waist-high timber bench with clay peg board, oil lamps, hand measures, bowls, and order space",
+          "used_for": "record comparison, household standing, labor evidence, receipt transfer"
+        },
+        {
+          "zone_id": "four_bay_dry_store",
+          "bounds_metres": {"x_min": 1, "x_max": 8, "y_min": 5.2, "y_max": 6},
+          "visible_form": "four stone storage recesses with one horizontal wooden security bar and separate geometric clay use markers",
+          "used_for": "current-watch issue, relief ration, attendant issue, contributor return"
+        },
+        {
+          "zone_id": "dry_station_stair",
+          "bounds_metres": {"x_min": 0, "x_max": 1.8, "y_min": 4, "y_max": 6},
+          "visible_form": "narrow roofed stone stair rising northwest with raised sealed-ration shelf at its first turn",
+          "used_for": "station workers, Circle message, relief ration route, stair-side witnesses"
+        },
+        {
+          "zone_id": "shortage_clapper",
+          "bounds_metres": {"x_min": 8.2, "x_max": 8.8, "y_min": 4.5, "y_max": 5.2},
+          "visible_form": "small iron clapper and striker hanging from the north jamb of the east cart arch",
+          "used_for": "public shortage signal"
+        }
+      ],
+      "carrying_routes": [
+        {
+          "route_id": "cart_to_store",
+          "path_metres": [[9, 3], [7.5, 1], [6.8, 2], [6.8, 4.4], [6, 5.2]],
+          "clearance": "two people carrying one sack abreast",
+          "supports": ["delivery", "wet inspection", "accepted storage"]
+        },
+        {
+          "route_id": "store_to_station",
+          "path_metres": [[4, 5.2], [2.2, 4.6], [1, 5.2]],
+          "clearance": "one hand-porter with one sack; no cart or draft team",
+          "supports": ["current issue", "relief ration", "recovery supply"]
+        },
+        {
+          "route_id": "store_to_cart",
+          "path_metres": [[6, 5.2], [5.5, 3.5], [8.7, 3]],
+          "clearance": "two carriers with one sack and clear view from tally bench",
+          "supports": ["central transfer", "bounded release", "total recall"]
+        }
+      ],
+      "camera_slots": [
+        {"camera_id": "cart_arch_wide", "position_metres": [8.5, 3, 2.2], "look_at_metres": [4.2, 4, 1.2], "supports_visual_scene_ids": ["ledger_landing_establishing"]},
+        {"camera_id": "bench_three_quarter", "position_metres": [7.8, 0.8, 1.8], "look_at_metres": [4.5, 3.2, 1.2], "supports_visual_scene_ids": ["ledger_morning_people", "ledger_morning_fold"]},
+        {"camera_id": "bench_choice_overview", "position_metres": [5.3, 1.2, 2.7], "look_at_metres": [4.5, 3.3, 1], "supports_visual_scene_ids": ["ledger_morning_issue_choice"]},
+        {"camera_id": "arch_inward_medium", "position_metres": [4.8, 0.5, 1.8], "look_at_metres": [7.2, 3, 1.4], "supports_visual_scene_ids": ["ledger_recall_arrival"]},
+        {"camera_id": "bench_order_overhead", "position_metres": [5, 2, 2.9], "look_at_metres": [5, 2.8, 0.9], "supports_visual_scene_ids": ["ledger_recall_order_choice"]},
+        {"camera_id": "store_wall_wide", "position_metres": [4.5, 0.4, 1.8], "look_at_metres": [4.5, 5.2, 1.2], "supports_visual_scene_ids": ["ledger_recall_fold"]},
+        {"camera_id": "bench_people_medium", "position_metres": [4.5, 1.2, 1.6], "look_at_metres": [4.8, 3.1, 1.2], "supports_visual_scene_ids": ["ledger_who_counts_choice"]},
+        {"camera_id": "stair_to_arch_wide", "position_metres": [1, 5.2, 2.2], "look_at_metres": [7.2, 2.8, 1.2], "supports_visual_scene_ids": ["ledger_classification_fold"]},
+        {"camera_id": "store_bar_threshold", "position_metres": [4.5, 0.8, 2.2], "look_at_metres": [4.7, 4.3, 1.1], "supports_visual_scene_ids": ["ledger_final_release"]},
+        {"camera_id": "arch_outgoing_medium", "position_metres": [8.7, 3, 1.7], "look_at_metres": [5.8, 4, 1.1], "supports_visual_scene_ids": ["ledger_ending_bounded_release"]},
+        {"camera_id": "rack_to_cart_medium", "position_metres": [5, 0.5, 1.7], "look_at_metres": [7, 3.5, 1.1], "supports_visual_scene_ids": ["ledger_ending_immediate_watch"]},
+        {"camera_id": "stair_support_medium", "position_metres": [1, 5, 1.8], "look_at_metres": [5.2, 3.1, 1.2], "supports_visual_scene_ids": ["ledger_ending_support_web"]},
+        {"camera_id": "empty_bays_wide", "position_metres": [1, 0.5, 1.8], "look_at_metres": [6.5, 4, 1.2], "supports_visual_scene_ids": ["ledger_ending_total_recall"]}
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "bench_to_all_bays",
+          "path": "tally_bench north edge -> unobstructed 1.8 metre aisle -> four_bay_dry_store",
+          "supports": ["Seni's bay custody", "Aru's classification gesture", "final bar decision"]
+        },
+        {
+          "lane_id": "arch_to_relief_shelf",
+          "path": "cityward_cart_arch -> north side of tally_bench -> raised shelf at dry_station_stair",
+          "supports": ["staged relief becomes visible to Aru", "empty relief shelf callbacks"]
+        },
+        {
+          "lane_id": "stair_to_bench",
+          "path": "dry_station_stair first turn -> west side of tally_bench",
+          "supports": ["Pera's arrivals", "Circle message", "stair-side witnesses"]
+        },
+        {
+          "lane_id": "arch_to_clapper",
+          "path": "cart stopping line -> shortage_clapper on north jamb",
+          "supports": ["public signal visible to waiting carriers"]
+        }
+      ],
+      "staging_slots": [
+        {"slot_id": "witness_bench_north", "coordinates_metres": [4.8, 3.8, 0], "default_agent": "seni_var"},
+        {"slot_id": "tender_stair", "coordinates_metres": [1.7, 4.2, 0], "default_agent": "pera_oth"},
+        {"slot_id": "carrier_rack", "coordinates_metres": [7, 1.5, 0], "default_agent": "kalo_rei"},
+        {"slot_id": "delegate_arch", "coordinates_metres": [7.8, 3.4, 0], "default_agent": "aru_venn"},
+        {"slot_id": "delegate_bench_east", "coordinates_metres": [6.4, 3, 0], "default_agent": "aru_venn"},
+        {"slot_id": "stair_witness_line", "coordinates_metres": [1.8, 4.8, 0], "default_agent": "landing_witnesses"},
+        {"slot_id": "arch_witness_line", "coordinates_metres": [8, 2, 0], "default_agent": "landing_witnesses"}
+      ],
+      "branch_persistent_state_anchors": [
+        "position and pairing of household clay tally halves",
+        "condition and location of the damp-grain drying tray",
+        "quantity remaining in each of four store bays",
+        "relief ration present on or absent from the stair shelf",
+        "bowls, hand measure, and runner token under the attendant marker",
+        "number and receipt state of outgoing grain sacks",
+        "horizontal store bar position",
+        "shortage clapper state and gathered witness positions",
+        "Aru's broad order-board and any narrower traveling copies"
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable visual identities for recurring named characters and conditional groups. Include only refs for bodies visible in the rendered frame.",
+    "characters": {
+      "seni_var": "Seni Var: sturdy human woman in her late thirties with umber skin, square face, broad nose, two short blunt horn nubs at the hairline, dark hair wrapped close in brown cloth, alert dark eyes, and strong wax-stained hands. She wears a moss-brown wool work coat with rolled sleeves over an undyed tunic, clay-red tally sash hung with geometric fired-clay pieces, dark loose trousers, and dry leather foot wraps. Her silhouette is upright behind the bench; judgment appears through exact hand placement and an economical raised eyebrow.",
+      "pera_oth": "Pera Oth: stocky human woman in her sixties with deep brown skin, rounded face, broad nose, silver hair fully contained by a cream head wrap, and powerful forearms. She wears a saffron quilted vest, cream work tunic, dark green apron with bowl cloth and spoon loops, loose trousers, and soft dry wraps. Her silhouette leans into practical care; she usually carries clay bowls, a runner token, folded cloth, or a covered ration.",
+      "kalo_rei": "Kalo Rei: lean human man in his twenties with copper-brown skin, long face, broad nostrils, one small horn nub at the right temple and a smooth left hairline, rain-dark curls, and watchful hazel eyes. He wears a grain-dusted brown tunic, slate-blue woven shoulder cloth, narrow belt with waxed household tally packet, close work trousers, wrapped calves, and mud-dark boots. His silhouette bends under sacks but straightens beside named household evidence.",
+      "aru_venn": "Aru Venn: tall human woman in her forties with dark brown skin, smooth hairline, narrow tired face, long black braid, and precise black eyes. She wears an indigo waxed storm cloak over a fitted ochre store coat, dark divided work skirt over leggings, high leather boots, and carries a square fired-clay order-board with abstract impressed marks. Her silhouette is long and forward-moving; urgency appears as a squared stance, raised order-board, and clipped pointing hand."
+    },
+    "groups": {
+      "landing_witnesses": "Landing witnesses: a small mixed group of adult household carriers, station attendants, and upper-stair workers in rain-dark wool cloaks, undyed tunics, aprons, wrapped calves, and work boots; varied human faces and physiques, some with small horn nubs and some with smooth hairlines; hands carry baskets, bowls, folded cloth, or clay tally halves. They stand along the stair and arch edges while keeping the central sack route clear."
+    }
+  },
+  "review_notes": [
+    "No images were generated. The visual plan and BFL prompt batch are the complete visual deliverables for this pass.",
+    "The measured scene_set is the geometry authority for this fixture; final website art should use camera-specific blockout renders derived from these coordinates.",
+    "Prompts use affirmative visible descriptions, individualized human bodies, abstract unlettered record marks, and material storm evidence rather than an unsupported glowing shield.",
+    "Character refs are assembled only when the character or conditional witness group is visible in the current frame."
+  ]
+}
