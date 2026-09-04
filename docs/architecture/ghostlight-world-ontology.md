@@ -35,13 +35,25 @@ not from a model agreeing that the world is deep.
 
 ## Current mechanism
 
-The sealed kernel holds subjects with a label and a kind
-(`Person | Institution | Population`), one affordance (`Speak`), and one action
-(`Speak { text }`). `reduce` checks phase, exact revision-bound opportunity,
-controller identity, and affordance grant, then appends a `DecisionEvent`. There
-is no place, route, resource, relation, fact, commitment, or pressure, no
-precondition on any action, no effect beyond the event itself, and no ingress
-that could admit structure.
+Pass 1 of the widening is landed (`d74d6ad`, `9ddc21f`). The sealed kernel
+holds subjects with a label and a kind (`Person | Institution | Population`),
+one affordance (`Speak`), and one action (`Speak { text }`). `reduce` checks
+phase, exact revision-bound opportunity, controller identity, and affordance
+grant, then appends a `DecisionEvent`. There is still no place, route,
+resource, relation, fact, commitment, or pressure, no precondition on any
+action, and no effect beyond the event itself.
+
+What now exists is the ingress that admits structure without a runtime
+discovery. `world/patch.rs` owns typed `SubjectId`/`EntityId`/`EdgeId`
+namespaces, `Ref<Id>` with `DraftHandle`, and a closed `resolve_declarations`
+that returns the complete `Vec<Mismatch>` before any canonical ID allocates;
+`derive_id` is deterministic over world, command, and handle.
+`CommandBody::AdmitPatch` is Draft-only, its `answers` type is uninhabited, and
+it emits `WorldEffect::PatchAdmitted`; it shares one `admit_resolved` insertion
+owner with genesis. `KernelError::PatchRejected(Vec<Mismatch>)` is the only
+rejection shape. State schema is `foundation.v1`, commit schema `foundation.v2`;
+older stores are refused. Passes 2 through 9 add the components, affordance
+data, boundaries, and scope-digest binding described below.
 
 ## The failure this vocabulary is designed against
 

@@ -2,8 +2,9 @@
 
 ## Current Subgoal
 
-Plan step 6 pass 1 via faculty fan-out. Modeling and Imagination maps are in the
-session scratchpad (`modeling-pass1.md`, `imagination-pass1.md`), not here.
+Plan step 6: pass 1 landed (`d74d6ad` + `9ddc21f`); three Soul follow-ups in
+flight (schema literals, subject-less genesis Mismatch, UnknownCanonical), then
+pass 2. Faculty maps for pass 1 are in the session scratchpad, not here.
 
 ## Working Notes
 

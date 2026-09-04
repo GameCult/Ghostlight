@@ -216,51 +216,52 @@ and proposals but cannot commit on their behalf.
 
 ## Next gate
 
-Ontology v2 is the adopted vocabulary: `34ce8c8` rewrote
-`docs/architecture/ghostlight-world-ontology.md` (twelve components, twenty-nine
-operations under one `WorldPatch`, world-authored affordances with
-preconditions, effect slots, and kernel-entropy outcome bands, four derived
-`CausalBoundary` kinds, scope-digest binding, one `AdmitPatch` for seed and
-elaboration, eighteen proofs). `ghostlight-transition-algebra.md` and
-`ghostlight-multiresolution-agency.md` are teardown evidence. Plan step 6 is
-nine implementation passes, none landed; kernel source is still Speak-only
-(`crates/ghostlight-dungeon/src/world/mod.rs`) with revision-bound
-opportunities. Run 115's vocabulary-shaped root cause and the v2 decisions are
-the last two records in `state/evidence.jsonl`.
+Ontology v2 is the adopted vocabulary at `docs/architecture/ghostlight-world-ontology.md`
+(twelve components, twenty-nine operations under one `WorldPatch`,
+world-authored affordances with preconditions, effect slots, and kernel-entropy
+outcome bands, four derived `CausalBoundary` kinds, scope-digest binding, one
+`AdmitPatch` for seed and elaboration, eighteen proofs).
+`ghostlight-transition-algebra.md` and `ghostlight-multiresolution-agency.md`
+are teardown evidence. Plan step 6 is nine implementation passes; pass 1 is
+landed, passes 2 through 9 are not.
 
-1. Plan step 6 pass 1 is in progress via a faculty fan-out, nothing landed in
-   `crates/` yet. Modeling (source shape) and Imagination (target shape) run
-   read-only in parallel on the sealed kernel; their maps are session
-   scratchpad files `modeling-pass1.md` and `imagination-pass1.md`, not
-   `state/`. Hands cuts pass 1 (typed ID namespaces, `Ref<Id>` draft handles,
-   closed-patch resolution, complete mismatch set) in an isolated git worktree;
-   Soul verifies there; the coordinator integrates onto
-   `codex/ghostlight-dungeon-mvp`. Baseline before the cut at `d87cad8`:
-   `AffordanceKind` is still `{ Speak }`, and `crates/ghostlight-dungeon/src/world/*.rs`
-   holds 43 test functions (mod 16, controllers 12, mailbox 12, journal 3; 83
-   across the whole crate). If `git log` shows no pass-1 commit and
-   `git worktree list` shows only the main tree, the cut has not landed. Eight
-   elaborators are one `OperationalAgent` loop whose tool catalog is a
-   projection of the operation set; no elaborator gets a tool the reducer
-   cannot validate.
-2. Four detached Codex CLI world workers are live on the prose plus
-   illustration Ink fixture path (relaunched 2026-09-04T16:17:56 local). PIDs
-   and per-run stderr paths: `C:\Users\Meta\.claude\worlds\logs\pids-worlds.csv`
-   (stderr logs are timestamped `world-<w>.<stamp>.stderr.log`). Poll from
-   `C:\Users\Meta\.claude\worlds\` with `.\Invoke-Worlds.ps1 -Phase Status`.
-   Ledgers: `F:\Projects\Ghostlight-worlds\<world>\examples\ink\<world>\RUN.md`
-   for aetheria, delvehold, kalsa, zyphos, on branches `codex/world-<world>`.
-   Lore output lands on `codex/ghostlight-worlds` in each vault clone at
-   `F:\Projects\<Lore>-worktrees\ghostlight-worlds`. Every one of those eight
-   paths is a full clone, not a linked worktree: a linked worktree's `.git` is
-   a file pointing into the parent repo's `.git/worktrees/`, outside the Codex
-   sandbox's writable roots, so `git commit` fails with `index.lock Permission
-   denied`. The directory name still says worktrees; `.git` is a directory.
-   `git worktree list` in this repo shows only the main tree. The launcher
-   passes `-c sandbox_workspace_write.network_access=true` so workers can push.
-   Image rendering is deferred: the BFL key drive E: is gone, workers emit
-   imagegen-ready prompts only, and `scripts/generate_bfl_images.py` has no
-   working default key path.
+1. Pass 1 landed on `codex/ghostlight-dungeon-mvp` as Hands `d74d6ad` plus Soul
+   `9ddc21f`, pushed. `crates/ghostlight-dungeon/src/world/patch.rs` owns
+   `SubjectId`/`EntityId`/`EdgeId` namespaces, `Ref<Id>` with `DraftHandle`,
+   closed `resolve_declarations` returning the complete `Vec<Mismatch>`, and
+   deterministic `derive_id` (sha256 over world, command, handle).
+   `CommandBody::AdmitPatch` is Draft-only and answers `uninhabited`;
+   `WorldEffect::PatchAdmitted` is its effect; one `admit_resolved` insertion
+   owner is shared with genesis. `KernelError` is 28 variants with
+   `PatchRejected(Vec<Mismatch>)`. `STATE_SCHEMA` is `foundation.v1`,
+   `COMMIT_SCHEMA` is `foundation.v2`, and old stores are refused. The action
+   vocabulary is still one affordance (`AffordanceKind::Speak`) and one action
+   (`DecisionAction::Speak`); pass 4 replaces that. Baseline for pass 2: 55
+   test functions in `world/*.rs`, 94 across the crate source, plus one
+   integration test. Three Soul follow-ups are being cut now and are not yet
+   in HEAD: `mesh.rs:241,257` and `idunn_health.rs:927,1215` still hand-copy
+   the literal `ghostlight.world_state.foundation.v0` and must read
+   `STATE_SCHEMA`; subject-less genesis must be a `Mismatch`, not
+   `CorruptJournal`; and the `UnknownCanonical` handle-field ambiguity. Next
+   is pass 2: `Position`, `Route`, containment, topology admission, and
+   scope-digest binding for opportunities.
+2. The world fan-out is now a 32-slot titled-elaborator scheduler:
+   `C:\Users\Meta\.claude\worlds\Invoke-Elaborators.ps1` (detached, PID 39500 at
+   launch), config `worlds.config.psd1` (eight legacy titles, per-world tone,
+   per-title lens, weights), prompt `elaborator-prompt.md`. Workers never run
+   git: the Codex workspace-write sandbox keeps `.git` read-only even inside
+   the writable root. The scheduler commits and pushes each slot clone on exit
+   to `slot/<world>/<title>/<stamp>` branches in both the Ghostlight world
+   clone and the lore clone, and records each completion in
+   `logs\elab-done.csv` (absent until the first slot completes). Integration
+   into `codex/world-<world>` and `codex/ghostlight-worlds` is a deliberate
+   later pass, not automatic. First fixture: Delvehold
+   `cistern-house-nine-breaker-test` on `codex/world-delvehold` at `9374fd0`.
+   Clone paths are unchanged: `F:\Projects\Ghostlight-worlds\<world>` and
+   `F:\Projects\<Lore>-worktrees\ghostlight-worlds` (full clones despite the
+   name). Image rendering is deferred: the BFL key drive E: is gone, workers
+   emit imagegen-ready prompts only, and `scripts/generate_bfl_images.py` has
+   no working default key path.
 
 The deployment gate below is deferred behind both orders, not cancelled:
 
