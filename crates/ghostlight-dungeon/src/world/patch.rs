@@ -2111,4 +2111,153 @@ mod tests {
         assert!(matches!(wrong_phase, KernelError::Invariant(_)));
         assert_eq!(candidate, kernel.state);
     }
+
+    /// Soul falsification: `RefKind` is never persisted, and it could not be.
+    /// `Subject(Option<SubjectKind>)` under `#[serde(tag = "namespace")]` is an
+    /// internally tagged newtype variant over a non-map, which serde refuses at
+    /// runtime. The derives are unexercised weight, and the deviation is safe
+    /// only because nothing writes a `RefKind`.
+    #[test]
+    fn soul_ref_kind_is_not_a_serializable_shape() {
+        assert!(serde_json::to_value(RefKind::Entity(EntityKind::Place)).is_ok());
+        assert!(serde_json::to_value(ANY_SUBJECT).is_err());
+        assert!(serde_json::to_value(RefKind::Subject(Some(SubjectKind::Person))).is_err());
+    }
+
+    /// Soul falsification: the three pass-2 `Mismatch` variants that no landed
+    /// test names are each reachable from a real patch.
+    #[test]
+    fn soul_self_loop_unplaced_subject_and_no_effect_are_each_reachable() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = draft_world(directory.path());
+        let before = kernel.snapshot().unwrap();
+
+        // A route whose two endpoints resolve to one place.
+        let error = kernel
+            .submit(
+                command(
+                    &before,
+                    CommandId::new(),
+                    CallerId::Principal(owner()),
+                    admit(patch_of(vec![
+                        entity("hollow", "The Hollow", EntityKind::Place),
+                        route("noose", "The Noose", "hollow", "hollow", 4),
+                    ])),
+                ),
+                &auth_principal(owner()),
+            )
+            .unwrap_err();
+        let KernelError::PatchRejected(mismatches) = error else {
+            panic!("expected a rejected patch");
+        };
+        assert_eq!(
+            mismatches,
+            vec![Mismatch::RouteSelfLoop {
+                referent: draft("noose")
+            }]
+        );
+
+        let topology = admit_topology(&mut kernel);
+        let active = activate(&mut kernel);
+        let commits_before = kernel.journal.commit_count();
+        let unplaced = *kernel
+            .state
+            .subjects
+            .iter()
+            .find(|(subject_id, _)| !kernel.state.positions.contains_key(*subject_id))
+            .expect("a genesis subject was declared without a position")
+            .0;
+
+        // Relocating a subject that stands nowhere.
+        let error = kernel
+            .submit(
+                command(
+                    &active,
+                    CommandId::new(),
+                    CallerId::Principal(owner()),
+                    admit(operations_of(vec![ComponentOp::Relocate {
+                        subject: Ref::Existing(unplaced),
+                        via: Ref::Existing(topology.ramp),
+                    }])),
+                ),
+                &auth_principal(owner()),
+            )
+            .unwrap_err();
+        let KernelError::PatchRejected(mismatches) = error else {
+            panic!("expected a rejected patch");
+        };
+        assert_eq!(mismatches, vec![Mismatch::UnplacedSubject { operation: 0 }]);
+
+        // Three operations that each change nothing: the ramp is already open,
+        // the shutter already closed, and the ramp already costs twelve.
+        let error = kernel
+            .submit(
+                command(
+                    &active,
+                    CommandId::new(),
+                    CallerId::Principal(owner()),
+                    admit(operations_of(vec![
+                        ComponentOp::OpenRoute {
+                            route: Ref::Existing(topology.ramp),
+                        },
+                        ComponentOp::CloseRoute {
+                            route: Ref::Existing(topology.shutter),
+                        },
+                        ComponentOp::AlterCost {
+                            route: Ref::Existing(topology.ramp),
+                            cost: Cost(12),
+                        },
+                    ])),
+                ),
+                &auth_principal(owner()),
+            )
+            .unwrap_err();
+        let KernelError::PatchRejected(mismatches) = error else {
+            panic!("expected a rejected patch");
+        };
+        assert_eq!(
+            mismatches,
+            vec![
+                Mismatch::NoOperationEffect { operation: 0 },
+                Mismatch::NoOperationEffect { operation: 1 },
+                Mismatch::NoOperationEffect { operation: 2 },
+            ]
+        );
+        assert_eq!(kernel.snapshot().unwrap(), active);
+        assert_eq!(kernel.journal.commit_count(), commits_before);
+    }
+
+    /// Soul falsification: `admit_resolved` re-derives every relocate
+    /// precondition, so a forged effect naming a route the subject does not
+    /// stand on, a closed route, or a restricted one dies at apply time.
+    #[test]
+    fn soul_a_forged_relocate_effect_is_refused_at_apply_time() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = draft_world(directory.path());
+        let topology = admit_topology(&mut kernel);
+        activate(&mut kernel);
+        for edge_id in [topology.span, topology.shutter, topology.toll] {
+            let forged = super::super::WorldEffect::PatchAdmitted {
+                resolved: ResolvedPatch {
+                    subjects: Vec::new(),
+                    entities: Vec::new(),
+                    routes: Vec::new(),
+                    operations: vec![ResolvedOp::Relocate {
+                        subject_id: topology.walker,
+                        edge_id,
+                    }],
+                    evidence: Vec::new(),
+                },
+            };
+            let mut candidate = kernel.state.clone();
+            let error = super::super::apply_effect(
+                &mut candidate,
+                &CallerId::Principal(owner()),
+                &forged,
+            )
+            .unwrap_err();
+            assert!(matches!(error, KernelError::Invariant(_)));
+            assert_eq!(candidate, kernel.state);
+        }
+    }
 }

@@ -3648,6 +3648,126 @@ mod tests {
         assert!(operational_surface.contains("speaker_subject_id"));
     }
 
+    /// Soul falsification: the typed view carries the acting subject's own place
+    /// and the routes incident to it, and no more. Another subject's position
+    /// and a route that touches neither endpoint stay out of the surface.
+    #[test]
+    fn soul_the_typed_view_exposes_only_the_actors_place_and_incident_routes() {
+        use crate::world::{AccessKind, Cost, EdgeId, EntityId, PlaceSnapshot, RouteSnapshot};
+
+        let actor_id = SubjectId::issue();
+        let other_id = SubjectId::issue();
+        let actor_controller = ControllerId::issue();
+        let other_controller = ControllerId::issue();
+        let speak_affordance = AffordanceId::issue();
+        // Ordered so the snapshot vectors stay in ID order, as `snapshot` builds
+        // them.
+        let mut place_ids = [EntityId::issue(), EntityId::issue(), EntityId::issue()];
+        place_ids.sort();
+        let [yard, road, vault] = place_ids;
+        // `EdgeId` has no test allocator; it is transparent over a UUID, so two
+        // literals in byte order do the job without touching production source.
+        let edge = |value: &str| {
+            serde_json::from_value::<EdgeId>(Value::String(value.into())).expect("an edge ID")
+        };
+        let first_edge = edge("11111111-1111-4111-8111-111111111111");
+        let second_edge = edge("22222222-2222-4222-8222-222222222222");
+
+        let opportunity = DecisionOpportunity {
+            world_id: WorldId::issue(),
+            revision: 12,
+            scope_digest: ScopeDigest::fixture("sha256:scope"),
+            scope: DecisionScope {
+                subject_id: actor_id,
+            },
+            controller_id: actor_controller,
+            controller_mode: ControllerMode::OperationalAgent,
+            affordance_ids: vec![speak_affordance],
+        };
+        let actor = SubjectSnapshot {
+            id: actor_id,
+            label: "The Walker".into(),
+            kind: SubjectKind::Person,
+            controller_id: actor_controller,
+            controller_mode: ControllerMode::OperationalAgent,
+            human_controller: None,
+            affordances: BTreeMap::from([(AffordanceKind::Speak, speak_affordance)]),
+            position: Some(yard),
+        };
+        let other = SubjectSnapshot {
+            id: other_id,
+            label: "The Vault Keeper".into(),
+            kind: SubjectKind::Person,
+            controller_id: other_controller,
+            controller_mode: ControllerMode::OperationalAgent,
+            human_controller: None,
+            affordances: BTreeMap::new(),
+            position: Some(vault),
+        };
+        let named_place = |id, label: &str| PlaceSnapshot {
+            id,
+            label: label.into(),
+            container: None,
+        };
+        let named_route = |id, label: &str, from, to| RouteSnapshot {
+            id,
+            label: label.into(),
+            from,
+            to,
+            access: AccessKind::Public,
+            cost: Cost(6),
+            open: true,
+        };
+        let snapshot = WorldSnapshot {
+            world_id: opportunity.world_id,
+            revision: opportunity.revision,
+            phase: WorldPhase::Active,
+            owner: PrincipalId::new("scope-fixture-owner"),
+            title: "Kharad".into(),
+            draft_approvals: BTreeSet::new(),
+            required_approvers: BTreeSet::new(),
+            subjects: vec![actor.clone(), other],
+            places: vec![
+                named_place(yard, "The Cavity Yard"),
+                named_place(road, "The Rhythm Road"),
+                named_place(vault, "The Sealed Vault"),
+            ],
+            routes: vec![
+                named_route(first_edge, "The Yard Ramp", yard, road),
+                named_route(second_edge, "The Vault Stair", road, vault),
+            ],
+            events: Vec::new(),
+            opportunities: vec![opportunity.clone()],
+            state_digest: "sha256:state".into(),
+            last_commit_digest: None,
+        };
+        let selected = SelectedDecision {
+            snapshot,
+            subject: actor,
+            opportunity,
+            speak_affordance,
+        };
+
+        let view = selected.typed_view().unwrap();
+        assert!(view.contains("The Cavity Yard"));
+        assert!(view.contains("The Yard Ramp"));
+        for leaked in [
+            "The Sealed Vault",
+            "The Vault Stair",
+            "The Vault Keeper",
+            encoded_id(&vault).unwrap().as_str(),
+        ] {
+            assert!(!view.contains(leaked), "the typed view leaked `{leaked}`");
+        }
+
+        // A subject standing nowhere gets a null place and no routes at all.
+        let mut unplaced = selected;
+        unplaced.subject.position = None;
+        let view = unplaced.typed_view().unwrap();
+        assert!(!view.contains("The Cavity Yard"));
+        assert!(!view.contains("The Yard Ramp"));
+    }
+
     #[test]
     fn controller_tool_schemas_cannot_claim_authority_or_envelopes() {
         for definition in interpreter_tools().into_iter().chain(operational_tools()) {

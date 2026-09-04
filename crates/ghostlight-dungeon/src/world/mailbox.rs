@@ -901,4 +901,156 @@ mod tests {
             .await;
         assert!(matches!(result, Err(MailboxError::Unavailable)));
     }
+
+    /// Soul falsification: the envelope revision is stamped inside the owner
+    /// task, so a controller turn bound at revision N still commits after an
+    /// unrelated commit moved the world to N+1. This exercises the mailbox
+    /// path, not the kernel gate a hand-built envelope would reach.
+    #[tokio::test]
+    async fn soul_a_bound_opportunity_commits_through_the_mailbox_after_an_unrelated_commit() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, _task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let owner = PrincipalId::new("owner");
+        let authenticated = authenticated_owner();
+        let declare = |handle: &str, label: &str, controller: NewController| {
+            Declaration::Subject(SubjectDeclaration {
+                handle: DraftHandle::new(handle),
+                label: label.into(),
+                kind: SubjectKind::Person,
+                controller,
+                affordances: BTreeSet::from([AffordanceKind::Speak]),
+                position: None,
+            })
+        };
+        let created = mailbox
+            .create_fixture(
+                CreateWorld {
+                    id: CommandId::new(),
+                    owner: owner.clone(),
+                    title: "Soul Stamping".into(),
+                    patch: WorldPatch {
+                        declarations: vec![
+                            declare("witness", "The Witness", NewController::NarrativePersona),
+                            declare("council", "The Council", NewController::OperationalAgent),
+                        ],
+                        operations: Vec::new(),
+                        evidence: Vec::new(),
+                    },
+                },
+                &authenticated,
+            )
+            .await
+            .unwrap();
+        let mut snapshot = mailbox.snapshot().await.unwrap();
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            mailbox
+                .submit_fixture(
+                    CommandEnvelope {
+                        id: CommandId::new(),
+                        world_id: created.world_id,
+                        expected_revision: snapshot.revision,
+                        caller: CallerId::Principal(owner.clone()),
+                        body,
+                    },
+                    &authenticated,
+                )
+                .await
+                .unwrap();
+            snapshot = mailbox.snapshot().await.unwrap();
+        }
+        let pick = |mode: crate::world::ControllerMode| {
+            snapshot
+                .opportunities
+                .iter()
+                .find(|value| value.controller_mode == mode)
+                .expect("an active opportunity")
+                .clone()
+        };
+        let bound = pick(crate::world::ControllerMode::OperationalAgent);
+        let unrelated = pick(crate::world::ControllerMode::NarrativePersona);
+
+        let speak = |opportunity: &DecisionOpportunity, text: &str| DecisionInvocation {
+            affordance_id: opportunity.affordance_ids[0],
+            action: crate::world::DecisionAction::Speak { text: text.into() },
+        };
+        mailbox
+            .submit_controller(
+                CommandId::new(),
+                &unrelated,
+                speak(&unrelated, "Somebody else moves."),
+            )
+            .await
+            .unwrap();
+        let moved = mailbox.snapshot().await.unwrap();
+        assert_eq!(moved.revision, bound.revision + 1);
+
+        let receipt = mailbox
+            .submit_controller(CommandId::new(), &bound, speak(&bound, "Still mine."))
+            .await
+            .expect("a bound turn must not die at the envelope CAS");
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+        assert_eq!(
+            mailbox.snapshot().await.unwrap().revision,
+            bound.revision + 2
+        );
+    }
+
+    /// Soul falsification: stamping the revision inside the owner must not open
+    /// a hole. A stamped body still fails closed when the world derives no such
+    /// opportunity.
+    #[tokio::test]
+    async fn soul_a_stamped_submission_still_fails_closed_on_a_foreign_scope() {
+        let (_directory, _path, mailbox, _task, authenticated, _input, created) = fixture().await;
+        let mut snapshot = mailbox.snapshot().await.unwrap();
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            mailbox
+                .submit_fixture(
+                    CommandEnvelope {
+                        id: CommandId::new(),
+                        world_id: created.world_id,
+                        expected_revision: snapshot.revision,
+                        caller: CallerId::Principal(PrincipalId::new("owner")),
+                        body,
+                    },
+                    &authenticated,
+                )
+                .await
+                .unwrap();
+            snapshot = mailbox.snapshot().await.unwrap();
+        }
+        assert_eq!(snapshot.phase, crate::world::WorldPhase::Active);
+        let forged = DecisionOpportunity {
+            world_id: WorldId::issue(),
+            revision: 0,
+            scope_digest: crate::world::ScopeDigest::fixture("sha256:not-a-scope"),
+            scope: crate::world::DecisionScope {
+                subject_id: crate::world::SubjectId::issue(),
+            },
+            controller_id: crate::world::ControllerId::issue(),
+            controller_mode: crate::world::ControllerMode::OperationalAgent,
+            affordance_ids: vec![crate::world::AffordanceId::issue()],
+        };
+        let result = mailbox
+            .submit_controller(
+                CommandId::new(),
+                &forged,
+                DecisionInvocation {
+                    affordance_id: forged.affordance_ids[0],
+                    action: crate::world::DecisionAction::Speak {
+                        text: "Let me in.".into(),
+                    },
+                },
+            )
+            .await;
+        // The owner stamps `world_id` as well as `expected_revision`, so the
+        // envelope's own `WorldMismatch` check is unreachable for these two
+        // bodies. `exact_opportunity` is what refuses the foreign world.
+        assert!(
+            matches!(
+                result,
+                Err(MailboxError::Kernel(KernelError::OpportunityMismatch))
+            ),
+            "a foreign scope was not refused: {result:?}"
+        );
+    }
 }

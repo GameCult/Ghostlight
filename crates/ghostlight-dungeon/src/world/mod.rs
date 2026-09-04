@@ -2943,4 +2943,177 @@ mod tests {
         ));
         assert_eq!(kernel.snapshot().unwrap(), snapshot);
     }
+
+    /// Soul falsification: the preimage must exclude the revision, the phase,
+    /// and every component outside the scope. Each step below is a real commit
+    /// that moves the world, not a hand-edited state.
+    #[test]
+    fn soul_scope_digest_excludes_revision_phase_and_everything_outside_the_scope() {
+        let dir = tempfile::tempdir().unwrap();
+        let (mut kernel, _) = WorldKernel::create(
+            dir.path().join("world.cc"),
+            creation(CommandId::new(), "Preimage"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let topology = admit_topology(&mut kernel);
+        let scope = DecisionScope {
+            subject_id: topology.walker,
+        };
+        let base = scope_digest(&kernel.state, scope).unwrap();
+        let start_revision = kernel.state.revision;
+
+        // A new place elsewhere, a route that touches neither the walker's
+        // place nor it, and a second placed subject: all outside the scope.
+        let before = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &before,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: vec![
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("annex"),
+                            label: "The Annex".into(),
+                            kind: EntityKind::Place,
+                            container: None,
+                        }),
+                        Declaration::Route(RouteDeclaration {
+                            handle: DraftHandle::new("annexway"),
+                            label: "The Annex Way".into(),
+                            from: Ref::Existing(topology.road),
+                            to: Ref::Draft(DraftHandle::new("annex")),
+                            access: AccessKind::Public,
+                            cost: Cost(3),
+                        }),
+                        Declaration::Subject(SubjectDeclaration {
+                            handle: DraftHandle::new("runner"),
+                            label: "The Runner".into(),
+                            kind: SubjectKind::Person,
+                            controller: NewController::OperationalAgent,
+                            affordances: BTreeSet::from([AffordanceKind::Speak]),
+                            position: Some(Ref::Existing(topology.road)),
+                        }),
+                    ],
+                    operations: Vec::new(),
+                    evidence: Vec::new(),
+                },
+            },
+        );
+        assert_ne!(kernel.state.revision, start_revision);
+        assert_eq!(scope_digest(&kernel.state, scope).unwrap(), base);
+
+        // Activation changes the phase, the approvals, and the revision.
+        let active = activate(&mut kernel);
+        assert_eq!(active.phase, WorldPhase::Active);
+        assert_eq!(scope_digest(&kernel.state, scope).unwrap(), base);
+
+        // Another subject's Position moving is not this scope's business.
+        let annexway = *kernel
+            .state
+            .edges
+            .iter()
+            .find(|(_, record)| record.label() == "The Annex Way")
+            .expect("the declared route")
+            .0;
+        let runner = *kernel
+            .state
+            .subjects
+            .iter()
+            .find(|(_, subject)| subject.label == "The Runner")
+            .expect("the declared subject")
+            .0;
+        let active = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &active,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![ComponentOp::Relocate {
+                        subject: Ref::Existing(runner),
+                        via: Ref::Existing(annexway),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        );
+        assert_eq!(
+            kernel.state.positions.get(&runner),
+            Some(&Position {
+                place: kernel
+                    .state
+                    .entities
+                    .iter()
+                    .find(|(_, record)| record.label == "The Annex")
+                    .map(|(id, _)| *id)
+                    .unwrap()
+            })
+        );
+        assert_eq!(scope_digest(&kernel.state, scope).unwrap(), base);
+
+        // A route incident to the walker's own place is inside the scope.
+        let moved = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &moved,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![ComponentOp::CloseRoute {
+                        route: Ref::Existing(topology.ramp),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        );
+        assert_ne!(scope_digest(&kernel.state, scope).unwrap(), base);
+    }
+
+    /// Soul falsification: a claimed opportunity whose `affordance_ids` name
+    /// grants this scope does not hold cannot widen authority. The kernel reads
+    /// the derived list, so the forged one is ignored and the invocation is
+    /// denied on the real grants.
+    #[test]
+    fn soul_a_forged_affordance_list_cannot_widen_authority() {
+        let dir = tempfile::tempdir().unwrap();
+        let (mut kernel, _) = WorldKernel::create(
+            dir.path().join("world.cc"),
+            creation(CommandId::new(), "Affordances"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let active = activate(&mut kernel);
+        let persona = opportunity(&active, ControllerMode::NarrativePersona);
+        let operator = opportunity(&active, ControllerMode::OperationalAgent);
+
+        // The persona claims the operator's affordance and lists it as its own.
+        let mut forged = persona.clone();
+        forged.affordance_ids = vec![operator.affordance_ids[0], persona.affordance_ids[0]];
+        let caller = CallerId::Controller(persona.controller_id);
+        let error = kernel
+            .submit(
+                command(
+                    &active,
+                    CommandId::new(),
+                    caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        opportunity: forged,
+                        invocation: DecisionInvocation {
+                            affordance_id: operator.affordance_ids[0],
+                            action: DecisionAction::Speak {
+                                text: "Not my grant.".into(),
+                            },
+                        },
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .unwrap_err();
+        assert!(matches!(error, KernelError::AffordanceDenied));
+        assert_eq!(kernel.snapshot().unwrap(), active);
+    }
 }

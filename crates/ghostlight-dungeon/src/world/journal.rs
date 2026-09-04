@@ -950,4 +950,142 @@ mod tests {
             Err(JournalError::Corrupt(_))
         ));
     }
+
+    /// Soul falsification: the extended replay shape check is not decoration.
+    /// A forged store row carrying a self-loop, a cost out of range, a
+    /// non-place endpoint, or a position on a non-place is refused by
+    /// `recover`, which is the path `WorldJournal::open` takes.
+    #[test]
+    fn soul_forged_topology_store_rows_are_refused_on_recover() {
+        use crate::world::patch::{AccessKind, Cost, EdgeRecord, MAX_ROUTE_COST};
+        use crate::world::tests::{admit_topology, auth_principal, owner};
+
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            crate::world::tests::creation(CommandId::new(), "Forged Rows"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let topology = admit_topology(&mut kernel);
+        let commits: Vec<CultCacheEnvelope> = kernel
+            .journal
+            .commits
+            .values()
+            .map(|commit| {
+                envelope(
+                    COMMIT_ROW,
+                    COMMIT_SCHEMA,
+                    commit.command.id().key(),
+                    commit,
+                )
+                .unwrap()
+            })
+            .collect();
+        let rows_for = |state: &WorldState, row_type: &str| {
+            let mut rows = commits.clone();
+            rows.push(envelope(row_type, STATE_SCHEMA, state.world_id.key(), state).unwrap());
+            rows
+        };
+
+        // The honest state recovers.
+        assert!(recover(rows_for(&kernel.state, STATE_ROW), None).is_ok());
+
+        let self_loop = {
+            let mut state = kernel.state.clone();
+            state.edges.insert(
+                topology.ramp,
+                EdgeRecord::Route {
+                    label: "The Yard Ramp".into(),
+                    from: topology.yard,
+                    to: topology.yard,
+                    access: AccessKind::Public,
+                    cost: Cost(12),
+                    open: true,
+                },
+            );
+            state
+        };
+        let bad_cost = {
+            let mut state = kernel.state.clone();
+            state
+                .edges
+                .get_mut(&topology.ramp)
+                .unwrap()
+                .set_cost(Cost(MAX_ROUTE_COST + 1));
+            state
+        };
+        let non_place_endpoint = {
+            let mut state = kernel.state.clone();
+            state.entities.get_mut(&topology.road).unwrap().kind =
+                crate::world::EntityKind::Resource;
+            state
+        };
+        let stray_position = {
+            let mut state = kernel.state.clone();
+            state.positions.insert(
+                topology.walker,
+                Position {
+                    place: EntityId::issue(),
+                },
+            );
+            state
+        };
+        for forged in [self_loop, bad_cost, non_place_endpoint, stray_position] {
+            let error = recover(rows_for(&forged, STATE_ROW), None).unwrap_err();
+            assert!(
+                matches!(error, JournalError::Corrupt(_)),
+                "a forged topology row recovered: {error:?}"
+            );
+        }
+    }
+
+    /// Soul falsification: a store written before the topology partitions is
+    /// refused outright, with no migration adapter in the path.
+    #[test]
+    fn soul_a_pre_topology_store_row_is_refused() {
+        use crate::world::tests::{admit_topology, auth_principal, owner};
+
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            crate::world::tests::creation(CommandId::new(), "Old Store"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        admit_topology(&mut kernel);
+        let mut rows: Vec<CultCacheEnvelope> = kernel
+            .journal
+            .commits
+            .values()
+            .map(|commit| {
+                envelope(
+                    "world_commit.foundation.v2",
+                    COMMIT_SCHEMA,
+                    commit.command.id().key(),
+                    commit,
+                )
+                .unwrap()
+            })
+            .collect();
+        rows.push(
+            envelope(
+                "world_state.foundation.v1",
+                STATE_SCHEMA,
+                kernel.state.world_id.key(),
+                &kernel.state,
+            )
+            .unwrap(),
+        );
+        let error = recover(rows, None).unwrap_err();
+        let JournalError::Corrupt(message) = error else {
+            panic!("expected a corrupt store, got {error:?}");
+        };
+        assert!(
+            message.contains("unadmitted row type"),
+            "unexpected refusal: {message}"
+        );
+    }
 }
