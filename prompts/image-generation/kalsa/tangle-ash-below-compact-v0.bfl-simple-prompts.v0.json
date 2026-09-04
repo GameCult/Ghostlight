@@ -1,0 +1,72 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "tangle-ash-below-compact-v0.bfl-simple-v0",
+  "fixture_id": "tangle-ash-below-compact-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Painterly high-fantasy storybook illustration, soot-dark geothermal masonry, ember-orange and oxidized-copper palette, precise tactile work objects, expressive human posture, readable political staging, restrained magical ambiguity, cinematic interactive-fiction frame, unlettered surfaces.",
+  "prompts": [
+    {
+      "id": "01_bakehouse_establishing",
+      "prompt": "Wide interior of a compact geothermal bakehouse built from dark fitted stone: six glowing arched ovens and copper heat pipes on the north wall, a cold stone washing trough at northwest, a long flour-dusted scoring table across the center, reed bread trays and hostel door on the west wall, a burial-meal shelf and descending south stair, and a slatted ironwood east door opening to a steep furnace-court stair. Ves, a sturdy medium-brown adult with short black curls under a cream headcloth and a flour-gray apron, scores flat ration loaves while three varied bakers work with long wooden peels."
+    },
+    {
+      "id": "02_compact_roster",
+      "prompt": "Medium-wide view along a bakehouse scoring table toward a slatted court door and upper stair landing. Ves works with clay tally ties; Enka, an older broad dark-skinned store steward in a red apron, stacks bread with three iron keys visible; Salen, a lean carrier in a patched gray cloak, holds a lidded burial basket by the south stair; Taru, a thick-set man with a scarred right hand and charcoal wrap, warms his hands at an oven; Melka, a tall dark-skinned mortuary witness in a pale sash, waits beyond the slats with a rigid palewood case."
+    },
+    {
+      "id": "03_three_records",
+      "prompt": "Overhead close view of a flour-dusted dark wood worktable under oven light. Three records remain visibly separate on cloth squares: thin answer-roll leaves tied with scored clay seals and small gesture drawings, a withdrawal tally with hostel and shrine marks beside cold copper tokens, and a bread tray list aligned with flat loaves, lamp-oil cups, and household markers. Ves's floury hands hold a blunt bone scorer; Enka's three keys rest beside the tray list; Taru's scarred hand touches only the recognizer copy."
+    },
+    {
+      "id": "04_preparation_choice",
+      "prompt": "High corner view of one compact geothermal bakehouse as a practical conspiracy map. Sturdy brown-skinned Ves in a cream headcloth and flour-gray apron can divide copy leaves among clay ties at the central table; older broad dark-skinned Enka in a red apron with three iron keys can fill publicly marked bread and lamp-oil trays on the west wall; thick-set Taru in a charcoal wrap, his right hand scarred, can raise household marks with two bakers; lean Salen in a patched gray carrier cloak can carry a lidded burial basket toward the south stair. Six hot ovens line the north wall, a cold trough sits northwest, a hostel door opens west, and a slatted court door rises east toward an upper landing."
+    },
+    {
+      "id": "05_preparation_fold",
+      "prompt": "Wide view of ordinary bread work continuing inside a compact geothermal bakehouse after a covert preparation. Flat loaves move from six north-wall ovens to a long central scoring table and then into reed trays on the west wall. Sturdy brown-skinned Ves in a cream headcloth and flour-gray apron keeps the household tally; older broad dark-skinned Enka in a red apron with three iron keys works the trays; thick-set Taru in a charcoal wrap waits near the slatted east court door; two varied bakers maintain the line. A bronze horn mouth high beyond the door catches light; cold trough, burial shelf, south stair, and upper landing preserve the room's routes."
+    },
+    {
+      "id": "06_first_horn",
+      "prompt": "Low-angle pivotal frame inside a soot-dark high-fantasy bakehouse looking toward a slatted east court door. A bronze horn mouth above the upper landing vibrates; loose flour lifts from a central scoring table; six oven flames lean under changing furnace draft; copper pipes and court-weight chains catch ember light. Sturdy brown-skinned Ves in a cream headcloth and flour-gray apron, older broad dark-skinned Enka in a red apron with three iron keys, and thick-set Taru in a charcoal wrap with a scarred right hand turn toward the door while scored clay seals and bread trays remain in their working places."
+    },
+    {
+      "id": "07_registrar_arrival",
+      "prompt": "Medium confrontation across a flour-dusted bakehouse table. Compact ochre-brown Nema, black hair in a severe knot above a soot-black wrap edged with oxidized copper, descends through the east court door carrying a rigid bronze case and places a torn clay-tied route strip on the table. Sturdy brown-skinned Ves in a cream headcloth and flour-gray apron faces her with scorer and day tally; older broad dark-skinned Enka in a red apron covers three store keys with a floury hand; thick-set Taru in a charcoal wrap looks toward the upper stair. Hot ovens glow behind them and cold shaft light frames the registrar."
+    },
+    {
+      "id": "08_exposure_choice",
+      "prompt": "Table-side political choice in a geothermal bakehouse. Compact ochre-brown registrar Nema in a copper-edged black wrap stands behind a torn route strip and open bronze case on the east side of a flour-dusted table. Sturdy brown-skinned Ves in a cream headcloth and flour-gray apron stands opposite with four visible tools: a lawful four-name office list, an open household bread tally, a scored copy leaf beside a lidded burial basket, and a blunt bone scorer above the next loaf. Older broad dark-skinned Enka in a red apron guards marked relief trays on the west side; thick-set Taru in a charcoal wrap waits by the slatted court door."
+    },
+    {
+      "id": "09_passage_token",
+      "prompt": "Close overhead view of a fired-clay passage token beside a torn route strip and an open bronze registrar's case on a flour-dusted scoring table. Separate cloth squares hold a tally keeper's office list, bread tally, and remaining scored copy leaves. Thick-set Taru's scarred right hand waits near the token; compact registrar Nema's ink-dark fingertips hold the strip; sturdy Ves's floury hand points a bone scorer between them. Through the slatted door at the top of frame, tall very dark-skinned Melka in a long linen coat and pale sash waits on a stone landing with a rigid palewood mortuary case."
+    },
+    {
+      "id": "10_threshold_choice",
+      "prompt": "Low-angle threshold decision at a slatted ironwood bakehouse door. One fired-clay passage token rests on a stone ledge. Sturdy brown-skinned Ves in a cream headcloth and flour-gray apron stands below it; thick-set Taru in a charcoal wrap waits with a household copy and scarred right hand visible; a young brown-skinned porter in rolled work wraps holds a lidded burial basket; older broad dark-skinned Enka in a red apron steadies the first relief tray; compact ochre-brown Nema in a copper-edged black wrap guards the rising court stair with a bronze case; tall very dark-skinned Melka in a linen coat and pale sash waits higher with an empty palewood case. Ember oven light meets pale stair light across clearly separated people, records, food, and routes."
+    },
+    {
+      "id": "11_final_threshold",
+      "prompt": "High corner view of the complete Ninth Furnace bakehouse pressure map before a second horn: six hot north-wall ovens and copper pipes, cold northwest trough, central table with separate copy leaves, household tally, torn route strip, and bronze case, west relief trays beside a hostel door, south burial shelf and descending stair, east slatted court door and rising landing. Sturdy brown-skinned Ves in a cream headcloth and flour-gray apron stands at the table; older broad dark-skinned Enka in a red apron stands at the trays; thick-set Taru in a charcoal wrap waits near the court door; compact ochre-brown Nema in a copper-edged black wrap guards the threshold; varied household witnesses line the west wall as flour trembles under tested weights."
+    },
+    {
+      "id": "12_three_claims_ending",
+      "prompt": "Long sightline from a bakehouse scoring table through a slatted court door to an upper landing. Sturdy brown-skinned Ves in a cream headcloth and flour-gray apron reads a withdrawal tally from below; thick-set Taru in a charcoal wrap stands below the threshold with a recognizer copy and scarred right hand visible; tall very dark-skinned Melka in a long linen coat and pale sash holds a closed palewood mortuary case higher on the stair; compact ochre-brown Nema in a copper-edged black wrap writes beside an open bronze branch case. Each occupies a distinct level and holds a distinct record while hot furnace light descends and marked bread trays remain visible."
+    },
+    {
+      "id": "13_household_floor_ending",
+      "prompt": "Wide distribution aftermath in a soot-dark geothermal bakehouse. Older broad dark-skinned Enka in a red apron opens a third store lock at the west tray wall; sturdy brown-skinned Ves in a cream headcloth and flour-gray apron reads household marks from the central table; varied bakers in rolled work wraps pass warm flat loaves and small lamp-oil cups to hostel residents and shrine families in an orderly queue; thick-set Taru in a charcoal wrap carries a short list of absent households with his scarred right hand visible. The north ovens glow, the washing trough stays visibly cold, and the east court stair carries distant forge light."
+    },
+    {
+      "id": "14_exposed_leverage_ending",
+      "prompt": "Political aftermath at a central bakehouse scoring table. Compact ochre-brown Nema, black hair knotted above a copper-edged black wrap, stands behind a bronze case full of roster leaves, household marks, passage receipts, and carrier strips. Sturdy brown-skinned Ves in a cream headcloth and flour-gray apron faces her with the day tally flat; older broad dark-skinned Enka in a red apron holds three hostel keys at the west side; thick-set Taru in a charcoal wrap holds a recognizer copy near the east door with his scarred right hand. Varied bakers continue bread work around them under ember light, showing a fully exposed conspiracy embedded in necessary offices and ordinary labor."
+    },
+    {
+      "id": "15_outer_copy_ending",
+      "prompt": "Route aftermath viewed from a descending south stair back into a high-fantasy geothermal bakehouse. A young brown-skinned porter in rolled work wraps carries a lidded reed basket down dark stone steps with a scored clay tie visible beneath the cloth. Far inside, sturdy brown-skinned Ves in a cream headcloth and flour-gray apron stands at the central table beside the partial receipt returned from a one-token hearing; compact ochre-brown Nema in a copper-edged black wrap watches from the east court door with a bronze case; hot ovens and marked relief trays divide the background."
+    }
+  ]
+}

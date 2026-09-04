@@ -1,0 +1,420 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "kalsa.tangle-ash-below-compact-v0.v0",
+  "source_status": "reviewed",
+  "fixture_status": "procedural_branch",
+  "source_refs": [
+    {
+      "source_id": "public-gods-dead",
+      "path": "Kalsa/Public/World/Gods and the Dead.md",
+      "title": "Gods and the Dead",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 90,
+      "relevance": "Reader-facing account of limited divine knowledge, divided covenant, miracle, and mortuary records, and hungry holy places."
+    },
+    {
+      "source_id": "public-peoples-polities",
+      "path": "Kalsa/Public/World/Peoples and Polities.md",
+      "title": "Peoples and Polities",
+      "canon_tier": "Public",
+      "line_start": 32,
+      "line_end": 48,
+      "relevance": "Reader-facing Jamnai branch rolls, heatworks, technical limits, and Soiru'i sect pressure."
+    },
+    {
+      "source_id": "public-ash-halo",
+      "path": "Kalsa/Public/Sources/The Faces in the Ash Halo.md",
+      "title": "The Faces in the Ash Halo",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 72,
+      "relevance": "Public record of the sealed answer roll, divine armament, silent shrines, copied household evidence, and reopened court."
+    },
+    {
+      "source_id": "canon-policy",
+      "path": "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+      "title": "Canon and Provenance",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 129,
+      "relevance": "Controls source status, knowledge layers, unresolved ontology, and the distinction between public facts and backstage constraints."
+    },
+    {
+      "source_id": "kaos-foundation",
+      "path": "Kalsa/Spoilers/Foundations/Kaos.md",
+      "title": "Kaos",
+      "canon_tier": "Spoilers/backstage",
+      "line_start": 1,
+      "line_end": 126,
+      "relevance": "Constrains divine armament to available material, energy, preparation, causal levers, time, and finite potential."
+    },
+    {
+      "source_id": "oracle-ecology",
+      "path": "Kalsa/Spoilers/Foundations/Oracle Ecology.md",
+      "title": "Oracle Ecology",
+      "canon_tier": "Spoilers/backstage",
+      "line_start": 1,
+      "line_end": 340,
+      "relevance": "Owns crowded divine routes, timeline capture, independent records, and the political value of keeping information, operation, force, and judgment separate."
+    },
+    {
+      "source_id": "projection-gods-thaumavores",
+      "path": "Kalsa/Spoilers/Foundations/Projections, God Beasts, and Thaumavores.md",
+      "title": "Projections, God Beasts, and Thaumavores",
+      "canon_tier": "Spoilers/backstage",
+      "line_start": 1,
+      "line_end": 156,
+      "relevance": "Owns divine hierarchy, routed potential, limited divine knowledge, feeding, interception, and unresolved posthumous identity."
+    },
+    {
+      "source_id": "jamnai-polity",
+      "path": "Kalsa/Spoilers/Polities/Sorcery - Jamnai and the Terjamna.md",
+      "title": "Sorcery — Jamnai and the Terjamna",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 158,
+      "relevance": "Owns Jamnai's geothermal dependency, branch life, ordinary workflow, Soiru'i politics, and Ash-Halo admission dispute."
+    },
+    {
+      "source_id": "submission-hierarchy",
+      "path": "Kalsa/Spoilers/Institutions/Jamnai Submission Hierarchy.md",
+      "title": "Jamnai Submission Hierarchy",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 190,
+      "relevance": "Owns registrar, branch, office, appeal, technical-boundary, protection-duty, and duplicate-record authorities."
+    },
+    {
+      "source_id": "god-cult-covenants",
+      "path": "Kalsa/Spoilers/Institutions/God-Cult Covenants.md",
+      "title": "God-Cult Covenants",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 273,
+      "relevance": "Owns recognized-share petitions, cult offices, welfare bargains, covenant records, appeal, and the limit of mortal claims over divine routing."
+    },
+    {
+      "source_id": "potential-economy",
+      "path": "Kalsa/Spoilers/Institutions/The Potential Economy.md",
+      "title": "The Potential Economy",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 302,
+      "relevance": "Owns withdrawn protections, miracle allocation, household-minimum coalitions, material leverage, audits, and the Ash-Halo docket consequences."
+    },
+    {
+      "source_id": "death-binding-law",
+      "path": "Kalsa/Spoilers/Institutions/Death and Binding Law.md",
+      "title": "Death and Binding Law",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 287,
+      "relevance": "Owns mortuary custody, answer rolls, independent witnesses, severance limits, organized mortuary positions, and copied evidence."
+    },
+    {
+      "source_id": "soirui-sects",
+      "path": "Kalsa/Spoilers/Institutions/Soiru'i Sects.md",
+      "title": "Soiru'i Sects",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 352,
+      "relevance": "Primary owner for sect practice and the authored Ash-Below Compact elaboration at lines 210-315."
+    },
+    {
+      "source_id": "ash-halo-history",
+      "path": "Kalsa/Spoilers/Events/The Ash-Halo Armament.md",
+      "title": "The Ash-Halo Armament",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 119,
+      "relevance": "Owns the historical armament, sealed roll, divine interception, silent shrines, records, and later admission dispute."
+    },
+    {
+      "source_id": "ash-halo-court",
+      "path": "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md",
+      "title": "The Ash-Halo Court",
+      "canon_tier": "Spoilers/author",
+      "line_start": 1,
+      "line_end": 246,
+      "relevance": "Owns the standing present at Ninth Furnace: Iresa, Nema, Taru, Melka, the Iron Shelter route, withdrawn shrines, one recognized-share opening, and three-horn clock."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Kalsa's standing present, during the preparation for the reopened Ash-Halo Court armament; absolute date remains unresolved.",
+    "location": "The fixture-bounded tributary bakehouse at Ninth Furnace, immediately below one controlled stair and slatted threshold leading toward the Ash-Halo furnace court.",
+    "summary": "The Ash-Below Compact conducts ordinary bread and relief accounting before Ninth Furnace's registrar exposes its copy route. Ves must decide whether to complete three separate claims, provision affected households, turn exposure into lawful leverage, or preserve an outer copy before the second horn.",
+    "public_facts": [
+      {
+        "text": "Jamnai branch institutions allocate protection while technical stewards retain control of dangerous heatwork operation.",
+        "source_refs": ["public-peoples-polities", "submission-hierarchy"]
+      },
+      {
+        "text": "The earlier Ash-Halo armament drew protection from outer shrines, crossed a mortuary route, and left familiar presences silent after its answer roll remained sealed.",
+        "source_refs": ["public-ash-halo", "ash-halo-history"]
+      },
+      {
+        "text": "Answer rolls record familiar signs and witnesses around great rites without proving the identity or intention of a manifestation.",
+        "source_refs": ["public-gods-dead", "death-binding-law"]
+      },
+      {
+        "text": "Ninth Furnace's present armament offers one recognized-share petition before the divine route opens and has withdrawn ordinary protection from a hostel and furnace-family shrine.",
+        "source_refs": ["ash-halo-court"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "A divine faction acts through mortal registrars, stewards, intermediaries, champions, stores, and admission tokens, none of which individually owns the god or the dead.",
+        "source_refs": ["god-cult-covenants", "potential-economy", "death-binding-law", "ash-halo-court"]
+      },
+      {
+        "text": "The Ash-Below Compact's strength comes from split custody and constituencies: branch exposure reveals its members but cannot remove the hostel, bakehouse, shrine, and mortuary work Ninth Furnace still needs.",
+        "source_refs": ["soirui-sects", "submission-hierarchy"]
+      },
+      {
+        "text": "Ash Hook can benefit from delay at Ninth Furnace, but its missing fracture copy and the legitimacy of its diversion remain unresolved; the fixture must not make it the compact's secret owner.",
+        "source_refs": ["ash-halo-court"]
+      },
+      {
+        "text": "Concentrated divine work is vulnerable to rival intervention and hungry dead, but no participant can infer full metaphysical identity from radiance, silence, or a familiar sign.",
+        "source_refs": ["oracle-ecology", "projection-gods-thaumavores", "ash-halo-history"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "ash-below-compact",
+      "label": "Ash-Below Compact",
+      "group_type": "local_soirui_copy_and_relief_alliance",
+      "institutional_logic": ["Coordinate covenant petition, potential withdrawal, mortuary evidence, and material relief while keeping their offices separate."],
+      "material_incentives": ["Preserve answer-roll copies", "Feed households whose protection was withdrawn", "Keep a later appeal possible", "Prevent one registrar from owning the only history"],
+      "internal_virtues": ["Split custody", "Named responsibility", "Fallback routes", "Ambition cut before dependants are cut"],
+      "internal_shames": ["A carrier sold for a cleaner hearing", "A relief list that excludes inconvenient households", "A familiar name used to hide a dangerous feeder"],
+      "prestige_markers": ["A copy that survives seizure", "A store opened before hunger decides the appeal", "A refusal recorded in more than one jurisdiction"],
+      "taboo_triggers": ["One member claiming to speak for the dead", "A branch calling coordinated lawful offices a private army", "A patron purchasing the fallback route"],
+      "emotional_display_norms": ["Fear is compressed into inventory work, custody jokes, route marks, and arguments over who is still owed."],
+      "trust_defaults": ["Trusts divided records and material support more than divine certainty; trusts members only within their named office and next handoff."],
+      "speech_register_cues": ["Bread and lamp counts", "Named office boundaries", "Dry conspiracy humor", "Specific custody verbs"],
+      "source_refs": ["soirui-sects", "potential-economy", "death-binding-law"]
+    },
+    {
+      "group_id": "ninth-furnace-continuity",
+      "label": "Ninth Furnace continuity faction",
+      "group_type": "jamnai_branch_and_cult_offices",
+      "institutional_logic": ["Open the Iron Shelter's armament route before Ash Hook consolidates the East Collar gate."],
+      "material_incentives": ["Restore heat to the hostel and bakehouse", "Hold the gate", "Protect branch standing", "Prevent route intelligence reaching rivals"],
+      "internal_virtues": ["Decisive protection", "Clean dockets", "Recognized shares", "A champion who reaches the gate before the opening closes"],
+      "internal_shames": ["A branch delayed by subordinate paperwork", "A rite feeding an unrecognized claimant", "A victory that cannot restore its withdrawn shrines"],
+      "prestige_markers": ["One authoritative branch copy", "An armament completed on the forecasted interval", "A refusal entered as contained dissent"],
+      "taboo_triggers": ["Independent carriers entering a divine route", "Ash Hook profiting from delay", "Mortuary custody limiting branch narration"],
+      "emotional_display_norms": ["Urgency is expressed as admission control, clean rosters, horn timing, and contempt for procedural multiplication."],
+      "trust_defaults": ["Trusts recognized branch offices and witnesses inside the docket; treats unlisted coordination as rival command."],
+      "speech_register_cues": ["One petition", "One bearer", "Named sponsorship", "Protection framed as continuity"],
+      "source_refs": ["submission-hierarchy", "god-cult-covenants", "ash-halo-court"]
+    },
+    {
+      "group_id": "withdrawn-households",
+      "label": "Hostel, shrine, and tributary bakehouse households",
+      "group_type": "dependent_constituency",
+      "institutional_logic": ["Keep food, heat, burial testimony, and household standing through a divine allocation made elsewhere."],
+      "material_incentives": ["Receive marked bread and lamp oil", "Preserve proof of withdrawn protection", "Avoid punishment for testimony", "Keep ordinary work running"],
+      "internal_virtues": ["Answering one's own mark", "Public distribution", "Remembering what the branch promised"],
+      "internal_shames": ["A household protected by another household's erasure", "A hidden reserve captured by a new patron"],
+      "prestige_markers": ["A receipt the branch must recognize", "A full tray when the shrine goes quiet", "A witness who returns home"],
+      "taboo_triggers": ["Being reduced to a withdrawal line", "Relief conditioned on inherited submission", "The gate war used to erase ordinary claims"],
+      "emotional_display_norms": ["Political alignment is expressed through queues, work attendance, answered marks, and who carries food to an absent household."],
+      "trust_defaults": ["Trusts whoever delivers the promised material support; remains divided over gods, sects, and branch loyalty."],
+      "speech_register_cues": ["Household marks", "Missing water and heat", "Who ate", "Who was entered as owed"],
+      "source_refs": ["potential-economy", "soirui-sects", "ash-halo-court"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "ash-below-compact.split-custody-or-capture",
+      "applies_to": ["ash-below-compact"],
+      "pressure_type": "conspiratorial_resilience",
+      "summary": "The compact must coordinate several lawful authorities closely enough to bite while keeping any one arrest or seizure from owning the whole claim.",
+      "projection_use": "Give Ves choices that strengthen copies, relief, solidarity, public standing, or fallback routes at different costs; no choice may grant control of divine identity or the court machinery.",
+      "source_refs": ["soirui-sects", "death-binding-law", "god-cult-covenants"]
+    },
+    {
+      "field_id": "ninth-furnace-continuity.one-door-one-story",
+      "applies_to": ["ninth-furnace-continuity"],
+      "pressure_type": "divine_route_control",
+      "summary": "The branch gains speed and security by forcing several claims through one admission token, but that compression gives the registrar political ownership over which problem exists.",
+      "projection_use": "Nema should enforce a plausible branch boundary and preserve exact records while interpreting every ambiguity in Ninth Furnace's favor.",
+      "source_refs": ["ash-halo-court", "submission-hierarchy"]
+    },
+    {
+      "field_id": "withdrawn-households.material-clock",
+      "applies_to": ["withdrawn-households"],
+      "pressure_type": "welfare_dependency",
+      "summary": "A later appeal is meaningless if withdrawn households run out of food, lamp fuel, heat, or witness support first.",
+      "projection_use": "Make every record strategy answer the immediate distribution line and every relief strategy preserve who remains owed.",
+      "source_refs": ["potential-economy", "god-cult-covenants"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "ninth-furnace-continuity",
+      "target_group_id": "ash-below-compact",
+      "observer_read": ["An Ash Hook delay cell", "A rival branch hidden inside mortuary procedure", "A route leak inviting feeders"],
+      "target_self_read": ["Several bounded offices making one divine refusal reviewable", "A relief network that remains useful after exposure"],
+      "misread_patterns": ["Treats coordination as command", "Treats a copied sign as a claimed identity", "Treats every delay beneficiary as the plot's owner"],
+      "likely_insults": ["ash rats", "borrowed mourners", "four offices seeking one throne"],
+      "projection_use": "Let Nema identify real security risks without turning her suspicion into proof of Ash Hook control or hostile dead identity.",
+      "source_refs": ["soirui-sects", "ash-halo-court"]
+    },
+    {
+      "observer_group_id": "ash-below-compact",
+      "target_group_id": "ninth-furnace-continuity",
+      "observer_read": ["A divine faction using one token to own three jurisdictions", "A branch willing to spend outer shrines for a visible champion"],
+      "target_self_read": ["The only organized protection capable of retaking the East Collar gate before the forecasted opening closes"],
+      "misread_patterns": ["Can reduce real siege pressure to patron ambition", "Can assume every clean docket is deliberate concealment rather than hurried control"],
+      "likely_insults": ["horn counters", "one-case saints", "keepers of the convenient dead"],
+      "projection_use": "Keep the compact wary of concentrated power while making the material cost of delay and a failed gate assault legible.",
+      "source_refs": ["ash-halo-court", "potential-economy"]
+    },
+    {
+      "observer_group_id": "withdrawn-households",
+      "target_group_id": "ash-below-compact",
+      "observer_read": ["People who may preserve a perfect case and deliver cold bread", "Useful storekeepers mixed with sect business"],
+      "target_self_read": ["The network keeping food and appeal alive together"],
+      "misread_patterns": ["Can judge secrecy by immediate distribution only", "Can treat a route sacrificed for later evidence as abandonment"],
+      "likely_insults": ["copy eaters", "basket prophets", "people who feed paper first"],
+      "projection_use": "Ensure household reactions follow material support and visibility rather than automatic loyalty to the compact.",
+      "source_refs": ["potential-economy", "soirui-sects"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "bakehouse-tally-keeper",
+      "summary": "A local clerk whose marks connect ordinary food distribution to branch promises and copied evidence.",
+      "obligations": ["Keep household marks accurate", "Separate office list from route list", "Preserve who remains owed", "Do not turn accounting into divine testimony"],
+      "available_masks": ["Routine bread count", "Tributary compliance", "Clerical literalism", "Dry workroom humor"],
+      "failure_modes": ["Treating people as copy infrastructure", "Exposing carriers before solidarity exists", "Preserving evidence while households go hungry"],
+      "source_refs": ["soirui-sects", "potential-economy"]
+    },
+    {
+      "role_id": "branch-registrar",
+      "summary": "A Ninth Furnace record officer who controls branch admission and preserves exact refusals while interpreting them for the holder.",
+      "obligations": ["Keep the branch docket legible", "Name sponsorship", "Protect the rite from unlisted routes", "Record decisions the branch may later need"],
+      "available_masks": ["Procedural fairness", "Security concern", "Literal custody questions", "Compressed urgency"],
+      "failure_modes": ["Making one bearer own several jurisdictions", "Treating coordination as magical submission", "Preserving a record so partisan that rival copies become stronger"],
+      "source_refs": ["submission-hierarchy", "ash-halo-court"]
+    },
+    {
+      "role_id": "soirui-recognizer",
+      "summary": "A public claimant who can recognize one recorded sign and request warning, withdrawal, or a share without proving identity.",
+      "obligations": ["Keep sign separate from identity", "State the requested act", "Refuse binding in the defeated champion's name", "Remain answerable to household copies"],
+      "available_masks": ["Branch petitioner", "Mourner", "Hearth advocate", "Defeated champion's follower"],
+      "failure_modes": ["Turning recognition into ownership", "Letting personal standing replace the copy chain", "Serving a rival branch for access"],
+      "source_refs": ["soirui-sects", "death-binding-law", "ash-halo-court"]
+    },
+    {
+      "role_id": "independent-death-witness",
+      "summary": "An outside mortuary witness whose case can hold an answer-roll copy beyond the branch registrar's sole custody.",
+      "obligations": ["Record signs and custody", "Preserve adverse evidence", "Refuse metaphysical conclusions", "Keep the route's material hazards distinct"],
+      "available_masks": ["Neutral procedure", "Mortuary distance", "Exact custody language"],
+      "failure_modes": ["Purchased independence", "Treating a complete copy as a complete person", "Withholding evidence to protect the compact"],
+      "source_refs": ["death-binding-law", "ash-halo-court"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "ves",
+      "known_context": [
+        {"text": "Ves knows the bakehouse tally, current compact office list, her own route handoffs, household withdrawals, public branch marks, and what enters or leaves the scoring table.", "source_refs": ["soirui-sects", "potential-economy"]}
+      ],
+      "beliefs": [
+        {"text": "Ves believes exposure can be survived when a conspiracy's real leverage lies in necessary offices and separately held records.", "source_refs": ["soirui-sects", "submission-hierarchy"]}
+      ],
+      "misreads": [
+        {"text": "Ves may overvalue a copy that cannot feed a household or reach a competent later forum.", "source_refs": ["potential-economy", "death-binding-law"]}
+      ],
+      "must_not_know": [
+        {"text": "Ves must not know the dead identity behind a sign, the Iron Shelter's full perception, Ash Hook's actual fracture evidence, or the rite's future outcome.", "source_refs": ["canon-policy", "projection-gods-thaumavores", "ash-halo-court"]}
+      ]
+    },
+    {
+      "speaker_id": "nema",
+      "known_context": [
+        {"text": "Nema knows Ninth Furnace's orders, branch copy, admitted petition token, named carriers she has stopped, and the marks placed in her case.", "source_refs": ["submission-hierarchy", "ash-halo-court"]}
+      ],
+      "beliefs": [
+        {"text": "Nema believes unlisted coordination near a divine route is both a security risk and a rival authority claim.", "source_refs": ["ash-halo-court", "god-cult-covenants"]}
+      ],
+      "misreads": [
+        {"text": "Nema may treat the branch that benefits from delay as the compact's owner without evidence of an agreement.", "source_refs": ["ash-halo-court"]}
+      ],
+      "must_not_know": [
+        {"text": "Nema must not know the full route list before it is exposed or infer divine intent from a clean docket.", "source_refs": ["canon-policy", "god-cult-covenants"]}
+      ]
+    },
+    {
+      "speaker_id": "taru",
+      "known_context": [
+        {"text": "Taru knows his household copy, the defeated champion's recorded sign, the silent shrine, and the recognized act he intends to request.", "source_refs": ["soirui-sects", "ash-halo-court"]}
+      ],
+      "beliefs": [
+        {"text": "Taru believes a warning or withdrawal request can preserve the old champion's claim without accepting a new binding in that champion's name.", "source_refs": ["ash-halo-court"]}
+      ],
+      "misreads": [
+        {"text": "Taru may hear split route knowledge as distrust of his claim rather than protection against seizure.", "source_refs": ["soirui-sects"]}
+      ],
+      "must_not_know": [
+        {"text": "Taru must not treat a familiar gesture as proof that the champion survives complete or wants the same petition.", "source_refs": ["death-binding-law", "projection-gods-thaumavores"]}
+      ]
+    },
+    {
+      "speaker_id": "melka",
+      "known_context": [
+        {"text": "Melka knows the custody and contents of copies actually placed in her case and the signs she has authority to witness.", "source_refs": ["death-binding-law", "ash-halo-court"]}
+      ],
+      "beliefs": [
+        {"text": "Melka believes independent custody is useful only if she remains free to record evidence adverse to whoever paid her costs.", "source_refs": ["death-binding-law"]}
+      ],
+      "misreads": [
+        {"text": "Melka may underestimate how the branch uses delay and access to punish households before a later hearing.", "source_refs": ["potential-economy"]}
+      ],
+      "must_not_know": [
+        {"text": "Melka must not identify a manifestation beyond the recorded sign and corroborating testimony.", "source_refs": ["death-binding-law", "canon-policy"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Projection, God Beast, thaumavore, oracle ecology, and timeline capture are backstage terms. Characters may speak of gods, routes, signs, shrines, feeding, branch pressure, and records but do not receive the author taxonomy.",
+      "source_refs": ["canon-policy", "projection-gods-thaumavores", "oracle-ecology"]
+    },
+    {
+      "text": "The Ash-Below Compact is one Spoilers-tier authored local alliance. It does not settle native sect terminology, Jamnai-wide conspiracy practice, or universal appeal law.",
+      "source_refs": ["soirui-sects", "canon-policy"]
+    },
+    {
+      "text": "The fixture may change which claims, copies, and relief stores reach the threshold. It must not choose the Ash-Halo Court's canonical outcome, identify the feeder, decide what the dead want, or resolve Ash Hook's missing inspection copy.",
+      "source_refs": ["ash-halo-court", "ash-halo-history"]
+    },
+    {
+      "text": "Individual character appearances, bakehouse dimensions, and the compact's current personnel are local authored detail, not universal Terjamna physiology or Jamnai architecture.",
+      "source_refs": ["jamnai-polity", "soirui-sects"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which native words would Ninth Furnace use for the Ash-Below Compact, its office list, and its route list?",
+      "blocks_training": false,
+      "notes": "The elaboration marks Ash-Below as a translated hearing name and keeps office titles functional because native terminology remains unresolved."
+    },
+    {
+      "question": "Which mortuary office beyond Ninth Furnace can receive the compact's outer copy?",
+      "blocks_training": false,
+      "notes": "The fixture preserves an outer handoff without inventing a regional appellate authority that the vault has not adopted."
+    },
+    {
+      "question": "What precise public markings distinguish Ninth Furnace branch custody, mortuary custody, hostel stores, and tributary household claims?",
+      "blocks_training": false,
+      "notes": "The visual plan uses bounded local materials—bronze case, clay ties, key ring, scored leaves, and household tray marks—without declaring continent-wide heraldry."
+    }
+  ]
+}

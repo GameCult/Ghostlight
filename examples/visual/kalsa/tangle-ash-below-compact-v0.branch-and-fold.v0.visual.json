@@ -1,0 +1,498 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "kalsa-tangle-ash-below-compact-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/kalsa/tangle-ash-below-compact-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/kalsa/tangle-ash-below-compact-v0.branch-and-fold.v0.training.json",
+  "scene_id": "tangle-ash-below-compact-v0.one-list-before-second-horn",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for the Ash-Below Compact's exposed copy-and-relief operation at Ninth Furnace.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for bakehouse routine, compact roster, separated records, registrar exposure, the one-token threshold, and four state-gated aftermath families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for establishing work, introducing the compact, the three-record closeup, preparation choice and fold, Nema's entrance, the exposed route strip, the passage token, the final threshold, and each ending family. The first horn and Nema's torn route strip receive distinct replay beats because each changes the room's power geometry.",
+    "prompting_rule": "Each base image prompt is a complete affirmative description of one frame for a general image model. Prompt assembly adds only visible named-character refs, the global style cue, and triggered state or branch modifiers. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Style: painterly high-fantasy storybook illustration with soot-dark geothermal masonry, ember-orange and oxidized-copper color, precise tactile work objects, expressive human posture, readable political staging, restrained magical ambiguity, cinematic interactive-fiction framing, unlettered surfaces.",
+    "prompt_assembly_rule": "Assemble global_style_cue plus the selected base_image_prompt plus visual refs only for agents or groups listed in visible_characters, then append triggered state_image_modifiers and global_branch_image_modifiers. Use the embedded coordinate scene_set as geometry authority for every camera slot.",
+    "scene_set_guidance": {
+      "current_mode": "embedded_coordinate_layout",
+      "scope_reason": "All replay beats occupy one fixture-bounded bakehouse and its visible stair landing. The embedded measured coordinate map fixes walls, routes, occlusion, cameras, props, and staging slots for B-level replay continuity.",
+      "future_scene_set_need": "A 3D blockout may improve production-quality repaint consistency, but the embedded coordinate layout is the current durable geometry authority and does not depend on generated concept art."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "ash_below_bakehouse_establishing",
+        "ink_anchor": "start",
+        "camera_slot": "wide_from_hostel_door",
+        "base_image_prompt": "Wide interior of a compact high-fantasy geothermal bakehouse built from dark fitted stone. Six arched ovens glow along the north wall beneath copper heat pipes; a long waist-high scoring table runs east to west through the center; a washing trough at the northwest corner holds cold water and a skin of steam from nearby ovens; reed bread trays line the west wall; a slatted ironwood door on the east wall opens to a steep stone stair rising toward a furnace court; a lower south stair descends beside a burial-meal shelf. Ves, a sturdy adult tally keeper in a flour-gray apron, scores flat ration loaves at the central table while three bakers in rolled work wraps move loaves with long wooden peels. Ember light and pale shaft light reveal soot, flour, clay tally ties, and exact working routes.",
+        "visible_characters": [
+          {
+            "agent_id": "ves",
+            "default_stance": "standing at the central scoring table with scorer in one hand and loaf tally under the other",
+            "visual_ref": "visual_character_refs.characters.ves"
+          },
+          {
+            "agent_id": "bakehouse_workers_and_households",
+            "default_stance": "three bakers moving between ovens, cooling rack, and reed trays",
+            "visual_ref": "visual_character_refs.groups.bakehouse_workers_and_households"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The north oven wall, central east-west table, west hostel door and tray wall, south lower stair and burial shelf, east slatted court door, and upper landing preserve their coordinate positions in every frame.",
+          "The visible cold-water trough is a consequence of the East Collar diversion; the ovens remain hot."
+        ]
+      },
+      {
+        "visual_scene_id": "ash_below_compact_roster",
+        "ink_anchor": "ordinary_roster",
+        "camera_slot": "medium_table_to_court_stair",
+        "base_image_prompt": "Medium-wide view along the central scoring table toward the slatted east door and upper stair landing. Ves stands at the near end with a clay scoring tool and open bread tally. Enka, an older broad-bodied hostel store steward in a dark red apron, stacks loaves into reed trays with three iron keys displayed at her belt. Salen, a lean release-tradition carrier in a patched gray cloak, waits beside the south burial-meal shelf with an empty lidded basket. Taru, a thick-set recognizer in a charcoal work wrap, warms scarred hands near the oven mouth. Through the slats and above them, Melka waits on the stone landing with a closed palewood mortuary case. The frame reads as ordinary food work joined by four distinct offices and one outside witness.",
+        "visible_characters": [
+          {"agent_id": "ves", "default_stance": "at near end of scoring table", "visual_ref": "visual_character_refs.characters.ves"},
+          {"agent_id": "enka", "default_stance": "stacking marked loaves with keys visible", "visual_ref": "visual_character_refs.characters.enka"},
+          {"agent_id": "salen", "default_stance": "beside burial shelf holding an empty basket", "visual_ref": "visual_character_refs.characters.salen"},
+          {"agent_id": "taru", "default_stance": "near oven mouth warming both hands", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "melka", "default_stance": "visible on upper landing beyond slatted door with mortuary case", "visual_ref": "visual_character_refs.characters.melka"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Melka is physically outside the bakehouse beyond the controlled door, visible only through the slats and stair opening."
+        ]
+      },
+      {
+        "visual_scene_id": "ash_below_three_records",
+        "ink_anchor": "compact_routine",
+        "camera_slot": "overhead_record_close",
+        "base_image_prompt": "Overhead close view of a flour-dusted dark wood scoring table under warm oven light. Three separate records occupy distinct cloth squares: thin answer-roll copy leaves tied with scored clay seals and small ink drawings of a counting hand and warning mouth; a withdrawal tally with hostel and shrine marks beside two cold copper tokens; a bread tray list aligned with flat loaves, lamp-oil cups, and household clay markers. Ves's flour-marked hands hold a blunt bone scorer between the records. Enka's three keys rest above the tray list; Taru's scarred right hand touches only the recognizer's copy. The objects remain visibly separate despite their deliberate alignment.",
+        "visible_characters": [
+          {"agent_id": "ves", "default_stance": "hands framing the three records", "visual_ref": "visual_character_refs.characters.ves"},
+          {"agent_id": "enka", "default_stance": "one hand and three keys at the tray-list edge", "visual_ref": "visual_character_refs.characters.enka"},
+          {"agent_id": "taru", "default_stance": "scarred hand touching only the recognizer copy", "visual_ref": "visual_character_refs.characters.taru"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The answer-roll copy, withdrawal tally, and tray list are three objects in separate custody, never one merged master ledger."
+        ]
+      },
+      {
+        "visual_scene_id": "ash_below_preparation_choice",
+        "ink_anchor": "preparation_choice",
+        "camera_slot": "high_corner_work_map",
+        "visual_continuity_notes": ["Hold all four work routes and their objects in the base state; the selected preparation modifier changes only its owned route."],
+        "base_image_prompt": "High corner view of the Ninth Furnace bakehouse presenting four practical conspiracy levers around the central table: sturdy brown-skinned Ves in a cream headcloth and flour-gray apron can divide thin copy leaves among scored clay ties; broad dark-skinned Enka in a red apron with three iron keys can move loaves and lamp oil into publicly marked reed trays along the west wall; thick-set Taru in a charcoal wrap, his right hand scarred, can answer household marks with two bakers; lean Salen in a patched gray carrier cloak can carry an empty burial basket toward the south stair. The hot north ovens, cold northwest trough, west hostel door, south stair, east slatted court door, and upper landing all remain visible as a compact route map made from ordinary work.",
+        "visible_characters": [
+          {"agent_id": "ves", "default_stance": "centered at the records", "visual_ref": "visual_character_refs.characters.ves"},
+          {"agent_id": "enka", "default_stance": "beside relief trays", "visual_ref": "visual_character_refs.characters.enka"},
+          {"agent_id": "salen", "default_stance": "at burial shelf facing south stair", "visual_ref": "visual_character_refs.characters.salen"},
+          {"agent_id": "taru", "default_stance": "at table with household markers", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "bakehouse_workers_and_households", "default_stance": "two bakers near ovens and table", "visual_ref": "visual_character_refs.groups.bakehouse_workers_and_households"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ash_below_preparation_fold",
+        "ink_anchor": "preparation_fold",
+        "camera_slot": "wide_from_hostel_door",
+        "visual_continuity_notes": ["Preserve the oven-to-table-to-tray workline; Salen is off frame and the selected preparation modifier owns any changed records, stores, or route object."],
+        "base_image_prompt": "Wide bakehouse routine after the compact's first preparation. Hot flat loaves move from six north-wall ovens to the central scoring table and then into reed trays along the west wall. Sturdy brown-skinned Ves, cream headcloth above a flour-gray apron, keeps the household tally at center; older broad dark-skinned Enka, in a red apron with three iron keys, works the tray line; thick-set Taru in a charcoal work wrap stands near the eastward court route; two varied bakers keep the oven traffic moving. A bronze horn mouth high beyond the slatted east door catches light as the first call approaches. The cold washing trough, burial shelf, south stair, and visible upper landing fix the room geometry.",
+        "visible_characters": [
+          {"agent_id": "ves", "default_stance": "working the central tally", "visual_ref": "visual_character_refs.characters.ves"},
+          {"agent_id": "enka", "default_stance": "moving relief trays", "visual_ref": "visual_character_refs.characters.enka"},
+          {"agent_id": "taru", "default_stance": "waiting near court door", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "bakehouse_workers_and_households", "default_stance": "two bakers maintaining oven traffic", "visual_ref": "visual_character_refs.groups.bakehouse_workers_and_households"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "copy_chain >= 4", "modifier_prompt": "Three thin copy leaves with differently scored clay ties sit in separate locations: one under a reed tray, one in a lidded burial basket, and one beneath the open day tally."},
+          {"trigger": "relief_reserve >= 4", "modifier_prompt": "The west wall holds several full reed trays marked by household clay tokens, with small lamp-oil cups beside them."},
+          {"trigger": "compact_cohesion >= 3", "modifier_prompt": "Ves, Enka, Taru, and the bakers move in coordinated lines around the table with easy shared eye contact."},
+          {"trigger": "compact_cohesion <= 1", "modifier_prompt": "The workers maintain the line with guarded spacing and eyes fixed on their separate objects."},
+          {"trigger": "route_integrity >= 4", "modifier_prompt": "A clay-knotted fallback cord is visible leaving in a basket at the lower south stair."},
+          {"trigger": "branch_exposure >= 3", "modifier_prompt": "Several household witnesses stand openly at the west tray wall with their marks raised."}
+        ]
+      },
+      {
+        "visual_scene_id": "ash_below_first_horn",
+        "ink_anchor": "first_horn",
+        "camera_slot": "court_door_low_angle",
+        "visual_continuity_notes": ["The slatted door remains closed for the horn beat; flour, flame, and chain movement carry the sound before Nema enters."],
+        "base_image_prompt": "Low-angle pivotal frame from the bakehouse floor toward the slatted east door. The bronze horn mouth above the upper landing vibrates under ember light; loose flour lifts from the central scoring table; oven flames lean slightly with changed furnace draft. Sturdy brown-skinned Ves in a cream headcloth and flour-gray apron, older broad dark-skinned Enka in a red apron with three iron keys, and thick-set Taru in a charcoal wrap with a scarred right hand turn toward the door. The hot stone, copper pipes, reed trays, and clay seals make the sound visible through small material movement.",
+        "visible_characters": [
+          {"agent_id": "ves", "default_stance": "turning from table toward court door", "visual_ref": "visual_character_refs.characters.ves"},
+          {"agent_id": "enka", "default_stance": "one hand on a relief tray", "visual_ref": "visual_character_refs.characters.enka"},
+          {"agent_id": "taru", "default_stance": "facing the slatted door", "visual_ref": "visual_character_refs.characters.taru"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ash_below_registrar_arrival",
+        "ink_anchor": "registrar_arrival",
+        "camera_slot": "medium_table_to_court_stair",
+        "base_image_prompt": "Medium confrontation view along the scoring table toward the open slatted east door. Compact ochre-brown Nema, black hair in one severe knot and soot-black wrap narrowly edged in copper, descends from the upper stair carrying a rigid bronze document case. She places a torn clay-tied route strip in the flour at the table center. Sturdy brown-skinned Ves in a cream headcloth and flour-gray apron stands opposite with scorer and day tally; older broad dark-skinned Enka in a red apron covers her three-key ring with one floury hand; thick-set Taru in a charcoal wrap looks past Nema toward the upper court stair. Hot ovens glow behind them while the branch entrance frames Nema in colder shaft light.",
+        "visible_characters": [
+          {"agent_id": "ves", "default_stance": "opposite Nema at scoring table", "visual_ref": "visual_character_refs.characters.ves"},
+          {"agent_id": "nema", "default_stance": "placing torn route strip on table with bronze case under arm", "visual_ref": "visual_character_refs.characters.nema"},
+          {"agent_id": "enka", "default_stance": "one hand covering the key ring", "visual_ref": "visual_character_refs.characters.enka"},
+          {"agent_id": "taru", "default_stance": "watching the court stair beyond Nema", "visual_ref": "visual_character_refs.characters.taru"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Nema enters only through the east court stair and door. The torn route strip stays on the central table until the final choice."
+        ]
+      },
+      {
+        "visual_scene_id": "ash_below_exposure_choice",
+        "ink_anchor": "exposure_choice",
+        "camera_slot": "table_side_power_geometry",
+        "visual_continuity_notes": ["Keep Nema on the east side and Ves on the west side of the table; the office list, tally, copy basket, and unfinished loaf remain separately reachable."],
+        "base_image_prompt": "Table-side political choice frame in the geothermal bakehouse. Compact ochre-brown registrar Nema, black hair knotted above a soot-black wrap with copper edging, stands behind a torn route strip and open bronze case on the east side of the flour-dusted table. Sturdy brown-skinned Ves, cream headcloth and flour-gray apron marked with work, has four reachable tools on the west side: a lawful office list, open household bread tally, scored copy leaf beside a lidded burial basket, and blunt scorer above the next loaf. Older broad dark-skinned Enka in a red apron guards the relief trays; thick-set Taru in a charcoal wrap waits near the slatted court door. The arrangement makes speech, evidence transfer, public accounting, and continued work visibly different actions.",
+        "visible_characters": [
+          {"agent_id": "ves", "default_stance": "hands poised between list, tally, copy leaf, and loaf", "visual_ref": "visual_character_refs.characters.ves"},
+          {"agent_id": "nema", "default_stance": "watching across open bronze case", "visual_ref": "visual_character_refs.characters.nema"},
+          {"agent_id": "enka", "default_stance": "at relief trays with keys visible", "visual_ref": "visual_character_refs.characters.enka"},
+          {"agent_id": "taru", "default_stance": "near the east door awaiting admission", "visual_ref": "visual_character_refs.characters.taru"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ash_below_passage_token",
+        "ink_anchor": "exposure_fold",
+        "camera_slot": "overhead_record_close",
+        "visual_continuity_notes": ["The token and torn route strip begin beside Nema's open case; state modifiers may change marks and custody but retain the separate cloth squares."],
+        "base_image_prompt": "Close overhead view of the table after exposure: a fired-clay passage token lies beside compact registrar Nema's torn route strip and open bronze case; sturdy tally keeper Ves's office list, bread tally, and remaining scored leaves occupy separate cloth squares; flour shows fresh finger and case marks. Through the upper edge of frame, tall dark-skinned Melka in a long linen coat and pale sash waits on the stair landing with a rigid palewood mortuary case. Thick-set Taru's scarred right hand waits near the token; Nema's ink-dark fingertips remain on the route strip; Ves's floury hand points the bone scorer between them.",
+        "visible_characters": [
+          {"agent_id": "ves", "default_stance": "scorer pointing between records and token", "visual_ref": "visual_character_refs.characters.ves"},
+          {"agent_id": "nema", "default_stance": "fingertips holding torn route strip", "visual_ref": "visual_character_refs.characters.nema"},
+          {"agent_id": "taru", "default_stance": "scarred hand waiting near token", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "melka", "default_stance": "upper landing with palewood case", "visual_ref": "visual_character_refs.characters.melka"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "branch_exposure >= 4", "modifier_prompt": "Nema's open case contains several neatly aligned name leaves and household marks, showing a prosecutable roster beside the branch's knowledge of withdrawn protection."},
+          {"trigger": "taru_access >= 2", "modifier_prompt": "The passage token carries Taru's dark charcoal recognizer mark beside the branch seal."},
+          {"trigger": "taru_access <= 0", "modifier_prompt": "The passage token carries a fresh scraped patch where Taru's recognizer mark was removed."},
+          {"trigger": "melka_custody >= 2", "modifier_prompt": "Melka's palewood case on the landing is closed around a visible scored clay tie."},
+          {"trigger": "horn_pressure >= 3", "modifier_prompt": "The upper stair glows brighter from opened furnace racks, and fine flour shivers in repeated lines across the table."}
+        ]
+      },
+      {
+        "visual_scene_id": "ash_below_threshold_choice",
+        "ink_anchor": "threshold_choice",
+        "camera_slot": "court_door_low_angle",
+        "visual_continuity_notes": ["This is the pre-choice token state: token on ledge, Taru below the first stair, porter on the floor route, Melka on the upper landing."],
+        "base_image_prompt": "Low-angle threshold decision at the east side of the bakehouse. The single fired-clay passage token rests on a small stone ledge inside the open slatted door. Thick-set Taru in a charcoal wrap waits below the first stair with his household copy and scarred right hand visible; a young bakehouse porter in rolled work wraps holds a lidded burial basket near the south-to-east floor route; older broad dark-skinned Enka in a red apron steadies the first relief tray; compact ochre-brown Nema in a copper-edged black wrap stands inside the door with her bronze case; tall dark-skinned Melka in a long linen coat and pale sash waits higher with an empty palewood case. Sturdy brown-skinned Ves in a cream headcloth and flour-gray apron stands where she can hand the token to Taru, place it on the porter basket, set it in the relief tray, or show Nema the matching route strip.",
+        "visible_characters": [
+          {"agent_id": "ves", "default_stance": "centered below threshold with one hand near token", "visual_ref": "visual_character_refs.characters.ves"},
+          {"agent_id": "nema", "default_stance": "inside slatted door guarding court stair", "visual_ref": "visual_character_refs.characters.nema"},
+          {"agent_id": "taru", "default_stance": "below first stair holding household copy", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "enka", "default_stance": "beside relief tray at table edge", "visual_ref": "visual_character_refs.characters.enka"},
+          {"agent_id": "melka", "default_stance": "upper landing holding empty mortuary case", "visual_ref": "visual_character_refs.characters.melka"},
+          {"agent_id": "bakehouse_workers_and_households", "default_stance": "one young porter holding lidded basket", "visual_ref": "visual_character_refs.groups.bakehouse_workers_and_households"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ash_below_final_threshold",
+        "ink_anchor": "final_threshold",
+        "camera_slot": "high_corner_work_map",
+        "visual_continuity_notes": ["Keep the base frame neutral about token custody; preparation, exposure, and threshold modifiers own every moved object and altered route."],
+        "base_image_prompt": "High corner view of the complete Ninth Furnace bakehouse pressure map before the second horn. Six hot north-wall ovens and copper heat pipes face the cold northwest washing trough; the central table holds separated copy leaves, household tally, a torn route strip, and open bronze case; west relief trays stand beside the hostel door; south burial shelf and lower stair carry ordinary traffic; the east slatted door and rising court stair frame compact ochre-brown registrar Nema in a copper-edged black wrap. Sturdy brown-skinned Ves in a cream headcloth and flour-gray apron stands at the table, older broad dark-skinned Enka in a red apron stands at the trays, thick-set Taru in a charcoal wrap waits near the east door, and several varied household witnesses line the west wall. Flour trembles as court weights test above.",
+        "visible_characters": [
+          {"agent_id": "ves", "default_stance": "center table facing all four routes", "visual_ref": "visual_character_refs.characters.ves"},
+          {"agent_id": "enka", "default_stance": "at relief trays", "visual_ref": "visual_character_refs.characters.enka"},
+          {"agent_id": "taru", "default_stance": "near the controlled east door", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "nema", "default_stance": "inside court threshold with bronze case", "visual_ref": "visual_character_refs.characters.nema"},
+          {"agent_id": "bakehouse_workers_and_households", "default_stance": "household witnesses and bakers along west wall and oven line", "visual_ref": "visual_character_refs.groups.bakehouse_workers_and_households"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "copy_chain >= 4", "modifier_prompt": "Scored answer-roll leaves appear in three separate custody positions: day tally, relief tray, and mortuary-route basket."},
+          {"trigger": "copy_chain <= 2", "modifier_prompt": "One prominent scored answer-roll leaf sits near the open bronze case, carrying visibly concentrated risk."},
+          {"trigger": "relief_reserve >= 4", "modifier_prompt": "The west wall shows full marked bread trays and lamp-oil cups ready for distribution."},
+          {"trigger": "relief_reserve <= 2", "modifier_prompt": "Only two partly filled bread trays and a few lamp-oil cups remain at the west wall."},
+          {"trigger": "compact_cohesion >= 4", "modifier_prompt": "Enka, Taru, Ves, and household witnesses face the threshold in a coordinated line while retaining their separate objects."},
+          {"trigger": "compact_cohesion <= 1", "modifier_prompt": "The compact members stand in isolated clusters around separate records, eyes guarded and routes socially fractured."},
+          {"trigger": "branch_exposure >= 5", "modifier_prompt": "Nema's bronze case visibly contains the office roster, carrier marks, and branch bar orders in aligned stacks."},
+          {"trigger": "route_integrity >= 4", "modifier_prompt": "One marked basket is already descending the lower south stair beyond the registrar's direct reach."},
+          {"trigger": "route_integrity <= 1", "modifier_prompt": "A branch watcher occupies the lower south stair and several route strips lie inside Nema's open case."},
+          {"trigger": "horn_pressure >= 4", "modifier_prompt": "The east stair pulses with forge light, the bronze horn is lifted toward a caller above, and court-weight chains hang taut."}
+        ]
+      },
+      {
+        "visual_scene_id": "ash_below_ending_three_claims",
+        "ink_anchor": "ending_three_claims_success|ending_three_claims_cost",
+        "camera_slot": "table_to_upper_landing_sightline",
+        "visual_continuity_notes": ["The three jurisdictional stations remain spatially separate; ending modifiers show whether any station is occupied, empty, sealed, or vulnerable."],
+        "base_image_prompt": "Long sightline from the scoring table through the slatted east door to the upper mortuary landing. Sturdy brown-skinned Ves, cream headcloth above a flour-gray apron, reads a household withdrawal tally from below; thick-set Taru in a charcoal wrap stands below the threshold with a recognizer's copy and scarred right hand visible; tall very dark-skinned Melka in a long linen coat and pale sash holds a palewood mortuary case on the upper landing; compact ochre-brown Nema in a copper-edged black wrap writes beside her open bronze branch case. Each person occupies a distinct level and holds a distinct record. Hot furnace light descends the stair while the bakehouse table and marked bread trays remain visible behind Ves.",
+        "visible_characters": [
+          {"agent_id": "ves", "default_stance": "reading withdrawal tally from scoring table", "visual_ref": "visual_character_refs.characters.ves"},
+          {"agent_id": "taru", "default_stance": "below the court threshold with recognition copy", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "melka", "default_stance": "upper landing with mortuary case", "visual_ref": "visual_character_refs.characters.melka"},
+          {"agent_id": "nema", "default_stance": "between threshold and landing recording the claims", "visual_ref": "visual_character_refs.characters.nema"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ash_below_ending_household_floor",
+        "ink_anchor": "ending_household_floor_success|ending_household_floor_cost",
+        "camera_slot": "wide_from_hostel_door",
+        "visual_continuity_notes": ["The west-wall distribution route owns this ending; ending modifiers distinguish full coordinated supply from the public shortage split."],
+        "base_image_prompt": "Wide distribution aftermath inside the geothermal bakehouse. Older broad dark-skinned Enka in a red apron opens the third store lock at the west tray wall; sturdy brown-skinned Ves in a cream headcloth and flour-gray apron reads household marks from the central table; varied bakers in rolled work wraps pass flat warm loaves and small lamp-oil cups to hostel residents and shrine families queued near the west door. Thick-set Taru in a charcoal wrap carries a short list of absent households along the line, his scarred right hand visible. The north ovens remain hot, the northwest washing trough remains cold, and the east court stair glows as the divine working proceeds elsewhere.",
+        "visible_characters": [
+          {"agent_id": "ves", "default_stance": "at table reading household marks", "visual_ref": "visual_character_refs.characters.ves"},
+          {"agent_id": "enka", "default_stance": "opening store and directing trays", "visual_ref": "visual_character_refs.characters.enka"},
+          {"agent_id": "taru", "default_stance": "moving along queue with absent-household list", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "bakehouse_workers_and_households", "default_stance": "bakers distributing goods to a mixed queue of working households", "visual_ref": "visual_character_refs.groups.bakehouse_workers_and_households"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ash_below_ending_exposed_leverage",
+        "ink_anchor": "ending_exposed_leverage_success|ending_exposed_leverage_cost",
+        "camera_slot": "table_side_power_geometry",
+        "visual_continuity_notes": ["Nema's case remains the exposure focus while the ending modifier distinguishes active distributed offices from separately marked investigation targets."],
+        "base_image_prompt": "Political aftermath at the central scoring table. Compact ochre-brown Nema, black hair in a severe knot above a copper-edged black wrap, stands behind a bronze case full of roster leaves, household marks, passage receipts, and carrier strips. Sturdy brown-skinned Ves in a cream headcloth and flour-gray apron faces her with the day tally flat; older broad dark-skinned Enka in a red apron holds three hostel keys at the west side; thick-set Taru in a charcoal wrap holds his recognizer's copy near the east door with his scarred right hand. Varied bakers continue bread work around them under ember light. The frame shows a fully exposed conspiracy embedded throughout necessary offices and ordinary labor.",
+        "visible_characters": [
+          {"agent_id": "ves", "default_stance": "opposite Nema with day tally", "visual_ref": "visual_character_refs.characters.ves"},
+          {"agent_id": "nema", "default_stance": "behind full open branch case", "visual_ref": "visual_character_refs.characters.nema"},
+          {"agent_id": "enka", "default_stance": "holding visible hostel keys", "visual_ref": "visual_character_refs.characters.enka"},
+          {"agent_id": "taru", "default_stance": "near east door holding recognizer copy", "visual_ref": "visual_character_refs.characters.taru"},
+          {"agent_id": "bakehouse_workers_and_households", "default_stance": "bakers continuing oven and tray work in background", "visual_ref": "visual_character_refs.groups.bakehouse_workers_and_households"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ash_below_ending_outer_copy",
+        "ink_anchor": "ending_outer_copy_success|ending_outer_copy_cost",
+        "camera_slot": "south_stair_route",
+        "visual_continuity_notes": ["The south stair and its occluding turn own the outcome; ending modifiers show whether the porter clears the turn or meets the branch watcher."],
+        "base_image_prompt": "Route aftermath viewed from the south burial-meal stair back into the bakehouse. A young brown-skinned porter in rolled work wraps carries a lidded reed basket down dark stone steps; a scored clay tie peeks beneath the cloth. Farther inside, sturdy brown-skinned Ves in a cream headcloth and flour-gray apron stands at the central table beside the partial receipt returned from the one-token hearing; compact ochre-brown Nema in a copper-edged black wrap watches from the east court door with bronze case in hand; hot ovens and marked relief trays divide the background. The composition makes the outer handoff, incomplete present claim, and branch observation readable in one bounded route.",
+        "visible_characters": [
+          {"agent_id": "ves", "default_stance": "distant at table beside the partial present-hearing receipt", "visual_ref": "visual_character_refs.characters.ves"},
+          {"agent_id": "nema", "default_stance": "watching from east court door", "visual_ref": "visual_character_refs.characters.nema"},
+          {"agent_id": "bakehouse_workers_and_households", "default_stance": "one young porter descending south stair with basket", "visual_ref": "visual_character_refs.groups.bakehouse_workers_and_households"}
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prepare_split_copy_visual",
+        "trigger": "branch_label == prepare_split_copy",
+        "apply_to_visual_scene_ids": ["ash_below_preparation_choice", "ash_below_preparation_fold", "ash_below_final_threshold"],
+        "modifier_prompt": "Ves divides thin answer-roll leaves among differently scored clay ties and three separate delivery holdings."
+      },
+      {
+        "modifier_id": "prepare_relief_loaves_visual",
+        "trigger": "branch_label == prepare_relief_loaves",
+        "apply_to_visual_scene_ids": ["ash_below_preparation_choice", "ash_below_preparation_fold", "ash_below_final_threshold"],
+        "modifier_prompt": "Enka and Ves fill the west-wall reed trays with flat bread and small lamp-oil cups under visible household markers."
+      },
+      {
+        "modifier_id": "prepare_public_petition_visual",
+        "trigger": "branch_label == prepare_public_petition",
+        "apply_to_visual_scene_ids": ["ash_below_preparation_choice", "ash_below_preparation_fold"],
+        "modifier_prompt": "Taru and two bakers raise their own household clay markers as Ves reads the withdrawal tally aloud."
+      },
+      {
+        "modifier_id": "prepare_quiet_route_visual",
+        "trigger": "branch_label == prepare_quiet_route",
+        "apply_to_visual_scene_ids": ["ash_below_preparation_choice", "ash_below_preparation_fold", "ash_below_final_threshold"],
+        "modifier_prompt": "Salen carries an apparently empty lidded burial basket toward the lower south stair with one clay-knotted cord on its handle."
+      },
+      {
+        "modifier_id": "disclose_office_list_visual",
+        "trigger": "branch_label == disclose_office_list",
+        "apply_to_visual_scene_ids": ["ash_below_exposure_choice", "ash_below_passage_token", "ash_below_final_threshold"],
+        "modifier_prompt": "A four-name office roster lies openly inside Nema's bronze case while each compact member remains beside their separate tool or record."
+      },
+      {
+        "modifier_id": "attach_ration_claim_visual",
+        "trigger": "branch_label == attach_ration_claim",
+        "apply_to_visual_scene_ids": ["ash_below_exposure_choice", "ash_below_passage_token", "ash_below_final_threshold"],
+        "modifier_prompt": "Branch-recognized household clay marks attach each relief tray to the open bread tally Nema is copying."
+      },
+      {
+        "modifier_id": "send_copy_with_salen_visual",
+        "trigger": "branch_label == send_copy_with_salen",
+        "apply_to_visual_scene_ids": ["ash_below_exposure_choice", "ash_below_passage_token"],
+        "modifier_prompt": "A young porter carries a lidded burial basket toward Melka; one scored clay tie is visible beneath the folded cloth while Nema records the departure."
+      },
+      {
+        "modifier_id": "refuse_names_keep_working_visual",
+        "trigger": "branch_label == refuse_names_keep_working",
+        "apply_to_visual_scene_ids": ["ash_below_exposure_choice", "ash_below_passage_token"],
+        "modifier_prompt": "Ves scores the next loaf while Nema waits across the table; Taru's mark has been scraped from the fired-clay admission token."
+      },
+      {
+        "modifier_id": "file_taru_share_visual",
+        "trigger": "branch_label == file_taru_share",
+        "apply_to_visual_scene_ids": ["ash_below_threshold_choice", "ash_below_final_threshold", "ash_below_ending_three_claims"],
+        "modifier_prompt": "Taru holds the fired-clay passage token and climbs the first stair with his household recognition copy while Nema records his admitted standing."
+      },
+      {
+        "modifier_id": "place_copy_with_melka_visual",
+        "trigger": "branch_label == place_copy_with_melka",
+        "apply_to_visual_scene_ids": ["ash_below_threshold_choice", "ash_below_final_threshold", "ash_below_ending_three_claims"],
+        "modifier_prompt": "Melka closes the palewood mortuary case around a scored answer-roll leaf on the upper landing; the young porter holds the fired-clay passage token below her; Taru remains below the slats."
+      },
+      {
+        "modifier_id": "open_relief_table_visual",
+        "trigger": "branch_label == open_relief_table",
+        "apply_to_visual_scene_ids": ["ash_below_threshold_choice", "ash_below_final_threshold", "ash_below_ending_household_floor"],
+        "modifier_prompt": "The fired-clay passage token rests on the first full relief tray while household witnesses form an orderly queue by the west hostel door."
+      },
+      {
+        "modifier_id": "disclose_route_list_visual",
+        "trigger": "branch_label == disclose_route_list",
+        "apply_to_visual_scene_ids": ["ash_below_threshold_choice", "ash_below_final_threshold", "ash_below_ending_exposed_leverage"],
+        "modifier_prompt": "Ves places a matching route strip beside Nema's torn piece, forming a visible path of shelf, basket, porter, and mortuary handoff marks inside the open bronze case; the fired-clay passage token remains unused on the stone ledge."
+      },
+      {
+        "modifier_id": "prioritize_three_claims_visual",
+        "trigger": "branch_label == prioritize_three_claims",
+        "apply_to_visual_scene_ids": ["ash_below_ending_three_claims"],
+        "modifier_prompt": "Ves's withdrawal tally, Taru's recognizer copy, and Melka's mortuary case form three distinct custody stations along the table-to-landing sightline."
+      },
+      {
+        "modifier_id": "prioritize_household_floor_visual",
+        "trigger": "branch_label == prioritize_household_floor",
+        "apply_to_visual_scene_ids": ["ash_below_ending_household_floor"],
+        "modifier_prompt": "The scoring table becomes a bread-and-lamp distribution station with household markers governing two orderly lines."
+      },
+      {
+        "modifier_id": "prioritize_exposed_leverage_visual",
+        "trigger": "branch_label == prioritize_exposed_leverage",
+        "apply_to_visual_scene_ids": ["ash_below_ending_exposed_leverage"],
+        "modifier_prompt": "Ves aligns the office roster, day tally, and passage receipt within Nema's view while each necessary office keeps working around the case."
+      },
+      {
+        "modifier_id": "prioritize_outer_copy_visual",
+        "trigger": "branch_label == prioritize_outer_copy",
+        "apply_to_visual_scene_ids": ["ash_below_ending_outer_copy"],
+        "modifier_prompt": "Ves keeps one unlisted scored route mark under the tally cloth while ordinary basket traffic enters the south stair."
+      },
+      {
+        "modifier_id": "ending_three_claims_success_visual",
+        "trigger": "ending_label == three_claims_success",
+        "apply_to_visual_scene_ids": ["ash_below_ending_three_claims"],
+        "modifier_prompt": "Taru's petition, Ves's withdrawal tally, and Melka's sealed mortuary copy align across three separate stair levels while Nema writes the refusal beside all three."
+      },
+      {
+        "modifier_id": "ending_three_claims_cost_visual",
+        "trigger": "ending_label == three_claims_cost",
+        "apply_to_visual_scene_ids": ["ash_below_ending_three_claims"],
+        "modifier_prompt": "One of the three custody positions is visibly empty: an unoccupied threshold step, an open empty mortuary case, or a single vulnerable copy leaf near Nema's case."
+      },
+      {
+        "modifier_id": "ending_household_floor_success_visual",
+        "trigger": "ending_label == household_floor_success",
+        "apply_to_visual_scene_ids": ["ash_below_ending_household_floor"],
+        "modifier_prompt": "Full marked bread trays and lamp-oil cups pass down a coordinated household line while the court light remains distant."
+      },
+      {
+        "modifier_id": "ending_household_floor_cost_visual",
+        "trigger": "ending_label == household_floor_cost",
+        "apply_to_visual_scene_ids": ["ash_below_ending_household_floor"],
+        "modifier_prompt": "Two short lines face different scarce goods: one partly filled bread tray and one row of lamp-oil cups, with Enka recording the households still owed."
+      },
+      {
+        "modifier_id": "ending_exposed_leverage_success_visual",
+        "trigger": "ending_label == exposed_leverage_success",
+        "apply_to_visual_scene_ids": ["ash_below_ending_exposed_leverage"],
+        "modifier_prompt": "Nema's case contains a complete roster, yet bread, keys, recognizer copy, and day tally remain active in four different hands around it."
+      },
+      {
+        "modifier_id": "ending_exposed_leverage_cost_visual",
+        "trigger": "ending_label == exposed_leverage_cost",
+        "apply_to_visual_scene_ids": ["ash_below_ending_exposed_leverage"],
+        "modifier_prompt": "Branch watch cords mark Ves's table, Enka's keys, Taru's copy, and the south stair as four separate investigation targets while the workers stand farther apart."
+      },
+      {
+        "modifier_id": "ending_outer_copy_success_visual",
+        "trigger": "ending_label == outer_copy_success",
+        "apply_to_visual_scene_ids": ["ash_below_ending_outer_copy"],
+        "modifier_prompt": "The porter descends beyond the last visible stair turn with a scored clay tie under the basket cloth while Nema remains across the room at the east door."
+      },
+      {
+        "modifier_id": "ending_outer_copy_cost_visual",
+        "trigger": "ending_label == outer_copy_cost",
+        "apply_to_visual_scene_ids": ["ash_below_ending_outer_copy"],
+        "modifier_prompt": "A branch watcher blocks the lower stair and receives the basket while Nema's bronze case holds the matching route strip."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "ninth_furnace_tributary_bakehouse.coordinate_scene_set.v0",
+      "geometry_authority_level": "durable_fixture_bounded_coordinate_layout",
+      "coordinate_system": "Origin at southwest floor corner; x increases east, y increases north, z increases upward; dimensions in meters.",
+      "room_dimensions": {"x": 10, "y": 7, "z": 3.5},
+      "room_model": "Single rectangular stone bakehouse with a visible external upper landing beyond the east wall and a lower stair descending from the south edge.",
+      "fixed_zones": [
+        {"zone_id": "north_oven_wall", "bounds": {"x_min": 0.5, "x_max": 6.8, "y_min": 6.2, "y_max": 7.0, "z_min": 0, "z_max": 2.8}, "visible_form": "six arched stone ovens below copper heat pipes", "used_for": "bread production, warm light, Taru hand warming"},
+        {"zone_id": "cold_washing_trough", "bounds": {"x_min": 0.4, "x_max": 1.8, "y_min": 5.0, "y_max": 6.0, "z_min": 0.6, "z_max": 1.1}, "visible_form": "stone trough with cold water beside hot oven masonry", "used_for": "East Collar diversion consequence"},
+        {"zone_id": "central_scoring_table", "bounds": {"x_min": 2.0, "x_max": 7.5, "y_min": 3.0, "y_max": 4.2, "z_min": 0, "z_max": 1.0}, "visible_form": "long dark wood worktable dusted with flour", "used_for": "bread scoring, three-record separation, Nema confrontation, final choice"},
+        {"zone_id": "west_tray_wall", "bounds": {"x_min": 0, "x_max": 1.2, "y_min": 1.0, "y_max": 4.8, "z_min": 0, "z_max": 2.0}, "visible_form": "reed tray racks, lamp-oil shelf, west hostel door", "used_for": "relief store, household queue, Enka staging"},
+        {"zone_id": "south_burial_route", "bounds": {"x_min": 6.8, "x_max": 9.2, "y_min": 0, "y_max": 1.4, "z_min": -2.5, "z_max": 1.0}, "visible_form": "burial-meal shelf beside a descending stone stair", "used_for": "Salen and porter cutout route, outer-copy ending"},
+        {"zone_id": "east_court_threshold", "bounds": {"x_min": 9.2, "x_max": 10.0, "y_min": 3.7, "y_max": 5.3, "z_min": 0, "z_max": 2.8}, "visible_form": "slatted ironwood door, stone token ledge, first steep stair", "used_for": "Nema entrance, one-token admission, Taru petition"},
+        {"zone_id": "upper_mortuary_landing", "bounds": {"x_min": 10.0, "x_max": 12.0, "y_min": 3.7, "y_max": 5.3, "z_min": 1.8, "z_max": 3.5}, "visible_form": "narrow stone landing visible through slats and stair opening", "used_for": "Melka staging and independent custody"}
+      ],
+      "fixed_routes": [
+        {"route_id": "oven_to_tray_workline", "path": "north_oven_wall -> central_scoring_table -> west_tray_wall", "width_m": 1.2, "users": ["bakers", "Ves", "Enka"]},
+        {"route_id": "burial_cutout_route", "path": "central_scoring_table -> south_burial_route -> lower offstage handoff", "width_m": 0.9, "users": ["Salen", "porter", "mourners"]},
+        {"route_id": "court_admission_route", "path": "central_scoring_table -> east_court_threshold -> upper_mortuary_landing -> furnace court offstage", "width_m": 1.0, "users": ["Nema", "Taru", "porter", "Melka"]},
+        {"route_id": "hostel_relief_route", "path": "west_tray_wall -> west hostel door offstage", "width_m": 1.3, "users": ["Enka", "households", "bakers"]}
+      ],
+      "occluders": [
+        {"occluder_id": "slatted_court_door", "effect": "permits partial sight to the first stair and upper landing while obscuring the furnace court beyond"},
+        {"occluder_id": "central_oven_mass", "effect": "blocks direct view between the northwest trough and the south burial stair from floor level"},
+        {"occluder_id": "south_stair_turn", "effect": "removes a descending carrier from Nema's sight after the first five steps"}
+      ],
+      "camera_slots": [
+        {"camera_id": "wide_from_hostel_door", "position": {"x": 1.4, "y": 2.6, "z": 1.7}, "look_at": {"x": 6.0, "y": 4.5, "z": 1.2}, "supports_visual_scene_ids": ["ash_below_bakehouse_establishing", "ash_below_preparation_fold", "ash_below_ending_household_floor"]},
+        {"camera_id": "medium_table_to_court_stair", "position": {"x": 1.6, "y": 3.5, "z": 1.6}, "look_at": {"x": 9.8, "y": 4.5, "z": 1.7}, "supports_visual_scene_ids": ["ash_below_compact_roster", "ash_below_registrar_arrival"]},
+        {"camera_id": "overhead_record_close", "position": {"x": 4.8, "y": 3.6, "z": 2.8}, "look_at": {"x": 4.8, "y": 3.6, "z": 0.9}, "supports_visual_scene_ids": ["ash_below_three_records", "ash_below_passage_token"]},
+        {"camera_id": "high_corner_work_map", "position": {"x": 1.0, "y": 6.4, "z": 3.1}, "look_at": {"x": 5.5, "y": 3.4, "z": 1.0}, "supports_visual_scene_ids": ["ash_below_preparation_choice", "ash_below_final_threshold"]},
+        {"camera_id": "court_door_low_angle", "position": {"x": 7.8, "y": 3.8, "z": 1.0}, "look_at": {"x": 10.4, "y": 4.5, "z": 2.2}, "supports_visual_scene_ids": ["ash_below_first_horn", "ash_below_threshold_choice"]},
+        {"camera_id": "table_side_power_geometry", "position": {"x": 4.8, "y": 1.8, "z": 1.5}, "look_at": {"x": 5.2, "y": 4.0, "z": 1.1}, "supports_visual_scene_ids": ["ash_below_exposure_choice", "ash_below_ending_exposed_leverage"]},
+        {"camera_id": "table_to_upper_landing_sightline", "position": {"x": 3.5, "y": 2.2, "z": 1.5}, "look_at": {"x": 10.8, "y": 4.5, "z": 2.4}, "supports_visual_scene_ids": ["ash_below_ending_three_claims"]},
+        {"camera_id": "south_stair_route", "position": {"x": 8.0, "y": -0.8, "z": 0.8}, "look_at": {"x": 5.0, "y": 3.2, "z": 1.1}, "supports_visual_scene_ids": ["ash_below_ending_outer_copy"]}
+      ],
+      "staging_slots": [
+        {"slot_id": "ves_table_west", "position": {"x": 3.4, "y": 2.8, "z": 0}, "allowed_agents": ["ves"]},
+        {"slot_id": "enka_tray_wall", "position": {"x": 1.0, "y": 3.1, "z": 0}, "allowed_agents": ["enka"]},
+        {"slot_id": "taru_oven", "position": {"x": 5.7, "y": 5.7, "z": 0}, "allowed_agents": ["taru"]},
+        {"slot_id": "taru_threshold", "position": {"x": 8.7, "y": 4.4, "z": 0}, "allowed_agents": ["taru"]},
+        {"slot_id": "nema_table_east", "position": {"x": 7.2, "y": 4.4, "z": 0}, "allowed_agents": ["nema"]},
+        {"slot_id": "nema_threshold", "position": {"x": 9.5, "y": 4.4, "z": 0}, "allowed_agents": ["nema"]},
+        {"slot_id": "melka_landing", "position": {"x": 10.8, "y": 4.5, "z": 2.1}, "allowed_agents": ["melka"]},
+        {"slot_id": "salen_burial_shelf", "position": {"x": 7.4, "y": 1.0, "z": 0}, "allowed_agents": ["salen"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "table_to_mortuary_case", "path": "central_scoring_table -> east_court_threshold slats -> upper_mortuary_landing", "supports": ["send_copy_with_salen", "place_copy_with_melka", "prioritize_three_claims"]},
+        {"lane_id": "nema_to_south_route", "path": "east_court_threshold -> south edge of central_scoring_table -> first five south stair steps", "occluded_after": "south_stair_turn", "supports": ["prepare_quiet_route", "prioritize_outer_copy"]},
+        {"lane_id": "public_relief_line", "path": "central_scoring_table -> west_tray_wall -> west hostel door", "supports": ["attach_ration_claim", "open_relief_table", "prioritize_household_floor"]}
+      ],
+      "branch_persistent_objects": [
+        {"object_id": "torn_route_strip", "base_location": "central_scoring_table east cloth square", "moves_when": "disclose_route_list aligns the matching piece beside it; otherwise Nema retains it at scene end"},
+        {"object_id": "passage_token", "base_location": "central_scoring_table beside Nema's case", "moves_when": "file_taru_share gives it to Taru; place_copy_with_melka gives it to the porter; open_relief_table places it on the relief tray; disclose_route_list leaves it on the stone ledge; later priority choices do not move it"},
+        {"object_id": "mortuary_case", "base_location": "upper_mortuary_landing with Melka", "moves_when": "remains on landing; open or closed state reflects melka_custody"},
+        {"object_id": "relief_trays", "base_location": "west_tray_wall", "moves_when": "open_relief_table shifts the first tray to east door; household endings move trays through west hostel route"}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for characters visible in each frame.",
+    "characters": {
+      "ves": "Ves: sturdy human adult tally keeper, medium-brown skin, short black curls covered by a folded cream headcloth, square expressive face, soot-gray tunic with sleeves rolled to the elbow, flour-gray apron crossed at the back, dark work trousers, blunt bone scoring tool and clay tally ties at the belt, practical planted stance, hands usually flour-marked. This is individual appearance, not universal Jamnai physiology.",
+      "enka": "Enka: older human woman, broad body, deep-brown skin, gray hair shaved close at the temples and braided into one short knot, dark red work apron over layered charcoal clothing, ring of three large iron store keys worn visibly at the waist, heavy forearms dusted with flour, posture of domestic authority grounded near the relief trays.",
+      "salen": "Salen: lean human adult release-tradition carrier, light-brown skin, long ash-brown braid, narrow weathered face, patched gray knee-length carrier cloak over plain work clothes, soft leather boots, lidded reed burial basket and clay-knotted cords, quiet posture angled toward exits and handoff routes.",
+      "taru": "Taru: thick-set human man in middle age, warm brown skin, close-cropped dark hair streaked with gray, old pale burn scar across the right palm and two fingers, charcoal work wrap over a rust-colored under-tunic, small household copy case at the chest, body language divided between the oven's warmth and the controlled court door.",
+      "melka": "Melka: tall human woman in middle age, very dark skin, shaved scalp, long undyed linen coat with a pale ash sash, rigid palewood mortuary document case held in both hands, spare upright posture on the upper landing, face attentive and withholding judgment.",
+      "nema": "Nema: compact human woman in early middle age, ochre-brown skin, straight black hair bound into a low knot, sharp triangular face, soot-black branch wrap with narrow oxidized-copper edging, rigid bronze document case, black ink stylus tucked at the wrist, exact economical movements and a posture that uses the doorway as office furniture."
+    },
+    "groups": {
+      "bakehouse_workers_and_households": "Ninth Furnace bakehouse workers and affected households: human adults of varied ages, builds, and skin tones in layered soot-gray, faded rust, cream, and dark red work wraps; bakers carry long wooden oven peels, reed trays, flour cloths, and clay household markers; household members carry cloth bags, lamp-oil cups, and small receipt tokens; practical work-worn posture and clear queue spacing."
+    }
+  },
+  "review_notes": [
+    "No images were generated. This visual plan and its BFL prompt batch are the complete visual deliverables for the fixture.",
+    "The embedded coordinate scene_set is the durable geometry authority for the fixture-bounded bakehouse, threshold, upper landing, and lower stair; generated images remain presentation output rather than spatial truth.",
+    "Prompts keep divine action visually ambiguous and stage only ordinary heat, records, horns, people, and court-weight effects visible from the bakehouse.",
+    "Character bodies and the measured bakehouse are local fixture elaborations, not universal Jamnai physiology or architecture."
+  ]
+}

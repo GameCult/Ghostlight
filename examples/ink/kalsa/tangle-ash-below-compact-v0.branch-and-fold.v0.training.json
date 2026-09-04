@@ -1,0 +1,437 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "kalsa-tangle-ash-below-compact-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/kalsa/tangle-ash-below-compact-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/kalsa/tangle-ash-below-compact-v0.v0.json",
+  "visual_plan_ref": "examples/visual/kalsa/tangle-ash-below-compact-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "tangle-ash-below-compact-v0.one-list-before-second-horn",
+  "protagonist_agent_id": "ves",
+  "npc_agent_ids": [
+    "enka",
+    "salen",
+    "taru",
+    "melka",
+    "nema",
+    "bakehouse_workers_and_households"
+  ],
+  "purpose": "Interactive Fiction Weaver compile of a Kalsa political-conspiracy fixture from Ves's bounded bakehouse viewpoint, dramatizing a Soiru'i copy-and-relief alliance whose leverage survives exposure through necessary mortal offices.",
+  "tonal_mode": "Domestic workplace wit turning into procedural noir under a divine deadline.",
+  "artifact_role": "Playable illustrated-fiction website collateral and lore stress test; not simulation state and not core model-training signal.",
+  "local_awareness_summary": [
+    {
+      "text": "Ves is the tributary bakehouse tally keeper. She can read and mark household trays, split copies under local custody, move relief through ordinary delivery routes, speak at the slatted threshold, and decide what leaves her scoring table.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/tangle-ash-below-compact-v0.v0.json",
+        "Kalsa/Spoilers/Institutions/Soiru'i Sects.md"
+      ]
+    },
+    {
+      "text": "Ves knows the compact's disclosed office list and her adjacent handoffs, but she does not know every fallback carrier or safe place on the route list.",
+      "source_refs": [
+        "Kalsa/Spoilers/Institutions/Soiru'i Sects.md"
+      ]
+    },
+    {
+      "text": "Nema's words, bronze case, torn route strip, branch order, and admission token are observable. Her private instructions, loyalties, and knowledge of other carriers remain unavailable to Ves.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/tangle-ash-below-compact-v0.v0.json",
+        "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md"
+      ]
+    },
+    {
+      "text": "The first and second horns, court-weight tests, slatted door, oven, scoring table, relief trays, burial basket, hostel door, lower stair, copy leaves, store keys, and custody cases are material affordances rather than magical verdicts.",
+      "source_refs": [
+        "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md",
+        "Kalsa/Spoilers/Institutions/Soiru'i Sects.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Ves's embodied clerk-and-carrier viewpoint inside the bakehouse. Narration may clarify political leverage for the reader but cannot reveal divine intent, posthumous identity, or the unopened court outcome.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/kalsa/tangle-ash-below-compact-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening must establish bread work, cold-water pressure, the four compact roles, Melka's outside position, and the three records before Nema exposes the route.",
+        "source_refs": [
+          "AGENTS.md",
+          "Kalsa/Spoilers/Institutions/Soiru'i Sects.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Ves owns the bakehouse tally and copies she physically handles; she does not own the potential ledger, mortuary case, recognized-share verdict, court admission, forge stop, champion, or divine route.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/The Potential Economy.md",
+          "Kalsa/Spoilers/Institutions/Death and Binding Law.md",
+          "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md"
+        ]
+      },
+      {
+        "text": "Nema can record branch decisions and control the passage token under Iresa's order; she cannot turn branch custody into mortuary truth or technical control of the furnace.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Jamnai Submission Hierarchy.md",
+          "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md"
+        ]
+      },
+      {
+        "text": "Taru can recognize a recorded sign and request an act; Melka can hold and annotate mortuary evidence. Neither can certify the dead identity or command the Iron Shelter.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Death and Binding Law.md",
+          "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Ves begins with the bakehouse tally, scoring tool, answer-roll working copy, withdrawal tally, and tray list; Enka holds the hostel store keys and relief goods; Nema holds the branch case, torn route strip, and passage token; Melka's case begins empty; Taru holds his household recognition copy; Salen carries only the handoff assigned to the current route.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Soiru'i Sects.md",
+          "examples/ink/kalsa/tangle-ash-below-compact-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every branch must keep covenant petition, potential withdrawal, mortuary custody, branch admission, relief distribution, and route secrecy as separate surfaces that can coordinate without becoming one authority.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/God-Cult Covenants.md",
+          "Kalsa/Spoilers/Institutions/The Potential Economy.md",
+          "Kalsa/Spoilers/Institutions/Death and Binding Law.md"
+        ]
+      },
+      {
+        "text": "Endings must distinguish completing the three claims, preserving the household floor, surviving public exposure, and keeping an outer copy; no route should solve the gate war or divine dispute.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Kalsa/Spoilers/Institutions/Soiru'i Sects.md"
+        ]
+      },
+      {
+        "text": "Exposure must create targets and political risk while leaving the compact leverage grounded in necessary work, recognized dependants, and independently held evidence.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Soiru'i Sects.md",
+          "Kalsa/Spoilers/Institutions/Jamnai Submission Hierarchy.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not identify any familiar sign as a complete dead person, make silence prove release, or let a copied answer roll command the God.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Death and Binding Law.md",
+          "Kalsa/Spoilers/Foundations/Projections, God Beasts, and Thaumavores.md"
+        ]
+      },
+      {
+        "text": "Do not resolve whether Ash Hook's fracture copy justifies its heat diversion or make Ash Hook the secret owner of the compact.",
+        "source_refs": [
+          "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md"
+        ]
+      },
+      {
+        "text": "Do not generalize the Ash-Below Compact, translated names, bakehouse layout, or character bodies into universal Jamnai practice or Terjamna physiology.",
+        "source_refs": [
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+          "examples/lore-grounding/kalsa/tangle-ash-below-compact-v0.v0.json"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through ordinary conspiracy preparation, registrar exposure, one-token threshold pressure, and compact priority, then select one of eight state-gated endings.",
+    "choice_layers": [
+      "compact_preparation",
+      "registrar_exposure",
+      "one_threshold_token",
+      "compact_priority"
+    ],
+    "variables": [
+      "copy_chain",
+      "relief_reserve",
+      "compact_cohesion",
+      "branch_exposure",
+      "horn_pressure",
+      "taru_access",
+      "melka_custody",
+      "route_integrity"
+    ],
+    "ending_gates": [
+      "ending_three_claims_success",
+      "ending_three_claims_cost",
+      "ending_household_floor_success",
+      "ending_household_floor_cost",
+      "ending_exposed_leverage_success",
+      "ending_exposed_leverage_cost",
+      "ending_outer_copy_success",
+      "ending_outer_copy_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prepare_split_copy",
+      "ink_path": "preparation_choice",
+      "action_type": "use_object",
+      "actor_intent": "Distribute answer-roll evidence across ordinary delivery holdings before the branch can seize one owner.",
+      "state_basis": ["Ves controls the working copy, scorer, clay ties, and bakehouse tray marks."],
+      "reviewed_consequences": ["Raises copy_chain, route_integrity, and branch_exposure; later folds show distributed leaves and increased visibility."],
+      "training_hooks": ["split_custody", "evidence_distribution", "secrecy_visibility_tradeoff"]
+    },
+    {
+      "branch_id": "prepare_relief_loaves",
+      "ink_path": "preparation_choice",
+      "action_type": "move_object",
+      "actor_intent": "Convert compact reserves into publicly marked household relief before seizure can rename them private sect property.",
+      "state_basis": ["Enka holds store keys; Ves can mark trays against recognized households."],
+      "reviewed_consequences": ["Raises relief_reserve, compact_cohesion, and horn_pressure; later options can sustain the household floor at time cost."],
+      "training_hooks": ["material_constituency", "public_distribution", "time_cost"]
+    },
+    {
+      "branch_id": "prepare_public_petition",
+      "ink_path": "preparation_choice",
+      "action_type": "speak",
+      "actor_intent": "Strengthen Taru's standing by making affected households answer their own withdrawal marks.",
+      "state_basis": ["Ves can read the tally; Taru and present workers can answer only for their own recognized claims."],
+      "reviewed_consequences": ["Raises taru_access, compact_cohesion, and branch_exposure; the claim becomes stronger and easier to target."],
+      "training_hooks": ["constituency_voice", "public_claim", "exposure_cost"]
+    },
+    {
+      "branch_id": "prepare_quiet_route",
+      "ink_path": "preparation_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Strengthen the fallback route while keeping the carrier ignorant of the full evidence chain.",
+      "state_basis": ["Salen can carry a marked burial basket and knows only the next handoff."],
+      "reviewed_consequences": ["Raises route_integrity and copy_chain while lowering compact_cohesion; later prose shows resilient routing and member distrust."],
+      "training_hooks": ["cutout_routing", "compartmentalization_cost", "fallback_preparation"]
+    },
+    {
+      "branch_id": "disclose_office_list",
+      "ink_path": "exposure_choice",
+      "action_type": "speak",
+      "actor_intent": "Give the lawful roster while refusing the registrar's demand for one owner of several jurisdictions.",
+      "state_basis": ["The authored compact keeps an office list that can be disclosed because each duty is lawful alone."],
+      "reviewed_consequences": ["Raises branch_exposure and taru_access while lowering compact_cohesion; exposure becomes both standing and targeting data."],
+      "training_hooks": ["membership_list", "authority_boundary", "exposure_double_edge"]
+    },
+    {
+      "branch_id": "attach_ration_claim",
+      "ink_path": "exposure_choice",
+      "action_type": "use_object",
+      "actor_intent": "Use branch-recognized household marks to prevent relief from being cleanly reclassified as sect property.",
+      "state_basis": ["The branch needs Ves's tally to distinguish dependants, dues, and relief."],
+      "reviewed_consequences": ["Raises relief_reserve, compact_cohesion, and horn_pressure; Nema must spend time copying the contradiction."],
+      "training_hooks": ["bureaucratic_leverage", "welfare_bargain", "deadline_pressure"]
+    },
+    {
+      "branch_id": "send_copy_with_salen",
+      "ink_path": "exposure_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Place a scored copy on the mortuary route using a porter who knows only the next custody owner.",
+      "state_basis": ["Melka waits with an empty case; ordinary burial delivery still passes the threshold under witnesses."],
+      "reviewed_consequences": ["Raises melka_custody, copy_chain, and horn_pressure while spending route_integrity; the branch observes the handoff."],
+      "training_hooks": ["cutout_delivery", "mortuary_custody", "route_spend"]
+    },
+    {
+      "branch_id": "refuse_names_keep_working",
+      "ink_path": "exposure_choice",
+      "action_type": "wait",
+      "actor_intent": "Force Nema to choose between an incomplete roster and interruption of necessary bakehouse accounting.",
+      "state_basis": ["The branch depends on the working tally but controls the admitted petition token."],
+      "reviewed_consequences": ["Raises route_integrity, compact_cohesion, branch_exposure, and horn_pressure while lowering taru_access."],
+      "training_hooks": ["work_refusal", "necessary_office_leverage", "retaliatory_access_cost"]
+    },
+    {
+      "branch_id": "file_taru_share",
+      "ink_path": "threshold_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Spend the single token on a recognized-share petition carried by the public recognizer.",
+      "state_basis": ["The current court admits one recognized-share petition before the second horn."],
+      "reviewed_consequences": ["Raises taru_access, branch_exposure, and horn_pressure; later three-claim success requires Taru to reach this standing."],
+      "training_hooks": ["recognized_share", "single_token_allocation", "public_claimant"]
+    },
+    {
+      "branch_id": "place_copy_with_melka",
+      "ink_path": "threshold_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Use the token for direct independent mortuary custody rather than sect advocacy inside the rite.",
+      "state_basis": ["Melka can hold evidence but cannot advocate the Soiru'i claim or declare identity."],
+      "reviewed_consequences": ["Raises melka_custody, copy_chain, and horn_pressure; Taru remains below while branch monopoly over the record weakens."],
+      "training_hooks": ["custody_over_advocacy", "evidence_independence", "foregone_access"]
+    },
+    {
+      "branch_id": "open_relief_table",
+      "ink_path": "threshold_choice",
+      "action_type": "move_object",
+      "actor_intent": "Turn the passage token into a visible household distribution claim at the controlled door.",
+      "state_basis": ["Marked households can lawfully receive bread in the bakehouse even when the court admits one bearer."],
+      "reviewed_consequences": ["Raises relief_reserve, compact_cohesion, and branch_exposure; the petition waits while the constituency becomes visible."],
+      "training_hooks": ["constituency_as_leverage", "material_queue", "petition_cost"]
+    },
+    {
+      "branch_id": "disclose_route_list",
+      "ink_path": "threshold_choice",
+      "action_type": "show_object",
+      "actor_intent": "Force Nema to record the ordinary offices and people she must bar to close the route.",
+      "state_basis": ["Ves holds the matching route fragment; Nema controls branch bars and records."],
+      "reviewed_consequences": ["Sharply raises branch_exposure and taru_access while lowering route_integrity and compact_cohesion; later exposure endings show whether dependency outlives targeting."],
+      "training_hooks": ["burn_the_cutout", "exposure_as_leverage", "solidarity_risk"]
+    },
+    {
+      "branch_id": "prioritize_three_claims",
+      "ink_path": "final_choice",
+      "action_type": "speak",
+      "actor_intent": "Complete covenant, potential, and mortuary claims without merging their authority.",
+      "state_basis": ["Success requires Taru's standing, Melka's custody, and a sufficiently distributed copy chain."],
+      "reviewed_consequences": ["Routes to success or cost according to taru_access, melka_custody, and copy_chain; horn_pressure changes the closing beat."],
+      "training_hooks": ["divided_authority", "state_gated_ending", "record_survives_denial"]
+    },
+    {
+      "branch_id": "prioritize_household_floor",
+      "ink_path": "final_choice",
+      "action_type": "move_object",
+      "actor_intent": "Spend compact capacity on food, lamps, and departure rather than the present hearing.",
+      "state_basis": ["Success requires enough relief and solidarity to serve named households without hiding the remainder."],
+      "reviewed_consequences": ["Routes to success or cost according to relief_reserve and compact_cohesion; Melka custody changes later appeal texture."],
+      "training_hooks": ["mutual_aid_clock", "constituency_priority", "shortage_record"]
+    },
+    {
+      "branch_id": "prioritize_exposed_leverage",
+      "ink_path": "final_choice",
+      "action_type": "show_object",
+      "actor_intent": "Make exposure reveal the necessary offices Ninth Furnace would have to break to defeat the compact.",
+      "state_basis": ["Success requires substantial public evidence and enough internal cohesion to survive named targeting."],
+      "reviewed_consequences": ["Routes to success or cost according to branch_exposure and compact_cohesion; route_integrity changes the cost ending."],
+      "training_hooks": ["leverage_survives_exposure", "membership_consequence", "institutional_dependency"]
+    },
+    {
+      "branch_id": "prioritize_outer_copy",
+      "ink_path": "final_choice",
+      "action_type": "withhold_object",
+      "actor_intent": "Accept failure at the current threshold to preserve evidence beyond Ninth Furnace.",
+      "state_basis": ["Success requires a surviving route and more than one viable copy."],
+      "reviewed_consequences": ["Routes to success or cost according to route_integrity and copy_chain; taru_access changes the sacrifice in the success ending."],
+      "training_hooks": ["fallback_over_present_victory", "future_appeal", "route_capture"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier trigger evaluation"
+    ],
+    "manual_review_required": [
+      "Any promotion of a played outcome into canonical Ash-Halo Court history",
+      "Durable character memory or relationship updates",
+      "Any named regional mortuary appeal office",
+      "Any change to Ash Hook's unresolved fracture claim or the feeder's identity"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex world elaborator applying the four repository reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative review found and repaired a false fold in Salen's location after the quiet-route preparation, gave the first horn its own replay knot, replaced late unsupported proper names with their offices, and made the outer-copy ending neutral to the earlier passage-token choice.",
+      "Lore review accepted the compact after checking all fifteen cited Kalsa notes and their Public, Spoilers/author, or Spoilers/backstage tiers. The elaboration remains explicitly Spoilers-tier and does not settle the feeder, the dead identity, divine intent, the fracture-copy dispute, or the Ash-Halo Court's canonical outcome.",
+      "Visual review expanded standalone character descriptions in the base prompts and BFL batch, added visible deltas for all four final priority branches, and removed token-placement assumptions from neutral ending frames.",
+      "Spatial review moved three camera origins out of fixed prop bounds and accepted the embedded measured bakehouse layout as the durable fixture-bounded geometry authority for its fifteen replay frames.",
+      "Ink compilation was deliberately not run because the task forbids installing or invoking an Ink compiler. The lore schema validator passed. JSON parsing, branch and knot cross-references, all 64 pre-ending route combinations, ending reachability, variable-use counts, visual anchor and camera support, modifier coverage, character refs, and affirmative prompt checks passed."
+    ],
+    "review_passes": {
+      "narrative_quality": {
+        "verdict": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 5,
+          "pacing": 4,
+          "voice": 5,
+          "tonal_fit": 5,
+          "if_playability": 5
+        },
+        "findings": [
+          "Repaired the shared Salen-location fold and the outer-ending token assumption.",
+          "Added a first-horn knot and replaced unintroduced late names with legible offices."
+        ],
+        "labels": [
+          "strong_contextual_onboarding",
+          "strong_wit_with_stakes",
+          "strong_branch_callback",
+          "strong_character_voice",
+          "strong_material_lore"
+        ]
+      },
+      "lore_grounding": {
+        "verdict": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 5,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "findings": [],
+        "labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_faction_grounding",
+          "strong_infrastructure_grounding",
+          "vault_backfill_candidate"
+        ]
+      },
+      "visual_continuity": {
+        "verdict": "accepted",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompt": 5,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 5
+        },
+        "findings": [
+          "Expanded standalone visible-character descriptions and completed choice and ending modifier coverage.",
+          "Removed neutral-frame assumptions about which earlier choice moved the single passage token."
+        ],
+        "labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity",
+          "durable_coordinate_scene_set"
+        ]
+      },
+      "spatial_cohesion": {
+        "verdict": "accepted",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightline": 5,
+          "body_affordance": 5,
+          "movement_access": 5,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "findings": [
+          "Moved the hostel, table-to-stair, and table-to-landing cameras clear of the tray wall and central worktable bounds."
+        ],
+        "labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_branch_spatial_state",
+          "durable_coordinate_scene_set"
+        ]
+      }
+    },
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}
