@@ -12,8 +12,8 @@ use super::patch::{
 };
 use super::{
     AccessKind, AffordanceId, CommandId, DecisionEvent, DecisionInvocation, DecisionOpportunity,
-    EdgeId, EntityId, EventId, KernelError, Magnitude, SubjectId, Target, WorldId, WorldState,
-    digest,
+    EdgeId, EntityId, EventId, GrantedAffordance, KernelError, Magnitude, SubjectId, Target,
+    WorldId, WorldState, digest,
 };
 use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet};
@@ -74,8 +74,8 @@ pub(crate) enum ActionMismatch {
 
 /// The band draw's whole preimage. Five fields, none of them from the
 /// invocation's payload: the proposer varies the attempt and cannot vary the
-/// draw. `affordance` is the kernel-resolved granted entry, checked against the
-/// grants before this value is built.
+/// draw. `affordance` is the id carried by the kernel-verified grant, so the
+/// draw cannot be steered by an affordance the scope does not hold.
 #[derive(Serialize)]
 struct BandPreimage {
     world_id: WorldId,
@@ -88,16 +88,18 @@ struct BandPreimage {
 /// Catalog lookup, binding, admission, draw, lowering, event. Stages 1 through 4
 /// accumulate one complete rejection set and return it sorted before anything is
 /// drawn or lowered, so nothing past the gate can fail on caller input.
+///
+/// The entry arrives as a [`GrantedAffordance`], which only `require_granted`
+/// can build: the grant check is the type, not a call a third caller might
+/// forget. Nothing here reads `invocation.affordance`.
 pub(super) fn exercise(
     state: &WorldState,
     command_id: CommandId,
     current: &DecisionOpportunity,
+    granted: &GrantedAffordance<'_>,
     invocation: &DecisionInvocation,
 ) -> Result<DecisionEvent, KernelError> {
-    let entry = state
-        .affordance_catalog
-        .get(&invocation.affordance)
-        .ok_or_else(|| KernelError::Invariant("granted affordance has no entry".into()))?;
+    let entry = granted.entry;
     let actor = current.scope.subject_id;
     let mut rejections = Vec::new();
 
@@ -110,7 +112,7 @@ pub(super) fn exercise(
         return Err(KernelError::ActionRejected(rejections));
     }
 
-    let band = select_band(state, command_id, invocation.affordance, entry)?;
+    let band = select_band(state, command_id, granted.id, entry)?;
     let operations = lower(entry, band, invocation, &bindings)?;
     let effects = if operations.is_empty() {
         Vec::new()
@@ -597,6 +599,18 @@ mod tests {
         }
     }
 
+    /// `exercise` only accepts a grant the kernel resolved, so a test walks the
+    /// same gate `reduce` does rather than reaching into the catalog.
+    fn draw_once(
+        state: &WorldState,
+        command_id: CommandId,
+        opportunity: &DecisionOpportunity,
+        invocation: &DecisionInvocation,
+    ) -> Result<DecisionEvent, KernelError> {
+        let granted = crate::world::require_granted(state, opportunity, invocation.affordance)?;
+        exercise(state, command_id, opportunity, &granted, invocation)
+    }
+
     fn binding(role: &str, target: Target) -> RoleBinding {
         RoleBinding {
             role: Role(role.into()),
@@ -636,10 +650,11 @@ mod tests {
             &self,
             invocation: &DecisionInvocation,
         ) -> Result<DecisionEvent, KernelError> {
-            exercise(
+            let opportunity = self.clerk_opportunity();
+            draw_once(
                 &self.kernel.state,
                 CommandId::issue(),
-                &self.clerk_opportunity(),
+                &opportunity,
                 invocation,
             )
         }
@@ -942,7 +957,7 @@ mod tests {
         let opportunity = bench.clerk_opportunity();
         let invocation = bench.variant(&bench.carry(1, bench.yard), "carry_chance");
         let draw = |command_id: CommandId, invocation: &DecisionInvocation| {
-            exercise(&bench.kernel.state, command_id, &opportunity, invocation)
+            draw_once(&bench.kernel.state, command_id, &opportunity, invocation)
                 .expect("the invocation is admissible")
                 .band
         };
@@ -1066,7 +1081,7 @@ mod tests {
             let command_id = (0..256)
                 .map(|_| CommandId::issue())
                 .find(|candidate| {
-                    exercise(&bench.kernel.state, *candidate, &opportunity, &split)
+                    draw_once(&bench.kernel.state, *candidate, &opportunity, &split)
                         .expect("the invocation is admissible")
                         .band
                         == wanted
@@ -1165,7 +1180,10 @@ mod tests {
         // path the store writes through.
         let encoded = rmp_serde::to_vec_named(&bench.kernel.state).expect("the state encodes");
         let decoded: WorldState = rmp_serde::from_slice(&encoded).expect("the state decodes");
-        assert_eq!(decoded.affordance_catalog, bench.kernel.state.affordance_catalog);
+        assert_eq!(
+            decoded.affordance_catalog,
+            bench.kernel.state.affordance_catalog
+        );
         assert!(digest(&bench.kernel.state).is_ok());
     }
 
@@ -1175,7 +1193,7 @@ mod tests {
         let bench = bench(directory.path(), "ForgedAction");
         let opportunity = bench.clerk_opportunity();
         let command_id = CommandId::issue();
-        let honest = exercise(
+        let honest = draw_once(
             &bench.kernel.state,
             command_id,
             &opportunity,

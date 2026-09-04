@@ -1056,8 +1056,8 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
             if assignment.expected_caller() != command.caller {
                 return Err(KernelError::ControllerMismatch);
             }
-            require_granted(state, &current, invocation.affordance)?;
-            let event = action::exercise(state, command.id, &current, invocation)?;
+            let granted = require_granted(state, &current, invocation.affordance)?;
+            let event = action::exercise(state, command.id, &current, &granted, invocation)?;
             Ok(WorldEffect::DecisionExercised {
                 opportunity: current,
                 event,
@@ -1836,20 +1836,37 @@ fn granted_entries(
         .collect()
 }
 
+/// One affordance the kernel has already gated: the opportunity offers this
+/// entry, the scope holds it, and `entry` is its catalog definition. It is the
+/// only way to name an affordance to `action::exercise`, so a caller cannot
+/// reach the invocation pipeline without passing the grant check first.
+pub(super) struct GrantedAffordance<'a> {
+    pub(super) id: AffordanceId,
+    pub(super) entry: &'a Affordance,
+}
+
 /// The membership half of the affordance check, shared by `reduce` and
-/// `apply_effect`: the opportunity offers the entry and the scope holds it.
-fn require_granted(
-    state: &WorldState,
+/// `apply_effect`: the opportunity offers the entry and the scope holds it. It
+/// returns the entry rather than a unit, so the gate and the lookup are one act.
+fn require_granted<'a>(
+    state: &'a WorldState,
     current: &DecisionOpportunity,
     affordance: AffordanceId,
-) -> Result<(), KernelError> {
+) -> Result<GrantedAffordance<'a>, KernelError> {
     if current.affordance_ids.contains(&affordance)
         && state
             .affordance_grants
             .get(&current.scope)
             .is_some_and(|granted| granted.contains(&affordance))
     {
-        Ok(())
+        let entry = state
+            .affordance_catalog
+            .get(&affordance)
+            .ok_or_else(|| KernelError::Invariant("granted affordance has no entry".into()))?;
+        Ok(GrantedAffordance {
+            id: affordance,
+            entry,
+        })
     } else {
         Err(KernelError::AffordanceDenied)
     }
@@ -2019,11 +2036,12 @@ fn apply_effect(
                     "decision effect does not match exact opportunity authority".into(),
                 ));
             }
-            require_granted(state, &current, event.invocation.affordance)?;
+            let granted = require_granted(state, &current, event.invocation.affordance)?;
             // The whole event is re-derived by the function that produced the
             // honest one, so a forged band, operation, magnitude, or utterance
             // is one comparison rather than a clause apiece.
-            let derived = action::exercise(state, command_id, &current, &event.invocation)?;
+            let derived =
+                action::exercise(state, command_id, &current, &granted, &event.invocation)?;
             if derived != *event {
                 return Err(KernelError::Invariant(
                     "decision effect does not derive from its opportunity".into(),
