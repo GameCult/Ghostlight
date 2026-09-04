@@ -1128,8 +1128,8 @@ mod tests {
 mod custody_tests {
     use super::*;
     use crate::world::{
-        CallerId, CommandBody, CommandId, ComponentOp, EntityKind, Quantity, Ref, SubmitReceipt,
-        WorldKernel, WorldPatch,
+        CallerId, CommandBody, CommandId, ComponentOp, DependencyRef, EntityKind, Quantity, Ref,
+        SubmitReceipt, WorldKernel, WorldPatch,
         tests::{admit_custody, admit_topology, auth_principal, command, creation, owner},
     };
 
@@ -1265,6 +1265,143 @@ mod custody_tests {
         );
         assert!(matches!(
             verify_state_shape(&dangling),
+            Err(JournalError::Corrupt(_))
+        ));
+    }
+
+    /// Soul: replay is exact after *every* custody and dependency operation, not
+    /// only after a transfer. The reopened world is byte-identical, the last
+    /// envelope is idempotent, and the whole chain still verifies.
+    #[test]
+    fn soul_replay_is_exact_after_every_custody_operation() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let authenticated = auth_principal(owner());
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            creation(CommandId::new(), "EveryOperation"),
+            &authenticated,
+        )
+        .unwrap();
+        let topology = admit_topology(&mut kernel);
+        // `Admit` and its evidence are Draft-only, so the opening balance is
+        // already on the log before activation.
+        let custody = admit_custody(&mut kernel, &topology);
+        let active = crate::world::tests::activate(&mut kernel);
+
+        let envelope = command(
+            &active,
+            CommandId::new(),
+            CallerId::Principal(owner()),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![
+                        ComponentOp::Transfer {
+                            from: Ref::Existing(custody.holder),
+                            to: Ref::Existing(custody.counterparty),
+                            resource: Ref::Existing(custody.tithe),
+                            qty: Quantity(3),
+                        },
+                        ComponentOp::Transform {
+                            holder: Ref::Existing(custody.holder),
+                            from_resource: Ref::Existing(custody.tithe),
+                            into_resource: Ref::Existing(custody.ingot),
+                            qty: Quantity(2),
+                        },
+                        ComponentOp::Consume {
+                            holder: Ref::Existing(custody.counterparty),
+                            resource: Ref::Existing(custody.tithe),
+                            qty: Quantity(1),
+                        },
+                        ComponentOp::Bind {
+                            subject: Ref::Existing(custody.holder),
+                            target: DependencyRef::Route(Ref::Existing(topology.shutter)),
+                        },
+                        ComponentOp::Bind {
+                            subject: Ref::Existing(custody.holder),
+                            target: DependencyRef::Subject(Ref::Existing(custody.counterparty)),
+                        },
+                    ],
+                    evidence: Vec::new(),
+                },
+            },
+        );
+        let SubmitReceipt::Applied(receipt) =
+            kernel.submit(envelope.clone(), &authenticated).unwrap()
+        else {
+            panic!("expected an applied custody patch");
+        };
+        let accepted = kernel.snapshot().unwrap();
+        let holdings = kernel.state.holdings.clone();
+        let dependencies = kernel.state.dependencies.clone();
+        let digest = kernel.state.state_digest.clone();
+        let world_id = accepted.world_id;
+        drop(kernel);
+
+        let mut reopened = WorldKernel::open(&path, world_id).unwrap();
+        assert_eq!(reopened.snapshot().unwrap(), accepted);
+        assert_eq!(reopened.state.holdings, holdings);
+        assert_eq!(reopened.state.dependencies, dependencies);
+        assert_eq!(reopened.state.state_digest, digest);
+        assert_eq!(
+            reopened.submit(envelope, &authenticated).unwrap(),
+            SubmitReceipt::AlreadyApplied(receipt)
+        );
+    }
+
+    /// Soul: a dependency naming a target of the wrong kind, or no canonical
+    /// target at all, is refused at replay. The shape clauses carry the
+    /// referential integrity the operation arm enforces at admission.
+    #[test]
+    fn soul_a_dependency_on_an_absent_or_wrong_kind_target_is_corrupt() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let authenticated = auth_principal(owner());
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            creation(CommandId::new(), "DependencyShape"),
+            &authenticated,
+        )
+        .unwrap();
+        let topology = admit_topology(&mut kernel);
+        let custody = admit_custody(&mut kernel, &topology);
+        crate::world::tests::activate(&mut kernel);
+        verify_state_shape(&kernel.state).expect("the admitted world has a canonical shape");
+
+        // A place is not a resource, so a resource dependency naming one dangles.
+        let mut wrong_kind = kernel.state.clone();
+        wrong_kind.dependencies.insert(
+            custody.holder,
+            BTreeSet::from([crate::world::DependencyTarget::Resource(topology.yard)]),
+        );
+        assert!(matches!(
+            verify_state_shape(&wrong_kind),
+            Err(JournalError::Corrupt(_))
+        ));
+
+        // An empty target set is the second representation of nothing, and there
+        // is only supposed to be one.
+        let mut emptied = kernel.state.clone();
+        emptied
+            .dependencies
+            .insert(custody.holder, BTreeSet::new());
+        assert!(matches!(
+            verify_state_shape(&emptied),
+            Err(JournalError::Corrupt(_))
+        ));
+
+        // A holder key that names no canonical subject.
+        let mut orphan = kernel.state.clone();
+        let absent = *orphan.subjects.keys().next().unwrap();
+        orphan.dependencies.insert(
+            absent,
+            BTreeSet::from([crate::world::DependencyTarget::Resource(custody.tithe)]),
+        );
+        orphan.subjects.remove(&absent);
+        assert!(matches!(
+            verify_state_shape(&orphan),
             Err(JournalError::Corrupt(_))
         ));
     }

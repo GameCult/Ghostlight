@@ -4092,4 +4092,302 @@ mod custody_tests {
         assert_eq!(kernel.journal.commit_count(), commits);
         assert_eq!(kernel.snapshot().unwrap(), moved);
     }
+
+    /// Soul, proof 4: the ledger equation stated as arithmetic over the
+    /// committed partitions, across one patch that exercises every conserving
+    /// operation at once. Per resource, `after == before + admitted + gained -
+    /// consumed - spent`, and no third resource moves.
+    #[test]
+    fn soul_a_mixed_patch_conserves_every_resource_it_touches() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "MixedLedger");
+        let (_, custody, active) = custody_world(&mut kernel);
+
+        // The opening balance was created by `Admit` alone: before is zero,
+        // admitted is the balance, and the total equals the sum of the two.
+        assert_eq!(
+            resource_total(&kernel.state, custody.tithe),
+            u128::from(OPENING_BALANCE)
+        );
+        assert_eq!(resource_total(&kernel.state, custody.ingot), 0);
+
+        let tithe_before = resource_total(&kernel.state, custody.tithe);
+        let ingot_before = resource_total(&kernel.state, custody.ingot);
+
+        let receipt = submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![
+                ComponentOp::Transfer {
+                    from: Ref::Existing(custody.holder),
+                    to: Ref::Existing(custody.counterparty),
+                    resource: Ref::Existing(custody.tithe),
+                    qty: Quantity(3),
+                },
+                ComponentOp::Transform {
+                    holder: Ref::Existing(custody.holder),
+                    from_resource: Ref::Existing(custody.tithe),
+                    into_resource: Ref::Existing(custody.ingot),
+                    qty: Quantity(2),
+                },
+                ComponentOp::Consume {
+                    holder: Ref::Existing(custody.counterparty),
+                    resource: Ref::Existing(custody.tithe),
+                    qty: Quantity(1),
+                },
+            ]),
+        );
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+
+        // Transfer contributes to no term; transform contributes one spent and
+        // one gained; consume contributes one consumed. Nothing was admitted.
+        assert_eq!(
+            resource_total(&kernel.state, custody.tithe),
+            tithe_before - 1 - 2
+        );
+        assert_eq!(
+            resource_total(&kernel.state, custody.ingot),
+            ingot_before + 2
+        );
+        assert_eq!(holding(&kernel, custody.holder, custody.tithe), 2);
+        assert_eq!(holding(&kernel, custody.holder, custody.ingot), 2);
+        assert_eq!(holding(&kernel, custody.counterparty, custody.tithe), 2);
+        // Absence is zero: the counterparty never held an ingot, so there is no
+        // row for one rather than a row holding nothing.
+        assert!(!kernel.state.holdings[&custody.counterparty].contains_key(&custody.ingot));
+    }
+
+    /// Soul: is the apply-side `check_ledger` reachable?
+    ///
+    /// A forged `PatchAdmitted` can carry a *sequence* whose second operation
+    /// exceeds what the first left. It dies at `apply_operation`'s own
+    /// re-derived precondition, one operation early, so the ledger never speaks.
+    /// A sequence in which every operation applies cannot break the equation,
+    /// because every `ResolvedOp` arm debits and credits the same `qty` it
+    /// records: the apply-side call is unreachable from the current closed set.
+    #[test]
+    fn soul_a_forged_sequence_dies_at_the_per_operation_check_not_the_ledger() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "ForgedSequence");
+        let (_, custody, _) = custody_world(&mut kernel);
+        let before = kernel.state.holdings.clone();
+
+        let forge = |operations: Vec<ResolvedOp>| WorldEffect::PatchAdmitted {
+            resolved: ResolvedPatch {
+                subjects: Vec::new(),
+                entities: Vec::new(),
+                routes: Vec::new(),
+                operations,
+                evidence: Vec::new(),
+            },
+        };
+        let transfer = |qty: u64| ResolvedOp::Transfer {
+            from: custody.holder,
+            to: custody.counterparty,
+            resource: custody.tithe,
+            qty: Quantity(qty),
+        };
+
+        // Two transfers of five out of a balance of seven: the first leaves two,
+        // the second cannot cover five.
+        let mut candidate = kernel.state.clone();
+        let error = apply_effect(
+            &mut candidate,
+            &CallerId::Principal(owner()),
+            &forge(vec![transfer(5), transfer(5)]),
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::Invariant(message) if message == "holder does not hold enough"),
+            "the per-operation precondition speaks first, not the ledger: {error:?}"
+        );
+        // The candidate is a throwaway clone; the live state never moved.
+        assert_eq!(kernel.state.holdings, before);
+
+        // Every operation applying means the equation balances, so the same
+        // forged lane commits a conserving sequence with no ledger complaint.
+        let mut conserving = kernel.state.clone();
+        apply_effect(
+            &mut conserving,
+            &CallerId::Principal(owner()),
+            &forge(vec![
+                transfer(5),
+                ResolvedOp::Transfer {
+                    from: custody.counterparty,
+                    to: custody.holder,
+                    resource: custody.tithe,
+                    qty: Quantity(5),
+                },
+            ]),
+        )
+        .expect("a conserving forged sequence applies");
+        assert_eq!(conserving.holdings, before);
+
+        // The degenerate shapes a forgery could otherwise use to mint or burn
+        // are refused by the arms themselves, not by the equation.
+        for degenerate in [
+            ResolvedOp::Transfer {
+                from: custody.holder,
+                to: custody.holder,
+                resource: custody.tithe,
+                qty: Quantity(1),
+            },
+            ResolvedOp::Transform {
+                holder: custody.holder,
+                from_resource: custody.tithe,
+                into_resource: custody.tithe,
+                qty: Quantity(1),
+            },
+        ] {
+            let mut candidate = kernel.state.clone();
+            let error = apply_effect(
+                &mut candidate,
+                &CallerId::Principal(owner()),
+                &forge(vec![degenerate]),
+            )
+            .unwrap_err();
+            assert!(
+                matches!(&error, KernelError::Invariant(message) if message == "custody operation moves nothing"),
+                "unexpected refusal: {error:?}"
+            );
+        }
+
+        // An `Admit` in a forged effect still needs its receipt in the same
+        // patch, so the apply lane mints no unattributable quantity either.
+        let mut unevidenced = kernel.state.clone();
+        let error = apply_effect(
+            &mut unevidenced,
+            &CallerId::Principal(owner()),
+            &forge(vec![ResolvedOp::Admit {
+                holder: custody.holder,
+                resource: custody.tithe,
+                qty: Quantity(4),
+                evidence: EvidenceRef::new(TITHE_RECEIPT),
+            }]),
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::Invariant(message) if message == "admitted quantity cites no evidence in its patch"),
+            "unexpected refusal: {error:?}"
+        );
+        assert_eq!(kernel.state.holdings, before);
+    }
+
+    /// Soul: `QuantityOverflow` is reachable, and the arithmetic that reaches it
+    /// is `checked_add` rather than a silent clamp. Two admissions in one patch
+    /// whose sum exceeds `u64::MAX` mint nothing and allocate no ID.
+    #[test]
+    fn soul_a_holding_cannot_overflow_silently() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "Overflow");
+        let topology = admit_topology(&mut kernel);
+        let before = kernel.snapshot().unwrap();
+        let commits = kernel.journal.commit_count();
+
+        let admit = |qty: u64| ComponentOp::Admit {
+            holder: Ref::Draft(DraftHandle::new("clerk")),
+            resource: Ref::Draft(DraftHandle::new("tithe")),
+            qty: Quantity(qty),
+            evidence: EvidenceRef::new(TITHE_RECEIPT),
+        };
+        let mismatches = reject_owner(
+            &mut kernel,
+            &before,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: vec![
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("tithe"),
+                            label: "The Rhythm Tithe".into(),
+                            kind: EntityKind::Resource,
+                            container: None,
+                        }),
+                        Declaration::Subject(SubjectDeclaration {
+                            handle: DraftHandle::new("clerk"),
+                            label: "The Ledger Clerk".into(),
+                            kind: SubjectKind::Institution,
+                            controller: NewController::OperationalAgent,
+                            affordances: BTreeSet::from([AffordanceKind::Speak]),
+                            position: Some(Ref::Existing(topology.yard)),
+                        }),
+                    ],
+                    operations: vec![admit(u64::MAX), admit(1)],
+                    evidence: vec![EvidenceRef::new(TITHE_RECEIPT)],
+                },
+            },
+        );
+
+        assert_eq!(
+            mismatches,
+            vec![Mismatch::QuantityOverflow { operation: 1 }],
+            "the overflow is the complete verdict: no clamp, no second name"
+        );
+        assert!(kernel.state.holdings.is_empty());
+        assert_eq!(kernel.journal.commit_count(), commits);
+        assert_eq!(kernel.snapshot().unwrap(), before);
+    }
+
+    /// Soul, scope: a transfer changes the *receiver's* components too, so the
+    /// counterparty's in-flight proposal is refused with `ScopeChanged` while an
+    /// unrelated subject's bound proposal still commits at the later revision.
+    #[test]
+    fn soul_an_incoming_transfer_changes_only_the_counterpartys_scope() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "IncomingScope");
+        let (topology, custody, active) = custody_world(&mut kernel);
+        let receiver = opportunity_for(&active, custody.counterparty);
+        let bystander = opportunity_for(&active, topology.walker);
+
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::Transfer {
+                from: Ref::Existing(custody.holder),
+                to: Ref::Existing(custody.counterparty),
+                resource: Ref::Existing(custody.tithe),
+                qty: Quantity(3),
+            }]),
+        );
+        let moved = kernel.snapshot().unwrap();
+
+        let exercise = |opportunity: &DecisionOpportunity| CommandBody::ExerciseDecision {
+            opportunity: opportunity.clone(),
+            invocation: DecisionInvocation {
+                affordance_id: opportunity.affordance_ids[0],
+                action: DecisionAction::Speak {
+                    text: "Counted before the tithe arrived.".into(),
+                },
+            },
+        };
+
+        let error = kernel
+            .submit(
+                command(
+                    &moved,
+                    CommandId::new(),
+                    CallerId::Controller(receiver.controller_id),
+                    exercise(&receiver),
+                ),
+                &AuthenticatedCaller::fixture(CallerId::Controller(receiver.controller_id)),
+            )
+            .unwrap_err();
+        assert!(
+            matches!(error, KernelError::ScopeChanged { .. }),
+            "the receiver's holdings moved under its bound proposal: {error:?}"
+        );
+
+        let receipt = kernel
+            .submit(
+                command(
+                    &moved,
+                    CommandId::new(),
+                    CallerId::Controller(bystander.controller_id),
+                    exercise(&bystander),
+                ),
+                &AuthenticatedCaller::fixture(CallerId::Controller(bystander.controller_id)),
+            )
+            .expect("an unrelated subject's bound proposal is untouched by the transfer");
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+    }
 }
