@@ -145,7 +145,7 @@ pub struct PersonaTurnBinding {
     /// world state as one value instead of inventing a second opportunity ID.
     pub opportunity_digest: String,
     pub world_revision: u64,
-    pub state_digest: String,
+    pub scope_digest: String,
     pub projector_receipt_digest: String,
     pub persona_inference_receipt_digest: String,
 }
@@ -545,7 +545,7 @@ fn persona_turn_receipt_digest(binding: &PersonaTurnBinding, source_digest: &str
         binding.world_id.as_bytes(),
         binding.controller_id.as_bytes(),
         binding.opportunity_digest.as_bytes(),
-        binding.state_digest.as_bytes(),
+        binding.scope_digest.as_bytes(),
         binding.projector_receipt_digest.as_bytes(),
         binding.persona_inference_receipt_digest.as_bytes(),
         source_digest.as_bytes(),
@@ -575,7 +575,7 @@ mod tests {
             controller_id: "controller:mara".into(),
             opportunity_digest: "sha256:complete-opportunity".into(),
             world_revision: 12,
-            state_digest: "sha256:world-state".into(),
+            scope_digest: "sha256:world-state".into(),
             projector_receipt_digest: "sha256:projector-receipt".into(),
             persona_inference_receipt_digest: "sha256:persona-inference-receipt".into(),
         };

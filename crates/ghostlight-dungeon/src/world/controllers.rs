@@ -744,7 +744,15 @@ fn turn_matches_opportunity(turn: &PersonaTurn, opportunity: &DecisionOpportunit
             .digest()
             .is_ok_and(|digest| digest == turn.binding().opportunity_digest)
         && opportunity.revision == turn.binding().world_revision
-        && opportunity.state_digest == turn.binding().state_digest
+        && opportunity.scope_digest.as_str() == turn.binding().scope_digest
+}
+
+/// Two opportunity values that bind the same proposal. The revision is a receipt
+/// and an ordering value; the scope digest is the binding.
+fn binds_same_scope(left: &DecisionOpportunity, right: &DecisionOpportunity) -> bool {
+    left.world_id == right.world_id
+        && left.scope == right.scope
+        && left.scope_digest == right.scope_digest
 }
 
 fn derive_narrative_capture(
@@ -1702,7 +1710,7 @@ impl ControllerRunner {
     ) -> Result<NarrativeRun, ControllerError> {
         match self.work.lookup(command_id).await? {
             ControllerWorkLookup::Confirmed(ControllerWork::Narrative(checkpoint)) => {
-                if checkpoint.opportunity() != opportunity {
+                if !binds_same_scope(checkpoint.opportunity(), opportunity) {
                     return Err(ControllerError::OpportunityMismatch);
                 }
                 return self
@@ -1710,7 +1718,7 @@ impl ControllerRunner {
                     .await;
             }
             ControllerWorkLookup::CustodyUncertain(ControllerWork::Narrative(checkpoint)) => {
-                if checkpoint.opportunity() != opportunity {
+                if !binds_same_scope(checkpoint.opportunity(), opportunity) {
                     return Err(ControllerError::OpportunityMismatch);
                 }
                 return Ok(narrative_pending(
@@ -1777,7 +1785,7 @@ impl ControllerRunner {
     ) -> Result<OperationalRun, ControllerError> {
         match self.work.lookup(command_id).await? {
             ControllerWorkLookup::Confirmed(ControllerWork::Operational(checkpoint)) => {
-                if checkpoint.opportunity() != opportunity {
+                if !binds_same_scope(checkpoint.opportunity(), opportunity) {
                     return Err(ControllerError::OpportunityMismatch);
                 }
                 return self
@@ -1785,7 +1793,7 @@ impl ControllerRunner {
                     .await;
             }
             ControllerWorkLookup::CustodyUncertain(ControllerWork::Operational(checkpoint)) => {
-                if checkpoint.opportunity() != opportunity {
+                if !binds_same_scope(checkpoint.opportunity(), opportunity) {
                     return Err(ControllerError::OpportunityMismatch);
                 }
                 return Ok(operational_pending(
@@ -1890,7 +1898,7 @@ impl ControllerRunner {
                     "operational runner received a terminal checkpoint".into(),
                 ));
             };
-            self.ensure_opportunity_current(&opportunity).await?;
+            self.ensure_scope_unchanged(&opportunity).await?;
             let model = invocation.invocation.request.model.clone();
             let output = match self.infer(invocation).await {
                 Ok(output) => output,
@@ -2014,7 +2022,10 @@ impl ControllerRunner {
         let matches = snapshot
             .opportunities
             .iter()
-            .filter(|opportunity| *opportunity == exact_opportunity)
+            .filter(|opportunity| {
+                opportunity.scope == exact_opportunity.scope
+                    && opportunity.scope_digest == exact_opportunity.scope_digest
+            })
             .cloned()
             .collect::<Vec<_>>();
         let [opportunity] = matches.as_slice() else {
@@ -2033,12 +2044,16 @@ impl ControllerRunner {
         Ok(SelectedDecision {
             snapshot,
             subject,
-            opportunity: opportunity.clone(),
+            // The run's own bound value, not the fresh snapshot's: one run binds
+            // one opportunity, persists it, and submits it unchanged.
+            opportunity: exact_opportunity.clone(),
             speak_affordance,
         })
     }
 
-    async fn ensure_opportunity_current(
+    /// The scope this run bound still derives the same digest. A commit
+    /// elsewhere in the world no longer kills an in-flight turn.
+    async fn ensure_scope_unchanged(
         &self,
         opportunity: &DecisionOpportunity,
     ) -> Result<(), ControllerError> {
@@ -2095,7 +2110,7 @@ impl ControllerRunner {
                 "Projector runner received another checkpoint".into(),
             ));
         };
-        self.ensure_opportunity_current(&opportunity).await?;
+        self.ensure_scope_unchanged(&opportunity).await?;
         let projector_output = match self.infer(invocation).await {
             Ok(output) => output,
             Err(error) => match inference_pending_reason(&error) {
@@ -2169,7 +2184,7 @@ impl ControllerRunner {
         let (lived_stream, projector_receipt) = projector_output
             .clone()
             .prose_only(InferencePurpose::Projector)?;
-        self.ensure_opportunity_current(&opportunity).await?;
+        self.ensure_scope_unchanged(&opportunity).await?;
         let persona = match self
             .infer(invocation)
             .await
@@ -2187,7 +2202,7 @@ impl ControllerRunner {
                 controller_id: encoded_id(&opportunity.controller_id)?,
                 opportunity_digest: opportunity.digest()?,
                 world_revision: opportunity.revision,
-                state_digest: opportunity.state_digest.clone(),
+                scope_digest: opportunity.scope_digest.as_str().to_owned(),
                 projector_receipt_digest: projector_receipt,
                 persona_inference_receipt_digest: persona.1,
             },
@@ -2257,7 +2272,7 @@ impl ControllerRunner {
                     "Interpreter runner received a terminal checkpoint".into(),
                 ));
             };
-            self.ensure_opportunity_current(&opportunity).await?;
+            self.ensure_scope_unchanged(&opportunity).await?;
             let model = invocation.invocation.request.model.clone();
             let output = match self.infer(invocation).await {
                 Ok(output) => output,
@@ -2547,13 +2562,55 @@ impl SelectedDecision {
                 "id": self.subject.id,
                 "label": self.subject.label,
                 "kind": self.subject.kind,
+                "place": self.typed_place(),
             },
             "permission": {
                 "speak": true,
             },
+            "routes": self.typed_incident_routes(),
             "visible_events": self.typed_visible_events(),
         }))
         .map_err(|error| ControllerError::Serialization(error.to_string()))
+    }
+
+    /// Only the acting subject's own place, so the typed surface carries what a
+    /// precondition reads and not a world gazetteer.
+    fn typed_place(&self) -> Value {
+        self.subject
+            .position
+            .and_then(|place| {
+                self.snapshot
+                    .places
+                    .iter()
+                    .find(|candidate| candidate.id == place)
+            })
+            .map_or(
+                Value::Null,
+                |place| json!({"id": place.id, "label": place.label}),
+            )
+    }
+
+    /// The routes incident to that place: the same set the scope digest reads.
+    fn typed_incident_routes(&self) -> Vec<Value> {
+        let Some(place) = self.subject.position else {
+            return Vec::new();
+        };
+        self.snapshot
+            .routes
+            .iter()
+            .filter(|route| route.from == place || route.to == place)
+            .map(|route| {
+                json!({
+                    "id": route.id,
+                    "label": route.label,
+                    "from": route.from,
+                    "to": route.to,
+                    "access": route.access,
+                    "cost": route.cost,
+                    "open": route.open,
+                })
+            })
+            .collect()
     }
 
     fn visible_stimulus(&self) -> Result<String, ControllerError> {
@@ -3343,7 +3400,7 @@ mod tests {
     use super::*;
     use crate::world::{
         AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, ControllerId, CreateWorld,
-        DecisionScope, Declaration, DraftHandle, EventId, NewController, PrincipalId,
+        DecisionScope, Declaration, DraftHandle, EventId, NewController, PrincipalId, ScopeDigest,
         SubjectDeclaration, SubjectKind, WorldId, WorldPatch, WorldPhase,
     };
     use std::{
@@ -3500,7 +3557,7 @@ mod tests {
         let opportunity = DecisionOpportunity {
             world_id: WorldId::issue(),
             revision: 41,
-            state_digest: "sha256:projector-must-not-see-this-digest".into(),
+            scope_digest: ScopeDigest::fixture("sha256:projector-must-not-see-this-digest"),
             scope: DecisionScope {
                 subject_id: actor_id,
             },
@@ -3516,6 +3573,7 @@ mod tests {
             controller_mode: ControllerMode::NarrativePersona,
             human_controller: None,
             affordances: BTreeMap::from([(AffordanceKind::Speak, speak_affordance)]),
+            position: None,
         };
         let speaker = SubjectSnapshot {
             id: speaker_id,
@@ -3525,6 +3583,7 @@ mod tests {
             controller_mode: ControllerMode::OperationalAgent,
             human_controller: None,
             affordances: BTreeMap::new(),
+            position: None,
         };
         let snapshot = WorldSnapshot {
             world_id: opportunity.world_id,
@@ -3535,6 +3594,8 @@ mod tests {
             draft_approvals: BTreeSet::new(),
             required_approvers: BTreeSet::new(),
             subjects: vec![actor.clone(), speaker],
+            places: Vec::new(),
+            routes: Vec::new(),
             events: vec![crate::world::DecisionEvent {
                 id: EventId::for_command(CommandId::new()),
                 revision: 40,
@@ -3550,7 +3611,7 @@ mod tests {
                 },
             }],
             opportunities: vec![opportunity.clone()],
-            state_digest: opportunity.state_digest.clone(),
+            state_digest: "sha256:projector-must-not-see-this-digest".into(),
             last_commit_digest: Some("sha256:projector-must-not-see-the-commit".into()),
         };
         let selected = SelectedDecision {
@@ -3738,7 +3799,7 @@ mod tests {
         DecisionOpportunity {
             world_id: WorldId::issue(),
             revision: 7,
-            state_digest: "sha256:fixture-state".into(),
+            scope_digest: ScopeDigest::fixture("sha256:fixture-state"),
             scope: DecisionScope {
                 subject_id: SubjectId::issue(),
             },
@@ -3779,7 +3840,7 @@ mod tests {
                 controller_id: encoded_id(&opportunity.controller_id).unwrap(),
                 opportunity_digest: opportunity.digest().unwrap(),
                 world_revision: opportunity.revision,
-                state_digest: opportunity.state_digest.clone(),
+                scope_digest: opportunity.scope_digest.as_str().to_owned(),
                 projector_receipt_digest: "sha256:projector".into(),
                 persona_inference_receipt_digest: "sha256:persona".into(),
             },
@@ -3905,7 +3966,7 @@ mod tests {
                             kind: SubjectKind::Person,
                             controller,
                             affordances: BTreeSet::from([AffordanceKind::Speak]),
-                            authority_scope: None,
+                            position: None,
                         })],
                         operations: Vec::new(),
                         evidence: Vec::new(),
@@ -4029,10 +4090,20 @@ mod tests {
             decision.submission,
             SubmissionDisposition::Completed(_)
         ));
+        // The same scope at a later revision is the same binding, so a caller
+        // holding a fresher snapshot resumes this run instead of failing.
         let later_opportunity = mailbox.snapshot().await.unwrap().opportunities[0].clone();
+        assert_ne!(later_opportunity.revision, opportunity.revision);
+        let NarrativeRun::Completed(resumed) = runner
+            .run_narrative(command_id, &later_opportunity)
+            .await
+            .unwrap()
+        else {
+            panic!("a later view of the same scope did not resume the run")
+        };
         assert!(matches!(
-            runner.run_narrative(command_id, &later_opportunity).await,
-            Err(ControllerError::OpportunityMismatch)
+            resumed.submission,
+            SubmissionDisposition::PreviouslyConfirmed(_)
         ));
         let NarrativeRun::Completed(replayed) = runner
             .run_narrative(command_id, &opportunity)
@@ -4175,15 +4246,25 @@ mod tests {
         assert!(after.events.is_empty());
         let refreshed = after.opportunities[0].clone();
         assert_ne!(refreshed, opportunity);
+        assert_eq!(refreshed.scope_digest, opportunity.scope_digest);
+        // A digest the world does not derive selects nothing.
+        let mut forged = opportunity.clone();
+        forged.scope_digest = ScopeDigest::fixture("sha256:not-this-scope");
         assert!(matches!(
-            runner.run_narrative(CommandId::new(), &opportunity).await,
+            runner.run_narrative(CommandId::new(), &forged).await,
             Err(ControllerError::NoOpportunity {
                 expected: ControllerMode::NarrativePersona
             })
         ));
+        let NarrativeRun::Completed(resumed) =
+            runner.run_narrative(command_id, &refreshed).await.unwrap()
+        else {
+            panic!("a later view of the same scope did not resume the run")
+        };
         assert!(matches!(
-            runner.run_narrative(command_id, &refreshed).await,
-            Err(ControllerError::OpportunityMismatch)
+            resumed.submission,
+            SubmissionDisposition::NoProposal(SubmitReceipt::AlreadyApplied(ref receipt))
+                if receipt == &applied
         ));
 
         let NarrativeRun::Completed(replayed) = runner
@@ -4483,7 +4564,7 @@ mod tests {
                                     principal: human.clone(),
                                 },
                                 affordances: BTreeSet::from([AffordanceKind::Speak]),
-                                authority_scope: None,
+                                position: None,
                             }),
                             Declaration::Subject(SubjectDeclaration {
                                 handle: DraftHandle::new("watch-officer"),
@@ -4491,7 +4572,7 @@ mod tests {
                                 kind: SubjectKind::Person,
                                 controller: NewController::NarrativePersona,
                                 affordances: BTreeSet::from([AffordanceKind::Speak]),
-                                authority_scope: None,
+                                position: None,
                             }),
                             Declaration::Subject(SubjectDeclaration {
                                 handle: DraftHandle::new("signal-council"),
@@ -4499,7 +4580,7 @@ mod tests {
                                 kind: SubjectKind::Institution,
                                 controller: NewController::OperationalAgent,
                                 affordances: BTreeSet::from([AffordanceKind::Speak]),
-                                authority_scope: None,
+                                position: None,
                             }),
                         ],
                         operations: Vec::new(),
@@ -4664,8 +4745,8 @@ mod tests {
                 == narrative_opportunity.revision
         );
         assert!(
-            narrative_decision.persona_turn().binding().state_digest
-                == narrative_opportunity.state_digest
+            narrative_decision.persona_turn().binding().scope_digest
+                == narrative_opportunity.scope_digest.as_str()
         );
         let persona_prose = narrative_decision.persona_turn().source_prose().to_owned();
         assert!(!persona_prose.trim().is_empty());

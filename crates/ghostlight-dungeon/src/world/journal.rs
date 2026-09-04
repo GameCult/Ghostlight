@@ -12,8 +12,8 @@ use std::{
 };
 use thiserror::Error;
 
-const STATE_ROW: &str = "world_state.foundation.v1";
-const COMMIT_ROW: &str = "world_commit.foundation.v2";
+const STATE_ROW: &str = "world_state.topology.v1";
+const COMMIT_ROW: &str = "world_commit.topology.v1";
 
 #[derive(Debug, Error)]
 pub(super) enum JournalError {
@@ -445,35 +445,53 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
             "world ontology is empty or has split subject/controller ownership".into(),
         ));
     }
-    for entity in state.entities.values() {
+    let is_place = |entity_id: &super::EntityId| {
+        state
+            .entities
+            .get(entity_id)
+            .is_some_and(|record| record.kind == super::EntityKind::Place)
+    };
+    for (entity_id, entity) in &state.entities {
         if !super::patch::is_canonical_text(&entity.label) {
             return Err(JournalError::Corrupt(
                 "entity label is empty or noncanonical".into(),
             ));
         }
+        if let Some(container) = entity.container
+            && (entity.kind != super::EntityKind::Place || !is_place(&container))
+        {
+            return Err(JournalError::Corrupt(
+                "entity container does not name a canonical place".into(),
+            ));
+        }
+        if !super::patch::containment_terminates(*entity_id, &state.entities) {
+            return Err(JournalError::Corrupt("place contains itself".into()));
+        }
     }
-    if state.edges.values().any(|edge| {
-        !state.entities.contains_key(&edge.from) || !state.entities.contains_key(&edge.to)
-    }) {
-        return Err(JournalError::Corrupt(
-            "edge endpoint references an unknown entity".into(),
-        ));
+    for edge in state.edges.values() {
+        let (from, to) = edge.endpoints();
+        if !is_place(&from)
+            || !is_place(&to)
+            || from == to
+            || !super::patch::is_valid_cost(edge.cost())
+        {
+            return Err(JournalError::Corrupt(
+                "route does not join two distinct places at a valid cost".into(),
+            ));
+        }
+    }
+    for (subject_id, position) in &state.positions {
+        if !state.subjects.contains_key(subject_id) || !is_place(&position.place) {
+            return Err(JournalError::Corrupt(
+                "position does not name a canonical subject and place".into(),
+            ));
+        }
     }
     let mut controller_ids = BTreeSet::new();
     for (subject_id, subject) in &state.subjects {
         if !super::patch::is_canonical_text(&subject.label) {
             return Err(JournalError::Corrupt(
                 "subject label is empty or noncanonical".into(),
-            ));
-        }
-        if let Some(entity_id) = subject.authority_scope
-            && state
-                .entities
-                .get(&entity_id)
-                .is_none_or(|entity| entity.kind != super::EntityKind::Place)
-        {
-            return Err(JournalError::Corrupt(
-                "subject authority scope does not name a canonical place".into(),
             ));
         }
         let scope = super::DecisionScope {
@@ -635,7 +653,7 @@ mod tests {
     use super::*;
     use crate::world::{
         AffordanceKind, AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, CreateWorld,
-        Declaration, DraftHandle, EntityDeclaration, EntityId, EntityKind, NewController,
+        Declaration, DraftHandle, EntityDeclaration, EntityId, EntityKind, NewController, Position,
         PrincipalId, Ref, SubjectDeclaration, SubjectKind, WorldKernel, WorldPatch,
     };
 
@@ -682,7 +700,7 @@ mod tests {
                     principal: owner.clone(),
                 },
                 affordances: BTreeSet::from([AffordanceKind::Speak]),
-                authority_scope: None,
+                position: None,
             }),
         };
         let (mut kernel, _) = WorldKernel::create(&path, creation, &authenticated).unwrap();
@@ -762,7 +780,7 @@ mod tests {
                     principal: owner.clone(),
                 },
                 affordances: BTreeSet::from([AffordanceKind::Speak]),
-                authority_scope: None,
+                position: None,
             }),
         };
         let (mut kernel, _) = WorldKernel::create(&path, creation, &authenticated).unwrap();
@@ -783,6 +801,7 @@ mod tests {
                                     handle: DraftHandle::new("rhythm-road"),
                                     label: "The Rhythm Road".into(),
                                     kind: EntityKind::Place,
+                                    container: None,
                                 }),
                                 Declaration::Subject(SubjectDeclaration {
                                     handle: DraftHandle::new("rhythm-authority"),
@@ -790,9 +809,7 @@ mod tests {
                                     kind: SubjectKind::Institution,
                                     controller: NewController::OperationalAgent,
                                     affordances: BTreeSet::from([AffordanceKind::Speak]),
-                                    authority_scope: Some(Ref::Draft(DraftHandle::new(
-                                        "rhythm-road",
-                                    ))),
+                                    position: Some(Ref::Draft(DraftHandle::new("rhythm-road"))),
                                 }),
                             ],
                             operations: Vec::new(),
@@ -810,7 +827,69 @@ mod tests {
         let WorldEffect::PatchAdmitted { resolved } = &mut forged.effect else {
             panic!("expected an admitted patch effect");
         };
-        resolved.subjects[0].subject.authority_scope = Some(EntityId::issue());
+        resolved.subjects[0].position = Some(Position {
+            place: EntityId::issue(),
+        });
+        forged.digest = commit_digest(forged).unwrap();
+        forged_head.last_commit_digest = Some(forged.digest.clone());
+
+        assert!(matches!(
+            verify_history(&forged_head, &forged_commits),
+            Err(JournalError::Corrupt(_))
+        ));
+    }
+
+    /// Replay re-derives the operation half too: a committed relocation rewritten
+    /// to move a different subject no longer reduces from its command.
+    #[test]
+    fn a_forged_relocate_effect_does_not_apply() {
+        use crate::world::tests::{activate, admit_topology, auth_principal, command, owner};
+
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let authenticated = auth_principal(owner());
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            crate::world::tests::creation(CommandId::new(), "Kharad"),
+            &authenticated,
+        )
+        .unwrap();
+        let topology = admit_topology(&mut kernel);
+        let active = activate(&mut kernel);
+        let command_id = CommandId::new();
+        kernel
+            .submit(
+                command(
+                    &active,
+                    command_id,
+                    CallerId::Principal(owner()),
+                    CommandBody::AdmitPatch {
+                        answers: None,
+                        patch: WorldPatch {
+                            declarations: Vec::new(),
+                            operations: vec![crate::world::ComponentOp::Relocate {
+                                subject: Ref::Existing(topology.walker),
+                                via: Ref::Existing(topology.ramp),
+                            }],
+                            evidence: Vec::new(),
+                        },
+                    },
+                ),
+                &authenticated,
+            )
+            .unwrap();
+
+        let mut forged_head = kernel.state.clone();
+        let mut forged_commits = kernel.journal.commits.clone();
+        let forged = forged_commits.get_mut(&command_id).unwrap();
+        let WorldEffect::PatchAdmitted { resolved } = &mut forged.effect else {
+            panic!("expected an admitted patch effect");
+        };
+        let crate::world::ResolvedOp::Relocate { subject_id, .. } = &mut resolved.operations[0]
+        else {
+            panic!("expected a lowered relocation");
+        };
+        *subject_id = crate::world::SubjectId::issue();
         forged.digest = commit_digest(forged).unwrap();
         forged_head.last_commit_digest = Some(forged.digest.clone());
 
@@ -837,7 +916,7 @@ mod tests {
                 kind: SubjectKind::Person,
                 controller: NewController::Human { principal: owner },
                 affordances: BTreeSet::from([AffordanceKind::Speak]),
-                authority_scope: None,
+                position: None,
             }),
         };
         let (kernel, _) = WorldKernel::create(&path, creation, &authenticated).unwrap();

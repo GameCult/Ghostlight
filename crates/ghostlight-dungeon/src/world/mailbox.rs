@@ -35,6 +35,17 @@ enum Request {
         authenticated: AuthenticatedCaller,
         reply: oneshot::Sender<Result<SubmitReceipt, KernelError>>,
     },
+    /// An opportunity-bearing command. Its scope digest is the whole binding, so
+    /// the envelope revision is stamped here, inside the owner task, where there
+    /// is no race — a caller-supplied revision would be a second, stricter
+    /// binding for a proposal the digest already binds.
+    SubmitStamped {
+        command_id: CommandId,
+        caller: CallerId,
+        body: CommandBody,
+        authenticated: AuthenticatedCaller,
+        reply: oneshot::Sender<Result<SubmitReceipt, KernelError>>,
+    },
     Snapshot {
         reply: oneshot::Sender<Result<WorldSnapshot, KernelError>>,
     },
@@ -89,7 +100,7 @@ impl WorldMailbox {
                 kind,
                 controller,
                 affordances: BTreeSet::from([AffordanceKind::Speak]),
-                authority_scope: None,
+                position: None,
             })
         };
         let mut declarations = vec![declare(
@@ -160,17 +171,52 @@ impl WorldMailbox {
         principal: &VerifiedPrincipalEvidence,
     ) -> Result<SubmitReceipt, MailboxError> {
         let principal_id = PrincipalId::new(principal.account_subject_hash());
+        let caller = CallerId::Principal(principal_id.clone());
+        let authenticated = AuthenticatedCaller::verified_principal(principal_id);
+        if matches!(
+            intent.body,
+            CommandBody::ExerciseDecision { .. } | CommandBody::DeclineDecision { .. }
+        ) {
+            return self
+                .submit_stamped(intent.id, caller, intent.body, authenticated)
+                .await;
+        }
         self.submit_authenticated(
             CommandEnvelope {
                 id: intent.id,
                 world_id: intent.world_id,
                 expected_revision: intent.expected_revision,
-                caller: CallerId::Principal(principal_id.clone()),
+                caller,
                 body: intent.body,
             },
-            AuthenticatedCaller::verified_principal(principal_id),
+            authenticated,
         )
         .await
+    }
+
+    async fn submit_stamped(
+        &self,
+        command_id: CommandId,
+        caller: CallerId,
+        body: CommandBody,
+        authenticated: AuthenticatedCaller,
+    ) -> Result<SubmitReceipt, MailboxError> {
+        let (reply, response) = oneshot::channel();
+        self.sender
+            .send(Request::SubmitStamped {
+                command_id,
+                caller,
+                body,
+                authenticated,
+                reply,
+            })
+            .await
+            .map_err(|_| MailboxError::Unavailable)?;
+
+        response
+            .await
+            .map_err(|_| MailboxError::OutcomeUnknown { command_id })?
+            .map_err(mailbox_outcome)
     }
 
     async fn submit_authenticated(
@@ -204,16 +250,12 @@ impl WorldMailbox {
         invocation: DecisionInvocation,
     ) -> Result<SubmitReceipt, MailboxError> {
         let controller_id = opportunity.controller_id;
-        self.submit_authenticated(
-            CommandEnvelope {
-                id: command_id,
-                world_id: opportunity.world_id,
-                expected_revision: opportunity.revision,
-                caller: CallerId::Controller(controller_id),
-                body: CommandBody::ExerciseDecision {
-                    opportunity: opportunity.clone(),
-                    invocation,
-                },
+        self.submit_stamped(
+            command_id,
+            CallerId::Controller(controller_id),
+            CommandBody::ExerciseDecision {
+                opportunity: opportunity.clone(),
+                invocation,
             },
             AuthenticatedCaller::verified_controller(controller_id),
         )
@@ -226,15 +268,11 @@ impl WorldMailbox {
         opportunity: &DecisionOpportunity,
     ) -> Result<SubmitReceipt, MailboxError> {
         let controller_id = opportunity.controller_id;
-        self.submit_authenticated(
-            CommandEnvelope {
-                id: command_id,
-                world_id: opportunity.world_id,
-                expected_revision: opportunity.revision,
-                caller: CallerId::Controller(controller_id),
-                body: CommandBody::DeclineDecision {
-                    opportunity: opportunity.clone(),
-                },
+        self.submit_stamped(
+            command_id,
+            CallerId::Controller(controller_id),
+            CommandBody::DeclineDecision {
+                opportunity: opportunity.clone(),
             },
             AuthenticatedCaller::verified_controller(controller_id),
         )
@@ -386,6 +424,34 @@ async fn run_owner(mut owned: OwnedWorld, mut receiver: mpsc::Receiver<Request>)
                     return;
                 }
             }
+            Request::SubmitStamped {
+                command_id,
+                caller,
+                body,
+                authenticated,
+                reply,
+            } => {
+                let result = match &mut owned {
+                    OwnedWorld::Empty(_) => Err(KernelError::WorldNotCreated),
+                    OwnedWorld::Live(kernel) => {
+                        let command = CommandEnvelope {
+                            id: command_id,
+                            world_id: kernel.state.world_id,
+                            expected_revision: kernel.state.revision,
+                            caller,
+                            body,
+                        };
+                        kernel.submit(command, &authenticated)
+                    }
+                };
+                let owner_must_stop = result
+                    .as_ref()
+                    .is_err_and(KernelError::requires_owner_restart);
+                let _ = reply.send(result);
+                if owner_must_stop {
+                    return;
+                }
+            }
             Request::Snapshot { reply } => {
                 let result = match &owned {
                     OwnedWorld::Empty(_) => Err(KernelError::WorldNotCreated),
@@ -447,8 +513,7 @@ mod tests {
     use super::*;
     use crate::world::{
         AffordanceKind, CallerId, CommandBody, Declaration, DraftHandle, EntityDeclaration,
-        EntityKind, Mismatch, NewController, PrincipalId, SubjectDeclaration, SubjectKind,
-        WorldId,
+        EntityKind, Mismatch, NewController, PrincipalId, SubjectDeclaration, SubjectKind, WorldId,
     };
     use std::{collections::BTreeSet, path::PathBuf};
     use tempfile::TempDir;
@@ -471,7 +536,7 @@ mod tests {
                         principal: PrincipalId::new("owner"),
                     },
                     affordances: BTreeSet::from([AffordanceKind::Speak]),
-                    authority_scope: None,
+                    position: None,
                 })],
                 operations: Vec::new(),
                 evidence: Vec::new(),
@@ -598,6 +663,7 @@ mod tests {
             handle: DraftHandle::new("empty-hall"),
             label: "The Empty Hall".into(),
             kind: EntityKind::Place,
+            container: None,
         })];
 
         let Err(MailboxError::Kernel(KernelError::PatchRejected(rejected))) =

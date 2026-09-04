@@ -972,20 +972,11 @@ async fn admit_controller_command(
             "human decisions cannot enter through the controller runner".into(),
         ));
     }
-    let source_version = invocation
+    invocation
         .operation
         .route_hint
         .source_version
         .ok_or_else(|| RuntimeCommandError::Payload("source version is required".into()))?;
-    let opportunity_version =
-        payload.opportunity.revision.checked_add(1).ok_or_else(|| {
-            RuntimeCommandError::Payload("opportunity revision overflowed".into())
-        })?;
-    if source_version != opportunity_version {
-        return Err(RuntimeCommandError::Payload(
-            "opportunity and surface version disagree".into(),
-        ));
-    }
     let snapshot = current_world(state)
         .await
         .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?
@@ -1245,11 +1236,6 @@ async fn execute_world(
         "world.speak" => {
             let payload: SpeakPayload = serde_json::from_value(invocation.payload.clone())
                 .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
-            if payload.opportunity.revision != expected_revision {
-                return Err(RuntimeCommandError::Payload(
-                    "opportunity and surface version disagree".into(),
-                ));
-            }
             CommandBody::ExerciseDecision {
                 opportunity: payload.opportunity,
                 invocation: DecisionInvocation {

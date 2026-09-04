@@ -18,10 +18,10 @@ pub(crate) use controllers::{
 };
 pub(crate) use mailbox::{MailboxError, WorldMailbox};
 pub(crate) use patch::{
-    Declaration, DraftHandle, EntityDeclaration, EntityKind, Mismatch, PatchAnswer, Ref,
-    SubjectDeclaration, WorldPatch,
+    AccessKind, Cost, Declaration, DraftHandle, EntityDeclaration, EntityKind, Mismatch,
+    PatchAnswer, Position, Ref, SubjectDeclaration, WorldPatch,
 };
-use patch::{EdgeRecord, EntityRecord, ResolvedPatch};
+use patch::{ComponentOp, EdgeRecord, EntityRecord, ResolvedOp, ResolvedPatch, RouteDeclaration};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -32,8 +32,8 @@ use std::path::Path;
 use thiserror::Error;
 use uuid::Uuid;
 
-pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.foundation.v1";
-pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.foundation.v2";
+pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.topology.v1";
+pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.topology.v1";
 
 /// Compatibility tag derived from [`STATE_SCHEMA`]: the trailing
 /// `<family>-<version>` pair (e.g. `foundation-v1`). Callers that publish a
@@ -235,12 +235,41 @@ pub(crate) struct DecisionScope {
     pub(crate) subject_id: SubjectId,
 }
 
+/// The digest of exactly the components a proposal's verification reads: the
+/// scope's controller assignment, its affordance grants, its subject's Position,
+/// and the routes incident to that place. Built through the one `digest()`
+/// helper over ordered containers, so it is a pure function of committed state.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(transparent)]
+pub(crate) struct ScopeDigest(String);
+
+impl ScopeDigest {
+    fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    #[cfg(test)]
+    pub(crate) fn fixture(value: &str) -> Self {
+        Self(value.into())
+    }
+}
+
+#[derive(Serialize)]
+struct ScopePreimage<'a> {
+    world_id: WorldId,
+    subject_id: SubjectId,
+    controller: &'a ControllerAssignment,
+    affordances: BTreeMap<AffordanceId, &'a AffordanceGrant>,
+    position: Option<&'a Position>,
+    routes: BTreeMap<EdgeId, &'a EdgeRecord>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct DecisionOpportunity {
     pub(crate) world_id: WorldId,
     pub(crate) revision: u64,
-    pub(crate) state_digest: String,
+    pub(crate) scope_digest: ScopeDigest,
     pub(crate) scope: DecisionScope,
     pub(crate) controller_id: ControllerId,
     pub(crate) controller_mode: ControllerMode,
@@ -317,7 +346,6 @@ pub(crate) enum CommandBody {
 struct SubjectState {
     label: String,
     kind: SubjectKind,
-    authority_scope: Option<EntityId>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -396,6 +424,7 @@ struct WorldState {
     subjects: BTreeMap<SubjectId, SubjectState>,
     entities: BTreeMap<EntityId, EntityRecord>,
     edges: BTreeMap<EdgeId, EdgeRecord>,
+    positions: BTreeMap<SubjectId, Position>,
     controller_assignments: BTreeMap<DecisionScope, ControllerAssignment>,
     affordance_grants: BTreeMap<AffordanceId, AffordanceGrant>,
     events: Vec<DecisionEvent>,
@@ -478,6 +507,25 @@ pub(crate) struct SubjectSnapshot {
     pub(crate) controller_mode: ControllerMode,
     pub(crate) human_controller: Option<PrincipalId>,
     pub(crate) affordances: BTreeMap<AffordanceKind, AffordanceId>,
+    pub(crate) position: Option<EntityId>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct PlaceSnapshot {
+    pub(crate) id: EntityId,
+    pub(crate) label: String,
+    pub(crate) container: Option<EntityId>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct RouteSnapshot {
+    pub(crate) id: EdgeId,
+    pub(crate) label: String,
+    pub(crate) from: EntityId,
+    pub(crate) to: EntityId,
+    pub(crate) access: AccessKind,
+    pub(crate) cost: Cost,
+    pub(crate) open: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -490,6 +538,8 @@ pub(crate) struct WorldSnapshot {
     pub(crate) draft_approvals: BTreeSet<PrincipalId>,
     pub(crate) required_approvers: BTreeSet<PrincipalId>,
     pub(crate) subjects: Vec<SubjectSnapshot>,
+    pub(crate) places: Vec<PlaceSnapshot>,
+    pub(crate) routes: Vec<RouteSnapshot>,
     pub(crate) events: Vec<DecisionEvent>,
     pub(crate) opportunities: Vec<DecisionOpportunity>,
     pub(crate) state_digest: String,
@@ -579,8 +629,14 @@ pub(crate) enum KernelError {
     DraftAlreadyApproved,
     #[error("draft is missing required approvals: {0:?}")]
     MissingApprovals(Vec<PrincipalId>),
-    #[error("decision opportunity is stale or does not exactly derive from current state")]
+    #[error("this world derives no such decision opportunity")]
     OpportunityMismatch,
+    #[error("decision scope changed since the proposal was bound")]
+    ScopeChanged {
+        scope: DecisionScope,
+        expected: ScopeDigest,
+        actual: ScopeDigest,
+    },
     #[error("caller does not control this decision scope")]
     ControllerMismatch,
     #[error("decision affordance is not granted by the opportunity")]
@@ -668,13 +724,10 @@ fn prepare_creation(
     // The world's own identity is not world structure, and it feeds every
     // derived ID, so it is minted before resolution rather than by it.
     let world_id = WorldId::issue();
-    let resolved = patch::resolve_declarations(
-        &BTreeMap::new(),
-        &BTreeMap::new(),
-        world_id,
+    let resolved = patch::resolve_patch(
+        &WorldState::empty(world_id, input.owner.clone(), title.clone()),
         input.id,
         &input.patch,
-        admits_human(0, &BTreeMap::new()),
     )
     .map_err(KernelError::PatchRejected)?;
     Ok(PreparedCreation {
@@ -772,8 +825,14 @@ impl WorldKernel {
         if command.caller != authenticated.caller {
             return Err(KernelError::AuthenticationMismatch);
         }
+        // Retry identity is caller plus body. The expected revision is stamped by
+        // the mailbox owner rather than supplied by the caller, so it is not part
+        // of what makes a command the same command.
         if let Some(commit) = self.committed_command(command.id) {
-            return if commit.command == CommittedCommand::WorldCommand(command.clone()) {
+            let CommittedCommand::WorldCommand(committed) = &commit.command else {
+                return Err(KernelError::CommandIdConflict);
+            };
+            return if committed.caller == command.caller && committed.body == command.body {
                 Ok(SubmitReceipt::AlreadyApplied(CommitReceipt::from(commit)))
             } else {
                 Err(KernelError::CommandIdConflict)
@@ -958,17 +1017,19 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
             })
         }
         CommandBody::AdmitPatch { answers: _, patch } => {
-            require_phase(state, WorldPhase::Draft)?;
             require_owner(state, &command.caller)?;
-            let resolved = patch::resolve_declarations(
-                &state.subjects,
-                &state.entities,
-                state.world_id,
-                command.id,
-                patch,
-                admits_human(state.revision, &state.subjects),
-            )
-            .map_err(KernelError::PatchRejected)?;
+            // Draft admits declarations, evidence, and operations. Active admits
+            // operations only, so it never mints a canonical ID.
+            if state.phase == WorldPhase::Active
+                && !(patch.declarations.is_empty() && patch.evidence.is_empty())
+            {
+                return Err(KernelError::WrongPhase {
+                    expected: WorldPhase::Draft,
+                    actual: WorldPhase::Active,
+                });
+            }
+            let resolved = patch::resolve_patch(state, command.id, patch)
+                .map_err(KernelError::PatchRejected)?;
             Ok(WorldEffect::PatchAdmitted { resolved })
         }
     }
@@ -985,6 +1046,30 @@ fn admits_human(revision: u64, subjects: &BTreeMap<SubjectId, SubjectState>) -> 
 }
 
 impl WorldState {
+    /// The world before any structure. Genesis resolves its own patch against
+    /// this value, so the genesis lane and `AdmitPatch` share one resolver
+    /// signature instead of hand-passing empty partitions.
+    fn empty(world_id: WorldId, owner: PrincipalId, title: String) -> Self {
+        Self {
+            schema: STATE_SCHEMA.into(),
+            world_id,
+            revision: 0,
+            phase: WorldPhase::Draft,
+            owner,
+            title,
+            draft_approvals: BTreeSet::new(),
+            subjects: BTreeMap::new(),
+            entities: BTreeMap::new(),
+            edges: BTreeMap::new(),
+            positions: BTreeMap::new(),
+            controller_assignments: BTreeMap::new(),
+            affordance_grants: BTreeMap::new(),
+            events: Vec::new(),
+            state_digest: String::new(),
+            last_commit_digest: None,
+        }
+    }
+
     fn genesis(
         world_id: WorldId,
         command: &CreateWorld,
@@ -1010,49 +1095,26 @@ impl WorldState {
         // The same re-derive-and-compare that `apply_committed_command` runs for
         // every other command. Deterministic allocation is what lets one
         // equality replace a field-by-field binding zip.
-        let expected = patch::resolve_declarations(
-            &BTreeMap::new(),
-            &BTreeMap::new(),
-            world_id,
-            command.id,
-            &command.patch,
-            admits_human(0, &BTreeMap::new()),
-        )
-        .map_err(KernelError::PatchRejected)?;
+        let mut state = Self::empty(world_id, owner.clone(), title.clone());
+        let expected = patch::resolve_patch(&state, command.id, &command.patch)
+            .map_err(KernelError::PatchRejected)?;
         if &expected != resolved {
             return Err(KernelError::Invariant(
                 "genesis effect does not derive from its creation command".into(),
             ));
         }
-
-        let mut state = Self {
-            schema: STATE_SCHEMA.into(),
-            world_id,
-            revision: 0,
-            phase: WorldPhase::Draft,
-            owner: owner.clone(),
-            title: title.clone(),
-            draft_approvals: BTreeSet::new(),
-            subjects: BTreeMap::new(),
-            entities: BTreeMap::new(),
-            edges: BTreeMap::new(),
-            controller_assignments: BTreeMap::new(),
-            affordance_grants: BTreeMap::new(),
-            events: Vec::new(),
-            state_digest: String::new(),
-            last_commit_digest: None,
-        };
         admit_resolved(&mut state, resolved)?;
         state.state_digest = state_digest(&state)?;
         Ok(state)
     }
 }
 
-/// The only writer of the subject, entity, controller, and grant partitions.
-/// Both admission lanes mutate through it, and it re-derives every structural
+/// The only writer of every ontology partition. Both admission lanes mutate
+/// through it in one fixed order — entities, routes, subjects, operations — so a
+/// patch may relocate along a route it declares. It re-derives every structural
 /// claim from `state`, so an effect that skipped resolution dies here.
 fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<(), KernelError> {
-    if resolved.subjects.is_empty() && resolved.entities.is_empty() {
+    if resolved.declares_nothing() && resolved.operations.is_empty() {
         return Err(KernelError::Invariant(
             "admitted patch carries no canonical change".into(),
         ));
@@ -1064,6 +1126,17 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
                 "admitted entity label is not canonical".into(),
             ));
         }
+        if let Some(container) = entity.entity.container
+            && (entity.entity.kind != EntityKind::Place
+                || state
+                    .entities
+                    .get(&container)
+                    .is_none_or(|record| record.kind != EntityKind::Place))
+        {
+            return Err(KernelError::Invariant(
+                "admitted container does not name a canonical place".into(),
+            ));
+        }
         if state
             .entities
             .insert(entity.entity_id, entity.entity.clone())
@@ -1072,6 +1145,37 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
             return Err(KernelError::Invariant(
                 "admitted entity ID collision".into(),
             ));
+        }
+        if !patch::containment_terminates(entity.entity_id, &state.entities) {
+            return Err(KernelError::Invariant(
+                "admitted place contains itself".into(),
+            ));
+        }
+    }
+    for route in &resolved.routes {
+        let (from, to) = route.edge.endpoints();
+        let endpoint_is_place = |entity_id: &EntityId| {
+            state
+                .entities
+                .get(entity_id)
+                .is_some_and(|record| record.kind == EntityKind::Place)
+        };
+        if !patch::is_canonical_text(route.edge.label())
+            || !endpoint_is_place(&from)
+            || !endpoint_is_place(&to)
+            || from == to
+            || !patch::is_valid_cost(route.edge.cost())
+        {
+            return Err(KernelError::Invariant(
+                "admitted route is noncanonical or does not join two places".into(),
+            ));
+        }
+        if state
+            .edges
+            .insert(route.edge_id, route.edge.clone())
+            .is_some()
+        {
+            return Err(KernelError::Invariant("admitted route ID collision".into()));
         }
     }
     let mut controller_ids: BTreeSet<ControllerId> = state
@@ -1104,14 +1208,14 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
                 "admitted subject has no affordance".into(),
             ));
         }
-        if let Some(entity_id) = subject.subject.authority_scope
+        if let Some(position) = subject.position
             && state
                 .entities
-                .get(&entity_id)
+                .get(&position.place)
                 .is_none_or(|entity| entity.kind != EntityKind::Place)
         {
             return Err(KernelError::Invariant(
-                "admitted authority scope does not name a canonical place".into(),
+                "admitted position does not name a canonical place".into(),
             ));
         }
         if !controller_ids.insert(subject.controller.id()) {
@@ -1132,6 +1236,16 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
                 "admitted subject or scope ID collision".into(),
             ));
         }
+        if let Some(position) = subject.position
+            && state
+                .positions
+                .insert(subject.subject_id, position)
+                .is_some()
+        {
+            return Err(KernelError::Invariant(
+                "admitted position collides with an existing one".into(),
+            ));
+        }
         for (affordance_id, grant) in &subject.affordances {
             if grant.scope != scope
                 || !scope_kinds.insert((scope, grant.kind))
@@ -1144,6 +1258,67 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
                     "admitted affordance is unscoped or collides".into(),
                 ));
             }
+        }
+    }
+    for operation in &resolved.operations {
+        apply_operation(state, operation)?;
+    }
+    Ok(())
+}
+
+/// The component half of admission. Every precondition is re-derived from the
+/// partitions, so a forged operation cannot assert a move the topology refuses.
+fn apply_operation(state: &mut WorldState, operation: &ResolvedOp) -> Result<(), KernelError> {
+    match operation {
+        ResolvedOp::Relocate {
+            subject_id,
+            edge_id,
+        } => {
+            let route = state
+                .edges
+                .get(edge_id)
+                .ok_or_else(|| KernelError::Invariant("relocation names no route".into()))?;
+            let (from, to) = route.endpoints();
+            if !route.is_open()
+                || route.access() != AccessKind::Public
+                || state.positions.get(subject_id) != Some(&Position { place: from })
+            {
+                return Err(KernelError::Invariant(
+                    "relocation does not traverse an open public route from the subject's place"
+                        .into(),
+                ));
+            }
+            state.positions.insert(*subject_id, Position { place: to });
+        }
+        ResolvedOp::OpenRoute { edge_id } | ResolvedOp::CloseRoute { edge_id } => {
+            let open = matches!(operation, ResolvedOp::OpenRoute { .. });
+            let route = state
+                .edges
+                .get_mut(edge_id)
+                .ok_or_else(|| KernelError::Invariant("route operation names no route".into()))?;
+            if route.is_open() == open {
+                return Err(KernelError::Invariant(
+                    "route operation changes nothing".into(),
+                ));
+            }
+            route.set_open(open);
+        }
+        ResolvedOp::AlterCost { edge_id, cost } => {
+            if !patch::is_valid_cost(*cost) {
+                return Err(KernelError::Invariant(
+                    "admitted cost is out of range".into(),
+                ));
+            }
+            let route = state
+                .edges
+                .get_mut(edge_id)
+                .ok_or_else(|| KernelError::Invariant("route operation names no route".into()))?;
+            if route.cost() == *cost {
+                return Err(KernelError::Invariant(
+                    "route operation changes nothing".into(),
+                ));
+            }
+            route.set_cost(*cost);
         }
     }
     Ok(())
@@ -1174,9 +1349,39 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                 controller_mode: controller.mode(),
                 human_controller: controller.human_principal().cloned(),
                 affordances,
+                position: state
+                    .positions
+                    .get(subject_id)
+                    .map(|position| position.place),
             })
         })
         .collect::<Result<Vec<_>, KernelError>>()?;
+    let places = state
+        .entities
+        .iter()
+        .filter(|(_, record)| record.kind == EntityKind::Place)
+        .map(|(entity_id, record)| PlaceSnapshot {
+            id: *entity_id,
+            label: record.label.clone(),
+            container: record.container,
+        })
+        .collect();
+    let routes = state
+        .edges
+        .iter()
+        .map(|(edge_id, record)| {
+            let (from, to) = record.endpoints();
+            RouteSnapshot {
+                id: *edge_id,
+                label: record.label().to_owned(),
+                from,
+                to,
+                access: record.access(),
+                cost: record.cost(),
+                open: record.is_open(),
+            }
+        })
+        .collect();
     Ok(WorldSnapshot {
         world_id: state.world_id,
         revision: state.revision,
@@ -1186,6 +1391,8 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
         draft_approvals: state.draft_approvals.clone(),
         required_approvers: required_approvers(state),
         subjects,
+        places,
+        routes,
         events: state.events.clone(),
         opportunities: derive_opportunities(state)?,
         state_digest: state.state_digest.clone(),
@@ -1215,7 +1422,7 @@ fn derive_opportunities(state: &WorldState) -> Result<Vec<DecisionOpportunity>, 
             Ok(DecisionOpportunity {
                 world_id: state.world_id,
                 revision: state.revision,
-                state_digest: state.state_digest.clone(),
+                scope_digest: scope_digest(state, *scope)?,
                 scope: *scope,
                 controller_id: controller.id(),
                 controller_mode: controller.mode(),
@@ -1225,21 +1432,70 @@ fn derive_opportunities(state: &WorldState) -> Result<Vec<DecisionOpportunity>, 
         .collect()
 }
 
+/// The sole producer of a `ScopeDigest`. `routes` holds every edge whose `from`
+/// or `to` is the subject's place: an inbound route decides who can arrive, and
+/// reading too little is a correctness hole while reading too much only costs an
+/// extra rejection.
+fn scope_digest(state: &WorldState, scope: DecisionScope) -> Result<ScopeDigest, KernelError> {
+    let controller = state
+        .controller_assignments
+        .get(&scope)
+        .ok_or_else(|| KernelError::Invariant("decision scope has no controller".into()))?;
+    let affordances = state
+        .affordance_grants
+        .iter()
+        .filter(|(_, grant)| grant.scope == scope)
+        .map(|(affordance_id, grant)| (*affordance_id, grant))
+        .collect();
+    let position = state.positions.get(&scope.subject_id);
+    let routes = position
+        .map(|position| {
+            state
+                .edges
+                .iter()
+                .filter(|(_, record)| {
+                    let (from, to) = record.endpoints();
+                    from == position.place || to == position.place
+                })
+                .map(|(edge_id, record)| (*edge_id, record))
+                .collect()
+        })
+        .unwrap_or_default();
+    digest(&ScopePreimage {
+        world_id: state.world_id,
+        subject_id: scope.subject_id,
+        controller,
+        affordances,
+        position,
+        routes,
+    })
+    .map(ScopeDigest)
+}
+
+/// The one validity check for a bound proposal. Controller, mode, and affordance
+/// IDs are inside the preimage, so the digest comparison is the whole check.
 fn exact_opportunity(
     state: &WorldState,
     claimed: &DecisionOpportunity,
 ) -> Result<DecisionOpportunity, KernelError> {
-    if claimed.world_id != state.world_id
-        || claimed.revision != state.revision
-        || claimed.state_digest != state.state_digest
-    {
+    if claimed.world_id != state.world_id {
         return Err(KernelError::OpportunityMismatch);
     }
-    derive_opportunities(state)?
+    let current = derive_opportunities(state)?
         .into_iter()
         .find(|current| current.scope == claimed.scope)
-        .filter(|current| current == claimed)
-        .ok_or(KernelError::OpportunityMismatch)
+        .ok_or(KernelError::OpportunityMismatch)?;
+    if claimed.revision > state.revision {
+        return Err(KernelError::OpportunityMismatch);
+    }
+    if current.scope_digest != claimed.scope_digest {
+        return Err(KernelError::ScopeChanged {
+            scope: claimed.scope,
+            expected: claimed.scope_digest.clone(),
+            actual: current.scope_digest,
+        });
+    }
+    Ok(current)
 }
 
 fn required_approvers(state: &WorldState) -> BTreeSet<PrincipalId> {
@@ -1322,11 +1578,11 @@ fn apply_effect(
             ));
         }
         WorldEffect::PatchAdmitted { resolved } => {
-            if state.phase != WorldPhase::Draft
-                || caller != &CallerId::Principal(state.owner.clone())
+            if caller != &CallerId::Principal(state.owner.clone())
+                || (state.phase == WorldPhase::Active && !resolved.declares_nothing())
             {
                 return Err(KernelError::Invariant(
-                    "admitted patch does not satisfy draft authority".into(),
+                    "admitted patch does not satisfy admission authority".into(),
                 ));
             }
             admit_resolved(state, resolved)?;
@@ -1452,7 +1708,7 @@ mod tests {
             kind,
             controller,
             affordances: BTreeSet::from([AffordanceKind::Speak]),
-            authority_scope: None,
+            position: None,
         })
     }
 
@@ -1543,6 +1799,162 @@ mod tests {
         kernel.snapshot().unwrap()
     }
 
+    /// The canonical IDs of the shared topology fixture: three places, four
+    /// routes with every access and open combination the operations read, and one
+    /// subject standing in the yard.
+    pub(super) struct Topology {
+        pub(super) yard: EntityId,
+        pub(super) road: EntityId,
+        pub(super) gate: EntityId,
+        pub(super) ramp: EdgeId,
+        pub(super) shutter: EdgeId,
+        pub(super) toll: EdgeId,
+        pub(super) span: EdgeId,
+        pub(super) walker: SubjectId,
+    }
+
+    fn place(handle: &str, label: &str) -> Declaration {
+        Declaration::Entity(EntityDeclaration {
+            handle: DraftHandle::new(handle),
+            label: label.into(),
+            kind: EntityKind::Place,
+            container: None,
+        })
+    }
+
+    fn way(
+        handle: &str,
+        label: &str,
+        from: &str,
+        to: &str,
+        access: AccessKind,
+        cost: u32,
+    ) -> Declaration {
+        Declaration::Route(RouteDeclaration {
+            handle: DraftHandle::new(handle),
+            label: label.into(),
+            from: Ref::Draft(DraftHandle::new(from)),
+            to: Ref::Draft(DraftHandle::new(to)),
+            access,
+            cost: Cost(cost),
+        })
+    }
+
+    pub(super) fn topology_patch() -> WorldPatch {
+        WorldPatch {
+            declarations: vec![
+                place("yard", "The Cavity Yard"),
+                place("road", "The Rhythm Road"),
+                place("gate", "The Rain Gate"),
+                way(
+                    "ramp",
+                    "The Yard Ramp",
+                    "yard",
+                    "road",
+                    AccessKind::Public,
+                    12,
+                ),
+                way(
+                    "shutter",
+                    "The Yard Shutter",
+                    "yard",
+                    "gate",
+                    AccessKind::Public,
+                    5,
+                ),
+                way(
+                    "toll",
+                    "The Toll Stair",
+                    "yard",
+                    "gate",
+                    AccessKind::Restricted,
+                    4,
+                ),
+                way(
+                    "span",
+                    "The Western Span",
+                    "road",
+                    "gate",
+                    AccessKind::Public,
+                    7,
+                ),
+                Declaration::Subject(SubjectDeclaration {
+                    handle: DraftHandle::new("walker"),
+                    label: "The Walker".into(),
+                    kind: SubjectKind::Person,
+                    controller: NewController::OperationalAgent,
+                    affordances: BTreeSet::from([AffordanceKind::Speak]),
+                    position: Some(Ref::Draft(DraftHandle::new("yard"))),
+                }),
+            ],
+            // A route that should start closed is declared and closed in one
+            // patch, so `open` keeps a single writer family.
+            operations: vec![ComponentOp::CloseRoute {
+                route: Ref::Draft(DraftHandle::new("shutter")),
+            }],
+            evidence: Vec::new(),
+        }
+    }
+
+    pub(super) fn admit_topology(kernel: &mut WorldKernel) -> Topology {
+        let before = kernel.snapshot().unwrap();
+        let receipt = submit_owner(
+            kernel,
+            &before,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: topology_patch(),
+            },
+        );
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+        let entity = |label: &str| {
+            *kernel
+                .state
+                .entities
+                .iter()
+                .find(|(_, record)| record.label == label)
+                .expect("a declared place")
+                .0
+        };
+        let edge = |label: &str| {
+            *kernel
+                .state
+                .edges
+                .iter()
+                .find(|(_, record)| record.label() == label)
+                .expect("a declared route")
+                .0
+        };
+        Topology {
+            yard: entity("The Cavity Yard"),
+            road: entity("The Rhythm Road"),
+            gate: entity("The Rain Gate"),
+            ramp: edge("The Yard Ramp"),
+            shutter: edge("The Yard Shutter"),
+            toll: edge("The Toll Stair"),
+            span: edge("The Western Span"),
+            walker: *kernel
+                .state
+                .subjects
+                .iter()
+                .find(|(_, subject)| subject.label == "The Walker")
+                .expect("the walker is admitted")
+                .0,
+        }
+    }
+
+    pub(super) fn opportunity_for(
+        snapshot: &WorldSnapshot,
+        subject_id: SubjectId,
+    ) -> DecisionOpportunity {
+        snapshot
+            .opportunities
+            .iter()
+            .find(|value| value.scope.subject_id == subject_id)
+            .expect("the subject has an opportunity")
+            .clone()
+    }
+
     fn opportunity(snapshot: &WorldSnapshot, mode: ControllerMode) -> DecisionOpportunity {
         snapshot
             .opportunities
@@ -1564,7 +1976,7 @@ mod tests {
         let opportunity = DecisionOpportunity {
             world_id: WorldId::issue(),
             revision: 4,
-            state_digest: "sha256:fixture".into(),
+            scope_digest: ScopeDigest::fixture("sha256:fixture"),
             scope: DecisionScope {
                 subject_id: SubjectId::issue(),
             },
@@ -1579,6 +1991,205 @@ mod tests {
         let mut outer = serde_json::to_value(&opportunity).unwrap();
         outer["callerId"] = serde_json::json!("legacy-controller");
         assert!(serde_json::from_value::<DecisionOpportunity>(outer).is_err());
+    }
+
+    /// A commit elsewhere in the world does not discard a bound proposal: the
+    /// binding is the scope digest, and this scope did not change.
+    #[test]
+    fn an_unchanged_scope_commits_at_a_later_revision() {
+        let dir = tempfile::tempdir().unwrap();
+        let (mut kernel, _) = WorldKernel::create(
+            dir.path().join("world.cc"),
+            creation(CommandId::new(), "Unchanged"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let topology = admit_topology(&mut kernel);
+        let active = activate(&mut kernel);
+        let bound = opportunity_for(&active, topology.walker);
+
+        let persona = opportunity(&active, ControllerMode::NarrativePersona);
+        let persona_caller = CallerId::Controller(persona.controller_id);
+        kernel
+            .submit(
+                command(
+                    &active,
+                    CommandId::new(),
+                    persona_caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        invocation: speak(&persona, "The yard is quiet."),
+                        opportunity: persona,
+                    },
+                ),
+                &AuthenticatedCaller::fixture(persona_caller),
+            )
+            .unwrap();
+        let later = kernel.snapshot().unwrap();
+        assert_eq!(later.revision, active.revision + 1);
+
+        let walker_caller = CallerId::Controller(bound.controller_id);
+        let receipt = kernel
+            .submit(
+                command(
+                    &later,
+                    CommandId::new(),
+                    walker_caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        invocation: speak(&bound, "I take the ramp."),
+                        opportunity: bound.clone(),
+                    },
+                ),
+                &AuthenticatedCaller::fixture(walker_caller),
+            )
+            .unwrap();
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+        let after = kernel.snapshot().unwrap();
+        assert_eq!(after.events.len(), 2);
+        assert_eq!(after.events[1].revision, bound.revision + 2);
+    }
+
+    /// Closing a route incident to the subject's place changes exactly what the
+    /// proposal's verification reads, so the bound proposal dies at the digest.
+    #[test]
+    fn a_changed_scope_is_rejected_with_scope_changed() {
+        let dir = tempfile::tempdir().unwrap();
+        let (mut kernel, _) = WorldKernel::create(
+            dir.path().join("world.cc"),
+            creation(CommandId::new(), "Changed"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let topology = admit_topology(&mut kernel);
+        let active = activate(&mut kernel);
+        let bound = opportunity_for(&active, topology.walker);
+
+        submit_owner(
+            &mut kernel,
+            &active,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![ComponentOp::CloseRoute {
+                        route: Ref::Existing(topology.ramp),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        );
+        let closed = kernel.snapshot().unwrap();
+        let walker_caller = CallerId::Controller(bound.controller_id);
+        let error = kernel
+            .submit(
+                command(
+                    &closed,
+                    CommandId::new(),
+                    walker_caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        invocation: speak(&bound, "I take the ramp."),
+                        opportunity: bound.clone(),
+                    },
+                ),
+                &AuthenticatedCaller::fixture(walker_caller),
+            )
+            .unwrap_err();
+        let KernelError::ScopeChanged {
+            scope,
+            expected,
+            actual,
+        } = error
+        else {
+            panic!("expected a changed scope");
+        };
+        assert_eq!(scope, bound.scope);
+        assert_eq!(expected, bound.scope_digest);
+        assert_ne!(expected, actual);
+        assert_eq!(kernel.snapshot().unwrap(), closed);
+    }
+
+    /// The digest covers the scope's controller, its grants, its Position, and
+    /// its incident routes, and nothing else in the world.
+    #[test]
+    fn scope_digest_reads_exactly_its_components() {
+        let dir = tempfile::tempdir().unwrap();
+        let (mut kernel, _) = WorldKernel::create(
+            dir.path().join("world.cc"),
+            creation(CommandId::new(), "Components"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let topology = admit_topology(&mut kernel);
+        activate(&mut kernel);
+        let scope = DecisionScope {
+            subject_id: topology.walker,
+        };
+        let base = scope_digest(&kernel.state, scope).unwrap();
+
+        let mut changed_controller = kernel.state.clone();
+        let assignment = changed_controller
+            .controller_assignments
+            .get_mut(&scope)
+            .unwrap();
+        *assignment = ControllerAssignment::NarrativePersona {
+            controller_id: assignment.id(),
+        };
+        assert_ne!(scope_digest(&changed_controller, scope).unwrap(), base);
+
+        let mut changed_grants = kernel.state.clone();
+        changed_grants.affordance_grants.insert(
+            AffordanceId::issue(),
+            AffordanceGrant {
+                scope,
+                kind: AffordanceKind::Speak,
+            },
+        );
+        assert_ne!(scope_digest(&changed_grants, scope).unwrap(), base);
+
+        let mut changed_position = kernel.state.clone();
+        changed_position.positions.insert(
+            topology.walker,
+            Position {
+                place: topology.road,
+            },
+        );
+        assert_ne!(scope_digest(&changed_position, scope).unwrap(), base);
+
+        let mut changed_route = kernel.state.clone();
+        changed_route
+            .edges
+            .get_mut(&topology.ramp)
+            .unwrap()
+            .set_cost(Cost(99));
+        assert_ne!(scope_digest(&changed_route, scope).unwrap(), base);
+
+        // The span joins road and gate, so it is incident to neither the walker's
+        // place nor its scope; an unrelated subject's decision is invisible too.
+        let mut unrelated_route = kernel.state.clone();
+        unrelated_route
+            .edges
+            .get_mut(&topology.span)
+            .unwrap()
+            .set_cost(Cost(99));
+        assert_eq!(scope_digest(&unrelated_route, scope).unwrap(), base);
+
+        let active = kernel.snapshot().unwrap();
+        let persona = opportunity(&active, ControllerMode::NarrativePersona);
+        let persona_caller = CallerId::Controller(persona.controller_id);
+        kernel
+            .submit(
+                command(
+                    &active,
+                    CommandId::new(),
+                    persona_caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        invocation: speak(&persona, "Unrelated."),
+                        opportunity: persona,
+                    },
+                ),
+                &AuthenticatedCaller::fixture(persona_caller),
+            )
+            .unwrap();
+        assert_eq!(scope_digest(&kernel.state, scope).unwrap(), base);
     }
 
     #[test]
@@ -1739,7 +2350,7 @@ mod tests {
     }
 
     #[test]
-    fn stale_or_tampered_opportunities_never_commit() {
+    fn a_tampered_or_unknown_opportunity_never_commits() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("world.cc");
         let (mut kernel, _) = WorldKernel::create(
@@ -1772,8 +2383,35 @@ mod tests {
             ),
             Err(KernelError::AffordanceDenied)
         ));
+        // A claimed affordance the world did not grant carries no authority: the
+        // kernel exercises the opportunity it derives, never the one submitted.
+        let forged_affordance = AffordanceId::issue();
         let mut tampered = original.clone();
-        tampered.affordance_ids.push(AffordanceId::issue());
+        tampered.affordance_ids.push(forged_affordance);
+        assert!(matches!(
+            kernel.submit(
+                command(
+                    &active,
+                    CommandId::new(),
+                    CallerId::Principal(player()),
+                    CommandBody::ExerciseDecision {
+                        invocation: DecisionInvocation {
+                            affordance_id: forged_affordance,
+                            action: DecisionAction::Speak {
+                                text: "Forged".into()
+                            },
+                        },
+                        opportunity: tampered,
+                    },
+                ),
+                &auth_principal(player())
+            ),
+            Err(KernelError::AffordanceDenied)
+        ));
+        assert_eq!(kernel.snapshot().unwrap(), active);
+
+        let mut forged_scope = original.clone();
+        forged_scope.scope_digest = ScopeDigest::fixture("sha256:not-this-scope");
         assert!(matches!(
             kernel.submit(
                 command(
@@ -1782,43 +2420,37 @@ mod tests {
                     CallerId::Principal(player()),
                     CommandBody::ExerciseDecision {
                         invocation: speak(&original, "No"),
-                        opportunity: tampered,
+                        opportunity: forged_scope,
+                    },
+                ),
+                &auth_principal(player())
+            ),
+            Err(KernelError::ScopeChanged { .. })
+        ));
+        assert_eq!(kernel.snapshot().unwrap(), active);
+
+        let unknown_scope = DecisionOpportunity {
+            scope: DecisionScope {
+                subject_id: SubjectId::issue(),
+            },
+            ..original.clone()
+        };
+        assert!(matches!(
+            kernel.submit(
+                command(
+                    &active,
+                    CommandId::new(),
+                    CallerId::Principal(player()),
+                    CommandBody::ExerciseDecision {
+                        invocation: speak(&original, "No"),
+                        opportunity: unknown_scope,
                     },
                 ),
                 &auth_principal(player())
             ),
             Err(KernelError::OpportunityMismatch)
         ));
-
-        kernel
-            .submit(
-                command(
-                    &active,
-                    CommandId::new(),
-                    CallerId::Principal(player()),
-                    CommandBody::ExerciseDecision {
-                        invocation: speak(&original, "Yes"),
-                        opportunity: original.clone(),
-                    },
-                ),
-                &auth_principal(player()),
-            )
-            .unwrap();
-        let after = kernel.snapshot().unwrap();
-        let stale_command = command(
-            &after,
-            CommandId::new(),
-            CallerId::Principal(player()),
-            CommandBody::ExerciseDecision {
-                invocation: speak(&original, "Again"),
-                opportunity: original,
-            },
-        );
-        assert!(matches!(
-            kernel.submit(stale_command, &auth_principal(player())),
-            Err(KernelError::OpportunityMismatch)
-        ));
-        assert_eq!(kernel.snapshot().unwrap(), after);
+        assert_eq!(kernel.snapshot().unwrap(), active);
     }
 
     #[test]
@@ -1998,20 +2630,6 @@ mod tests {
                 .unwrap(),
             SubmitReceipt::AlreadyApplied(receipt.clone())
         );
-        assert!(matches!(
-            kernel.submit(
-                command(
-                    &after,
-                    CommandId::new(),
-                    caller.clone(),
-                    CommandBody::DeclineDecision {
-                        opportunity: decision,
-                    },
-                ),
-                &AuthenticatedCaller::fixture(caller),
-            ),
-            Err(KernelError::OpportunityMismatch)
-        ));
         assert_eq!(kernel.snapshot().unwrap(), after);
         drop(kernel);
         let reopened = WorldKernel::open(&path, after.world_id).unwrap();
