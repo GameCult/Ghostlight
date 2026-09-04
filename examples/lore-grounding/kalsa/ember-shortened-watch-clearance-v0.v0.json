@@ -1,0 +1,321 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "kalsa.ember-shortened-watch-clearance-v0.v0",
+  "source_status": "reviewed",
+  "fixture_status": "adopted_history_branch",
+  "source_refs": [
+    {
+      "source_id": "public-kalsa",
+      "path": "Kalsa/Public/World/Kalsa.md",
+      "title": "Kalsa",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 42,
+      "relevance": "Reader-facing world context: unmoving sun, Crown-derived public works, living settlements around old systems, and inherited formulae used in the wrong season."
+    },
+    {
+      "source_id": "public-relics-ruins",
+      "path": "Kalsa/Public/World/Relics and Ruins.md",
+      "title": "Relics and Ruins",
+      "canon_tier": "Public",
+      "line_start": 1,
+      "line_end": 75,
+      "relevance": "Reader-facing rule that inherited works still carry water and signals, while technical competence, public authority, custody, and affected residents retain separate claims."
+    },
+    {
+      "source_id": "canon-policy",
+      "path": "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+      "title": "Canon and Provenance",
+      "canon_tier": "Spoilers/policy",
+      "line_start": 1,
+      "line_end": 129,
+      "relevance": "Controls adopted-history status, unresolved claims, knowledge layers, source ownership, and the distinction between machine evidence and institutional interpretation."
+    },
+    {
+      "source_id": "events-index",
+      "path": "Kalsa/Spoilers/Events/index.md",
+      "title": "Events",
+      "canon_tier": "Spoilers/navigation",
+      "line_start": 1,
+      "line_end": 36,
+      "relevance": "Identifies the Shortened Watch Failure as the factual owner of the lethal scheduling event."
+    },
+    {
+      "source_id": "shortened-watch-event",
+      "path": "Kalsa/Spoilers/Events/The Shortened Watch Failure.md",
+      "title": "The Shortened Watch Failure",
+      "canon_tier": "Spoilers/adopted history",
+      "line_start": 1,
+      "line_end": 115,
+      "relevance": "Primary owner for the accepted formula, premature release, injuries, damaged equipment and channel works, four distinct records, later inquiry, settlement, and fixture-authored clearance-house elaboration."
+    },
+    {
+      "source_id": "language-reckoning",
+      "path": "Kalsa/Spoilers/Foundations/Language and Reckoning.md",
+      "title": "Language and Reckoning",
+      "canon_tier": "Spoilers/foundation",
+      "line_start": 1,
+      "line_end": 95,
+      "relevance": "Owns High Lojban and octal inheritance, regional semantic change, and the rule that shared form does not establish a shared present duration."
+    },
+    {
+      "source_id": "high-lojban-institution",
+      "path": "Kalsa/Spoilers/Institutions/High Lojban and Descendant Speech.md",
+      "title": "High Lojban and Descendant Speech",
+      "canon_tier": "Spoilers/institution",
+      "line_start": 1,
+      "line_end": 140,
+      "relevance": "Owns accountable translation, public notice, scoped certification, and separation among quotation, conversion, work instruction, and witnessed explanation."
+    },
+    {
+      "source_id": "measures-formulae",
+      "path": "Kalsa/Spoilers/Institutions/Measures, Formulae, and Machine Speech.md",
+      "title": "Measures, Formulae, and Machine Speech",
+      "canon_tier": "Spoilers/institution",
+      "line_start": 1,
+      "line_end": 156,
+      "relevance": "Owns declared conversion bridges, operator scope, public consequence, machine acceptance as bounded evidence, observable-process comparison, and stop authority established after the failure."
+    },
+    {
+      "source_id": "timeline",
+      "path": "Kalsa/Spoilers/Reference/Timeline.md",
+      "title": "Timeline",
+      "canon_tier": "Spoilers/reference",
+      "line_start": 1,
+      "line_end": 85,
+      "relevance": "Keeps the adopted event post-Fall and chronologically unresolved; prevents invented dates, epochs, or ordering."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Post-Fall Kalsa during the adopted Shortened Watch Failure; absolute date, era name, and mutual order with other adopted histories remain unresolved.",
+    "location": "The fixture-bounded last clearance house at the main outflow channel of the event's unnamed reservoir and polity.",
+    "summary": "An ordinary channel-maintenance closure becomes irreversible when observable release signs appear while the approved schedule still promises work time. Isca Rel can warn, protest, rescue, and preserve evidence, but cannot directly stop the upstream operator or undo the already accepted formula.",
+    "public_facts": [
+      {
+        "text": "Kalsan settlements maintain old works that may still carry water, pressure, heat, movement, or signals through later masonry and institutions.",
+        "source_refs": ["public-kalsa", "public-relics-ruins"]
+      },
+      {
+        "text": "A surviving formula can operate an inherited system without proving who lawfully owns its public consequence.",
+        "source_refs": ["public-relics-ruins"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "The same inherited watch word named different practical durations in the source record, conversion, managers' schedule, and notice delivered to workers.",
+        "source_refs": ["shortened-watch-event", "language-reckoning"]
+      },
+      {
+        "text": "Machine acceptance records that a submitted formula was accepted; it does not validate the conversion, schedule, public notice, or distribution of risk.",
+        "source_refs": ["shortened-watch-event", "measures-formulae"]
+      },
+      {
+        "text": "Before the later settlement, downstream workers lacked the explicit stop authority created in response to the disaster.",
+        "source_refs": ["shortened-watch-event", "measures-formulae"]
+      },
+      {
+        "text": "Warnings, rescue capacity, tools, evidence custody, and exit space compete for the same people and narrow physical routes.",
+        "source_refs": ["shortened-watch-event"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "clearance-house-workface",
+      "label": "Last clearance house and channel crew",
+      "group_type": "public_works_crew",
+      "institutional_logic": ["Clear the outflow channel, keep a usable downstream warning, and return workers and tools before release."],
+      "material_incentives": ["Leave the channel alive", "Preserve rescue access", "Keep essential tools", "Retain a record later reviewers can compare"],
+      "internal_virtues": ["Visible work", "Warnings that arrive before water", "A line prepared before it is needed", "Naming which record made which promise"],
+      "internal_shames": ["Leaving a worker below for a cleaner board", "Calling an occupied yard empty", "Saving evidence by pretending it saved bodies"],
+      "prestige_markers": ["A counted crew on the landing", "A warning repeated down-channel", "Tools returned above the wet line"],
+      "taboo_triggers": ["Blaming worker speech before checking the schedule", "Calling machine acceptance a complete safety finding"],
+      "emotional_display_norms": ["Fear enters clipped orders, rope work, counting, and jokes made while there is still enough time to laugh."],
+      "trust_defaults": ["Trusts observable process, prepared routes, named ownership, and coworkers' bodies more than a shared heading or distant approval."],
+      "speech_register_cues": ["Work objects", "Route positions", "Who remains below", "Dry literal jokes", "Short challenges"],
+      "source_refs": ["shortened-watch-event", "measures-formulae"]
+    },
+    {
+      "group_id": "gatehouse-and-schedule-chain",
+      "label": "Gatehouse operator, conversion clerk, and managers",
+      "group_type": "technical_and_administrative_chain",
+      "institutional_logic": ["Translate the inherited interval into an approved work schedule and submit the accepted release sequence."],
+      "material_incentives": ["Complete maintenance", "Keep authority legible", "Avoid an unauthorized delay", "Defend the competence of the conversion chain"],
+      "internal_virtues": ["Signed values", "Approved sequence", "Traceable submission", "Stable schedule"],
+      "internal_shames": ["A conversion exposed as unsafe", "A downstream warning outrunning official instruction", "An accepted formula producing an unlawful schedule"],
+      "prestige_markers": ["A clean board", "A machine acceptance", "No unexplained interruption"],
+      "taboo_triggers": ["A vernacular worker overturning a signed conversion", "A local process sign treated as stronger than certified text"],
+      "emotional_display_norms": ["Alarm is compressed into defense of record scope, signature, and approval."],
+      "trust_defaults": ["Trusts the signed bridge and gatehouse acceptance; may treat downstream divergence as pace, speech, or discipline failure."],
+      "speech_register_cues": ["Approved value", "Submitted sequence", "Authorization", "Record scope"],
+      "source_refs": ["shortened-watch-event", "high-lojban-institution", "measures-formulae"]
+    },
+    {
+      "group_id": "lower-channel-dependents",
+      "label": "Workers, residents, and yards below the clearance house",
+      "group_type": "affected_public",
+      "institutional_logic": ["Act on delivered warning and preserve lives and ordinary work outside the formal technical chain."],
+      "material_incentives": ["Receive intelligible notice", "Keep the stair passable", "Move bodies before goods", "Retain standing in later review"],
+      "internal_virtues": ["An answering bell", "A warning carried farther than rank", "Naming occupied ground as occupied"],
+      "internal_shames": ["Waiting for the official pattern after local danger is visible", "Crowding the only crew exit in search of shelter"],
+      "prestige_markers": ["People accounted for beyond the work board", "A copied warning that matches what was heard"],
+      "taboo_triggers": ["Being reduced to an empty schedule cell", "A notice nobody received being cited as public consent"],
+      "emotional_display_norms": ["Urgency appears as abandoned carts, lifted children, answering bells, and disputes over which stair is still open."],
+      "trust_defaults": ["Trusts warnings that are audible and actionable; cannot inspect the upstream formula while water approaches."],
+      "speech_register_cues": ["Bell meanings", "Route crowding", "Named yards", "Who has moved and who has not"],
+      "source_refs": ["shortened-watch-event", "high-lojban-institution"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "gatehouse-and-schedule-chain.acceptance-prestige",
+      "applies_to": ["gatehouse-and-schedule-chain"],
+      "pressure_type": "technical_legitimacy",
+      "summary": "A machine acceptance is tempting because it makes several human judgments look like one objective result.",
+      "projection_use": "Let Dema defend the signed conversion through the accepted value while the scene keeps the schedule and notice visibly separate.",
+      "source_refs": ["shortened-watch-event", "measures-formulae"]
+    },
+    {
+      "field_id": "clearance-house-workface.process-before-permission",
+      "applies_to": ["clearance-house-workface"],
+      "pressure_type": "immediate_hazard",
+      "summary": "Observable water behavior can require action before the authority chain admits its schedule is wrong.",
+      "projection_use": "Make early warning, crew withdrawal, evidence custody, and equipment loss compete without giving Isca retroactive formal stop authority.",
+      "source_refs": ["shortened-watch-event", "measures-formulae"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "gatehouse-and-schedule-chain",
+      "target_group_id": "clearance-house-workface",
+      "observer_read": ["Crew behind schedule", "Unauthorized warning", "Local panic", "Imprecise speech"],
+      "target_self_read": ["People located where the formula becomes water", "Witnesses to process divergence", "The hands responsible for physical clearance"],
+      "misread_patterns": ["Treats observable process as anecdote", "Treats protest as discipline failure", "Mistakes one shared word for one shared duration"],
+      "likely_insults": ["late hands", "bell-panicked", "bad speakers"],
+      "projection_use": "Keep Dema's defense plausible inside the prestige chain without making downstream evidence merely emotional.",
+      "source_refs": ["shortened-watch-event", "high-lojban-institution"]
+    },
+    {
+      "observer_group_id": "clearance-house-workface",
+      "target_group_id": "gatehouse-and-schedule-chain",
+      "observer_read": ["Clean cuffs above dangerous work", "Paper trying to overrule wet stone", "Distance disguised as precision"],
+      "target_self_read": ["A traceable technical chain protecting a dangerous public work from improvisation"],
+      "misread_patterns": ["May collapse Dema's bounded conversion duty into sole ownership of the failure", "May treat all distant technical caution as class contempt"],
+      "likely_insults": ["dry-watch", "board keeper", "upstream ears"],
+      "projection_use": "Let workplace anger sharpen accountability without inventing one villain or one forged ledger.",
+      "source_refs": ["shortened-watch-event", "measures-formulae"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "clearance-keeper",
+      "summary": "A downstream keeper who owns local warning, muster, and record custody but cannot directly cancel the upstream formula.",
+      "obligations": ["Know who received notice", "Keep warning routes usable", "Name process divergence", "Preserve workers before administrative neatness"],
+      "available_masks": ["Dry competence", "Literal correction", "Routine bell work", "Deference narrow enough to survive"],
+      "failure_modes": ["Warning people into a blocked stair", "Saving records while rescue hands fail", "Losing credibility before the signal must carry"],
+      "source_refs": ["shortened-watch-event"]
+    },
+    {
+      "role_id": "channel-foreperson",
+      "summary": "The worker responsible for bodies, braces, and movement at the physical workface.",
+      "obligations": ["Count the crew", "Choose an exit order", "Keep lines staffed", "Refuse a board contradicted by water"],
+      "available_masks": ["Workplace humor", "Blunt material certainty", "Command through names and positions"],
+      "failure_modes": ["Saving tools before people", "Assuming warning leaves the stair clear", "Treating a local sign as a complete technical account"],
+      "source_refs": ["shortened-watch-event", "measures-formulae"]
+    },
+    {
+      "role_id": "conversion-clerk",
+      "summary": "The accountable keeper of the signed conversion whose value entered the approved schedule.",
+      "obligations": ["Name source and target measures", "Preserve uncertainty", "Expose a consequential divergence", "Keep machine response separate from the human schedule"],
+      "available_masks": ["Scoped technical precision", "Clean procedure", "Institutional calm"],
+      "failure_modes": ["Defending acceptance as total correctness", "Letting rank harden uncertainty into schedule", "Blaming notice recipients first"],
+      "source_refs": ["shortened-watch-event", "high-lojban-institution", "measures-formulae"]
+    },
+    {
+      "role_id": "brace-worker",
+      "summary": "A young channel worker whose position makes the abstract interval a bodily hazard.",
+      "obligations": ["Keep the brace sequence", "Answer the foreperson", "Carry line or records when ordered", "Leave before the route closes"],
+      "available_masks": ["Apprentice jokes", "Visible effort", "Pretended unconcern"],
+      "failure_modes": ["Staying for a tool", "Trusting the work board over the wall", "Crowding the wrong exit"],
+      "source_refs": ["shortened-watch-event"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "isca_rel",
+      "known_context": [
+        {"text": "Isca knows the local signs, record table, warning meanings, crew positions, stair state, and which notices she delivered.", "source_refs": ["shortened-watch-event"]}
+      ],
+      "beliefs": [
+        {"text": "Isca believes an accepted formula cannot make an occupied channel empty or a missed notice delivered.", "source_refs": ["shortened-watch-event", "measures-formulae"]}
+      ],
+      "misreads": [
+        {"text": "Isca may underweight how a lower warning draws residents into the crew's only covered exit.", "source_refs": ["shortened-watch-event"]}
+      ],
+      "must_not_know": [
+        {"text": "Isca must not know the operator's private reasoning, exact formula grammar, or total downstream casualties while the scene is unfolding.", "source_refs": ["canon-policy", "shortened-watch-event"]}
+      ]
+    },
+    {
+      "speaker_id": "dema_tern",
+      "known_context": [
+        {"text": "Dema knows the source copy used, the signed conversion, its intended task, and that the gatehouse accepted the submitted value.", "source_refs": ["shortened-watch-event", "measures-formulae"]}
+      ],
+      "beliefs": [
+        {"text": "Dema initially believes the traceable accepted value is stronger evidence than an unauthorized downstream warning.", "source_refs": ["shortened-watch-event"]}
+      ],
+      "misreads": [
+        {"text": "Dema may hear worker vernacular and gallows humor as imprecision rather than evidence of a different lived schedule.", "source_refs": ["high-lojban-institution", "shortened-watch-event"]}
+      ],
+      "must_not_know": [
+        {"text": "Dema must not treat acceptance as proof that notice, conversion, and schedule expressed the same duration.", "source_refs": ["shortened-watch-event", "measures-formulae"]}
+      ]
+    },
+    {
+      "speaker_id": "anet_vos",
+      "known_context": [
+        {"text": "Anet knows crew positions, brace state, line capacity, stair access, and the process signs visible at the workface.", "source_refs": ["shortened-watch-event"]}
+      ],
+      "beliefs": [
+        {"text": "Anet believes wet stone and moving grit are enough to pull workers even when they are not enough to reconstruct the source interval.", "source_refs": ["shortened-watch-event"]}
+      ],
+      "misreads": [
+        {"text": "Anet may collapse all technical responsibility into Dema because the signed conversion is the nearest visible administrative object.", "source_refs": ["shortened-watch-event"]}
+      ],
+      "must_not_know": [
+        {"text": "Anet must not know the remote gatehouse state except through its visible signals and the release itself.", "source_refs": ["canon-policy", "shortened-watch-event"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The clearance-house geometry, signals, names, and process signs are one fixture-marked elaboration inside the adopted event, not a universal Kalsan public-works template.",
+      "source_refs": ["shortened-watch-event", "canon-policy"]
+    },
+    {
+      "text": "The scene precedes the settlement's explicit downstream stop authority. No branch may use later reform as an already available command power.",
+      "source_refs": ["shortened-watch-event", "measures-formulae"]
+    },
+    {
+      "text": "Every ending preserves the adopted injuries, damaged equipment and channel works, and water reaching places the schedule treated as empty; local variation remains inside unresolved totals.",
+      "source_refs": ["shortened-watch-event"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "What polity, reservoir, downstream district, and present archive own the event?",
+      "blocks_training": false,
+      "notes": "The fixture leaves all four unresolved and uses only the event-bounded clearance house."
+    },
+    {
+      "question": "What exact inherited interval, local watch duration, notation, and conversion method failed?",
+      "blocks_training": false,
+      "notes": "The fixture dramatizes record divergence without supplying any number, pronunciation, or formula grammar."
+    },
+    {
+      "question": "How many people were injured, what damage remained, and what compensation was paid?",
+      "blocks_training": false,
+      "notes": "Endings preserve injury and material damage while refusing a total or final remedy."
+    }
+  ]
+}

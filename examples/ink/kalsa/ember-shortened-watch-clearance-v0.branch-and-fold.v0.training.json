@@ -1,0 +1,434 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "kalsa-ember-shortened-watch-clearance-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/kalsa/ember-shortened-watch-clearance-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/kalsa/ember-shortened-watch-clearance-v0.v0.json",
+  "visual_plan_ref": "examples/visual/kalsa/ember-shortened-watch-clearance-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "ember-shortened-watch-clearance-v0.last-clearance-bell",
+  "protagonist_agent_id": "isca_rel",
+  "npc_agent_ids": [
+    "anet_vos",
+    "pel_orra",
+    "dema_tern",
+    "channel_crew",
+    "lower_yard_residents"
+  ],
+  "purpose": "Interactive Fiction Weaver-style branch-and-fold fixture dramatizing the last downstream clearance interval during the adopted Shortened Watch Failure from clearance keeper Isca Rel's bounded perspective.",
+  "tonal_mode": "Workplace gallows wit tightening into procedural dread.",
+  "artifact_role": "Playable illustrated-fiction website collateral and a room-scale Kalsa lore stress test; not canonical simulation state and not core social-model training signal.",
+  "local_awareness_summary": [
+    {
+      "text": "Isca can see the clearance house, service stair, channel crew, side-hollow process signs, record table, lower bell, upstream protest shutter, and the distant gatehouse signal. She cannot see the submitted formula or cancel it from downstream.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/ember-shortened-watch-clearance-v0.v0.json",
+        "Kalsa/Spoilers/Events/The Shortened Watch Failure.md"
+      ]
+    },
+    {
+      "text": "The four records use a related watch word but belong to separate accountable owners: inherited source, signed conversion, approved schedule, and delivered notice.",
+      "source_refs": [
+        "Kalsa/Spoilers/Events/The Shortened Watch Failure.md",
+        "Kalsa/Spoilers/Institutions/Measures, Formulae, and Machine Speech.md"
+      ]
+    },
+    {
+      "text": "Vibration, darkening seep lines, and grit lifted from the side hollow are local observable process signs. They justify crew action but do not reveal an exact universal interval or machine grammar.",
+      "source_refs": [
+        "Kalsa/Spoilers/Events/The Shortened Watch Failure.md"
+      ]
+    },
+    {
+      "text": "The adopted event fixes premature release, worker injury, equipment and channel damage, and water reaching ground the schedule treated as empty. Branches may redistribute unresolved local losses but cannot erase those facts.",
+      "source_refs": [
+        "Kalsa/Spoilers/Events/The Shortened Watch Failure.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Isca's embodied downstream viewpoint. Narration may explain the record chain and material stakes but cannot disclose the operator's private reasoning or a complete facility state.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/kalsa/ember-shortened-watch-clearance-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes ordinary brace work, dry humor, the four records, the exit routes, and Isca's limited signal authority before the process signs diverge from the schedule.",
+        "source_refs": [
+          "AGENTS.md",
+          "Kalsa/Spoilers/Events/The Shortened Watch Failure.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Isca may warn, muster, preserve records, order the local crew out, and signal protest. The gatehouse operator and managers own the submitted sequence and schedule; the machine supplies only its material response.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Measures, Formulae, and Machine Speech.md",
+          "Kalsa/Spoilers/Events/The Shortened Watch Failure.md"
+        ]
+      },
+      {
+        "text": "Dema owns the signed conversion but cannot borrow correctness from machine acceptance. Anet owns crew movement at the workface but cannot revise the approved schedule by declaring a different duration.",
+        "source_refs": [
+          "Kalsa/Spoilers/Events/The Shortened Watch Failure.md"
+        ]
+      },
+      {
+        "text": "Later stop authority is a settlement consequence, not a power Isca possesses during the initiating disaster.",
+        "source_refs": [
+          "Kalsa/Spoilers/Events/The Shortened Watch Failure.md",
+          "Kalsa/Spoilers/Institutions/Measures, Formulae, and Machine Speech.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Isca initially controls the bell frame, protest shutter, notice tally, rescue shelf, and local record table. Dema controls the signed conversion slip; Anet controls the crew and work lines; Pel may receive the records or rescue line from the shelf.",
+        "source_refs": [
+          "examples/ink/kalsa/ember-shortened-watch-clearance-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every route keeps machine acceptance, source interval, conversion, schedule, notice, observed process, warning, and physical rescue distinct.",
+        "source_refs": [
+          "Kalsa/Spoilers/Events/The Shortened Watch Failure.md",
+          "Kalsa/Spoilers/Institutions/High Lojban and Descendant Speech.md"
+        ]
+      },
+      {
+        "text": "Endings must preserve the adopted disaster while changing who is reached, which evidence survives, how the first surge is borne, and what later inquiry can plausibly establish.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Kalsa/Spoilers/Events/The Shortened Watch Failure.md"
+        ]
+      },
+      {
+        "text": "Warnings move bodies into routes and can create congestion; evidence preservation spends hands; equipment recovery competes with rescue; no choice is a costless moral button.",
+        "source_refs": [
+          "Kalsa/Spoilers/Events/The Shortened Watch Failure.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not establish a universal watch length, present calendar, exact inherited unit, formula grammar, polity, Crown City, or regional signal code.",
+        "source_refs": [
+          "Kalsa/Spoilers/Foundations/Language and Reckoning.md",
+          "Kalsa/Spoilers/Events/The Shortened Watch Failure.md"
+        ]
+      },
+      {
+        "text": "Do not let the bell, shutter, work board, signed conversion, or surviving record directly control the reservoir.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Measures, Formulae, and Machine Speech.md"
+        ]
+      },
+      {
+        "text": "Do not produce an ending with no injuries, no damaged equipment or channel work, or no water reaching scheduled-empty ground.",
+        "source_refs": [
+          "Kalsa/Spoilers/Events/The Shortened Watch Failure.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through routine preparation, record-process divergence, first-surge response, and an irreversible priority, then select one of eight state-gated endings that preserve the adopted disaster.",
+    "choice_layers": [
+      "clearance_house_preparation",
+      "schedule_and_process_diverge",
+      "first_surge_response",
+      "irreversible_priority"
+    ],
+    "variables": [
+      "crew_readiness",
+      "process_warning",
+      "record_separation",
+      "warning_state",
+      "upstream_protest",
+      "lower_route_clear",
+      "rescue_capacity",
+      "equipment_secured",
+      "isca_credibility",
+      "pel_position",
+      "copy_custody",
+      "stair_congestion",
+      "flow_deflection"
+    ],
+    "ending_gates": [
+      "ending_crew_success",
+      "ending_crew_cost",
+      "ending_warning_success",
+      "ending_warning_cost",
+      "ending_records_success",
+      "ending_records_cost",
+      "ending_protest_success",
+      "ending_protest_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prepare_separate_records",
+      "ink_path": "preparation_choice",
+      "action_type": "use_object",
+      "actor_intent": "Make source, conversion, schedule, and delivered notice separately legible before pressure begins.",
+      "state_basis": ["Isca has access to the local record table and can create working copies."],
+      "reviewed_consequences": ["Raises record_separation and copy_custody while costing crew preparation time; later folds, record-rescue prose, and record endings read both values."],
+      "training_hooks": ["record_owner_separation", "time_cost_of_evidence"]
+    },
+    {
+      "branch_id": "prepare_rescue_line",
+      "ink_path": "preparation_choice",
+      "action_type": "move",
+      "actor_intent": "Prepare the rescue shelf and verify the lifting line with the crew foreperson.",
+      "state_basis": ["The raised shelf and line are within Isca and Anet's physical reach."],
+      "reviewed_consequences": ["Raises rescue_capacity, crew_readiness, and isca_credibility; later rescue, crew-exit gates, and visuals read the prepared line."],
+      "training_hooks": ["routine_preparation", "care_as_infrastructure", "workplace_wit"]
+    },
+    {
+      "branch_id": "prepare_process_check",
+      "ink_path": "preparation_choice",
+      "action_type": "inspect",
+      "actor_intent": "Establish a local baseline for seep, grit, and vibration before relying on the board.",
+      "state_basis": ["The side hollow and channel wall provide observable reservoir-process evidence."],
+      "reviewed_consequences": ["Raises process_warning while costing crew readiness; later divergence prose and protest success require the observed baseline."],
+      "training_hooks": ["observable_process", "inspection_cost"]
+    },
+    {
+      "branch_id": "prepare_equipment",
+      "ink_path": "preparation_choice",
+      "action_type": "move_object",
+      "actor_intent": "Move tools and brace shoes above the channel while helping Pel nearer the exit.",
+      "state_basis": ["Loose equipment and Pel are still on the channel floor during routine work."],
+      "reviewed_consequences": ["Raises equipment_secured, pel_position, and crew_readiness; later folds and crew endings show what remains above water."],
+      "training_hooks": ["material_work", "position_state", "equipment_custody"]
+    },
+    {
+      "branch_id": "expose_record_divergence",
+      "ink_path": "warning_choice",
+      "action_type": "speak",
+      "actor_intent": "Force the conversion clerk to name the distinct authority of all four records.",
+      "state_basis": ["The records are physically present and Dema can identify the conversion and managers' board."],
+      "reviewed_consequences": ["Raises record_separation, upstream_protest, and credibility while costing crew readiness; Dema's admission changes later evidentiary strength."],
+      "training_hooks": ["accountable_translation", "speech_under_pressure"]
+    },
+    {
+      "branch_id": "warn_lower_ground",
+      "ink_path": "warning_choice",
+      "action_type": "use_object",
+      "actor_intent": "Issue the local lower-channel warning before authorization arrives.",
+      "state_basis": ["Isca controls a bell whose local warning can move people but cannot cancel release."],
+      "reviewed_consequences": ["Raises warning_state, lower_route_clear, and stair_congestion while lowering credibility; warning success and cost both read the route created."],
+      "training_hooks": ["warning_before_authority", "evacuation_congestion", "signal_cost"]
+    },
+    {
+      "branch_id": "protest_upstream",
+      "ink_path": "warning_choice",
+      "action_type": "use_object",
+      "actor_intent": "Make the disputed conversion visible to the distant gatehouse through the protest shutter.",
+      "state_basis": ["The shutter is visible upstream and Dema's signed slip identifies the disputed conversion."],
+      "reviewed_consequences": ["Raises upstream_protest, copy_custody, and process_warning while costing crew readiness; later protest routing tests whether objection and process evidence converge."],
+      "training_hooks": ["bounded_signal", "signed_evidence", "authority_distance"]
+    },
+    {
+      "branch_id": "pull_crew_early",
+      "ink_path": "warning_choice",
+      "action_type": "speak",
+      "actor_intent": "Move Pel and the lowest workers toward the shelf before the approved board expires.",
+      "state_basis": ["Anet can act on Isca's local warning even while Dema disputes the schedule."],
+      "reviewed_consequences": ["Raises pel_position, rescue_capacity, and crew_readiness while abandoning equipment; later folds and exits read both bodily and material consequences."],
+      "training_hooks": ["crew_authority", "schedule_refusal", "equipment_tradeoff"]
+    },
+    {
+      "branch_id": "first_surge_rescue",
+      "ink_path": "first_surge_choice",
+      "action_type": "use_object",
+      "actor_intent": "Spend the first response on the lowest worker and form a staffed rescue line.",
+      "state_basis": ["The line can reach from shelf and landing to the channel floor."],
+      "reviewed_consequences": ["Raises rescue capacity, crew readiness, and Pel's safe position while risking record custody; crew-exit gates and visuals read the taut line."],
+      "training_hooks": ["embodied_rescue", "evidence_attention_cost"]
+    },
+    {
+      "branch_id": "first_surge_bell",
+      "ink_path": "first_surge_choice",
+      "action_type": "use_object",
+      "actor_intent": "Carry the warning beyond the work yards despite demands for Isca's hands at the stair.",
+      "state_basis": ["Repeated bell signals can travel farther down the open channel than speech."],
+      "reviewed_consequences": ["Raises warning_state, route clearance, and stair congestion while reducing rescue capacity; the lower-ground endings read all four consequences."],
+      "training_hooks": ["warning_range", "attention_tradeoff", "route_pressure"]
+    },
+    {
+      "branch_id": "first_surge_records",
+      "ink_path": "first_surge_choice",
+      "action_type": "move_object",
+      "actor_intent": "Move all four records to the rescue shelf without merging their meanings.",
+      "state_basis": ["The shelf is above the first water and Pel can receive the records."],
+      "reviewed_consequences": ["Raises copy custody and record separation while reducing rescue and equipment preservation; record endings and wet-record visuals read the result."],
+      "training_hooks": ["evidence_rescue", "hands_are_finite"]
+    },
+    {
+      "branch_id": "first_surge_deflection",
+      "ink_path": "first_surge_choice",
+      "action_type": "move_object",
+      "actor_intent": "Use the abandoned brace frame as a short-lived physical breakwater.",
+      "state_basis": ["The frame can cross the local side hollow but cannot stop the full reservoir release."],
+      "reviewed_consequences": ["Creates local flow_deflection and route time while destroying equipment and reducing crew readiness; later folds and visuals show the twisted frame and flying pins."],
+      "training_hooks": ["material_deflection", "no_magic_shortcut", "equipment_sacrifice"]
+    },
+    {
+      "branch_id": "prioritize_crew_exit",
+      "ink_path": "final_choice",
+      "action_type": "move",
+      "actor_intent": "Concentrate hands, rope, and route space on extracting the channel crew.",
+      "state_basis": ["Success depends on combined crew_readiness and rescue_capacity without severe stair congestion."],
+      "reviewed_consequences": ["Routes to crew success or cost; both preserve injury and public-work damage while varying local extraction and equipment loss."],
+      "training_hooks": ["state_gated_rescue", "fixed_event_variable_cost"]
+    },
+    {
+      "branch_id": "prioritize_lower_warning",
+      "ink_path": "final_choice",
+      "action_type": "use_object",
+      "actor_intent": "Keep the lower warning ahead of the main water even while the crew exits behind Isca.",
+      "state_basis": ["Success depends on warning strength, a cleared route, and enough local credibility for people to act."],
+      "reviewed_consequences": ["Routes to warning success or cost; both show water reaching scheduled-empty ground while varying bodily exposure and signal coherence."],
+      "training_hooks": ["public_warning", "signal_meaning", "property_body_tradeoff"]
+    },
+    {
+      "branch_id": "prioritize_record_chain",
+      "ink_path": "final_choice",
+      "action_type": "protect_object",
+      "actor_intent": "Preserve the four accountable records as separate evidence for the inquiry.",
+      "state_basis": ["Success depends on prior separation and safe shelf custody."],
+      "reviewed_consequences": ["Routes to a strong or damaged evidence chain; both refuse to turn records into retroactive rescue."],
+      "training_hooks": ["evidence_not_salvation", "inquiry_path_dependence"]
+    },
+    {
+      "branch_id": "prioritize_upstream_protest",
+      "ink_path": "final_choice",
+      "action_type": "signal",
+      "actor_intent": "Keep objection and observable process evidence in the gatehouse sightline.",
+      "state_basis": ["Success depends on an established protest and a prior observed process baseline."],
+      "reviewed_consequences": ["Routes to supported or punishable protest; neither reverses the already accepted release."],
+      "training_hooks": ["machine_acceptance_boundary", "observable_process_evidence", "discipline_risk"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose and visual callbacks",
+      "State-gated ending selection"
+    ],
+    "manual_review_required": [
+      "Any further durable facts about the Shortened Watch Failure",
+      "Character memory or relationship updates",
+      "Accepted corpus promotion",
+      "Any reuse of the clearance-house layout as a regional standard"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Ember elaborator self-review against the four required Ghostlight reviewer prompts",
+    "review_status": "accepted",
+    "reviewer_verdicts": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 4,
+          "pacing": 5,
+          "voice": 4,
+          "tonal_fit": 5,
+          "if_playability": 4
+        },
+        "findings_fixed": [
+          "The supported-protest success gate was unreachable; the explicit upstream-protest branch now establishes enough protest state while still requiring a prior physical-process inspection.",
+          "Two aftermath paths described flooding without restating the adopted worker injury and public-work damage; both endings now carry those fixed consequences explicitly."
+        ],
+        "remaining_findings": [],
+        "acceptance_notes": [
+          "The opening establishes locality, roles, objects, authority limits, ordinary work, and tonal warmth before escalation.",
+          "Four choice layers combine speech, inspection, signaling, movement, rescue, and evidence custody; eight endings differ through state rather than flavor alone."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 5,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "findings_fixed": [
+          "An early record-ending prompt assigned an injury specifically to Pel although the Ink fixed only an injured worker; the visual plan now uses the channel-crew group for that body.",
+          "The lore patch names the local room, signals, process signs, roles, dependencies, and costs while explicitly preserving every unresolved date, polity, duration, language, signal standard, and casualty total."
+        ],
+        "remaining_findings": [],
+        "acceptance_notes": [
+          "Every material setting claim routes to the adopted event owner or its language, measures, timeline, public-world, and canon-policy owners.",
+          "Machine acceptance remains bounded material evidence in every route and never becomes political or moral judgment."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompt": 5,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 4
+        },
+        "findings_fixed": [
+          "The four final-priority branches initially depended only on ending-label imagery; explicit branch modifiers now stage rope, bell, records, or shutter before resolution.",
+          "A pre-choice base prompt assumed records were already separated; it now shows four documents beneath the shared heading and leaves separation to state modifiers.",
+          "A flood-threshold prompt used memory-dependent placement for Pel; it now supplies one concrete default position and lets branch modifiers move him."
+        ],
+        "remaining_findings": [
+          "High-consistency multi-angle website rendering should use a plan-view or 3D blockout lowered from the included structured scene_set; this does not block the deferred-rendering fixture."
+        ],
+        "acceptance_notes": [
+          "Fourteen standalone base prompts, twenty-four branch or ending modifiers, stable character refs, and a BFL batch cover every major replay beat without off-frame refs or jargon-only image direction."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightline": 5,
+          "body_affordance": 4,
+          "movement_access": 5,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "findings_fixed": [
+          "Pel's threshold position was ambiguous across folded paths; the base frame now locates him on the lower landing and named branch modifiers carry shelf or rescue-line movement.",
+          "Lower-yard residents had a conditional default stance in a shared frame; the base stance now keeps them at carts and racks until warning modifiers move them."
+        ],
+        "remaining_findings": [],
+        "acceptance_notes": [
+          "The scene_set fixes eleven zones, four routes, nine camera slots, and seven persistent state anchors. The stair-congestion consequence follows one physically shared crew-and-resident route."
+        ]
+      }
+    ],
+    "review_notes": [
+      "The fixture was authored against the adopted event owner and its linked language, measures, and timeline owners.",
+      "Four reviewer passes were completed after mechanical branch, ending, prompt, character-ref, and anchor audits; all required revisions were applied.",
+      "Ink was written from the reference shape and was not compiled because this pass forbids installing or running an Ink compiler.",
+      "All four JSON artifacts parsed successfully after review. Every success and cost ending was reachable in a 64-history state enumeration."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "kalsa_lore_content_readable": true,
+      "fixed_event_outcome_preserved": true
+    }
+  }
+}

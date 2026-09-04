@@ -1,0 +1,68 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "kalsa-ember-shortened-watch-clearance-v0.bfl-simple-v0",
+  "fixture_id": "ember-shortened-watch-clearance-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, sharp readable silhouettes, permanent-twilight blue and rain-muted stone, oxidized bronze and old dark metal, warm ochre work lamps, restrained historical realism, tactile labor detail, abstract unlettered record marks, humane faces under practical pressure.",
+  "prompts": [
+    {
+      "id": "01_clearance_house_establishing",
+      "prompt": "Wide cutaway of a compact stone clearance house built into the bank above a masonry reservoir outflow channel: record bay, pale upstream signal shutter, bronze lower bell, covered stair, short landing, raised rescue shelf, side hollow, timber braces and crew below, old dark metal release throat and distant gatehouse upstream, low occupied work yards down-channel."
+    },
+    {
+      "id": "02_four_records_close",
+      "prompt": "Overhead evidence closeup on a scarred wooden table: old source interval in a metal-edged sleeve, signed conversion slip, manager-approved work board, delivered-notice tally, all visibly distinct beneath one painted heading; callused keeper hand and clean clerk cuff beside abstract unlettered marks."
+    },
+    {
+      "id": "03_preparation_choice",
+      "prompt": "Medium-wide work choice inside a stone clearance house: wax leaves and stylus at record table, coiled hemp rescue line on raised shelf, dry side hollow below, iron brace shoes and tools by a young worker on the landing; keeper positioned between table, shelf, and stair while foreperson and clerk watch."
+    },
+    {
+      "id": "04_routine_fold",
+      "prompt": "Ordinary reservoir maintenance under twilight rain: clearance keeper checks bell rope and shutter latch, braided clerk reads a work board, broad foreperson directs workers loosening timber braces, young worker carries iron shoes near the landing, ochre light above blue wet masonry."
+    },
+    {
+      "id": "05_lifted_grit_warning",
+      "prompt": "Pivotal low close frame: grit lifts in a shallow side hollow, seep darkens masonry beneath a raised rescue shelf, clearance keeper feels vibration through the wall, foreperson turns from braces, clerk holds approved board, young worker looks up from channel floor."
+    },
+    {
+      "id": "06_warning_choice",
+      "prompt": "Tense decision geometry inside an upper-bank clearance house: keeper between four separate records, heavy bronze warning bell, pale upstream protest shutter, and covered stair to workers below; signed conversion in clerk's hand, dark seep visible beneath rescue shelf, distant gatehouse aligned upstream."
+    },
+    {
+      "id": "07_signal_fold",
+      "prompt": "Whole public-works pressure view: stone record bay, bell frame, open or closed protest shutter, narrow covered stair, landing and rescue shelf; foreperson moves mud-streaked crew upward, young worker climbs, clerk guards records, keeper holds signals, lower-yard residents begin moving beyond the bend."
+    },
+    {
+      "id": "08_release_accepted",
+      "prompt": "Wide channel crisis: ancient dark metal release throat shifts in repaired masonry, first brown water rounds the bend toward timber braces and workers, keeper grips lower doorway, foreperson turns to crew, young worker stands between brace and shelf, clerk holds approved board under ochre lamp."
+    },
+    {
+      "id": "09_first_surge_choice",
+      "prompt": "Dynamic flood-response choice at a reservoir workface: keeper can reach hemp rescue line, swinging warning bell rope, four wet records, or long timber brace frame; brown water enters the channel as foreperson and workers climb toward landing and young worker reaches for raised shelf."
+    },
+    {
+      "id": "10_irreversible_threshold",
+      "prompt": "Flood threshold cutaway of one stone clearance house and channel bend: full brown release, covered stair, landing, raised shelf, bell, record table, protest shutter, distant gatehouse sightline, crew distributed between water and exit, residents moving among low work yards down-channel."
+    },
+    {
+      "id": "11_crew_ending",
+      "prompt": "Crew-extraction aftermath on stone landing and raised shelf: keeper and foreperson haul hemp line, young worker and mud-streaked crew show cuts and exhaustion, clerk supports one worker at doorway, broken timber and iron tools churn in flooded channel below."
+    },
+    {
+      "id": "12_warning_ending",
+      "prompt": "Down-channel warning aftermath from bronze bell frame: keeper grips wet rope while low work yards, drying racks, carts, baskets, stone-and-timber roofs, and mixed-age residents lie before approaching brown water; figures move toward higher routes under twilight rain."
+    },
+    {
+      "id": "13_records_ending",
+      "prompt": "Evidence aftermath on a raised stone shelf above flood: four distinct wet records, clearance keeper crouched over them, injured young worker sheltering nearby, lower table submerged, broken tools in current, ochre lamp reflected on wet wax and old metal edges."
+    },
+    {
+      "id": "14_protest_ending",
+      "prompt": "Upstream protest aftermath through spray: pale signal shutter held open toward distant gatehouse, keeper braced at sighting bar, clerk near wet record table, signed conversion and process mark present or absent by branch, old release throat sending brown water through repaired masonry below."
+    }
+  ]
+}

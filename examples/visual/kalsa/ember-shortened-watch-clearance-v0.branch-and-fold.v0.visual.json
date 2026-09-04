@@ -1,0 +1,324 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "kalsa-ember-shortened-watch-clearance-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/kalsa/ember-shortened-watch-clearance-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/kalsa/ember-shortened-watch-clearance-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ember-shortened-watch-clearance-v0.last-clearance-bell",
+  "purpose": "Illustrated Ink replay segmentation and image-prompt controls for the last downstream clearance interval during the Shortened Watch Failure.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for ordinary channel work, the four-record comparison, visible process divergence, competing warnings, accepted release, rescue, and four families of historical consequence.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the clearance-house establishing frame, record closeup, preparation choice, routine fold, first process sign, warning choice, signal fold, accepted-release beat, first surge response, irreversible threshold, and each ending family. The lifted grit and the first water around the bend each receive a discrete replay beat.",
+    "prompting_rule": "Each base image prompt restates drawable geometry, materials, light, bodies, interfaces, and key objects for a general image model. Continuity notes stay in tooling fields; prompt assembly uses only visible character refs and triggered visible deltas.",
+    "global_style_cue": "Style: hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, sharp readable silhouettes, permanent-twilight blue and rain-muted stone, oxidized bronze and old dark metal, warm ochre work lamps, restrained historical realism, tactile labor detail, abstract unlettered record marks, humane faces under practical pressure.",
+    "prompt_assembly_rule": "Assemble every render prompt from the global_style_cue, one scene base_image_prompt, visual refs only for named characters or groups visible in that frame, and triggered state_image_modifiers or global_branch_image_modifiers. Continuity notes and off-frame character refs stay outside the prompt.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture returns to one small multi-level workface from several angles and branches change routes, props, water, and character positions. The structured scene_set below is the durable draft geometry authority for prose and prompt review.",
+      "future_scene_set_need": "Before high-consistency website rendering, lower this map into a plan view or simple 3D blockout with the record bay, upstream shutter, bell frame, covered stair, landing, rescue shelf, channel floor, side hollow, outflow bend, and distant gatehouse sightline."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "ember_clearance_house_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide exterior-interior cutaway view of a compact public-works clearance house built into the stone bank above a broad masonry outflow channel under permanent twilight. The house has thick rain-dark walls, an upstream-facing pale signal shutter, a bronze bell frame beside a lower door, a waist-high record table under ochre oil lamps, and a covered stone stair descending to a wet channel floor. A short landing leads to a raised rescue shelf above the water line. Far upstream, an old dark metal release throat is set inside newer stone and a small gatehouse stands in the shutter sightline. Down-channel, work yards and low occupied roofs follow the bend. Isca Rel stands by the bell frame; Dema Tern is at the record table; Anet Vos directs a mud-streaked crew below; Pel Orra braces a timber frame on the channel floor.",
+        "visible_characters": [
+          {"agent_id": "isca_rel", "default_stance": "beside the bell frame, counting people below", "visual_ref": "visual_character_refs.characters.isca_rel"},
+          {"agent_id": "dema_tern", "default_stance": "at the record table with a rolled work board", "visual_ref": "visual_character_refs.characters.dema_tern"},
+          {"agent_id": "anet_vos", "default_stance": "on the lower landing directing the crew", "visual_ref": "visual_character_refs.characters.anet_vos"},
+          {"agent_id": "pel_orra", "default_stance": "on the channel floor at a timber brace", "visual_ref": "visual_character_refs.characters.pel_orra"},
+          {"agent_id": "channel_crew", "default_stance": "working at braces along the channel floor", "visual_ref": "visual_character_refs.groups.channel_crew"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The clearance house occupies the upper bank at one channel bend. Interior record bay, bell frame, upstream shutter, landing, rescue shelf, stair, side hollow, and channel floor retain fixed adjacency.",
+          "The distant gatehouse is visible only through the upstream shutter sightline; speech cannot cross the distance."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_four_records_close",
+        "ink_anchor": "records_and_routine",
+        "base_image_prompt": "Close overhead evidence view on a scarred waist-high wooden table inside a stone clearance house. Four distinct work records sit beneath one painted heading board: a protected old source copy in a dark metal-edged sleeve, a small signed conversion slip, a larger manager-approved work board, and a narrow tally of warnings carried down-channel. Their marks are abstract and unlettered but visibly different in age, material, handwriting, and seals. Isca Rel's callused finger points between them while Dema Tern's clean dark cuff and seal hand rest beside the conversion slip. An ochre lamp warms the records; blue twilight and spray enter through the pale upstream signal shutter behind them.",
+        "visible_characters": [
+          {"agent_id": "isca_rel", "default_stance": "hand separating the four records", "visual_ref": "visual_character_refs.characters.isca_rel"},
+          {"agent_id": "dema_tern", "default_stance": "hand beside the signed conversion", "visual_ref": "visual_character_refs.characters.dema_tern"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The source copy, conversion slip, work board, and notice tally remain four separate objects even when stacked under one heading."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_preparation_choice",
+        "ink_anchor": "preparation_choice",
+        "base_image_prompt": "Medium-wide choice frame inside and just below a stone clearance house over a masonry channel. Four practical preparations are visibly available: four wax leaves and a stylus beside the record table; a coiled hemp rescue line on the raised shelf; a dry side hollow in the channel wall where loose grit can be inspected; and iron brace shoes, mallets, wedges, and pins waiting beside Pel Orra on the lower landing. Isca Rel stands at the junction between table, shelf, and stair. Dema Tern guards the records, Anet Vos looks up from the crew, and ochre lamplight meets blue twilight rain through the door and signal shutter.",
+        "visible_characters": [
+          {"agent_id": "isca_rel", "default_stance": "at the junction of table, shelf, and descending stair", "visual_ref": "visual_character_refs.characters.isca_rel"},
+          {"agent_id": "dema_tern", "default_stance": "beside the record table", "visual_ref": "visual_character_refs.characters.dema_tern"},
+          {"agent_id": "anet_vos", "default_stance": "on the lower landing looking up", "visual_ref": "visual_character_refs.characters.anet_vos"},
+          {"agent_id": "pel_orra", "default_stance": "beside loose tools and brace shoes", "visual_ref": "visual_character_refs.characters.pel_orra"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Ordinary maintenance at a twilight reservoir outflow: inside the upper-bank stone clearance house, Isca Rel checks a bronze bell rope and pale signal-shutter latch while Dema Tern studies an approved work board at a wooden table. Through the open lower door, a covered stair descends past a raised rescue shelf to the masonry channel where Anet Vos and several workers loosen a timber brace. Pel Orra works near the landing with iron brace shoes and a basket of pins. Old dark metal from the release throat is visible upstream inside repaired stone. The scene feels practiced, damp, and mildly funny before danger acquires a voice.",
+        "visible_characters": [
+          {"agent_id": "isca_rel", "default_stance": "checking bell rope and shutter latch", "visual_ref": "visual_character_refs.characters.isca_rel"},
+          {"agent_id": "dema_tern", "default_stance": "reading the manager-approved board", "visual_ref": "visual_character_refs.characters.dema_tern"},
+          {"agent_id": "anet_vos", "default_stance": "directing the brace work below", "visual_ref": "visual_character_refs.characters.anet_vos"},
+          {"agent_id": "pel_orra", "default_stance": "lifting tools near the landing", "visual_ref": "visual_character_refs.characters.pel_orra"},
+          {"agent_id": "channel_crew", "default_stance": "spread along the channel braces", "visual_ref": "visual_character_refs.groups.channel_crew"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "record_separation >= 2", "modifier_prompt": "Four labeled wax leaves lie separately beside the original record objects, each with its own seal space."},
+          {"trigger": "rescue_capacity >= 3", "modifier_prompt": "Two clean coils of thick hemp rescue line rest on the raised shelf with tested knots visible."},
+          {"trigger": "equipment_secured >= 2", "modifier_prompt": "Iron brace shoes, mallets, wedges, and pins are stacked on the dry landing above the channel floor."},
+          {"trigger": "pel_position >= 1", "modifier_prompt": "Pel works on the lower landing close to the covered stair instead of at the deepest brace."},
+          {"trigger": "crew_readiness <= 1", "modifier_prompt": "Several brace positions remain unfinished and Anet signals urgently for more hands."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "ember_lifted_grit_warning",
+        "ink_anchor": "early_sign",
+        "base_image_prompt": "Pivotal close-low frame at the masonry side hollow below a reservoir clearance house. Dry grit lifts and begins to float in a shallow darkening seep while a wet line draws itself across rain-stained stone under a raised rescue shelf. Isca Rel stands with one boot on the lower stair and one hand on the wall, feeling vibration from the old dark metal release throat upstream. Anet Vos turns from the brace crew; Dema Tern holds the approved work board above the wet edge; Pel Orra looks up from the channel floor. Cold blue twilight fills the channel while warm ochre light spills from the house above.",
+        "visible_characters": [
+          {"agent_id": "isca_rel", "default_stance": "hand on vibrating stone above the side hollow", "visual_ref": "visual_character_refs.characters.isca_rel"},
+          {"agent_id": "anet_vos", "default_stance": "turning from the crew toward the wet stone", "visual_ref": "visual_character_refs.characters.anet_vos"},
+          {"agent_id": "dema_tern", "default_stance": "holding the approved board above spray", "visual_ref": "visual_character_refs.characters.dema_tern"},
+          {"agent_id": "pel_orra", "default_stance": "crouched at a lower brace and looking upward", "visual_ref": "visual_character_refs.characters.pel_orra"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "process_warning >= 2", "modifier_prompt": "Isca points from the lifted grit to a small dry-baseline mark she made earlier on the side hollow."}
+        ]
+      },
+      {
+        "visual_scene_id": "ember_warning_choice",
+        "ink_anchor": "warning_choice",
+        "base_image_prompt": "Tense medium-wide decision frame inside the upper-bank clearance house. Isca Rel stands between four physical levers: the record table with four work documents beneath one painted heading, a heavy bronze lower-warning bell, a pale upstream signal shutter with a sighting bar aimed at the distant gatehouse, and the covered stair down to Anet Vos, Pel Orra, and the channel crew. Dema Tern holds the signed conversion near the approved board. A dark seep line is visible below the rescue shelf and the old metal throat sits upstream in repaired masonry. Every route is concrete: records behind Isca, signal above, workers below, occupied yards beyond the bend.",
+        "visible_characters": [
+          {"agent_id": "isca_rel", "default_stance": "between table, bell, shutter, and stair", "visual_ref": "visual_character_refs.characters.isca_rel"},
+          {"agent_id": "dema_tern", "default_stance": "holding the conversion beside the work board", "visual_ref": "visual_character_refs.characters.dema_tern"},
+          {"agent_id": "anet_vos", "default_stance": "at the stair foot looking up", "visual_ref": "visual_character_refs.characters.anet_vos"},
+          {"agent_id": "pel_orra", "default_stance": "at a low brace", "visual_ref": "visual_character_refs.characters.pel_orra"},
+          {"agent_id": "channel_crew", "default_stance": "working below in the channel", "visual_ref": "visual_character_refs.groups.channel_crew"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_signal_fold",
+        "ink_anchor": "signal_fold",
+        "base_image_prompt": "Whole-workface pressure view at a reservoir channel bend under twilight rain. The stone clearance house contains a record table, bronze bell frame, and pale upstream protest shutter; its lower door opens to a covered stair crowded around a short landing and raised rescue shelf. Anet Vos calls the channel crew upward while Pel Orra climbs from the braces. Isca Rel holds the center between signals and stair. Dema Tern stands at the separated or stacked records. Far upstream, the gatehouse is visible through the shutter sightline; down-channel, low work yards sit beyond the bend.",
+        "visible_characters": [
+          {"agent_id": "isca_rel", "default_stance": "between the bell frame and stair mouth", "visual_ref": "visual_character_refs.characters.isca_rel"},
+          {"agent_id": "dema_tern", "default_stance": "at the record table", "visual_ref": "visual_character_refs.characters.dema_tern"},
+          {"agent_id": "anet_vos", "default_stance": "moving workers toward the stair", "visual_ref": "visual_character_refs.characters.anet_vos"},
+          {"agent_id": "pel_orra", "default_stance": "between channel floor and rescue shelf depending on state", "visual_ref": "visual_character_refs.characters.pel_orra"},
+          {"agent_id": "channel_crew", "default_stance": "leaving braces in a staggered line", "visual_ref": "visual_character_refs.groups.channel_crew"},
+          {"agent_id": "lower_yard_residents", "default_stance": "small figures at carts and racks in the lower work yards", "visual_ref": "visual_character_refs.groups.lower_yard_residents"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "record_separation >= 3", "modifier_prompt": "Source copy, conversion slip, work board, and delivered-notice tally lie in four visibly separate positions on the record table."},
+          {"trigger": "warning_state >= 2", "modifier_prompt": "The bronze bell swings and small figures in the lower work yards turn toward the covered stair."},
+          {"trigger": "upstream_protest >= 2", "modifier_prompt": "The pale protest shutter is open toward the gatehouse with a signed slip pinned beneath its sighting bar."},
+          {"trigger": "crew_readiness >= 4", "modifier_prompt": "The channel crew forms an orderly stagger toward the stair and raised shelf."},
+          {"trigger": "crew_readiness <= 1", "modifier_prompt": "Several workers remain bent at low brace frames farthest from the stair."},
+          {"trigger": "pel_position >= 2", "modifier_prompt": "Pel crouches on the raised rescue shelf with one hand near the coiled line."},
+          {"trigger": "stair_congestion >= 1", "modifier_prompt": "Yard workers appear inside the covered stair above the climbing channel crew, tightening the route."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "ember_release_accepted",
+        "ink_anchor": "release_accepted",
+        "base_image_prompt": "Pivotal wide channel frame beneath a stone clearance house: ancient dark metal shifts inside the upstream release throat, water pushes around the masonry bend, and the first brown tongue reaches a channel where timber braces and workers are still present. Isca Rel grips the lower doorway; Anet Vos turns toward the crew; Pel Orra is between a low brace and the raised rescue shelf; Dema Tern stands under the ochre lamp with the approved board. The pale protest shutter and bronze bell frame remain material signals while the reservoir mechanism moves beyond their direct control.",
+        "visible_characters": [
+          {"agent_id": "isca_rel", "default_stance": "braced in the lower doorway", "visual_ref": "visual_character_refs.characters.isca_rel"},
+          {"agent_id": "anet_vos", "default_stance": "turning to extract the crew", "visual_ref": "visual_character_refs.characters.anet_vos"},
+          {"agent_id": "pel_orra", "default_stance": "caught between brace and rescue shelf", "visual_ref": "visual_character_refs.characters.pel_orra"},
+          {"agent_id": "dema_tern", "default_stance": "at the record table with the approved board", "visual_ref": "visual_character_refs.characters.dema_tern"},
+          {"agent_id": "channel_crew", "default_stance": "workers lifting heads as water rounds the bend", "visual_ref": "visual_character_refs.groups.channel_crew"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_first_surge_choice",
+        "ink_anchor": "first_surge_choice",
+        "base_image_prompt": "Dynamic medium-wide action choice at a flooding reservoir workface. A stone clearance house opens onto a covered stair, short landing, and raised rescue shelf above a masonry channel. Brown water enters around the upstream bend. Isca Rel can reach a coiled hemp rescue line, the swinging lower-warning bell rope, four vulnerable records on the waist-high table, or a long timber brace frame beside the darkening side hollow. Anet Vos and the mud-streaked channel crew climb toward the stair. Pel Orra reaches for the shelf. Dema Tern stands between the records and lower door under mixed ochre lamp and blue twilight.",
+        "visible_characters": [
+          {"agent_id": "isca_rel", "default_stance": "poised among rope, bell, records, and brace frame", "visual_ref": "visual_character_refs.characters.isca_rel"},
+          {"agent_id": "anet_vos", "default_stance": "hauling workers toward the landing", "visual_ref": "visual_character_refs.characters.anet_vos"},
+          {"agent_id": "pel_orra", "default_stance": "reaching toward the rescue shelf", "visual_ref": "visual_character_refs.characters.pel_orra"},
+          {"agent_id": "dema_tern", "default_stance": "between wet records and the lower door", "visual_ref": "visual_character_refs.characters.dema_tern"},
+          {"agent_id": "channel_crew", "default_stance": "moving through ankle-deep first water", "visual_ref": "visual_character_refs.groups.channel_crew"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_irreversible_threshold",
+        "ink_anchor": "surge_fold|final_choice",
+        "base_image_prompt": "Flood threshold inside and below a compact stone clearance house at a reservoir outflow bend. Brown water fills the channel floor and strikes timber braces. The covered stair rises beside a short landing; a raised rescue shelf holds a loose hemp line, one wet worker, and the dry stone lip available for records. A bronze warning bell hangs beside the lower door, and a pale upstream protest shutter faces a distant gatehouse through spray. Isca Rel stands where bell, table, stair, and shelf compete for reach. Anet Vos manages the crew line, Pel Orra braces on the lower landing with one hand reaching toward the shelf, and Dema Tern braces at the doorway. Low work yards and moving residents are visible down-channel beyond the bend.",
+        "visible_characters": [
+          {"agent_id": "isca_rel", "default_stance": "at the center of bell, stair, shelf, and record routes", "visual_ref": "visual_character_refs.characters.isca_rel"},
+          {"agent_id": "anet_vos", "default_stance": "managing the extraction line", "visual_ref": "visual_character_refs.characters.anet_vos"},
+          {"agent_id": "pel_orra", "default_stance": "on channel floor or rescue shelf according to state", "visual_ref": "visual_character_refs.characters.pel_orra"},
+          {"agent_id": "dema_tern", "default_stance": "at the wet lower doorway", "visual_ref": "visual_character_refs.characters.dema_tern"},
+          {"agent_id": "channel_crew", "default_stance": "distributed between water, landing, shelf, and stair", "visual_ref": "visual_character_refs.groups.channel_crew"},
+          {"agent_id": "lower_yard_residents", "default_stance": "moving among carts and low roofs down-channel", "visual_ref": "visual_character_refs.groups.lower_yard_residents"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "rescue_capacity >= 3", "modifier_prompt": "A taut hemp rescue line connects the channel floor to workers on the landing and raised shelf."},
+          {"trigger": "rescue_capacity <= 1", "modifier_prompt": "One short tangled line serves too many reaching hands while Anet chooses an extraction order."},
+          {"trigger": "warning_state >= 3", "modifier_prompt": "The bronze bell swings hard and answering signal motions appear in the lower yards."},
+          {"trigger": "copy_custody >= 2", "modifier_prompt": "Four wet but separate records lie spread beneath the dry lip of the raised shelf."},
+          {"trigger": "copy_custody <= 0", "modifier_prompt": "The record packet sits on the low table with spray crossing its edges."},
+          {"trigger": "flow_deflection >= 2", "modifier_prompt": "A long timber brace frame lies twisted across the side hollow, breaking the first water against the empty service wall."},
+          {"trigger": "equipment_secured <= 0", "modifier_prompt": "Iron brace shoes, mallets, wedges, and pins tumble in the brown current."},
+          {"trigger": "stair_congestion >= 2", "modifier_prompt": "Yard residents climbing upward meet wet channel workers inside the narrow covered stair."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "ember_ending_crew",
+        "ink_anchor": "ending_crew_success|ending_crew_cost",
+        "base_image_prompt": "Crew-extraction aftermath on the stone landing and covered stair of a flooded reservoir clearance house. Isca Rel and Anet Vos pull a hemp line from the brown channel; Pel Orra and mud-streaked workers gather on the raised rescue shelf and landing with visible cuts, soaked clothes, and exhausted postures. Broken timber braces and old dark metal fragments churn below. Dema Tern supports one worker at the lower doorway. The composition centers counted bodies, finite route space, and the material wreckage still moving down-channel.",
+        "visible_characters": [
+          {"agent_id": "isca_rel", "default_stance": "hauling the rescue line", "visual_ref": "visual_character_refs.characters.isca_rel"},
+          {"agent_id": "anet_vos", "default_stance": "counting and directing extracted workers", "visual_ref": "visual_character_refs.characters.anet_vos"},
+          {"agent_id": "pel_orra", "default_stance": "injured on the shelf or struggling on the stair depending on outcome", "visual_ref": "visual_character_refs.characters.pel_orra"},
+          {"agent_id": "dema_tern", "default_stance": "supporting a wet worker at the doorway", "visual_ref": "visual_character_refs.characters.dema_tern"},
+          {"agent_id": "channel_crew", "default_stance": "injured workers clustered across shelf and landing", "visual_ref": "visual_character_refs.groups.channel_crew"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "equipment_secured >= 2", "modifier_prompt": "Saved mallets, wedges, brace shoes, and pins sit in a dry ordered stack above the injured crew."},
+          {"trigger": "equipment_secured < 2", "modifier_prompt": "Brace frames and iron tools hammer the flooded channel wall below the crew."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "ember_ending_warning",
+        "ink_anchor": "ending_warning_success|ending_warning_cost",
+        "base_image_prompt": "Down-channel warning aftermath seen from the bronze bell frame of a reservoir clearance house. Isca Rel grips the wet bell rope in the foreground. Beyond the masonry bend, low work yards, drying racks, carts, baskets, and occupied stone-and-timber roofs stand in the path of brown water. Human figures move toward higher ground and a covered service stair under permanent twilight rain. Broken brace timber and tools enter the channel behind them. The frame shows warning as movement through constrained routes, with property and ordinary work left exposed.",
+        "visible_characters": [
+          {"agent_id": "isca_rel", "default_stance": "holding the warning rope above the channel", "visual_ref": "visual_character_refs.characters.isca_rel"},
+          {"agent_id": "lower_yard_residents", "default_stance": "moving among carts, racks, roofs, and stair approaches", "visual_ref": "visual_character_refs.groups.lower_yard_residents"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_ending_records",
+        "ink_anchor": "ending_records_success|ending_records_cost",
+        "base_image_prompt": "Evidence aftermath on a raised stone rescue shelf inside a flooded clearance house. Four wet work-record objects and their painted shared heading occupy the focal plane: old protected source copy, signed conversion slip, approved work board, and delivered-notice tally. Isca Rel crouches over them while brown water takes the lower table and broken tools churn in the channel. One injured channel worker shelters beside the shelf lip in a soaked waxed cape, wrapped work clothes, and high leather boots. Ochre lamp glow reflects on wet wax and metal edges; blue twilight rain enters through the open door. The image treats records as surviving evidence beside bodily and material damage.",
+        "visible_characters": [
+          {"agent_id": "isca_rel", "default_stance": "protecting separate records on the shelf", "visual_ref": "visual_character_refs.characters.isca_rel"},
+          {"agent_id": "channel_crew", "default_stance": "one injured worker sheltered beneath the shelf lip", "visual_ref": "visual_character_refs.groups.channel_crew"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ember_ending_protest",
+        "ink_anchor": "ending_protest_success|ending_protest_cost",
+        "base_image_prompt": "Upstream protest aftermath inside a rain-struck reservoir clearance house. A pale wooden signal shutter stands open in the thick stone wall, aimed along a clear sightline toward a small distant gatehouse. Isca Rel braces the shutter bar while spray crosses the room. The dark seep line and lifted-grit side hollow are visible below the raised rescue shelf; the old metal release throat moves water through repaired masonry upstream. Dema Tern stands near the shutter and wet record table. Brown water fills the channel beneath them, making the signal a witnessed objection after an irreversible release.",
+        "visible_characters": [
+          {"agent_id": "isca_rel", "default_stance": "holding the protest shutter open through spray", "visual_ref": "visual_character_refs.characters.isca_rel"},
+          {"agent_id": "dema_tern", "default_stance": "near the shutter and wet records", "visual_ref": "visual_character_refs.characters.dema_tern"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "process_warning >= 2", "modifier_prompt": "A clear dark baseline mark beside lifted grit ties the protest shutter to an earlier observed process change."},
+          {"trigger": "upstream_protest >= 3", "modifier_prompt": "Dema's signed conversion slip is pinned visibly beneath the pale shutter's sighting bar."
+          }
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {"modifier_id": "prepare_separate_records_visual", "trigger": "branch_label == prepare_separate_records", "apply_to_visual_scene_ids": ["ember_preparation_choice", "ember_routine_fold", "ember_signal_fold"], "modifier_prompt": "Four fresh wax leaves sit apart on the record table with separate abstract headings and seal spaces."},
+      {"modifier_id": "prepare_rescue_line_visual", "trigger": "branch_label == prepare_rescue_line", "apply_to_visual_scene_ids": ["ember_preparation_choice", "ember_routine_fold", "ember_irreversible_threshold"], "modifier_prompt": "A thick hemp rescue line lies in two tested coils on the raised shelf, with Anet's silt-dark handprint on one knot."},
+      {"modifier_id": "prepare_process_check_visual", "trigger": "branch_label == prepare_process_check", "apply_to_visual_scene_ids": ["ember_preparation_choice", "ember_lifted_grit_warning", "ember_ending_protest"], "modifier_prompt": "A small dry-baseline scratch and Isca's fingertip mark appear beside the side hollow where seep and grit later move."},
+      {"modifier_id": "prepare_equipment_visual", "trigger": "branch_label == prepare_equipment", "apply_to_visual_scene_ids": ["ember_preparation_choice", "ember_routine_fold", "ember_ending_crew"], "modifier_prompt": "Iron brace shoes, mallets, wedges, and a basket of pins are stacked above the channel on the dry landing."},
+      {"modifier_id": "expose_record_divergence_visual", "trigger": "branch_label == expose_record_divergence", "apply_to_visual_scene_ids": ["ember_warning_choice", "ember_signal_fold", "ember_ending_records"], "modifier_prompt": "Isca points across four separated records while Dema's hand rests only beside the signed conversion slip."},
+      {"modifier_id": "warn_lower_ground_visual", "trigger": "branch_label == warn_lower_ground", "apply_to_visual_scene_ids": ["ember_warning_choice", "ember_signal_fold", "ember_ending_warning"], "modifier_prompt": "The heavy bronze lower bell swings; yard workers abandon carts and racks and begin moving toward the covered stair."},
+      {"modifier_id": "protest_upstream_visual", "trigger": "branch_label == protest_upstream", "apply_to_visual_scene_ids": ["ember_warning_choice", "ember_signal_fold", "ember_ending_protest"], "modifier_prompt": "The pale upstream shutter is fixed open toward the distant gatehouse with a signed conversion slip pinned beneath its bar."},
+      {"modifier_id": "pull_crew_early_visual", "trigger": "branch_label == pull_crew_early", "apply_to_visual_scene_ids": ["ember_warning_choice", "ember_signal_fold", "ember_release_accepted"], "modifier_prompt": "Pel crouches on the raised shelf while Anet directs the lowest workers away from abandoned brace frames."},
+      {"modifier_id": "first_surge_rescue_visual", "trigger": "branch_label == first_surge_rescue", "apply_to_visual_scene_ids": ["ember_first_surge_choice", "ember_irreversible_threshold", "ember_ending_crew"], "modifier_prompt": "A hemp rescue line arcs from Isca's hands to the lowest worker, with Pel receiving the second length from the raised shelf."},
+      {"modifier_id": "first_surge_bell_visual", "trigger": "branch_label == first_surge_bell", "apply_to_visual_scene_ids": ["ember_first_surge_choice", "ember_irreversible_threshold", "ember_ending_warning"], "modifier_prompt": "Isca holds the bell rope in ankle-deep water while the bronze bell swings and answering figures move down-channel."},
+      {"modifier_id": "first_surge_records_visual", "trigger": "branch_label == first_surge_records", "apply_to_visual_scene_ids": ["ember_first_surge_choice", "ember_irreversible_threshold", "ember_ending_records"], "modifier_prompt": "Pel spreads four wet but distinct records beneath the dry lip of the raised rescue shelf."},
+      {"modifier_id": "first_surge_deflection_visual", "trigger": "branch_label == first_surge_deflection", "apply_to_visual_scene_ids": ["ember_first_surge_choice", "ember_irreversible_threshold", "ember_ending_crew"], "modifier_prompt": "A long timber brace frame twists across the side hollow, throwing the first brown water against an empty service wall while loose pins flash in spray."},
+      {"modifier_id": "prioritize_crew_exit_visual", "trigger": "branch_label == prioritize_crew_exit", "apply_to_visual_scene_ids": ["ember_irreversible_threshold", "ember_ending_crew"], "modifier_prompt": "Isca and Anet put both bodies on the rescue route, hands on rope and stair rail while every available worker faces toward the landing."},
+      {"modifier_id": "prioritize_lower_warning_visual", "trigger": "branch_label == prioritize_lower_warning", "apply_to_visual_scene_ids": ["ember_irreversible_threshold", "ember_ending_warning"], "modifier_prompt": "Isca turns from the rescue shelf to the bell frame and drives the heavy bronze warning while lower-yard figures react along the channel."},
+      {"modifier_id": "prioritize_record_chain_visual", "trigger": "branch_label == prioritize_record_chain", "apply_to_visual_scene_ids": ["ember_irreversible_threshold", "ember_ending_records"], "modifier_prompt": "Isca climbs toward the rescue shelf with four distinct record objects held apart across both forearms as floodwater takes the low table."},
+      {"modifier_id": "prioritize_upstream_protest_visual", "trigger": "branch_label == prioritize_upstream_protest", "apply_to_visual_scene_ids": ["ember_irreversible_threshold", "ember_ending_protest"], "modifier_prompt": "Isca braces at the pale upstream shutter, aligning its sighting bar, the signed conversion, and the dark process mark toward the distant gatehouse."},
+      {"modifier_id": "ending_crew_success_visual", "trigger": "ending_label == crew_exit_success", "apply_to_visual_scene_ids": ["ember_ending_crew"], "modifier_prompt": "Every locally visible crew member reaches landing or shelf; Pel has a bloodied shoulder and two workers need support while Anet counts them."},
+      {"modifier_id": "ending_crew_cost_visual", "trigger": "ending_label == crew_exit_cost", "apply_to_visual_scene_ids": ["ember_ending_crew"], "modifier_prompt": "The stair is choked with wet bodies, one rescue line is slack, Pel has lost footing, and Anet reaches toward an unseen worker below."},
+      {"modifier_id": "ending_warning_success_visual", "trigger": "ending_label == lower_warning_success", "apply_to_visual_scene_ids": ["ember_ending_warning"], "modifier_prompt": "People have cleared the low yards and climb toward several higher routes while abandoned carts, racks, baskets, and goods take the flood."},
+      {"modifier_id": "ending_warning_cost_visual", "trigger": "ending_label == lower_warning_cost", "apply_to_visual_scene_ids": ["ember_ending_warning"], "modifier_prompt": "One yard stands empty, one crowd packs the covered stair, and one group waits beside carts for an official signal as water approaches all three."},
+      {"modifier_id": "ending_records_success_visual", "trigger": "ending_label == record_chain_success", "apply_to_visual_scene_ids": ["ember_ending_records"], "modifier_prompt": "The four records stay separately arranged and legible above the flood, with distinct seals and wet edges."},
+      {"modifier_id": "ending_records_cost_visual", "trigger": "ending_label == record_chain_cost", "apply_to_visual_scene_ids": ["ember_ending_records"], "modifier_prompt": "The records form one wet packet under the surviving shared heading; the notice tally's lower edge has bled away while Dema's signature remains sharp."},
+      {"modifier_id": "ending_protest_success_visual", "trigger": "ending_label == upstream_protest_success", "apply_to_visual_scene_ids": ["ember_ending_protest"], "modifier_prompt": "The signed conversion is fixed in the gatehouse sightline and an earlier dry-baseline mark clearly precedes the dark seep line beside lifted grit."},
+      {"modifier_id": "ending_protest_cost_visual", "trigger": "ending_label == upstream_protest_cost", "apply_to_visual_scene_ids": ["ember_ending_protest"], "modifier_prompt": "The pale shutter is open through spray with an empty sighting bar and no preserved baseline mark beside the moving water."}
+    ],
+    "scene_set": {
+      "scene_set_id": "shortened_watch_last_clearance_house.scene_set.draft",
+      "geometry_authority_level": "structured_plan_view_not_3d_blockout",
+      "room_model": "A compact thick-walled clearance house occupies the upper bank at one outflow bend. Its dry record bay connects to a lower door, short landing, raised rescue shelf, and a covered stair descending along the bank to the channel floor and continuing toward lower work yards.",
+      "fixed_zones": [
+        {"zone_id": "record_bay", "visible_form": "dry stone room with waist-high wooden record table and ochre work lamps", "used_for": "four-record comparison, Dema's conversion custody, evidence rescue"},
+        {"zone_id": "upstream_protest_shutter", "visible_form": "pale rectangular wooden shutter and sighting bar in the upstream wall", "used_for": "visual protest toward distant gatehouse"},
+        {"zone_id": "lower_bell_frame", "visible_form": "heavy bronze bell and hemp rope beside the lower door overlooking the channel", "used_for": "down-channel warning"},
+        {"zone_id": "covered_service_stair", "visible_form": "narrow roofed stone stair descending along the bank from the house to channel and lower-yard access", "used_for": "crew exit, resident ascent, congestion state"},
+        {"zone_id": "short_landing", "visible_form": "stone platform immediately outside the lower door above first-water level", "used_for": "crew muster, tool staging, line handling"},
+        {"zone_id": "raised_rescue_shelf", "visible_form": "stone ledge beside the landing above the normal channel floor with a dry underside lip", "used_for": "rescue anchor, Pel staging, wet-record custody"},
+        {"zone_id": "side_hollow", "visible_form": "shallow carved depression in the channel-side wall beneath the rescue shelf", "used_for": "grit, seep, vibration baseline, brace-frame deflection"},
+        {"zone_id": "channel_floor_and_braces", "visible_form": "broad masonry outflow bed with removable timber brace frames, iron shoes, wedges, mallets, and pins", "used_for": "maintenance work, injury hazard, first surge"},
+        {"zone_id": "release_throat_bend", "visible_form": "old dark metal throat set in repaired upstream masonry beyond one visible channel bend", "used_for": "observable mechanism response and arriving water"},
+        {"zone_id": "lower_work_yards", "visible_form": "low stone-and-timber roofs, racks, carts, baskets, and occupied work ground down-channel", "used_for": "warning consequence and scheduled-empty ground"},
+        {"zone_id": "distant_gatehouse", "visible_form": "small upper structure aligned with the pale shutter across the upstream channel", "used_for": "remote operator signal reception only"}
+      ],
+      "routes": [
+        {"route_id": "crew_exit_route", "path": "channel_floor_and_braces -> covered_service_stair lower flight -> short_landing -> record_bay or upper road", "constraints": "Narrows at the landing and conflicts with residents ascending from lower work yards."},
+        {"route_id": "rescue_line_route", "path": "raised_rescue_shelf anchor -> short_landing hands -> channel_floor_and_braces", "constraints": "Requires prepared rope and workers on both shelf and landing."},
+        {"route_id": "warning_route", "path": "lower_bell_frame sound -> release_throat_bend downstream opening -> lower_work_yards", "constraints": "Carries an audible warning but does not choose where evacuees move."},
+        {"route_id": "protest_sightline", "path": "upstream_protest_shutter -> release_throat_bend airspace -> distant_gatehouse", "constraints": "Carries visible shutter state and pinned objects, not speech or direct machine control."}
+      ],
+      "camera_slots": [
+        {"camera_id": "wide_cutaway_bank", "supports_visual_scene_ids": ["ember_clearance_house_establishing", "ember_signal_fold"]},
+        {"camera_id": "record_table_overhead", "supports_visual_scene_ids": ["ember_four_records_close", "ember_ending_records"]},
+        {"camera_id": "house_junction_medium", "supports_visual_scene_ids": ["ember_preparation_choice", "ember_warning_choice"]},
+        {"camera_id": "routine_channel_wide", "supports_visual_scene_ids": ["ember_routine_fold"]},
+        {"camera_id": "side_hollow_low", "supports_visual_scene_ids": ["ember_lifted_grit_warning"]},
+        {"camera_id": "release_bend_wide", "supports_visual_scene_ids": ["ember_release_accepted", "ember_first_surge_choice"]},
+        {"camera_id": "flood_threshold_cutaway", "supports_visual_scene_ids": ["ember_irreversible_threshold", "ember_ending_crew"]},
+        {"camera_id": "down_channel_warning", "supports_visual_scene_ids": ["ember_ending_warning"]},
+        {"camera_id": "upstream_shutter_sightline", "supports_visual_scene_ids": ["ember_ending_protest"]}
+      ],
+      "persistent_state_anchors": [
+        {"anchor_id": "records", "states": ["stacked_shared_heading", "four_separate_objects", "wet_shelf_custody", "damaged_packet"]},
+        {"anchor_id": "rescue_line", "states": ["unprepared", "coiled_on_shelf", "taut_to_channel", "tangled_or_slack"]},
+        {"anchor_id": "bell", "states": ["still", "early_warning", "sustained_warning"]},
+        {"anchor_id": "protest_shutter", "states": ["closed", "open_empty", "open_with_signed_conversion"]},
+        {"anchor_id": "pel_position", "states": ["channel_floor", "landing", "raised_rescue_shelf"]},
+        {"anchor_id": "channel_water", "states": ["dry_workface", "seep_and_lifted_grit", "first_water", "full_release"]},
+        {"anchor_id": "brace_frame", "states": ["installed", "abandoned", "twisted_as_breakwater", "broken_in_current"]}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for bodies visible in a scene.",
+    "characters": {
+      "isca_rel": "Isca Rel: human clearance keeper in her late thirties or forties, medium-brown skin, strong narrow face, close dark curls threaded with gray, dark eyes, copper-brown waxed work coat over layered slate-blue wool, broad blue warning sash, fingerless leather gloves, high strapped boots, compact practical silhouette, body language that checks exits and counts people before addressing rank.",
+      "anet_vos": "Anet Vos: human channel foreperson in her forties or fifties, deep brown skin, broad shoulders, shaved head, heavy brows, sleeveless dark waxed-leather work vest over rolled ochre linen, belt of wooden wedges and chalk, silt-black hands and boots, stable low stance, gestures with whole hand toward routes and named workers.",
+      "pel_orra": "Pel Orra: young human brace worker in late teens or early twenties, pale freckled skin, thick black curls tied with a red cord, olive wool tunic under a short gray oilskin cape, wrapped forearms, mud-dark trousers and boots, lean unfinished strength, quick grin that vanishes under danger, often carrying a basket of iron pins or gripping rescue line.",
+      "dema_tern": "Dema Tern: human conversion clerk in his thirties or forties, warm brown skin, long black braid bound in bronze rings, fine angular face, cream-gray layered clerk coat with dark clean cuffs, narrow seal belt, lacquered document tube, upright economical posture, hands kept close to the signed conversion and approved board until the flood forces physical work."
+    },
+    "groups": {
+      "channel_crew": "Channel crew: six human public-works laborers of varied ages, skin tones, builds, and genders, wearing layered wool and linen under short waxed capes, wrapped forearms, rope belts, high leather boots, silt-streaked faces, carrying timber braces, mallets, wedges, iron shoes, pin baskets, and hemp lines; bodies crouched low for leverage or staggered in an extraction line.",
+      "lower_yard_residents": "Lower-yard residents and workers: mixed-age human figures in rain capes, work aprons, layered tunics, head wraps, and high boots, moving among drying racks, carts, baskets, low stone-and-timber roofs, and the covered stair; adults carry tools, goods, or small children while others guide carts toward higher routes."
+    }
+  },
+  "review_notes": [
+    "No images were generated. This visual plan and the BFL prompt batch are the complete visual deliverables for the pass.",
+    "The fixture is multi-angle and branch-persistent. Its structured scene_set is sufficient for draft staging and prompt review; high-consistency website rendering still requires a plan-view or 3D blockout derived from it.",
+    "Every base prompt is self-contained and uses affirmative visible geometry, materials, bodies, lighting, objects, and positions.",
+    "The old release throat is presented as material infrastructure. The fixture does not invent visible magic, a universal machine interface, or readable fictional text."
+  ]
+}
