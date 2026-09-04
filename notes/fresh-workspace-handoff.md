@@ -80,9 +80,9 @@ load or evaluation evidence; none admits ontology or declares a world complete.
   noncanonical evidence, typed captures cite exact source spans, malformed spans,
   raw decode failure, and normal exhaustion receive whole-source gap fallback,
   infrastructure interruption returns the source pending, and only actual
-  spoken words qualify for a speech proposal. This contract is not wired into
-  the live legacy Persona runners; they still terminalize and remain deletion
-  targets.
+  spoken words qualify for a speech proposal. This contract is live: the single
+  `ControllerRunner` in `crates/ghostlight-dungeon/src/world/controllers.rs`
+  carries it, and no legacy Persona runner survives in `crates/`.
 - An uncommitted broad `world.rs` prototype was rejected and deleted. It
   exposed mutable state and ID issuance, admitted translation-gap evidence into
   canonical types, allowed no-op commits, and left affordance and opportunity
@@ -195,6 +195,20 @@ including Delvehold and Epiphany, own their state; Ghostlight may publish views
 and proposals but cannot commit on their behalf.
 
 ## Next gate
+
+The operator has ordered design of an elaboration ontology for the sealed
+WorldKernel before further deployment work. The kernel ontology is Speak-only
+today: `SubjectKind` is Person/Institution/Population, `AffordanceKind` has one
+variant `Speak`, and `DecisionAction` has one variant `Speak { text }`, all in
+`crates/ghostlight-dungeon/src/world/mod.rs`. The legacy elaboration machine is
+gone from source; `12ee9f4` removed its kernel ingresses and component-write
+helpers with no compatibility path, and it is not a design input. Sparse causal
+sufficiency governs elaboration: counts, cover ratios, and qualitative review
+stay evaluation evidence and cannot admit ontology. Elaboration enters at a
+typed causal boundary through the same mutation vocabulary as seed creation,
+action, import, individuation, and time.
+
+The deployment gate below is deferred behind that design, not cancelled:
 
 Review and subtract the uncommitted Idunn-owned Expected/activation/anchor/lease
 projection and bounded multi-session RUDP document transport. Repoint Odin off

@@ -1,11 +1,16 @@
 # Ghostlight World Transition Algebra
 
-Status: adopted architecture; foreground, reaction, strategic, time, travel,
-approval-gated fission, bounded region expansion, and in-place locality
-elaboration use the mutation reducer.
-Initial compiler publication is classified as a one-time creation transaction,
-and named-person materialisation is classified as a resolution transaction.
-Aggregate-storage removal remains migration work.
+Status: teardown evidence. This describes the pre-rebuild vocabulary — string
+`SubjectRef` identifiers, two-phase `AdmitEntity`, flat permitted-mutation
+batches, strategic cells, Gestalt fission, and compiler publication — all of
+which are on the deletion line in
+`docs/architecture/ghostlight-dungeon-mvp.md`. The current closed vocabulary is
+`docs/architecture/ghostlight-world-ontology.md`. Read this file for why the old
+shape failed, not for what to build.
+
+The one principle carried forward: different admission lanes share one mutation
+vocabulary. A player and an institution transferring the same medicine use the
+same custody mutation.
 
 ## Objective
 

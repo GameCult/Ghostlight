@@ -234,7 +234,35 @@ negative legacy checks agree, delete the old units, releases, state roots,
 acceptance debris, gamecult-ops target deploy programs, and local run
 scaffolding.
 
-### 6. Contract verification
+### 6. Widen the ontology to the causal boundary — designed, not implemented
+
+The operator ordered this stage ahead of the deployment cutover. Step 2 deferred
+places, relations, resources, and external ownership until "a live typed causal
+boundary" existed; this stage builds that boundary.
+
+The closed vocabulary is `docs/architecture/ghostlight-world-ontology.md`: typed
+ID namespaces, draft-handle references resolved inside one closed `WorldPatch`,
+twelve decision-constraining components, four derived `CausalBoundary` kinds, and
+one `AdmitPatch` command shared by seed admission and boundary elaboration. It
+carries its own cut line, subtraction budget, build budget, and ten-proof
+verification contract.
+
+Implementation order, each pass landing tests before the next begins:
+
+1. Typed ID namespaces and `Ref<Id>` with draft handles; no components yet.
+   Proves the Run 115 rejection shape against an otherwise empty ontology.
+2. `Position`, `Route`, containment, and topology admission.
+3. `Custody`, `Dependency`, and conservation.
+4. `Authority`, `Selection`, `Redress` — the civic subgraph.
+5. `Knowledge`, `Channel`, and scoped-projection non-leakage.
+6. `Commitment`, `Pressure`, and boundary derivation from committed pressure.
+7. `AdmitPatch` boundary binding in `active`, and seed admission in `draft`
+   through the same reducer.
+
+The deployment cutover (step 5) is deferred behind this stage, not cancelled. No
+world acceptance run may start while Yggdrasil serves the legacy body.
+
+### 7. Contract verification
 
 Required black-box proofs:
 
