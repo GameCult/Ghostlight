@@ -1,0 +1,374 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "patina-colour-slips-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/delvehold/patina-colour-slips-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/delvehold/patina-colour-slips-v0.v0.json",
+  "visual_plan_ref": "examples/visual/delvehold/patina-colour-slips-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "patina-colour-slips-v0.morning-lamp-repair",
+  "protagonist_agent_id": "kela_ashpin",
+  "npc_agent_ids": [
+    "ovra_toll",
+    "senn_brindle",
+    "coppervein_morning_customers"
+  ],
+  "purpose": "Interactive Fiction Weaver draft for a low-stakes Delvehold branch-and-fold scene about the colour slips used to test and price mixed-metal rune seams.",
+  "local_awareness_summary": [
+    {
+      "text": "Kela is a dwarven rune-shop apprentice who can receive repairs, compare substrates, cut a one-junction witness, use the sand test cradle and mana tap, quote materials, and request instruction; Master Ovra retains the workshop punch and responsibility for admitted work.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/patina-colour-slips-v0.v0.json",
+        "Delvehold/Lore/Industry/Runic Engineering.md",
+        "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+      ]
+    },
+    {
+      "text": "Kela can observe the returned pale-stone slip, the current dark-slate lamp face, channel depth, heat location, test staining, rail bells, material weight, and customer behavior; she cannot infer the whole graph from a single slip.",
+      "source_refs": [
+        "Delvehold/Lore/Industry/Runic Engineering.md",
+        "Delvehold/Lore/Ontology/Mana and Pattern.md"
+      ]
+    },
+    {
+      "text": "The immediate stakes are a conductor's midday departure, a modest repair bill, Kela's standing at the counter, and whether the workshop mark follows current evidence or an attractive old witness.",
+      "source_refs": [
+        "Delvehold/Lore/The Greathold.md",
+        "Delvehold/Lore/Industry/Dwarven Industry.md",
+        "Delvehold/Game Design/HOLD/Workshop Play.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Kela's apprentice-local viewpoint inside one public-facing rune repair shop. Choices use reachable slips, lamp, clamp, magnifier, scale, materials, mana tap, job wire, and workshop punch.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/delvehold/patina-colour-slips-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes pump calls, rail noise, the colour-slip rack, counter humor, and an ordinary repair before the changed substrate creates schedule pressure.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "AGENTS.md"
+        ]
+      },
+      {
+        "text": "Tonal mode is warm trade-town workplace comedy with modest craft and schedule pressure; the scene remains low-stakes while making proof, cost, and trust consequential.",
+        "source_refs": [
+          "AGENTS.md",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Kela may perform assigned bench work and withhold her own completion step, but she cannot turn one witness seam into certification of a whole graph or silently grant herself a civic seal.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Runic Engineering.md",
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "The fixture may establish a local repair shop, characters, and a lamp repair as provenance-marked generated texture; those occurrences do not become authored Delvehold history through the fixture.",
+        "source_refs": [
+          "Delvehold/Game Design/Narrative and Validation/Onboarding and Content Authority.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Senn brings the inspection lamp and its returned pale-stone colour slip. Kela may place them on the bench and perform offered work; the workshop controls blank substrate, channel fills, crystal shavings, mana tap, punch, job wire, and the new slip until handoff.",
+        "source_refs": [
+          "examples/ink/delvehold/patina-colour-slips-v0.branch-and-fold.v0.ink",
+          "Delvehold/Lore/Industry/Runic Engineering.md"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "A colour slip witnesses one matched junction under one small working. Changed substrate, depth, junction, or fill prevents an old slip from answering for the current job.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Runic Engineering.md",
+          "Delvehold/Lore/Ontology/Mana and Pattern.md"
+        ]
+      },
+      {
+        "text": "Every ending must distinguish some combination of repair quality, train timing, metal cost, customer trust, apprentice standing, and custody of the current witness.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let the colour slip certify a whole graph, erase material differences, or make a mismatched old witness true through a workshop mark.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Runic Engineering.md",
+          "Delvehold/Lore/Ontology/Mana and Pattern.md"
+        ]
+      },
+      {
+        "text": "Do not escalate the warm lamp handle into a civic emergency, ecological revelation, living-machine diagnosis, or new rune standard.",
+        "source_refs": [
+          "examples/lore-grounding/delvehold/patina-colour-slips-v0.v0.json"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through a changed-substrate diagnosis and select one of eight state-gated repair handoffs.",
+    "choice_layers": [
+      "ordinary_counter_practice",
+      "matched_witness_test",
+      "repair_handoff"
+    ],
+    "variables": [
+      "slip_fit",
+      "departure_margin",
+      "customer_trust",
+      "material_spend",
+      "apprentice_standing",
+      "heat_clue",
+      "market_rainbow"
+    ],
+    "ending_gates": [
+      "ending_fresh_match_on_time",
+      "ending_fresh_match_late",
+      "ending_gold_on_time",
+      "ending_gold_late",
+      "ending_honest_delay",
+      "ending_counter_quarrel",
+      "ending_shared_choice",
+      "ending_shared_choice_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_material_match",
+      "ink_path": "receiving_choice",
+      "action_type": "compare_objects",
+      "actor_intent": "Check whether the returned witness matches the lamp's current substrate, depth, and filled turns.",
+      "state_basis": [
+        "The old slip and current lamp face are both on Kela's counter and can be compared under the bench light."
+      ],
+      "reviewed_consequences": [
+        "Raises slip_fit and apprentice_standing while spending departure_margin; later strengthens the fresh-match and shared-choice routes."
+      ],
+      "training_hooks": [
+        "material_match_before_copy",
+        "time_spent_on_inspection"
+      ]
+    },
+    {
+      "branch_id": "prime_heat_location",
+      "ink_path": "receiving_choice",
+      "action_type": "test_object",
+      "actor_intent": "Turn Senn's report into a local physical clue by observing where the handle warms in the sand cradle.",
+      "state_basis": [
+        "The sand cradle can hold the lamp while keeping the handle accessible to Senn."
+      ],
+      "reviewed_consequences": [
+        "Raises heat_clue and customer_trust while spending departure_margin; later supports a precise matched repair or informed customer choice."
+      ],
+      "training_hooks": [
+        "customer_knowledge_as_evidence",
+        "embodied_fault_location"
+      ]
+    },
+    {
+      "branch_id": "prime_gold_rebuild",
+      "ink_path": "receiving_choice",
+      "action_type": "quote_material",
+      "actor_intent": "Offer a quick, dependable gold route before spending more time on mixed-metal diagnosis.",
+      "state_basis": [
+        "Gold carries many patterns with little interference and the workshop has enough wire to weigh a quote."
+      ],
+      "reviewed_consequences": [
+        "Raises material_spend and departure_margin while lowering customer_trust; later opens the all-gold handoff at a visible price."
+      ],
+      "training_hooks": [
+        "money_buys_simple_carrier",
+        "quote_before_diagnosis"
+      ]
+    },
+    {
+      "branch_id": "prime_market_rainbow",
+      "ink_path": "receiving_choice",
+      "action_type": "display_object",
+      "actor_intent": "Use the colourful returned slip as public-facing shop display and let beauty carry the sale.",
+      "state_basis": [
+        "Kela can turn the returned slip bright side out in the counter frame."
+      ],
+      "reviewed_consequences": [
+        "Raises market_rainbow and customer_trust while lowering apprentice_standing; later creates audience and reputation pressure around the pretty old proof."
+      ],
+      "training_hooks": [
+        "trade_town_display_custom",
+        "prestige_colour_pressure"
+      ]
+    },
+    {
+      "branch_id": "cut_matching_slip",
+      "ink_path": "witness_choice",
+      "action_type": "cut_witness",
+      "actor_intent": "Test the doubtful junction on matching dark slate before altering the full lamp graph.",
+      "state_basis": [
+        "The workshop has a matching offcut, trace fills, a crystal shaving, and a null-terminated witness practice."
+      ],
+      "reviewed_consequences": [
+        "Raises slip_fit, heat_clue, material_spend, and apprentice_standing while spending departure_margin; produces a visible current-job stain and enables the matched handoff."
+      ],
+      "training_hooks": [
+        "cheap_failure_surface",
+        "matched_witness",
+        "null_terminated_test"
+      ]
+    },
+    {
+      "branch_id": "trust_old_slip",
+      "ink_path": "witness_choice",
+      "action_type": "reuse_witness",
+      "actor_intent": "Protect the departure window by treating the accepted old slip as current proof.",
+      "state_basis": [
+        "The old pale-stone slip still runs cleanly and carries an accepted job mark."
+      ],
+      "reviewed_consequences": [
+        "Raises departure_margin while lowering slip_fit and customer_trust; later weakens any claim that the current dark-stone lamp has been tested."
+      ],
+      "training_hooks": [
+        "stale_proof_shortcut",
+        "schedule_over_fit"
+      ]
+    },
+    {
+      "branch_id": "prepare_gold_path",
+      "ink_path": "witness_choice",
+      "action_type": "redesign_material_path",
+      "actor_intent": "Replace the doubtful mixed seam with one dependable but costly gold carrier.",
+      "state_basis": [
+        "Kela can lay the known graph out in wax and weigh enough gold to fill its channels."
+      ],
+      "reviewed_consequences": [
+        "Raises material_spend and slip_fit while spending departure_margin and lowering market_rainbow; later strengthens the all-gold ending."
+      ],
+      "training_hooks": [
+        "plain_expensive_repair",
+        "material_cost_visible"
+      ]
+    },
+    {
+      "branch_id": "compare_with_master",
+      "ink_path": "witness_choice",
+      "action_type": "request_instruction",
+      "actor_intent": "Spend schedule margin to turn the material mismatch into supervised craft learning.",
+      "state_basis": [
+        "Ovra can compare both substrates under the bench magnifier without transferring the workshop punch."
+      ],
+      "reviewed_consequences": [
+        "Raises heat_clue, slip_fit, and apprentice_standing while spending departure_margin; later supports refusal and customer-choice routes."
+      ],
+      "training_hooks": [
+        "apprenticeship_instruction",
+        "expertise_without_authority_transfer"
+      ]
+    },
+    {
+      "branch_id": "handoff_fresh_match",
+      "ink_path": "handoff_choice",
+      "action_type": "complete_matched_repair",
+      "actor_intent": "Finish and mark the repair using current substrate evidence.",
+      "state_basis": [
+        "Available only when slip_fit and heat_clue support a specific current-job repair."
+      ],
+      "reviewed_consequences": [
+        "Routes to an on-time or late ending based on departure_margin; both carry the matched new slip with the lamp."
+      ],
+      "training_hooks": [
+        "state_gated_matched_repair",
+        "proof_custody_at_handoff"
+      ]
+    },
+    {
+      "branch_id": "handoff_gold_path",
+      "ink_path": "handoff_choice",
+      "action_type": "complete_gold_rebuild",
+      "actor_intent": "Buy a dependable carrier with a visible material bill.",
+      "state_basis": [
+        "Available only when prior choices have admitted enough gold expenditure."
+      ],
+      "reviewed_consequences": [
+        "Routes to an on-time or late ending; both produce a cool handle, plain gold slip, and higher rail-office cost."
+      ],
+      "training_hooks": [
+        "costed_reliability",
+        "schedule_does_not_follow_price"
+      ]
+    },
+    {
+      "branch_id": "handoff_honest_delay",
+      "ink_path": "handoff_choice",
+      "action_type": "withhold_certification",
+      "actor_intent": "Keep the workshop punch off an unproved current job.",
+      "state_basis": [
+        "Kela can leave the lamp open and refuse her own completion step; Ovra decides whether the refusal remains supported at the counter."
+      ],
+      "reviewed_consequences": [
+        "Routes to supported delay or counter quarrel based on apprentice_standing and customer_trust; the lamp remains in the sand cradle."
+      ],
+      "training_hooks": [
+        "apprentice_refusal",
+        "correct_action_relational_cost"
+      ]
+    },
+    {
+      "branch_id": "handoff_customer_choice",
+      "ink_path": "handoff_choice",
+      "action_type": "share_decision_surface",
+      "actor_intent": "Let Senn choose time or cost after seeing what the old and current witnesses actually show.",
+      "state_basis": [
+        "Available when the bench has at least enough material comparison to distinguish the two slips."
+      ],
+      "reviewed_consequences": [
+        "Routes to a shared delay decision when trust and heat evidence are strong, or to a quick-copy return when the evidence is too weak."
+      ],
+      "training_hooks": [
+        "customer_agency",
+        "evidence_quality_changes_choice"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Any promotion of Coppervein Repairs, Kela, Ovra, Senn, or the lamp repair into canonical Delvehold history",
+      "Durable character memory or relationship updates",
+      "Any quantitative rune, rail, commodity, price, or materials standard inferred from this scene",
+      "Acceptance into a model-training corpus"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex elaborator applying the four required Ghostlight reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality verdict: accepted. Reader orientation, coherence, pacing, voice, tonal fit, and IF playability score 5/5. Kela, Ovra, Senn, the colour-slip custom, the lamp fault, and the modest train-clock stakes are established before choices; all twelve choices alter later gates, prose, objects, visual state, or endings.",
+      "Lore grounding verdict: accepted. Source coverage, canon fit, grounding quality, and vault-backfill value score 5/5 after checking all twelve cited Delvehold sources. The fixture keeps the lamp failure local, uses gold and mixed-material behavior within their source bounds, preserves apprentice and Master authority, and separates fixture-local characters and shop history from the authored colour-slip practice.",
+      "Visual continuity verdict: accepted_with_minor_revisions as a complete illustrated-IF plan with rendering deferred. Segmentation, prompt quality, character visibility, and branch continuity score 5/5; website replay readiness scores 4/5 because the structured draft set map still needs a plan-view or 3D blockout before high-consistency multi-angle rendering. Seventeen unique visual anchors and seventeen BFL prompts cover every focal shift and ending family; base prompts are standalone, affirmative, and use only visible character refs.",
+      "Spatial-geometric cohesion verdict: accepted_with_minor_revisions. Layout, sightlines, body affordance, movement, object geometry, and branch spatial state score 5/5 after moving the sand cradle from the rear bench into the counter reach slot and staging Ovra's explicit admission of the workshop punch. The structured map fixes public and staff zones, object locations, customer reach, camera slots, and branch-persistent lamp and slip states; a rendered blockout remains future visual-production work.",
+      "Mechanical verification found four exact schema versions, twelve Ink branches matching twelve sidecar receipts, seven later-read variables, sixteen knots, seventeen visual anchors, seventeen BFL prompts, complete character refs, valid lore paths and ranges, and no negative constructions in base image prompts.",
+      "Per instruction, no Ink compiler was installed or run. The artifact received JSON parse validation, header inspection, branch/receipt comparison, variable-use audit, visual-anchor checks, source-range checks, and manual Ink structure review; compilation remains deferred."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

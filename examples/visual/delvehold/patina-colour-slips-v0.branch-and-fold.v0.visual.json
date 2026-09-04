@@ -1,0 +1,790 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "patina-colour-slips-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/delvehold/patina-colour-slips-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/delvehold/patina-colour-slips-v0.branch-and-fold.v0.training.json",
+  "scene_id": "patina-colour-slips-v0.morning-lamp-repair",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for the colour-slip repair fixture.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for Coppervein Repairs, its colour-slip routine, Senn's lamp, the changed-substrate diagnosis, four bench approaches, the handoff threshold, and four ending families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the establishing shop, slip rack, customer arrival, each material approach, the mismatch reveal, each witness test, the final counter threshold, and each ending family. The first visible fresh-slip stain receives its own close frame.",
+    "prompting_rule": "Each base image prompt restates the drawable room area, materials, light, objects, and complete appearance of every visible named character. Continuity notes remain reviewer and tooling constraints.",
+    "global_style_cue": "Style: richly textured high-fantasy industrial storybook illustration, precise ink contours with restrained watercolor, worn carved stone, tarnished brass, dark slate, fine gold and copper rune channels, warm amber workshop lamps, cool blue-white mana light, readable silhouettes, humane facial acting, practical magical machinery, intimate trade-town scale, unlettered surfaces.",
+    "prompt_assembly_rule": "Assemble each image prompt from global_style_cue, the scene base_image_prompt, visual refs only for characters actually visible in that scene, and triggered state_image_modifiers or global_branch_image_modifiers. Each base prompt already carries enough concrete appearance and geometry to stand alone. Continuity notes are excluded from prompt assembly.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture stays in one small workshop and its arcade threshold but uses multiple focal lengths and branch positions. The included set map fixes the counter, bench, test cradle, rack, rail stair, and character routes for draft replay planning.",
+      "future_scene_set_need": "Before high-consistency multi-angle rendering, build a simple plan view or 3D blockout from the declared zones, camera slots, sightlines, staging slots, and object states."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "patina_coppervein_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of a compact underground rune repair shop carved beneath a broad stone rail stair. An arched service counter opens onto a busy amber-lit street landing; iron stair ribs and a passing rune locomotive cast moving shadows across the ceiling. A brass-rimmed sand test cradle is inset into the counter's inner edge with a shallow customer reach slot. Inside, a long stone workbench runs along the back wall beneath a copper smoke hood and blue-white mana lamp; a balance and coils of gold and copper wire occupy the left end, and a rack of thumb-length rune-cut stone slips hangs above the counter. Kela Ashpin, a compact young dwarf with warm brown skin, black curls braided with blue thread, brown leather apron, rolled cream sleeves, chalky cuffs, and square protective lenses on her forehead, lifts the wooden shutter. Ovra Toll, a broad older dwarf with deep umber skin, a square silver beard, green wool tunic, heavy dark apron, brass workshop punch at her belt, and steady severe posture, lights the mana tap beside a lidded tea cup.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "inside the counter arch lifting the shutter",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "ovra_toll",
+            "default_stance": "at the rear bench lighting the mana tap",
+            "visual_ref": "visual_character_refs.characters.ovra_toll"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The public arcade is outside the front counter; the sand cradle is inset into the counter's inner edge, while the workbench, mana tap, magnifier, balance, and blank-stock cabinet remain behind the counter.",
+          "The rail stair passes directly above the shop ceiling and never enters the workroom."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_colour_slip_routine",
+        "ink_anchor": "morning_rack",
+        "base_image_prompt": "Close-medium view across an arched stone repair counter beneath a rail stair. Dozens of thumb-length pale stone and dark slate slips hang from thin wire loops on a wooden rack; each slip bears one short geometric rune junction filled with fine gold, copper, or mixed metal, a small hooked null terminator, and a scratched job mark on its blank edge. Pretty stained failures face the public arcade while accepted slips face the workshop. Kela Ashpin, a compact young dwarf with warm brown skin, black curls braided with blue thread, brown apron, cream sleeves, chalky cuffs, and square lenses on her forehead, turns the rack by hand. Ovra Toll, a broad older dwarf with deep umber skin, square silver beard, green tunic, dark apron, and brass workshop punch, drinks from a lidded cup beside the blue-white mana lamp. Morning customers in worn wool coats and work aprons queue beyond the counter carrying a kettle, a carriage lamp, and a small valve housing.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "turning the hanging slip rack at the counter",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "ovra_toll",
+            "default_stance": "at the bench with lidded tea",
+            "visual_ref": "visual_character_refs.characters.ovra_toll"
+          },
+          {
+            "agent_id": "coppervein_morning_customers",
+            "default_stance": "orderly queue in the public arcade",
+            "visual_ref": "visual_character_refs.groups.coppervein_morning_customers"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Colour slips are small test coupons, never books, tickets, coins, or full rune plates.",
+          "Every displayed slip includes one short junction, a null terminator, a blank job edge, and a wire loop."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_rail_lamp_arrival",
+        "ink_anchor": "senn_arrives",
+        "base_image_prompt": "Medium view at the public counter of a compact carved-stone rune shop beneath an overhead rail stair. Senn Brindle, a sturdy middle-aged dwarf with pale freckled skin, rust-red beard divided into two short braids, slate-blue rail coat with tarnished brass buttons, brown cap, heavy leather gloves, and a round inspection-lamp satchel, sets a hand lamp and its old pale-stone colour slip on the counter. The lamp has a dark close-grained slate rune face, handsome gold-and-copper channels, a leather-wrapped handle, a brass service ring, and a hooded white lens. Kela Ashpin, a compact young dwarf with warm brown skin, black curls braided in blue thread, chalky cream cuffs, brown apron, and square lenses on her forehead, studies the mismatch. The slip rack, rear workbench, sand cradle, mana lamp, and balance remain visible behind her; rail shadows cross the low ceiling.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "behind the counter studying lamp and returned slip",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "senn_brindle",
+            "default_stance": "public side of counter setting down the lamp",
+            "visual_ref": "visual_character_refs.characters.senn_brindle"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Senn owns the lamp and returned pale slip at arrival; Kela handles them only across the service counter and bench route.",
+          "The current lamp face is dark slate and the old slip is pale stone in every scene."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_material_comparison",
+        "ink_anchor": "receiving_choice.prime_material_match",
+        "base_image_prompt": "Object-comparison close-up on a long stone workbench in a compact underground rune shop. Kela Ashpin, a compact young dwarf with warm brown skin, black curls braided in blue thread, brown apron, chalky cream cuffs, and square protective lenses lowered over her eyes, holds a pale thumb-length colour slip flush against a dark-slate inspection-lamp face under a white bench lamp. The visible rune shapes align while the second channel on the lamp is visibly deeper than the channel on the slip. Fine gold and copper fills catch the light; scratched job marks and a brass service ring sit in sharp focus. Ovra Toll's broad dark hand and lidded tea cup rest at the edge of frame, leaving the comparison to Kela.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "leaning over the bench with both objects aligned",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "ovra_toll",
+            "default_stance": "partly visible at bench edge, observing",
+            "visual_ref": "visual_character_refs.characters.ovra_toll"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The material comparison happens beneath the fixed white bench lamp at the left-center bench slot."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_heat_cradle_test",
+        "ink_anchor": "receiving_choice.prime_heat_location",
+        "base_image_prompt": "Medium bench test in a compact carved-stone rune shop beneath an overhead rail stair. A dark-slate rail inspection lamp lies secured in a rectangular brass-rimmed cradle filled with pale sand, its leather-wrapped handle projecting safely toward the public counter and its hooded lens casting white light into a copper smoke hood. Kela Ashpin, a compact young dwarf with warm brown skin, black curls braided with blue thread, brown apron, chalky cream cuffs, and square lenses, marks the underside of the handle with white chalk. Senn Brindle, a sturdy middle-aged dwarf with pale freckled skin, rust-red twin-braided beard, slate-blue rail coat, brown cap, and heavy gloves, points to the warm place below the second gold-and-copper junction. A small brass minute dial beside the cradle shows three intervals.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "at the inner side of the sand cradle marking the heat location",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "senn_brindle",
+            "default_stance": "leaning across the counter reach slot to point with a gloved finger",
+            "visual_ref": "visual_character_refs.characters.senn_brindle"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The sand cradle fixes the lamp in the counter's inner edge while its handle extends through the shallow reach slot where Senn can touch it."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_gold_quote",
+        "ink_anchor": "receiving_choice.prime_gold_rebuild",
+        "base_image_prompt": "Close counter tableau in a compact underground rune repair shop. A small brass balance holds a costly coil of fine gold wire on one pan and rune-shop weights on the other; beside it sits the dark-slate rail lamp with mixed gold-and-copper channels and its pale returned colour slip. Kela Ashpin, a compact young dwarf with warm brown skin, black curls braided in blue thread, brown apron, chalky cuffs, and square lenses, points to the settled balance. Senn Brindle, a sturdy middle-aged dwarf with pale freckled skin, rust-red twin-braided beard, slate-blue rail coat, brown cap, and heavy leather gloves, holds his cap in both hands and studies the weight. The hanging slip rack and blue-white mana lamp glow behind them under the stone rail stair.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "behind the balance naming the gold weight",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "senn_brindle",
+            "default_stance": "public side of counter holding his cap and reading the quote",
+            "visual_ref": "visual_character_refs.characters.senn_brindle"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The material balance occupies the left bench end and remains behind the public counter."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_market_rainbow_display",
+        "ink_anchor": "receiving_choice.prime_market_rainbow",
+        "base_image_prompt": "Public-facing close-medium view of an arched rune-shop counter beneath a massive stone rail stair. Kela Ashpin, a compact young dwarf with warm brown skin, black curls braided in blue thread, brown apron, chalky cream cuffs, and square lenses on her forehead, hooks a pale thumb-length colour slip bright side outward in a wooden counter frame. Its fine gold and copper channels glow under amber market lamps. Senn Brindle, a sturdy middle-aged dwarf with pale freckled skin, rust-red twin-braided beard, slate-blue rail coat, brown cap, and heavy gloves, smiles at the display. Ovra Toll, a broad older dwarf with deep umber skin, square silver beard, green tunic, dark apron, brass workshop punch, and severe posture, watches from the rear bench. Two wool-coated morning customers pause in the arcade with a kettle and a valve housing.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "hanging the bright slip in the public counter frame",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "senn_brindle",
+            "default_stance": "watching the colourful display from the public side",
+            "visual_ref": "visual_character_refs.characters.senn_brindle"
+          },
+          {
+            "agent_id": "ovra_toll",
+            "default_stance": "still at rear bench, visibly unimpressed",
+            "visual_ref": "visual_character_refs.characters.ovra_toll"
+          },
+          {
+            "agent_id": "coppervein_morning_customers",
+            "default_stance": "two customers pausing in the arcade",
+            "visual_ref": "visual_character_refs.groups.coppervein_morning_customers"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The display frame is built into the public edge of the counter and is visible from both workshop and arcade."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_changed_substrate_reveal",
+        "ink_anchor": "material_mismatch_fold",
+        "base_image_prompt": "Medium three-person view at the long rear workbench of a compact stone rune shop beneath an overhead rail stair. Ovra Toll, a broad older dwarf with deep umber skin, square silver beard, green wool tunic, heavy dark apron, brass workshop punch, and steady severe posture, turns a dark-slate inspection-lamp rune face over to reveal a tiny supplier mark on its back. Kela Ashpin, a compact young dwarf with warm brown skin, black curls braided in blue thread, brown apron, chalky cream cuffs, and square lenses, holds the old pale colour slip beside it. Senn Brindle, a sturdy middle-aged dwarf with pale freckled skin, rust-red twin-braided beard, slate-blue rail coat, cap, and gloves, watches from the public side of the arched counter. The sand cradle, balance, mana lamp, hanging slip rack, and moving rail shadows remain visible.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "holding the pale slip beside the lamp face",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "ovra_toll",
+            "default_stance": "turning the dark lamp plate to show its supplier mark",
+            "visual_ref": "visual_character_refs.characters.ovra_toll"
+          },
+          {
+            "agent_id": "senn_brindle",
+            "default_stance": "leaning toward the reveal from the counter",
+            "visual_ref": "visual_character_refs.characters.senn_brindle"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "heat_clue >= 2",
+            "modifier_prompt": "Add a small white chalk mark on the leather handle directly below the second mixed-metal junction."
+          },
+          {
+            "trigger": "material_spend >= 2",
+            "modifier_prompt": "Show a measured gold coil resting prominently on the brass balance at the left bench end."
+          },
+          {
+            "trigger": "market_rainbow >= 3",
+            "modifier_prompt": "Show the bright pale colour slip in the public display frame with two curious customer silhouettes watching from the arcade."
+          },
+          {
+            "trigger": "departure_margin <= 1",
+            "modifier_prompt": "Add sharp passing carriage-light bands across the low stone ceiling and make Senn glance upward toward the rail stair."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The supplier mark is on the back of the removable dark-slate lamp face and becomes visible only when Ovra turns it over."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_fresh_slip_stain",
+        "ink_anchor": "witness_choice.cut_matching_slip",
+        "base_image_prompt": "Pivotal object close-up under a copper smoke hood in a compact underground rune shop. A fresh thumb-length dark-slate colour slip rests in a brass clip beside a crystal shaving and blue-white mana tap. The slip carries a short gold-and-copper junction, a hooked null terminator, a scratched rail-lamp job mark, and a brown heat stain opening beneath the second junction before stopping at the null. Kela Ashpin's compact brown hands, chalky cuffs, leather apron edge, and square protective lenses are visible as she steadies the clip with one tool. Senn Brindle's heavy gloved hand rests beyond the sand cradle near the matching lamp handle. The image centers the small stained witness as cheap material evidence.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "hands at the clipped fresh witness beneath the hood",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "senn_brindle",
+            "default_stance": "gloved hand visible near the matching lamp handle",
+            "visual_ref": "visual_character_refs.characters.senn_brindle"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The fresh slip is dark slate, the old returned slip is pale stone, and the heat stain belongs only to the fresh test."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_old_slip_retest",
+        "ink_anchor": "witness_choice.trust_old_slip",
+        "base_image_prompt": "Close-medium bench view in a carved-stone rune repair shop beneath a rail stair. The old pale-stone colour slip sits in a brass mana clip glowing evenly through fine gold-and-copper channels; its hooked null closes cleanly and the stone surface remains pale and polished. The current dark-slate inspection lamp waits separately in the sand cradle, its leather handle marked by use. Kela Ashpin, a compact young dwarf with warm brown skin, black curls braided in blue thread, brown apron, chalky cream cuffs, and square lenses, watches the clean old witness with an uncertain mouth. Ovra Toll, a broad older dwarf with deep umber skin, square silver beard, green tunic, dark apron, and brass workshop punch, keeps one finger on the lamp's service ring.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "watching the pale slip in the mana clip",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "ovra_toll",
+            "default_stance": "one finger holding the lamp service ring at the cradle",
+            "visual_ref": "visual_character_refs.characters.ovra_toll"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The pale slip and dark lamp remain physically separate in this branch; the old clean result does not alter the current lamp."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_plain_gold_layout",
+        "ink_anchor": "witness_choice.prepare_gold_path",
+        "base_image_prompt": "Top-down workbench view in a compact underground rune repair shop. A dark-slate inspection-lamp graph is copied onto a waxed slate sheet, and one continuous fine gold wire follows every geometric channel from input to hooked null terminator. The original mixed gold-and-copper lamp face lies beside the drawing; a brass balance carries the remaining gold coil and weights. Kela Ashpin, a compact young dwarf with warm brown skin, black curls braided in blue thread, brown apron, chalky cream cuffs, and square lenses, presses the wire into the wax route with a blunt probe. Senn Brindle, a sturdy middle-aged dwarf with pale freckled skin, rust-red twin-braided beard, slate-blue rail coat, cap, and heavy gloves, studies the severe plain layout across the arched counter.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "pressing gold wire into the waxed route",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "senn_brindle",
+            "default_stance": "watching from the public side of the counter",
+            "visual_ref": "visual_character_refs.characters.senn_brindle"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The wax layout is a temporary bench plan beside the lamp, not a new installed rune plate."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_master_magnifier",
+        "ink_anchor": "witness_choice.compare_with_master",
+        "base_image_prompt": "Close teaching frame at a stone workbench beneath a copper hood in a compact rune shop. A hinged brass magnifier spans a pale old colour slip and a dark replacement slate plate, revealing tiny open grains around the deeper second channel on the dark stone. Ovra Toll, a broad older dwarf with deep umber skin, square silver beard, green wool tunic, dark apron, brass workshop punch, and calm severe eyes, offers a blunt probe. Kela Ashpin, a compact young dwarf with warm brown skin, black curls braided in blue thread, chalky cream cuffs, brown apron, and square lenses, touches the porous edge while writing a short note on a small job slate. Blue-white mana light and amber shop lamps cross over the gold-and-copper channels.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "using the blunt probe under the magnifier",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "ovra_toll",
+            "default_stance": "guiding the comparison from the opposite side of the lens",
+            "visual_ref": "visual_character_refs.characters.ovra_toll"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The fixed magnifier occupies the right side of the rear bench and can hold both small substrates at once."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_repair_handoff_threshold",
+        "ink_anchor": "bench_result_fold|handoff_choice",
+        "base_image_prompt": "Wide-medium final counter threshold inside a compact carved-stone rune repair shop beneath a rail stair. The arched public counter divides Senn Brindle from the rear workbench. Senn is a sturdy middle-aged dwarf with pale freckled skin, rust-red beard in two short braids, slate-blue rail coat, brown cap, and heavy leather gloves; one gloved hand remains on the dark-slate inspection lamp. Kela Ashpin is a compact young dwarf with warm brown skin, black curls braided in blue thread, brown apron, chalky cream cuffs, and square lenses; she stands between the sand cradle, hanging slip rack, brass balance, job wire, and workshop punch. Ovra Toll is a broad older dwarf with deep umber skin, square silver beard, green tunic, dark apron, brass workshop punch, and steady severe posture at Kela's right. The pale old slip and current lamp face are both visible. Passing rail lights stripe the ceiling while the mana lamp casts cool light over the open graph.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "center bench position between evidence, materials, and handoff tools",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "ovra_toll",
+            "default_stance": "at Kela's right near the workshop punch",
+            "visual_ref": "visual_character_refs.characters.ovra_toll"
+          },
+          {
+            "agent_id": "senn_brindle",
+            "default_stance": "public side of counter with one hand on the lamp",
+            "visual_ref": "visual_character_refs.characters.senn_brindle"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "slip_fit >= 3",
+            "modifier_prompt": "Place a fresh dark-slate slip with a scratched job mark and brown stain beside the pale returned witness."
+          },
+          {
+            "trigger": "slip_fit <= 1",
+            "modifier_prompt": "Make the polished pale old slip the only completed witness while the dark lamp graph remains open in the sand cradle."
+          },
+          {
+            "trigger": "heat_clue >= 3",
+            "modifier_prompt": "Align a chalk mark on the lamp handle, a brown stain on the fresh slip, and porous dark stone beneath the magnifier around the second junction."
+          },
+          {
+            "trigger": "material_spend >= 3",
+            "modifier_prompt": "Show a fully measured gold coil on the balance and a plain continuous gold route on waxed slate."
+          },
+          {
+            "trigger": "market_rainbow >= 3",
+            "modifier_prompt": "Keep the bright gold-and-copper old slip facing the arcade in the counter display while curious customer silhouettes linger outside."
+          },
+          {
+            "trigger": "customer_trust >= 3",
+            "modifier_prompt": "Senn leans forward watching Kela's evidence with his cap lowered and his lamp hand relaxed."
+          },
+          {
+            "trigger": "customer_trust <= 1",
+            "modifier_prompt": "Senn grips the lamp service ring and angles his body toward the arcade exit."
+          },
+          {
+            "trigger": "apprentice_standing >= 4",
+            "modifier_prompt": "Ovra slides the job wire and brass workshop punch within Kela's reach."
+          },
+          {
+            "trigger": "apprentice_standing <= 1",
+            "modifier_prompt": "Ovra keeps one broad hand over the brass workshop punch and draws the lamp toward her bench position."
+          },
+          {
+            "trigger": "departure_margin <= 0",
+            "modifier_prompt": "A bright band from the loading train sweeps across the ceiling, and Senn turns one eye toward the rail stair."
+          }
+        ],
+        "visual_continuity_notes": [
+          "This frame must keep old pale slip, current dark lamp, route to the arcade, balance, cradle, and punch visible together because the final choices depend on them.",
+          "Senn remains on the public side of the counter; Kela and Ovra remain behind it."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_ending_fresh_match",
+        "ink_anchor": "ending_fresh_match_on_time|ending_fresh_match_late",
+        "base_image_prompt": "Repair aftermath at an arched stone rune-shop counter beneath an overhead rail stair. The dark-slate inspection lamp shines cool white from its hooded lens while its leather-wrapped handle rests against a small brass minute dial. A fresh dark-slate colour slip with a scratched job mark, fine gold-and-copper junction, hooked null, and faint brown test stain hangs from the lamp's brass service ring. Kela Ashpin, a compact young dwarf with warm brown skin, black curls braided in blue thread, brown apron, chalky cream cuffs, and square lenses, offers the lamp across the counter. Senn Brindle, a sturdy middle-aged dwarf with pale freckled skin, rust-red twin-braided beard, slate-blue rail coat, cap, and heavy gloves, takes it while rail-light bands move across the ceiling.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "offering the cool lamp across the counter",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "senn_brindle",
+            "default_stance": "receiving lamp and matched slip",
+            "visual_ref": "visual_character_refs.characters.senn_brindle"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The matched ending always transfers both lamp and fresh dark-slate slip to Senn."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_ending_gold",
+        "ink_anchor": "ending_gold_on_time|ending_gold_late",
+        "base_image_prompt": "Gold-rebuild aftermath at a compact underground rune-shop workbench and public counter. The rail inspection lamp now carries one plain continuous fine-gold channel graph across its dark-slate face, ending at a hooked null; removed copper fill rests in a small return tray beside a brass balance and written bill slate. A plain gold-filled colour slip hangs from the lamp's service ring. Kela Ashpin, a compact young dwarf with warm brown skin, black curls braided in blue thread, brown apron, chalky cream cuffs, and square lenses, points from the balance to the bill. Senn Brindle, a sturdy middle-aged dwarf with pale freckled skin, rust-red twin-braided beard, slate-blue rail coat, brown cap, and heavy gloves, holds the cool lamp and studies the cost. Ovra Toll, a broad older dwarf with deep umber skin, square silver beard, green tunic, dark apron, and steady posture, raises a lidded tea cup at the rear bench.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "showing the measured bill at the balance",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "senn_brindle",
+            "default_stance": "holding the gold-filled lamp and reading the bill",
+            "visual_ref": "visual_character_refs.characters.senn_brindle"
+          },
+          {
+            "agent_id": "ovra_toll",
+            "default_stance": "rear bench with raised lidded cup",
+            "visual_ref": "visual_character_refs.characters.ovra_toll"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The gold ending carries a continuous single-material channel, a plain matching slip, a return tray of removed fill, and a visibly larger bill."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_ending_delay",
+        "ink_anchor": "ending_honest_delay|ending_counter_quarrel",
+        "base_image_prompt": "Delay aftermath inside a compact carved-stone rune repair shop beneath a rail stair. The dark-slate inspection lamp remains open in the pale sand cradle under blue-white mana light; the brass workshop punch hangs on its hook beside the long bench. The old pale colour slip and current dark lamp face sit side by side at the arched counter. Kela Ashpin, a compact young dwarf with warm brown skin, black curls braided in blue thread, brown apron, chalky cream cuffs, and square lenses, stands beside the untouched punch. Ovra Toll, a broad older dwarf with deep umber skin, square silver beard, green tunic, dark apron, and calm severe posture, faces the customer side. Senn Brindle, a sturdy middle-aged dwarf with pale freckled skin, rust-red twin-braided beard, slate-blue rail coat, cap, and gloves, prepares a short-handled brass depot spare lamp at the public counter.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "beside the open repair and unused workshop punch",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "ovra_toll",
+            "default_stance": "between Kela and customer side, owning the counter response",
+            "visual_ref": "visual_character_refs.characters.ovra_toll"
+          },
+          {
+            "agent_id": "senn_brindle",
+            "default_stance": "public side preparing the awkward depot spare",
+            "visual_ref": "visual_character_refs.characters.senn_brindle"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The delayed lamp stays in workshop custody in the sand cradle; Senn leaves with a visibly shorter spare lamp."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_ending_shared_choice",
+        "ink_anchor": "ending_shared_choice|ending_shared_choice_cost",
+        "base_image_prompt": "Customer-choice aftermath at an arched stone rune-shop counter beneath a broad rail stair. A pale accepted colour slip and a dark current-job slip lie side by side between a dark-slate rail inspection lamp, a measured gold coil on a brass balance, and a small rail-bell clock. Kela Ashpin, a compact young dwarf with warm brown skin, black curls braided in blue thread, brown apron, chalky cream cuffs, and square lenses, points to the material differences. Senn Brindle, a sturdy middle-aged dwarf with pale freckled skin, rust-red twin-braided beard, slate-blue rail coat, cap, and heavy gloves, holds a short-handled depot spare in one hand while considering the current lamp with the other. The hanging slip rack, sand cradle, mana lamp, and amber arcade remain visible behind the choice surface.",
+        "visible_characters": [
+          {
+            "agent_id": "kela_ashpin",
+            "default_stance": "presenting both slips and material costs across the counter",
+            "visual_ref": "visual_character_refs.characters.kela_ashpin"
+          },
+          {
+            "agent_id": "senn_brindle",
+            "default_stance": "holding the depot spare while choosing between time and repair evidence",
+            "visual_ref": "visual_character_refs.characters.senn_brindle"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Both slips, the lamp, the gold balance, the spare, and the departure clock stay visible because the ending compares their costs."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "high_current_witness_fit",
+        "trigger": "slip_fit >= 3",
+        "apply_to_visual_scene_ids": [
+          "patina_repair_handoff_threshold",
+          "patina_ending_fresh_match",
+          "patina_ending_shared_choice"
+        ],
+        "modifier_prompt": "Show a fresh dark-slate colour slip with the current job mark and one brown test stain beside the pale returned slip."
+      },
+      {
+        "modifier_id": "weak_current_witness_fit",
+        "trigger": "slip_fit <= 1",
+        "apply_to_visual_scene_ids": [
+          "patina_repair_handoff_threshold",
+          "patina_ending_shared_choice"
+        ],
+        "modifier_prompt": "Show the pale old slip polished and complete while the current dark-slate lamp remains open and lacks a matched finished witness."
+      },
+      {
+        "modifier_id": "strong_heat_location",
+        "trigger": "heat_clue >= 3",
+        "apply_to_visual_scene_ids": [
+          "patina_repair_handoff_threshold",
+          "patina_ending_shared_choice"
+        ],
+        "modifier_prompt": "Align a white chalk mark on the lamp handle with the second mixed-metal junction and the fresh slip's brown stain."
+      },
+      {
+        "modifier_id": "gold_route_ready",
+        "trigger": "material_spend >= 3",
+        "apply_to_visual_scene_ids": [
+          "patina_repair_handoff_threshold",
+          "patina_ending_gold",
+          "patina_ending_shared_choice"
+        ],
+        "modifier_prompt": "Place a measured coil of fine gold wire on the brass balance and a continuous gold route drawn on waxed slate beside the lamp."
+      },
+      {
+        "modifier_id": "market_rainbow_pressure",
+        "trigger": "market_rainbow >= 3",
+        "apply_to_visual_scene_ids": [
+          "patina_changed_substrate_reveal",
+          "patina_repair_handoff_threshold"
+        ],
+        "modifier_prompt": "Keep the bright mixed-metal old slip facing the arcade display, catching amber light while two waiting customers watch."
+      },
+      {
+        "modifier_id": "departure_margin_spent",
+        "trigger": "departure_margin <= 0",
+        "apply_to_visual_scene_ids": [
+          "patina_repair_handoff_threshold",
+          "patina_ending_fresh_match",
+          "patina_ending_gold",
+          "patina_ending_delay",
+          "patina_ending_shared_choice"
+        ],
+        "modifier_prompt": "Add strong moving bands of carriage light across the low ceiling and stage Senn's body toward the rail-stair exit."
+      },
+      {
+        "modifier_id": "ending_fresh_on_time_visual",
+        "trigger": "ending_label == fresh_match_on_time",
+        "apply_to_visual_scene_ids": [
+          "patina_ending_fresh_match"
+        ],
+        "modifier_prompt": "Stage Senn stepping into the arcade with the repaired lamp and fresh slip while one unspent rail bell remains on the clock."
+      },
+      {
+        "modifier_id": "ending_fresh_late_visual",
+        "trigger": "ending_label == fresh_match_late",
+        "apply_to_visual_scene_ids": [
+          "patina_ending_fresh_match"
+        ],
+        "modifier_prompt": "Show departing carriage lights moving overhead while Senn and Kela remain at the counter with the completed cool lamp."
+      },
+      {
+        "modifier_id": "ending_gold_on_time_visual",
+        "trigger": "ending_label == gold_rebuild_on_time",
+        "apply_to_visual_scene_ids": [
+          "patina_ending_gold"
+        ],
+        "modifier_prompt": "Stage Senn hurrying toward the arcade exit with the gold-filled lamp while holding the large bill slate at arm's length."
+      },
+      {
+        "modifier_id": "ending_gold_late_visual",
+        "trigger": "ending_label == gold_rebuild_late",
+        "apply_to_visual_scene_ids": [
+          "patina_ending_gold"
+        ],
+        "modifier_prompt": "Show the loading platform light sliding away overhead while Senn stands still with the cool gold-filled lamp and heavy bill."
+      },
+      {
+        "modifier_id": "ending_honest_delay_visual",
+        "trigger": "ending_label == honest_delay_supported",
+        "apply_to_visual_scene_ids": [
+          "patina_ending_delay"
+        ],
+        "modifier_prompt": "Ovra stands beside Kela in clear support while Senn fastens his gloves around the awkward short-handled depot spare."
+      },
+      {
+        "modifier_id": "ending_counter_quarrel_visual",
+        "trigger": "ending_label == honest_delay_contested",
+        "apply_to_visual_scene_ids": [
+          "patina_ending_delay"
+        ],
+        "modifier_prompt": "Ovra occupies the customer-facing center of the counter while Kela steps back toward the slip rack and Senn gestures sharply with the depot spare."
+      },
+      {
+        "modifier_id": "ending_shared_choice_visual",
+        "trigger": "ending_label == shared_material_choice",
+        "apply_to_visual_scene_ids": [
+          "patina_ending_shared_choice"
+        ],
+        "modifier_prompt": "Senn signs the delay line beside the stained dark slip while holding the depot spare; Kela points to the scheduled fresh repair."
+      },
+      {
+        "modifier_id": "ending_shared_choice_cost_visual",
+        "trigger": "ending_label == shared_choice_without_enough_proof",
+        "apply_to_visual_scene_ids": [
+          "patina_ending_shared_choice"
+        ],
+        "modifier_prompt": "Show Senn taking the current lamp and polished pale slip toward the rail stair while Kela remains behind the counter with an untested dark offcut."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "coppervein_repairs.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "One compact rectangular stone workshop tucked under a rail stair, with an arched open counter along the front wall, a full-width workbench along the back wall, and a narrow staff aisle between them.",
+      "fixed_zones": [
+        {
+          "zone_id": "public_arcade",
+          "visible_form": "amber-lit stone street landing outside the counter, beneath the descending rail stair",
+          "used_for": "customer queue, Senn arrival and exit, moving train-light cues"
+        },
+        {
+          "zone_id": "arched_service_counter",
+          "visible_form": "waist-high dark stone counter inside a broad arch with one shallow customer reach slot",
+          "used_for": "object transfer, side-by-side slip comparison, bills, customer choice"
+        },
+        {
+          "zone_id": "colour_slip_rack",
+          "visible_form": "rotating wooden rack above the inner counter with wire-hung thumb-length stone slips",
+          "used_for": "morning routine, market-rainbow display, returned-job memory"
+        },
+        {
+          "zone_id": "rear_workbench",
+          "visible_form": "long carved-stone bench under copper hood with blue-white mana lamp and tap",
+          "used_for": "cutting, filling, null termination, magnifier instruction, open repair"
+        },
+        {
+          "zone_id": "sand_test_cradle",
+          "visible_form": "rectangular brass-rimmed box of pale sand inset into the counter's inner edge with lamp clamps, minute dial, and a shallow customer reach slot",
+          "used_for": "safe lamp activation and customer heat-location test"
+        },
+        {
+          "zone_id": "material_balance",
+          "visible_form": "small brass balance, weights, return tray, and wire coils at left bench end",
+          "used_for": "gold quote, material cost, removed-fill custody"
+        },
+        {
+          "zone_id": "hinged_magnifier",
+          "visible_form": "large circular brass lens fixed to the right bench end with space for two slips beneath it",
+          "used_for": "supervised material comparison"
+        },
+        {
+          "zone_id": "punch_and_job_wire_hook",
+          "visible_form": "wall hook above the right bench holding brass workshop punch and thin job wire",
+          "used_for": "completion authority and handoff"
+        },
+        {
+          "zone_id": "rail_stair_overhead",
+          "visible_form": "massive sloped stone stair and iron rail bed directly above the shop ceiling",
+          "used_for": "rail sounds, carriage-light bands, departure pressure"
+        }
+      ],
+      "staging_slots": [
+        {
+          "slot_id": "kela_center_bench",
+          "zone_id": "rear_workbench",
+          "allowed_agents": [
+            "kela_ashpin",
+            "ovra_toll"
+          ],
+          "reach": "sand cradle, mana tap, slip rack inner face, punch hook, balance through bench aisle"
+        },
+        {
+          "slot_id": "ovra_right_bench",
+          "zone_id": "hinged_magnifier",
+          "allowed_agents": [
+            "ovra_toll",
+            "kela_ashpin"
+          ],
+          "reach": "magnifier, punch hook, current lamp after transfer"
+        },
+        {
+          "slot_id": "senn_counter_public",
+          "zone_id": "arched_service_counter",
+          "allowed_agents": [
+            "senn_brindle",
+            "coppervein_morning_customers"
+          ],
+          "reach": "counter objects, lamp handle when extended through the reach slot, arcade exit"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_from_arcade",
+          "supports_visual_scene_ids": [
+            "patina_coppervein_establishing",
+            "patina_repair_handoff_threshold"
+          ]
+        },
+        {
+          "camera_id": "counter_medium",
+          "supports_visual_scene_ids": [
+            "patina_colour_slip_routine",
+            "patina_rail_lamp_arrival",
+            "patina_market_rainbow_display",
+            "patina_ending_delay",
+            "patina_ending_shared_choice"
+          ]
+        },
+        {
+          "camera_id": "left_bench_close",
+          "supports_visual_scene_ids": [
+            "patina_material_comparison",
+            "patina_gold_quote",
+            "patina_plain_gold_layout",
+            "patina_ending_gold"
+          ]
+        },
+        {
+          "camera_id": "cradle_medium",
+          "supports_visual_scene_ids": [
+            "patina_heat_cradle_test",
+            "patina_old_slip_retest",
+            "patina_ending_fresh_match"
+          ]
+        },
+        {
+          "camera_id": "hood_object_close",
+          "supports_visual_scene_ids": [
+            "patina_fresh_slip_stain"
+          ]
+        },
+        {
+          "camera_id": "right_bench_magnifier",
+          "supports_visual_scene_ids": [
+            "patina_changed_substrate_reveal",
+            "patina_master_magnifier"
+          ]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "arcade_to_display",
+          "path": "public_arcade -> arched_service_counter -> outward face of colour_slip_rack",
+          "supports": [
+            "prime_market_rainbow",
+            "market_rainbow_pressure"
+          ]
+        },
+        {
+          "lane_id": "customer_to_cradle_handle",
+          "path": "senn_counter_public -> counter reach slot -> sand_test_cradle handle",
+          "supports": [
+            "prime_heat_location"
+          ]
+        },
+        {
+          "lane_id": "final_choice_surface",
+          "path": "senn_counter_public -> old and fresh slips on arched_service_counter -> balance and open lamp on rear_workbench",
+          "supports": [
+            "handoff_customer_choice",
+            "handoff_honest_delay"
+          ]
+        }
+      ],
+      "object_states": {
+        "inspection_lamp": [
+          "arrives with dark-slate face, mixed gold-and-copper channels, warm handle, and pale returned slip",
+          "may remain open in sand cradle",
+          "may leave with recut mixed junction and dark matched slip",
+          "may leave with continuous gold graph and plain gold slip"
+        ],
+        "colour_slips": [
+          "old pale accepted slip",
+          "fresh dark test slip with brown stain when cut",
+          "plain gold-filled dark slip after gold rebuild"
+        ],
+        "workshop_punch": [
+          "on wall hook",
+          "within Kela's reach when apprentice_standing is high",
+          "under Ovra's hand when apprentice_standing is low"
+        ]
+      }
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for characters visible in a scene.",
+    "characters": {
+      "kela_ashpin": "Kela Ashpin: compact young adult dwarf; warm brown skin; round face with a small scar through the left eyebrow; black curls braided with one blue thread at each temple; square brass-framed protective lenses usually on forehead or eyes; cream work shirt with rolled sleeves and chalky cuffs; worn brown leather rune-maker apron; short strong fingers stained with charcoal and metal dust; quick forward-leaning curiosity; silhouette anchored by apron pockets, lenses, and braided curls.",
+      "ovra_toll": "Ovra Toll: broad older adult dwarf; deep umber skin; square silver beard cut to the upper chest; close-cropped silver hair; dark green wool tunic beneath a heavy charcoal apron; brass workshop punch and plain circular civic seal at belt; wide steady hands; severe still posture softened by a lidded tea cup; silhouette anchored by square beard, heavy apron, and belt tools.",
+      "senn_brindle": "Senn Brindle: sturdy middle-aged dwarf rail conductor; pale freckled skin; rust-red beard split into two short practical braids; brown cap; slate-blue wool rail coat with tarnished brass buttons and reinforced elbows; heavy brown leather gloves; round inspection-lamp satchel; expressive eyebrows and schedule-conscious forward posture; silhouette anchored by cap, twin beard braids, gloves, and blue coat."
+    },
+    "groups": {
+      "coppervein_morning_customers": "Coppervein morning customers: four to six Greathold residents of varied heights and builds in worn wool coats, work aprons, boots, and scarves, queued in the amber-lit stone arcade with ordinary repair objects such as a dented kettle, hooded carriage lamp, small brass valve housing, and warming plate; patient posture broken by curiosity at colourful rune work."
+    }
+  },
+  "review_notes": [
+    "Visual continuity self-review accepted the artifact with the minor production caveat that high-consistency multi-angle rendering still needs a plan view or 3D blockout.",
+    "Spatial review moved the sand cradle into the counter's customer reach slot, fixed the public/staff boundary, and made workshop-punch admission explicit in the matched repair ending.",
+    "The included structured scene-set map fixes zones, staging, sightlines, camera slots, and branch-persistent object states. Image generation and the final blockout are intentionally deferred."
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "patina-colour-slips-v0.bfl-simple-v0",
+  "fixture_id": "patina-colour-slips-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Richly textured high-fantasy industrial storybook illustration, precise ink contours with restrained watercolor, worn carved stone, tarnished brass, dark slate, fine gold and copper rune channels, warm amber workshop lamps, cool blue-white mana light, readable silhouettes, humane facial acting, practical magical machinery, intimate trade-town scale, unlettered surfaces.",
+  "prompts": [
+    {
+      "id": "01_coppervein_establishing",
+      "prompt": "Compact rune repair shop carved beneath a broad stone rail stair: arched public counter, long rear workbench, copper hood, blue mana lamp, sand test cradle, material balance, hanging stone test slips; young brown-skinned dwarf apprentice lifts the shutter while an older silver-bearded dwarf Master lights the bench."
+    },
+    {
+      "id": "02_colour_slip_routine",
+      "prompt": "Close rune-shop counter with dozens of thumb-length pale stone and dark slate witness slips hanging from wires, each bearing one gold or copper junction, hooked null, and blank job edge; chalk-cuffed dwarf apprentice turns the rack while morning customers queue with kettles and lamps."
+    },
+    {
+      "id": "03_rail_lamp_arrival",
+      "prompt": "Rust-bearded dwarf rail conductor in slate-blue coat sets a hooded inspection lamp and old pale colour slip on a stone counter; the lamp has a newer dark-slate rune face, gold-and-copper channels, leather handle, and brass service ring; apprentice studies the mismatch."
+    },
+    {
+      "id": "04_material_comparison",
+      "prompt": "Object close-up under white bench light: dwarf apprentice aligns pale thumb-length witness slip against dark-slate lamp face; geometric runes match while the second lamp channel is visibly deeper; gold and copper fills, job marks, and brass service ring sharp in focus."
+    },
+    {
+      "id": "05_heat_cradle_test",
+      "prompt": "Dark-slate rail lamp secured in a brass-rimmed cradle of pale sand under a copper hood; leather handle extends toward the counter; rail conductor points with a heavy glove to warmth below the second mixed-metal turn while dwarf apprentice marks it in chalk."
+    },
+    {
+      "id": "06_gold_quote",
+      "prompt": "Brass shop balance holds a costly coil of fine gold wire beside a dark-slate rail lamp and pale returned slip; young dwarf apprentice names the weight while rust-bearded conductor removes his cap and studies the financially offensive repair."
+    },
+    {
+      "id": "07_market_rainbow",
+      "prompt": "Young dwarf apprentice hangs a pale rune-cut witness slip bright side outward in an arched market counter; gold and copper seams catch amber light; conductor smiles, older silver-bearded Master watches severely, and two customers pause with ordinary repair objects."
+    },
+    {
+      "id": "08_changed_substrate",
+      "prompt": "Older silver-bearded dwarf Master turns a dark-slate lamp plate over to reveal a tiny supplier mark; young apprentice holds the pale old witness beside it; rust-bearded rail conductor watches across the counter amid hanging slips, sand cradle, balance, and moving train-light shadows."
+    },
+    {
+      "id": "09_fresh_slip_stain",
+      "prompt": "Pivotal close-up of fresh dark-slate test slip clipped beneath copper hood: short gold-and-copper junction, hooked null, scratched job edge, crystal shaving, and brown heat stain opening under the second turn and stopping at the null; chalky dwarf hands steady the clip."
+    },
+    {
+      "id": "10_old_slip_retest",
+      "prompt": "Old pale-stone witness slip glows evenly in a brass mana clip and remains polished and cool; current dark-slate lamp waits separately in sand cradle; young dwarf apprentice watches uncertainly while older Master keeps one finger on its service ring."
+    },
+    {
+      "id": "11_plain_gold_layout",
+      "prompt": "Top-down rune-shop bench: one continuous fine gold wire follows a lamp graph drawn on waxed slate from input to hooked null; original gold-and-copper dark lamp face and weighted gold coil lie beside it; apprentice presses wire with blunt probe while conductor watches."
+    },
+    {
+      "id": "12_master_magnifier",
+      "prompt": "Brass magnifier spans pale old witness and dark replacement slate, revealing open grains around the deeper second channel; older silver-bearded dwarf Master offers a blunt probe while chalk-cuffed apprentice examines the porous edge under crossing amber and blue-white light."
+    },
+    {
+      "id": "13_repair_handoff",
+      "prompt": "Whole rune-shop choice surface: arched counter divides rust-bearded rail conductor from young apprentice and older Master; old pale slip, current dark lamp, fresh dark witness, sand cradle, measured gold, job wire, workshop punch, hanging slip rack, and rail-bell light all visible."
+    },
+    {
+      "id": "14_fresh_match_end",
+      "prompt": "Young dwarf apprentice offers a cool shining rail lamp across the stone counter; a fresh dark-slate colour slip with job mark, hooked null, and faint brown test stain hangs from its brass service ring; conductor receives both under moving rail lights."
+    },
+    {
+      "id": "15_gold_rebuild_end",
+      "prompt": "Rail lamp rebuilt with one plain continuous gold channel on dark slate, matching gold witness on service ring, removed copper in return tray, and heavy bill beside brass balance; conductor holds lamp while apprentice points to cost and older Master raises lidded tea."
+    },
+    {
+      "id": "16_honest_delay_end",
+      "prompt": "Dark-slate lamp remains open in sand cradle while workshop punch hangs unused; old pale slip and current face sit side by side; young apprentice and older Master face rust-bearded conductor as he prepares an awkward short-handled depot spare."
+    },
+    {
+      "id": "17_shared_choice_end",
+      "prompt": "Pale accepted slip and dark current-job slip lie side by side between rail lamp, measured gold coil, and bell clock at a stone counter; apprentice points to material evidence while conductor holds a short depot spare and chooses between time and repair."
+    }
+  ]
+}
