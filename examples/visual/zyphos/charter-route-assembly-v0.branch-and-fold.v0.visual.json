@@ -1,0 +1,794 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "charter-route-assembly-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/zyphos/charter-route-assembly-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/charter-route-assembly-v0.branch-and-fold.v0.training.json",
+  "scene_id": "charter-route-assembly-v0.low-bend-standing-and-redress",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for a Sa'ueia route assembly testing ecological standing and redress at Low Bend.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for Low Bend's public geometry, routine signal preparation, mirror-amoeba discovery, evidence gathering, standing tests, remedy threshold, and four state-gated ending families.",
+    "segmentation_rule": "Use separate anchors for establishing geometry, participant introduction, routine preparation, folded record, contamination reveal, evidence work, standing challenge, remedy threshold, and each ending family. Branch choices with durable visible consequences use modifiers on the next shared scene and ending frames.",
+    "prompting_rule": "Each base image prompt is a complete standalone frame for a general image model. It describes visible geometry, materials, light, bodies, and objects in plain language and includes only participants visible in that frame.",
+    "global_style_cue": "Style: hand-painted ecological science-fantasy storybook frame, layered gouache and ink textures, restrained cold blues and amber bioluminescence, silver-green wetland color, sharp readable silhouettes, tactile living infrastructure, expressive nonhuman body language, cinematic composition designed for illustrated interactive fiction.",
+    "prompt_assembly_rule": "Assemble every image prompt from global_style_cue, the selected scene base_image_prompt, visual refs only for named characters and groups visible in that frame, and triggered state or branch modifiers. Continuity notes remain reviewer constraints. Each generation receives a camera-specific scene-set blockout when high-consistency replay art is produced.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture revisits one crossing from several focal distances and branches alter lane lighting, cargo position, ant traces, courier presence, herd position, and archive state. A stable map is required even for draft prompt planning.",
+      "future_scene_set_need": "Build a plan-view or low-detail 3D blockout of Low Bend from the scene_set zones and camera slots before high-consistency website rendering. Use generated images only as painterly output over that geometry."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "low_bend_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide elevated establishing view of Low Bend on a dim alien world during eclipse ingress. A narrow amber fungal road descends from the upper right between three thick lantern trees and reaches a dry crescent-shaped stone hearing shelf at center. Cold blue bioluminescent knots hang beneath the tree canopies. A shallow river runs from the upper left across the lower frame toward a mineral reef mouth in the far left distance. Silver-green prism-patterned living mats tile the shallow ford. Two passages leave the shelf: a dry root lane curves beneath the trees, and a wet ford lane crosses the mats before both rise toward a distant route. On the central shelf, a long-bodied six-limbed Sa'ueia route reader rests low beside pale route cords, a black stone water basin seated in a thumb-wide runnel from the river, and layered flexible archive membranes on a ribbed work frame. Umbros, an enormous dark neighboring world, hangs fixed in the sky while shadow begins to cover the sun.",
+        "visible_characters": [
+          {
+            "agent_id": "seyr_path_opener",
+            "default_stance": "resting low at the center of the crescent shelf with chest manipulators beside cords and archive frame",
+            "visual_ref": "visual_character_refs.characters.seyr_path_opener"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Current direction runs upper-left to lower-left toward the distant reef mouth; the upland fungal road enters from upper-right.",
+          "Root lane and ford lane diverge at the crescent shelf and rejoin beyond the crossing.",
+          "Sa'ueia anatomy is hexapodal: four tall digitigrade running legs and two smaller three-digit chest manipulators."
+        ]
+      },
+      {
+        "visual_scene_id": "low_bend_parties",
+        "ink_anchor": "introduce_parties",
+        "base_image_prompt": "Medium-wide view across a crescent stone hearing shelf above a shallow silver-green ford. Seyr, a long-bodied six-limbed route reader, rests at the center beside pale speaking cords. Ili, an older six-limbed archive keeper with one crooked facial fan, unfolds layered translucent memory membranes on a low pale rib frame. Varet, a younger route traveler with a balanced graft pack frame, waits at the upland edge beside a herd of stocky glassback grazers whose translucent dorsal plates hold cloudy bands of warmth; one pregnant dam faces the blue-lit root lane. Two unrelated Sa'ueia signal bearers kneel separately, one beside amber fungal candles and one over a black basin of fresh river water. A ribbon-winged courier animal grips a high cord and worries a white salt bead. Cold blue lantern knots and amber road beads light the dim scene.",
+        "visible_characters": [
+          {
+            "agent_id": "seyr_path_opener",
+            "default_stance": "centered at the speaking cords",
+            "visual_ref": "visual_character_refs.characters.seyr_path_opener"
+          },
+          {
+            "agent_id": "ili_record_keeper",
+            "default_stance": "beside the low archive frame with membranes open",
+            "visual_ref": "visual_character_refs.characters.ili_record_keeper"
+          },
+          {
+            "agent_id": "varet_claimant",
+            "default_stance": "routeward beside the herd and graft frame",
+            "visual_ref": "visual_character_refs.characters.varet_claimant"
+          },
+          {
+            "agent_id": "unindebted_signal_bearers",
+            "default_stance": "one at the fungal candles and one at the water basin",
+            "visual_ref": "visual_character_refs.groups.unindebted_signal_bearers"
+          },
+          {
+            "agent_id": "low_bend_glassback_herd",
+            "default_stance": "clustered at the upland edge, pregnant dam toward the crossing",
+            "visual_ref": "visual_character_refs.groups.low_bend_glassback_herd"
+          },
+          {
+            "agent_id": "witness_threadwing",
+            "default_stance": "perched high on a route cord with a salt bead",
+            "visual_ref": "visual_character_refs.groups.witness_threadwing"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The two bearers occupy separated signal stations so one body cannot visually own both translations.",
+          "Varet and the herd remain routeward of the speaking cord before any provisional passage is staged."
+        ]
+      },
+      {
+        "visual_scene_id": "low_bend_public_record_choice",
+        "ink_anchor": "routine_choice",
+        "base_image_prompt": "Medium overhead choice frame on a dry crescent hearing shelf above an alien wetland ford. Four inspectable evidence stations surround Seyr: amber fungal candles encircle a sealed strip of pale dead graft at the upland edge; a black stone basin sits beside the moving river; cold blue lantern knots illuminate two diverging lanes; layered flexible archive membranes lie on a low ribbed frame with a dark clasp holding deeper layers shut. Seyr's two small chest manipulators hover between the stations while four running legs remain folded beneath the body. Ili watches from the archive frame, Varet waits beside a graft pack and glassback herd, and two bearers remain at separate signal stations. The eclipse shadow is beginning, with warm amber, cold blue, and silver-green light marking distinct channels.",
+        "visible_characters": [
+          {
+            "agent_id": "seyr_path_opener",
+            "default_stance": "centered with chest manipulators poised between four evidence stations",
+            "visual_ref": "visual_character_refs.characters.seyr_path_opener"
+          },
+          {
+            "agent_id": "ili_record_keeper",
+            "default_stance": "at the archive frame",
+            "visual_ref": "visual_character_refs.characters.ili_record_keeper"
+          },
+          {
+            "agent_id": "varet_claimant",
+            "default_stance": "routeward beside the herd",
+            "visual_ref": "visual_character_refs.characters.varet_claimant"
+          },
+          {
+            "agent_id": "unindebted_signal_bearers",
+            "default_stance": "separated beside road and basin",
+            "visual_ref": "visual_character_refs.groups.unindebted_signal_bearers"
+          },
+          {
+            "agent_id": "low_bend_glassback_herd",
+            "default_stance": "waiting beyond the cords",
+            "visual_ref": "visual_character_refs.groups.low_bend_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "All four routine choices are reachable from Seyr's central low posture using chest manipulators, a short walk, or a directed gesture."
+        ]
+      },
+      {
+        "visual_scene_id": "low_bend_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide civic-routine frame at a crescent stone shelf above a silver-green ford. Ili records several separate signals on layered flexible membranes. Two Sa'ueia bearers hold distinct stations at amber fungal candles and a black river basin. Seyr moves a pale speaking cord between the stations. Varet and a glassback herd wait at the upland edge. Three lantern trees hang cold blue knots over a dry root lane while the wet ford crosses prism-patterned living mats. A ribbon-winged courier perches above after swallowing a salt bead. The fixed dark world Umbros covers the first part of the sun, turning ordinary procedure into a visible light budget.",
+        "visible_characters": [
+          {
+            "agent_id": "seyr_path_opener",
+            "default_stance": "moving the speaking cord between stations",
+            "visual_ref": "visual_character_refs.characters.seyr_path_opener"
+          },
+          {
+            "agent_id": "ili_record_keeper",
+            "default_stance": "recording on open membranes",
+            "visual_ref": "visual_character_refs.characters.ili_record_keeper"
+          },
+          {
+            "agent_id": "varet_claimant",
+            "default_stance": "waiting routeward with flattened facial fans",
+            "visual_ref": "visual_character_refs.characters.varet_claimant"
+          },
+          {
+            "agent_id": "unindebted_signal_bearers",
+            "default_stance": "separate and attentive at their stations",
+            "visual_ref": "visual_character_refs.groups.unindebted_signal_bearers"
+          },
+          {
+            "agent_id": "low_bend_glassback_herd",
+            "default_stance": "waiting with visible heat in dorsal plates",
+            "visual_ref": "visual_character_refs.groups.low_bend_glassback_herd"
+          },
+          {
+            "agent_id": "witness_threadwing",
+            "default_stance": "high on the route cord",
+            "visual_ref": "visual_character_refs.groups.witness_threadwing"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "road_evidence >= 3",
+            "modifier_prompt": "The amber fungal candles lean inward around a clean graft strip and hold a bright line toward the dry corpse pocket."
+          },
+          {
+            "trigger": "river_evidence >= 3",
+            "modifier_prompt": "The freshly filled black basin carries three concentric ripples and a tight spiral pressed against the visible current direction."
+          },
+          {
+            "trigger": "grove_consent >= 3",
+            "modifier_prompt": "Cold blue lantern knots trace the dry root lane while one narrow white warning pulse marks the wet ford."
+          },
+          {
+            "trigger": "family_record >= 3",
+            "modifier_prompt": "A bright unbroken custody trace runs across the upper archive membrane while the darker lineage layers remain closed beneath a clasp."
+          },
+          {
+            "trigger": "eclipse_time <= 2",
+            "modifier_prompt": "Umbros covers half the sun and the shelf depends visibly on amber fungal beads, blue lantern knots, and stored heat in glassback plates."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "low_bend_silver_rupture",
+        "ink_anchor": "contamination_arrives",
+        "base_image_prompt": "Pivotal close-wide frame at an alien wetland ford during eclipse. A silver cellular shimmer spreads in the shallow water between silver-green prism-patterned mats, and the mats curl away from the current in lifted sheets. Amber fungal candles nearest the wet bank extinguish in a dark arc. A black river basin on the hearing shelf puckers with hard concentric pressure ripples. Seyr snaps both chemical-sensing facial fans toward the water. Varet stands at the pale speaking cord beside a pregnant glassback dam whose translucent dorsal heat plates have fogged nearly dark. The cold blue root lane remains visible under three lantern trees, while a narrow white warning pulse marks the wet ford.",
+        "visible_characters": [
+          {
+            "agent_id": "seyr_path_opener",
+            "default_stance": "turned sharply toward the silver ford",
+            "visual_ref": "visual_character_refs.characters.seyr_path_opener"
+          },
+          {
+            "agent_id": "varet_claimant",
+            "default_stance": "at the speaking cord with body angled between Seyr and the herd",
+            "visual_ref": "visual_character_refs.characters.varet_claimant"
+          },
+          {
+            "agent_id": "low_bend_glassback_herd",
+            "default_stance": "pregnant dam stamping at front, herd bunched behind",
+            "visual_ref": "visual_character_refs.groups.low_bend_glassback_herd"
+          },
+          {
+            "agent_id": "unindebted_signal_bearers",
+            "default_stance": "road bearer recoiling from dark candles and river bearer over the rippling basin",
+            "visual_ref": "visual_character_refs.groups.unindebted_signal_bearers"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The silver shimmer appears in the ford water and wet sediment, distinct from blue lantern light and amber fungal light.",
+          "The distant choir reef remains outside the primary frame; its pressure response is visible in the connected basin and current."
+        ]
+      },
+      {
+        "visual_scene_id": "low_bend_evidence_work",
+        "ink_anchor": "evidence_choice|evidence_fold",
+        "base_image_prompt": "Medium-wide evidence-work frame on a crescent stone hearing shelf above a shallow alien ford. Seyr stands low near the wet sediment line with two small chest manipulators free. Ili holds open the public archive membrane at the central rib frame. Varet and a balanced graft pack wait behind a pale speaking cord beside the glassback herd. Amber fungal candles border the upland approach, a black basin connects visually to the flowing river, cold blue lantern knots mark a dry root lane, and silver-green prism mats fold away from a silver cellular shimmer in the wet ford. The arrangement leaves clear work space for a small ant diagnostic mesh, a quarantined bundle, a cargo-free herd lane, or a departing ribbon-winged courier as branch-specific additions.",
+        "visible_characters": [
+          {
+            "agent_id": "seyr_path_opener",
+            "default_stance": "near the wet sediment line with chest manipulators ready",
+            "visual_ref": "visual_character_refs.characters.seyr_path_opener"
+          },
+          {
+            "agent_id": "ili_record_keeper",
+            "default_stance": "holding the public archive membrane open",
+            "visual_ref": "visual_character_refs.characters.ili_record_keeper"
+          },
+          {
+            "agent_id": "varet_claimant",
+            "default_stance": "behind the cord beside the graft pack",
+            "visual_ref": "visual_character_refs.characters.varet_claimant"
+          },
+          {
+            "agent_id": "low_bend_glassback_herd",
+            "default_stance": "bunched routeward with dim heat plates",
+            "visual_ref": "visual_character_refs.groups.low_bend_glassback_herd"
+          },
+          {
+            "agent_id": "diagnostic_lattice_ants",
+            "visibility_condition": "source_trace == 2",
+            "default_stance": "assembled across the wet sediment line only when the ant diagnostic branch is active",
+            "visual_ref": "visual_character_refs.groups.diagnostic_lattice_ants"
+          },
+          {
+            "agent_id": "witness_threadwing",
+            "visibility_condition": "appeal_ready >= 2",
+            "default_stance": "launching downcurrent only when the second-crossing evidence branch is active",
+            "visual_ref": "visual_character_refs.groups.witness_threadwing"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "source_trace == 2",
+            "modifier_prompt": "A dense black lattice of tiny jointed ants and translucent microbial glue bridges the wet sediment; its silver diagnostic stain points from an older upstream pocket, passes beneath the graft-deposit line, and continues toward the river."
+          },
+          {
+            "trigger": "source_trace == 1",
+            "modifier_prompt": "A sealed pale graft bundle sits on a dry fungal spur; silver moisture beads along one wrapping seam while the nearest amber candles pale and the river basin repeats a tight ripple."
+          },
+          {
+            "trigger": "split_lane >= 2",
+            "modifier_prompt": "The pregnant glassback dam stands at the entrance to the blue-lit root lane with its graft pack removed and placed behind the speaking cord; other herd bodies align behind it."
+          },
+          {
+            "trigger": "appeal_ready >= 2",
+            "modifier_prompt": "A ribbon-winged courier launches downstream carrying a tiny sealed water bead and a rolled translucent record membrane on its route braid."
+          },
+          {
+            "trigger": "eclipse_time <= 1",
+            "modifier_prompt": "Deep eclipse turns the sky blue-black; living amber and blue route lights and the grazers' remaining plate warmth provide the practical illumination."
+          },
+          {
+            "trigger": "herd_strain >= 3",
+            "modifier_prompt": "The pregnant dam stamps with an uneven stance, and its translucent dorsal plates look opaque and drained while the herd presses close."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Branch-created evidence occupies fixed zones: ant mesh on wet sediment, graft quarantine on dry fungal spur, unladen herd at root-lane entrance, courier flight downcurrent."
+        ]
+      },
+      {
+        "visual_scene_id": "low_bend_standing_test",
+        "ink_anchor": "standing_test|standing_choice",
+        "base_image_prompt": "Medium civic confrontation on a crescent stone shelf at a bioluminescent ford. Two six-limbed Sa'ueia signal bearers occupy clearly separated stations: the road bearer crouches beside live amber fungal candles, and the river bearer bends paired chemical-sensing facial fans over a black basin patterned by pressure ripples. Seyr controls a pale speaking cord at center. Ili sits at a low archive frame with relevant translucent membranes open and deeper dark layers clasped shut. Varet stands routeward beside a graft frame. A glassback herd turns broadside so translucent dorsal plates show fatigue and willingness to move. Three lantern trees mark the root lane with cold blue knots and the ford with white warning light. The composition makes source, bearer, debt disclosure, archive scope, and herd response physically separate.",
+        "visible_characters": [
+          {
+            "agent_id": "seyr_path_opener",
+            "default_stance": "centered at the speaking cord, watching both stations",
+            "visual_ref": "visual_character_refs.characters.seyr_path_opener"
+          },
+          {
+            "agent_id": "ili_record_keeper",
+            "default_stance": "at the archive frame with one membrane open",
+            "visual_ref": "visual_character_refs.characters.ili_record_keeper"
+          },
+          {
+            "agent_id": "varet_claimant",
+            "default_stance": "routeward beside the graft frame",
+            "visual_ref": "visual_character_refs.characters.varet_claimant"
+          },
+          {
+            "agent_id": "unindebted_signal_bearers",
+            "default_stance": "separated at candle and basin stations",
+            "visual_ref": "visual_character_refs.groups.unindebted_signal_bearers"
+          },
+          {
+            "agent_id": "low_bend_glassback_herd",
+            "default_stance": "broadside beside the root-lane entrance",
+            "visual_ref": "visual_character_refs.groups.low_bend_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "bearer_standing >= 3",
+            "modifier_prompt": "The bearers' source stations remain visually distinct while matching marks on the public archive show disclosed debt and independent cross-checks."
+          },
+          {
+            "trigger": "family_record >= 3",
+            "modifier_prompt": "A precise bright custody path crosses the top archive membrane from graft station to seal, carrier, road pocket, and flood interval; a dark clasp holds deeper lineage layers closed."
+          },
+          {
+            "trigger": "split_lane >= 3",
+            "modifier_prompt": "The pregnant dam has one forefoot on the dry blue-lit root lane while packs remain visibly behind the speaking cord."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The bearers never share one station or merge their signals into a single display.",
+          "The glassback herd communicates through plate state, posture, and movement rather than Sa'ueia gestures."
+        ]
+      },
+      {
+        "visual_scene_id": "low_bend_remedy_threshold",
+        "ink_anchor": "remedy_threshold|final_choice",
+        "base_image_prompt": "Wide final-threshold frame of Low Bend under deep eclipse. The crescent hearing shelf sits between four readable authorities: amber fungal road candles on the upland approach, cold blue lantern knots over the dry root lane, a silver-contaminated wet ford with folded prism-patterned mats, and a black river basin carrying tight pressure ripples toward a distant mineral reef mouth. Seyr rests at center beside four pale route cords arranged toward closure, split passage, exoneration record, and downstream redress. Ili holds the public archive membrane at the low rib frame. Varet waits beside quarantined graft cargo. Two bearers remain at separate stations. The glassback herd clusters at the route edge with dim translucent dorsal plates. The frame presents several material remedies while keeping every body's channel distinct.",
+        "visible_characters": [
+          {
+            "agent_id": "seyr_path_opener",
+            "default_stance": "centered beside four remedy cords",
+            "visual_ref": "visual_character_refs.characters.seyr_path_opener"
+          },
+          {
+            "agent_id": "ili_record_keeper",
+            "default_stance": "holding the public record at the archive frame",
+            "visual_ref": "visual_character_refs.characters.ili_record_keeper"
+          },
+          {
+            "agent_id": "varet_claimant",
+            "default_stance": "waiting beside graft cargo behind the cord",
+            "visual_ref": "visual_character_refs.characters.varet_claimant"
+          },
+          {
+            "agent_id": "unindebted_signal_bearers",
+            "default_stance": "separate at road and river stations",
+            "visual_ref": "visual_character_refs.groups.unindebted_signal_bearers"
+          },
+          {
+            "agent_id": "low_bend_glassback_herd",
+            "default_stance": "clustered at route edge facing the two lanes",
+            "visual_ref": "visual_character_refs.groups.low_bend_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "road_evidence >= 3",
+            "modifier_prompt": "The fungal road holds a bright amber line to a dry quarantine spur, showing active participation in the remedy."
+          },
+          {
+            "trigger": "river_evidence >= 4",
+            "modifier_prompt": "The river basin and wet ford share a strong tight spiral of ripples, and the prism-patterned mats remain folded from the water."
+          },
+          {
+            "trigger": "grove_consent >= 3",
+            "modifier_prompt": "Cold blue lantern knots form a continuous bounded path through the dry root lane while the wet ford retains a white warning pulse."
+          },
+          {
+            "trigger": "source_trace == 2",
+            "modifier_prompt": "A preserved black ant-trace diagram on the archive membrane points from an older upstream wound pocket through the later graft-deposit line."
+          },
+          {
+            "trigger": "appeal_ready >= 2",
+            "modifier_prompt": "One high route cord stands empty with a salt bead missing, and a tiny courier silhouette is visible downcurrent carrying the first record."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "low_bend_ending_closure",
+        "ink_anchor": "ending_closure_recognized|ending_closure_contested",
+        "base_image_prompt": "Closure aftermath at Low Bend under blue-black eclipse. The wet ford forms a dark sealed arc: prism-patterned mats curl shut, white lantern warning knots face the water, and fungal candles at the bank are extinguished. A dry quarantine spur above the water holds a sealed graft bundle. Seyr and Ili remain on the crescent shelf beside an open public record. Varet stands near the glassback herd at the routeward edge. The river basin carries a tight pressure spiral. The composition centers a locally enforced closure whose public recognition changes with visible record, bearer, and herd details.",
+        "visible_characters": [
+          {
+            "agent_id": "seyr_path_opener",
+            "default_stance": "on the hearing shelf beside the closure cord",
+            "visual_ref": "visual_character_refs.characters.seyr_path_opener"
+          },
+          {
+            "agent_id": "ili_record_keeper",
+            "default_stance": "marking the open public record",
+            "visual_ref": "visual_character_refs.characters.ili_record_keeper"
+          },
+          {
+            "agent_id": "varet_claimant",
+            "default_stance": "beside the waiting herd and quarantined cargo",
+            "visual_ref": "visual_character_refs.characters.varet_claimant"
+          },
+          {
+            "agent_id": "low_bend_glassback_herd",
+            "default_stance": "waiting at the routeward edge",
+            "visual_ref": "visual_character_refs.groups.low_bend_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "low_bend_ending_split",
+        "ink_anchor": "ending_split_recognized|ending_split_fails",
+        "base_image_prompt": "Split-passage aftermath at a bioluminescent river crossing under eclipse. A dry root lane curves beneath three lantern trees, a wet ford lies silver and closed beside folded prism-patterned mats, and a dry fungal spur holds sealed graft cargo behind a pale speaking cord. The pregnant glassback dam stands at the root-lane entrance with other herd bodies aligned behind. Seyr waits beside the lane cord, Ili records from the crescent shelf, and Varet stands near the separated cargo. Amber fungal beads and cold blue lantern knots show which channels are participating.",
+        "visible_characters": [
+          {
+            "agent_id": "seyr_path_opener",
+            "default_stance": "beside the split-lane cord",
+            "visual_ref": "visual_character_refs.characters.seyr_path_opener"
+          },
+          {
+            "agent_id": "ili_record_keeper",
+            "default_stance": "recording from the central shelf",
+            "visual_ref": "visual_character_refs.characters.ili_record_keeper"
+          },
+          {
+            "agent_id": "varet_claimant",
+            "default_stance": "between herd and quarantined cargo",
+            "visual_ref": "visual_character_refs.characters.varet_claimant"
+          },
+          {
+            "agent_id": "low_bend_glassback_herd",
+            "default_stance": "pregnant dam first at the root lane, herd aligned behind",
+            "visual_ref": "visual_character_refs.groups.low_bend_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "low_bend_ending_exoneration",
+        "ink_anchor": "ending_exoneration_recognized|ending_exoneration_fails",
+        "base_image_prompt": "Evidence aftermath on Low Bend's crescent hearing shelf. A bright graft-custody chain and a separate pale ground-trace strip lie side by side across open translucent archive membranes on a low rib frame. The wet ford remains closed with silver cellular shimmer and folded prism mats. The fungal road opens amber candles toward a dry spur, and the lantern grove lights the root lane blue. Seyr, Ili, and Varet form a low triangle around the record while the glassback herd waits at the edge. The image centers the difference between first origin, later spread, and incomplete proof.",
+        "visible_characters": [
+          {
+            "agent_id": "seyr_path_opener",
+            "default_stance": "facing the paired trace and custody records",
+            "visual_ref": "visual_character_refs.characters.seyr_path_opener"
+          },
+          {
+            "agent_id": "ili_record_keeper",
+            "default_stance": "holding the membranes flat",
+            "visual_ref": "visual_character_refs.characters.ili_record_keeper"
+          },
+          {
+            "agent_id": "varet_claimant",
+            "default_stance": "watching the record with tense facial fans",
+            "visual_ref": "visual_character_refs.characters.varet_claimant"
+          },
+          {
+            "agent_id": "low_bend_glassback_herd",
+            "default_stance": "waiting behind Varet at the route edge",
+            "visual_ref": "visual_character_refs.groups.low_bend_glassback_herd"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "low_bend_ending_redress",
+        "ink_anchor": "ending_redress_ready|ending_redress_thin",
+        "base_image_prompt": "Redress aftermath at Low Bend during deep eclipse. The crescent stone shelf, black river basin seated in its narrow river runnel, pale speaking cords, low archive frame, amber fungal road, blue-lit root lane, and silver closed ford remain visible. Seyr and Ili stand beside the first hearing record. Varet waits with the glassback herd and quarantined cargo. A ribbon-winged courier remains perched on the highest route cord beside an untied sealed water bead and rolled translucent membrane. Living route lights and dim glassback heat illuminate the costs of waiting for a second hearing.",
+        "visible_characters": [
+          {
+            "agent_id": "seyr_path_opener",
+            "default_stance": "beside the redress cord and first record",
+            "visual_ref": "visual_character_refs.characters.seyr_path_opener"
+          },
+          {
+            "agent_id": "ili_record_keeper",
+            "default_stance": "holding the sealed first record",
+            "visual_ref": "visual_character_refs.characters.ili_record_keeper"
+          },
+          {
+            "agent_id": "varet_claimant",
+            "default_stance": "waiting beside herd and cargo",
+            "visual_ref": "visual_character_refs.characters.varet_claimant"
+          },
+          {
+            "agent_id": "low_bend_glassback_herd",
+            "default_stance": "clustered with dim plates at the routeward edge",
+            "visual_ref": "visual_character_refs.groups.low_bend_glassback_herd"
+          },
+          {
+            "agent_id": "witness_threadwing",
+            "default_stance": "perched on the highest cord beside untied evidence until a ready-redress modifier sends it downcurrent",
+            "visual_ref": "visual_character_refs.groups.witness_threadwing"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_road_evidence_visual",
+        "trigger": "branch_label == prime_road_evidence",
+        "apply_to_visual_scene_ids": ["low_bend_public_record_choice", "low_bend_routine_fold"],
+        "modifier_prompt": "Seyr places a sealed pale graft strip inside an inward-leaning ring of amber fungal candles, and a new bright candle opens toward the dry corpse pocket."
+      },
+      {
+        "modifier_id": "prime_river_evidence_visual",
+        "trigger": "branch_label == prime_river_evidence",
+        "apply_to_visual_scene_ids": ["low_bend_public_record_choice", "low_bend_routine_fold"],
+        "modifier_prompt": "Seyr tips old basin water downslope and refills the black stone bowl from the ford while three ripples and a tight counter-current spiral form on the fresh surface."
+      },
+      {
+        "modifier_id": "prime_grove_consent_visual",
+        "trigger": "branch_label == prime_grove_consent",
+        "apply_to_visual_scene_ids": ["low_bend_public_record_choice", "low_bend_routine_fold"],
+        "modifier_prompt": "Seyr opens both facial fans toward three lantern trunks; cold blue knots trace the dry root lane and one white warning knot marks the wet ford."
+      },
+      {
+        "modifier_id": "prime_family_record_visual",
+        "trigger": "branch_label == prime_family_record",
+        "apply_to_visual_scene_ids": ["low_bend_public_record_choice", "low_bend_routine_fold"],
+        "modifier_prompt": "Seyr and Ili lift one translucent custody membrane between chest digits while a dark clasp keeps the deeper stacked family layers visibly closed."
+      },
+      {
+        "modifier_id": "trace_upstream_seep_visual",
+        "trigger": "branch_label == trace_upstream_seep",
+        "apply_to_visual_scene_ids": ["low_bend_evidence_work", "low_bend_remedy_threshold", "low_bend_ending_exoneration"],
+        "modifier_prompt": "Tiny black lattice ants lock into a diagnostic bridge across wet sediment, and silver microbial glue draws a trace from an older upstream pocket through the later graft-deposit line."
+      },
+      {
+        "modifier_id": "trace_family_bundle_visual",
+        "trigger": "branch_label == trace_family_bundle",
+        "apply_to_visual_scene_ids": ["low_bend_evidence_work", "low_bend_remedy_threshold", "low_bend_ending_closure"],
+        "modifier_prompt": "The sealed graft bundle rests on a dry fungal spur with silver moisture along its wrapping seam while nearby amber candles pale."
+      },
+      {
+        "modifier_id": "prepare_split_passage_visual",
+        "trigger": "branch_label == prepare_split_passage",
+        "apply_to_visual_scene_ids": ["low_bend_evidence_work", "low_bend_standing_test", "low_bend_remedy_threshold", "low_bend_ending_split"],
+        "modifier_prompt": "The pregnant glassback dam approaches the blue-lit root lane with its pack frame removed and placed behind the pale speaking cord; the herd forms a single-body queue."
+      },
+      {
+        "modifier_id": "prepare_second_crossing_visual",
+        "trigger": "branch_label == prepare_second_crossing",
+        "apply_to_visual_scene_ids": ["low_bend_evidence_work", "low_bend_remedy_threshold", "low_bend_ending_redress"],
+        "modifier_prompt": "A ribbon-winged courier flies downcurrent carrying a sealed droplet capsule and rolled translucent hearing membrane tied to its route braid."
+      },
+      {
+        "modifier_id": "replace_indebted_bearer_visual",
+        "trigger": "branch_label == replace_indebted_bearer",
+        "apply_to_visual_scene_ids": ["low_bend_standing_test", "low_bend_remedy_threshold"],
+        "modifier_prompt": "The first road bearer steps behind the speaking cord while another six-limbed reader approaches the amber candle station from the far side and repeats the live signal."
+      },
+      {
+        "modifier_id": "crosscheck_river_channels_visual",
+        "trigger": "branch_label == crosscheck_river_channels",
+        "apply_to_visual_scene_ids": ["low_bend_standing_test", "low_bend_remedy_threshold"],
+        "modifier_prompt": "A dried mineral thread lies beside the rippling black basin, with separate marks on the public archive preserving where mineral taste and live pressure agree and differ."
+      },
+      {
+        "modifier_id": "bound_archive_testimony_visual",
+        "trigger": "branch_label == bound_archive_testimony",
+        "apply_to_visual_scene_ids": ["low_bend_standing_test", "low_bend_remedy_threshold", "low_bend_ending_exoneration"],
+        "modifier_prompt": "Each bearer points to one bright segment of the top custody membrane while a dark physical clasp keeps the deeper lineage membranes folded shut."
+      },
+      {
+        "modifier_id": "ask_herd_consent_visual",
+        "trigger": "branch_label == ask_herd_consent",
+        "apply_to_visual_scene_ids": ["low_bend_standing_test", "low_bend_remedy_threshold", "low_bend_ending_split"],
+        "modifier_prompt": "The pregnant dam places one forefoot on the dry blue-lit root lane; its dorsal plates brighten and the herd aligns behind while all cargo remains behind the cord."
+      },
+      {
+        "modifier_id": "ending_closure_recognized_visual",
+        "trigger": "ending_label == closure_recognized",
+        "apply_to_visual_scene_ids": ["low_bend_ending_closure"],
+        "modifier_prompt": "Matching closure marks appear on the river basin, public archive, and separated bearer stations; the dry quarantine spur glows amber while the herd either enters a prepared root lane or begins an uphill reroute."
+      },
+      {
+        "modifier_id": "ending_closure_contested_visual",
+        "trigger": "ending_label == closure_contested",
+        "apply_to_visual_scene_ids": ["low_bend_ending_closure"],
+        "modifier_prompt": "The ford remains physically dark while one bearer station lacks a matching record mark; Varet faces the bearers and the glassback herd turns uphill with strained opaque plates."
+      },
+      {
+        "modifier_id": "ending_split_recognized_visual",
+        "trigger": "ending_label == split_passage_recognized",
+        "apply_to_visual_scene_ids": ["low_bend_ending_split"],
+        "modifier_prompt": "Glassbacks move one unladen body at a time through a continuous blue root lane, sealed graft cargo stays behind the cord, and the fungal road opens a bright dry quarantine spur."
+      },
+      {
+        "modifier_id": "ending_split_failed_visual",
+        "trigger": "ending_label == split_passage_failed",
+        "apply_to_visual_scene_ids": ["low_bend_ending_split"],
+        "modifier_prompt": "The proposed root lane breaks into white warning lights, the herd bunches at the speaking cord, and the dry fungal spur dims around the waiting cargo."
+      },
+      {
+        "modifier_id": "ending_exoneration_recognized_visual",
+        "trigger": "ending_label == exoneration_recognized",
+        "apply_to_visual_scene_ids": ["low_bend_ending_exoneration"],
+        "modifier_prompt": "The black ant trace clearly begins upstream before crossing the bright family custody line; route-credit marks remain amber while a separate repair-duty mark stays attached to Varet's record."
+      },
+      {
+        "modifier_id": "ending_exoneration_failed_visual",
+        "trigger": "ending_label == exoneration_failed",
+        "apply_to_visual_scene_ids": ["low_bend_ending_exoneration"],
+        "modifier_prompt": "The bright family custody record ends before any independent ground trace begins, leaving two separated true records and an unresolved blank between them."
+      },
+      {
+        "modifier_id": "ending_redress_ready_visual",
+        "trigger": "ending_label == second_crossing_ready",
+        "apply_to_visual_scene_ids": ["low_bend_ending_redress"],
+        "modifier_prompt": "The high route cord is empty as the ribbon-winged courier flies toward the distant reef mouth carrying a sealed water bead and the rolled first record; a second speaking cord is coiled beside Ili for the later hearing."
+      },
+      {
+        "modifier_id": "ending_redress_thin_visual",
+        "trigger": "ending_label == second_crossing_unready",
+        "apply_to_visual_scene_ids": ["low_bend_ending_redress"],
+        "modifier_prompt": "The ribbon-winged courier stays perched on the high cord beside untied evidence, and the first record remains attached to the same disputed bearer marks while the herd turns uphill."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "low_bend_route_assembly.scene_set.draft",
+      "geometry_authority_level": "draft_textual_map_not_3d_blockout",
+      "room_model": "Open-air asymmetric crossing organized around a central crescent hearing shelf, one upland road approach, one connected river channel, and two bounded passage lanes that rejoin beyond the shelf.",
+      "fixed_zones": [
+        {
+          "zone_id": "crescent_hearing_shelf",
+          "visible_form": "dry dark stone crescent above the ford with enough low work area for resting hexapods",
+          "used_for": "speaking order, record custody, evidence comparison, and remedy proposals"
+        },
+        {
+          "zone_id": "upland_candle_road",
+          "visible_form": "paired lines of amber fungal fruiting beads descending from upper-right into the shelf",
+          "used_for": "Varet and herd arrival, road testimony, route credit, and dry quarantine spur"
+        },
+        {
+          "zone_id": "river_basin_station",
+          "visible_form": "black stone bowl at the left edge of the shelf seated in a thumb-wide stone runnel that carries water pressure from the visible current",
+          "used_for": "current choir-reef pressure signals and river-bearer staging"
+        },
+        {
+          "zone_id": "archive_frame",
+          "visible_form": "low pale ribbed frame at shelf center holding layered translucent memory membranes and dark custody clasps",
+          "used_for": "record-keeper staging, bounded family evidence, and appeal record"
+        },
+        {
+          "zone_id": "speaking_cords",
+          "visible_form": "pale flexible cords laid across the shelf and lane entrances",
+          "used_for": "speaking order, cargo boundary, remedy paths, and visible office authority"
+        },
+        {
+          "zone_id": "dry_root_lane",
+          "visible_form": "curving dry passage beneath three lantern trees, bounded by raised roots and cold blue hanging knots",
+          "used_for": "provisional and recognized cargo-free glassback passage"
+        },
+        {
+          "zone_id": "wet_ford_lane",
+          "visible_form": "shallow water crossing tiled with silver-green prism-patterned mats",
+          "used_for": "ordinary crossing, mirror-amoeba reveal, reef closure, and prismwake refusal"
+        },
+        {
+          "zone_id": "downcurrent_channel",
+          "visible_form": "river flowing leftward from the ford toward a distant low mineral reef mouth",
+          "used_for": "reef pressure continuity, courier route, contamination direction, and redress evidence transport"
+        },
+        {
+          "zone_id": "wet_sediment_line",
+          "visible_form": "muddy boundary between the fungal road bank and ford water",
+          "used_for": "lattice-ant diagnostic bridge and source tracing"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "elevated_crossing_wide",
+          "supports_visual_scene_ids": ["low_bend_establishing", "low_bend_routine_fold", "low_bend_remedy_threshold"]
+        },
+        {
+          "camera_id": "shelf_participant_medium",
+          "supports_visual_scene_ids": ["low_bend_parties", "low_bend_public_record_choice", "low_bend_standing_test"]
+        },
+        {
+          "camera_id": "ford_rupture_close_wide",
+          "supports_visual_scene_ids": ["low_bend_silver_rupture", "low_bend_evidence_work"]
+        },
+        {
+          "camera_id": "closure_aftermath_wide",
+          "supports_visual_scene_ids": ["low_bend_ending_closure"]
+        },
+        {
+          "camera_id": "root_lane_aftermath_wide",
+          "supports_visual_scene_ids": ["low_bend_ending_split"]
+        },
+        {
+          "camera_id": "archive_evidence_close",
+          "supports_visual_scene_ids": ["low_bend_ending_exoneration"]
+        },
+        {
+          "camera_id": "downcurrent_redress_wide",
+          "supports_visual_scene_ids": ["low_bend_ending_redress"]
+        }
+      ],
+      "staging_slots": [
+        {
+          "slot_id": "path_opener_center",
+          "zone": "crescent_hearing_shelf",
+          "allowed_agents": ["seyr_path_opener"]
+        },
+        {
+          "slot_id": "record_keeper_archive",
+          "zone": "archive_frame",
+          "allowed_agents": ["ili_record_keeper"]
+        },
+        {
+          "slot_id": "claimant_routeward",
+          "zone": "upland_candle_road",
+          "allowed_agents": ["varet_claimant"]
+        },
+        {
+          "slot_id": "road_bearer_station",
+          "zone": "upland_candle_road",
+          "allowed_agents": ["unindebted_signal_bearers"]
+        },
+        {
+          "slot_id": "river_bearer_station",
+          "zone": "river_basin_station",
+          "allowed_agents": ["unindebted_signal_bearers"]
+        },
+        {
+          "slot_id": "herd_route_edge",
+          "zone": "upland_candle_road",
+          "allowed_agents": ["low_bend_glassback_herd"]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "shelf_to_both_passages",
+          "path": "path_opener_center -> dry_root_lane and wet_ford_lane",
+          "supports": ["prepare_split_passage", "ask_herd_consent", "remedy_split_channels"]
+        },
+        {
+          "lane_id": "river_signal_line",
+          "path": "downcurrent_channel -> wet_ford_lane -> river_basin_station",
+          "supports": ["prime_river_evidence", "crosscheck_river_channels", "remedy_close_and_restore"]
+        },
+        {
+          "lane_id": "sediment_diagnostic_line",
+          "path": "upland_candle_road corpse pocket -> wet_sediment_line -> wet_ford_lane",
+          "supports": ["trace_upstream_seep", "trace_family_bundle", "remedy_exonerate_and_open"]
+        },
+        {
+          "lane_id": "courier_redress_line",
+          "path": "archive_frame -> downcurrent_channel -> distant reef mouth",
+          "supports": ["prepare_second_crossing", "remedy_second_crossing"]
+        }
+      ],
+      "branch_persistent_states": [
+        {
+          "state": "source_trace == 2",
+          "visible_form": "ant diagnostic line begins at older upstream pocket and crosses later graft deposit"
+        },
+        {
+          "state": "source_trace == 1",
+          "visible_form": "silver moisture remains attached to graft bundle on dry quarantine spur"
+        },
+        {
+          "state": "split_lane >= 2",
+          "visible_form": "graft cargo remains behind cord while herd stages at root lane"
+        },
+        {
+          "state": "appeal_ready >= 2",
+          "visible_form": "courier and sealed evidence travel downcurrent; high route cord becomes empty"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for participants visible in a rendered frame.",
+    "characters": {
+      "seyr_path_opener": "Seyr: adult Sa'ueia route reader, long-bodied hexapod with four tall digitigrade running legs folded or planted beneath the torso and two smaller chest limbs ending in three soft opposing digits; short pale-gray insulating fibers over charcoal hide; two broad chemical-sensing facial fans striped cream and rust; narrow wedge-shaped head; balanced slate-blue flank straps; calm low posture and precise chest-hand gestures; one thin white scar across the right facial fan.",
+      "ili_record_keeper": "Ili: elderly Sa'ueia archive keeper, long-bodied hexapod with four sturdy digitigrade running legs and two small three-digit chest manipulators; dark umber hide under sparse silver fibers; left chemical-sensing facial fan healed into a permanent crooked fold; pale archive cords looped across the flank; compact resting posture near low work surfaces; dry attentive expression carried through fan angle and head tilt.",
+      "varet_claimant": "Varet: younger adult Sa'ueia route traveler, long-bodied hexapod with four lean digitigrade running legs and two three-digit chest manipulators; copper-brown hide under cream-and-black short fibers; paired facial fans with dark blue edges; balanced woven flank frame holding sealed pale graft bundles; alert forward posture, frequent glances between herd, lanes, and record."
+    },
+    "groups": {
+      "unindebted_signal_bearers": "Two adult Sa'ueia route readers from different families, each a long-bodied hexapod with four digitigrade running legs, two smaller three-digit chest manipulators, wedge-shaped head, and paired chemical-sensing facial fans. One wears moss-green flank cords at the amber fungal candle station; the other wears river-blue cords at the black water basin. Their bodies remain visibly separated at different signal sources.",
+      "low_bend_glassback_herd": "Small herd of stocky alien quadruped grazers with broad muzzles, dark flexible hides, and tall translucent dorsal plates covering living heat-storage tissue. Plate colors show cloudy amber warmth, dark stress, and pale route confidence. One visibly pregnant dam has a low heavy abdomen and a blue woven pack frame that can be removed; the herd communicates by broadside display, flank spacing, stamping, and lane approach.",
+      "witness_threadwing": "One small alien courier animal with a narrow gliding body, hooked perching feet, and several long ribbonlike sensory vanes in place of feathered wings. The vanes shimmer cream, blue, and mineral silver; a braided route loop can carry a salt bead, sealed water droplet, or rolled translucent record. Body language uses vane flutter, head angle, gripping, launch, and refusal to land.",
+      "diagnostic_lattice_ants": "A colony of tiny black jointed insects that lock their bodies into a flexible bridge or net over wet ground. Pale shed fibers and translucent microbial glue connect them into a temporary circuit; chemical history appears as silver, amber, and dark stains traveling through the assembled mesh."
+    }
+  },
+  "review_notes": [
+    "The visual plan includes a draft textual scene_set with fixed zones, camera slots, staging slots, sightlines, and branch-persistent spatial states.",
+    "High-consistency website art still requires a hand-built plan view or 3D blockout before image generation; the manifest intentionally defers rendering.",
+    "Prompts use affirmative visible geometry and explain Sa'ueia, glassback, threadwing, fungal-road, lantern-grove, prismwake, mirror-amoeba, and archive forms for a general image model.",
+    "Low Bend is a fixture-local descriptive label and the images must not invent culture-specific signage or permanent court architecture."
+  ]
+}

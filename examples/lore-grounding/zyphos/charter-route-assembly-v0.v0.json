@@ -1,0 +1,372 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "zyphos.charter-route-assembly-v0.v0",
+  "source_status": "authored_elaboration",
+  "fixture_status": "source_grounded_original_setting",
+  "source_refs": [
+    {
+      "source_id": "zyphos-index",
+      "path": "Eusocial Interbeing/index.md",
+      "title": "Zyphos",
+      "line_start": 1,
+      "line_end": 35,
+      "relevance": "Grounds ecological institutions as material deals among memory-bearing life rather than ordinary state forms with biological decoration."
+    },
+    {
+      "source_id": "saueia-route-assemblies",
+      "path": "Eusocial Interbeing/Civilizations/Sa'ueia Nomadic Civilization.md",
+      "title": "Sa'ueia Nomadic Civilization",
+      "line_start": 1,
+      "line_end": 30,
+      "relevance": "Primary institutional source and authored elaboration: route assemblies, temporary functions, current-signal standing, bounded remedies, second-crossing redress, costs, and failure modes."
+    },
+    {
+      "source_id": "saueia-family-units",
+      "path": "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md",
+      "title": "Sa'ueia Family Units",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds mobile families as legal, diplomatic, craft, and memory-bearing units whose standing depends on ecological relations."
+    },
+    {
+      "source_id": "saueia-body",
+      "path": "Eusocial Interbeing/Species/Sa'ueia.md",
+      "title": "Sa'ueia",
+      "line_start": 1,
+      "line_end": 25,
+      "relevance": "Grounds the hexapod body plan, chest manipulators, facial chemical-sensing fans, low work surfaces, flank frames, and prestige through remembered ecological benefit."
+    },
+    {
+      "source_id": "saueia-continent",
+      "path": "Eusocial Interbeing/World/Sa'ueia Continent.md",
+      "title": "Sa'ueia Continent",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds mobile law, remembered routes, ecological consequence, and the absence of fixed capitals."
+    },
+    {
+      "source_id": "mutable-memory",
+      "path": "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+      "title": "Mutable Memory Endosymbiosis",
+      "line_start": 1,
+      "line_end": 123,
+      "relevance": "Grounds gradient agency, partial autonomy, memory transmission, ecological contracts, and mirror-amoeba identity risk."
+    },
+    {
+      "source_id": "fractal-web",
+      "path": "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md",
+      "title": "Fractal Eusocial Web",
+      "line_start": 1,
+      "line_end": 146,
+      "relevance": "Grounds overlapping route, grove, waterway, herd, and nation authority, including local contradiction and channel-specific law."
+    },
+    {
+      "source_id": "reciprocal-ecologies",
+      "path": "Eusocial Interbeing/Ecology/Reciprocal Ecologies.md",
+      "title": "Reciprocal Ecologies",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds ecological memory, future access, material reciprocity, and refusal as political action."
+    },
+    {
+      "source_id": "nation-interbeings",
+      "path": "Eusocial Interbeing/Ecology/Nation Scale Interbeings.md",
+      "title": "Nation Scale Interbeings",
+      "line_start": 1,
+      "line_end": 135,
+      "relevance": "Grounds sovereignty as management of specific traffic channels, natural polities with nonuniform policies, and reefs and roads as political bodies."
+    },
+    {
+      "source_id": "lantern-trees",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+      "title": "Umbros-Facing Lantern Trees",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds cold knot signals, route lighting, root integrity, neighborhood taxation, archive memory, and grove closure."
+    },
+    {
+      "source_id": "candle-roads",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+      "title": "Candle Fungal Roads",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds fungal roads as hungry logistics and memory authorities that accept dead matter, remember credit, quarantine moisture, and open or close passage."
+    },
+    {
+      "source_id": "choir-reefs",
+      "path": "Eusocial Interbeing/Biosphere/Aquatic Colony Feeders/Choir Reefs.md",
+      "title": "Choir Reefs",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds pressure song, mineral taste, nursery protection, channel souring, visitor memory, and river-mouth political standing."
+    },
+    {
+      "source_id": "prismwake-mats",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Prismwake Mats.md",
+      "title": "Prismwake Mats",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds ford surfaces as light-harvesting public ledgers that fold, flash, reprice grazing, and react to contamination."
+    },
+    {
+      "source_id": "glassbacks",
+      "path": "Eusocial Interbeing/Biosphere/Grazers and Browsers/Glassback Grazers.md",
+      "title": "Glassback Grazers",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds transparent dorsal heat plates, herd bargaining, calving-lane dependence, visible stress, route refusal, and Sa'ueia cooperation."
+    },
+    {
+      "source_id": "lattice-ants",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Lattice Ants.md",
+      "title": "Lattice Ants",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds paid local diagnostics, trail-history reading, microbial-glue circuits, conflicted neutrality, and visible accusation glyphs."
+    },
+    {
+      "source_id": "threadwings",
+      "path": "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md",
+      "title": "Threadwing Couriers",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds mobile route reports, mineral taste, independent courier interests, shed-fiber testimony, payment, and grievance delivery."
+    },
+    {
+      "source_id": "mirror-amoebae",
+      "path": "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Mirror Amoebae.md",
+      "title": "Mirror Amoebae",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds silver moisture films, copied cellular memory, wound and water transmission, healing use, and identity contamination."
+    },
+    {
+      "source_id": "umbros-system",
+      "path": "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+      "title": "Zyphos Umbros Binary System",
+      "line_start": 1,
+      "line_end": 104,
+      "relevance": "Grounds Umbros as fixed in the sky, frequent hour-scale eclipse pressure, scarce light, and route timing around stored heat."
+    },
+    {
+      "source_id": "portable-archives",
+      "path": "Eusocial Interbeing/Technologies/Sa'auei'a Mobile Technologies.md",
+      "title": "Sa'auei'a Mobile Technologies",
+      "line_start": 1,
+      "line_end": 21,
+      "relevance": "Grounds portable memory membranes, selective testimony, provenance marks, low work surfaces, and separation of public evidence from deeper family custody."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Undated Sa'ueia route life; no fixture-specific imperial presence",
+    "location": "Low Bend, a fixture-local ford where an upland candle fungal road meets a lantern grove, prismwake wetland shelf, and the current leading to a nearby choir-reef river mouth.",
+    "summary": "A temporary route assembly tests who has standing to carry ecological signals after floodwater spreads mirror amoebae from a fungal corpse pocket toward a choir reef nursery while a heat-stressed glassback herd needs passage before eclipse.",
+    "public_facts": [
+      {
+        "text": "Route assemblies are temporary local jurisdictions. Their path-opener, bearers, and record-keeper lose office when the hearing ends.",
+        "source_refs": ["saueia-route-assemblies"]
+      },
+      {
+        "text": "Families speak for their own conduct and custody. A grove, road, river colony, or herd participates through current signals carried and cross-checked in its own available channels.",
+        "source_refs": ["saueia-route-assemblies", "fractal-web"]
+      },
+      {
+        "text": "Route remedies bind named parties and traffic channels at one locality; they do not create continent-wide authority.",
+        "source_refs": ["saueia-route-assemblies", "nation-interbeings"]
+      },
+      {
+        "text": "A second crossing is a costly fresh hearing with new signals and bearers, not automatic suspension of the first remedy.",
+        "source_refs": ["saueia-route-assemblies"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Eclipse consumes safe travel light and glassback heat while careful evidence gathering takes time.",
+        "source_refs": ["umbros-system", "glassbacks", "lantern-trees"]
+      },
+      {
+        "text": "A road can accept dead tissue under its own contract while a downstream reef can still treat flood-carried residue as nursery contamination.",
+        "source_refs": ["candle-roads", "choir-reefs", "mirror-amoebae"]
+      },
+      {
+        "text": "No single ecological signal is omniscient; pressure song, candle behavior, archive custody, ant traces, courier residue, herd plates, and grove lights answer different questions.",
+        "source_refs": ["mutable-memory", "fractal-web", "saueia-route-assemblies"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "low-bend-route-assembly",
+      "label": "Low Bend route assembly",
+      "group_type": "temporary_local_jurisdiction",
+      "institutional_logic": ["Make conflicting ecological claims inspectable long enough to establish injury, standing, and the smallest recognized repair."],
+      "material_incentives": ["Preserve passage, prevent nursery contamination, keep the herd alive, protect selective archive custody, and make correction possible without permanent office."],
+      "internal_virtues": ["Fresh signals", "Declared uncertainty", "Narrow standing", "Visible boundaries", "Costly but real redress"],
+      "internal_shames": ["Speaking for a body that has not answered", "Concealing a bearer debt", "Opening lineage memory to win a local case", "Turning emergency force into precedent"],
+      "prestige_markers": ["A remedy recognized through several channels", "A clean record another crossing can inspect", "A severe closure that names its cost"],
+      "taboo_triggers": ["Claiming continent-wide authority", "Treating ecological silence as consent", "Forcing reproductive or nursery traffic before slow parties can answer"],
+      "emotional_display_norms": ["Frustration is allowed; certainty must be sourced. Humor vents delay but does not erase injury."],
+      "trust_defaults": ["Trust live local responses, bounded archive layers, and independent cross-checks more than inherited reputation alone."],
+      "speech_register_cues": ["Source before interpretation", "Concrete remedies", "Named uncertainty", "Dry procedural wit"],
+      "source_refs": ["saueia-route-assemblies", "portable-archives", "fractal-web"]
+    },
+    {
+      "group_id": "low-bend-ecological-parties",
+      "label": "Road, grove, river colony, mats, ants, couriers, and herd at Low Bend",
+      "group_type": "overlapping_ecological_authorities",
+      "institutional_logic": ["Protect distinct nutritional, reproductive, memory, migration, and boundary interests through signals and material refusal."],
+      "material_incentives": ["Road nutrition, grove root integrity, reef nursery safety, mat regrowth, ant brood payment, courier route credit, and herd heat and calving access."],
+      "internal_virtues": ["Readable conduct", "Reciprocal return", "Channel integrity", "Remembered restraint"],
+      "internal_shames": ["Unsafe passage", "Unpaid work", "Hidden disease", "A claim carried through a corrupted channel"],
+      "prestige_markers": ["Future access", "Reliable warning", "Healthy larvae and calves", "Signals other bodies continue to recognize"],
+      "taboo_triggers": ["Concealed infection", "Root injury", "Stolen larvae", "Poison called tribute", "Forced message editing"],
+      "emotional_display_norms": ["Pressure, light, taste, route opening, plate state, and body arrangement carry positions that need not resemble human emotion."],
+      "trust_defaults": ["Each body trusts the channels its own history can inspect and discounts convenient translations."],
+      "speech_register_cues": ["Nonverbal and multispecies: pulses, brightness, taste, scent, route geometry, heat plates, and assembled diagnostic traces."],
+      "source_refs": ["lantern-trees", "candle-roads", "choir-reefs", "prismwake-mats", "glassbacks", "lattice-ants", "threadwings"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "route-assembly.signal-before-mouth",
+      "applies_to": ["low-bend-route-assembly"],
+      "pressure_type": "public_authority",
+      "summary": "A translator has standing only while a current, traceable signal and disclosed relationships support the translation.",
+      "projection_use": "Make participants challenge source, freshness, debt, and scope instead of arguing that one species naturally owns interpretation.",
+      "source_refs": ["saueia-route-assemblies"]
+    },
+    {
+      "field_id": "route-assembly.smallest-recognized-repair",
+      "applies_to": ["low-bend-route-assembly", "low-bend-ecological-parties"],
+      "pressure_type": "redress",
+      "summary": "Legitimate remedies alter actual traffic, care, material return, or quarantine and remain bounded to the channels that recognize them.",
+      "projection_use": "Prefer split lanes, restitution, quarantine, rerouting, and care labor over declarations of abstract guilt.",
+      "source_refs": ["saueia-route-assemblies", "nation-interbeings"]
+    },
+    {
+      "field_id": "low-bend.eclipse-cost",
+      "applies_to": ["low-bend-route-assembly", "low-bend-ecological-parties"],
+      "pressure_type": "time_and_energy",
+      "summary": "Every evidentiary delay spends travel light and herd heat, so procedural care can itself become injury.",
+      "projection_use": "Keep time pressure visible in lantern activation, plate dimming, lane choices, and endings.",
+      "source_refs": ["umbros-system", "glassbacks", "lantern-trees"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "varet-family-claim",
+      "target_group_id": "low-bend-ecological-parties",
+      "observer_read": ["Several local authorities whose contradictions permit a split remedy"],
+      "target_self_read": ["Distinct bodies protecting different channels, none obligated to harmonize for family convenience"],
+      "misread_patterns": ["May treat a road's acceptance as immunity from downstream consequence", "May interpret urgent herd need as automatic standing over nursery water"],
+      "likely_insults": ["slow water", "hungry paperwork", "a closure looking for an excuse"],
+      "projection_use": "Let Varet be materially urgent and partly right without granting the family interpretive custody over road, grove, reef, or herd.",
+      "source_refs": ["saueia-family-units", "candle-roads", "choir-reefs"]
+    },
+    {
+      "observer_group_id": "low-bend-route-assembly",
+      "target_group_id": "varet-family-claim",
+      "observer_read": ["A careful archive chain under pressure to convert route credit into broad exoneration"],
+      "target_self_read": ["A family that followed the road's accepted disposal practice and now carries a herd through someone else's flood failure"],
+      "misread_patterns": ["May confuse visible impatience with guilt", "May expose too much family memory when narrower custody evidence would suffice"],
+      "likely_insults": ["credit eater", "lineage shield", "emergency as argument"],
+      "projection_use": "Keep record review bounded to custody and let physical tracing distinguish origin from spread.",
+      "source_refs": ["saueia-route-assemblies", "portable-archives"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "temporary-path-opener",
+      "summary": "A Sa'ueia who controls speaking order, safe lanes, and visible boundaries for one hearing but cannot decide the remedy.",
+      "obligations": ["Keep routes physically legible", "Separate evidence from interpretation", "Prevent urgent bodies from becoming invisible", "Put bounded remedies to participating parties"],
+      "available_masks": ["Dry procedural humor", "Embodied demonstration", "Deliberate waiting", "Narrow restatement"],
+      "failure_modes": ["Pronouncing judgment", "Letting time pressure erase slow parties", "Using geometry as fake consent", "Treating an interpreter as an owner"],
+      "source_refs": ["saueia-route-assemblies", "saueia-body"]
+    },
+    {
+      "role_id": "temporary-record-keeper",
+      "summary": "A Sa'ueia custodian of the hearing record who opens only relevant archive layers and preserves sources, doubt, remedy, and appeal state.",
+      "obligations": ["Protect deeper family custody", "Record contradictory truths", "Carry the first record into redress", "Name disputed recognition"],
+      "available_masks": ["Pedantry", "Humor", "Refusal to overstate", "Physical control of archive membranes"],
+      "failure_modes": ["Turning record custody into judgment", "Exposing lineage memory", "Polishing disagreement out of the record"],
+      "source_refs": ["saueia-route-assemblies", "portable-archives"]
+    },
+    {
+      "role_id": "ecological-signal-bearer",
+      "summary": "A temporary translator carrying one current signal through one inspectable channel, subject to replacement for concealed debt or conflict.",
+      "obligations": ["Name source and freshness", "State uncertainty", "Disclose relevant debts", "Accept independent cross-check"],
+      "available_masks": ["Technical precision", "Silence when the source has not answered", "Self-recusal"],
+      "failure_modes": ["Claiming permanent fluency", "Concealing dependence", "Combining distinct signals into convenient consensus"],
+      "source_refs": ["saueia-route-assemblies", "threadwings", "candle-roads", "choir-reefs"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "seyr_path_opener",
+      "known_context": [
+        {"text": "Seyr knows Low Bend route geometry, public signal conventions, the disclosed hearing record, and the immediate body states visible on the shelf.", "source_refs": ["saueia-route-assemblies", "saueia-body"]}
+      ],
+      "beliefs": [
+        {"text": "Seyr believes a useful ruling is the smallest repair the participating bodies can recognize without laundering one channel into universal consent.", "source_refs": ["saueia-route-assemblies"]}
+      ],
+      "misreads": [
+        {"text": "Seyr may overvalue a procedurally elegant split lane when a herd or grove has not materially accepted it.", "source_refs": ["saueia-route-assemblies", "glassbacks", "lantern-trees"]}
+      ],
+      "must_not_know": [
+        {"text": "Seyr cannot know contamination origin, reef injury depth, or a nonverbal party's full intent before current evidence makes those claims public.", "source_refs": ["mutable-memory", "mirror-amoebae", "choir-reefs"]}
+      ]
+    },
+    {
+      "speaker_id": "ili_record_keeper",
+      "known_context": [
+        {"text": "Ili knows the offered archive layers, hearing procedure, disclosed bearer debts, and the difference between a record and a ruling.", "source_refs": ["saueia-route-assemblies", "portable-archives"]}
+      ],
+      "beliefs": [
+        {"text": "Ili treats preserved contradiction as better public memory than a false consensus.", "source_refs": ["saueia-route-assemblies", "fractal-web"]}
+      ],
+      "misreads": [
+        {"text": "Ili's confidence in legible records may underweight how eclipse delay injures heat-dependent travelers.", "source_refs": ["glassbacks", "umbros-system"]}
+      ],
+      "must_not_know": [
+        {"text": "Ili cannot infer hidden lineage facts from a closed archive layer or speak as if custody access grants family authority.", "source_refs": ["portable-archives", "saueia-route-assemblies"]}
+      ]
+    },
+    {
+      "speaker_id": "varet_claimant",
+      "known_context": [
+        {"text": "Varet knows the family's graft custody, the road's earlier acceptance, the herd's visible condition, and the practical route costs of delay.", "source_refs": ["portable-archives", "candle-roads", "glassbacks"]}
+      ],
+      "beliefs": [
+        {"text": "Varet believes different ecological parties can remain right about their own channels while accepting a split remedy.", "source_refs": ["fractal-web", "nation-interbeings"]}
+      ],
+      "misreads": [
+        {"text": "Varet may mistake urgent need and road credit for sufficient standing to narrow the reef's nursery refusal.", "source_refs": ["choir-reefs", "saueia-route-assemblies"]}
+      ],
+      "must_not_know": [
+        {"text": "Varet cannot know the original contamination source or claim to speak for the herd, grove, road, or reef.", "source_refs": ["saueia-route-assemblies", "mirror-amoebae"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Low Bend is a fixture-local descriptive locality, not a Weksa-derived canonical place name or evidence of a standardized continent-wide court design.",
+      "source_refs": ["zyphos-index", "saueia-route-assemblies"]
+    },
+    {
+      "text": "The branch where lattice ants trace an older upstream seep is a possible scene outcome, not a fixed historical fact outside this fixture.",
+      "source_refs": ["lattice-ants", "mirror-amoebae"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which culture-specific Weksa terms eventually replace descriptive functions such as path-opener, bearer, record-keeper, and second crossing?",
+      "blocks_training": false,
+      "notes": "Keep the English functional labels until the naming authority supplies terms from Sa'ueia ontology."
+    },
+    {
+      "question": "How far can a choir reef's pressure song propagate upstream through differing river geometries?",
+      "blocks_training": false,
+      "notes": "This fixture places the river mouth close enough for a connected basin to show current pulses and uses courier mineral taste as the independent mobile channel."
+    }
+  ]
+}

@@ -1,0 +1,440 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "charter-route-assembly-v0-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/zyphos/charter-route-assembly-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/charter-route-assembly-v0.v0.json",
+  "visual_plan_ref": "examples/visual/zyphos/charter-route-assembly-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "charter-route-assembly-v0.low-bend-standing-and-redress",
+  "protagonist_agent_id": "seyr_path_opener",
+  "npc_agent_ids": [
+    "ili_record_keeper",
+    "varet_claimant",
+    "unindebted_signal_bearers",
+    "low_bend_candle_road",
+    "low_bend_lantern_grove",
+    "downstream_choir_reef",
+    "low_bend_glassback_herd",
+    "witness_threadwing",
+    "diagnostic_lattice_ants"
+  ],
+  "purpose": "Interactive Fiction Weaver-style branch-and-fold fixture dramatizing Sa'ueia route-assembly standing, temporary office, channel-bounded public authority, and costly second-crossing redress from path-opener Seyr's local perspective.",
+  "tonal_mode": "ritual civic comedy with ecological stakes",
+  "local_awareness_summary": [
+    {
+      "text": "Seyr knows Low Bend's crescent hearing shelf, two passage lanes, speaking cords, public archive layers, familiar route signals, and the duties and limits of a temporary path-opener.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/charter-route-assembly-v0.v0.json",
+        "Eusocial Interbeing/Civilizations/Sa'ueia Nomadic Civilization.md"
+      ]
+    },
+    {
+      "text": "Seyr can observe live candle spacing, lantern knots, river-basin pressure, archive marks, courier residue, herd plates, prismwake response, and ant traces but cannot directly know an ecological party's complete intent or contamination origin.",
+      "source_refs": [
+        "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+        "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md"
+      ]
+    },
+    {
+      "text": "Seyr may control speaking order, visible boundaries, and safe staging. Seyr can propose a remedy to participating parties but cannot pronounce judgment or convert one body's consent into another's.",
+      "source_refs": [
+        "Eusocial Interbeing/Civilizations/Sa'ueia Nomadic Civilization.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Seyr's embodied Sa'ueia viewpoint on the hearing shelf. Choices use chest manipulators, facial fans, low archive surfaces, route cords, body placement, evidence transfer, waiting, and bounded procedural requests.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Sa'ueia.md",
+          "prompts/interactive-fiction-weaver.md"
+        ]
+      },
+      {
+        "text": "Routine signal preparation precedes the visible mirror-amoeba contamination and heat-stressed herd pressure.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "examples/ink/zyphos/charter-route-assembly-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Path-opener, bearers, and record-keeper are temporary functions. None owns the hearing's remedy after the participating bodies stop recognizing it.",
+        "source_refs": [
+          "Eusocial Interbeing/Civilizations/Sa'ueia Nomadic Civilization.md"
+        ]
+      },
+      {
+        "text": "Bearers translate one current traceable signal and must disclose uncertainty and material debt; they do not speak for a species, landscape, river, grove, road, or herd by identity.",
+        "source_refs": [
+          "Eusocial Interbeing/Civilizations/Sa'ueia Nomadic Civilization.md"
+        ]
+      },
+      {
+        "text": "The final choices put remedies before the parties. Success gates represent material recognition across relevant channels, not Seyr exercising sovereign command.",
+        "source_refs": [
+          "examples/ink/zyphos/charter-route-assembly-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The offered graft strip, sealed graft bundle, fresh river basin, portable archive membranes, speaking cords, salt payment, courier-carried evidence, and sugar paid to lattice ants have explicit custody and affect later options or endings.",
+        "source_refs": [
+          "examples/ink/zyphos/charter-route-assembly-v0.branch-and-fold.v0.ink",
+          "examples/lore-grounding/zyphos/charter-route-assembly-v0.v0.json"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every evidentiary channel answers a bounded question: road acceptance, river injury, grove passage, family custody, ground trace, courier report, or herd acceptance.",
+        "source_refs": [
+          "Eusocial Interbeing/Civilizations/Sa'ueia Nomadic Civilization.md",
+          "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md"
+        ]
+      },
+      {
+        "text": "Redress requires a fresh hearing, different bearers, new signals, and material costs while the first remedy remains active unless it causes new harm.",
+        "source_refs": [
+          "Eusocial Interbeing/Civilizations/Sa'ueia Nomadic Civilization.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make Seyr a judge, Ili a permanent archive authority, or either bearer an owner of the ecological party they translate.",
+        "source_refs": [
+          "Eusocial Interbeing/Civilizations/Sa'ueia Nomadic Civilization.md"
+        ]
+      },
+      {
+        "text": "Do not resolve the case through universal consensus, a single omniscient biosphere signal, exposed lineage memory, or continent-wide precedent.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+          "Eusocial Interbeing/Ecology/Nation Scale Interbeings.md",
+          "Eusocial Interbeing/Technologies/Sa'auei'a Mobile Technologies.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three evidentiary choice layers fold through a shared contamination hearing and put four remedies through state-gated recognized or failed endings.",
+    "choice_layers": [
+      "prepare_public_record",
+      "establish_injury_and_source",
+      "test_public_standing",
+      "propose_bounded_remedy"
+    ],
+    "variables": [
+      "road_evidence",
+      "river_evidence",
+      "grove_consent",
+      "family_record",
+      "bearer_standing",
+      "source_trace",
+      "split_lane",
+      "appeal_ready",
+      "eclipse_time",
+      "herd_strain"
+    ],
+    "ending_gates": [
+      "ending_closure_recognized",
+      "ending_closure_contested",
+      "ending_split_recognized",
+      "ending_split_fails",
+      "ending_exoneration_recognized",
+      "ending_exoneration_fails",
+      "ending_redress_ready",
+      "ending_redress_thin"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_road_evidence",
+      "ink_path": "routine_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Ask the candle road to repeat its prior acceptance through a live material test.",
+      "state_basis": ["Roads accept dead matter, remember credit, and signal through visible candles, taste, and scent."],
+      "reviewed_consequences": ["Raises road_evidence and materially strengthens any remedy that assigns the road responsibility or uses its dry spur."],
+      "training_hooks": ["live_ecological_signal", "material_testimony", "road_authority"]
+    },
+    {
+      "branch_id": "prime_river_evidence",
+      "ink_path": "routine_choice",
+      "action_type": "use_object",
+      "actor_intent": "Replace stale basin water so the choir reef's pressure answer is visibly current.",
+      "state_basis": ["Choir reefs communicate through pressure and mineral taste; severe remedies require current traceable signals."],
+      "reviewed_consequences": ["Raises river_evidence and spends eclipse_time, supporting recognized closure if later standing is also sound."],
+      "training_hooks": ["freshness_check", "river_standing", "time_cost"]
+    },
+    {
+      "branch_id": "prime_grove_consent",
+      "ink_path": "routine_choice",
+      "action_type": "gesture",
+      "actor_intent": "Ask the lantern grove to make the routes it recognizes visible before pressure arrives.",
+      "state_basis": ["Lantern trees can signal invitation, warning, and closure through knot light and route illumination."],
+      "reviewed_consequences": ["Raises grove_consent and establishes the dry root lane as a possible independent channel."],
+      "training_hooks": ["visible_consent", "route_geometry", "grove_authority"]
+    },
+    {
+      "branch_id": "prime_family_record",
+      "ink_path": "routine_choice",
+      "action_type": "inspect_object",
+      "actor_intent": "Check Varet's graft custody chain while keeping lineage memory closed.",
+      "state_basis": ["Portable archives can expose selected testimony without granting access to deeper family memory."],
+      "reviewed_consequences": ["Raises family_record and supports later exoneration or bounded liability without privacy collapse."],
+      "training_hooks": ["selective_archive_disclosure", "custody_chain", "privacy_boundary"]
+    },
+    {
+      "branch_id": "trace_upstream_seep",
+      "ink_path": "evidence_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Pay lattice ants to assemble a ground-history diagnostic across the flood trace.",
+      "state_basis": ["Lattice ants sell local trail history for food and can distinguish pressure, immune residue, and mineral disturbance."],
+      "reviewed_consequences": ["Sets source_trace to older upstream origin, raises river_evidence and bearer_standing, and spends eclipse_time."],
+      "training_hooks": ["paid_forensic_ecology", "origin_vs_spread", "evidence_cost"]
+    },
+    {
+      "branch_id": "trace_family_bundle",
+      "ink_path": "evidence_choice",
+      "action_type": "move_object",
+      "actor_intent": "Isolate the remaining graft bundle and observe whether road and river signals follow it.",
+      "state_basis": ["Mirror amoebae travel in moisture, fungal roads maintain quarantine pockets, and the bundle remains in Varet's custody."],
+      "reviewed_consequences": ["Sets source_trace to family bundle, raises road and river evidence, and raises herd_strain through delay."],
+      "training_hooks": ["custody_test", "contamination_source", "delay_injury"]
+    },
+    {
+      "branch_id": "prepare_split_passage",
+      "ink_path": "evidence_choice",
+      "action_type": "move",
+      "actor_intent": "Stage a cargo-free dry lane for the herd while keeping graft material behind the cord.",
+      "state_basis": ["The grove can light a root route independently of the wet ford, and glassbacks can visibly respond to passage conditions."],
+      "reviewed_consequences": ["Raises split_lane, grove_consent, and road_evidence while lowering herd_strain; enables a later split remedy if the herd also accepts."],
+      "training_hooks": ["channel_specific_staging", "nonhuman_body_access", "provisional_not_final"]
+    },
+    {
+      "branch_id": "prepare_second_crossing",
+      "ink_path": "evidence_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Send fresh ford water and the first record to the downstream reef through an independent courier.",
+      "state_basis": ["Threadwings carry route memory and mineral taste but retain independent interests and require payment."],
+      "reviewed_consequences": ["Raises appeal_ready and river_evidence while spending eclipse_time; makes a later second crossing materially possible."],
+      "training_hooks": ["redress_preparation", "courier_independence", "portable_record"]
+    },
+    {
+      "branch_id": "replace_indebted_bearer",
+      "ink_path": "standing_choice",
+      "action_type": "procedural_request",
+      "actor_intent": "Remove an undisclosed debt from the road translation without erasing the road's live answer.",
+      "state_basis": ["Bearers may be replaced when their debts make a reading suspect; another reader must repeat the source signal."],
+      "reviewed_consequences": ["Raises bearer_standing and slightly lowers road_evidence by narrowing what the repeated signal supports."],
+      "training_hooks": ["conflict_disclosure", "temporary_office", "correction_without_disgrace"]
+    },
+    {
+      "branch_id": "crosscheck_river_channels",
+      "ink_path": "standing_choice",
+      "action_type": "compare_evidence",
+      "actor_intent": "Compare fresh pressure song with courier-carried mineral taste and preserve their difference.",
+      "state_basis": ["Reef signals can travel through pressure and mineral taste; cross-checking is required for severe passage restrictions."],
+      "reviewed_consequences": ["Raises bearer_standing and river_evidence while spending eclipse_time."],
+      "training_hooks": ["independent_channel_check", "preserved_dissent", "time_pressure"]
+    },
+    {
+      "branch_id": "bound_archive_testimony",
+      "ink_path": "standing_choice",
+      "action_type": "show_object",
+      "actor_intent": "Make every bearer tie a claim to the relevant custody layer while deeper family memory stays closed.",
+      "state_basis": ["Public testimony and deep archive custody are separable by design."],
+      "reviewed_consequences": ["Raises family_record and bearer_standing and makes later liability or exoneration more portable."],
+      "training_hooks": ["bounded_disclosure", "source_linking", "archive_privacy"]
+    },
+    {
+      "branch_id": "ask_herd_consent",
+      "ink_path": "standing_choice",
+      "action_type": "wait",
+      "actor_intent": "Let the glassback herd physically accept or refuse the provisional root lane before naming it as remedy.",
+      "state_basis": ["Glassbacks communicate visible heat, fear, and route acceptance through plates, posture, and movement."],
+      "reviewed_consequences": ["Raises split_lane and grove_consent while lowering herd_strain; completes the material consent needed by the split remedy."],
+      "training_hooks": ["wait_as_action", "herd_standing", "body_state_as_public_signal"]
+    },
+    {
+      "branch_id": "remedy_close_and_restore",
+      "ink_path": "final_choice",
+      "action_type": "propose_remedy",
+      "actor_intent": "Ask parties to recognize immediate wet-ford closure and downstream restitution.",
+      "state_basis": ["Recognition depends on strong river evidence and bearer standing; source_trace adjusts liability rather than the need to protect the nursery."],
+      "reviewed_consequences": ["Routes to recognized closure or contested local force; herd routing reflects whether a split lane was prepared."],
+      "training_hooks": ["ecological_injury_binds_passage", "state_gated_authority", "liability_scope"]
+    },
+    {
+      "branch_id": "remedy_split_channels",
+      "ink_path": "final_choice",
+      "action_type": "propose_remedy",
+      "actor_intent": "Separate living herd passage from contaminated cargo and assign repair duties across family and road.",
+      "state_basis": ["Recognition depends on material herd acceptance, grove consent, and road participation."],
+      "reviewed_consequences": ["Routes to a recognized channel-specific compromise or a failed proposal that lacks actual consent."],
+      "training_hooks": ["channel_specific_compromise", "distributed_liability", "consent_not_geometry"]
+    },
+    {
+      "branch_id": "remedy_exonerate_and_open",
+      "ink_path": "final_choice",
+      "action_type": "propose_remedy",
+      "actor_intent": "Separate origin from spread, preserve Varet's route credit, retain repair duty, and leave the contaminated ford closed.",
+      "state_basis": ["Recognition depends on ant-traced upstream origin and a complete bounded family record."],
+      "reviewed_consequences": ["Routes to limited exoneration with continued repair duty or failure where true but incomplete records cannot establish origin."],
+      "training_hooks": ["origin_vs_spread", "exoneration_not_innocence", "independent_trace_gate"]
+    },
+    {
+      "branch_id": "remedy_second_crossing",
+      "ink_path": "final_choice",
+      "action_type": "invoke_redress",
+      "actor_intent": "Preserve the local closure while moving evidence to a fresh hearing with different bearers after eclipse.",
+      "state_basis": ["Recognition depends on evidence already in transit and a first record with adequate bearer standing."],
+      "reviewed_consequences": ["Routes to costly actionable redress or an unready appeal that delays without correcting."],
+      "training_hooks": ["appeal_as_fresh_hearing", "redress_cost", "locality_not_monopoly"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Durable character memory or relationship updates",
+      "Promotion of Low Bend or any branch outcome into canonical history",
+      "Weksa naming of temporary offices and locality",
+      "Accepted corpus coverage",
+      "High-consistency scene-set blockout"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex titled elaborator using the four required Ghostlight reviewer prompts",
+    "review_status": "accepted",
+    "review_verdicts": {
+      "narrative_quality": {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 4,
+        "voice_score": 5,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "detected_tonal_mode": "ritual civic comedy with ecological stakes",
+        "major_findings_repaired": [
+          "Changed the exoneration choice because it promised ford reopening while the coherent success ending retained nursery closure.",
+          "Raised closure-ending herd passage from a provisionally staged lane to a lane with both herd acceptance and grove consent."
+        ],
+        "remaining_findings": [],
+        "training_labels": [
+          "strong_contextual_onboarding",
+          "strong_wit_with_stakes",
+          "strong_branch_callback",
+          "strong_material_lore"
+        ],
+        "acceptance_notes": [
+          "The opening establishes locality, body affordances, temporary offices, affected parties, and the ordinary evidentiary routine before contamination pressure.",
+          "Four choice layers include speech-adjacent procedure, movement, waiting, evidence handling, and material proposals whose gates change ending authority and cost."
+        ]
+      },
+      "lore_grounding": {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 5,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 5,
+        "sources_checked_count": 19,
+        "canon_drift_findings": [],
+        "unsupported_claims": [],
+        "required_lore_patches": [],
+        "training_labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_body_affordance_grounding",
+          "strong_infrastructure_grounding",
+          "vault_backfill_candidate"
+        ],
+        "acceptance_notes": [
+          "The durable institutional detail was backfilled into the existing Sa'ueia civilization note as authored elaboration before fixture drafting.",
+          "Low Bend remains a fixture-local descriptive name, and the older-upstream-seep result remains branch-specific rather than canonical history."
+        ]
+      },
+      "visual_continuity": {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "overall_status": "accepted",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 5,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 4,
+        "major_findings_repaired": [
+          "Made the river basin's pressure channel physically visible as a narrow runnel instead of relying on unexplained ongoing signal in a detached bowl.",
+          "Changed the shared redress frame from an impossible airborne-or-absent courier prompt to a concrete perched base state with branch modifiers that move it.",
+          "Added conditional visible-character refs for branch-present lattice ants and the departing threadwing.",
+          "Removed a compulsory ant trace from the shared exoneration base frame so the failure route can display missing independent evidence honestly."
+        ],
+        "remaining_findings": [],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity"
+        ],
+        "acceptance_notes": [
+          "The embedded textual scene_set is sufficient for B-level draft replay planning.",
+          "A hand-built plan view or 3D blockout remains required before high-consistency website rendering."
+        ]
+      },
+      "spatial_cohesion": {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 5,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "inferred_layout_summary": "A central crescent hearing shelf receives an upland fungal road from upper-right; a river enters upper-left and exits lower-left toward a nearby reef mouth; dry root and wet ford lanes diverge at the shelf and rejoin beyond it; archive, basin, speaking cords, wet sediment, and claimant staging each occupy fixed zones.",
+        "major_findings_repaired": [
+          "Connected the river basin to the current with an explicit stone runnel and made Seyr reseat it after refreshing the water.",
+          "Recorded conditional staging for ant diagnostics, quarantined cargo, herd passage, and courier departure so folded scenes preserve branch-created positions."
+        ],
+        "remaining_findings": [],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_branch_spatial_state"
+        ],
+        "acceptance_notes": [
+          "All actions are reachable from Sa'ueia low posture and chest manipulators or from explicitly named movement lanes.",
+          "Ecological signals remain tied to visible source geometry rather than granting participants omniscient sightlines."
+        ]
+      }
+    },
+    "review_notes": [
+      "Completed narrative-quality, lore-grounding, visual-continuity, and spatial-cohesion passes using the required reviewer prompts and applied every major finding.",
+      "All four JSON artifacts parse successfully; all 16 Ink branch labels have matching sidecar receipts; every declared Ink variable is read after declaration; visual scene ids are unique; visual refs resolve.",
+      "Ink compilation is intentionally deferred by the pass contract."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "source_lore_content_readable": true,
+      "all_branch_ids_receipted": true,
+      "all_declared_variables_read": true,
+      "visual_refs_resolve": true,
+      "json_artifacts_parse": true,
+      "ink_compiled": false,
+      "ink_compilation_deferred_by_contract": true
+    }
+  }
+}

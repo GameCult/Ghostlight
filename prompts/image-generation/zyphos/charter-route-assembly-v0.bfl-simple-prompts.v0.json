@@ -1,0 +1,60 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "charter-route-assembly-v0.bfl-simple-v0",
+  "fixture_id": "charter-route-assembly-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Hand-painted ecological science-fantasy storybook frame, layered gouache and ink, restrained cold blue and amber bioluminescence, silver-green wetland color, sharp readable silhouettes, tactile living infrastructure, expressive nonhuman body language, cinematic illustrated interactive fiction, purely visual storytelling.",
+  "prompts": [
+    {
+      "id": "01_low_bend_establishing",
+      "prompt": "Wide elevated alien river crossing during eclipse: amber fungal road descends between three blue-glowing lantern trees to a crescent stone hearing shelf; silver-green living mats tile a shallow ford; a separate dry root lane curves under the trees; an enormous dark twin world hangs fixed in the sky; one long-bodied six-limbed route reader rests beside cords, a water basin, and translucent archive membranes."
+    },
+    {
+      "id": "02_assembly_parties",
+      "prompt": "Temporary outdoor hearing on a crescent shelf: three long-bodied six-limbed travelers with smaller chest manipulators gather around low archive membranes; two signal bearers remain separated at amber fungal candles and a black river basin; a ribbon-winged courier grips a high cord; stocky glassback grazers wait routeward with cloudy heat visible in tall translucent dorsal plates."
+    },
+    {
+      "id": "03_public_record_choice",
+      "prompt": "Overhead civic choice composition with four evidence stations around a six-limbed path-opener: clean dead graft inside amber fungal candles, fresh black water basin with ripples, blue lantern knots marking two routes, and layered translucent archive membranes with deeper dark layers physically clasped shut."
+    },
+    {
+      "id": "04_silver_rupture",
+      "prompt": "Pivotal wetland contamination reveal under eclipse: silver cellular shimmer spreads through a shallow ford, prism-patterned living mats curl away, amber fungal candles at the bank extinguish, a black water basin puckers with hard ripples, and a pregnant glassback dam stamps with heat plates fogged dark beside tense six-limbed travelers."
+    },
+    {
+      "id": "05_ant_trace",
+      "prompt": "Forensic ecology at wet sediment: tiny black insects lock into a diagnostic bridge connected by translucent microbial glue; a silver stain traces from an older upstream pocket through a later graft deposit toward the river; a long-bodied six-limbed route reader and an elderly archive keeper inspect the line beside open memory membranes."
+    },
+    {
+      "id": "06_split_lane",
+      "prompt": "Provisional passage at an alien ford: pregnant glassback grazer steps toward a cold blue root lane beneath glowing trees, other herd bodies queue behind, removable graft packs sit behind a pale boundary cord, and the neighboring wet ford remains silver and closed."
+    },
+    {
+      "id": "07_standing_test",
+      "prompt": "Public standing made physical: one six-limbed signal bearer crouches at amber fungal candles, another bends broad facial fans over a rippling black basin, an elderly keeper guards layered archive membranes, a claimant waits beside cargo, and the path-opener controls a pale speaking cord at the center."
+    },
+    {
+      "id": "08_remedy_threshold",
+      "prompt": "Deep-eclipse final threshold at a crescent river shelf: amber fungal road, blue-lit dry root lane, silver contaminated wet ford, and rippling river basin surround four pale remedy cords; six-limbed participants and glassback herd wait in separate positions while the open public record glows at center."
+    },
+    {
+      "id": "09_closure_end",
+      "prompt": "Recognized river closure: wet ford dark under folded prism mats and white warning knots; sealed graft bundle rests on a bright dry fungal spur; public archive and pressure basin carry matching closure marks; a glassback herd waits routeward beside the pale passage cords."
+    },
+    {
+      "id": "10_split_passage_end",
+      "prompt": "Channel-specific compromise under eclipse: unladen glassbacks pass one body at a time along a continuous blue root lane; sealed graft cargo remains behind the boundary cord; amber fungal candles open a dry quarantine spur; silver wet ford stays empty beside folded living mats."
+    },
+    {
+      "id": "11_exoneration_end",
+      "prompt": "Close evidence tableau on translucent memory membranes: a black ant-trace begins at an older upstream wound and crosses a later bright family custody line; separate marks preserve route credit and repair duty; three six-limbed participants form a low triangle around the record while the wet ford remains closed."
+    },
+    {
+      "id": "12_redress_end",
+      "prompt": "Costly appeal after eclipse hearing: ribbon-winged courier flies downcurrent toward a distant mineral reef carrying a sealed droplet and rolled translucent record; on the crescent shelf behind it, six-limbed travelers, quarantined cargo, and a glassback herd wait under amber road beads and cold blue lantern knots."
+    }
+  ]
+}
