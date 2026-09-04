@@ -352,6 +352,8 @@ acceptance roots, and local run scaffolding.
 - Interface authority: `docs/architecture/ghostlight-eve-native-interface.md`
 - Gestalt authority: `docs/architecture/ghostlight-multiresolution-agency.md`
 - Operations: `F:\Projects\gamecult-ops`
+- Faculty-workflow lessons (Epiphany): `F:\Projects\Epiphany
+otesaculty-workflow-lessons-2026-09-04.md`
 
 ## Re-entry warnings
 
