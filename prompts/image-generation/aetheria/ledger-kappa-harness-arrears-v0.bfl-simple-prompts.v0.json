@@ -1,0 +1,80 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "ledger-kappa-harness-arrears-v0.bfl-simple-v0",
+  "fixture_id": "ledger-kappa-harness-arrears-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Bleak humane retro-industrial science-fiction storybook illustration, precise ink linework under translucent gouache color, damp teal support light against amber warning panels and dirty white work lamps, tactile worn polymers and metal, readable nonhuman anatomy, legible machinery and labor hierarchy, restrained dry humor, cinematic square composition, interfaces rendered as abstract bars and icons.",
+  "prompts": [
+    {
+      "id": "01_kappa_prep_establishing",
+      "prompt": "Wide curved maintenance ring inside a rotating asteroid-built habitat: open hazy industrial atmosphere beyond an inward safety rail, dense outward shell wall of ribbed plates, pale aggregate panels, gray-green substrate, air and coolant pipes, two oval crawl throats, low rig-prep bay recessed into the counterspinward end bulkhead beside the inward rail, glass supervisor gallery and badge stair; one harnessed octopoid and three human workers."
+    },
+    {
+      "id": "02_kappa_harness_fit",
+      "prompt": "Medium close view of a mottled umber uplifted octopoid resting across a low work rail while a shaved-head human fitter checks a compact mobile dry-work harness with teal mist collar, oxygenation canister, soft arm cuffs, conductive bands and side tool rail."
+    },
+    {
+      "id": "03_kappa_shift_line",
+      "prompt": "Work-line view toward two narrow shell crawl throats: harnessed octopoid at prep rail, broad human rigger beside wheeled bypass cart, second octopoid testing patched contact bands, transparent sleeve with two sealed white membrane packs, superintendent silhouette behind high operations glass."
+    },
+    {
+      "id": "04_kappa_prep_choice",
+      "prompt": "Close four-affordance rig-prep choice: eight-armed octopoid reaches toward sealed humidity membrane, unbranded adapter with custody strip, pale cuff abrasion on their own arm, and a peer's patched contact band while fitter holds gauge and rigger records time."
+    },
+    {
+      "id": "05_kappa_routine_fold",
+      "prompt": "Ordinary maintenance routine in damp teal prep bay: harnessed octopoid tests eight contact bands along low rail, human fitter watches oxygen gauge, rigger inventories clamps, second octopoid moves toward neighboring throat, ribbed shell pipes and consumable sleeve behind them."
+    },
+    {
+      "id": "06_kappa_arrears_notice",
+      "prompt": "Pivotal amber service notice: uplifted octopoid remains visibly supported by pulsing oxygen canister and teal mist collar while every harness indicator and large shift board turns amber; fitter stiffens and rigger looks toward two sealed membrane packs."
+    },
+    {
+      "id": "07_kappa_arrears_choice",
+      "prompt": "Low copy-pad decision under amber light: eight-armed octopoid reaches separately toward sucker-print refusal pad, glowing equipment-balance field, sealed refill and fitter signature card while fitter and rigger hold physical records."
+    },
+    {
+      "id": "08_kappa_gate_rejection",
+      "prompt": "Low outward view at oval Kappa-7 crawl gate: mottled octopoid in active teal-misting harness braces on guide rail and connects utility lead to amber release plate; narrow ribbed artery turns behind structural shell ribs, pipe crossings and condensate traps."
+    },
+    {
+      "id": "09_kappa_default_cascade",
+      "prompt": "Harnessed octopoid waits at amber crawl gate beneath one board of linked amber icons for release, inspection, pressure bypass, thermal reserve, heavy cycle, freight, paid hours and claimshares; mixed workers stop at the ring entrance as supervisor gallery door opens."
+    },
+    {
+      "id": "10_kappa_superintendent_arrival",
+      "prompt": "Short severe superintendent in clean charcoal pressure jacket descends dedicated badge stair from glass gallery toward harnessed octopoid held at amber gate; fitter holds bounded signature card and broad rigger unstraps manual bypass plate beside dense air-coolant manifold wall."
+    },
+    {
+      "id": "11_kappa_response_choice",
+      "prompt": "Wide choice junction in curved shell gallery: harnessed octopoid holds fit card and route diagram between throat scanner, human fitter witness, rigger with bypass plate at large valves, superintendent at white override control and manual receipt surface."
+    },
+    {
+      "id": "12_kappa_shift_threshold",
+      "prompt": "Seal-lung cough ripples through manifold wall: flexible pipe couplings and seal diaphragm flex, amber indicators pulse, eight-armed octopoid braces low on rail, rigger works bypass valves, fitter watches mist collar, superintendent stands at override beneath multiple shrinking reserve bars."
+    },
+    {
+      "id": "13_kappa_final_choice",
+      "prompt": "Final dependency choice around centered harnessed octopoid with eight arms oriented toward shared bypass kit and civilian pressure bar, narrow crawl throat beside a separate override control, sealed joined receipt, and prep bay where other fitted workers wait; rigger, fitter and superintendent hold separate stations."
+    },
+    {
+      "id": "14_kappa_ending_air",
+      "prompt": "Air-margin aftermath at human-scale bypass manifold: broad rigger seats flat manual plate across large valves, harnessed octopoid signals timing from low rail, fitter watches oxygen loop, civilian pressure line rises while heavy-cycle light stays dark and open kit compartments expose finite supply."
+    },
+    {
+      "id": "15_kappa_ending_production",
+      "prompt": "Inside cramped curved Kappa-7 shell artery, uplifted octopoid in compact teal-misting harness braces eight arms across structural ribs beside flexible seal-lung valve nest and shifted sensor bracket; pale shielding panels, coolant cuffs, condensate and strain gauges crowd the route."
+    },
+    {
+      "id": "16_kappa_ending_proof",
+      "prompt": "Proof aftermath at amber throat gate: fitter seals transparent sleeve around stiff manual receipt joining invoice, harness, rejected gate, attendance, bypass and freight icons; harnessed octopoid and rigger add sucker mark and grease-pencil time while superintendent watches from override control."
+    },
+    {
+      "id": "17_kappa_ending_workers",
+      "prompt": "Quiet support-line aftermath in damp prep bay: harnessed octopoid turns from amber gate toward low rails, fitter monitors oxygenation loop, rigger rolls bypass cart toward civilian manifold, mixed baseline and harnessed octopoid workers form a loose line between shift entry and shared refills."
+    }
+  ]
+}

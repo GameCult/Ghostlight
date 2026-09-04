@@ -1,0 +1,508 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "ledger-kappa-harness-arrears-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/aetheria/ledger-kappa-harness-arrears-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/aetheria/ledger-kappa-harness-arrears-v0.v0.json",
+  "visual_plan_ref": "examples/visual/aetheria/ledger-kappa-harness-arrears-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "ledger-kappa-harness-arrears-v0.kappa-last-current-shift",
+  "protagonist_agent_id": "tavi",
+  "npc_agent_ids": [
+    "sela_jori",
+    "rook_venn",
+    "ione_malk",
+    "kappa_shift_workers"
+  ],
+  "purpose": "Interactive Fiction Weaver draft of a Pallas Kappa harness-service arrears cascade from Tavi's embodied perspective. Tonal mode: dry workplace comedy under slow industrial strangulation, with quiet mutual aid.",
+  "local_awareness_summary": [
+    {
+      "text": "Tavi is an uplifted octopoid maintenance worker using a mobile dry-operation harness with humidity, oxygenation, pressure-cuff, contact-band, tool, and interlock support. Choices use eight-arm bracing, sucker contact, compact crawling, manual records, fit judgment, and route memory.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/ledger-kappa-harness-arrears-v0.v0.json"
+      ]
+    },
+    {
+      "text": "Tavi can observe the rig-prep bay, Service Ring Kappa board, throat gate, operations gallery, bypass manifold, current service notice, manual records, coworkers, and their own body; they cannot inspect private insurer or procurement reasoning.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/ledger-kappa-harness-arrears-v0.v0.json"
+      ]
+    },
+    {
+      "text": "The immediate pressure is a current harness paired with paused consumable issue and recertification, a rejected crawl release, a due Kappa-7 inspection, and a temporary bypass that preserves atmosphere while spending pressure and thermal margin.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/ledger-kappa-harness-arrears-v0.v0.json"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Tavi's embodied viewpoint across the prep rail, service ring, throat gate, and limited visible route. Institutional consequences appear only through boards, receipts, gates, spoken claims, and material changes Tavi can perceive.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/aetheria/ledger-kappa-harness-arrears-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Routine harness fitting, coworker banter, and ordinary work choices precede the arrears notice and gate refusal.",
+        "source_refs": [
+          "AGENTS.md#Aetheria-Grounding-Doctrine",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Sela can witness fit and condition inside a recorded envelope; she cannot certify Kappa-7, decide Tavi's consent, pay AU's debt, or bind the yard insurer.",
+        "source_refs": [
+          "examples/lore-grounding/aetheria/ledger-kappa-harness-arrears-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Ione owns AU's local badge and production exception but cannot create bodily margin, enlarge Sela's signature, or turn an unaccepted crawl into accepted evidence by declaration.",
+        "source_refs": [
+          "examples/lore-grounding/aetheria/ledger-kappa-harness-arrears-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Tavi owns whether to enter and can contribute route judgment, manual evidence, work, refusal, and crew coordination; Tavi does not control freight, payroll, insurance, or the whole habitat.",
+        "source_refs": [
+          "examples/lore-grounding/aetheria/ledger-kappa-harness-arrears-v0.v0.json"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The fitted harness, two sealed humidity membranes, pooled adapter, manual fit card, custody sleeve, strike-safe bypass plate, utility interlock, and joined receipt have explicit holders and branch-visible uses.",
+        "source_refs": [
+          "examples/ink/aetheria/ledger-kappa-harness-arrears-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "The unpaid batch service invoice must visibly cascade through recertification, coverage acceptance, badge release, missed inspection, bypass margin, freight, paid hours, claimshare pressure, and future maintenance budget.",
+        "source_refs": [
+          "examples/lore-grounding/aetheria/ledger-kappa-harness-arrears-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The support remains live after the notice; the scene must not use a supplier remote kill switch or make administrative authority physically omnipotent.",
+        "source_refs": [
+          "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md"
+        ]
+      },
+      {
+        "text": "Mutual aid can preserve bodily and civilian air margin for hours while still spending finite compatible inventory and leaving production, wages, and supply dependence unresolved.",
+        "source_refs": [
+          "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make the exact Kappa geometry, lease sequence, insurer rule, or consumable compatibility universal to all Blooms, AU ramps, or BioElevate contracts.",
+        "source_refs": [
+          "examples/lore-grounding/aetheria/ledger-kappa-harness-arrears-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Do not found the Cephalopod Syndicate, solve the Pallas Species Strikes, or let one heroic choice erase the material dependency web.",
+        "source_refs": [
+          "examples/lore-grounding/aetheria/ledger-kappa-harness-arrears-v0.v0.json"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four harness-preparation choices fold into the arrears notice; four record and custody responses fold into the rejected gate; four bypass and exception responses fold into one final dependency threshold; four priorities select eight state-gated endings.",
+    "choice_layers": [
+      "harness_preparation",
+      "arrears_response",
+      "gate_and_bypass_response",
+      "dependency_priority"
+    ],
+    "variables": [
+      "rig_margin",
+      "crew_reserve",
+      "arrears_evidence",
+      "worker_cohesion",
+      "yard_margin",
+      "claimshare_pressure",
+      "route_knowledge",
+      "superintendent_pressure",
+      "limited_entry_record",
+      "production_exception",
+      "lease_balance_signed"
+    ],
+    "ending_gates": [
+      "ending_air_margin_success",
+      "ending_air_margin_cost",
+      "ending_production_success",
+      "ending_production_cost",
+      "ending_proof_success",
+      "ending_proof_cost",
+      "ending_workers_success",
+      "ending_workers_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prep_fresh_membrane",
+      "ink_path": "prep_choice",
+      "action_type": "use_object",
+      "actor_intent": "Buy bodily margin before the crawl with the last sealed supplier-tracked consumable.",
+      "state_basis": ["Tavi can select a compatible sealed membrane from the visible custody sleeve."],
+      "reviewed_consequences": ["Raises rig_margin, spends crew_reserve, and raises claimshare_pressure through an individually logged issue."],
+      "training_hooks": ["bodily_margin_as_inventory", "individual_support_charge", "finite_reserve"]
+    },
+    {
+      "branch_id": "prep_pooled_adapter",
+      "ink_path": "prep_choice",
+      "action_type": "use_object",
+      "actor_intent": "Use a crew-held compatible adapter while preserving sealed refills for injury or failure.",
+      "state_basis": ["Sela can physically check local fit; Tavi and Rook can close a worker-held custody strip."],
+      "reviewed_consequences": ["Raises rig_margin, worker_cohesion, and arrears_evidence through a pooled part and manual custody record."],
+      "training_hooks": ["mutual_aid_before_crisis", "manual_custody", "support_compatibility"]
+    },
+    {
+      "branch_id": "prep_record_cuff_wear",
+      "ink_path": "prep_choice",
+      "action_type": "show_body",
+      "actor_intent": "Turn an abraded cuff mark into inspectable evidence before the clock starts.",
+      "state_basis": ["Tavi can show their own skin and request a bounded fit record."],
+      "reviewed_consequences": ["Raises route_knowledge, arrears_evidence, and superintendent_pressure while making bodily cost visible."],
+      "training_hooks": ["body_as_evidence", "fit_record", "time_pressure"]
+    },
+    {
+      "branch_id": "prep_peer_band",
+      "ink_path": "prep_choice",
+      "action_type": "assist",
+      "actor_intent": "Improve another worker's contact-band fit at the cost of counted shift time.",
+      "state_basis": ["Tavi has relevant body-specific fit knowledge and can manipulate the band with several arms."],
+      "reviewed_consequences": ["Raises worker_cohesion, route_knowledge, and claimshare_pressure through unpaid maintenance time."],
+      "training_hooks": ["embodied_peer_care", "unpaid_support_work", "ordinary_mutual_aid"]
+    },
+    {
+      "branch_id": "arrears_refuse_balance",
+      "ink_path": "arrears_choice",
+      "action_type": "refuse_document",
+      "actor_intent": "Reject conversion of AU's batch-service default into personal equipment debt.",
+      "state_basis": ["The balance form and manual copy pad are visible and reachable by sucker contact."],
+      "reviewed_consequences": ["Raises arrears_evidence and superintendent_pressure; preserves a worker-held refusal copy."],
+      "training_hooks": ["administrative_refusal", "sucker_interface", "operator_debt_boundary"]
+    },
+    {
+      "branch_id": "arrears_sign_balance",
+      "ink_path": "arrears_choice",
+      "action_type": "sign_document",
+      "actor_intent": "Preserve immediate custody of the fitted harness by accepting future claim pressure.",
+      "state_basis": ["The form promises continued assignment, not new route acceptance or service."],
+      "reviewed_consequences": ["Sets lease_balance_signed, raises claimshare_pressure, and lowers superintendent_pressure."],
+      "training_hooks": ["coerced_equipment_balance", "body_lease_dependency", "short_term_relief"]
+    },
+    {
+      "branch_id": "arrears_pool_refill",
+      "ink_path": "arrears_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Place a compatible refill under shared worker and fitter custody before supplier issue closes.",
+      "state_basis": ["One sealed refill can be physically transferred and logged without claiming route certification."],
+      "reviewed_consequences": ["Spends crew_reserve and raises rig_margin, worker_cohesion, and arrears_evidence."],
+      "training_hooks": ["shared_consumable_custody", "finite_mutual_aid", "preemptive_support"]
+    },
+    {
+      "branch_id": "arrears_bound_signature",
+      "ink_path": "arrears_choice",
+      "action_type": "speak",
+      "actor_intent": "Separate harness fit, route safety, and operator debt in a recorded exchange.",
+      "state_basis": ["Sela knows the scope of her own signature; Rook can record what is said."],
+      "reviewed_consequences": ["Raises arrears_evidence, route_knowledge, and superintendent_pressure."],
+      "training_hooks": ["signature_scope", "authority_separation", "recorded_dialogue"]
+    },
+    {
+      "branch_id": "response_limited_entry",
+      "ink_path": "response_choice",
+      "action_type": "show_document",
+      "actor_intent": "Request a witnessed throat-mouth entry that preserves air margin without laundering it into full Kappa-7 clearance.",
+      "state_basis": ["The throat mouth and visible coupling can be reached without the blind crawl; Sela can witness the boundary."],
+      "reviewed_consequences": ["Sets limited_entry_record and raises yard_margin and arrears_evidence."],
+      "training_hooks": ["bounded_exception", "life_support_before_throughput", "manual_limit_record"]
+    },
+    {
+      "branch_id": "response_human_bypass",
+      "ink_path": "response_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Move the strike-safe bypass plate to a human-scale manifold and guide work from the support rail.",
+      "state_basis": ["Rook can reach the manifold; Tavi can hold and signal the route diagram from outside the throat."],
+      "reviewed_consequences": ["Raises worker_cohesion and yard_margin while spending crew_reserve."],
+      "training_hooks": ["cross_body_work_handoff", "shared_route_knowledge", "bypass_cost"]
+    },
+    {
+      "branch_id": "response_production_exception",
+      "ink_path": "response_choice",
+      "action_type": "accept_override",
+      "actor_intent": "Preserve wages and freight by accepting route risk under Ione's local production exception.",
+      "state_basis": ["Ione can open the local gate; the harness is still operating but the insurer line remains unaccepted."],
+      "reviewed_consequences": ["Sets production_exception, spends rig_margin, and lowers claimshare_pressure while leaving Ione responsible for the unresolved operator default."],
+      "training_hooks": ["override_not_safety", "personalized_operator_default", "throughput_pressure"]
+    },
+    {
+      "branch_id": "response_join_default",
+      "ink_path": "response_choice",
+      "action_type": "create_record",
+      "actor_intent": "Join the unpaid invoice, rejected release, and prepared nonattendance code into one worker-held receipt.",
+      "state_basis": ["Tavi, Sela, and Rook each hold one visible part of the local causal chain."],
+      "reviewed_consequences": ["Raises arrears_evidence, superintendent_pressure, and claimshare_pressure."],
+      "training_hooks": ["dependency_chain_as_evidence", "cross_ledger_join", "worker_record_custody"]
+    },
+    {
+      "branch_id": "prioritize_air_margin",
+      "ink_path": "final_choice",
+      "action_type": "use_object",
+      "actor_intent": "Spend finite crew inventory to preserve civilian air margin rather than clear production.",
+      "state_basis": ["Outcome depends on yard_margin and crew_reserve."],
+      "reviewed_consequences": ["Routes to air-margin success or an insufficient local service-margin cost based on prior support, stock, and bypass choices."],
+      "training_hooks": ["mutual_aid_preserves_life", "production_remains_stopped", "state_gated_ending"]
+    },
+    {
+      "branch_id": "prioritize_production",
+      "ink_path": "final_choice",
+      "action_type": "move",
+      "actor_intent": "Attempt the full Kappa-7 crawl to preserve wages and booked freight.",
+      "state_basis": ["Outcome depends on production_exception, rig_margin, and route_knowledge."],
+      "reviewed_consequences": ["Routes to a short-term throughput result or bodily injury and incomplete inspection."],
+      "training_hooks": ["bodily_margin_gate", "unsafe_work_pressure", "state_gated_ending"]
+    },
+    {
+      "branch_id": "prioritize_proof",
+      "ink_path": "final_choice",
+      "action_type": "refuse_and_transfer",
+      "actor_intent": "Preserve a joined causal record and refuse the blind crawl.",
+      "state_basis": ["Outcome depends on arrears_evidence and superintendent_pressure."],
+      "reviewed_consequences": ["Routes to joined-default proof or separated accurate records that fail to establish the chain."],
+      "training_hooks": ["causal_record", "refusal_with_evidence", "state_gated_ending"]
+    },
+    {
+      "branch_id": "prioritize_workers",
+      "ink_path": "final_choice",
+      "action_type": "withdraw",
+      "actor_intent": "Keep already-fitted bodies supported together rather than let access categories separate the line.",
+      "state_basis": ["Outcome depends on worker_cohesion and rig_margin."],
+      "reviewed_consequences": ["Routes to a quiet cross-role work stoppage or an isolated refusal under household and bodily pressure."],
+      "training_hooks": ["mutual_aid_before_movement", "cohesion_gate", "state_gated_ending"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Any durable relationship or memory updates for Tavi, Sela, Rook, or Ione",
+      "Any promotion of fixture-local people or events into Pallas history",
+      "Any generalization of this lease and coverage chain to other yards",
+      "Any economy-schema conversion of the harness, service batch, consumables, bypass kit, claimshare balance, or freight delay"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Aetheria Ledger worker using the four required Ghostlight reviewer prompts as separate passes",
+    "review_status": "accepted_with_visual_blockout_deferred",
+    "review_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "artifact_ref": "examples/ink/aetheria/ledger-kappa-harness-arrears-v0.branch-and-fold.v0.ink",
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 4,
+        "voice_score": 5,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "detected_tonal_mode": "Dry workplace comedy under slow industrial strangulation, with embodied procedural dread and quiet mutual aid.",
+        "major_findings": [],
+        "minor_findings": [],
+        "path_specific_failures": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "lore_context_bridges_needed": [],
+        "character_introduction_fixes": [],
+        "branch_fold_fixes": [],
+        "voice_and_prose_fixes": [],
+        "training_labels": [
+          "strong_contextual_onboarding",
+          "strong_branch_callback",
+          "strong_character_voice",
+          "strong_tonal_control",
+          "strong_wit_with_stakes",
+          "strong_material_lore"
+        ],
+        "acceptance_notes": [
+          "The first pass found an impossible final production option on paths where Ione's exception had not opened Kappa-7, a crew-reserve path that could spend stock below zero, and an unexplained claimshare term.",
+          "The repaired artifact gates the full crawl on production_exception, gates the human-bypass response on remaining crew stock, and defines claimshares in the opening before they become an ending cost.",
+          "Tavi, Sela, Rook, Ione, the body-support routine, the two role routes, and the air-versus-production distinction are introduced before any folded payoff depends on them."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "artifact_ref": "examples/ink/aetheria/ledger-kappa-harness-arrears-v0.branch-and-fold.v0.ink",
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 4,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 5,
+        "sources_checked": [
+          {"source_ref": "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md", "reason_checked": "Harness, bypass kit, lease-arrears elaboration, and economy ownership.", "used_for": "canon check and backfill target"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Pallas Species Strikes.md", "reason_checked": "Historical place, time, labor categories, support rigs, and technical chokepoints.", "used_for": "canon check"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md", "reason_checked": "Ramp authority, maintenance budgets, safety exceptions, suppliers, claimshares, and failure allocation.", "used_for": "canon check"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/BioElevate.md", "reason_checked": "Cephalopod adaptation, dry-work support, limiter interfaces, and supplier liability.", "used_for": "canon check"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cephalopod Syndicate.md", "reason_checked": "Later political value of service-artery knowledge and bare-minimum rig history.", "used_for": "context only"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/VitaForge.md", "reason_checked": "Supplier provenance boundary in the mixed Pallas ecology.", "used_for": "contradiction check"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md", "reason_checked": "Uplift provenance, support dependence, agency, and recognition boundaries.", "used_for": "canon check"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Biodrone.md", "reason_checked": "Boundary between uplifted workers and purpose-grown biodrones.", "used_for": "contradiction check"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom.md", "reason_checked": "Manufactured habitat construction, recurring certification, supply dependence, and divided maintenance responsibility.", "used_for": "canon check"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom Habitat Anatomy.md", "reason_checked": "Open atmosphere, shell access, pressure and thermal flow, bypasses, and failure propagation.", "used_for": "canon check"},
+          {"source_ref": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md", "reason_checked": "Belt and Pallas overlapping authority, shared air, and maintenance chokepoints.", "used_for": "context only"},
+          {"source_ref": "Aetheria/Brainstorming/Technology/Bloom Habitat Constraint Ledger.md", "reason_checked": "Provisional Kappa subsystem, access hierarchy, and AU geometry pressure.", "used_for": "provisional spatial check"},
+          {"source_ref": "Aetheria/Brainstorming/Technology/Bloom Habitat Systems Walkthroughs.md", "reason_checked": "Worker, octopoid, and supervisor routes plus Kappa engineering and visual requirements.", "used_for": "provisional spatial check"},
+          {"source_ref": "Aetheria/Brainstorming/Technology/Bloom Habitat Open Questions And Red Team.md", "reason_checked": "Kappa red-team constraints and sightline requirements.", "used_for": "contradiction check"},
+          {"source_ref": "Aetheria/Brainstorming/Technology/Bloom Habitat Ontology Drafts.md", "reason_checked": "Provisional Kappa layout, throat purpose, seal-lung cluster, and gallery route.", "used_for": "provisional spatial check"},
+          {"source_ref": "Aetheria/Brainstorming/Technology/Bloom Habitat Engineering Research Notes.md", "reason_checked": "Physical and economic justification for narrow service arteries and life-support power.", "used_for": "context only"},
+          {"source_ref": "Aetheria/Brainstorming/Technology/Bloom Habitat Article Audit.md", "reason_checked": "Boundary between current canon anatomy and provisional Kappa story geometry.", "used_for": "contradiction check"},
+          {"source_ref": "Aetheria/Brainstorming/Technology/Bloom Habitat Quantitative Sanity Anchors.md", "reason_checked": "Shielding, structure, scale, access cost, and explicit provisional status.", "used_for": "provisional spatial check"},
+          {"source_ref": "Aetheria/Brainstorming/Vault Cleanup/index.md", "reason_checked": "Verification ledger stating Kappa remains provisional brainstorming.", "used_for": "authority boundary check"}
+        ],
+        "source_gaps": [],
+        "canon_drift_findings": [],
+        "unsupported_claims": [],
+        "stale_or_conflicting_lore": [],
+        "vault_backfill_candidates": [
+          {
+            "priority": "high",
+            "target_source": "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+            "candidate_fact": "One bounded Pallas yard pattern leases dry-operation harness support in batches, letting operator arrears propagate through consumables, recertification, accepted access, inspection, bypass margin, freight, hours, and claimshares while worker-held bypass gear can interrupt the cascade briefly.",
+            "artifact_origin": "Kappa arrears notice, gate rejection, default-cascade fold, and air-margin or proof endings.",
+            "why_it_belongs": "It turns an existing equipment seed into a reusable economy and dependency mechanism for future writing, simulation, and commodity design.",
+            "how_to_add_without_bloat": "Already added as one explicitly non-universal authored subsection in the existing item-hook owner; scheduler commit is pending."
+          }
+        ],
+        "required_story_revisions": [],
+        "required_lore_patches": [],
+        "suggested_story_revisions": [],
+        "suggested_lore_patches": [],
+        "training_labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_faction_pressure",
+          "strong_body_affordance_grounding",
+          "strong_infrastructure_grounding",
+          "vault_backfill_candidate",
+          "economy_schema_candidate"
+        ],
+        "acceptance_notes": [
+          "The first pass found generic pressure-lung terminology drifting from the Kappa sources' seal-lung language; every occurrence was repaired in prose and prompt surfaces.",
+          "The fixture marks the Kappa map, exact cast, exact shift, and exact contract pattern as bounded drafts. It neither universalizes the insurer rule nor places the later Cephalopod Syndicate in the room.",
+          "VitaForge remains a separate mixed-yard supplier and is not assigned ownership of Tavi, the BioElevate harness, or the default cascade."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "artifact_ref": "examples/visual/aetheria/ledger-kappa-harness-arrears-v0.branch-and-fold.v0.visual.json",
+        "overall_status": "needs_revision",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 5,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 3,
+        "major_findings": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "The embedded scene-set map has no rendered plan view or 3D blockout for the repeated multi-angle Kappa ring.",
+            "why_it_matters": "Text and structured zones can stage the draft, but generated art cannot reliably preserve ring curvature, throat occlusion, gallery elevation, gate state, and multi-body reach across seventeen frames.",
+            "evidence": "The plan reuses one ring from six camera slots and makes routes, sightlines, valves, support rails, and body access consequential.",
+            "fix_direction": "Before website rendering, build a camera-specific plan view or simple blockout from the declared fixed zones, routes, occluders, camera slots, staging slots, and state anchors."
+          }
+        ],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "missing_visual_scenes": [],
+        "weak_image_prompts": [],
+        "missing_scene_set_needs": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "No camera-specific rendered blockout accompanies the detailed embedded map.",
+            "why_it_matters": "High-consistency replay art needs visual geometry input stronger than text.",
+            "evidence": "Seventeen concept frames use six camera slots in one curved environment.",
+            "fix_direction": "Materialize the embedded map as plan-view or 3D camera renders before generating website art."
+          }
+        ],
+        "missing_branch_modifiers": [],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity",
+          "missing_scene_set"
+        ],
+        "acceptance_notes": [
+          "The first pass removed a base prompt that painted Kappa-7 white before production_exception earned that state and replaced a negative style instruction with affirmative interface direction.",
+          "All seventeen Ink visual ids map one-to-one to standalone base prompts; visible named characters and groups have stable refs, and all sixteen material branches have visible modifiers.",
+          "The BFL manifest supplies seventeen matching concept prompts. Rendering is deferred, so the current output is accepted as concept-ready collateral and remains explicitly short of high-consistency website replay."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "artifact_ref": "examples/ink/aetheria/ledger-kappa-harness-arrears-v0.branch-and-fold.v0.ink and examples/visual/aetheria/ledger-kappa-harness-arrears-v0.branch-and-fold.v0.visual.json",
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 5,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "inferred_layout_summary": "A curved human-scale ring runs spinward-counterspinward between an inward safety rail facing open yard atmosphere and an outward manufactured-shell manifold wall. The counterspinward prep bay feeds Tavi along a low guide rail to near Kappa-7; human-scale bypass valves sit between Kappa-7 and the partly occluded background throat. Ione's glass gallery hangs inward-above the ring and reaches the cascade-board landing by a dedicated stair. The sharp throat turn hides the blind artery and sensor nest from every ring and gallery observer.",
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "spatial_questions": [],
+        "diagram_or_visual_plan_needs": [
+          {
+            "priority": "high",
+            "needed_artifact": "camera-specific plan view or 3D blockout before image generation",
+            "reason": "The embedded map proves draft staging, while generated multi-angle continuity needs a visual geometry source.",
+            "minimum_required_detail": "Materialize eight fixed zones, four role routes, three occluders, six camera slots, six staging slots, and five persistent state anchors already declared in the visual plan."
+          }
+        ],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_branch_spatial_state",
+          "diagram_needed"
+        ],
+        "acceptance_notes": [
+          "The first pass found the prep bay occupying an inward wall while the same side opened to the yard, plus a wheel-like movement verb for a harness with no wheel mechanism.",
+          "The repaired layout places the prep bay in a counterspinward bulkhead beside the inward rail and moves Tavi by eight-arm crawling and bracing.",
+          "Each role has one explicit route, the gallery cannot see through the throat turn, all objects retain fixed zones, and folded state remains visible through gate, inventory, receipt, crew-formation, and rig-margin anchors."
+        ]
+      }
+    ],
+    "review_notes": [
+      "One-shot authoring is bootstrap scaffolding for the fixture corpus and does not claim to be a runtime responder capture.",
+      "The four reviewer prompts were applied as separate narrative, lore, visual, and spatial passes after artifact drafting; their first-pass findings were repaired before the verdicts above were recorded.",
+      "No Ink compiler was installed or invoked. Static checks found valid JSON, 16 matching Ink/sidecar branch ids, 17 matching Ink/visual scene ids, 21 knots, 16 choices, 8 endings, and no unread declared Ink variables.",
+      "No images were generated. The BFL prompt manifest is deferred input only."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

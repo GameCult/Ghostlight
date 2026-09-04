@@ -1,0 +1,336 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.ledger-kappa-harness-arrears-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "pallas-maintenance-assemblies",
+      "path": "Aetheria/Economy/Item Hooks/Pallas Strike Maintenance Assemblies.md",
+      "title": "Pallas Strike Maintenance Assemblies",
+      "line_start": 1,
+      "line_end": 118,
+      "relevance": "Primary equipment and economy owner for the cephalopod dry-operation harness, strike-safe bypass kit, and the authored Kappa lease-arrears cascade."
+    },
+    {
+      "source_id": "pallas-species-strikes",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Pallas Species Strikes.md",
+      "title": "Pallas Species Strikes",
+      "line_start": 1,
+      "line_end": 15,
+      "relevance": "Historical place and time, mixed supplier ecology, dry-yard cephalopod labor, liability categories, technical chokepoints, and coordinated refusal."
+    },
+    {
+      "source_id": "aeronautics-unlimited",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+      "title": "Aeronautics Unlimited",
+      "line_start": 1,
+      "line_end": 29,
+      "relevance": "Grounds ramps, temporary operating authority, maintenance budgets, safety exceptions, supplier separation, claimshares, and household exposure to project failure."
+    },
+    {
+      "source_id": "bioelevate",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/BioElevate.md",
+      "title": "BioElevate",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds dry-yard cephalopod bodies and rigs, industrial adaptation, limiter interfaces, and supplier-liability language."
+    },
+    {
+      "source_id": "cephalopod-syndicate",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Cephalopod Syndicate.md",
+      "title": "Cephalopod Syndicate",
+      "line_start": 1,
+      "line_end": 7,
+      "relevance": "Grounds later political leverage from zero-g maintenance knowledge and bare-minimum dry-operation support rigs without placing a mature Syndicate in this fixture."
+    },
+    {
+      "source_id": "uplift",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Uplift.md",
+      "title": "Uplift",
+      "line_start": 1,
+      "line_end": 13,
+      "relevance": "Grounds uplift as an existing lineage changed by interfaces and environments, and separates cognition from legal recognition."
+    },
+    {
+      "source_id": "bloom",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom.md",
+      "title": "Bloom",
+      "line_start": 1,
+      "line_end": 41,
+      "relevance": "Grounds manufactured rotating habitats, recurrent certification pressure, imported machinery, ramp control, and divided maintenance responsibility."
+    },
+    {
+      "source_id": "bloom-anatomy",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom Habitat Anatomy.md",
+      "title": "Bloom Habitat Anatomy",
+      "line_start": 1,
+      "line_end": 66,
+      "relevance": "Grounds open atmosphere, manufactured shell, service access, utility crossings, bypasses, thermal and pressure failure, and authority at physical chokepoints."
+    },
+    {
+      "source_id": "territories",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+      "title": "Territories",
+      "line_start": 1,
+      "line_end": 61,
+      "relevance": "Grounds the Belt as overlapping technical authority and the Pallas yards as mixed-category labor inside shared air and maintenance chokepoints."
+    },
+    {
+      "source_id": "kappa-ontology-draft",
+      "path": "Aetheria/Brainstorming/Technology/Bloom Habitat Ontology Drafts.md",
+      "title": "Bloom Habitat Ontology Drafts",
+      "line_start": 357,
+      "line_end": 405,
+      "relevance": "Provisional spatial source for Service Ring Kappa, the operations gallery, crawl throats, seal lungs, sensor nests, and separate worker routes."
+    },
+    {
+      "source_id": "kappa-walkthrough-draft",
+      "path": "Aetheria/Brainstorming/Technology/Bloom Habitat Systems Walkthroughs.md",
+      "title": "Bloom Habitat Systems Walkthroughs",
+      "line_start": 41,
+      "line_end": 234,
+      "relevance": "Provisional causal and visual source for rig preparation, role routes, Kappa mixed utilities, dangerous access, and the required blueprint relationships."
+    },
+    {
+      "source_id": "kappa-quantitative-draft",
+      "path": "Aetheria/Brainstorming/Technology/Bloom Habitat Quantitative Sanity Anchors.md",
+      "title": "Bloom Habitat Quantitative Sanity Anchors",
+      "line_start": 1,
+      "line_end": 148,
+      "relevance": "Provisional constraint that narrow service access reflects shielding, structure, downtime, and certification costs rather than arbitrary tunnel drama."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Pallas Species Strikes period, 2719-2724",
+    "location": "Provisional Service Ring Kappa in an Aeronautics Unlimited industrial Bloom in the Pallas Cluster.",
+    "summary": "A current dry-operation harness remains life-supporting while an unpaid AU batch service invoice pauses consumable issue and recertification. The resulting badge rejection turns one procurement default into a missed Kappa inspection, reduced habitat margin, lost freight, lost hours, and claimshare pressure.",
+    "public_facts": [
+      {
+        "text": "AU Pallas yards place baseline crews, BioElevate uplifts, VitaForge biodrones, suppliers, and supervisors inside shared life-support systems while administering refusals through different categories.",
+        "source_refs": ["pallas-species-strikes", "aeronautics-unlimited", "territories"]
+      },
+      {
+        "text": "BioElevate dry-yard cephalopod lines use mobile humidity, oxygenation, pressure-cuff, contact-band, tool, and diagnostic support suited to narrow low-gravity maintenance spaces.",
+        "source_refs": ["pallas-maintenance-assemblies", "bioelevate", "cephalopod-syndicate"]
+      },
+      {
+        "text": "A Bloom remains dependent on skilled labor, replacement parts, recurring certification, transport, and repair; its bypasses and reserves only buy time.",
+        "source_refs": ["bloom", "bloom-anatomy"]
+      },
+      {
+        "text": "The Kappa room and route model is provisional brainstorming rather than promoted universal Bloom canon.",
+        "source_refs": ["kappa-ontology-draft", "kappa-walkthrough-draft", "kappa-quantitative-draft"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "The harness lease joins bodily support to supplier payment, fitter recognition, yard access, work hours, and claimshares while leaving responsibility split among those offices.",
+        "source_refs": ["pallas-maintenance-assemblies", "aeronautics-unlimited", "bioelevate"]
+      },
+      {
+        "text": "A temporary bypass can preserve atmosphere without clearing heavy production, making the distinction between life safety and throughput materially visible.",
+        "source_refs": ["pallas-maintenance-assemblies", "bloom-anatomy", "kappa-walkthrough-draft"]
+      },
+      {
+        "text": "Workers can pool compatible support consumables and records for hours, but cannot abolish supply dependence with courage or solidarity alone.",
+        "source_refs": ["pallas-maintenance-assemblies", "pallas-species-strikes"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "kappa-cephalopod-crew",
+      "label": "Kappa dry-operation maintenance crew",
+      "group_type": "uplifted_labor_crew",
+      "institutional_logic": ["Keep bodies supported, preserve route knowledge, complete critical maintenance, and resist having operator defaults reclassified as worker defects."],
+      "material_incentives": ["Current humidity and oxygenation support", "Usable work hours and claimshares", "Safe route access", "Shared consumable reserve", "Civilian air margin"],
+      "internal_virtues": ["Accurate hazard memory", "Practical mutual aid", "Refusal that preserves life support", "Custody records workers can inspect"],
+      "internal_shames": ["Spending another worker's bodily margin without asking", "Calling unsafe compliance professionalism", "Letting separate ledgers erase one causal chain"],
+      "prestige_markers": ["A route warning that proves true", "A support repair that remains inspectable", "Keeping a bypass alive without surrendering the stoppage"],
+      "taboo_triggers": ["Being called an assigned assembly holder before a worker", "Having pain or refusal classified as support-rig noncompliance"],
+      "emotional_display_norms": ["Concern is often expressed by checking seals, moving refills, touching route maps, and positioning bodies before anyone makes a speech."],
+      "trust_defaults": ["Trusts lived route memory, physical fit evidence, and specific acts; distrusts green records that collapse body, rig, route, and invoice."],
+      "speech_register_cues": ["Compressed work language", "Body-specific gesture", "Dry jokes about accounting", "Exact distinctions under pressure"],
+      "source_refs": ["pallas-species-strikes", "bioelevate", "cephalopod-syndicate", "pallas-maintenance-assemblies"]
+    },
+    {
+      "group_id": "au-kappa-administration",
+      "label": "AU Kappa Ramp Administration",
+      "group_type": "corporate_operator",
+      "institutional_logic": ["Keep the ramp's pressure systems, freight cycle, maintenance schedule, and future-production claims moving while allocating each failure to the narrowest contract category."],
+      "material_incentives": ["Heavy yard throughput", "Booked freight transfer", "Insurer acceptance", "Deferred maintenance cash", "Continued claimshare confidence"],
+      "internal_virtues": ["Schedule recovery", "Accepted exceptions", "Separate responsibility fields", "Operational continuity"],
+      "internal_shames": ["A default that crosses department boundaries", "A stopped heavy cycle", "A worker-owned receipt that joins the causal chain"],
+      "prestige_markers": ["A short authority route", "A recovered transfer window", "A loss assigned below ramp level"],
+      "taboo_triggers": ["Calling a service arrears event a habitat failure", "Letting worker judgment outrank a current record"],
+      "emotional_display_norms": ["Fear becomes exception language, schedules, attendance codes, and instructions to keep moving."],
+      "trust_defaults": ["Trusts current service marks, gates, timekeeping, and production recovery more than worker-held causal records."],
+      "speech_register_cues": ["Exception language", "Schedule compression", "Personalized responsibility", "Clean declaratives"],
+      "source_refs": ["aeronautics-unlimited", "bloom", "pallas-maintenance-assemblies"]
+    },
+    {
+      "group_id": "licensed-rig-service",
+      "label": "Licensed support-rig fitters",
+      "group_type": "supplier_service",
+      "institutional_logic": ["Keep fitted assemblies within the condition and route envelopes the service can actually witness without absorbing AU's route, labor, or debt authority."],
+      "material_incentives": ["Paid service batches", "Available consumables", "Defensible signatures", "Worker survival", "Continued yard access"],
+      "internal_virtues": ["A signature no larger than the evidence", "Current physical fit", "Preserved manual records"],
+      "internal_shames": ["False route assurance", "Treating an unpaid operator invoice as permission to stop live bodily support"],
+      "prestige_markers": ["A rig that stays usable", "A bounded exception", "A worker-held fit receipt"],
+      "taboo_triggers": ["Pressure to certify the crawl from a prep-bay diagnostic", "Pressure to absorb procurement debt"],
+      "emotional_display_norms": ["Alarm appears as narrowed claims and meticulous hands rather than grand resistance."],
+      "trust_defaults": ["Trusts inspected physical condition within a named envelope and refuses to generalize beyond it."],
+      "speech_register_cues": ["Narrow scope", "Technical correction", "Understated gallows humor", "Refusal by exact boundary"],
+      "source_refs": ["bioelevate", "pallas-maintenance-assemblies", "bloom"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "kappa-crew.support-before-category",
+      "applies_to": ["kappa-cephalopod-crew"],
+      "pressure_type": "mutual_aid",
+      "summary": "Workers quietly move fit knowledge, compatible consumables, and custody records across contract categories because bodies fail faster than institutional responsibility converges.",
+      "projection_use": "Prompt help as concrete handling of rigs, adapters, records, valves, and routes rather than movement rhetoric.",
+      "source_refs": ["pallas-maintenance-assemblies", "pallas-species-strikes"]
+    },
+    {
+      "field_id": "au-kappa.separate-ledger-innocence",
+      "applies_to": ["au-kappa-administration"],
+      "pressure_type": "liability",
+      "summary": "AU preserves operator flexibility by keeping procurement, access, attendance, insurance, and claimshare consequences separately correct.",
+      "projection_use": "Management choices should move fields and schedules while resisting any record that joins them into one default cascade.",
+      "source_refs": ["aeronautics-unlimited", "pallas-maintenance-assemblies"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "au-kappa-administration",
+      "target_group_id": "kappa-cephalopod-crew",
+      "observer_read": ["Assigned assembly holders", "Unavailable route capacity", "Adaptation variance", "Attendance risk"],
+      "target_self_read": ["Workers carrying route memory", "Bodies supported by leased equipment", "The crew preventing an operator default from becoming a pressure failure"],
+      "misread_patterns": ["Treats a current harness as proof of a safe crawl", "Treats badge rejection as worker absence", "Treats pooled support as inventory irregularity"],
+      "likely_insults": ["noncompliant support user", "unavailable capacity", "equipment-balance holder"],
+      "projection_use": "Let AU language stay administratively plausible while the visible room shows the worker present, fitted, and barred from work by AU arrears.",
+      "source_refs": ["aeronautics-unlimited", "bioelevate", "pallas-maintenance-assemblies"]
+    },
+    {
+      "observer_group_id": "kappa-cephalopod-crew",
+      "target_group_id": "licensed-rig-service",
+      "observer_read": ["Necessary hands attached to supplier authority", "Possible witness", "Another office able to say no and unable to fix the whole chain"],
+      "target_self_read": ["Fit and condition specialists", "Bounded signatories", "People trying not to lie with a green diagnostic"],
+      "misread_patterns": ["Workers may initially read recertification pause as fitter punishment", "Fitters may underestimate how bodily dependence makes neutral lease custody coercive"],
+      "likely_insults": ["signature hands", "invoice gills"],
+      "projection_use": "Keep tension between Tavi and Sela specific to supply, signatures, and bodily support; neither has whole-chain authority.",
+      "source_refs": ["bioelevate", "pallas-maintenance-assemblies"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "dry-operation-seal-worker",
+      "summary": "An uplifted octopoid worker whose harness expands access to dry, cramped, low-gravity shell spaces while making continued bodily support an operator and supplier dependency.",
+      "obligations": ["Keep the rig within bodily limits", "Remember route hazards", "Protect civilian air margin", "Decide whether to enter"],
+      "available_masks": ["Routine fit compliance", "Minimal speech", "Tool-focused practicality", "Administrative confusion performed for time"],
+      "failure_modes": ["Taking production risk into the body", "Spending another worker's refill", "Leaving the causal chain in separate ledgers"],
+      "source_refs": ["pallas-species-strikes", "bioelevate", "cephalopod-syndicate", "pallas-maintenance-assemblies"]
+    },
+    {
+      "role_id": "licensed-support-fitter",
+      "summary": "A technician who can witness harness condition and fit inside a named envelope but cannot decide route safety, worker assent, AU debt, or insurer acceptance.",
+      "obligations": ["Keep current support alive", "Bound every signature", "Preserve fit evidence", "Refuse scope inflation"],
+      "available_masks": ["Technical exactness", "Dry humor", "Supplier procedure", "Visible manual work"],
+      "failure_modes": ["Letting urgency enlarge the signature", "Withholding bodily support to collect operator debt"],
+      "source_refs": ["pallas-maintenance-assemblies", "bioelevate", "bloom"]
+    },
+    {
+      "role_id": "ramp-superintendent",
+      "summary": "An AU operator with schedule, badge, exception, and incident authority but no power to manufacture bodily margin or accepted evidence by declaration.",
+      "obligations": ["Protect atmosphere", "Recover heavy cycle", "Keep freight and payroll moving", "Allocate the default"],
+      "available_masks": ["Personal ownership of exceptions", "Calm urgency", "Schedule necessity", "Narrow promises"],
+      "failure_modes": ["Confusing an override with safety", "Personalizing AU arrears", "Preserving production while the same dependency worsens"],
+      "source_refs": ["aeronautics-unlimited", "pallas-maintenance-assemblies", "bloom-anatomy"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "tavi",
+      "known_context": [
+        {"text": "Tavi knows their rig's bodily behavior, Kappa route memory, visible bypass margin, crew-held supplies, and the local shift's work practices.", "source_refs": ["pallas-species-strikes", "kappa-walkthrough-draft", "pallas-maintenance-assemblies"]}
+      ],
+      "beliefs": [
+        {"text": "Tavi believes a record is useful when workers can keep custody of the causal chain and bodily refusal remains separate from supplier and operator judgment.", "source_refs": ["pallas-maintenance-assemblies", "aeronautics-unlimited"]}
+      ],
+      "misreads": [
+        {"text": "Tavi may initially treat Sela's recertification boundary as supplier punishment before seeing how AU's unpaid invoice and yard acceptance recruit it.", "source_refs": ["pallas-maintenance-assemblies", "bioelevate"]}
+      ],
+      "must_not_know": [
+        {"text": "Tavi must not know the later Cephalopod Syndicate as a settled outcome or infer the private decisions of insurer and ramp offices not visible in the room.", "source_refs": ["cephalopod-syndicate", "pallas-species-strikes"]}
+      ]
+    },
+    {
+      "speaker_id": "sela_jori",
+      "known_context": [
+        {"text": "Sela knows current harness condition, fit, consumable custody, the service-payment state shown to her, and the scope of her own signature.", "source_refs": ["bioelevate", "pallas-maintenance-assemblies"]}
+      ],
+      "beliefs": [
+        {"text": "Sela believes a bounded physical record protects workers and fitters better than enlarging a diagnostic into route assurance.", "source_refs": ["bloom", "pallas-maintenance-assemblies"]}
+      ],
+      "misreads": [
+        {"text": "Sela may underestimate how an apparently neutral equipment assignment becomes bodily debt when a worker cannot safely abandon the rig in a dry yard.", "source_refs": ["bioelevate", "pallas-maintenance-assemblies"]}
+      ],
+      "must_not_know": [
+        {"text": "Sela must not know that Kappa-7 is safe from prep-bay diagnostics or decide the worker's consent.", "source_refs": ["kappa-walkthrough-draft", "pallas-maintenance-assemblies"]}
+      ]
+    },
+    {
+      "speaker_id": "ione_malk",
+      "known_context": [
+        {"text": "Ione knows the operations board, freight and bypass clocks, local badge state, AU exception process, and visible worker presence.", "source_refs": ["aeronautics-unlimited", "kappa-walkthrough-draft"]}
+      ],
+      "beliefs": [
+        {"text": "Ione believes one supervised production exception can keep a wider ramp failure from recruiting more systems.", "source_refs": ["aeronautics-unlimited", "bloom-anatomy"]}
+      ],
+      "misreads": [
+        {"text": "Ione may mistake authority to admit an exception for authority over bodily margin, supplier scope, insurer acceptance, and route truth.", "source_refs": ["pallas-maintenance-assemblies", "aeronautics-unlimited"]}
+      ],
+      "must_not_know": [
+        {"text": "Ione must not know Tavi's private pain, exact route memory, or willingness to accept bodily risk unless Tavi shows or states it.", "source_refs": ["uplift", "pallas-species-strikes"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Service Ring Kappa's exact geometry remains provisional brainstorming; the fixture may use it as a bounded scene set but must not describe it as a universal Bloom layout.",
+      "source_refs": ["kappa-ontology-draft", "kappa-walkthrough-draft", "kappa-quantitative-draft"]
+    },
+    {
+      "text": "The batch lease pattern is an authored economy elaboration for this Pallas yard pattern, not proof that every BioElevate or AU contract uses the same payment, certification, or access sequence.",
+      "source_refs": ["pallas-maintenance-assemblies"]
+    },
+    {
+      "text": "Tavi, Sela Jori, Rook Venn, Ione Malk, the exact shift, and all branch outcomes are fixture-local drafts rather than promoted historical canon.",
+      "source_refs": ["pallas-species-strikes"]
+    },
+    {
+      "text": "The later Cephalopod Syndicate is context for the value of service knowledge, not a present organization or guaranteed outcome in this room.",
+      "source_refs": ["cephalopod-syndicate"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "How widespread are batch rig-service leases across AU ramps outside this Pallas yard pattern?",
+      "blocks_training": false,
+      "notes": "Keep the fixture and item hook explicitly local until another source establishes broader practice."
+    },
+    {
+      "question": "Which dry-operation harness consumables are safely interchangeable across fitters and line revisions?",
+      "blocks_training": false,
+      "notes": "The fixture limits mutual aid to physically checked compatible parts and does not claim a universal open standard."
+    },
+    {
+      "question": "What exact Kappa plan view and camera blockout should own high-consistency multi-angle replay?",
+      "blocks_training": false,
+      "notes": "The visual plan supplies a detailed draft scene-set map; rendering remains deferred until a durable blockout exists."
+    }
+  ]
+}

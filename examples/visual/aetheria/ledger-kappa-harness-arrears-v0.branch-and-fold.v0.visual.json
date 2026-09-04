@@ -1,0 +1,345 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "ledger-kappa-harness-arrears-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/aetheria/ledger-kappa-harness-arrears-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/ledger-kappa-harness-arrears-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ledger-kappa-harness-arrears-v0.kappa-last-current-shift",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a Service Ring Kappa harness-service arrears cascade.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary harness preparation, the batch-service notice, the rejected crawl release, the visible default cascade, the superintendent's short route, four material responses, and four state-gated ending families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the rig-prep bay, harness closeup, shift-line power geometry, preparation choice, ordinary fold, arrears notice, arrears response, gate rejection, cascade board, superintendent arrival, bypass response, threshold, final priority, and each ending family. The amber notice, rejected gate, and seal-lung cough are pivotal replay screens.",
+    "prompting_rule": "Each base image prompt states the full visible frame in plain image language, including engineered-shell geometry, body plan, equipment, light, material, interfaces, and positions. Continuity notes remain tooling constraints. Prompt assembly includes visual refs only for named characters and groups visible in the rendered frame.",
+    "global_style_cue": "Style: bleak humane retro-industrial science-fiction storybook illustration, precise ink linework beneath translucent gouache color, damp teal support light against amber warning panels and dirty white work lamps, tactile worn polymers and metal, readable nonhuman anatomy, legible machinery and labor hierarchy, restrained dry humor, cinematic interactive-fiction frame, interfaces represented by abstract bars, icons, and color fields.",
+    "prompt_assembly_rule": "Assemble each image prompt from global_style_cue, scene base_image_prompt, visual refs only for visible named characters or groups, and triggered state_image_modifiers or global_branch_image_modifiers. Exclude absent character refs and visual_continuity_notes. Use the camera-specific scene-set blockout as visual input before any high-consistency multi-angle rendering.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture returns to one curved maintenance ring from six angles and uses elevation, route access, occlusion, body reach, and persistent objects as branch meaning. The embedded map defines draft geometry authority for prose and concept prompts.",
+      "future_scene_set_need": "Before high-consistency website rendering, build a plan view or simple 3D blockout from the fixed zones, routes, occluders, camera slots, staging slots, and state anchors declared below."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "kappa_prep_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view along a curved human-scale maintenance gallery inside a rotating industrial space habitat at Pallas. The inward side opens behind a waist-high safety rail to a vast hazy yard atmosphere, suspended white work lamps, distant gantries, and a subtle upward curve toward the axis. The outward side is a dense engineered shell wall of dark ribbed plating, pale consolidated asteroid aggregate behind inspection panels, gray-green structural substrate, heavy seals, parallel air and coolant pipes, condensate drains, valve wheels, sensor cabinets, and two oval crawl throats. A low rig-prep bay recesses into the counterspinward service bulkhead at the near end beside the inward rail; a glass operations gallery hangs one level above with a metal badge stair descending to the ring. Amber utility light and damp teal support lamps reflect on worn metal flooring. Four workers are small figures at the prep bay: one uplifted octopoid in a compact mobile harness and three baseline humans in work clothes.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "low on the work-support rail in the near prep bay", "visual_ref": "visual_character_refs.characters.tavi"},
+          {"agent_id": "sela_jori", "default_stance": "beside Tavi with fit tools", "visual_ref": "visual_character_refs.characters.sela_jori"},
+          {"agent_id": "rook_venn", "default_stance": "beside the equipment cart", "visual_ref": "visual_character_refs.characters.rook_venn"},
+          {"agent_id": "kappa_shift_workers", "default_stance": "one additional harnessed octopoid at the neighboring support rail", "visual_ref": "visual_character_refs.groups.kappa_shift_workers"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Bloom-inward is across the safety rail toward open yard atmosphere; Bloom-outward is into the manufactured pressure shell and crawl throats.",
+          "Service Ring Kappa curves spinward and counterspinward. It is a repeated access circuit around one local seal-lung and bypass cluster, not a habitat-scale corridor.",
+          "The operations gallery sees the human-scale ring and gate faces. Curved shell ribs and throat turns occlude the blind arteries beyond them."
+        ]
+      },
+      {
+        "visual_scene_id": "kappa_harness_fit",
+        "ink_anchor": "introduce_tavi",
+        "base_image_prompt": "Medium close view in a damp teal rig-prep bay. Tavi, an uplifted octopoid with eight flexible arms, a rounded mantle, mottled umber skin paling around old cuff marks, and two dark lateral eyes, rests low across a stainless work-support rail. A compact mobile work harness lies close around the mantle: flexible charcoal body loops, a misting collar releasing fine beads of water, a small pulsing oxygenation canister behind the mantle, soft pressure cuffs and conductive contact bands on several arms, a side tool rail, and a short utility interlock lead. The equipment leaves all eight arms free to brace and manipulate tools. Sela Jori, a wiry baseline human fitter with brown skin, a shaved head, faded green coveralls, and a mechanical fit gauge, checks a cuff while meeting Tavi's eye. Ribbed shell panels, labeled hose couplings, and a transparent wall sleeve holding two sealed membrane packs fill the background.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "mantle supported low, several arms relaxed across the rail, one arm offered for fitting", "visual_ref": "visual_character_refs.characters.tavi"},
+          {"agent_id": "sela_jori", "default_stance": "crouched at the rail checking one soft pressure cuff", "visual_ref": "visual_character_refs.characters.sela_jori"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Tavi's harness remains a compact mobile support assembly with open arm movement and low-profile life-support components.",
+          "Tavi's pale old cuff marks remain visible near the base of two arms."
+        ]
+      },
+      {
+        "visual_scene_id": "kappa_shift_line",
+        "ink_anchor": "introduce_shift_line",
+        "base_image_prompt": "Medium-wide work-line view from the rig-prep bay toward the crawl throats. Tavi, a mottled umber uplifted octopoid in a close mobile humidity-and-oxygenation harness, faces an outward shell wall with two oval ribbed crawl openings. Rook Venn, a broad baseline human rigger with dark cropped hair, oil-streaked orange-gray coveralls, worn gloves, and a scarred tool belt, stands by a wheeled equipment cart carrying a flat manual bypass plate, coiled hoses, clamps, and a route diagram. A second harnessed octopoid passes a steel nut along patched contact bands at the neighboring rail. A transparent custody sleeve holds two white sealed humidity membranes and one small metal-polymer adapter. Above, Superintendent Ione Malk appears as a compact silhouette behind the operations-gallery glass; her enclosed badge stair descends directly to the ring. Dirty white work lamps, damp teal rig lights, and amber schedule bars reveal the hierarchy of routes.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "oriented toward the two crawl throats", "visual_ref": "visual_character_refs.characters.tavi"},
+          {"agent_id": "rook_venn", "default_stance": "one hand on the equipment cart", "visual_ref": "visual_character_refs.characters.rook_venn"},
+          {"agent_id": "ione_malk", "default_stance": "small silhouette behind operations glass above", "visual_ref": "visual_character_refs.characters.ione_malk"},
+          {"agent_id": "kappa_shift_workers", "default_stance": "one harnessed octopoid testing a patched contact band", "visual_ref": "visual_character_refs.groups.kappa_shift_workers"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The worker entrance is counterspinward beyond the prep bay. The operations gallery has its own upper spoke-side route and badge stair.",
+          "Kappa-7 is the nearer active throat. The second throat remains visible deeper spinward behind the manifold pump bodies."
+        ]
+      },
+      {
+        "visual_scene_id": "kappa_prep_choice",
+        "ink_anchor": "prep_choice",
+        "base_image_prompt": "Choice composition at the Kappa rig-prep rail, framed tightly enough to read four physical affordances. Tavi, a mottled umber uplifted octopoid wearing a compact misting and oxygenation harness, holds several arms near a sealed white humidity membrane, an unbranded metal-polymer adapter with a tamper strip, a pale abraded cuff mark on their own skin, and the patched contact band of a second octopoid worker. Sela, a shaved-head human fitter in green coveralls, holds a fit gauge and manual record card. Rook, a broad human rigger in orange-gray coveralls, waits with a grease pencil. Teal mist light, amber clock bars, wall couplings, and the transparent custody sleeve make body support, evidence, time, and shared inventory equally visible.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "arms spread among membrane, adapter, cuff mark, and peer contact band", "visual_ref": "visual_character_refs.characters.tavi"},
+          {"agent_id": "sela_jori", "default_stance": "ready with fit gauge and manual card", "visual_ref": "visual_character_refs.characters.sela_jori"},
+          {"agent_id": "rook_venn", "default_stance": "waiting with grease pencil", "visual_ref": "visual_character_refs.characters.rook_venn"},
+          {"agent_id": "kappa_shift_workers", "default_stance": "one octopoid extending a patched contact band from the neighboring rail", "visual_ref": "visual_character_refs.groups.kappa_shift_workers"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "kappa_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Ordinary maintenance routine in a curved engineered-shell prep bay. Tavi, a mottled umber uplifted octopoid in a close mobile dry-work harness, tests conductive bands one arm at a time against a low stainless rail. Sela, a shaved-head human fitter in faded green coveralls, watches oxygen flow on a handheld mechanical gauge. Rook, a broad human rigger in oil-streaked orange-gray coveralls, inventories clamps on the wheeled bypass cart. A second harnessed octopoid folds toward the neighboring throat. Behind them are ribbed shell plating, pale asteroid-aggregate inspection panels, air and coolant pipe runs, condensate drains, a transparent consumable sleeve, teal mist lights, and a high glass operations gallery. The atmosphere is practiced, damp, and economically counted.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "testing contact bands along the low rail", "visual_ref": "visual_character_refs.characters.tavi"},
+          {"agent_id": "sela_jori", "default_stance": "watching oxygen flow on a gauge", "visual_ref": "visual_character_refs.characters.sela_jori"},
+          {"agent_id": "rook_venn", "default_stance": "inventorying clamps at the cart", "visual_ref": "visual_character_refs.characters.rook_venn"},
+          {"agent_id": "kappa_shift_workers", "default_stance": "one octopoid moving toward the neighboring throat", "visual_ref": "visual_character_refs.groups.kappa_shift_workers"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "rig_margin >= 4", "modifier_prompt": "A fresh white membrane sits under Tavi's collar and produces a dense even teal mist across the mantle."},
+          {"trigger": "rig_margin == 3", "modifier_prompt": "An unbranded adapter sits slightly crooked at Tavi's harness coupling and bears three small physical custody marks."},
+          {"trigger": "arrears_evidence >= 1", "modifier_prompt": "A stiff manual record card with a fresh embossed ring mark rests beside Sela's fit gauge."},
+          {"trigger": "worker_cohesion >= 3", "modifier_prompt": "The sealed membrane packs remain centered in the transparent shared sleeve, visible to both support rails."},
+          {"trigger": "claimshare_pressure >= 2", "modifier_prompt": "A small amber-red deduction bar glows beside Tavi's work line on the wall board."}
+        ]
+      },
+      {
+        "visual_scene_id": "kappa_arrears_notice",
+        "ink_anchor": "arrears_notice",
+        "base_image_prompt": "Pivotal amber notice in the Kappa rig-prep bay. Tavi, a mottled umber uplifted octopoid in a compact mobile life-support harness, remains visibly supported: the oxygenation canister pulses, the humidity collar releases teal mist, and eight arms hold steady on the work rail. Every small harness indicator and the large shift board glow amber. The board shows dense blocks, one service line, and a separate equipment-balance panel as abstract interface shapes. Sela, the shaved-head fitter in green coveralls, stands rigid beside the gauge. Rook, the broad rigger in orange-gray coveralls, looks from the board to two sealed membranes in the transparent custody sleeve. Worn ribbed shell metal and amber light compress the frame.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "supported and breathing at the rail, eyes on the amber board", "visual_ref": "visual_character_refs.characters.tavi"},
+          {"agent_id": "sela_jori", "default_stance": "rigid beside the fit gauge", "visual_ref": "visual_character_refs.characters.sela_jori"},
+          {"agent_id": "rook_venn", "default_stance": "looking between notice board and custody sleeve", "visual_ref": "visual_character_refs.characters.rook_venn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The harness continues visibly operating throughout the notice.",
+          "The board conveys arrears and separate balance fields through interface geometry and color; generated art does not need legible prose."
+        ]
+      },
+      {
+        "visual_scene_id": "kappa_arrears_choice",
+        "ink_anchor": "arrears_choice",
+        "base_image_prompt": "Close choice frame at a low copy pad under amber notice light. Tavi, a mottled umber uplifted octopoid in a teal-misting mobile harness, can reach four objects with separate arms: a glass copy pad sized for sucker contact, a glowing equipment-balance signature field, one sealed white refill beside the shared custody sleeve, and Sela's fit-signature card near Rook's recorder. Sela, a shaved-head human fitter in faded green coveralls, keeps one hand on the physical fit card. Rook, a broad human rigger in orange-gray coveralls, holds a grease pencil and compact recorder. Ribbed shell plating, hose couplings, and amber service indicators fill the tight industrial background.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "four arms poised over copy pad, balance field, refill, and fit card", "visual_ref": "visual_character_refs.characters.tavi"},
+          {"agent_id": "sela_jori", "default_stance": "one hand holding the physical fit card", "visual_ref": "visual_character_refs.characters.sela_jori"},
+          {"agent_id": "rook_venn", "default_stance": "recorder and grease pencil ready", "visual_ref": "visual_character_refs.characters.rook_venn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "kappa_gate_rejection",
+        "ink_anchor": "gate_release",
+        "base_image_prompt": "Low outward-facing view at Kappa-7's oval crawl-throat gate. Tavi, an uplifted octopoid with mottled umber mantle and eight arms, moves through the curved service ring in a compact mobile harness: two arms brace on a low guide rail, two hold a small tool case, and four remain free. A short utility interlock lead connects the harness to a waist-high release plate. The gate light stays amber while the oxygenation canister and mist collar remain active teal. The oval throat is ribbed, narrow, and turns behind massive curved shell ribs toward hidden sensor nests. Parallel air and coolant pipes, condensate traps, seal flanges, pale aggregate inspection windows, and heavy gray-green substrate show a manufactured pressure shell. A second throat is partly visible spinward behind pump bodies.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "braced at the amber gate with utility interlock connected", "visual_ref": "visual_character_refs.characters.tavi"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "lease_balance_signed == 1", "modifier_prompt": "A small green assignment marker glows on Tavi's harness tag beside the larger amber crawl-release plate."},
+          {"trigger": "arrears_evidence >= 2", "modifier_prompt": "Tavi keeps a stiff manual record card secured on the side tool rail within easy arm reach."}
+        ]
+      },
+      {
+        "visual_scene_id": "kappa_default_cascade",
+        "ink_anchor": "default_cascade",
+        "base_image_prompt": "Medium-wide view tying the physical gate to the cascade board. Tavi, a mottled umber uplifted octopoid in an active teal-misting harness, waits at the amber Kappa-7 release plate. Above the manifold wall, one large industrial status board carries a descending sequence of linked amber indicators: crawl release, sensor inspection, temporary pressure bypass, thermal reserve, heavy yard cycle, freight transfer, paid shift hours, and claimshare conversion, represented by icons, bars, and connecting lines. The outward wall holds ribbed shell plating, curved structural ribs, air and coolant pipes, condensate traps, valve bodies, and a manual bypass coupling. Several workers at the counterspinward entry stop and face the linked indicators. The glass operations-gallery door begins opening above.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "waiting at the amber gate beneath the linked indicators", "visual_ref": "visual_character_refs.characters.tavi"},
+          {"agent_id": "kappa_shift_workers", "default_stance": "mixed baseline and harnessed octopoid workers stopped at the counterspinward entry", "visual_ref": "visual_character_refs.groups.kappa_shift_workers"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "claimshare_pressure >= 3", "modifier_prompt": "Three separate red-amber account bars appear beside Tavi's work marker: harness balance, lost release time, and claimshare review."},
+          {"trigger": "arrears_evidence >= 3", "modifier_prompt": "A manual card on Tavi's tool rail shows several embossed physical marks connected by grease-pencil lines."},
+          {"trigger": "worker_cohesion >= 3", "modifier_prompt": "Neighboring workers face the same board in a loose line, bodies angled toward one another as well as the gate."}
+        ]
+      },
+      {
+        "visual_scene_id": "kappa_superintendent_arrival",
+        "ink_anchor": "superintendent_arrival",
+        "base_image_prompt": "Power-geometry frame along Service Ring Kappa. Superintendent Ione Malk, a short severe baseline human with silver-black hair, a clean charcoal pressure jacket, polished boots, and a bright executive badge, descends the enclosed metal stair from the glass operations gallery directly onto the ring. Below her, Tavi, a mottled umber uplifted octopoid in an active compact harness, waits at the amber throat gate. Sela, a wiry shaved-head fitter in faded green coveralls, stands beside Tavi with a fit card held close. Rook, a broad rigger in oil-streaked orange-gray coveralls, unstraps a flat manual bypass plate from the cart. The outward manifold wall is dense with air pipes, coolant cuffs, valves, condensate lines, ribbed shell supports, and two oval crawl throats. Amber schedule bars reflect across Ione's clean jacket while damp teal support light remains low around Tavi.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "low at the amber throat gate facing Ione", "visual_ref": "visual_character_refs.characters.tavi"},
+          {"agent_id": "sela_jori", "default_stance": "beside Tavi holding a fit card", "visual_ref": "visual_character_refs.characters.sela_jori"},
+          {"agent_id": "rook_venn", "default_stance": "at the cart unstrapping the bypass plate", "visual_ref": "visual_character_refs.characters.rook_venn"},
+          {"agent_id": "ione_malk", "default_stance": "descending the dedicated badge stair", "visual_ref": "visual_character_refs.characters.ione_malk"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Ione's stair reaches the main ring near the operations board. It provides fast authority access and no route into the blind crawl artery."
+        ]
+      },
+      {
+        "visual_scene_id": "kappa_response_choice",
+        "ink_anchor": "response_choice",
+        "base_image_prompt": "Wide choice frame at the junction of prep bay, Kappa-7 gate, and human-scale bypass manifold. Tavi, a mottled umber uplifted octopoid in a compact mobile harness, holds a manual fit card near the throat scanner and a route diagram across two arms. Sela, the shaved-head fitter in green coveralls, stands close enough to witness the throat boundary. Rook, the broad rigger in orange-gray coveralls, grips the flat bypass plate beside the large reachable valve manifold and wheeled cart. Ione, the short superintendent in a clean charcoal pressure jacket, stands at a white override control below her badge stair. A separate manual copy surface holds the unpaid service icon, amber gate icon, and attendance field. Air pipes, coolant cuffs, condensate drains, structural ribs, and the oval throat establish four distinct affordances in one readable room.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "between fit card, route diagram, and gate scanner", "visual_ref": "visual_character_refs.characters.tavi"},
+          {"agent_id": "sela_jori", "default_stance": "at the visible throat boundary ready to witness", "visual_ref": "visual_character_refs.characters.sela_jori"},
+          {"agent_id": "rook_venn", "default_stance": "holding bypass plate beside human-scale valves", "visual_ref": "visual_character_refs.characters.rook_venn"},
+          {"agent_id": "ione_malk", "default_stance": "at the white override control", "visual_ref": "visual_character_refs.characters.ione_malk"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "kappa_shift_threshold",
+        "ink_anchor": "shift_threshold",
+        "base_image_prompt": "Threshold frame along the outward manifold wall as a seal-lung pulse moves through Service Ring Kappa. Flexible pipe couplings and one large seal diaphragm visibly flex; amber indicators ripple along the curved wall; the low safety rail and workers' clothing vibrate. Tavi, a mottled umber uplifted octopoid in an active harness, braces with four arms against the low rail while the oxygenation canister pulses at the mantle. Rook stands at the human-scale bypass valves with the flat manual plate. Sela watches Tavi's mist collar and holds a sealed manual card. Ione stands near the override plate under the glass gallery. The board shows pressure reserve, thermal reserve, freight, paid hours, and claimshare bars counting in different amber rhythms.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "four arms braced against the low rail during the pressure cough", "visual_ref": "visual_character_refs.characters.tavi"},
+          {"agent_id": "sela_jori", "default_stance": "watching Tavi's collar with sealed card in hand", "visual_ref": "visual_character_refs.characters.sela_jori"},
+          {"agent_id": "rook_venn", "default_stance": "at the bypass valves", "visual_ref": "visual_character_refs.characters.rook_venn"},
+          {"agent_id": "ione_malk", "default_stance": "near the override plate", "visual_ref": "visual_character_refs.characters.ione_malk"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "yard_margin >= 4", "modifier_prompt": "The pressure-reserve bar rises from red into amber while the heavy-cycle indicator remains dark."},
+          {"trigger": "yard_margin <= 3", "modifier_prompt": "The pressure and thermal reserve bars contract toward red and an isolation-shutter icon brightens near the yard edge."},
+          {"trigger": "limited_entry_record == 1", "modifier_prompt": "Sela's sealed manual card carries a bright boundary diagram ending at the visible throat mouth."},
+          {"trigger": "production_exception == 1", "modifier_prompt": "The Kappa-7 gate glows white while a separate coverage indicator beside it remains amber."},
+          {"trigger": "arrears_evidence >= 4", "modifier_prompt": "A joined physical receipt displays several embossed icons connected by dark grease-pencil lines."},
+          {"trigger": "worker_cohesion >= 4", "modifier_prompt": "Workers from both shift lines stand still at their gates, forming a loose cross-role line across the counterspinward entrance."},
+          {"trigger": "crew_reserve <= 0", "modifier_prompt": "The transparent custody sleeve is visibly empty, its open clips lit by amber light."},
+          {"trigger": "rig_margin <= 1", "modifier_prompt": "Tavi's teal mist collar sputters unevenly and their mantle skin looks dry and pale near the cuff marks."}
+        ]
+      },
+      {
+        "visual_scene_id": "kappa_final_choice",
+        "ink_anchor": "final_choice",
+        "base_image_prompt": "Final-priority composition at Service Ring Kappa under pulsing amber pressure light. Tavi, a mottled umber uplifted octopoid in a compact misting and oxygenation harness, occupies the center low rail with eight arms oriented toward four material futures: the shared bypass kit and civilian pressure bar, the narrow Kappa-7 throat beside a supervisor override plate, a sealed joined receipt in Sela's hands, and the rig-prep bay where other workers wait beside compatible support supplies. Rook stands at the human-scale manifold. Sela holds the receipt at the visible boundary. Ione waits at the override control below the gallery stair. Ribbed shell plating, pale aggregate panels, gray-green substrate, air and coolant pipes, condensate drains, valves, and flexing seal hardware make every choice part of one machine.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "centered low with arms oriented toward four material priorities", "visual_ref": "visual_character_refs.characters.tavi"},
+          {"agent_id": "sela_jori", "default_stance": "holding the joined receipt near the throat boundary", "visual_ref": "visual_character_refs.characters.sela_jori"},
+          {"agent_id": "rook_venn", "default_stance": "at the human-scale manifold", "visual_ref": "visual_character_refs.characters.rook_venn"},
+          {"agent_id": "ione_malk", "default_stance": "at the override control", "visual_ref": "visual_character_refs.characters.ione_malk"},
+          {"agent_id": "kappa_shift_workers", "default_stance": "waiting in the rig-prep bay", "visual_ref": "visual_character_refs.groups.kappa_shift_workers"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "kappa_ending_air",
+        "ink_anchor": "ending_air_margin_success|ending_air_margin_cost",
+        "base_image_prompt": "Air-margin aftermath at the human-scale bypass manifold. Rook, a broad human rigger in orange-gray coveralls, has seated a flat manual logic plate across two large reachable valve bodies. Tavi, a mottled umber uplifted octopoid in a compact active harness, braces at the low rail and signals valve timing with several arms while watching an amber pressure bar. Sela, a shaved-head fitter in green coveralls, watches Tavi's oxygenation canister and humidity collar. The heavy-cycle indicator is dark, the freight icon recedes on the board, and the housing-air line remains lit. Open kit compartments, hose sets, custody strips, ribbed shell supports, parallel air and coolant pipes, and damp teal light make finite mercy visible.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "braced at rail signaling valve timing", "visual_ref": "visual_character_refs.characters.tavi"},
+          {"agent_id": "sela_jori", "default_stance": "watching Tavi's support loop", "visual_ref": "visual_character_refs.characters.sela_jori"},
+          {"agent_id": "rook_venn", "default_stance": "working the manual bypass valves", "visual_ref": "visual_character_refs.characters.rook_venn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "kappa_ending_production",
+        "ink_anchor": "ending_production_success|ending_production_cost",
+        "base_image_prompt": "Inside the narrow curved Kappa-7 service artery embedded in a manufactured habitat shell. Tavi, an uplifted octopoid with mottled umber mantle and eight arms, wears a close charcoal mobile harness with teal mist collar, compact oxygenation canister, soft cuffs, contact bands, side tool rail, and short tether. They brace across dark structural ribs around a flexible seal-lung valve nest and a shifted sensor bracket. Pale compacted asteroid shielding shows behind sealed inspection windows; gray-green structural substrate, coolant cuffs, condensate beads, cables, and mechanical strain gauges crowd the low-gravity route. White gate light enters from the oval throat far behind, crossed by a separate amber coverage indicator. The frame emphasizes body fit, limited retreat space, and moving membrane hardware.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "eight arms braced across curved ribs beside shifted sensor bracket", "visual_ref": "visual_character_refs.characters.tavi"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "kappa_ending_proof",
+        "ink_anchor": "ending_proof_success|ending_proof_cost",
+        "base_image_prompt": "Proof aftermath at the Kappa throat gate. Sela, a wiry shaved-head human fitter in faded green coveralls, closes a transparent tamper-evident sleeve around a stiff manual receipt. The receipt carries several embossed icons and grease-pencil links representing service invoice, current harness, rejected amber gate, attendance field, falling bypass bar, and freight time. Tavi, a mottled umber uplifted octopoid in an active teal-misting harness, leaves the utility release socket untouched and holds one arm against the sleeve. Rook, a broad human rigger in orange-gray coveralls, adds a final grease-pencil time. Ione, a short superintendent in a clean charcoal jacket, stands by the override control under amber board light. The outward wall's ribs, seals, air pipes, coolant cuffs, valves, and crawl throat remain sharply readable.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "one arm touching the sealed receipt, other arms clear of the release socket", "visual_ref": "visual_character_refs.characters.tavi"},
+          {"agent_id": "sela_jori", "default_stance": "closing the transparent evidence sleeve", "visual_ref": "visual_character_refs.characters.sela_jori"},
+          {"agent_id": "rook_venn", "default_stance": "adding a grease-pencil transfer time", "visual_ref": "visual_character_refs.characters.rook_venn"},
+          {"agent_id": "ione_malk", "default_stance": "watching from the override control", "visual_ref": "visual_character_refs.characters.ione_malk"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "kappa_ending_workers",
+        "ink_anchor": "ending_workers_success|ending_workers_cost",
+        "base_image_prompt": "Quiet work-line aftermath in the Kappa rig-prep bay. Tavi, a mottled umber uplifted octopoid in a close active dry-operation harness, has turned away from the amber crawl gate toward the low stainless support rails. Sela, a shaved-head human fitter in faded green coveralls, keeps a mechanical gauge on Tavi's oxygenation loop. Rook, a broad human rigger in orange-gray coveralls, turns the wheeled bypass cart toward the civilian manifold. Additional baseline and harnessed octopoid workers stand between the counterspinward shift entry and their amber gates. The transparent custody sleeve, compatible refill packs, pooled adapter, wet polymer surfaces, ribbed shell plating, air and coolant pipes, and operations glass remain visible. Small changes in group spacing distinguish a shared line from an isolated refusal.",
+        "visible_characters": [
+          {"agent_id": "tavi", "default_stance": "turned from the gate toward the support rails", "visual_ref": "visual_character_refs.characters.tavi"},
+          {"agent_id": "sela_jori", "default_stance": "monitoring Tavi's oxygenation loop", "visual_ref": "visual_character_refs.characters.sela_jori"},
+          {"agent_id": "rook_venn", "default_stance": "turning the bypass cart toward the civilian manifold", "visual_ref": "visual_character_refs.characters.rook_venn"},
+          {"agent_id": "kappa_shift_workers", "default_stance": "distributed between shift entry, prep rails, and amber gates", "visual_ref": "visual_character_refs.groups.kappa_shift_workers"}
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {"modifier_id": "prep_fresh_membrane_visual", "trigger": "branch_label == prep_fresh_membrane", "apply_to_visual_scene_ids": ["kappa_prep_choice", "kappa_routine_fold", "kappa_arrears_notice"], "modifier_prompt": "Tavi wears a fresh white humidity membrane under the collar; one sealed pack is missing from the transparent sleeve and an individual amber charge mark appears on the board."},
+      {"modifier_id": "prep_pooled_adapter_visual", "trigger": "branch_label == prep_pooled_adapter", "apply_to_visual_scene_ids": ["kappa_prep_choice", "kappa_routine_fold", "kappa_arrears_notice"], "modifier_prompt": "An unbranded adapter sits at Tavi's coupling with three physical custody marks; both sealed white membrane packs remain in the wall sleeve."},
+      {"modifier_id": "prep_record_cuff_wear_visual", "trigger": "branch_label == prep_record_cuff_wear", "apply_to_visual_scene_ids": ["kappa_prep_choice", "kappa_routine_fold", "kappa_arrears_choice"], "modifier_prompt": "Tavi extends an arm showing a pale ridged abrasion while a fresh embossed sucker-ring record rests on Sela's manual card."},
+      {"modifier_id": "prep_peer_band_visual", "trigger": "branch_label == prep_peer_band", "apply_to_visual_scene_ids": ["kappa_prep_choice", "kappa_routine_fold"], "modifier_prompt": "Tavi uses three arms to hold a patched contact band while the second octopoid passes a steel nut across its green contact points; Rook adds a grease-pencil time mark."},
+      {"modifier_id": "arrears_refuse_balance_visual", "trigger": "branch_label == arrears_refuse_balance", "apply_to_visual_scene_ids": ["kappa_arrears_choice", "kappa_gate_rejection", "kappa_default_cascade"], "modifier_prompt": "A crisp sucker-ring refusal print and copied receipt appear on Tavi's stiff manual card."},
+      {"modifier_id": "arrears_sign_balance_visual", "trigger": "branch_label == arrears_sign_balance", "apply_to_visual_scene_ids": ["kappa_arrears_choice", "kappa_gate_rejection", "kappa_default_cascade"], "modifier_prompt": "A small green equipment-assignment indicator remains on Tavi's harness while a deeper amber balance bar appears beside the claimshare line."},
+      {"modifier_id": "arrears_pool_refill_visual", "trigger": "branch_label == arrears_pool_refill", "apply_to_visual_scene_ids": ["kappa_arrears_choice", "kappa_gate_rejection", "kappa_shift_threshold"], "modifier_prompt": "One sealed white refill sits inside a transparent crew sleeve closed by sucker ring, fitter stamp, and grease-pencil mark; the original wall sleeve shows one fewer pack."},
+      {"modifier_id": "arrears_bound_signature_visual", "trigger": "branch_label == arrears_bound_signature", "apply_to_visual_scene_ids": ["kappa_arrears_choice", "kappa_default_cascade", "kappa_superintendent_arrival"], "modifier_prompt": "Sela's physical fit card shows three separate bounded icons for rig condition, route, and invoice while Rook's recorder light is active."},
+      {"modifier_id": "response_limited_entry_visual", "trigger": "branch_label == response_limited_entry", "apply_to_visual_scene_ids": ["kappa_response_choice", "kappa_shift_threshold", "kappa_final_choice"], "modifier_prompt": "A sealed manual boundary diagram ends at the visible throat mouth; Tavi remains on the ring side beside the coupling."},
+      {"modifier_id": "response_human_bypass_visual", "trigger": "branch_label == response_human_bypass", "apply_to_visual_scene_ids": ["kappa_response_choice", "kappa_shift_threshold", "kappa_final_choice"], "modifier_prompt": "Rook seats the flat bypass plate on human-scale valves while Tavi holds the route diagram from the low support rail; the custody sleeve shows a spent refill position."},
+      {"modifier_id": "response_production_exception_visual", "trigger": "branch_label == response_production_exception", "apply_to_visual_scene_ids": ["kappa_response_choice", "kappa_shift_threshold", "kappa_final_choice", "kappa_ending_production"], "modifier_prompt": "The Kappa-7 gate glows white under Ione's override while a separate adjacent indicator remains amber; Tavi's mist output is visibly thinner."},
+      {"modifier_id": "response_join_default_visual", "trigger": "branch_label == response_join_default", "apply_to_visual_scene_ids": ["kappa_response_choice", "kappa_shift_threshold", "kappa_final_choice", "kappa_ending_proof"], "modifier_prompt": "A stiff manual receipt joins invoice, gate, attendance, bypass, and freight icons with embossed marks and dark grease-pencil lines."},
+      {"modifier_id": "ending_air_success_visual", "trigger": "ending_label == air_margin_success", "apply_to_visual_scene_ids": ["kappa_ending_air"], "modifier_prompt": "The civilian pressure line rises into amber, one sealed compatible refill remains in the sleeve, the heavy-cycle indicator stays dark, and the freight icon moves away."},
+      {"modifier_id": "ending_air_cost_visual", "trigger": "ending_label == air_margin_cost", "apply_to_visual_scene_ids": ["kappa_ending_air"], "modifier_prompt": "The pressure bar rises briefly then stalls; open kit compartments show empty slots and at most one sealed refill, visibly insufficient for the demanded hour, while isolation shutters begin closing along the yard edge."},
+      {"modifier_id": "ending_production_success_visual", "trigger": "ending_label == production_success_with_personalized_risk", "apply_to_visual_scene_ids": ["kappa_ending_production"], "modifier_prompt": "Tavi marks the shifted sensor bracket from a stable eight-arm brace; the mist collar remains even and the distant freight indicator turns late green."},
+      {"modifier_id": "ending_production_cost_visual", "trigger": "ending_label == production_cost", "apply_to_visual_scene_ids": ["kappa_ending_production"], "modifier_prompt": "Tavi's humidity collar has slipped, one cuff bites pale into an arm, the flexible pressure membrane bows inward, and the inspection indicator remains incomplete amber."},
+      {"modifier_id": "ending_proof_success_visual", "trigger": "ending_label == joined_default_proof", "apply_to_visual_scene_ids": ["kappa_ending_proof"], "modifier_prompt": "The sealed receipt presents one continuous physical chain of embossed icons and grease-pencil links while several workers' hands and sucker marks hold duplicate sleeves."},
+      {"modifier_id": "ending_proof_cost_visual", "trigger": "ending_label == separated_records_cost", "apply_to_visual_scene_ids": ["kappa_ending_proof"], "modifier_prompt": "Three separate cards sit apart on the rail: fit condition, bypass reading, and refusal receipt; the central board keeps invoice, access, and attendance in isolated columns."},
+      {"modifier_id": "ending_workers_success_visual", "trigger": "ending_label == worker_support_line", "apply_to_visual_scene_ids": ["kappa_ending_workers"], "modifier_prompt": "Baseline and harnessed octopoid workers form a loose continuous line from both amber gates to the prep rails; Rook rolls the cart toward the civilian manifold and already-fitted harnesses remain under Sela's observation."},
+      {"modifier_id": "ending_workers_cost_visual", "trigger": "ending_label == isolated_worker_cost", "apply_to_visual_scene_ids": ["kappa_ending_workers"], "modifier_prompt": "Tavi and Sela occupy one support rail while Rook remains by the work cart and the second octopoid worker signs at a separate balance pad; one compatible refill remains between the two small groups."}
+    ],
+    "scene_set": {
+      "scene_set_id": "service_ring_kappa_rig_gate.scene_set.draft",
+      "geometry_authority_level": "embedded_plan_map_not_3d_blockout",
+      "room_model": "A curved segment of human-scale Service Ring Kappa runs spinward-counterspinward between an inward open-yard safety rail and an outward manufactured-shell manifold wall. The rig-prep bay recesses into a counterspinward service bulkhead beside the inward rail. Two outward crawl throats penetrate the shell; human-scale bypass valves sit between them. A glass operations gallery hangs inward-above the ring with a badge stair landing near the main board.",
+      "fixed_zones": [
+        {"zone_id": "open_yard_inward", "visible_form": "waist-high safety rail, broad hazy industrial atmosphere, suspended work lights, distant gantries", "used_for": "radial orientation and civilian yard-air stakes"},
+        {"zone_id": "rig_prep_bay", "visible_form": "two low stainless support rails, teal mist lights, fit tools, wall couplings, transparent consumable sleeve, copy pad", "used_for": "harness fitting, ordinary mutual aid, record and custody choices"},
+        {"zone_id": "worker_entry_counterspinward", "visible_form": "shift gate and equipment-issue corridor entering the ring beyond the prep bay", "used_for": "worker arrival and group-cohesion staging"},
+        {"zone_id": "kappa_7_throat", "visible_form": "near oval ribbed crawl gate with low guide rail, utility release plate, sharp outward turn into shell", "used_for": "Tavi's access rejection, limited entry, and production route"},
+        {"zone_id": "kappa_8_background_throat", "visible_form": "second oval crawl mouth partly hidden spinward behind pump bodies", "used_for": "establishing Kappa as a repeated route cluster"},
+        {"zone_id": "human_bypass_manifold", "visible_form": "large reachable air and coolant valves, flat logic-plate coupling, coiled hose points, mechanical gauges", "used_for": "Rook's bypass work and air-margin ending"},
+        {"zone_id": "operations_gallery", "visible_form": "glassed booth inward-above the ring, long window, dedicated spoke-side corridor, enclosed metal badge stair", "used_for": "supervisor observation and fast arrival"},
+        {"zone_id": "cascade_board", "visible_form": "large board above manifold showing linked access, inspection, reserve, cycle, freight, hours, and claimshare icons", "used_for": "visible dependency propagation"}
+      ],
+      "routes": [
+        {"route_id": "baseline_worker_route", "path": "worker_entry_counterspinward -> equipment cart -> human_bypass_manifold -> main ring", "users": ["rook_venn", "kappa_shift_workers"]},
+        {"route_id": "octopoid_worker_route", "path": "worker_entry_counterspinward -> rig_prep_bay -> low guide rail -> kappa_7_throat", "users": ["tavi", "kappa_shift_workers"]},
+        {"route_id": "supervisor_route", "path": "spoke-side control corridor -> operations_gallery -> badge stair -> cascade_board landing", "users": ["ione_malk"]},
+        {"route_id": "limited_bypass_route", "path": "equipment cart -> human_bypass_manifold; optional witnessed reach from ring to visible kappa_7 throat coupling", "users": ["tavi", "sela_jori", "rook_venn"]}
+      ],
+      "occluders": [
+        {"occluder_id": "throat_turn", "effect": "The outward turn and shell ribs hide Kappa-7's sensor nest and blind route from the ring and operations gallery."},
+        {"occluder_id": "manifold_pumps", "effect": "Large pump bodies partly hide the background Kappa-8 throat from low ring cameras."},
+        {"occluder_id": "ring_curvature", "effect": "Curvature keeps the counterspinward worker entry outside a close Kappa-7 gate frame while preserving it in wide establishing views."}
+      ],
+      "camera_slots": [
+        {"camera_id": "wide_ring_inward", "supports_visual_scene_ids": ["kappa_prep_establishing", "kappa_shift_line", "kappa_default_cascade"]},
+        {"camera_id": "prep_rail_medium", "supports_visual_scene_ids": ["kappa_harness_fit", "kappa_prep_choice", "kappa_routine_fold", "kappa_arrears_notice", "kappa_arrears_choice", "kappa_ending_workers"]},
+        {"camera_id": "gate_low_outward", "supports_visual_scene_ids": ["kappa_gate_rejection", "kappa_response_choice", "kappa_shift_threshold", "kappa_final_choice", "kappa_ending_proof"]},
+        {"camera_id": "badge_stair_diagonal", "supports_visual_scene_ids": ["kappa_superintendent_arrival"]},
+        {"camera_id": "manifold_work_medium", "supports_visual_scene_ids": ["kappa_ending_air"]},
+        {"camera_id": "kappa_7_artery_internal", "supports_visual_scene_ids": ["kappa_ending_production"]}
+      ],
+      "staging_slots": [
+        {"slot_id": "tavi_prep_low", "location": "rig_prep_bay low support rail", "allowed_agents": ["tavi", "kappa_shift_workers"]},
+        {"slot_id": "tavi_gate_low", "location": "low guide rail at Kappa-7 release plate", "allowed_agents": ["tavi"]},
+        {"slot_id": "fitter_boundary", "location": "ring side between prep bay and visible Kappa-7 throat mouth", "allowed_agents": ["sela_jori"]},
+        {"slot_id": "rigger_manifold", "location": "human bypass valves and equipment cart", "allowed_agents": ["rook_venn"]},
+        {"slot_id": "superintendent_landing", "location": "badge stair landing beside cascade board and override plate", "allowed_agents": ["ione_malk"]},
+        {"slot_id": "shift_line_counterspinward", "location": "worker entry and neighboring amber gates", "allowed_agents": ["kappa_shift_workers"]}
+      ],
+      "state_anchors": [
+        {"anchor_id": "consumable_custody", "values": ["two_sealed", "one_shared", "empty"], "visible_form": "counted white membrane packs and adapter positions in transparent sleeves"},
+        {"anchor_id": "kappa_7_release", "values": ["amber_rejected", "white_override"], "visible_form": "large gate indicator with a separate smaller coverage indicator"},
+        {"anchor_id": "manual_evidence", "values": ["separate_cards", "joined_receipt", "sealed_duplicates"], "visible_form": "stiff cards with embossed icons, sucker rings, fitter stamps, and grease-pencil links"},
+        {"anchor_id": "crew_formation", "values": ["separate_lines", "loose_attention", "continuous_support_line"], "visible_form": "worker spacing between entry, gates, prep rails, and civilian manifold"},
+        {"anchor_id": "tavi_rig_margin", "values": ["even_mist", "thin_mist", "sputtering_mist"], "visible_form": "humidity collar output and skin condition around the mantle and cuff marks"}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable visual identities for named characters and the visible shift group. Include only refs for people present in each frame.",
+    "characters": {
+      "tavi": "Tavi: uplifted octopoid maintenance worker with a rounded low mantle, mottled umber and muted rust skin, pale old pressure-cuff marks near the bases of two arms, two dark lateral eyes, eight long flexible arms with visible suckers, compact low silhouette, deliberate multi-arm bracing and object handling. Mobile dry-operation work harness: close charcoal flexible loops around the mantle, damp teal misting collar, compact oxygenation canister behind the mantle, soft gray pressure cuffs and conductive bands on several arms, narrow side tool rail, short utility interlock lead. All eight arms remain visibly mobile.",
+      "sela_jori": "Sela Jori: wiry baseline human support-rig fitter, middle-aged, medium-brown skin, shaved head, narrow tired face, faded green coveralls with repaired knees, soft utility boots, supplier-service patch at one shoulder, mechanical fit gauge and stiff manual record cards, precise crouched work posture and dry steady gaze.",
+      "rook_venn": "Rook Venn: broad baseline human rigger, middle-aged, dark cropped hair with gray at the temples, heavy tired face, oil-streaked orange-gray coveralls, worn work gloves, scarred tool belt, grease pencil behind one ear, practical stance beside a wheeled equipment cart and large manual bypass plate.",
+      "ione_malk": "Ione Malk: short baseline human AU superintendent, late middle age, pale olive skin, straight silver-black hair cut at the jaw, severe compact face, clean charcoal pressure jacket with hard seams, polished black work boots, bright executive badge, controlled upright posture and one hand habitually near an override plate."
+    },
+    "groups": {
+      "kappa_shift_workers": "Kappa shift workers: a small mixed group of baseline humans in worn orange-gray or blue-gray industrial coveralls and uplifted octopoid workers with varied brown, rust, and gray mottled mantles wearing compact mobile misting-and-oxygenation harnesses; bodies occupy low support rails, equipment carts, shift entry, and amber gates according to role; postures range from routine tool handling to a loose cross-role support line."
+    }
+  },
+  "review_notes": [
+    "Service Ring Kappa's exact layout is a fixture-local use of provisional brainstorming geometry, not a universal Bloom plan.",
+    "The embedded scene-set map is sufficient for draft staging and concept-prompt review. A plan-view or 3D blockout remains required before high-consistency multi-angle website rendering.",
+    "Base prompts describe complete visible frames and all fictional equipment in physical terms. Branch modifiers contain visible deltas only.",
+    "Rendering is deferred. No images were generated in this pass."
+  ]
+}
