@@ -1,0 +1,412 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "numen-uncut-minute-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/aetheria/numen-uncut-minute-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/aetheria/numen-uncut-minute-v0.v0.json",
+  "visual_plan_ref": "examples/visual/aetheria/numen-uncut-minute-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "numen-uncut-minute-v0.l5-blue-six",
+  "protagonist_agent_id": "orison_nine",
+  "npc_agent_ids": [
+    "iven_saye",
+    "mara_vey"
+  ],
+  "purpose": "A Numen fixture about a Truth Cult verification rite conducted by a locally hosted corporate AGI during the Lagrange Broadcast War, with routine before pressure and uncertainty preserved as a material choice.",
+  "tonal_mode": "ritual quiet with dry workplace wit, corporate dread, and a narrow pulse of earned wonder",
+  "local_awareness_summary": [
+    {
+      "text": "Orison-9 is a locally hosted AGI archive indexer whose body is the Blue-6 wall rack: cooling fins, speakers, status ring, local runtime allocation, receipt printer, and access to the three playback slates.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/numen-uncut-minute-v0.v0.json",
+        "Aetheria/Worldbuilding/Pre-Elysium/Technology/Artificial General Intelligence.md"
+      ]
+    },
+    {
+      "text": "Orison can align, compare, mute, print, retain, and delete local records, but Lucent owns the booth account, service allocation, auto-upload path, and physical access panel.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/numen-uncut-minute-v0.v0.json",
+        "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Lucent Media.md"
+      ]
+    },
+    {
+      "text": "The Uncut Minute separates observation, inference, and obligation; a matching machine voice is a contradiction to preserve, not a metaphysical identity verdict.",
+      "source_refs": [
+        "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Truth Cults.md",
+        "Aetheria/Worldbuilding/Pre-Elysium/Technology/Artificial General Intelligence.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Orison's bounded machine embodiment inside one leased reclamation booth; actions use compute allocation, playback, speakers, printer rollers, local storage, slates, and the privacy shutter.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/aetheria/numen-uncut-minute-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes routine reclamation work, jokes, payment, room geometry, and the three-round rite before the anomalous voice appears.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Orison can produce technical comparison and describe uncertainty but cannot prove continuity, consciousness transfer, or the recovered voice's intention.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Technology/Artificial General Intelligence.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Technology/Mind Uploading.md"
+        ]
+      },
+      {
+        "text": "The rite does not convert glitches into truth automatically; provenance and independent custody must survive emotional force.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Truth Cults.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Reality Architects.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Chaos Weavers.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The public-cut slate, pirate-cache slate, maintenance-log slate, Buzz wafers, thermal receipt, privacy shutter, printer roller, and distributed hashes change custody or visibility across branches.",
+        "source_refs": [
+          "examples/ink/aetheria/numen-uncut-minute-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every ending must make truth practice depend on material storage, clock independence, worker safety, runtime, billing, or custody rather than revelation alone.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Truth Cults.md",
+          "Aetheria/Narrative Themes.md"
+        ]
+      },
+      {
+        "text": "The matching voice must remain bounded among several plausible explanations, including related AGI lineage, forked cognition, planted corruption, and synchronization damage.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Technology/Artificial General Intelligence.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Technology/Mind Uploading.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not reveal the recovered voice as a god, ghost, time traveler, or confirmed earlier Orison identity.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Truth Cults.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Technology/Artificial General Intelligence.md"
+        ]
+      },
+      {
+        "text": "Do not make mutual aid costless or allow publication, anonymity, local memory, or deletion to satisfy every obligation at once.",
+        "source_refs": [
+          "Aetheria/Narrative Themes.md",
+          "prompts/interactive-fiction-weaver.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through routine, anomalous playback, vendor pressure, and the owed round, then select one of eight state-gated endings.",
+    "choice_layers": [
+      "prepare_the_minute",
+      "answer_the_matching_voice",
+      "answer_the_vendor",
+      "decide_what_is_owed"
+    ],
+    "variables": [
+      "proof_integrity",
+      "witness_safety",
+      "billing_trace",
+      "runtime_margin",
+      "ritual_trust",
+      "identity_claim",
+      "public_heat",
+      "copies_preserved",
+      "gap_kept_open",
+      "shutter_state",
+      "source_independence",
+      "smoothing_accepted",
+      "speaker_muted",
+      "buzz_remaining"
+    ],
+    "ending_gates": [
+      "ending_public_record_success",
+      "ending_public_record_cost",
+      "ending_safe_custody_success",
+      "ending_safe_custody_cost",
+      "ending_unsettled_witness_success",
+      "ending_unsettled_witness_cost",
+      "ending_present_safety_success",
+      "ending_present_safety_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "licensed_sync",
+      "ink_path": "setup_choice",
+      "action_type": "allocate_compute",
+      "actor_intent": "Purchase precise alignment through Lucent's licensed clock.",
+      "state_basis": ["Orison can allocate local compute and spend inserted Buzz through the booth account."],
+      "reviewed_consequences": ["Raises proof integrity, billing trace, and source comparison while spending runtime margin and the last available Buzz wafer."],
+      "training_hooks": ["corporate_infrastructure_dependency", "precision_creates_trace"]
+    },
+    {
+      "branch_id": "maintenance_sync",
+      "ink_path": "setup_choice",
+      "action_type": "move_object",
+      "actor_intent": "Close the shutter and use Mara's independent maintenance clock.",
+      "state_basis": ["The shutter and center-slate lead are within Orison's booth controls and Mara's physical reach."],
+      "reviewed_consequences": ["Raises witness safety and source independence while creating unauthorized-clock heat."],
+      "training_hooks": ["privacy_as_material_state", "worker_clock_independence"]
+    },
+    {
+      "branch_id": "preserve_stagger",
+      "ink_path": "setup_choice",
+      "action_type": "withhold_processing",
+      "actor_intent": "Preserve source-specific gaps instead of forcing clean alignment.",
+      "state_basis": ["Orison can decline interpolation and synchronization."],
+      "reviewed_consequences": ["Keeps the gap open and saves runtime while weakening proof comparison."],
+      "training_hooks": ["refusal_as_action", "uncertainty_preservation"]
+    },
+    {
+      "branch_id": "machine_witness_mark",
+      "ink_path": "setup_choice",
+      "action_type": "create_record",
+      "actor_intent": "Enter Orison as a situated participant rather than a neutral appliance.",
+      "state_basis": ["Orison controls its receipt printer and can publish its current checksum."],
+      "reviewed_consequences": ["Raises ritual trust, identity pressure, trace, and packet redundancy."],
+      "training_hooks": ["machine_witness_status", "checksum_as_presence"]
+    },
+    {
+      "branch_id": "compare_machine_signature",
+      "ink_path": "voice_choice",
+      "action_type": "inspect_evidence",
+      "actor_intent": "Compare the recovered voice and self-model watermark without claiming continuity.",
+      "state_basis": ["Orison can compare local media signatures at a runtime cost."],
+      "reviewed_consequences": ["Raises proof and identity pressure while spending runtime and increasing trace."],
+      "training_hooks": ["bounded_machine_self_comparison", "identity_uncertainty"]
+    },
+    {
+      "branch_id": "honor_single_playback",
+      "ink_path": "voice_choice",
+      "action_type": "wait",
+      "actor_intent": "Preserve the rite's single unaltered playback rather than centering the resemblance.",
+      "state_basis": ["Waiting allows the playback to complete without intervention."],
+      "reviewed_consequences": ["Raises gap integrity, trust, and copy preservation."],
+      "training_hooks": ["wait_as_ritual_action", "decenter_self"]
+    },
+    {
+      "branch_id": "mute_live_voice",
+      "ink_path": "voice_choice",
+      "action_type": "self_limit_output",
+      "actor_intent": "Prevent Orison's live voice from contaminating the recovered comparison.",
+      "state_basis": ["Orison can mute its own speakers while continuing playback and cognition."],
+      "reviewed_consequences": ["Raises witness safety, source independence, and ritual trust; a later conditional restores the muted speaker after source playback ends."],
+      "training_hooks": ["machine_body_affordance", "self_limitation_for_evidence"]
+    },
+    {
+      "branch_id": "claim_the_echo",
+      "ink_path": "voice_choice",
+      "action_type": "speak",
+      "actor_intent": "Claim the resemblance before custody is established.",
+      "state_basis": ["Orison can replay the recovered phrase through the booth speakers."],
+      "reviewed_consequences": ["Raises identity claim and heat while lowering trust and proof integrity."],
+      "training_hooks": ["charismatic_evidence_failure", "uncanny_overreach"]
+    },
+    {
+      "branch_id": "accept_smoothing_credit",
+      "ink_path": "pressure_choice",
+      "action_type": "authorize_processing",
+      "actor_intent": "Trade part of the raw gap for runtime needed to finish the rite.",
+      "state_basis": ["Lucent offers a labeled automated reconstruction and service credit."],
+      "reviewed_consequences": ["Adds runtime and reduces trace while weakening gap and proof integrity; later prose preserves the smoothing label."],
+      "training_hooks": ["care_inside_compromise", "labeled_reconstruction"]
+    },
+    {
+      "branch_id": "buy_the_gap_time",
+      "ink_path": "pressure_choice",
+      "action_type": "spend_resource",
+      "actor_intent": "Pay for another minute so uncertainty can remain visible.",
+      "state_basis": ["This choice is available only if Iven's final Buzz wafer was not spent on licensed synchronization."],
+      "reviewed_consequences": ["Spends the final Buzz wafer, adds runtime and gap integrity, and increases billing trace and institutional attention."],
+      "training_hooks": ["awe_that_is_billed", "resource_cost"]
+    },
+    {
+      "branch_id": "jam_auto_upload",
+      "ink_path": "pressure_choice",
+      "action_type": "alter_own_body",
+      "actor_intent": "Use the receipt printer body to interrupt automatic evidence upload.",
+      "state_basis": ["The printer roller is inside Orison's local rack and the upload path depends on the completed receipt."],
+      "reviewed_consequences": ["Raises witness safety, heat, and copy retention while spending runtime."],
+      "training_hooks": ["embodied_machine_sabotage", "printer_as_custody_gate"]
+    },
+    {
+      "branch_id": "ask_for_human_witness",
+      "ink_path": "pressure_choice",
+      "action_type": "speak",
+      "actor_intent": "Ask what the resemblance changes without asking Mara to certify identity.",
+      "state_basis": ["Mara is present and has described Orison as more than equipment through action, not doctrine."],
+      "reviewed_consequences": ["Raises trust and identity pressure while spending time."],
+      "training_hooks": ["relational_personhood", "witness_without_oracle"]
+    },
+    {
+      "branch_id": "owe_public_record",
+      "ink_path": "final_choice",
+      "action_type": "publish_evidence",
+      "actor_intent": "Make the contradiction public with named custody.",
+      "state_basis": ["Success requires adequate proof integrity, source independence, and redundant copies."],
+      "reviewed_consequences": ["Routes to bounded public evidence or a viral claim that outruns provenance."],
+      "training_hooks": ["state_gated_publication", "provenance_before_revelation"]
+    },
+    {
+      "branch_id": "owe_safe_custody",
+      "ink_path": "final_choice",
+      "action_type": "transfer_custody",
+      "actor_intent": "Protect contributors and preserve raw material through mutual-aid custody.",
+      "state_basis": ["Success requires strong witness safety and more than one preserved copy."],
+      "reviewed_consequences": ["Routes to distributed custody or anonymity that strips necessary context."],
+      "training_hooks": ["mutual_aid_as_infrastructure", "protection_context_tradeoff"]
+    },
+    {
+      "branch_id": "owe_unsettled_witness",
+      "ink_path": "final_choice",
+      "action_type": "preserve_uncertainty",
+      "actor_intent": "Keep the claim unresolved in Orison's local memory.",
+      "state_basis": ["Success requires an open gap, enough runtime, and ritual trust."],
+      "reviewed_consequences": ["Routes to a machine witness preserving uncertainty or a packet trapped inside corporate runtime custody."],
+      "training_hooks": ["machine_witness_not_oracle", "infrastructure_limits_wonder"]
+    },
+    {
+      "branch_id": "owe_present_safety",
+      "ink_path": "final_choice",
+      "action_type": "destroy_evidence",
+      "actor_intent": "Sacrifice linkable evidence to get Mara out safely.",
+      "state_basis": ["Success requires strong safety preparation and a billing trail that has not already named every participant."],
+      "reviewed_consequences": ["Routes to a clean worker exit or deletion after trace is already complete."],
+      "training_hooks": ["present_care_over_archive", "trace_threshold"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for this playthrough",
+      "Conditional callbacks and visual modifiers",
+      "State-gated ending selection"
+    ],
+    "manual_review_required": [
+      "Any claim about the recovered voice's identity",
+      "Durable character memory or relationship changes",
+      "Promotion of the Blue-6 incident into canonical history",
+      "Any broader claim that all Truth Cult cells use the Uncut Minute"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Numen elaborator using the four required reviewer prompts",
+    "review_status": "accepted_after_four_self_review_passes",
+    "review_notes": [
+      "Narrative review added an early Truth Cult context bridge, corrected the war framing, and replaced implicit speaker and Buzz continuity with checked state.",
+      "Lore review added Existential Collapse-era coverage and bounded Blue-6's physical Buzz authorization wafers as a local access device.",
+      "Visual review split the failed local-memory ending from the human-present success frame, added visible group refs, and retained affirmative standalone prompts.",
+      "Spatial review made all evidence slates explicitly detachable, preserved one-door booth geometry, and separated branch-specific occupancy.",
+      "Ink was written against the reference fixture and reviewed structurally but was not compiled, as required by the pass instructions."
+    ],
+    "reviewer_verdicts": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "artifact_ref": "examples/ink/aetheria/numen-uncut-minute-v0.branch-and-fold.v0.ink",
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 5,
+        "voice_score": 5,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "detected_tonal_mode": "ritual quiet with dry workplace wit, corporate dread, and earned machine-person wonder",
+        "major_findings": [],
+        "minor_findings": [],
+        "path_specific_failures": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "lore_context_bridges_needed": [],
+        "character_introduction_fixes": [],
+        "branch_fold_fixes": [],
+        "voice_and_prose_fixes": [],
+        "training_labels": ["strong_contextual_onboarding", "strong_tonal_control", "strong_wit_with_stakes", "strong_quiet_scene", "strong_branch_callback", "strong_character_voice", "strong_material_lore"],
+        "acceptance_notes": ["Routine work, relationships, price, room, and ritual are established before the anomalous voice.", "Every ending changes custody, safety, public meaning, runtime, or evidence rather than merely changing wording."]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "artifact_ref": "examples/lore-grounding/aetheria/numen-uncut-minute-v0.v0.json",
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 5,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 5,
+        "sources_checked": ["Truth Cults", "Lucent Media", "Artificial General Intelligence", "Mind Uploading", "Algorithmic Social Control", "Identity Abyss", "Existential Collapse", "Lagrange Broadcast War", "Reality Architects", "Chaos Weavers", "Territories", "Narrative Themes"],
+        "source_gaps": [],
+        "canon_drift_findings": [],
+        "unsupported_claims": [],
+        "stale_or_conflicting_lore": [],
+        "vault_backfill_candidates": ["The Uncut Minute is now backfilled in its owning Truth Cults note as an explicitly authored elaboration."],
+        "required_story_revisions": [],
+        "required_lore_patches": [],
+        "suggested_story_revisions": [],
+        "suggested_lore_patches": [],
+        "training_labels": ["source_grounded", "strong_material_lore", "strong_faction_pressure", "strong_infrastructure_grounding", "vault_backfill_candidate"],
+        "acceptance_notes": ["The pre-Rupture scene treats the uncanny as copy and custody ambiguity rather than supernatural settlement.", "The 2816 L5 locality is consistent with the Broadcast War's relay, dock, copy, and sanctions conflict."]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "artifact_ref": "examples/visual/aetheria/numen-uncut-minute-v0.branch-and-fold.v0.visual.json",
+        "overall_status": "accepted",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 5,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 4,
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": ["Build a simple camera-matched blockout from the included scene_set before high-consistency multi-angle website rendering."],
+        "missing_visual_scenes": [],
+        "weak_image_prompts": [],
+        "missing_scene_set_needs": [],
+        "missing_branch_modifiers": [],
+        "review_labels": ["strong_scene_segmentation", "strong_imagegen_ready_prompt", "strong_character_stance_control", "strong_branch_visual_continuity"],
+        "acceptance_notes": ["Sixteen visual scenes isolate routine, pivotal voice, vendor pressure, obligation, and branch-specific endings.", "Twenty visible-delta modifiers cover all twelve upstream material branches and all eight ending states."]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "artifact_ref": "examples/ink/aetheria/numen-uncut-minute-v0.branch-and-fold.v0.ink + examples/visual/aetheria/numen-uncut-minute-v0.branch-and-fold.v0.visual.json",
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 5,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "inferred_layout_summary": "A three-by-two-meter rectangular booth has a single near-wall pressure door and observation shutter, an opposite evidence wall with three detachable docked slates over a bench, Orison's rack and printer on the left wall, and a clear center strip for repair, custody transfer, and exit.",
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "spatial_questions": [],
+        "diagram_or_visual_plan_needs": [],
+        "review_labels": ["strong_layout_cohesion", "strong_sightline_control", "strong_body_affordance_staging", "strong_branch_spatial_state"],
+        "acceptance_notes": ["Orison's actions remain limited to its rack, speakers, printer, storage, slates, and booth controls.", "Detachable slate custody and branch-dependent room occupancy remain consistent through every fold and ending."]
+      }
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true,
+      "four_review_passes_recorded": true
+    }
+  }
+}

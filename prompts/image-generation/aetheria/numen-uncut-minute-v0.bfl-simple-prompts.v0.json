@@ -1,0 +1,28 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "numen-uncut-minute-v0.bfl-simple-v0",
+  "fixture_id": "numen-uncut-minute-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Painterly illustrated science-fiction story frame, quiet ritual gravity, dry workplace intimacy, restrained ink-line detail, deep charcoal shadows, warm amber practical lights, cold corporate cyan interfaces, tactile worn materials, cinematic composition sized for interactive-fiction replay.",
+  "prompts": [
+    {"id": "01_blue_six_establishing", "prompt": "Wide view of a narrow rectangular archive booth at Earth-Moon L5: three slate displays above a worn bench, one pressure door with shuttered observation strip, matte-black wall computer with cooling fins, blue status ring and thermal printer, two tired workers in cyan-gray media uniform and orange dock jacket."},
+    {"id": "02_ritual_setup", "prompt": "Three distinct slates prepared for a verification rite: polished evacuation broadcast, maintenance reset log, damaged relay waveform; two translucent payment wafers, gloved cable repair, wall-mounted machine witness, amber booth light and cyan screens."},
+    {"id": "03_preparation_choice", "prompt": "Archive booth presents four physical choices: payment reader for licensed clock, privacy shutter control, braided maintenance-clock lead, three staggered waveforms, and checksum receipt printer; two human workers and one wall-mounted machine mind poised among them."},
+    {"id": "04_ordinary_reclamation", "prompt": "Quiet archive-work routine: rights clerk marks source custody, dock technician repairs cracked connector beside open tool case, wall machine prints a curling bill, tiny ration sweet rests on cooling shelf, courier shadows cross observation glass."},
+    {"id": "05_minute_playback", "prompt": "Darkened booth with three simultaneous source displays: polished presenters, maintenance clocks and reset marker, damaged dock alarm feed; two workers sit still on bench while wall computer watches, amber floor light beneath cyan screens."},
+    {"id": "06_matching_voice", "prompt": "Pivotal frame: recovered voice waveform on damaged slate exactly resembles the live blue waveform around a wall-mounted machine mind; hard black nine-second gap between them; two human witnesses turn toward the correspondence in stunned stillness."},
+    {"id": "07_seen_round", "prompt": "Evidence round in triangular composition: rights worker points to sponsor-covered interval, dock worker points to maintenance reset, wall machine displays two partly matching signatures separated by amber uncertainty marker; three slates remain visibly independent."},
+    {"id": "08_smoothing_offer", "prompt": "Corporate smoothing offer covers center slate with clean cyan reconstructed waveform and credit icon; amber remote-verification lamp wakes above observation strip; long receipt crosses floor; wall machine fan indicator slows while workers face payment reader and door."},
+    {"id": "09_vendor_choice", "prompt": "Four pressure responses staged inside one booth: cyan smoothing control, final translucent payment wafer, exposed thermal-printer roller, dock worker ready to answer beside pressure door; raw slates, shutter, bench and wall machine remain legible."},
+    {"id": "10_owed_round", "prompt": "Material obligation fills the small room: open tool case for one slate, uniform lining for another, machine local-storage strip, pressure-door timer, privacy shutter, contributor credential mark, raw black gap, labeled reconstructed waveform, hashes and curled bill."},
+    {"id": "11_final_obligation", "prompt": "Final threshold from door toward evidence wall: two independent relay-send icons, privacy blocks and tool case, machine local-memory light, delete control and custody receipt; rights clerk at transfer slate, dock worker at exit, wall machine between storage and printer."},
+    {"id": "12_public_record_end", "prompt": "Public evidence aftermath: two relay acknowledgements, packet with clock marks and unresolved identity marker, machine checksum glowing beside wall status ring, rights worker at controls, dock worker visibly linked by credential under amber verification light."},
+    {"id": "13_safe_custody_end", "prompt": "Mutual-aid custody aftermath: one raw slate hidden in frayed uniform lining, another beneath a cable coil in orange worker's metal tool case, contributor names sealed separately, wall machine retains independent hashes, pressure door ready."},
+    {"id": "14_unsettled_witness_success", "prompt": "Mostly empty booth centered on wall-mounted machine witness preserving a hard black gap and two partly matching signatures with amber unresolved marker; dock worker at door holds a tiny ration sweet; rights worker seals a custody mark."},
+    {"id": "15_unsettled_witness_cost", "prompt": "Empty narrow archive booth with wall machine access panel open, blue status ring reduced to one slow line, black gap preserved on docked slate, clean corporate service attendant adjusting compute throttle with insulated glove and diagnostic case."},
+    {"id": "16_present_safety_end", "prompt": "Immediate-safety aftermath: three slates show ordinary archive noise, single custody receipt remains, open pressure door reveals orange-jacketed worker merging into a dock crowd in patched pressure coveralls and tool belts, rights clerk performs bored billing dispute, wall machine shows steady blue ring and empty packet light."}
+  ]
+}

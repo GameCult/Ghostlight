@@ -1,0 +1,295 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "numen-uncut-minute-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/aetheria/numen-uncut-minute-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/numen-uncut-minute-v0.branch-and-fold.v0.training.json",
+  "scene_id": "numen-uncut-minute-v0.l5-blue-six",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for the Uncut Minute fixture.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for routine archive work, ritual setup, the matching machine voice, corporate smoothing pressure, the owed round, and four ending families.",
+    "segmentation_rule": "Use distinct visual_scene_id anchors for room establishment, ritual setup, preparation choices, ordinary routine, playback, the single-sentence matching-voice beat, evidence rounds, vendor pressure, final obligation, and each ending family.",
+    "prompting_rule": "Each base image prompt describes a complete frame in plain visible language for a general image model. Prompt assembly adds only the style cue, refs for characters visible in that frame, and triggered visible deltas.",
+    "global_style_cue": "Style: painterly illustrated science-fiction story frame, quiet ritual gravity, dry workplace intimacy, restrained ink-line detail, deep charcoal shadows, warm amber practical lights, cold corporate cyan interfaces, tactile worn materials, cinematic composition sized for interactive-fiction replay.",
+    "prompt_assembly_rule": "Assemble every prompt from global_style_cue plus the scene base_image_prompt, visual refs only for named characters physically visible in the frame, and triggered state or branch modifiers. Tooling continuity notes stay outside the assembled prompt.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "Blue-6 is one compact room revisited from several angles with a moving shutter, three slates, paper custody, and branch-dependent body positions.",
+      "future_scene_set_need": "Use the included plan-view geometry for draft replay; build a simple blockout with the declared camera slots before high-consistency website rendering."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "numen_blue_six_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide view of a narrow rectangular media-reclamation booth inside an Earth-Moon L5 dockside relay in 2816. The far evidence wall holds three detachable slate displays seated in shallow charging docks above a worn padded bench. The left wall holds a nonhumanoid archive computer body: matte-black cooling fins, one blue circular status light, two narrow speaker slots, cable conduits, and a small thermal-paper printer. The near wall has one pressure door and a waist-high observation strip fitted with a ribbed metal privacy shutter. Amber maintenance lights mix with cold cyan screen glow. Iven Saye, a slim middle-aged human with warm brown skin, close-cropped black hair, and a frayed cyan-gray Lucent uniform, stands near the slates. Mara Vey, a broad middle-aged human with a gray side braid, worn orange dock jacket, heavy signal gloves, and a metal tool case, works by the center display.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "wall-mounted body active with blue status ring", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "iven_saye", "default_stance": "standing at the evidence wall", "visual_ref": "visual_character_refs.characters.iven_saye"},
+          {"agent_id": "mara_vey", "default_stance": "standing beside the center slate with tool case", "visual_ref": "visual_character_refs.characters.mara_vey"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Blue-6 remains one narrow rectangular booth: evidence wall opposite the door; Orison rack on the left wall; shuttered observation strip beside the door; padded bench under the slates.",
+          "Orison's visible body is the wall rack and its attached speaker, printer, status ring, cooling fins, and local cable conduits."
+        ]
+      },
+      {
+        "visual_scene_id": "numen_ritual_setup",
+        "ink_anchor": "ritual_setup",
+        "base_image_prompt": "Medium view toward three slate displays in a compact archive booth. The left slate shows a polished presenter image, the center shows maintenance timestamps and signal bars, and the right shows a damaged relay waveform. Two small translucent payment wafers rest in a reader below the center slate. Iven Saye, slim with warm brown skin, close-cropped hair, and a worn cyan-gray media uniform, wipes the slates with one sleeve. Mara Vey, broad with a gray side braid, orange dock jacket, and thick signal gloves, leaves visible fingerprints while reseating a cracked cable. Orison's matte-black wall rack, blue status ring, cooling fins, and thermal printer are clearly visible on the left wall. Amber booth light and cyan displays create a small solemn working space.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "status ring bright beside the slates", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "iven_saye", "default_stance": "cleaning the slates", "visual_ref": "visual_character_refs.characters.iven_saye"},
+          {"agent_id": "mara_vey", "default_stance": "repairing the center connector", "visual_ref": "visual_character_refs.characters.mara_vey"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_preparation_choice",
+        "ink_anchor": "setup_choice",
+        "base_image_prompt": "Wide-medium decision frame inside the narrow archive booth. Three evidence slates face the viewer; two payment wafers sit in their reader; a braided maintenance-clock lead hangs within Mara's gloved reach; the ribbed privacy shutter waits above the observation strip; Orison's blue status ring and thermal printer sit on the left wall. Iven in a frayed cyan-gray uniform stands between payment reader and shutter control. Mara in an orange dock jacket stands between the clock lead and cracked slate connector. The geometry presents four visible actions: buy licensed alignment, close the shutter and attach the maintenance clock, preserve staggered waveforms, or print Orison's checksum.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "wall body active beside printer", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "iven_saye", "default_stance": "between payment reader and shutter control", "visual_ref": "visual_character_refs.characters.iven_saye"},
+          {"agent_id": "mara_vey", "default_stance": "beside maintenance lead and center slate", "visual_ref": "visual_character_refs.characters.mara_vey"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_ordinary_reclamation",
+        "ink_anchor": "ordinary_fold",
+        "base_image_prompt": "Quiet routine inside a worn L5 archive booth. Iven Saye checks source marks on the three slates with a grease pencil. Mara Vey kneels at the right display, reseating a cracked connector beside an open metal tool case, orange jacket creased across her shoulders. Orison's black wall rack measures the room with a blue status ring and a strip of thermal receipt curling from the printer. A tiny wrapped ration sweet rests on the cooling shelf. Courier shadows cross the observation strip beside the pressure door. Amber maintenance light makes the booth intimate despite cold cyan service displays.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "wall body active with receipt and ration sweet at cooling shelf", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "iven_saye", "default_stance": "checking custody marks", "visual_ref": "visual_character_refs.characters.iven_saye"},
+          {"agent_id": "mara_vey", "default_stance": "kneeling at cracked connector", "visual_ref": "visual_character_refs.characters.mara_vey"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "shutter_state == 1", "modifier_prompt": "The ribbed privacy shutter covers the observation strip completely, replacing corridor shadows with warm reflected booth light."},
+          {"trigger": "billing_trace >= 3", "modifier_prompt": "A long thermal receipt curls from Orison's printer and reaches the dark floor tiles."},
+          {"trigger": "gap_kept_open >= 3", "modifier_prompt": "The three playback progress bars are visibly staggered, with separate black gaps and unmatched time ticks."},
+          {"trigger": "identity_claim >= 1", "modifier_prompt": "A short thermal checksum receipt lies beneath the center slate beside two human custody marks."}
+        ]
+      },
+      {
+        "visual_scene_id": "numen_minute_playback",
+        "ink_anchor": "minute_playback",
+        "base_image_prompt": "Front view of three media slates playing simultaneously in a darkened archive booth. The left slate shows polished evacuation presenters under clean studio light; the center slate shows maintenance process names, clocks, and a reset marker; the right slate shows a damaged dock feed with warning beacons and broken waveform bands. Iven Saye sits upright at one end of the padded bench, hands folded. Mara Vey sits at the other end, orange dock gloves clasped around one knee. Orison's black wall rack and blue status ring watch from the left wall. Amber floor light outlines faces, cooling fins, payment reader, shutter, and door.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "wall body active during playback", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "iven_saye", "default_stance": "still on left end of bench", "visual_ref": "visual_character_refs.characters.iven_saye"},
+          {"agent_id": "mara_vey", "default_stance": "still on right end of bench", "visual_ref": "visual_character_refs.characters.mara_vey"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_matching_voice",
+        "ink_anchor": "uncanny_voice|voice_choice",
+        "base_image_prompt": "Pivotal silent frame in a compact dark archive booth. The damaged right-hand slate displays a pale voice waveform identical in shape and color to the live waveform glowing around Orison's blue status ring on the left wall. Between them, nine seconds appear as a hard black interval on all three displays. Iven Saye turns toward the wall-mounted machine body, face held still. Mara Vey grips the edge of the padded bench with one orange signal glove. Cold cyan waveform light and one warm amber floor strip isolate the matching patterns.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "blue status ring aligned visually with recovered waveform", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "iven_saye", "default_stance": "turned toward Orison, still", "visual_ref": "visual_character_refs.characters.iven_saye"},
+          {"agent_id": "mara_vey", "default_stance": "gripping bench edge", "visual_ref": "visual_character_refs.characters.mara_vey"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_seen_round",
+        "ink_anchor": "seen_round",
+        "base_image_prompt": "Medium triangular composition inside a compact L5 archive booth after playback. Iven Saye stands at the left slate and points only to the sponsor-covered interval. Mara Vey stands at the center slate and points to the maintenance reset marker. Orison's wall rack illuminates a comparison diagram near its blue status ring: two partly matching machine signatures separated by a clear uncertainty gap. The three detachable evidence slates remain seated in separate shallow docks above the bench. The pressure door and observation shutter are visible at frame edge. Amber work light returns while cyan evidence stays bright.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "wall display showing bounded comparison", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "iven_saye", "default_stance": "pointing at public cut interval", "visual_ref": "visual_character_refs.characters.iven_saye"},
+          {"agent_id": "mara_vey", "default_stance": "pointing at reset marker", "visual_ref": "visual_character_refs.characters.mara_vey"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "proof_integrity >= 4", "modifier_prompt": "Precise time ticks align across all three slates, making the nine-second contradiction visibly bounded."},
+          {"trigger": "proof_integrity <= 1", "modifier_prompt": "Time ticks drift across the slates and custody marks look incomplete despite the striking waveform."},
+          {"trigger": "identity_claim >= 3", "modifier_prompt": "Orison's live blue ring pulses in exact rhythm with the recovered waveform while a separate amber uncertainty marker remains between them."}
+        ]
+      },
+      {
+        "visual_scene_id": "numen_smoothing_offer",
+        "ink_anchor": "billing_pressure",
+        "base_image_prompt": "Corporate pressure frame inside the compact archive booth. The center slate is covered by a clean cyan reconstruction offer with a bright credit icon, a two-second filled waveform, and an account timer. Above the observation strip, a small remote-verification lamp glows amber. Orison's cooling fins and blue ring sit beside a slowing fan indicator. Iven Saye stands near the depleted payment reader. Mara Vey stands near the shutter and pressure door with her tool case closed. A thermal receipt curls across the floor between evidence wall and machine rack.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "wall body under compute pressure", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "iven_saye", "default_stance": "near payment reader", "visual_ref": "visual_character_refs.characters.iven_saye"},
+          {"agent_id": "mara_vey", "default_stance": "near shutter and door", "visual_ref": "visual_character_refs.characters.mara_vey"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "billing_trace >= 4", "modifier_prompt": "The remote-verification lamp burns bright amber and the thermal receipt carries several dense account blocks."},
+          {"trigger": "public_heat >= 2", "modifier_prompt": "The pressure-door panel shows a short maintenance-review countdown in sharp amber segments."},
+          {"trigger": "runtime_margin <= 1", "modifier_prompt": "Orison's fan indicator drops to one slow blue segment and its status-ring pulse stretches visibly."},
+          {"trigger": "shutter_state == 1", "modifier_prompt": "The metal shutter is fully lowered, and amber verification light shines through its narrow perforations."}
+        ]
+      },
+      {
+        "visual_scene_id": "numen_vendor_choice",
+        "ink_anchor": "pressure_choice",
+        "base_image_prompt": "Wide-medium choice frame in Blue-6 with four reachable pressure responses. The center slate carries a cyan smoothing-credit control. One remaining translucent Buzz wafer sits in Iven's fingers near the reader. Orison's thermal printer roller and curled paper are exposed behind a small service slot. Mara Vey stands between Orison's speaker and the pressure door, ready to answer. Three raw evidence slates remain on the far wall. The fixed bench, left-wall rack, shuttered observation strip, and door preserve the room layout under amber warning light.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "printer roller and speaker active", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "iven_saye", "default_stance": "holding final Buzz wafer", "visual_ref": "visual_character_refs.characters.iven_saye"},
+          {"agent_id": "mara_vey", "default_stance": "between speaker and door", "visual_ref": "visual_character_refs.characters.mara_vey"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_owed_round",
+        "ink_anchor": "owed_round",
+        "base_image_prompt": "The owed round in a narrow archive booth rendered as material obligations. Three evidence slates glow above the bench. An open metal tool case can carry one slate. Iven Saye holds a uniform lining open for another. Orison's local storage indicator, printer slot, and blue status ring occupy the left wall. The pressure door timer and ribbed privacy shutter occupy the near wall. A labeled reconstructed waveform, raw black gap, custody hashes, contributor credential mark, and curled bill are visible as separate interface elements. Mara Vey stands closest to the exit in her orange dock jacket and heavy gloves.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "storage and status indicators active", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "iven_saye", "default_stance": "holding uniform lining open for a slate", "visual_ref": "visual_character_refs.characters.iven_saye"},
+          {"agent_id": "mara_vey", "default_stance": "closest to the pressure door", "visual_ref": "visual_character_refs.characters.mara_vey"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "witness_safety >= 4", "modifier_prompt": "Mara's credential mark is sealed under a dark privacy block while the exit panel shows an ordinary customer route."},
+          {"trigger": "copies_preserved >= 3", "modifier_prompt": "Three independent hash blocks glow on separate slates and on Orison's local storage strip."},
+          {"trigger": "gap_kept_open >= 3", "modifier_prompt": "The nine-second interval stays black across the raw slates with a clear unresolved marker."},
+          {"trigger": "smoothing_accepted == 1", "modifier_prompt": "A cyan reconstructed transition appears beside the raw black interval with a bright addition marker and separate border."},
+          {"trigger": "public_heat >= 3", "modifier_prompt": "The door timer glows amber at ninety seconds while a service presence casts a narrow shadow beyond the observation strip."},
+          {"trigger": "runtime_margin <= 1", "modifier_prompt": "Orison's status ring pulses slowly and its local storage indicator advances in long delayed steps."}
+        ]
+      },
+      {
+        "visual_scene_id": "numen_final_obligation",
+        "ink_anchor": "final_choice",
+        "base_image_prompt": "Final threshold view from the pressure door toward the evidence wall of Blue-6. Four material routes are legible in one frame: two relay-send icons on the left slate, privacy blocks and an open tool case beneath the center slate, Orison's local-memory indicator on the left wall, and a delete control beside the curled custody receipt. Iven Saye stands at the transfer slate. Mara Vey waits at the openable door with tool case and gloves. Orison's blue ring sits between storage light and receipt printer. Amber door light presses against the colder cyan evidence wall.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "wall body between storage and receipt", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "iven_saye", "default_stance": "at transfer slate", "visual_ref": "visual_character_refs.characters.iven_saye"},
+          {"agent_id": "mara_vey", "default_stance": "at the pressure door with tool case", "visual_ref": "visual_character_refs.characters.mara_vey"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_ending_public_record",
+        "ink_anchor": "ending_public_record_success|ending_public_record_cost",
+        "base_image_prompt": "Public-record aftermath in Blue-6. Two relay acknowledgements glow on separate evidence slates while the third displays the matching machine waveform, black gap, clock marks, and a custody packet. Orison's wall ring shines beside its checksum receipt. Iven Saye holds the packet controls with tense precision. Mara Vey stands by the door with her maintenance credential visibly linked to the record. Amber verification light spills through the observation strip, showing that publication has opened a route and exposed a person.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "checksum and status visible beside public packet", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "iven_saye", "default_stance": "at packet controls", "visual_ref": "visual_character_refs.characters.iven_saye"},
+          {"agent_id": "mara_vey", "default_stance": "at door with credential link visible", "visual_ref": "visual_character_refs.characters.mara_vey"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_ending_safe_custody",
+        "ink_anchor": "ending_safe_custody_success|ending_safe_custody_cost",
+        "base_image_prompt": "Mutual-aid custody aftermath inside the compact booth. One raw slate slides into the hidden lining of Iven Saye's frayed cyan-gray uniform. Another raw slate rests beneath a coil of signal cable in Mara Vey's open metal tool case. Orison's wall storage strip holds only independent hashes beside a blue status ring. Contributor names sit in a small sealed index separate from the raw gap. The pressure door stands ready at Mara's shoulder under warm amber light.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "hash-only storage active", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "iven_saye", "default_stance": "hiding one slate in uniform lining", "visual_ref": "visual_character_refs.characters.iven_saye"},
+          {"agent_id": "mara_vey", "default_stance": "placing one slate beneath cable coil", "visual_ref": "visual_character_refs.characters.mara_vey"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_ending_unsettled_witness_success",
+        "ink_anchor": "ending_unsettled_witness_success",
+        "base_image_prompt": "Machine-witness aftermath in a mostly empty Blue-6 booth. Orison's matte-black cooling fins, blue status ring, local memory strip, speaker slots, and thermal printer dominate the left wall. The center slate preserves a hard black nine-second interval beside two partly matching machine signatures and an amber unresolved marker. Mara Vey stands at the door holding the third piece of ration sweet between two heavy orange signal gloves. Iven Saye is physically visible at the evidence wall sealing a final custody mark. The booth feels small, warm, and owned.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "local memory holding unresolved packet", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "iven_saye", "default_stance": "sealing final custody mark", "visual_ref": "visual_character_refs.characters.iven_saye"},
+          {"agent_id": "mara_vey", "default_stance": "at door holding ration sweet", "visual_ref": "visual_character_refs.characters.mara_vey"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_ending_unsettled_witness_cost",
+        "ink_anchor": "ending_unsettled_witness_cost",
+        "base_image_prompt": "Failed machine-witness aftermath in an empty narrow L5 archive booth. Orison's matte-black wall rack has an open service panel exposing cooling fins, cable conduits, thermal printer, and local memory strip. The blue status ring has narrowed to one slow line. The center detachable slate remains in its charging dock and preserves a hard black nine-second interval beside two partly matching signatures. Only Orison's wall body and a Lucent service attendant occupy the room. The attendant wears a clean cyan-gray pressure coverall and reaches one insulated gloved hand into the access panel while a compact diagnostic case rests on the floor. The pressure door is closed.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "open access panel and throttled local memory", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "lucent_service_attendant", "default_stance": "at Orison's open access panel with diagnostic case", "visual_ref": "visual_character_refs.groups.lucent_service_attendant"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_ending_present_safety",
+        "ink_anchor": "ending_present_safety_success|ending_present_safety_cost",
+        "base_image_prompt": "Immediate-safety aftermath in Blue-6. The three slates show ordinary archive noise and erased local packet space. A single curled custody receipt remains on the dark floor. The pressure door stands open. Mara Vey in an orange dock jacket is visible through the observation strip merging into a dense corridor crowd wearing patched pressure coveralls, tool belts, cargo straps, scuffed helmets, and heavy work boots. Inside, Iven Saye stands at the payment reader with one hand raised in a practiced billing dispute. Orison's black wall rack shows a steady blue status ring and an empty local packet indicator. Amber corridor light cuts across the cyan booth.",
+        "visible_characters": [
+          {"agent_id": "orison_nine", "default_stance": "empty packet indicator and steady ring", "visual_ref": "visual_character_refs.characters.orison_nine"},
+          {"agent_id": "iven_saye", "default_stance": "arguing at payment reader", "visual_ref": "visual_character_refs.characters.iven_saye"},
+          {"agent_id": "mara_vey", "default_stance": "visible beyond observation strip entering dock crowd", "visual_ref": "visual_character_refs.characters.mara_vey"},
+          {"agent_id": "l5_dock_crowd", "default_stance": "moving through corridor around Mara", "visual_ref": "visual_character_refs.groups.l5_dock_crowd"}
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {"modifier_id": "licensed_sync_visual", "trigger": "branch_label == licensed_sync", "apply_to_visual_scene_ids": ["numen_preparation_choice", "numen_ordinary_reclamation"], "modifier_prompt": "All three slate timelines snap into precise alignment while two payment wafers disappear into the reader and fresh receipt paper advances."},
+      {"modifier_id": "maintenance_sync_visual", "trigger": "branch_label == maintenance_sync", "apply_to_visual_scene_ids": ["numen_preparation_choice", "numen_ordinary_reclamation"], "modifier_prompt": "The privacy shutter lowers over the observation strip and a braided cable links Mara's wrist clock to the center slate."},
+      {"modifier_id": "preserve_stagger_visual", "trigger": "branch_label == preserve_stagger", "apply_to_visual_scene_ids": ["numen_preparation_choice", "numen_minute_playback"], "modifier_prompt": "Three slate progress bars remain visibly staggered with separate timing ticks and differently placed black gaps."},
+      {"modifier_id": "machine_witness_mark_visual", "trigger": "branch_label == machine_witness_mark", "apply_to_visual_scene_ids": ["numen_preparation_choice", "numen_ordinary_reclamation"], "modifier_prompt": "A fresh checksum receipt curls from Orison's printer and lies beside Iven's signature and Mara's greasy thumb mark."},
+      {"modifier_id": "compare_signature_visual", "trigger": "branch_label == compare_machine_signature", "apply_to_visual_scene_ids": ["numen_matching_voice", "numen_seen_round"], "modifier_prompt": "A detailed comparison diagram shows shared waveform structure and partly matching machine watermark blocks separated by an amber uncertainty marker."},
+      {"modifier_id": "single_playback_visual", "trigger": "branch_label == honor_single_playback", "apply_to_visual_scene_ids": ["numen_matching_voice", "numen_seen_round"], "modifier_prompt": "The recovered waveform passes once into a clean black interval while every body in the booth remains still."},
+      {"modifier_id": "mute_live_voice_visual", "trigger": "branch_label == mute_live_voice", "apply_to_visual_scene_ids": ["numen_matching_voice", "numen_seen_round"], "modifier_prompt": "Orison's speaker indicators go dark while its blue status ring stays awake; Mara faces the evidence slate instead of the machine rack."},
+      {"modifier_id": "claim_echo_visual", "trigger": "branch_label == claim_the_echo", "apply_to_visual_scene_ids": ["numen_matching_voice", "numen_seen_round"], "modifier_prompt": "The recovered waveform and Orison's live blue waveform overlap across the booth while Iven's posture tightens and the amber uncertainty marker shrinks."},
+      {"modifier_id": "accept_smoothing_visual", "trigger": "branch_label == accept_smoothing_credit", "apply_to_visual_scene_ids": ["numen_vendor_choice", "numen_owed_round"], "modifier_prompt": "A cyan reconstructed bridge fills two seconds beside the raw black gap, enclosed by a bright border and addition marker; Orison's fan indicator strengthens."},
+      {"modifier_id": "buy_gap_time_visual", "trigger": "branch_label == buy_the_gap_time", "apply_to_visual_scene_ids": ["numen_vendor_choice", "numen_owed_round"], "modifier_prompt": "Iven presses the last Buzz wafer into the reader; the raw black interval returns while the receipt and door timer both lengthen."},
+      {"modifier_id": "jam_upload_visual", "trigger": "branch_label == jam_auto_upload", "apply_to_visual_scene_ids": ["numen_vendor_choice", "numen_owed_round"], "modifier_prompt": "Thermal paper folds tightly inside Orison's exposed printer slot and an amber upload-failure icon appears above the jammed roller."},
+      {"modifier_id": "ask_witness_visual", "trigger": "branch_label == ask_for_human_witness", "apply_to_visual_scene_ids": ["numen_vendor_choice", "numen_owed_round"], "modifier_prompt": "Mara turns from the matching waveform to face Orison's wall rack, one gloved hand resting beside the ration sweet while Iven watches the evidence."},
+      {"modifier_id": "public_success_visual", "trigger": "ending_label == public_record_success", "apply_to_visual_scene_ids": ["numen_ending_public_record"], "modifier_prompt": "Two relay acknowledgements glow independently and the packet displays complete clock marks, custody names, source hashes, and a prominent unresolved identity marker."},
+      {"modifier_id": "public_cost_visual", "trigger": "ending_label == public_record_cost", "apply_to_visual_scene_ids": ["numen_ending_public_record"], "modifier_prompt": "The slates fill with multiplying derivative edits and devotional portraits while Mara's credential warning and Orison's service warning glow sharp amber."},
+      {"modifier_id": "safe_custody_success_visual", "trigger": "ending_label == safe_custody_success", "apply_to_visual_scene_ids": ["numen_ending_safe_custody"], "modifier_prompt": "Raw slates travel in two separate human-held containers while contributor identities remain sealed in a small independent index."},
+      {"modifier_id": "safe_custody_cost_visual", "trigger": "ending_label == safe_custody_cost", "apply_to_visual_scene_ids": ["numen_ending_safe_custody"], "modifier_prompt": "The hidden slates survive, but their maintenance-clock context appears as a broken gray link beside the sealed identity index."},
+      {"modifier_id": "unsettled_success_visual", "trigger": "ending_label == unsettled_witness_success", "apply_to_visual_scene_ids": ["numen_ending_unsettled_witness_success"], "modifier_prompt": "Orison's memory strip glows steadily around the raw black gap and amber unresolved marker; Mara holds the ration sweet like a promised return."},
+      {"modifier_id": "unsettled_cost_visual", "trigger": "ending_label == unsettled_witness_cost", "apply_to_visual_scene_ids": ["numen_ending_unsettled_witness_cost"], "modifier_prompt": "The service attendant's insulated glove rests on the compute throttle while Orison's local memory strip advances in one dim delayed segment."},
+      {"modifier_id": "present_safety_success_visual", "trigger": "ending_label == present_safety_success", "apply_to_visual_scene_ids": ["numen_ending_present_safety"], "modifier_prompt": "Mara is deep inside the moving dock crowd while Iven's bored billing dispute holds attention inside the booth."},
+      {"modifier_id": "present_safety_cost_visual", "trigger": "ending_label == present_safety_cost", "apply_to_visual_scene_ids": ["numen_ending_present_safety"], "modifier_prompt": "The slates are empty but the account panel displays linked booth, clock, and credential traces; an attendant silhouette reaches the pressure door before Mara clears the observation strip."}
+    ],
+    "scene_set": {
+      "scene_set_id": "l5_blue_six.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Narrow rectangular reclamation booth, approximately three meters long and two meters wide, with evidence wall opposite the single pressure door, Orison rack on the left wall, observation strip and shutter beside the door, and one bench under three slates.",
+      "fixed_zones": [
+        {"zone_id": "evidence_wall", "visible_form": "three detachable slate displays seated in separate shallow charging docks above one padded bench with a payment reader below the center slate", "used_for": "public cut, maintenance log, pirate cache, playback, custody, and final transfers"},
+        {"zone_id": "orison_wall_body", "visible_form": "left-wall matte-black rack with cooling fins, blue status ring, speaker slots, local storage strip, cable conduits, and thermal printer", "used_for": "Orison embodiment, runtime state, speech, printing, storage, and upload interruption"},
+        {"zone_id": "door_and_observation", "visible_form": "single near-wall pressure door with waist-high observation strip, ribbed privacy shutter, verification lamp, and countdown panel", "used_for": "entry, exit, corridor sightline, privacy, and Lucent pressure"},
+        {"zone_id": "center_work_strip", "visible_form": "clear standing space between bench and door with floor cable channel and room for one open tool case", "used_for": "Mara's repair work, slate transfer, and exit staging"},
+        {"zone_id": "cooling_shelf", "visible_form": "shallow metal shelf below Orison's cooling fins and above the printer slot", "used_for": "receipt handling and the ration-sweet relationship beat"}
+      ],
+      "camera_slots": [
+        {"camera_id": "door_to_evidence_wide", "supports_visual_scene_ids": ["numen_blue_six_establishing", "numen_preparation_choice", "numen_final_obligation"]},
+        {"camera_id": "bench_to_orison_medium", "supports_visual_scene_ids": ["numen_ritual_setup", "numen_ordinary_reclamation", "numen_vendor_choice"]},
+        {"camera_id": "evidence_front", "supports_visual_scene_ids": ["numen_minute_playback", "numen_seen_round", "numen_smoothing_offer", "numen_owed_round"]},
+        {"camera_id": "waveform_close", "supports_visual_scene_ids": ["numen_matching_voice", "numen_ending_unsettled_witness_success", "numen_ending_unsettled_witness_cost"]},
+        {"camera_id": "door_aftermath", "supports_visual_scene_ids": ["numen_ending_public_record", "numen_ending_safe_custody", "numen_ending_present_safety"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "bench_to_three_sources", "path": "padded bench -> left public slate + center maintenance slate + right damaged-cache slate", "supports": ["minute_playback", "seen_round"]},
+        {"lane_id": "matching_waveform_lane", "path": "right damaged-cache slate -> center black interval -> left-wall Orison status ring", "supports": ["uncanny_voice", "compare_machine_signature", "claim_the_echo"]},
+        {"lane_id": "corridor_observation_lane", "path": "center work strip -> waist-high observation strip -> dock corridor", "supports": ["maintenance_sync", "owed_round", "owe_present_safety"]}
+      ],
+      "shutter_states": [
+        {"value": 0, "label": "open_observation", "visible_form": "clear waist-high strip showing moving courier and dock-worker silhouettes"},
+        {"value": 1, "label": "closed_privacy", "visible_form": "ribbed metal shutter fully lowered with verification light visible through narrow perforations"}
+      ],
+      "printer_states": [
+        {"label": "ordinary", "visible_form": "straight narrow thermal receipt feeding from the slot"},
+        {"label": "long_billing_trace", "visible_form": "receipt curling from slot to floor with dense account blocks"},
+        {"label": "jammed_upload", "visible_form": "paper folded inside exposed roller with amber upload-failure icon"}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable visual identities for named characters. Include a ref only when that character's body is physically visible in the rendered frame.",
+    "characters": {
+      "orison_nine": "Orison-9: nonhumanoid locally hosted AGI whose visible body is a matte-black wall rack about human torso height, vertical cooling fins, one blue circular status ring, two narrow speaker slots, a horizontal local-storage light strip, bundled cable conduits entering the wall, a small thermal-paper printer with visible roller, and a shallow cooling shelf. Presence is expressed through ring pulse, speaker lights, fan speed, printer action, and storage indicators.",
+      "iven_saye": "Iven Saye: baseline human in middle adulthood, slim build, warm brown skin, close-cropped black hair, angular tired face, frayed cyan-gray Lucent rights-clearance uniform with narrow sleeve badge and practical dark shoes; economical movements, careful hands, dry controlled expression.",
+      "mara_vey": "Mara Vey: baseline human in middle adulthood, broad sturdy build, weathered tan face, dark hair shaved at the sides with one gray braid, worn orange dock-signal jacket over charcoal work layers, thick orange-black signal gloves, heavy boots, compact metal tool case; grounded stance and visibly work-worn equipment."
+    },
+    "groups": {
+      "lucent_service_attendant": "Lucent service attendant: one baseline human in a clean cyan-gray pressure coverall, insulated pale gloves, sealed practical work shoes, narrow service badge, and compact hard diagnostic case; posture focused on the open machine access panel.",
+      "l5_dock_crowd": "L5 dock corridor crowd: baseline and visibly modified human workers in patched pressure coveralls, tool belts, cargo straps, scuffed helmets, heavy work boots, and varied work-worn body shapes, moving shoulder-to-shoulder through amber relay-corridor light."
+    }
+  },
+  "review_notes": [
+    "The included draft scene_set names fixed zones, camera slots, sightlines, shutter states, and printer states for B-level replay planning.",
+    "A hand-built blockout remains required before high-consistency multi-angle website rendering.",
+    "All prompts are affirmative visible descriptions, and recurring named character refs are attached only where those bodies are visible."
+  ]
+}

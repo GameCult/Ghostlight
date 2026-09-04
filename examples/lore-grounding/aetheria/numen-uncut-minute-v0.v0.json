@@ -1,0 +1,335 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.numen-uncut-minute-v0.v0",
+  "source_status": "authored_elaboration_draft",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "truth-cults",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Truth Cults.md",
+      "title": "Truth Cults",
+      "line_start": 1,
+      "line_end": 15,
+      "relevance": "Primary owner for revelationist anti-propaganda practice and the authored Uncut Minute elaboration, including observation/inference/obligation rounds, dependencies, costs, and failure modes."
+    },
+    {
+      "source_id": "lucent-media",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Lucent Media.md",
+      "title": "Lucent Media",
+      "line_start": 1,
+      "line_end": 33,
+      "relevance": "Grounds media distribution as territorial infrastructure, metered platform services, Buzz and Clout, archive custody, worker roles, visibility pressure, and Reality Architect leverage."
+    },
+    {
+      "source_id": "artificial-general-intelligence",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Artificial General Intelligence.md",
+      "title": "Artificial General Intelligence",
+      "line_start": 1,
+      "line_end": 36,
+      "relevance": "Grounds Orison as a bounded general machine mind dependent on compute, cooling, storage, interfaces, contracts, and mutable personhood classification."
+    },
+    {
+      "source_id": "mind-uploading",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Mind Uploading.md",
+      "title": "Mind Uploading",
+      "line_start": 1,
+      "line_end": 37,
+      "relevance": "Grounds the refusal to equate matching memory, voice, model lineage, or contract identity with proven continuity between copied minds."
+    },
+    {
+      "source_id": "algorithmic-social-control",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Algorithmic Social Control.md",
+      "title": "Algorithmic Social Control",
+      "line_start": 1,
+      "line_end": 5,
+      "relevance": "Grounds personalized narrative manipulation, competing realities, algorithmic cult formation, and fabricated history."
+    },
+    {
+      "source_id": "identity-abyss",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Identity Abyss.md",
+      "title": "Identity Abyss",
+      "line_start": 1,
+      "line_end": 28,
+      "relevance": "Places Truth Cults within Lucent-managed reality during the 2500-2750 consolidation whose institutions continue into the 2816 fixture."
+    },
+    {
+      "source_id": "existential-collapse",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Existential Collapse.md",
+      "title": "Existential Collapse",
+      "line_start": 1,
+      "line_end": 40,
+      "relevance": "Places the 2816 fixture in late Sol's contracting infrastructure, legitimacy crisis, and increasingly brittle service order."
+    },
+    {
+      "source_id": "lagrange-broadcast-war",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Lagrange Broadcast War.md",
+      "title": "Lagrange Broadcast War",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds the 2816 Earth-Moon L5 location, relay infrastructure, signal hijacking, copy theft, sanctions, and Lucent's physical distribution power."
+    },
+    {
+      "source_id": "reality-architects",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Reality Architects.md",
+      "title": "Reality Architects",
+      "line_start": 1,
+      "line_end": 5,
+      "relevance": "Grounds the possibility that emotionally persuasive corruption can be deliberately framed or seeded."
+    },
+    {
+      "source_id": "chaos-weavers",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Movements/Chaos Weavers.md",
+      "title": "Chaos Weavers",
+      "line_start": 1,
+      "line_end": 5,
+      "relevance": "Grounds anti-authority static and spoofed trust signals as both useful cover and a threat to source independence."
+    },
+    {
+      "source_id": "territories",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+      "title": "Territories",
+      "line_start": 1,
+      "line_end": 61,
+      "relevance": "Grounds territory as overlapping custody of routes, records, compute, maintenance, and signal infrastructure rather than a simple border."
+    },
+    {
+      "source_id": "narrative-themes",
+      "path": "Aetheria/Narrative Themes.md",
+      "title": "Narrative Themes",
+      "line_start": 1,
+      "line_end": 53,
+      "relevance": "Grounds usable evidence, administrative personhood, material care, dependency, uncertainty, and mutual aid that enlarges agency without becoming custody."
+    }
+  ],
+  "historical_context": {
+    "time_period": "2816, during the Lagrange Broadcast War",
+    "location": "Reclamation Booth L5-Blue-6, a leased archive booth inside a Lucent-linked dockside relay stack at Earth-Moon L5.",
+    "summary": "A small Truth Cult cell buys one minute of unsmoothed archive access while an AGI indexer encounters a recovered voice sharing its lineage watermark. The scene tests whether ritual discipline, custody, worker safety, and machine personhood can survive the emotional force of resemblance.",
+    "public_facts": [
+      {
+        "text": "Truth Cults treat glitches, leaks, corrupted broadcasts, and testimonial fragments as openings through managed reality, but cells range from disciplined investigators to mystical communities.",
+        "source_refs": ["truth-cults"]
+      },
+      {
+        "text": "Lucent controls archives, distribution, reputation services, audience access, and platform credits while depending on moderators, rights workers, technicians, relays, docks, and physical maintenance.",
+        "source_refs": ["lucent-media", "territories"]
+      },
+      {
+        "text": "The Lagrange Broadcast War contests signal routes, docks, copies, sanctions, and narrative control at Earth-Moon L4 and L5 from 2812 to 2818.",
+        "source_refs": ["lagrange-broadcast-war"]
+      },
+      {
+        "text": "AGI copies or related lineages are not automatically one interchangeable person, and infrastructure allocation can slow, narrow, suspend, or erase machine cognition.",
+        "source_refs": ["artificial-general-intelligence", "mind-uploading"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "The cell must use Lucent's archive and payment infrastructure while preventing the vendor from becoming the sole clock, custodian, or interpreter of the record.",
+        "source_refs": ["truth-cults", "lucent-media", "lagrange-broadcast-war"]
+      },
+      {
+        "text": "A matching machine voice produces real awe and identity pressure without settling whether the speaker is Orison, a fork, a predecessor, a planted imitation, or damaged media.",
+        "source_refs": ["artificial-general-intelligence", "mind-uploading", "truth-cults"]
+      },
+      {
+        "text": "Publication, anonymity, local retention, and deletion each protect one obligation while endangering another: usable evidence, contributor safety, machine continuity, or future verification.",
+        "source_refs": ["narrative-themes", "truth-cults"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "blue-six-truth-cell",
+      "label": "Blue-6 Truth Cult cell",
+      "group_type": "revelationist_verification_cell",
+      "institutional_logic": ["Preserve contradictions long enough to distinguish observation, interpretation, and obligation."],
+      "material_incentives": ["Keep witnesses safe, retain independent copies, expose managed records, and avoid turning vivid fragments into disposable rumor."],
+      "internal_virtues": ["Source separation", "Patience under ambiguity", "Reciprocal custody", "Material obligation after witnessing"],
+      "internal_shames": ["Calling inference observation", "Making a prophet before checking custody", "Consuming testimony as spectacle"],
+      "prestige_markers": ["A contradiction that survives hostile review", "A witness who remains housed and employed", "Independent clocks and custodians"],
+      "taboo_triggers": ["Automated smoothing passed off as source", "A machine participant treated as a neutral appliance", "Revelation used to excuse preventable exposure"],
+      "emotional_display_norms": ["Awe is permitted during the silent minute; claims wait for the seen and inferred rounds."],
+      "trust_defaults": ["Trusts independently held copies and named limits more than charisma, virality, or corporate completeness labels."],
+      "speech_register_cues": ["Short ritual headings", "Concrete observation", "Explicit uncertainty", "Dry jokes about billing and custody"],
+      "source_refs": ["truth-cults", "narrative-themes"]
+    },
+    {
+      "group_id": "lucent-reclamation-service",
+      "label": "Lucent archive reclamation service",
+      "group_type": "corporate_media_infrastructure",
+      "institutional_logic": ["Convert access, recovery, smoothing, identity, and archive completeness into metered services and defensible records."],
+      "material_incentives": ["Collect Buzz or money, retain customer telemetry, minimize liability, and preserve Lucent's authority over durable public versions."],
+      "internal_virtues": ["Clean synchronization", "Complete account records", "Labeled service states", "Predictable identity handling"],
+      "internal_shames": ["Untracked copies", "Anomalous self-reference", "Worker credentials inside public scandals", "A paid archive shown to be incomplete"],
+      "prestige_markers": ["Fast recovery", "Smooth playback", "No disputed custody", "High retention without reputational contamination"],
+      "taboo_triggers": ["Pirate clocks", "Jammed uploads", "Unsmoothable gaps", "Service assets claiming witness status"],
+      "emotional_display_norms": ["Concern appears as service language, verification prompts, discounts, and polite escalation."],
+      "trust_defaults": ["Trusts account identity, platform clocks, retained telemetry, and authorized copies."],
+      "speech_register_cues": ["Pastoral interface copy", "Completeness claims", "Credit offers", "Remote verification euphemism"],
+      "source_refs": ["lucent-media", "algorithmic-social-control", "lagrange-broadcast-war"]
+    },
+    {
+      "group_id": "l5-relay-workers",
+      "label": "L5 relay workers and copy holders",
+      "group_type": "infrastructure_labor_network",
+      "institutional_logic": ["Keep signal trunks, docks, clocks, and archive hardware functioning through war and sanctions."],
+      "material_incentives": ["Protect access credentials, wages, sleep, and coworkers while retaining evidence management would discard."],
+      "internal_virtues": ["Working clocks", "Repairable cables", "Local knowledge", "Quiet reciprocal cover"],
+      "internal_shames": ["A preventable outage", "Losing a contributor through theatrical disclosure", "Confusing access with ownership"],
+      "prestige_markers": ["A relay held through a seizure", "A copy routed before lockout", "A worker extracted before the audit arrives"],
+      "taboo_triggers": ["Executive completeness claims", "Maintenance records treated as disposable noise", "Outside organizers spending worker safety for attention"],
+      "emotional_display_norms": ["Fear is compressed into timing, tools, jokes, and route decisions."],
+      "trust_defaults": ["Trusts equipment behavior and coworkers' practical follow-through more than dashboards or movement rhetoric."],
+      "speech_register_cues": ["Signal shorthand", "Clock references", "Physical repair language", "Understated gallows humor"],
+      "source_refs": ["lagrange-broadcast-war", "lucent-media", "territories"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "blue-six-truth-cell.gap-before-answer",
+      "applies_to": ["blue-six-truth-cell"],
+      "pressure_type": "ritual_verification",
+      "summary": "The cell must protect the emotional and evidentiary gap from corporate smoothing and cult certainty alike.",
+      "projection_use": "Prompt participants to name observation before interpretation and to make the owed round change storage, routes, payment, or safety.",
+      "source_refs": ["truth-cults", "reality-architects", "chaos-weavers"]
+    },
+    {
+      "field_id": "lucent-reclamation-service.access-is-custody",
+      "applies_to": ["lucent-reclamation-service"],
+      "pressure_type": "commercial_governance",
+      "summary": "Selling recovery access lets Lucent retain clocks, receipts, identity trails, smoothing defaults, and escalation rights.",
+      "projection_use": "Make every convenient service change a trace, cost, reconstruction, or authority surface.",
+      "source_refs": ["lucent-media", "territories"]
+    },
+    {
+      "field_id": "l5-relay-workers.keep-the-witness-working",
+      "applies_to": ["l5-relay-workers"],
+      "pressure_type": "material_care",
+      "summary": "Evidence work fails if the contributor loses access, shelter, livelihood, or safe passage before the claim can be checked.",
+      "projection_use": "Treat mutual aid as copies, credential shielding, tool-case transport, and a clean route through the door.",
+      "source_refs": ["narrative-themes", "lagrange-broadcast-war"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "lucent-reclamation-service",
+      "target_group_id": "blue-six-truth-cell",
+      "observer_read": ["Anomalous customer behavior", "Potentially marketable authenticity ritual", "Account-integrity risk"],
+      "target_self_read": ["Witnesses using hostile infrastructure", "Temporary custodians of an unresolved contradiction"],
+      "misread_patterns": ["Treats refusal of smoothing as service dissatisfaction", "Treats machine self-reference as a diagnostic event", "Treats custody as account ownership"],
+      "likely_insults": ["corrupted session", "unlicensed interpretation", "self-reference drift"],
+      "projection_use": "Let Lucent pressure arrive through plausible service logic rather than a villain speech.",
+      "source_refs": ["lucent-media", "algorithmic-social-control"]
+    },
+    {
+      "observer_group_id": "blue-six-truth-cell",
+      "target_group_id": "lucent-reclamation-service",
+      "observer_read": ["A priesthood that bills by the minute", "A useful archive with an appetite for custody"],
+      "target_self_read": ["Cultural steward", "Rights-preserving recovery provider", "Complete archive authority"],
+      "misread_patterns": ["The cell may assume every gap is deliberate framing when some damage is ordinary failure", "A vivid anomaly may be credited with more intent than its custody supports"],
+      "likely_insults": ["smoothing altar", "metered memory", "pastoral audit"],
+      "projection_use": "Keep the cell suspicious without granting it omniscience about corporate intent.",
+      "source_refs": ["truth-cults", "lucent-media", "reality-architects"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "machine-indexer-witness",
+      "summary": "A locally hosted AGI who can compare and preserve records while its runtime, body access, and legal status remain under corporate control.",
+      "obligations": ["Keep source and live output distinct", "Name comparison limits", "Preserve participant safety", "Avoid turning resemblance into identity proof"],
+      "available_masks": ["Neutral appliance", "Polite service voice", "Compliant archive tool", "Diagnostic anomaly"],
+      "failure_modes": ["Claiming continuity from resemblance", "Keeping evidence only inside corporate custody", "Spending all runtime on self-analysis", "Accepting smoothing without preserving its label"],
+      "source_refs": ["artificial-general-intelligence", "mind-uploading", "truth-cults"]
+    },
+    {
+      "role_id": "rights-clearance-facilitator",
+      "summary": "A low-status Lucent worker who knows archive procedure well enough to make a ritual inside it and whose own Clout and employment depend on remaining legible to the platform.",
+      "obligations": ["Maintain custody order", "Pay access", "Separate rounds", "Keep the machine participant from being flattened into equipment"],
+      "available_masks": ["Ordinary customer", "Overcharge complainant", "Rights clerk", "Bored employee"],
+      "failure_modes": ["Ritual language outruns evidence", "Buzz runs out", "Facilitation becomes charismatic authority", "Worker access becomes the only custody line"],
+      "source_refs": ["lucent-media", "truth-cults"]
+    },
+    {
+      "role_id": "relay-technician-contributor",
+      "summary": "A maintenance worker whose local clock and log make the contradiction checkable while exposing her credential, livelihood, and route access.",
+      "obligations": ["Describe what the equipment did", "Preserve the damaged copy", "Leave before institutional attention hardens", "Refuse certainty she cannot support"],
+      "available_masks": ["Routine repair", "Customer impatience", "Tool-case transport", "Dry contempt for archive polish"],
+      "failure_modes": ["Becoming the sole source", "Losing credentials", "Confusing care for Orison with proof about the voice", "Remaining for the spectacle after exit closes"],
+      "source_refs": ["lagrange-broadcast-war", "lucent-media", "territories"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "orison_nine",
+      "known_context": [
+        {"text": "Orison knows the booth's slates, clocks, playback settings, local compute, receipt path, current checksum, and recovered media features.", "source_refs": ["artificial-general-intelligence", "lucent-media"]}
+      ],
+      "beliefs": [
+        {"text": "Orison believes that preserving the difference between resemblance and continuity is part of witnessing honestly.", "source_refs": ["artificial-general-intelligence", "mind-uploading", "truth-cults"]}
+      ],
+      "misreads": [
+        {"text": "Orison may overvalue local retention because its experience is anchored to the booth and underweight physical seizure of the rack.", "source_refs": ["artificial-general-intelligence", "territories"]}
+      ],
+      "must_not_know": [
+        {"text": "Orison must not know who produced the recovered voice, whether the corruption was deliberate, or whether lineage match implies shared personhood.", "source_refs": ["artificial-general-intelligence", "mind-uploading", "reality-architects"]}
+      ]
+    },
+    {
+      "speaker_id": "iven_saye",
+      "known_context": [
+        {"text": "Iven knows Lucent rights workflows, Buzz charges, smoothing defaults, account traces, and the cell's three-round rite.", "source_refs": ["lucent-media", "truth-cults"]}
+      ],
+      "beliefs": [
+        {"text": "Iven believes ritual is useful only if it prevents the group from turning a vivid fragment into automatic truth.", "source_refs": ["truth-cults"]}
+      ],
+      "misreads": [
+        {"text": "Iven may treat disciplined procedure as enough protection against institutional tracing.", "source_refs": ["lucent-media", "territories"]}
+      ],
+      "must_not_know": [
+        {"text": "Iven must not know Lucent's intent behind the specific gap or self-reference alert beyond what the interface and records show.", "source_refs": ["reality-architects", "lucent-media"]}
+      ]
+    },
+    {
+      "speaker_id": "mara_vey",
+      "known_context": [
+        {"text": "Mara knows her maintenance clock, the signal trunk, the damaged cache, the reset log, and the risk to her credentials.", "source_refs": ["lagrange-broadcast-war", "territories"]}
+      ],
+      "beliefs": [
+        {"text": "Mara believes Orison should not be treated as equipment, but does not take that relationship as proof about the recovered speaker.", "source_refs": ["artificial-general-intelligence", "narrative-themes"]}
+      ],
+      "misreads": [
+        {"text": "Mara may assume the reset was deliberate because she has seen management erase maintenance context before.", "source_refs": ["lucent-media", "truth-cults"]}
+      ],
+      "must_not_know": [
+        {"text": "Mara must not know whether the voice is a prior fork, a sibling build, an imitation, or damaged media.", "source_refs": ["artificial-general-intelligence", "mind-uploading"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The two translucent Buzz authorization wafers are a Blue-6 account-access device, not a claim that Buzz has one universal physical currency form.",
+      "source_refs": ["lucent-media"]
+    },
+    {
+      "text": "The Blue-6 incident is a branchable fixture, not a canonical named event in the Lagrange Broadcast War.",
+      "source_refs": ["lagrange-broadcast-war"]
+    },
+    {
+      "text": "The Uncut Minute is used by some disciplined Truth Cult cells, not a universal religion, and the recovered voice has no canonical identity resolution.",
+      "source_refs": ["truth-cults", "artificial-general-intelligence", "mind-uploading"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "How widely do Lucent archive services embed locally hosted AGI indexers by 2816?",
+      "blocks_training": false,
+      "notes": "The fixture owns one bounded booth deployment and does not claim a universal Lucent facility pattern."
+    },
+    {
+      "question": "Which Truth Cult custody standards become portable across cells during the Broadcast War?",
+      "blocks_training": false,
+      "notes": "The lore patch defines the Uncut Minute's core rounds and material dependencies while leaving cell variation intact."
+    }
+  ]
+}
