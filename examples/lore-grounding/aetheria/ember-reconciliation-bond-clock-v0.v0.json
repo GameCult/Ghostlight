@@ -1,0 +1,302 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.ember-reconciliation-bond-clock-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "source_grounded_authored_elaboration",
+  "source_refs": [
+    {
+      "source_id": "port-insurer-compact",
+      "path": "Aetheria/Worldbuilding/Post-Elysium/Reference/Port-Insurer Compact.md",
+      "title": "Port-Insurer Compact",
+      "line_start": 1,
+      "line_end": 53,
+      "relevance": "Primary mechanism and authored elaboration: independent receiving offices, conditional berth, reconciliation bonds, separate clocks, cascading default, and counter-surety."
+    },
+    {
+      "source_id": "continuity-admissibility-finding",
+      "path": "Aetheria/Worldbuilding/Post-Elysium/Reference/Continuity Admissibility Finding.md",
+      "title": "Continuity Admissibility Finding",
+      "line_start": 1,
+      "line_end": 39,
+      "relevance": "Grounds contradictory but credible command records, required scope, superseding findings, and the separation between classification and enforcement."
+    },
+    {
+      "source_id": "parallax-auditors",
+      "path": "Aetheria/Worldbuilding/Post-Elysium/Factions/Parallax Auditors.md",
+      "title": "Parallax Auditors",
+      "line_start": 1,
+      "line_end": 29,
+      "relevance": "Grounds Hane's procedural remit, insurer dependence, class bias, appeal cost, and inability to command ports or insurers."
+    },
+    {
+      "source_id": "ship-mind-custody",
+      "path": "Aetheria/Worldbuilding/Post-Elysium/Concepts/Ship Mind Custody.md",
+      "title": "Ship Mind Custody",
+      "line_start": 1,
+      "line_end": 51,
+      "relevance": "Grounds a ship as embodied mind, bounded systems authority, maintenance dependence, voluntary bodily disposition, and the distinction between rescue, recovery, and seizure."
+    },
+    {
+      "source_id": "narrative-themes",
+      "path": "Aetheria/Narrative Themes.md",
+      "title": "Narrative Themes",
+      "line_start": 1,
+      "line_end": 53,
+      "relevance": "Grounds administrative personhood, usable evidence, divided institutional authority, material care, and meaningful exit."
+    },
+    {
+      "source_id": "nibu",
+      "path": "Aetheria/Lore/Nibu.md",
+      "title": "Nibu",
+      "line_start": 1,
+      "line_end": 53,
+      "relevance": "Context check for embodied ship-mind dependence, damaged records, short clearance windows, bad berths, and recognition that prices a body without settling personhood."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Post-Elysium, after continuity residue has become ordinary enough for Compact practice",
+    "location": "Fixture-local Cairn Port, Isolation Berth I-6: a recessed courier bay with an inner service gallery, audit booth, insurer console, neighboring tool hatch, and red tug lock.",
+    "summary": "An embodied courier and its human mechanic have one berth window to answer an insurer's reconciliation-bond call after a Parallax finding makes incompatible command records usable for pricing. The port, insurer, auditor, repair yard, and claimant retain separate authority while their clocks create one material trap.",
+    "public_facts": [
+      {
+        "text": "A continuity admissibility finding classifies contradiction-bearing evidence for one named office and use; it does not settle truth, continuity, personhood, title, or custody.",
+        "source_refs": ["continuity-admissibility-finding", "port-insurer-compact"]
+      },
+      {
+        "text": "Berth authorities and insurers may independently accept scoped findings and apply only actions they already own, including conditional berth and bond requirements.",
+        "source_refs": ["port-insurer-compact", "parallax-auditors"]
+      },
+      {
+        "text": "Ship minds are embodied in drives, sensors, pressure systems, route memory, and interfaces, and may depend on human labor and institutional access without surrendering all authority over the hull.",
+        "source_refs": ["ship-mind-custody", "nibu"]
+      },
+      {
+        "text": "The authored Compact elaboration defines reconciliation-bond and berth-isolation clocks, downstream default cascades, and small counter-sureties that buy review time without resolving the record.",
+        "source_refs": ["port-insurer-compact"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "A remedy can be formally available and still arrive too late for the berth, repair slot, wages, medicine, cargo, or onward contracts that make it useful.",
+        "source_refs": ["port-insurer-compact", "parallax-auditors"]
+      },
+      {
+        "text": "The ship's sensor crown is both part of its perceptual body and financeable hardware, making self-disposition possible under pressure without making the pressure equal bargaining.",
+        "source_refs": ["ship-mind-custody"]
+      },
+      {
+        "text": "Mutual aid is real only at human scale: several neighbors can share exposure and preserve review time, but the insurer may still call the bond and every signer remains legible to the same gatekeeping system.",
+        "source_refs": ["port-insurer-compact", "narrative-themes"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "compact-receiving-offices",
+      "label": "Compact receiving offices at Cairn Port",
+      "group_type": "federated_administrative_gate",
+      "institutional_logic": ["Accept scoped findings independently and act only through preexisting berth, coverage, repair, or claim authority."],
+      "material_incentives": ["Keep traffic moving", "Price tow and command risk", "Protect repair schedules", "Avoid inheriting another office's liability"],
+      "internal_virtues": ["Legible scope", "Recorded notice", "Clean handoff", "No jurisdictional improvisation"],
+      "internal_shames": ["Acting outside remit", "Holding a clinic tender for a poor courier", "Accepting unpriced risk", "Losing the record chain"],
+      "prestige_markers": ["A decision that survives challenge", "On-time lane clearance", "A cure accepted without reopening every claim"],
+      "taboo_triggers": ["Being asked to decide personhood", "Being blamed for a consequence owned by another office", "An exception with no budget owner"],
+      "emotional_display_norms": ["Concern is compressed into clock extensions, scope language, and risk categories."],
+      "trust_defaults": ["Trusts authenticated records and in-scope findings; distrusts testimony that asks one office to solve the whole dispute."],
+      "speech_register_cues": ["Bounded authority", "Traffic timing", "Coverage conditions", "Notice and expiry language"],
+      "source_refs": ["port-insurer-compact", "continuity-admissibility-finding", "parallax-auditors"]
+    },
+    {
+      "group_id": "disputed-ship-and-crew",
+      "label": "Common Margin and working crew",
+      "group_type": "embodied_ship_household",
+      "institutional_logic": ["Keep the ship mobile, paid, repairable, and capable of refusing custody while passing gates built around human credentials and financeable components."],
+      "material_incentives": ["Retain berth and repair slot", "Protect wages and warmth", "Keep the sensor crown", "Avoid tow debt and cold anchorage"],
+      "internal_virtues": ["Ask before pledging another person's pay", "Separate inspection from consent", "Preserve exact records", "Keep bodily decisions with the ship"],
+      "internal_shames": ["Using crew care as automatic collateral", "Calling coerced component loss an uncomplicated choice", "Letting a clean record outrank survival"],
+      "prestige_markers": ["A repair performed under consent", "A route crossed without surrendered command", "An invoice survived without becoming an owner"],
+      "taboo_triggers": ["Treating the ship's sensors as spare inventory", "Assuming a human signature owns the entire hull", "Using rescue language for an involuntary transfer"],
+      "emotional_display_norms": ["Fear appears as clipped work talk, temperature adjustments, record precision, and jokes too small for the official log."],
+      "trust_defaults": ["Trusts witnessed work and bounded commitments more than general assurances."],
+      "speech_register_cues": ["Dry shipboard wit", "Concrete consent questions", "Mechanical specifics", "Refusal stated without metaphysical argument"],
+      "source_refs": ["ship-mind-custody", "nibu", "narrative-themes"]
+    },
+    {
+      "group_id": "berth-counter-surety-circle",
+      "label": "Neighboring dock crews",
+      "group_type": "informal_mutual_aid",
+      "institutional_logic": ["Keep a neighbor's review window open through several small pledges that prevent any one patron from owning the rescue."],
+      "material_incentives": ["Preserve reciprocal access to tools, labor, testimony, and emergency help", "Avoid making solidarity easy to seize as one account"],
+      "internal_virtues": ["Ask what the bond actually covers", "Read call conditions aloud", "Split exposure", "Keep private copies of signer records"],
+      "internal_shames": ["Promising money another worker cannot lose", "Turning help into command", "Hiding the risk from signers"],
+      "prestige_markers": ["A small pledge that buys real time", "A witnessed repair honored later", "No rescuer becoming owner"],
+      "taboo_triggers": ["Patronage disguised as solidarity", "An insurer broadening a narrow pledge", "A claimant treating the circle as a recovery channel"],
+      "emotional_display_norms": ["Care is practical, quick, and explicit about who may be harmed if the bond is called."],
+      "trust_defaults": ["Trusts named loss, bounded duration, witnessed consent, and reciprocal work."],
+      "speech_register_cues": ["Short questions", "Tool and shift language", "Risk spoken plainly", "No movement slogans"],
+      "source_refs": ["port-insurer-compact", "narrative-themes"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "compact-receiving-offices.separate-authority-shared-deadline",
+      "applies_to": ["compact-receiving-offices"],
+      "pressure_type": "administrative_clock",
+      "summary": "Several bounded decisions can create one unbounded lived consequence without any office gaining total authority.",
+      "projection_use": "Keep each official's dialogue inside its remit while showing the combined effect through tug locks, repair slots, support draw, wages, and collateral.",
+      "source_refs": ["port-insurer-compact", "continuity-admissibility-finding"]
+    },
+    {
+      "field_id": "disputed-ship-and-crew.body-as-collateral",
+      "applies_to": ["disputed-ship-and-crew"],
+      "pressure_type": "custody_and_finance",
+      "summary": "The ship can choose to pledge or sell a component of its own body, but financial pressure keeps that choice from proving equal bargaining power.",
+      "projection_use": "Make sensor-crown disposition a ship-owned decision with explicit perceptual cost and no sentimental claim that consent erases coercive conditions.",
+      "source_refs": ["ship-mind-custody", "narrative-themes"]
+    },
+    {
+      "field_id": "berth-counter-surety-circle.time-not-absolution",
+      "applies_to": ["berth-counter-surety-circle"],
+      "pressure_type": "mutual_aid",
+      "summary": "Counter-surety can buy inspection time and distribute risk; it cannot reconcile history or make the port and insurer cease pricing the signers.",
+      "projection_use": "Show hope through small reversible pledges, shared risk knowledge, and tool exchange, not institutional conversion or movement-scale triumph.",
+      "source_refs": ["port-insurer-compact", "narrative-themes"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "compact-receiving-offices",
+      "target_group_id": "disputed-ship-and-crew",
+      "observer_read": ["Contradiction-bearing risk", "Movable traffic load", "Coverage exposure", "Financeable component set"],
+      "target_self_read": ["A ship-self in its body", "A working household", "Separate people with separate consent", "A repair relationship"],
+      "misread_patterns": ["Treats a bounded priced use as if it described the whole ship", "Reads timely collateral as better truth", "Calls forced movement neutral because title remains untouched"],
+      "likely_insults": ["subject vessel", "command anomaly", "movable exposure", "adequate security"],
+      "projection_use": "Let officials remain procedurally accurate while objects, cold, and clocks expose what their categories omit.",
+      "source_refs": ["port-insurer-compact", "parallax-auditors", "ship-mind-custody"]
+    },
+    {
+      "observer_group_id": "disputed-ship-and-crew",
+      "target_group_id": "compact-receiving-offices",
+      "observer_read": ["One machine with several mouths", "A coordinated eviction", "Truth priced by wealth"],
+      "target_self_read": ["Independent offices preserving scope", "Traffic and risk owners", "Reviewable administrative actors"],
+      "misread_patterns": ["May mistake aligned deadlines for centralized command", "May ask Parallax to provide relief it cannot authorize"],
+      "likely_insults": ["clock choir", "jurisdictional ventriloquism", "complimentary isolation"],
+      "projection_use": "Preserve anger while keeping Common Margin intelligent enough to distinguish the hand that classifies from the hands that move and price.",
+      "source_refs": ["port-insurer-compact", "continuity-admissibility-finding"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "embodied-courier-under-bond-call",
+      "summary": "A ship-self able to act through its records, thermal loops, locks, cameras, lights, and component consent while dependent on humans and gates outside the hull.",
+      "obligations": ["Keep crew alive", "Preserve meaningful refusal", "Answer the named risk", "Avoid pretending that access to a speaker is general institutional control"],
+      "available_masks": ["Commercial humor", "Machine precision", "Cooperative vessel", "Hazardous subject"],
+      "failure_modes": ["Trading crew wages without asking", "Confusing priced recognition with personhood", "Selling bodily capacity under a false story of free choice", "Letting the berth clock erase all other clocks"],
+      "source_refs": ["ship-mind-custody", "nibu", "port-insurer-compact"]
+    },
+    {
+      "role_id": "parallax-auditor-at-receiving-gate",
+      "summary": "A specialist who can preserve, narrow, or supersede a finding but cannot grant berth, insurance, title, or custody relief.",
+      "obligations": ["Test ordinary explanations", "Name receiving office and permitted use", "Preserve contradictory evidence", "Record scope and expiry"],
+      "available_masks": ["Procedural calm", "Dry professional distance", "Exact qualification"],
+      "failure_modes": ["Letting client urgency broaden the finding", "Treating inability to clear history as guilt", "Implying that classification commands the receiver"],
+      "source_refs": ["parallax-auditors", "continuity-admissibility-finding"]
+    },
+    {
+      "role_id": "neighboring-dock-rigger",
+      "summary": "A worker able to lend a part, assemble several small sureties, witness repair commitments, and explain the risk without promising salvation.",
+      "obligations": ["Keep signers informed", "Prevent one pledge from becoming patronage", "Protect tool and labor reciprocity", "Withdraw unused pledges"],
+      "available_masks": ["Routine tool loan", "Shift accounting", "Mild annoyance", "Paperwork avoidance"],
+      "failure_modes": ["Exposing signers to an open-ended call", "Becoming rescue authority", "Letting secrecy replace consent"],
+      "source_refs": ["port-insurer-compact", "narrative-themes"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "common_margin",
+      "known_context": [
+        {"text": "Common Margin knows its own hull state, route records, crew agreements, local berth systems exposed to it, and the notices delivered to the gallery.", "source_refs": ["ship-mind-custody", "port-insurer-compact"]}
+      ],
+      "beliefs": [
+        {"text": "Common Margin treats inspection, pledge, transfer, berth control, and insurance acceptance as separate acts with separate owners.", "source_refs": ["ship-mind-custody", "port-insurer-compact"]}
+      ],
+      "misreads": [
+        {"text": "Under pressure it may experience aligned deadlines as one hostile will even when no office owns the whole cascade.", "source_refs": ["narrative-themes", "port-insurer-compact"]}
+      ],
+      "must_not_know": [
+        {"text": "It must not know private insurer, port, claimant, auditor, or neighbor motives beyond records, observed actions, and direct statements.", "source_refs": ["continuity-admissibility-finding", "ship-mind-custody"]}
+      ]
+    },
+    {
+      "speaker_id": "tamsin_reed",
+      "known_context": [
+        {"text": "Tamsin knows maintenance state, wages, repair timing, her own consent, and the practical effect of berth loss.", "source_refs": ["ship-mind-custody", "port-insurer-compact"]}
+      ],
+      "beliefs": [
+        {"text": "Tamsin believes preserving the ship's refusal matters even when doing so threatens her housing and wages.", "source_refs": ["ship-mind-custody", "narrative-themes"]}
+      ],
+      "misreads": [
+        {"text": "She may blame Hane for restrictions he only made admissible to other offices.", "source_refs": ["parallax-auditors", "continuity-admissibility-finding"]}
+      ],
+      "must_not_know": [
+        {"text": "She must not know whether either authenticated command history is metaphysically true.", "source_refs": ["continuity-admissibility-finding"]}
+      ]
+    },
+    {
+      "speaker_id": "hane_vey",
+      "known_context": [
+        {"text": "Hane knows the supplied records, tested ordinary explanations, tool marks released to his reader, named receivers, and accepted scope.", "source_refs": ["parallax-auditors", "continuity-admissibility-finding"]}
+      ],
+      "beliefs": [
+        {"text": "Hane believes a narrower defensible finding is preferable to a broad useful suspicion.", "source_refs": ["parallax-auditors", "continuity-admissibility-finding"]}
+      ],
+      "misreads": [
+        {"text": "Professional scope can make him underestimate how quickly independent restrictions become bodily eviction.", "source_refs": ["parallax-auditors", "port-insurer-compact"]}
+      ],
+      "must_not_know": [
+        {"text": "Hane must not infer the true route branch or claim authority over berth, coverage, title, or ship-body consent.", "source_refs": ["continuity-admissibility-finding", "port-insurer-compact"]}
+      ]
+    },
+    {
+      "speaker_id": "yara_sen",
+      "known_context": [
+        {"text": "Yara knows dock work, the named bond losses, willing neighboring signers, the tool hatch, and witnessed repair commitments.", "source_refs": ["port-insurer-compact", "narrative-themes"]}
+      ],
+      "beliefs": [
+        {"text": "Yara believes several small explicit risks are less dominating than one rescuer with enough collateral to demand custody.", "source_refs": ["port-insurer-compact", "narrative-themes"]}
+      ],
+      "misreads": [
+        {"text": "She may underestimate how counter-surety makes solidarity legible to later gatekeepers.", "source_refs": ["port-insurer-compact", "parallax-auditors"]}
+      ],
+      "must_not_know": [
+        {"text": "Yara must not know insurer acceptance or final bond disposition before the relevant notice arrives.", "source_refs": ["port-insurer-compact"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Cairn Port, Isolation Berth I-6, Common Margin, Tamsin Reed, Hane Vey, and Yara Sen are fixture-local elaborations, not claims that these proper nouns already exist elsewhere in canon.",
+      "source_refs": ["port-insurer-compact"]
+    },
+    {
+      "text": "The scene may show several offices producing one lived trap, but must not imply a central Compact authority or let Parallax command a receiver.",
+      "source_refs": ["port-insurer-compact", "continuity-admissibility-finding", "parallax-auditors"]
+    },
+    {
+      "text": "Common Margin may voluntarily pledge or transfer its sensor crown. Tamsin, the port, the insurer, and the claimant must not silently acquire authority to make that bodily decision on the ship's behalf.",
+      "source_refs": ["ship-mind-custody"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Does Cairn Port or its exact berth geometry deserve reuse beyond this fixture?",
+      "blocks_training": false,
+      "notes": "Treat the locality and proper nouns as story-local unless a later artifact needs the same port. The Compact mechanism, not the port name, is the durable canon elaboration."
+    },
+    {
+      "question": "Which specific currencies, clearing instruments, or lien schemas carry counter-surety across post-Elysium jurisdictions?",
+      "blocks_training": false,
+      "notes": "The fixture deliberately uses shares, wage claims, repair commitments, and an incoming freight claim without canonizing a universal currency or database schema."
+    }
+  ]
+}

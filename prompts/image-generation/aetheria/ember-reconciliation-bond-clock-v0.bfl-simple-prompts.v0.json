@@ -1,0 +1,68 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "ember-reconciliation-bond-clock-v0.bfl-simple-v0",
+  "fixture_id": "ember-reconciliation-bond-clock-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Bleak industrial science-fiction noir in crisp ink line and restrained gouache, slate blue metal, dirty white glass, amber instruments, sparse emergency red, tactile working surfaces, readable silhouettes, humane facial detail, cinematic interactive-fiction key frame.",
+  "prompts": [
+    {
+      "id": "01_berth_establishing",
+      "prompt": "Wide narrow isolation gallery with full-height pressure window showing a battered blue-gray wedge courier in a recessed bay, glass audit booth and insurer console on the opposite wall, square tool hatch near camera, sealed red-framed tug-control window at far end showing an external collar tunnel, compact dark-skinned mechanic in orange pressure vest warming a dented tea tin on exposed coolant pipes."
+    },
+    {
+      "id": "02_routine_cup",
+      "prompt": "Medium workplace frame: dark-skinned mechanic with short charcoal curls, orange pressure vest and taped fingers holds a dented tea tin to a warm pipe; beyond pressure glass, a scarred courier ship aims one pale maintenance lamp at her, amber six-lens sensor crown above its bow."
+    },
+    {
+      "id": "03_auditor_neighbor",
+      "prompt": "Diagonal gallery view: lean shaved-head auditor in plum coat compares two command traces behind clean glass; broad older rigger with silver coiled hair and red work harness rolls a black seal ring through a square tool hatch; battered courier watches through pressure glass."
+    },
+    {
+      "id": "04_archive_review",
+      "prompt": "Close audit booth: precise auditor in plum coat and blue optical loupe bends over a sealed reader filled with tool marks and two branching command histories, dry biscuit forgotten in one glove, courier sensor crown visible across amber-lit gallery."
+    },
+    {
+      "id": "05_cold_load",
+      "prompt": "Frost rims a numbered crew-support umbilical in a narrow berth gallery; mechanic zips orange quilted vest and moves tea tin from cold pipe; blue-gray courier beyond window shows dim habitation strip; berth-load gauge falls."
+    },
+    {
+      "id": "06_wage_reserve",
+      "prompt": "Mechanic with taped fingers presses a wage-reserve symbol on an insurer console; dented tea tin on console edge, blue pledged marker and rent reminder, scarred courier bow and pale maintenance lamp through pressure window."
+    },
+    {
+      "id": "07_crown_appraisal",
+      "prompt": "Exterior close view of blue-gray courier bow in recessed bay, armor petals open around attached amber sensor crown with six lens clusters and braided cables, jointed appraisal camera studying the crown, straight white gallery window behind."
+    },
+    {
+      "id": "08_bond_call",
+      "prompt": "Wide isolation gallery with three separate deadlines: six-block amber bond ladder on insurer console, red segmented countdown around sealed tug-control window, amber repair-slot strip; mechanic stands between displays, auditor behind glass, embodied courier beyond pressure window."
+    },
+    {
+      "id": "09_two_clocks",
+      "prompt": "Threshold in narrow gallery: sealed tug-control window begins red pre-cycle glow around an external collar tunnel, collateral ladder and repair timer disagree, silver-haired rigger leans through square hatch with signer slate, mechanic stands at console, auditor watches behind glass, blue-gray courier fills pressure window."
+    },
+    {
+      "id": "10_final_threshold",
+      "prompt": "Low wide final decision: sealed red-framed tug-control window shows a white-lit external collar iris opening beyond gallery pressure, amber transmit control on insurer console, silver-haired rigger at tool hatch with signer slate, auditor behind glass, mechanic holding black seal ring, courier bow and amber crown outside pressure window."
+    },
+    {
+      "id": "11_bond_holds",
+      "prompt": "Warm berth aftermath: tug lock dark, complete bond ladder with several small pledge marks, mechanic installs black seal ring near warming tea tin, older rigger divides signer records at tool hatch, courier remains docked with amber crown attached."
+    },
+    {
+      "id": "12_bond_shortfall",
+      "prompt": "Eviction beat: sealed red-framed tug-control window shows a mechanical collar advancing through the external bay tunnel, amber collateral ladder stops below target, repair strip gray, mechanic packs tea tin and seal ring into tool kit, tug approaches battered courier beyond pressure glass."
+    },
+    {
+      "id": "13_cold_roadstead",
+      "prompt": "Exterior long shot of white industrial tug carrying a small battered blue-gray courier with folded radiators and attached amber crown away from a bright rectangular port berth toward dark anchor beacons, released umbilicals curling back toward the port."
+    },
+    {
+      "id": "14_crown_transfer",
+      "prompt": "Close through pressure window: blue-gray courier bow with open armor petals and dark empty crown socket, yellow yard manipulator carries detached amber six-cluster sensor crown to padded case, mechanic presses gloved palm to glass, one ship lamp faces her hand."
+    }
+  ]
+}

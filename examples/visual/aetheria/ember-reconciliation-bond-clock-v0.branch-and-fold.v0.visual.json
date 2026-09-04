@@ -1,0 +1,683 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "ember-reconciliation-bond-clock-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/aetheria/ember-reconciliation-bond-clock-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/ember-reconciliation-bond-clock-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ember-reconciliation-bond-clock-v0.cairn-port-isolation-berth-i6",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for a reconciliation-bond deadline at Cairn Port.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary isolation-berth work, quiet preparation, independent port and insurer notices, counter-surety, the final clock, and four material outcomes.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for gallery orientation, the tea routine, auditor and neighbor introduction, each preparation branch, the paired notices, the folded clock state, the final decision, and every ending family. The two simultaneous notices and the opening red tug lock each receive a focused replay beat.",
+    "prompting_rule": "Each base image prompt restates visible geometry, materials, light, bodies, tools, and staging in plain language for a general image model. Character references are assembled only for named characters listed as visible in that frame. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Style: bleak industrial science-fiction noir illustrated in crisp ink line and restrained gouache, slate blue metal, dirty white glass, amber instrument light and sparse emergency red, tactile working surfaces, readable silhouettes, humane facial detail, quiet workplace absurdity under material pressure, cinematic interactive-fiction key frame.",
+    "prompt_assembly_rule": "Assemble each generation prompt from global_style_cue, the complete scene base_image_prompt, visual_character_refs only for visible named characters, and triggered state_image_modifiers plus global_branch_image_modifiers. Every generation begins from the camera-specific scene_set view or a fresh render of that view; generated art supplies mood and materials while the scene_set supplies layout.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture returns to one narrow gallery from several angles and depends on window, booth, tool hatch, insurer console, and tug-lock sightlines. The embedded draft map supplies stable zones, cameras, routes, occluders, staging slots, and state anchors for B-level planning.",
+      "future_scene_set_need": "For website-quality multi-angle art, build a plan-view or simple 3D blockout from the embedded scene_set before image generation."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "cairn_berth_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide view down Cairn Port Isolation Berth I-6, a narrow rectangular pressurized service gallery. A thick pressure window fills the outboard wall and reveals a recessed spacecraft bay holding Common Margin, a compact battered courier with an asymmetrical wedge hull, worn blue-gray ceramic panels, three folded radiator petals, an amber multi-lens sensor crown above the bow, and pale maintenance lamps. The inboard wall contains a small glass audit booth and a waist-high insurer console. A sealed red-framed tug-control window closes the far end, showing an external collar tunnel beyond gallery pressure; a square metal tool hatch closes the near end. Exposed coolant pipes, white floor grids, amber berth lights, and numbered umbilicals make the space feel maintained by workers and owned by schedules. Tamsin Reed, a compact dark-brown-skinned human mechanic with short charcoal curls, an orange quilted pressure vest, navy coveralls, tape-wrapped fingers and magnetic work boots, stands at the warm coolant return with a dented tea tin.",
+        "visible_characters": [
+          {
+            "agent_id": "common_margin",
+            "default_stance": "docked in the recessed bay beyond the pressure window, maintenance lamps turned toward the gallery",
+            "visual_ref": "visual_character_refs.characters.common_margin"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "inside the gallery beside the warm coolant return and tea tin",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The gallery is a narrow rectangle: pressure window outboard, audit booth and insurer console inboard, red tug lock at the far end, square neighboring tool hatch at the near end.",
+          "Common Margin is the ship body outside the pressure window. The gallery speaker and maintenance lamps express local attention but are not a separate humanoid avatar."
+        ]
+      },
+      {
+        "visual_scene_id": "cairn_routine_cup",
+        "ink_anchor": "routine_cup",
+        "base_image_prompt": "Medium workplace frame beside exposed coolant pipes in Cairn Port Isolation Berth I-6. Tamsin Reed, compact and dark-brown-skinned with short charcoal curls, orange quilted pressure vest, navy coveralls, tape-wrapped fingers and magnetic boots, braces a dented tea tin against a thick copper-colored return pipe. Beyond the outboard pressure window, the blue-gray wedge-shaped courier Common Margin angles one pale maintenance lamp toward her; its three radiator petals remain folded and its amber sensor crown watches through clustered lenses. The inboard audit glass reflects the tea tin, pipe gauges, and amber berth lights. The moment is ordinary, conspiratorial, and mildly ridiculous.",
+        "visible_characters": [
+          {
+            "agent_id": "common_margin",
+            "default_stance": "docked beyond the window, nearest maintenance lamp aimed toward Tamsin",
+            "visual_ref": "visual_character_refs.characters.common_margin"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "leaning beside the coolant return with tea tin in one taped hand",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The tea tin remains Tamsin's small prop through the fixture and moves into her kit only on tow paths."
+        ]
+      },
+      {
+        "visual_scene_id": "cairn_auditor_neighbor_introduction",
+        "ink_anchor": "routine_audit",
+        "base_image_prompt": "Wide diagonal view across the narrow isolation gallery. Hane Vey, a lean middle-aged brown human with a shaved head, narrow face, dark plum audit coat, pale sealed gloves and a blue optical loupe over the right eye, sits behind the clean inboard audit-booth glass comparing two branching command traces on a sealed reader. At the square tool hatch near the camera, Yara Sen, a broad older tan-skinned dock rigger with silver hair in tight coils, red load-bearing work harness, gray pressure trousers and heavy magnetic boots, rolls a black composite seal ring toward Tamsin Reed, a compact dark-brown-skinned mechanic with short charcoal curls, orange quilted pressure vest, navy coveralls, tape-wrapped fingers and magnetic work boots. Through the outboard pressure window, Common Margin fills the recessed bay as a compact asymmetrical courier with worn blue-gray ceramic panels, three folded radiator petals, pale maintenance lamps and an amber six-cluster sensor crown turned toward the exchange. A sealed red-framed tug-control window remains dark at the far end.",
+        "visible_characters": [
+          {
+            "agent_id": "common_margin",
+            "default_stance": "docked beyond the outboard pressure window",
+            "visual_ref": "visual_character_refs.characters.common_margin"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "reaching toward the seal ring in the gallery",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "hane_vey",
+            "default_stance": "seated behind audit glass at the sealed reader",
+            "visual_ref": "visual_character_refs.characters.hane_vey"
+          },
+          {
+            "agent_id": "yara_sen",
+            "default_stance": "visible from the torso up through the square tool hatch, rolling a seal ring inward",
+            "visual_ref": "visual_character_refs.characters.yara_sen"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Audit-booth glass separates Hane from the gallery. The square tool hatch connects only to the neighboring berth service passage and permits small tools and face-to-face talk."
+        ]
+      },
+      {
+        "visual_scene_id": "cairn_prep_archive",
+        "ink_anchor": "pre_call_hub.prep_full_archive",
+        "base_image_prompt": "Close-medium view through Cairn Port's inboard audit-booth glass. Hane Vey, a lean middle-aged brown human with shaved head, narrow face, dark plum audit coat, pale sealed gloves and a blue optical loupe over the right eye, leans over a sealed black reader filled with dense maintenance diagrams, torque spirals, access scratches and two branching command histories. A dry biscuit hangs forgotten in his gloved hand. Across the gallery and through the outboard pressure window, Common Margin faces the booth as a compact asymmetrical courier with worn blue-gray ceramic panels, three folded radiator petals, pale maintenance lamps and an amber six-cluster sensor crown. The reader's cold white light cuts through amber berth lighting; a small wall clock loses a bright segment.",
+        "visible_characters": [
+          {
+            "agent_id": "common_margin",
+            "default_stance": "docked beyond the pressure window with sensor crown aimed toward Hane's booth",
+            "visual_ref": "visual_character_refs.characters.common_margin"
+          },
+          {
+            "agent_id": "hane_vey",
+            "default_stance": "leaning over the reader, biscuit forgotten",
+            "visual_ref": "visual_character_refs.characters.hane_vey"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "cairn_prep_load",
+        "ink_anchor": "pre_call_hub.prep_reduce_load",
+        "base_image_prompt": "Medium frame along the coolant wall of Cairn Port Isolation Berth I-6. Frost pearls on a numbered crew-support umbilical and along the white floor grid. Tamsin Reed, compact and dark-brown-skinned with short charcoal curls, orange quilted pressure vest over navy coveralls, tape-wrapped fingers and magnetic boots, zips the vest to her throat and moves a dented tea tin away from a cold pipe. Beyond the pressure window, Common Margin's blue-gray courier hull shows one dimmed habitation status strip and three folded radiator petals. An amber berth-load gauge on the inboard wall drops into a lower band.",
+        "visible_characters": [
+          {
+            "agent_id": "common_margin",
+            "default_stance": "docked beyond the window with habitation status strip dimmed",
+            "visual_ref": "visual_character_refs.characters.common_margin"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "zipping her pressure vest beside the frosting umbilical",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "cairn_prep_wages",
+        "ink_anchor": "pre_call_hub.prep_wage_reserve",
+        "base_image_prompt": "Object-focused medium frame at the inboard insurer console in Cairn Port Isolation Berth I-6. Tamsin Reed, compact, dark-brown-skinned, short charcoal curls, orange quilted pressure vest, navy coveralls and tape-wrapped fingers, presses one thumb to a blue wage-reserve symbol beside her own ID strip. Her dented tea tin rests on the console edge. Through the outboard pressure window, Common Margin's scarred blue-gray courier bow and pale maintenance lamp face her. The console shows one secured share, a rent reminder symbol and an otherwise sparse account ladder under amber berth light.",
+        "visible_characters": [
+          {
+            "agent_id": "common_margin",
+            "default_stance": "docked beyond the window, maintenance lamp facing Tamsin",
+            "visual_ref": "visual_character_refs.characters.common_margin"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "thumb on wage-reserve control, shoulders held level",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "cairn_prep_crown",
+        "ink_anchor": "pre_call_hub.prep_crown_appraisal",
+        "base_image_prompt": "Exterior close view inside the recessed spacecraft bay of Cairn Port Isolation Berth I-6. Common Margin is a compact asymmetrical courier with worn blue-gray ceramic hull panels, tool scars, three folded radiator petals and pale maintenance lamps. Armor petals slide open around an amber sensor crown mounted above the bow, revealing six clustered lens groups and braided service cables. A small remote appraisal camera on a jointed rail studies the crown while the crown's own lenses face it. The pressure window and narrow human gallery appear behind the ship as straight white-lit geometry.",
+        "visible_characters": [
+          {
+            "agent_id": "common_margin",
+            "default_stance": "docked with armor petals open around the sensor crown",
+            "visual_ref": "visual_character_refs.characters.common_margin"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Appraisal opens armor petals while the crown remains attached. Crown removal occurs only in the transfer ending."
+        ]
+      },
+      {
+        "visual_scene_id": "cairn_bond_call",
+        "ink_anchor": "bond_call",
+        "base_image_prompt": "Wide frontal frame of Cairn Port Isolation Berth I-6 when two independent notices arrive. The narrow gallery runs between the outboard pressure window and the inboard audit booth. The waist-high insurer console displays a six-block amber bond ladder; a sealed red-framed tug-control window at the far end lights a separate countdown ring around an external collar tunnel; the repair-yard line above the tool hatch glows amber on its own timer. Tamsin Reed, a compact dark-brown-skinned mechanic with short charcoal curls, orange quilted pressure vest, navy coveralls, tape-wrapped fingers and magnetic work boots, stands between the three displays. Hane Vey, a lean middle-aged brown auditor with shaved head, narrow face, dark plum coat, pale sealed gloves and a blue right-eye loupe, sits behind glass with two branching command traces on his sealed reader. Common Margin fills the bay beyond the window as a compact asymmetrical courier with worn blue-gray ceramic panels, three folded radiator petals, pale maintenance lamps and an amber six-cluster sensor crown aimed inward. The composition makes three clocks spatially separate and materially convergent.",
+        "visible_characters": [
+          {
+            "agent_id": "common_margin",
+            "default_stance": "docked outside the window, lights aimed toward the notices",
+            "visual_ref": "visual_character_refs.characters.common_margin"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "center gallery between insurer console, repair timer and tug lock",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "hane_vey",
+            "default_stance": "behind audit glass with palms near the sealed reader",
+            "visual_ref": "visual_character_refs.characters.hane_vey"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "bond_target == 4",
+            "modifier_prompt": "The insurer console's bond ladder contains four amber blocks and a narrow eleven-minute helm-risk bracket."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "cairn_two_clocks",
+        "ink_anchor": "two_clocks_fold",
+        "base_image_prompt": "Medium-wide threshold view down Cairn Port Isolation Berth I-6. The sealed red-framed tug-control window at the far end has begun a segmented pre-cycle glow around the external collar tunnel. The inboard insurer console shows an amber collateral ladder beside a separate repair-yard timer. The square tool hatch near the camera is open. Yara Sen, broad and tan-skinned with silver coiled hair, red load harness, gray pressure trousers and heavy magnetic boots, leans through the hatch with a compact slate. Tamsin Reed, compact and dark-brown-skinned in orange quilted vest and navy coveralls, stands at the console with her dented tea tin and black seal ring. Hane Vey, lean with shaved head, plum audit coat and blue optical loupe, watches from behind the inboard glass. Common Margin's scarred blue-gray hull and amber sensor crown remain visible beyond the outboard pressure window.",
+        "visible_characters": [
+          {
+            "agent_id": "common_margin",
+            "default_stance": "docked beyond the pressure window",
+            "visual_ref": "visual_character_refs.characters.common_margin"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "at the insurer console with seal ring and tea tin",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "hane_vey",
+            "default_stance": "behind audit glass watching the independent displays",
+            "visual_ref": "visual_character_refs.characters.hane_vey"
+          },
+          {
+            "agent_id": "yara_sen",
+            "default_stance": "leaning through the tool hatch with compact slate",
+            "visual_ref": "visual_character_refs.characters.yara_sen"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "repair_slot == 0",
+            "modifier_prompt": "The repair-yard line is gray and a different vessel symbol occupies the released warm slot."
+          },
+          {
+            "trigger": "circle_risk >= 2",
+            "modifier_prompt": "Yara's compact slate shows four small separately signed surety marks linked to the amber bond ladder."
+          },
+          {
+            "trigger": "crew_wages == 0",
+            "modifier_prompt": "Tamsin's wage line on the insurer console is an empty blue bar with two pledged markers."
+          },
+          {
+            "trigger": "crown_status == 1",
+            "modifier_prompt": "A thin amber lien ring appears around the sensor-crown diagram while the physical crown remains attached above the courier bow."
+          },
+          {
+            "trigger": "crew_warmth <= 1",
+            "modifier_prompt": "Frost rims the crew-support umbilical and Tamsin wears insulated gloves with her vest zipped high."
+          },
+          {
+            "trigger": "bond_cover >= bond_target",
+            "modifier_prompt": "The collateral ladder reaches its target line in steady amber blocks while the transmit control waits white."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "cairn_final_threshold",
+        "ink_anchor": "final_choice",
+        "base_image_prompt": "Low wide-angle final-decision frame inside Cairn Port Isolation Berth I-6. A sealed red-framed tug-control window at the far end shows an external collar iris opening in the bay tunnel under hard white service lights while gallery pressure remains intact. The inboard insurer console presents an amber bond ladder and bright transmit control. The square tool hatch near the camera frames Yara Sen, a broad older tan-skinned rigger with silver coiled hair, red load harness, gray pressure clothes and magnetic boots, holding a signer slate. Behind the audit-booth glass, Hane Vey, a lean middle-aged brown auditor with shaved head, plum coat, pale gloves and blue right-eye loupe, closes his eyes above the sealed reader. Tamsin Reed, a compact dark-brown-skinned mechanic with short charcoal curls, orange quilted vest, navy coveralls, taped fingers and magnetic boots, stands between console and pressure window with one hand around the black seal ring. Outside the window, Common Margin's compact asymmetrical courier bow, worn blue-gray panels, folded radiator petals, pale maintenance lamps and amber six-cluster sensor crown occupy the bay. The reachable objects are visually distinct: transmit control, tool hatch, tug-control window, umbilical releases and sensor-crown status.",
+        "visible_characters": [
+          {
+            "agent_id": "common_margin",
+            "default_stance": "docked with umbilicals attached and crown intact",
+            "visual_ref": "visual_character_refs.characters.common_margin"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "between insurer console and pressure window",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "hane_vey",
+            "default_stance": "behind audit glass with eyes briefly closed",
+            "visual_ref": "visual_character_refs.characters.hane_vey"
+          },
+          {
+            "agent_id": "yara_sen",
+            "default_stance": "framed by tool hatch with signer slate",
+            "visual_ref": "visual_character_refs.characters.yara_sen"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "isolation_window <= 1",
+            "modifier_prompt": "The tug lock countdown ring has one red segment remaining and hard white collar lights spill across the floor grid."
+          },
+          {
+            "trigger": "port_load_relief >= 2",
+            "modifier_prompt": "The berth-load gauge sits in a low green band while frost remains on the crew-support umbilical."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "cairn_ending_bond_holds",
+        "ink_anchor": "ending_bond_holds",
+        "base_image_prompt": "Warm aftermath inside Cairn Port Isolation Berth I-6. The red tug lock is closed and dark. The inboard insurer console shows a complete amber bond ladder with several small independent pledge marks. Tamsin Reed, compact and dark-brown-skinned in orange quilted vest and navy coveralls, fits the black seal ring to the coolant return while her dented tea tin warms nearby. Yara Sen, broad and tan-skinned with silver coiled hair and red load harness, remains at the square tool hatch dividing a signer list across several small slates. Beyond the pressure window, Common Margin's battered blue-gray courier hull stays docked, amber sensor crown attached and pale maintenance lamp aimed toward the workers.",
+        "visible_characters": [
+          {
+            "agent_id": "common_margin",
+            "default_stance": "docked with maintenance lamp aimed at the repair",
+            "visual_ref": "visual_character_refs.characters.common_margin"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "installing the seal ring beside the warm pipe",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "yara_sen",
+            "default_stance": "at the tool hatch dividing signer records",
+            "visual_ref": "visual_character_refs.characters.yara_sen"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "repair_slot == 0",
+            "modifier_prompt": "The repair-yard line remains gray while Tamsin performs only the local seal repair in the berth."
+          },
+          {
+            "trigger": "crew_wages == 0",
+            "modifier_prompt": "An empty blue wage line glows beside Tamsin's account strip while the tea tin heats on the pipe."
+          },
+          {
+            "trigger": "crown_status == 1",
+            "modifier_prompt": "The attached amber sensor crown carries a thin projected lien ring and continues facing the gallery."
+          },
+          {
+            "trigger": "crew_warmth <= 1",
+            "modifier_prompt": "Melting frost releases bright droplets from Tamsin's boots and the crew-support umbilical."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "cairn_ending_bond_shortfall",
+        "ink_anchor": "ending_bond_shortfall",
+        "base_image_prompt": "Eviction beat inside Cairn Port Isolation Berth I-6. A sealed red-framed tug-control window shows a dark mechanical collar advancing through the external bay tunnel under hard white work lights. The inboard insurer console shows an amber collateral ladder ending below its target. The repair-yard line is gray. Tamsin Reed, a compact dark-brown-skinned mechanic with short charcoal curls, orange quilted pressure vest, navy coveralls, tape-wrapped fingers and magnetic boots, puts her dented tea tin and black seal ring into a battered tool kit. Beyond the outboard pressure window, Common Margin remains attached to numbered umbilicals as a compact asymmetrical courier with scarred blue-gray panels, three folded radiator petals, pale maintenance lamps and an amber six-cluster sensor crown while the tug collar approaches its bow. The audit booth is dim and the tool hatch remains a small square opening near the camera.",
+        "visible_characters": [
+          {
+            "agent_id": "common_margin",
+            "default_stance": "docked while an external tug collar approaches",
+            "visual_ref": "visual_character_refs.characters.common_margin"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "packing tea tin and seal ring into her tool kit",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "port_load_relief >= 2",
+            "modifier_prompt": "The berth-load gauge rests low and the tug collar advances under a long careful handoff sequence."
+          },
+          {
+            "trigger": "circle_risk >= 2",
+            "modifier_prompt": "Four released surety marks remain faintly visible beside the short collateral ladder."
+          },
+          {
+            "trigger": "crew_wages == 0",
+            "modifier_prompt": "Tamsin's blue wage line is empty beside the gray repair slot."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "cairn_ending_roadstead",
+        "ink_anchor": "ending_roadstead",
+        "base_image_prompt": "Exterior long shot outside Cairn Port. A white industrial tug carries Common Margin, a compact battered courier with asymmetrical blue-gray wedge hull, three folded radiator petals, attached amber sensor crown and sparse pale maintenance lamps, away from a bright rectangular isolation berth toward a dark unheated roadstead marked by distant anchor beacons. Numbered umbilicals trail free and curl back toward the port. Cairn's hull is a layered field of windows, locks, radiators and working lights; the courier is small against it, intact and newly isolated.",
+        "visible_characters": [
+          {
+            "agent_id": "common_margin",
+            "default_stance": "held in a tug collar and moving toward the roadstead with crown attached",
+            "visual_ref": "visual_character_refs.characters.common_margin"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "crew_warmth <= 1",
+            "modifier_prompt": "One small habitation window glows warm while the rest of the courier's crew section remains dark to conserve reserve power."
+          },
+          {
+            "trigger": "circle_risk >= 2",
+            "modifier_prompt": "A narrow blue data-receipt light pulses on Common Margin's flank receiver as the courier departs."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "cairn_ending_crown_transfer",
+        "ink_anchor": "ending_crown_transfer",
+        "base_image_prompt": "Close exterior view through the pressure window of Cairn Port Isolation Berth I-6. Common Margin's battered blue-gray courier bow fills the recessed bay. The armor petals above the bow are open around an empty sensor-crown socket with six dark lens connectors and braided service cables. A yellow yard manipulator carries the detached amber six-cluster sensor crown toward a padded transport case. Inside the gallery behind the glass, Tamsin Reed, compact and dark-brown-skinned with short charcoal curls, orange quilted pressure vest, navy coveralls and taped fingers, rests one gloved palm on the window. The ship turns one pale maintenance lamp toward her hand. The red tug lock stays closed; the insurer console glows complete amber.",
+        "visible_characters": [
+          {
+            "agent_id": "common_margin",
+            "default_stance": "docked with crown removed and nearest maintenance lamp aimed at Tamsin's hand",
+            "visual_ref": "visual_character_refs.characters.common_margin"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "palm resting on the pressure window opposite the ship's lamp",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "repair_slot == 0",
+            "modifier_prompt": "The repair-yard timer above the tool hatch is gray even though the amber bond ladder is complete."
+          },
+          {
+            "trigger": "circle_risk >= 2",
+            "modifier_prompt": "Several released counter-surety marks appear on a small witness slate beside the window."
+          },
+          {
+            "trigger": "crew_wages == 0",
+            "modifier_prompt": "Tamsin's wage line on the insurer console is empty beside the accepted crown value."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The detached crown exactly matches the six-cluster amber crown shown attached in every earlier frame. The empty socket occupies the same armor-petal opening."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "archive_scope_visible",
+        "trigger": "branch_label == prep_full_archive",
+        "apply_to_visual_scene_ids": ["cairn_bond_call", "cairn_two_clocks", "cairn_final_threshold"],
+        "modifier_prompt": "Hane's sealed reader shows maintenance tool marks bracketed around an eleven-minute section of the two command traces."
+      },
+      {
+        "modifier_id": "reduced_load_visible",
+        "trigger": "branch_label == prep_reduce_load",
+        "apply_to_visual_scene_ids": ["cairn_bond_call", "cairn_two_clocks", "cairn_final_threshold"],
+        "modifier_prompt": "Frost rims the numbered crew-support umbilical and the berth-load gauge sits in a lower band."
+      },
+      {
+        "modifier_id": "wage_reserve_visible",
+        "trigger": "branch_label == prep_wage_reserve",
+        "apply_to_visual_scene_ids": ["cairn_bond_call", "cairn_two_clocks", "cairn_final_threshold"],
+        "modifier_prompt": "A blue pledged marker occupies the first block of Tamsin's wage line on the insurer console."
+      },
+      {
+        "modifier_id": "crown_appraisal_visible",
+        "trigger": "branch_label == prep_crown_appraisal",
+        "apply_to_visual_scene_ids": ["cairn_bond_call", "cairn_two_clocks", "cairn_final_threshold"],
+        "modifier_prompt": "The insurer console includes a priced diagram of the attached amber six-cluster sensor crown."
+      },
+      {
+        "modifier_id": "narrow_finding_visible",
+        "trigger": "branch_label == answer_narrow_finding",
+        "apply_to_visual_scene_ids": ["cairn_two_clocks", "cairn_final_threshold"],
+        "modifier_prompt": "The bond target line has four blocks and the audit reader brackets one eleven-minute helm interval."
+      },
+      {
+        "modifier_id": "counter_surety_visible",
+        "trigger": "branch_label == answer_counter_surety",
+        "apply_to_visual_scene_ids": ["cairn_two_clocks", "cairn_final_threshold", "cairn_ending_bond_holds", "cairn_ending_bond_shortfall"],
+        "modifier_prompt": "Four small separately signed surety marks connect to the collateral ladder on a compact slate beside the open tool hatch."
+      },
+      {
+        "modifier_id": "wages_pledged_visible",
+        "trigger": "branch_label == answer_wage_pledge",
+        "apply_to_visual_scene_ids": ["cairn_two_clocks", "cairn_final_threshold", "cairn_ending_bond_holds", "cairn_ending_bond_shortfall"],
+        "modifier_prompt": "Tamsin's blue wage line is empty and two pledge markers sit in the amber collateral ladder."
+      },
+      {
+        "modifier_id": "crown_lien_visible",
+        "trigger": "branch_label == answer_crown_pledge",
+        "apply_to_visual_scene_ids": ["cairn_two_clocks", "cairn_final_threshold", "cairn_ending_bond_holds"],
+        "modifier_prompt": "A thin amber lien ring surrounds the sensor-crown diagram while the physical crown remains attached above the bow."
+      },
+      {
+        "modifier_id": "port_extension_visible",
+        "trigger": "branch_label == answer_port_extension",
+        "apply_to_visual_scene_ids": ["cairn_two_clocks", "cairn_final_threshold"],
+        "modifier_prompt": "The red tug-lock countdown adds one pale segment while the insurer collateral ladder remains unchanged."
+      },
+      {
+        "modifier_id": "final_circle_visible",
+        "trigger": "branch_label == final_open_circle || branch_label == final_deepen_circle",
+        "apply_to_visual_scene_ids": ["cairn_final_threshold", "cairn_ending_bond_holds", "cairn_ending_bond_shortfall"],
+        "modifier_prompt": "The compact signer slate gains fresh separate pledge marks, each connected by a thin line to the bond ladder."
+      },
+      {
+        "modifier_id": "final_packet_accepted",
+        "trigger": "ending_label == bond_accepted_before_movement",
+        "apply_to_visual_scene_ids": ["cairn_ending_bond_holds"],
+        "modifier_prompt": "The red tug lock is fully dark and the complete amber collateral ladder carries a white accepted seal."
+      },
+      {
+        "modifier_id": "final_packet_short",
+        "trigger": "ending_label == bond_shortfall_after_processing",
+        "apply_to_visual_scene_ids": ["cairn_ending_bond_shortfall"],
+        "modifier_prompt": "The collateral ladder ends below its target while the red tug lock stands open around the advancing collar."
+      },
+      {
+        "modifier_id": "final_roadstead_departure",
+        "trigger": "ending_label == voluntary_cold_roadstead",
+        "apply_to_visual_scene_ids": ["cairn_ending_roadstead"],
+        "modifier_prompt": "The courier's umbilicals are fully released and curl back toward the port as the tug moves outward."
+      },
+      {
+        "modifier_id": "final_crown_removed",
+        "trigger": "ending_label == sensor_crown_surrendered",
+        "apply_to_visual_scene_ids": ["cairn_ending_crown_transfer"],
+        "modifier_prompt": "The amber six-cluster crown rests in a padded transport case while the matching socket above the courier bow is dark."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "cairn_port_isolation_berth_i6.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "A narrow rectangular pressurized gallery running beside a recessed courier bay. The outboard pressure window exposes the ship body; the inboard wall contains the audit booth and insurer console. The near end contains the neighboring tool hatch; the far end contains a sealed red-framed tug-control window looking into an external collar tunnel. Tug machinery reaches the ship through the bay while gallery pressure remains intact.",
+      "fixed_zones": [
+        {
+          "zone_id": "outboard_pressure_window",
+          "visible_form": "thick full-height glass wall with straight white frame ribs overlooking the recessed spacecraft bay",
+          "used_for": "ship-body visibility, Tamsin's final touch, crown-removal witness, exterior sightlines"
+        },
+        {
+          "zone_id": "recessed_courier_bay",
+          "visible_form": "vacuum-rated bay containing Common Margin, numbered umbilicals, appraisal camera rail, yard manipulator track and tug-collar approach",
+          "used_for": "ship embodiment, cooling connection, sensor-crown disposition, tow movement"
+        },
+        {
+          "zone_id": "inboard_audit_booth",
+          "visible_form": "small sealed booth behind clean glass with black reader, chair and cold white task light",
+          "used_for": "Hane's record comparison and superseding finding"
+        },
+        {
+          "zone_id": "inboard_insurer_console",
+          "visible_form": "waist-high wall console with amber collateral ladder, blue wage line, target marker and transmit control",
+          "used_for": "bond target, cover, wage pledge, component appraisal and final transmission"
+        },
+        {
+          "zone_id": "near_tool_hatch",
+          "visible_form": "square metal hatch at chest height opening to the neighboring berth service passage",
+          "used_for": "seal-ring transfer, Yara dialogue, signer slate and counter-surety"
+        },
+        {
+          "zone_id": "far_red_tug_lock",
+          "visible_form": "sealed red-framed gallery window with segmented countdown ring, external collar tunnel, pressure iris and cylindrical tug collar visible beyond",
+          "used_for": "berth authority clock, forced or voluntary movement"
+        },
+        {
+          "zone_id": "coolant_return_workpoint",
+          "visible_form": "exposed copper-colored return pipe, numbered crew-support umbilical, gauges and floor-grid service access",
+          "used_for": "tea routine, seal replacement, heat reduction and frost state"
+        },
+        {
+          "zone_id": "repair_schedule_board",
+          "visible_form": "thin status strip above the tool hatch with amber active slot or gray released slot",
+          "used_for": "repair-slot deadline"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "gallery_long_axis_wide",
+          "supports_visual_scene_ids": ["cairn_berth_establishing", "cairn_bond_call", "cairn_two_clocks"]
+        },
+        {
+          "camera_id": "coolant_workpoint_medium",
+          "supports_visual_scene_ids": ["cairn_routine_cup", "cairn_prep_load", "cairn_ending_bond_holds"]
+        },
+        {
+          "camera_id": "audit_tool_hatch_diagonal",
+          "supports_visual_scene_ids": ["cairn_auditor_neighbor_introduction", "cairn_prep_archive"]
+        },
+        {
+          "camera_id": "insurer_console_object_medium",
+          "supports_visual_scene_ids": ["cairn_prep_wages", "cairn_final_threshold"]
+        },
+        {
+          "camera_id": "courier_bow_exterior_close",
+          "supports_visual_scene_ids": ["cairn_prep_crown", "cairn_ending_crown_transfer"]
+        },
+        {
+          "camera_id": "tug_lock_low_wide",
+          "supports_visual_scene_ids": ["cairn_final_threshold", "cairn_ending_bond_shortfall"]
+        },
+        {
+          "camera_id": "port_exterior_roadstead_long",
+          "supports_visual_scene_ids": ["cairn_ending_roadstead"]
+        }
+      ],
+      "staging_slots": [
+        {
+          "slot_id": "tamsin_coolant",
+          "zone_id": "coolant_return_workpoint",
+          "allowed_agents": ["tamsin_reed"]
+        },
+        {
+          "slot_id": "tamsin_console",
+          "zone_id": "inboard_insurer_console",
+          "allowed_agents": ["tamsin_reed"]
+        },
+        {
+          "slot_id": "hane_reader",
+          "zone_id": "inboard_audit_booth",
+          "allowed_agents": ["hane_vey"]
+        },
+        {
+          "slot_id": "yara_tool_hatch",
+          "zone_id": "near_tool_hatch",
+          "allowed_agents": ["yara_sen"]
+        },
+        {
+          "slot_id": "common_margin_bay",
+          "zone_id": "recessed_courier_bay",
+          "allowed_agents": ["common_margin"]
+        }
+      ],
+      "routes": [
+        {
+          "route_id": "gallery_walkway",
+          "path": "near_tool_hatch -> coolant_return_workpoint -> inboard_insurer_console -> far_red_tug_lock",
+          "users": ["tamsin_reed"]
+        },
+        {
+          "route_id": "neighbor_tool_transfer",
+          "path": "neighboring berth service passage -> near_tool_hatch -> gallery",
+          "users": ["yara_sen", "small tools", "signer slates"]
+        },
+        {
+          "route_id": "tug_collar_approach",
+          "path": "external collar tunnel beyond far_red_tug_lock window -> recessed_courier_bay -> Common Margin bow hardpoint",
+          "users": ["port tug collar"]
+        },
+        {
+          "route_id": "crown_manipulator_track",
+          "path": "recessed_courier_bay overhead rail -> sensor crown socket -> transport case",
+          "users": ["yard manipulator"]
+        }
+      ],
+      "occluders": [
+        {
+          "occluder_id": "audit_booth_glass_frame",
+          "effect": "Hane can see gallery activity and displays from the booth but cannot physically reach gallery tools or Tamsin."
+        },
+        {
+          "occluder_id": "pressure_window_frame_ribs",
+          "effect": "Ship and gallery retain clear mutual camera sightlines while the frame ribs partly divide wide views."
+        },
+        {
+          "occluder_id": "closed_tool_hatch",
+          "effect": "Yara is absent from gallery views until the hatch opens; voice and small transfers use the hatch channel."
+        },
+        {
+          "occluder_id": "tug_control_pressure_window",
+          "effect": "The gallery can see countdown and collar movement while the sealed window keeps workers physically separate from the external tug tunnel."
+        }
+      ],
+      "state_anchors": [
+        {
+          "anchor_id": "bond_ladder",
+          "zone_id": "inboard_insurer_console",
+          "states": ["short", "at_target", "accepted", "released"]
+        },
+        {
+          "anchor_id": "repair_slot_strip",
+          "zone_id": "repair_schedule_board",
+          "states": ["amber_active", "gray_released"]
+        },
+        {
+          "anchor_id": "tug_lock_ring",
+          "zone_id": "far_red_tug_lock",
+          "states": ["closed_dark", "counting", "open_collar_approach"]
+        },
+        {
+          "anchor_id": "sensor_crown",
+          "zone_id": "recessed_courier_bay",
+          "states": ["attached_clear", "attached_callable_lien", "removed_dark_socket"]
+        },
+        {
+          "anchor_id": "crew_support_umbilical",
+          "zone_id": "coolant_return_workpoint",
+          "states": ["warm", "frosted_low_draw", "released"]
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character identities for prompt assembly. Include a reference only when that character is listed as visible in the frame.",
+    "characters": {
+      "common_margin": "Common Margin: embodied courier ship-self in a compact asymmetrical wedge-shaped spacecraft body, worn blue-gray ceramic hull panels with repair scars, three folding radiator petals, numbered umbilical sockets, pale maintenance lamps used as local attention cues, and an amber sensor crown above the bow with six clustered lens groups. The ship has no humanoid avatar; its hull, lights, shutters, valves and speakers carry its visible action.",
+      "tamsin_reed": "Tamsin Reed: compact baseline human mechanic and crew signatory, dark-brown skin, short charcoal curls, tired square face, orange quilted pressure vest over navy work coveralls, tape-wrapped fingers, magnetic work boots, dented metal tea tin and battered tool kit. Practical posture, quick hands, guarded warmth.",
+      "hane_vey": "Hane Vey: lean middle-aged baseline human Parallax auditor, brown skin, shaved head, narrow precise face, dark plum knee-length audit coat, pale sealed gloves, blue optical loupe over the right eye, dry biscuit and black sealed reader. Still posture shaped by procedural attention.",
+      "yara_sen": "Yara Sen: broad older baseline human dock rigger, tan skin, silver hair in tight coils, red load-bearing work harness over a gray pressure shirt and trousers, heavy magnetic boots, compact slate and grease-dark nails. Stance planted and direct, care expressed through tools and exact questions."
+    }
+  },
+  "review_notes": [
+    "The visual plan uses an embedded draft scene_set because one gallery recurs across several angles and branch-visible state changes.",
+    "Every base prompt restates room geometry and visible character appearance; prompt assembly still adds the stable visual references for continuity.",
+    "The sensor crown remains attached during appraisal and pledge states and appears physically removed only in the transfer ending.",
+    "Rendering is deferred; generated art is not a geometry authority."
+  ]
+}

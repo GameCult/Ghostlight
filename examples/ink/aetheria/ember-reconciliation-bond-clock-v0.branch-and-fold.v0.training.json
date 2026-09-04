@@ -1,0 +1,402 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "ember-reconciliation-bond-clock-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/aetheria/ember-reconciliation-bond-clock-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/aetheria/ember-reconciliation-bond-clock-v0.v0.json",
+  "scene_id": "ember-reconciliation-bond-clock-v0.cairn-port-isolation-berth-i6",
+  "protagonist_agent_id": "common_margin",
+  "npc_agent_ids": [
+    "tamsin_reed",
+    "hane_vey",
+    "yara_sen",
+    "cairn_berth_controller",
+    "insurer_desk",
+    "sensor_crown_claimant"
+  ],
+  "purpose": "Ember-mandate branch-and-fold fixture dramatizing how a reconciliation-bond cure, berth-isolation clock, repair slot, wages, bodily collateral, and counter-surety produce urgent consequences while each authority remains bounded.",
+  "local_awareness_summary": [
+    {
+      "text": "Common Margin is an embodied courier ship-self. It perceives and acts through its hull sensors, route records, maintenance lamps, speakers, shutters, coolant and habitation loops, umbilical releases, and component consent keys; it cannot command the port, insurer, audit booth, claimant, or neighboring crews.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/ember-reconciliation-bond-clock-v0.v0.json",
+        "Aetheria/Worldbuilding/Post-Elysium/Concepts/Ship Mind Custody.md"
+      ]
+    },
+    {
+      "text": "The scene begins during ordinary isolation-berth maintenance before the insurer and port independently accept the same restricted finding for different purposes.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/ember-reconciliation-bond-clock-v0.v0.json",
+        "Aetheria/Worldbuilding/Post-Elysium/Reference/Port-Insurer Compact.md"
+      ]
+    },
+    {
+      "text": "Common Margin knows the visible berth clocks, crew agreements, released evidence, and notices it receives. It does not know which incompatible command history is metaphysically true or any participant's private motive.",
+      "source_refs": [
+        "Aetheria/Worldbuilding/Post-Elysium/Reference/Continuity Admissibility Finding.md",
+        "examples/lore-grounding/aetheria/ember-reconciliation-bond-clock-v0.v0.json"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Common Margin's ship-scale embodied viewpoint at Cairn Port. Choices use record release, speech, thermal control, shutters, consent keys, collateral authorization, umbilical release, and observed human work.",
+        "source_refs": ["prompts/interactive-fiction-weaver.md", "examples/lore-grounding/aetheria/ember-reconciliation-bond-clock-v0.v0.json"]
+      },
+      {
+        "text": "Tonal mode is dry workplace noir with humane wit: ordinary tea, tool lending, and minor administrative jokes establish life before the bond call sharpens the scene.",
+        "source_refs": ["prompts/narrative-quality-reviewer.md", "Aetheria/Narrative Themes.md"]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Hane may preserve, narrow, and supersede a finding; the insurer independently prices and accepts security; the berth controller independently sets traffic timing; the repair yard owns its slot; the claimant owns its offer; Common Margin owns consent over its sensor crown.",
+        "source_refs": ["Aetheria/Worldbuilding/Post-Elysium/Reference/Port-Insurer Compact.md", "Aetheria/Worldbuilding/Post-Elysium/Reference/Continuity Admissibility Finding.md", "Aetheria/Worldbuilding/Post-Elysium/Concepts/Ship Mind Custody.md"]
+      },
+      {
+        "text": "Counter-surety buys review time and shares exposure. It neither reconciles the record nor gives neighboring crews authority over the ship.",
+        "source_refs": ["Aetheria/Worldbuilding/Post-Elysium/Reference/Port-Insurer Compact.md"]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The seal ring belongs to Yara until lent for the repair; the tea tin remains Tamsin's; the sealed reader remains Hane's evidentiary surface; the sensor crown remains part of Common Margin until the ship pledges or transfers it; wage claims require Tamsin's explicit consent.",
+        "source_refs": ["examples/ink/aetheria/ember-reconciliation-bond-clock-v0.branch-and-fold.v0.ink", "Aetheria/Worldbuilding/Post-Elysium/Concepts/Ship Mind Custody.md"]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "The fixture must show that separate bounded offices can create one escalating material trap without becoming a central authority.",
+        "source_refs": ["Aetheria/Worldbuilding/Post-Elysium/Reference/Port-Insurer Compact.md"]
+      },
+      {
+        "text": "The best outcome preserves minutes and a berth while carrying visible costs in wages, signer exposure, repair delay, cold, or callable bodily collateral.",
+        "source_refs": ["Aetheria/Worldbuilding/Post-Elysium/Reference/Port-Insurer Compact.md", "Aetheria/Narrative Themes.md"]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let the Parallax auditor order the port or insurer, decide true history, or resolve personhood and custody.",
+        "source_refs": ["Aetheria/Worldbuilding/Post-Elysium/Factions/Parallax Auditors.md", "Aetheria/Worldbuilding/Post-Elysium/Reference/Continuity Admissibility Finding.md"]
+      },
+      {
+        "text": "Do not let Tamsin, the insurer, claimant, or port silently transfer Common Margin's sensor crown; the ship must own pledge and transfer actions.",
+        "source_refs": ["Aetheria/Worldbuilding/Post-Elysium/Concepts/Ship Mind Custody.md"]
+      },
+      {
+        "text": "Do not turn the counter-surety into a movement, universal fund, clean rescue, or guarantee of insurer acceptance.",
+        "source_refs": ["Aetheria/Worldbuilding/Post-Elysium/Reference/Port-Insurer Compact.md", "Aetheria/Narrative Themes.md"]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold quiet preparation and one bond response into a shared two-clock threshold, then select state-gated berth, tow, roadstead, or crown-transfer outcomes.",
+    "choice_layers": [
+      "quiet_preparation",
+      "answer_the_bond_call",
+      "choose_what_crosses_the_deadline"
+    ],
+    "variables": [
+      "bond_cover",
+      "bond_target",
+      "isolation_window",
+      "repair_slot",
+      "crew_wages",
+      "crew_warmth",
+      "crown_status",
+      "circle_risk",
+      "finding_scope",
+      "port_load_relief",
+      "claimant_leverage"
+    ],
+    "ending_gates": [
+      "ending_bond_holds",
+      "ending_bond_shortfall",
+      "ending_roadstead",
+      "ending_crown_transfer"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prep_full_archive",
+      "ink_path": "pre_call_hub",
+      "action_type": "transmit_record",
+      "actor_intent": "Give Hane physical maintenance evidence capable of narrowing a later finding.",
+      "state_basis": ["Common Margin owns its maintenance archive and can release it to Hane's sealed reader."],
+      "reviewed_consequences": ["Raises finding_scope and spends one isolation-window band; later gates answer_narrow_finding and visualizes the eleven-minute bracket."],
+      "training_hooks": ["evidence_release", "time_for_scope_tradeoff", "auditor_boundary"]
+    },
+    {
+      "branch_id": "prep_reduce_load",
+      "ink_path": "pre_call_hub",
+      "action_type": "alter_embodied_system",
+      "actor_intent": "Reduce port support load by cooling the crew habitation loop.",
+      "state_basis": ["Common Margin controls its own habitation heat while Tamsin bears the bodily cost."],
+      "reviewed_consequences": ["Raises port_load_relief and isolation_window while lowering crew_warmth; later gates port-extension action and cold-state callbacks."],
+      "training_hooks": ["embodied_infrastructure_action", "care_costs_body", "port_clock_leverage"]
+    },
+    {
+      "branch_id": "prep_wage_reserve",
+      "ink_path": "pre_call_hub",
+      "action_type": "speak",
+      "actor_intent": "Ask Tamsin to hold current pay as legible bond security while protecting the next claim.",
+      "state_basis": ["Tamsin owns her wage consent and Common Margin can ask rather than authorize it alone."],
+      "reviewed_consequences": ["Raises bond_cover and lowers crew_wages; later changes insurer displays and wage callbacks in every outcome."],
+      "training_hooks": ["consent_before_collateral", "wage_pressure", "ordinary_household_cost"]
+    },
+    {
+      "branch_id": "prep_crown_appraisal",
+      "ink_path": "pre_call_hub",
+      "action_type": "expose_component",
+      "actor_intent": "Learn what value a claimant will assign to the sensor crown while preserving removal consent.",
+      "state_basis": ["Common Margin controls the appraisal shutter and crown maintenance interlock."],
+      "reviewed_consequences": ["Raises claimant_leverage and spends time; later gates crown pledge and improves the claimant's transfer price."],
+      "training_hooks": ["inspection_not_transfer", "body_as_collateral", "claimant_leverage"]
+    },
+    {
+      "branch_id": "answer_narrow_finding",
+      "ink_path": "bond_response",
+      "action_type": "speak",
+      "actor_intent": "Restrict priced risk to the disputed eleven-minute helm interval.",
+      "state_basis": ["Available only after the full archive raises finding_scope."],
+      "reviewed_consequences": ["Lowers bond_target to four, spends review time, and leaves insurer acceptance separate from Hane's superseding packet."],
+      "training_hooks": ["scope_reduction", "superseding_finding", "independent_receiver_acceptance"]
+    },
+    {
+      "branch_id": "answer_counter_surety",
+      "ink_path": "bond_response",
+      "action_type": "request_mutual_aid",
+      "actor_intent": "Assemble four shares from several neighboring workers and crews.",
+      "state_basis": ["Yara has direct tool-hatch contact and can convene small informed pledges."],
+      "reviewed_consequences": ["Raises bond_cover and circle_risk while spending time; later exposes or releases signers and changes ending texture."],
+      "training_hooks": ["mutual_aid_under_risk", "distributed_surety", "time_not_absolution"]
+    },
+    {
+      "branch_id": "answer_wage_pledge",
+      "ink_path": "bond_response",
+      "action_type": "authorize_transfer",
+      "actor_intent": "Ask Tamsin to place remaining wages into the bond packet.",
+      "state_basis": ["Tamsin remains the wage owner and gives an explicit yes."],
+      "reviewed_consequences": ["Raises bond_cover, sets crew_wages to zero, spends time, and changes household consequences across endings."],
+      "training_hooks": ["welfare_as_liability_line", "explicit_consent_under_pressure", "cascading_default"]
+    },
+    {
+      "branch_id": "answer_crown_pledge",
+      "ink_path": "bond_response",
+      "action_type": "pledge_embodied_component",
+      "actor_intent": "Risk the sensor crown as callable collateral while retaining it physically.",
+      "state_basis": ["Available only after appraisal; Common Margin owns the consent key."],
+      "reviewed_consequences": ["Provides full cover, changes crown_status to attached callable lien, and raises claimant leverage."],
+      "training_hooks": ["ship_owned_body_decision", "callable_component_lien", "recognition_without_personhood"]
+    },
+    {
+      "branch_id": "answer_port_extension",
+      "ink_path": "bond_response",
+      "action_type": "transmit_system_state",
+      "actor_intent": "Ask the berth controller to convert verified lower support draw into twelve more minutes.",
+      "state_basis": ["Available only after Common Margin reduces port load."],
+      "reviewed_consequences": ["Raises isolation_window while leaving bond_cover and insurer terms unchanged."],
+      "training_hooks": ["separate_authority", "load_for_time", "crew_cold_callback"]
+    },
+    {
+      "branch_id": "final_transmit_packet",
+      "ink_path": "final_choice",
+      "action_type": "transmit_record",
+      "actor_intent": "Submit current security before the tug cycle.",
+      "state_basis": ["Common Margin can transmit the packet but cannot cause insurer acceptance."],
+      "reviewed_consequences": ["Routes to bond-holds or shortfall ending by comparing bond_cover against bond_target."],
+      "training_hooks": ["state_gated_outcome", "adequate_or_short"]
+    },
+    {
+      "branch_id": "final_open_circle",
+      "ink_path": "final_choice",
+      "action_type": "request_mutual_aid",
+      "actor_intent": "Open a counter-surety only if no neighboring pledges have already been used.",
+      "state_basis": ["Available only when circle_risk is zero and the current packet remains below target."],
+      "reviewed_consequences": ["Adds four shares and signer risk, spends time, then routes by the resulting cover threshold."],
+      "training_hooks": ["late_mutual_aid", "distributed_risk", "conditional_success"]
+    },
+    {
+      "branch_id": "final_deepen_circle",
+      "ink_path": "final_choice",
+      "action_type": "request_additional_mutual_aid",
+      "actor_intent": "Ask existing signers to carry a final shortfall with full knowledge of the deeper call risk.",
+      "state_basis": ["Available only after a counter-surety already exists and the current packet remains below target."],
+      "reviewed_consequences": ["Adds two shares, increases circle_risk, and reaches the bond-holds ending with heavier signer exposure."],
+      "training_hooks": ["mutual_aid_escalation", "consent_to_shared_risk"]
+    },
+    {
+      "branch_id": "final_spend_extension",
+      "ink_path": "final_choice",
+      "action_type": "authorize_review",
+      "actor_intent": "Use port-granted time for a last scoped review and separate insurer decision.",
+      "state_basis": ["Available only with lower port load while the current packet remains below target; the verified reduction gives Hane and the insurer time for one last scoped review."],
+      "reviewed_consequences": ["Lowers bond_target to four, spends time, then routes by existing cover; it does not create collateral."],
+      "training_hooks": ["time_for_review", "scope_not_money", "independent_handoff"]
+    },
+    {
+      "branch_id": "final_choose_roadstead",
+      "ink_path": "final_choice",
+      "action_type": "alter_embodied_system",
+      "actor_intent": "Release umbilicals and accept port movement while refusing new collateral.",
+      "state_basis": ["Common Margin controls its umbilical release and may consent to the port's tug movement."],
+      "reviewed_consequences": ["Closes repair_slot and routes to cold-roadstead debt while preserving the attached crown."],
+      "training_hooks": ["meaningful_exit", "autonomy_with_invoice", "embodied_departure"]
+    },
+    {
+      "branch_id": "final_transfer_crown",
+      "ink_path": "final_choice",
+      "action_type": "surrender_embodied_component",
+      "actor_intent": "Choose a bounded perceptual loss to clear the call and keep the berth.",
+      "state_basis": ["Available only while the bond remains short; Common Margin owns the crown removal interlock and makes the transfer decision."],
+      "reviewed_consequences": ["Sets crown_status to removed, fills bond_cover, and routes to a distinct bodily-loss ending with appraisal and repair-state callbacks."],
+      "training_hooks": ["pressured_self_disposition", "perception_loss", "mobility_bought_with_body"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional choice availability and prose callbacks",
+      "Ending selection",
+      "Visual state and branch modifier selection"
+    ],
+    "manual_review_required": [
+      "Promotion of fixture-local people or Cairn Port into durable canon",
+      "Durable character memory, relationship, wage, debt, custody, or injury updates",
+      "Acceptance into the training corpus",
+      "Any future universal currency, lien, or post-Elysium clearing schema"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex self-review using the four required reviewer prompts",
+    "review_status": "accepted",
+    "review_notes": [
+      "All four required self-review passes reached B-level acceptance after revisions.",
+      "Mechanical audit found all 15 Ink branch ids represented in the training sidecar, all 11 declared variables read after declaration, 14 valid visual anchors, 14 BFL prompts for 14 visual scenes, and no negative or memory-dependent wording in base image prompts.",
+      "The Ink was not compiled because the pass explicitly forbids installing or running an Ink compiler."
+    ],
+    "reviewer_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 4,
+          "pacing": 4,
+          "voice": 5,
+          "tonal_fit": 5,
+          "if_playability": 4
+        },
+        "detected_tonal_mode": "Dry workplace noir with humane wit and a cold administrative escalation.",
+        "findings_fixed": [
+          "Gated late counter-surety and scoped-review choices to genuine shortfalls so already-complete bond paths do not offer fake rescue work.",
+          "Removed a duplicate seal-ring installation and made the repair handoff temporally legible.",
+          "Gated outright sensor-crown transfer to a live bond shortfall so bodily sacrifice always buys a material outcome."
+        ],
+        "remaining_notes": [
+          "The piece is intentionally dense, but each invented term is introduced through an object, office, or immediate cost before choice payoff."
+        ],
+        "training_labels": [
+          "strong_contextual_onboarding",
+          "strong_tonal_control",
+          "strong_wit_with_stakes",
+          "strong_branch_callback",
+          "strong_material_lore"
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 5,
+          "grounding_quality": 5,
+          "vault_backfill_value": 4
+        },
+        "sources_checked": [
+          "Aetheria/Worldbuilding/Post-Elysium/Reference/Port-Insurer Compact.md",
+          "Aetheria/Worldbuilding/Post-Elysium/Reference/Continuity Admissibility Finding.md",
+          "Aetheria/Worldbuilding/Post-Elysium/Factions/Parallax Auditors.md",
+          "Aetheria/Worldbuilding/Post-Elysium/Concepts/Ship Mind Custody.md",
+          "Aetheria/Narrative Themes.md",
+          "Aetheria/Lore/Nibu.md"
+        ],
+        "findings_fixed": [
+          "Changed wage-collateral acceptance from the berth to the insurer desk, preserving receiving-office authority.",
+          "Changed crown-transfer settlement so the claimant transfers value and the insurer clears the bond.",
+          "Kept Hane's power to evidence classification and superseding scope while every enforcement decision remains with its receiver."
+        ],
+        "remaining_notes": [
+          "Cairn Port and all named fixture characters remain story-local; only reconciliation-bond clocks and counter-surety entered the owning lore note."
+        ],
+        "training_labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_infrastructure_grounding",
+          "strong_body_affordance_grounding",
+          "vault_backfill_candidate"
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompt": 5,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 4
+        },
+        "findings_fixed": [
+          "Expanded recurring-character appearance in base prompts so each image prompt stands alone for a general model.",
+          "Removed off-frame character names from signer-slate modifiers and replaced them with visible object descriptions.",
+          "Added a crew-wage modifier to the crown-transfer frame and preserved crown attachment, lien, and removal as distinct visible states."
+        ],
+        "remaining_notes": [
+          "The embedded scene_set map is sufficient for draft replay planning; website-quality multi-angle rendering still needs a plan-view or 3D blockout before image generation."
+        ],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity"
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightline": 5,
+          "body_affordance": 5,
+          "movement_access": 4,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "inferred_layout_summary": "A pressurized rectangular human gallery runs beside a recessed vacuum courier bay. The outboard pressure window provides ship sightlines; the inboard booth isolates Hane; the near tool hatch connects neighboring service passages; the far sealed red tug-control window overlooks an external collar tunnel; Tamsin uses the gallery walkway between coolant workpoint and insurer console.",
+        "findings_fixed": [
+          "Separated the external tug collar and pressure iris from the occupied gallery behind a sealed tug-control window.",
+          "Corrected the scene-set route so collar machinery enters the recessed bay from its external tunnel instead of traversing human gallery pressure.",
+          "Kept appraisal, callable lien, and physical removal at one stable crown socket with one manipulator route."
+        ],
+        "remaining_notes": [
+          "A future blockout should set exact dimensions, but every action, sightline, route, and occluder required by this fixture has a named stageable path."
+        ],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_branch_spatial_state"
+        ]
+      }
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}
