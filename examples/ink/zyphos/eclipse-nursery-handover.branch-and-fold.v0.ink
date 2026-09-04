@@ -13,13 +13,15 @@ VAR flower_credibility = 2
 VAR eclipse_time = 3
 VAR isolation_lane = 0
 VAR incoming_fatigue = 1
+VAR flower_cupped = 0
+VAR external_witness_sent = 0
 
 -> start
 
 === start ===
 The breeding ground keeps its front door outdoors.
 
-Its arrival terrace is a low fan of dark, root-bound stone. The narrow end points routeward, where a candle fungal road reaches the terrace in two rows of amber fruiting beads. The broad end faces nurseryward, down three shallow ramps into warm communal hollows. Between them sits a waist-low work cradle grown from pale flexible ribs. An isolation shelter curls beyond the terrace's outer rim. Umbros-facing lantern trees hold the inner rim, their cold blue knots waking as the fixed dark world begins to cover the sun.
+Its arrival terrace is a low fan of dark, root-bound stone. The narrow end points routeward, where a candle fungal road reaches the terrace in two rows of amber fruiting beads. The road's visible boundary arcs across the fan's narrow throat. A waist-low work cradle grown from pale flexible ribs straddles that arc, with one rail on each side. The broad end faces nurseryward, down three shallow ramps into warm communal hollows. An isolation shelter curls beyond the terrace's outer rim. Umbros-facing lantern trees hold the inner rim, their cold blue knots waking as the fixed dark world begins to cover the sun.
 
 Seyr folds four long running legs beneath a striped, fibered body and lays the outgoing archive case on the cradle. The smaller pair of chest limbs remains free; three soft digits on each one sort graft wraps, route cords, and the snack nobody has admitted is ceremonial.
 
@@ -68,7 +70,7 @@ Seyr taps the archive case. Handover means more than changing caretakers. The ro
     ~ graft_readiness = graft_readiness + 2
     ~ nursery_trust = nursery_trust + 1
     ~ eclipse_time = eclipse_time - 1
-    Nara advances only as far as the cradle's routeward edge. Seyr unlatches the balanced flank frame while Nara remains folded low enough that the smaller chest limbs can meet over the graft trays.
+    Nara advances only as far as the cradle's routeward rail. Seyr folds at the nurseryward rail. Their smaller chest limbs meet over the graft trays while all six of Nara's feet remain beyond the fungal boundary.
 
     The new medical tissues are pale, damp, and individually wrapped in breathable leaf-skin. Seyr checks scent seams, warmth blisters, and the little oath-knots that keep nursery memory out until a patient accepts the graft.
 
@@ -178,7 +180,7 @@ Ili folds the snack away. The situation has become official.
 + [Move Mottled Echo into a clear mineral cup on the outer edge of the cradle.]
     // ghostlight.action_label: transfer_object
     // ghostlight.branch_label: isolate_flower_witness
-    ~ isolation_lane = isolation_lane + 1
+    ~ flower_cupped = 1
     ~ flower_credibility = flower_credibility - 1
     ~ nursery_trust = nursery_trust - 1
     ~ quarantine_pressure = quarantine_pressure + 1
@@ -213,7 +215,7 @@ Ili folds the snack away. The situation has become official.
 The terrace now holds four testimonies: Nara's words, Mottled Echo's color, the portable archive, and the fungal road's bitter ring. They agree only that something traveled here.
 
 {flower_credibility >= 4: Mottled Echo keeps a restrained red-violet pattern. Even Nara stops calling it mere drama.}
-{flower_credibility <= 1: Mottled Echo blazes in the mineral cup, vivid and separated from the body it claims to explain.}
+{flower_cupped == 1: Mottled Echo blazes in the mineral cup, vivid and separated from the body it claims to explain.}
 {route_testimony >= 3: Seyr can trace the violet signal back through the archive to Nara's recent graft station.}
 {graft_readiness >= 3: The sorted trays make one suspect wrap visibly separable from the clean medical grafts.}
 {incoming_fatigue >= 3: Nara's long body sags between the two locomotor pairs. Pride is now competing with muscle tremor.}
@@ -274,6 +276,7 @@ Seyr reads a proposal: separate the doubtful material, keep testimony moving, pr
     ~ eclipse_time = eclipse_time - 1
     ~ quarantine_pressure = quarantine_pressure + 1
     ~ nursery_trust = nursery_trust - 1
+    ~ external_witness_sent = 1
     Seyr knots a clean shed fiber beside a trace from the suspect wrap. The threadwing lands on the cradle's outer rail, ribbon vanes held clear of Mottled Echo.
 
     It tastes the packet, takes it, and launches routeward.
@@ -296,7 +299,7 @@ Umbros is no wandering moon. It hangs fixed and enormous above the lantern grove
 {eclipse_time <= 1: The threadwings have gone quiet. There will be little time to finish the handover before returning light changes every signal.}
 {isolation_lane >= 2: Blue-white lantern light and sparse amber candles define a clean outer route to the isolation shelter.}
 
-Nara waits outside the nursery. The children wait inside it. Mottled Echo waits wherever the last choice left it and continues being, in its small botanical way, extremely available for consultation.
+Nara waits outside the nursery. The children wait inside it. {flower_cupped == 1: Mottled Echo waits in the mineral cup on the cradle's routeward rail.|Mottled Echo remains on Nara's bare left flank.} In either position it continues being, in its small botanical way, extremely available for consultation.
 
 The handover needs a decision that does not pretend uncertainty has disappeared.
 
@@ -337,7 +340,7 @@ The handover needs a decision that does not pretend uncertainty has disappeared.
 + [Keep the boundary closed until the threadwing or road produces a second witness.]
     // ghostlight.action_label: wait
     // ghostlight.branch_label: wait_for_second_witness
-    {route_testimony >= 2 && flower_credibility >= 3 && eclipse_time >= 1:
+    {external_witness_sent == 1 && route_testimony >= 2 && flower_credibility >= 3 && eclipse_time >= 1:
         Seyr folds beside Nara outside the ring, archive between them, and gives the slower witnesses time.
         -> ending_witness_success
     - else:
@@ -434,7 +437,7 @@ No witness wins. Their overlap becomes enough to act.
 // ghostlight.training_hook: waiting_spends_light_and_body_capacity
 Seyr waits.
 
-Totality thins. Returning light opens the wrong fungal candles first, and route traffic begins to gather behind Nara. The threadwing does not return. Mottled Echo repeats red-violet until the pattern stops adding information and starts becoming reputation.
+Totality thins. Returning light opens the wrong fungal candles first, and route traffic begins to gather behind Nara. {external_witness_sent == 1: The threadwing does not return.|No threadwing carries a comparison packet; the road is the only second witness still working.} Mottled Echo repeats red-violet until the pattern stops adding information and starts becoming reputation.
 
 By the time the road offers an isolation lane, Nara is too exhausted to carry the graft frame and Seyr's replacement watch has not begun.
 

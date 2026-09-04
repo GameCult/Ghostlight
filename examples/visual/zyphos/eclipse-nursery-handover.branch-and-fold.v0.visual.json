@@ -14,13 +14,13 @@
     "scene_set_guidance": {
       "current_mode": "scene_set_required_missing",
       "scope_reason": "The story revisits one terrace from several angles and makes sightlines, ramps, boundary arcs, object placement, and branch-created routes mechanically important. Textual prompts support concept frames but are not geometry authority.",
-      "future_scene_set_need": "Before replay-ready website rendering, build a plan view or 3D blockout with the fan-shaped terrace, routeward fungal boundary, nurseryward ramps, central work cradle, inner lantern-tree rim, outer isolation shelter, fixed camera slots, and branch-visible clean or closed lanes."
+      "future_scene_set_need": "Before replay-ready website rendering, build a plan view or 3D blockout with the fan-shaped terrace, fungal boundary crossing its narrow throat, boundary-straddling work cradle, nurseryward ramps, inner lantern-tree rim, outer isolation shelter, fixed camera slots, and branch-visible clean or closed lanes."
     },
     "scenes": [
       {
         "visual_scene_id": "zyphos_nursery_terrace_establishing",
         "ink_anchor": "start",
-        "base_image_prompt": "Wide elevated establishing view of an outdoor alien nursery arrival terrace at eclipse ingress. A fan-shaped platform of dark root-bound stone narrows toward a living road marked by two rows of faint amber fungal beads, then broadens toward three shallow ramps descending into warm communal nursery hollows. A pale flexible-rib work cradle stands at the center. Tall lantern trees line the inner rim with cold blue luminous knots hanging under their canopies. A low crescent isolation shelter of grown ribs and translucent leaf-skin curves beyond the outer rim. An enormous fixed dark planet begins covering a dim red-orange sun. Small long-bodied six-limbed caretakers move around the low terrace.",
+        "base_image_prompt": "Wide elevated establishing view of an outdoor alien nursery arrival terrace at eclipse ingress. A fan-shaped platform of dark root-bound stone narrows toward a living road marked by two rows of faint amber fungal beads; their visible boundary arcs across the fan's narrow throat, where a pale flexible-rib work cradle straddles the line with one rail on each side. The fan broadens toward three shallow ramps descending into warm communal nursery hollows. Tall lantern trees line the inner rim with cold blue luminous knots hanging under their canopies. A low crescent isolation shelter of grown ribs and translucent leaf-skin curves beyond the outer rim. An enormous fixed dark planet begins covering a dim red-orange sun. Small long-bodied six-limbed caretakers move around the low terrace.",
         "visible_characters": [
           {
             "agent_id": "nursery_caretakers",
@@ -37,7 +37,7 @@
       {
         "visual_scene_id": "zyphos_handover_people",
         "ink_anchor": "handover_people",
-        "base_image_prompt": "Medium-wide eye-level view across the fan-shaped root-stone terrace. Seyr, a long-bodied hexapod caretaker, folds four tall digitigrade running legs beneath a fiber-covered torso at the central pale-rib work cradle and opens a layered portable archive case with two small three-digit chest hands. Nara waits beyond the amber fungal-road boundary wearing balanced medical-graft frames on both flanks; a gray-green burden flower grips a bare patch on her left flank. Elderly Ili rests beside the nearest nursery ramp with a crooked facial chemical-sensing fan. Cold blue lantern knots brighten behind them as eclipse shadow grows.",
+        "base_image_prompt": "Medium-wide eye-level view across the narrow throat of a fan-shaped root-stone terrace. A pale-rib work cradle straddles the curved amber fungal boundary with one rail on each side. Seyr, a long-bodied hexapod caretaker, folds four tall digitigrade running legs on the nurseryward side and opens a layered portable archive case with two small three-digit chest hands. Nara waits on the routeward side wearing balanced medical-graft frames on both flanks; a gray-green burden flower grips a bare patch on her left flank. Elderly Ili rests beside the nearest nursery ramp with a crooked facial chemical-sensing fan. Cold blue lantern knots brighten behind them as eclipse shadow grows.",
         "visible_characters": [
           {
             "agent_id": "seyr_outgoing_caretaker",
@@ -69,7 +69,7 @@
       {
         "visual_scene_id": "zyphos_routine_handover_hub",
         "ink_anchor": "routine_choice",
-        "base_image_prompt": "Medium overhead work view of the terrace's central low cradle during an alien caretaker handover. Four concrete tasks are readable around the pale flexible ribs: a clean failed tissue graft beside the amber fungal-road edge; sealed pale medical graft trays on Nara's balanced flank frame; a portable archive whose flexible memory membranes open like layered translucent fans; and cold blue lantern knots hanging beneath trees on the inner rim. Seyr folds beside the cradle with two small chest hands poised between the objects, while Nara waits routeward and Ili watches from the nursery ramp.",
+        "base_image_prompt": "Medium overhead work view of a low pale-rib cradle straddling the curved fungal boundary at the narrow throat of an alien nursery terrace. Four concrete tasks are readable around it: a clean failed tissue graft beside amber road candles; sealed pale medical graft trays on Nara's balanced flank frame at the routeward rail; a portable archive whose flexible memory membranes open like layered translucent fans at the nurseryward rail; and cold blue lantern knots hanging beneath trees on the inner rim. Seyr folds nurseryward with two small chest hands poised over the cradle, Nara remains routeward with all six feet beyond the boundary, and Ili watches from the nursery ramp.",
         "visible_characters": [
           {
             "agent_id": "seyr_outgoing_caretaker",
@@ -163,7 +163,7 @@
       {
         "visual_scene_id": "zyphos_quarantine_action_hub",
         "ink_anchor": "alarm_choice",
-        "base_image_prompt": "Medium action-choice frame centered on the routeward boundary of the fan-shaped root-stone terrace. Nara stands inside a ring of bitter fungal beads with a red-violet burden flower on her left flank and pale medical graft trays in a balanced frame. Seyr faces her from the terrace beside the central rib cradle. A shallow clear mineral cup waits on the cradle's outer edge, flexible archive membranes lie open nearby, and scattered shed body fibers touch the amber road. The three nursery ramps remain behind Seyr under white-warning lantern knots. The composition exposes four physical actions: observe the attached flower, compare Nara's throat patch with graft seals, move the flower to the cup, or wait for the road to sample residue.",
+        "base_image_prompt": "Medium action-choice frame centered on a pale-rib cradle straddling the curved fungal boundary at the narrow throat of a fan-shaped root-stone terrace. Nara stands routeward inside a ring of bitter fungal beads with a red-violet burden flower on her left flank and pale medical graft trays in a balanced frame. Seyr faces her from the nurseryward rail. A shallow clear mineral cup waits on the routeward rail, flexible archive membranes lie open on the nurseryward rail, and scattered shed body fibers touch the amber road. The three nursery ramps remain behind Seyr under white-warning lantern knots. The composition exposes four physical actions: observe the attached flower, compare Nara's throat patch with graft seals, move the flower to the cup, or wait for the road to sample residue.",
         "visible_characters": [
           {
             "agent_id": "seyr_outgoing_caretaker",
@@ -375,9 +375,9 @@
         "state_image_modifiers": []
       },
       {
-        "visual_scene_id": "zyphos_ending_witness",
-        "ink_anchor": "ending_witness_success|ending_witness_cost",
-        "base_image_prompt": "Second-witness aftermath outside the fungal boundary of a nursery terrace. Seyr and Nara rest folded on the routeward ground with the portable archive between their open chemical-sensing facial fans. Mottled Echo shows red-violet or yellow on Nara's flank or in a mineral cup. A threadwing courier with silver ribbonlike vanes approaches the archive case carrying a tiny knotted fiber sample. Amber fungal candles and cold blue-white lantern knots define the disputed outer route while eclipse light changes at the horizon.",
+        "visual_scene_id": "zyphos_ending_witness_success",
+        "ink_anchor": "ending_witness_success",
+        "base_image_prompt": "Successful second-witness aftermath outside the fungal boundary of a nursery terrace. Seyr and Nara rest folded on the routeward ground with the portable archive between their open chemical-sensing facial fans. Mottled Echo shows a restrained yellow-violet pattern on Nara's flank or in a mineral cup. A threadwing courier with silver ribbonlike vanes lands on the archive case carrying a tiny knotted fiber sample. Amber fungal candles open toward the isolation shelter and cold blue-white lantern knots answer while the last eclipse darkness holds.",
         "visible_characters": [
           {
             "agent_id": "seyr_outgoing_caretaker",
@@ -396,8 +396,31 @@
           },
           {
             "agent_id": "witness_threadwing",
-            "default_stance": "returning toward the archive or absent in the cost state",
+            "default_stance": "landed on the archive case with a knotted fiber sample",
             "visual_ref": "visual_character_refs.characters.witness_threadwing"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_ending_witness_cost",
+        "ink_anchor": "ending_witness_cost",
+        "base_image_prompt": "Failed-wait aftermath outside the fungal boundary of a nursery terrace during returning light. Seyr and Nara rest folded on the routeward ground with the portable archive between them. Nara's long body sags with fatigue. Mottled Echo repeats a harsh red-violet display on Nara's flank or in a mineral cup. Route travelers gather behind Nara, amber fungal candles open in an unrelated traffic line, and the disputed boundary stays dark beneath cold lantern knots. A red-orange rim of sunlight appears around the enormous fixed black planet.",
+        "visible_characters": [
+          {
+            "agent_id": "seyr_outgoing_caretaker",
+            "default_stance": "folded beside Nara outside the ring",
+            "visual_ref": "visual_character_refs.characters.seyr_outgoing_caretaker"
+          },
+          {
+            "agent_id": "nara_incoming_specialist",
+            "default_stance": "folded beside the archive with visible fatigue",
+            "visual_ref": "visual_character_refs.characters.nara_incoming_specialist"
+          },
+          {
+            "agent_id": "mottled_echo_burden_flower",
+            "default_stance": "repeating a harsh red-violet display on host or in cup",
+            "visual_ref": "visual_character_refs.characters.mottled_echo_burden_flower"
           }
         ],
         "state_image_modifiers": []
@@ -588,12 +611,12 @@
       "fixed_zones": [
         {
           "zone_id": "routeward_fungal_boundary",
-          "visible_form": "two curved rows of amber fruiting beads at the narrow point of the terrace",
+          "visible_form": "two curved rows of amber fruiting beads crossing the fan's narrow throat beneath the work cradle",
           "used_for": "arrival gating, bitter quarantine ring, sampling, and clean-lane state"
         },
         {
           "zone_id": "central_work_cradle",
-          "visible_form": "waist-low oval cradle of pale flexible ribs reachable from every side",
+          "visible_form": "waist-low oval cradle of pale flexible ribs straddling the fungal boundary with one routeward rail and one nurseryward rail",
           "used_for": "archive transfer, graft inspection, mineral cup, and courier packet"
         },
         {

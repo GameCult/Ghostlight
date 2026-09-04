@@ -1,0 +1,60 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "eclipse-nursery-handover.bfl-simple-v0",
+  "fixture_id": "eclipse-nursery-handover",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Painterly speculative-ecology storybook frame, restrained gouache and ink texture, low-energy bioluminescence, readable alien anatomy, precise ecological infrastructure, deep eclipse blues against muted amber and mineral earth, humane workplace detail, cinematic interactive-fiction composition.",
+  "prompts": [
+    {
+      "id": "01_nursery_terrace_establishing",
+      "prompt": "Wide elevated view of a fan-shaped outdoor nursery terrace made of dark root-bound stone: a narrow living road marked by paired amber fungal beads, three shallow ramps into warm communal hollows, a central pale-rib work cradle, cold blue lantern knots under an inner tree rim, a crescent isolation shelter beyond the outer rim, and an enormous fixed dark planet beginning to eclipse a dim red-orange sun."
+    },
+    {
+      "id": "02_handover_people",
+      "prompt": "Three long-bodied alien hexapods at a low nursery work cradle: four tall digitigrade running legs, two small three-digit chest hands, wedge heads and paired chemical-sensing facial fans. An ochre caretaker opens layered archive membranes, a charcoal medical specialist waits beyond amber fungal candles with balanced graft trays and a gray-green burden flower on her flank, and a silver elder rests by a nursery ramp under blue lantern knots."
+    },
+    {
+      "id": "03_routine_handover_hub",
+      "prompt": "Overhead work view of a low pale-rib cradle on a fan-shaped root-stone terrace, showing four handover tasks around folded six-limbed caretakers: a clean failed tissue graft near amber fungal candles, sealed medical graft trays, translucent portable archive membranes, and blue lantern knots witnessing from the inner tree rim as eclipse shadow deepens."
+    },
+    {
+      "id": "04_routine_fold",
+      "prompt": "Ordinary nursery shift transfer under eclipse: an ochre hexapod caretaker sorts pale graft trays on the central cradle, a charcoal route specialist displays damaged tools beyond the fungal boundary, a silver elder coils route cords beside three shallow nursery ramps, and a gray-green burden flower creeps across the specialist's bare flank beneath cold blue lantern light."
+    },
+    {
+      "id": "05_flower_alarm",
+      "prompt": "Close alarm beat at the routeward terrace edge: a hand-sized burden flower attached to a charcoal hexapod's bare flank snaps open into yellow, violet, and red leaves; bitter dark-red fungal beads rise around four digitigrade feet; an ochre caretaker turns from a pale-rib cradle; white lantern warnings replace blue invitation while a planet-sized eclipse fills the sky."
+    },
+    {
+      "id": "06_quarantine_action_hub",
+      "prompt": "Medium quarantine-choice frame on a fan-shaped nursery terrace: a route-tired long-bodied hexapod stands inside a bitter fungal ring with graft trays and a red-violet flower on her flank; an ochre caretaker faces her beside a low cradle holding a clear mineral cup, open archive membranes, shed fibers, and sealed graft wraps; three nursery ramps remain behind under white lantern knots."
+    },
+    {
+      "id": "07_multiwitness_fold",
+      "prompt": "Four disputed witnesses on an eclipse-dark terrace: a tired six-limbed specialist inside a bitter amber-red road ring, an ochre caretaker beside violet-edged archive membranes and pale graft trays, a small red-violet burden flower on host or in a clear mineral cup, and a silver-vane threadwing circling above white lantern knots that point toward a separate crescent shelter."
+    },
+    {
+      "id": "08_witness_route_hub",
+      "prompt": "Overhead evidence-and-route choice at near-total eclipse: a low ribbed cradle holds violet archive membranes, one suspicious graft wrap, a clear mineral cup, and a knotted courier sample; an ochre six-limbed caretaker reaches with two chest hands; a tired specialist waits inside the fungal ring; blue-white lanterns trace the outer curve toward an isolation shelter while a silver-vane courier circles."
+    },
+    {
+      "id": "09_totality_threshold",
+      "prompt": "Wide frontal totality view of the whole fan-shaped terrace beneath an enormous fixed black planet: cold blue lantern trees above three nursery ramps, amber fungal candles around the routeward specialist, central cradle with archives and grafts, ochre caretaker facing the boundary, silver elder guarding the first ramp, and an outer crescent isolation shelter reached only by a sparse blue-white and amber curve."
+    },
+    {
+      "id": "10_admission_aftermath",
+      "prompt": "Admission aftermath at the nursery threshold: two long-bodied hexapods stand beside a narrow amber clean lane, an isolated suspect graft tray remains sealed on the cradle's outer rail, clean grafts and archive sit nurseryward, and a silver elder receives or blocks the first shallow ramp beneath cold blue lantern knots."
+    },
+    {
+      "id": "11_isolation_aftermath",
+      "prompt": "Outer-rim quarantine route under total eclipse: two low six-limbed bodies carry a balanced clean graft frame along a curved path of blue-white lantern light and sparse amber fungal beads toward a crescent shelter of pale grown ribs and translucent leaf-skin, physically separated from the distant nursery ramps."
+    },
+    {
+      "id": "12_deferred_or_witness_aftermath",
+      "prompt": "Quiet routeward aftermath during eclipse egress: two long-bodied hexapods rest folded outside a lowered fungal ring with a closed portable archive between their facial fans, a burden flower displays yellow and violet, a silver-ribbon threadwing approaches with a knotted sample, and returning red-orange light edges the enormous fixed dark planet above blue lantern knots."
+    }
+  ]
+}

@@ -131,7 +131,9 @@
       "flower_credibility",
       "eclipse_time",
       "isolation_lane",
-      "incoming_fatigue"
+      "incoming_fatigue",
+      "flower_cupped",
+      "external_witness_sent"
     ],
     "ending_gates": [
       "ending_admission_success",
@@ -253,7 +255,7 @@
         "Burden flowers can release and regrip slowly and can live from mineral access and light."
       ],
       "reviewed_consequences": [
-        "Raises isolation_lane and quarantine_pressure while lowering flower_credibility and nursery_trust; later prose preserves the flower in a mineral cup."
+        "Sets flower_cupped, raises quarantine_pressure, and lowers flower_credibility and nursery_trust; later Ink conditionals and visual modifiers preserve the flower in a mineral cup."
       ],
       "training_hooks": [
         "witness_separation_cost",
@@ -334,7 +336,7 @@
         "Threadwings carry route memory, wound scents, and symbiont cargo between ecologies."
       ],
       "reviewed_consequences": [
-        "Raises road_credit and quarantine_pressure, lowers nursery_trust, and spends eclipse_time; opens the possibility but not certainty of a second witness."
+        "Sets external_witness_sent, raises road_credit and quarantine_pressure, lowers nursery_trust, and spends eclipse_time; only this branch can satisfy the returning-threadwing success gate."
       ],
       "training_hooks": [
         "federated_testimony",
