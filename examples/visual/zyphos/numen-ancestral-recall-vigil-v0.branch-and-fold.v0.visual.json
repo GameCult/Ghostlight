@@ -1,0 +1,709 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "numen-ancestral-recall-vigil-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/zyphos/numen-ancestral-recall-vigil-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/numen-ancestral-recall-vigil-v0.branch-and-fold.v0.training.json",
+  "scene_id": "numen-ancestral-recall-vigil-v0.western-severance-grove-vigil",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a Zyphos Mother Tree ancestral-recall vigil under memetic contamination pressure.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for the root-terrace locality, ordinary ritual labor, four preparation choices, courier refusal, distributed recall, imperial intrusion, final priority, and three ending families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the terrace establishing frame, ordinary maintenance, petitioner threshold, each preparation action, eclipse fold, courier refusal, distributed recall, the one-sentence synchronized intrusion, final state, and each ending family.",
+    "prompting_rule": "Each base image prompt describes a complete frame in plain visible terms, including local geometry, lighting, materials, bodies, tools, and stance. Prompt assembly adds the single global style cue and only the stable refs for characters listed as visible in that frame.",
+    "global_style_cue": "Luminous ecological science-fiction storybook illustration, fine ink contours over restrained gouache, low-energy cold bioluminescence, wet bark and fungal translucency, readable nonhuman silhouettes, ritual intimacy, ecological wonder edged with biological unease, cinematic composition designed for interactive-fiction replay.",
+    "prompt_assembly_rule": "Assemble each generated prompt from global_style_cue, the scene base_image_prompt, visual refs only for visible named characters or groups, and triggered state_image_modifiers or global_branch_image_modifiers. Visual continuity notes stay in review tooling. Each pass begins from the relevant camera-specific scene-set input when spatial continuity matters.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture revisits one open root terrace from several angles and moves four differently embodied participants around a central contact basin, so a stable plan is required. The included scene_set fixes zones, camera slots, routes, sightlines, and severable tissue states for B-level draft review.",
+      "future_scene_set_need": "Before high-consistency website rendering, build a plan-view or simple 3D blockout of the western witness chamber using the listed zones and camera slots. Image generation should paint over those camera-specific inputs."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "numen_terrace_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of an outdoor ritual chamber grown into the outer roots of an immense sentient tree on a rain-wet alien escarpment. Two house-thick buttress roots form a shallow bowl open to blue daylight and rain on the west side. A narrow living root connects the bowl to the massive trunk on the east side. At the center, a low oval basin holds a glossy translucent fungal membrane. Three feeding gourds hang above a pale root wrapped around a stone trough; six fibrous contact cords descend around the basin; a narrow salt rail crosses overhead; small cup-shaped fungal organs hang from thin root necks. An enormous neighboring planet covers the first edge of the dim sun. One six-limbed scaled climber works at the basin, another stands near the feeding root, and a small gliding courier with ribbonlike sensory vanes waits on the rail.",
+        "visible_characters": [
+          {
+            "agent_id": "second_witness",
+            "default_stance": "anchored on the sloping root with upper claws and grasping feet, two smaller hands cleaning the basin",
+            "visual_ref": "visual_character_refs.characters.second_witness"
+          },
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "standing beside the feeding trough with precise lower hands on ritual tools",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "three_frayed_threadwing",
+            "default_stance": "balanced on the overhead salt rail with sensory vanes partly open",
+            "visual_ref": "visual_character_refs.characters.three_frayed_threadwing"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The terrace is one open bowl between buttress roots: trunk/deep archive east, rainward opening west, witness basin center, feeding trough north, south feeder crack downhill, courier rail overhead, fungal cups east of the basin.",
+          "Umbros remains fixed above the rainward horizon and eclipse light progresses from dim blue to deep cold shadow."
+        ]
+      },
+      {
+        "visual_scene_id": "numen_ordinary_maintenance",
+        "ink_anchor": "ordinary_work",
+        "base_image_prompt": "Medium view inside a wet root-terrace chamber. A six-limbed adult climber with fine rust-red scales, dark grown plates, two large clawed upper arms, two small blunt lower hands, digitigrade legs, and two taloned grasping feet scrapes dead gray fungal skin from a glowing oval basin. An older six-limbed climber with pale moss-green scales and layered bark-fiber mantle points at a pale living root that curls stubbornly through a shallow black-stone feeding trough. The enormous tree root visibly tightens around the trough. Overhead, a small tawny gliding animal with three frayed ribbonlike sensory vanes waits beside white salt chips on a narrow rail. Rain beads on dark bark; eclipse light is cool and soft.",
+        "visible_characters": [
+          {
+            "agent_id": "second_witness",
+            "default_stance": "cleaning the basin with lower hands while upper claws and feet anchor the body",
+            "visual_ref": "visual_character_refs.characters.second_witness"
+          },
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "pointing toward the pale root in the trough with dry irritation",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "three_frayed_threadwing",
+            "default_stance": "waiting on the salt rail and watching the grooming tools",
+            "visual_ref": "visual_character_refs.characters.three_frayed_threadwing"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_returner_threshold",
+        "ink_anchor": "petitioner_arrives",
+        "base_image_prompt": "Medium-wide view from the central fungal basin toward the west root arch of an outdoor tree chamber. At the threshold stands a lean six-limbed scaled traveler with blue-gray skin, pale plate seams, two strong clawed upper arms, two smaller soft hands curled near the torso, digitigrade legs, and grasping taloned feet. Their dark woven mantle has clean-cut gaps and straight pale pressure scars where standardized rank strips were removed. Inside the arch, a rust-scaled six-limbed witness faces them from the oval membrane basin while an older moss-green tender stands by the feeding trough. A tawny ribbon-vaned glider waits overhead with a small sealed packet beneath its breast. Downhill at the south edge, a thin crack leaks black bitter water toward pale nursery roots.",
+        "visible_characters": [
+          {
+            "agent_id": "second_witness",
+            "default_stance": "inside the arch beside the witness basin, facing the petitioner",
+            "visual_ref": "visual_character_refs.characters.second_witness"
+          },
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "by the feeding trough with lower hands resting on the basin rim",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "returner",
+            "default_stance": "outside the root arch in careful inspection-queue stillness",
+            "visual_ref": "visual_character_refs.characters.returner"
+          },
+          {
+            "agent_id": "three_frayed_threadwing",
+            "default_stance": "on the overhead salt rail with sealed packet visible",
+            "visual_ref": "visual_character_refs.characters.three_frayed_threadwing"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_prepare_tree_reserve",
+        "ink_anchor": "preparation_choice.prepare_tree_reserve",
+        "base_image_prompt": "Close action view at the north side of a rain-wet root terrace. A rust-red six-limbed scaled witness anchors two clawed upper arms and two taloned feet on dark bark while two smaller soft hands tip a gourd of thick violet sugar-and-mineral mash into a black-stone feeding trough. A pale living root coils through the trough and loosens slightly as the mash flows. An older moss-green six-limbed archive tender watches with restrained satisfaction. The central translucent fungal basin glows a few body lengths south; cold eclipse light outlines wet bark and hanging contact cords.",
+        "visible_characters": [
+          {
+            "agent_id": "second_witness",
+            "default_stance": "pouring the reserve mash with lower hands while braced on the root",
+            "visual_ref": "visual_character_refs.characters.second_witness"
+          },
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "watching the root release the trough",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_prepare_courier",
+        "ink_anchor": "preparation_choice.prepare_courier_trust",
+        "base_image_prompt": "Close-medium view beneath a narrow salt rail in an open tree-root chamber. A rust-scaled six-limbed Airawa witness hangs securely from bark using two large clawed upper arms and two taloned grasping feet. Two smaller blunt lower hands gently separate the sensory ribbons of a tawny gliding courier; two tiny dark mites lie beside white salt chips on the rail. The courier has a narrow body, membrane wings folded along its flanks, many ribbonlike vanes with exactly three visibly frayed tips, bright lateral eyes, and a sealed translucent lineage packet held beneath its breast. The oval fungal basin and hanging contact cords remain visible below.",
+        "visible_characters": [
+          {
+            "agent_id": "second_witness",
+            "default_stance": "hanging beside the rail and grooming vanes with both lower hands",
+            "visual_ref": "visual_character_refs.characters.second_witness"
+          },
+          {
+            "agent_id": "three_frayed_threadwing",
+            "default_stance": "standing voluntarily on the salt rail with vanes opened for grooming",
+            "visual_ref": "visual_character_refs.characters.three_frayed_threadwing"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_prepare_quarantine",
+        "ink_anchor": "preparation_choice.prepare_quarantine_sheath",
+        "base_image_prompt": "Top-down close view of an oval witness basin grown into dark tree roots. A rust-red six-limbed scaled worker uses two small precise hands in sequence to lift dead gray fungal skin, cut it with a hooked bone-white tool, hold a living edge, and weave a fresh pale fungal braid into the opening. Two large clawed upper arms keep six fibrous contact cords clear; two taloned feet brace around the slippery basin. An older moss-green six-limbed tender feeds fresh braid from a shallow tray. The repaired membrane forms a clean luminous ring around darker wet tissue under cold eclipse light.",
+        "visible_characters": [
+          {
+            "agent_id": "second_witness",
+            "default_stance": "spread around the basin with every limb assigned to a visible task",
+            "visual_ref": "visual_character_refs.characters.second_witness"
+          },
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "feeding pale fungal braid from the north edge",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_prepare_returner",
+        "ink_anchor": "preparation_choice.prepare_returner_trust",
+        "base_image_prompt": "Intimate two-character frame at the west root arch of a rain-wet ritual terrace. A rust-scaled six-limbed witness sits just inside the arch, large clawed upper arms relaxed against bark, two small lower hands open and empty, digitigrade legs folded with grasping taloned feet secure on the slope. A lean blue-gray six-limbed Returner sits outside in a dark woven mantle with missing rank strips and straight pale pressure scars across grown plates. Their careful posture softens while speaking about an ordinary food memory. Between them, a thin outer tree root taps the mud. The glowing fungal basin and feeding trough are visible deeper in the chamber.",
+        "visible_characters": [
+          {
+            "agent_id": "second_witness",
+            "default_stance": "seated inside the threshold with lower hands open",
+            "visual_ref": "visual_character_refs.characters.second_witness"
+          },
+          {
+            "agent_id": "returner",
+            "default_stance": "seated outside the threshold, posture beginning to loosen",
+            "visual_ref": "visual_character_refs.characters.returner"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_eclipse_preparation_fold",
+        "ink_anchor": "preparation_fold",
+        "base_image_prompt": "Wide view of the prepared witness chamber during eclipse ingress. The giant neighboring planet covers half the dim sun above the west opening. Cold fungal beads illuminate a bowl between massive wet buttress roots. The central oval membrane basin, north feeding trough, overhead salt rail, east hanging fungal cups, narrow deep-root neck, and south crack of black water are all visible. A rust-scaled six-limbed witness stands at the basin, an older moss-green tender grips the feeding root, a blue-gray six-limbed petitioner waits at the west arch, and a tawny gliding courier launches from the rail with a sealed packet beneath its breast.",
+        "visible_characters": [
+          {
+            "agent_id": "second_witness",
+            "default_stance": "ready at the basin",
+            "visual_ref": "visual_character_refs.characters.second_witness"
+          },
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "at the north feeding root",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "returner",
+            "default_stance": "at the west arch",
+            "visual_ref": "visual_character_refs.characters.returner"
+          },
+          {
+            "agent_id": "three_frayed_threadwing",
+            "default_stance": "in flight from the rail toward the basin",
+            "visual_ref": "visual_character_refs.characters.three_frayed_threadwing"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "archive_reserve >= 5",
+            "modifier_prompt": "Violet nutrient pulses fill the pale feeding root and the fungal basin shines with even controlled light."
+          },
+          {
+            "trigger": "archive_reserve <= 2",
+            "modifier_prompt": "The fungal basin glows in uneven dim patches and the feeding root looks thin."
+          },
+          {
+            "trigger": "quarantine_integrity >= 4",
+            "modifier_prompt": "A clean pale ring of freshly woven fungal braid surrounds the central basin."
+          },
+          {
+            "trigger": "returner_trust >= 4",
+            "modifier_prompt": "The blue-gray Returner holds upper arms and lower hands in a relaxed self-chosen stance instead of inspection-queue stillness."
+          },
+          {
+            "trigger": "feeder_root_damage >= 2",
+            "modifier_prompt": "Black bitter water beads visibly from the south crack and stains pale nursery-directed rootlets."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "numen_courier_refusal",
+        "ink_anchor": "courier_refusal",
+        "base_image_prompt": "Pivotal medium-wide frame in a cold eclipse-lit root chamber. A tawny gliding courier banks sharply above the central fungal basin; all ribbonlike sensory vanes clamp tight around its narrow body and the sealed packet stays beneath its breast. A lean blue-gray six-limbed Returner stands at the west arch with two lower hands curled against a cut dark mantle. A rust-scaled six-limbed witness presses two open lower palms toward the basin while an older moss-green tender turns from the north feeding trough. The glossy fungal membrane puckers completely closed. At the south edge, black water splits a pale feeder root with a wet crack.",
+        "visible_characters": [
+          {
+            "agent_id": "second_witness",
+            "default_stance": "at the basin, lower palms open toward the closing membrane",
+            "visual_ref": "visual_character_refs.characters.second_witness"
+          },
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "turning from the feeding root toward the refusal",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "returner",
+            "default_stance": "at the threshold with lower hands curled against the mantle",
+            "visual_ref": "visual_character_refs.characters.returner"
+          },
+          {
+            "agent_id": "three_frayed_threadwing",
+            "default_stance": "banking away from the basin with all sensory vanes folded tight",
+            "visual_ref": "visual_character_refs.characters.three_frayed_threadwing"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_distributed_recall",
+        "ink_anchor": "recall_assembly",
+        "base_image_prompt": "Ritual tableau around an oval living membrane basin in an open tree-root chamber under deep blue eclipse light. Three six-limbed Airawa occupy distinct points: a rust-red witness braces large upper claws and two taloned feet on the south rim while two small lower hands contact luminous fungus; an older moss-green tender grips the pale feeding root at the north rim; a lean blue-gray Returner anchors at the west rim with lower hands in the shallow membrane and a ridged path leading directly behind them to open rain through the root arch. Thin colored sensory streams remain separated across their bodies: hooked-tool motion around the witness, sulfur-yellow scent haze around the tender, and dark rose panic pulses around the Returner. A tawny ribbon-vaned courier watches from the overhead salt rail. Hanging fungal cups and the narrow east deep-root connection remain visible.",
+        "visible_characters": [
+          {
+            "agent_id": "second_witness",
+            "default_stance": "south rim, fully braced, receiving remembered tool motion",
+            "visual_ref": "visual_character_refs.characters.second_witness"
+          },
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "north rim gripping the feeding root, receiving scent",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "returner",
+            "default_stance": "west basin rim on the direct ridged path to the exit, receiving panic and judgment",
+            "visual_ref": "visual_character_refs.characters.returner"
+          },
+          {
+            "agent_id": "three_frayed_threadwing",
+            "default_stance": "on the overhead rail with one sensory vane aimed toward the packet",
+            "visual_ref": "visual_character_refs.characters.three_frayed_threadwing"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "recall_clarity >= 4",
+            "modifier_prompt": "The three differently colored sensory streams align into one readable sequence pointing toward the south diseased root."
+          },
+          {
+            "trigger": "recall_clarity <= 2",
+            "modifier_prompt": "Tool motion, sulfur haze, and panic pulses remain spatially separated and incomplete around the three bodies."
+          },
+          {
+            "trigger": "contamination_pressure >= 3",
+            "modifier_prompt": "A fourth perfectly regular white pulse runs beneath the three organic sensory streams toward the narrow east deep-root connection."
+          },
+          {
+            "trigger": "outer_chamber_state >= 2",
+            "modifier_prompt": "One hanging fungal cup is connected by a visibly pinched thin root neck and holds an isolated luminous packet band."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "numen_imperial_intrusion",
+        "ink_anchor": "imperial_intrusion",
+        "base_image_prompt": "Single pivotal moment in an eclipse-dark living root chamber. Three six-limbed Airawa around a central glowing fungal basin all reach involuntarily toward one narrow root leading east into the massive tree trunk. The rust-red witness's two lower hands pull inward while upper claws fight for purchase; the older moss-green tender strains against the north feeding root; the blue-gray Returner leans from the basin's west rim toward the closed deep connection while the ridged exit path and rain-open arch remain behind them. A rigid white pulse synchronizes the fungal membrane, contact cords, and every reaching hand. The tree's narrow deep root has slammed flat and dark like a sealed muscular valve. The image makes coerced unity beautiful, precise, and frightening.",
+        "visible_characters": [
+          {
+            "agent_id": "second_witness",
+            "default_stance": "upper claws resisting while two lower hands are drawn east",
+            "visual_ref": "visual_character_refs.characters.second_witness"
+          },
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "straining against the feeding root while pulled east",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "returner",
+            "default_stance": "leaning inward from the west basin rim with the open exit path behind",
+            "visual_ref": "visual_character_refs.characters.returner"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_final_state",
+        "ink_anchor": "final_fold",
+        "base_image_prompt": "Wide decision frame of the western witness chamber under full cold eclipse. The massive trunk and sealed deep-root valve stand east; the open rainward arch stands west; the central oval basin glows weakly between them; a hanging fungal cup waits on a thin root neck to the east. A rigid white rhythm moves through the outer living tissue. Black water spreads through the south feeder crack toward pale nursery rootlets. A rust-scaled six-limbed witness remains at the basin, an older moss-green tender grips the feeding root, a blue-gray Returner stands inside the west arch, and a tawny ribbon-vaned courier perches overhead. The composition presents three material choices: repair tools and sick root to the south, severable fungal tissue to the east, and the Returner's offered memory at the west threshold.",
+        "visible_characters": [
+          {
+            "agent_id": "second_witness",
+            "default_stance": "centered at the basin with attention divided among sick root, fungal cup, and Returner",
+            "visual_ref": "visual_character_refs.characters.second_witness"
+          },
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "north beside the feeding root and cutting tool",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "returner",
+            "default_stance": "inside the west arch with lower hands visible and open",
+            "visual_ref": "visual_character_refs.characters.returner"
+          },
+          {
+            "agent_id": "three_frayed_threadwing",
+            "default_stance": "overhead on the salt rail watching the isolated cup",
+            "visual_ref": "visual_character_refs.characters.three_frayed_threadwing"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "archive_reserve >= 4",
+            "modifier_prompt": "The north feeding root carries strong violet nutrient pulses into the basin."
+          },
+          {
+            "trigger": "archive_reserve <= 1",
+            "modifier_prompt": "The basin and feeding root fade toward darkness with only scattered cold fungal beads."
+          },
+          {
+            "trigger": "quarantine_integrity >= 4",
+            "modifier_prompt": "Several pale isolation rings constrict around the white-blistered fungal cup and its thin root neck."
+          },
+          {
+            "trigger": "outer_chamber_state <= 1",
+            "modifier_prompt": "The rigid white rhythm remains spread through the central basin while the east fungal cup hangs empty and ready."
+          },
+          {
+            "trigger": "outer_chamber_state >= 2",
+            "modifier_prompt": "The rigid white rhythm is concentrated as blisters inside the east fungal cup behind a visibly pinched thin root neck."
+          },
+          {
+            "trigger": "afterecho_burden >= 3",
+            "modifier_prompt": "The rust-scaled witness's six-limbed stance echoes the blue-gray Returner's posture with unsettling precision."
+          },
+          {
+            "trigger": "feeder_root_damage >= 3",
+            "modifier_prompt": "Black water visibly reaches the first branching pale nursery rootlet at the south edge."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "numen_ending_repair",
+        "ink_anchor": "ending_repair_success|ending_repair_cost",
+        "base_image_prompt": "Aftermath on the south slope below an immense mother tree during fading eclipse. A blackened feeder root crosses a shallow channel of bitter water. A rust-red six-limbed Airawa witness anchors large upper claws and taloned feet on wet bark while two smaller hands hold a hooked pruning tool at the diseased braid. An older moss-green six-limbed tender leans close to a pale mineral growth, and a lean blue-gray six-limbed Returner points with two lower hands while remaining clear of the cut. Behind them, pale nursery-directed rootlets branch under the terrace; the central ritual basin is visible uphill between buttress roots.",
+        "visible_characters": [
+          {
+            "agent_id": "second_witness",
+            "default_stance": "braced over the diseased root with pruning tool in two lower hands",
+            "visual_ref": "visual_character_refs.characters.second_witness"
+          },
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "following the sulfur-marked pale rot at the cut",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "returner",
+            "default_stance": "warning where panic would cut too deep",
+            "visual_ref": "visual_character_refs.characters.returner"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_ending_severance",
+        "ink_anchor": "ending_severance_success|ending_severance_cost",
+        "base_image_prompt": "Aftermath inside the open root-terrace chamber under blue-black eclipse. The central witness basin is dark. East of it, an expendable fungal cup and its root neck blacken from reactive bitter sap while an older moss-green six-limbed tender cuts a white isolation ring with a hooked tool. A rust-red six-limbed witness holds the chamber cords clear using upper claws and two precise lower hands. The blue-gray Returner stands beyond the dead tissue at the west arch. A tawny ribbon-vaned courier perches high on the salt rail with vanes tight. The immense deep-root valve is visible behind the charred outer organ.",
+        "visible_characters": [
+          {
+            "agent_id": "second_witness",
+            "default_stance": "holding contact cords clear of the burning outer organ",
+            "visual_ref": "visual_character_refs.characters.second_witness"
+          },
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "cutting the white isolation ring at the thin root neck",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "returner",
+            "default_stance": "at the west arch behind the dead fungal ring",
+            "visual_ref": "visual_character_refs.characters.returner"
+          },
+          {
+            "agent_id": "three_frayed_threadwing",
+            "default_stance": "launching above the salt rail with vanes open",
+            "visual_ref": "visual_character_refs.characters.three_frayed_threadwing"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "threadwing_cooperation >= 3",
+            "modifier_prompt": "The tawny courier launches from the rail before the heat rises, sensory vanes open around a faint clean warning trace."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "numen_ending_bargain",
+        "ink_anchor": "ending_bargain_success|ending_bargain_cost",
+        "base_image_prompt": "Intimate aftermath at the west side of a living witness basin during returning blue daylight. A lean blue-gray six-limbed Returner chooses contact: two large upper claws and two taloned feet brace against the ridged west basin rim while two smaller hands press a deliberate recent-memory pattern into the shallow fungal membrane; the rain-open root arch is visible directly behind them along the exit path. Across the basin, a rust-red six-limbed witness mirrors only the contact points needed for corroboration, and an older moss-green tender holds the feeding root. The immense tree keeps its narrow east deep-root valve visibly closed while one small strand of light remains within the outer basin; repair tools lie ready at the south edge. A tawny ribbon-vaned courier watches from the salt rail.",
+        "visible_characters": [
+          {
+            "agent_id": "second_witness",
+            "default_stance": "across the basin, corroborating only the controlled outer contact",
+            "visual_ref": "visual_character_refs.characters.second_witness"
+          },
+          {
+            "agent_id": "archive_tender",
+            "default_stance": "holding the north feeding root and watching the deep valve",
+            "visual_ref": "visual_character_refs.characters.archive_tender"
+          },
+          {
+            "agent_id": "returner",
+            "default_stance": "self-anchored at the west basin rim with two lower hands in chosen contact and the exit path behind",
+            "visual_ref": "visual_character_refs.characters.returner"
+          },
+          {
+            "agent_id": "three_frayed_threadwing",
+            "default_stance": "watching from the overhead salt rail",
+            "visual_ref": "visual_character_refs.characters.three_frayed_threadwing"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prepare_tree_reserve_visible",
+        "trigger": "branch_label == prepare_tree_reserve",
+        "apply_to_visual_scene_ids": ["numen_eclipse_preparation_fold", "numen_final_state"],
+        "modifier_prompt": "The black-stone trough holds violet sugar-and-mineral mash and the pale feeding root carries strong nutrient pulses."
+      },
+      {
+        "modifier_id": "prepare_courier_trust_visible",
+        "trigger": "branch_label == prepare_courier_trust",
+        "apply_to_visual_scene_ids": ["numen_eclipse_preparation_fold", "numen_courier_refusal", "numen_distributed_recall"],
+        "modifier_prompt": "The tawny courier's sensory ribbons are clean and widely spread, three frayed tips remain distinct, and white salt chips sit on the rail."
+      },
+      {
+        "modifier_id": "prepare_quarantine_visible",
+        "trigger": "branch_label == prepare_quarantine_sheath",
+        "apply_to_visual_scene_ids": ["numen_eclipse_preparation_fold", "numen_distributed_recall", "numen_final_state"],
+        "modifier_prompt": "A freshly woven pale fungal ring defines the basin edge with one clear severable route toward the east fungal cup."
+      },
+      {
+        "modifier_id": "prepare_returner_trust_visible",
+        "trigger": "branch_label == prepare_returner_trust",
+        "apply_to_visual_scene_ids": ["numen_eclipse_preparation_fold", "numen_courier_refusal", "numen_final_state"],
+        "modifier_prompt": "The blue-gray Returner's six limbs hold a self-chosen relaxed posture and their two lower hands remain visibly open."
+      },
+      {
+        "modifier_id": "admit_full_trace_visible",
+        "trigger": "branch_label == admit_full_trace",
+        "apply_to_visual_scene_ids": ["numen_distributed_recall", "numen_imperial_intrusion"],
+        "modifier_prompt": "The sealed packet touches the basin membrane and bright lineage bands mingle with a second rigid white rhythm."
+      },
+      {
+        "modifier_id": "isolate_trace_visible",
+        "trigger": "branch_label == isolate_trace",
+        "apply_to_visual_scene_ids": ["numen_distributed_recall", "numen_final_state"],
+        "modifier_prompt": "A sealed packet rests inside the east hanging fungal cup, separated from the basin by a pinched thin root neck."
+      },
+      {
+        "modifier_id": "admit_fresh_memory_visible",
+        "trigger": "branch_label == admit_fresh_memory",
+        "apply_to_visual_scene_ids": ["numen_distributed_recall", "numen_imperial_intrusion"],
+        "modifier_prompt": "The blue-gray Returner stands at the west basin rim by choice, both smaller hands in shallow membrane contact while upper claws and feet brace beside the direct path to the rain-open arch."
+      },
+      {
+        "modifier_id": "follow_courier_visible",
+        "trigger": "branch_label == follow_courier_diagnosis",
+        "apply_to_visual_scene_ids": ["numen_distributed_recall", "numen_final_state"],
+        "modifier_prompt": "One clean sensory ribbon from the courier points toward a narrow packet band held inside concentric pale isolation rings."
+      },
+      {
+        "modifier_id": "sever_contact_visible",
+        "trigger": "branch_label == sever_witness_contact",
+        "apply_to_visual_scene_ids": ["numen_final_state"],
+        "modifier_prompt": "The rust-scaled witness has torn both lower hands free; luminous fungal strands trail from the digits and one angle of the recall pattern is visibly missing."
+      },
+      {
+        "modifier_id": "witness_present_visible",
+        "trigger": "branch_label == witness_the_present",
+        "apply_to_visual_scene_ids": ["numen_final_state", "numen_ending_repair", "numen_ending_bargain"],
+        "modifier_prompt": "The three Airawa hold distinct asymmetrical postures while several irregular local-color pulses interrupt the rigid synchronized white signal."
+      },
+      {
+        "modifier_id": "externalize_payload_visible",
+        "trigger": "branch_label == externalize_payload",
+        "apply_to_visual_scene_ids": ["numen_final_state", "numen_ending_severance"],
+        "modifier_prompt": "The east fungal cup swells with cold white blisters and its thin root neck is visibly crushed between isolation rings."
+      },
+      {
+        "modifier_id": "ending_repair_success_visible",
+        "trigger": "ending_label == root_repair_success",
+        "apply_to_visual_scene_ids": ["numen_ending_repair"],
+        "modifier_prompt": "One narrow blackened root has been cut cleanly, pale rot is sealed inside an outer fungal knot, and clear rainwater flows toward intact nursery rootlets."
+      },
+      {
+        "modifier_id": "ending_repair_cost_visible",
+        "trigger": "ending_label == root_repair_cost",
+        "apply_to_visual_scene_ids": ["numen_ending_repair"],
+        "modifier_prompt": "A wide rough pruning wound crosses several roots; two empty folded gestation galleries close behind the workers while the nursery channel remains barely clear."
+      },
+      {
+        "modifier_id": "ending_severance_success_visible",
+        "trigger": "ending_label == quarantine_severance_success",
+        "apply_to_visual_scene_ids": ["numen_ending_severance"],
+        "modifier_prompt": "Only the small east fungal cup and thin root neck are blackened; the massive deep-root valve and central basin remain structurally intact."
+      },
+      {
+        "modifier_id": "ending_severance_cost_visible",
+        "trigger": "ending_label == quarantine_severance_cost",
+        "apply_to_visual_scene_ids": ["numen_ending_severance"],
+        "modifier_prompt": "A broad sheet of recent luminous archive fungus has collapsed into gray tissue and the south feeder root lies dark beside the larger amputation."
+      },
+      {
+        "modifier_id": "ending_bargain_success_visible",
+        "trigger": "ending_label == reciprocal_memory_bargain_success",
+        "apply_to_visual_scene_ids": ["numen_ending_bargain"],
+        "modifier_prompt": "One controlled braided strand carries colored recent-memory patterns around the sealed deep valve toward the south repair tools while all participants keep distinct body postures."
+      },
+      {
+        "modifier_id": "ending_bargain_cost_visible",
+        "trigger": "ending_label == reciprocal_memory_bargain_cost",
+        "apply_to_visual_scene_ids": ["numen_ending_bargain"],
+        "modifier_prompt": "The east deep-root valve remains fully dark, the outer basin holds a small warning copy, and the black south water advances while living workers gather wide-pruning tools."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "western_severance_witness_chamber.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Open oval root terrace approximately twelve Airawa body lengths east-west and eight north-south, formed by two buttress roots, with a central witness basin, deep archive toward the trunk east, rainward entrance west, feeding work north, and sick feeder channel south.",
+      "fixed_zones": [
+        {
+          "zone_id": "east_deep_root_valve",
+          "visible_form": "one narrow muscular root neck joining the outer chamber to the immense trunk and deep archive",
+          "used_for": "tree-owned archive admission and emergency closure"
+        },
+        {
+          "zone_id": "central_witness_basin",
+          "visible_form": "low oval depression lined with glossy translucent fungal membrane and six hanging contact cords",
+          "used_for": "distributed memory contact and witness staging"
+        },
+        {
+          "zone_id": "west_root_arch",
+          "visible_form": "rain-open threshold between two curved roots with mud and downhill egress beyond",
+          "used_for": "petitioner admission, withdrawal, and Returner staging"
+        },
+        {
+          "zone_id": "north_feeding_station",
+          "visible_form": "black-stone trough, three hanging gourds, and a pale feeding root curled through the basin",
+          "used_for": "sugar and mineral payment, Archive Tender position, reserve cues"
+        },
+        {
+          "zone_id": "overhead_courier_rail",
+          "visible_form": "narrow bark-and-bone rail above the basin with salt chips and a clear flight lane to the west arch",
+          "used_for": "threadwing staging, packet custody, refusal, and departure"
+        },
+        {
+          "zone_id": "east_fungal_cups",
+          "visible_form": "three translucent cup-shaped fungal organs hanging east of the basin on thin severable root necks",
+          "used_for": "packet isolation, payload externalization, and bounded destruction"
+        },
+        {
+          "zone_id": "south_feeder_channel",
+          "visible_form": "downhill root-and-water channel where a black crack advances toward smaller pale nursery-directed rootlets",
+          "used_for": "repair deadline, root damage, and repair endings"
+        },
+        {
+          "zone_id": "buttress_bracing_faces",
+          "visible_form": "wet ridged root surfaces surrounding the basin with claw holds at Airawa upper-arm and foot reach",
+          "used_for": "stable six-limbed contact posture and emergency withdrawal"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "west_wide_establishing",
+          "supports_visual_scene_ids": ["numen_terrace_establishing", "numen_eclipse_preparation_fold", "numen_final_state"]
+        },
+        {
+          "camera_id": "north_work_medium",
+          "supports_visual_scene_ids": ["numen_ordinary_maintenance", "numen_prepare_tree_reserve"]
+        },
+        {
+          "camera_id": "west_threshold_medium",
+          "supports_visual_scene_ids": ["numen_returner_threshold", "numen_prepare_returner", "numen_ending_bargain"]
+        },
+        {
+          "camera_id": "overhead_basin_close",
+          "supports_visual_scene_ids": ["numen_prepare_quarantine", "numen_distributed_recall"]
+        },
+        {
+          "camera_id": "courier_rail_close",
+          "supports_visual_scene_ids": ["numen_prepare_courier", "numen_courier_refusal"]
+        },
+        {
+          "camera_id": "east_intrusion_centerline",
+          "supports_visual_scene_ids": ["numen_imperial_intrusion"]
+        },
+        {
+          "camera_id": "south_feeder_after",
+          "supports_visual_scene_ids": ["numen_ending_repair"]
+        },
+        {
+          "camera_id": "east_cup_after",
+          "supports_visual_scene_ids": ["numen_ending_severance"]
+        }
+      ],
+      "routes": [
+        {
+          "route_id": "returner_entry_exit",
+          "path": "west_root_arch -> west rim of central_witness_basin",
+          "supports": ["petitioner_arrives", "admit_fresh_memory", "ending_bargain_success", "ending_bargain_cost"]
+        },
+        {
+          "route_id": "courier_packet_lane",
+          "path": "overhead_courier_rail -> airspace above central basin -> east fungal cups",
+          "supports": ["courier_refusal", "admit_full_trace", "isolate_trace", "follow_courier_diagnosis"]
+        },
+        {
+          "route_id": "repair_descent",
+          "path": "central_witness_basin south rim -> ridged buttress descent -> south_feeder_channel",
+          "supports": ["prioritize_root_repair", "ending_repair_success", "ending_repair_cost"]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "basin_to_deep_valve",
+          "path": "all three witness positions -> central membrane -> east_deep_root_valve",
+          "supports": ["recall_assembly", "imperial_intrusion", "final_fold"]
+        },
+        {
+          "lane_id": "basin_to_sick_root",
+          "path": "central basin south rim -> open downhill channel -> black feeder crack",
+          "supports": ["petitioner_arrives", "courier_refusal", "final_choice"]
+        },
+        {
+          "lane_id": "rail_to_packet_cup",
+          "path": "overhead salt rail -> central airspace -> east fungal cup",
+          "supports": ["isolate_trace", "follow_courier_diagnosis"]
+        }
+      ],
+      "outer_chamber_states": [
+        {
+          "value": 1,
+          "label": "connected_outer_chamber",
+          "visible_form": "central basin and east fungal cups remain connected to the deep valve by living pale root tissue"
+        },
+        {
+          "value": 2,
+          "label": "isolated_expendable_tissue",
+          "visible_form": "one fungal cup or basin route is bounded by pale rings and a pinched thin root neck"
+        },
+        {
+          "value": 3,
+          "label": "destroyed_outer_chamber",
+          "visible_form": "bounded fungal tissue is blackened or gray while the massive deep-root valve remains closed"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable visual identities for recurring named fixture roles. Prompt assembly includes only refs for bodies listed as visible in a scene.",
+    "characters": {
+      "second_witness": "Second Witness: adult six-limbed Airawa with fine rust-red soft scales, dark brown grown plate sections with faint cyan bioluminescent seams, minimal slit-like nose and ears, two large muscular upper arms ending in curved climbing claws, two smaller lower arms ending in blunt four-digit hands arranged as two opposing pairs, long digitigrade legs, four-toed grasping feet with hooked climbing talons, dark woven waist mantle, bone-white membrane knife and hooked pruning tool. Silhouette always preserves two clawed upper arms, two small tool hands, two digitigrade legs, and two taloned grasping feet.",
+      "archive_tender": "Archive Tender: older adult six-limbed Airawa with pale moss-green soft scales, broad charcoal grown plates, warm amber bioluminescent plate seams, minimal facial slits, two large scarred climbing arms with dark claws, two precise lower hands, digitigrade legs and taloned grasping feet, layered bark-fiber shoulder mantle carrying pale fungal braid, feeding ladle, and hooked cutting tool. Posture is economical, rooted, and dryly expressive through hand placement and plate glow.",
+      "returner": "Returner: lean adult six-limbed Airawa with blue-gray soft scales, pale violet plate seams, two strong clawed upper arms, two smaller blunt lower hands, long digitigrade legs, grasping taloned feet, and a dark woven contract mantle with clean-cut gaps where standardized imperial rank strips were removed; straight pale pressure scars cross the grown plates beneath those gaps. Posture begins rigid and inspection-trained, then changes only through branch state.",
+      "three_frayed_threadwing": "Three-frayed threadwing courier: small tawny flying and gliding animal with a narrow body, two membrane flight wings folded along the flanks, bright lateral eyes, many long ribbonlike sensory vanes reading air and chemical traces, exactly three visibly frayed vane tips, a sealed translucent lineage packet held beneath the breast, and body language through vane opening, vane clamping, circling, landing, and refusal."
+    }
+  },
+  "review_notes": [
+    "The included draft scene_set fixes a workable local coordinate frame, Airawa bracing surfaces, participant routes, courier flight lane, sightlines, and branch-persistent outer-chamber states.",
+    "High-consistency website rendering still requires a plan-view drawing or simple 3D blockout generated outside this pass; image generation is explicitly deferred.",
+    "Base prompts use affirmative visible descriptions and restate local geometry and body affordances for each frame.",
+    "All branch and ending families have visible posture, tissue, lighting, object, or damage deltas tied to explicit branch or state triggers."
+  ]
+}

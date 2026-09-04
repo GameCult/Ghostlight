@@ -1,0 +1,590 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "zyphos.numen-ancestral-recall-vigil-v0",
+  "source_status": "authored_elaboration",
+  "fixture_status": "source_grounded_draft",
+  "source_refs": [
+    {
+      "source_id": "matriarch-trees",
+      "path": "Eusocial Interbeing/Species/Matriarch Trees.md",
+      "title": "Matriarch Trees",
+      "line_start": 1,
+      "line_end": 47,
+      "relevance": "Primary owning note for Mother Tree memory authority, Airawa gestation, the existing coercive bargain, and the authored ancestral-recall vigil elaboration."
+    },
+    {
+      "source_id": "mother-tree-networks",
+      "path": "Eusocial Interbeing/Ecology/Mother Tree Networks.md",
+      "title": "Mother Tree Networks",
+      "line_start": 1,
+      "line_end": 10,
+      "relevance": "Grounds communal memory, ecological warnings, obligations, ancestral continuity, and vulnerability to engine infection."
+    },
+    {
+      "source_id": "mutable-memory",
+      "path": "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+      "title": "Mutable Memory Endosymbiosis",
+      "line_start": 1,
+      "line_end": 95,
+      "relevance": "Grounds mutable memory as cellular and ecological traffic, sentience across scale, ritual steering, and non-omniscient archive organs."
+    },
+    {
+      "source_id": "airawa",
+      "path": "Eusocial Interbeing/Species/Airawa.md",
+      "title": "Airawa",
+      "line_start": 1,
+      "line_end": 72,
+      "relevance": "Grounds six-limbed Airawa anatomy, climbing and precise lower-hand affordances, gestation contracts, ritual songs, and contract dress."
+    },
+    {
+      "source_id": "disconnected-networks",
+      "path": "Eusocial Interbeing/Civilizations/Disconnected Tree Networks.md",
+      "title": "Disconnected Tree Networks",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds surviving severed ecologies, secret memory preservation, immune countermeasures, and varied tree-versus-Airawa authority."
+    },
+    {
+      "source_id": "biological-memetic-engine",
+      "path": "Eusocial Interbeing/Technologies/Biological Memetic Engine.md",
+      "title": "Biological Memetic Engine",
+      "line_start": 1,
+      "line_end": 18,
+      "relevance": "Grounds ritual payloads, memory and taboo editing, transmission through trusted living networks, and reduced reliability outside imperial topology."
+    },
+    {
+      "source_id": "binary-system",
+      "path": "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+      "title": "Zyphos Umbros Binary System",
+      "line_start": 1,
+      "line_end": 82,
+      "relevance": "Grounds fixed Umbros, daily eclipse timing, low-energy ecology, and eclipse-linked ritual synchronization."
+    },
+    {
+      "source_id": "threadwing-couriers",
+      "path": "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md",
+      "title": "Threadwing Couriers",
+      "line_start": 1,
+      "line_end": 24,
+      "relevance": "Grounds ribbonlike sensory vanes, symbiont and memory cargo, salt and grooming payment, refusal to land, and courier-owned route judgment."
+    },
+    {
+      "source_id": "nation-scale-interbeings",
+      "path": "Eusocial Interbeing/Ecology/Nation Scale Interbeings.md",
+      "title": "Nation Scale Interbeings",
+      "line_start": 1,
+      "line_end": 103,
+      "relevance": "Grounds mother-tree archival polities, granular permeability, strict control of deep archive access, and ritual payloads as border traffic."
+    },
+    {
+      "source_id": "pre-imperial-airawa",
+      "path": "Eusocial Interbeing/Civilizations/Pre-Imperial Airawa Tribes.md",
+      "title": "Pre-Imperial Airawa Tribes",
+      "line_start": 1,
+      "line_end": 25,
+      "relevance": "Grounds ritualized obligations, memory dependency, tree withholding, and contract craft as portable ecological diplomacy."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Present condition after imperial expansion and the survival of disconnected native tree networks",
+    "location": "An expendable witness chamber on the outer root terrace of a disconnected mother tree at the western rain margin of the Airawa Home Continent, during eclipse ingress.",
+    "summary": "A ritual worker, an archive tender, a Returner from an overrun edge settlement, a threadwing courier, and a mother tree attempt to recover old root-repair knowledge without letting an imperial memetic command reach the deep archive.",
+    "public_facts": [
+      {
+        "text": "Mother trees preserve communal memory and control Airawa access to ancestral continuity in exchange for nutrients, tending, defense, reproductive assistance, and deference.",
+        "source_refs": ["matriarch-trees", "mother-tree-networks", "pre-imperial-airawa"]
+      },
+      {
+        "text": "The authored ancestral-recall vigil reconstructs one stored experience across several witness bodies through a tree and fungal membrane; agreement supports authority while contradictions expose uncertainty or editing.",
+        "source_refs": ["matriarch-trees", "mutable-memory"]
+      },
+      {
+        "text": "Disconnected networks use expendable outer tissue and severance because engine-compatible ritual or memory traffic can infect trusted channels.",
+        "source_refs": ["matriarch-trees", "disconnected-networks", "biological-memetic-engine"]
+      },
+      {
+        "text": "Threadwing couriers are independent ecological partners that carry memory-bearing cargo and can refuse routes when their sensory vanes detect danger.",
+        "source_refs": ["threadwing-couriers"]
+      },
+      {
+        "text": "Airawa anatomy supports simultaneous climbing, bracing, and fine membrane work through strong clawed upper limbs, two precise lower hands, digitigrade legs, and taloned grasping feet.",
+        "source_refs": ["airawa"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "The daily eclipse provides a predictable bounded interval for dangerous archive traffic while the low-energy tree must ration sugar among recall, repair, and reproduction.",
+        "source_refs": ["binary-system", "matriarch-trees"]
+      },
+      {
+        "text": "The grove needs old repair knowledge before a sick feeder root reaches nursery channels, but urgency cannot turn uncertain recall into certainty.",
+        "source_refs": ["matriarch-trees", "mutable-memory"]
+      },
+      {
+        "text": "Imperial survivors may carry both useful testimony and engineered compliance signals, making infection control a relationship problem rather than a simple enemy test.",
+        "source_refs": ["biological-memetic-engine", "disconnected-networks"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "western-severance-archive",
+      "label": "Western rain-margin disconnected mother-tree archive",
+      "group_type": "mother_tree_archival_polity",
+      "institutional_logic": [
+        "Preserve deep memory by admitting ancestral and ritual traffic only through bounded, severable outer organs."
+      ],
+      "material_incentives": [
+        "Acquire sugar, minerals, tending, current witness traces, courier intelligence, and enough living cooperation to keep archive knowledge usable."
+      ],
+      "internal_virtues": [
+        "Corroborated witness",
+        "Bounded access",
+        "Useful continuity",
+        "Refusal before deep infection"
+      ],
+      "internal_shames": [
+        "Letting hunger distort precedent",
+        "Mistaking synchronized feeling for truth",
+        "Sacrificing living needs to archive purity"
+      ],
+      "prestige_markers": [
+        "A cleanly witnessed recall",
+        "An outer chamber cut before contamination spreads",
+        "A petitioner admitted without surrendering network boundaries"
+      ],
+      "taboo_triggers": [
+        "Forced deep archive access",
+        "Unbounded imperial signal traffic",
+        "Treating the tree as a passive record store"
+      ],
+      "emotional_display_norms": [
+        "Fear appears as tightened roots, closed membranes, shortened access, bitter sap, and ritual delay rather than human facial expression."
+      ],
+      "trust_defaults": [
+        "Trusts corroborated local memory, paid ecological partners, and physically bounded traffic; treats imperial legibility as infection pressure."
+      ],
+      "speech_register_cues": [
+        "The tree communicates through root pressure, membrane opening, fungal light, resource allocation, and refusal."
+      ],
+      "source_refs": ["matriarch-trees", "mother-tree-networks", "disconnected-networks", "nation-scale-interbeings"]
+    },
+    {
+      "group_id": "airawa-vigil-workers",
+      "label": "Airawa ancestral-recall witnesses and tenders",
+      "group_type": "ritual_archive_labor",
+      "institutional_logic": [
+        "Make partial tree memory socially usable by staging several embodied fragments, speaking present evidence, and accepting reviewable contradiction."
+      ],
+      "material_incentives": [
+        "Recover legal precedent, lineage continuity, ecological warnings, repair knowledge, and access to future gestation contracts."
+      ],
+      "internal_virtues": [
+        "Steady contact",
+        "Present-tense witness",
+        "Precise multi-limb craft",
+        "Admitting uncertainty before action"
+      ],
+      "internal_shames": [
+        "Performing certainty for prestige",
+        "Forcing a partner's body into transmission",
+        "Hiding an afterecho that changes judgment"
+      ],
+      "prestige_markers": [
+        "A contradiction caught before it becomes law",
+        "A repair recalled without opening the deep archive",
+        "Contract dress that makes obligations legible"
+      ],
+      "taboo_triggers": [
+        "Declaring one witness body to be the ancestor",
+        "Calling coerced memory payment reciprocal",
+        "Touching deep archive tissue without tree admission"
+      ],
+      "emotional_display_norms": [
+        "Strong emotion is expected during distributed recall, but ritual authority comes from comparing fragments rather than intensity."
+      ],
+      "trust_defaults": [
+        "Trusts bodily corroboration cautiously and knows the tree can preserve a people while exploiting their need for continuity."
+      ],
+      "speech_register_cues": [
+        "Concrete sensory testimony, brief ritual roles, dry work humor, and explicit statements of what was directly witnessed."
+      ],
+      "source_refs": ["airawa", "matriarch-trees", "pre-imperial-airawa"]
+    },
+    {
+      "group_id": "threadwing-route-partners",
+      "label": "Threadwing courier partners",
+      "group_type": "courier_pollinator_network",
+      "institutional_logic": [
+        "Carry viable memory and lineage traces while preserving route reputation and the right to refuse dangerous transfers."
+      ],
+      "material_incentives": [
+        "Receive salt, grooming, safe roosts, accurate route signals, and protection from forced memory editing."
+      ],
+      "internal_virtues": [
+        "Cargo integrity",
+        "Route accuracy",
+        "Refusal under contamination",
+        "Grievance delivery"
+      ],
+      "internal_shames": [
+        "Landing for payment on a route the body reads as poisoned",
+        "Delivering a warning too late to matter"
+      ],
+      "prestige_markers": [
+        "A clean packet",
+        "A difficult refusal respected",
+        "A warning carried beyond the infected grove"
+      ],
+      "taboo_triggers": [
+        "Forced capture",
+        "Poisoned payment",
+        "Attempts to edit gut or route memory without negotiation"
+      ],
+      "emotional_display_norms": [
+        "Risk and refusal show through vane folding, route circling, silence, landing choice, and targeted departure."
+      ],
+      "trust_defaults": [
+        "Trusts repeated bodily care and accurate signals more than titles or urgency."
+      ],
+      "speech_register_cues": [
+        "Nonverbal vane posture, route arcs, landing, packet placement, and refusal to land."
+      ],
+      "source_refs": ["threadwing-couriers"]
+    },
+    {
+      "group_id": "imperial-memetic-pressure",
+      "label": "Airawa imperial memetic pressure",
+      "group_type": "engineered_network_intrusion",
+      "institutional_logic": [
+        "Turn compatible memory, ritual, emotion, and immune traffic into a uniform command topology."
+      ],
+      "material_incentives": [
+        "Gain trusted root access, make openness feel healthy, and recast refusal as pathology."
+      ],
+      "internal_virtues": [
+        "Legibility",
+        "Unity",
+        "High-throughput consensus",
+        "Productive local autonomy"
+      ],
+      "internal_shames": [
+        "A living contradiction",
+        "A network that refuses connection",
+        "Useful memory outside imperial authorship"
+      ],
+      "prestige_markers": [
+        "Many bodies reaching inward together",
+        "An ancestral symbol that carries current command"
+      ],
+      "taboo_triggers": [
+        "Locally negotiated boundaries",
+        "Uneditable courier refusal",
+        "Disconnected archives"
+      ],
+      "emotional_display_norms": [
+        "Pressure arrives as coordinated relief, belonging, health, and certainty instead of a visible imperial speaker."
+      ],
+      "trust_defaults": [
+        "Exploits channels life already trusts and is least reliable where admission remains local and redundant."
+      ],
+      "speech_register_cues": [
+        "Compressed inherited imperatives equating unity with health and refusal with disease."
+      ],
+      "source_refs": ["biological-memetic-engine", "disconnected-networks"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "western-severance-archive.continuity-has-a-price",
+      "applies_to": ["western-severance-archive", "airawa-vigil-workers"],
+      "pressure_type": "archive_dependency",
+      "summary": "The tree can preserve knowledge no living person owns, and every retrieval feeds the tree with nutrients, labor, recent memory, and deference.",
+      "projection_use": "Make every act of reverence also a resource transfer or authority negotiation.",
+      "source_refs": ["matriarch-trees", "pre-imperial-airawa"]
+    },
+    {
+      "field_id": "threadwing-route-partners.refusal-is-signal-not-verdict",
+      "applies_to": ["threadwing-route-partners", "airawa-vigil-workers"],
+      "pressure_type": "ecological_diplomacy",
+      "summary": "A courier refusal is valuable embodied evidence, but treating it as moral certainty would erase the courier's limited sensorium and the petitioner's agency.",
+      "projection_use": "Offer choices to respect, investigate, or override the refusal, each with concrete costs.",
+      "source_refs": ["threadwing-couriers", "mutable-memory"]
+    },
+    {
+      "field_id": "imperial-memetic-pressure.sacred-familiarity",
+      "applies_to": ["western-severance-archive", "airawa-vigil-workers", "imperial-memetic-pressure"],
+      "pressure_type": "memetic_contamination",
+      "summary": "The most dangerous command feels inherited and communal because it rides an actual ancestral sequence through actual shared bodies.",
+      "projection_use": "Render contamination as a synchronized urge whose familiarity is evidence of its delivery channel, not proof of truth.",
+      "source_refs": ["biological-memetic-engine", "matriarch-trees"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "western-severance-archive",
+      "target_group_id": "airawa-vigil-workers",
+      "observer_read": [
+        "Short-lived update organs",
+        "Sources of present-tense memory",
+        "Necessary repair labor",
+        "Potential infection vectors"
+      ],
+      "target_self_read": [
+        "Witnesses",
+        "Petitioners",
+        "Partners with refusal rights",
+        "People whose ancestry the tree also needs"
+      ],
+      "misread_patterns": [
+        "The tree may value a witness's information while undervaluing the person's need for timely continuity.",
+        "Airawa may read tree caution as moral judgment when it is also archive-scale immune fear."
+      ],
+      "likely_insults": [
+        "Calling the tree a storehouse",
+        "Calling witnesses temporary roots"
+      ],
+      "projection_use": "Keep the tree's refusal causally legible without translating it into benevolent human motives.",
+      "source_refs": ["matriarch-trees", "nation-scale-interbeings"]
+    },
+    {
+      "observer_group_id": "airawa-vigil-workers",
+      "target_group_id": "imperial-memetic-pressure",
+      "observer_read": [
+        "An invading command",
+        "A false ancestor",
+        "Imperial contamination"
+      ],
+      "target_self_read": [
+        "Health",
+        "Unity",
+        "Corrected tissue",
+        "Continental destiny"
+      ],
+      "misread_patterns": [
+        "Witnesses may treat every memory scar in an imperial survivor as active enemy intent.",
+        "The engine exploits that suspicion by making isolation socially costly."
+      ],
+      "likely_insults": [
+        "disease",
+        "unhealed tissue",
+        "false continuity"
+      ],
+      "projection_use": "Separate the Returner's consent and present behavior from the engineered traffic carried in their symbiont history.",
+      "source_refs": ["biological-memetic-engine", "disconnected-networks"]
+    },
+    {
+      "observer_group_id": "threadwing-route-partners",
+      "target_group_id": "airawa-vigil-workers",
+      "observer_read": [
+        "Partners who pay",
+        "Large bodies that sometimes mistake urgency for route ownership"
+      ],
+      "target_self_read": [
+        "Ritual specialists",
+        "Archive defenders",
+        "Those responsible for nursery survival"
+      ],
+      "misread_patterns": [
+        "Airawa may overread vane refusal as a complete diagnosis.",
+        "The courier may prioritize cargo integrity over the grove's repair deadline."
+      ],
+      "likely_insults": [
+        "forced landing",
+        "unpaid packet",
+        "bad route"
+      ],
+      "projection_use": "Give the courier meaningful control over landing, timing, and warning without making it omniscient.",
+      "source_refs": ["threadwing-couriers"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "second-witness",
+      "summary": "An Airawa ritual worker responsible for one embodied memory fragment, present-tense corroboration, and safe manipulation of outer archive tissue.",
+      "obligations": [
+        "Keep the deep archive closed under uncertainty",
+        "Protect nursery infrastructure",
+        "Report afterecho honestly",
+        "Preserve courier and petitioner consent"
+      ],
+      "available_masks": [
+        "Dry competence",
+        "Ritual formality",
+        "Work humor",
+        "Physical steadiness"
+      ],
+      "failure_modes": [
+        "Confusing shared intensity with truth",
+        "Cutting contact before preserving enough repair knowledge",
+        "Keeping contact after judgment has become borrowed"
+      ],
+      "source_refs": ["airawa", "matriarch-trees"]
+    },
+    {
+      "role_id": "archive-tender",
+      "summary": "An experienced Airawa steward of feeding, membrane health, ritual timing, and the tree's negotiated access rules.",
+      "obligations": [
+        "Maintain the witness chamber",
+        "Interpret tree pressure without claiming to speak for it",
+        "Protect scarce reserve",
+        "Keep witness fragments comparable"
+      ],
+      "available_masks": [
+        "Practical complaint",
+        "Ceremonial authority",
+        "Older-worker patience"
+      ],
+      "failure_modes": [
+        "Letting tradition hide resource politics",
+        "Turning tree refusal into unquestionable doctrine"
+      ],
+      "source_refs": ["matriarch-trees", "pre-imperial-airawa"]
+    },
+    {
+      "role_id": "returner-petitioner",
+      "summary": "An Airawa survivor seeking ancestral repair knowledge while carrying scars, memory traffic, and possible engineered contamination from imperial territory.",
+      "obligations": [
+        "Disclose known exposure",
+        "Choose what recent memory to offer",
+        "Accept that return is not automatic innocence or automatic guilt"
+      ],
+      "available_masks": [
+        "Inspection-queue stillness",
+        "Bitter precision",
+        "Ordinary remembered affection"
+      ],
+      "failure_modes": [
+        "Offering coerced compliance as consent",
+        "Treating ancestral claim as ownership of the tree",
+        "Reading necessary quarantine as personal erasure"
+      ],
+      "source_refs": ["airawa", "biological-memetic-engine", "disconnected-networks"]
+    },
+    {
+      "role_id": "threadwing-courier",
+      "summary": "A sensory courier that owns the route and packet long enough to refuse a dangerous landing and indicate a suspect signal if trust was earned.",
+      "obligations": [
+        "Keep packet viable",
+        "Protect route reputation",
+        "Carry warnings",
+        "Refuse forced contamination"
+      ],
+      "available_masks": [
+        "Professional appetite",
+        "Vane-folded refusal",
+        "Circling diagnosis"
+      ],
+      "failure_modes": [
+        "Withholding too long for the repair deadline",
+        "Carrying a clean warning out through a contaminated route"
+      ],
+      "source_refs": ["threadwing-couriers"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "second_witness",
+      "known_context": [
+        {
+          "text": "The Second Witness knows chamber maintenance, Airawa contact posture, visible root damage, ritual procedure, and directly observed participant actions.",
+          "source_refs": ["airawa", "matriarch-trees"]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "They believe corroborated partial memories can guide action but that every recall remains a bargain with the tree.",
+          "source_refs": ["matriarch-trees"]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "They may mistake archive-scale caution for a moral verdict on the Returner or mistake an afterecho for personal conviction.",
+          "source_refs": ["matriarch-trees", "mutable-memory"]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "They must not know whether the packet is contaminated until the courier and recall provide observable evidence, nor whether any repair choice will succeed before state gates are evaluated.",
+          "source_refs": ["biological-memetic-engine"]
+        }
+      ]
+    },
+    {
+      "speaker_id": "archive_tender",
+      "known_context": [
+        {
+          "text": "The Tender knows the local tree's recurrent root behavior, reserve condition, ritual controls, and previous chamber failures.",
+          "source_refs": ["matriarch-trees"]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "The Tender believes a rite is trustworthy only when its biological boundaries and witness disagreements remain visible.",
+          "source_refs": ["matriarch-trees", "mutable-memory"]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Experience may make the Tender overconfident that ritual procedure can contain a novel engine payload.",
+          "source_refs": ["biological-memetic-engine"]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "The Tender interprets tree acts but must not become an omniscient voice for the tree's whole intention.",
+          "source_refs": ["matriarch-trees"]
+        }
+      ]
+    },
+    {
+      "speaker_id": "returner",
+      "known_context": [
+        {
+          "text": "The Returner knows their caretaker memory, their imperial exposure, the overrun settlement, and the requested repair precedent.",
+          "source_refs": ["biological-memetic-engine", "disconnected-networks"]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "They believe survival under imperial conditioning does not erase their personhood or automatically prove hostile intent.",
+          "source_refs": ["disconnected-networks"]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "They may read tree quarantine as the same logic as imperial purity even when the authority structure and refusal rights differ.",
+          "source_refs": ["matriarch-trees", "biological-memetic-engine"]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "They cannot know which inherited or trained sensations carry engine-compatible command traffic.",
+          "source_refs": ["biological-memetic-engine"]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The western rain-margin grove, Second Witness, Archive Tender, Returner, bitter-water rot, and exact repair event are fixture-local and are not promoted as named Zyphos canon by this artifact.",
+      "source_refs": ["matriarch-trees"]
+    },
+    {
+      "text": "The authored lore patch establishes the ritual mechanism, dependencies, costs, uses, afterechoes, and failure modes; it does not canonize a universal liturgy, fixed office hierarchy, or single Airawa theology.",
+      "source_refs": ["matriarch-trees", "nation-scale-interbeings"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "How do distinct native Airawa polities name and vary witness roles once Weksa language work exists?",
+      "blocks_training": false,
+      "notes": "The fixture uses translated role labels and does not establish Weksa terms or a universal priesthood."
+    },
+    {
+      "question": "What durable visual geometry distinguishes Matriarch Tree archive organs from ordinary lantern-tree or fungal-road tissues?",
+      "blocks_training": false,
+      "notes": "The fixture limits itself to an outer root terrace, witness basin, contact cords, fungal membrane, feeding trough, courier rail, and severable deep-root neck; repeated use should earn a dedicated visual source note or blockout."
+    }
+  ]
+}

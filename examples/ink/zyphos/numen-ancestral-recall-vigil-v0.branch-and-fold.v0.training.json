@@ -1,0 +1,499 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "numen-ancestral-recall-vigil-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/zyphos/numen-ancestral-recall-vigil-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/numen-ancestral-recall-vigil-v0.v0.json",
+  "visual_plan_ref": "examples/visual/zyphos/numen-ancestral-recall-vigil-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "numen-ancestral-recall-vigil-v0.western-severance-grove-vigil",
+  "protagonist_agent_id": "second_witness",
+  "npc_agent_ids": [
+    "archive_tender",
+    "returner",
+    "western_severance_matriarch",
+    "three_frayed_threadwing"
+  ],
+  "purpose": "Numen-mandate illustrated branch-and-fold fixture dramatizing a Mother Tree ancestral-recall vigil as sacred, fallible, multispecies memory work under Biological Memetic Engine contamination pressure.",
+  "tonal_mode": "ritual quiet with humane dry wit, ecological wonder, and bounded biological horror",
+  "local_awareness_summary": [
+    {
+      "text": "The Second Witness is an adult six-limbed Airawa trained to stabilize an ancestral recall with climbing claws and feet while using two soft lower hands on fungal contact membranes.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/numen-ancestral-recall-vigil-v0.v0.json",
+        "Eusocial Interbeing/Species/Airawa.md"
+      ]
+    },
+    {
+      "text": "The western rain-margin grove is a disconnected mother-tree network; the witness chamber is expendable outer tissue because trusted memory channels can carry imperial memetic payloads.",
+      "source_refs": [
+        "Eusocial Interbeing/Species/Matriarch Trees.md",
+        "Eusocial Interbeing/Civilizations/Disconnected Tree Networks.md",
+        "Eusocial Interbeing/Technologies/Biological Memetic Engine.md"
+      ]
+    },
+    {
+      "text": "The south feeder root is visibly worsening toward nursery channels, but the Second Witness cannot know in advance whether the Returner's lineage trace is valid, contaminated, or both.",
+      "source_refs": [
+        "examples/ink/zyphos/numen-ancestral-recall-vigil-v0.branch-and-fold.v0.ink"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains the Second Witness's local sensorium: root pressure, fungal light, courier vane posture, scent, body position, spoken testimony, and sensations received during contact.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "Eusocial Interbeing/Species/Airawa.md"
+        ]
+      },
+      {
+        "text": "The opening establishes ordinary chamber maintenance, a long-running root-and-trough dispute, courier payment, and ritual preparation before contamination pressure appears.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "examples/ink/zyphos/numen-ancestral-recall-vigil-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "The mother tree owns admission to and release from its deep archive. Airawa witnesses can prepare, petition, isolate, withdraw, interpret, and bargain; they cannot query memory as a neutral database.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md",
+          "Eusocial Interbeing/Themes/Memory as Hostage.md"
+        ]
+      },
+      {
+        "text": "The threadwing courier owns its landing and packet custody. Its refusal is a sensory risk response, not proof of guilt or a command the witnesses must obey.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md"
+        ]
+      },
+      {
+        "text": "The Biological Memetic Engine may travel through compatible ritual and memory traffic, but it does not grant remote omniscience or total control outside the imperial topology.",
+        "source_refs": [
+          "Eusocial Interbeing/Technologies/Biological Memetic Engine.md",
+          "Eusocial Interbeing/Civilizations/Airawa Empire.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The sealed lineage packet remains under courier custody until a chosen admission action transfers it into the basin or expendable fungal cup.",
+        "source_refs": [
+          "examples/ink/zyphos/numen-ancestral-recall-vigil-v0.branch-and-fold.v0.ink"
+        ]
+      },
+      {
+        "text": "The tree owns the live fungal membrane and deep-root connection; the Second Witness can manipulate only exposed outer tissue and prepared contact cords.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md",
+          "examples/ink/zyphos/numen-ancestral-recall-vigil-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Ancestral recall is a distributed reconstruction whose agreement earns authority and whose contradictions reveal damage or manipulation; it is neither resurrection nor infallible testimony.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md"
+        ]
+      },
+      {
+        "text": "Every successful path preserves a cost: metabolic debt, delayed reproduction, sacrificed archive tissue, recent-memory disclosure, conditional standing, or embodied afterecho.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md",
+          "Eusocial Interbeing/Themes/Ecological Bargaining.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make the mother tree morally pure, automatically truthful, or subordinate to the Airawa ritual staff.",
+        "source_refs": [
+          "Eusocial Interbeing/Inspirations/Semiosis/Semiosis - Plant Agency Reviews.md",
+          "Eusocial Interbeing/Species/Matriarch Trees.md"
+        ]
+      },
+      {
+        "text": "Do not treat synchronized sensation as supernatural certainty; observable biological carriers, partial recall, contamination, and disagreement remain present.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+          "Eusocial Interbeing/Species/Matriarch Trees.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through a shared courier refusal and contaminated recall, then select one of six state-gated endings centered on repair, severance, or reciprocal bargain.",
+    "choice_layers": [
+      "vigil_preparation",
+      "contested_admission",
+      "contaminated_recall_response",
+      "vigil_priority"
+    ],
+    "variables": [
+      "archive_reserve",
+      "quarantine_integrity",
+      "lineage_confidence",
+      "recall_clarity",
+      "returner_trust",
+      "contamination_pressure",
+      "afterecho_burden",
+      "threadwing_cooperation",
+      "feeder_root_damage",
+      "outer_chamber_state"
+    ],
+    "ending_gates": [
+      "ending_repair_success",
+      "ending_repair_cost",
+      "ending_severance_success",
+      "ending_severance_cost",
+      "ending_bargain_success",
+      "ending_bargain_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prepare_tree_reserve",
+      "ink_path": "preparation_choice",
+      "action_type": "use_object",
+      "actor_intent": "Strengthen the mother tree for precise recall by spending community sugar and mineral reserve.",
+      "state_basis": [
+        "Mother Trees require nutrients and ritual labor.",
+        "The south feeder root continues to worsen while preparation takes time."
+      ],
+      "reviewed_consequences": [
+        "Raises archive_reserve and feeder_root_damage; both alter the final fold and repair outcomes."
+      ],
+      "training_hooks": [
+        "ritual_as_metabolic_payment",
+        "time_cost",
+        "non_speech_preparation"
+      ]
+    },
+    {
+      "branch_id": "prepare_courier_trust",
+      "ink_path": "preparation_choice",
+      "action_type": "tend_body",
+      "actor_intent": "Pay and groom the courier to secure independent lineage evidence and later cooperation.",
+      "state_basis": [
+        "Threadwings respond to parasite removal, salt, and respectful treatment.",
+        "Airawa lower hands support precise grooming and packet handling."
+      ],
+      "reviewed_consequences": [
+        "Raises threadwing_cooperation and lineage_confidence, unlocking a diagnostic wait branch and altering later visuals and endings."
+      ],
+      "training_hooks": [
+        "ecological_partner_consent",
+        "airawa_lower_hand_affordance"
+      ]
+    },
+    {
+      "branch_id": "prepare_quarantine_sheath",
+      "ink_path": "preparation_choice",
+      "action_type": "repair_object",
+      "actor_intent": "Rebuild expendable fungal tissue before opening an uncertain memory channel.",
+      "state_basis": [
+        "Disconnected networks survive through severance and immune countermeasures.",
+        "The witness chamber is outer tissue connected by a narrow root neck."
+      ],
+      "reviewed_consequences": [
+        "Raises quarantine_integrity and recall_clarity while spending archive_reserve; all three affect later prose and endings."
+      ],
+      "training_hooks": [
+        "quarantine_as_ritual_craft",
+        "expendable_organ"
+      ]
+    },
+    {
+      "branch_id": "prepare_returner_trust",
+      "ink_path": "preparation_choice",
+      "action_type": "speak",
+      "actor_intent": "Establish a present-tense continuity trace through an ordinary memory rather than imperial credentials.",
+      "state_basis": [
+        "The Returner is visibly tense and carries scars from standardized imperial bindings.",
+        "The tree indexes ancestral requests against current witnesses."
+      ],
+      "reviewed_consequences": [
+        "Raises returner_trust and lineage_confidence, unlocking a consented fresh-memory admission and improving the bargain route."
+      ],
+      "training_hooks": [
+        "ordinary_memory_as_personhood",
+        "trust_before_contact"
+      ]
+    },
+    {
+      "branch_id": "admit_full_trace",
+      "ink_path": "admission_choice",
+      "action_type": "petition",
+      "actor_intent": "Maximize lineage proof and recall detail despite a courier warning.",
+      "state_basis": [
+        "The tree may admit a packet only to the outer chamber.",
+        "The courier retains custody until the membrane opens."
+      ],
+      "reviewed_consequences": [
+        "Raises lineage_confidence, recall_clarity, and contamination_pressure; the gain and infection risk remain visible after folding."
+      ],
+      "training_hooks": [
+        "archive_access_risk",
+        "courier_warning_overridden"
+      ]
+    },
+    {
+      "branch_id": "isolate_trace",
+      "ink_path": "admission_choice",
+      "action_type": "route_object",
+      "actor_intent": "Route the suspect packet into a physically expendable fungal cup.",
+      "state_basis": [
+        "The outer chamber has hanging fungal cups with severable root necks."
+      ],
+      "reviewed_consequences": [
+        "Raises quarantine_integrity and lineage_confidence, raises feeder_root_damage through delay, and isolates outer_chamber_state."
+      ],
+      "training_hooks": [
+        "physical_quarantine_geometry",
+        "safety_delay_tradeoff"
+      ]
+    },
+    {
+      "branch_id": "admit_fresh_memory",
+      "ink_path": "admission_choice",
+      "action_type": "invite_contact",
+      "actor_intent": "Use a consented recent autobiographical memory as continuity evidence.",
+      "state_basis": [
+        "Available only after returner_trust reaches the cooperative threshold.",
+        "Witnesses pay the tree in recent memory as well as nutrients."
+      ],
+      "reviewed_consequences": [
+        "Raises lineage_confidence, recall_clarity, afterecho_burden, and contamination_pressure."
+      ],
+      "training_hooks": [
+        "consented_memory_payment",
+        "trust_gated_contact"
+      ]
+    },
+    {
+      "branch_id": "follow_courier_diagnosis",
+      "ink_path": "admission_choice",
+      "action_type": "wait",
+      "actor_intent": "Let the courier indicate the suspect signal instead of treating its refusal as a verdict.",
+      "state_basis": [
+        "Available only after threadwing_cooperation reaches the cooperative threshold."
+      ],
+      "reviewed_consequences": [
+        "Raises quarantine_integrity and recall_clarity, raises feeder_root_damage through delay, and isolates outer_chamber_state."
+      ],
+      "training_hooks": [
+        "wait_as_action",
+        "nonhuman_diagnostic_partner"
+      ]
+    },
+    {
+      "branch_id": "sever_witness_contact",
+      "ink_path": "intrusion_choice",
+      "action_type": "withdraw_body",
+      "actor_intent": "Protect the network by removing one witness body from the synchronized command.",
+      "state_basis": [
+        "The Second Witness is physically attached by two lower hands and braced by upper claws and feet."
+      ],
+      "reviewed_consequences": [
+        "Raises quarantine_integrity, lowers recall_clarity and returner_trust, and isolates the outer chamber."
+      ],
+      "training_hooks": [
+        "body_withdrawal_as_refusal",
+        "safety_relationship_cost"
+      ]
+    },
+    {
+      "branch_id": "witness_the_present",
+      "ink_path": "intrusion_choice",
+      "action_type": "speak",
+      "actor_intent": "Use current witnessed facts to help the tree distinguish shared truth from synchronized obedience.",
+      "state_basis": [
+        "All participants directly observed the courier refusal, sick root, petition, and tree closure."
+      ],
+      "reviewed_consequences": [
+        "Raises recall_clarity and afterecho_burden while spending archive_reserve."
+      ],
+      "training_hooks": [
+        "present_testimony_against_memetic_command",
+        "afterecho_cost"
+      ]
+    },
+    {
+      "branch_id": "externalize_payload",
+      "ink_path": "intrusion_choice",
+      "action_type": "manipulate_tissue",
+      "actor_intent": "Move the suspect rhythm into severable tissue using Airawa multi-limb coordination.",
+      "state_basis": [
+        "The hanging fungal cup is reachable from the witness basin and attached by a thin root neck."
+      ],
+      "reviewed_consequences": [
+        "Raises quarantine_integrity and recall_clarity, spends archive_reserve, and isolates outer_chamber_state."
+      ],
+      "training_hooks": [
+        "nonhuman_body_affordance",
+        "invisible_command_made_material"
+      ]
+    },
+    {
+      "branch_id": "prioritize_root_repair",
+      "ink_path": "final_choice",
+      "action_type": "commit_repair",
+      "actor_intent": "Use the recalled repair procedure before the nursery feeder channels fail.",
+      "state_basis": [
+        "Success requires clear recall, adequate archive reserve, bounded contamination, and limited feeder-root damage."
+      ],
+      "reviewed_consequences": [
+        "Routes to repair success or costly over-pruning based on four previously visible variables."
+      ],
+      "training_hooks": [
+        "state_gated_repair",
+        "ancestral_memory_as_infrastructure"
+      ]
+    },
+    {
+      "branch_id": "prioritize_severance",
+      "ink_path": "final_choice",
+      "action_type": "authorize_destruction",
+      "actor_intent": "Sacrifice the outer recall organ to keep the disconnected deep archive capable of refusal.",
+      "state_basis": [
+        "Success requires strong quarantine and a physically isolated chamber."
+      ],
+      "reviewed_consequences": [
+        "Routes to bounded chamber loss or deeper archive amputation based on quarantine and chamber state."
+      ],
+      "training_hooks": [
+        "deliberate_forgetting",
+        "network_severance_cost"
+      ]
+    },
+    {
+      "branch_id": "prioritize_reciprocal_bargain",
+      "ink_path": "final_choice",
+      "action_type": "negotiate",
+      "actor_intent": "Exchange a consented recent border memory for controlled repair knowledge and conditional standing.",
+      "state_basis": [
+        "Success requires high returner trust, credible lineage, and bounded contamination."
+      ],
+      "reviewed_consequences": [
+        "Routes to a reciprocal but unequal bargain or a lawful refusal that leaves the repair problem with the living."
+      ],
+      "training_hooks": [
+        "ecological_bargain",
+        "memory_as_payment",
+        "tree_leverage_preserved"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Any durable memory, trust, standing, or relationship update for the Second Witness, Archive Tender, Returner, courier, or mother tree",
+      "Promotion of fixture-local people, bitter-water rot, or the western rain-margin severance grove into Zyphos canon",
+      "Any claim that courier refusal or distributed recall provides certain diagnosis",
+      "Website replay readiness before a durable witness-chamber blockout exists"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Numen elaborator applying the four named Ghostlight reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "reviewer_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 5,
+          "pacing": 4,
+          "voice": 5,
+          "tonal_fit": 5,
+          "if_playability": 5
+        },
+        "findings": [],
+        "acceptance_notes": [
+          "The opening establishes locality, body plan, work roles, ordinary maintenance, humor, ritual purpose, and the sick-root deadline before contamination pressure.",
+          "All important participants and physical levers appear before folded scenes depend on them; endings differ by state and material cost."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 5,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "findings": [],
+        "acceptance_notes": [
+          "The owning Matriarch Trees note now contains the durable ritual mechanism; the fixture dramatizes its stated dependencies, costs, afterechoes, uses, and infection failure mode.",
+          "The western grove, participant roles, lineage packet, bitter-water rot, and exact repair event remain explicitly fixture-local."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "verdict": "accepted_with_minor_revisions",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompt": 5,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 4
+        },
+        "findings_resolved": [
+          "Neutralized shared ending base prompts that had prematurely encoded successful severance or bargain outcomes.",
+          "Added explicit outer_chamber_state and threadwing_cooperation visual modifiers so cup state and courier departure follow Ink state."
+        ],
+        "deferred_condition": "A plan-view or simple 3D witness-chamber blockout is required before high-consistency multi-angle website rendering; the included scene-set map is sufficient for draft replay planning.",
+        "acceptance_notes": [
+          "Fifteen visual anchors and fifteen BFL prompts cover distinct focal areas, pivotal beats, branch-visible state, and ending families.",
+          "All base prompts are affirmative, self-contained for a general image model, and use stable refs only for bodies declared visible in the frame."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightline": 5,
+          "body_affordance": 5,
+          "movement_access": 5,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "findings_resolved": [
+          "Corrected every draft occurrence that gave six-limbed Airawa four lower hands or four feet; the live fixture uses one upper arm pair, one lower hand pair, and one leg/foot pair.",
+          "Moved the Returner's contact stance from the distant entrance arch to the basin's west rim and preserved a direct ridged withdrawal path to the arch."
+        ],
+        "inferred_layout_summary": "An open oval root terrace has the deep archive valve east, rainward arch west, witness basin center, feeding station north, sick feeder channel south, courier rail overhead, and expendable fungal cups between basin and deep root.",
+        "acceptance_notes": [
+          "Named routes, camera slots, Airawa bracing faces, courier flight lane, and outer-chamber states preserve staging across every fold and ending family."
+        ]
+      }
+    ],
+    "review_notes": [
+      "Mechanical audit found fourteen Ink branch handles and fourteen sidecar branch records with no omissions in either direction.",
+      "All ten declared variables are read after mutation; an exhaustive hand-modeled state audit found thirty reachable pre-ending paths and all six ending knots reachable.",
+      "All four JSON artifacts parse successfully and carry the required schema_version strings.",
+      "Ink compilation was deliberately not performed under the bounded-pass instruction; review used reference-shape, knot, branch, variable, gate, and anchor checks."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "zyphos_lore_content_readable": true,
+      "all_declared_variables_read": true,
+      "all_ending_gates_reachable": true,
+      "visual_refs_limited_to_visible_characters": true,
+      "ink_compilation_performed": false
+    }
+  }
+}

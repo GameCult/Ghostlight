@@ -1,0 +1,72 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "numen-ancestral-recall-vigil-v0.bfl-simple-v0",
+  "fixture_id": "numen-ancestral-recall-vigil-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Luminous ecological science-fiction storybook illustration, fine ink contours over restrained gouache, low-energy cold bioluminescence, wet bark and fungal translucency, readable nonhuman silhouettes, ritual intimacy, ecological wonder edged with biological unease, cinematic composition designed for interactive-fiction replay.",
+  "prompts": [
+    {
+      "id": "01_terrace_establishing",
+      "prompt": "Wide root-terrace ritual chamber grown between immense wet buttress roots; oval luminous fungal basin at center, narrow deep-root valve toward the trunk, rain-open arch opposite, feeding trough, hanging gourds, courier rail, fungal cups, and giant neighboring planet entering eclipse. Three six-limbed scaled climbers and one ribbon-vaned gliding courier occupy clear work positions."
+    },
+    {
+      "id": "02_ordinary_maintenance",
+      "prompt": "Rust-red six-limbed scaled climber braces with clawed upper arms and taloned feet while two smaller hands scrape dead fungal skin from a glowing basin; older moss-green six-limbed tender argues with a pale living root curled stubbornly through a stone feeding trough; tawny ribbon-vaned courier waits above beside salt chips."
+    },
+    {
+      "id": "03_returner_threshold",
+      "prompt": "Blue-gray six-limbed traveler stands rigid at a rain-open root arch, dark mantle cut where imperial rank strips were removed and pale pressure scars visible; rust-red witness and moss-green tender wait inside by a fungal basin; ribbon-vaned courier holds a sealed packet overhead; black water cracks a pale feeder root downhill."
+    },
+    {
+      "id": "04_feed_tree",
+      "prompt": "Close ritual labor: rust-red six-limbed witness pours violet sugar-and-mineral mash into a black-stone trough using two small hands while clawed upper arms and taloned feet grip wet bark; pale root loosens around the trough; older moss-green tender watches; cold eclipse light outlines hanging contact cords."
+    },
+    {
+      "id": "05_groom_courier",
+      "prompt": "Six-limbed rust-red witness hangs securely beside an overhead rail and uses two precise hands to groom the sensory ribbons of a tawny gliding courier; exactly three vane tips remain frayed, mites and salt chips lie on the rail, and a sealed translucent packet rests beneath the courier's breast."
+    },
+    {
+      "id": "06_reweave_membrane",
+      "prompt": "Top-down basin craft: six-limbed rust-red worker assigns every limb to brace, lift dead gray fungal skin, cut it, hold a living edge, and weave fresh pale braid into a clean luminous quarantine ring; older moss-green tender feeds braid from a shallow tray."
+    },
+    {
+      "id": "07_ordinary_memory",
+      "prompt": "Intimate root-threshold conversation: rust-red six-limbed witness sits inside with two lower hands open; blue-gray six-limbed Returner sits in rain outside, dark cut mantle and pale plate scars visible, posture softening around a small ordinary memory; one thin tree root taps the mud between them."
+    },
+    {
+      "id": "08_eclipse_fold",
+      "prompt": "Prepared root chamber under half-eclipsed sun: cold fungal beads define central basin, feeding trough north, courier rail overhead, hanging isolation cups east, deep-root valve at the trunk, rain arch west, black sick-root crack south; three six-limbed Airawa hold separate stations while a tawny courier launches with a sealed packet."
+    },
+    {
+      "id": "09_courier_refusal",
+      "prompt": "Pivotal refusal in cold eclipse light: tawny gliding courier banks away above the basin with every ribbonlike sensory vane clamped tight and sealed packet retained; blue-gray Returner freezes at the arch, rust-red witness opens two lower palms, moss-green tender turns, fungal membrane puckers shut, black feeder root cracks below."
+    },
+    {
+      "id": "10_distributed_recall",
+      "prompt": "Three six-limbed Airawa around a luminous fungal basin receive different parts of one old memory: rust-red witness surrounded by hooked-tool motion, moss-green tender by sulfur-yellow scent haze, blue-gray Returner by dark rose panic pulses; bodies remain separately braced, courier watches from overhead rail, deep-root valve visible east."
+    },
+    {
+      "id": "11_imperial_intrusion",
+      "prompt": "Single frightening ritual beat: three differently colored six-limbed Airawa involuntarily reach from separate positions toward a sealed root valve in the immense tree trunk; rigid white pulses synchronize twenty-four small contact digits and fungal cords while clawed upper arms and taloned feet resist; coerced unity appears precise and beautiful."
+    },
+    {
+      "id": "12_final_state",
+      "prompt": "Wide decision frame under full eclipse: dark deep-root valve east, rain exit west, weak fungal basin center, expendable cup on a thin root neck, rigid white rhythm moving through outer tissue, black water advancing south, feeding root north; witness, tender, Returner, and courier face repair tools, severable tissue, and a chosen memory bargain."
+    },
+    {
+      "id": "13_repair_ending",
+      "prompt": "South-slope repair below immense tree: rust-red six-limbed witness braces over a black feeder root with hooked pruning tool held by two small hands; moss-green tender tracks pale mineral rot; blue-gray Returner points out the dangerous cut; nursery rootlets and ritual terrace remain visible uphill."
+    },
+    {
+      "id": "14_severance_ending",
+      "prompt": "Outer archive severance under blue-black eclipse: small fungal cup blackens from bitter reactive sap, moss-green six-limbed tender cuts a white isolation ring, rust-red witness holds luminous cords clear, blue-gray Returner stands at rain arch, ribbon-vaned courier grips the salt rail, deep-root valve looms behind the charred organ."
+    },
+    {
+      "id": "15_bargain_ending",
+      "prompt": "Memory bargain in returning blue light: blue-gray six-limbed Returner braces upper claws and taloned feet at the west basin rim and places two lower hands in shallow fungal contact, with the rain-open exit arch directly behind; rust-red witness corroborates across the basin, moss-green tender holds feeding root, tawny courier watches above, and the deep-root valve stays closed."
+    }
+  ]
+}
