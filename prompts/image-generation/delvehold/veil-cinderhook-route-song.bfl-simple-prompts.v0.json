@@ -1,0 +1,92 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "veil-cinderhook-route-song-v0.bfl-simple-v0",
+  "fixture_id": "veil-cinderhook-route-song-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Painterly high-fantasy storybook illustration, grounded Faerun register, moody ink-wash shadows, warm brass and amber fungus light, restrained blue-white rune glow, tactile living stone and worn rail machinery, expressive readable silhouettes, cinematic interactive-fiction frame, image-only symbolic signage.",
+  "prompts": [
+    {
+      "id": "01_cinderhook_establishing",
+      "prompt": "Wide wedge-shaped underground junction: north brass pressure gate, rail bending east behind a massive stone buttress, low rope-screened south arch, west dwarf dispatch desk with red clapper, central bronze listening grate, three metal drip cups, damp living stone."
+    },
+    {
+      "id": "02_morning_routine",
+      "prompt": "Warm work morning in a stone rail junction: short olive-brown goblin singer tests a copper cup at a bronze grate, square-built dwarf clerk writes at west desk, red-bearded dwarf surveyor waits beside north rail."
+    },
+    {
+      "id": "03_runner_arrival",
+      "prompt": "Lean ochre goblin runner emerges around an east stone buttress, left sleeve soaked and green coat chalked white; another goblin answers from a floor grate while dwarf clerk and Company surveyor watch."
+    },
+    {
+      "id": "04_test_the_route",
+      "prompt": "Close goblin route work: copper, iron, and stone cups arranged on a bronze listening grate, one cup warm in hand, another ringing, the third trembling; dwarf clerk waits and surveyor checks a brass watch."
+    },
+    {
+      "id": "05_restore_the_chorus",
+      "prompt": "Two goblin route singers answer across a bronze floor grate in a damp rail hall, leaving one empty chalk footprint for a missing witness; dwarf clerk and red-bearded surveyor listen under amber fungus lamps."
+    },
+    {
+      "id": "06_teach_uncertainty",
+      "prompt": "Object closeup at dwarf dispatch desk: goblin hand draws two close chalk marks and one broad blank interval on dark slate, clerk copies the gap, Company surveyor writes a hard zero in another book."
+    },
+    {
+      "id": "07_stale_song",
+      "prompt": "Uneasy calm in an underground relay: dry-sleeved goblin singer gives a neat report, dwarf clerk writes quickly, surveyor relaxes, wet-sleeved goblin runner waits silently at a rope-screened south arch."
+    },
+    {
+      "id": "08_morning_fold",
+      "prompt": "Wide operational route hall: dwarf clerk updates west signal board, two goblins occupy central well and south arch, Company surveyor watches red clapper, cold north gate exhales, east rail vibrates toward a blind bend."
+    },
+    {
+      "id": "09_company_demand",
+      "prompt": "Confrontation around a bronze listening well: red-bearded dwarf Company surveyor opens contract case, olive-brown goblin singer faces him, dwarf clerk sets chalk down, wet-sleeved goblin guards low south arch, east signal amber."
+    },
+    {
+      "id": "10_public_road_refrain",
+      "prompt": "Goblin singer performs toward a dwarf clerk's slate showing feet, one arch, and a barred engine rune; Company surveyor studies the abrupt blank edge while another goblin guards the south rope screen."
+    },
+    {
+      "id": "11_sealed_home_hearing",
+      "prompt": "Close triangular hearing: dwarf clerk presses brass civic seal into red wax on a slate, two goblins sing quietly beside her, Company surveyor watches from several paces outside, south arch behind them."
+    },
+    {
+      "id": "12_early_decoy_halt",
+      "prompt": "Red-bearded dwarf surveyor strikes a red departure clapper before the tunnel closes; hard white hold lamp ignites, dwarf clerk watches goblin singer, east rail remains visibly open behind stone buttress."
+    },
+    {
+      "id": "13_seize_dispatch_hold",
+      "prompt": "Low-angle goblin action under a brass dispatch rail: small route-singer pulls thick iron pin from red clapper linkage, handle drops loose, white signal flashes, dwarf clerk leans over desk and surveyor brandishes contract case."
+    },
+    {
+      "id": "14_third_pulse",
+      "prompt": "Pivotal magical pressure wave in a stone rail junction: blue-white rune pulse races east, living walls answer in amber violet and green bands, north gate brass seals drop, hanging cups ring, two goblins and two dwarves turn toward an occluding buttress."
+    },
+    {
+      "id": "15_closure_aftermath",
+      "prompt": "Rune locomotive noses around a stone buttress as living stone ribs pinch the rail behind it and the north pressure gate seals; nine soot-marked dwarf miners dismount, two pale crystal pallets remain strapped down, four disputants occupy grate, desk, arch, and cargo."
+    },
+    {
+      "id": "16_final_threshold",
+      "prompt": "Four-way decision tableau: stopped locomotive and stone-ribbed east closure, sealed north pressure gate, workers around central grate, crystal pallets, west record desk, low south escape arch, goblin singer between public duty and hidden route."
+    },
+    {
+      "id": "17_crossing_end",
+      "prompt": "Narrow Low Echo culvert with wet shelf and fork: olive-brown goblin leads, dwarf clerk follows with white signal lantern, nine dwarf miners walk behind with two pale crystal sacks, ochre goblin guards rear, public stair rises while dark home branch descends."
+    },
+    {
+      "id": "18_disclosure_end",
+      "prompt": "At a rope-screened arch, dwarf clerk holds red-wax-sealed slate, two goblin singers watch her, Company surveyor studies a route board with public stair symbol and missing lower branch; stranded train and crystal behind."
+    },
+    {
+      "id": "19_record_end",
+      "prompt": "Dwarf clerk pins two slates side by side: rigid clock circles and broken rail on one, pulse marks with a preserved blank interval and walking symbol on the other; goblin singer and Company surveyor contest the board."
+    },
+    {
+      "id": "20_home_end",
+      "prompt": "Rope screen closed across low south arch; goblin singer guards the knot, wet-sleeved goblin waits near bronze grate, nine soot-marked workers gather beside an open blanket chest, dwarf clerk at west controls, surveyor writes beside stranded crystals."
+    }
+  ]
+}

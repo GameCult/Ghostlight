@@ -1,0 +1,440 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "veil-cinderhook-route-song-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/delvehold/veil-cinderhook-route-song.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/delvehold/veil-cinderhook-route-song.branch-and-fold.v0.training.json",
+  "scene_id": "veil-cinderhook-route-song-v0.cinderhook-third-pulse",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for a Cinderhook Relay route-song disclosure crisis.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for Cinderhook's routine song work, the returned witness, four reporting methods, the Company disclosure demand, four disclosure acts, the third pulse, the folded closure state, the final choice, and four ending families.",
+    "segmentation_rule": "Use distinct visual_scene_id anchors for changes of focal area, character arrival, each material branch action, the one-sentence third-pulse turn, the post-closure state, the final threshold, and each ending family.",
+    "prompting_rule": "Every base prompt describes a complete frame for a general image model: camera, route-hall geometry, light, materials, visible bodies, interfaces, and props. Character refs are assembled only for named characters or groups visible in that frame. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Painterly high-fantasy storybook illustration in a grounded Faerun register, moody ink-wash shadows, warm brass and amber fungus light, restrained blue-white rune glow, tactile living stone and worn rail machinery, expressive readable silhouettes, humane workplace detail, cinematic interactive-fiction composition, image-only signage rendered as simple symbols and marks.",
+    "prompt_assembly_rule": "Assemble every render prompt from the global_style_cue, the selected scene base_image_prompt, visual_character_refs only for characters listed in visible_characters, and all triggered state_image_modifiers or global_branch_image_modifiers. Each base prompt remains complete enough to render independently. Continuity notes are excluded from model prompts.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture uses several angles and branch-persistent objects in one junction hall. The embedded draft map fixes zones, routes, occlusion, cameras, staging, signal state, and object state for review.",
+      "future_scene_set_need": "Before high-consistency website rendering, build a plan view or simple 3D blockout of Cinderhook Relay and supply camera-specific renders to the image model."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "veil_cinderhook_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of a wedge-shaped underground junction hall carved from dark living stone. A brass-railed freight line enters through a pressure gate in the north wall, crosses the floor, and bends east behind a massive stone buttress. A low south arch is screened by knotted rope and turns out of sight. A bronze listening-well grate occupies the center. Copper, iron, and stone drip cups hang on the east wall. A dwarven dispatch desk with a red mechanical clapper stands against the west wall. Amber shelf fungi and blue-white rune lamps reveal damp stone, worn chalk marks, rail grease, and practical public infrastructure.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "North pressure gate, east Glassvein bend, south Low Echo arch, west dispatch desk, central listening well, east drip cups, and the thick eastern buttress retain fixed positions.",
+          "The buttress blocks all direct sight from the relay into the returning train's approach; Low Echo's bend blocks all view of its forks and settlement."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_morning_routine",
+        "ink_anchor": "morning_routine",
+        "base_image_prompt": "Medium-wide morning work scene in the wedge-shaped stone relay. Tikka Reed-Teeth, a short wiry olive-brown goblin in a patched rust-and-moss guide coat, tests a copper drip cup beside the central bronze grate. Orsa Feldspar, a square-built middle-aged dwarf in an indigo dispatch coat with a grey-brown braid and brass civic seal, writes at the west desk beside the red clapper. Veyr Copperstamp, a stocky dwarf surveyor in a fitted charcoal Company coat, clipped red-brown beard, silver measuring visor, and contract case, waits by the north rail. Warm fungus light catches damp cups; blue-white rune light traces the rail.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "standing at the central grate with copper cup raised", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "orsa_feldspar", "default_stance": "writing behind the west dispatch desk", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "waiting beside the north rail", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Tikka can cross between the central well, south arch, and west desk without crossing the rail east of the warning stripe.",
+          "The red clapper and removable iron dispatch pin are reachable from the clerk side of the west desk and from beneath its low brass rail."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_runner_arrival",
+        "ink_anchor": "runner_arrival",
+        "base_image_prompt": "Medium action view toward the east side of the underground junction. Marn Nine-Turns, a lean ochre-skinned goblin runner with large pointed ears, cropped black hair, soft boots, a moss-green patched coat, chalk dust across the chest, and a left sleeve wet to the shoulder, emerges from behind the thick stone buttress. He taps hanging iron and stone cups while Tikka, a wiry olive-brown goblin route-singer with black corded hair and brass listening cups, answers from the central grate. Orsa watches from the west dispatch desk; Veyr checks a brass watch near the north rail. Pale tunnel moths retreat from the blue-white rail glow.",
+        "visible_characters": [
+          {"agent_id": "marn_nine_turns", "default_stance": "breathing hard beside the east drip cups", "visual_ref": "visual_character_refs.characters.marn_nine_turns"},
+          {"agent_id": "tikka_reed_teeth", "default_stance": "answering from the listening well", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "orsa_feldspar", "default_stance": "seated at west desk with chalk lifted", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "standing by north rail with watch raised", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Marn enters from the east approach on the relay side of the occluding buttress; the train remains out of sight."]
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_test_route",
+        "ink_anchor": "morning_choice.morning_test_the_route",
+        "base_image_prompt": "Close-medium work frame around a bronze grate in the center of a wedge-shaped living-stone relay. Tikka, a short olive-brown goblin in a patched guide coat, arranges copper, iron, and stone drip cups on the grate: copper warm in one hand, iron ringing against bronze, stone trembling under the other wrist. Orsa, a middle-aged dwarf clerk in indigo, waits at the west desk with slate turned face down. Veyr, a red-bearded dwarf Company surveyor in charcoal, watches from beside the north rail with an impatient brass watch. Amber fungus lamps and blue rune light reflect in three different wet metals.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "kneeling at the listening well with three cups", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "orsa_feldspar", "default_stance": "waiting behind west desk", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "watching from north rail", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_restore_chorus",
+        "ink_anchor": "morning_choice.morning_restore_the_chorus",
+        "base_image_prompt": "Medium two-person performance frame in an underground stone relay. Marn, a lean ochre goblin runner with wet sleeve and chalked green coat, sings beside hanging east-wall cups. Tikka, a wiry olive-brown goblin route-singer with black corded hair, rust-and-moss coat, and listening beads, answers from the central bronze grate. Between them an empty chalk footprint beside a second survey marker represents the absent runner. Orsa and Veyr listen from the west desk and north rail. The east rail bends behind a massive stone buttress under cold blue rune light.",
+        "visible_characters": [
+          {"agent_id": "marn_nine_turns", "default_stance": "singing beside east-wall cups", "visual_ref": "visual_character_refs.characters.marn_nine_turns"},
+          {"agent_id": "tikka_reed_teeth", "default_stance": "answering from central grate", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "orsa_feldspar", "default_stance": "listening with chalk lowered", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "listening through silver visor", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_teach_uncertainty",
+        "ink_anchor": "morning_choice.morning_teach_uncertainty",
+        "base_image_prompt": "Object-focused frame at the west dispatch desk of a living-stone rail junction. Tikka, a small olive-brown goblin in a patched guide coat, draws two close chalk strokes on a dark slate and leaves a broad empty space before a third mark. Orsa, a square-built dwarf clerk in an indigo coat with brass seal, copies the spacing carefully. Veyr, a red-bearded dwarf surveyor wearing a silver visor, writes a hard circular zero in a separate book. The red departure clapper, removable iron pin, central grate, and blue-lit east rail are visible around the hands and slate.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "leaning over slate and marking a gap", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "orsa_feldspar", "default_stance": "copying Tikka's spacing", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "writing in separate Company book", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_stale_song",
+        "ink_anchor": "morning_choice.morning_repeat_the_stale_song",
+        "base_image_prompt": "Quiet uneasy frame in the wedge-shaped relay hall. Tikka, a short olive-brown goblin route-singer in a dry patched coat, stands near the central bronze grate giving a neat familiar cadence. Orsa writes quickly at the west desk beside the red clapper. Veyr's red-bearded shoulders relax near the north rail. Marn, a lean ochre goblin with a sleeve soaked to the shoulder, stands by the south rope-screened arch and looks from his wet cloth to Tikka's dry sleeve. Amber fungus light warms the people while cold blue runes travel along the east rail.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "singing a tidy refrain at the central grate", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "orsa_feldspar", "default_stance": "writing quickly at the desk", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "relaxed beside north rail", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"},
+          {"agent_id": "marn_nine_turns", "default_stance": "silent at south arch, wet sleeve visible", "visual_ref": "visual_character_refs.characters.marn_nine_turns"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_morning_fold",
+        "ink_anchor": "morning_fold",
+        "base_image_prompt": "Wide operational view of the wedge-shaped underground relay after the morning report. Orsa, a dwarf clerk in indigo, updates the west departure board beside its red clapper. Tikka, a wiry olive-brown goblin route-singer, stands at the central bronze grate; Marn, an ochre goblin runner with wet sleeve, waits between the east cups and south arch; Veyr, a red-bearded Company surveyor in charcoal and silver visor, watches the controls. Cold air curls around the north pressure gate. The east rail vibrates toward its blind bend behind the thick buttress.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "at central listening well", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "marn_nine_turns", "default_stance": "between east cups and south arch", "visual_ref": "visual_character_refs.characters.marn_nine_turns"},
+          {"agent_id": "orsa_feldspar", "default_stance": "updating west departure board", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "watching clapper and rail", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "route_confidence >= 4", "modifier_prompt": "All three damp metal cups rest in a coherent pattern on the grate; Tikka's stance is settled and exact."},
+          {"trigger": "route_confidence <= 1", "modifier_prompt": "The cups remain hanging and untested; Tikka watches the vibrating rail with visible uncertainty."},
+          {"trigger": "chorus_integrity >= 4", "modifier_prompt": "Tikka and Marn hold opposite sides of the well with a deliberate empty space for the missing witness."},
+          {"trigger": "chorus_integrity <= 1", "modifier_prompt": "Marn stands at the south rope screen with mouth closed and body angled away from Tikka."},
+          {"trigger": "record_fidelity >= 2", "modifier_prompt": "Orsa's slate shows paired chalk strokes separated by one unmistakable blank interval."},
+          {"trigger": "time_margin <= 1", "modifier_prompt": "White steam and a faint headlamp glow begin to show around the far edge of the eastern buttress."},
+          {"trigger": "company_pressure >= 2", "modifier_prompt": "Veyr has lowered his watch and now watches the red departure clapper directly."}
+        ]
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_company_demand",
+        "ink_anchor": "company_demand",
+        "base_image_prompt": "Medium confrontation around the central bronze grate of a wedge-shaped living-stone relay. Veyr, a stocky red-bearded dwarf surveyor in charcoal Company coat and silver visor, stands at the grate's edge with contract case open. Tikka, a short olive-brown goblin in a rust-and-moss guide coat, faces him from across the well. Orsa, a middle-aged dwarf clerk in indigo with brass civic seal, has set her chalk down at the west desk. Marn, a lean ochre goblin runner with wet sleeve, holds two fingers against the knotted rope screen over the low south arch. The east signal is amber; two crystal-pallet shapes remain hidden beyond the buttress.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "facing Veyr across the well", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "marn_nine_turns", "default_stance": "guarding south rope screen", "visual_ref": "visual_character_refs.characters.marn_nine_turns"},
+          {"agent_id": "orsa_feldspar", "default_stance": "behind west desk with chalk down", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "at the well edge with contract case", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Veyr remains off the bronze grate; Marn can guard the south arch while seeing the central well and west desk."]
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_road_refrain",
+        "ink_anchor": "disclosure_choice.disclose_road_refrain",
+        "base_image_prompt": "Medium performance frame in an amber-and-blue lit stone rail relay. Tikka, a wiry olive-brown goblin route-singer with corded black hair and brass listening beads, sings toward the west departure board. Orsa, a square-built dwarf clerk in an indigo coat, marks a slate with simple foot symbols, one south arch symbol, and a barred engine rune. Veyr, a red-bearded dwarf surveyor in a silver visor, looks at the abrupt blank edge of the slate. Marn guards the rope-screened south arch. The east signal glows amber above the rail bend.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "singing toward the public board", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "orsa_feldspar", "default_stance": "marking conditional symbols on slate", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "studying the slate's abrupt end", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"},
+          {"agent_id": "marn_nine_turns", "default_stance": "at the south rope screen", "visual_ref": "visual_character_refs.characters.marn_nine_turns"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_home_hearing",
+        "ink_anchor": "disclosure_choice.entrust_home_verse",
+        "base_image_prompt": "Close triangular staging inside a wedge-shaped underground relay. Orsa, a middle-aged dwarf clerk in an indigo work coat, presses a brass civic seal into warm red wax on the blank back of a slate. Tikka, a short olive-brown goblin route-singer in patched rust and moss cloth, sings close to her. Marn, a lean ochre goblin runner with wet sleeve, answers from beside them. Veyr, a stocky red-bearded dwarf surveyor in charcoal, stands several paces away outside the tight hearing, watching their faces. The south rope-screened arch is behind Marn; amber fungi and blue rail runes divide warm trust from cold scrutiny.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "singing close to Orsa", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "marn_nine_turns", "default_stance": "answering inside the hearing triangle", "visual_ref": "visual_character_refs.characters.marn_nine_turns"},
+          {"agent_id": "orsa_feldspar", "default_stance": "sealing the slate in warm wax", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "watching from outside hearing distance", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_decoy_warning",
+        "ink_anchor": "disclosure_choice.plant_early_closure",
+        "base_image_prompt": "Tense medium view at the west controls of a wedge-shaped stone relay. Tikka, a small olive-brown goblin in a patched guide coat, turns away after singing into the room. Veyr, a red-bearded dwarf Company surveyor in charcoal and a silver visor, strikes the red departure clapper. A hard white hold lamp ignites over the north rail. Orsa, a square-built dwarf clerk in an indigo coat, looks directly at Tikka with chalk suspended. Marn waits at the south rope screen. The eastern rail still curves open behind the buttress, making the early halt visibly useful and visibly ahead of the stone.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "turning from the overheard decoy", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "striking the red clapper", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"},
+          {"agent_id": "orsa_feldspar", "default_stance": "watching Tikka with chalk raised", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "marn_nine_turns", "default_stance": "waiting at south arch", "visual_ref": "visual_character_refs.characters.marn_nine_turns"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_seize_hold",
+        "ink_anchor": "disclosure_choice.seize_dispatch_hold",
+        "base_image_prompt": "Low-angle action frame beneath the west dispatch desk in a living-stone rail relay. Tikka, a short wiry olive-brown goblin in a patched guide coat, ducks under a low brass rail and pulls a thick iron pin from the red clapper linkage, closing one fist around it. The red handle drops loose and a hard white hold lamp flashes above the north track. Orsa, a dwarf clerk in indigo, leans over the desk in alarm. Veyr, a red-bearded Company surveyor in charcoal, opens his contract case and points at its clauses. The central grate and south rope-screened arch remain visible across the hall.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "crouched under desk rail with iron pin", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "orsa_feldspar", "default_stance": "leaning over desk toward loose clapper", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "pointing into open contract case", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_third_pulse",
+        "ink_anchor": "third_pulse",
+        "base_image_prompt": "Pivotal wide frame in a wedge-shaped underground rail junction at the instant of a magical pressure pulse. The blue-white rune line along the east rail flashes in one clean industrial wave. The dark living-stone walls answer with several rippling bands of amber, violet, and deep green light. Brass seals drop across the north pressure gate. Tikka and Marn, two small goblin silhouettes, brace near the central grate and south arch; Orsa and Veyr, two dwarf silhouettes, turn toward the occluding eastern buttress. Dust lifts from the rail and hanging metal cups ring outward. The returning train remains hidden around the bend.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "braced at central well", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "marn_nine_turns", "default_stance": "braced at south arch", "visual_ref": "visual_character_refs.characters.marn_nine_turns"},
+          {"agent_id": "orsa_feldspar", "default_stance": "turning from west desk toward east", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "turning from north rail toward east", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_closure_aftermath",
+        "ink_anchor": "closure_aftermath",
+        "base_image_prompt": "Wide crisis view of Cinderhook Relay. A compact rune locomotive noses around the thick eastern buttress trailing white steam; behind it, living stone folds into slow rib-like constrictions around the blue-white engine rune pattern. Heavy brass seals close the north pressure gate. Nine soot-marked dwarven mine workers in leather aprons, wool layers, helmets, gloves, and heavy boots jump down or cling to side steps. Two waist-high pallets of pale pump crystals are strapped to the engine. Tikka stands at the central grate, Marn guards the low south rope-screened arch, Orsa controls the west board, and Veyr stands near the cargo and north gate. Amber warning light fills the wedge-shaped hall.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "at central grate watching train", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "marn_nine_turns", "default_stance": "at south arch ready to guide", "visual_ref": "visual_character_refs.characters.marn_nine_turns"},
+          {"agent_id": "orsa_feldspar", "default_stance": "at west controls signaling crew", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "between crystal pallets and north gate", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"},
+          {"agent_id": "glassvein_crew", "default_stance": "dismounting locomotive into relay", "visual_ref": "visual_character_refs.groups.glassvein_crew"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "dispatch_hold >= 1", "modifier_prompt": "The north departure lamp burns hard white; the red clapper hangs loose or locked while the locomotive stops clear of the cross-hall line."},
+          {"trigger": "dispatch_hold == 0 && worker_warning >= 2", "modifier_prompt": "Orsa waves all nine workers off the locomotive toward the central floor before powered movement continues."},
+          {"trigger": "dispatch_hold == 0 && worker_warning < 2", "modifier_prompt": "Three workers remain on the locomotive side steps while Marn runs into the safe edge of the rail bed and calls them down."},
+          {"trigger": "record_fidelity >= 3", "modifier_prompt": "Orsa's public slate visibly pairs three pulse marks with an engine rune and one walking figure symbol."},
+          {"trigger": "record_fidelity <= 1", "modifier_prompt": "The public board shows one blunt broken-rail symbol with every conditional field left blank."},
+          {"trigger": "home_verse_exposure >= 2", "modifier_prompt": "Orsa looks toward the hidden depth of the south arch while Veyr studies her line of sight."},
+          {"trigger": "company_pressure >= 4", "modifier_prompt": "Veyr plants both boots between the pale crystal pallets and the north gate, contract case clutched against his chest."}
+        ]
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_final_threshold",
+        "ink_anchor": "final_choice",
+        "base_image_prompt": "Decision tableau in a wedge-shaped underground route hall after a rail closure. Living stone ribs pinch the blue-lit east rail behind a stopped steam locomotive, and heavy brass seals close the north pressure gate until its runes can be bled safe. Nine tired dwarven workers stand around the central bronze grate. Two pale crystal pallets remain strapped to the engine. The west dispatch desk offers public records and a delayed north rescue; the low south rope-screened arch offers the only immediate walking route. Tikka, a wiry olive-brown goblin singer, stands between the well and south arch. Marn guards the rope screen. Orsa holds a dark route slate at the west desk. Veyr guards the cargo. Amber fungus and warning lamps divide four visible priorities across the frame.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "between central well and south arch", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "marn_nine_turns", "default_stance": "guarding rope screen", "visual_ref": "visual_character_refs.characters.marn_nine_turns"},
+          {"agent_id": "orsa_feldspar", "default_stance": "at west desk holding slate", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "beside crystal pallets", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"},
+          {"agent_id": "glassvein_crew", "default_stance": "clustered around central well", "visual_ref": "visual_character_refs.groups.glassvein_crew"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "decoy_forecast >= 1", "modifier_prompt": "Veyr's open book shows two pulse marks circled beside a separate observed third mark, making the contradiction visible as paired symbols."},
+          {"trigger": "home_verse_exposure >= 2", "modifier_prompt": "Orsa's sealed slate is waxed shut against her coat while her gaze avoids the hidden south bend."},
+          {"trigger": "time_margin <= 1", "modifier_prompt": "Loose pebbles fall from the south arch and the workers crowd closer to the route threshold."}
+        ]
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_ending_crossing",
+        "ink_anchor": "ending_crossing_success|ending_crossing_cost",
+        "base_image_prompt": "Underground evacuation through the Low Echo culvert: a narrow stone passage with damp lower shelf, chalk foot marks, low amber fungi, and a blind bend splitting toward an ascending public stair and a darker descending fork. Tikka, a short olive-brown goblin guide in rust-and-moss coat, leads with one hand raised to feel airflow. Orsa, a square-built dwarf clerk in indigo, follows with a white signal lantern. Nine tired dwarven workers walk behind her; four share two sacks of pale pump crystal. Marn, a lean ochre goblin with wet sleeve, guards the rear. Metal buckles, boots, soft goblin footwear, and hand-carried weight make the crossing practical and strained.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "leading at the fork", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "orsa_feldspar", "default_stance": "following Tikka with white signal lantern", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "marn_nine_turns", "default_stance": "guarding rear of walking group", "visual_ref": "visual_character_refs.characters.marn_nine_turns"},
+          {"agent_id": "glassvein_crew", "default_stance": "walking in single file with two crystal sacks", "visual_ref": "visual_character_refs.groups.glassvein_crew"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_ending_disclosure",
+        "ink_anchor": "ending_disclosure_success|ending_disclosure_cost",
+        "base_image_prompt": "Disclosure aftermath at the south side of Cinderhook Relay. Tikka, a wiry olive-brown goblin route-singer, and Marn, a wet-sleeved ochre goblin runner, stand beside the knotted rope screen. Orsa, a square-built dwarf clerk in indigo with brass civic seal, holds a wax-sealed slate against her coat. Veyr, a red-bearded dwarf surveyor in charcoal and silver visor, studies a route order board showing a public stair symbol and a deliberately absent lower branch. The stopped locomotive, pale crystal pallets, central grate, and stone-ribbed east closure remain visible behind them.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "beside rope screen watching Orsa", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "marn_nine_turns", "default_stance": "at the south arch knotting a route cord", "visual_ref": "visual_character_refs.characters.marn_nine_turns"},
+          {"agent_id": "orsa_feldspar", "default_stance": "holding wax-sealed slate", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "studying route-order symbols", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_ending_record",
+        "ink_anchor": "ending_record_success|ending_record_cost",
+        "base_image_prompt": "Record aftermath at the west dispatch board of a living-stone rail relay. Orsa, a middle-aged dwarf clerk in indigo, pins two dark slates side by side beneath an amber lamp. One slate bears rigid clock circles and a broken-rail symbol; the other uses paired pulse marks, one blank interval, an engine rune, and a walking figure. Tikka, a short olive-brown goblin singer, watches from beside the central grate. Veyr, a red-bearded Company surveyor in silver visor, points at one slate with a chalk stylus. The stopped locomotive and ribbed stone closure occupy the east background; the south rope screen remains closed and uncharted.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "watching the boards from central grate", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "orsa_feldspar", "default_stance": "pinning paired slates to public board", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "pointing at one report with chalk", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_cinderhook_ending_home",
+        "ink_anchor": "ending_home_success|ending_home_cost",
+        "base_image_prompt": "Home-secrecy aftermath in the wedge-shaped relay. The knotted rope screen is drawn firmly across the low south arch. Tikka, a wiry olive-brown goblin in patched guide clothes, stands before it with one hand gripping a rope-screen knot. Marn, a lean ochre goblin runner with wet sleeve, waits beside the central bronze grate. Nine soot-marked workers gather between the well and an open wall chest of folded grey blankets. Orsa stands at the west departure controls. Veyr writes in his open contract book beside the stranded pale crystal pallets and stopped locomotive.",
+        "visible_characters": [
+          {"agent_id": "tikka_reed_teeth", "default_stance": "standing before closed rope screen", "visual_ref": "visual_character_refs.characters.tikka_reed_teeth"},
+          {"agent_id": "marn_nine_turns", "default_stance": "sharing a tin cup by the well", "visual_ref": "visual_character_refs.characters.marn_nine_turns"},
+          {"agent_id": "orsa_feldspar", "default_stance": "keeping hold at west desk", "visual_ref": "visual_character_refs.characters.orsa_feldspar"},
+          {"agent_id": "veyr_copperstamp", "default_stance": "writing beside stranded cargo", "visual_ref": "visual_character_refs.characters.veyr_copperstamp"},
+          {"agent_id": "glassvein_crew", "default_stance": "wrapped in blankets around central grate", "visual_ref": "visual_character_refs.groups.glassvein_crew"}
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "morning_test_persists",
+        "trigger": "branch_label == morning_test_the_route",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_morning_fold", "veil_cinderhook_closure_aftermath"],
+        "modifier_prompt": "Copper, iron, and stone cups remain arranged on the bronze grate in the tested three-part pattern."
+      },
+      {
+        "modifier_id": "morning_chorus_persists",
+        "trigger": "branch_label == morning_restore_the_chorus",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_morning_fold", "veil_cinderhook_company_demand"],
+        "modifier_prompt": "Tikka and Marn occupy opposite sides of the listening well with one empty witness space held between them."
+      },
+      {
+        "modifier_id": "morning_notation_persists",
+        "trigger": "branch_label == morning_teach_uncertainty",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_morning_fold", "veil_cinderhook_closure_aftermath", "veil_cinderhook_ending_record"],
+        "modifier_prompt": "Orsa's dark slate preserves two close chalk strokes, one broad empty interval, and a final condition mark."
+      },
+      {
+        "modifier_id": "morning_stale_song_persists",
+        "trigger": "branch_label == morning_repeat_the_stale_song",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_morning_fold", "veil_cinderhook_company_demand"],
+        "modifier_prompt": "Marn remains near the south rope screen, wet sleeve conspicuous, with body angled away from Tikka."
+      },
+      {
+        "modifier_id": "road_refrain_recorded",
+        "trigger": "branch_label == disclose_road_refrain",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_closure_aftermath", "veil_cinderhook_final_threshold"],
+        "modifier_prompt": "The west slate displays a foot symbol, one south arch, and a barred engine rune ending at a clean blank edge."
+      },
+      {
+        "modifier_id": "home_verse_entrusted",
+        "trigger": "branch_label == entrust_home_verse",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_closure_aftermath", "veil_cinderhook_final_threshold", "veil_cinderhook_ending_disclosure"],
+        "modifier_prompt": "Orsa carries a dark slate sealed shut with red wax and her brass civic seal; Veyr watches her gaze toward the south arch."
+      },
+      {
+        "modifier_id": "early_decoy_halt",
+        "trigger": "branch_label == plant_early_closure",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_closure_aftermath", "veil_cinderhook_final_threshold", "veil_cinderhook_ending_record"],
+        "modifier_prompt": "Veyr's open Company book shows two pulse circles marked as the warning and a separate third observed pulse; the north hold lamp burns white."
+      },
+      {
+        "modifier_id": "physical_dispatch_hold",
+        "trigger": "branch_label == seize_dispatch_hold",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_closure_aftermath", "veil_cinderhook_final_threshold", "veil_cinderhook_ending_home"],
+        "modifier_prompt": "The red departure clapper hangs loose with its iron linkage pin removed; Tikka keeps the thick pin in one fist and the north signal stays white."
+      },
+      {
+        "modifier_id": "crossing_success_visual",
+        "trigger": "ending_label == people_and_pumps_success",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_ending_crossing"],
+        "modifier_prompt": "All nine workers move in an orderly single file toward the ascending public stair while two intact crystal sacks travel hand to hand; the descending home fork remains dark."
+      },
+      {
+        "modifier_id": "crossing_cost_visual",
+        "trigger": "ending_label == people_and_pumps_cost",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_ending_crossing"],
+        "modifier_prompt": "Water covers the lower shelf; one crystal sack with metal buckles lies abandoned at the tightening passage while the group turns toward the public stair."
+      },
+      {
+        "modifier_id": "disclosure_success_visual",
+        "trigger": "ending_label == bounded_disclosure_success",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_ending_disclosure"],
+        "modifier_prompt": "Orsa returns the intact wax-sealed slate to Tikka; the route board shows only the public stair symbol while Veyr's chart remains blank below it."
+      },
+      {
+        "modifier_id": "disclosure_cost_visual",
+        "trigger": "ending_label == bounded_disclosure_cost",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_ending_disclosure"],
+        "modifier_prompt": "Veyr's chart contains a new dotted branch inferred below the public stair; Marn knots a route cord into a visibly altered pattern at the rope screen."
+      },
+      {
+        "modifier_id": "record_success_visual",
+        "trigger": "ending_label == public_record_success",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_ending_record"],
+        "modifier_prompt": "The relay slate clearly preserves two witnessed pulse marks, one empty witness interval, a third engine-pattern mark, and one walking-window symbol; the home branch is absent."
+      },
+      {
+        "modifier_id": "record_cost_visual",
+        "trigger": "ending_label == public_record_cost",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_ending_record"],
+        "modifier_prompt": "The public slate reduces the event to three clock circles and a broken-rail symbol; the meaningful blank interval has become an empty table cell."
+      },
+      {
+        "modifier_id": "home_success_visual",
+        "trigger": "ending_label == home_secrecy_success",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_ending_home"],
+        "modifier_prompt": "The crew sits safely in blankets around the well; Marn shares tea with a miner; the rope screen is closed and the north hold lamp remains white."
+      },
+      {
+        "modifier_id": "home_cost_visual",
+        "trigger": "ending_label == home_secrecy_cost",
+        "apply_to_visual_scene_ids": ["veil_cinderhook_ending_home"],
+        "modifier_prompt": "Marn blocks the south arch with his body while two miners stop an arm's length away; Orsa reaches for an active clapper and Veyr points toward the opening."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "cinderhook_relay.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "One wedge-shaped junction hall with a north-to-east rail bend, a low south foot culvert, a west dispatch desk, a central listening well, and a thick eastern buttress that occludes the Glassvein approach.",
+      "fixed_zones": [
+        {"zone_id": "north_pressure_gate", "visible_form": "brass-sealed freight gate and cold-air threshold on the north wall", "used_for": "Hold rail arrival, rescue approach, and onward departure hold"},
+        {"zone_id": "east_glassvein_bend", "visible_form": "single brass-railed line bending behind a massive stone buttress under blue-white rune lamps", "used_for": "returning train arrival, third-pulse response, and occluded mine approach"},
+        {"zone_id": "south_low_echo_arch", "visible_form": "low stone arch with knotted rope screen and a blind first turn", "used_for": "walking escape, home-secret boundary, and bodily route blocking"},
+        {"zone_id": "west_dispatch_desk", "visible_form": "waist-high stone and brass desk with slate board, red departure clapper, removable iron linkage pin, and white hold lamp", "used_for": "records, sealed hearing, signals, and physical hold"},
+        {"zone_id": "central_listening_well", "visible_form": "bronze floor grate over a dark shaft, surrounded by safe standing room", "used_for": "route-song response, crew shelter, and room focal point"},
+        {"zone_id": "east_drip_cups", "visible_form": "copper, iron, and stone cups hanging on chalked hooks before the buttress", "used_for": "mana and seep observation"},
+        {"zone_id": "stopped_locomotive_and_pallets", "visible_form": "compact rune steam locomotive stopped east of the well with two strapped pale-crystal pallets", "used_for": "post-closure worker, cargo, and contract pressure"}
+      ],
+      "camera_slots": [
+        {"camera_id": "wide_west_to_east", "supports_visual_scene_ids": ["veil_cinderhook_establishing", "veil_cinderhook_morning_fold", "veil_cinderhook_third_pulse", "veil_cinderhook_closure_aftermath", "veil_cinderhook_final_threshold"]},
+        {"camera_id": "medium_well_triangle", "supports_visual_scene_ids": ["veil_cinderhook_morning_routine", "veil_cinderhook_restore_chorus", "veil_cinderhook_company_demand"]},
+        {"camera_id": "east_cups_arrival", "supports_visual_scene_ids": ["veil_cinderhook_runner_arrival", "veil_cinderhook_test_route"]},
+        {"camera_id": "west_desk_close", "supports_visual_scene_ids": ["veil_cinderhook_teach_uncertainty", "veil_cinderhook_decoy_warning", "veil_cinderhook_seize_hold", "veil_cinderhook_ending_record"]},
+        {"camera_id": "south_arch_medium", "supports_visual_scene_ids": ["veil_cinderhook_stale_song", "veil_cinderhook_road_refrain", "veil_cinderhook_home_hearing", "veil_cinderhook_ending_disclosure", "veil_cinderhook_ending_home"]},
+        {"camera_id": "low_echo_fork", "supports_visual_scene_ids": ["veil_cinderhook_ending_crossing"]}
+      ],
+      "staging_slots": [
+        {"slot_id": "singer_at_well", "zone_id": "central_listening_well", "allowed_agents": ["tikka_reed_teeth", "marn_nine_turns"]},
+        {"slot_id": "runner_at_south_screen", "zone_id": "south_low_echo_arch", "allowed_agents": ["marn_nine_turns", "tikka_reed_teeth"]},
+        {"slot_id": "clerk_at_desk", "zone_id": "west_dispatch_desk", "allowed_agents": ["orsa_feldspar"]},
+        {"slot_id": "company_at_north_rail", "zone_id": "north_pressure_gate", "allowed_agents": ["veyr_copperstamp"]},
+        {"slot_id": "crew_around_well", "zone_id": "central_listening_well", "allowed_agents": ["glassvein_crew"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "desk_to_east_signal", "path": "west_dispatch_desk -> central_listening_well -> visible east signal before buttress", "supports": ["Orsa's signals and worker warning"]},
+        {"lane_id": "well_to_south_screen", "path": "central_listening_well -> south_low_echo_arch rope screen -> blind turn occlusion", "supports": ["Tikka and Marn guarding disclosure boundary"]},
+        {"lane_id": "veyr_infers_from_orsa", "path": "north rail or cargo position -> Orsa at west desk -> Orsa's gaze toward south arch", "supports": ["home_verse_exposure visual inference"]}
+      ],
+      "branch_persistent_states": [
+        {"state_id": "dispatch_operable", "trigger": "dispatch_hold == 0", "visible_form": "red clapper upright with iron pin seated; north lamp can show amber or green"},
+        {"state_id": "dispatch_held", "trigger": "dispatch_hold >= 1", "visible_form": "north lamp hard white; red clapper struck or linkage pin removed"},
+        {"state_id": "home_verse_sealed", "trigger": "home_verse_exposure >= 2", "visible_form": "dark slate sealed in red wax with Orsa's brass seal"},
+        {"state_id": "glassvein_closed", "trigger": "after third_pulse", "visible_form": "living stone ribs constrict the east rail around the repeated blue-white rune pattern; the north pressure gate's brass seals are down until the rail runes are bled safe"}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable character and group descriptions for prompt assembly. Include only refs named by each scene's visible_characters array.",
+    "characters": {
+      "tikka_reed_teeth": "Tikka Reed-Teeth: adult goblin route-singer, short and wiry, olive-brown skin, large pointed ears, black hair in two corded braids, one pale stone tooth cap, patched knee-length guide coat in rust red and moss green, belt of brass listening cups and bone route beads, soft split-soled boots, quick exact hands, posture alternating between listening stillness and dry challenge.",
+      "marn_nine_turns": "Marn Nine-Turns: young adult goblin route-runner, lean compact build, ochre-brown skin, large pointed ears, cropped black hair, moss-green patched short coat dusted white with tunnel chalk, left sleeve wet to the shoulder during this scene, braided route cord at one wrist, soft dark boots, breath-forward runner posture and guarded attention toward the south arch.",
+      "orsa_feldspar": "Orsa Feldspar: middle-aged dwarf Hold dispatch clerk, short square build, warm brown skin, broad practical face, grey-brown hair in one thick braid, indigo wool work coat with brass fasteners, brass civic seal at the breast, chalk-stained fingers, heavy black boots, posture rooted behind the desk until action forces her into the hall.",
+      "veyr_copperstamp": "Veyr Copperstamp: middle-aged dwarf Deep Company surveyor, stocky build, ruddy light-brown skin, clipped red-brown beard, fitted charcoal survey coat with copper piping, narrow silver measuring visor over the eyes, brass watch, leather contract case, polished work boots, controlled posture that tightens around cargo and schedules."
+    },
+    "groups": {
+      "glassvein_crew": "Glassvein crew: nine adult dwarven mine workers with short sturdy bodies and varied brown skin tones, soot-marked faces, wool underlayers, leather work aprons, iron-capped boots, gloves, practical helmets with small rune lamps, hand tools and lunch tins; tired coordinated workers, some supporting crystal sacks or helping others down from the locomotive."
+    }
+  },
+  "review_notes": [
+    "The visual plan embeds a draft route-hall map with fixed zones, camera slots, staging slots, sightlines, and branch-persistent signal, slate, and closure states.",
+    "The visual prompts treat the route-song as performed work and visible evidence rather than glowing prophecy text.",
+    "A camera-specific plan view or 3D blockout is still required before high-consistency multi-angle image generation; rendering is deferred for this pass."
+  ]
+}

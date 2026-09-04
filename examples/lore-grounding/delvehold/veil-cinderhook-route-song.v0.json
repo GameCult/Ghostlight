@@ -1,0 +1,350 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "delvehold.veil-cinderhook-route-song.v0",
+  "source_status": "canonical_with_fixture_elaboration",
+  "fixture_status": "grounded_draft",
+  "source_refs": [
+    {
+      "source_id": "delvehold-goblins",
+      "path": "Delvehold/Lore/Peoples/Goblins.md",
+      "title": "Goblins",
+      "line_start": 1,
+      "line_end": 32,
+      "relevance": "Primary owner for goblin practical intelligence and the authored route-song elaboration: observed inputs, conditional prediction, maintenance cost, road and home verses, disclosure taboo, route denial, and transcription failure."
+    },
+    {
+      "source_id": "delvehold-greathold",
+      "path": "Delvehold/Lore/The Greathold.md",
+      "title": "The Greathold",
+      "line_start": 1,
+      "line_end": 60,
+      "relevance": "Grounds the connected Hold routes, deep gates, inherited route books, goblin guides, civic institutions, freight infrastructure, and the mountain-range dungeon substrate."
+    },
+    {
+      "source_id": "delvehold-ecological-responses",
+      "path": "Delvehold/Lore/Dungeon Ecology/Ecological Responses.md",
+      "title": "Ecological responses",
+      "line_start": 1,
+      "line_end": 26,
+      "relevance": "Grounds passage sealing, deposits retreating, machine-targeting adaptation, goblin intelligence networks, and competing interpretations of the same response."
+    },
+    {
+      "source_id": "delvehold-deep-mining",
+      "path": "Delvehold/Lore/Industry/Deep Mining.md",
+      "title": "Deep mining",
+      "line_start": 1,
+      "line_end": 26,
+      "relevance": "Grounds repeated runic disturbance, coordinated deep response, industrial interpretation, and lock-in through pump, rail, furnace, and weapon demand."
+    },
+    {
+      "source_id": "delvehold-dungeon-lifecycle",
+      "path": "Delvehold/Lore/Dungeon Ecology/Dungeon Lifecycle.md",
+      "title": "Dungeon lifecycle",
+      "line_start": 1,
+      "line_end": 36,
+      "relevance": "Grounds a core's ability to divert intruders, hide resources, raise a price, remember encounters, and distinguish contested walking delves from direct industrial taking."
+    },
+    {
+      "source_id": "delvehold-mana-pattern",
+      "path": "Delvehold/Lore/Ontology/Mana and Pattern.md",
+      "title": "Mana and pattern",
+      "line_start": 1,
+      "line_end": 45,
+      "relevance": "Grounds repeated runic patterns, history carried in mana flow, material participation in magical signals, and mana crystal as both industrial fuel and ecological nutrient."
+    },
+    {
+      "source_id": "delvehold-nested-dungeons",
+      "path": "Delvehold/Lore/Ontology/Nested Dungeons.md",
+      "title": "Nested dungeons",
+      "line_start": 1,
+      "line_end": 24,
+      "relevance": "Grounds local route behavior inside overlapping regional systems whose borders change with pressure, season, damage, and memory."
+    },
+    {
+      "source_id": "delvehold-dwarven-industry",
+      "path": "Delvehold/Lore/Industry/Dwarven Industry.md",
+      "title": "Dwarven industry",
+      "line_start": 1,
+      "line_end": 40,
+      "relevance": "Grounds Hold-level freight and reserve decisions, Deep Company interests, public infrastructure dependence, and the immediate cost of interrupted crystal supply."
+    },
+    {
+      "source_id": "delvehold-surface-symptoms",
+      "path": "Delvehold/Lore/Crisis/Surface Symptoms.md",
+      "title": "Surface symptoms",
+      "line_start": 1,
+      "line_end": 26,
+      "relevance": "Grounds goblin route logs as early timing evidence whose overlap with other archives is difficult for dwarven models to dismiss."
+    },
+    {
+      "source_id": "delvehold-international-crisis",
+      "path": "Delvehold/Lore/Crisis/International Crisis.md",
+      "title": "International crisis",
+      "line_start": 1,
+      "line_end": 18,
+      "relevance": "Grounds trade forecasts failing when goblin networks close routes and the absence of a contraction plan that can simply ignore winter power and wages."
+    },
+    {
+      "source_id": "delvehold-world-without-villain",
+      "path": "Delvehold/Lore/Crisis/World Without a Villain.md",
+      "title": "A world without a villain",
+      "line_start": 1,
+      "line_end": 16,
+      "relevance": "Grounds the scene's refusal of a clean solution: crystal extraction supplies vital pumps while injuring an older living system."
+    }
+  ],
+  "historical_context": {
+    "time_period": "The deep-mining crisis after industrial dependence has locked Hold utilities to crystal supply.",
+    "location": "Cinderhook Relay, a route-song and freight junction on a Greathold frontier line between Glassvein Throat, the Low Echo foot culvert, and a northbound Hold rail.",
+    "summary": "A routine route-song update predicts that Glassvein Throat will close after the third repetition of a survey engine's rune pattern. The prediction preserves a walking escape through Low Echo, but the song's concealed home verse would expose a displaced goblin settlement if translated into Company geography.",
+    "public_facts": [
+      {
+        "text": "Goblin communities maintain practical knowledge of safe routes, mana cycles, monster migration, structural warnings, and dungeon intent before runic surveys often detect change.",
+        "source_refs": ["delvehold-goblins"]
+      },
+      {
+        "text": "Route-songs predict how a passage is likely to behave under a named pressure; their pauses and call-and-response preserve confidence, missing observations, and news from connected routes.",
+        "source_refs": ["delvehold-goblins"]
+      },
+      {
+        "text": "Deep ecological responses close passages, retreat deposits, and target standardized industrial machinery while sometimes leaving nearby homes untouched.",
+        "source_refs": ["delvehold-ecological-responses", "delvehold-deep-mining"]
+      },
+      {
+        "text": "Hold pumps, trains, public heat, and reserve decisions depend on the same crystal flows that sustain extraction.",
+        "source_refs": ["delvehold-dwarven-industry", "delvehold-world-without-villain"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "A singer can disclose a useful road refrain without disclosing the home verse that connects the route to hidden water, food, refuge, and escape chambers.",
+        "source_refs": ["delvehold-goblins"]
+      },
+      {
+        "text": "The Deep Company needs a transferable route and a completed winter delivery; the goblin network needs a conditional forecast to remain attached to its witnesses and disclosure terms.",
+        "source_refs": ["delvehold-goblins", "delvehold-dwarven-industry"]
+      },
+      {
+        "text": "A correct halt can be caused by deliberate route-denial misinformation, forcing later reviewers to distinguish a protective decoy from the chorus's evidentiary claim.",
+        "source_refs": ["delvehold-goblins", "delvehold-surface-symptoms"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "cinderhook-route-chorus",
+      "label": "Cinderhook goblin route chorus",
+      "group_type": "guide_network",
+      "institutional_logic": ["Keep routes current through returned witness, preserve uncertainty in performance, and separate public passage advice from home geography."],
+      "material_incentives": ["Move people through living tunnels, retain access to water and fungal beds, keep displaced households concealed, and exchange reliable warnings for food, money, or reciprocal duty."],
+      "internal_virtues": ["Returning with observations", "Leaving a missing witness audible", "Naming the pressure a route will answer", "Sharing useful warnings without selling a home"],
+      "internal_shames": ["Filling a dead runner's beat for neatness", "Performing certainty for a buyer", "Singing a home verse before an unbound listener"],
+      "prestige_markers": ["A refrain revised before the stone moves", "A crossing whose limits are remembered", "A secret kept while strangers still get home"],
+      "taboo_triggers": ["Demands for a full song as purchased property", "A transcript that removes held beats", "A road warning treated as consent to survey a settlement"],
+      "emotional_display_norms": ["Fear may remain as an unfinished cadence, repeated observation, practical closure, or dry mockery rather than a declaration of panic."],
+      "trust_defaults": ["Trust returned witnesses first; trust reciprocal obligations locally; treat portable copies as potential routes for seizure."],
+      "speech_register_cues": ["Call-and-response", "Route conditions named through physical signs", "Held beats for missing evidence", "Compressed jokes about maps and clocks"],
+      "source_refs": ["delvehold-goblins", "delvehold-greathold"]
+    },
+    {
+      "group_id": "greathold-relay-office",
+      "label": "Greathold Hold-level relay office",
+      "group_type": "civic_infrastructure",
+      "institutional_logic": ["Keep passenger and freight movement attributable, issue holds, and carry local route evidence into wider Hold decisions."],
+      "material_incentives": ["Bring workers home, deliver pump crystal, avoid preventable closures, and preserve a record other offices can act upon."],
+      "internal_virtues": ["A physical hold that works", "A timetable that preserves conditions", "A seal attached to an exact duty"],
+      "internal_shames": ["Publishing a safe time from incomplete evidence", "Letting contract urgency override a local halt", "Turning confidential guidance into transferable property"],
+      "prestige_markers": ["Few stranded crews", "Receipts that survive a wider moot", "Freight and passenger routes that fail separately"],
+      "taboo_triggers": ["An unsealed alteration to a departure board", "A private company order presented as public necessity"],
+      "emotional_display_norms": ["Concern appears as changed signals, chalk marks, seals, and clipped instructions before it becomes confession."],
+      "trust_defaults": ["Trusts repeatable procedures and accountable local witnesses; struggles with evidence that cannot be copied whole."],
+      "speech_register_cues": ["Timetable shorthand", "Seal and receipt language", "Dry operational understatement"],
+      "source_refs": ["delvehold-greathold", "delvehold-dwarven-industry"]
+    },
+    {
+      "group_id": "glassvein-deep-company",
+      "label": "Glassvein Deep Company interest",
+      "group_type": "industrial_extraction_company",
+      "institutional_logic": ["Convert local route knowledge into repeatable throughput and fulfil extraction and delivery bonds."],
+      "material_incentives": ["Recover workers, engine, and crystal pallets; avoid an insurance loss; preserve the southern route as future Company capacity."],
+      "internal_virtues": ["A reproducible forecast", "A mapped bypass", "A completed winter delivery", "A failure assigned to a named cause"],
+      "internal_shames": ["An engine trapped by a warning the survey rejected", "A route no purchased instrument can reproduce", "Public dependence on a displaced guide network"],
+      "prestige_markers": ["Continuous rail movement", "Transferable charts", "Hazards priced before departure"],
+      "taboo_triggers": ["A route held on testimony the Company cannot own", "Protective deception that also prevents loss"],
+      "emotional_display_norms": ["Fear becomes a clause, an estimate, a schedule, or an allegation of sabotage."],
+      "trust_defaults": ["Trusts rune instruments, clocks, charts, and insured procedures; discounts performed uncertainty as negotiable ambiguity."],
+      "speech_register_cues": ["Delivery bonds", "Reproducible coordinates", "Variance", "Obstruction", "Loss allocation"],
+      "source_refs": ["delvehold-deep-mining", "delvehold-dwarven-industry", "delvehold-ecological-responses"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "cinderhook-route-chorus.warning-without-home-sale",
+      "applies_to": ["cinderhook-route-chorus"],
+      "pressure_type": "selective_disclosure",
+      "summary": "The chorus is expected to keep strangers alive without converting hidden community geography into a commodity.",
+      "projection_use": "Give Tikka choices that separate crossing conditions, confidence, listener duties, and home geography instead of treating disclosure as all or nothing.",
+      "source_refs": ["delvehold-goblins"]
+    },
+    {
+      "field_id": "greathold-relay-office.portable-record-pressure",
+      "applies_to": ["greathold-relay-office"],
+      "pressure_type": "institutional_translation",
+      "summary": "The relay office needs a record that other offices can act upon, while the route-song loses meaning and safety when flattened into coordinates and clock time.",
+      "projection_use": "Let Orsa preserve held beats, conditions, seals, and omissions as procedural facts without granting the office ownership of the whole song.",
+      "source_refs": ["delvehold-goblins", "delvehold-surface-symptoms", "delvehold-greathold"]
+    },
+    {
+      "field_id": "glassvein-deep-company.winter-bond-pressure",
+      "applies_to": ["glassvein-deep-company"],
+      "pressure_type": "contract_dependency",
+      "summary": "The Company's demand for the hidden route is sharpened by a real pump-crystal delivery rather than profit alone.",
+      "projection_use": "Keep Veyr coercive and materially credible: the Company wants future capacity, but a Hold district also needs the current cargo.",
+      "source_refs": ["delvehold-dwarven-industry", "delvehold-world-without-villain"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "glassvein-deep-company",
+      "target_group_id": "cinderhook-route-chorus",
+      "observer_read": ["A folk forecast reducible to time and coordinates", "Selective disclosure as price negotiation", "Changed verses as unreliability or sabotage"],
+      "target_self_read": ["A maintained conditional model", "Uncertainty attached to named witnesses", "Road advice separated from home custody"],
+      "misread_patterns": ["Copies words but drops pauses", "Treats the third repetition as the third bell", "Treats a concealed fork as missing survey data"],
+      "likely_insults": ["superstition", "unreproducible", "withheld asset", "moving claim"],
+      "projection_use": "Make the central dispute concern what the song predicts and what a listener is entitled to copy, not whether goblins possess mystical foresight.",
+      "source_refs": ["delvehold-goblins", "delvehold-ecological-responses"]
+    },
+    {
+      "observer_group_id": "cinderhook-route-chorus",
+      "target_group_id": "greathold-relay-office",
+      "observer_read": ["A machine that turns useful omission into a blank cell", "A possible reciprocal witness", "A source of holds that distant offices may reverse"],
+      "target_self_read": ["A public safety office", "A carrier of attributable evidence", "A local authority balancing workers and infrastructure"],
+      "misread_patterns": ["The chorus may underestimate a clerk's ability to preserve a conditional record", "The office may underestimate how its correct orders reveal hidden geography by inference"],
+      "likely_insults": ["dead ink", "clock ear", "map mouth"],
+      "projection_use": "Keep Tikka and Orsa capable of local trust while making portable records and inferred geography a continuing risk.",
+      "source_refs": ["delvehold-goblins", "delvehold-greathold", "delvehold-dwarven-industry"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "route-singer",
+      "summary": "A goblin specialist who maintains conditional route knowledge through observation, returned witness, performance, and selective disclosure.",
+      "obligations": ["Preserve missing evidence", "Warn travellers within the song's confidence", "Protect the home verse", "Close a route when the cadence is unfinished"],
+      "available_masks": ["Dry guide humor", "Purchased performer", "Unhelpful local", "Superstitious singer"],
+      "failure_modes": ["Letting urgency fill a missing beat", "Using a decoy without preserving the distinction", "Exposing home geography to make the warning credible"],
+      "source_refs": ["delvehold-goblins"]
+    },
+    {
+      "role_id": "route-runner",
+      "summary": "A goblin witness whose body, clothing, and return cadence carry observations from a passage no desk can see.",
+      "obligations": ["Return if possible", "Report signs before interpretation hardens", "Answer the chorus honestly", "Guard the blind bend"],
+      "available_masks": ["Breathless messenger", "Minor guide", "Silent labourer"],
+      "failure_modes": ["Bravado stated as confidence", "A lost observation after injury", "Withdrawal when the chorus spends trust cheaply"],
+      "source_refs": ["delvehold-goblins"]
+    },
+    {
+      "role_id": "hold-dispatch-clerk",
+      "summary": "A local dwarven clerk who can stop rail movement and carry route evidence into Hold procedure but cannot erase the seizure risk created by a portable record.",
+      "obligations": ["Bring workers home", "Keep signals truthful", "Record conditions", "Account for failed freight and public utility impact"],
+      "available_masks": ["Timetable pedant", "Neutral recorder", "Municipal property guardian", "Sealed witness"],
+      "failure_modes": ["Turning a pause into zero", "Inferring and exposing a secret through correct orders", "Allowing a private delivery bond to command a civic signal"],
+      "source_refs": ["delvehold-greathold", "delvehold-dwarven-industry"]
+    },
+    {
+      "role_id": "deep-company-surveyor",
+      "summary": "An industrial surveyor responsible for people, equipment, cargo, and a forecast his instruments did not make.",
+      "obligations": ["Recover the crew", "Fulfil the winter bond", "Protect Company route capacity", "Explain the lost engine"],
+      "available_masks": ["Technical skeptic", "Contract realist", "Safety advocate", "Injured purchaser"],
+      "failure_modes": ["Mistaking time for condition", "Reverse-engineering a refuge from rescue orders", "Calling a correct halt fraud because its warning was false"],
+      "source_refs": ["delvehold-deep-mining", "delvehold-dwarven-industry"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "tikka_reed_teeth",
+      "known_context": [
+        {"text": "Tikka knows the local route-song, the difference between road and home verses, the current witnesses, and the visible Cinderhook instruments.", "source_refs": ["delvehold-goblins"]}
+      ],
+      "beliefs": [
+        {"text": "Tikka believes the third repeated engine pulse will trigger a Glassvein closure and that Low Echo will admit one unpowered crossing.", "source_refs": ["delvehold-goblins", "delvehold-ecological-responses"]}
+      ],
+      "misreads": [
+        {"text": "Tikka may overestimate how completely a sealed listener can prevent others from inferring hidden geography.", "source_refs": ["delvehold-goblins", "delvehold-greathold"]}
+      ],
+      "must_not_know": [
+        {"text": "Tikka cannot know whether the route response comes from one core, a regional dungeon, distributed adaptation, or several processes converging.", "source_refs": ["delvehold-ecological-responses", "delvehold-nested-dungeons"]}
+      ]
+    },
+    {
+      "speaker_id": "marn_nine_turns",
+      "known_context": [
+        {"text": "Marn knows the signs encountered on his latest Glassvein crossing and which expected runner failed to answer.", "source_refs": ["delvehold-goblins"]}
+      ],
+      "beliefs": [
+        {"text": "Marn treats the missing response as active uncertainty and the Low Echo home fork as protected community knowledge.", "source_refs": ["delvehold-goblins"]}
+      ],
+      "misreads": [
+        {"text": "Marn may read institutional notation as deliberate seizure even when Orsa is trying to preserve the song's limits.", "source_refs": ["delvehold-goblins", "delvehold-greathold"]}
+      ],
+      "must_not_know": [
+        {"text": "Marn has no direct view of the returning train after it passes the eastern buttress.", "source_refs": ["delvehold-greathold"]}
+      ]
+    },
+    {
+      "speaker_id": "orsa_feldspar",
+      "known_context": [
+        {"text": "Orsa knows Cinderhook signals, timetable procedure, the route-song evidence performed in the room, and the district consequence of a missed pump-crystal delivery.", "source_refs": ["delvehold-greathold", "delvehold-dwarven-industry"]}
+      ],
+      "beliefs": [
+        {"text": "Orsa believes a conditional record and physical departure hold can carry the warning into public procedure.", "source_refs": ["delvehold-greathold", "delvehold-surface-symptoms"]}
+      ],
+      "misreads": [
+        {"text": "Orsa may believe a sealed duty is enough to contain the geographic inference created by her rescue orders.", "source_refs": ["delvehold-goblins"]}
+      ],
+      "must_not_know": [
+        {"text": "Orsa does not know the home fork unless Tikka chooses the full disclosure branch.", "source_refs": ["delvehold-goblins"]}
+      ]
+    },
+    {
+      "speaker_id": "veyr_copperstamp",
+      "known_context": [
+        {"text": "Veyr knows the Company survey pulses, the returning crew and cargo, contract urgency, and only the route-song material performed within his hearing.", "source_refs": ["delvehold-deep-mining", "delvehold-dwarven-industry"]}
+      ],
+      "beliefs": [
+        {"text": "Veyr believes useful route knowledge should become transferable coordinates and schedule rules.", "source_refs": ["delvehold-deep-mining", "delvehold-goblins"]}
+      ],
+      "misreads": [
+        {"text": "Veyr may mistake route-denial misinformation for the chorus's prediction and a withheld home verse for a withheld safe crossing.", "source_refs": ["delvehold-goblins"]}
+      ],
+      "must_not_know": [
+        {"text": "Veyr cannot see past Low Echo's blind bend and cannot know the concealed settlement's location from the public refrain alone.", "source_refs": ["delvehold-goblins"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The route's response may be local core action, regional adaptation, or distributed ecological learning. The fixture must not settle that mystery through omniscient narration.",
+      "source_refs": ["delvehold-ecological-responses", "delvehold-nested-dungeons"]
+    },
+    {
+      "text": "The exact location and extent of the hidden Low Echo settlement remain outside the artifact; only its dependence on concealed water, fungal beds, sleeping chambers, and escape routes is grounded.",
+      "source_refs": ["delvehold-goblins"]
+    },
+    {
+      "text": "No branch outcome is promoted as fixed Delvehold history. The fixture demonstrates disclosure paths and their costs.",
+      "source_refs": ["delvehold-goblins", "delvehold-greathold"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "How widely does Greathold contract law recognize a route-singer's closed or reciprocal hearing?",
+      "blocks_training": false,
+      "notes": "The fixture treats Orsa's sealed hearing as a local civic promise and makes its limits explicit. It does not establish a Greathold-wide privilege."
+    },
+    {
+      "question": "Which instruments can preserve route-song timing and confidence without making the home verse transferable?",
+      "blocks_training": false,
+      "notes": "Cinderhook uses slate gaps, witness names, and condition text as a narrow attempt. Future Ledger or Enginewright work may furnish standard practice."
+    }
+  ]
+}

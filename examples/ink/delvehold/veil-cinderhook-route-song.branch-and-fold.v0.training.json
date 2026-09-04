@@ -1,0 +1,389 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "veil-cinderhook-route-song-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/delvehold/veil-cinderhook-route-song.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/delvehold/veil-cinderhook-route-song.v0.json",
+  "scene_id": "veil-cinderhook-route-song-v0.cinderhook-third-pulse",
+  "protagonist_agent_id": "tikka_reed_teeth",
+  "npc_agent_ids": [
+    "marn_nine_turns",
+    "orsa_feldspar",
+    "veyr_copperstamp",
+    "glassvein_crew"
+  ],
+  "purpose": "Veil-mandate branch-and-fold fixture about a goblin route-singer choosing how to warn workers, preserve uncertainty, and protect a concealed community when a conditional route forecast collides with a winter crystal contract.",
+  "local_awareness_summary": [
+    {
+      "text": "Tikka knows Cinderhook's cups, well, signals, public road refrain, protected home verse, returned witnesses, and the observed conditions behind the predicted third-pulse closure.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/veil-cinderhook-route-song.v0.json",
+        "Delvehold/Lore/Peoples/Goblins.md"
+      ]
+    },
+    {
+      "text": "Tikka can inspect small instruments, sing or withhold verses, teach notation, move through the relay, manipulate the exposed dispatch pin, and guide a walking route; Tikka cannot command the core or see around the Glassvein buttress.",
+      "source_refs": [
+        "examples/ink/delvehold/veil-cinderhook-route-song.branch-and-fold.v0.ink",
+        "examples/visual/delvehold/veil-cinderhook-route-song.branch-and-fold.v0.visual.json"
+      ]
+    },
+    {
+      "text": "The immediate stakes are nine returning workers, two pump-crystal pallets, Cistern Terrace's cold-turn delivery, one Low Echo walking window, and the hidden settlement encoded by the home verse.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/veil-cinderhook-route-song.v0.json"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Tikka's local goblin route-singer viewpoint inside Cinderhook Relay. Choices operate on observations, song disclosure, records, signals, carried objects, route access, and bodily guidance.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/delvehold/veil-cinderhook-route-song.v0.json"
+        ]
+      },
+      {
+        "text": "The tonal mode is warm workplace comedy braided with procedural dread: morning banter and exact work establish ordinary dependence before the route answers the engine pattern.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "examples/ink/delvehold/veil-cinderhook-route-song.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "The route chorus owns the home verse and its disclosure terms; the Hold clerk owns the civic signal and public record; the Deep Company owns its engine, cargo, survey book, and contractual claim. None owns the passage's response.",
+        "source_refs": [
+          "examples/lore-grounding/delvehold/veil-cinderhook-route-song.v0.json"
+        ]
+      },
+      {
+        "text": "Orsa can promise a sealed local hearing and issue a physical hold. She cannot guarantee that Veyr will fail to infer hidden geography from correct rescue orders.",
+        "source_refs": [
+          "examples/lore-grounding/delvehold/veil-cinderhook-route-song.v0.json"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The copper, iron, and stone cups; Orsa's slate and civic seal; Veyr's survey book; the red clapper and removable iron pin; the rope screen; locomotive; and crystal pallets remain material branch surfaces.",
+        "source_refs": [
+          "examples/ink/delvehold/veil-cinderhook-route-song.branch-and-fold.v0.ink",
+          "examples/visual/delvehold/veil-cinderhook-route-song.branch-and-fold.v0.visual.json"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "The route-song predicts passage behavior under a named pressure, not a fixed clock time or inevitable future. Its held beats and chorus preserve uncertainty and witness provenance.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Goblins.md"
+        ]
+      },
+      {
+        "text": "Every final priority must spend something real: crossing margin, secret custody, public credibility, freight, utility supply, institutional trust, or future route access.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "examples/lore-grounding/delvehold/veil-cinderhook-route-song.v0.json"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not reveal an omniscient dungeon speaker, settle which scale of core caused the closure, or make the song supernatural prophecy detached from observation.",
+        "source_refs": [
+          "Delvehold/Lore/Dungeon Ecology/Ecological Responses.md",
+          "Delvehold/Lore/Ontology/Nested Dungeons.md"
+        ]
+      },
+      {
+        "text": "Do not produce a cost-free branch that saves all freight, satisfies the winter bond, preserves the home verse, changes the official model, and leaves every relationship intact.",
+        "source_refs": [
+          "Delvehold/Lore/Crisis/World Without a Villain.md",
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold four morning reporting methods and four disclosure acts into one visible third-pulse closure, then route four final priorities to eight state-gated endings.",
+    "choice_layers": [
+      "morning_song_method",
+      "disclosure_under_second_pulse",
+      "route_song_consequence"
+    ],
+    "variables": [
+      "route_confidence",
+      "chorus_integrity",
+      "orsa_trust",
+      "company_pressure",
+      "time_margin",
+      "worker_warning",
+      "home_verse_exposure",
+      "record_fidelity",
+      "dispatch_hold",
+      "decoy_forecast"
+    ],
+    "ending_gates": [
+      "ending_crossing_success",
+      "ending_crossing_cost",
+      "ending_disclosure_success",
+      "ending_disclosure_cost",
+      "ending_record_success",
+      "ending_record_cost",
+      "ending_home_success",
+      "ending_home_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "morning_test_the_route",
+      "ink_path": "morning_choice",
+      "action_type": "use_object",
+      "actor_intent": "Buy forecast confidence by testing the listening well and every material cup before singing.",
+      "state_basis": [
+        "Tikka can compare draught, seep, resonance, and mana behavior through local route instruments.",
+        "The returning train is close enough that inspection spends time."
+      ],
+      "reviewed_consequences": [
+        "Raises route_confidence and orsa_trust while lowering time_margin; later crossing and record gates read the added confidence."
+      ],
+      "training_hooks": [
+        "practical_intelligence_as_instrument_work",
+        "accuracy_time_tradeoff",
+        "non_speech_route_action"
+      ]
+    },
+    {
+      "branch_id": "morning_restore_the_chorus",
+      "ink_path": "morning_choice",
+      "action_type": "speak",
+      "actor_intent": "Have Marn repeat the crossing in call-and-response so the missing witness remains audible.",
+      "state_basis": [
+        "Marn has returned with current observations.",
+        "A missing runner's answer should remain an explicit gap rather than be filled for neatness."
+      ],
+      "reviewed_consequences": [
+        "Raises route_confidence and chorus_integrity while raising company_pressure; chorus_integrity later gates safe reciprocal disclosure."
+      ],
+      "training_hooks": [
+        "witness_gap_preserved",
+        "collective_knowledge_method",
+        "death_as_information_loss"
+      ]
+    },
+    {
+      "branch_id": "morning_teach_uncertainty",
+      "ink_path": "morning_choice",
+      "action_type": "show_object",
+      "actor_intent": "Teach Orsa a notation that preserves the held beat in a portable civic record.",
+      "state_basis": [
+        "Orsa controls the public timetable and is willing to copy the gap.",
+        "Portable notation risks Company scrutiny but can stop later offices flattening uncertainty."
+      ],
+      "reviewed_consequences": [
+        "Raises route_confidence, record_fidelity, orsa_trust, and company_pressure; later public-record gates require the improved record."
+      ],
+      "training_hooks": [
+        "uncertainty_translation",
+        "selective_disclosure_interface",
+        "record_as_risk_and_tool"
+      ]
+    },
+    {
+      "branch_id": "morning_repeat_the_stale_song",
+      "ink_path": "morning_choice",
+      "action_type": "withhold_object",
+      "actor_intent": "Save time and defer conflict by performing the last familiar refrain instead of exposing current uncertainty.",
+      "state_basis": [
+        "Yesterday's route-song is still available in memory.",
+        "Marn's new wet-sleeve evidence has not been integrated."
+      ],
+      "reviewed_consequences": [
+        "Lowers route_confidence, chorus_integrity, and company_pressure while raising time_margin; later crossings and disclosure attempts carry the social and evidentiary weakness."
+      ],
+      "training_hooks": [
+        "routine_misinformation",
+        "schedule_pressure",
+        "withholding_costs_chorus"
+      ]
+    },
+    {
+      "branch_id": "disclose_road_refrain",
+      "ink_path": "disclosure_choice",
+      "action_type": "speak",
+      "actor_intent": "Warn that Low Echo permits one walking crossing while withholding every home route after the blind bend.",
+      "state_basis": [
+        "The road refrain can communicate a useful window and forbidden engine pattern without disclosing the settlement.",
+        "Orsa can place the condition on the public board."
+      ],
+      "reviewed_consequences": [
+        "Raises worker_warning, record_fidelity, and company_pressure; later closure staging and final record gates read the warning and notation."
+      ],
+      "training_hooks": [
+        "warning_without_home_sale",
+        "public_refrain",
+        "conditional_forecast"
+      ]
+    },
+    {
+      "branch_id": "entrust_home_verse",
+      "ink_path": "disclosure_choice",
+      "action_type": "disclose_secret",
+      "actor_intent": "Give Orsa the home fork in a sealed reciprocal hearing so she can coordinate the walking rescue.",
+      "state_basis": [
+        "Orsa can make a local sealed promise but cannot stop Veyr from inferring geography through her orders.",
+        "The home verse contains water, food, refuge, and escape routes."
+      ],
+      "reviewed_consequences": [
+        "Raises worker_warning, home_verse_exposure, orsa_trust, and record_fidelity while lowering time_margin; success later requires both high trust and a whole chorus."
+      ],
+      "training_hooks": [
+        "reciprocal_secret_custody",
+        "disclosure_inference_risk",
+        "trust_is_not_control"
+      ]
+    },
+    {
+      "branch_id": "plant_early_closure",
+      "ink_path": "disclosure_choice",
+      "action_type": "deceive",
+      "actor_intent": "Plant a stale second-pulse warning where Veyr will overhear it, causing a useful early halt without revealing Low Echo.",
+      "state_basis": [
+        "Evicted communities may leave stale refrains for Company listeners as route denial.",
+        "Veyr controls enough Company urgency to strike the public clapper when he believes the rail has already failed."
+      ],
+      "reviewed_consequences": [
+        "Raises worker_warning, decoy_forecast, dispatch_hold, company_pressure, and time_margin while lowering orsa_trust; the public-record ending must distinguish the decoy from evidence."
+      ],
+      "training_hooks": [
+        "protective_misinformation",
+        "accurate_halt_false_forecast",
+        "route_denial_not_testimony"
+      ]
+    },
+    {
+      "branch_id": "seize_dispatch_hold",
+      "ink_path": "disclosure_choice",
+      "action_type": "use_object",
+      "actor_intent": "Remove the iron dispatch pin so the north departure signal fails safe before argument spends the window.",
+      "state_basis": [
+        "The removable pin is physically reachable below the west desk's low rail.",
+        "Tikka can halt municipal equipment but cannot authorize the resulting freight loss."
+      ],
+      "reviewed_consequences": [
+        "Raises dispatch_hold, worker_warning, company_pressure, and time_margin; the physical hold later gates safe home protection and visibly persists in the visual plan."
+      ],
+      "training_hooks": [
+        "physical_hold_as_direct_action",
+        "municipal_authority_conflict",
+        "non_speech_safety_action"
+      ]
+    },
+    {
+      "branch_id": "prioritize_people_and_pumps",
+      "ink_path": "final_choice",
+      "action_type": "move",
+      "actor_intent": "Guide workers and two hand-carried crystal sacks through the song's narrow walking permission.",
+      "state_basis": [
+        "Success requires route_confidence, time_margin, and worker_warning.",
+        "Hand-carried crystal preserves some pump service while leaving the powered engine behind."
+      ],
+      "reviewed_consequences": [
+        "Routes to a safe bounded crossing or a rushed wet-shelf retreat; home_verse_exposure changes how much Orsa knows during success."
+      ],
+      "training_hooks": [
+        "people_and_utility_tradeoff",
+        "conditional_crossing",
+        "state_gated_ending"
+      ]
+    },
+    {
+      "branch_id": "prioritize_bounded_disclosure",
+      "ink_path": "final_choice",
+      "action_type": "transfer_knowledge",
+      "actor_intent": "Let Orsa direct the crossing with the full cadence and test reciprocal custody beyond the chorus.",
+      "state_basis": [
+        "Success requires orsa_trust and chorus_integrity together.",
+        "Correct route orders can expose a hidden branch even if the sealed slate remains closed."
+      ],
+      "reviewed_consequences": [
+        "Routes to one contained cross-cultural custody or to a correct rescue whose orders create a Company map inference."
+      ],
+      "training_hooks": [
+        "secret_custody_beyond_kin",
+        "inference_breaks_confidentiality",
+        "state_gated_ending"
+      ]
+    },
+    {
+      "branch_id": "prioritize_public_record",
+      "ink_path": "final_choice",
+      "action_type": "show_record",
+      "actor_intent": "Publish the conditional route account beside the Company report while withholding home geography.",
+      "state_basis": [
+        "Success requires both a high-fidelity record and high route confidence.",
+        "A planted decoy must be labeled route denial instead of being laundered into evidence."
+      ],
+      "reviewed_consequences": [
+        "Routes to an institutional record preserving conditions and uncertainty or to another clock-bound mistranslation; decoy_forecast alters both versions."
+      ],
+      "training_hooks": [
+        "uncertainty_survives_translation",
+        "misinformation_provenance",
+        "route_logs_as_future_evidence"
+      ]
+    },
+    {
+      "branch_id": "prioritize_home_secrecy",
+      "ink_path": "final_choice",
+      "action_type": "block_route",
+      "actor_intent": "Keep every stranger and powered cart out of Low Echo, accepting the winter delivery loss.",
+      "state_basis": [
+        "Success requires a prepared physical dispatch hold and at least some worker warning.",
+        "The hidden settlement's safety conflicts with immediate pump-crystal delivery."
+      ],
+      "reviewed_consequences": [
+        "Routes to safe shelter and an explicit public utility cost or to a bodily confrontation that keeps the home unseen but reveals the contested boundary."
+      ],
+      "training_hooks": [
+        "secret_kept_with_public_cost",
+        "route_blocking_as_embodied_action",
+        "state_gated_ending"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Any promotion of a branch outcome into fixed Delvehold history",
+      "Durable character memory, trust, or relationship updates",
+      "Greathold-wide recognition of sealed route-song hearings",
+      "Accepted corpus status"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Veil elaborator applying the four required Ghostlight reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality verdict: accepted. Reader orientation, coherence, pacing, voice, tonal fit, and IF playability meet the B-level gate. Review repairs made the north pressure gate's surge isolation explicit, corrected the one-two-three pulse chronology, placed Orsa inside both Low Echo crossing outcomes, and made the public-record endings carry worker delay and missed pump delivery.",
+      "Lore grounding verdict: accepted. Eleven cited Delvehold source notes and the authored Goblins.md route-song section were checked. The fixture keeps the song conditional and observational, preserves uncertainty and home-verse custody, leaves the responsible dungeon scale unresolved, and labels the sealed-hearing practice as a local promise rather than Greathold-wide law.",
+      "Visual continuity verdict: accepted_with_minor_revisions as an illustrated-IF scaffold, not replay-ready art. Twenty unique visual anchors and twenty BFL prompts cover focal changes, all material branch actions, the third-pulse beat, folded state, and eight endings. Stable character refs, affirmative standalone prompts, branch modifiers, and the draft scene-set map are present; a camera-specific plan view or 3D blockout remains required before multi-angle rendering.",
+      "Spatial-geometric cohesion verdict: accepted_with_minor_revisions as a stageable text and map plan. The fixed wedge hall, north pressure gate, east occluding buttress, south blind culvert, west dispatch desk, central well, cup wall, sightlines, staging slots, and branch-persistent object states support every action. Review removed a false north escape, corrected Orsa's crossing position, and kept Veyr's high-pressure cargo stance conditional. A durable blockout remains the precondition for replay-ready visual continuity.",
+      "No Ink compiler was installed or invoked, as required by the scheduler task. The artifact received JSON parse validation, top-level reference-shape comparison, header and knot-target inspection, variable-use audit, branch/sidecar/modifier cross-checks, character-ref validation, prompt-language inspection, source-path and line-range validation, and manual branch-path review."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}
