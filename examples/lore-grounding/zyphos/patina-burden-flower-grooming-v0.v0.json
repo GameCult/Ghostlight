@@ -1,0 +1,659 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "zyphos.patina-burden-flower-grooming-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "source_grounded_original_setting",
+  "source_refs": [
+    {
+      "source_id": "zyphos-index",
+      "path": "Eusocial Interbeing/index.md",
+      "title": "Zyphos",
+      "line_start": 1,
+      "line_end": 35,
+      "relevance": "World premise: low-light close-binary life uses mutable memory and ecological contracts across scale."
+    },
+    {
+      "source_id": "burden-flowers",
+      "path": "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+      "title": "Burden Flowers",
+      "line_start": 1,
+      "line_end": 54,
+      "relevance": "Primary organism and elaboration source: body, senses, warning testimony, metabolic loyalties, grooming triggers, seed shedding, credibility, and the authored grooming contract."
+    },
+    {
+      "source_id": "saueia-body",
+      "path": "Eusocial Interbeing/Species/Sa'ueia.md",
+      "title": "Sa'ueia",
+      "line_start": 1,
+      "line_end": 25,
+      "relevance": "Grounds the long-bodied hexapod body plan, chest manipulators, chemical-sensing facial fans, low work surfaces, mobile family life, and breeding-ground commons."
+    },
+    {
+      "source_id": "breeding-grounds",
+      "path": "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+      "title": "Breeding Grounds",
+      "line_start": 1,
+      "line_end": 21,
+      "relevance": "Primary locality source: the open arrival terrace, fungal boundary, nursery ramps, low work surfaces, ecological witnesses, and non-ownership of route decisions."
+    },
+    {
+      "source_id": "saueia-family-units",
+      "path": "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md",
+      "title": "Sa'ueia Family Units",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds small mobile kin groups as schools, workshops, caravans, memory keepers, and ecological negotiators."
+    },
+    {
+      "source_id": "saueia-nomadic-civilization",
+      "path": "Eusocial Interbeing/Civilizations/Sa'ueia Nomadic Civilization.md",
+      "title": "Sa'ueia Nomadic Civilization",
+      "line_start": 1,
+      "line_end": 16,
+      "relevance": "Grounds advanced mobile institutions, route assemblies, ecological partners, and reproductive commons."
+    },
+    {
+      "source_id": "saueia-continent",
+      "path": "Eusocial Interbeing/World/Sa'ueia Continent.md",
+      "title": "Sa'ueia Continent",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds migratory ecological politics, remembered generosity, and permanent occupation concentrated at breeding grounds."
+    },
+    {
+      "source_id": "fractal-eusocial-web",
+      "path": "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md",
+      "title": "Fractal Eusocial Web",
+      "line_start": 1,
+      "line_end": 146,
+      "relevance": "Grounds organisms, routes, commons, and tissues as distinct political scales joined by memory-bearing contracts."
+    },
+    {
+      "source_id": "biosphere-examples",
+      "path": "Eusocial Interbeing/Ecology/Zyphos Biosphere Examples.md",
+      "title": "Zyphos Biosphere Examples",
+      "line_start": 1,
+      "line_end": 81,
+      "relevance": "Grounds burden-flower warning and reputation behavior plus restrained low-energy visual language."
+    },
+    {
+      "source_id": "mutable-memory",
+      "path": "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+      "title": "Mutable Memory Endosymbiosis",
+      "line_start": 1,
+      "line_end": 123,
+      "relevance": "Grounds cellular memory, partial agency, immune politics, transmitted states, reproduction as negotiation, and ecological contracts."
+    },
+    {
+      "source_id": "reciprocal-ecologies",
+      "path": "Eusocial Interbeing/Ecology/Reciprocal Ecologies.md",
+      "title": "Reciprocal Ecologies",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds remembered conduct, materially rational generosity, and local access or refusal."
+    },
+    {
+      "source_id": "candle-fungal-roads",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+      "title": "Candle Fungal Roads",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds amber route candles, disease disclosure, carried memory, route credit, quarantine behavior, and dark or bitter refusal."
+    },
+    {
+      "source_id": "umbros-facing-lantern-trees",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+      "title": "Umbros-Facing Lantern Trees",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds low blue-white route and infant-shelter lights, below-canopy lantern knots, fungal-road exchange, and eclipse timing."
+    },
+    {
+      "source_id": "prismwake-mats",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Prismwake Mats.md",
+      "title": "Prismwake Mats",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds burden-flower testimony as an affidavit whose credibility and exaggeration history affect host treatment."
+    },
+    {
+      "source_id": "umbros-system",
+      "path": "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+      "title": "Zyphos Umbros Binary System",
+      "line_start": 1,
+      "line_end": 104,
+      "relevance": "Grounds the fixed planet-scale Umbros sky position, approximately hour-long eclipse, dim primary, and scarce returning-light window."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Ordinary current-era Sa'auei'a life during the returning-light interval after a routine eclipse.",
+    "location": "The outer grooming rim of an open arrival terrace where a candle fungal road meets a Sa'auei'a breeding ground.",
+    "summary": "A child performs normal care for a route-companion burden flower before family departure. The flower repeats an old alarm strongly enough for the living road to notice, turning a domestic grooming choice into a small public negotiation over care, testimony, and credibility.",
+    "public_facts": [
+      {
+        "text": "Burden flowers attach to bodies or gear, consume sweat, light, minerals, and immune-emotional states, and warn hosts about disease, bad water, hostile route memory, and predators.",
+        "source_refs": [
+          "burden-flowers"
+        ]
+      },
+      {
+        "text": "Sa'auei'a families cultivate trusted burden-flower lineages as route companions while their status depends on remembered ecological relationships.",
+        "source_refs": [
+          "burden-flowers",
+          "saueia-family-units",
+          "reciprocal-ecologies"
+        ]
+      },
+      {
+        "text": "Candle fungal roads connect breeding grounds and respond visibly to food, contamination, truthful disease disclosure, and broken obligations.",
+        "source_refs": [
+          "candle-fungal-roads",
+          "breeding-grounds"
+        ]
+      },
+      {
+        "text": "The authored grooming contract uses mineral wash, soft three-pronged combs, leaf turning, shed-fiber removal, witnessed alarms, wash runoff, and seed-bead release to connect host care with ecological credibility.",
+        "source_refs": [
+          "burden-flowers"
+        ]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Returning light is a scarce care resource because eclipse rhythm and a dim primary constrain photosynthetic opportunity.",
+        "source_refs": [
+          "umbros-system",
+          "burden-flowers"
+        ]
+      },
+      {
+        "text": "A flower's strong public display can protect a host or impose reputation cost, while hunger and neglect can reward repetition and exaggeration.",
+        "source_refs": [
+          "burden-flowers",
+          "prismwake-mats"
+        ]
+      },
+      {
+        "text": "The breeding ground and fungal road are participants with independent boundary authority; family schedule does not override either ecology.",
+        "source_refs": [
+          "breeding-grounds",
+          "candle-fungal-roads",
+          "mutable-memory"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "saueia-mobile-family",
+      "label": "Departing Sa'auei'a family unit",
+      "group_type": "mobile_kin_working_group",
+      "institutional_logic": [
+        "Carry kinship, teaching, craft, route memory, ecological diplomacy, and childcare while remaining mobile."
+      ],
+      "material_incentives": [
+        "Depart within a useful light window, preserve road access, maintain healthy symbionts, and keep family testimony credible."
+      ],
+      "internal_virtues": [
+        "Care that can be witnessed",
+        "Precise boundaries",
+        "Useful return",
+        "Generosity remembered by non-social partners"
+      ],
+      "internal_shames": [
+        "Hiding a partner's warning for convenience",
+        "Letting schedule become extraction",
+        "Calling control a grooming necessity"
+      ],
+      "prestige_markers": [
+        "A trusted burden-flower lineage",
+        "Routes that reopen after years away",
+        "Young members who can perform care without erasing testimony"
+      ],
+      "taboo_triggers": [
+        "Forced ecological access",
+        "Cutting live memory tissue to mute a dispute",
+        "Treating a breeding ground as family property"
+      ],
+      "emotional_display_norms": [
+        "Embarrassment is legible through facial-fan closure, posture, scent, and terse humor; public alarm invites comparison before verdict."
+      ],
+      "trust_defaults": [
+        "Trusts repeated acts and situated witnesses more than one signal, one speaker, or one owned archive."
+      ],
+      "speech_register_cues": [
+        "Compact practical instruction",
+        "Dry family teasing",
+        "Concrete naming of costs",
+        "Few abstract declarations"
+      ],
+      "source_refs": [
+        "saueia-body",
+        "saueia-family-units",
+        "saueia-nomadic-civilization",
+        "breeding-grounds"
+      ]
+    },
+    {
+      "group_id": "trusted-burden-flower-lineage",
+      "label": "Trusted burden-flower lineage",
+      "group_type": "mobile_parasite_symbiont",
+      "institutional_logic": [
+        "Trade warnings and carried memory for mineral feeding, light, grooming, travel, credible attention, and suitable reproduction sites."
+      ],
+      "material_incentives": [
+        "Keep the host alive, secure light and salts, protect rootlets, place seed beads near useful routes, and retain enough credibility to remain carried."
+      ],
+      "internal_virtues": [
+        "Timely alarm",
+        "Signal restraint after feeding",
+        "Cooperative rootlet release",
+        "Useful seed placement"
+      ],
+      "internal_shames": [
+        "Repeated exaggeration",
+        "Trading old fear for attention until no ecology believes it"
+      ],
+      "prestige_markers": [
+        "Clear color bands",
+        "Warnings confirmed by roads or mats",
+        "Hosts who preserve inconvenient testimony"
+      ],
+      "taboo_triggers": [
+        "Live sensory filaments cut during disputed testimony",
+        "Forced stripping",
+        "Prolonged shade and mineral neglect"
+      ],
+      "emotional_display_norms": [
+        "Appetite, alarm, resistance, and cooperation appear through color, leaf angle, rootlet pressure, sap, and seed shedding."
+      ],
+      "trust_defaults": [
+        "Responds to regular feeding and careful touch; treats concealment or rough removal as threat."
+      ],
+      "speech_register_cues": [
+        "No word speech",
+        "Color sequence",
+        "Rootlet pressure",
+        "Leaf stance",
+        "Seed release"
+      ],
+      "source_refs": [
+        "burden-flowers",
+        "mutable-memory"
+      ]
+    },
+    {
+      "group_id": "arrival-terrace-fungal-road",
+      "label": "Arrival-terrace candle fungal road",
+      "group_type": "living_route_authority",
+      "institutional_logic": [
+        "Maintain safe traffic by comparing carried chemistry, remembered conduct, food contributions, disease disclosure, and testimony from partner organisms."
+      ],
+      "material_incentives": [
+        "Receive clean biological matter, prevent contamination, keep reliable traffic, and preserve credit with breeding-ground and producer partners."
+      ],
+      "internal_virtues": [
+        "Useful sampling",
+        "Remembered reliability",
+        "Local rerouting",
+        "Proportionate bitterness"
+      ],
+      "internal_shames": [
+        "Opening to concealed disease",
+        "Mistaking loud testimony for complete truth"
+      ],
+      "prestige_markers": [
+        "Continuous bright candles",
+        "Accurate quarantine rings",
+        "Routes preferred by credible families"
+      ],
+      "taboo_triggers": [
+        "Hidden sickness",
+        "Trampled fruiting bodies",
+        "Poison presented as tribute",
+        "Forced passage"
+      ],
+      "emotional_display_norms": [
+        "Invitation and refusal appear as candle brightness, gaps, bitter beads, dark lanes, and slow reopening."
+      ],
+      "trust_defaults": [
+        "Treats burden-flower color as one affidavit among chemistry, pressure, wash residue, and remembered family conduct."
+      ],
+      "speech_register_cues": [
+        "No word speech",
+        "Amber candle sequence",
+        "Bitter ground taste",
+        "Route opening and closure"
+      ],
+      "source_refs": [
+        "candle-fungal-roads",
+        "breeding-grounds",
+        "reciprocal-ecologies"
+      ]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "saueia-mobile-family.care-must-travel",
+      "applies_to": [
+        "saueia-mobile-family"
+      ],
+      "pressure_type": "mobility_care_tradeoff",
+      "summary": "Portable life makes care work time-sensitive: delaying grooming protects departure position while degrading the symbiont and the family's route credibility.",
+      "projection_use": "Give family actors choices among time, comfort, evidence, and route access instead of treating care as free background labor.",
+      "source_refs": [
+        "saueia-family-units",
+        "burden-flowers",
+        "umbros-system"
+      ]
+    },
+    {
+      "field_id": "trusted-burden-flower-lineage.warning-needs-credibility",
+      "applies_to": [
+        "trusted-burden-flower-lineage"
+      ],
+      "pressure_type": "testimony_market",
+      "summary": "Warnings earn food and attention, so the flower benefits from strong signals while depending on long-term credibility with hosts, roads, and mats.",
+      "projection_use": "Let hunger, care, and social opportunity change signal intensity while keeping current danger unresolved until compared.",
+      "source_refs": [
+        "burden-flowers",
+        "prismwake-mats"
+      ]
+    },
+    {
+      "field_id": "arrival-terrace-fungal-road.affidavit-not-verdict",
+      "applies_to": [
+        "arrival-terrace-fungal-road"
+      ],
+      "pressure_type": "boundary_evidence",
+      "summary": "The route can price uncertainty and request more legible evidence without possessing complete diagnosis or authority over every participant.",
+      "projection_use": "Express response through candle lanes and bitter footing, with proportional local costs instead of omniscient punishment.",
+      "source_refs": [
+        "candle-fungal-roads",
+        "breeding-grounds",
+        "mutable-memory"
+      ]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "saueia-mobile-family",
+      "target_group_id": "trusted-burden-flower-lineage",
+      "observer_read": [
+        "Trusted warning companion",
+        "Hungry exaggerator",
+        "Public embarrassment",
+        "Dependent organism owed care"
+      ],
+      "target_self_read": [
+        "Mobile warning organ",
+        "Mineral and light claimant",
+        "Lineage seeking credible reproduction"
+      ],
+      "misread_patterns": [
+        "A hurried host may call old memory false because it is inconvenient",
+        "A caring host may mistake feeding for ownership of the report"
+      ],
+      "likely_insults": [
+        "gossiping petals",
+        "schedule eater",
+        "old-alarm merchant"
+      ],
+      "projection_use": "Keep family humor affectionate and defensive while the flower's needs remain materially binding.",
+      "source_refs": [
+        "burden-flowers"
+      ]
+    },
+    {
+      "observer_group_id": "trusted-burden-flower-lineage",
+      "target_group_id": "saueia-mobile-family",
+      "observer_read": [
+        "Source of minerals and travel",
+        "Body with readable immune state",
+        "Potential censor",
+        "Seed carrier"
+      ],
+      "target_self_read": [
+        "Caretaker",
+        "Route partner",
+        "Autonomous host with bodily boundaries"
+      ],
+      "misread_patterns": [
+        "The flower may read grooming delay as abandonment",
+        "The flower may treat a boundary-preserving transfer as removal threat"
+      ],
+      "likely_insults": [
+        "tight rootlets",
+        "loud bloom",
+        "bitter sap"
+      ],
+      "projection_use": "Use rootlet release, leaf angle, and signal clarity to show negotiation while preserving the host's right to refuse a painful attachment point.",
+      "source_refs": [
+        "burden-flowers",
+        "mutable-memory"
+      ]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "route-child-flower-host",
+      "summary": "A young Sa'auei'a learning to perform portable symbiont care under family schedule, public observation, and bodily discomfort.",
+      "obligations": [
+        "Feed rootlets",
+        "Provide light",
+        "Protect live tissue",
+        "Keep warnings legible",
+        "Name uncertainty"
+      ],
+      "available_masks": [
+        "Competent apprentice",
+        "Busy packer",
+        "Unbothered host",
+        "Dry family wit"
+      ],
+      "failure_modes": [
+        "Hiding the bloom",
+        "Confusing speed with competence",
+        "Treating discomfort as permission to silence",
+        "Offering evidence after its chain is broken"
+      ],
+      "source_refs": [
+        "saueia-body",
+        "saueia-family-units",
+        "burden-flowers"
+      ]
+    },
+    {
+      "role_id": "elder-grooming-witness",
+      "summary": "A family teacher who can witness care and testimony while leaving the child, flower, and road their own authority.",
+      "obligations": [
+        "Teach sequence",
+        "Observe pre-wash color",
+        "Preserve route evidence",
+        "Keep correction proportionate"
+      ],
+      "available_masks": [
+        "Routine instruction",
+        "Patient silence",
+        "Dry teasing",
+        "Public procedural calm"
+      ],
+      "failure_modes": [
+        "Taking over the child's boundary",
+        "Declaring a diagnosis from one bloom",
+        "Using shame as a substitute for evidence"
+      ],
+      "source_refs": [
+        "saueia-family-units",
+        "breeding-grounds",
+        "burden-flowers"
+      ]
+    },
+    {
+      "role_id": "burden-flower-witness-symbiont",
+      "summary": "A small mobile plant whose alarm, appetite, credibility, attachment, and reproduction are one entangled bargaining position.",
+      "obligations": [
+        "Signal danger",
+        "Respond to care",
+        "Avoid spending credibility on hunger-amplified repetition"
+      ],
+      "available_masks": [
+        "Restrained color",
+        "Loud alarm",
+        "Cooperative release",
+        "Painful grip",
+        "Seed shedding"
+      ],
+      "failure_modes": [
+        "Repeating old fear until discounted",
+        "Escalating discomfort into false alarm",
+        "Forcing attention through badly placed seeds"
+      ],
+      "source_refs": [
+        "burden-flowers"
+      ]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "saueia_route_child",
+      "known_context": [
+        {
+          "text": "The child knows this flower's care routine, recent shelter history, family departure schedule, and common meanings of its current color order.",
+          "source_refs": [
+            "burden-flowers",
+            "saueia-family-units"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "The child believes the alarm is old and partly hunger-amplified, while recognizing that the road may price the uncertainty anyway.",
+          "source_refs": [
+            "burden-flowers",
+            "candle-fungal-roads"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "The child may read public attention as unfair accusation and treat fast concealment as a harmless scheduling choice.",
+          "source_refs": [
+            "burden-flowers",
+            "prismwake-mats"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "The child cannot know whether the violet residue indicates active danger, harmless old memory, or a signal changed by appetite until other evidence emerges.",
+          "source_refs": [
+            "mutable-memory",
+            "burden-flowers"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "elder_cousin_grooming_witness",
+      "known_context": [
+        {
+          "text": "The cousin knows grooming sequence, public witness expectations, fungal-road signals, and the family's current schedule and credit.",
+          "source_refs": [
+            "burden-flowers",
+            "candle-fungal-roads"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "The cousin believes care and testimony can be separated into observable steps without granting any one participant total authority.",
+          "source_refs": [
+            "mutable-memory",
+            "breeding-grounds"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "The cousin may underweight how strongly public observation turns a routine lesson into shame for the child.",
+          "source_refs": [
+            "saueia-family-units"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "The cousin cannot convert the road's candle response into a complete diagnosis or command it to restore passage.",
+          "source_refs": [
+            "candle-fungal-roads",
+            "breeding-grounds"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "childs_burden_flower",
+      "known_context": [
+        {
+          "text": "The flower carries host sweat, immune chemistry, emotional state, fungal-road scent, grooming memory, and old shelter residue through embodied channels.",
+          "source_refs": [
+            "burden-flowers"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "The flower's behavior treats mineral hunger, safe light, credible attention, and continued travel as immediate goods.",
+          "source_refs": [
+            "burden-flowers"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "The flower may respond to delayed care or careful separation as threat and intensify an otherwise stale report.",
+          "source_refs": [
+            "burden-flowers"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "The flower does not know the whole family's route plan or the fungal road's final interpretation beyond visible, chemical, and pressure feedback.",
+          "source_refs": [
+            "burden-flowers",
+            "candle-fungal-roads"
+          ]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The child, cousin, exact color order, old rain-shelter residue, dialogue, and playthrough outcomes are fixture-local inventions rather than committed historical canon.",
+      "source_refs": [
+        "burden-flowers"
+      ]
+    },
+    {
+      "text": "The durable canon contribution is the general burden-flower grooming contract in the owning organism note; the fixture dramatizes possible practice at one already established kind of locality.",
+      "source_refs": [
+        "burden-flowers",
+        "breeding-grounds"
+      ]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which native Sa'auei'a terms will eventually name grooming roles, route-witness cords, mineral-wash tools, and burden-flower life stages?",
+      "blocks_training": false,
+      "notes": "The fixture uses descriptive English handles and does not claim Weksa authority."
+    },
+    {
+      "question": "Do different fungal-road lineages compare grooming runoff directly, through partner organisms, or only as a local custom at some breeding grounds?",
+      "blocks_training": false,
+      "notes": "The authored elaboration establishes the local practice and its evidentiary role without claiming one universal planetary procedure."
+    }
+  ]
+}

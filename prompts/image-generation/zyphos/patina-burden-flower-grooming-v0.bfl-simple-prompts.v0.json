@@ -1,0 +1,56 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "patina-burden-flower-grooming-v0.bfl-simple-v0",
+  "fixture_id": "patina-burden-flower-grooming-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Intimate ecological science-fantasy storybook illustration, restrained ink contours and layered watercolor texture, dark mineral stone, muted blue-green organisms, amber fungal lights, dim red-sun illumination, expressive nonhuman body language, precise natural-history detail, gentle domestic wit, cinematic framing suitable for interactive fiction.",
+  "prompts": [
+    {
+      "id": "01_terrace_establishing",
+      "prompt": "Wide view of a fan-shaped outdoor terrace made of black root-bound stone: amber fungal road candles cross its narrow throat, three shallow ramps descend into warm nursery hollows, and low lantern trees carry blue-white knots along the inner rim. A juvenile long-bodied hexapod with four folded running legs and two small three-digit chest hands sits beside an older hexapod at a reed grooming mat, two shallow bowls, soft combs, mineral salts, and family packs. A hand-sized blue-gray mobile plant grips the child's bare left flank. A huge fixed dark planet covers most of the dim red sun, leaving a bright returning crescent."
+    },
+    {
+      "id": "02_grooming_closeup",
+      "prompt": "Close natural-history view of a juvenile long-bodied hexapod's bare left flank and two small three-digit chest hands beside a reed mat. A hand-sized mobile plant has pale clasping rootlets, several flat blue-gray leaves, a cup of fine silver sensory filaments, and dark beadlike seeds. The kit includes two palm-wide black stone bowls, three rounded soft-pronged combs, pale mineral salts with a short pruning blade tucked into the packet seam, and an unknotted route cord. An older rust-fibered hexapod watches from across the mat; amber fungal candles and blue-white lantern knots glow behind them."
+    },
+    {
+      "id": "03_ordinary_routine",
+      "prompt": "Morning care on a dark stone breeding-ground terrace: the child and older cousin work over a reed mat and low grooming bowls while family flank packs wait routeward. Background caretakers exchange folded medicine wraps, an amber fungal candle opens beside shed fibers, and three small long-bodied infants imitate a lantern tree's blue-white pulse. The attached blue-gray burden flower lifts its leaves into the first returning red sunlight."
+    },
+    {
+      "id": "04_alarm_bloom",
+      "prompt": "Pivotal close frame of a small mobile plant blooming red on a juvenile hexapod's bare left flank. Violet memory follows the red through several flat blue-gray leaves, edged by sharp yellow; silver sensory filaments flare from the central cup and pale rootlets grip an irritated dark skin patch. The child's two three-digit chest hands freeze around a soft comb while an older cousin holds open hands above two shallow bowls in eclipse shadow."
+    },
+    {
+      "id": "05_public_alarm",
+      "prompt": "Routeward view across a reed grooming mat toward a living fungal-road boundary. The long-bodied child exposes a red-violet-yellow flower bloom on the left flank; the older cousin sits opposite with open chest hands. Three amber fungal candles have closed dark. Two adult long-bodied hexapods pause beside balanced flank packs with facial scent-fans aimed at the bloom. Three nursery ramps and blue-white lantern trees remain visible behind the child under returning red light."
+    },
+    {
+      "id": "06_comparison_fold",
+      "prompt": "Overhead-oblique view of a reed grooming mat on dark stone: two shallow bowls, three soft combs, mineral salts with a pruning blade tucked into the packet seam, and a three-knotted route cord form a precise work layout between a juvenile charcoal-blue hexapod and an older rust-brown cousin. The blue-gray burden flower and bowl contents are central; family packs wait toward the amber fungal boundary; nursery ramps and lantern trees establish the opposite side."
+    },
+    {
+      "id": "07_departure_threshold",
+      "prompt": "Wide threshold on the fan-shaped terrace: the child rises onto four digitigrade running legs while two small chest hands hover between a catch bowl, the burden flower, a clean outer pack strap, and a pruning blade tucked into the mineral packet seam. The older cousin waits across the mat. Family packs line the routeward side, amber fungal candles cross the narrow throat, and three nursery ramps with blue-white lantern knots remain behind them."
+    },
+    {
+      "id": "08_witnessed_departure",
+      "prompt": "Medium-wide departure at the fungal verge: the juvenile long-bodied hexapod stands beside balanced packs while the small blue-gray flower grips a clean woven outer pack strap. The older cousin places a shallow bowl of violet-clouded mineral wash and a three-knotted route cord beside amber fungal candles. Returning red sunlight reaches the dark terrace and nursery ramps behind them."
+    },
+    {
+      "id": "09_light_repair",
+      "prompt": "Quiet outer-rim scene after the main departure line: child and older cousin wait beside packed gear, a reed mat, and two shallow bowls while the burden flower opens several flat leaves into returning red sunlight. One dark seed bead rests at the fungal verge. Lantern branches cast patterned shade and amber road candles cross the terrace throat in the distance."
+    },
+    {
+      "id": "10_open_alarm_travel",
+      "prompt": "Low travel view beyond the terrace: a juvenile long-bodied hexapod walks on four digitigrade legs with balanced flank packs, facial scent-fans lowered toward faint bitter vapor rising from dark damp ground, and a visible burden flower gripping a clean outer-left pack strap with crisp red-violet leaf bands. The older cousin follows one body length behind. Amber fungal candles form a narrow road toward the foreground while the terrace and blue-white lantern trees recede."
+    },
+    {
+      "id": "11_silenced_aftermath",
+      "prompt": "Close aftermath on a reed mat: a juvenile long-bodied hexapod recoils with two three-digit chest hands stained by bitter red sap; a narrow pruning blade and three pale unripe seed beads lie on dark stone. The child's bare left flank and a splashed routeward mineral bowl are both visible. A detached blue-gray mobile flower curls its cut sensory cup beside the bowl while the older cousin shifts between child and route. Every fungal candle at the terrace throat is closed dark."
+    }
+  ]
+}

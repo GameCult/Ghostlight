@@ -1,0 +1,434 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "patina-burden-flower-grooming-v0-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/zyphos/patina-burden-flower-grooming-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/patina-burden-flower-grooming-v0.v0.json",
+  "scene_id": "patina-burden-flower-grooming-v0.returning-light-wash",
+  "protagonist_agent_id": "saueia_route_child",
+  "npc_agent_ids": [
+    "elder_cousin_grooming_witness",
+    "childs_burden_flower",
+    "arrival_terrace_fungal_road"
+  ],
+  "purpose": "Interactive Fiction Weaver draft of a low-stakes Zyphos grooming dispute from a Sa'auei'a child's local perspective, with the burden flower and fungal road retaining independent interests.",
+  "local_awareness_summary": [
+    {
+      "text": "The child knows the family's grooming order, the flower's familiar color sequence, the arrival terrace departure routine, and the immediate embarrassment of making a route wait.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/patina-burden-flower-grooming-v0.v0.json",
+        "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md"
+      ]
+    },
+    {
+      "text": "The child can use two three-digit chest manipulators while resting on four folded running legs, can taste route chemistry through facial fans held near the surface, and can change the flower's attachment without treating it as an inert ornament.",
+      "source_refs": [
+        "Eusocial Interbeing/Species/Sa'ueia.md",
+        "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md"
+      ]
+    },
+    {
+      "text": "The child cannot know from color alone whether the bloom is current danger, old immune memory, hunger-amplified testimony, or opportunism; comparison and later ecological response remain partial.",
+      "source_refs": [
+        "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+        "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective stays with the child's nonhuman body and limited local knowledge. Choices use chest hands, facial fans, a flank attachment patch, low bowls, combs, pack straps, waiting, and speech.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Sa'ueia.md",
+          "prompts/interactive-fiction-weaver.md"
+        ]
+      },
+      {
+        "text": "The opening choice performs ordinary grooming before the flower's disputed alarm makes the same routine publicly consequential.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "The child owns consent to a painful attachment point but does not own the flower's testimony, the fungal road's route recommendation, or the cousin's witness account.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+          "Eusocial Interbeing/Ecology/Reciprocal Ecologies.md"
+        ]
+      },
+      {
+        "text": "The flower may repeat, exaggerate, or clarify embodied memory according to hunger, care, and credibility, but it does not provide infallible diagnosis or moral judgment.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The two mineral-wash bowls, three-pronged combs, salt packet, pruning blade, route cord, family packs, flower, used wash, and any released seed bead retain explicit placement across folds.",
+        "source_refs": [
+          "examples/ink/zyphos/patina-burden-flower-grooming-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Grooming must expose reciprocal costs: carried minerals, returning-light time, host comfort, flower nourishment, seed dispersal, public testimony, credibility, and road access.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+          "Eusocial Interbeing/World/Zyphos Umbros Binary System.md"
+        ]
+      },
+      {
+        "text": "Branch consequences remain visible through flower color and grip, skin irritation, bowl contents, road candles, pack placement, delayed departure, seed custody, and distinct endings.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "examples/visual/zyphos/patina-burden-flower-grooming-v0.branch-and-fold.v0.visual.json"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not reduce grooming to ownership, obedience training, or cosmetic pet care; the flower remains a metabolic and political participant.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md",
+          "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md"
+        ]
+      },
+      {
+        "text": "Do not make ecological witnesses omniscient or make a hidden bloom consequence-free; route response is partial, local, and materially priced.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+          "Eusocial Interbeing/Biosphere/Primary Producers/Prismwake Mats.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through ordinary grooming, a disputed alarm, and a shared departure decision before selecting one of seven state-aware endings.",
+    "choice_layers": [
+      "ordinary_grooming",
+      "disputed_alarm",
+      "departure_contract"
+    ],
+    "variables": [
+      "flower_hunger",
+      "flower_credibility",
+      "host_flower_trust",
+      "road_credit",
+      "light_window",
+      "skin_irritation",
+      "witness_quality",
+      "flower_separated",
+      "alarm_strength",
+      "departure_delay",
+      "seed_beads_released"
+    ],
+    "ending_gates": [
+      "ending_witnessed_success",
+      "ending_witnessed_cost",
+      "ending_light_success",
+      "ending_light_cost",
+      "ending_open_alarm_success",
+      "ending_open_alarm_cost",
+      "ending_silenced"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "feed_rootlets_first",
+      "ink_path": "routine_choice",
+      "action_type": "use_object",
+      "actor_intent": "Feed the flower before manipulating its attachment.",
+      "state_basis": [
+        "Mineral washing is a cooperation trigger and the child can reach the flank rootlets with chest manipulators."
+      ],
+      "reviewed_consequences": [
+        "Lowers flower_hunger and raises host_flower_trust, changing later grip behavior and light-repair eligibility."
+      ],
+      "training_hooks": [
+        "symbiont_feeding_before_handling",
+        "embodied_nonhuman_care"
+      ]
+    },
+    {
+      "branch_id": "give_light_turn",
+      "ink_path": "routine_choice",
+      "action_type": "gesture",
+      "actor_intent": "Spend part of the returning-light interval on the flower's photosynthetic need.",
+      "state_basis": [
+        "Burden flowers require safe light exposure and Zyphos light windows are scarce."
+      ],
+      "reviewed_consequences": [
+        "Raises flower credibility and host_flower_trust while reducing the remaining light_window."
+      ],
+      "training_hooks": [
+        "light_as_care_resource",
+        "time_cost_in_routine"
+      ]
+    },
+    {
+      "branch_id": "clear_attachment_patch",
+      "ink_path": "routine_choice",
+      "action_type": "touch_object",
+      "actor_intent": "Remove shed fibers without disturbing live rootlets.",
+      "state_basis": [
+        "Careful pruning and grooming patterns affect cooperation; the child's chest hands are suited to precise work."
+      ],
+      "reviewed_consequences": [
+        "Lowers skin irritation and alarm strength while raising host_flower_trust."
+      ],
+      "training_hooks": [
+        "attachment_boundary_care",
+        "precise_body_affordance"
+      ]
+    },
+    {
+      "branch_id": "hurry_the_routine",
+      "ink_path": "routine_choice",
+      "action_type": "use_object",
+      "actor_intent": "Prioritize pack readiness and departure position over immediate flower care.",
+      "state_basis": [
+        "The family is waiting to depart and neglect makes hunger-driven testimony more likely."
+      ],
+      "reviewed_consequences": [
+        "Raises flower hunger and alarm strength while lowering road credit."
+      ],
+      "training_hooks": [
+        "mundane_neglect_pressure",
+        "schedule_over_care"
+      ]
+    },
+    {
+      "branch_id": "preserve_pre_wash_testimony",
+      "ink_path": "alarm_choice",
+      "action_type": "speak",
+      "actor_intent": "Create a witnessed record before care changes the visible signal.",
+      "state_basis": [
+        "After an alarm bloom, a second observer can distinguish grooming from censorship."
+      ],
+      "reviewed_consequences": [
+        "Raises witness quality and flower credibility while spending departure time and returning light."
+      ],
+      "training_hooks": [
+        "speech_as_witness_request",
+        "testimony_before_intervention"
+      ]
+    },
+    {
+      "branch_id": "make_wash_comparison",
+      "ink_path": "alarm_choice",
+      "action_type": "use_object",
+      "actor_intent": "Feed the flower and produce used wash that the road can compare with its report.",
+      "state_basis": [
+        "Mineral wash affects flower hunger and diluted chemistry can be left at the fungal verge."
+      ],
+      "reviewed_consequences": [
+        "Lowers hunger and alarm strength, raises witness quality and road credit, and spends time."
+      ],
+      "training_hooks": [
+        "care_produces_public_evidence",
+        "ecological_comparison"
+      ]
+    },
+    {
+      "branch_id": "separate_flower_carefully",
+      "ink_path": "alarm_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Protect a sore attachment patch while keeping the flower alive and visible in mineral wash.",
+      "state_basis": [
+        "The host may refuse a painful attachment point; careful release differs from forced stripping."
+      ],
+      "reviewed_consequences": [
+        "Moves the flower to the bowl, lowers irritation and alarm strength, raises witness quality, and spends relational trust."
+      ],
+      "training_hooks": [
+        "host_boundary_without_silencing",
+        "explicit_object_custody"
+      ]
+    },
+    {
+      "branch_id": "hide_public_bloom",
+      "ink_path": "alarm_choice",
+      "action_type": "conceal_object",
+      "actor_intent": "Protect departure speed and reputation by covering the visible alarm.",
+      "state_basis": [
+        "The child can cover the flower with a soft pack flap, but the road can observe concealment and the flower can tighten its grip."
+      ],
+      "reviewed_consequences": [
+        "Lowers host-flower trust, flower credibility, and road credit while raising alarm strength."
+      ],
+      "training_hooks": [
+        "reputation_concealment_backfires",
+        "symbiont_resistance"
+      ]
+    },
+    {
+      "branch_id": "finish_witnessed_contract",
+      "ink_path": "final_choice",
+      "action_type": "mixed",
+      "actor_intent": "Preserve testimony, protect the sore flank, and offer the road a public comparison.",
+      "state_basis": [
+        "Success depends on shared witness quality, retained road credit, and flower credibility."
+      ],
+      "reviewed_consequences": [
+        "Routes to a witnessed success or bitter-lane cost ending and visibly transfers the flower to a clean outer pack strap."
+      ],
+      "training_hooks": [
+        "reciprocal_grooming_contract",
+        "state_gated_ending"
+      ]
+    },
+    {
+      "branch_id": "spend_time_on_repair",
+      "ink_path": "final_choice",
+      "action_type": "wait",
+      "actor_intent": "Miss departure position to restore light, nourishment, and seed dispersal.",
+      "state_basis": [
+        "Success depends on remaining light, manageable hunger, and retained host-flower trust."
+      ],
+      "reviewed_consequences": [
+        "Releases a seed bead, increases departure delay, and routes to timely or late care endings."
+      ],
+      "training_hooks": [
+        "care_spends_mobility",
+        "reproduction_as_contract_cost"
+      ]
+    },
+    {
+      "branch_id": "carry_alarm_openly",
+      "ink_path": "final_choice",
+      "action_type": "authorize",
+      "actor_intent": "Let the flower's inconvenient report remain visible and accept route repricing.",
+      "state_basis": [
+        "Success depends on flower credibility, a manageable alarm, and some road credit."
+      ],
+      "reviewed_consequences": [
+        "Routes to priced passage with a credible alarm or to unlit travel after prior concealment or neglect."
+      ],
+      "training_hooks": [
+        "public_uncertainty",
+        "credibility_not_visibility_alone"
+      ]
+    },
+    {
+      "branch_id": "silence_and_depart",
+      "ink_path": "final_choice",
+      "action_type": "attack",
+      "actor_intent": "End the public inconvenience by cutting live sensory tissue and leaving immediately.",
+      "state_basis": [
+        "The pruning blade is physically available, while the lore establishes bitter sap, forced removal, and memory-bearing wounds as failure consequences."
+      ],
+      "reviewed_consequences": [
+        "Always routes to coerced-silence cost: distressed seed shedding, an inflamed memory-bearing wound, and loss of fungal-road guidance."
+      ],
+      "training_hooks": [
+        "coercion_becomes_evidence",
+        "negative_invariant_test"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Durable canon promotion beyond the authored grooming-contract section",
+      "Character memory or relationship updates",
+      "Acceptance into a training corpus",
+      "Any native-language name for the grooming practice, tools, locality, or participants"
+    ]
+  },
+  "audit": {
+    "reviewer": "Patina elaborator self-review using the four required Ghostlight reviewer prompts",
+    "review_status": "accepted",
+    "reviewer_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 5,
+          "pacing": 5,
+          "voice": 5,
+          "tonal_fit": 5,
+          "if_playability": 4
+        },
+        "findings_resolved": [
+          "Made the witnessed-contract branch create its wash sample on every incoming path instead of assuming prior wash custody.",
+          "Moved pack-strap transfer before the open-alarm ending gate so success and cost endings share the same physical action.",
+          "Split the forced-silencing prose by current flower custody and changed the rushed packing action label from waiting to object use."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 4,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "findings_resolved": [
+          "Removed an unsupported foot-pad chemosense and routed road taste through the established facial scent-fans.",
+          "Added source coverage for lantern trees, the Sa'auei'a continent, the fractal ecology, and biosphere render constraints.",
+          "Kept the child, cousin, exact colors, shelter residue, and outcomes fixture-local while backfilling only the durable grooming contract."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompts": 5,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 4
+        },
+        "findings_resolved": [
+          "Expanded weak base prompts so each frame describes the burden flower, Sa'auei'a bodies, terrace geometry, light, tools, and staging without lore-password dependence.",
+          "Added state-specific silencing modifiers for attached and bowl-separated flower custody.",
+          "Tied every material branch and ending to a visible modifier while limiting character refs to bodies present in each frame."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "verdict": "accepted",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightlines": 5,
+          "body_affordance": 5,
+          "movement_access": 5,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "findings_resolved": [
+          "Reconciled the pruning blade as stored in the mineral-packet seam until the destructive ending places it on the mat.",
+          "Added an embedded two-dimensional coordinate frame with zone anchors, camera origins, staging slots, sightline lanes, and occluders.",
+          "Preserved flower, bowls, wash sample, seed bead, pack strap, route cord, and flank state through folded branches and ending frames."
+        ]
+      }
+    ],
+    "review_notes": [
+      "Narrative review accepted the ordinary-life opening, clear roles, three consequential choice layers, low-stakes pressure, conditional callbacks, and distinct state-gated endings after custody repairs.",
+      "Lore review inspected all fifteen digest sources and accepted the grooming elaboration as a narrow continuation of existing burden-flower, road, breeding-ground, and Sa'auei'a constraints.",
+      "Visual review accepted eleven click-through scenes, standalone affirmative base prompts, stable body refs, fifteen branch/ending modifiers, and the BFL prompt manifest.",
+      "Spatial review accepted the fan-shaped terrace coordinate frame, body reach, route access, sightlines, prop custody, and branch-persistent attachment states."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "zyphos_lore_content_readable": true
+    }
+  }
+}

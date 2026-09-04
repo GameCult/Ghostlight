@@ -1,0 +1,698 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "patina-burden-flower-grooming-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/zyphos/patina-burden-flower-grooming-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/patina-burden-flower-grooming-v0.branch-and-fold.v0.training.json",
+  "scene_id": "patina-burden-flower-grooming-v0.returning-light-wash",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a Sa'auei'a child's burden-flower grooming contract.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for the breeding-ground arrival terrace, the grooming kit and body affordances, the alarm bloom, the witnessed comparison, the departure choice, and four ending families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the terrace establishing view, grooming closeup, ordinary routine fold, pivotal alarm bloom, public alarm reading, comparison fold, departure threshold, and each ending family. The one-sentence red bloom stands alone in replay.",
+    "prompting_rule": "Each base image prompt stands alone for a general image model, explains fictional organisms and environments as visible forms, and names only bodies visible in the frame. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Style: intimate ecological science-fantasy storybook illustration, restrained ink contours and layered watercolor texture, dark mineral stone, muted blue-green organisms, amber fungal lights, dim red-sun illumination, expressive nonhuman body language, precise natural-history detail, gentle domestic wit, cinematic framing suitable for interactive fiction.",
+    "prompt_assembly_rule": "Assemble each image prompt from the global_style_cue, the scene base_image_prompt, visual refs only for visible characters or groups, and triggered state_image_modifiers or global_branch_image_modifiers. Exclude absent refs and continuity-note prose. Each generation begins from the complete assembled text and a camera-specific scene-set input when one exists.",
+    "scene_set_guidance": {
+      "current_mode": "embedded_structured_2d_layout",
+      "scope_reason": "The fixture remains on one arrival terrace but returns to it from wide, close, routeward, and ending angles; the embedded coordinate map fixes the fungal boundary, grooming mat, bowls, nursery ramps, lantern trees, pack line, cameras, staging slots, and sightlines.",
+      "future_scene_set_need": "A simple 3D blockout may replace the embedded layout if the fixture is promoted to high-consistency multi-angle animation; the structured 2D layout is the current geometry authority for illustrated replay."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "patina_terrace_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of an outdoor Sa'auei'a breeding-ground arrival terrace built from dark root-bound stone in a broad fan shape. The narrow routeward throat is crossed by two rows of ankle-high amber fungal fruiting candles; the broad nurseryward edge descends along three shallow ramps into warm communal hollows. Low lantern trees line the inner rim with blue-white glowing knots beneath their branches. On the outer rim, a long-bodied six-limbed child rests on four folded digitigrade running legs beside a rectangular reed grooming mat while two smaller three-digit chest limbs hover over two shallow stone bowls, three soft-pronged combs, and a packet of mineral salts. A small mobile blue-gray plant with clasping rootlets and flat leaves grips a bare patch on the child's left flank. An older long-bodied cousin settles across the mat. A huge fixed dark planet covers most of the dim red sun, leaving a returning crescent of light.",
+        "visible_characters": [
+          {
+            "agent_id": "saueia_route_child",
+            "default_stance": "four running legs folded beside the outer-rim grooming mat, chest hands poised above the bowls",
+            "visual_ref": "visual_character_refs.characters.saueia_route_child"
+          },
+          {
+            "agent_id": "elder_cousin_grooming_witness",
+            "default_stance": "folded across the mat with facial fans open toward the flower and road",
+            "visual_ref": "visual_character_refs.characters.elder_cousin_grooming_witness"
+          },
+          {
+            "agent_id": "childs_burden_flower",
+            "default_stance": "attached to the child's bare left flank with leaves angled toward returning light",
+            "visual_ref": "visual_character_refs.characters.childs_burden_flower"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The terrace stays fan-shaped: fungal-road boundary at the narrow routeward throat, three nursery ramps at the broad edge, lantern trees on the inner rim, grooming mat on the outer rim, and family packs just beyond the mat toward the road.",
+          "Sa'auei'a bodies remain long-bodied hexapods with four tall digitigrade locomotor legs, two smaller chest manipulators, wedge heads, paired facial scent-fans, dark hide, and short insulating fibers."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_grooming_closeup",
+        "ink_anchor": "caretaker_arrives",
+        "base_image_prompt": "Close-medium natural-history view at the outer rim of a dark stone terrace. A juvenile long-bodied Sa'auei'a rests low on four folded digitigrade legs while two small chest limbs with three soft opposing digits arrange a grooming kit on a woven reed mat: two palm-wide shallow black stone bowls, three combs with rounded flexible prongs, a folded packet of pale mineral salts with a short narrow pruning blade tucked into its outer seam, and an unknotted route cord. On the child's bare left flank, a hand-sized mobile plant holds with pale rootlets; several flat blue-gray photosynthetic leaves surround a cup of fine sensory filaments. An older Sa'auei'a cousin watches from across the mat, facial fans spread toward the bowls. Amber fungal candles and blue-white lantern knots glow softly in the background under eclipse dimness.",
+        "visible_characters": [
+          {
+            "agent_id": "saueia_route_child",
+            "default_stance": "folded low, chest hands arranging grooming tools",
+            "visual_ref": "visual_character_refs.characters.saueia_route_child"
+          },
+          {
+            "agent_id": "elder_cousin_grooming_witness",
+            "default_stance": "watching across the mat, facial fans open",
+            "visual_ref": "visual_character_refs.characters.elder_cousin_grooming_witness"
+          },
+          {
+            "agent_id": "childs_burden_flower",
+            "default_stance": "rootlets gripping the bare left flank, sensory cup turned toward the mineral packet",
+            "visual_ref": "visual_character_refs.characters.childs_burden_flower"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The grooming kit remains on one reed mat; the clear bowl starts nearest the child and the catch bowl starts nearest the routeward fungal verge."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_ordinary_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Medium-wide morning routine on a fan-shaped root-bound stone terrace. The child and older cousin occupy a reed grooming mat on the outer rim. Two shallow bowls and soft-pronged combs sit between them; family flank packs wait in a neat line on the routeward side. Caretakers exchange folded medicine wraps near the three nursery ramps, an amber fungal candle opens beside a basket of shed fibers, and three small long-bodied infants mimic the blue-white pulse of a low lantern tree. A hand-sized mobile plant with pale clasping rootlets, several flat blue-gray leaves, and a fine silver sensory cup lifts from the child's bare left flank. Returning red sunlight rims the fixed dark planet overhead and begins to touch the terrace edge.",
+        "visible_characters": [
+          {
+            "agent_id": "saueia_route_child",
+            "default_stance": "working over the grooming mat",
+            "visual_ref": "visual_character_refs.characters.saueia_route_child"
+          },
+          {
+            "agent_id": "elder_cousin_grooming_witness",
+            "default_stance": "settled across the mat, supervising lightly",
+            "visual_ref": "visual_character_refs.characters.elder_cousin_grooming_witness"
+          },
+          {
+            "agent_id": "childs_burden_flower",
+            "default_stance": "attached at the left flank with leaves lifted",
+            "visual_ref": "visual_character_refs.characters.childs_burden_flower"
+          },
+          {
+            "agent_id": "terrace_morning_caretakers",
+            "default_stance": "small background groups near nursery ramps and a shed-fiber basket",
+            "visual_ref": "visual_character_refs.groups.terrace_morning_caretakers"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "flower_hunger <= 1",
+            "modifier_prompt": "The flower's rootlets curl gently around a wet comb, and its blue-gray leaf edges appear smooth and clear."
+          },
+          {
+            "trigger": "flower_hunger >= 3",
+            "modifier_prompt": "The flower crowds both bowls with overlapping leaves and tight pale rootlets pressing into the child's flank."
+          },
+          {
+            "trigger": "skin_irritation <= 0",
+            "modifier_prompt": "The bare attachment patch appears cool, smooth, and clean beneath lifted rootlets."
+          },
+          {
+            "trigger": "skin_irritation >= 1",
+            "modifier_prompt": "A narrow dark-red irritation halo circles one rootlet cluster on the bare flank patch."
+          },
+          {
+            "trigger": "road_credit <= 1",
+            "modifier_prompt": "Only a few amber fungal candles remain open beside the waiting family packs, leaving visible gaps in the route line."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "patina_alarm_bloom",
+        "ink_anchor": "alarm_bloom",
+        "base_image_prompt": "Pivotal close frame of a hand-sized mobile plant blooming red on a juvenile Sa'auei'a's bare left flank. Fine sensory filaments flare from the central cup; saturated red runs through flat blue-gray leaves, followed by a violet inner band and a sharp yellow fringe. Pale clasping rootlets grip dark irritated skin. The child's two three-digit chest hands freeze around a soft-pronged comb. The older cousin's hands stay open across the reed mat. Two shallow bowls catch the colored reflection. The background falls into eclipse shadow with a few amber fungal candles visible at the terrace throat.",
+        "visible_characters": [
+          {
+            "agent_id": "saueia_route_child",
+            "default_stance": "chest hands frozen around the comb, flank turned toward the flower",
+            "visual_ref": "visual_character_refs.characters.saueia_route_child"
+          },
+          {
+            "agent_id": "elder_cousin_grooming_witness",
+            "default_stance": "open hands held above the mat",
+            "visual_ref": "visual_character_refs.characters.elder_cousin_grooming_witness"
+          },
+          {
+            "agent_id": "childs_burden_flower",
+            "default_stance": "fully open red-violet-yellow alarm display on the left flank",
+            "visual_ref": "visual_character_refs.characters.childs_burden_flower"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The flower begins attached to the left flank and the comb remains in the child's chest hands at this beat."
+        ]
+      },
+      {
+        "visual_scene_id": "patina_public_alarm_read",
+        "ink_anchor": "alarm_read",
+        "base_image_prompt": "Routeward medium shot across the outer-rim grooming mat toward the fungal-road boundary. The long-bodied child turns a hand-sized left-flank mobile plant toward the road; pale clasping rootlets hold the bare skin while several flat blue-gray leaves display red, violet, and yellow around a silver sensory cup. The older cousin sits opposite with both small chest hands visible. Three amber fungal candles at the narrow terrace throat have closed into dark beads. Two departing adult Sa'auei'a pause beside balanced flank packs, four running legs standing tall and facial scent-fans angled toward the bloom. The nursery ramps remain open behind the child, and low lantern trees hold blue-white knots along the inner rim under the returning red sunlight.",
+        "visible_characters": [
+          {
+            "agent_id": "saueia_route_child",
+            "default_stance": "folded beside the mat, left flank exposed routeward",
+            "visual_ref": "visual_character_refs.characters.saueia_route_child"
+          },
+          {
+            "agent_id": "elder_cousin_grooming_witness",
+            "default_stance": "opposite the child with hands visible and facial fans open",
+            "visual_ref": "visual_character_refs.characters.elder_cousin_grooming_witness"
+          },
+          {
+            "agent_id": "childs_burden_flower",
+            "default_stance": "attached and blooming toward the road",
+            "visual_ref": "visual_character_refs.characters.childs_burden_flower"
+          },
+          {
+            "agent_id": "departing_family_adults",
+            "default_stance": "standing beside the family pack line at the terrace throat",
+            "visual_ref": "visual_character_refs.groups.departing_family_adults"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "patina_alarm_comparison_fold",
+        "ink_anchor": "alarm_fold",
+        "base_image_prompt": "Overhead-oblique view of the outer-rim grooming mat on dark stone. Two shallow bowls, three soft-pronged combs, a salt packet with a pruning blade tucked into its outer seam, and a knotted route cord form a readable work arrangement. The child rests along the mat's nurseryward side; the older cousin rests routeward with the cord. Family packs stand beyond the mat toward the narrow fungal-road boundary. A hand-sized mobile plant with pale clasping rootlets, several flat blue-gray leaves, a silver sensory cup, and dark seed beads remains central beside the bowl contents. Three nursery ramps and low blue-white lantern knots establish the broad inner side of the terrace. Returning red sunlight reaches the edge of the mat.",
+        "visible_characters": [
+          {
+            "agent_id": "saueia_route_child",
+            "default_stance": "along the mat's nurseryward side with chest hands near the bowls",
+            "visual_ref": "visual_character_refs.characters.saueia_route_child"
+          },
+          {
+            "agent_id": "elder_cousin_grooming_witness",
+            "default_stance": "routeward side with a knotted witness cord",
+            "visual_ref": "visual_character_refs.characters.elder_cousin_grooming_witness"
+          },
+          {
+            "agent_id": "childs_burden_flower",
+            "default_stance": "attachment position controlled by flower_separated state",
+            "visual_ref": "visual_character_refs.characters.childs_burden_flower"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "flower_separated == 1",
+            "modifier_prompt": "Place the flower inside the routeward shallow bowl with flat leaves spread over the rim; show small grip marks on the child's bare left flank."
+          },
+          {
+            "trigger": "flower_separated == 0",
+            "modifier_prompt": "Keep the flower attached to the child's bare left flank with pale rootlets visible beneath its colored leaves."
+          },
+          {
+            "trigger": "witness_quality >= 2",
+            "modifier_prompt": "The cousin holds a route cord with three fresh knots corresponding to the red, violet, and yellow display order."
+          },
+          {
+            "trigger": "alarm_strength <= 1",
+            "modifier_prompt": "The flower shows a restrained red-violet band with clear leaf edges and no yellow fringe."
+          },
+          {
+            "trigger": "alarm_strength >= 3",
+            "modifier_prompt": "The flower shows a broad red field with crowded yellow leaf edges and tightly curled rootlets."
+          },
+          {
+            "trigger": "departure_delay >= 1",
+            "modifier_prompt": "The nearest family packs have moved ahead along the road, leaving a visible gap in the departure line beside the mat."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "patina_departure_threshold",
+        "ink_anchor": "final_choice",
+        "base_image_prompt": "Wide routeward threshold view of the fan-shaped breeding-ground terrace in returning light. The reed grooming mat lies on the outer rim with two shallow bowls, combs, a salt packet holding a narrow pruning blade in its outer seam, and a knotted route cord. The child begins to rise on four digitigrade running legs while two small chest hands hover between a hand-sized mobile plant with pale rootlets, blue-gray leaves, and a silver sensory cup; the catch bowl; a clean outer pack strap; and the blade packet. The elder cousin waits across the mat. Balanced family packs line the routeward side. Amber fungal candles cross the narrow terrace throat; three shallow nursery ramps and blue-white lantern knots remain visible behind the pair. The composition presents four physical choices: make and offer a wash sample at the fungal verge, turn the mat into sunlight, transfer the flower visibly to the pack strap, or reach for the blade.",
+        "visible_characters": [
+          {
+            "agent_id": "saueia_route_child",
+            "default_stance": "rising from the mat with chest hands between wash, flower, strap, and blade",
+            "visual_ref": "visual_character_refs.characters.saueia_route_child"
+          },
+          {
+            "agent_id": "elder_cousin_grooming_witness",
+            "default_stance": "settled across the mat, watching the choice",
+            "visual_ref": "visual_character_refs.characters.elder_cousin_grooming_witness"
+          },
+          {
+            "agent_id": "childs_burden_flower",
+            "default_stance": "attached to the left flank or placed in the bowl according to state",
+            "visual_ref": "visual_character_refs.characters.childs_burden_flower"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "flower_separated == 1",
+            "modifier_prompt": "Place the flower in the routeward bowl and show the child's left flank bare with a ring of small grip marks."
+          },
+          {
+            "trigger": "flower_separated == 0",
+            "modifier_prompt": "Place the flower on the child's bare left flank with its rootlets still attached."
+          },
+          {
+            "trigger": "road_credit <= 1",
+            "modifier_prompt": "Show the fungal boundary almost entirely dark, with one isolated amber candle beside the family packs."
+          },
+          {
+            "trigger": "witness_quality >= 2",
+            "modifier_prompt": "Show the cousin's three-knotted route cord laid clearly beside the used-wash bowl."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "patina_ending_witnessed",
+        "ink_anchor": "ending_witnessed_success|ending_witnessed_cost",
+        "base_image_prompt": "Medium-wide route departure at the fungal edge of the dark fan-shaped terrace. The child stands on four tall running legs beside balanced flank packs, and the small burden flower grips a clean woven strap on the outer pack instead of skin. The older cousin crouches at the fungal verge, setting down a shallow bowl of clouded mineral wash beside amber fruiting candles and a three-knotted route cord. Three nursery ramps and low lantern trees recede behind them under returning red sunlight. The road-lane brightness and spacing carry the outcome state.",
+        "visible_characters": [
+          {
+            "agent_id": "saueia_route_child",
+            "default_stance": "standing beside the pack line, flank clear",
+            "visual_ref": "visual_character_refs.characters.saueia_route_child"
+          },
+          {
+            "agent_id": "elder_cousin_grooming_witness",
+            "default_stance": "placing wash and route cord at the fungal verge",
+            "visual_ref": "visual_character_refs.characters.elder_cousin_grooming_witness"
+          },
+          {
+            "agent_id": "childs_burden_flower",
+            "default_stance": "attached to a clean outer flank-pack strap with colored leaves visible",
+            "visual_ref": "visual_character_refs.characters.childs_burden_flower"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "patina_ending_light",
+        "ink_anchor": "ending_light_success|ending_light_cost",
+        "base_image_prompt": "Quiet wide illustration of the outer terrace rim after the main departure line has moved on. The child and older cousin rest beside the reed mat and two shallow bowls while a hand-sized mobile plant with pale rootlets, several flat blue-gray leaves, a silver sensory cup, and dark seed beads opens toward the returning red sunlight. Balanced family packs remain beside them. A dark seed bead lies near the routeward bowl. Amber fungal candles form the road boundary at the narrow throat; low lantern branches cast patterned shade across the mat; three nursery ramps remain visible at the broad edge. The frame emphasizes time spent on care and the empty space left by the departed group.",
+        "visible_characters": [
+          {
+            "agent_id": "saueia_route_child",
+            "default_stance": "resting beside the mat and turning the flower toward light",
+            "visual_ref": "visual_character_refs.characters.saueia_route_child"
+          },
+          {
+            "agent_id": "elder_cousin_grooming_witness",
+            "default_stance": "waiting with packed gear beside the child",
+            "visual_ref": "visual_character_refs.characters.elder_cousin_grooming_witness"
+          },
+          {
+            "agent_id": "childs_burden_flower",
+            "default_stance": "leaves spread flat in the returning light",
+            "visual_ref": "visual_character_refs.characters.childs_burden_flower"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "seed_beads_released == 1",
+            "modifier_prompt": "Show one released seed bead beside the second bowl, with color and firmness controlled by the ending modifier."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "patina_ending_open_alarm",
+        "ink_anchor": "ending_open_alarm_success|ending_open_alarm_cost",
+        "base_image_prompt": "Low traveling view from the routeward side of the terrace. The juvenile Sa'auei'a walks on four tall digitigrade legs with balanced flank packs, two small chest limbs folded under the forward torso, and facial scent-fans lowered toward the road's damp air. A burden flower grips a clean woven strap on the outer left pack, its red-violet leaves facing the road. The older cousin follows one body length behind. The fungal route continues away as lines of amber candles over dark damp ground, and the broad stone terrace with three nursery ramps and blue-white lantern knots recedes behind them. The route surface and candle state show whether the travelers receive a narrow guided lane or rough unlit ground.",
+        "visible_characters": [
+          {
+            "agent_id": "saueia_route_child",
+            "default_stance": "walking routeward on four legs with facial fans open",
+            "visual_ref": "visual_character_refs.characters.saueia_route_child"
+          },
+          {
+            "agent_id": "elder_cousin_grooming_witness",
+            "default_stance": "following one body length behind",
+            "visual_ref": "visual_character_refs.characters.elder_cousin_grooming_witness"
+          },
+          {
+            "agent_id": "childs_burden_flower",
+            "default_stance": "gripping a clean outer-left pack strap with red-violet leaves facing the road",
+            "visual_ref": "visual_character_refs.characters.childs_burden_flower"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "patina_ending_silenced",
+        "ink_anchor": "ending_silenced",
+        "base_image_prompt": "Close aftermath on the outer-rim reed mat. The juvenile Sa'auei'a recoils with two small three-digit chest hands stained by bitter red sap; a narrow pruning blade lies on the mat beside three pale unripe seed beads. The child's bare left flank and the routeward mineral bowl are both fully visible. The detached burden flower curls its cut sensory cup and flat leaves beside the bowl. The elder cousin has shifted between the child and the route, facial fans tight with alarm. Every fungal candle at the narrow terrace throat is closed and dark under the widening returning light.",
+        "visible_characters": [
+          {
+            "agent_id": "saueia_route_child",
+            "default_stance": "recoiling over the mat with sap-stained chest hands",
+            "visual_ref": "visual_character_refs.characters.saueia_route_child"
+          },
+          {
+            "agent_id": "elder_cousin_grooming_witness",
+            "default_stance": "shifted between child and road with facial fans tight",
+            "visual_ref": "visual_character_refs.characters.elder_cousin_grooming_witness"
+          },
+          {
+            "agent_id": "childs_burden_flower",
+            "default_stance": "detached beside the mineral bowl with curled injured sensory cup",
+            "visual_ref": "visual_character_refs.characters.childs_burden_flower"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "flower_separated == 1",
+            "modifier_prompt": "Show mineral water splashed over the routeward bowl rim, lashing rootlets inside the bowl, and the child's bare left flank marked only by the earlier ring of small grip impressions."
+          },
+          {
+            "trigger": "flower_separated == 0",
+            "modifier_prompt": "Show fresh torn rootlet marks and a hot dark-red inflammation field on the child's bare left flank where the flower detached."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The pruning blade moves from the salt packet seam to the mat; the flower is detached; three unripe beads remain visible; the flank state follows flower_separated."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "feed_rootlets_first_visual",
+        "trigger": "branch_label == feed_rootlets_first",
+        "apply_to_visual_scene_ids": [
+          "patina_ordinary_routine_fold"
+        ],
+        "modifier_prompt": "Show a wet soft-pronged comb beneath the flower's loosened rootlets and clear mineral water in the bowl nearest the child."
+      },
+      {
+        "modifier_id": "give_light_turn_visual",
+        "trigger": "branch_label == give_light_turn",
+        "apply_to_visual_scene_ids": [
+          "patina_ordinary_routine_fold"
+        ],
+        "modifier_prompt": "Angle the flower's leaves into the thin returning sunlight so silver light travels along the leaf ribs."
+      },
+      {
+        "modifier_id": "clear_attachment_patch_visual",
+        "trigger": "branch_label == clear_attachment_patch",
+        "apply_to_visual_scene_ids": [
+          "patina_ordinary_routine_fold"
+        ],
+        "modifier_prompt": "Show a small pile of combed dark shed fibers on the mat and a clean cool attachment patch beneath lifted rootlets."
+      },
+      {
+        "modifier_id": "hurry_the_routine_visual",
+        "trigger": "branch_label == hurry_the_routine",
+        "apply_to_visual_scene_ids": [
+          "patina_ordinary_routine_fold"
+        ],
+        "modifier_prompt": "Place the child's chest hands on route cords and pack latches while the flower crawls toward the light with visibly tight rootlets."
+      },
+      {
+        "modifier_id": "preserve_pre_wash_testimony_visual",
+        "trigger": "branch_label == preserve_pre_wash_testimony",
+        "apply_to_visual_scene_ids": [
+          "patina_alarm_comparison_fold",
+          "patina_departure_threshold"
+        ],
+        "modifier_prompt": "Show the elder cousin leaning close to the untouched bloom and tying three fresh witness knots into a route cord."
+      },
+      {
+        "modifier_id": "make_wash_comparison_visual",
+        "trigger": "branch_label == make_wash_comparison",
+        "apply_to_visual_scene_ids": [
+          "patina_alarm_comparison_fold",
+          "patina_departure_threshold"
+        ],
+        "modifier_prompt": "Show one bowl holding clouded mineral wash with a faint violet cast and one nearby fungal candle reopened beside it."
+      },
+      {
+        "modifier_id": "separate_flower_carefully_visual",
+        "trigger": "branch_label == separate_flower_carefully",
+        "apply_to_visual_scene_ids": [
+          "patina_alarm_comparison_fold",
+          "patina_departure_threshold"
+        ],
+        "modifier_prompt": "Place the burden flower in the shallow routeward mineral bowl with leaves overlapping the rim; show a ring of small grip marks on the child's bare left flank."
+      },
+      {
+        "modifier_id": "hide_public_bloom_visual",
+        "trigger": "branch_label == hide_public_bloom",
+        "apply_to_visual_scene_ids": [
+          "patina_alarm_comparison_fold",
+          "patina_departure_threshold"
+        ],
+        "modifier_prompt": "Drape a woven pack flap across the attached flower, with five bright red points leaking through the fabric and the fungal candles at the route throat closed dark."
+      },
+      {
+        "modifier_id": "witnessed_contract_success_visual",
+        "trigger": "ending_label == witnessed_contract_success",
+        "apply_to_visual_scene_ids": [
+          "patina_ending_witnessed"
+        ],
+        "modifier_prompt": "Open a continuous narrow line of amber fungal candles beside the offered wash; show the flower calmly gripping the clean outer pack strap with restrained red-violet leaves."
+      },
+      {
+        "modifier_id": "witnessed_contract_cost_visual",
+        "trigger": "ending_label == witnessed_contract_cost",
+        "apply_to_visual_scene_ids": [
+          "patina_ending_witnessed"
+        ],
+        "modifier_prompt": "Open only two widely spaced fungal candles leading toward a rough bitter lane; show the child's facial fans compressed in embarrassment."
+      },
+      {
+        "modifier_id": "light_repair_success_visual",
+        "trigger": "ending_label == light_repair_success",
+        "apply_to_visual_scene_ids": [
+          "patina_ending_light"
+        ],
+        "modifier_prompt": "Fill the flower's leaf ribs with clear silver-blue returning light and show one dark firm seed bead placed at the fungal verge."
+      },
+      {
+        "modifier_id": "light_repair_cost_visual",
+        "trigger": "ending_label == light_repair_cost",
+        "apply_to_visual_scene_ids": [
+          "patina_ending_light"
+        ],
+        "modifier_prompt": "Move the bright strip beyond the lantern branches, leaving the flower reaching through patterned shade; show one pale soft seed bead wrapped beside the bowl."
+      },
+      {
+        "modifier_id": "open_alarm_success_visual",
+        "trigger": "ending_label == open_alarm_success",
+        "apply_to_visual_scene_ids": [
+          "patina_ending_open_alarm"
+        ],
+        "modifier_prompt": "Open a narrow amber candle lane beneath the travelers; show the flower's display settled into crisp red-violet bands and the child's paired facial fans lowered toward a faint bitter vapor rising from the damp road."
+      },
+      {
+        "modifier_id": "open_alarm_cost_visual",
+        "trigger": "ending_label == open_alarm_cost",
+        "apply_to_visual_scene_ids": [
+          "patina_ending_open_alarm"
+        ],
+        "modifier_prompt": "Keep the fungal road dark while the travelers pick across rough damp ground beside it; show the flower's loud mixed red-yellow bloom and the child's closed facial fans."
+      },
+      {
+        "modifier_id": "coerced_silence_cost_visual",
+        "trigger": "ending_label == coerced_silence_cost",
+        "apply_to_visual_scene_ids": [
+          "patina_ending_silenced"
+        ],
+        "modifier_prompt": "Emphasize red sap on the child's three-digit chest hands, three unripe beads on dark stone, the detached curled flower, and a fully dark fungal-road boundary."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "saueia_arrival_terrace_grooming.scene_set.draft",
+      "geometry_authority_level": "embedded_structured_2d_layout",
+      "room_model": "Outdoor fan-shaped root-bound stone terrace: narrow routeward fungal boundary, broad nurseryward edge with three shallow ramps, inner lantern-tree rim, outer grooming rim, and a fixed family-pack line beyond the grooming mat.",
+      "coordinate_frame": {
+        "origin": "center of the reed grooming mat",
+        "x_axis": "positive x points routeward toward the fungal throat; negative x points nurseryward toward the three ramps",
+        "y_axis": "positive y follows the outer rim toward the family pack line; negative y follows the inner rim beneath the lantern trees",
+        "unit": "one resting adult Sa'auei'a body length"
+      },
+      "fixed_zones": [
+        {
+          "zone_id": "routeward_fungal_throat",
+          "visible_form": "two rows of ankle-high amber fungal fruiting candles crossing the terrace's narrow throat",
+          "used_for": "route recommendation, visible closure, wash comparison, and departure lane"
+        },
+        {
+          "zone_id": "outer_grooming_rim",
+          "visible_form": "flat dark stone strip holding one rectangular reed mat and enough space for two folded Sa'auei'a bodies",
+          "used_for": "grooming, alarm comparison, bowl placement, and final decision"
+        },
+        {
+          "zone_id": "nurseryward_ramps",
+          "visible_form": "three broad shallow ramps descending from the terrace's wide edge into warm communal hollows",
+          "used_for": "orientation and background caretaker traffic"
+        },
+        {
+          "zone_id": "inner_lantern_tree_rim",
+          "visible_form": "low spreading branches with blue-white bioluminescent knots beneath the canopy",
+          "used_for": "eclipse illumination, patterned shade, and light-window framing"
+        },
+        {
+          "zone_id": "grooming_mat_tools",
+          "visible_form": "reed mat with child-side clear bowl, route-side catch bowl, three soft-pronged combs, salt packet with pruning blade in its outer seam, and route cord",
+          "used_for": "all player object choices and custody callbacks"
+        },
+        {
+          "zone_id": "family_pack_line",
+          "visible_form": "balanced flank frames and woven packs placed just routeward of the mat",
+          "used_for": "departure pressure, clean strap transfer, and visible delay"
+        }
+      ],
+      "zone_anchors_2d": [
+        {
+          "zone_id": "grooming_mat_tools",
+          "center": [0.0, 0.0],
+          "extent_body_lengths": [0.8, 0.5]
+        },
+        {
+          "zone_id": "routeward_fungal_throat",
+          "center": [3.0, 0.0],
+          "extent_body_lengths": [0.2, 2.0]
+        },
+        {
+          "zone_id": "family_pack_line",
+          "center": [1.2, 0.8],
+          "extent_body_lengths": [0.8, 0.3]
+        },
+        {
+          "zone_id": "nurseryward_ramps",
+          "center": [-3.0, 0.0],
+          "extent_body_lengths": [0.6, 2.5]
+        },
+        {
+          "zone_id": "inner_lantern_tree_rim",
+          "center": [-0.8, -2.0],
+          "extent_body_lengths": [3.0, 0.5]
+        },
+        {
+          "zone_id": "outer_grooming_rim",
+          "center": [0.0, 0.4],
+          "extent_body_lengths": [2.5, 1.0]
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "terrace_wide_outer_to_inner",
+          "origin_2d": [0.0, 4.5],
+          "aim_2d": [-0.5, 0.0],
+          "supports_visual_scene_ids": [
+            "patina_terrace_establishing",
+            "patina_ordinary_routine_fold",
+            "patina_ending_light"
+          ]
+        },
+        {
+          "camera_id": "grooming_mat_close",
+          "origin_2d": [0.6, 1.4],
+          "aim_2d": [0.0, 0.0],
+          "supports_visual_scene_ids": [
+            "patina_grooming_closeup",
+            "patina_alarm_bloom",
+            "patina_alarm_comparison_fold",
+            "patina_ending_silenced"
+          ]
+        },
+        {
+          "camera_id": "routeward_boundary_sightline",
+          "origin_2d": [4.2, 0.0],
+          "aim_2d": [0.0, 0.0],
+          "supports_visual_scene_ids": [
+            "patina_public_alarm_read",
+            "patina_departure_threshold",
+            "patina_ending_witnessed"
+          ]
+        },
+        {
+          "camera_id": "road_departure_low",
+          "origin_2d": [5.0, 0.5],
+          "aim_2d": [3.0, 0.0],
+          "supports_visual_scene_ids": [
+            "patina_ending_open_alarm"
+          ]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "flower_to_fungal_boundary",
+          "path": "child left flank or routeward bowl -> open outer-rim space -> fungal candles at terrace throat",
+          "supports": [
+            "preserve_pre_wash_testimony",
+            "make_wash_comparison",
+            "carry_alarm_openly"
+          ]
+        },
+        {
+          "lane_id": "witness_across_mat",
+          "path": "elder cousin routeward side -> bowls and flower at mat center -> child nurseryward side",
+          "supports": [
+            "preserve_pre_wash_testimony",
+            "separate_flower_carefully",
+            "finish_witnessed_contract"
+          ]
+        }
+      ],
+      "staging_slots": [
+        {
+          "slot_id": "child_mat_nurseryward",
+          "position_2d": [-0.4, 0.0],
+          "allowed_movement": "may fold at the mat, rise into the outer-rim lane, reach every grooming tool, or walk routeward past the pack line"
+        },
+        {
+          "slot_id": "cousin_mat_routeward",
+          "position_2d": [0.5, 0.0],
+          "allowed_movement": "may reach the routeward bowl and witness cord, then move directly to the fungal verge"
+        },
+        {
+          "slot_id": "departing_adults_pack_line",
+          "position_2d": [1.4, 0.8],
+          "allowed_movement": "may pause beside the packs or continue through the fungal throat"
+        }
+      ],
+      "occluders": [
+        {
+          "occluder_id": "low_lantern_canopy",
+          "effect": "casts patterned shade across the inner half of the mat but leaves the flower, bowls, and fungal throat visible from declared cameras"
+        },
+        {
+          "occluder_id": "family_pack_line",
+          "effect": "can hide the road surface from the outer-rim wide camera below pack height; routeward and overhead cameras retain a clear candle sightline"
+        }
+      ],
+      "flower_custody_states": [
+        {
+          "value": 0,
+          "label": "attached_left_flank",
+          "visible_form": "pale rootlets grip the child's bare left flank beneath flat leaves"
+        },
+        {
+          "value": 1,
+          "label": "separated_in_routeward_bowl",
+          "visible_form": "flower rests in the shallow catch bowl with leaves overlapping the rim and grip marks visible on the bare flank"
+        },
+        {
+          "value": 2,
+          "label": "transferred_to_clean_pack_strap",
+          "visible_form": "flower grips a woven outer flank-pack strap, leaving the child's bare flank clear"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable visual identities for prompt assembly. Include only refs for bodies visible in a scene.",
+    "characters": {
+      "saueia_route_child": "Sa'auei'a route child: juvenile long-bodied hexapod about two-thirds adult length; four tall digitigrade running legs; two smaller chest limbs ending in three soft opposing digits; wedge-shaped head; paired flexible facial scent-fans; short charcoal-blue insulating fibers over dark plum hide; bare throat and left-flank signal patches; balanced moss-green woven flank packs when standing; quick curious posture expressed through neck angle, facial-fan spread, foot placement, and chest-hand precision.",
+      "elder_cousin_grooming_witness": "Older Sa'auei'a cousin: adult long-bodied hexapod with four sturdy digitigrade running legs, two small three-digit chest manipulators, wedge head, paired facial scent-fans, short rust-brown fibers over dark hide, one pale healed stripe across the right facial fan, faded ochre route wraps around the forward locomotor pair, patient low posture and dry watchfulness.",
+      "childs_burden_flower": "Child's burden flower: hand-sized mobile plant analogue with pale clasping rootlets, several flat blue-gray photosynthetic leaves, fine silver sensory filaments in a central cup, leaf veins able to display clear silver, yellow, violet, and red bands, dark beadlike seeds beneath the leaf bases; movement through slow release and regrip of rootlets."
+    },
+    "groups": {
+      "terrace_morning_caretakers": "Terrace morning caretakers and infants: several long-bodied Sa'auei'a hexapods with four digitigrade running legs, two smaller chest manipulators, wedge heads, paired facial scent-fans, dark hides under short muted fibers, simple woven route wraps; adults work low beside nursery ramps while three small infants imitate lantern pulses with hand-sized covered lamps.",
+      "departing_family_adults": "Two departing adult Sa'auei'a: long-bodied hexapods standing on four tall digitigrade legs with two small chest limbs folded beneath the forward torso, paired facial scent-fans angled toward the flower, short dark fibers, balanced woven flank packs, patient but visibly delayed posture."
+    }
+  },
+  "review_notes": [
+    "Visual continuity self-review accepted eleven click-through scenes, affirmative standalone prompts, visible-body refs, and branch/state deltas.",
+    "Spatial self-review accepted the embedded two-dimensional terrace layout as the current replay geometry authority; a future 3D blockout is an optional promotion path for animation-level consistency.",
+    "The scene set fixes zones, coordinates, cameras, staging slots, sightlines, occluders, grooming-tool custody, and flower attachment states."
+  ]
+}
