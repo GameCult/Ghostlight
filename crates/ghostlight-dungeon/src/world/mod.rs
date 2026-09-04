@@ -3218,9 +3218,9 @@ mod tests {
         }
     }
 
-    /// Six world-authored civic entries. The kernel builds none of them; each
-    /// is a worked example of what a seed author writes to make the political
-    /// layer playable rather than administratively imposed.
+    /// Seven world-authored civic entries. The kernel builds none of them;
+    /// each is a worked example of what a seed author writes to make the
+    /// political layer playable rather than administratively imposed.
     fn civic_affordances() -> Vec<Declaration> {
         let entry = |handle: &str,
                      kind: &str,
@@ -3287,6 +3287,27 @@ mod tests {
                         kind: authority_kind(LEVY_KIND),
                     },
                     vec!["deputy", "ground"],
+                    Bounds::None,
+                )],
+                certain_band(),
+                false,
+            ),
+            // Isolates the action-lane's revocation envelope: no separate
+            // precondition, so a rejection here can only be
+            // `DelegationNotMonotone`.
+            entry(
+                "revoke",
+                "revoke",
+                vec![
+                    role("holder", RefKind::Subject(None)),
+                    role("ground", RefKind::Entity(EntityKind::Place)),
+                ],
+                Vec::new(),
+                vec![slot(
+                    ComponentOpKind::RevokeAuthority {
+                        kind: authority_kind(LEVY_KIND),
+                    },
+                    vec!["holder", "ground"],
                     Bounds::None,
                 )],
                 certain_band(),
@@ -3439,7 +3460,9 @@ mod tests {
                     kind: SubjectKind::Institution,
                     controller: NewController::OperationalAgent,
                     affordances: civic_grants(
-                        &["levy", "delegate", "deploy", "sanction", "appoint"],
+                        &[
+                            "levy", "delegate", "deploy", "sanction", "appoint", "revoke",
+                        ],
                         &speak,
                     ),
                     position: Some(Ref::Draft(DraftHandle::new("hall"))),
@@ -3459,7 +3482,7 @@ mod tests {
                     "farmer",
                     "The Winter Farmer",
                     Ref::Draft(DraftHandle::new("chamber")),
-                    &["levy", "petition"],
+                    &["levy", "petition", "revoke"],
                 ),
                 person(
                     "outsider",

@@ -1146,6 +1146,38 @@ fn candidate_targets_overlap(
     }
 }
 
+/// Whether a candidate `Subject` grant target and a candidate `PlaceSubtree`
+/// grant target of one kind name overlapping ground: a `PlaceSubtree` grant
+/// covers a `Subject` grant's target when the subject's committed position
+/// sits under that subtree. Checked live against `state` rather than the
+/// candidate graph, because `covers` reads committed position and
+/// containment, not anything a patch declares; a target still in this
+/// patch's drafts has no committed position and so cannot overlap here. This
+/// is the one cross-shape case `candidate_targets_overlap` leaves alone by
+/// construction — same-shape overlap is its job, not this one's.
+fn grant_targets_nest(
+    state: &super::WorldState,
+    left: &AuthorityTargetKey,
+    right: &AuthorityTargetKey,
+) -> bool {
+    let place_and_subject = |a: &AuthorityTargetKey, b: &AuthorityTargetKey| match (a, b) {
+        (
+            AuthorityTargetKey::PlaceSubtree(Key::Existing(place)),
+            AuthorityTargetKey::Subject(Key::Existing(subject_id)),
+        ) => Some((*place, *subject_id)),
+        _ => None,
+    };
+    place_and_subject(left, right)
+        .or_else(|| place_and_subject(right, left))
+        .is_some_and(|(place, subject_id)| {
+            super::covers(
+                state,
+                AuthorityTarget::PlaceSubtree(place),
+                super::Target::Subject(subject_id),
+            )
+        })
+}
+
 fn target_key_of(target: AuthorityTarget) -> AuthorityTargetKey {
     match target {
         AuthorityTarget::Subject(subject_id) => {
@@ -2564,6 +2596,25 @@ pub(super) fn resolve_patch(
                     kind: grant.kind.clone(),
                     over,
                 };
+                // Admission-time only: a `Subject` grant landing inside a
+                // `PlaceSubtree` grant the holder already has, or the reverse,
+                // is a second source for the same kind of act. This does not
+                // reach `targets_overlap`/`verify_state_shape`, which stay
+                // structural and position-independent; a later `Relocate`
+                // that creates this shape is not re-derived as a violation.
+                if granting
+                    && authority.get(&holder_key).is_some_and(|grants| {
+                        grants.iter().any(|other| {
+                            other.kind == entry.kind
+                                && grant_targets_nest(state, &entry.over, &other.over)
+                        })
+                    })
+                {
+                    mismatches.push(Mismatch::OverlappingJurisdiction {
+                        operation: position,
+                    });
+                    continue;
+                }
                 let held = authority
                     .get(&holder_key)
                     .is_some_and(|grants| grants.contains(&entry));

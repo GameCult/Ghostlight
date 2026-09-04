@@ -1551,18 +1551,20 @@ mod tests {
         );
     }
 
-    /// Soul falsification of the structural-overlap decision: disjointness is
-    /// decided by target shape, not by where anybody is standing, so no
-    /// `Relocate` out of the jurisdiction can produce a
-    /// store the shape checks call corrupt. The grant pair used here is exactly
-    /// the one a covering-predicate overlap rule would have had to reject on
-    /// arrival and could not have kept rejected afterwards.
+    /// Soul falsification of the structural-overlap decision, updated for the
+    /// admission-time covering check: a `Subject` grant naming ground a
+    /// `PlaceSubtree` grant already covers is refused on arrival, but nothing
+    /// re-derives that check off of live position. Once the farmer walks out
+    /// from under the hall, the identical grant is unremarkable, and no
+    /// `Relocate` — in either direction — is ever asked to keep a shape
+    /// decision current.
     #[test]
     fn a_relocation_never_corrupts_a_civic_store() {
         use crate::world::tests::{
-            LEVY_KIND, auth_principal, civic_world, operations, over_subject, owner, submit_owner,
+            LEVY_KIND, auth_principal, civic_world, operations, over_subject, owner, reject_owner,
+            submit_owner,
         };
-        use crate::world::{ComponentOp, SubmitReceipt};
+        use crate::world::{ComponentOp, Mismatch, SubmitReceipt};
 
         let directory = tempfile::tempdir().unwrap();
         let path = directory.path().join("world.cc");
@@ -1586,18 +1588,6 @@ mod tests {
                 "a committed store never holds two overlapping jurisdictions"
             );
         };
-
-        // The treasury levies the hall the farmer stands in, and now also the
-        // farmer by name.
-        admit(
-            &mut kernel,
-            vec![crate::world::tests::grant_to(
-                civic.treasury,
-                LEVY_KIND,
-                over_subject(civic.farmer),
-            )],
-        );
-        // Both grants answer for the same subject, and the store is admitted.
         let place_covers = |kernel: &WorldKernel| {
             crate::world::covers(
                 &kernel.state,
@@ -1605,7 +1595,24 @@ mod tests {
                 crate::world::Target::Subject(civic.farmer),
             )
         };
-        assert!(place_covers(&kernel) && kernel.state.authority[&civic.treasury].len() >= 3);
+        let name_farmer = || {
+            vec![crate::world::tests::grant_to(
+                civic.treasury,
+                LEVY_KIND,
+                over_subject(civic.farmer),
+            )]
+        };
+
+        // The treasury's hall grant already covers the farmer standing in the
+        // chamber underneath it, so naming him directly is a second source
+        // for the same kind of act, and admission refuses it while he stands
+        // there.
+        assert!(place_covers(&kernel));
+        let before = kernel.snapshot().unwrap();
+        assert_eq!(
+            reject_owner(&mut kernel, &before, operations(name_farmer())),
+            vec![Mismatch::OverlappingJurisdiction { operation: 0 }]
+        );
 
         // Out of the subtree, one route at a time.
         for edge in [civic.passage, civic.causeway] {
@@ -1617,9 +1624,14 @@ mod tests {
                 }],
             );
         }
-        // The move dissolved the double cover without any operation naming it,
-        // which is why the disjointness rule cannot be occupancy-sensitive.
+        // The move dissolved the cover without any operation naming it, which
+        // is why the disjointness rule cannot be occupancy-sensitive: nothing
+        // reruns the covering check on a `Relocate`, in or out.
         assert!(!place_covers(&kernel));
+
+        // Now that he stands outside it, the identical grant is unremarkable.
+        admit(&mut kernel, name_farmer());
+        assert!(kernel.state.authority[&civic.treasury].len() >= 3);
 
         // The whole history replays, and the reopened world is identical.
         let committed = kernel.snapshot().unwrap();

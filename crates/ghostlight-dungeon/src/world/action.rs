@@ -332,15 +332,19 @@ fn check_preconditions(
     }
 }
 
-/// Stage 4, beside the ceilings: an authority a slot would grant must not
-/// exceed the granter's own. Every slot is checked, not just the drawn band's,
-/// for the same reason every ceiling is — the proposer commits to a complete
-/// attempt and cannot see the band.
+/// Stage 4, beside the ceilings: an authority a slot would grant or revoke
+/// must not exceed the actor's own. For a grant this is the monotonicity
+/// envelope — no holder mints authority it does not itself hold. For a
+/// revocation it is the same envelope read the other way: an actor may not
+/// strip ground it holds no jurisdiction over, so revocation is not a lever
+/// for reaching past one's own authority. Every slot is checked, not just the
+/// drawn band's, for the same reason every ceiling is — the proposer commits
+/// to a complete attempt and cannot see the band.
 ///
 /// The rule is action-lane only, and that is not two truths. The patch lane's
-/// `GrantAuthority` is admitted by the world owner; monotonicity *is* the
-/// action lane's authority envelope, and both lanes reach one
-/// `apply_operation` with the identical mutation.
+/// `GrantAuthority`/`RevokeAuthority` is admitted by the world owner;
+/// monotonicity *is* the action lane's authority envelope, and both lanes
+/// reach one `apply_operation` with the identical mutation.
 fn check_delegation(
     state: &WorldState,
     authority: &BTreeSet<AuthorityGrant>,
@@ -349,8 +353,10 @@ fn check_delegation(
     rejections: &mut Vec<ActionMismatch>,
 ) {
     for (index, slot) in entry.effect_slots.iter().enumerate() {
-        let ComponentOpKind::GrantAuthority { kind } = &slot.op_kind else {
-            continue;
+        let kind = match &slot.op_kind {
+            ComponentOpKind::GrantAuthority { kind }
+            | ComponentOpKind::RevokeAuthority { kind } => kind,
+            _ => continue,
         };
         let Some(over) = slot
             .roles
@@ -712,9 +718,9 @@ mod tests {
     };
     use crate::world::tests::{
         ADMIT_KIND, COMMAND_KIND, Civic, LEVY_KIND, OPENING_BALANCE, SEIZURE_GRIEVANCE, Topology,
-        WARDEN_OFFICE, activate, affordance_named, auth_principal, civic_world, command,
-        custody_world, grant_to, grievance, office, operations, opportunity_for, over_place,
-        over_subject, player, reject_owner, submit_owner,
+        WARDEN_OFFICE, activate, affordance_named, auth_principal, authority_kind, civic_world,
+        command, custody_world, grant_to, grievance, office, operations, opportunity_for,
+        over_place, over_subject, player, reject_owner, submit_owner,
     };
     use crate::world::{
         AffordanceKindName, AuthenticatedCaller, CallerId, CommandBody, Declaration, EntityKind,
@@ -1519,6 +1525,43 @@ mod tests {
             )
         }
 
+        /// Commands a subordinate to traverse a route: the fixture's one
+        /// `Relocate`-lowering affordance, gated by `command` authority over
+        /// the subordinate rather than by the subordinate's own consent.
+        fn deploy(&self, subordinate: SubjectId, via: EdgeId) -> DecisionInvocation {
+            self.call(
+                "deploy",
+                vec![
+                    binding("subordinate", Target::Subject(subordinate)),
+                    binding("via", Target::Edge(via)),
+                ],
+                vec![ProposedEffect {
+                    slot: 0,
+                    magnitude: Magnitude::None,
+                }],
+                None,
+            )
+        }
+
+        /// Strips `holder`'s `levy` grant over `ground`: the fixture's one
+        /// `RevokeAuthority`-lowering affordance, carrying no precondition of
+        /// its own so a rejection can only be the action lane's revocation
+        /// envelope.
+        fn revoke(&self, holder: SubjectId, ground: EntityId) -> DecisionInvocation {
+            self.call(
+                "revoke",
+                vec![
+                    binding("holder", Target::Subject(holder)),
+                    binding("ground", Target::Entity(ground)),
+                ],
+                vec![ProposedEffect {
+                    slot: 0,
+                    magnitude: Magnitude::None,
+                }],
+                None,
+            )
+        }
+
         fn try_as(
             &self,
             actor: SubjectId,
@@ -1818,6 +1861,94 @@ mod tests {
         assert_eq!(
             bench.refuse(vec![grant_to(outsider, LEVY_KIND, over_place(hall))]),
             vec![crate::world::Mismatch::OverlappingJurisdiction { operation: 0 }]
+        );
+    }
+
+    /// The revocation envelope is the same predicate as the grant one, read
+    /// the other way: an actor may strip a `levy` grant only over ground its
+    /// own authority covers, so a bystander cannot use `revoke` to reach past
+    /// what it may otherwise touch.
+    #[test]
+    fn revoking_a_grant_requires_covering_authority_over_its_ground() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut bench = civics(directory.path(), "RevokeEnvelope");
+        let treasury = bench.civic.treasury;
+        let farmer = bench.civic.farmer;
+        let hall = bench.civic.hall;
+
+        // The farmer holds no authority at all, so stripping the treasury's
+        // own `levy` grant over the hall fails the envelope before the patch
+        // lane ever sees the operation.
+        assert_eq!(
+            bench.rejected_as(farmer, &bench.revoke(treasury, hall)),
+            vec![ActionMismatch::DelegationNotMonotone { slot: 0 }]
+        );
+
+        // The treasury's own `levy` grant over the hall covers the hall, so
+        // the treasury may strip its own grant, and the ledger loses it.
+        assert!(matches!(
+            bench.commit_as(treasury, bench.revoke(treasury, hall)),
+            SubmitReceipt::Applied(_)
+        ));
+        assert!(
+            !bench
+                .kernel
+                .state
+                .authority
+                .get(&treasury)
+                .is_some_and(|grants| grants.contains(&crate::world::AuthorityGrant {
+                    kind: authority_kind(LEVY_KIND),
+                    over: crate::world::AuthorityTarget::PlaceSubtree(hall),
+                })),
+            "the revoked grant is gone from the ledger"
+        );
+    }
+
+    /// The fixture's one `Relocate`-lowering affordance: a commander may move
+    /// a subordinate standing under its ground, and one standing outside it
+    /// fails the same `Authorized` precondition every other civic act reads.
+    #[test]
+    fn deploy_relocates_a_subordinate_under_command_and_refuses_one_outside_it() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut bench = civics(directory.path(), "Deploy");
+        let treasury = bench.civic.treasury;
+        let farmer = bench.civic.farmer;
+        let outsider = bench.civic.outsider;
+        let chamber = bench.civic.chamber;
+        let hall = bench.civic.hall;
+        let passage = bench.civic.passage;
+
+        // The pedlar stands on the road, outside the hall the treasury
+        // commands, so the precondition alone refuses the attempt.
+        assert_eq!(
+            bench.rejected_as(treasury, &bench.deploy(outsider, passage)),
+            vec![ActionMismatch::NotAuthorized { precondition: 0 }]
+        );
+
+        // The farmer stands in the chamber, under the treasury's command, and
+        // the passage carries it into the hall the same way a direct
+        // `Relocate` would.
+        assert_eq!(
+            bench
+                .kernel
+                .state
+                .positions
+                .get(&farmer)
+                .map(|position| position.place),
+            Some(chamber)
+        );
+        assert!(matches!(
+            bench.commit_as(treasury, bench.deploy(farmer, passage)),
+            SubmitReceipt::Applied(_)
+        ));
+        assert_eq!(
+            bench
+                .kernel
+                .state
+                .positions
+                .get(&farmer)
+                .map(|position| position.place),
+            Some(hall)
         );
     }
 
@@ -2143,12 +2274,14 @@ mod tests {
         );
     }
 
-    /// Structural overlap does not see a `Subject` grant sitting inside a
-    /// `PlaceSubtree` grant of the same kind, so one subject can hold two
-    /// sources of one permission and revoking the wider one leaves the act
-    /// standing through the narrower. Nothing arbitrates between them, so this
-    /// is a gap in the disjointness rule rather than the precedence hazard the
-    /// rule was written to prevent.
+    /// Structural overlap alone does not see a `Subject` grant sitting inside
+    /// a `PlaceSubtree` grant of the same kind: `targets_overlap` compares
+    /// shapes, not position, and stays that way so the answer cannot decay
+    /// when a subject walks somewhere. Admission catches the cross-shape case
+    /// live instead, in the resolver where the second grant lands, using the
+    /// same covering predicate `Authorized` reads. Both directions fire the
+    /// identical check, so whichever grant is minted second is the one that
+    /// is refused.
     #[test]
     fn soul_a_subject_grant_inside_a_place_grant_is_a_second_source() {
         let directory = tempfile::tempdir().unwrap();
@@ -2158,23 +2291,26 @@ mod tests {
         let hall = bench.civic.hall;
 
         // The farmer stands under the hall the treasury already levies, so the
-        // covering predicate says both grants answer for the same target.
+        // covering predicate says both grants would answer for the same
+        // target, and admission refuses the narrower grant landing second.
         assert!(crate::world::covers(
             &bench.kernel.state,
             crate::world::AuthorityTarget::PlaceSubtree(hall),
             Target::Subject(farmer)
         ));
-        bench.admit(vec![grant_to(treasury, LEVY_KIND, over_subject(farmer))]);
+        assert_eq!(
+            bench.refuse(vec![grant_to(treasury, LEVY_KIND, over_subject(farmer))]),
+            vec![crate::world::Mismatch::OverlappingJurisdiction { operation: 0 }]
+        );
 
-        // Revoking the wider grant leaves the levy authorized through the
-        // narrower one.
-        bench.admit(vec![ComponentOp::RevokeAuthority {
-            holder: PatchRef::Existing(treasury),
-            grant: crate::world::tests::grant_of(LEVY_KIND, over_place(hall)),
-        }]);
-        assert!(
-            bench.try_as(treasury, &bench.levy(farmer, 1)).is_ok(),
-            "the narrower grant still authorizes the act"
+        // The symmetric order: a direct grant over the farmer, minted first
+        // under a fresh kind, blocks a later place grant that would cover
+        // him too.
+        const AUDIT_KIND: &str = "audit";
+        bench.admit(vec![grant_to(treasury, AUDIT_KIND, over_subject(farmer))]);
+        assert_eq!(
+            bench.refuse(vec![grant_to(treasury, AUDIT_KIND, over_place(hall))]),
+            vec![crate::world::Mismatch::OverlappingJurisdiction { operation: 0 }]
         );
     }
 
