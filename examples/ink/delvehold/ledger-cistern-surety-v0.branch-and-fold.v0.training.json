@@ -1,0 +1,383 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "ledger-cistern-surety-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/delvehold/ledger-cistern-surety-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/delvehold/ledger-cistern-surety-v0.v0.json",
+  "scene_id": "ledger-cistern-surety-v0.renewal-at-cistern-house-nine",
+  "protagonist_agent_id": "talla_venn",
+  "npc_agent_ids": [
+    "neri_ash",
+    "poma_reed",
+    "osric_vale",
+    "terrace_water_users"
+  ],
+  "purpose": "Interactive Fiction Weaver draft for a Delvehold branch-and-fold fixture about pump debt, failure exclusions, emergency crystal, and class pressure during a surety inspection at Cistern House Nine.",
+  "local_awareness_summary": [
+    {
+      "text": "Talla is the dwarf Master whose single workshop seal owns the local operating decision and service note, but not the reserve house, consortium freight order, district moot, or other workshops' seals.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/ledger-cistern-surety-v0.v0.json",
+        "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+      ]
+    },
+    {
+      "text": "Talla can inspect the three-pump plant, spend the workshop's bounded credit, sign or refuse a claim classification, break a local reserve seal, widen the dispute, and post a delving contract.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/ledger-cistern-surety-v0.v0.json",
+        "Delvehold/Lore/The Greathold.md",
+        "Delvehold/Lore/Industry/Dwarven Industry.md"
+      ]
+    },
+    {
+      "text": "Talla can observe the rune-shaped grooves on the mites and compare standardized plates, but cannot know whether deliberate design, retained adaptation, ordinary variation, or a deeper intelligence produced them.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/ledger-cistern-surety-v0.v0.json",
+        "Delvehold/Lore/Dungeon Ecology/Ecological Responses.md",
+        "Delvehold/Lore/Dungeon Ecology/Monsters.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Talla's embodied workshop-Master viewpoint inside Cistern House Nine. Choices use her seal, plant access, contract standing, reserve authority, and ability to call a district moot; they do not grant control over other seals or freight offices.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/delvehold/ledger-cistern-surety-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes ordinary surety-reading work, familiar banter, the cistern's geometry, and the water clock before the pump failure creates allocation pressure.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "Delvehold/Lore/The Greathold.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Osric owns reserve-house claim classification and can request freight priority; he cannot command Talla's workshop, rewrite Poma's public slate, or compel other Masters to pledge seals.",
+        "source_refs": [
+          "examples/lore-grounding/delvehold/ledger-cistern-surety-v0.v0.json",
+          "Delvehold/Lore/Industry/Dwarven Industry.md"
+        ]
+      },
+      {
+        "text": "Neri can inspect and repair under workshop authority but has no civic seal. Poma can preserve public evidence and show district consequence but cannot cross the safety rail or authorize pump work.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/The Greathold.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Talla controls her workshop seal and the reserve-lock key; Neri handles housings, wedges, tools, and specimens under her authority; Poma owns the outward-facing public slate; Osric owns the surety book, red rule, and copper refusal plate.",
+        "source_refs": [
+          "examples/ink/delvehold/ledger-cistern-surety-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every repair route must name who pays, which resource moves, which authority can commit it, and what shortage or uncertainty remains elsewhere.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Dwarven Industry.md",
+          "Delvehold/Lore/Crisis/Industrial Escalation.md"
+        ]
+      },
+      {
+        "text": "Recording ecological adaptation must strengthen truth while weakening standard insurance coverage; class pressure must reach unsealed workers and households through queues, assessments, labour loss, and freight displacement.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Dwarven Industry.md",
+          "Delvehold/Lore/Dungeon Ecology/Ecological Responses.md",
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let a seal, insurance payment, or moral speech create free resources, erase the service note, or resolve the wider ecological injury.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Dwarven Industry.md",
+          "Delvehold/Lore/Crisis/World Without a Villain.md"
+        ]
+      },
+      {
+        "text": "Do not identify the mites as agents of a known core or prove machine-dungeon awareness from one pump-house failure.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Machine-Dungeon.md",
+          "Delvehold/Lore/Dungeon Ecology/Ecological Responses.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three economic choice layers fold through a pump failure and select one of eight state-gated payment outcomes.",
+    "choice_layers": [
+      "renewal_preparation",
+      "cause_and_claim",
+      "allocate_failure_cost"
+    ],
+    "variables": [
+      "water_margin",
+      "reserve_crystal",
+      "claim_strength",
+      "ecology_evidence",
+      "public_record",
+      "workshop_credit",
+      "household_burden",
+      "repair_integrity",
+      "relief_priority"
+    ],
+    "ending_gates": [
+      "ending_claim_paid",
+      "ending_claim_refused",
+      "ending_workshop_assessment",
+      "ending_moot_failure",
+      "ending_reserve_repair",
+      "ending_reserve_shortfall",
+      "ending_delving_contract",
+      "ending_delving_delay"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_joint_inspection",
+      "ink_path": "ledger_choice",
+      "action_type": "use_object",
+      "actor_intent": "Create shared custody for a mechanically sound claim before the test.",
+      "state_basis": [
+        "Talla controls the workshop seal and can open the engine housing for inspection.",
+        "Neri can perform the technical work while Osric witnesses it."
+      ],
+      "reviewed_consequences": [
+        "Raises claim_strength, repair_integrity, and relief_priority; later improves the covered-claim and reserve-freight routes."
+      ],
+      "training_hooks": [
+        "shared_custody",
+        "maintenance_as_credit",
+        "insurance_evidence"
+      ]
+    },
+    {
+      "branch_id": "prime_public_water_clock",
+      "ink_path": "ledger_choice",
+      "action_type": "show_object",
+      "actor_intent": "Make the safe water margin and outstanding debt visible to affected households.",
+      "state_basis": [
+        "Poma owns the public slate and can post tank and assessment figures visible from the landing."
+      ],
+      "reviewed_consequences": [
+        "Raises public_record and relief_priority; later improves the district-moot route and keeps restored service tied to its charge."
+      ],
+      "training_hooks": [
+        "public_resource_clock",
+        "distributed_evidence",
+        "class_pressure"
+      ]
+    },
+    {
+      "branch_id": "prime_temporary_flow",
+      "ink_path": "ledger_choice",
+      "action_type": "spend_resource",
+      "actor_intent": "Buy immediate water margin with emergency crystal before the inspection is complete.",
+      "state_basis": [
+        "Talla can release a bounded crystal shaving from the local emergency locker."
+      ],
+      "reviewed_consequences": [
+        "Raises water_margin and household_burden while lowering reserve_crystal and repair_integrity; improves immediate service but damages later reserve and claim routes."
+      ],
+      "training_hooks": [
+        "reserve_spend",
+        "temporary_service_permanent_invoice",
+        "future_shortage"
+      ]
+    },
+    {
+      "branch_id": "prime_ecology_check",
+      "ink_path": "ledger_choice",
+      "action_type": "move",
+      "actor_intent": "Look for a living cause before contract language fixes the classification.",
+      "state_basis": [
+        "Neri can descend the grated stair and inspect the intake grille with a lamp and scraper."
+      ],
+      "reviewed_consequences": [
+        "Raises ecology_evidence and public_record while lowering water_margin; improves the delving route and worsens time pressure."
+      ],
+      "training_hooks": [
+        "ecology_before_contract",
+        "inspection_costs_time",
+        "worker_observation"
+      ]
+    },
+    {
+      "branch_id": "record_adaptive_pattern",
+      "ink_path": "cause_choice",
+      "action_type": "use_object",
+      "actor_intent": "Keep physical evidence of possible rune adaptation even though the surety excludes it.",
+      "state_basis": [
+        "Talla and Neri can preserve live mites; Poma can copy their visible shell grooves onto the public slate."
+      ],
+      "reviewed_consequences": [
+        "Raises ecology_evidence and public_record while lowering claim_strength and workshop_credit; strengthens truth and delving options while weakening insurance."
+      ],
+      "training_hooks": [
+        "truth_voids_coverage",
+        "specimen_custody",
+        "ecological_warning"
+      ]
+    },
+    {
+      "branch_id": "claim_ordinary_vermin",
+      "ink_path": "cause_choice",
+      "action_type": "mixed",
+      "actor_intent": "Keep the failure inside covered language and obtain a matched assembly quickly.",
+      "state_basis": [
+        "Named local pipe vermin are covered by the surety; Talla's classification binds her workshop to the claim."
+      ],
+      "reviewed_consequences": [
+        "Raises claim_strength, repair_integrity, and household_burden while lowering ecology_evidence; opens the fast vendor route and buries the warning."
+      ],
+      "training_hooks": [
+        "classification_allocates_cost",
+        "covered_language",
+        "evidence_erasure"
+      ]
+    },
+    {
+      "branch_id": "test_repeated_adaptation",
+      "ink_path": "cause_choice",
+      "action_type": "use_object",
+      "actor_intent": "Compare an idle pump's identical rune array before deciding whether the failure is local fouling.",
+      "state_basis": [
+        "Engine Two is available for bounded comparison inside the same plant."
+      ],
+      "reviewed_consequences": [
+        "Raises ecology_evidence and repair_integrity while lowering water_margin; strengthens the adaptive pattern and delving route."
+      ],
+      "training_hooks": [
+        "standardization_as_attack_surface",
+        "comparative_evidence",
+        "time_cost"
+      ]
+    },
+    {
+      "branch_id": "buy_water_with_wear",
+      "ink_path": "cause_choice",
+      "action_type": "use_object",
+      "actor_intent": "Protect the upper tanks by spending backup-pump life and reserve crystal.",
+      "state_basis": [
+        "Talla can open Engine Three beyond catalogue duty but cannot make the overrun insured or mechanically harmless."
+      ],
+      "reviewed_consequences": [
+        "Raises water_margin while lowering reserve_crystal, repair_integrity, and relief_priority; preserves water and damages later repair routes."
+      ],
+      "training_hooks": [
+        "overduty_service",
+        "future_repair_debt",
+        "water_now"
+      ]
+    },
+    {
+      "branch_id": "accept_covered_cause",
+      "ink_path": "payment_choice",
+      "action_type": "use_object",
+      "actor_intent": "Obtain the consortium's matched assembly by accepting the reserve house's covered classification.",
+      "state_basis": [
+        "Success requires strong claim evidence, little surviving adaptive evidence, and sound repair custody."
+      ],
+      "reviewed_consequences": [
+        "Routes to covered-claim success or refusal; a paid claim restores water while preserving debt and possibly a public doubt."
+      ],
+      "training_hooks": [
+        "state_gated_claim",
+        "speed_for_blindness",
+        "service_note_survives"
+      ]
+    },
+    {
+      "branch_id": "assess_sealed_workshops",
+      "ink_path": "payment_choice",
+      "action_type": "move",
+      "actor_intent": "Ask the district's sealed workshops to carry the repair order before raising every water connection.",
+      "state_basis": [
+        "Success requires a strong public record and enough workshop credit to gather pledges."
+      ],
+      "reviewed_consequences": [
+        "Routes to workshop assessment or moot failure; success distributes cost among civic owners while leaving unsealed Neri outside the franchise."
+      ],
+      "training_hooks": [
+        "jurisdiction_follows_consequence",
+        "seal_class_pressure",
+        "public_credit"
+      ]
+    },
+    {
+      "branch_id": "buy_emergency_repair",
+      "ink_path": "payment_choice",
+      "action_type": "spend_resource",
+      "actor_intent": "Restore water with winter crystal and a displaced freight slot.",
+      "state_basis": [
+        "Success requires an intact reserve and enough evidentiary priority for the lift office to move the part."
+      ],
+      "reviewed_consequences": [
+        "Routes to reserve repair or shortfall; success moves scarcity from water into winter heat and transport."
+      ],
+      "training_hooks": [
+        "strategic_reserve_tradeoff",
+        "freight_priority",
+        "scarcity_moves"
+      ]
+    },
+    {
+      "branch_id": "pay_for_bounded_contest",
+      "ink_path": "payment_choice",
+      "action_type": "mixed",
+      "actor_intent": "Trace the living cause and recover material through a route the dungeon can contest.",
+      "state_basis": [
+        "Success requires preserved ecology evidence, enough water margin to wait, and enough workshop credit to provision a party."
+      ],
+      "reviewed_consequences": [
+        "Routes to a viable delving contract or delay; preserves uncertainty and bounded contest but cannot produce instant water."
+      ],
+      "training_hooks": [
+        "industrial_delving",
+        "truthful_method_has_cost",
+        "party_can_refuse"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Promotion of any branch outcome into canonical Cistern House Nine history",
+      "Durable character memory or relationship updates",
+      "Any named reserve house, Forge Consortium, Hold, currency, or Greathold-wide insurance standard",
+      "Acceptance into any model-training corpus"
+    ]
+  },
+  "audit": {
+    "reviewer": "Ledger elaborator applying the four required Ghostlight reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality verdict: accepted. Scores: reader orientation 5, coherence 5, pacing 4, voice 5, tonal fit 5, IF playability 5. The routine establishes work, roles, and water dependency before the failure; all three choice layers change later options, costs, prose, or endings; no skipped branch supplies required onboarding.",
+      "Lore grounding verdict: accepted. Scores: source coverage 5, canon fit 5, grounding quality 5, vault backfill value 5. Ten exact vault sources were checked. The durable surety mechanism was backfilled into Dwarven Industry; named characters and all branch outcomes remain fixture-only, and the mite cause remains uncertain.",
+      "Visual continuity verdict: accepted_with_minor_revisions. Scores: segmentation 5, visual prompts 5, character visibility 5, branch visual continuity 5, website replay 4. Review replaced success-only objects in shared ending bases with neutral delivery bays, pledge spaces, and an unclaimed delving bench so branch modifiers add visible deltas. A hand-built blockout remains required before high-consistency multi-angle rendering.",
+      "Spatial-geometric cohesion verdict: accepted_with_minor_revisions. Scores: layout cohesion 5, sightlines 4, body affordance 5, movement and access 5, object-system geometry 5, branch spatial state 5. The draft scene_set fixes two levels, pump order, public and work boundaries, intake route, staging reach, custody objects, sightline lanes, and persistent pump, specimen, reserve, and overduty states; a plan view or simple 3D blockout remains the final geometry authority for rendering.",
+      "The repository validator reached its compiler step, but no local Ink compiler was available and its network fetch was denied. No compiler was installed and the Ink was not compiled. JSON parsing, schema checks, exact header inspection, twelve-branch receipt matching, variable-use audit, and manual Ink structure review passed."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

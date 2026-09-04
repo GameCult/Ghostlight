@@ -1,0 +1,767 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "delvehold.ledger-cistern-surety-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "procedural_branch",
+  "source_refs": [
+    {
+      "source_id": "dwarven-industry",
+      "path": "Delvehold/Lore/Industry/Dwarven Industry.md",
+      "title": "Dwarven industry",
+      "line_start": 1,
+      "line_end": 50,
+      "relevance": "Primary owner of Forge Consortiums, reserve houses, Hold institutions, crystal dependency, and the authored pump-surety mechanism."
+    },
+    {
+      "source_id": "the-greathold",
+      "path": "Delvehold/Lore/The Greathold.md",
+      "title": "The Greathold",
+      "line_start": 1,
+      "line_end": 60,
+      "relevance": "Grounds the federated Hold structure, infrastructure routes, Cistern House Nine geometry, workshop seal, public inspection, and district water service."
+    },
+    {
+      "source_id": "mastership",
+      "path": "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+      "title": "Mastership and citizenship",
+      "line_start": 1,
+      "line_end": 54,
+      "relevance": "Grounds the single workshop seal, answerability, open franchise, apprentice and worker rights, and exclusion of unsealed workers from civic votes."
+    },
+    {
+      "source_id": "runic-engineering",
+      "path": "Delvehold/Lore/Industry/Runic Engineering.md",
+      "title": "Runic engineering",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds spell-engine pumps, standardized arrays, gold channels, mana-crystal fuel, null termination, displaced utility labour, and model-specific maintenance."
+    },
+    {
+      "source_id": "ecological-responses",
+      "path": "Delvehold/Lore/Dungeon Ecology/Ecological Responses.md",
+      "title": "Ecological responses",
+      "line_start": 1,
+      "line_end": 26,
+      "relevance": "Grounds rune-breaking insects, functional attacks on pumps and substations, competing explanations, and adaptation to standardized machinery."
+    },
+    {
+      "source_id": "monsters",
+      "path": "Delvehold/Lore/Dungeon Ecology/Monsters.md",
+      "title": "Monsters",
+      "line_start": 1,
+      "line_end": 31,
+      "relevance": "Grounds accelerated variation, non-command ecological roles, rune-disrupting insects, and uncertainty about whether adaptation was designed or retained."
+    },
+    {
+      "source_id": "dungeon-lifecycle",
+      "path": "Delvehold/Lore/Dungeon Ecology/Dungeon Lifecycle.md",
+      "title": "Dungeon lifecycle",
+      "line_start": 1,
+      "line_end": 36,
+      "relevance": "Grounds bounded delving as a contested material exchange and the party's real ability to refuse or retreat."
+    },
+    {
+      "source_id": "mana-pattern",
+      "path": "Delvehold/Lore/Ontology/Mana and Pattern.md",
+      "title": "Mana and pattern",
+      "line_start": 21,
+      "line_end": 45,
+      "relevance": "Grounds consequential mana history in conduits, gold-channel behavior, mana crystals as commodity and reserve, and the ecological meaning of crystal extraction."
+    },
+    {
+      "source_id": "industrial-escalation",
+      "path": "Delvehold/Lore/Crisis/Industrial Escalation.md",
+      "title": "Industrial escalation",
+      "line_start": 1,
+      "line_end": 27,
+      "relevance": "Grounds the pump-rail-extraction debt loop, stronger replacements, procurement pressure, and the machinery loan outlasting ecological response."
+    },
+    {
+      "source_id": "world-without-villain",
+      "path": "Delvehold/Lore/Crisis/World Without a Villain.md",
+      "title": "A world without a villain",
+      "line_start": 1,
+      "line_end": 16,
+      "relevance": "Grounds the refusal to solve a systemic dependency by removing one person and the immediate need to keep water flowing amid long ecological injury."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Industrial Greathold, after standardized civic pumps have become load-bearing and while adaptive ecological responses remain institutionally disputed",
+    "location": "Cistern House Nine, a seal-bearing public pump workshop serving a terraced Hold beside a warm underground sea.",
+    "summary": "An ordinary pump-surety renewal becomes an allocation crisis when rune-disrupting mites stop an insured engine and the evidence that explains the failure also activates the contract's deep-pattern exclusion.",
+    "public_facts": [
+      {
+        "text": "Cistern House Nine has a public landing, dry rune gallery, wet intake chamber, three pump engines, visible pressure floats and valves, removable isolation wedges, a municipal crystal feed, and a workshop inspection plate.",
+        "source_refs": [
+          "the-greathold"
+        ]
+      },
+      {
+        "text": "District pump service may depend simultaneously on a Forge Consortium's matched parts, a local sealed workshop, reserve-house surety, crystal allotments, and lift-office freight priority.",
+        "source_refs": [
+          "dwarven-industry",
+          "runic-engineering"
+        ]
+      },
+      {
+        "text": "Standard pump sureties can cover named mechanical or local-creature failures while excluding coordinated ecological response, undocumented rerouting, and organisms adapted to standardized rune arrays.",
+        "source_refs": [
+          "dwarven-industry",
+          "ecological-responses",
+          "monsters"
+        ]
+      },
+      {
+        "text": "A workshop Master can bind one seal and widen a local dispute, but apprentices, journeyworkers, tenants, and wage workers do not gain a civic seal merely by paying or performing the work.",
+        "source_refs": [
+          "mastership"
+        ]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "The physical evidence most useful for diagnosing adaptive ecological injury can also give the reserve house grounds to refuse the repair claim.",
+        "source_refs": [
+          "dwarven-industry",
+          "ecological-responses"
+        ]
+      },
+      {
+        "text": "A failed cistern moves labour, freight, crystal, and debt before any institution settles its cause; bakeries, clinics, laundries, public kitchens, and households bear those movements directly.",
+        "source_refs": [
+          "dwarven-industry",
+          "the-greathold"
+        ]
+      },
+      {
+        "text": "Restoring water through insurance, pooled workshop credit, winter reserve, or bounded delving moves scarcity into a different owner and time horizon instead of abolishing it.",
+        "source_refs": [
+          "dwarven-industry",
+          "dungeon-lifecycle",
+          "world-without-villain"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "cistern-house-nine-workshop",
+      "label": "Cistern House Nine workshop",
+      "group_type": "seal_bearing_public_works_practice",
+      "institutional_logic": [
+        "Keep district water moving through a materially safe pump state.",
+        "Attach the workshop seal to inspection, maintenance, and any claim classification it can defend."
+      ],
+      "material_incentives": [
+        "Obtain matched replacement parts and crystal before the upper tanks empty.",
+        "Preserve workshop credit without hiding a failure that will attack the same design again."
+      ],
+      "internal_virtues": [
+        "Inspectible repair",
+        "Named responsibility",
+        "Craft evidence",
+        "Service that survives the signature"
+      ],
+      "internal_shames": [
+        "Sealing an unsafe machine",
+        "Losing a public service through private pride",
+        "Making a journeyworker carry a Master's lie"
+      ],
+      "prestige_markers": [
+        "A pump still repairable after decades",
+        "A claim ledger whose physical evidence agrees with the seal",
+        "A district willing to widen the workshop's order"
+      ],
+      "taboo_triggers": [
+        "An insurer treating the public workshop as a disposable loss sink",
+        "A public slate exposing discrepancies between seal and machine"
+      ],
+      "emotional_display_norms": [
+        "Fear is compressed into measurements, parts custody, work assignments, and dry correction until the water clock makes restraint impossible."
+      ],
+      "trust_defaults": [
+        "Trusts visible isolation, repeatable inspection, competent hands, and records that attach each decision to an owner."
+      ],
+      "speech_register_cues": [
+        "Craft shorthand",
+        "Specific risk",
+        "Understated rebuke",
+        "Service arithmetic"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "mastership",
+        "runic-engineering",
+        "dwarven-industry"
+      ]
+    },
+    {
+      "group_id": "reserve-house-surety",
+      "label": "Reserve-house surety assessors",
+      "group_type": "risk_and_emergency_credit_practice",
+      "institutional_logic": [
+        "Guarantee failures whose cause and cost can be bounded by a named table.",
+        "Keep correlated deep-pattern losses outside any single reserve house's promises."
+      ],
+      "material_incentives": [
+        "Prevent one adaptive failure pattern from consuming reserves pledged across many Holds.",
+        "Control claim evidence strongly enough to request scarce relief freight."
+      ],
+      "internal_virtues": [
+        "Shared custody",
+        "Precise exclusions",
+        "Reserves that survive several failures",
+        "A refusal issued before false hope spends freight"
+      ],
+      "internal_shames": [
+        "Paying a fraudulent claim",
+        "Discovering that supposedly independent risks share one deep cause",
+        "A refusal plate hidden from the affected district"
+      ],
+      "prestige_markers": [
+        "A red rule accepted by both repairer and claimant",
+        "A reserve book that survives winter",
+        "Fast freight for a clean life-service claim"
+      ],
+      "taboo_triggers": [
+        "Calling an unbounded systemic risk ordinary wear",
+        "A workshop changing cause after inspection custody closes"
+      ],
+      "emotional_display_norms": [
+        "Concern is expressed as narrower promises, cleaner custody, and quieter language."
+      ],
+      "trust_defaults": [
+        "Trusts sealed housings, named causes, shared measurements, and solvent orders more than testimony about unprecedented behavior."
+      ],
+      "speech_register_cues": [
+        "Coverage language",
+        "Measured courtesy",
+        "Freight priority",
+        "Refusal without accusation"
+      ],
+      "source_refs": [
+        "dwarven-industry",
+        "the-greathold"
+      ]
+    },
+    {
+      "group_id": "forge-consortium-supply",
+      "label": "Forge Consortium pump supply",
+      "group_type": "industrial_vendor_and_creditor",
+      "institutional_logic": [
+        "Sell standardized spell engines and keep matched assemblies moving through controlled supply routes.",
+        "Use service notes and parts compatibility to secure repayment across long operating lives."
+      ],
+      "material_incentives": [
+        "Prioritize solvent and covered orders when matched parts are scarce.",
+        "Keep local technicians dependent on consortium models and replacement arrays."
+      ],
+      "internal_virtues": [
+        "Interchangeable assemblies",
+        "Predictable duty ratings",
+        "Paid notes",
+        "Serviceable installed base"
+      ],
+      "internal_shames": [
+        "A standard array becoming a standard ecological target",
+        "A public pump failing while its debt remains current"
+      ],
+      "prestige_markers": [
+        "Catalogued performance",
+        "Fast matched replacement",
+        "A maintenance workforce fluent in the model"
+      ],
+      "taboo_triggers": [
+        "Local substitution that bypasses proprietary matching",
+        "A delinquent order demanding priority over a solvent customer"
+      ],
+      "emotional_display_norms": [
+        "Urgency is translated into order position, warranty status, and freight marks."
+      ],
+      "trust_defaults": [
+        "Trusts standardized parts, paid service notes, and contracted duty limits."
+      ],
+      "speech_register_cues": [
+        "Catalogue terms",
+        "Matched-part language",
+        "Order priority",
+        "Polite creditor distance"
+      ],
+      "source_refs": [
+        "dwarven-industry",
+        "runic-engineering",
+        "industrial-escalation"
+      ]
+    },
+    {
+      "group_id": "terrace-water-users",
+      "label": "Terrace households and water-dependent work",
+      "group_type": "affected_district_public",
+      "institutional_logic": [
+        "Keep homes, clinics, bakeries, laundries, and public kitchens supplied.",
+        "Make service debt and emergency charges visible where non-seal holders can contest them."
+      ],
+      "material_incentives": [
+        "Receive water before stored vessels empty.",
+        "Keep repair costs from being passed automatically to every connection while workshop owners choose the terms."
+      ],
+      "internal_virtues": [
+        "Shared rationing",
+        "Public arithmetic",
+        "Specific complaint",
+        "Carrying water for a neighbour"
+      ],
+      "internal_shames": [
+        "Taking more than a ration",
+        "Hiding a surcharge in restored service",
+        "Treating unsealed labour as politically silent because it is legally voteless"
+      ],
+      "prestige_markers": [
+        "An accurate public slate",
+        "A clinic can filled before a private bath",
+        "A charge traced to the seal that chose it"
+      ],
+      "taboo_triggers": [
+        "Being told a dry tap is only a technical matter",
+        "Restored water presented as free when winter heat or household credit paid for it"
+      ],
+      "emotional_display_norms": [
+        "Pressure appears first as vessels, queues, missed shifts, posted figures, and exact repetition of promised delivery times."
+      ],
+      "trust_defaults": [
+        "Trusts gauge movement, public custody, and visible delivery more than insurer or workshop reassurance."
+      ],
+      "speech_register_cues": [
+        "Water hours",
+        "Household charges",
+        "Lost work",
+        "Dry practical humor"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "dwarven-industry",
+        "mastership"
+      ]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "cistern-house-nine-workshop.seal-must-name-cost",
+      "applies_to": [
+        "cistern-house-nine-workshop"
+      ],
+      "pressure_type": "civic_accountability",
+      "summary": "A workshop seal must bind a real repair classification and a named bearer of the resulting scarcity.",
+      "projection_use": "Make Talla choose among costs she can actually authorize rather than pronouncing a free solution.",
+      "source_refs": [
+        "mastership",
+        "dwarven-industry"
+      ]
+    },
+    {
+      "field_id": "reserve-house-surety.correlated-loss-fear",
+      "applies_to": [
+        "reserve-house-surety"
+      ],
+      "pressure_type": "systemic_risk",
+      "summary": "Evidence that many standardized pumps share one adaptive threat is economically more dangerous to the surety house than one cracked channel.",
+      "projection_use": "Keep Osric strict without making him omniscient or privately malicious; the exclusion protects a bounded reserve at public cost.",
+      "source_refs": [
+        "dwarven-industry",
+        "ecological-responses"
+      ]
+    },
+    {
+      "field_id": "terrace-water-users.payment-without-seal",
+      "applies_to": [
+        "terrace-water-users"
+      ],
+      "pressure_type": "class_and_resource_dependency",
+      "summary": "Unsealed residents and workers lose time, wages, water, and household credit while sealed workshop owners decide how the repair order is distributed.",
+      "projection_use": "Show class pressure through the yellow line, water vessels, missed work, surcharge lines, and Neri's place outside the moot.",
+      "source_refs": [
+        "mastership",
+        "dwarven-industry"
+      ]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "reserve-house-surety",
+      "target_group_id": "cistern-house-nine-workshop",
+      "observer_read": [
+        "A claimant tempted to rename systemic risk as covered wear",
+        "A necessary local authority whose service pressure can corrupt evidence custody"
+      ],
+      "target_self_read": [
+        "Custodians responsible for water now and repeatable failure later",
+        "Technical witnesses trapped inside a creditor's categories"
+      ],
+      "misread_patterns": [
+        "The assessor may read honest urgency as fraud pressure.",
+        "The workshop may read reserve discipline as indifference to thirst."
+      ],
+      "likely_insults": [
+        "claim-polisher",
+        "refusal clerk"
+      ],
+      "projection_use": "Let both sides understand the material exposure while disagreeing over which institution should carry an unbounded cause.",
+      "source_refs": [
+        "dwarven-industry",
+        "mastership"
+      ]
+    },
+    {
+      "observer_group_id": "terrace-water-users",
+      "target_group_id": "reserve-house-surety",
+      "observer_read": [
+        "A creditor who can turn physical evidence into an excuse not to pay",
+        "The person whose freight mark may still move a replacement part"
+      ],
+      "target_self_read": [
+        "Stewards of reserves pledged to many districts",
+        "Classifiers of bounded promises, not owners of all public need"
+      ],
+      "misread_patterns": [
+        "A technically justified refusal looks identical to selective abandonment from behind the public rail.",
+        "Fast covered freight may make a damaging classification look true."
+      ],
+      "likely_insults": [
+        "dry-book",
+        "copper mercy"
+      ],
+      "projection_use": "Keep public anger tied to the visible refusal plate, water clock, and order priority rather than generic hostility to finance.",
+      "source_refs": [
+        "dwarven-industry",
+        "the-greathold"
+      ]
+    },
+    {
+      "observer_group_id": "forge-consortium-supply",
+      "target_group_id": "terrace-water-users",
+      "observer_read": [
+        "End users represented by the district service note",
+        "Demand that becomes legible only after a sealed order reaches the freight book"
+      ],
+      "target_self_read": [
+        "The people already paying the note and the failure",
+        "Households and essential work that cannot wait for vendor order discipline"
+      ],
+      "misread_patterns": [
+        "The vendor compresses a district into one debtor and misses unequal household exposure.",
+        "Residents may mistake a parts shortage for deliberate punishment when solvency rules produce the same visible result."
+      ],
+      "likely_insults": [
+        "catalogue mouths",
+        "queue without buckets"
+      ],
+      "projection_use": "Keep the consortium mostly offstage as parts compatibility, note balance, and freight priority rather than inventing a villainous director.",
+      "source_refs": [
+        "dwarven-industry",
+        "runic-engineering"
+      ]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "pump-workshop-master",
+      "summary": "A civic-seal owner who must keep water moving, preserve repair truth, and place each cost under authority she actually holds.",
+      "obligations": [
+        "Maintain safe pump state",
+        "Answer for claim classification",
+        "Train and protect unsealed workers",
+        "Widen jurisdiction when the cost widens"
+      ],
+      "available_masks": [
+        "Dry craft authority",
+        "Debtor competence",
+        "Public severity",
+        "Measured solidarity"
+      ],
+      "failure_modes": [
+        "Calling adaptive evidence ordinary vermin to buy speed",
+        "Spending winter reserve as if it were surplus",
+        "Passing charges to connections without exposing the choice",
+        "Promising delving without time or credit"
+      ],
+      "source_refs": [
+        "mastership",
+        "dwarven-industry",
+        "the-greathold"
+      ]
+    },
+    {
+      "role_id": "journeyworker-pump-technician",
+      "summary": "A skilled unsealed worker who can inspect, isolate, compare, and repair the engines while carrying consequences chosen by civic owners.",
+      "obligations": [
+        "Preserve physical custody",
+        "Report what the machine and organisms do",
+        "Refuse unsafe work",
+        "Keep tools and bodies clear of live patterns"
+      ],
+      "available_masks": [
+        "Practical brevity",
+        "Competent silence",
+        "Workplace humor",
+        "Literal callout"
+      ],
+      "failure_modes": [
+        "Letting the Master's classification replace observation",
+        "Taking political blame without political authority",
+        "Overrunning a backup until the second failure arrives"
+      ],
+      "source_refs": [
+        "runic-engineering",
+        "mastership",
+        "the-greathold"
+      ]
+    },
+    {
+      "role_id": "reserve-house-assessor",
+      "summary": "A risk worker who controls claim classification and evidence custody but not the workshop, district, or relief route itself.",
+      "obligations": [
+        "Measure the covered failure",
+        "Protect pooled reserves from correlated losses",
+        "Issue refusals visibly",
+        "Request freight only on evidence he can defend"
+      ],
+      "available_masks": [
+        "Dry courtesy",
+        "Narrow promise",
+        "Procedural patience",
+        "Economic fatalism"
+      ],
+      "failure_modes": [
+        "Treating the exclusion as proof of cause",
+        "Letting shared risk erase local need",
+        "Hiding behind the book when custody is incomplete"
+      ],
+      "source_refs": [
+        "dwarven-industry",
+        "ecological-responses"
+      ]
+    },
+    {
+      "role_id": "public-landing-clerk",
+      "summary": "An unsealed district record keeper who can keep water, debt, custody, and time visible outside the workshop rail.",
+      "obligations": [
+        "Post accurate tank and charge figures",
+        "Separate observation from diagnosis",
+        "Keep public custody of copied evidence",
+        "Attach relief to its later cost"
+      ],
+      "available_masks": [
+        "Literal arithmetic",
+        "Dry interruption",
+        "Patient witness",
+        "Public inconvenience"
+      ],
+      "failure_modes": [
+        "Turning a shell pattern into certainty",
+        "Letting restored flow hide the surcharge",
+        "Mistaking visibility for repair authority"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "mastership",
+        "dwarven-industry"
+      ]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "talla_venn",
+      "known_context": [
+        {
+          "text": "Talla knows the local plant, service note, current water and crystal margins, her workshop credit, the surety terms, and every action taken under her seal.",
+          "source_refs": [
+            "the-greathold",
+            "dwarven-industry",
+            "mastership"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Talla believes a civic seal should expose who receives service and who inherits its cost.",
+          "source_refs": [
+            "mastership",
+            "dwarven-industry"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Talla may read Osric's exclusion as creditor cowardice before acknowledging the correlated risk his reserve cannot cover.",
+          "source_refs": [
+            "dwarven-industry"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Talla cannot know whether the mites were deliberately designed, selected by repeated exposure, directed by a core, or incidentally suited to the rune.",
+          "source_refs": [
+            "ecological-responses",
+            "monsters"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "neri_ash",
+      "known_context": [
+        {
+          "text": "Neri knows the physical pump plant, tool and specimen custody, shell grooves, fastener state, intake route, and effects of running Engine Three above duty.",
+          "source_refs": [
+            "the-greathold",
+            "runic-engineering"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Neri trusts comparison and physical isolation more than a contract category chosen before inspection.",
+          "source_refs": [
+            "runic-engineering",
+            "ecological-responses"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Neri may read repeated rune-shaped grooves as purposeful writing when adaptation alone could produce the pattern.",
+          "source_refs": [
+            "monsters",
+            "ecological-responses"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Neri cannot know other Holds' loss patterns or reserve-house exposure from this one inspection.",
+          "source_refs": [
+            "dwarven-industry"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "poma_reed",
+      "known_context": [
+        {
+          "text": "Poma knows public gauge levels, posted assessment, visible custody, the queue's needs, and the times attached to workshop and assessor promises.",
+          "source_refs": [
+            "the-greathold",
+            "mastership"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Poma believes restored flow and its displaced cost belong on the same public slate.",
+          "source_refs": [
+            "dwarven-industry",
+            "mastership"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Poma may read a technically necessary delay as creditor or workshop self-protection because both are visible as the same falling gauge.",
+          "source_refs": [
+            "the-greathold",
+            "dwarven-industry"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Poma cannot diagnose insect adaptation, remote freight capacity, or reserve solvency from the landing slate.",
+          "source_refs": [
+            "ecological-responses",
+            "dwarven-industry"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "osric_vale",
+      "known_context": [
+        {
+          "text": "Osric knows the surety terms, current shared measurements, claim custody, reserve-house tables, and the evidentiary threshold for requesting freight priority.",
+          "source_refs": [
+            "dwarven-industry"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Osric believes a reserve that promises correlated deep-pattern failures will fail every district at once.",
+          "source_refs": [
+            "dwarven-industry",
+            "ecological-responses"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Osric may treat the exclusion boundary as more certain than the actual cause because the contract needs a decision before the ecology supplies one.",
+          "source_refs": [
+            "dwarven-industry",
+            "monsters"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Osric cannot know the full connected loss pattern, the consortium's future stock, or any core's intention from this local claim.",
+          "source_refs": [
+            "ecological-responses",
+            "world-without-villain"
+          ]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The rune-shaped shell grooves are a fixture-scale expression of canonical rune-disrupting insects; they do not prove deliberate authorship, speech, or a named core's agency.",
+      "source_refs": [
+        "ecological-responses",
+        "monsters"
+      ]
+    },
+    {
+      "text": "Pump sureties are the authored durable economic elaboration. Talla, Neri, Poma, Osric, the specific failure, and all branch outcomes remain noncanonical fixture content.",
+      "source_refs": [
+        "dwarven-industry",
+        "the-greathold"
+      ]
+    },
+    {
+      "text": "A successful delving ending validates only that a bounded contract can be posted; it does not establish what the party finds or settle whether industrial delving repairs the wider crisis.",
+      "source_refs": [
+        "dungeon-lifecycle",
+        "world-without-villain"
+      ]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which named Hold contains Cistern House Nine?",
+      "blocks_training": false,
+      "notes": "The owning lore retains the existing unnamed terraced Hold; the fixture does not invent one."
+    },
+    {
+      "question": "How widely are pump-surety exclusions standardized among reserve houses and foreign buyers?",
+      "blocks_training": false,
+      "notes": "The lore patch establishes a common standard form without naming a central regulator or universal wording."
+    },
+    {
+      "question": "Do the shell grooves result from deliberate cultivation, retained ecological adaptation, ordinary variation, or several causes together?",
+      "blocks_training": false,
+      "notes": "The artifact preserves this as uncertainty; classification changes coverage but does not prove ontology."
+    }
+  ]
+}

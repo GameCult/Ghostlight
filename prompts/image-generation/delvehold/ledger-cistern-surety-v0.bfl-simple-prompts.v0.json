@@ -1,0 +1,56 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "ledger-cistern-surety-v0.bfl-simple-v0",
+  "fixture_id": "ledger-cistern-surety-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Richly textured high-fantasy industrial storybook illustration, precise dark ink lines, restrained mineral watercolor, carved basalt and worn brass, warm amber work lamps against cold blue and violet mana light, practical rune machinery, readable silhouettes, humane facial acting, dry civic tension, unlettered graphic surfaces.",
+  "prompts": [
+    {
+      "id": "01_surety_cistern_establishing",
+      "prompt": "Wide view of a two-level underground civic pump house: dry basalt gallery and public landing above a misty black-water intake, three brass-and-iron pumps aligned left to right behind a safety rail, grated stair, locked blue-lit mana conduit, barred crystal locker, inspection table, large black public slate, yellow boundary line, and terrace water gauge. Four compact dwarf workers perform an ordinary inspection under amber lamps."
+    },
+    {
+      "id": "02_surety_renewal_table",
+      "prompt": "Medium-wide pump-surety inspection in a basalt gallery: broad older dwarf woman with long gray braid, oxblood pump apron, square brass civic seal, and two burn-scarred fingers faces a narrow silver-haired dwarf assessor in charcoal coat with black ledger, red brass rule, and copper refusal plate. A young dwarf journeyworker in moss-green coveralls cleans the left pump while a teal-coated dwarf clerk chalks tank, crystal, and debt figures beyond a yellow line."
+    },
+    {
+      "id": "03_surety_preparation_choice",
+      "prompt": "Medium action view of the leftmost pump presenting four practical choices around a gray-braided dwarf Master: open brass return housing and inspection key, barred locker with blue emergency crystal, grated stair descending into warm mist, and outward-facing public slate. A moss-green dwarf journeyworker waits with spanner and lamp, a teal-coated dwarf clerk holds chalk, and a charcoal-coated assessor watches over a red rule and ledger."
+    },
+    {
+      "id": "04_surety_rune_mite_reveal",
+      "prompt": "Pivotal close-up of an opened brass pump housing: six thumbnail-sized blue-black mites cling to a dim branching gold rune, each shell bearing raised grooves matching the channel and glowing dull violet as it absorbs cold blue mana. A red-shouldered iron isolation wedge is fully inserted; a gray-braided dwarf Master finishes a null gesture while a moss-green dwarf journeyworker holds a glass phial and brush clear of the live machinery."
+    },
+    {
+      "id": "05_surety_cause_choice",
+      "prompt": "Medium classification scene around an isolated brass pump in a basalt cistern: gray-braided dwarf Master between a glass mite phial, white lime tray and brush, the idle center pump opened for rune comparison, and the right backup pump's black duty notch. Moss-green journeyworker guards tools, teal-coated clerk copies shell grooves onto a public slate, and charcoal-coated assessor turns a palm-sized copper refusal plate face-up as the water gauge falls."
+    },
+    {
+      "id": "06_surety_cost_arrives",
+      "prompt": "Wide civic pressure view of the complete two-level pump house. Beyond a yellow line, mixed Hold residents queue with hammered copper cans: dwarf householders, short halfling bakery porter with wheeled trough, lean goblin clinic runner with stoppered vessels, and laundry workers beside wet sheets. Inside the gallery, gray-braided Master, moss-green journeyworker, teal-coated clerk, and charcoal-coated assessor surround a refusal plate, specimen phial, ledger, and falling red water gauge while one of three pumps remains dark."
+    },
+    {
+      "id": "07_surety_payment_threshold",
+      "prompt": "Medium-wide decision tableau in a carved basalt pump gallery: gray-braided dwarf Master holds her square civic seal over four material routes: reserve-house claim table with copper plate and ledger, public slate leading toward a district moot, barred locker with blue winter crystal and freight plaque, and delving contract board beside the grated stair into warm mist. Three pump states, younger journeyworker, teal-coated clerk, assessor, and vessel queue remain visibly connected."
+    },
+    {
+      "id": "08_surety_claim_ending",
+      "prompt": "Claim aftermath at the inspection table: gray-braided dwarf Master and charcoal-coated dwarf assessor place a square civic seal and copper claim plate beside a black ledger and red rule. A moss-green journeyworker waits at the isolated left pump beside low freight rails ending in an empty painted delivery bay; beyond the yellow line a teal-coated clerk posts the outcome beside the terrace water gauge while residents hold copper vessels."
+    },
+    {
+      "id": "09_surety_workshop_moot_ending",
+      "prompt": "Open district moot on a broad basalt landing outside the pump house: gray-braided dwarf Master and teal-coated dwarf clerk carry a large public slate toward a low stone table holding Talla's single square brass seal and four clean pledge spaces. Bakery, lift, clinic, and laundry Masters stand behind the spaces; a moss-green journeyworker stands with tools outside the seal ring while water vessels, bakery trough, laundry cart, and public gauge keep the class boundary visible."
+    },
+    {
+      "id": "10_surety_reserve_ending",
+      "prompt": "Reserve-spend aftermath in the two-level pump gallery: barred locker open with broken blue wax seal and visible crystal tray, gray-braided dwarf Master holding the seal, moss-green journeyworker waiting at the isolated left pump beside an empty painted delivery bay, and charcoal-coated assessor holding a life-service freight plaque above the bay. A teal-coated clerk posts separate water and winter-heat gauges while residents watch from the public landing."
+    },
+    {
+      "id": "11_surety_delving_ending",
+      "prompt": "Delving-contract aftermath at the grated stair into a warm misty intake: gray-braided dwarf Master holds her square brass seal above a parchment contract while a moss-green dwarf journeyworker holds a glass phial of rune-grooved mites, chalk groove map, and route slate beside an empty provision bench arranged with three hooded lamps, ropes, shields, specimen boxes, and salvage packs. Behind them, a teal-coated clerk posts a red water clock; the isolated pump, brass rail, black water, blue mana conduit, and ration queue remain visible."
+    }
+  ]
+}

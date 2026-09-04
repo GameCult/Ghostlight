@@ -1,0 +1,765 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "ledger-cistern-surety-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/delvehold/ledger-cistern-surety-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/delvehold/ledger-cistern-surety-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ledger-cistern-surety-v0.renewal-at-cistern-house-nine",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a pump-surety renewal and failure-cost dispute at Cistern House Nine.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary inspection work, the rune-mite reveal, classification pressure, district cost arrival, four payment routes, and their state-gated aftermaths.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the two-level cistern establishing shot, the renewal table, the first preparation, the stopped-pump reveal, cause classification, the arriving water queue, the payment threshold, and each ending family. The twelfth pump stroke and the copper refusal plate receive distinct focal frames.",
+    "prompting_rule": "Each base image prompt is a complete frame for a general image model. It states camera distance, room geometry, materials, light, machinery, visible bodies, tools, and evidence. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Style: richly textured high-fantasy industrial storybook illustration, precise dark ink lines, restrained mineral watercolor, carved basalt and worn brass, warm amber work lamps against cold blue and violet mana light, practical rune machinery, readable silhouettes, humane facial acting, dry civic tension, unlettered graphic surfaces.",
+    "prompt_assembly_rule": "Assemble every image prompt from the global_style_cue, one scene base_image_prompt, visual refs only for named characters or groups listed as visible in that scene, and each triggered state_image_modifier or global_branch_image_modifier. Render each frame from a camera-specific scene-set blockout when one becomes available.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture reuses one two-level pump house across wide, medium, close, landing, and intake-facing views. The structured map fixes zones, routes, staging, sightlines, and state anchors for draft replay planning.",
+      "future_scene_set_need": "Before high-consistency multi-angle rendering, build a plan view or simple 3D blockout with the public landing, yellow line, dry gallery, inspection table, three-pump service floor, grated stair, wet intake, conduit arch, reserve locker, and fixed camera slots."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "surety_cistern_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of a two-level underground civic pump house carved into dark basalt beside a warm subterranean sea. A dry upper gallery opens from a public stone landing; a yellow painted line and large black slate mark the public boundary. A grated iron stair descends to a misty wet intake chamber with black water. Three squat brass-and-iron pump engines stand left to right behind a waist-high brass safety rail, their vertical rods descending into mist, glass pressure floats and long outlet valves facing the gallery. A locked arched conduit in the wall carries cold blue mana light. A barred crystal locker glows faintly beside an inspection table. A terrace water gauge has calm white marks above one red mark. Four compact dwarf workers occupy the gallery as small figures under amber lamps.",
+        "visible_characters": [
+          {
+            "agent_id": "talla_venn",
+            "default_stance": "beside the inspection table with square brass seal at her belt",
+            "visual_ref": "visual_character_refs.characters.talla_venn"
+          },
+          {
+            "agent_id": "neri_ash",
+            "default_stance": "cleaning Engine One's pressure float behind the rail",
+            "visual_ref": "visual_character_refs.characters.neri_ash"
+          },
+          {
+            "agent_id": "poma_reed",
+            "default_stance": "writing on the public slate beyond the yellow line",
+            "visual_ref": "visual_character_refs.characters.poma_reed"
+          },
+          {
+            "agent_id": "osric_vale",
+            "default_stance": "seated at the inspection table with red rule and thick ledger",
+            "visual_ref": "visual_character_refs.characters.osric_vale"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Pump order is Engine One nearest the public landing, Engine Two centered, Engine Three nearest the wall conduit and reserve locker.",
+          "The public landing and slate are on the dry upper level; the wet intake is visible only through the grated stair opening and gaps around the pump rods."
+        ]
+      },
+      {
+        "visual_scene_id": "surety_renewal_table",
+        "ink_anchor": "renewal_routine",
+        "base_image_prompt": "Medium-wide view across the dry basalt gallery of an underground pump house. In the foreground, an older broad dwarf woman with a long gray braid, brown work tunic, oxblood leather apron, square brass seal, and two gold-channel burn scars stands at an inspection table. A narrow dwarf man in a charcoal reserve-house coat lays a red brass measuring rule beside a thick black ledger and copper refusal plate. Behind the safety rail, a compact younger dwarf journeyworker in moss-green coveralls wipes the glass float on the leftmost of three brass pumps. Beyond a yellow line, a sturdy dwarf clerk in a teal wool coat chalks tank margin, blue crystal reserve, and debt marks onto a large public slate. Amber lamps illuminate worn brass; cold blue mana shines through the locked wall conduit.",
+        "visible_characters": [
+          {
+            "agent_id": "talla_venn",
+            "default_stance": "standing at the table, one scarred hand near her seal",
+            "visual_ref": "visual_character_refs.characters.talla_venn"
+          },
+          {
+            "agent_id": "neri_ash",
+            "default_stance": "behind the rail at Engine One with rag and tool roll",
+            "visual_ref": "visual_character_refs.characters.neri_ash"
+          },
+          {
+            "agent_id": "poma_reed",
+            "default_stance": "at the public slate beyond the yellow line",
+            "visual_ref": "visual_character_refs.characters.poma_reed"
+          },
+          {
+            "agent_id": "osric_vale",
+            "default_stance": "seated straight-backed behind the surety book",
+            "visual_ref": "visual_character_refs.characters.osric_vale"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Osric's red rule, black surety book, and copper refusal plate stay on the inspection table unless a branch explicitly moves the refusal plate.",
+          "Poma remains outside the safety rail; her large slate faces the public landing."
+        ]
+      },
+      {
+        "visual_scene_id": "surety_preparation_choice",
+        "ink_anchor": "ledger_choice",
+        "base_image_prompt": "Medium action view centered on Engine One inside a two-level basalt pump house. The leftmost brass-and-iron pump stands behind a brass rail beside an open tool roll; a red-shouldered iron isolation wedge sits near its conduit throat. A broad older dwarf woman with gray braid and oxblood apron chooses among an inspection key, a barred locker containing blue mana crystal, the grated stair descending into warm mist, and the public slate beyond a yellow line. A younger dwarf journeyworker waits with spanner and hooded lamp; a teal-coated dwarf clerk holds chalk at the slate; a narrow reserve-house assessor in charcoal coat watches over a red rule and black ledger. Amber work light and cold blue conduit light divide the frame into practical choices.",
+        "visible_characters": [
+          {
+            "agent_id": "talla_venn",
+            "default_stance": "between Engine One, the reserve locker, and the public line",
+            "visual_ref": "visual_character_refs.characters.talla_venn"
+          },
+          {
+            "agent_id": "neri_ash",
+            "default_stance": "at Engine One with spanner and lamp",
+            "visual_ref": "visual_character_refs.characters.neri_ash"
+          },
+          {
+            "agent_id": "poma_reed",
+            "default_stance": "waiting at the public slate",
+            "visual_ref": "visual_character_refs.characters.poma_reed"
+          },
+          {
+            "agent_id": "osric_vale",
+            "default_stance": "watching from the inspection table",
+            "visual_ref": "visual_character_refs.characters.osric_vale"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "water_margin <= 1",
+            "modifier_prompt": "Set the terrace gauge one white mark above its red band and place more empty copper vessels on the public landing."
+          },
+          {
+            "trigger": "reserve_crystal <= 1",
+            "modifier_prompt": "Show only one small blue crystal shaving glowing behind the dark bars of the reserve locker."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The four first-choice affordances occupy stable zones: Engine One housing, public slate, crystal locker, and grated intake stair."
+        ]
+      },
+      {
+        "visual_scene_id": "surety_rune_mite_reveal",
+        "ink_anchor": "failure",
+        "base_image_prompt": "Pivotal close-up inside an underground rune pump: an opened brass return housing exposes a branching gold channel gone dim. Six thumbnail-sized blue-black mites cling along the same branches; each hard shell has raised grooves matching the gold rune beneath it, and the grooves emit dull violet heat as they absorb the last cold blue mana. A real iron isolation wedge with red shoulder sits fully inserted at the conduit throat. In the middle distance, a compact dwarf journeyworker in moss-green coveralls holds a glass inspection phial and brush while a broad gray-braided dwarf Master completes a right-to-left null gesture. Warm mist rises behind the brass rail from black water below.",
+        "visible_characters": [
+          {
+            "agent_id": "talla_venn",
+            "default_stance": "hand finishing a null gesture beside the isolated pump",
+            "visual_ref": "visual_character_refs.characters.talla_venn"
+          },
+          {
+            "agent_id": "neri_ash",
+            "default_stance": "holding phial and brush clear of the live channel",
+            "visual_ref": "visual_character_refs.characters.neri_ash"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The shell grooves visibly resemble the standardized branching rune but remain biological structures, preserving causal uncertainty.",
+          "Engine One remains physically isolated throughout the classification scene."
+        ]
+      },
+      {
+        "visual_scene_id": "surety_cause_choice",
+        "ink_anchor": "cause_choice",
+        "base_image_prompt": "Medium view of cause classification around the opened leftmost pump in a carved basalt cistern. A broad older dwarf woman with long gray braid and square brass seal stands between four concrete options: a glass phial for two living blue-black rune-grooved mites; a shallow white lime tray and brush; the bolted housing of the idle center pump ready for comparison; and the rightmost backup pump with a black duty notch on its lever. A younger dwarf journeyworker in moss-green coveralls keeps tools beside the isolated engine. At the inspection table a narrow assessor in charcoal coat turns a copper refusal plate face-up. Beyond the yellow line a teal-coated dwarf clerk copies shell grooves onto a public slate as the terrace water gauge falls.",
+        "visible_characters": [
+          {
+            "agent_id": "talla_venn",
+            "default_stance": "between specimen tools, Engine Two, and Engine Three's duty lever",
+            "visual_ref": "visual_character_refs.characters.talla_venn"
+          },
+          {
+            "agent_id": "neri_ash",
+            "default_stance": "beside isolated Engine One with hands clear",
+            "visual_ref": "visual_character_refs.characters.neri_ash"
+          },
+          {
+            "agent_id": "poma_reed",
+            "default_stance": "copying the groove pattern at the public slate",
+            "visual_ref": "visual_character_refs.characters.poma_reed"
+          },
+          {
+            "agent_id": "osric_vale",
+            "default_stance": "turning the copper refusal plate face-up",
+            "visual_ref": "visual_character_refs.characters.osric_vale"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ecology_evidence >= 2",
+            "modifier_prompt": "Place a sealed glass phial with two living blue-black grooved mites beside a careful chalk copy of their branching shell pattern."
+          },
+          {
+            "trigger": "repair_integrity <= 1",
+            "modifier_prompt": "Show Engine Three vibrating under blue overload light with its duty lever beyond the black catalogue notch."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The lime tray, phial, Engine Two comparison plate, and Engine Three duty lever remain separate branch affordances.",
+          "Osric can see Engine One and the table evidence; Poma can see the table, gauge, and exposed housing from beyond the yellow line."
+        ]
+      },
+      {
+        "visual_scene_id": "surety_cost_arrives",
+        "ink_anchor": "cost_fold",
+        "base_image_prompt": "Wide civic pressure view of a two-level basalt pump house after one engine stops. Three brass pumps and the isolated left engine remain visible behind the rail. On the public landing beyond a yellow line, mixed Hold residents queue with hammered copper cans: sturdy dwarves in work coats, a short halfling bakery porter with a wheeled wooden trough, a lean goblin clinic runner carrying stoppered copper vessels, and laundry workers beside a cart of cooling wet sheets. A teal-coated dwarf clerk faces a large black slate toward them. At the inspection table, a gray-braided dwarf Master, moss-green journeyworker, and charcoal-coated assessor surround a copper refusal plate, glass phial, red rule, and service ledger. The water gauge approaches red under amber lamps and cold blue conduit light.",
+        "visible_characters": [
+          {
+            "agent_id": "talla_venn",
+            "default_stance": "beside the refusal plate with seal visible",
+            "visual_ref": "visual_character_refs.characters.talla_venn"
+          },
+          {
+            "agent_id": "neri_ash",
+            "default_stance": "at Engine One with tool roll closed",
+            "visual_ref": "visual_character_refs.characters.neri_ash"
+          },
+          {
+            "agent_id": "poma_reed",
+            "default_stance": "between public slate and queue",
+            "visual_ref": "visual_character_refs.characters.poma_reed"
+          },
+          {
+            "agent_id": "osric_vale",
+            "default_stance": "behind the refusal plate and surety book",
+            "visual_ref": "visual_character_refs.characters.osric_vale"
+          },
+          {
+            "agent_id": "terrace_water_users",
+            "default_stance": "orderly vessel queue on the public landing",
+            "visual_ref": "visual_character_refs.groups.terrace_water_users"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "water_margin <= 1",
+            "modifier_prompt": "Move the terrace gauge into its red band and lengthen the public queue with more empty copper cans."
+          },
+          {
+            "trigger": "public_record >= 3",
+            "modifier_prompt": "Make the public slate carry four distinct chalk rows for water, debt, cause, and evidence custody, facing the queue."
+          },
+          {
+            "trigger": "household_burden >= 3",
+            "modifier_prompt": "Add two separate emergency-charge marks beside each water connection on the public slate and show residents counting small household tally tokens."
+          },
+          {
+            "trigger": "reserve_crystal <= 0",
+            "modifier_prompt": "Show the barred reserve locker open on a dark empty tray with a broken blue wax inventory seal."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The queue stays outside the yellow line and safety rail; named workshop and surety characters stay inside the dry gallery work zone.",
+          "The refusal plate is a palm-sized copper document plate, distinct from Talla's square hanging civic seal."
+        ]
+      },
+      {
+        "visual_scene_id": "surety_payment_threshold",
+        "ink_anchor": "payment_choice",
+        "base_image_prompt": "Medium-wide decision tableau in a carved basalt pump gallery. A broad older dwarf Master with gray braid and oxblood apron holds her square brass civic seal over four material routes arranged across the room: the reserve-house assessor's copper refusal plate and black surety book on the table; a large outward-facing public slate beside the yellow line leading toward a district moot; a barred locker with blue winter crystal beside a small freight-priority plaque; and a delving contract board hung near the grated stair into the misty intake galleries. The isolated left pump, idle center pump, stressed right pump, falling terrace gauge, younger journeyworker, teal-coated clerk, charcoal-coated assessor, and public vessel queue all remain visible.",
+        "visible_characters": [
+          {
+            "agent_id": "talla_venn",
+            "default_stance": "centered with seal poised over the four cost routes",
+            "visual_ref": "visual_character_refs.characters.talla_venn"
+          },
+          {
+            "agent_id": "neri_ash",
+            "default_stance": "beside the isolated pump with repair tools",
+            "visual_ref": "visual_character_refs.characters.neri_ash"
+          },
+          {
+            "agent_id": "poma_reed",
+            "default_stance": "holding the public slate at the yellow line",
+            "visual_ref": "visual_character_refs.characters.poma_reed"
+          },
+          {
+            "agent_id": "osric_vale",
+            "default_stance": "behind the surety book and refusal plate",
+            "visual_ref": "visual_character_refs.characters.osric_vale"
+          },
+          {
+            "agent_id": "terrace_water_users",
+            "default_stance": "waiting with vessels beyond the public line",
+            "visual_ref": "visual_character_refs.groups.terrace_water_users"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "claim_strength >= 3 && ecology_evidence <= 1",
+            "modifier_prompt": "Place a clean covered-claim marker over the surety book and keep the specimen space empty."
+          },
+          {
+            "trigger": "ecology_evidence >= 2",
+            "modifier_prompt": "Place the sealed mite phial and matching chalk groove diagram beside the face-up copper refusal plate."
+          },
+          {
+            "trigger": "workshop_credit <= 1",
+            "modifier_prompt": "Show only one small workshop pledge token beside Talla's seal and several empty pledge spaces around it."
+          },
+          {
+            "trigger": "repair_integrity <= 1",
+            "modifier_prompt": "Show the rightmost backup pump shuddering with violet heat and a hairline blue channel flare."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The four final affordances remain physically distinct and reachable from Talla's central position: claim table, public slate route, reserve locker, and delving board at the intake stair."
+        ]
+      },
+      {
+        "visual_scene_id": "surety_ending_claim",
+        "ink_anchor": "ending_claim_paid|ending_claim_refused",
+        "base_image_prompt": "Claim aftermath inside a basalt civic pump house. At the inspection table, a broad gray-braided dwarf Master and a narrow dwarf assessor in charcoal coat place a square brass civic seal and a palm-sized copper claim plate beside a black surety ledger and red measuring rule. Behind them, a compact journeyworker in moss-green coveralls stands at the isolated left pump beside low freight rails ending in an empty painted delivery bay. Beyond the yellow line, a teal-coated clerk posts the outcome beside the terrace water gauge while residents hold copper vessels. Amber work lamps, cold blue mana channels, three pumps, brass rail, and the grated misty intake establish the complete room.",
+        "visible_characters": [
+          {
+            "agent_id": "talla_venn",
+            "default_stance": "at the claim table with seal in hand",
+            "visual_ref": "visual_character_refs.characters.talla_venn"
+          },
+          {
+            "agent_id": "neri_ash",
+            "default_stance": "beside Engine One and the matched part cart",
+            "visual_ref": "visual_character_refs.characters.neri_ash"
+          },
+          {
+            "agent_id": "poma_reed",
+            "default_stance": "posting claim outcome on the public slate",
+            "visual_ref": "visual_character_refs.characters.poma_reed"
+          },
+          {
+            "agent_id": "osric_vale",
+            "default_stance": "stamping or withholding the copper plate",
+            "visual_ref": "visual_character_refs.characters.osric_vale"
+          },
+          {
+            "agent_id": "terrace_water_users",
+            "default_stance": "watching the gauge and public slate from the landing",
+            "visual_ref": "visual_character_refs.groups.terrace_water_users"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "surety_ending_workshop_moot",
+        "ink_anchor": "ending_workshop_assessment|ending_moot_failure",
+        "base_image_prompt": "Open district moot on a broad basalt landing outside a civic pump house. A gray-braided dwarf Master and teal-coated dwarf clerk carry a large black public slate between them; its chalk blocks represent water, debt, cause, and custody. A low stone table holds Talla's single square brass seal at the center and four clean pledge spaces around it. Masters from a bakery, lift repair shop, clinic store, and laundry stand behind those spaces. A compact moss-green journeyworker stands with pump tools behind the gathering, visibly present and outside the ring of seals. Copper water vessels, a wheeled bakery trough, laundry cart, public gauge, and the pump-house arch tie the political meeting to material need.",
+        "visible_characters": [
+          {
+            "agent_id": "talla_venn",
+            "default_stance": "carrying one end of the slate toward the seal table",
+            "visual_ref": "visual_character_refs.characters.talla_venn"
+          },
+          {
+            "agent_id": "neri_ash",
+            "default_stance": "behind the seal ring with closed tool roll",
+            "visual_ref": "visual_character_refs.characters.neri_ash"
+          },
+          {
+            "agent_id": "poma_reed",
+            "default_stance": "carrying the other end of the public slate",
+            "visual_ref": "visual_character_refs.characters.poma_reed"
+          },
+          {
+            "agent_id": "terrace_water_users",
+            "default_stance": "surrounding the moot with work carts and water vessels",
+            "visual_ref": "visual_character_refs.groups.terrace_water_users"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "surety_ending_reserve",
+        "ink_anchor": "ending_reserve_repair|ending_reserve_shortfall",
+        "base_image_prompt": "Reserve-spend aftermath in a two-level basalt pump gallery. A barred wall locker stands open beside three brass pumps, its blue wax inventory seal broken and its crystal tray fully visible. A broad gray-braided dwarf Master holds the broken seal while a compact moss-green journeyworker waits at the isolated left pump beside an empty rectangular delivery bay painted on the floor. A narrow charcoal-coated assessor holds a small life-service freight plaque above the bay. Beyond the yellow line, a teal-coated clerk has drawn separate water and winter-heat gauges on the public slate. Residents with copper vessels watch under amber lamps and cold blue mana light.",
+        "visible_characters": [
+          {
+            "agent_id": "talla_venn",
+            "default_stance": "at the open reserve locker with broken blue wax seal",
+            "visual_ref": "visual_character_refs.characters.talla_venn"
+          },
+          {
+            "agent_id": "neri_ash",
+            "default_stance": "staging the replacement assembly at Engine One",
+            "visual_ref": "visual_character_refs.characters.neri_ash"
+          },
+          {
+            "agent_id": "poma_reed",
+            "default_stance": "posting water and winter-heat gauges together",
+            "visual_ref": "visual_character_refs.characters.poma_reed"
+          },
+          {
+            "agent_id": "osric_vale",
+            "default_stance": "placing the freight plaque on the parts cart",
+            "visual_ref": "visual_character_refs.characters.osric_vale"
+          },
+          {
+            "agent_id": "terrace_water_users",
+            "default_stance": "watching both gauges from the landing",
+            "visual_ref": "visual_character_refs.groups.terrace_water_users"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "surety_ending_delving",
+        "ink_anchor": "ending_delving_contract|ending_delving_delay",
+        "base_image_prompt": "Delving-contract aftermath at the grated stair of an underground civic pump house. A broad gray-braided dwarf Master holds her square brass seal above a parchment work contract on a small board beside the stair descending into warm mist and black water. A compact journeyworker in moss-green coveralls holds a glass phial of blue-black rune-grooved mites, a chalked groove map, and an intake-route slate beside an empty provision bench with three hooded lamps, three coiled ropes, shields, specimen boxes, and empty salvage packs arranged for possible claimants. A teal-coated public clerk posts a red water clock behind them. The isolated left pump, brass rail, vertical rods, locked blue mana conduit, and public vessel queue remain visible in the full high-fantasy industrial space.",
+        "visible_characters": [
+          {
+            "agent_id": "talla_venn",
+            "default_stance": "sealing the delving contract beside the grated stair",
+            "visual_ref": "visual_character_refs.characters.talla_venn"
+          },
+          {
+            "agent_id": "neri_ash",
+            "default_stance": "transferring phial, route slate, and groove map",
+            "visual_ref": "visual_character_refs.characters.neri_ash"
+          },
+          {
+            "agent_id": "poma_reed",
+            "default_stance": "posting the water clock at the public line",
+            "visual_ref": "visual_character_refs.characters.poma_reed"
+          },
+          {
+            "agent_id": "terrace_water_users",
+            "default_stance": "waiting with rationed vessels behind the yellow line",
+            "visual_ref": "visual_character_refs.groups.terrace_water_users"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The delvers enter through the grated stair into the intake galleries; the route never crosses the public landing or through a pump casing.",
+          "The phial, groove map, and route slate must remain distinct objects in Neri's custody until transfer."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_joint_inspection_visual",
+        "trigger": "branch_label == prime_joint_inspection",
+        "apply_to_visual_scene_ids": [
+          "surety_preparation_choice",
+          "surety_rune_mite_reveal"
+        ],
+        "modifier_prompt": "Open Engine One's brass return housing in clean order; arrange bolts on white cloth while Neri calls each seal and Osric measures beside Talla."
+      },
+      {
+        "modifier_id": "prime_public_water_clock_visual",
+        "trigger": "branch_label == prime_public_water_clock",
+        "apply_to_visual_scene_ids": [
+          "surety_preparation_choice",
+          "surety_cost_arrives"
+        ],
+        "modifier_prompt": "Write a large two-mark safe-water clock and the unpaid assessment as separate bold chalk rows on Poma's outward-facing slate."
+      },
+      {
+        "modifier_id": "prime_temporary_flow_visual",
+        "trigger": "branch_label == prime_temporary_flow",
+        "apply_to_visual_scene_ids": [
+          "surety_preparation_choice",
+          "surety_cost_arrives"
+        ],
+        "modifier_prompt": "Seat one bright blue crystal shaving in Engine One's starter fork; raise the water gauge and add a fresh emergency-charge mark on the public slate."
+      },
+      {
+        "modifier_id": "prime_ecology_check_visual",
+        "trigger": "branch_label == prime_ecology_check",
+        "apply_to_visual_scene_ids": [
+          "surety_preparation_choice",
+          "surety_rune_mite_reveal"
+        ],
+        "modifier_prompt": "Place Neri halfway down the grated stair with a hooded lamp and hooked scraper, warm mist around their boots, blue-black shell fragments visible on the tool."
+      },
+      {
+        "modifier_id": "record_adaptive_pattern_visual",
+        "trigger": "branch_label == record_adaptive_pattern",
+        "apply_to_visual_scene_ids": [
+          "surety_cause_choice",
+          "surety_cost_arrives",
+          "surety_payment_threshold"
+        ],
+        "modifier_prompt": "Show two living blue-black grooved mites sealed in a glass phial, Poma copying their branching shell pattern, and Osric turning the copper refusal plate face-up."
+      },
+      {
+        "modifier_id": "claim_ordinary_vermin_visual",
+        "trigger": "branch_label == claim_ordinary_vermin",
+        "apply_to_visual_scene_ids": [
+          "surety_cause_choice",
+          "surety_payment_threshold"
+        ],
+        "modifier_prompt": "Brush the mites into a shallow white lime tray; leave the specimen space empty and place a clean covered-vermin mark in Osric's ledger."
+      },
+      {
+        "modifier_id": "test_repeated_adaptation_visual",
+        "trigger": "branch_label == test_repeated_adaptation",
+        "apply_to_visual_scene_ids": [
+          "surety_cause_choice",
+          "surety_payment_threshold"
+        ],
+        "modifier_prompt": "Open the center pump's unused return plate and reveal three pale scratches crossing the same branching points while Osric measures them with the red rule."
+      },
+      {
+        "modifier_id": "buy_water_with_wear_visual",
+        "trigger": "branch_label == buy_water_with_wear",
+        "apply_to_visual_scene_ids": [
+          "surety_cause_choice",
+          "surety_cost_arrives",
+          "surety_payment_threshold"
+        ],
+        "modifier_prompt": "Push Engine Three's lever past its black duty notch; show the right pump vibrating, warm spray striking the grate, and violet heat gathering along one gold channel."
+      },
+      {
+        "modifier_id": "ending_claim_paid_visual",
+        "trigger": "ending_label == covered_claim_success",
+        "apply_to_visual_scene_ids": [
+          "surety_ending_claim"
+        ],
+        "modifier_prompt": "Stamp the copper plate with a clean covered-claim mark, wheel a matched brass-and-gold return assembly into the painted delivery bay at Engine One, raise the water gauge, and add one new assessment row to the public slate."
+      },
+      {
+        "modifier_id": "ending_claim_refused_visual",
+        "trigger": "ending_label == covered_claim_cost",
+        "apply_to_visual_scene_ids": [
+          "surety_ending_claim"
+        ],
+        "modifier_prompt": "Stamp the copper plate as refused, place the face-down freight plaque alone in the empty painted delivery bay, keep Engine One dark, and lower the water gauge toward red."
+      },
+      {
+        "modifier_id": "ending_workshop_assessment_visual",
+        "trigger": "ending_label == workshop_assessment_success",
+        "apply_to_visual_scene_ids": [
+          "surety_ending_workshop_moot"
+        ],
+        "modifier_prompt": "Fill the four pledge spaces around Talla's central seal with distinct bakery, lift, clinic, and laundry workshop seals, and hold the household-assessment chalk row unchanged on Poma's slate."
+      },
+      {
+        "modifier_id": "ending_moot_failure_visual",
+        "trigger": "ending_label == workshop_assessment_cost",
+        "apply_to_visual_scene_ids": [
+          "surety_ending_workshop_moot"
+        ],
+        "modifier_prompt": "Keep the four pledge spaces visibly bare stone around Talla's single seal and add a fresh temporary household-assessment row beneath the red water clock."
+      },
+      {
+        "modifier_id": "ending_reserve_repair_visual",
+        "trigger": "ending_label == reserve_repair_success",
+        "apply_to_visual_scene_ids": [
+          "surety_ending_reserve"
+        ],
+        "modifier_prompt": "Move one bright crystal allotment from the locker into a repair cradle, wheel a matched assembly into the painted delivery bay, raise the water gauge, lower the winter-heat gauge, and place a life-service freight plaque on the assembly."
+      },
+      {
+        "modifier_id": "ending_reserve_shortfall_visual",
+        "trigger": "ending_label == reserve_repair_cost",
+        "apply_to_visual_scene_ids": [
+          "surety_ending_reserve"
+        ],
+        "modifier_prompt": "Show the reserve tray nearly dark, the painted delivery bay holding only a face-down freight plaque, and the terrace water gauge in red."
+      },
+      {
+        "modifier_id": "ending_delving_contract_visual",
+        "trigger": "ending_label == delving_contract_success",
+        "apply_to_visual_scene_ids": [
+          "surety_ending_delving"
+        ],
+        "modifier_prompt": "Place three equipped delvers in layered leather and mail at the provision bench, each taking a hooded lamp and rope while accepting the sealed contract, phial, groove map, and route slate."
+      },
+      {
+        "modifier_id": "ending_delving_delay_visual",
+        "trigger": "ending_label == delving_contract_cost",
+        "apply_to_visual_scene_ids": [
+          "surety_ending_delving"
+        ],
+        "modifier_prompt": "Show the contract board with a bare seal block, the three sets of delving gear still arranged on the empty provision bench, the phial and route slate in Neri's hands, and the public water clock in red beside the ration queue."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "cistern_house_nine_surety.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Two-level civic pump house: public landing and dry rune gallery above and beside a wet intake chamber, with three pumps aligned left-to-right behind one safety rail.",
+      "fixed_zones": [
+        {
+          "zone_id": "public_landing",
+          "visible_form": "broad basalt landing with yellow boundary line, outward-facing black slate, terrace gauge, and room for vessel queue and small work carts",
+          "used_for": "Poma, water users, ration pressure, public record, and route to district moot"
+        },
+        {
+          "zone_id": "dry_rune_gallery",
+          "visible_form": "upper basalt work floor with amber lamps, inspection table, brass safety rail, pump controls, and access to all three housings",
+          "used_for": "Talla, Neri, Osric, inspection, classification, and payment choice"
+        },
+        {
+          "zone_id": "pump_line",
+          "visible_form": "three squat brass-and-iron engines aligned Engine One near landing, Engine Two center, Engine Three near conduit wall, each with float, valve, rod, housing, and isolation wedge",
+          "used_for": "failure, comparison, backup overrun, repair, and persistent pump states"
+        },
+        {
+          "zone_id": "grated_intake_stair",
+          "visible_form": "iron grated stair descending from the gallery beside Engine One into warm mist and black water, with lamp hooks and tool clearance",
+          "used_for": "intake inspection and delving-party descent"
+        },
+        {
+          "zone_id": "wet_intake_chamber",
+          "visible_form": "lower black-water chamber crossed by three vertical pump rods and outlet throats under warm mist",
+          "used_for": "water source, mite route, pump stroke, and delving threshold"
+        },
+        {
+          "zone_id": "inspection_table",
+          "visible_form": "heavy stone table inside the gallery with black surety book, red brass rule, copper refusal plate, white bolt cloth, lime tray, and specimen phial",
+          "used_for": "claim custody and classification"
+        },
+        {
+          "zone_id": "municipal_feed_arch",
+          "visible_form": "locked carved-stone arch at the Engine Three end of the gallery carrying cold blue mana through protected gold and copper channels",
+          "used_for": "crystal power input and room orientation"
+        },
+        {
+          "zone_id": "reserve_locker",
+          "visible_form": "barred stone-and-brass locker between Engine Three and the inspection table with blue wax inventory seal and visible crystal tray",
+          "used_for": "reserve state and winter-cost choice"
+        },
+        {
+          "zone_id": "delving_contract_board",
+          "visible_form": "small framed parchment board beside the top of the intake stair with seal block, route-slate hook, and provision tally pegs",
+          "used_for": "bounded-contest contract route"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_from_public_arch",
+          "supports_visual_scene_ids": [
+            "surety_cistern_establishing",
+            "surety_cost_arrives"
+          ]
+        },
+        {
+          "camera_id": "medium_from_engine_two",
+          "supports_visual_scene_ids": [
+            "surety_renewal_table",
+            "surety_preparation_choice",
+            "surety_payment_threshold"
+          ]
+        },
+        {
+          "camera_id": "engine_one_housing_close",
+          "supports_visual_scene_ids": [
+            "surety_rune_mite_reveal",
+            "surety_cause_choice"
+          ]
+        },
+        {
+          "camera_id": "claim_table_to_landing",
+          "supports_visual_scene_ids": [
+            "surety_ending_claim",
+            "surety_ending_reserve"
+          ]
+        },
+        {
+          "camera_id": "district_moot_wide",
+          "supports_visual_scene_ids": [
+            "surety_ending_workshop_moot"
+          ]
+        },
+        {
+          "camera_id": "intake_stair_three_quarter",
+          "supports_visual_scene_ids": [
+            "surety_ending_delving"
+          ]
+        }
+      ],
+      "staging_slots": [
+        {
+          "slot_id": "master_claim_side",
+          "zone_id": "dry_rune_gallery",
+          "allowed_agents": [
+            "talla_venn"
+          ],
+          "reach": "inspection table, reserve locker, all pump control faces, public-line edge, and delving board"
+        },
+        {
+          "slot_id": "journeyworker_service_side",
+          "zone_id": "pump_line",
+          "allowed_agents": [
+            "neri_ash"
+          ],
+          "reach": "pump housings, wedges, valves, tool roll, phial, and grated stair"
+        },
+        {
+          "slot_id": "assessor_table_side",
+          "zone_id": "inspection_table",
+          "allowed_agents": [
+            "osric_vale"
+          ],
+          "reach": "surety book, red rule, refusal plate, white bolt cloth, and observed housing sightline"
+        },
+        {
+          "slot_id": "clerk_public_side",
+          "zone_id": "public_landing",
+          "allowed_agents": [
+            "poma_reed"
+          ],
+          "reach": "public slate, terrace gauge, queue, and yellow-line evidence handoff"
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "public_slate_to_claim_table",
+          "path": "public landing slate -> yellow line -> inspection table -> exposed Engine One housing",
+          "supports": [
+            "prime_public_water_clock",
+            "record_adaptive_pattern",
+            "assess_sealed_workshops"
+          ]
+        },
+        {
+          "lane_id": "assessor_to_pump_line",
+          "path": "inspection table -> open gallery floor -> Engine One and Engine Two return housings",
+          "supports": [
+            "prime_joint_inspection",
+            "test_repeated_adaptation",
+            "accept_covered_cause"
+          ]
+        },
+        {
+          "lane_id": "gallery_to_intake",
+          "path": "dry gallery rail -> grated stair -> Engine One intake grille in wet chamber",
+          "supports": [
+            "prime_ecology_check",
+            "pay_for_bounded_contest"
+          ]
+        }
+      ],
+      "branch_persistent_states": [
+        {
+          "state_id": "engine_one_isolated",
+          "visible_form": "Engine One dark with red-shouldered iron wedge fully inserted and rod stopped halfway",
+          "persists_from": "failure",
+          "cleared_by": "covered_claim_success or reserve_repair_success"
+        },
+        {
+          "state_id": "adaptive_specimen_preserved",
+          "visible_form": "two living blue-black grooved mites in sealed glass phial plus chalk groove copy",
+          "persists_from": "record_adaptive_pattern",
+          "cleared_by": "manual custody transfer after fixture"
+        },
+        {
+          "state_id": "reserve_spent",
+          "visible_form": "broken blue wax seal and reduced or empty crystal tray in barred locker",
+          "persists_from": "prime_temporary_flow or buy_water_with_wear or reserve ending",
+          "cleared_by": "future replenishment outside fixture"
+        },
+        {
+          "state_id": "engine_three_overduty",
+          "visible_form": "lever beyond black notch, visible vibration, violet heat, and hairline blue channel flare",
+          "persists_from": "buy_water_with_wear",
+          "cleared_by": "shutdown and later inspection outside fixture"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for characters visible in a scene.",
+    "characters": {
+      "talla_venn": "Master Talla Venn: broad middle-aged dwarf woman, compact square silhouette, warm brown skin, long iron-gray braid threaded through one brass bead, heavy brows, brown work tunic under an oxblood leather pump apron, thick boots, square brass civic seal on a belt chain, two pale gold-channel burn scars across the first two fingers of her right hand; posture planted, economical, and accustomed to owning a decision.",
+      "neri_ash": "Neri Ash: young adult dwarf journeyworker, compact sturdy build, copper-brown skin, short black hair with one narrow braided side lock, moss-green canvas coveralls, rolled sleeves, dark leather tool belt, brass-capped boots, small glass inspection phial and cloth-wrapped tool roll; posture precise around live machinery, humor shown through one raised brow and careful hands.",
+      "poma_reed": "Poma Reed: sturdy adult dwarf clerk, tawny skin, dark coiled hair pinned with two chalk sticks, teal wool coat over a slate-gray tunic, broad chalk-stained fingers, small ledger pouch, large black public slate nearby; posture square to the public landing, eyes moving between gauge, custody, and queue.",
+      "osric_vale": "Osric Vale: narrow older dwarf man, light brown skin, close-cropped silver hair and pointed silver beard, charcoal reserve-house coat with red piping, black leather ledger case, long red brass measuring rule, palm-sized copper refusal plate; posture straight-backed and deliberately courteous, hands kept clean and visible."
+    },
+    "groups": {
+      "terrace_water_users": "Terrace water users: mixed Hold residents in worn high-fantasy work clothing, mostly compact dwarves with a short halfling bakery porter and a lean goblin clinic runner, carrying hammered copper cans, stoppered clinic vessels, a wheeled wooden bakery trough, and a laundry cart with cooling wet sheets; orderly queue posture tightens as the red water mark approaches."
+    }
+  },
+  "review_notes": [
+    "Visual continuity self-review verdict: accepted_with_minor_revisions. Eleven scene anchors and sixteen branch or ending modifiers cover every focal shift and material visible consequence; all named visible characters resolve through stable refs.",
+    "Spatial-geometric cohesion self-review verdict: accepted_with_minor_revisions. The structured scene_set fixes two levels, pump order, public and work boundaries, access routes, staging reach, sightlines, custody objects, and four branch-persistent physical states.",
+    "Shared ending bases use neutral visible anchors: empty delivery bays, bare workshop pledge spaces, and an unclaimed delving provision bench. Success and failure modifiers add their own objects and postures.",
+    "All base prompts use affirmative visible descriptions and state the relevant room geometry, materials, light, characters, interfaces, tools, and branch evidence.",
+    "The scene_set is a draft map, not a rendered blockout. High-consistency multi-angle image generation remains deferred until a plan view or simple 3D blockout exists.",
+    "No images were generated."
+  ]
+}
