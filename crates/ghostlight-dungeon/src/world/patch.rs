@@ -62,8 +62,11 @@ pub(crate) struct Position {
 /// expects; resolution refuses a handle that answers with another one. A subject
 /// expectation carries `None` where the referring position constrains the
 /// namespace but not the kind.
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(tag = "namespace", rename_all = "snake_case")]
+///
+/// Not serializable: a `RefKind` is never persisted. It lives in `Mismatch`, in
+/// the resolution index, and in the three constants below, all of which stay in
+/// memory for the length of one reduction.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum RefKind {
     Subject(Option<SubjectKind>),
     Entity(EntityKind),
@@ -2112,18 +2115,6 @@ mod tests {
         assert_eq!(candidate, kernel.state);
     }
 
-    /// Soul falsification: `RefKind` is never persisted, and it could not be.
-    /// `Subject(Option<SubjectKind>)` under `#[serde(tag = "namespace")]` is an
-    /// internally tagged newtype variant over a non-map, which serde refuses at
-    /// runtime. The derives are unexercised weight, and the deviation is safe
-    /// only because nothing writes a `RefKind`.
-    #[test]
-    fn soul_ref_kind_is_not_a_serializable_shape() {
-        assert!(serde_json::to_value(RefKind::Entity(EntityKind::Place)).is_ok());
-        assert!(serde_json::to_value(ANY_SUBJECT).is_err());
-        assert!(serde_json::to_value(RefKind::Subject(Some(SubjectKind::Person))).is_err());
-    }
-
     /// Soul falsification: the three pass-2 `Mismatch` variants that no landed
     /// test names are each reachable from a real patch.
     #[test]
@@ -2250,12 +2241,9 @@ mod tests {
                 },
             };
             let mut candidate = kernel.state.clone();
-            let error = super::super::apply_effect(
-                &mut candidate,
-                &CallerId::Principal(owner()),
-                &forged,
-            )
-            .unwrap_err();
+            let error =
+                super::super::apply_effect(&mut candidate, &CallerId::Principal(owner()), &forged)
+                    .unwrap_err();
             assert!(matches!(error, KernelError::Invariant(_)));
             assert_eq!(candidate, kernel.state);
         }

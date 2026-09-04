@@ -5,8 +5,8 @@
 //! one process write lease. Ghostlight reports what this process actually is;
 //! it never promotes its route or manufactures Ready.
 
-use anyhow::{Context, Result, anyhow, bail, ensure};
 use crate::world::{STATE_SCHEMA, state_schema_compatibility_tag};
+use anyhow::{Context, Result, anyhow, bail, ensure};
 #[cfg(test)]
 use cultcache_rs::CacheBackingStore;
 use cultcache_rs::{CultCacheEnvelope, DatabaseEntry, SingleFileMessagePackBackingStore};

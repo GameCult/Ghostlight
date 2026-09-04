@@ -974,13 +974,7 @@ mod tests {
             .commits
             .values()
             .map(|commit| {
-                envelope(
-                    COMMIT_ROW,
-                    COMMIT_SCHEMA,
-                    commit.command.id().key(),
-                    commit,
-                )
-                .unwrap()
+                envelope(COMMIT_ROW, COMMIT_SCHEMA, commit.command.id().key(), commit).unwrap()
             })
             .collect();
         let rows_for = |state: &WorldState, row_type: &str| {

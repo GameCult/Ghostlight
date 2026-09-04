@@ -142,7 +142,8 @@ pub struct PersonaTurnBinding {
     pub controller_id: String,
     /// Digest of the complete canonical decision opportunity supplied to the
     /// Projector. It binds scope, controller mode, affordances, revision, and
-    /// world state as one value instead of inventing a second opportunity ID.
+    /// the scope digest as one value instead of inventing a second opportunity
+    /// ID.
     pub opportunity_digest: String,
     pub world_revision: u64,
     pub scope_digest: String,

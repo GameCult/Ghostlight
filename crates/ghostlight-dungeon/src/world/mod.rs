@@ -21,7 +21,9 @@ pub(crate) use patch::{
     AccessKind, Cost, Declaration, DraftHandle, EntityDeclaration, EntityKind, Mismatch,
     PatchAnswer, Position, Ref, SubjectDeclaration, WorldPatch,
 };
-use patch::{ComponentOp, EdgeRecord, EntityRecord, ResolvedOp, ResolvedPatch, RouteDeclaration};
+#[cfg(test)]
+use patch::{ComponentOp, RouteDeclaration};
+use patch::{EdgeRecord, EntityRecord, ResolvedOp, ResolvedPatch};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

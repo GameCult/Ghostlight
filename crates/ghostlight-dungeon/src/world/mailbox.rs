@@ -194,6 +194,14 @@ impl WorldMailbox {
         .await
     }
 
+    /// Stamps both `world_id` and `expected_revision` from the live kernel. The
+    /// mailbox owns exactly one world, so there is no other world a caller could
+    /// have meant, and asking a controller runner to restate an ID it cannot
+    /// choose would only invent a way to be wrong. The consequence is that
+    /// `WorldKernel::submit`'s `WorldMismatch` check cannot fire on this path:
+    /// scope, not world identity, is what fails an opportunity-bearing command
+    /// here, and `soul_a_stamped_submission_still_fails_closed_on_a_foreign_scope`
+    /// is the proof that it still fails closed.
     async fn submit_stamped(
         &self,
         command_id: CommandId,

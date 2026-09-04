@@ -972,11 +972,6 @@ async fn admit_controller_command(
             "human decisions cannot enter through the controller runner".into(),
         ));
     }
-    invocation
-        .operation
-        .route_hint
-        .source_version
-        .ok_or_else(|| RuntimeCommandError::Payload("source version is required".into()))?;
     let snapshot = current_world(state)
         .await
         .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?
