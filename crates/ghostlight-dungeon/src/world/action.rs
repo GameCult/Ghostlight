@@ -7,8 +7,8 @@
 //! draws a band, and the draw goes through the one `digest()` owner.
 
 use super::patch::{
-    self, Affordance, Bounds, ComponentOpKind, Cost, Precondition, Quantity, RefKind, Role,
-    WorldPatch,
+    self, Affordance, Audience, AudienceSpec, Bounds, ComponentOpKind, Cost, Precondition,
+    Quantity, RefKind, Role, WorldPatch,
 };
 use super::{
     AffordanceId, AuthorityGrant, AuthorityTarget, CommandId, DecisionEvent, DecisionInvocation,
@@ -89,6 +89,23 @@ pub(crate) enum ActionMismatch {
     DelegationNotMonotone {
         slot: usize,
     },
+    /// The actor does not hold the bound fact at the required confidence. A
+    /// re-appraisal that lowered its own confidence while the proposal was in
+    /// flight arrives here rather than as a rebind: confidence is admission-only.
+    FactUnknown {
+        precondition: usize,
+    },
+    /// The actor has no audience at all: unplaced for co-location, or outside a
+    /// channel it does not control.
+    NoAudience {
+        precondition: usize,
+    },
+    /// The addressed subject is not inside that audience. A target that walked
+    /// out of the room while the proposal was in flight arrives here: the
+    /// preimage holds what the actor *is*, not the world it reaches.
+    CannotReach {
+        precondition: usize,
+    },
 }
 
 /// The band draw's whole preimage. Five fields, none of them from the
@@ -136,7 +153,7 @@ pub(super) fn exercise(
 
     let band = select_band(state, command_id, granted.id, entry)?;
     let operations = lower(entry, band, invocation, &bindings)?;
-    let effects = if operations.is_empty() {
+    let mut effects = if operations.is_empty() {
         Vec::new()
     } else {
         // The same resolver, the same per-operation preconditions, the same
@@ -154,6 +171,41 @@ pub(super) fn exercise(
         .operations
     };
 
+    // The speech lowering: kernel-owned, not a slot, and unreachable by any
+    // proposer, band, or effect ceiling. The audience comes from the entry's one
+    // speech precondition, so a world's `whisper` and `proclaim` lower through
+    // the same two operations with a different audience and the kernel learns no
+    // genre. Addressing does not narrow the fan-out: a voice fills its audience.
+    let speech = match (&invocation.speech, entry.carries_speech) {
+        (Some(statement), true) => {
+            let fact = EntityId(patch::derive_id(
+                patch::ENTITY_NAMESPACE,
+                state.world_id,
+                command_id,
+                &patch::DraftHandle::new(SPEECH_HANDLE),
+                Some(SPEECH_INDEX),
+            ));
+            let to = speech_audience(entry, &bindings)?;
+            effects.splice(
+                0..0,
+                [
+                    patch::ResolvedOp::AssertClaim {
+                        fact,
+                        statement: statement.clone(),
+                        by: actor,
+                    },
+                    patch::ResolvedOp::Communicate {
+                        speaker: actor,
+                        fact,
+                        to,
+                    },
+                ],
+            );
+            Some(fact)
+        }
+        _ => None,
+    };
+
     let revision = state
         .revision
         .checked_add(1)
@@ -163,10 +215,40 @@ pub(super) fn exercise(
         revision,
         scope: current.scope,
         controller_id: current.controller_id,
-        invocation: invocation.clone(),
+        affordance: granted.id,
+        speech,
         band,
         effects,
     })
+}
+
+/// The synthetic handle every minted claim allocates under. It is synthesized
+/// only in Active and declarations are Draft-only, so no world-declared handle
+/// can collide with it.
+const SPEECH_HANDLE: &str = "ghostlight.speech";
+
+/// The speech index, passed as `derive_id`'s discriminator. It is `0` for every
+/// invocation because one invocation carries one utterance; it exists so a later
+/// multi-utterance turn needs no second allocation idiom.
+const SPEECH_INDEX: &str = "0";
+
+/// The audience a speech-carrying entry names. The declaration validator already
+/// refused an entry with none (`SpeechWithoutAudience`) or two
+/// (`AmbiguousSpeechAudience`), so anything else here is a corrupt catalog.
+fn speech_audience(
+    entry: &Affordance,
+    bindings: &BTreeMap<Role, Target>,
+) -> Result<Audience, KernelError> {
+    entry
+        .preconditions
+        .iter()
+        .find_map(|precondition| match precondition {
+            Precondition::CanBroadcast { via } | Precondition::CanReach { via, .. } => {
+                bound_audience(via, bindings)
+            }
+            _ => None,
+        })
+        .ok_or_else(|| KernelError::Invariant("a speech-carrying entry names no audience".into()))
 }
 
 /// Stage 2. The acting subject is never a declared role: the kernel binds the
@@ -328,7 +410,58 @@ fn check_preconditions(
                     });
                 }
             }
+            Precondition::Knows { fact, at_least } => {
+                let Some(Target::Entity(entity_id)) = bindings.get(fact).copied() else {
+                    continue;
+                };
+                if !state
+                    .knowledge
+                    .get(&actor)
+                    .and_then(|held| held.get(&entity_id))
+                    .is_some_and(|held| held.confidence >= *at_least)
+                {
+                    rejections.push(ActionMismatch::FactUnknown {
+                        precondition: index,
+                    });
+                }
+            }
+            Precondition::CanBroadcast { via } => {
+                let Some(audience) = bound_audience(via, bindings) else {
+                    continue;
+                };
+                if !super::audience(state, actor, &audience).contains(&actor) {
+                    rejections.push(ActionMismatch::NoAudience {
+                        precondition: index,
+                    });
+                }
+            }
+            Precondition::CanReach { subject, via } => {
+                let Some(Target::Subject(target)) = bindings.get(subject).copied() else {
+                    continue;
+                };
+                let Some(audience) = bound_audience(via, bindings) else {
+                    continue;
+                };
+                if !super::audience(state, actor, &audience).contains(&target) {
+                    rejections.push(ActionMismatch::CannotReach {
+                        precondition: index,
+                    });
+                }
+            }
         }
+    }
+}
+
+/// The catalog's role indirection lowered to the canonical audience: the entry
+/// names a role, the invoker binds a channel to it, and every reader of reach
+/// sees one shape. `None` means the role is unbound, which stage 2 already named.
+fn bound_audience(via: &AudienceSpec, bindings: &BTreeMap<Role, Target>) -> Option<Audience> {
+    match via {
+        AudienceSpec::Colocated => Some(Audience::Colocated),
+        AudienceSpec::Channel(role) => match bindings.get(role).copied() {
+            Some(Target::Entity(entity_id)) => Some(Audience::Channel(entity_id)),
+            _ => None,
+        },
     }
 }
 
@@ -506,7 +639,7 @@ fn check_proposals(
             rejections.push(ActionMismatch::SlotNotProposed { slot });
         }
     }
-    // `Utterance` is serde-transparent, so a value that arrived through
+    // `Statement` is serde-transparent, so a value that arrived through
     // deserialization rather than through the constructor is re-checked here
     // rather than trusted.
     match (&invocation.speech, entry.carries_speech) {
@@ -703,6 +836,18 @@ fn lower(
                 institution: subject(0)?,
                 office: office.clone(),
             },
+            ComponentOpKind::AcquireKnowledge { confidence } => {
+                patch::ComponentOp::AcquireKnowledge {
+                    subject: subject(0)?,
+                    fact: entity(1)?,
+                    source: patch::AuthoredSource::Witnessed,
+                    confidence: *confidence,
+                }
+            }
+            ComponentOpKind::Forget => patch::ComponentOp::Forget {
+                subject: subject(0)?,
+                fact: entity(1)?,
+            },
         });
     }
     Ok(operations)
@@ -724,7 +869,7 @@ mod tests {
     };
     use crate::world::{
         AffordanceKindName, AuthenticatedCaller, CallerId, CommandBody, Declaration, EntityKind,
-        ProposedEffect, RoleBinding, SubmitReceipt, Utterance, WorldEffect, WorldKernel,
+        ProposedEffect, RoleBinding, Statement, SubmitReceipt, WorldEffect, WorldKernel,
         WorldPatch, WorldSnapshot, apply_effect,
     };
     use std::collections::BTreeSet;
@@ -1083,7 +1228,7 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         let bench = bench(directory.path(), "Speech");
         let mut spoken_carry = bench.carry(1, bench.yard);
-        spoken_carry.speech = Some(Utterance::new("Take it.").unwrap());
+        spoken_carry.speech = Some(Statement::new("Take it.").unwrap());
         assert_eq!(
             bench.rejections(&spoken_carry),
             vec![ActionMismatch::SpeechNotCarried]
@@ -1101,9 +1246,9 @@ mod tests {
             vec![ActionMismatch::SpeechRequired]
         );
 
-        // `Utterance` is serde-transparent, so a value that arrived without the
+        // `Statement` is serde-transparent, so a value that arrived without the
         // constructor is re-checked here rather than trusted.
-        silent_speak.speech = Some(serde_json::from_str::<Utterance>("\"   \"").unwrap());
+        silent_speak.speech = Some(serde_json::from_str::<Statement>("\"   \"").unwrap());
         assert_eq!(
             bench.rejections(&silent_speak),
             vec![ActionMismatch::EmptySpeech]
@@ -1354,13 +1499,8 @@ mod tests {
         let bench = bench(directory.path(), "ForgedAction");
         let opportunity = bench.clerk_opportunity();
         let command_id = CommandId::issue();
-        let honest = draw_once(
-            &bench.kernel.state,
-            command_id,
-            &opportunity,
-            &bench.carry(2, bench.yard),
-        )
-        .unwrap();
+        let invocation = bench.carry(2, bench.yard);
+        let honest = draw_once(&bench.kernel.state, command_id, &opportunity, &invocation).unwrap();
         let caller = CallerId::Controller(opportunity.controller_id);
 
         for forged in [
@@ -1385,6 +1525,7 @@ mod tests {
                 &caller,
                 &WorldEffect::DecisionExercised {
                     opportunity: opportunity.clone(),
+                    invocation: invocation.clone(),
                     event: forged,
                 },
             )
@@ -1401,6 +1542,7 @@ mod tests {
             &caller,
             &WorldEffect::DecisionExercised {
                 opportunity,
+                invocation: invocation.clone(),
                 event: honest,
             },
         )
@@ -1434,7 +1576,7 @@ mod tests {
                             affordance: speak,
                             bindings: Vec::new(),
                             proposed: Vec::new(),
-                            speech: Some(Utterance::new("I open the door.").unwrap()),
+                            speech: Some(Statement::new("I open the door.").unwrap()),
                         },
                     },
                 ),
@@ -1444,9 +1586,10 @@ mod tests {
         assert!(matches!(receipt, SubmitReceipt::Applied(_)));
         let event = kernel.state.events.last().unwrap();
         assert_eq!(event.band, 0);
-        assert!(event.effects.is_empty());
+        // The two the speech lowering prepends, and nothing from a slot.
+        assert_eq!(event.effects.len(), 2);
         assert_eq!(
-            event.invocation.speech.as_ref().map(Utterance::as_str),
+            crate::world::tests::spoken(&kernel.state, event),
             Some("I open the door.")
         );
         assert_eq!(kernel.state.holdings, holdings);
@@ -1483,7 +1626,7 @@ mod tests {
             kind: &str,
             bindings: Vec<RoleBinding>,
             proposed: Vec<ProposedEffect>,
-            speech: Option<Utterance>,
+            speech: Option<Statement>,
         ) -> DecisionInvocation {
             DecisionInvocation {
                 affordance: affordance_named(&self.active, kind),
@@ -1773,7 +1916,9 @@ mod tests {
                             role: Role("actor".into()),
                             kind: RefKind::Subject(None),
                         }],
-                        preconditions: Vec::new(),
+                        preconditions: vec![Precondition::CanBroadcast {
+                            via: AudienceSpec::Colocated,
+                        }],
                         effect_slots: Vec::new(),
                         outcome_bands: vec![OutcomeBand {
                             weight: 1,
@@ -1962,7 +2107,7 @@ mod tests {
             "petition",
             Vec::new(),
             Vec::new(),
-            Some(Utterance::new("The tithe was taken twice.").unwrap()),
+            Some(Statement::new("The tithe was taken twice.").unwrap()),
         );
         assert_eq!(
             bench.rejected_as(bench.civic.outsider, &petition),
@@ -1980,9 +2125,9 @@ mod tests {
             .events
             .last()
             .expect("the committed event");
-        assert!(event.effects.is_empty());
+        assert_eq!(event.effects.len(), 2);
         assert_eq!(
-            event.invocation.speech.as_ref().map(Utterance::as_str),
+            crate::world::tests::spoken(&bench.kernel.state, event),
             Some("The tithe was taken twice.")
         );
 

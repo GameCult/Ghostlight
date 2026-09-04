@@ -20,14 +20,18 @@ pub(crate) use controllers::{
 };
 pub(crate) use mailbox::{MailboxError, WorldMailbox};
 pub(crate) use patch::{
-    AccessKind, Affordance, AffordanceKindName, AuthorityGrant, AuthorityKindName, AuthorityTarget,
-    Bounds, ComponentOpKind, Cost, Declaration, DependencyTarget, DraftHandle, EffectSlot,
-    EntityDeclaration, EntityKind, EvidenceRef, Forum, GrievanceKindName, Mismatch, Office,
-    OfficeName, OutcomeBand, PatchAnswer, Position, Precondition, Quantity, Ref, RefKind, Role,
-    RoleSpec, SubjectDeclaration, WorldPatch,
+    AccessKind, Affordance, AffordanceKindName, Audience, AuthoredSource, AuthorityGrant,
+    AuthorityKindName, AuthorityTarget, Bounds, ChannelRecord, ComponentOpKind, Confidence, Cost,
+    Declaration, DependencyTarget, DraftHandle, EffectSlot, EntityDeclaration, EntityKind,
+    EvidenceRef, FactRecord, FactStanding, Forum, GrievanceKindName, Knowledge, KnowledgeSource,
+    Mismatch, Office, OfficeName, OutcomeBand, PatchAnswer, Position, Precondition, Quantity,
+    Reach, Ref, RefKind, Role, RoleSpec, Statement, SubjectDeclaration, WorldPatch,
 };
 #[cfg(test)]
-use patch::{AffordanceDeclaration, ComponentOp, DependencyRef, RouteDeclaration};
+use patch::{
+    AffordanceDeclaration, AudienceRef, AudienceSpec, ChannelDeclaration, ComponentOp,
+    DependencyRef, FactDeclaration, FactStandingRef, ReachRef, RouteDeclaration,
+};
 #[cfg(test)]
 pub(crate) use patch::{AuthorityGrantRef, AuthorityTargetRef};
 use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch};
@@ -41,8 +45,8 @@ use std::path::Path;
 use thiserror::Error;
 use uuid::Uuid;
 
-pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.authority.v1";
-pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.authority.v1";
+pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.knowledge.v1";
+pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.knowledge.v1";
 
 /// Compatibility tag derived from [`STATE_SCHEMA`]: the trailing
 /// `<family>-<version>` pair (e.g. `foundation-v1`). Callers that publish a
@@ -105,8 +109,11 @@ impl WorldId {
 }
 
 // Subject, entity, controller, and affordance IDs are derived, never drawn.
-// `patch::derive_id` is the only allocator; these fixtures exist so tests can
-// name an ID that no partition holds.
+// `patch::derive_id` is the only allocator, and it is called from exactly two
+// sites: `patch::resolve_patch` and `action::exercise`. The action lane mints
+// exactly one referent per invocation — always an `EntityKind::Fact`, always
+// `Claimed` by the acting subject, never caller-named, never any other kind.
+// These fixtures exist so tests can name an ID that no partition holds.
 #[cfg(test)]
 impl SubjectId {
     fn issue() -> Self {
@@ -305,27 +312,6 @@ pub(crate) struct RoleBinding {
     pub(crate) target: Target,
 }
 
-/// Canonical nonempty text. Emptiness is one `ActionMismatch` inside the
-/// complete set, not a kernel error of its own.
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(transparent)]
-pub(crate) struct Utterance(String);
-
-impl Utterance {
-    pub(crate) fn new(value: impl Into<String>) -> Option<Self> {
-        let value = value.into();
-        if patch::is_canonical_text(&value) {
-            Some(Self(value))
-        } else {
-            None
-        }
-    }
-
-    pub(crate) fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "magnitude", content = "value", rename_all = "snake_case")]
 pub(crate) enum Magnitude {
@@ -352,7 +338,9 @@ pub(crate) struct DecisionInvocation {
     pub(crate) bindings: Vec<RoleBinding>,
     /// Exactly one entry per slot in the entry, in any order.
     pub(crate) proposed: Vec<ProposedEffect>,
-    pub(crate) speech: Option<Utterance>,
+    /// Command input, and the only place an utterance's text enters the kernel.
+    /// The committed home of those bytes is `facts[fact].statement`.
+    pub(crate) speech: Option<Statement>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -455,7 +443,13 @@ pub(crate) struct DecisionEvent {
     pub(crate) revision: u64,
     pub(crate) scope: DecisionScope,
     pub(crate) controller_id: ControllerId,
-    pub(crate) invocation: DecisionInvocation,
+    /// The entry exercised. The invocation itself lives on the effect: the
+    /// invocation is what the caller said, the event is what the world recorded.
+    pub(crate) affordance: AffordanceId,
+    /// The claim this act asserted, if it carried speech. Never the text: the
+    /// event is the world's record and every reader reads it, so it carries the
+    /// fact id and the statement lives in `facts` alone.
+    pub(crate) speech: Option<EntityId>,
     /// Index into the entry's `outcome_bands`. Re-derived and compared at apply
     /// and at replay, never trusted.
     pub(crate) band: usize,
@@ -483,6 +477,17 @@ struct WorldState {
     holdings: BTreeMap<SubjectId, BTreeMap<EntityId, Quantity>>,
     /// What each subject depends on. Never empty for a present key.
     dependencies: BTreeMap<SubjectId, BTreeSet<DependencyTarget>>,
+    /// One row per `EntityKind::Fact` entity, and no orphan either way. Facts
+    /// are write-once: declaration and `AssertClaim` are the only writers, and
+    /// standing never changes after admission.
+    facts: BTreeMap<EntityId, FactRecord>,
+    /// One row per `EntityKind::Channel` entity, and no orphan either way.
+    channels: BTreeMap<EntityId, ChannelRecord>,
+    /// What each subject knows. The sole owner of who-heard-what: `events`
+    /// records what was done, and this decides what a subject may act on and
+    /// what its projection may contain. Never empty for a present key, and
+    /// absence is "knows nothing of it" — forgetting removes the key.
+    knowledge: BTreeMap<SubjectId, BTreeMap<EntityId, Knowledge>>,
     /// What ground each subject has jurisdiction over, and under which
     /// world-declared kind. Never empty for a present key. No subject holds two
     /// grants of one kind over overlapping ground, so nothing ever arbitrates
@@ -527,6 +532,10 @@ enum WorldEffect {
     WorldActivated,
     DecisionExercised {
         opportunity: DecisionOpportunity,
+        /// The command's own input, kept beside the event rather than inside it:
+        /// the invocation is what the caller said, the event is what the world
+        /// recorded, and only the first carries text.
+        invocation: DecisionInvocation,
         event: DecisionEvent,
     },
     DecisionDeclined {
@@ -603,6 +612,38 @@ pub(crate) struct SubjectSnapshot {
     /// View-only: the forums whose standing covers this subject, through the
     /// same covering predicate `HasStanding` uses.
     pub(crate) redress: Vec<ForumSnapshot>,
+    /// Every fact this subject holds, with the statement resolved. The sole
+    /// perception surface: a subject perceives a speech act if and only if it
+    /// holds `Knowledge` of that act's fact. Ordered by `spoken_at` then `fact`.
+    pub(crate) knowledge: Vec<KnowledgeSnapshot>,
+    /// The channels this subject controls, by id. Not their reach: who else is
+    /// in earshot is a question about other subjects.
+    pub(crate) controls: BTreeSet<EntityId>,
+}
+
+/// What a subject knows of one fact. `standing` carries no `EvidenceRef`: a
+/// receipt is non-fictional provenance and never enters a subject-facing
+/// surface, so a subject learns *that* a fact is canonical and never which
+/// receipt admitted it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct KnowledgeSnapshot {
+    pub(crate) fact: EntityId,
+    pub(crate) statement: Statement,
+    pub(crate) standing: FactStandingView,
+    pub(crate) confidence: Confidence,
+    /// The speaker a subject sees is `Told { by }`. A subject holding a fact it
+    /// was never told sees the statement with no speaker, which is correct: it
+    /// knows the thing, not the telling.
+    pub(crate) source: KnowledgeSource,
+    /// The revision of the speech act that minted this claim, when some
+    /// committed event asserted it.
+    pub(crate) spoken_at: Option<u64>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum FactStandingView {
+    Canonical,
+    Claimed { by: SubjectId },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -671,10 +712,20 @@ pub(crate) struct WorldSnapshot {
     pub(crate) places: Vec<PlaceSnapshot>,
     pub(crate) resources: Vec<ResourceSnapshot>,
     pub(crate) routes: Vec<RouteSnapshot>,
-    pub(crate) events: Vec<DecisionEvent>,
     pub(crate) opportunities: Vec<DecisionOpportunity>,
     pub(crate) state_digest: String,
     pub(crate) last_commit_digest: Option<String>,
+}
+
+/// One committed act as the human operator's story feed reads it. It is the
+/// operator surface, not a perception surface: no subject-facing lane receives
+/// it, and `SelectedDecision` never sees an event log at all.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct OperatorEvent {
+    pub(crate) revision: u64,
+    pub(crate) speaker: SubjectId,
+    pub(crate) speaker_label: String,
+    pub(crate) speech: Option<Statement>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -941,6 +992,14 @@ impl WorldKernel {
         snapshot(&self.state)
     }
 
+    /// The human operator's story feed. Separate from `snapshot` so that no
+    /// controller lane can reach an unscoped event log: a `WorldSnapshot` field
+    /// no consumer may read in full would be a loaded gun with a comment on it.
+    fn operator_log(&self) -> Result<Vec<OperatorEvent>, KernelError> {
+        self.journal.ensure_healthy()?;
+        operator_log(&self.state)
+    }
+
     fn submit(
         &mut self,
         command: CommandEnvelope,
@@ -1107,6 +1166,7 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
             let event = action::exercise(state, command.id, &current, &granted, invocation)?;
             Ok(WorldEffect::DecisionExercised {
                 opportunity: current,
+                invocation: invocation.clone(),
                 event,
             })
         }
@@ -1126,8 +1186,10 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
         }
         CommandBody::AdmitPatch { answers: _, patch } => {
             require_owner(state, &command.caller)?;
-            // Draft admits declarations, evidence, and operations. Active admits
-            // operations only, so it never mints a canonical ID.
+            // Draft admits declarations, evidence, and operations; Active admits
+            // operations only. The patch lane therefore structurally cannot mint
+            // the claim every utterance asserts, which is why `action::exercise`
+            // is the second `derive_id` call site.
             if state.phase == WorldPhase::Active
                 && !(patch.declarations.is_empty() && patch.evidence.is_empty())
             {
@@ -1172,6 +1234,9 @@ impl WorldState {
             positions: BTreeMap::new(),
             holdings: BTreeMap::new(),
             dependencies: BTreeMap::new(),
+            facts: BTreeMap::new(),
+            channels: BTreeMap::new(),
+            knowledge: BTreeMap::new(),
             authority: BTreeMap::new(),
             selection: BTreeMap::new(),
             redress: BTreeMap::new(),
@@ -1377,6 +1442,59 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
                 .entry(scope)
                 .or_default()
                 .insert(*affordance_id);
+        }
+    }
+    // Facts and channels: one `entities` row and one payload row per
+    // declaration, written together so the bijection has one writer.
+    for declared in &resolved.facts {
+        let claimed_by_a_stranger = match &declared.fact.standing {
+            FactStanding::Canonical { evidence } => {
+                !(patch::is_canonical_text(evidence.text()) && resolved.evidence.contains(evidence))
+            }
+            FactStanding::Claimed { by } => !state.subjects.contains_key(by),
+        };
+        if !patch::is_canonical_text(&declared.entity.label)
+            || !patch::is_canonical_text(declared.fact.statement.as_str())
+            || declared.entity.kind != EntityKind::Fact
+            || claimed_by_a_stranger
+        {
+            return Err(KernelError::Invariant(
+                "admitted fact is noncanonical, unevidenced, or asserted by no live subject".into(),
+            ));
+        }
+        if state
+            .entities
+            .insert(declared.entity_id, declared.entity.clone())
+            .is_some()
+            || state
+                .facts
+                .insert(declared.entity_id, declared.fact.clone())
+                .is_some()
+        {
+            return Err(KernelError::Invariant("admitted fact ID collision".into()));
+        }
+    }
+    for declared in &resolved.channels {
+        if !patch::is_canonical_text(&declared.entity.label)
+            || declared.entity.kind != EntityKind::Channel
+            || !channel_referents_exist(state, &declared.channel)
+        {
+            return Err(KernelError::Invariant(
+                "admitted channel is noncanonical or names no live reach".into(),
+            ));
+        }
+        if state
+            .entities
+            .insert(declared.entity_id, declared.entity.clone())
+            .is_some()
+            || state
+                .channels
+                .insert(declared.entity_id, declared.channel.clone())
+                .is_some()
+        {
+            return Err(KernelError::Invariant(
+                "admitted channel ID collision".into(),
+            ));
         }
     }
     apply_operations(state, &resolved.operations, &resolved.evidence)
@@ -1871,8 +1989,262 @@ fn apply_operation(
                 ));
             }
         }
+        ResolvedOp::AssertClaim {
+            fact,
+            statement,
+            by,
+        } => {
+            if !state.subjects.contains_key(by) || !patch::is_canonical_text(statement.as_str()) {
+                return Err(KernelError::Invariant(
+                    "a claim names no live asserter or no canonical statement".into(),
+                ));
+            }
+            if state
+                .entities
+                .insert(
+                    *fact,
+                    EntityRecord {
+                        label: CLAIM_LABEL.into(),
+                        kind: EntityKind::Fact,
+                        container: None,
+                    },
+                )
+                .is_some()
+                || state
+                    .facts
+                    .insert(
+                        *fact,
+                        FactRecord {
+                            statement: statement.clone(),
+                            standing: FactStanding::Claimed { by: *by },
+                        },
+                    )
+                    .is_some()
+            {
+                return Err(KernelError::Invariant("minted claim ID collision".into()));
+            }
+        }
+        ResolvedOp::AcquireKnowledge {
+            subject,
+            fact,
+            source,
+            confidence,
+        } => {
+            let Some(record) = state.facts.get(fact) else {
+                return Err(KernelError::Invariant(
+                    "knowledge operation names no canonical fact".into(),
+                ));
+            };
+            if !state.subjects.contains_key(subject)
+                || (*source == AuthoredSource::Evidenced
+                    && !matches!(record.standing, FactStanding::Canonical { .. }))
+            {
+                return Err(KernelError::Invariant(
+                    "knowledge operation names no live subject, or evidences a claim".into(),
+                ));
+            }
+            let entry = Knowledge {
+                confidence: *confidence,
+                source: match source {
+                    AuthoredSource::Witnessed => KnowledgeSource::Witnessed,
+                    AuthoredSource::Evidenced => KnowledgeSource::Evidenced,
+                },
+            };
+            if state
+                .knowledge
+                .get(subject)
+                .and_then(|held| held.get(fact))
+                .is_some_and(|held| *held == entry)
+            {
+                return Err(KernelError::Invariant(
+                    "knowledge operation changes nothing".into(),
+                ));
+            }
+            state
+                .knowledge
+                .entry(*subject)
+                .or_default()
+                .insert(*fact, entry);
+        }
+        ResolvedOp::Forget { subject, fact } => {
+            let (removed, emptied) = state
+                .knowledge
+                .get_mut(subject)
+                .map(|held| {
+                    let removed = held.remove(fact).is_some();
+                    (removed, held.is_empty())
+                })
+                .unwrap_or((false, false));
+            if !removed {
+                return Err(KernelError::Invariant(
+                    "knowledge operation changes nothing".into(),
+                ));
+            }
+            if emptied {
+                state.knowledge.remove(subject);
+            }
+        }
+        ResolvedOp::Communicate { speaker, fact, to } => {
+            if !state.subjects.contains_key(speaker) || !state.facts.contains_key(fact) {
+                return Err(KernelError::Invariant(
+                    "a telling names no live speaker or fact".into(),
+                ));
+            }
+            if !audience(state, *speaker, to).contains(speaker) {
+                return Err(KernelError::Invariant(
+                    "a speaker is outside its own audience".into(),
+                ));
+            }
+            // An empty fan-out is legal: the delta of a telling is a property of
+            // the world — an empty room, a silenced channel — not a defect in
+            // the proposal. Speaking alone commits the claim and lands nothing.
+            for listener in fan_out(state, *speaker, *fact, to) {
+                state.knowledge.entry(listener).or_default().insert(
+                    *fact,
+                    Knowledge {
+                        confidence: Confidence::Believed,
+                        source: KnowledgeSource::Told {
+                            by: *speaker,
+                            via: to.channel(),
+                        },
+                    },
+                );
+            }
+        }
+        ResolvedOp::SetReach { channel, reach } => {
+            let current = state
+                .channels
+                .get(channel)
+                .ok_or_else(|| KernelError::Invariant("channel operation names no channel".into()))?
+                .clone();
+            let record = ChannelRecord {
+                reach: reach.clone(),
+                controller: current.controller,
+            };
+            if !channel_referents_exist(state, &record) {
+                return Err(KernelError::Invariant(
+                    "a reach names no live subject or place".into(),
+                ));
+            }
+            if current.reach == *reach {
+                return Err(KernelError::Invariant(
+                    "channel operation changes nothing".into(),
+                ));
+            }
+            state.channels.insert(*channel, record);
+        }
+        ResolvedOp::SetController {
+            channel,
+            controller,
+        } => {
+            if controller.is_some_and(|subject_id| !state.subjects.contains_key(&subject_id)) {
+                return Err(unknown());
+            }
+            let seat = state.channels.get_mut(channel).ok_or_else(|| {
+                KernelError::Invariant("channel operation names no channel".into())
+            })?;
+            if seat.controller == *controller {
+                return Err(KernelError::Invariant(
+                    "channel operation changes nothing".into(),
+                ));
+            }
+            seat.controller = *controller;
+        }
     }
     Ok(())
+}
+
+/// The label every minted claim carries. A label is a name, not a transcript:
+/// the statement is never copied into it and the label is never derived from it,
+/// so the utterance has one home in state. Labels resolve no references, so
+/// identical labels across every claim are unremarkable.
+const CLAIM_LABEL: &str = "claim";
+
+/// Whether a channel's reach and controller name live structure.
+fn channel_referents_exist(state: &WorldState, record: &ChannelRecord) -> bool {
+    let reach = match &record.reach {
+        Reach::Subjects(members) => members
+            .iter()
+            .all(|subject_id| state.subjects.contains_key(subject_id)),
+        Reach::Place(place) => state
+            .entities
+            .get(place)
+            .is_some_and(|entity| entity.kind == EntityKind::Place),
+    };
+    reach
+        && record
+            .controller
+            .is_none_or(|subject_id| state.subjects.contains_key(&subject_id))
+}
+
+/// The one statement of reach. Called by both speech preconditions, by a
+/// `Communicate`'s admission, and by its apply. Nothing else computes an
+/// audience.
+///
+/// Co-location is the actor's exact place, not its subtree: a voice fills a
+/// room, not the district containing it. A channel's `Reach::Place` is
+/// deliberately wider, because a declared broadcast area is a declared choice.
+fn audience(state: &WorldState, actor: SubjectId, of: &Audience) -> BTreeSet<SubjectId> {
+    match of {
+        Audience::Colocated => {
+            let Some(here) = state.positions.get(&actor).copied() else {
+                return BTreeSet::new();
+            };
+            state
+                .positions
+                .iter()
+                .filter(|(_, position)| **position == here)
+                .map(|(subject_id, _)| *subject_id)
+                .collect()
+        }
+        Audience::Channel(channel) => {
+            let Some(record) = state.channels.get(channel) else {
+                return BTreeSet::new();
+            };
+            let mut inside: BTreeSet<SubjectId> = match &record.reach {
+                Reach::Subjects(members) => members.clone(),
+                Reach::Place(root) => state
+                    .positions
+                    .iter()
+                    .filter(|(_, position)| {
+                        patch::covers_place(&state.entities, *root, position.place)
+                    })
+                    .map(|(subject_id, _)| *subject_id)
+                    .collect(),
+            };
+            // The controller may speak on its own channel whether or not it
+            // stands inside its reach: the horn belongs to the temple.
+            if let Some(controller) = record.controller {
+                inside.insert(controller);
+            }
+            inside
+        }
+    }
+}
+
+/// Who gains knowledge from one telling: the audience, less the speaker and less
+/// anyone who already holds the fact. A telling never overwrites and never
+/// downgrades — the knower owns its own credence, and a speaker who could reset
+/// a listener's confidence by repeating itself would own another subject's mind
+/// through an effect nobody checked. `Believed` is fixed by the kernel and is
+/// not a field on the operation, so a speaker cannot choose how much a listener
+/// believes it.
+fn fan_out(
+    state: &WorldState,
+    speaker: SubjectId,
+    fact: EntityId,
+    to: &Audience,
+) -> BTreeSet<SubjectId> {
+    audience(state, speaker, to)
+        .into_iter()
+        .filter(|listener| {
+            *listener != speaker
+                && !state
+                    .knowledge
+                    .get(listener)
+                    .is_some_and(|held| held.contains_key(&fact))
+        })
+        .collect()
 }
 
 /// Whether an authority target names a live subject or a live place.
@@ -1967,6 +2339,17 @@ pub(super) struct ScopeComponents {
     /// jurisdiction, and only delegated kinds enter — an institution's `judge`
     /// jurisdiction never churns a `levy`-only incumbent's proposals.
     delegated: BTreeMap<SubjectId, BTreeMap<OfficeName, BTreeSet<AuthorityGrant>>>,
+    /// The keys of this subject's own knowledge. Keys, not payloads: a statement
+    /// is immutable, so it cannot change without the key changing, and
+    /// confidence is admission-only — a re-appraisal that lowers a subject's own
+    /// confidence does not reject its own in-flight proposal, because `Knows`
+    /// re-checks at commit and fails closed with `FactUnknown`.
+    knows: BTreeSet<EntityId>,
+    /// The channels this subject controls, with their records. Membership of a
+    /// channel it merely hears never enters: a 1,000-member channel would churn
+    /// a thousand digests per membership change, which is whole-world binding by
+    /// the front door.
+    controls: BTreeMap<EntityId, ChannelRecord>,
 }
 
 /// Whether an authority target covers a referent. The one statement of
@@ -2085,10 +2468,55 @@ fn scope_components(state: &WorldState, subject_id: SubjectId) -> ScopeComponent
             .cloned()
             .unwrap_or_default(),
         delegated: delegated_authority(state, subject_id),
+        knows: state
+            .knowledge
+            .get(&subject_id)
+            .into_iter()
+            .flat_map(BTreeMap::keys)
+            .copied()
+            .collect(),
+        controls: state
+            .channels
+            .iter()
+            .filter(|(_, record)| record.controller == Some(subject_id))
+            .map(|(entity_id, record)| (*entity_id, record.clone()))
+            .collect(),
     }
 }
 
+/// The human operator's story feed, derived from the causal record. The events
+/// log is not a perception surface: `knowledge` is the sole answer to what a
+/// subject may act on and what its projection may contain.
+fn operator_log(state: &WorldState) -> Result<Vec<OperatorEvent>, KernelError> {
+    state
+        .events
+        .iter()
+        .map(|event| {
+            let speaker = state
+                .subjects
+                .get(&event.scope.subject_id)
+                .ok_or_else(|| KernelError::Invariant("event names no live subject".into()))?;
+            Ok(OperatorEvent {
+                revision: event.revision,
+                speaker: event.scope.subject_id,
+                speaker_label: speaker.label.clone(),
+                speech: event
+                    .speech
+                    .and_then(|fact| state.facts.get(&fact))
+                    .map(|record| record.statement.clone()),
+            })
+        })
+        .collect()
+}
+
 fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
+    // One pass over the causal record so each subject's own knowledge map can be
+    // stamped with the revision that minted each claim it holds.
+    let spoken_at: BTreeMap<EntityId, u64> = state
+        .events
+        .iter()
+        .filter_map(|event| event.speech.map(|fact| (fact, event.revision)))
+        .collect();
     let subjects = state
         .subjects
         .iter()
@@ -2147,6 +2575,32 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                     forum: forum.forum,
                 })
                 .collect();
+            // The sole perception surface, derived here rather than in a
+            // controller: a controller that recomputed perception would be a
+            // second answer to who heard what.
+            let mut knowledge: Vec<KnowledgeSnapshot> = state
+                .knowledge
+                .get(subject_id)
+                .into_iter()
+                .flatten()
+                .map(|(fact, held)| {
+                    let record = state.facts.get(fact).ok_or_else(|| {
+                        KernelError::Invariant("knowledge names no canonical fact".into())
+                    })?;
+                    Ok(KnowledgeSnapshot {
+                        fact: *fact,
+                        statement: record.statement.clone(),
+                        standing: match &record.standing {
+                            FactStanding::Canonical { .. } => FactStandingView::Canonical,
+                            FactStanding::Claimed { by } => FactStandingView::Claimed { by: *by },
+                        },
+                        confidence: held.confidence,
+                        source: held.source,
+                        spoken_at: spoken_at.get(fact).copied(),
+                    })
+                })
+                .collect::<Result<Vec<_>, KernelError>>()?;
+            knowledge.sort_by_key(|entry| (entry.spoken_at, entry.fact));
             Ok(SubjectSnapshot {
                 id: *subject_id,
                 label: subject.label.clone(),
@@ -2163,6 +2617,8 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                 offices_held,
                 offices_granted,
                 redress,
+                knowledge,
+                controls: components.controls.into_keys().collect(),
             })
         })
         .collect::<Result<Vec<_>, KernelError>>()?;
@@ -2221,7 +2677,6 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
         places,
         resources,
         routes,
-        events: state.events.clone(),
         opportunities: derive_opportunities(state)?,
         state_digest: state.state_digest.clone(),
         last_commit_digest: state.last_commit_digest.clone(),
@@ -2470,7 +2925,11 @@ fn apply_effect(
             }
             state.phase = WorldPhase::Active;
         }
-        WorldEffect::DecisionExercised { opportunity, event } => {
+        WorldEffect::DecisionExercised {
+            opportunity,
+            invocation,
+            event,
+        } => {
             let current = exact_opportunity(state, opportunity)?;
             let assignment = state
                 .controller_assignments
@@ -2483,12 +2942,11 @@ fn apply_effect(
                     "decision effect does not match exact opportunity authority".into(),
                 ));
             }
-            let granted = require_granted(state, &current, event.invocation.affordance)?;
+            let granted = require_granted(state, &current, invocation.affordance)?;
             // The whole event is re-derived by the function that produced the
-            // honest one, so a forged band, operation, magnitude, or utterance
-            // is one comparison rather than a clause apiece.
-            let derived =
-                action::exercise(state, command_id, &current, &granted, &event.invocation)?;
+            // honest one, so a forged band, operation, magnitude, minted claim,
+            // or utterance is one comparison rather than a clause apiece.
+            let derived = action::exercise(state, command_id, &current, &granted, invocation)?;
             if derived != *event {
                 return Err(KernelError::Invariant(
                     "decision effect does not derive from its opportunity".into(),
@@ -2541,6 +2999,16 @@ mod tests {
     use super::patch::kernel_speak_grant;
     use super::*;
 
+    /// What a committed event actually asserted, read from the one home of an
+    /// utterance: the minted claim's statement. No other partition holds those
+    /// bytes.
+    pub(super) fn spoken<'a>(state: &'a WorldState, event: &DecisionEvent) -> Option<&'a str> {
+        event
+            .speech
+            .and_then(|fact| state.facts.get(&fact))
+            .map(|record| record.statement.as_str())
+    }
+
     pub(super) fn owner() -> PrincipalId {
         PrincipalId::new("owner@example.test")
     }
@@ -2565,9 +3033,19 @@ mod tests {
             kind,
             controller,
             affordances: kernel_speak_grant(),
-            position: None,
+            // The fixture world is one room. Co-located speech needs a place to
+            // fill, so every fixture subject stands in the commons.
+            position: Some(Ref::Draft(DraftHandle::new(COMMONS))),
         })
     }
+
+    /// The one place the base fixture world declares.
+    pub(super) const COMMONS: &str = "commons";
+
+    /// How many entities the base fixture world admits at genesis: the commons
+    /// and nothing else. A patch-lane test that proves a rejection allocated
+    /// nothing compares against this rather than against zero.
+    pub(super) const FIXTURE_ENTITIES: usize = 1;
 
     /// The committed Speak entry. A post-genesis declaration grants it by
     /// canonical reference, like every other structure a previous commit
@@ -2605,6 +3083,12 @@ mod tests {
                 operations: Vec::new(),
                 evidence: Vec::new(),
                 declarations: vec![
+                    Declaration::Entity(EntityDeclaration {
+                        handle: DraftHandle::new(COMMONS),
+                        label: "The Commons".into(),
+                        kind: EntityKind::Place,
+                        container: None,
+                    }),
                     // A second, world-declared entry granted to exactly one
                     // subject, so the fixture world has more than one verb and
                     // grant sets differ between scopes.
@@ -2612,7 +3096,11 @@ mod tests {
                         handle: DraftHandle::new("convene"),
                         kind: AffordanceKindName("convene".into()),
                         roles: Vec::new(),
-                        preconditions: Vec::new(),
+                        // A speech-carrying entry must name exactly one
+                        // audience for the lowering to read.
+                        preconditions: vec![Precondition::CanBroadcast {
+                            via: AudienceSpec::Colocated,
+                        }],
                         effect_slots: Vec::new(),
                         outcome_bands: vec![OutcomeBand {
                             weight: 1,
@@ -2643,7 +3131,7 @@ mod tests {
                             .into_iter()
                             .chain(std::iter::once(Ref::Draft(DraftHandle::new("convene"))))
                             .collect(),
-                        position: None,
+                        position: Some(Ref::Draft(DraftHandle::new(COMMONS))),
                     }),
                 ],
             },
@@ -3378,9 +3866,15 @@ mod tests {
                 "petition",
                 "petition",
                 Vec::new(),
-                vec![Precondition::HasStanding {
-                    grievance: grievance(SEIZURE_GRIEVANCE),
-                }],
+                vec![
+                    Precondition::HasStanding {
+                        grievance: grievance(SEIZURE_GRIEVANCE),
+                    },
+                    // A petition is spoken, so the entry names where it lands.
+                    Precondition::CanBroadcast {
+                        via: AudienceSpec::Colocated,
+                    },
+                ],
                 Vec::new(),
                 vec![OutcomeBand {
                     weight: 1,
@@ -3490,6 +3984,17 @@ mod tests {
                     Ref::Existing(topology.road),
                     &["levy", "petition"],
                 ),
+                // Deliberately unplaced: a place-subtree jurisdiction covers a
+                // subject through its position, so a subject with none is
+                // covered by nothing.
+                Declaration::Subject(SubjectDeclaration {
+                    handle: DraftHandle::new("nowhere"),
+                    label: "The Unhoused".into(),
+                    kind: SubjectKind::Person,
+                    controller: NewController::NarrativePersona,
+                    affordances: civic_grants(&["levy", "petition"], &speak),
+                    position: None,
+                }),
             ])
             .collect();
         WorldPatch {
@@ -3612,6 +4117,209 @@ mod tests {
         (topology, civic, active)
     }
 
+    /// The speech bench: a hall containing a yard, a speaker and a listener in
+    /// the hall, a bystander in the yard, a stranger nowhere, one evidenced
+    /// canonical fact, and a horn that carries over the hall subtree.
+    pub(super) struct Speech {
+        pub(super) hall: EntityId,
+        pub(super) yard: EntityId,
+        pub(super) speaker: SubjectId,
+        pub(super) listener: SubjectId,
+        pub(super) bystander: SubjectId,
+        pub(super) stranger: SubjectId,
+        pub(super) flood: EntityId,
+        pub(super) horn: EntityId,
+        pub(super) whisper: AffordanceId,
+        pub(super) proclaim: AffordanceId,
+        pub(super) recant: AffordanceId,
+        pub(super) stair: EdgeId,
+    }
+
+    pub(super) const FLOOD_STATEMENT: &str = "The lower hinge is flooding.";
+    pub(super) const FLOOD_EVIDENCE: &str = "vault:flood-survey";
+
+    /// A world with one room inside another, four subjects, a fact, and a
+    /// channel. Two world-declared speaking entries exercise both audiences: an
+    /// addressed co-located `whisper` and a channel-bound `proclaim`.
+    pub(super) fn speech_world(kernel: &mut WorldKernel) -> (Speech, WorldSnapshot) {
+        let before = kernel.snapshot().unwrap();
+        let speak = speak_entry(kernel);
+        let person = |handle: &str, label: &str, place: Option<&str>| {
+            Declaration::Subject(SubjectDeclaration {
+                handle: DraftHandle::new(handle),
+                label: label.into(),
+                kind: SubjectKind::Person,
+                controller: NewController::NarrativePersona,
+                affordances: BTreeSet::from([
+                    speak.clone(),
+                    Ref::Draft(DraftHandle::new("whisper")),
+                    Ref::Draft(DraftHandle::new("proclaim")),
+                    Ref::Draft(DraftHandle::new("recant")),
+                ]),
+                position: place.map(|place| Ref::Draft(DraftHandle::new(place))),
+            })
+        };
+        submit_owner(
+            kernel,
+            &before,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    evidence: vec![EvidenceRef::new(FLOOD_EVIDENCE)],
+                    operations: Vec::new(),
+                    declarations: vec![
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("hall"),
+                            label: "The Long Hall".into(),
+                            kind: EntityKind::Place,
+                            container: None,
+                        }),
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("yard"),
+                            label: "The Cavity Yard".into(),
+                            kind: EntityKind::Place,
+                            container: Some(Ref::Draft(DraftHandle::new("hall"))),
+                        }),
+                        Declaration::Route(RouteDeclaration {
+                            handle: DraftHandle::new("stair"),
+                            label: "The Yard Stair".into(),
+                            from: Ref::Draft(DraftHandle::new("yard")),
+                            to: Ref::Draft(DraftHandle::new("hall")),
+                            access: AccessKind::Public,
+                            cost: Cost(1),
+                        }),
+                        Declaration::Fact(FactDeclaration {
+                            handle: DraftHandle::new("flood"),
+                            label: "the flooding of the lower hinge".into(),
+                            statement: Statement::new(FLOOD_STATEMENT).unwrap(),
+                            standing: FactStandingRef::Canonical {
+                                evidence: EvidenceRef::new(FLOOD_EVIDENCE),
+                            },
+                        }),
+                        // Addressed speech: the audience is still the room.
+                        Declaration::Affordance(AffordanceDeclaration {
+                            handle: DraftHandle::new("whisper"),
+                            kind: AffordanceKindName("whisper".into()),
+                            roles: vec![RoleSpec {
+                                role: Role("target".into()),
+                                kind: RefKind::Subject(None),
+                            }],
+                            preconditions: vec![Precondition::CanReach {
+                                subject: Role("target".into()),
+                                via: AudienceSpec::Colocated,
+                            }],
+                            effect_slots: Vec::new(),
+                            outcome_bands: vec![OutcomeBand {
+                                weight: 1,
+                                effects: Vec::new(),
+                            }],
+                            carries_speech: true,
+                        }),
+                        Declaration::Affordance(AffordanceDeclaration {
+                            handle: DraftHandle::new("proclaim"),
+                            kind: AffordanceKindName("proclaim".into()),
+                            roles: vec![RoleSpec {
+                                role: Role("channel".into()),
+                                kind: RefKind::Entity(EntityKind::Channel),
+                            }],
+                            preconditions: vec![Precondition::CanBroadcast {
+                                via: AudienceSpec::Channel(Role("channel".into())),
+                            }],
+                            effect_slots: Vec::new(),
+                            outcome_bands: vec![OutcomeBand {
+                                weight: 1,
+                                effects: Vec::new(),
+                            }],
+                            carries_speech: true,
+                        }),
+                        // `Knows` plus the one knowledge operation an affordance
+                        // may propose: a subject may only unremember what it
+                        // holds with certainty.
+                        Declaration::Affordance(AffordanceDeclaration {
+                            handle: DraftHandle::new("recant"),
+                            kind: AffordanceKindName("recant".into()),
+                            roles: vec![RoleSpec {
+                                role: Role("fact".into()),
+                                kind: RefKind::Entity(EntityKind::Fact),
+                            }],
+                            preconditions: vec![Precondition::Knows {
+                                fact: Role("fact".into()),
+                                at_least: Confidence::Certain,
+                            }],
+                            effect_slots: vec![EffectSlot {
+                                op_kind: ComponentOpKind::Forget,
+                                roles: vec![Role("actor".into()), Role("fact".into())],
+                                bounds: Bounds::None,
+                            }],
+                            outcome_bands: vec![OutcomeBand {
+                                weight: 1,
+                                effects: vec![0],
+                            }],
+                            carries_speech: false,
+                        }),
+                        person("speaker", "The Hall Speaker", Some("hall")),
+                        person("listener", "The Hall Listener", Some("hall")),
+                        person("bystander", "The Yard Bystander", Some("yard")),
+                        person("stranger", "The Placeless Stranger", None),
+                        Declaration::Channel(ChannelDeclaration {
+                            handle: DraftHandle::new("horn"),
+                            label: "The Temple Horn".into(),
+                            reach: ReachRef::Place(Ref::Draft(DraftHandle::new("hall"))),
+                            controller: Some(Ref::Draft(DraftHandle::new("speaker"))),
+                        }),
+                    ],
+                },
+            },
+        );
+        let active = activate(kernel);
+        let place = |label: &str| {
+            active
+                .places
+                .iter()
+                .find(|place| place.label == label)
+                .expect("the declared place")
+                .id
+        };
+        let who = |label: &str| {
+            active
+                .subjects
+                .iter()
+                .find(|subject| subject.label == label)
+                .expect("the declared subject")
+                .id
+        };
+        let fact = *kernel
+            .state
+            .facts
+            .iter()
+            .find(|(_, record)| record.statement.as_str() == FLOOD_STATEMENT)
+            .expect("the declared fact")
+            .0;
+        let horn = *kernel
+            .state
+            .channels
+            .keys()
+            .next()
+            .expect("the declared channel");
+        (
+            Speech {
+                hall: place("The Long Hall"),
+                yard: place("The Cavity Yard"),
+                speaker: who("The Hall Speaker"),
+                listener: who("The Hall Listener"),
+                bystander: who("The Yard Bystander"),
+                stranger: who("The Placeless Stranger"),
+                flood: fact,
+                horn,
+                whisper: affordance_named(&active, "whisper"),
+                proclaim: affordance_named(&active, "proclaim"),
+                recant: affordance_named(&active, "recant"),
+                stair: active.routes[0].id,
+            },
+            active,
+        )
+    }
+
     /// Submits as owner and returns the complete mismatch set.
     pub(super) fn reject_owner(
         kernel: &mut WorldKernel,
@@ -3672,7 +4380,7 @@ mod tests {
             affordance: opportunity.affordance_ids[0],
             bindings: Vec::new(),
             proposed: Vec::new(),
-            speech: Some(Utterance::new(text).unwrap()),
+            speech: Some(Statement::new(text).unwrap()),
         }
     }
 
@@ -3748,9 +4456,9 @@ mod tests {
             )
             .unwrap();
         assert!(matches!(receipt, SubmitReceipt::Applied(_)));
-        let after = kernel.snapshot().unwrap();
-        assert_eq!(after.events.len(), 2);
-        assert_eq!(after.events[1].revision, bound.revision + 2);
+        let after = kernel.state.events.clone();
+        assert_eq!(after.len(), 2);
+        assert_eq!(after[1].revision, bound.revision + 2);
     }
 
     /// Closing a route incident to the subject's place changes exactly what the
@@ -3946,13 +4654,9 @@ mod tests {
             )
             .unwrap();
         let after_player = kernel.snapshot().unwrap();
-        assert_eq!(after_player.events.len(), 1);
+        assert_eq!(kernel.state.events.len(), 1);
         assert_eq!(
-            after_player.events[0]
-                .invocation
-                .speech
-                .as_ref()
-                .map(Utterance::as_str),
+            spoken(&kernel.state, &kernel.state.events[0]),
             Some("I open the door.")
         );
 
@@ -3973,7 +4677,7 @@ mod tests {
             )
             .unwrap();
         let after_persona = kernel.snapshot().unwrap();
-        assert_eq!(after_persona.events.len(), 2);
+        assert_eq!(kernel.state.events.len(), 2);
         assert!(
             after_persona
                 .opportunities
@@ -4089,7 +4793,7 @@ mod tests {
             affordance: affordance_named(&active, "convene"),
             bindings: Vec::new(),
             proposed: Vec::new(),
-            speech: Some(Utterance::new("No grant").unwrap()),
+            speech: Some(Statement::new("No grant").unwrap()),
         };
         assert!(matches!(
             kernel.submit(
@@ -4122,7 +4826,7 @@ mod tests {
                             affordance: forged_affordance,
                             bindings: Vec::new(),
                             proposed: Vec::new(),
-                            speech: Some(Utterance::new("Forged").unwrap()),
+                            speech: Some(Statement::new("Forged").unwrap()),
                         },
                         opportunity: tampered,
                     },
@@ -4326,7 +5030,7 @@ mod tests {
         };
         let after = kernel.snapshot().unwrap();
         assert_eq!(after.revision, active.revision + 1);
-        assert!(after.events.is_empty());
+        assert!(kernel.state.events.is_empty());
         let refreshed = opportunity(&after, ControllerMode::OperationalAgent);
         assert_ne!(refreshed, decision);
         assert_eq!(
@@ -4493,7 +5197,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("world.cc");
         let mut invalid = creation(CommandId::new(), "Nope");
-        invalid.patch.declarations[2] = invalid.patch.declarations[1].clone();
+        invalid.patch.declarations[3] = invalid.patch.declarations[2].clone();
         let Err(KernelError::PatchRejected(rejected)) =
             WorldKernel::create(&path, invalid, &auth_principal(owner()))
         else {
@@ -4833,7 +5537,7 @@ mod tests {
                             affordance: convened,
                             bindings: Vec::new(),
                             proposed: Vec::new(),
-                            speech: Some(Utterance::new("Not my grant.").unwrap()),
+                            speech: Some(Statement::new("Not my grant.").unwrap()),
                         },
                     },
                 ),
@@ -4898,7 +5602,7 @@ mod tests {
                             affordance: convened,
                             bindings: Vec::new(),
                             proposed: Vec::new(),
-                            speech: Some(Utterance::new("The council convenes.").unwrap()),
+                            speech: Some(Statement::new("The council convenes.").unwrap()),
                         },
                     },
                 ),
@@ -4992,7 +5696,7 @@ mod tests {
                             affordance: speak,
                             bindings: Vec::new(),
                             proposed: Vec::new(),
-                            speech: Some(Utterance::new("Still here.").unwrap()),
+                            speech: Some(Statement::new("Still here.").unwrap()),
                         },
                     },
                 ),
@@ -5610,6 +6314,8 @@ mod custody_tests {
                 entities: Vec::new(),
                 routes: Vec::new(),
                 affordances: Vec::new(),
+                facts: Vec::new(),
+                channels: Vec::new(),
                 operations: vec![ResolvedOp::Transfer {
                     from: custody.holder,
                     to: custody.counterparty,
@@ -6101,7 +6807,7 @@ mod custody_tests {
                             affordance: bound.affordance_ids[0],
                             bindings: Vec::new(),
                             proposed: Vec::new(),
-                            speech: Some(Utterance::new("The tithe is short.").unwrap()),
+                            speech: Some(Statement::new("The tithe is short.").unwrap()),
                         },
                     },
                 ),
@@ -6199,6 +6905,8 @@ mod custody_tests {
                 entities: Vec::new(),
                 routes: Vec::new(),
                 affordances: Vec::new(),
+                facts: Vec::new(),
+                channels: Vec::new(),
                 operations,
                 evidence: Vec::new(),
             },
@@ -6384,7 +7092,7 @@ mod custody_tests {
                 affordance: opportunity.affordance_ids[0],
                 bindings: Vec::new(),
                 proposed: Vec::new(),
-                speech: Some(Utterance::new("Counted before the tithe arrived.").unwrap()),
+                speech: Some(Statement::new("Counted before the tithe arrived.").unwrap()),
             },
         };
 
@@ -6416,5 +7124,1005 @@ mod custody_tests {
             )
             .expect("an unrelated subject's bound proposal is untouched by the transfer");
         assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+    }
+}
+
+/// Pass 6: `Knowledge`, `Channel`, `Fact` standing, and the non-leakage rule.
+/// A subject perceives a speech act if and only if it holds `Knowledge` of that
+/// act's fact — the knowledge partition is the sole owner of who-heard-what.
+#[cfg(test)]
+mod knowledge_tests {
+    use super::patch::{RefName, Site};
+    use super::tests::{
+        FLOOD_EVIDENCE, FLOOD_STATEMENT, Speech, auth_principal, command, creation, operations,
+        opportunity_for, owner, reject_owner, speech_world, spoken, submit_owner,
+    };
+    use super::*;
+    use std::path::Path;
+
+    fn speech_kernel(path: &Path, title: &str) -> (WorldKernel, Speech, WorldSnapshot) {
+        let mut kernel = WorldKernel::create(
+            path.join("world.cc"),
+            creation(CommandId::new(), title),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let (speech, active) = speech_world(&mut kernel);
+        (kernel, speech, active)
+    }
+
+    fn utter(
+        kernel: &mut WorldKernel,
+        snapshot: &WorldSnapshot,
+        actor: SubjectId,
+        invocation: DecisionInvocation,
+    ) -> Result<SubmitReceipt, KernelError> {
+        let opportunity = opportunity_for(snapshot, actor);
+        let caller = CallerId::Controller(opportunity.controller_id);
+        kernel.submit(
+            command(
+                snapshot,
+                CommandId::new(),
+                caller.clone(),
+                CommandBody::ExerciseDecision {
+                    opportunity,
+                    invocation,
+                },
+            ),
+            &AuthenticatedCaller::fixture(caller),
+        )
+    }
+
+    fn say(affordance: AffordanceId, bindings: Vec<RoleBinding>, text: &str) -> DecisionInvocation {
+        DecisionInvocation {
+            affordance,
+            bindings,
+            proposed: Vec::new(),
+            speech: Some(Statement::new(text).unwrap()),
+        }
+    }
+
+    fn binding(role: &str, target: Target) -> RoleBinding {
+        RoleBinding {
+            role: Role(role.into()),
+            target,
+        }
+    }
+
+    fn rejected(result: Result<SubmitReceipt, KernelError>) -> Vec<ActionMismatch> {
+        match result {
+            Err(KernelError::ActionRejected(mismatches)) => mismatches,
+            other => panic!("expected a rejected invocation, got {other:?}"),
+        }
+    }
+
+    fn knows(kernel: &WorldKernel, subject: SubjectId, fact: EntityId) -> Option<Knowledge> {
+        kernel
+            .state
+            .knowledge
+            .get(&subject)
+            .and_then(|held| held.get(&fact))
+            .copied()
+    }
+
+    fn acquire(subject: SubjectId, fact: EntityId, source: AuthoredSource) -> ComponentOp {
+        ComponentOp::AcquireKnowledge {
+            subject: Ref::Existing(subject),
+            fact: Ref::Existing(fact),
+            source,
+            confidence: Confidence::Certain,
+        }
+    }
+
+    fn minted_claim(kernel: &WorldKernel) -> EntityId {
+        kernel
+            .state
+            .events
+            .last()
+            .expect("the committed event")
+            .speech
+            .expect("a speech act names its claim")
+    }
+
+    /// Verification 5, first half: a patch adds knowledge only by citing an
+    /// accessible fact, and a rejected citation allocates nothing.
+    #[test]
+    fn knowledge_citing_an_inaccessible_fact_is_rejected() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "Inaccessible");
+        let before = kernel.state.clone();
+
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &active,
+                operations(vec![acquire(
+                    speech.listener,
+                    EntityId::issue(),
+                    AuthoredSource::Witnessed
+                )]),
+            ),
+            vec![Mismatch::UnknownCanonical {
+                site: Site::Operation(0),
+                expected: RefKind::Entity(EntityKind::Fact),
+            }]
+        );
+        // A live referent of the wrong kind names the kind it actually is.
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &active,
+                operations(vec![acquire(
+                    speech.listener,
+                    speech.hall,
+                    AuthoredSource::Witnessed
+                )]),
+            ),
+            vec![Mismatch::WrongKind {
+                site: Site::Operation(0),
+                referent: RefName::Entity(Ref::Existing(speech.hall)),
+                expected: RefKind::Entity(EntityKind::Fact),
+                actual: RefKind::Entity(EntityKind::Place),
+            }]
+        );
+        assert_eq!(kernel.state, before);
+
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![acquire(
+                speech.listener,
+                speech.flood,
+                AuthoredSource::Witnessed,
+            )]),
+        );
+        assert_eq!(
+            knows(&kernel, speech.listener, speech.flood).map(|held| held.source),
+            Some(KnowledgeSource::Witnessed)
+        );
+    }
+
+    /// Standing is what a fact *is*, so both halves are checked at declaration:
+    /// canon needs its receipt in the same patch, a claim needs a live asserter.
+    #[test]
+    fn a_canonical_fact_needs_evidence_and_a_claim_needs_an_asserter() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut draft = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(CommandId::new(), "Standing"),
+            &auth_principal(owner()),
+        )
+        .expect("a draft world")
+        .0;
+        let start = draft.snapshot().unwrap();
+        let declare =
+            |standing: FactStandingRef, evidence: Vec<EvidenceRef>| CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: vec![Declaration::Fact(FactDeclaration {
+                        handle: DraftHandle::new("rumour"),
+                        label: "a rumour".into(),
+                        statement: Statement::new("The reeve took two tithes.").unwrap(),
+                        standing,
+                    })],
+                    operations: Vec::new(),
+                    evidence,
+                },
+            };
+
+        assert_eq!(
+            reject_owner(
+                &mut draft,
+                &start,
+                declare(
+                    FactStandingRef::Canonical {
+                        evidence: EvidenceRef::new("vault:absent"),
+                    },
+                    Vec::new(),
+                ),
+            ),
+            vec![Mismatch::FactWithoutEvidence {
+                handle: DraftHandle::new("rumour"),
+            }]
+        );
+        assert_eq!(
+            reject_owner(
+                &mut draft,
+                &start,
+                declare(
+                    FactStandingRef::Claimed {
+                        by: Ref::Draft(DraftHandle::new("nobody")),
+                    },
+                    Vec::new(),
+                ),
+            ),
+            vec![Mismatch::UnresolvedDraft {
+                site: Site::Declaration(DraftHandle::new("rumour")),
+                referent: DraftHandle::new("nobody"),
+                expected: RefKind::Subject(None),
+            }]
+        );
+        assert!(draft.state.facts.is_empty());
+
+        submit_owner(
+            &mut draft,
+            &start,
+            declare(
+                FactStandingRef::Canonical {
+                    evidence: EvidenceRef::new("vault:rumour"),
+                },
+                vec![EvidenceRef::new("vault:rumour")],
+            ),
+        );
+        assert_eq!(draft.state.facts.len(), 1);
+        // The bijection holds in both directions.
+        let fact = *draft.state.facts.keys().next().unwrap();
+        assert_eq!(draft.state.entities[&fact].kind, EntityKind::Fact);
+    }
+
+    /// A receipt vouches for canon. It cannot vouch for an assertion the kernel
+    /// never evaluated.
+    #[test]
+    fn evidenced_knowledge_of_a_claim_is_rejected() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "Evidenced");
+        utter(
+            &mut kernel,
+            &active,
+            speech.speaker,
+            say(
+                speech.proclaim,
+                vec![binding("channel", Target::Entity(speech.horn))],
+                "The gate was left open.",
+            ),
+        )
+        .expect("the proclamation commits");
+        let claim = minted_claim(&kernel);
+        let active = kernel.snapshot().unwrap();
+
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &active,
+                operations(vec![acquire(
+                    speech.stranger,
+                    claim,
+                    AuthoredSource::Evidenced
+                )]),
+            ),
+            vec![Mismatch::EvidencedKnowledgeOfClaim { operation: 0 }]
+        );
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![acquire(
+                speech.stranger,
+                speech.flood,
+                AuthoredSource::Evidenced,
+            )]),
+        );
+        assert_eq!(
+            knows(&kernel, speech.stranger, speech.flood).map(|held| held.source),
+            Some(KnowledgeSource::Evidenced)
+        );
+        assert_eq!(
+            kernel.state.facts[&speech.flood].standing,
+            FactStanding::Canonical {
+                evidence: EvidenceRef::new(FLOOD_EVIDENCE),
+            }
+        );
+    }
+
+    /// The fan-out is the audience, less the speaker: co-located speech fills
+    /// the exact room, and the utterance lands in `facts` and nowhere else.
+    #[test]
+    fn speak_fans_out_to_the_audience_and_not_beyond() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "FanOut");
+        utter(
+            &mut kernel,
+            &active,
+            speech.speaker,
+            say(
+                speech.whisper,
+                vec![binding("target", Target::Subject(speech.listener))],
+                "Mind the hinge.",
+            ),
+        )
+        .expect("the whisper commits");
+
+        let event = kernel.state.events.last().expect("the committed event");
+        let claim = event.speech.expect("a speech act names its claim");
+        assert_eq!(spoken(&kernel.state, event), Some("Mind the hinge."));
+        assert_eq!(
+            knows(&kernel, speech.listener, claim),
+            Some(Knowledge {
+                confidence: Confidence::Believed,
+                source: KnowledgeSource::Told {
+                    by: speech.speaker,
+                    via: None,
+                },
+            })
+        );
+        // The yard is inside the hall, but a voice fills a room and not the
+        // district containing it. The speaker's own claim is not implied.
+        for outside in [speech.bystander, speech.stranger, speech.speaker] {
+            assert_eq!(knows(&kernel, outside, claim), None);
+        }
+        assert_eq!(
+            kernel.state.facts[&claim].standing,
+            FactStanding::Claimed { by: speech.speaker }
+        );
+        // The utterance has exactly one home: a label is a name, not a
+        // transcript.
+        assert_ne!(kernel.state.entities[&claim].label, "Mind the hinge.");
+    }
+
+    /// Co-location is the exact place; a channel's `Reach::Place` is the
+    /// subtree, through the same containment walk a jurisdiction uses.
+    #[test]
+    fn co_location_reach_is_the_exact_place_and_a_channel_place_is_the_subtree() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "Reach");
+        utter(
+            &mut kernel,
+            &active,
+            speech.speaker,
+            say(
+                speech.proclaim,
+                vec![binding("channel", Target::Entity(speech.horn))],
+                "The horn carries.",
+            ),
+        )
+        .expect("the proclamation commits");
+        let broadcast = minted_claim(&kernel);
+        assert!(knows(&kernel, speech.listener, broadcast).is_some());
+        assert!(knows(&kernel, speech.bystander, broadcast).is_some());
+        assert_eq!(knows(&kernel, speech.stranger, broadcast), None);
+
+        // The same speaker's voice reaches only the hall.
+        let active = kernel.snapshot().unwrap();
+        utter(
+            &mut kernel,
+            &active,
+            speech.speaker,
+            say(
+                speech.whisper,
+                vec![binding("target", Target::Subject(speech.listener))],
+                "A voice does not.",
+            ),
+        )
+        .expect("the whisper commits");
+        let voiced = minted_claim(&kernel);
+        assert!(knows(&kernel, speech.listener, voiced).is_some());
+        assert_eq!(knows(&kernel, speech.bystander, voiced), None);
+
+        // Moving the bystander up the stair puts it in both audiences.
+        let active = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::Relocate {
+                subject: Ref::Existing(speech.bystander),
+                via: Ref::Existing(speech.stair),
+            }]),
+        );
+        let active = kernel.snapshot().unwrap();
+        utter(
+            &mut kernel,
+            &active,
+            speech.speaker,
+            say(
+                speech.whisper,
+                vec![binding("target", Target::Subject(speech.bystander))],
+                "Now you hear it.",
+            ),
+        )
+        .expect("the whisper commits");
+        assert!(knows(&kernel, speech.bystander, minted_claim(&kernel)).is_some());
+    }
+
+    /// The delta of a telling is a property of the world, not a defect in the
+    /// proposal: speaking alone commits the claim and the event and lands
+    /// nothing.
+    #[test]
+    fn speaking_into_an_empty_room_commits_the_claim_and_lands_nothing() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "EmptyRoom");
+        let knowledge_before = kernel.state.knowledge.clone();
+        utter(
+            &mut kernel,
+            &active,
+            speech.bystander,
+            say(
+                speech.whisper,
+                vec![binding("target", Target::Subject(speech.bystander))],
+                "Nobody is here.",
+            ),
+        )
+        .expect("speech into an empty room commits");
+
+        assert_eq!(kernel.state.knowledge, knowledge_before);
+        assert_eq!(kernel.state.events.len(), 1);
+        assert_eq!(
+            spoken(&kernel.state, kernel.state.events.last().unwrap()),
+            Some("Nobody is here.")
+        );
+        assert_eq!(
+            kernel
+                .state
+                .facts
+                .values()
+                .filter(|record| matches!(record.standing, FactStanding::Claimed { .. }))
+                .count(),
+            1
+        );
+    }
+
+    /// The horn belongs to the temple: its controller may speak on it whether
+    /// or not it stands inside its reach, and removing the controller flips the
+    /// same invocation to exactly one named failure.
+    #[test]
+    fn a_channel_controller_may_speak_outside_its_own_reach() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "Controller");
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::SetReach {
+                channel: Ref::Existing(speech.horn),
+                reach: ReachRef::Subjects(BTreeSet::from([Ref::Existing(speech.listener)])),
+            }]),
+        );
+        let proclaim = || {
+            say(
+                speech.proclaim,
+                vec![binding("channel", Target::Entity(speech.horn))],
+                "The horn still carries.",
+            )
+        };
+        let active = kernel.snapshot().unwrap();
+        utter(&mut kernel, &active, speech.speaker, proclaim())
+            .expect("the controller may speak on its own channel");
+
+        let active = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::SetController {
+                channel: Ref::Existing(speech.horn),
+                controller: None,
+            }]),
+        );
+        let active = kernel.snapshot().unwrap();
+        assert_eq!(
+            rejected(utter(&mut kernel, &active, speech.speaker, proclaim())),
+            vec![ActionMismatch::NoAudience { precondition: 0 }]
+        );
+    }
+
+    /// Addressing does not narrow the audience, and a target outside it names
+    /// itself. A target that walked in mid-flight commits, and the whole
+    /// audience receives the telling, not only the addressed subject.
+    #[test]
+    fn an_addressed_subject_outside_the_audience_names_itself() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "Addressing");
+        let whisper = || {
+            say(
+                speech.whisper,
+                vec![binding("target", Target::Subject(speech.bystander))],
+                "Come inside.",
+            )
+        };
+        assert_eq!(
+            rejected(utter(&mut kernel, &active, speech.speaker, whisper())),
+            vec![ActionMismatch::CannotReach { precondition: 0 }]
+        );
+
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::Relocate {
+                subject: Ref::Existing(speech.bystander),
+                via: Ref::Existing(speech.stair),
+            }]),
+        );
+        let active = kernel.snapshot().unwrap();
+        utter(&mut kernel, &active, speech.speaker, whisper())
+            .expect("the addressed subject is now in the room");
+        let claim = minted_claim(&kernel);
+        assert!(knows(&kernel, speech.bystander, claim).is_some());
+        assert!(
+            knows(&kernel, speech.listener, claim).is_some(),
+            "speaking to someone in a room is heard by the room"
+        );
+    }
+
+    /// `Knows` compares confidence with one `>=`, and `Forget` removes the key
+    /// rather than storing a zero.
+    #[test]
+    fn knows_fails_below_its_confidence_and_forget_removes() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "Knows");
+        let recant = || DecisionInvocation {
+            affordance: speech.recant,
+            bindings: vec![binding("fact", Target::Entity(speech.flood))],
+            proposed: vec![ProposedEffect {
+                slot: 0,
+                magnitude: Magnitude::None,
+            }],
+            speech: None,
+        };
+        assert_eq!(
+            rejected(utter(&mut kernel, &active, speech.listener, recant())),
+            vec![ActionMismatch::FactUnknown { precondition: 0 }]
+        );
+
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::AcquireKnowledge {
+                subject: Ref::Existing(speech.listener),
+                fact: Ref::Existing(speech.flood),
+                source: AuthoredSource::Witnessed,
+                confidence: Confidence::Believed,
+            }]),
+        );
+        let active = kernel.snapshot().unwrap();
+        assert_eq!(
+            rejected(utter(&mut kernel, &active, speech.listener, recant())),
+            vec![ActionMismatch::FactUnknown { precondition: 0 }],
+            "Believed falls short of Certain"
+        );
+
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![acquire(
+                speech.listener,
+                speech.flood,
+                AuthoredSource::Witnessed,
+            )]),
+        );
+        let active = kernel.snapshot().unwrap();
+        utter(&mut kernel, &active, speech.listener, recant())
+            .expect("certainty admits the recant");
+        // Absence is the one shape of knowing nothing: no empty inner map.
+        assert!(!kernel.state.knowledge.contains_key(&speech.listener));
+
+        let active = kernel.snapshot().unwrap();
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &active,
+                operations(vec![ComponentOp::Forget {
+                    subject: Ref::Existing(speech.listener),
+                    fact: Ref::Existing(speech.flood),
+                }]),
+            ),
+            vec![Mismatch::NoOperationEffect { operation: 0 }]
+        );
+    }
+
+    /// A telling never overwrites and never downgrades: the knower owns its own
+    /// credence.
+    #[test]
+    fn a_telling_never_overwrites_a_holder() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "NoOverwrite");
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![acquire(
+                speech.listener,
+                speech.flood,
+                AuthoredSource::Witnessed,
+            )]),
+        );
+        let before = knows(&kernel, speech.listener, speech.flood);
+        let active = kernel.snapshot().unwrap();
+
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::Communicate {
+                speaker: Ref::Existing(speech.speaker),
+                fact: Ref::Existing(speech.flood),
+                to: AudienceRef::Channel(Ref::Existing(speech.horn)),
+            }]),
+        );
+        assert_eq!(knows(&kernel, speech.listener, speech.flood), before);
+        assert_eq!(
+            knows(&kernel, speech.bystander, speech.flood),
+            Some(Knowledge {
+                confidence: Confidence::Believed,
+                source: KnowledgeSource::Told {
+                    by: speech.speaker,
+                    via: Some(speech.horn),
+                },
+            })
+        );
+    }
+
+    /// Ontology admission: communication reaches only subjects inside the
+    /// channel's reach, and a speaker outside it is not speaking.
+    #[test]
+    fn communicating_from_outside_the_audience_is_rejected() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "OutsideAudience");
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &active,
+                operations(vec![ComponentOp::Communicate {
+                    speaker: Ref::Existing(speech.stranger),
+                    fact: Ref::Existing(speech.flood),
+                    to: AudienceRef::Colocated,
+                }]),
+            ),
+            vec![Mismatch::SpeakerOutsideAudience { operation: 0 }]
+        );
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &active,
+                operations(vec![ComponentOp::Communicate {
+                    speaker: Ref::Existing(speech.stranger),
+                    fact: Ref::Existing(speech.flood),
+                    to: AudienceRef::Channel(Ref::Existing(speech.horn)),
+                }]),
+            ),
+            vec![Mismatch::SpeakerOutsideAudience { operation: 0 }]
+        );
+        assert!(kernel.state.knowledge.is_empty());
+    }
+
+    /// The two allocation sites, asserted: only `derive_id` allocates, and the
+    /// action lane's one referent per invocation is reproduced by calling it
+    /// directly with the recorded world, command, handle, and discriminator.
+    #[test]
+    fn every_canonical_id_comes_from_one_of_two_sites() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "Allocation");
+        let world_id = kernel.state.world_id;
+        let command_id = CommandId::new();
+        let opportunity = opportunity_for(&active, speech.speaker);
+        let caller = CallerId::Controller(opportunity.controller_id);
+        let entities_before = kernel.state.entities.len();
+        kernel
+            .submit(
+                command(
+                    &active,
+                    command_id,
+                    caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        opportunity,
+                        invocation: say(
+                            speech.whisper,
+                            vec![binding("target", Target::Subject(speech.listener))],
+                            "Counted.",
+                        ),
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .expect("the whisper commits");
+
+        let claim = minted_claim(&kernel);
+        assert_eq!(
+            claim,
+            EntityId(patch::derive_id(
+                patch::ENTITY_NAMESPACE,
+                world_id,
+                command_id,
+                &DraftHandle::new("ghostlight.speech"),
+                Some("0"),
+            ))
+        );
+        // Exactly one referent, always a fact, always claimed by the actor.
+        assert_eq!(kernel.state.entities.len(), entities_before + 1);
+        assert_eq!(kernel.state.entities[&claim].kind, EntityKind::Fact);
+        assert_eq!(
+            kernel.state.facts[&claim].standing,
+            FactStanding::Claimed { by: speech.speaker }
+        );
+    }
+
+    /// Replay is exact because every allocation derives from committed inputs
+    /// and every fan-out is re-derived at apply from the audience plus live
+    /// state.
+    #[test]
+    fn restart_replay_after_speech_is_exact() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (speech, world_id, expected) = {
+            let mut kernel = WorldKernel::create(
+                &path,
+                creation(CommandId::new(), "ReplaySpeech"),
+                &auth_principal(owner()),
+            )
+            .expect("a created world")
+            .0;
+            let (speech, active) = speech_world(&mut kernel);
+            utter(
+                &mut kernel,
+                &active,
+                speech.speaker,
+                say(
+                    speech.proclaim,
+                    vec![binding("channel", Target::Entity(speech.horn))],
+                    "One.",
+                ),
+            )
+            .expect("the first proclamation commits");
+            let active = kernel.snapshot().unwrap();
+            utter(
+                &mut kernel,
+                &active,
+                speech.listener,
+                say(
+                    speech.whisper,
+                    vec![binding("target", Target::Subject(speech.speaker))],
+                    "Two.",
+                ),
+            )
+            .expect("the whisper commits");
+            let active = kernel.snapshot().unwrap();
+            submit_owner(
+                &mut kernel,
+                &active,
+                operations(vec![ComponentOp::Communicate {
+                    speaker: Ref::Existing(speech.speaker),
+                    fact: Ref::Existing(speech.flood),
+                    to: AudienceRef::Channel(Ref::Existing(speech.horn)),
+                }]),
+            );
+            let world_id = kernel.state.world_id;
+            (speech, world_id, kernel.state.clone())
+        };
+
+        let reopened = WorldKernel::open(&path, world_id).expect("the store replays");
+        assert_eq!(reopened.state.facts, expected.facts);
+        assert_eq!(reopened.state.channels, expected.channels);
+        assert_eq!(reopened.state.knowledge, expected.knowledge);
+        assert_eq!(reopened.state.events, expected.events);
+        assert_eq!(reopened.state, expected);
+        assert!(!reopened.state.knowledge[&speech.bystander].is_empty());
+    }
+
+    /// A forged claim does not apply, and a forged recipient list is
+    /// unrepresentable: `ResolvedOp::Communicate` stores an audience, never
+    /// recipients.
+    #[test]
+    fn a_forged_claim_or_forged_recipient_does_not_apply() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "Forgery");
+        let command_id = CommandId::new();
+        let opportunity = opportunity_for(&active, speech.speaker);
+        let caller = CallerId::Controller(opportunity.controller_id);
+        let invocation = say(
+            speech.proclaim,
+            vec![binding("channel", Target::Entity(speech.horn))],
+            "Honest.",
+        );
+        let granted = require_granted(&kernel.state, &opportunity, invocation.affordance).unwrap();
+        let honest = action::exercise(
+            &kernel.state,
+            command_id,
+            &opportunity,
+            &granted,
+            &invocation,
+        )
+        .expect("the honest event derives");
+        let fact = honest.speech.expect("the honest claim");
+
+        let mut forged_claim = honest.clone();
+        forged_claim.speech = Some(speech.flood);
+        let mut forged_statement = honest.clone();
+        forged_statement.effects[0] = ResolvedOp::AssertClaim {
+            fact,
+            statement: Statement::new("Forged.").unwrap(),
+            by: speech.speaker,
+        };
+        let mut forged_asserter = honest.clone();
+        forged_asserter.effects[0] = ResolvedOp::AssertClaim {
+            fact,
+            statement: Statement::new("Honest.").unwrap(),
+            by: speech.listener,
+        };
+        for forged in [forged_claim, forged_statement, forged_asserter] {
+            let mut candidate = kernel.state.clone();
+            let error = apply_effect(
+                &mut candidate,
+                command_id,
+                &caller,
+                &WorldEffect::DecisionExercised {
+                    opportunity: opportunity.clone(),
+                    invocation: invocation.clone(),
+                    event: forged,
+                },
+            )
+            .unwrap_err();
+            assert!(matches!(error, KernelError::Invariant(_)));
+            assert_eq!(candidate, kernel.state);
+        }
+
+        // A recipient list cannot be forged because none is stored.
+        assert!(matches!(
+            honest.effects[1],
+            ResolvedOp::Communicate {
+                to: Audience::Channel(_),
+                ..
+            }
+        ));
+        let mut candidate = kernel.state.clone();
+        apply_effect(
+            &mut candidate,
+            command_id,
+            &caller,
+            &WorldEffect::DecisionExercised {
+                opportunity,
+                invocation,
+                event: honest,
+            },
+        )
+        .expect("the honest event applies");
+        assert!(candidate.knowledge.contains_key(&speech.listener));
+    }
+
+    /// The scope table: a telling rebinds its listener and leaves a bystander
+    /// alone, and a reach change moves only the controller's digest.
+    #[test]
+    fn a_telling_moves_only_the_listeners_scope() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, speech, active) = speech_kernel(directory.path(), "ScopeMove");
+        let digest = |kernel: &WorldKernel, subject: SubjectId| {
+            scope_digest(
+                &kernel.state,
+                DecisionScope {
+                    subject_id: subject,
+                },
+            )
+            .unwrap()
+        };
+        let listener_before = digest(&kernel, speech.listener);
+        let bystander_before = digest(&kernel, speech.bystander);
+
+        utter(
+            &mut kernel,
+            &active,
+            speech.speaker,
+            say(
+                speech.whisper,
+                vec![binding("target", Target::Subject(speech.listener))],
+                "Only you.",
+            ),
+        )
+        .expect("the whisper commits");
+        assert_ne!(digest(&kernel, speech.listener), listener_before);
+        assert_eq!(digest(&kernel, speech.bystander), bystander_before);
+
+        // Reach membership is admission-only: adding a hearer moves the
+        // controller's digest and nobody else's.
+        let active = kernel.snapshot().unwrap();
+        let hearer_before = digest(&kernel, speech.listener);
+        let speaker_before = digest(&kernel, speech.speaker);
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::SetReach {
+                channel: Ref::Existing(speech.horn),
+                reach: ReachRef::Subjects(BTreeSet::from([Ref::Existing(speech.stranger)])),
+            }]),
+        );
+        assert_eq!(digest(&kernel, speech.listener), hearer_before);
+        assert_ne!(digest(&kernel, speech.speaker), speaker_before);
+    }
+
+    /// A speech-carrying entry names exactly one audience: none is unlowerable
+    /// and two is unchoosable. Each rejection allocates no `AffordanceId`.
+    #[test]
+    fn a_speech_carrying_entry_must_declare_exactly_one_audience() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            creation(CommandId::new(), "SpeechAudience"),
+            &auth_principal(owner()),
+        )
+        .expect("a draft world")
+        .0;
+        let before = kernel.snapshot().unwrap();
+        let catalog_before = kernel.state.affordance_catalog.len();
+        let declare = |preconditions: Vec<Precondition>| CommandBody::AdmitPatch {
+            answers: None,
+            patch: WorldPatch {
+                declarations: vec![Declaration::Affordance(AffordanceDeclaration {
+                    handle: DraftHandle::new("herald"),
+                    kind: AffordanceKindName("herald".into()),
+                    roles: Vec::new(),
+                    preconditions,
+                    effect_slots: Vec::new(),
+                    outcome_bands: vec![OutcomeBand {
+                        weight: 1,
+                        effects: Vec::new(),
+                    }],
+                    carries_speech: true,
+                })],
+                operations: Vec::new(),
+                evidence: Vec::new(),
+            },
+        };
+        assert_eq!(
+            reject_owner(&mut kernel, &before, declare(Vec::new())),
+            vec![Mismatch::SpeechWithoutAudience {
+                handle: DraftHandle::new("herald"),
+            }]
+        );
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &before,
+                declare(vec![
+                    Precondition::CanBroadcast {
+                        via: AudienceSpec::Colocated,
+                    },
+                    Precondition::CanBroadcast {
+                        via: AudienceSpec::Colocated,
+                    },
+                ]),
+            ),
+            vec![Mismatch::AmbiguousSpeechAudience {
+                handle: DraftHandle::new("herald"),
+            }]
+        );
+        assert_eq!(kernel.state.affordance_catalog.len(), catalog_before);
+    }
+
+    /// The kernel does not compare two statements: no dedup, no interning, no
+    /// contradiction check, no similarity. A claim byte-identical to a
+    /// canonical fact and one that plainly negates it commit identically.
+    #[test]
+    fn the_kernel_never_compares_two_statements() {
+        let directory = tempfile::tempdir().unwrap();
+        let run = |name: &str, text: &str| {
+            let room = directory.path().join(name);
+            std::fs::create_dir_all(&room).unwrap();
+            let (mut kernel, speech, active) = speech_kernel(&room, name);
+            let receipt = utter(
+                &mut kernel,
+                &active,
+                speech.speaker,
+                say(
+                    speech.whisper,
+                    vec![binding("target", Target::Subject(speech.listener))],
+                    text,
+                ),
+            )
+            .expect("both statements commit identically");
+            assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+            let event = kernel.state.events.last().unwrap().clone();
+            (kernel, speech, event)
+        };
+        let (agreeing, agreeing_speech, agreeing_event) = run("agree", FLOOD_STATEMENT);
+        let (negating, _, negating_event) = run("negate", "The lower hinge is dry.");
+
+        assert_eq!(agreeing_event.band, negating_event.band);
+        assert_eq!(agreeing_event.effects.len(), negating_event.effects.len());
+        assert_eq!(agreeing.state.facts.len(), negating.state.facts.len());
+        // Two facts with byte-identical statements are two facts: the claim is
+        // not the canonical fact it repeats, and neither run learned anything
+        // about the other's meaning.
+        let claim = agreeing_event.speech.unwrap();
+        assert_ne!(claim, agreeing_speech.flood);
+        assert_eq!(
+            agreeing.state.facts[&claim].statement,
+            agreeing.state.facts[&agreeing_speech.flood].statement
+        );
+        assert_ne!(
+            agreeing.state.facts[&claim].standing,
+            agreeing.state.facts[&agreeing_speech.flood].standing
+        );
     }
 }

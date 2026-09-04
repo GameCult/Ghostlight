@@ -7,11 +7,11 @@
 //! affordance fields.
 
 use crate::world::{
-    AffordanceId, AffordanceSnapshot, AuthorityGrant, Bounds, CommandId, CommitReceipt,
+    AffordanceId, AffordanceSnapshot, AuthorityGrant, Bounds, CommandId, CommitReceipt, Confidence,
     ControllerMode, Cost, DecisionInvocation, DecisionOpportunity, DependencyTarget, EdgeId,
-    EntityId, EntityKind, KernelError, Magnitude, MailboxError, OfficeSnapshot, ProposedEffect,
-    Quantity, RefKind, RoleBinding, SubjectId, SubjectSnapshot, SubmitReceipt, Target, Utterance,
-    WorldMailbox, WorldSnapshot,
+    EntityId, EntityKind, FactStandingView, KernelError, KnowledgeSnapshot, KnowledgeSource,
+    Magnitude, MailboxError, OfficeSnapshot, ProposedEffect, Quantity, RefKind, RoleBinding,
+    Statement, SubjectId, SubjectSnapshot, SubmitReceipt, Target, WorldMailbox, WorldSnapshot,
 };
 use async_trait::async_trait;
 use chrono::Utc;
@@ -46,8 +46,8 @@ const MAX_CONNECTOR_FRAME_BYTES: usize = 1_052_672;
 const REQUEST_EXPIRY: Duration = Duration::from_secs(300);
 const TOOL_STEP_BUDGET: usize = 4;
 const PERSONA_WORD_BUDGET: usize = 180;
-const CONTROLLER_WORK_ROW: &str = "controller_work.v4";
-const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v4";
+const CONTROLLER_WORK_ROW: &str = "controller_work.v5";
+const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v5";
 
 /// The Interpreter's byte-span capture tool. It is not the generated `speak`
 /// affordance tool: one captures an utterance out of preserved prose, the other
@@ -2607,7 +2607,8 @@ impl SelectedDecision {
             "offices_held": Self::typed_offices(&self.subject.offices_held),
             "offices_granted": Self::typed_offices(&self.subject.offices_granted),
             "redress": self.typed_redress(),
-            "visible_events": self.typed_visible_events(),
+            "knowledge": self.typed_knowledge(),
+            "channels": self.typed_channels(),
         }))
         .map_err(|error| ControllerError::Serialization(error.to_string()))
     }
@@ -2740,51 +2741,75 @@ impl SelectedDecision {
     }
 
     fn visible_stimulus(&self) -> Result<String, ControllerError> {
-        serde_json::to_string_pretty(&self.projector_visible_events()?)
+        serde_json::to_string_pretty(&self.projector_knowledge())
             .map_err(|error| ControllerError::Serialization(error.to_string()))
     }
 
-    /// Only spoken events. What one subject perceives of another's action is a
-    /// `Knowledge` question and has no component yet; rendering every action
-    /// here would decide that every subject perceives everything.
-    fn typed_visible_events(&self) -> Vec<Value> {
-        self.snapshot
-            .events
+    /// The acting subject's own knowledge, and nothing else. A subject perceives
+    /// a speech act if and only if it holds `Knowledge` of that act's fact, so
+    /// this is a renderer over one kernel-derived field rather than a walk that
+    /// decides reach a second time. Confidence reaches the Projector as prose
+    /// uncertainty, which makes the prompt's instruction a description of the
+    /// surface instead of its enforcement.
+    fn projector_knowledge(&self) -> Vec<Value> {
+        self.subject
+            .knowledge
             .iter()
-            .filter_map(|event| {
-                event.invocation.speech.as_ref().map(|text| {
-                    json!({
-                        "revision": event.revision,
-                        "speaker_subject_id": event.scope.subject_id,
-                        "text": text.as_str(),
-                    })
+            .map(|entry| {
+                json!({
+                    "speaker": self.speaker_label(entry),
+                    "certainty": entry.confidence,
+                    "text": entry.statement.as_str(),
                 })
             })
             .collect()
     }
 
-    fn projector_visible_events(&self) -> Result<Vec<Value>, ControllerError> {
-        self.snapshot
-            .events
+    /// Attribution comes from the listener's own knowledge, never from an event
+    /// scope: a subject that holds a fact it was never told sees the statement
+    /// with no speaker, because it knows the thing and not the telling. A label
+    /// is resolved only for a subject that spoke to this one.
+    fn speaker_label(&self, entry: &KnowledgeSnapshot) -> Value {
+        match entry.source {
+            KnowledgeSource::Told { by, .. } => self
+                .snapshot
+                .subjects
+                .iter()
+                .find(|subject| subject.id == by)
+                .map_or(Value::Null, |subject| Value::String(subject.label.clone())),
+            KnowledgeSource::Witnessed | KnowledgeSource::Evidenced => Value::Null,
+        }
+    }
+
+    fn typed_knowledge(&self) -> Vec<Value> {
+        self.subject
+            .knowledge
             .iter()
-            .filter_map(|event| event.invocation.speech.as_ref().map(|text| (event, text)))
-            .map(|(event, text)| {
-                let speaker = self
-                    .snapshot
-                    .subjects
-                    .iter()
-                    .find(|subject| subject.id == event.scope.subject_id)
-                    .map(|subject| subject.label.as_str())
-                    .ok_or_else(|| {
-                        ControllerError::Serialization(
-                            "visible event speaker is absent from the canonical snapshot".into(),
-                        )
-                    })?;
-                Ok(json!({
-                    "speaker": speaker,
-                    "text": text.as_str(),
-                }))
+            .map(|entry| {
+                json!({
+                    "fact": entry.fact,
+                    "statement": entry.statement.as_str(),
+                    "standing": match entry.standing {
+                        FactStandingView::Canonical => json!({"standing": "canonical"}),
+                        FactStandingView::Claimed { by } => {
+                            json!({"standing": "claimed", "by": by})
+                        }
+                    },
+                    "confidence": entry.confidence,
+                    "source": entry.source,
+                    "spoken_at": entry.spoken_at,
+                })
             })
+            .collect()
+    }
+
+    /// Only the channels this subject controls, by id. Who else is in reach is a
+    /// question about other subjects, so no reach set is carried.
+    fn typed_channels(&self) -> Vec<Value> {
+        self.subject
+            .controls
+            .iter()
+            .map(|channel| json!({"id": channel}))
             .collect()
     }
 }
@@ -2799,7 +2824,7 @@ fn speak_invocation(
         .iter()
         .find(|entry| entry.entry.kind.0 == SPEAK_KIND)
         .ok_or(ControllerError::SpeakUnavailable)?;
-    let speech = Utterance::new(text).ok_or_else(|| {
+    let speech = Statement::new(text).ok_or_else(|| {
         ControllerError::Serialization("Persona proposal is not canonical utterance text".into())
     })?;
     Ok(DecisionInvocation {
@@ -3672,7 +3697,7 @@ fn decode_catalog_call(
             .get("text")
             .and_then(Value::as_str)
             .ok_or_else(|| "`text` is missing or not a string".to_owned())?;
-        Some(Utterance::new(text).ok_or_else(|| "`text` is not canonical".to_owned())?)
+        Some(Statement::new(text).ok_or_else(|| "`text` is not canonical".to_owned())?)
     } else {
         None
     };
@@ -3745,7 +3770,7 @@ mod tests {
     }
     use crate::world::{
         AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, ControllerId, CreateWorld,
-        DecisionScope, Declaration, DraftHandle, EventId, NewController, PrincipalId, ScopeDigest,
+        DecisionScope, Declaration, DraftHandle, NewController, PrincipalId, ScopeDigest,
         SubjectDeclaration, SubjectKind, WorldId, WorldPatch, WorldPhase,
     };
     use std::{
@@ -3910,6 +3935,10 @@ mod tests {
             controller_mode: ControllerMode::NarrativePersona,
             affordance_ids: vec![speak_affordance],
         };
+        // Mara was told. Iris also holds a fact of her own that Mara was never
+        // told, and no surface of Mara's may carry it.
+        let heard = EntityId::issue();
+        let unheard = EntityId::issue();
         let actor = SubjectSnapshot {
             id: actor_id,
             label: "Mara at the rain gate".into(),
@@ -3926,6 +3955,18 @@ mod tests {
             offices_held: Vec::new(),
             offices_granted: Vec::new(),
             redress: Vec::new(),
+            knowledge: vec![KnowledgeSnapshot {
+                fact: heard,
+                statement: Statement::new("The lower hinge is flooding.").unwrap(),
+                standing: FactStandingView::Claimed { by: speaker_id },
+                confidence: Confidence::Believed,
+                source: KnowledgeSource::Told {
+                    by: speaker_id,
+                    via: None,
+                },
+                spoken_at: Some(40),
+            }],
+            controls: BTreeSet::new(),
         };
         let speaker = SubjectSnapshot {
             id: speaker_id,
@@ -3943,6 +3984,15 @@ mod tests {
             offices_held: Vec::new(),
             offices_granted: Vec::new(),
             redress: Vec::new(),
+            knowledge: vec![KnowledgeSnapshot {
+                fact: unheard,
+                statement: Statement::new("The tollhouse ledger is short.").unwrap(),
+                standing: FactStandingView::Canonical,
+                confidence: Confidence::Certain,
+                source: KnowledgeSource::Witnessed,
+                spoken_at: None,
+            }],
+            controls: BTreeSet::new(),
         };
         let snapshot = WorldSnapshot {
             world_id: opportunity.world_id,
@@ -3957,22 +4007,6 @@ mod tests {
             places: Vec::new(),
             resources: Vec::new(),
             routes: Vec::new(),
-            events: vec![crate::world::DecisionEvent {
-                id: EventId::for_command(CommandId::new()),
-                revision: 40,
-                scope: DecisionScope {
-                    subject_id: speaker_id,
-                },
-                controller_id: speaker_controller,
-                invocation: DecisionInvocation {
-                    affordance: AffordanceId::issue(),
-                    bindings: Vec::new(),
-                    proposed: Vec::new(),
-                    speech: Some(Utterance::new("The lower hinge is flooding.").unwrap()),
-                },
-                band: 0,
-                effects: Vec::new(),
-            }],
             opportunities: vec![opportunity.clone()],
             state_digest: "sha256:projector-must-not-see-this-digest".into(),
             last_commit_digest: Some("sha256:projector-must-not-see-the-commit".into()),
@@ -4003,14 +4037,112 @@ mod tests {
             );
         }
         assert!(projector_surface.contains("Mara at the rain gate"));
+        // The speaker's label is resolved because Mara was told by her, and the
+        // statement appears because Mara holds it. Iris's own unheard fact does
+        // not: a subject's view carries its own knowledge and no one else's.
         assert!(projector_surface.contains("Iris in the tollhouse"));
         assert!(projector_surface.contains("The lower hinge is flooding."));
+        assert!(!projector_surface.contains("The tollhouse ledger is short."));
 
         let operational_surface = selected.typed_view().unwrap();
         assert!(operational_surface.contains("state_digest"));
-        assert!(operational_surface.contains("speaker_subject_id"));
+        assert!(operational_surface.contains("The lower hinge is flooding."));
+        assert!(!operational_surface.contains("The tollhouse ledger is short."));
     }
 
+    /// Verification 5, second half, over real committed state: a subject
+    /// perceives a speech act if and only if it holds `Knowledge` of that act's
+    /// fact. The speaker speaks in the hall; the listener perceives it, the
+    /// bystander one containment level down does not, the placeless stranger
+    /// does not, and no surface of any of the three carries the utterance bytes
+    /// except the listener's.
+    #[test]
+    fn a_subject_does_not_perceive_speech_it_was_not_in_reach_of() {
+        use crate::world::tests::{auth_principal, command, opportunity_for, owner, speech_world};
+        use crate::world::{
+            AuthenticatedCaller, DecisionInvocation, Role, RoleBinding, Statement, SubmitReceipt,
+            Target, WorldKernel,
+        };
+
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = WorldKernel::create(
+            directory.path().join("world.cc"),
+            crate::world::tests::creation(CommandId::new(), "Leakage"),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0;
+        let (speech, active) = speech_world(&mut kernel);
+        let utterance = "The lower hinge is flooding tonight.";
+        let opportunity = opportunity_for(&active, speech.speaker);
+        let caller = CallerId::Controller(opportunity.controller_id);
+        let receipt = kernel
+            .submit(
+                command(
+                    &active,
+                    CommandId::new(),
+                    caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        opportunity,
+                        invocation: DecisionInvocation {
+                            affordance: speech.whisper,
+                            bindings: vec![RoleBinding {
+                                role: Role("target".into()),
+                                target: Target::Subject(speech.listener),
+                            }],
+                            proposed: Vec::new(),
+                            speech: Some(Statement::new(utterance).unwrap()),
+                        },
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .expect("the whisper commits");
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+
+        let snapshot = kernel.snapshot().unwrap();
+        let surfaces = |subject_id| {
+            let subject = snapshot
+                .subjects
+                .iter()
+                .find(|subject| subject.id == subject_id)
+                .expect("the subject")
+                .clone();
+            let opportunity = opportunity_for(&snapshot, subject_id);
+            let granted: Vec<AffordanceSnapshot> = snapshot
+                .affordances
+                .iter()
+                .filter(|entry| subject.affordances.contains(&entry.id))
+                .cloned()
+                .collect();
+            let selected = SelectedDecision {
+                snapshot: snapshot.clone(),
+                subject,
+                opportunity,
+                granted,
+            };
+            format!(
+                "{}\n{}\n{}",
+                selected.projector_context().unwrap(),
+                selected.visible_stimulus().unwrap(),
+                selected.typed_view().unwrap(),
+            )
+        };
+
+        assert!(surfaces(speech.listener).contains(utterance));
+        for deaf in [speech.bystander, speech.stranger, speech.speaker] {
+            assert!(
+                !surfaces(deaf).contains(utterance),
+                "a subject perceived speech it holds no knowledge of"
+            );
+        }
+        // The listener sees who told it, and nothing about anyone else's
+        // knowledge, holdings, or position.
+        let heard = surfaces(speech.listener);
+        assert!(heard.contains("The Hall Speaker"));
+        assert!(!heard.contains("The Yard Bystander"));
+        assert!(!heard.contains("The Placeless Stranger"));
+    }
     /// Soul falsification: the typed view carries the acting subject's own place
     /// and the routes incident to it, and no more. Another subject's position
     /// and a route that touches neither endpoint stay out of the surface.
@@ -4066,6 +4198,8 @@ mod tests {
             offices_held: Vec::new(),
             offices_granted: Vec::new(),
             redress: Vec::new(),
+            knowledge: Vec::new(),
+            controls: BTreeSet::new(),
         };
         let other = SubjectSnapshot {
             id: other_id,
@@ -4083,6 +4217,8 @@ mod tests {
             offices_held: Vec::new(),
             offices_granted: Vec::new(),
             redress: Vec::new(),
+            knowledge: Vec::new(),
+            controls: BTreeSet::new(),
         };
         let named_place = |id, label: &str| PlaceSnapshot {
             id,
@@ -4118,7 +4254,6 @@ mod tests {
                 named_route(first_edge, "The Yard Ramp", yard, road),
                 named_route(second_edge, "The Vault Stair", road, vault),
             ],
-            events: Vec::new(),
             opportunities: vec![opportunity.clone()],
             state_digest: "sha256:state".into(),
             last_commit_digest: None,
@@ -4660,14 +4795,25 @@ mod tests {
                     owner: owner.clone(),
                     title: "Controller Fixture".into(),
                     patch: WorldPatch {
-                        declarations: vec![Declaration::Subject(SubjectDeclaration {
-                            handle: DraftHandle::new("subject"),
-                            label: "Subject".into(),
-                            kind: SubjectKind::Person,
-                            controller,
-                            affordances: kernel_speak_grant(),
-                            position: None,
-                        })],
+                        declarations: vec![
+                            Declaration::Entity(crate::world::EntityDeclaration {
+                                handle: DraftHandle::new("commons"),
+                                label: "The Commons".into(),
+                                kind: EntityKind::Place,
+                                container: None,
+                            }),
+                            Declaration::Subject(SubjectDeclaration {
+                                handle: DraftHandle::new("subject"),
+                                label: "Subject".into(),
+                                kind: SubjectKind::Person,
+                                controller,
+                                affordances: kernel_speak_grant(),
+                                // Speech needs a room to fill.
+                                position: Some(crate::world::Ref::Draft(DraftHandle::new(
+                                    "commons",
+                                ))),
+                            }),
+                        ],
                         operations: Vec::new(),
                         evidence: Vec::new(),
                     },
@@ -4816,7 +4962,7 @@ mod tests {
             replayed.submission,
             SubmissionDisposition::PreviouslyConfirmed(_)
         ));
-        assert_eq!(mailbox.snapshot().await.unwrap().events.len(), 1);
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), 1);
         drop(runner);
         drop(mailbox);
         task.await.unwrap();
@@ -4875,7 +5021,7 @@ mod tests {
             replayed.submission,
             SubmissionDisposition::PreviouslyConfirmed(_)
         ));
-        assert_eq!(mailbox.snapshot().await.unwrap().events.len(), 1);
+        assert_eq!(mailbox.operator_log().await.unwrap().len(), 1);
         drop(runner);
         drop(mailbox);
         task.await.unwrap();
@@ -4943,7 +5089,7 @@ mod tests {
         assert_eq!(applied.resulting_revision, opportunity.revision + 1);
         let after = mailbox.snapshot().await.unwrap();
         assert_eq!(after.revision, opportunity.revision + 1);
-        assert!(after.events.is_empty());
+        assert!(mailbox.operator_log().await.unwrap().is_empty());
         let refreshed = after.opportunities[0].clone();
         assert_ne!(refreshed, opportunity);
         assert_eq!(refreshed.scope_digest, opportunity.scope_digest);
@@ -5032,7 +5178,7 @@ mod tests {
         assert_eq!(applied.resulting_revision, opportunity.revision + 1);
         let after = mailbox.snapshot().await.unwrap();
         assert_eq!(after.revision, opportunity.revision + 1);
-        assert!(after.events.is_empty());
+        assert!(mailbox.operator_log().await.unwrap().is_empty());
 
         let OperationalRun::Completed(replayed) = runner
             .run_operational(command_id, &opportunity)
@@ -5204,16 +5350,9 @@ mod tests {
             derive_narrative_capture(turn, interpreter_prompt, completed).unwrap(),
             captured
         );
-        let snapshot = mailbox.snapshot().await.unwrap();
-        assert_eq!(snapshot.events.len(), 1);
-        assert_eq!(
-            snapshot.events[0]
-                .invocation
-                .speech
-                .as_ref()
-                .map(Utterance::as_str),
-            Some(speech)
-        );
+        let log = mailbox.operator_log().await.unwrap();
+        assert_eq!(log.len(), 1);
+        assert_eq!(log[0].speech.as_ref().map(Statement::as_str), Some(speech));
 
         drop(reopened_terminal);
         drop(mailbox);
@@ -5374,7 +5513,7 @@ mod tests {
                             affordance: human_speak,
                             bindings: Vec::new(),
                             proposed: Vec::new(),
-                            speech: Some(Utterance::new(seed).unwrap()),
+                            speech: Some(Statement::new(seed).unwrap()),
                         },
                     },
                 },
@@ -5395,8 +5534,9 @@ mod tests {
         .unwrap();
 
         snapshot = mailbox.snapshot().await.unwrap();
-        assert!(snapshot.events.len() == 1);
-        let seeded_text = snapshot.events[0].invocation.speech.as_ref().unwrap();
+        let log = mailbox.operator_log().await.unwrap();
+        assert!(log.len() == 1);
+        let seeded_text = log[0].speech.as_ref().unwrap();
         assert!(seeded_text.as_str().as_bytes() == seed.as_bytes());
         let narrative_subject = snapshot
             .subjects
@@ -5495,14 +5635,14 @@ mod tests {
         assert!(interpreter_speak.source_end_byte == narrative_span.end_byte);
 
         snapshot = mailbox.snapshot().await.unwrap();
-        assert!(snapshot.events.len() == 2);
+        let log = mailbox.operator_log().await.unwrap();
+        assert!(log.len() == 2);
         assert!(snapshot.revision == narrative_opportunity.revision + 1);
-        let narrative_event = snapshot
-            .events
+        let narrative_event = log
             .iter()
-            .find(|event| event.controller_id == narrative_subject.controller_id)
+            .find(|event| event.speaker == narrative_subject.id)
             .unwrap();
-        let committed_narrative_speech = narrative_event.invocation.speech.as_ref().unwrap();
+        let committed_narrative_speech = narrative_event.speech.as_ref().unwrap();
         assert!(committed_narrative_speech.as_str().as_bytes() == narrative_speech.as_bytes());
 
         let operational_subject = snapshot
@@ -5567,14 +5707,14 @@ mod tests {
         assert!(operational_speak.text.as_bytes() == operational_speech.as_bytes());
 
         snapshot = mailbox.snapshot().await.unwrap();
-        assert!(snapshot.events.len() == 3);
+        let log = mailbox.operator_log().await.unwrap();
+        assert!(log.len() == 3);
         assert!(snapshot.revision == operational_opportunity.revision + 1);
-        let operational_event = snapshot
-            .events
+        let operational_event = log
             .iter()
-            .find(|event| event.controller_id == operational_subject.controller_id)
+            .find(|event| event.speaker == operational_subject.id)
             .unwrap();
-        let committed_operational_speech = operational_event.invocation.speech.as_ref().unwrap();
+        let committed_operational_speech = operational_event.speech.as_ref().unwrap();
         assert!(committed_operational_speech.as_str().as_bytes() == operational_speech.as_bytes());
 
         drop(runner);

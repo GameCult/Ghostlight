@@ -1,15 +1,19 @@
 use super::{
     AuthenticatedCaller, CallerId, CommandBody, CommandEnvelope, CommandId, CreateWorld,
     CreateWorldIntent, CreationReceipt, DecisionInvocation, DecisionOpportunity, Declaration,
-    DraftHandle, KernelError, NewController, PrincipalCommandIntent, PrincipalId,
-    SubjectDeclaration, SubjectKind, SubmitReceipt, WorldKernel, WorldPatch, WorldSnapshot,
-    journal, patch::kernel_speak_grant, prepare_creation,
+    DraftHandle, EntityDeclaration, EntityKind, KernelError, NewController, OperatorEvent,
+    PrincipalCommandIntent, PrincipalId, Ref, SubjectDeclaration, SubjectKind, SubmitReceipt,
+    WorldKernel, WorldPatch, WorldSnapshot, journal, patch::kernel_speak_grant, prepare_creation,
 };
 use crate::app_session::VerifiedPrincipalEvidence;
 use std::path::Path;
 use thiserror::Error;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinHandle;
+
+/// The one place a world starts with, so its first subjects can hear each
+/// other. A world that wants more declares them through the patch lane.
+const GENESIS_PLACE: &str = "commons";
 
 const REQUEST_CAPACITY: usize = 32;
 
@@ -47,6 +51,11 @@ enum Request {
     },
     Snapshot {
         reply: oneshot::Sender<Result<WorldSnapshot, KernelError>>,
+    },
+    /// The human operator's story feed. Separate from `Snapshot` so no
+    /// controller lane can reach an unscoped event log.
+    OperatorLog {
+        reply: oneshot::Sender<Result<Vec<OperatorEvent>, KernelError>>,
     },
     ControllerReceipt {
         command_id: CommandId,
@@ -92,6 +101,9 @@ impl WorldMailbox {
         let principal_id = PrincipalId::new(principal.account_subject_hash());
         // Ingress owns label normalization; the reducer only admits canonical
         // labels.
+        // A world needs a room. Co-located speech fills the place its speaker
+        // stands in, so ingress declares one and stands every genesis subject
+        // there rather than creating a world where nobody can be heard.
         let declare = |handle: &str, label: String, kind, controller| {
             Declaration::Subject(SubjectDeclaration {
                 handle: DraftHandle::new(handle),
@@ -99,17 +111,25 @@ impl WorldMailbox {
                 kind,
                 controller,
                 affordances: kernel_speak_grant(),
-                position: None,
+                position: Some(Ref::Draft(DraftHandle::new(GENESIS_PLACE))),
             })
         };
-        let mut declarations = vec![declare(
-            "first-person",
-            input.human_subject_label,
-            SubjectKind::Person,
-            NewController::Human {
-                principal: principal_id.clone(),
-            },
-        )];
+        let mut declarations = vec![
+            Declaration::Entity(EntityDeclaration {
+                handle: DraftHandle::new(GENESIS_PLACE),
+                label: "The Commons".into(),
+                kind: EntityKind::Place,
+                container: None,
+            }),
+            declare(
+                "first-person",
+                input.human_subject_label,
+                SubjectKind::Person,
+                NewController::Human {
+                    principal: principal_id.clone(),
+                },
+            ),
+        ];
         if let Some(label) = input.narrative_persona_label {
             declarations.push(declare(
                 "narrative-persona",
@@ -306,6 +326,21 @@ impl WorldMailbox {
             .await
     }
 
+    /// The human operator's story feed. It is not a perception surface, and no
+    /// controller lane calls it.
+    pub(crate) async fn operator_log(&self) -> Result<Vec<OperatorEvent>, MailboxError> {
+        let (reply, response) = oneshot::channel();
+        self.sender
+            .send(Request::OperatorLog { reply })
+            .await
+            .map_err(|_| MailboxError::Unavailable)?;
+
+        response
+            .await
+            .map_err(|_| MailboxError::Unavailable)?
+            .map_err(MailboxError::Kernel)
+    }
+
     pub(crate) async fn snapshot(&self) -> Result<WorldSnapshot, MailboxError> {
         let (reply, response) = oneshot::channel();
         self.sender
@@ -472,6 +507,19 @@ async fn run_owner(mut owned: OwnedWorld, mut receiver: mpsc::Receiver<Request>)
                     return;
                 }
             }
+            Request::OperatorLog { reply } => {
+                let result = match &owned {
+                    OwnedWorld::Empty(_) => Err(KernelError::WorldNotCreated),
+                    OwnedWorld::Live(kernel) => kernel.operator_log(),
+                };
+                let owner_must_stop = result
+                    .as_ref()
+                    .is_err_and(KernelError::requires_owner_restart);
+                let _ = reply.send(result);
+                if owner_must_stop {
+                    return;
+                }
+            }
             Request::ControllerReceipt {
                 command_id,
                 opportunity,
@@ -535,16 +583,24 @@ mod tests {
             owner: PrincipalId::new("owner"),
             title: title.into(),
             patch: WorldPatch {
-                declarations: vec![Declaration::Subject(SubjectDeclaration {
-                    handle: DraftHandle::new("operator"),
-                    label: "Operator".into(),
-                    kind: SubjectKind::Person,
-                    controller: NewController::Human {
-                        principal: PrincipalId::new("owner"),
-                    },
-                    affordances: kernel_speak_grant(),
-                    position: None,
-                })],
+                declarations: vec![
+                    Declaration::Entity(EntityDeclaration {
+                        handle: DraftHandle::new(GENESIS_PLACE),
+                        label: "The Commons".into(),
+                        kind: EntityKind::Place,
+                        container: None,
+                    }),
+                    Declaration::Subject(SubjectDeclaration {
+                        handle: DraftHandle::new("operator"),
+                        label: "Operator".into(),
+                        kind: SubjectKind::Person,
+                        controller: NewController::Human {
+                            principal: PrincipalId::new("owner"),
+                        },
+                        affordances: kernel_speak_grant(),
+                        position: Some(Ref::Draft(DraftHandle::new(GENESIS_PLACE))),
+                    }),
+                ],
                 operations: Vec::new(),
                 evidence: Vec::new(),
             },
@@ -627,7 +683,7 @@ mod tests {
         invalid
             .patch
             .declarations
-            .push(invalid.patch.declarations[0].clone());
+            .push(invalid.patch.declarations[1].clone());
         let Err(MailboxError::Kernel(KernelError::PatchRejected(rejected))) =
             mailbox.create_fixture(invalid, &authenticated).await
         else {
@@ -919,6 +975,8 @@ mod tests {
         let (mailbox, _task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
         let owner = PrincipalId::new("owner");
         let authenticated = authenticated_owner();
+        // Two rooms, not one: a telling reaches its own room, so the bound
+        // subject must stand somewhere the unrelated speaker does not.
         let declare = |handle: &str, label: &str, controller: NewController| {
             Declaration::Subject(SubjectDeclaration {
                 handle: DraftHandle::new(handle),
@@ -926,7 +984,15 @@ mod tests {
                 kind: SubjectKind::Person,
                 controller,
                 affordances: kernel_speak_grant(),
-                position: None,
+                position: Some(Ref::Draft(DraftHandle::new(format!("room-{handle}")))),
+            })
+        };
+        let room = |handle: &str| {
+            Declaration::Entity(EntityDeclaration {
+                handle: DraftHandle::new(format!("room-{handle}")),
+                label: format!("The {handle} room"),
+                kind: EntityKind::Place,
+                container: None,
             })
         };
         let created = mailbox
@@ -937,6 +1003,8 @@ mod tests {
                     title: "Soul Stamping".into(),
                     patch: WorldPatch {
                         declarations: vec![
+                            room("witness"),
+                            room("council"),
                             declare("witness", "The Witness", NewController::NarrativePersona),
                             declare("council", "The Council", NewController::OperationalAgent),
                         ],
@@ -980,7 +1048,7 @@ mod tests {
             affordance: opportunity.affordance_ids[0],
             bindings: Vec::new(),
             proposed: Vec::new(),
-            speech: Some(crate::world::Utterance::new(text).unwrap()),
+            speech: Some(crate::world::Statement::new(text).unwrap()),
         };
         mailbox
             .submit_controller(
@@ -1047,7 +1115,7 @@ mod tests {
                     affordance: forged.affordance_ids[0],
                     bindings: Vec::new(),
                     proposed: Vec::new(),
-                    speech: Some(crate::world::Utterance::new("Let me in.").unwrap()),
+                    speech: Some(crate::world::Statement::new("Let me in.").unwrap()),
                 },
             )
             .await;

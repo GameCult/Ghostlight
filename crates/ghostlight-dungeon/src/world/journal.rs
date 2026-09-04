@@ -12,8 +12,8 @@ use std::{
 };
 use thiserror::Error;
 
-const STATE_ROW: &str = "world_state.authority.v1";
-const COMMIT_ROW: &str = "world_commit.authority.v1";
+const STATE_ROW: &str = "world_state.knowledge.v1";
+const COMMIT_ROW: &str = "world_commit.knowledge.v1";
 
 #[derive(Debug, Error)]
 pub(super) enum JournalError {
@@ -527,6 +527,80 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
             ));
         }
     }
+    // Facts, channels, and knowledge. The `facts`/`channels` bijections run both
+    // ways: a payload row without its entity, or an entity of that kind without
+    // its payload, is a referenceable half-thing.
+    for (entity_id, record) in &state.facts {
+        let standing_is_live = match &record.standing {
+            super::FactStanding::Canonical { evidence } => {
+                super::patch::is_canonical_text(evidence.text())
+            }
+            super::FactStanding::Claimed { by } => state.subjects.contains_key(by),
+        };
+        if !state
+            .entities
+            .get(entity_id)
+            .is_some_and(|entity| entity.kind == super::EntityKind::Fact)
+            || !super::patch::is_canonical_text(record.statement.as_str())
+            || !standing_is_live
+        {
+            return Err(JournalError::Corrupt(
+                "a fact names no canonical entity, statement, or standing".into(),
+            ));
+        }
+    }
+    for (entity_id, record) in &state.channels {
+        let reach_is_live = match &record.reach {
+            super::Reach::Subjects(members) => members
+                .iter()
+                .all(|subject_id| state.subjects.contains_key(subject_id)),
+            super::Reach::Place(place) => is_place(place),
+        };
+        if !state
+            .entities
+            .get(entity_id)
+            .is_some_and(|entity| entity.kind == super::EntityKind::Channel)
+            || !reach_is_live
+            || !record
+                .controller
+                .is_none_or(|subject_id| state.subjects.contains_key(&subject_id))
+        {
+            return Err(JournalError::Corrupt(
+                "a channel names no canonical entity, reach, or controller".into(),
+            ));
+        }
+    }
+    for (entity_id, entity) in &state.entities {
+        let paired = match entity.kind {
+            super::EntityKind::Fact => state.facts.contains_key(entity_id),
+            super::EntityKind::Channel => state.channels.contains_key(entity_id),
+            super::EntityKind::Place | super::EntityKind::Resource => true,
+        };
+        if !paired {
+            return Err(JournalError::Corrupt(
+                "a fact or channel entity carries no payload row".into(),
+            ));
+        }
+    }
+    for (subject_id, held) in &state.knowledge {
+        let entry_is_live = |entry: &super::Knowledge| match entry.source {
+            super::KnowledgeSource::Told { by, via } => {
+                state.subjects.contains_key(&by)
+                    && via.is_none_or(|channel| state.channels.contains_key(&channel))
+            }
+            super::KnowledgeSource::Witnessed | super::KnowledgeSource::Evidenced => true,
+        };
+        if !state.subjects.contains_key(subject_id)
+            || held.is_empty()
+            || held
+                .iter()
+                .any(|(fact, entry)| !state.facts.contains_key(fact) || !entry_is_live(entry))
+        {
+            return Err(JournalError::Corrupt(
+                "knowledge does not name a canonical subject, fact, and source".into(),
+            ));
+        }
+    }
     // The civic subgraph, in the slot the deleted `authority_scope` check
     // occupied: a jurisdiction names live ground under a canonical kind, an
     // office sits on an institution and lends something to a person who holds
@@ -663,6 +737,7 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
         ));
     }
     let mut event_ids = BTreeSet::new();
+    let mut claimed = BTreeSet::new();
     let mut previous_event_revision = 0;
     for event in &state.events {
         let assignment = state
@@ -671,8 +746,19 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
             .ok_or_else(|| JournalError::Corrupt("event references an unknown scope".into()))?;
         let entry = state
             .affordance_catalog
-            .get(&event.invocation.affordance)
+            .get(&event.affordance)
             .ok_or_else(|| JournalError::Corrupt("event uses an unknown affordance".into()))?;
+        // A speech event names the claim it minted, and that claim is asserted
+        // by the acting subject and by no other event.
+        let speech_is_canonical = event.speech.is_none_or(|fact| {
+            claimed.insert(fact)
+                && state.facts.get(&fact).is_some_and(|record| {
+                    record.standing
+                        == super::FactStanding::Claimed {
+                            by: event.scope.subject_id,
+                        }
+                })
+        });
         if !event_ids.insert(event.id)
             || event.revision == 0
             || event.revision > state.revision
@@ -681,9 +767,15 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
             || !state
                 .affordance_grants
                 .get(&event.scope)
-                .is_some_and(|granted| granted.contains(&event.invocation.affordance))
+                .is_some_and(|granted| granted.contains(&event.affordance))
             || event.band >= entry.outcome_bands.len()
-            || (entry.outcome_bands[event.band].effects.is_empty() && !event.effects.is_empty())
+            || event.speech.is_some() != entry.carries_speech
+            // One lowered operation per band effect, plus the two the speech
+            // lowering prepends.
+            || entry.outcome_bands[event.band].effects.len()
+                + if event.speech.is_some() { 2 } else { 0 }
+                != event.effects.len()
+            || !speech_is_canonical
         {
             return Err(JournalError::Corrupt(
                 "decision event is noncanonical or violates controller scope".into(),
@@ -1758,7 +1850,12 @@ mod custody_tests {
             panic!("expected an applied invocation");
         };
         let accepted = kernel.snapshot().unwrap();
-        let committed = accepted.events.last().expect("the committed event").clone();
+        let committed = kernel
+            .state
+            .events
+            .last()
+            .expect("the committed event")
+            .clone();
         assert!(!committed.effects.is_empty());
         let world_id = accepted.world_id;
         drop(kernel);
@@ -1766,12 +1863,7 @@ mod custody_tests {
         let mut reopened = WorldKernel::open(&path, world_id).unwrap();
         assert_eq!(reopened.snapshot().unwrap(), accepted);
         assert_eq!(
-            reopened
-                .snapshot()
-                .unwrap()
-                .events
-                .last()
-                .expect("the replayed event"),
+            reopened.state.events.last().expect("the replayed event"),
             &committed
         );
         assert_eq!(

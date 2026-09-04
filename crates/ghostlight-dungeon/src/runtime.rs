@@ -13,8 +13,8 @@ use crate::{
         AffordanceId, CommandBody, CommandId, ControllerError, ControllerModels,
         ControllerPendingReason, ControllerRunner, ControllerWorkCustody, CreateWorldIntent,
         DecisionInvocation, DecisionOpportunity, KernelError, MailboxError, NarrativeRun,
-        OperationalRun, PrincipalCommandIntent, PrincipalId, SubmissionDisposition, SubmitReceipt,
-        Utterance, WorldMailbox, WorldSnapshot,
+        OperationalRun, PrincipalCommandIntent, PrincipalId, Statement, SubmissionDisposition,
+        SubmitReceipt, WorldMailbox, WorldSnapshot,
     },
 };
 use anyhow::{Context, bail, ensure};
@@ -442,9 +442,11 @@ async fn eve_surface(
     let Some(principal) = authenticated_principal(&headers, &state).await else {
         return Json(eve::anonymous_surface()).into_response();
     };
-    match current_world(&state).await.and_then(|snapshot| {
-        eve::authenticated_surface(principal.account_subject_hash(), snapshot.as_ref())
-    }) {
+    match current_operator_view(&state)
+        .await
+        .and_then(|(snapshot, log)| {
+            eve::authenticated_surface(principal.account_subject_hash(), snapshot.as_ref(), &log)
+        }) {
         Ok(surface) => Json(surface).into_response(),
         Err(error) => (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -1241,7 +1243,7 @@ async fn execute_world(
                     affordance: payload.affordance_id,
                     bindings: Vec::new(),
                     proposed: Vec::new(),
-                    speech: Some(Utterance::new(payload.text).ok_or_else(|| {
+                    speech: Some(Statement::new(payload.text).ok_or_else(|| {
                         RuntimeCommandError::Payload("spoken text is not canonical".into())
                     })?),
                 },
@@ -1303,6 +1305,21 @@ async fn current_world(state: &AppState) -> anyhow::Result<Option<WorldSnapshot>
         Err(MailboxError::Kernel(KernelError::WorldNotCreated)) => Ok(None),
         Err(error) => Err(error.into()),
     }
+}
+
+/// The two halves of the operator surface, fetched together: the projection of
+/// world state, and the story feed the human reads. The feed is deliberately not
+/// a snapshot field, so no controller lane can reach it.
+async fn current_operator_view(
+    state: &AppState,
+) -> anyhow::Result<(Option<WorldSnapshot>, Vec<crate::world::OperatorEvent>)> {
+    let snapshot = current_world(state).await?;
+    let log = match state.world.operator_log().await {
+        Ok(log) => log,
+        Err(MailboxError::Kernel(KernelError::WorldNotCreated)) => Vec::new(),
+        Err(error) => return Err(error.into()),
+    };
+    Ok((snapshot, log))
 }
 
 async fn publish_projection(state: &AppState) -> anyhow::Result<u64> {
@@ -2181,8 +2198,9 @@ mod tests {
         )
         .await;
         assert_eq!(spoken["sourceVersion"], 4);
-        let world = current_world(&fixture.state).await.unwrap().unwrap();
-        assert_eq!(world.events.len(), 1);
+        let (world, log) = current_operator_view(&fixture.state).await.unwrap();
+        assert!(world.is_some());
+        assert_eq!(log.len(), 1);
     }
 
     #[tokio::test]

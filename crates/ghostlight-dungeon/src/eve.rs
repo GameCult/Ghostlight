@@ -2,7 +2,7 @@
 
 use crate::{
     mesh::{COMMAND_BOUNDARY, COMMAND_RESULT_SCHEMA, PROVIDER_ID, SURFACE_ID},
-    world::{ControllerMode, WorldPhase, WorldSnapshot},
+    world::{ControllerMode, OperatorEvent, WorldPhase, WorldSnapshot},
 };
 use anyhow::{Context, bail};
 use chrono::{DateTime, Utc};
@@ -100,9 +100,13 @@ fn anonymous_surface_at(version: u64) -> Value {
     )
 }
 
+/// `operator_log` arrives beside the snapshot rather than inside it: the story
+/// feed is the human operator's surface, and no subject-facing lane may reach an
+/// unscoped event log.
 pub(crate) fn authenticated_surface(
     account: &str,
     snapshot: Option<&WorldSnapshot>,
+    operator_log: &[OperatorEvent],
 ) -> anyhow::Result<Value> {
     let version = surface_version(snapshot);
     let mut children = vec![json!({
@@ -182,7 +186,7 @@ pub(crate) fn authenticated_surface(
                 "children":[{
                     "id":"world.summary.body",
                     "kind":"text",
-                    "props":{"value":format!("{} subject(s), {} committed event(s)", world.subjects.len(), world.events.len())},
+                    "props":{"value":format!("{} subject(s), {} committed event(s)", world.subjects.len(), operator_log.len())},
                     "children":[]
                 }]
             }));
@@ -228,11 +232,10 @@ pub(crate) fn authenticated_surface(
                     }
                 }
                 WorldPhase::Active => {
-                    let story = world
-                        .events
+                    let story = operator_log
                         .iter()
                         .filter_map(|event| {
-                            event.invocation.speech.as_ref().map(|text| {
+                            event.speech.as_ref().map(|text| {
                                 json!({
                                     "id":format!("world.event.{}", event.revision),
                                     "kind":"text",
@@ -533,7 +536,7 @@ mod tests {
 
     #[test]
     fn empty_authenticated_surface_has_create_without_session_zero() {
-        let surface = authenticated_surface("sha256:owner", None).unwrap();
+        let surface = authenticated_surface("sha256:owner", None, &[]).unwrap();
         let encoded = serde_json::to_string(&surface).unwrap();
         assert!(encoded.contains("world.create"));
         assert!(encoded.contains("narrative_persona_label"));

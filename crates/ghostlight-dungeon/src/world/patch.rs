@@ -1,5 +1,10 @@
 //! Closed-patch resolution: the one owner of draft handles, reference kinds, and
-//! canonical ID allocation for every admission lane.
+//! declaration-lane ID allocation.
+//!
+//! Only [`derive_id`] allocates a canonical ID, and it is called from exactly
+//! two sites: [`resolve_patch`] here, and `action::exercise`, which mints one
+//! referent per speech-carrying invocation — always a `Claimed` fact asserted by
+//! the acting subject.
 //!
 //! A patch names structure two ways and no other way: an exact canonical ID that
 //! already keys a partition, or a draft handle declared in the same patch.
@@ -259,11 +264,172 @@ pub(crate) struct RoleSpec {
     pub(crate) kind: RefKind,
 }
 
+/// Committed world text: canonical, non-empty. The kernel stores it, hands it to
+/// a projection, and reads it no other way. Nothing compares two `Statement`s:
+/// no dedup, no interning, no contradiction check, no similarity. Two facts with
+/// byte-identical statements are two facts.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(transparent)]
+pub(crate) struct Statement(String);
+
+impl Statement {
+    pub(crate) fn new(value: impl Into<String>) -> Option<Self> {
+        let value = value.into();
+        is_canonical_text(&value).then_some(Self(value))
+    }
+
+    pub(crate) fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+/// How a fact stands. Immutable after admission: there is no `SetStanding`. A
+/// claim never becomes canon and canon never degrades to a claim, so nothing
+/// ever has to decide which of two facts wins. A world in which a court rules on
+/// a rumour declares a *new* `Canonical` fact; the rumour survives beside it,
+/// which is what makes a later `Redress` reading possible at all.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "standing", rename_all = "snake_case")]
+pub(crate) enum FactStanding {
+    /// Admitted with a receipt, through the same evidence gate `Admit` uses.
+    Canonical { evidence: EvidenceRef },
+    /// Asserted by a subject. The kernel does not evaluate the assertion.
+    Claimed { by: SubjectId },
+}
+
+/// The proposal-time twin of [`FactStanding`].
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "standing", rename_all = "snake_case")]
+pub(crate) enum FactStandingRef {
+    Canonical { evidence: EvidenceRef },
+    Claimed { by: Ref<SubjectId> },
+}
+
+/// One `EntityKind::Fact` row's payload. Write-once: only declaration and
+/// `AssertClaim` ever write `facts`.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct FactRecord {
+    pub(crate) statement: Statement,
+    pub(crate) standing: FactStanding,
+}
+
+/// Where a channel carries. A place reach is the subtree, through the same
+/// [`covers_place`] walk a `PlaceSubtree` jurisdiction uses.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "reach", content = "of", rename_all = "snake_case")]
+pub(crate) enum Reach {
+    /// Exactly these subjects. May be empty: an empty reach is the named
+    /// silenced state, which is the outcome this component exists to hold.
+    Subjects(BTreeSet<SubjectId>),
+    /// Everyone positioned at that place or anywhere inside it.
+    Place(EntityId),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "reach", content = "of", rename_all = "snake_case")]
+pub(crate) enum ReachRef {
+    Subjects(BTreeSet<Ref<SubjectId>>),
+    Place(Ref<EntityId>),
+}
+
+/// One `EntityKind::Channel` row's payload. It carries no latency: there is no
+/// clock, so a latency field would be read by nothing and bound by nothing.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ChannelRecord {
+    pub(crate) reach: Reach,
+    /// Who may speak on it besides those inside its reach, and whose scope
+    /// digest binds it. The horn belongs to the temple, not to whoever happens
+    /// to be within earshot of it.
+    pub(crate) controller: Option<SubjectId>,
+}
+
+/// A small closed ordinal. Ordered ascending by declaration order, so derived
+/// `Ord` *is* the semantics and `Knows { at_least }` is one `>=`. Three levels:
+/// two cannot express "I heard it but I doubt it", which is the state deception
+/// produces; four or more is a scale nothing in the vocabulary distinguishes.
+/// There is no zero — forgetting is a removed key, exactly as `Quantity(0)` is
+/// unstorable.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum Confidence {
+    Doubted,
+    Believed,
+    Certain,
+}
+
+/// Three sources, three writers, no overlap: `Witnessed` and `Evidenced` are
+/// written by `AcquireKnowledge`, `Told` only by `Communicate`.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "source", rename_all = "snake_case")]
+pub(crate) enum KnowledgeSource {
+    Witnessed,
+    /// `via: None` is co-location.
+    Told {
+        by: SubjectId,
+        via: Option<EntityId>,
+    },
+    Evidenced,
+}
+
+/// What one subject holds of one fact.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Knowledge {
+    pub(crate) confidence: Confidence,
+    pub(crate) source: KnowledgeSource,
+}
+
+/// The source an author may write. `Told` is unrepresentable here: only
+/// `Communicate` writes it, so no author can forge a teller.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "source", rename_all = "snake_case")]
+pub(crate) enum AuthoredSource {
+    Witnessed,
+    Evidenced,
+}
+
+/// Where a telling lands. `Colocated` is derived from `positions` at check and
+/// at apply; it is never a stored channel, so no entity is minted per place and
+/// no world must enumerate a village to let people talk in a room.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum Audience {
+    Colocated,
+    Channel(EntityId),
+}
+
+impl Audience {
+    pub(super) fn channel(self) -> Option<EntityId> {
+        match self {
+            Self::Colocated => None,
+            Self::Channel(entity_id) => Some(entity_id),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum AudienceRef {
+    Colocated,
+    Channel(Ref<EntityId>),
+}
+
+/// The catalog form: a declared affordance names a role, the invoker binds a
+/// channel to it, and `exercise` lowers this plus the bindings into the
+/// canonical [`Audience`].
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum AudienceSpec {
+    Colocated,
+    Channel(Role),
+}
+
 /// What must already be true of committed state before an invocation is
-/// admitted. Only the ones whose components exist: `Knows`, `CanReach`, and
-/// `Committed` land in the pass that adds `Knowledge`, `Channel`, and
-/// `Commitment`. A variant whose only behaviour would be to be refused is a
-/// placeholder wearing a check.
+/// admitted. Only the ones whose components exist: `Committed` lands in the pass
+/// that adds `Commitment`. A variant whose only behaviour would be to be refused
+/// is a placeholder wearing a check.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "precondition", rename_all = "snake_case")]
 pub(crate) enum Precondition {
@@ -281,6 +447,16 @@ pub(crate) enum Precondition {
     Authorized { over: Role, kind: AuthorityKindName },
     /// A forum takes `grievance` and the acting subject is inside its standing.
     HasStanding { grievance: GrievanceKindName },
+    /// The acting subject holds the fact bound to `fact` at `at_least` or
+    /// better.
+    Knows { fact: Role, at_least: Confidence },
+    /// The acting subject has an audience at all: it is positioned, for
+    /// co-location, or it is inside the bound channel's reach or is its
+    /// controller.
+    CanBroadcast { via: AudienceSpec },
+    /// The referent bound to `subject` is inside that audience. Addressing does
+    /// not narrow the audience: a telling still lands on everyone in it.
+    CanReach { subject: Role, via: AudienceSpec },
 }
 
 /// Exactly the operations an affordance may propose. `Admit` is absent because
@@ -306,10 +482,24 @@ pub(crate) enum ComponentOpKind {
     Consume,
     Bind,
     Release,
-    GrantAuthority { kind: AuthorityKindName },
-    RevokeAuthority { kind: AuthorityKindName },
-    InstallIncumbent { office: OfficeName },
-    VacateOffice { office: OfficeName },
+    GrantAuthority {
+        kind: AuthorityKindName,
+    },
+    RevokeAuthority {
+        kind: AuthorityKindName,
+    },
+    InstallIncumbent {
+        office: OfficeName,
+    },
+    VacateOffice {
+        office: OfficeName,
+    },
+    /// Source is fixed to `Witnessed`: only `Communicate` writes a teller, and
+    /// `Evidenced` needs a patch's evidence list, which an invocation has not.
+    AcquireKnowledge {
+        confidence: Confidence,
+    },
+    Forget,
 }
 
 /// The referent shape of one operation: the single source of both the
@@ -345,6 +535,9 @@ impl ComponentOpKind {
             }
             Self::InstallIncumbent { .. } => vec![subject(), subject()],
             Self::VacateOffice { .. } => vec![subject()],
+            Self::AcquireKnowledge { .. } | Self::Forget => {
+                vec![subject(), RoleKindRule::Exact(FACT)]
+            }
         }
     }
 
@@ -461,6 +654,10 @@ impl EvidenceRef {
     pub(super) fn new(value: impl Into<String>) -> Self {
         Self(value.into())
     }
+
+    pub(super) fn text(&self) -> &str {
+        &self.0
+    }
 }
 
 /// `position` is the subject's presence: one place it stands in. A subject
@@ -502,13 +699,39 @@ pub(crate) struct RouteDeclaration {
     pub(crate) cost: Cost,
 }
 
+/// A fact's label is a short authored name ("the flooding of the lower hinge"),
+/// never a transcript: the statement is never copied into the label and the
+/// label is never derived from the statement, so the utterance has exactly one
+/// home in state.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct FactDeclaration {
+    pub(crate) handle: DraftHandle,
+    pub(crate) label: String,
+    pub(crate) statement: Statement,
+    pub(crate) standing: FactStandingRef,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ChannelDeclaration {
+    pub(crate) handle: DraftHandle,
+    pub(crate) label: String,
+    pub(crate) reach: ReachRef,
+    pub(crate) controller: Option<Ref<SubjectId>>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub(crate) enum Declaration {
     Subject(SubjectDeclaration),
+    /// Places and resources only. `Fact` and `Channel` carry a payload and have
+    /// their own declarations, so a referenceable empty one is unrepresentable.
     Entity(EntityDeclaration),
     Route(RouteDeclaration),
     Affordance(AffordanceDeclaration),
+    Fact(FactDeclaration),
+    Channel(ChannelDeclaration),
 }
 
 /// The operations that change a component of an already canonical structure.
@@ -607,6 +830,33 @@ pub(crate) enum ComponentOp {
     },
     CloseForum {
         grievance: GrievanceKindName,
+    },
+    /// Source is authored: `Witnessed` by an author or an affordance,
+    /// `Evidenced` only over a `Canonical` fact.
+    AcquireKnowledge {
+        subject: Ref<SubjectId>,
+        fact: Ref<EntityId>,
+        source: AuthoredSource,
+        confidence: Confidence,
+    },
+    /// One telling. It stores the audience, never the recipients: the fan-out is
+    /// re-derived at apply from live `positions` and `channels`.
+    Communicate {
+        speaker: Ref<SubjectId>,
+        fact: Ref<EntityId>,
+        to: AudienceRef,
+    },
+    Forget {
+        subject: Ref<SubjectId>,
+        fact: Ref<EntityId>,
+    },
+    SetReach {
+        channel: Ref<EntityId>,
+        reach: ReachRef,
+    },
+    SetController {
+        channel: Ref<EntityId>,
+        controller: Option<Ref<SubjectId>>,
     },
 }
 
@@ -823,6 +1073,38 @@ pub(crate) enum Mismatch {
     ReservedRole {
         handle: DraftHandle,
     },
+    /// An `EntityDeclaration` naming `Fact` or `Channel`. Those kinds carry a
+    /// payload and have their own declaration; a payload-less one would make a
+    /// referenceable, empty fact a legal state.
+    PayloadEntityKind {
+        handle: DraftHandle,
+    },
+    /// A `Canonical` fact declaration whose `EvidenceRef` is not listed in this
+    /// patch's `evidence`.
+    FactWithoutEvidence {
+        handle: DraftHandle,
+    },
+    EmptyStatement {
+        handle: DraftHandle,
+    },
+    /// `AcquireKnowledge { source: Evidenced }` over a `Claimed` fact.
+    EvidencedKnowledgeOfClaim {
+        operation: usize,
+    },
+    /// A `Communicate` whose speaker is neither inside the audience nor the
+    /// channel's controller.
+    SpeakerOutsideAudience {
+        operation: usize,
+    },
+    /// A catalog entry with `carries_speech` and no `CanBroadcast` or
+    /// `CanReach`: its speech would have no audience to lower.
+    SpeechWithoutAudience {
+        handle: DraftHandle,
+    },
+    /// More than one, so the lowering could not choose.
+    AmbiguousSpeechAudience {
+        handle: DraftHandle,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -919,6 +1201,24 @@ pub(super) struct ResolvedAffordance {
     pub(super) affordance: Affordance,
 }
 
+/// A declared fact: one `entities` row and one `facts` row, allocated together
+/// so the bijection has one writer.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub(super) struct ResolvedFact {
+    pub(super) handle: DraftHandle,
+    pub(super) entity_id: EntityId,
+    pub(super) entity: EntityRecord,
+    pub(super) fact: FactRecord,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub(super) struct ResolvedChannel {
+    pub(super) handle: DraftHandle,
+    pub(super) entity_id: EntityId,
+    pub(super) entity: EntityRecord,
+    pub(super) channel: ChannelRecord,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub(super) struct ResolvedRoute {
     pub(super) handle: DraftHandle,
@@ -1011,6 +1311,42 @@ pub(crate) enum ResolvedOp {
     CloseForum {
         grievance: GrievanceKindName,
     },
+    AcquireKnowledge {
+        subject: SubjectId,
+        fact: EntityId,
+        source: AuthoredSource,
+        confidence: Confidence,
+    },
+    /// Stores the audience, never the recipients. `apply_operation` re-derives
+    /// the fan-out from live `positions`/`channels`, exactly as `Relocate`
+    /// stores `edge_id` and re-derives the destination, so a forged effect
+    /// cannot assert a landing the world does not have.
+    Communicate {
+        speaker: SubjectId,
+        fact: EntityId,
+        to: Audience,
+    },
+    Forget {
+        subject: SubjectId,
+        fact: EntityId,
+    },
+    SetReach {
+        channel: EntityId,
+        reach: Reach,
+    },
+    SetController {
+        channel: EntityId,
+        controller: Option<SubjectId>,
+    },
+    /// Kernel-only: no [`ComponentOp`] twin, because no proposer may author one.
+    /// Synthesized by `action::exercise` for a speech-carrying invocation and by
+    /// nothing else. Inserts the entity row and the `facts` row; it writes no
+    /// knowledge, because a speaker's own knowledge of its claim is not implied.
+    AssertClaim {
+        fact: EntityId,
+        statement: Statement,
+        by: SubjectId,
+    },
 }
 
 /// One resource's movement across a whole patch. Accumulators are `u128` so an
@@ -1058,6 +1394,8 @@ pub(super) struct ResolvedPatch {
     pub(super) entities: Vec<ResolvedEntity>,
     pub(super) routes: Vec<ResolvedRoute>,
     pub(super) affordances: Vec<ResolvedAffordance>,
+    pub(super) facts: Vec<ResolvedFact>,
+    pub(super) channels: Vec<ResolvedChannel>,
     pub(super) operations: Vec<ResolvedOp>,
     pub(super) evidence: Vec<EvidenceRef>,
 }
@@ -1068,17 +1406,21 @@ impl ResolvedPatch {
             && self.entities.is_empty()
             && self.routes.is_empty()
             && self.affordances.is_empty()
+            && self.facts.is_empty()
+            && self.channels.is_empty()
             && self.evidence.is_empty()
     }
 }
 
 const SUBJECT_NAMESPACE: &str = "ghostlight.id.subject.v1";
-const ENTITY_NAMESPACE: &str = "ghostlight.id.entity.v1";
+pub(super) const ENTITY_NAMESPACE: &str = "ghostlight.id.entity.v1";
 const EDGE_NAMESPACE: &str = "ghostlight.id.edge.v1";
 const CONTROLLER_NAMESPACE: &str = "ghostlight.id.controller.v1";
 const AFFORDANCE_NAMESPACE: &str = "ghostlight.id.affordance.v1";
 
 const PLACE: RefKind = RefKind::Entity(EntityKind::Place);
+const FACT: RefKind = RefKind::Entity(EntityKind::Fact);
+const CHANNEL: RefKind = RefKind::Entity(EntityKind::Channel);
 const ROUTE: RefKind = RefKind::Edge(EdgeKind::Route);
 const ANY_SUBJECT: RefKind = RefKind::Subject(None);
 
@@ -1243,6 +1585,82 @@ fn candidate_effective_authority(
     effective
 }
 
+/// A fact in the candidate graph. Only its standing matters to resolution: the
+/// statement is never read and never compared.
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum FactCandidate {
+    Canonical,
+    Claimed(Key<SubjectId>),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum ReachKey {
+    Subjects(BTreeSet<Key<SubjectId>>),
+    Place(Key<EntityId>),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct ChannelCandidate {
+    reach: ReachKey,
+    controller: Option<Key<SubjectId>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum KnowledgeSourceKey {
+    Witnessed,
+    Told {
+        by: Key<SubjectId>,
+        via: Option<Key<EntityId>>,
+    },
+    Evidenced,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct KnowledgeCandidate {
+    confidence: Confidence,
+    source: KnowledgeSourceKey,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum AudienceKey {
+    Colocated,
+    Channel(Key<EntityId>),
+}
+
+/// Whether a subject is inside an audience over the candidate graph: the same
+/// question `audience()` answers over committed state, asked before any ID is
+/// minted. A controller is inside its own channel's audience for the purpose of
+/// speaking on it — the horn belongs to the temple.
+fn candidate_in_audience(
+    subject: &Key<SubjectId>,
+    audience: &AudienceKey,
+    speaker: &Key<SubjectId>,
+    positions: &BTreeMap<Key<SubjectId>, Key<EntityId>>,
+    channels: &BTreeMap<Key<EntityId>, ChannelCandidate>,
+    containers: &BTreeMap<Key<EntityId>, Key<EntityId>>,
+) -> bool {
+    match audience {
+        AudienceKey::Colocated => match (positions.get(speaker), positions.get(subject)) {
+            (Some(here), Some(there)) => here == there,
+            _ => false,
+        },
+        AudienceKey::Channel(channel) => {
+            let Some(record) = channels.get(channel) else {
+                return false;
+            };
+            if record.controller.as_ref() == Some(subject) {
+                return true;
+            }
+            match &record.reach {
+                ReachKey::Subjects(members) => members.contains(subject),
+                ReachKey::Place(root) => positions
+                    .get(subject)
+                    .is_some_and(|place| key_covers_place(root, place, containers)),
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 struct RouteCandidate {
     from: Key<EntityId>,
@@ -1252,11 +1670,12 @@ struct RouteCandidate {
     open: bool,
 }
 
-/// The only canonical ID allocator. Deterministic on purpose: journal replay
-/// recomputes `reduce` and requires effect equality, so a reduce arm can never
-/// draw a `Uuid::new_v4`. Preimage fields are length-prefixed where they are
-/// variable-width, so the concatenation is unambiguous.
-fn derive_id(
+/// The only canonical ID allocator, called from exactly two sites:
+/// [`resolve_patch`] and `action::exercise`. Deterministic on purpose: journal
+/// replay recomputes `reduce` and requires effect equality, so a reduce arm can
+/// never draw a `Uuid::new_v4`. Preimage fields are length-prefixed where they
+/// are variable-width, so the concatenation is unambiguous.
+pub(super) fn derive_id(
     namespace: &str,
     world_id: WorldId,
     command_id: CommandId,
@@ -1324,14 +1743,18 @@ pub(super) fn kernel_speak_grant() -> BTreeSet<Ref<AffordanceId>> {
     BTreeSet::from([Ref::Draft(DraftHandle::new(KERNEL_SPEAK_HANDLE))])
 }
 
-/// Zero preconditions, zero slots, one empty band, one utterance. Speech reaches
-/// everyone because `Channel` does not exist yet; a reach check that always
-/// passed would look like the invariant is enforced.
+/// Zero roles, zero slots, one empty band, one utterance, and one audience: a
+/// voice fills the room it is standing in. Zero roles is load-bearing — the
+/// Interpreter lane submits no bindings and Eve's speak payload carries only
+/// text. The precondition is not vacuous: an unplaced subject has no
+/// co-location audience and fails with `NoAudience`.
 pub(super) fn kernel_speak_entry() -> Affordance {
     Affordance {
         kind: AffordanceKindName("speak".into()),
         roles: Vec::new(),
-        preconditions: Vec::new(),
+        preconditions: vec![Precondition::CanBroadcast {
+            via: AudienceSpec::Colocated,
+        }],
         effect_slots: Vec::new(),
         outcome_bands: vec![OutcomeBand {
             weight: 1,
@@ -1462,6 +1885,21 @@ fn validate_affordance(
             }),
             Some(_) => {}
         };
+    let require_subject = |role: &Role, mismatches: &mut Vec<Mismatch>| match declared.get(role) {
+        None => mismatches.push(Mismatch::UnknownRole {
+            handle: handle.clone(),
+            role: role.clone(),
+        }),
+        Some(RefKind::Subject(_)) => {}
+        Some(_) => mismatches.push(Mismatch::RoleKindUnfit {
+            handle: handle.clone(),
+            role: role.clone(),
+        }),
+    };
+    let require_audience = |via: &AudienceSpec, mismatches: &mut Vec<Mismatch>| match via {
+        AudienceSpec::Colocated => {}
+        AudienceSpec::Channel(role) => require(role, CHANNEL, mismatches),
+    };
     for precondition in preconditions {
         match precondition {
             Precondition::Present { at } => {
@@ -1501,6 +1939,34 @@ fn validate_affordance(
                     mismatches.push(Mismatch::InvalidCivicName { site: site() });
                 }
             }
+            Precondition::Knows { fact, .. } => require(fact, FACT, mismatches),
+            Precondition::CanBroadcast { via } => require_audience(via, mismatches),
+            Precondition::CanReach { subject, via } => {
+                require_subject(subject, mismatches);
+                require_audience(via, mismatches);
+            }
+        }
+    }
+    // A speech-carrying entry must name exactly one audience: the lowering reads
+    // it, so none is unlowerable and two is unchoosable.
+    if carries_speech {
+        let audiences = preconditions
+            .iter()
+            .filter(|precondition| {
+                matches!(
+                    precondition,
+                    Precondition::CanBroadcast { .. } | Precondition::CanReach { .. }
+                )
+            })
+            .count();
+        if audiences == 0 {
+            mismatches.push(Mismatch::SpeechWithoutAudience {
+                handle: handle.clone(),
+            });
+        } else if audiences > 1 {
+            mismatches.push(Mismatch::AmbiguousSpeechAudience {
+                handle: handle.clone(),
+            });
         }
     }
     for (index, slot) in effect_slots.iter().enumerate() {
@@ -1819,6 +2285,78 @@ fn resolve_office_institution(
     named.then_some(key)
 }
 
+/// The one reach resolver: every member of a subject set, or one place.
+fn resolve_reach(
+    site: Site,
+    reach: &ReachRef,
+    index: &BTreeMap<DraftHandle, RefKind>,
+    state: &super::WorldState,
+    mismatches: &mut Vec<Mismatch>,
+) -> Option<ReachKey> {
+    match reach {
+        ReachRef::Subjects(members) => {
+            let mut resolved = BTreeSet::new();
+            let mut complete = true;
+            for reference in members {
+                match resolve_subject(site.clone(), reference, index, &state.subjects, mismatches) {
+                    Some(key) => {
+                        resolved.insert(key);
+                    }
+                    None => complete = false,
+                }
+            }
+            complete.then_some(ReachKey::Subjects(resolved))
+        }
+        ReachRef::Place(reference) => resolve_entity(
+            site,
+            EntityKind::Place,
+            reference,
+            index,
+            &state.entities,
+            mismatches,
+        )
+        .map(ReachKey::Place),
+    }
+}
+
+/// A channel controller is optional, so "declared none" and "named one that did
+/// not resolve" are two answers, not one.
+fn resolve_controller(
+    site: Site,
+    controller: &Option<Ref<SubjectId>>,
+    index: &BTreeMap<DraftHandle, RefKind>,
+    state: &super::WorldState,
+    mismatches: &mut Vec<Mismatch>,
+) -> Option<Option<Key<SubjectId>>> {
+    match controller {
+        None => Some(None),
+        Some(reference) => {
+            resolve_subject(site, reference, index, &state.subjects, mismatches).map(Some)
+        }
+    }
+}
+
+fn resolve_audience(
+    site: Site,
+    audience: &AudienceRef,
+    index: &BTreeMap<DraftHandle, RefKind>,
+    state: &super::WorldState,
+    mismatches: &mut Vec<Mismatch>,
+) -> Option<AudienceKey> {
+    match audience {
+        AudienceRef::Colocated => Some(AudienceKey::Colocated),
+        AudienceRef::Channel(reference) => resolve_entity(
+            site,
+            EntityKind::Channel,
+            reference,
+            index,
+            &state.entities,
+            mismatches,
+        )
+        .map(AudienceKey::Channel),
+    }
+}
+
 fn resolve_authority_target(
     site: Site,
     target: &AuthorityTargetRef,
@@ -1916,6 +2454,8 @@ pub(super) fn resolve_patch(
             // validator against the tool-name alphabet rather than against the
             // label rule.
             Declaration::Affordance(affordance) => (&affordance.handle, None, RefKind::Affordance),
+            Declaration::Fact(fact) => (&fact.handle, Some(&fact.label), FACT),
+            Declaration::Channel(channel) => (&channel.handle, Some(&channel.label), CHANNEL),
         };
         let named = is_canonical_text(&handle.0);
         if !named {
@@ -1950,6 +2490,29 @@ pub(super) fn resolve_patch(
             if !kind_names.insert(affordance.kind.clone()) {
                 mismatches.push(Mismatch::DuplicateAffordanceKind {
                     handle: affordance.handle.clone(),
+                });
+            }
+        }
+        if let Declaration::Entity(entity) = declaration
+            && matches!(entity.kind, EntityKind::Fact | EntityKind::Channel)
+        {
+            mismatches.push(Mismatch::PayloadEntityKind {
+                handle: handle.clone(),
+            });
+        }
+        if let Declaration::Fact(fact) = declaration {
+            if !is_canonical_text(fact.statement.as_str()) {
+                mismatches.push(Mismatch::EmptyStatement {
+                    handle: handle.clone(),
+                });
+            }
+            // The same predicate `Admit` uses, moved into the declaration loop so
+            // one rule serves evidenced quantity and evidenced canon alike.
+            if let FactStandingRef::Canonical { evidence } = &fact.standing
+                && !(is_canonical_text(&evidence.0) && patch.evidence.contains(evidence))
+            {
+                mismatches.push(Mismatch::FactWithoutEvidence {
+                    handle: handle.clone(),
                 });
             }
         }
@@ -2072,6 +2635,63 @@ pub(super) fn resolve_patch(
             )
         })
         .collect();
+    let mut facts: BTreeMap<Key<EntityId>, FactCandidate> = state
+        .facts
+        .iter()
+        .map(|(entity_id, record)| {
+            (
+                Key::Existing(*entity_id),
+                match &record.standing {
+                    FactStanding::Canonical { .. } => FactCandidate::Canonical,
+                    FactStanding::Claimed { by } => FactCandidate::Claimed(Key::Existing(*by)),
+                },
+            )
+        })
+        .collect();
+    let mut channels: BTreeMap<Key<EntityId>, ChannelCandidate> = state
+        .channels
+        .iter()
+        .map(|(entity_id, record)| {
+            (
+                Key::Existing(*entity_id),
+                ChannelCandidate {
+                    reach: match &record.reach {
+                        Reach::Subjects(members) => {
+                            ReachKey::Subjects(members.iter().copied().map(Key::Existing).collect())
+                        }
+                        Reach::Place(place) => ReachKey::Place(Key::Existing(*place)),
+                    },
+                    controller: record.controller.map(Key::Existing),
+                },
+            )
+        })
+        .collect();
+    // Keys and payload, so an `AcquireKnowledge` that changes nothing is
+    // `NoOperationEffect` before any ID is minted. A `Communicate` never enters:
+    // its fan-out is re-derived at apply, and a telling is a canonical change
+    // whatever the room holds.
+    let mut knowledge: BTreeMap<(Key<SubjectId>, Key<EntityId>), KnowledgeCandidate> = state
+        .knowledge
+        .iter()
+        .flat_map(|(subject_id, held)| {
+            held.iter().map(move |(fact, entry)| {
+                (
+                    (Key::Existing(*subject_id), Key::Existing(*fact)),
+                    KnowledgeCandidate {
+                        confidence: entry.confidence,
+                        source: match entry.source {
+                            KnowledgeSource::Witnessed => KnowledgeSourceKey::Witnessed,
+                            KnowledgeSource::Evidenced => KnowledgeSourceKey::Evidenced,
+                            KnowledgeSource::Told { by, via } => KnowledgeSourceKey::Told {
+                                by: Key::Existing(by),
+                                via: via.map(Key::Existing),
+                            },
+                        },
+                    },
+                )
+            })
+        })
+        .collect();
     let mut deltas: BTreeMap<Key<EntityId>, LedgerDelta> = BTreeMap::new();
     let mut declared_places: Vec<(DraftHandle, Key<EntityId>)> = Vec::new();
 
@@ -2103,6 +2723,44 @@ pub(super) fn resolve_patch(
                 }
             }
             Declaration::Affordance(_) => {}
+            Declaration::Fact(fact) => {
+                let standing = match &fact.standing {
+                    FactStandingRef::Canonical { .. } => Some(FactCandidate::Canonical),
+                    FactStandingRef::Claimed { by } => resolve_subject(
+                        Site::Declaration(fact.handle.clone()),
+                        by,
+                        &index,
+                        &state.subjects,
+                        &mut mismatches,
+                    )
+                    .map(FactCandidate::Claimed),
+                };
+                if let Some(standing) = standing {
+                    facts.insert(Key::Draft(fact.handle.clone()), standing);
+                }
+            }
+            Declaration::Channel(channel) => {
+                let reach = resolve_reach(
+                    Site::Declaration(channel.handle.clone()),
+                    &channel.reach,
+                    &index,
+                    state,
+                    &mut mismatches,
+                );
+                let controller = resolve_controller(
+                    Site::Declaration(channel.handle.clone()),
+                    &channel.controller,
+                    &index,
+                    state,
+                    &mut mismatches,
+                );
+                if let (Some(reach), Some(controller)) = (reach, controller) {
+                    channels.insert(
+                        Key::Draft(channel.handle.clone()),
+                        ChannelCandidate { reach, controller },
+                    );
+                }
+            }
             Declaration::Subject(subject) => {
                 for reference in &subject.affordances {
                     resolve_affordance(
@@ -2833,6 +3491,188 @@ pub(super) fn resolve_patch(
                     });
                 }
             }
+            ComponentOp::AcquireKnowledge {
+                subject,
+                fact,
+                source,
+                confidence,
+            } => {
+                let subject_key = resolve_subject(
+                    Site::Operation(position),
+                    subject,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                let fact_key = resolve_entity(
+                    Site::Operation(position),
+                    EntityKind::Fact,
+                    fact,
+                    &index,
+                    &state.entities,
+                    &mut mismatches,
+                );
+                let (Some(subject_key), Some(fact_key)) = (subject_key, fact_key) else {
+                    continue;
+                };
+                // Evidenced knowledge is knowledge of canon. A receipt cannot
+                // vouch for an assertion the kernel never evaluated.
+                if *source == AuthoredSource::Evidenced
+                    && facts.get(&fact_key) != Some(&FactCandidate::Canonical)
+                {
+                    mismatches.push(Mismatch::EvidencedKnowledgeOfClaim {
+                        operation: position,
+                    });
+                    continue;
+                }
+                let entry = KnowledgeCandidate {
+                    confidence: *confidence,
+                    source: match source {
+                        AuthoredSource::Witnessed => KnowledgeSourceKey::Witnessed,
+                        AuthoredSource::Evidenced => KnowledgeSourceKey::Evidenced,
+                    },
+                };
+                let slot = (subject_key, fact_key);
+                if knowledge.get(&slot) == Some(&entry) {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                } else {
+                    knowledge.insert(slot, entry);
+                }
+            }
+            ComponentOp::Forget { subject, fact } => {
+                let subject_key = resolve_subject(
+                    Site::Operation(position),
+                    subject,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                let fact_key = resolve_entity(
+                    Site::Operation(position),
+                    EntityKind::Fact,
+                    fact,
+                    &index,
+                    &state.entities,
+                    &mut mismatches,
+                );
+                let (Some(subject_key), Some(fact_key)) = (subject_key, fact_key) else {
+                    continue;
+                };
+                if knowledge.remove(&(subject_key, fact_key)).is_none() {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                }
+            }
+            ComponentOp::Communicate { speaker, fact, to } => {
+                let speaker_key = resolve_subject(
+                    Site::Operation(position),
+                    speaker,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                let fact_key = resolve_entity(
+                    Site::Operation(position),
+                    EntityKind::Fact,
+                    fact,
+                    &index,
+                    &state.entities,
+                    &mut mismatches,
+                );
+                let audience = resolve_audience(
+                    Site::Operation(position),
+                    to,
+                    &index,
+                    state,
+                    &mut mismatches,
+                );
+                let (Some(speaker_key), Some(_), Some(audience)) =
+                    (speaker_key, fact_key, audience)
+                else {
+                    continue;
+                };
+                // Ontology admission: communication reaches only subjects inside
+                // the channel's reach, and a speaker outside it is not speaking.
+                if !candidate_in_audience(
+                    &speaker_key,
+                    &audience,
+                    &speaker_key,
+                    &positions,
+                    &channels,
+                    &containers,
+                ) {
+                    mismatches.push(Mismatch::SpeakerOutsideAudience {
+                        operation: position,
+                    });
+                }
+            }
+            ComponentOp::SetReach { channel, reach } => {
+                let channel_key = resolve_entity(
+                    Site::Operation(position),
+                    EntityKind::Channel,
+                    channel,
+                    &index,
+                    &state.entities,
+                    &mut mismatches,
+                );
+                let reach_key = resolve_reach(
+                    Site::Operation(position),
+                    reach,
+                    &index,
+                    state,
+                    &mut mismatches,
+                );
+                let (Some(channel_key), Some(reach_key)) = (channel_key, reach_key) else {
+                    continue;
+                };
+                let Some(candidate) = channels.get_mut(&channel_key) else {
+                    continue;
+                };
+                if candidate.reach == reach_key {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                } else {
+                    candidate.reach = reach_key;
+                }
+            }
+            ComponentOp::SetController {
+                channel,
+                controller,
+            } => {
+                let channel_key = resolve_entity(
+                    Site::Operation(position),
+                    EntityKind::Channel,
+                    channel,
+                    &index,
+                    &state.entities,
+                    &mut mismatches,
+                );
+                let controller_key = resolve_controller(
+                    Site::Operation(position),
+                    controller,
+                    &index,
+                    state,
+                    &mut mismatches,
+                );
+                let (Some(channel_key), Some(controller_key)) = (channel_key, controller_key)
+                else {
+                    continue;
+                };
+                let Some(candidate) = channels.get_mut(&channel_key) else {
+                    continue;
+                };
+                if candidate.controller == controller_key {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                } else {
+                    candidate.controller = controller_key;
+                }
+            }
         }
         // Disjointness, checked against the complete candidate graph after each
         // operation that could widen someone's jurisdiction, so two operations
@@ -2925,6 +3765,30 @@ pub(super) fn resolve_patch(
                 container: None,
             },
         });
+    }
+    // Facts and channels allocate through the same entity namespace and the same
+    // `derive_id`, so no namespace is added and `RefKind::Entity` types every
+    // reference to one. They stay out of `entities` above so that vector remains
+    // a zip over the place and resource declarations.
+    for declaration in &patch.declarations {
+        let handle = match declaration {
+            Declaration::Fact(fact) => &fact.handle,
+            Declaration::Channel(channel) => &channel.handle,
+            _ => continue,
+        };
+        let entity_id = EntityId(derive_id(
+            ENTITY_NAMESPACE,
+            world_id,
+            command_id,
+            handle,
+            None,
+        ));
+        if state.entities.contains_key(&entity_id) {
+            collisions.push(Mismatch::CanonicalCollision {
+                handle: handle.clone(),
+            });
+        }
+        allocated_entities.insert(handle.clone(), entity_id);
     }
     let entity_id_of = |key: &Key<EntityId>| -> EntityId {
         match key {
@@ -3145,6 +4009,68 @@ pub(super) fn resolve_patch(
             }
         }
     };
+    let reach_of = |reach: &ReachRef| -> Reach {
+        match reach {
+            ReachRef::Subjects(members) => Reach::Subjects(
+                members
+                    .iter()
+                    .map(|reference| subject_id_of(&key_of(reference)))
+                    .collect(),
+            ),
+            ReachRef::Place(reference) => Reach::Place(entity_id_of(&key_of(reference))),
+        }
+    };
+    let controller_of = |controller: &Option<Ref<SubjectId>>| -> Option<SubjectId> {
+        controller
+            .as_ref()
+            .map(|reference| subject_id_of(&key_of(reference)))
+    };
+    let audience_of = |audience: &AudienceRef| -> Audience {
+        match audience {
+            AudienceRef::Colocated => Audience::Colocated,
+            AudienceRef::Channel(reference) => Audience::Channel(entity_id_of(&key_of(reference))),
+        }
+    };
+    let mut declared_facts = Vec::new();
+    let mut declared_channels = Vec::new();
+    for declaration in &patch.declarations {
+        match declaration {
+            Declaration::Fact(fact) => declared_facts.push(ResolvedFact {
+                handle: fact.handle.clone(),
+                entity_id: entity_id_of(&Key::Draft(fact.handle.clone())),
+                entity: EntityRecord {
+                    label: fact.label.clone(),
+                    kind: EntityKind::Fact,
+                    container: None,
+                },
+                fact: FactRecord {
+                    statement: fact.statement.clone(),
+                    standing: match &fact.standing {
+                        FactStandingRef::Canonical { evidence } => FactStanding::Canonical {
+                            evidence: evidence.clone(),
+                        },
+                        FactStandingRef::Claimed { by } => FactStanding::Claimed {
+                            by: subject_id_of(&key_of(by)),
+                        },
+                    },
+                },
+            }),
+            Declaration::Channel(channel) => declared_channels.push(ResolvedChannel {
+                handle: channel.handle.clone(),
+                entity_id: entity_id_of(&Key::Draft(channel.handle.clone())),
+                entity: EntityRecord {
+                    label: channel.label.clone(),
+                    kind: EntityKind::Channel,
+                    container: None,
+                },
+                channel: ChannelRecord {
+                    reach: reach_of(&channel.reach),
+                    controller: controller_of(&channel.controller),
+                },
+            }),
+            _ => {}
+        }
+    }
     let grant_of = |grant: &AuthorityGrantRef| -> AuthorityGrant {
         AuthorityGrant {
             kind: grant.kind.clone(),
@@ -3271,6 +4197,37 @@ pub(super) fn resolve_patch(
             ComponentOp::CloseForum { grievance } => ResolvedOp::CloseForum {
                 grievance: grievance.clone(),
             },
+            ComponentOp::AcquireKnowledge {
+                subject,
+                fact,
+                source,
+                confidence,
+            } => ResolvedOp::AcquireKnowledge {
+                subject: subject_id_of(&key_of(subject)),
+                fact: entity_id_of(&key_of(fact)),
+                source: *source,
+                confidence: *confidence,
+            },
+            ComponentOp::Communicate { speaker, fact, to } => ResolvedOp::Communicate {
+                speaker: subject_id_of(&key_of(speaker)),
+                fact: entity_id_of(&key_of(fact)),
+                to: audience_of(to),
+            },
+            ComponentOp::Forget { subject, fact } => ResolvedOp::Forget {
+                subject: subject_id_of(&key_of(subject)),
+                fact: entity_id_of(&key_of(fact)),
+            },
+            ComponentOp::SetReach { channel, reach } => ResolvedOp::SetReach {
+                channel: entity_id_of(&key_of(channel)),
+                reach: reach_of(reach),
+            },
+            ComponentOp::SetController {
+                channel,
+                controller,
+            } => ResolvedOp::SetController {
+                channel: entity_id_of(&key_of(channel)),
+                controller: controller_of(controller),
+            },
         })
         .collect();
 
@@ -3284,6 +4241,8 @@ pub(super) fn resolve_patch(
         entities,
         routes,
         affordances,
+        facts: declared_facts,
+        channels: declared_channels,
         operations,
         evidence: patch.evidence.clone(),
     })
@@ -3400,8 +4359,8 @@ pub(super) fn containment_terminates(
 mod tests {
     use super::*;
     use crate::world::tests::{
-        activate, admit_topology, auth_principal, command, creation, owner, player, reject_owner,
-        speak_entry, submit_owner,
+        FIXTURE_ENTITIES, activate, admit_topology, auth_principal, command, creation, owner,
+        player, reject_owner, speak_entry, submit_owner,
     };
     use crate::world::{
         CallerId, CommandBody, CommandId, KernelError, SubmitReceipt, WorldKernel, WorldPhase,
@@ -3878,7 +4837,7 @@ mod tests {
         );
         assert_eq!(kernel.snapshot().unwrap(), before);
         assert_eq!(kernel.journal.commit_count(), commits_before);
-        assert!(kernel.state.entities.is_empty());
+        assert_eq!(kernel.state.entities.len(), FIXTURE_ENTITIES);
         assert_eq!(kernel.state.subjects.len(), before.subjects.len());
     }
 
@@ -3914,7 +4873,7 @@ mod tests {
         let after = kernel.snapshot().unwrap();
         assert_eq!(after.revision, before.revision + 1);
         assert_eq!(kernel.journal.commit_count(), commits_before + 1);
-        assert_eq!(kernel.state.entities.len(), 2);
+        assert_eq!(kernel.state.entities.len(), 3);
         let road = *kernel
             .state
             .entities
@@ -4076,7 +5035,7 @@ mod tests {
         ]);
         let receipt = submit_owner(&mut kernel, &before, admit(repaired));
         assert!(matches!(receipt, SubmitReceipt::Applied(_)));
-        assert_eq!(kernel.state.entities.len(), 2);
+        assert_eq!(kernel.state.entities.len(), 3);
     }
 
     #[test]
@@ -4145,7 +5104,7 @@ mod tests {
         }
         assert_eq!(kernel.journal.commit_count(), commits_before);
         assert_eq!(kernel.snapshot().unwrap(), active);
-        assert!(kernel.state.entities.is_empty());
+        assert_eq!(kernel.state.entities.len(), FIXTURE_ENTITIES);
     }
 
     /// Three places whose containers form a cycle name themselves, and the
@@ -4192,7 +5151,7 @@ mod tests {
         expected.sort();
         assert_eq!(mismatches, expected);
         assert_eq!(kernel.snapshot().unwrap(), before);
-        assert!(kernel.state.entities.is_empty());
+        assert_eq!(kernel.state.entities.len(), FIXTURE_ENTITIES);
     }
 
     #[test]
@@ -4417,7 +5376,7 @@ mod tests {
         let snapshot = kernel.snapshot().unwrap();
         assert_eq!(snapshot, kernel.snapshot().unwrap());
 
-        assert_eq!(snapshot.places.len(), 3);
+        assert_eq!(snapshot.places.len(), 4);
         let place_ids: Vec<_> = snapshot.places.iter().map(|place| place.id).collect();
         let mut sorted_places = place_ids.clone();
         sorted_places.sort();
@@ -4628,7 +5587,7 @@ mod tests {
         let reopened = WorldKernel::open(&path, before.world_id).unwrap();
         assert_eq!(reopened.snapshot().unwrap(), before);
         assert_eq!(reopened.journal.commit_count(), 1);
-        assert!(reopened.state.entities.is_empty());
+        assert_eq!(reopened.state.entities.len(), FIXTURE_ENTITIES);
         assert!(
             !reopened
                 .state
@@ -4755,6 +5714,22 @@ mod tests {
         );
 
         let topology = admit_topology(&mut kernel);
+        // Every fixture subject stands somewhere now, so the unplaced case is
+        // declared here rather than borrowed from a genesis accident.
+        let before = kernel.snapshot().unwrap();
+        let speak = speak_entry(&kernel);
+        submit_owner(
+            &mut kernel,
+            &before,
+            admit(patch_of(vec![Declaration::Subject(SubjectDeclaration {
+                handle: draft("nowhere"),
+                label: "The Unplaced".into(),
+                kind: SubjectKind::Person,
+                controller: NewController::NarrativePersona,
+                affordances: BTreeSet::from([speak]),
+                position: None,
+            })])),
+        );
         let active = activate(&mut kernel);
         let commits_before = kernel.journal.commit_count();
         let unplaced = *kernel
@@ -4762,7 +5737,7 @@ mod tests {
             .subjects
             .iter()
             .find(|(subject_id, _)| !kernel.state.positions.contains_key(*subject_id))
-            .expect("a genesis subject was declared without a position")
+            .expect("the unplaced subject this test declared")
             .0;
 
         // Relocating a subject that stands nowhere.
@@ -4840,6 +5815,8 @@ mod tests {
                     entities: Vec::new(),
                     routes: Vec::new(),
                     affordances: Vec::new(),
+                    facts: Vec::new(),
+                    channels: Vec::new(),
                     operations: vec![ResolvedOp::Relocate {
                         subject_id: topology.walker,
                         edge_id,
