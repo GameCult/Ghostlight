@@ -958,6 +958,114 @@ mod tests {
         ));
     }
 
+    /// Soul: `a_forged_band_or_forged_effect_does_not_apply` proves the live
+    /// `apply_effect` arm re-derives. `verify_state_shape` does not re-derive a
+    /// band — it only bounds the index and refuses effects under an empty band —
+    /// so the layer that kills a persisted forgery is replay effect-equality.
+    /// This forges a committed decision inside the journal, re-digests it into a
+    /// contiguous chain, and asserts recovery refuses it.
+    #[test]
+    fn soul_a_forged_band_or_effect_in_the_journal_dies_at_replay() {
+        use crate::world::tests::{
+            activate, admit_custody, admit_topology, affordance_named, auth_principal, command,
+            opportunity_for, owner,
+        };
+        use crate::world::{
+            AuthenticatedCaller, DecisionInvocation, Magnitude, ProposedEffect, Quantity,
+            RoleBinding, Target,
+        };
+
+        let forge = |kind: &str, mutate: &dyn Fn(&mut crate::world::DecisionEvent)| {
+            let directory = tempfile::tempdir().unwrap();
+            let path = directory.path().join("world.cc");
+            let authenticated = auth_principal(owner());
+            let (mut kernel, _) = WorldKernel::create(
+                &path,
+                crate::world::tests::creation(CommandId::new(), "ForgedDecision"),
+                &authenticated,
+            )
+            .unwrap();
+            let topology = admit_topology(&mut kernel);
+            let custody = admit_custody(&mut kernel, &topology);
+            let active = activate(&mut kernel);
+            let entry = affordance_named(&active, kind);
+            let opportunity = opportunity_for(&active, custody.holder);
+            let caller = CallerId::Controller(opportunity.controller_id);
+            let command_id = CommandId::new();
+            let role = |name: &str, target| RoleBinding {
+                role: crate::world::Role(name.into()),
+                target,
+            };
+            kernel
+                .submit(
+                    command(
+                        &active,
+                        command_id,
+                        caller.clone(),
+                        CommandBody::ExerciseDecision {
+                            opportunity,
+                            invocation: DecisionInvocation {
+                                affordance: entry,
+                                bindings: vec![
+                                    role("from", Target::Subject(custody.holder)),
+                                    role("recipient", Target::Subject(custody.counterparty)),
+                                    role("place", Target::Entity(topology.yard)),
+                                    role("resource", Target::Entity(custody.tithe)),
+                                ],
+                                proposed: vec![ProposedEffect {
+                                    slot: 0,
+                                    magnitude: Magnitude::Quantity(Quantity(2)),
+                                }],
+                                speech: None,
+                            },
+                        },
+                    ),
+                    &AuthenticatedCaller::fixture(caller),
+                )
+                .unwrap();
+
+            // The honest journal recovers.
+            assert!(verify_history(&kernel.state, &kernel.journal.commits).is_ok());
+
+            let mut forged_head = kernel.state.clone();
+            let mut forged_commits = kernel.journal.commits.clone();
+            let forged = forged_commits.get_mut(&command_id).unwrap();
+            let WorldEffect::DecisionExercised { event, .. } = &mut forged.effect else {
+                panic!("expected an exercised decision effect");
+            };
+            mutate(event);
+            let forged_event = event.clone();
+            *forged_head.events.last_mut().unwrap() = forged_event;
+            forged.digest = commit_digest(forged).unwrap();
+            forged_head.last_commit_digest = Some(forged.digest.clone());
+            forged_head.state_digest = String::new();
+            forged_head.state_digest = crate::world::state_digest(&forged_head).unwrap();
+            (forged_head, forged_commits)
+        };
+
+        // A band the seed did not draw, held inside a chain that verifies.
+        let (head, commits) = forge("carry_chance", &|event| {
+            event.band = (event.band + 1) % 3;
+        });
+        assert!(matches!(
+            verify_history(&head, &commits),
+            Err(JournalError::Corrupt(_))
+        ));
+
+        // A magnitude the ceiling admitted but the lowering never produced.
+        let (head, commits) = forge("carry", &|event| {
+            let Some(crate::world::ResolvedOp::Transfer { qty, .. }) = event.effects.first_mut()
+            else {
+                panic!("expected a lowered transfer");
+            };
+            *qty = Quantity(1);
+        });
+        assert!(matches!(
+            verify_history(&head, &commits),
+            Err(JournalError::Corrupt(_))
+        ));
+    }
+
     #[test]
     fn replay_rejects_genesis_that_does_not_derive_from_its_creation_command() {
         let directory = tempfile::tempdir().unwrap();

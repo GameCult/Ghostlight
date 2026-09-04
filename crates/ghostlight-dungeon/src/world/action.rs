@@ -1022,6 +1022,153 @@ mod tests {
         );
     }
 
+    /// Soul: contract 10's discriminating case. `a_zero_effect_band_commits_
+    /// nothing_but_the_event` proves an empty band commits nothing, and
+    /// `a_committed_event_carries_the_exact_lowered_operations` proves a
+    /// one-slot entry lowers what it declares — neither separates a slot the
+    /// proposer offered from a slot the draw admitted. This entry declares two
+    /// slots on disjoint bands and proposes both within their ceilings: only
+    /// the drawn band's slot may appear in `event.effects`, and the other slot
+    /// must move no partition. Both bands are exercised, so neither branch
+    /// passes by never being taken.
+    #[test]
+    fn soul_only_the_selected_bands_effects_are_committed() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut bench = bench(directory.path(), "SelectedBand");
+        let split_id = affordance_named(&bench.active, "carry_split");
+        let split = DecisionInvocation {
+            affordance: split_id,
+            bindings: vec![
+                binding("from", Target::Subject(bench.clerk)),
+                binding("recipient", Target::Subject(bench.keeper)),
+                binding("place", Target::Entity(bench.yard)),
+                binding("resource", Target::Entity(bench.tithe)),
+            ],
+            proposed: vec![
+                ProposedEffect {
+                    slot: 0,
+                    magnitude: Magnitude::Quantity(Quantity(2)),
+                },
+                ProposedEffect {
+                    slot: 1,
+                    magnitude: Magnitude::Quantity(Quantity(1)),
+                },
+            ],
+            speech: None,
+        };
+        let mut seen: BTreeSet<usize> = BTreeSet::new();
+
+        for wanted in [0usize, 1] {
+            // The draw is a pure function of the pre-commit revision and the
+            // command id, so the command id that reaches a band is findable
+            // before the envelope is built rather than hunted by retrying.
+            let opportunity = bench.clerk_opportunity();
+            let command_id = (0..256)
+                .map(|_| CommandId::issue())
+                .find(|candidate| {
+                    exercise(&bench.kernel.state, *candidate, &opportunity, &split)
+                        .expect("the invocation is admissible")
+                        .band
+                        == wanted
+                })
+                .expect("a two-band entry reaches both bands over 256 command ids");
+
+            let before_clerk = bench.held(bench.clerk);
+            let before_keeper = bench.held(bench.keeper);
+            let caller = CallerId::Controller(opportunity.controller_id);
+            let receipt = bench
+                .kernel
+                .submit(
+                    command(
+                        &bench.active,
+                        command_id,
+                        caller.clone(),
+                        CommandBody::ExerciseDecision {
+                            opportunity,
+                            invocation: split.clone(),
+                        },
+                    ),
+                    &AuthenticatedCaller::fixture(caller),
+                )
+                .expect("the invocation commits");
+            assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+            bench.refresh();
+            let event = bench
+                .kernel
+                .state
+                .events
+                .last()
+                .expect("the committed event")
+                .clone();
+            assert_eq!(event.band, wanted);
+            seen.insert(event.band);
+            match event.band {
+                0 => {
+                    assert_eq!(
+                        event.effects,
+                        vec![ResolvedOp::Transfer {
+                            from: bench.clerk,
+                            to: bench.keeper,
+                            resource: bench.tithe,
+                            qty: Quantity(2),
+                        }]
+                    );
+                    assert_eq!(bench.held(bench.clerk), before_clerk - 2);
+                    assert_eq!(bench.held(bench.keeper), before_keeper + 2);
+                }
+                1 => {
+                    assert_eq!(
+                        event.effects,
+                        vec![ResolvedOp::Consume {
+                            holder: bench.clerk,
+                            resource: bench.tithe,
+                            qty: Quantity(1),
+                        }]
+                    );
+                    assert_eq!(bench.held(bench.clerk), before_clerk - 1);
+                    assert_eq!(bench.held(bench.keeper), before_keeper);
+                }
+                other => panic!("the entry declares two bands, drew {other}"),
+            }
+        }
+
+        assert_eq!(
+            seen.len(),
+            2,
+            "both declared bands must be reachable across command ids"
+        );
+    }
+
+    /// Soul: `RoleSpec` persists inside the catalog, so `RefKind` had to become
+    /// serializable this pass. An internally tagged newtype over an `Option`
+    /// does not serialize; this one is adjacently tagged, and a stored
+    /// `Subject(None)` role is what would fault on first write if that were
+    /// wrong. The fixture catalog carries four such roles.
+    #[test]
+    fn soul_a_stored_role_spec_over_an_optional_subject_kind_round_trips() {
+        let directory = tempfile::tempdir().unwrap();
+        let bench = bench(directory.path(), "OptionalSubjectKind");
+        let entry = bench
+            .kernel
+            .state
+            .affordance_catalog
+            .get(&bench.carry)
+            .expect("the fixture entry");
+        assert!(
+            entry
+                .roles
+                .iter()
+                .any(|spec| spec.kind == RefKind::Subject(None))
+        );
+
+        // The state row encoder and the digest owner are the same `to_vec_named`
+        // path the store writes through.
+        let encoded = rmp_serde::to_vec_named(&bench.kernel.state).expect("the state encodes");
+        let decoded: WorldState = rmp_serde::from_slice(&encoded).expect("the state decodes");
+        assert_eq!(decoded.affordance_catalog, bench.kernel.state.affordance_catalog);
+        assert!(digest(&bench.kernel.state).is_ok());
+    }
+
     #[test]
     fn a_forged_band_or_forged_effect_does_not_apply() {
         let directory = tempfile::tempdir().unwrap();

@@ -2429,6 +2429,66 @@ mod tests {
     /// one thing — a precondition or a band table — by naming a different entry
     /// rather than by reaching into a committed catalog. The catalog is
     /// Draft-only, so authoring it is how a world gets a verb.
+    fn carry_roles() -> Vec<RoleSpec> {
+        vec![
+            RoleSpec {
+                role: Role("from".into()),
+                kind: RefKind::Subject(None),
+            },
+            RoleSpec {
+                role: Role("recipient".into()),
+                kind: RefKind::Subject(None),
+            },
+            RoleSpec {
+                role: Role("place".into()),
+                kind: RefKind::Entity(EntityKind::Place),
+            },
+            RoleSpec {
+                role: Role("resource".into()),
+                kind: RefKind::Entity(EntityKind::Resource),
+            },
+        ]
+    }
+
+    /// Two slots on disjoint bands: band 0 names only the transfer, band 1 only
+    /// the consume. Both slots are proposed on every invocation, so the entry
+    /// separates what a proposer offered from what a draw admitted.
+    fn split_variant() -> Declaration {
+        Declaration::Affordance(AffordanceDeclaration {
+            handle: DraftHandle::new("carry-split"),
+            kind: AffordanceKindName("carry_split".into()),
+            roles: carry_roles(),
+            preconditions: Vec::new(),
+            effect_slots: vec![
+                EffectSlot {
+                    op_kind: ComponentOpKind::Transfer,
+                    roles: vec![
+                        Role("from".into()),
+                        Role("recipient".into()),
+                        Role("resource".into()),
+                    ],
+                    bounds: Bounds::Quantity(Quantity(3)),
+                },
+                EffectSlot {
+                    op_kind: ComponentOpKind::Consume,
+                    roles: vec![Role("from".into()), Role("resource".into())],
+                    bounds: Bounds::Quantity(Quantity(3)),
+                },
+            ],
+            outcome_bands: vec![
+                OutcomeBand {
+                    weight: 1,
+                    effects: vec![0],
+                },
+                OutcomeBand {
+                    weight: 1,
+                    effects: vec![1],
+                },
+            ],
+            carries_speech: false,
+        })
+    }
+
     fn carry_variant(
         handle: &str,
         kind: &str,
@@ -2438,24 +2498,7 @@ mod tests {
         Declaration::Affordance(AffordanceDeclaration {
             handle: DraftHandle::new(handle),
             kind: AffordanceKindName(kind.into()),
-            roles: vec![
-                RoleSpec {
-                    role: Role("from".into()),
-                    kind: RefKind::Subject(None),
-                },
-                RoleSpec {
-                    role: Role("recipient".into()),
-                    kind: RefKind::Subject(None),
-                },
-                RoleSpec {
-                    role: Role("place".into()),
-                    kind: RefKind::Entity(EntityKind::Place),
-                },
-                RoleSpec {
-                    role: Role("resource".into()),
-                    kind: RefKind::Entity(EntityKind::Resource),
-                },
-            ],
+            roles: carry_roles(),
             preconditions,
             effect_slots: vec![EffectSlot {
                 op_kind: ComponentOpKind::Transfer,
@@ -2566,6 +2609,7 @@ mod tests {
                     },
                 ],
             ),
+            split_variant(),
         ]
     }
 
@@ -3876,6 +3920,94 @@ mod tests {
             .unwrap_err();
         assert!(matches!(error, KernelError::AffordanceDenied));
         assert_eq!(kernel.snapshot().unwrap(), active);
+    }
+
+    /// Soul: an `AffordanceId` now names a catalog entry, not a subject's copy
+    /// of one — the three genesis subjects share Speak's single id. So the id
+    /// cannot be what gates: grant membership for the invoking scope is. The
+    /// same `convene` id commits for the scope that holds it and is denied for
+    /// one that does not.
+    #[test]
+    fn soul_a_shared_catalog_id_is_gated_by_the_scope_grant() {
+        let dir = tempfile::tempdir().unwrap();
+        let (mut kernel, _) = WorldKernel::create(
+            dir.path().join("world.cc"),
+            creation(CommandId::new(), "SharedCatalogIds"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let active = activate(&mut kernel);
+        let speak = affordance_named(&active, "speak");
+        let convened = affordance_named(&active, "convene");
+
+        // One entry, one id, every genesis subject a grantee.
+        assert_eq!(active.subjects.len(), 3);
+        assert!(
+            active
+                .subjects
+                .iter()
+                .all(|subject| subject.affordances.contains(&speak))
+        );
+        assert!(
+            active
+                .opportunities
+                .iter()
+                .all(|opportunity| opportunity.affordance_ids.contains(&speak))
+        );
+        let holders: Vec<SubjectId> = active
+            .subjects
+            .iter()
+            .filter(|subject| subject.affordances.contains(&convened))
+            .map(|subject| subject.id)
+            .collect();
+        assert_eq!(holders.len(), 1);
+
+        let invoke = |kernel: &mut WorldKernel, snapshot: &WorldSnapshot, subject: SubjectId| {
+            let opportunity = opportunity_for(snapshot, subject);
+            let caller = CallerId::Controller(opportunity.controller_id);
+            kernel.submit(
+                command(
+                    snapshot,
+                    CommandId::new(),
+                    caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        opportunity,
+                        invocation: DecisionInvocation {
+                            affordance: convened,
+                            bindings: Vec::new(),
+                            proposed: Vec::new(),
+                            speech: Some(Utterance::new("The council convenes.").unwrap()),
+                        },
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+        };
+
+        // The grantee's scope commits with that id.
+        assert!(matches!(
+            invoke(&mut kernel, &active, holders[0]).unwrap(),
+            SubmitReceipt::Applied(_)
+        ));
+
+        // A scope that does not hold the entry is denied the very same id, and
+        // nothing commits.
+        let after = kernel.snapshot().unwrap();
+        // A controller-driven scope, so the denial is the grant check rather
+        // than the human lane's caller check reached first.
+        let stranger = after
+            .subjects
+            .iter()
+            .find(|subject| {
+                !subject.affordances.contains(&convened) && subject.human_controller.is_none()
+            })
+            .expect("a controller-driven subject without the grant")
+            .id;
+        assert!(matches!(
+            invoke(&mut kernel, &after, stranger).unwrap_err(),
+            KernelError::AffordanceDenied
+        ));
+        assert_eq!(kernel.snapshot().unwrap(), after);
     }
 
     #[test]
