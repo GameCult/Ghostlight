@@ -1,0 +1,335 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "delvehold.charter-burden-claim-v0.v0",
+  "source_status": "canonical_with_fixture_elaboration",
+  "fixture_status": "grounded_draft",
+  "source_refs": [
+    {
+      "source_id": "lore-index",
+      "path": "Delvehold/Lore/index.md",
+      "title": "Lore",
+      "line_start": 1,
+      "line_end": 32,
+      "relevance": "Grounds the setting as a living magical ecology under industrial pressure and distinguishes competing cultural interpretations from settled world knowledge."
+    },
+    {
+      "source_id": "mastership",
+      "path": "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+      "title": "Mastership and citizenship",
+      "line_start": 1,
+      "line_end": 66,
+      "relevance": "Primary institutional source: open but workshop-bound civic franchise, local-first jurisdiction, public complaint and audit, plus the fixture-authored burden-claim and answering-table procedure."
+    },
+    {
+      "source_id": "halflings",
+      "path": "Delvehold/Lore/Peoples/Halflings.md",
+      "title": "Halflings",
+      "line_start": 1,
+      "line_end": 16,
+      "relevance": "Grounds agricultural dependence on dwarven pumps, careful long-term field observation, glassy crop mutation, and demands for alternate crystal supply and restitution."
+    },
+    {
+      "source_id": "dwarves",
+      "path": "Delvehold/Lore/Peoples/Dwarves.md",
+      "title": "Dwarves",
+      "line_start": 1,
+      "line_end": 34,
+      "relevance": "Grounds durable craft, seal-bearing Mastership across ancestry, infrastructure dependence, and the political weight of keeping water and other public systems running."
+    },
+    {
+      "source_id": "the-greathold",
+      "path": "Delvehold/Lore/The Greathold.md",
+      "title": "The Greathold",
+      "line_start": 1,
+      "line_end": 60,
+      "relevance": "Grounds connected Holds, gate markets, guild law, contract expertise, and jurisdiction widening outward with material consequence rather than descending from a permanent capital."
+    },
+    {
+      "source_id": "dwarven-industry",
+      "path": "Delvehold/Lore/Industry/Dwarven Industry.md",
+      "title": "Dwarven industry",
+      "line_start": 1,
+      "line_end": 40,
+      "relevance": "Grounds forge consortiums, deep companies, insurers and public institutions as distinct interests, and makes reserve power and pump continuity material constraints on relief."
+    },
+    {
+      "source_id": "runic-engineering",
+      "path": "Delvehold/Lore/Industry/Runic Engineering.md",
+      "title": "Runic engineering",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds crystal-fed pump engines, visible runic interfaces, municipal dependence, and the displacement created by standardized power machinery."
+    },
+    {
+      "source_id": "surface-symptoms",
+      "path": "Delvehold/Lore/Crisis/Surface Symptoms.md",
+      "title": "Surface symptoms",
+      "line_start": 1,
+      "line_end": 26,
+      "relevance": "Grounds crop mutation, uncertain attribution, overlapping records, and downstream councils sending evidence against machinery they cannot vote on."
+    },
+    {
+      "source_id": "international-crisis",
+      "path": "Delvehold/Lore/Crisis/International Crisis.md",
+      "title": "International crisis",
+      "line_start": 1,
+      "line_end": 18,
+      "relevance": "Grounds foreign dependence on dwarven pumps and the diplomatic difficulty of removing power systems before a viable substitute exists."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Early public attribution disputes, after foreign pump dependence and surface crop mutations have both become politically visible",
+    "location": "Rillgate Contract Hall at a surface-facing Greathold freight gate; Brackenwash is a fixture-local halfling farming town connected by an export pump contract.",
+    "tonal_mode": "Warm procedural wit with agrarian stakes: bureaucracy is funny because people have made it usable, and frightening because crops continue changing while it works.",
+    "summary": "Brackenwash speaker Pella Reedbank lodges a burden claim against a crystal-fed pump contract. Rillgate's answering table must distinguish evidence custody, contract provenance, conflicts of interest, interim power, and material redress without claiming certainty about the injured ecology.",
+    "public_facts": [
+      {
+        "text": "Halfling agricultural communities use dwarven enchanted pumps and preserve long field records that can reveal slow magical ecological change.",
+        "source_refs": ["halflings", "surface-symptoms"]
+      },
+      {
+        "text": "Greathold jurisdiction begins near the affected matter and widens when consequences or required remedies cross Hold and route boundaries.",
+        "source_refs": ["mastership", "the-greathold"]
+      },
+      {
+        "text": "A foreign claimant needs no civic seal to lodge a burden claim, but the deciding authority remains with unconflicted workshop seals assembled through the affected moot.",
+        "source_refs": ["mastership"]
+      },
+      {
+        "text": "A marked drawdown can isolate a named disputed crystal lot and use a named reserve or substitute supply, but the procedure cannot invent power or erase the resulting service cost.",
+        "source_refs": ["mastership", "dwarven-industry"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Brackenwash needs its pump to keep working even while its inhabitants suspect the power supply is contributing to crop mutation.",
+        "source_refs": ["halflings", "international-crisis"]
+      },
+      {
+        "text": "Rillgate can bind local contract custody, reserves, surety and workshops; it cannot settle the nature of the world-spirit or command a foreign town.",
+        "source_refs": ["mastership", "surface-symptoms"]
+      },
+      {
+        "text": "Commercial interdependence can make every technically qualified seal financially interested, turning conflict disclosure into a condition of legitimate judgment.",
+        "source_refs": ["mastership", "dwarven-industry"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "brackenwash-claimants",
+      "label": "Brackenwash town claimants",
+      "group_type": "foreign_agricultural_council",
+      "institutional_logic": [
+        "Keep irrigation running while forcing the export contract to answer for possible harm.",
+        "Preserve field observation and sample custody outside the supplier's files."
+      ],
+      "material_incentives": [
+        "Secure alternate crystal or a safe repair before the next irrigation turns.",
+        "Recover seed, livestock-care and inspection costs without surrendering evidence."
+      ],
+      "internal_virtues": ["Long memory", "Named burdens", "Duplicate records", "Practical suspicion"],
+      "internal_shames": ["Letting a claim become somebody else's speech", "Winning compensation while the field keeps changing"],
+      "prestige_markers": ["A field book kept across seasons", "A sample whose custody survives travel", "A pump kept useful on safer terms"],
+      "taboo_triggers": ["Calling crop injury a warranty inconvenience", "Demanding that the town choose between proof and water before alternatives are counted"],
+      "emotional_display_norms": ["Fear appears as dates, duplicate jars, livestock names, pump schedules, and jokes too exact to be soothing."],
+      "trust_defaults": ["Trusts repeated field observation and independent custody; treats supplier speed as useful but interested."],
+      "speech_register_cues": ["Agricultural particulars", "Dry queue humor", "Names before aggregates", "Direct requests for material relief"],
+      "source_refs": ["halflings", "surface-symptoms", "mastership"]
+    },
+    {
+      "group_id": "rillgate-answering-table",
+      "label": "Rillgate answering table",
+      "group_type": "temporary_civic_bench",
+      "institutional_logic": [
+        "Assemble unconflicted civic seals in the smallest jurisdiction able to reach both cause and remedy.",
+        "Keep clerical routing, technical testimony and judgment as separate authorities."
+      ],
+      "material_incentives": [
+        "Protect the legitimacy of Greathold contracts without privatizing cross-border harms.",
+        "Spend reserve crystal only against a bounded and inspectable order."
+      ],
+      "internal_virtues": ["Visible custody", "Narrow orders", "Declared interest", "Attributable delay"],
+      "internal_shames": ["A paid supplier judging its own cord", "A seal pretending to create resources"],
+      "prestige_markers": ["An order that names its cost", "A clean recusal", "A claim widened before local authority becomes fiction"],
+      "taboo_triggers": ["Private settlement presented as public redress", "Foreign harm dismissed because the claimant lacks a Greathold vote"],
+      "emotional_display_norms": ["Alarm is compressed into docket marks, recusal, reserve counts and increasingly specific questions."],
+      "trust_defaults": ["Trusts witnessed custody and disclosed interests more than rank, wealth or expert certainty."],
+      "speech_register_cues": ["Plain procedural distinction", "Read-aloud provenance", "Bounded authority", "Material arithmetic"],
+      "source_refs": ["mastership", "the-greathold", "dwarves"]
+    },
+    {
+      "group_id": "rillgate-exporter",
+      "label": "Rillgate power exporter",
+      "group_type": "forge_consortium_site",
+      "institutional_logic": [
+        "Keep installed pumps operating and disputed harms inside warranty terms.",
+        "Prevent one local claim from freezing a crystal lot shared by many buyers."
+      ],
+      "material_incentives": [
+        "Avoid reserve draw, surety payment, lot disclosure and widened claims.",
+        "Preserve the exporter's reputation for continuous operation."
+      ],
+      "internal_virtues": ["Rapid repair", "Continuity", "Specific fault diagnosis", "Contract confidence"],
+      "internal_shames": ["An interrupted buyer", "A provenance chain that becomes an accusation", "A public supplier conflict"],
+      "prestige_markers": ["Same-day replacement", "Unbroken pump hours", "A dispute closed as ordinary service"],
+      "taboo_triggers": ["Treating uncertain ecological attribution as settled liability", "Letting a small foreign buyer bind an entire shared lot"],
+      "emotional_display_norms": ["Fear becomes helpful speed, narrowed definitions, clean gloves and concern for other customers."],
+      "trust_defaults": ["Trusts controlled inspection and warranty custody; distrusts public records that combine technical uncertainty with political pressure."],
+      "speech_register_cues": ["Warranty language", "Continuity warnings", "Buyer protection", "Careful non-admission"],
+      "source_refs": ["dwarven-industry", "runic-engineering", "mastership"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "brackenwash-claimants.water-and-proof",
+      "applies_to": ["brackenwash-claimants"],
+      "pressure_type": "dependency_and_redress",
+      "summary": "The town cannot treat stopping its pump as costless, so useful resistance must preserve service, evidence, or a named substitute rather than perform purity.",
+      "projection_use": "Give Pella choices among custody, provenance, public testimony, interim supply and restitution; each route spends time or leverage.",
+      "source_refs": ["halflings", "international-crisis"]
+    },
+    {
+      "field_id": "rillgate-answering-table.seal-needs-boundary",
+      "applies_to": ["rillgate-answering-table"],
+      "pressure_type": "public_authority",
+      "summary": "The seals can bind only named Greathold owners and resources; an honest order identifies its jurisdiction, its evidence and who pays its service cost.",
+      "projection_use": "Keep the bench from declaring ecological truth or solving scarcity by fiat.",
+      "source_refs": ["mastership", "dwarven-industry"]
+    },
+    {
+      "field_id": "rillgate-exporter.private-warranty-gravity",
+      "applies_to": ["rillgate-exporter"],
+      "pressure_type": "liability",
+      "summary": "A rapid private repair protects service and supplier reputation while pulling evidence out of public custody.",
+      "projection_use": "Make Orik's offer materially useful, institutionally narrowing, and therefore difficult to refuse cleanly.",
+      "source_refs": ["dwarven-industry", "runic-engineering"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "rillgate-exporter",
+      "target_group_id": "brackenwash-claimants",
+      "observer_read": ["Anxious buyer", "Warranty escalation", "Political attempt to settle uncertain causation"],
+      "target_self_read": ["Long-term observers", "Dependent customers", "A town preserving evidence because the supplier has stronger custody"],
+      "misread_patterns": ["Supplier speed can mistake the desire for continued water as consent to privatize the claim."],
+      "likely_insults": ["agitation", "anecdote", "maintenance complaint"],
+      "projection_use": "Let Orik offer real repair while repeatedly shrinking the public meaning of the evidence.",
+      "source_refs": ["halflings", "dwarven-industry"]
+    },
+    {
+      "observer_group_id": "brackenwash-claimants",
+      "target_group_id": "rillgate-answering-table",
+      "observer_read": ["Dwarven authority judging dwarven trade", "A route to reserve power", "A public record that may outlive a private denial"],
+      "target_self_read": ["A locally assembled bench", "Seals answerable through workshops", "Authority bounded to Greathold contracts and resources"],
+      "misread_patterns": ["Claimants may read slow evidentiary work as conspiracy where scarcity and jurisdiction are also real constraints."],
+      "likely_insults": ["seal circle", "mountain delay"],
+      "projection_use": "Preserve the franchise asymmetry without making every clerk or sealkeeper secretly captured.",
+      "source_refs": ["mastership", "surface-symptoms"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "foreign-town-speaker",
+      "summary": "A halfling council speaker who may lodge, question and widen a claim but cannot cast a Greathold civic seal.",
+      "obligations": ["Keep evidence tied to named neighbours", "Protect a town copy", "Ask for usable water", "Expose conflicts without pretending to own the verdict"],
+      "available_masks": ["Patient customer", "Exact farmer", "Dry petitioner", "Unimpressed foreigner"],
+      "failure_modes": ["Surrendering custody for speed", "Demanding a remedy the reserve cannot carry", "Treating correlation as final cosmology"],
+      "source_refs": ["mastership", "halflings", "surface-symptoms"]
+    },
+    {
+      "role_id": "receiving-clerk",
+      "summary": "A dwarf clerk who marks evidence, follows contract provenance and routes authority without deciding the claim.",
+      "obligations": ["Keep a public docket", "Separate witness from judgment", "Name delays and resource costs", "Carry a widened claim intact"],
+      "available_masks": ["Routine boredom", "Literal correction", "Procedural hospitality", "Arithmetic"],
+      "failure_modes": ["Letting expert language become a verdict", "Hiding service loss inside a file transfer", "Owning the only copy"],
+      "source_refs": ["mastership", "the-greathold"]
+    },
+    {
+      "role_id": "exporter-representative",
+      "summary": "A dwarf workshop Master whose quickest honest repair can also narrow public liability into a private warranty matter.",
+      "obligations": ["Maintain exported machinery", "Protect other buyers sharing the lot", "Answer the contract record", "Disclose custody when ordered"],
+      "available_masks": ["Helpful speed", "Technical modesty", "Concern for continuity", "Careful courtesy"],
+      "failure_modes": ["Confusing repair with redress", "Using dependence as consent", "Treating the town's copy as hostility"],
+      "source_refs": ["dwarven-industry", "runic-engineering", "mastership"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "pella_reedbank",
+      "known_context": [
+        {"text": "Pella knows Brackenwash's pump schedule, field books, livestock injuries, samples, town mandate and the contract papers she carries.", "source_refs": ["halflings", "surface-symptoms"]}
+      ],
+      "beliefs": [
+        {"text": "Pella believes the claim must keep water, evidence and named neighbours in the same argument.", "source_refs": ["halflings", "mastership"]}
+      ],
+      "misreads": [
+        {"text": "Pella may interpret Greathold delay as captured authority before distinguishing conflict, scarce reserve and genuine technical uncertainty.", "source_refs": ["mastership", "international-crisis"]}
+      ],
+      "must_not_know": [
+        {"text": "Pella cannot know whether deep extraction, the specific crystal lot, pump machinery, local magic or another cause produced the glassweed.", "source_refs": ["surface-symptoms"]}
+      ]
+    },
+    {
+      "speaker_id": "nali_stoneclip",
+      "known_context": [
+        {"text": "Nali knows Rillgate contract records, public evidence procedure, current bonded lots, eligible seal rolls and reserve counts.", "source_refs": ["mastership", "the-greathold"]}
+      ],
+      "beliefs": [
+        {"text": "Nali believes a complaint becomes governable when custody, authority and cost are separately visible.", "source_refs": ["mastership"]}
+      ],
+      "misreads": [
+        {"text": "Nali may overvalue a clean docket when the filing delay itself is worsening the town's burden.", "source_refs": ["halflings", "mastership"]}
+      ],
+      "must_not_know": [
+        {"text": "Nali cannot decide causation or the remedy merely because she controls routing and copies.", "source_refs": ["mastership"]}
+      ]
+    },
+    {
+      "speaker_id": "orik_vane",
+      "known_context": [
+        {"text": "Orik knows the export contract, warranty capacity, other buyers attached to the lot and the commercial cost of a public drawdown.", "source_refs": ["dwarven-industry", "runic-engineering"]}
+      ],
+      "beliefs": [
+        {"text": "Orik believes same-day repair is the least harmful response while causation remains uncertain.", "source_refs": ["dwarven-industry", "surface-symptoms"]}
+      ],
+      "misreads": [
+        {"text": "Orik may mistake Brackenwash's need for continuous pumping as acceptance of private warranty custody.", "source_refs": ["halflings", "international-crisis"]}
+      ],
+      "must_not_know": [
+        {"text": "Orik cannot know that replacing the lining will end the mutation or that the deep crystal lot is harmless.", "source_refs": ["surface-symptoms"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Rillgate, Brackenwash, Pella, Nali and Orik are fixture-local inventions used to dramatize the canonical procedure; their branch outcomes are not established history.",
+      "source_refs": ["mastership"]
+    },
+    {
+      "text": "The blue-green comparison filament establishes a repeatable local correspondence, not a settled theory of world-spirit injury or crystal culpability.",
+      "source_refs": ["surface-symptoms", "lore-index"]
+    },
+    {
+      "text": "The three drawn Masters demonstrate ancestry-open Mastership without claiming that mixed benches are mandatory or uniformly representative.",
+      "source_refs": ["mastership", "dwarves"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "How do foreign polities formally authenticate the speaker sent to lodge a burden claim?",
+      "blocks_training": false,
+      "notes": "The fixture states that Pella is Brackenwash's chosen speaker but does not canonize a universal foreign credential."
+    },
+    {
+      "question": "Which guild standards govern comparison basins used for water and magical contamination evidence?",
+      "blocks_training": false,
+      "notes": "The fixture treats the basin as a bounded correlation tool and avoids making it a universal causal detector."
+    },
+    {
+      "question": "How is a marked drawdown prioritized when several foreign utilities and a Greathold public service need the same reserve crystal?",
+      "blocks_training": false,
+      "notes": "The authored procedure requires the cost to be named but leaves priority doctrine for a later Charter pass."
+    }
+  ]
+}

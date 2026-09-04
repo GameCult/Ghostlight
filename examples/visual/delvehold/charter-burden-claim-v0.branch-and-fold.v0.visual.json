@@ -1,0 +1,480 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "charter-burden-claim-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/delvehold/charter-burden-claim-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/delvehold/charter-burden-claim-v0.branch-and-fold.v0.training.json",
+  "scene_id": "charter-burden-claim-v0.rillgate-answering-table",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for the Rillgate burden-claim fixture.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for contract-hall routine, four evidence filings, the mixed-species seal draw, warranty and conflict pressure, the reserve reckoning, and four state-gated remedy families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the hall establishing view, clerk routine, each branch action that changes evidence or authority, the answering-table draw, the comparison-basin reveal, the reserve threshold, and each ending family. The three-seal draw and the visible reserve arithmetic each receive their own screen.",
+    "prompting_rule": "Each base image prompt states complete visible geometry, camera distance, lighting, bodies, reachable objects and current institutional state. Character refs are assembled only for characters visible in that frame; modifiers carry explicit branch or state deltas.",
+    "global_style_cue": "Style: richly textured high-fantasy industrial storybook illustration, precise ink linework and restrained watercolor, carved basalt, worn brass, wet wool and colored contract cords, warm amber lamps against pale blue-green mana light, expressive faces and hands, readable silhouettes, humane procedural comedy with serious agrarian stakes, cinematic composition for interactive-fiction replay.",
+    "prompt_assembly_rule": "Assemble every prompt from global_style_cue plus the scene base_image_prompt, then append visual refs only for visible named characters or groups and triggered state_image_modifiers or global_branch_image_modifiers. Continuity notes stay in tooling. Use a camera-specific render of the declared scene_set map for final multi-angle art.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture revisits one contract hall from counter, wall-cord, bench, locker and wagon-arch angles. Reach, public-versus-clerk sides of the counter, seal seating and custody routes affect branch meaning.",
+      "future_scene_set_need": "For high-consistency website rendering, turn the embedded Rillgate plan into a simple plan view or 3D blockout with the fixed zones, camera slots, sightlines and object states declared below."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "rillgate_hall_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of a long rectangular contract hall carved from charcoal basalt at a mountain gate. A rain-bright arched wagon entrance fills the west end; a barred brass freight lift fills the east end. A waist-high public counter crosses the center with one lowered section, a shallow brass-rimmed comparison basin and abstract geometric docket marks. Colored contract cords run through stamped metal discs along the south wall: copper braid, blue flax and black horsehair. Three empty stone seal seats stand north of the counter. A bonded iron crystal locker and a smaller brass-bound reserve chest sit against the east wall under amber lamps. Porters and traders queue on wet flagstones near the wagon arch while freight clerks work behind the counter.",
+        "visible_characters": [
+          {
+            "agent_id": "rillgate_public_queue",
+            "default_stance": "porters and traders waiting between the rain-bright arch and public counter",
+            "visual_ref": "visual_character_refs.groups.rillgate_public_queue"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The west wagon arch, center cross-counter, south contract-cord wall, north seal seats and east lift-and-locker wall remain fixed across all cameras.",
+          "The lowered counter section gives Pella direct reach to the basin, cords laid across the counter and public docket surface."
+        ]
+      },
+      {
+        "visual_scene_id": "rillgate_morning_clerk",
+        "ink_anchor": "morning_clerk",
+        "base_image_prompt": "Medium view at the lowered public counter inside the basalt contract hall. Pella Reedbank, a one-meter-tall middle-aged halfling woman with warm brown skin, black curls streaked silver, a mustard wool vest, cream rolled sleeves, rain-dark blue-green cloak and wide mud-stained boots, stands beside a small two-wheel handcart carrying two stoppered green-glass water jars, a swollen leather field book and an oilskin contract packet. Behind the counter Nali Stoneclip, a broad dwarf woman with umber skin, iron-grey hair bound close, square spectacles and a charcoal clerk apron, hangs a fresh stamped date-disc on colored wall cords. Amber lamps warm the wet stone and brass basin between them.",
+        "visible_characters": [
+          {
+            "agent_id": "pella_reedbank",
+            "default_stance": "at the low counter with both hands near the evidence cart",
+            "visual_ref": "visual_character_refs.characters.pella_reedbank"
+          },
+          {
+            "agent_id": "nali_stoneclip",
+            "default_stance": "behind the counter hanging a date-disc on the contract cords",
+            "visual_ref": "visual_character_refs.characters.nali_stoneclip"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Pella and her cart remain on the public west side of the counter; Nali remains on the clerk east side unless a later prompt explicitly moves her."
+        ]
+      },
+      {
+        "visual_scene_id": "rillgate_sample_chain",
+        "ink_anchor": "filing_choice.prime_sample_chain",
+        "base_image_prompt": "Close-medium evidence-admission frame at the lowered counter. A one-meter-tall halfling woman in a rain-dark blue-green cloak lifts a stoppered green-glass jar of brown irrigation water into a shallow brass cradle; a hair-thin silver root has grown through the cork from inside. A broad dwarf clerk in square spectacles crimps a scratched tin time-strip around the jar neck while three rough-clothed porters witness from the public side. Plain blue-green runes circle the basin, colored contract cords hang on basalt behind the clerk, and the second jar remains on the halfling's handcart.",
+        "visible_characters": [
+          {
+            "agent_id": "pella_reedbank",
+            "default_stance": "both hands steadying the admitted jar in the basin cradle",
+            "visual_ref": "visual_character_refs.characters.pella_reedbank"
+          },
+          {
+            "agent_id": "nali_stoneclip",
+            "default_stance": "crimping the time-strip around the jar neck",
+            "visual_ref": "visual_character_refs.characters.nali_stoneclip"
+          },
+          {
+            "agent_id": "rillgate_public_queue",
+            "default_stance": "three porters leaning forward as formal witnesses",
+            "visual_ref": "visual_character_refs.groups.rillgate_public_queue"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "rillgate_provenance_trace",
+        "ink_anchor": "filing_choice.prime_provenance",
+        "base_image_prompt": "Oblique medium view along the south wall of the basalt contract hall. A broad dwarf clerk in a charcoal apron draws one copper-and-blue braided contract cord through seven wall rings and lays stamped metal custody discs in sequence across the lowered counter. A one-meter-tall halfling woman in wet travel clothes holds an oilskin pump contract open and follows the chain with one finger. The pale crystal locker is visible at the east wall; rain falls beyond the west wagon arch; an amber clock lamp burns lower as the trace consumes the morning.",
+        "visible_characters": [
+          {
+            "agent_id": "pella_reedbank",
+            "default_stance": "following the custody discs from the public side",
+            "visual_ref": "visual_character_refs.characters.pella_reedbank"
+          },
+          {
+            "agent_id": "nali_stoneclip",
+            "default_stance": "drawing the contract cord through wall rings behind the counter",
+            "visual_ref": "visual_character_refs.characters.nali_stoneclip"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "rillgate_field_record",
+        "ink_anchor": "filing_choice.prime_field_record",
+        "base_image_prompt": "Over-counter view of a swollen leather field book open beneath a brass pressure-copy frame. The pages show dated crop diagrams, sheep-mouth lesions and translucent-edged weeds as small ink drawings. Pella Reedbank, a short brown-skinned halfling woman with silver-streaked black curls and muddy boots, turns a page from the public side. Nali Stoneclip, a broad dwarf clerk with square spectacles and iron-grey bound hair, lifts a thin copied slate sheet from the frame. Waiting traders behind Pella hold parcels and make patient arithmetic with their faces under warm amber lamps.",
+        "visible_characters": [
+          {
+            "agent_id": "pella_reedbank",
+            "default_stance": "turning field-book pages under the copy frame",
+            "visual_ref": "visual_character_refs.characters.pella_reedbank"
+          },
+          {
+            "agent_id": "nali_stoneclip",
+            "default_stance": "lifting a fresh public copy from the pressure frame",
+            "visual_ref": "visual_character_refs.characters.nali_stoneclip"
+          },
+          {
+            "agent_id": "rillgate_public_queue",
+            "default_stance": "waiting behind Pella with restrained impatience",
+            "visual_ref": "visual_character_refs.groups.rillgate_public_queue"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "rillgate_town_copy",
+        "ink_anchor": "filing_choice.prime_town_copy",
+        "base_image_prompt": "Low-counter custody frame inside the contract hall. Pella Reedbank, a one-meter-tall halfling woman in a mustard vest and wet blue-green cloak, folds a leather flap over a second green-glass water jar and duplicate field book on her two-wheel handcart, keeping them on the public side. Nali Stoneclip, a broad dwarf clerk in square spectacles, scratches a matching duplicate-custody mark onto the outward-facing docket. The first jar, comparison basin, colored contract cords and three empty seal seats remain visible across the counter.",
+        "visible_characters": [
+          {
+            "agent_id": "pella_reedbank",
+            "default_stance": "one hand closing the cart flap over the retained copy",
+            "visual_ref": "visual_character_refs.characters.pella_reedbank"
+          },
+          {
+            "agent_id": "nali_stoneclip",
+            "default_stance": "marking duplicate custody on the public docket",
+            "visual_ref": "visual_character_refs.characters.nali_stoneclip"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "rillgate_filing_fold",
+        "ink_anchor": "filing_fold",
+        "base_image_prompt": "Wide civic routine inside the long basalt contract hall. A white claim disc now crosses one copper-and-blue cord on the south wall. Pella Reedbank, a short halfling petitioner with muddy boots and evidence cart, stands at the lowered counter; dwarf clerk Nali Stoneclip faces her from the work side. Porters weigh freight near the rain-bright west arch, traders wait on public benches, three stone seal seats remain empty to the north, and the bonded crystal locker waits beside the barred east lift. The hall continues ordinary business around the newly public claim.",
+        "visible_characters": [
+          {
+            "agent_id": "pella_reedbank",
+            "default_stance": "at the lowered counter beside her cart",
+            "visual_ref": "visual_character_refs.characters.pella_reedbank"
+          },
+          {
+            "agent_id": "nali_stoneclip",
+            "default_stance": "behind the counter beneath the white claim disc",
+            "visual_ref": "visual_character_refs.characters.nali_stoneclip"
+          },
+          {
+            "agent_id": "rillgate_public_queue",
+            "default_stance": "continuing freight and queue routines around the claim",
+            "visual_ref": "visual_character_refs.groups.rillgate_public_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "evidence_chain >= 3",
+            "modifier_prompt": "Show the admitted jar with a crimped tin time-strip and several copied field pages grouped together beside the comparison basin."
+          },
+          {
+            "trigger": "provenance_depth >= 2",
+            "modifier_prompt": "Stretch four or more stamped custody discs in a clear sequence along the copper-and-blue wall cord."
+          },
+          {
+            "trigger": "public_record >= 3",
+            "modifier_prompt": "Fill the outward-facing docket with abstract copied diagrams, dates and witness marks visible to the public benches."
+          },
+          {
+            "trigger": "town_copy >= 2",
+            "modifier_prompt": "Keep a second sealed jar and duplicate leather field book visibly secured under the handcart's folded leather flap."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "rillgate_table_draw",
+        "ink_anchor": "table_draw",
+        "base_image_prompt": "Medium-wide power-geometry frame facing the three stone seal seats north of the public counter. Three Masters take the seats: a flour-dusted dwarf baker in rolled white sleeves, a long-limbed human lift mechanic in a red scarf and work leathers, and a small grey-green goblin chart-printer with long ears and blue-inked fingers; each places a distinct heavy civic seal on stone. At the low counter stands Pella Reedbank, a short brown-skinned halfling woman with silver-streaked curls and evidence cart. Dwarf clerk Nali Stoneclip holds an open bronze draw drum. Master Orik Vane approaches from the east lift, a broad dwarf man in a tailored rust-red coat, silver-clipped red beard and clean gloves. Blue ink also marks two stamped discs on the wall cord behind him.",
+        "visible_characters": [
+          {
+            "agent_id": "pella_reedbank",
+            "default_stance": "at the low counter studying the drawn seals",
+            "visual_ref": "visual_character_refs.characters.pella_reedbank"
+          },
+          {
+            "agent_id": "nali_stoneclip",
+            "default_stance": "between counter and seal seats holding the draw drum",
+            "visual_ref": "visual_character_refs.characters.nali_stoneclip"
+          },
+          {
+            "agent_id": "orik_vane",
+            "default_stance": "arriving from the east lift with controlled urgency",
+            "visual_ref": "visual_character_refs.characters.orik_vane"
+          },
+          {
+            "agent_id": "rillgate_drawn_masters",
+            "default_stance": "three different bodies seated behind three civic seals",
+            "visual_ref": "visual_character_refs.groups.rillgate_drawn_masters"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The blue ink connection must be simultaneously visible on the goblin printer's fingers and Orik's custody discs so Pella can plausibly notice it from the low counter."
+        ]
+      },
+      {
+        "visual_scene_id": "rillgate_public_warranty",
+        "ink_anchor": "pressure_choice.condition_public_warranty",
+        "base_image_prompt": "Medium negotiation frame across the lowered counter. Pella Reedbank, a short halfling woman with muddy broad boots and wet blue-green cloak, points from Orik Vane's offered brass pump-lining token to the white claim disc on the wall. Orik, a broad red-bearded dwarf in a tailored rust-red coat and clean gloves, holds the token over the private side of the counter. Dwarf clerk Nali Stoneclip taps the white disc with a chalk stylus. Three drawn Masters watch from stone seats behind them; the evidence cart and comparison basin remain within Pella's reach.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "pointing between warranty token and public claim disc", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "nali_stoneclip", "default_stance": "tapping the public claim disc with a stylus", "visual_ref": "visual_character_refs.characters.nali_stoneclip"},
+          {"agent_id": "orik_vane", "default_stance": "offering a brass pump-lining token across the counter", "visual_ref": "visual_character_refs.characters.orik_vane"},
+          {"agent_id": "rillgate_drawn_masters", "default_stance": "watching from the three stone seats", "visual_ref": "visual_character_refs.groups.rillgate_drawn_masters"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "rillgate_deep_lot_trace",
+        "ink_anchor": "pressure_choice.deepen_lot_trace",
+        "base_image_prompt": "Long oblique view from the low counter to the east crystal locker. Pella Reedbank, a short halfling petitioner in rain-dark wool, slides seven stamped custody discs into a straight line on the counter. Dwarf clerk Nali Stoneclip reads them with one finger while Orik Vane, a broad dwarf exporter in a rust-red coat, objects with both clean-gloved hands spread. Six pale crystal crates bearing matching abstract lot sigils show behind the bonded iron grate. Three Masters sit beyond the cord line under amber lamps.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "aligning the custody discs from the public side", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "nali_stoneclip", "default_stance": "reading the aligned discs", "visual_ref": "visual_character_refs.characters.nali_stoneclip"},
+          {"agent_id": "orik_vane", "default_stance": "objecting between the cord and crystal locker", "visual_ref": "visual_character_refs.characters.orik_vane"},
+          {"agent_id": "rillgate_drawn_masters", "default_stance": "seated behind the public trace", "visual_ref": "visual_character_refs.groups.rillgate_drawn_masters"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "rillgate_named_burden",
+        "ink_anchor": "pressure_choice.name_the_burden",
+        "base_image_prompt": "Public-testimony frame at the center counter. Pella Reedbank, a one-meter-tall halfling woman with silver-streaked black curls and a mustard vest, turns an open field book toward the public benches; one page shows a sheep's mouth lesions and a translucent-edged weed beside dated pump marks. Orik Vane, a broad red-bearded dwarf in clean gloves, starts to object. A flour-dusted dwarf baker among the three drawn Masters leans forward with one hand beside her civic seal. Nali Stoneclip keeps the white claim disc visible over the book while traders and porters look on from the west side.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "reading a farmer's name with the book facing the benches", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "nali_stoneclip", "default_stance": "keeping the docket and claim disc visible", "visual_ref": "visual_character_refs.characters.nali_stoneclip"},
+          {"agent_id": "orik_vane", "default_stance": "beginning an objection with one gloved hand raised", "visual_ref": "visual_character_refs.characters.orik_vane"},
+          {"agent_id": "rillgate_drawn_masters", "default_stance": "baker leaning forward while the other two listen", "visual_ref": "visual_character_refs.groups.rillgate_drawn_masters"},
+          {"agent_id": "rillgate_public_queue", "default_stance": "watching the open field-book page from public benches", "visual_ref": "visual_character_refs.groups.rillgate_public_queue"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "rillgate_conflict_challenge",
+        "ink_anchor": "pressure_choice.expose_bench_conflict",
+        "base_image_prompt": "Tight institutional confrontation around the third stone seat. Pella Reedbank, a short halfling woman in a wet blue-green cloak, points from the grey-green goblin chart-printer's blue-inked fingertips to two blue-inked consignment discs on Orik Vane's contract cord. The goblin lifts a heavy civic seal from the seat with a small square-toothed expression of annoyance. Nali Stoneclip, a broad dwarf clerk in spectacles, opens the bronze draw drum for a replacement. A soot-dark dwarf chimneywright approaches from the public benches while Orik, a red-bearded dwarf exporter in a rust-red coat, watches the conflict enter the docket.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "pointing along the visible blue-ink connection", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "nali_stoneclip", "default_stance": "opening the draw drum beside the vacated seat", "visual_ref": "visual_character_refs.characters.nali_stoneclip"},
+          {"agent_id": "orik_vane", "default_stance": "watching from beside the contract cord", "visual_ref": "visual_character_refs.characters.orik_vane"},
+          {"agent_id": "rillgate_drawn_masters", "default_stance": "printer recusing, two Masters seated, chimneywright arriving", "visual_ref": "visual_character_refs.groups.rillgate_drawn_masters"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "rillgate_comparison_reveal",
+        "ink_anchor": "hearing_fold",
+        "base_image_prompt": "Pivotal close-wide frame centered on the shallow comparison basin at the lowered counter. Brown water from a green-glass evidence jar hangs in a dwarf clerk's silver spoon above plain runes; a blue-green luminous filament rises through the water and echoes the translucent edge in an open glassweed drawing beside it. Pella Reedbank, a short brown-skinned halfling woman with silver-streaked curls, watches from the public side. Nali Stoneclip, a broad dwarf clerk in square spectacles, holds the spoon. Orik Vane, a red-bearded dwarf in a rust-red coat, stands near the contract cord. Three civic seals remain visible on the north stone seats, and the bonded crystal locker waits at the east wall.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "watching the basin from the public side", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "nali_stoneclip", "default_stance": "holding the sample spoon above the active basin", "visual_ref": "visual_character_refs.characters.nali_stoneclip"},
+          {"agent_id": "orik_vane", "default_stance": "watching from beside the traced contract cord", "visual_ref": "visual_character_refs.characters.orik_vane"},
+          {"agent_id": "rillgate_drawn_masters", "default_stance": "three sealkeepers watching from the north seats", "visual_ref": "visual_character_refs.groups.rillgate_drawn_masters"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "provenance_depth >= 2", "modifier_prompt": "Show a long ordered chain of stamped custody discs leading visually from the basin toward six matching crystal crates behind the east iron grate."},
+          {"trigger": "public_record >= 3", "modifier_prompt": "Show copied field diagrams and witness marks spread across the outward-facing docket where the public benches can inspect them."},
+          {"trigger": "conflict_exposed >= 2", "modifier_prompt": "Place the blue-fingered goblin chart-printer among the witness benches and a soot-dark dwarf chimneywright behind the third civic seal."},
+          {"trigger": "conflict_exposed == 0", "modifier_prompt": "Keep the blue-fingered goblin chart-printer behind the third civic seal with matching blue consignment discs visible on the contract cord."},
+          {"trigger": "warranty_public >= 1", "modifier_prompt": "Hang a small brass warranty token directly beneath the white public claim disc."},
+          {"trigger": "supplier_pressure >= 3", "modifier_prompt": "Turn Orik's posture from open-palmed reassurance to rigid counting, one gloved finger tracking other buyer discs on the wall cord."}
+        ]
+      },
+      {
+        "visual_scene_id": "rillgate_reserve_threshold",
+        "ink_anchor": "remedy_choice",
+        "base_image_prompt": "Wide final-threshold view from the public counter toward the east wall. Six pale crystal crates sit behind a bonded iron grate. Beside them a much smaller brass-bound reserve chest stands open with only a few clean crystal bars inside. Dwarf clerk Nali Stoneclip chalks two large abstract tally groups on a black slate: nine pump-day marks beside a tiny field symbol and six hoist-day marks beside a lift cage symbol. Pella Reedbank, a short halfling petitioner with evidence cart, faces the three mixed-body Masters and their civic seals. Orik Vane stands between the contract cord and locker. The barred freight lift looms behind the reserve arithmetic under amber and pale blue-green light.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "between evidence cart and three deciding seals", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "nali_stoneclip", "default_stance": "at the slate naming both reserve costs", "visual_ref": "visual_character_refs.characters.nali_stoneclip"},
+          {"agent_id": "orik_vane", "default_stance": "between contract cord and bonded locker", "visual_ref": "visual_character_refs.characters.orik_vane"},
+          {"agent_id": "rillgate_drawn_masters", "default_stance": "three sealkeepers facing Pella across the counter", "visual_ref": "visual_character_refs.groups.rillgate_drawn_masters"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "crop_harm >= 4", "modifier_prompt": "Add a small courier tray at the wagon arch carrying a fresh bundle of translucent-edged weeds and a wet third-bell notice from Brackenwash."},
+          {"trigger": "town_copy >= 2", "modifier_prompt": "Keep the second sealed jar and duplicate book visible under the handcart flap beside Pella."}
+        ],
+        "visual_continuity_notes": [
+          "The reserve chest is physically smaller than the bonded locker and visibly cannot support every service attached to the disputed lot.",
+          "Pella may request a remedy across the counter but cannot reach the seal seats, locker or reserve chest directly."
+        ]
+      },
+      {
+        "visual_scene_id": "rillgate_ending_drawdown",
+        "ink_anchor": "ending_drawdown_granted|ending_drawdown_refused",
+        "base_image_prompt": "Drawdown aftermath inside the east half of Rillgate Contract Hall. Porters stand between the bonded iron locker holding six pale crystal crates and the small brass-bound reserve chest. A white contract cord runs from the low public counter toward the storage wall. Pella Reedbank waits beside her evidence cart; Nali Stoneclip holds a prepared order strip; Orik Vane stands near the custody discs; three Masters hold their civic seals over the stone seats. Amber hall light and pale blue-green crystal light divide service continuity from suspected supply.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "watching the storage transfer from beside her cart", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "nali_stoneclip", "default_stance": "holding the order strip between counter and storage", "visual_ref": "visual_character_refs.characters.nali_stoneclip"},
+          {"agent_id": "orik_vane", "default_stance": "beside the custody discs with restrained opposition", "visual_ref": "visual_character_refs.characters.orik_vane"},
+          {"agent_id": "rillgate_drawn_masters", "default_stance": "three seals poised over the decision", "visual_ref": "visual_character_refs.groups.rillgate_drawn_masters"},
+          {"agent_id": "rillgate_public_queue", "default_stance": "porters positioned at locker and reserve chest", "visual_ref": "visual_character_refs.groups.rillgate_public_queue"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "rillgate_ending_restitution",
+        "ink_anchor": "ending_restitution_granted|ending_restitution_deferred",
+        "base_image_prompt": "Restitution aftermath at the lowered counter. Pella Reedbank, a short halfling woman in muddy boots and a blue-green cloak, stands beside open field records, seed-bag and sheep-care symbols rendered as small physical claim tokens. Nali Stoneclip, a broad dwarf clerk in spectacles, holds the black horsehair surety cord beside a red metal chest token. Orik Vane watches from the copper power cord. Three civic seals and the blue-green comparison basin remain visible, keeping compensation, evidence and uncertain cause in one frame.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "beside field records and material claim tokens", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "nali_stoneclip", "default_stance": "holding the surety cord at the public docket", "visual_ref": "visual_character_refs.characters.nali_stoneclip"},
+          {"agent_id": "orik_vane", "default_stance": "watching from the power cord", "visual_ref": "visual_character_refs.characters.orik_vane"},
+          {"agent_id": "rillgate_drawn_masters", "default_stance": "seated behind their seals", "visual_ref": "visual_character_refs.groups.rillgate_drawn_masters"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "rillgate_ending_widening",
+        "ink_anchor": "ending_widening_admitted|ending_widening_stalled",
+        "base_image_prompt": "Jurisdiction-widening aftermath along the south contract wall. Nali Stoneclip, a broad dwarf clerk with square spectacles, threads a white claim cord through branching wall rings toward several route bundles leading to the barred east lift. Pella Reedbank, a short halfling traveler with evidence handcart and wet blue-green cloak, stands beneath the rain-bright west arch ready for the road. Orik Vane, a red-bearded dwarf exporter in a rust-red coat, watches the claim attach to other buyer discs. The three drawn civic seals remain visible at the north seats while porters carry copied docket slates toward the lift.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "under the wagon arch beside her cart", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "nali_stoneclip", "default_stance": "threading the white cord through outward route rings", "visual_ref": "visual_character_refs.characters.nali_stoneclip"},
+          {"agent_id": "orik_vane", "default_stance": "watching beside the widening buyer-disc chain", "visual_ref": "visual_character_refs.characters.orik_vane"},
+          {"agent_id": "rillgate_drawn_masters", "default_stance": "seated behind three visible civic seals", "visual_ref": "visual_character_refs.groups.rillgate_drawn_masters"},
+          {"agent_id": "rillgate_public_queue", "default_stance": "porters carrying copied slates toward the east lift", "visual_ref": "visual_character_refs.groups.rillgate_public_queue"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "rillgate_ending_warranty",
+        "ink_anchor": "ending_warranty_public|ending_warranty_absorbs_claim",
+        "base_image_prompt": "Warranty departure at the rain-bright west wagon arch of Rillgate Contract Hall. A compact repair cart carries a new brass pump lining, tool rolls and a travel lantern. Pella Reedbank, a short brown-skinned halfling woman with silver-streaked black curls and muddy boots, stands beside her own evidence handcart. Orik Vane, a broad red-bearded dwarf in a rust-red coat and clean gloves, holds the repair order. Nali Stoneclip, a broad dwarf clerk in square spectacles, stands at the low counter beneath the white public claim disc. Three civic seals and the colored contract cords remain visible deeper in the hall.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "between evidence cart and departing repair cart", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "nali_stoneclip", "default_stance": "at the counter beneath the claim disc", "visual_ref": "visual_character_refs.characters.nali_stoneclip"},
+          {"agent_id": "orik_vane", "default_stance": "holding the repair order beside the repair cart", "visual_ref": "visual_character_refs.characters.orik_vane"},
+          {"agent_id": "rillgate_drawn_masters", "default_stance": "visible deeper in the hall behind their seals", "visual_ref": "visual_character_refs.groups.rillgate_drawn_masters"}
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "public_warranty_visible",
+        "trigger": "branch_label == condition_public_warranty",
+        "apply_to_visual_scene_ids": ["rillgate_comparison_reveal", "rillgate_reserve_threshold", "rillgate_ending_warranty"],
+        "modifier_prompt": "Hang a brass pump-lining warranty token directly beneath the white claim disc, visibly tying the repair report to the public docket."
+      },
+      {
+        "modifier_id": "deep_provenance_visible",
+        "trigger": "branch_label == deepen_lot_trace",
+        "apply_to_visual_scene_ids": ["rillgate_comparison_reveal", "rillgate_reserve_threshold", "rillgate_ending_drawdown"],
+        "modifier_prompt": "Align seven stamped custody discs from the low counter to six matching crystal crates behind the bonded east-wall grate."
+      },
+      {
+        "modifier_id": "named_burden_visible",
+        "trigger": "branch_label == name_the_burden",
+        "apply_to_visual_scene_ids": ["rillgate_comparison_reveal", "rillgate_reserve_threshold", "rillgate_ending_restitution"],
+        "modifier_prompt": "Open the field book toward the public side on a dated drawing of sheep-mouth lesions and translucent-edged weeds."
+      },
+      {
+        "modifier_id": "conflict_recusal_visible",
+        "trigger": "branch_label == expose_bench_conflict",
+        "apply_to_visual_scene_ids": ["rillgate_comparison_reveal", "rillgate_reserve_threshold", "rillgate_ending_widening"],
+        "modifier_prompt": "Place the blue-fingered goblin chart-printer among witnesses holding the removed seal at waist height; place a soot-dark dwarf chimneywright behind the third stone seat."
+      },
+      {
+        "modifier_id": "drawdown_granted_visible",
+        "trigger": "ending_label == marked_drawdown_granted",
+        "apply_to_visual_scene_ids": ["rillgate_ending_drawdown"],
+        "modifier_prompt": "Close the bonded iron grate around six disputed crates, run a taut white cord from the smaller reserve chest toward Brackenwash's pump disc, and show three fresh seal impressions on one narrow order strip."
+      },
+      {
+        "modifier_id": "drawdown_refused_visible",
+        "trigger": "ending_label == marked_drawdown_refused",
+        "apply_to_visual_scene_ids": ["rillgate_ending_drawdown"],
+        "modifier_prompt": "Keep both storage locks closed, leave the prepared order strip bare, and place a new red missed-irrigation mark on the outward docket beside Pella."
+      },
+      {
+        "modifier_id": "restitution_granted_visible",
+        "trigger": "ending_label == restitution_granted",
+        "apply_to_visual_scene_ids": ["rillgate_ending_restitution"],
+        "modifier_prompt": "Attach three seal impressions to the black horsehair surety cord and stack physical seed, veterinary and inspector tokens on Pella's side of the counter."
+      },
+      {
+        "modifier_id": "restitution_deferred_visible",
+        "trigger": "ending_label == restitution_deferred",
+        "apply_to_visual_scene_ids": ["rillgate_ending_restitution"],
+        "modifier_prompt": "Leave a visible gap in the sample custody discs, keep the red surety token behind the clerk line, and show the white claim disc still hanging unresolved."
+      },
+      {
+        "modifier_id": "widening_admitted_visible",
+        "trigger": "ending_label == widening_admitted",
+        "apply_to_visual_scene_ids": ["rillgate_ending_widening"],
+        "modifier_prompt": "Thread the white claim cord through several branching route rings and give two porters copied docket slates for the east freight lift."
+      },
+      {
+        "modifier_id": "widening_stalled_visible",
+        "trigger": "ending_label == widening_stalled",
+        "apply_to_visual_scene_ids": ["rillgate_ending_widening"],
+        "modifier_prompt": "End the white claim cord at a single Rillgate wall ring, keep copied slates stacked on the counter, and close the barred east freight lift."
+      },
+      {
+        "modifier_id": "public_warranty_success_visible",
+        "trigger": "ending_label == public_warranty_repair",
+        "apply_to_visual_scene_ids": ["rillgate_ending_warranty"],
+        "modifier_prompt": "Keep the white claim disc hanging, secure the second jar and duplicate book on Pella's cart, and attach two plain observer badges to the repair cart."
+      },
+      {
+        "modifier_id": "private_warranty_absorption_visible",
+        "trigger": "ending_label == private_warranty_absorbs_claim",
+        "apply_to_visual_scene_ids": ["rillgate_ending_warranty"],
+        "modifier_prompt": "Place both evidence jars and the field book on the exporter's repair cart, remove the white claim disc from the wall, and leave Pella's handcart visibly empty."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "rillgate_contract_hall.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Long rectangular basalt hall aligned west-to-east, with a public wagon arch at west, a clerk counter crossing the middle, contract cords on the south wall, seal seats on the north side and freight lift plus crystal storage at east.",
+      "fixed_zones": [
+        {"zone_id": "west_wagon_arch", "visible_form": "wide rain-bright stone arch with wet wagon ramp and public arrival lane", "used_for": "claimant arrival, public queue and departure"},
+        {"zone_id": "center_public_counter", "visible_form": "waist-high brass-edged stone counter with one lowered section and outward docket surface", "used_for": "Pella's reachable filing actions and public-versus-clerk authority boundary"},
+        {"zone_id": "comparison_basin", "visible_form": "shallow brass-rimmed basin inset in the lowered counter with plain blue-green runes and jar cradle", "used_for": "bounded sample admission and visible correlation test"},
+        {"zone_id": "south_contract_wall", "visible_form": "parallel colored cords threaded through wall rings and stamped metal custody discs", "used_for": "contract provenance, claim routing and widened jurisdiction"},
+        {"zone_id": "north_seal_seats", "visible_form": "three separate stone seats behind a shallow semicircular ledge", "used_for": "drawn civic authority, recusal and three-seal orders"},
+        {"zone_id": "east_storage", "visible_form": "large bonded iron locker with six crystal crates beside a smaller brass-bound reserve chest", "used_for": "marked drawdown and visible scarcity"},
+        {"zone_id": "east_freight_lift", "visible_form": "barred brass lift cage and descending shaft behind storage", "used_for": "contract routes, Orik arrival and widened-copy departure"},
+        {"zone_id": "public_benches", "visible_form": "low stone benches between wagon arch and counter", "used_for": "witnesses, queue, recused sealkeeper and replacement draw"}
+      ],
+      "routes": [
+        {"route_id": "public_arrival", "path": "west_wagon_arch -> public_benches -> lowered counter", "access": "claimants, porters, traders and public witnesses"},
+        {"route_id": "clerk_workline", "path": "east_freight_lift -> east_storage -> clerk side of center counter -> south contract wall", "access": "clerks, admitted workers and ordered porters"},
+        {"route_id": "seal_draw", "path": "public_benches -> bronze draw drum beside counter -> north seal seats", "access": "eligible Masters called by the clerk"}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "blue_ink_conflict", "path": "Pella at lowered counter -> goblin printer's fingers at north third seat -> blue custody discs on south wall", "supports": ["expose_bench_conflict"]},
+        {"lane_id": "public_docket", "path": "public benches -> outward counter docket -> white claim disc on south wall", "supports": ["prime_field_record", "name_the_burden", "condition_public_warranty"]},
+        {"lane_id": "reserve_arithmetic", "path": "lowered counter -> tally slate -> small reserve chest -> large bonded locker", "supports": ["seek_marked_drawdown"]}
+      ],
+      "object_states": [
+        {"object_id": "white_claim_disc", "states": ["absent", "hanging_public", "widened_across_routes", "removed_into_private_warranty"]},
+        {"object_id": "evidence_custody", "states": ["claimant_held", "one_copy_admitted", "distributed_public_and_town_copy", "absorbed_by_exporter"]},
+        {"object_id": "third_seal_seat", "states": ["blue_ink_printer_seated", "printer_recused", "chimneywright_replacement_seated"]},
+        {"object_id": "crystal_supply", "states": ["disputed_lot_bonded", "reserve_closed", "marked_drawdown_to_reserve", "all_storage_closed"]}
+      ],
+      "camera_slots": [
+        {"camera_id": "west_hall_wide", "supports_visual_scene_ids": ["rillgate_hall_establishing", "rillgate_filing_fold", "rillgate_ending_warranty"]},
+        {"camera_id": "low_counter_medium", "supports_visual_scene_ids": ["rillgate_morning_clerk", "rillgate_sample_chain", "rillgate_field_record", "rillgate_town_copy", "rillgate_public_warranty", "rillgate_named_burden"]},
+        {"camera_id": "south_cord_oblique", "supports_visual_scene_ids": ["rillgate_provenance_trace", "rillgate_deep_lot_trace", "rillgate_ending_widening"]},
+        {"camera_id": "north_bench_medium", "supports_visual_scene_ids": ["rillgate_table_draw", "rillgate_conflict_challenge"]},
+        {"camera_id": "basin_close_wide", "supports_visual_scene_ids": ["rillgate_comparison_reveal", "rillgate_ending_restitution"]},
+        {"camera_id": "east_storage_wide", "supports_visual_scene_ids": ["rillgate_reserve_threshold", "rillgate_ending_drawdown"]}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for bodies visible in a scene.",
+    "characters": {
+      "pella_reedbank": "Pella Reedbank: halfling woman in early middle age, about one meter tall, warm brown skin, round weathered face, black curly hair streaked silver and pinned loosely, mustard wool vest over cream rolled sleeves, rain-dark blue-green cloak, broad mud-stained boots, sturdy farmer's hands, practical upright posture, often beside a small two-wheel handcart with green-glass jars and a swollen leather field book.",
+      "nali_stoneclip": "Nali Stoneclip: dwarf woman, about 1.25 meters tall, broad compact build, umber skin, iron-grey hair bound close behind the head, square brass spectacles, charcoal clerk apron over dark wool, chalk stylus and crimping pliers at the belt, economical hand movements and an expression of practiced procedural patience.",
+      "orik_vane": "Master Orik Vane: dwarf man, about 1.35 meters tall, broad dense build, pale ruddy skin, carefully divided red beard held by two silver clips, tailored rust-red wool coat, cream shirt, polished dark boots, clean grey gloves, open-palmed sales posture that tightens into counting under pressure."
+    },
+    "groups": {
+      "rillgate_drawn_masters": "Rillgate drawn Masters: three individual civic sealkeepers on separate stone seats—a broad flour-dusted dwarf baker in rolled white sleeves, a long-limbed dark-skinned human lift mechanic in worn brown work leathers and a red scarf, and a small grey-green goblin chart-printer with long batlike ears, blue-inked fingertips and an indigo printer apron. When recusal is triggered, the goblin stands among witnesses holding the removed seal and a soot-dark dwarf chimneywright in a patched black coat occupies the third seat. Each visible officeholder has one distinct heavy metal civic seal.",
+      "rillgate_public_queue": "Rillgate public queue: mixed dwarf, halfling, human and goblin porters and traders in wet wool, leather aprons, hooded travel cloaks and work boots, carrying freight hooks, parcel frames, ledgers and handcarts; orderly queue posture near the west wagon arch, with faces shifting from routine patience to attentive public witness."
+    }
+  },
+  "review_notes": [
+    "Prompts use affirmative visible descriptions and restate room geometry for every camera-specific base frame.",
+    "The embedded scene_set map controls the public and clerk sides of the counter, the blue-ink conflict sightline, the reserve arithmetic sightline and branch-persistent custody states.",
+    "A hand-built plan view or 3D blockout remains desirable before high-consistency multi-angle image rendering; image generation is deferred in this pass."
+  ]
+}

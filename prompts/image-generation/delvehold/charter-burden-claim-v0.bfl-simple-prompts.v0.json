@@ -1,0 +1,84 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "charter-burden-claim-v0.bfl-simple-v0",
+  "fixture_id": "charter-burden-claim-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Richly textured high-fantasy industrial storybook illustration, precise ink linework, restrained watercolor, carved basalt, worn brass, wet wool, colored contract cords, warm amber lamps, pale blue-green mana, readable silhouettes, humane procedural comedy, serious agrarian stakes, abstract geometric marks on unlettered surfaces.",
+  "prompts": [
+    {
+      "id": "01_rillgate_establishing",
+      "prompt": "Long basalt contract hall between rainy wagon arch and barred freight lift; low public counter, colored contract cords, three empty seal seats, large crystal locker and small reserve chest."
+    },
+    {
+      "id": "02_morning_clerk",
+      "prompt": "Short halfling farmer with evidence handcart faces broad dwarf clerk at low counter; two green-glass water jars, swollen field book, brass basin and wall cords visible."
+    },
+    {
+      "id": "03_sample_chain",
+      "prompt": "Halfling seats brown-water jar in brass cradle; silver root pierces cork; dwarf clerk crimps tin time-strip while three rough-clothed porters witness."
+    },
+    {
+      "id": "04_provenance_trace",
+      "prompt": "Dwarf clerk pulls copper-and-blue contract cord through wall rings; halfling follows a line of stamped custody discs toward pale crystal locker as morning lamp burns lower."
+    },
+    {
+      "id": "05_field_record",
+      "prompt": "Leather field book under brass copying press, pages showing dated glassy weeds and sheep lesions; halfling turns pages, dwarf clerk lifts thin slate copy, queue waits."
+    },
+    {
+      "id": "06_town_copy",
+      "prompt": "Halfling secures second jar and duplicate field book under handcart flap while dwarf clerk marks independent custody on outward-facing docket."
+    },
+    {
+      "id": "07_public_claim",
+      "prompt": "White claim disc crosses colored power-and-water cord while ordinary freight weighing continues around halfling petitioner, dwarf clerk, public benches and empty stone seal seats."
+    },
+    {
+      "id": "08_three_seal_draw",
+      "prompt": "Three Masters take stone seats: flour-dusted dwarf baker, human lift mechanic with red scarf, grey-green goblin printer with blue fingers; halfling watches as red-bearded dwarf exporter arrives."
+    },
+    {
+      "id": "09_public_warranty",
+      "prompt": "Halfling points between brass pump-repair token and white claim disc; clean-gloved dwarf exporter offers repair; dwarf clerk fixes the offer to public docket before three seals."
+    },
+    {
+      "id": "10_deep_lot_trace",
+      "prompt": "Seven stamped custody discs align from low counter to six matching crystal crates behind iron grate; halfling and dwarf clerk trace while exporter objects."
+    },
+    {
+      "id": "11_named_burden",
+      "prompt": "Halfling reads a farmer's name over open field drawings facing public benches; dwarf exporter raises objection; flour-dusted sealkeeper leans forward."
+    },
+    {
+      "id": "12_conflict_challenge",
+      "prompt": "Halfling points from goblin printer's blue fingertips to matching consignment discs; printer lifts civic seal from seat; dwarf clerk draws soot-dark replacement."
+    },
+    {
+      "id": "13_comparison_reveal",
+      "prompt": "Blue-green filament rises through brown water in brass rune basin beside matching glassweed drawing; halfling, dwarf clerk, exporter and three seals watch uncertain correlation become public."
+    },
+    {
+      "id": "14_reserve_threshold",
+      "prompt": "Small brass reserve chest beside large locked crystal store; dwarf clerk chalks nine field-day marks and six lift-day marks while halfling faces exporter and three civic seals."
+    },
+    {
+      "id": "15_drawdown_end",
+      "prompt": "Porters between disputed crystal locker and scarce reserve chest; three seals over narrow order strip; white cord waits to carry substitute power toward halfling town."
+    },
+    {
+      "id": "16_restitution_end",
+      "prompt": "Halfling stands beside field book, seed and livestock-care tokens; dwarf clerk holds black surety cord and red chest token while exporter and three seals watch."
+    },
+    {
+      "id": "17_widening_end",
+      "prompt": "Dwarf clerk threads white claim cord into branching mountain routes; porters carry copied slates to freight lift; halfling waits under rainy arch with evidence cart."
+    },
+    {
+      "id": "18_warranty_end",
+      "prompt": "Repair cart with brass pump lining waits at rainy arch between halfling's evidence handcart and clean-gloved dwarf exporter; white public claim disc hangs deeper in hall."
+    }
+  ]
+}

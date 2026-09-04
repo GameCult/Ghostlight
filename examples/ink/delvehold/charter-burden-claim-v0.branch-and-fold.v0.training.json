@@ -1,0 +1,380 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "charter-burden-claim-v0-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/delvehold/charter-burden-claim-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/delvehold/charter-burden-claim-v0.v0.json",
+  "visual_plan_ref": "examples/visual/delvehold/charter-burden-claim-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "charter-burden-claim-v0.rillgate-answering-table",
+  "protagonist_agent_id": "pella_reedbank",
+  "npc_agent_ids": [
+    "nali_stoneclip",
+    "orik_vane",
+    "rillgate_drawn_masters",
+    "rillgate_public_queue"
+  ],
+  "purpose": "Interactive Fiction Weaver draft of a Delvehold branch-and-fold fixture about a halfling town speaker using the Greathold answering-table procedure to seek redress against a power-export contract.",
+  "tonal_mode": "Warm procedural wit with agrarian stakes.",
+  "local_awareness_summary": [
+    {
+      "text": "Pella knows Brackenwash's pump contract, samples, field records, livestock injuries and town mandate; she does not know what ultimately caused the glassweed.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/charter-burden-claim-v0.v0.json",
+        "Delvehold/Lore/Peoples/Halflings.md",
+        "Delvehold/Lore/Crisis/Surface Symptoms.md"
+      ]
+    },
+    {
+      "text": "Pella may lodge evidence, retain a town copy, question provenance, condition a warranty offer, challenge one seal for interest and request relief; she cannot cast a Greathold civic seal or order the bonded locker herself.",
+      "source_refs": [
+        "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+      ]
+    },
+    {
+      "text": "Pella can see the contract cords, stamped custody discs, comparison basin, three drawn Masters, reserve chest and bonded crystal locker, so player choices operate through visible institutional objects.",
+      "source_refs": [
+        "examples/ink/delvehold/charter-burden-claim-v0.branch-and-fold.v0.ink"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Pella's: a halfling petitioner at a low public counter, with bodily access to jars, books, cords and the public docket but not to the seals or bonded stores behind the clerk line.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/delvehold/charter-burden-claim-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes first-bell clerical routine before supplier pressure, seal conflict and scarce reserve power sharpen the claim.",
+        "source_refs": [
+          "AGENTS.md",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Nali owns evidence admission, copying and routing, not judgment; the three drawn workshop seals own the order within Greathold jurisdiction.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "The table may bind Greathold contract custody, reserve use, surety and workshops; it cannot command Brackenwash, declare ecological cosmology or create substitute power by decree.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/Industry/Dwarven Industry.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Two stoppered water jars, an original and duplicate field book, the oilskin pump contract, the white claim disc, custody discs, bonded crystal crates and reserve chest have separate owners and visible custody changes.",
+        "source_refs": [
+          "examples/ink/delvehold/charter-burden-claim-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every successful remedy must name both what it changes and who bears its material cost.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "The fixture must preserve the distinction among harm, evidence correlation, contractual liability and ultimate ecological cause.",
+        "source_refs": [
+          "Delvehold/Lore/Crisis/Surface Symptoms.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let Pella or a clerk decide the order merely because they possess evidence or control the docket.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "Do not make a warranty repair, restitution award or comparison-basin result prove a total theory of deep ecological injury.",
+        "source_refs": [
+          "Delvehold/Lore/Crisis/Surface Symptoms.md"
+        ]
+      },
+      {
+        "text": "Do not make reserve power free; a marked drawdown must remove capacity from another named service future.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Dwarven Industry.md",
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through public evidence admission and the answering-table hearing, then route to four remedy families with state-gated success or cost endings.",
+    "choice_layers": [
+      "opening_evidence",
+      "warranty_and_conflict_pressure",
+      "requested_redress"
+    ],
+    "variables": [
+      "evidence_chain",
+      "provenance_depth",
+      "public_record",
+      "town_copy",
+      "reserve_capacity",
+      "crop_harm",
+      "conflict_exposed",
+      "supplier_pressure",
+      "warranty_public",
+      "pump_service"
+    ],
+    "ending_gates": [
+      "ending_drawdown_granted",
+      "ending_drawdown_refused",
+      "ending_restitution_granted",
+      "ending_restitution_deferred",
+      "ending_widening_admitted",
+      "ending_widening_stalled",
+      "ending_warranty_public",
+      "ending_warranty_absorbs_claim"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_sample_chain",
+      "ink_path": "filing_choice",
+      "action_type": "lodge_physical_evidence",
+      "actor_intent": "Make the water sample's custody legible before testing.",
+      "state_basis": ["Pella carries two sealed water jars; Nali can admit evidence in public but cannot decide causation."],
+      "reviewed_consequences": ["Raises evidence_chain and public_record; later strengthens drawdown and restitution gates."],
+      "training_hooks": ["evidence_custody", "public_clerk_boundary"]
+    },
+    {
+      "branch_id": "prime_provenance",
+      "ink_path": "filing_choice",
+      "action_type": "trace_contract",
+      "actor_intent": "Attach the claim to the issuing site, fuel lot, route and surety.",
+      "state_basis": ["The pump contract carries recorded provenance through stamped cords and discs."],
+      "reviewed_consequences": ["Raises provenance_depth and supplier_pressure; delay raises crop_harm; later enables a lot-specific drawdown."],
+      "training_hooks": ["contract_provenance", "time_cost"]
+    },
+    {
+      "branch_id": "prime_field_record",
+      "ink_path": "filing_choice",
+      "action_type": "request_public_copy",
+      "actor_intent": "Preserve years of local observation outside supplier custody.",
+      "state_basis": ["Halfling field records are politically awkward evidence; Rillgate can make a public copy."],
+      "reviewed_consequences": ["Raises evidence_chain and public_record; copying delay raises crop_harm; later strengthens restitution and widening."],
+      "training_hooks": ["long_memory", "public_record_cost"]
+    },
+    {
+      "branch_id": "prime_town_copy",
+      "ink_path": "filing_choice",
+      "action_type": "retain_duplicate_custody",
+      "actor_intent": "Keep an independent copy if the official record is narrowed or lost.",
+      "state_basis": ["Pella has duplicate evidence and may retain it on the claimant side of the counter."],
+      "reviewed_consequences": ["Raises town_copy, evidence_chain and supplier_pressure; later determines whether warranty repair preserves independent custody."],
+      "training_hooks": ["distributed_custody", "institutional_distrust"]
+    },
+    {
+      "branch_id": "condition_public_warranty",
+      "ink_path": "pressure_choice",
+      "action_type": "condition_offer",
+      "actor_intent": "Gain immediate repair while keeping the engineer's report on the public claim cord.",
+      "state_basis": ["Orik offers same-day warranty service; Pella can condition acceptance but cannot force a private report to become public without the table."],
+      "reviewed_consequences": ["Opens the warranty ending family, raises public_record and pump_service, and lowers supplier_pressure."],
+      "training_hooks": ["useful_compromise", "repair_vs_redress"]
+    },
+    {
+      "branch_id": "deepen_lot_trace",
+      "ink_path": "pressure_choice",
+      "action_type": "expose_provenance",
+      "actor_intent": "Name the exact crystal lot a bounded order could isolate.",
+      "state_basis": ["Nali can read the custody chain; six local crates share the lot."],
+      "reviewed_consequences": ["Raises provenance_depth and supplier_pressure; tracing delay raises crop_harm; later strengthens drawdown."],
+      "training_hooks": ["bounded_cause", "commercial_network_pressure"]
+    },
+    {
+      "branch_id": "name_the_burden",
+      "ink_path": "pressure_choice",
+      "action_type": "publish_testimony",
+      "actor_intent": "Keep technical uncertainty attached to named people absorbing the harm.",
+      "state_basis": ["Pella's field book contains names, dates, pump turns and observed injuries."],
+      "reviewed_consequences": ["Raises evidence_chain, public_record and supplier_pressure; later strengthens restitution and widening."],
+      "training_hooks": ["named_burden", "human_scale_evidence"]
+    },
+    {
+      "branch_id": "expose_bench_conflict",
+      "ink_path": "pressure_choice",
+      "action_type": "challenge_seal",
+      "actor_intent": "Remove a contract-paid workshop from the deciding bench.",
+      "state_basis": ["A claimant may challenge one drawn seal; matching blue ink visibly connects the chart-printer to Orik's route work."],
+      "reviewed_consequences": ["Raises conflict_exposed, public_record and supplier_pressure; replaces the sealkeeper and later strengthens widening callbacks."],
+      "training_hooks": ["conflict_of_interest", "claimant_voice_without_vote"]
+    },
+    {
+      "branch_id": "seek_marked_drawdown",
+      "ink_path": "final_choice",
+      "action_type": "request_interim_order",
+      "actor_intent": "Isolate the named lot while keeping Brackenwash's pump supplied from a finite reserve.",
+      "state_basis": ["Success requires sufficient evidence, lot provenance and reserve capacity."],
+      "reviewed_consequences": ["Routes to granted or refused drawdown; success spends reserve_capacity, while failure raises crop_harm and records another lost pump turn in the ending."],
+      "training_hooks": ["bounded_interim_relief", "reserve_cost", "state_gated_ending"]
+    },
+    {
+      "branch_id": "seek_restitution",
+      "ink_path": "final_choice",
+      "action_type": "claim_surety",
+      "actor_intent": "Convert documented harm into seed, veterinary care and independent inspection.",
+      "state_basis": ["Success requires a strong evidence chain and public record."],
+      "reviewed_consequences": ["Routes to granted or deferred restitution; successful payment repairs people without deciding ultimate ecological cause."],
+      "training_hooks": ["material_redress", "liability_not_cosmology"]
+    },
+    {
+      "branch_id": "seek_widened_moot",
+      "ink_path": "final_choice",
+      "action_type": "widen_jurisdiction",
+      "actor_intent": "Move authority outward because the shared lot, records or conflicts cross routes.",
+      "state_basis": ["Success requires an exposed conflict or a sufficiently distributed public record."],
+      "reviewed_consequences": ["Routes to admitted or stalled widening; success raises supplier_pressure while carrying the present record outward."],
+      "training_hooks": ["local_first_federation", "appeal_carryover"]
+    },
+    {
+      "branch_id": "take_public_warranty",
+      "ink_path": "final_choice",
+      "action_type": "accept_bounded_repair",
+      "actor_intent": "Restore service quickly without surrendering the public claim.",
+      "state_basis": ["Choice appears only after the public-warranty condition; success also requires that condition to be docketed and a claimant-held duplicate to survive."],
+      "reviewed_consequences": ["Routes to public repair or private absorption of the claim based on public_record and town_copy."],
+      "training_hooks": ["conditional_option", "custody_determines_compromise"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Conditional warranty choice availability",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Any durable history for Rillgate, Brackenwash, Pella, Nali or Orik",
+      "Any conclusion about the cause of glassweed or deep ecological injury",
+      "Character memory and relationship updates",
+      "Accepted corpus coverage",
+      "Future standards for comparison basins or foreign-speaker credentials"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex titled elaborator applying the four required reviewer prompts",
+    "review_status": "accepted",
+    "review_notes": [
+      "Ink was authored from the canonical Delvehold sources and the fixture-specific answering-table elaboration.",
+      "Narrative review found the public-warranty success unreachable because its gate required public_record >= 3 while the town-copy opening and warranty-pressure choice could produce only 2; the gate now requires 2 plus town_copy >= 2, preserving the intended custody test.",
+      "The fake-variable audit removed a dead post-hearing pump_service decrement and added visible reads for warranty-raised pump_service and spent reserve_capacity.",
+      "Lore review kept the comparison basin, Rillgate, Brackenwash and named characters explicitly fixture-local while preserving uncertainty about ecological cause.",
+      "Visual and spatial reviews confirmed eighteen visual anchors, matching prompt-manifest coverage, visible-character-only refs, a stable one-hall coordinate frame, reachable controls and branch-persistent custody, recusal and storage states.",
+      "Ink was not compiled because this pass forbids installing or running an Ink compiler."
+    ],
+    "reviewer_verdicts": {
+      "narrative_quality": {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 5,
+          "pacing": 4,
+          "voice": 5,
+          "tonal_fit": 5,
+          "if_playability": 5
+        },
+        "detected_tonal_mode": "Warm procedural wit with agrarian stakes.",
+        "findings_fixed": [
+          "Made the public-warranty success reachable through the intended town-copy plus public-warranty path.",
+          "Removed a dead pump-service state change and made remaining resource changes bite in later prose."
+        ],
+        "acceptance_notes": [
+          "Routine, roles, locality and public stakes are established before pressure.",
+          "All eight remedy endings are reachable and differ through custody, evidence, provenance, conflict or reserve state."
+        ]
+      },
+      "lore_grounding": {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 5,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "sources_checked": [
+          "Delvehold/Lore/index.md",
+          "Delvehold/Lore/The Greathold.md",
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/Peoples/Halflings.md",
+          "Delvehold/Lore/Peoples/Dwarves.md",
+          "Delvehold/Lore/Industry/Dwarven Industry.md",
+          "Delvehold/Lore/Industry/Runic Engineering.md",
+          "Delvehold/Lore/Crisis/Surface Symptoms.md",
+          "Delvehold/Lore/Crisis/International Crisis.md"
+        ],
+        "findings_fixed": [
+          "Kept the basin result as correlation rather than causal or theological proof.",
+          "Marked named people and localities as fixture-local instead of silently promoting them to historical canon."
+        ],
+        "acceptance_notes": [
+          "The authored lore patch supplies the missing redress procedure; the fixture dramatizes its costs without expanding it into a sovereign court."
+        ]
+      },
+      "visual_continuity": {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompt": 5,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 4
+        },
+        "findings_fixed": [
+          "Matched all eighteen visual scene anchors with eighteen BFL manifest prompts.",
+          "Kept character refs restricted to bodies visible in each frame and expressed every branch delta as a concrete object, posture, route or custody change."
+        ],
+        "acceptance_notes": [
+          "The embedded scene-set map is sufficient for B-level planning; a camera blockout remains a rendering-stage input for high-consistency final art."
+        ]
+      },
+      "spatial_cohesion": {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "overall_status": "accepted",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightline": 4,
+          "body_affordance": 5,
+          "movement_access": 5,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "inferred_layout_summary": "A west-to-east rectangular hall: public wagon arch and benches at west; a north-south center counter separating public west from clerk east, with a reachable lowered section and inset basin; contract cords on the south wall; three seal seats in the north bench alcove; bonded locker, smaller reserve chest and freight lift at east.",
+        "findings_fixed": [
+          "Declared the blue-ink conflict, public docket and reserve arithmetic as explicit sightline lanes.",
+          "Declared fixed routes and persistent states for evidence custody, the third seal seat, the claim cord and crystal storage."
+        ],
+        "acceptance_notes": [
+          "Pella can reach claimant-side evidence and cords laid across the low counter, while seals and stores remain beyond her physical and legal reach."
+        ]
+      }
+    },
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "lore_content_readable": true,
+      "ink_compiled": false
+    }
+  }
+}
