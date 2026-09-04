@@ -1,0 +1,685 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "delvehold.ember-cistern-house-nine-v0",
+  "source_status": "canonical_vault_with_authored_elaboration",
+  "fixture_status": "lore_grounded_pressure_fixture",
+  "source_refs": [
+    {
+      "source_id": "the-greathold",
+      "path": "Delvehold/Lore/The Greathold.md",
+      "title": "The Greathold",
+      "line_start": 1,
+      "line_end": 40,
+      "relevance": "Grounds the Hold/Vault distinction, distributed jurisdiction, mountain-spine infrastructure, and the established two-level geometry and safety routine of Cistern House Nine."
+    },
+    {
+      "source_id": "the-greathold-one-shift",
+      "path": "Delvehold/Lore/The Greathold.md",
+      "title": "The Greathold — One shift of reserve",
+      "line_start": 42,
+      "line_end": 48,
+      "relevance": "Authored Ember elaboration grounding the header clock, three-engine failure state, half-shift repair, outlet-trunk collapse risk, ration authority, and insurance boundary."
+    },
+    {
+      "source_id": "runic-engineering",
+      "path": "Delvehold/Lore/Industry/Runic Engineering.md",
+      "title": "Runic engineering",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds iterative pump engines, municipal utility machinery, material conduits, null-rune practice, skilled technicians, and the possibility of undocumented network behavior."
+    },
+    {
+      "source_id": "dwarven-industry",
+      "path": "Delvehold/Lore/Industry/Dwarven Industry.md",
+      "title": "Dwarven industry",
+      "line_start": 1,
+      "line_end": 40,
+      "relevance": "Grounds public dependence on drainage, water, freight, heat, and shared crystal contracts, plus the role of Hold institutions and labor."
+    },
+    {
+      "source_id": "machine-dungeon",
+      "path": "Delvehold/Lore/Industry/Machine-Dungeon.md",
+      "title": "The machine-dungeon",
+      "line_start": 1,
+      "line_end": 31,
+      "relevance": "Grounds cross-district coupling, undocumented rune sequences, distant-load ambiguity, and the rule that local staff cannot infer a network mind from one maintenance anomaly."
+    },
+    {
+      "source_id": "industrial-escalation",
+      "path": "Delvehold/Lore/Crisis/Industrial Escalation.md",
+      "title": "Industrial escalation",
+      "line_start": 1,
+      "line_end": 27,
+      "relevance": "Grounds the feedback loop in which pumps, defenses, replacement infrastructure, and mana demand convert one repair decision into larger extraction pressure."
+    },
+    {
+      "source_id": "mastership",
+      "path": "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+      "title": "Mastership and citizenship",
+      "line_start": 1,
+      "line_end": 54,
+      "relevance": "Grounds the single civic seal per workshop, public answerability, apprentice and journeyworker limits, and jurisdiction widening with the dispute."
+    },
+    {
+      "source_id": "dwarves",
+      "path": "Delvehold/Lore/Peoples/Dwarves.md",
+      "title": "Dwarves",
+      "line_start": 1,
+      "line_end": 30,
+      "relevance": "Grounds durable craft prestige, cistern life inside ancient Vaults, public dependence on industry, and civic adulthood through Mastership."
+    },
+    {
+      "source_id": "mana-and-pattern",
+      "path": "Delvehold/Lore/Ontology/Mana and Pattern.md",
+      "title": "Mana and pattern",
+      "line_start": 1,
+      "line_end": 45,
+      "relevance": "Grounds pattern history carried through mana, rune branches and terminators, conduit material effects, and the difference between observable feedback and proven awakening."
+    }
+  ],
+  "historical_context": {
+    "time_period": "The active deep-mining crisis, after runic municipal infrastructure has become load-bearing to ordinary Hold life.",
+    "location": "Cistern House Nine, a public pump workshop serving a terrace district beside one unnamed Hold's warm underground sea.",
+    "summary": "The fixture occupies one shift in which House Nine's stored header water is the only buffer between a three-engine fault and district service failure. The scene remains a possible dramatization; its characters and branch outcomes are not promoted to canonical history.",
+    "public_facts": [
+      {
+        "text": "House Nine has a dry rune gallery and public landing above a wet intake chamber, with three visible pump engines, isolation wedges, pressure floats, outlet valves, a municipal feed, and a workshop inspection plate.",
+        "source_refs": [
+          "the-greathold"
+        ]
+      },
+      {
+        "text": "The upper terrace header holds one work shift at ordinary draw; the safe operating covenant assumes two engines carry flow while one stands cold.",
+        "source_refs": [
+          "the-greathold-one-shift"
+        ]
+      },
+      {
+        "text": "Engine One is shedding bronze, Engine Two is isolated after a feed-side reroute, and Engine Three cannot safely carry the overlapping bakery and laundry peaks alone.",
+        "source_refs": [
+          "the-greathold-one-shift"
+        ]
+      },
+      {
+        "text": "A workshop Master may seal local repair and shutdown states, while rationing commercial draw requires the affected district workshops to bring their own seals into the moot.",
+        "source_refs": [
+          "the-greathold-one-shift",
+          "mastership"
+        ]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Every hour spent preparing or investigating consumes stored water; every attempt to manufacture more water consumes bearing life, public trust, or insurance standing.",
+        "source_refs": [
+          "the-greathold-one-shift"
+        ]
+      },
+      {
+        "text": "The pump house's visible isolation hardware and public slate make acts attributable, but visibility cannot grant technical safety or widen one workshop's authority over another.",
+        "source_refs": [
+          "the-greathold",
+          "mastership"
+        ]
+      },
+      {
+        "text": "The Engine Two reroute may be coupled feedback, undocumented work, fraud, or something alive; local urgency does not resolve that ontological dispute.",
+        "source_refs": [
+          "machine-dungeon",
+          "mana-and-pattern"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "cistern-house-nine-workshop",
+      "label": "Cistern House Nine workshop",
+      "group_type": "public_utility_workshop",
+      "institutional_logic": [
+        "Keep water service inside inspectable mechanical limits.",
+        "Attach every admitted service state to one answerable civic seal.",
+        "Widen the dispute when its consequence leaves the house."
+      ],
+      "material_incentives": [
+        "Preserve at least two serviceable pumps.",
+        "Fit the spare bearing sleeve before the header empties.",
+        "Keep a valid insurance claim and public record."
+      ],
+      "internal_virtues": [
+        "Visible isolation",
+        "Prepared tools",
+        "Specific uncertainty",
+        "Repair that survives inspection"
+      ],
+      "internal_shames": [
+        "An unstamped override presented as routine",
+        "A dry district hidden behind workshop procedure",
+        "A seal applied to a state the machinery does not possess"
+      ],
+      "prestige_markers": [
+        "A flush red wedge",
+        "A clean null termination",
+        "A repair completed in the time publicly promised"
+      ],
+      "taboo_triggers": [
+        "Calling a physical safety boundary mere paperwork",
+        "Treating public water dependence as permission for unlimited override"
+      ],
+      "emotional_display_norms": [
+        "Fear is translated into callouts, tool staging, gauge counts, and dry humor until the mechanism fails."
+      ],
+      "trust_defaults": [
+        "Trusts visible wedges, named hands, repeatable tests, and records held on both sides of the rail."
+      ],
+      "speech_register_cues": [
+        "Short craft statements",
+        "Public callouts",
+        "Specific correction",
+        "Humor about procedure rather than the people bearing its cost"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "the-greathold-one-shift",
+        "runic-engineering",
+        "mastership"
+      ]
+    },
+    {
+      "group_id": "terrace-water-users",
+      "label": "Terrace district water users",
+      "group_type": "affected_district_public",
+      "institutional_logic": [
+        "Keep household water, food work, and washing available.",
+        "Bring service disputes to the nearest body able to answer for them."
+      ],
+      "material_incentives": [
+        "Preserve household draw through the shift.",
+        "Know when to fill vessels and which commercial uses must wait.",
+        "Prevent hidden workshop delay from consuming the whole reserve."
+      ],
+      "internal_virtues": [
+        "Shared counts",
+        "Orderly vessel filling",
+        "Witness attached to consequence"
+      ],
+      "internal_shames": [
+        "Taking private water before the public clock is known",
+        "Letting status decide whose tap remains wet"
+      ],
+      "prestige_markers": [
+        "An accurate header board",
+        "A workshop that names a deadline before failure",
+        "Commercial Masters willing to ration their own output"
+      ],
+      "taboo_triggers": [
+        "Being told a falling gauge is only a technical matter",
+        "Discovering that an emergency override was hidden until the claim failed"
+      ],
+      "emotional_display_norms": [
+        "Pressure first appears as filled vessels, repeated clock counts, queue discipline, and exact questions about who can act."
+      ],
+      "trust_defaults": [
+        "Trusts a public clock and visible pump state more than reassurance from behind the rail."
+      ],
+      "speech_register_cues": [
+        "Household arithmetic",
+        "Commercial schedules",
+        "Direct questions about time and authority"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "the-greathold-one-shift",
+        "dwarven-industry",
+        "mastership"
+      ]
+    },
+    {
+      "group_id": "commercial-workshop-masters",
+      "label": "Bakery and laundry workshop Masters",
+      "group_type": "district_workshop_moot",
+      "institutional_logic": [
+        "Retain authority over each workshop's own draw and production obligations.",
+        "Coordinate ration only through seals attached to the work actually being curtailed."
+      ],
+      "material_incentives": [
+        "Keep ovens and wash drums productive.",
+        "Avoid destroying household water to protect one shift of output.",
+        "Know whether competing workshops are bound to the same ration."
+      ],
+      "internal_virtues": [
+        "Reciprocal sacrifice",
+        "A seal placed on one's own cost",
+        "A ration with a clear end condition"
+      ],
+      "internal_shames": [
+        "Demanding another workshop close first",
+        "Using emergency need to seize a neighbour's authority"
+      ],
+      "prestige_markers": [
+        "A workshop that can lose output without losing its workers",
+        "A ration other workshops can inspect"
+      ],
+      "taboo_triggers": [
+        "House Nine trying to seal their valves for them",
+        "A public utility concealing the clock until commercial draw becomes blame"
+      ],
+      "emotional_display_norms": [
+        "Alarm appears as questions about reciprocity, lost production, and whether the same rule binds every seal."
+      ],
+      "trust_defaults": [
+        "Trusts a shared clock and reciprocal seals; distrusts unilateral requests made after the peak begins."
+      ],
+      "speech_register_cues": [
+        "Output schedules",
+        "Reciprocity tests",
+        "Seal language",
+        "Loss stated in loaves or wash loads"
+      ],
+      "source_refs": [
+        "the-greathold-one-shift",
+        "mastership"
+      ]
+    },
+    {
+      "group_id": "house-nine-insurance-covenant",
+      "label": "House Nine's infrastructure insurer",
+      "group_type": "contractual_risk_allocator",
+      "institutional_logic": [
+        "Cover failures admitted through recorded isolation and bounded repair.",
+        "Refuse losses materially worsened by an unstamped emergency override."
+      ],
+      "material_incentives": [
+        "Distinguish covered failure from chosen overdrive.",
+        "Move ambiguous losses toward the weakest evidence chain."
+      ],
+      "internal_virtues": [
+        "Continuous records",
+        "Named custody",
+        "A visible exception boundary"
+      ],
+      "internal_shames": [
+        "Paying for deliberate override",
+        "Admitting an ontological anomaly the covenant cannot price"
+      ],
+      "prestige_markers": [
+        "A claim resolved from records rather than patronage",
+        "Replacement stock dispatched under a covered finding"
+      ],
+      "taboo_triggers": [
+        "Missing cam records",
+        "Retrospective seals",
+        "A null anomaly presented as a settled cause"
+      ],
+      "emotional_display_norms": [
+        "Institutional fear appears as suspended claims, requests for another witness, and narrow definitions of covered work."
+      ],
+      "trust_defaults": [
+        "Trusts time-marked isolation, physical fragments, seal custody, and independent public records."
+      ],
+      "speech_register_cues": [
+        "Covered state",
+        "Exception",
+        "Sequence of acts",
+        "Custody and attribution"
+      ],
+      "source_refs": [
+        "the-greathold-one-shift"
+      ]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "cistern-house-nine-workshop.one-shift-is-a-resource",
+      "applies_to": [
+        "cistern-house-nine-workshop"
+      ],
+      "pressure_type": "depleting_public_reserve",
+      "summary": "Stored header water converts maintenance time into a public resource whose consumption must remain visible.",
+      "projection_use": "Make preparation, investigation, meeting time, and repair time erase chalk hours that later gate options and outcomes.",
+      "source_refs": [
+        "the-greathold-one-shift"
+      ]
+    },
+    {
+      "field_id": "commercial-workshop-masters.ration-own-consequence",
+      "applies_to": [
+        "commercial-workshop-masters"
+      ],
+      "pressure_type": "distributed_authority",
+      "summary": "A viable ration requires the workshops losing output to attach their own seals to that loss.",
+      "projection_use": "Do not let House Nine issue a magic district-wide closure; make early notice and reciprocal seals determine whether the ration bites in time.",
+      "source_refs": [
+        "mastership",
+        "the-greathold-one-shift"
+      ]
+    },
+    {
+      "field_id": "house-nine-insurance-covenant.exception-follows-override",
+      "applies_to": [
+        "house-nine-insurance-covenant",
+        "cistern-house-nine-workshop"
+      ],
+      "pressure_type": "contractual_exposure",
+      "summary": "An unstamped override may buy water now while transferring later repair cost onto the workshop and district.",
+      "projection_use": "Keep immediate hydraulic relief distinct from coverage, attribution, and next-shift machinery life.",
+      "source_refs": [
+        "the-greathold-one-shift"
+      ]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "terrace-water-users",
+      "target_group_id": "cistern-house-nine-workshop",
+      "observer_read": [
+        "Skilled custodians of a public necessity",
+        "The people consuming the last safe hours through testing and procedure"
+      ],
+      "target_self_read": [
+        "Workers preventing one damaged pump from destroying three",
+        "A workshop with authority over machinery but not district production"
+      ],
+      "misread_patterns": [
+        "The district may read safe preparation as guild delay.",
+        "Visible water recovery may look like repair even when it is bearing overdrive."
+      ],
+      "likely_insults": [
+        "clock polishers",
+        "dry-pipe masters"
+      ],
+      "projection_use": "Separate trust in candor from relief at rising water; the two should not move automatically together.",
+      "source_refs": [
+        "the-greathold",
+        "the-greathold-one-shift",
+        "mastership"
+      ]
+    },
+    {
+      "observer_group_id": "cistern-house-nine-workshop",
+      "target_group_id": "commercial-workshop-masters",
+      "observer_read": [
+        "Peak demand that can be reduced by a seal",
+        "Neighbours whose output pressure may outrun their solidarity"
+      ],
+      "target_self_read": [
+        "Food and washing workshops carrying their own public obligations",
+        "Equal civic owners rather than loads on a pump chart"
+      ],
+      "misread_patterns": [
+        "Pumpwrights may compress lost bread and wash capacity into a valve setting.",
+        "Commercial Masters may treat the pump fault as House Nine's private responsibility until taps fail."
+      ],
+      "likely_insults": [
+        "peak thieves",
+        "valve tyrants"
+      ],
+      "projection_use": "Make ration negotiation about owned consequences, not selfish merchants versus heroic utility workers.",
+      "source_refs": [
+        "the-greathold-one-shift",
+        "mastership",
+        "dwarven-industry"
+      ]
+    },
+    {
+      "observer_group_id": "house-nine-insurance-covenant",
+      "target_group_id": "cistern-house-nine-workshop",
+      "observer_read": [
+        "A sequence of covered acts or excluded overrides",
+        "A source of ambiguous loss under public pressure"
+      ],
+      "target_self_read": [
+        "People balancing immediate water against a mechanical threshold",
+        "Named hands whose uncertainty is not negligence"
+      ],
+      "misread_patterns": [
+        "Contract categories may erase the service pressure that made an unsafe run locally compelling.",
+        "Workshop workers may expect public necessity to repair gaps in the evidence chain."
+      ],
+      "likely_insults": [
+        "exception-makers",
+        "paper sluice"
+      ],
+      "projection_use": "Keep insurance economically consequential without giving it technical or civic authority over the immediate scene.",
+      "source_refs": [
+        "the-greathold-one-shift"
+      ]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "pump-house-journeyworker",
+      "summary": "A technically competent dwarf worker who can operate and repair the plant but cannot seal public service or ration another workshop.",
+      "obligations": [
+        "Keep physical states legible",
+        "Refuse to call an unsafe engine safe",
+        "Use stored water and craft time honestly",
+        "Name when the dispute has exceeded workshop authority"
+      ],
+      "available_masks": [
+        "Dry competence",
+        "Literal callout",
+        "Tool-focused calm",
+        "Public candor"
+      ],
+      "failure_modes": [
+        "Trading machinery life for applause",
+        "Letting technical expertise impersonate civic authority",
+        "Treating a correct repair as timely when preparation began too late"
+      ],
+      "source_refs": [
+        "the-greathold-one-shift",
+        "runic-engineering",
+        "mastership"
+      ]
+    },
+    {
+      "role_id": "public-utility-workshop-master",
+      "summary": "The holder of House Nine's single civic seal, answerable for the material service state admitted under it.",
+      "obligations": [
+        "Seal only bounded local work",
+        "Keep water and machinery failure attached to named decisions",
+        "Invite wider seals when district draw must change"
+      ],
+      "available_masks": [
+        "Severe instruction",
+        "Understated approval",
+        "Public procedural calm"
+      ],
+      "failure_modes": [
+        "Stamping retrospective safety",
+        "Hiding behind insurance language",
+        "Claiming authority over another workshop's valve"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "the-greathold-one-shift",
+        "mastership"
+      ]
+    },
+    {
+      "role_id": "district-landing-clerk",
+      "summary": "A record keeper who preserves the public clock, witnessed engine states, and custody transitions without gaining technical command.",
+      "obligations": [
+        "Keep the outward-facing record current",
+        "Distinguish observation from diagnosis",
+        "Move notices to the workshops whose seals are needed"
+      ],
+      "available_masks": [
+        "Literal repetition",
+        "Administrative wit",
+        "Queue-facing patience"
+      ],
+      "failure_modes": [
+        "Letting one side own the only clock",
+        "Turning uncertain cause into public accusation",
+        "Recording an override after its consequence"
+      ],
+      "source_refs": [
+        "the-greathold",
+        "mastership"
+      ]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "rada_venn",
+      "known_context": [
+        {
+          "text": "Rada knows House Nine's plant geometry, visible pump and header state, repair sequence, tool locations, null practice, and every local act she performs.",
+          "source_refs": [
+            "the-greathold",
+            "the-greathold-one-shift",
+            "runic-engineering"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Rada believes stored water is craft time made public and that an override must remain visible even when it works.",
+          "source_refs": [
+            "the-greathold-one-shift",
+            "mastership"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Rada may reduce bakery and laundry obligations to peak draw because pump behavior is the pressure she can directly measure.",
+          "source_refs": [
+            "the-greathold-one-shift",
+            "mastership"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Rada must not know the ultimate cause, intent, or destination of Engine Two's feed-side reroute.",
+          "source_refs": [
+            "machine-dungeon",
+            "mana-and-pattern"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "kelda_moor",
+      "known_context": [
+        {
+          "text": "Kelda knows House Nine's operating covenant, insurance exception, workshop seal obligations, repair requirements, and local water clock.",
+          "source_refs": [
+            "the-greathold-one-shift",
+            "mastership"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Kelda believes a civic seal owns an inspectable decision; it cannot make a bad pump or another workshop's ration obey by declaration.",
+          "source_refs": [
+            "the-greathold",
+            "mastership"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Kelda may treat insurer legibility as public legibility even when the landing needs a simpler clock and consequence statement.",
+          "source_refs": [
+            "the-greathold-one-shift"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Kelda must not diagnose network personhood from the local reroute.",
+          "source_refs": [
+            "machine-dungeon"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "iven_chalk",
+      "known_context": [
+        {
+          "text": "Iven knows visible header counts, callouts, seal state, public questions, and records transferred into his custody.",
+          "source_refs": [
+            "the-greathold",
+            "mastership"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Iven believes a district can argue usefully only after it shares the same clock and can distinguish who saw, acted, sealed, and paid.",
+          "source_refs": [
+            "the-greathold-one-shift",
+            "mastership"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Iven may overvalue a continuous record when a physical isolation boundary has already been lost.",
+          "source_refs": [
+            "the-greathold",
+            "runic-engineering"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Iven cannot infer hidden engine state, remote network state, or private workshop intent from the public slate alone.",
+          "source_refs": [
+            "machine-dungeon"
+          ]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The authored one-shift reserve condition is canonical setting pressure. Rada, Kelda, Iven, the visiting Masters, and every branch outcome remain fixture-local possibilities unless separately promoted.",
+      "source_refs": [
+        "the-greathold-one-shift"
+      ]
+    },
+    {
+      "text": "Engine Two's reroute preserves canonical ambiguity among coupled feedback, undocumented work, fraud, and machine-dungeon agency; the fixture may not settle it.",
+      "source_refs": [
+        "machine-dungeon",
+        "mana-and-pattern"
+      ]
+    },
+    {
+      "text": "The insurance covenant allocates replacement cost after the incident; it does not own technical safety, ration authority, or the workshop seal.",
+      "source_refs": [
+        "the-greathold-one-shift",
+        "mastership"
+      ]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which named Hold contains Cistern House Nine?",
+      "blocks_training": false,
+      "notes": "The owning lore deliberately keeps the terraced Hold unnamed; the fixture preserves that boundary."
+    },
+    {
+      "question": "Which underwriting workshop or foreign office holds House Nine's insurance covenant?",
+      "blocks_training": false,
+      "notes": "The elaboration needs the contract boundary, not a new named institution. A later Ledger pass may furnish the insurer if it becomes a recurring economic actor."
+    },
+    {
+      "question": "What caused Engine Two's feed-side reroute?",
+      "blocks_training": false,
+      "notes": "The fixture preserves the vault's machine-dungeon ambiguity and treats the loop only as observable evidence."
+    },
+    {
+      "question": "Which branch outcome becomes history for Cistern House Nine?",
+      "blocks_training": false,
+      "notes": "None is canon by default; the fixture explores the pressure state rather than declaring a timeline."
+    }
+  ]
+}

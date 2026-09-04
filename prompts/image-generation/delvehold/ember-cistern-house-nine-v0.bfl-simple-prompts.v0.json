@@ -1,0 +1,68 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "ember-cistern-house-nine-v0.bfl-simple-v0",
+  "fixture_id": "ember-cistern-house-nine-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Richly textured high-fantasy industrial storybook illustration, precise dark ink lines, restrained watercolor, worn basalt, practical brass-and-iron machinery, warm amber lamps against cold blue mana, readable compact dwarf silhouettes, expressive faces and hands, cinematic interactive-fiction composition, simple abstract runes and unlettered gauges.",
+  "prompts": [
+    {
+      "id": "01_house_nine_establishing",
+      "prompt": "Wide two-level underground pump house: west public doorway, upper basalt gallery, south brass rail around a grated stair opening, lower wet service floor, three west-to-east iron pumps below the rail, overhead chain hoist, black-water intake slot, north-wall blue mana conduit, west-turning outlet trunks, black board with eight chalk squares."
+    },
+    {
+      "id": "02_second_shift_routine",
+      "prompt": "Compact umber-skinned dwarf pumpwright in moss shirt and leather apron counts bronze filings by three pumps; older silver-braided dwarf Master holds a brass seal apart from an inspection plate; red-haired dwarf clerk marks eight squares on a public water board and passes a hot bread heel through the rail."
+    },
+    {
+      "id": "03_first_hour_choice",
+      "prompt": "Wide pump-house choice tableau with a broad dwarf journeyworker centered between four physical levers: spare bronze bearing sleeve and hoist tools, black public water clock, route slips for bakery and laundry seals, and a damaged pump's manual cam above a white dish of bronze filings."
+    },
+    {
+      "id": "04_preparation_fold",
+      "prompt": "Three-engine municipal pump room under amber and blue light: damaged left pump, isolated dark middle pump with flush red wedge, working right pump with trembling glass float; staged sleeve tools, public chalk clock, departing route runners, and shallow emergency stroke appear as visible preparation states."
+    },
+    {
+      "id": "05_bearing_break",
+      "prompt": "Pivotal close action at a brass rail: curved bronze fragment rings in amber light, common intake screen jerks above warm black water, right pump float falls, middle pump stays dark behind red wedge while a hair-thin blue mana loop curls around its feed, goggled dwarf mechanic recoils and older Master holds the red lever still."
+    },
+    {
+      "id": "06_mechanical_triage",
+      "prompt": "High angle from grated stair over three iron pumps and black-water intake: goggled compact dwarf worker clipped to brass rail between hoist chain, intake rake, isolation wedge, null slate, manual cam and red lever; older Master guards keys and seal; public clerk watches from upper landing."
+    },
+    {
+      "id": "07_pressure_fold",
+      "prompt": "Wide pump-house status tableau: bronze curls at damaged left engine, dark isolated middle engine with blue feed-side loop, overloaded right engine, raised intake screen, wet grating, staged repair yoke, outward-facing evidence slate, dwindling chalk clock and bare inspection plate all visible across two levels."
+    },
+    {
+      "id": "08_emergency_moot",
+      "prompt": "West public landing of underground pump house: silver-braided dwarf pump Master lays one brass seal beside bare plate; flour-dusted bakery Master and damp-sleeved laundry Master arrive with separate seal boards; clerk holds black water clock; mechanic faces them across rail while orderly neighbors hold copper cans and bakery trough."
+    },
+    {
+      "id": "09_last_shift_threshold",
+      "prompt": "Whole two-level pump-house decision visible at once: prepared bearing sleeve at wet stair, three pumps and low black-water intake, reciprocal commercial seal boards at public rail, bagged bronze and blue-loop evidence on clerk slate, damaged pump's red emergency cam, few remaining chalk hours and compact dwarf mechanic between all four choices."
+    },
+    {
+      "id": "10_repair_ending",
+      "prompt": "High-angle half-shift repair: all three pumps dark behind red wedges, wet chamber drained below pump feet, overhead chain hoist lowers yoke over damaged shaft, compact dwarf mechanic drives spare bronze sleeve while older Master holds sealed shutdown and clerk erases the last public water squares."
+    },
+    {
+      "id": "11_ration_ending",
+      "prompt": "Civic ration at brass public rail: pump-house Master, flour-dusted bakery Master and steam-damp laundry Master each press separate brass seals onto one valve schedule; clerk braces the board, mechanic watches right pump float settle above air line, neighbors fill copper vessels in measured order."
+    },
+    {
+      "id": "12_claim_ending",
+      "prompt": "Close evidence row at pump-house rail: sealed shutdown plate, three red wedges, clear bag of bronze crescents, black slate with chalk clock squares and copied blue loop, cam key on black chain; mechanic, Master and clerk each hold their part while empty copper cans wait beyond."
+    },
+    {
+      "id": "13_override_success",
+      "prompt": "Low hydraulic crisis beneath west public landing: damaged iron pump drives hard with cold blue mana, bronze curls fill white dish, compact goggled dwarf mechanic holds red cam, older silver-braided Master reaches for isolation wedges with civic seal closed, west-turning outlet trunk joint holds under a halo of falling dust while fresh chalk squares appear above."
+    },
+    {
+      "id": "14_override_collapse",
+      "prompt": "Low hydraulic disaster beneath west public landing: a thick iron outlet trunk splits at its stone-collared joint, warm black water blasts across lower grating in blue steam, three red isolation wedges fall, compact goggled dwarf mechanic recoils from the cam, and an older silver-braided Master reaches through amber light to break the blue mana feed."
+    }
+  ]
+}

@@ -1,0 +1,478 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "ember-cistern-house-nine-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/delvehold/ember-cistern-house-nine-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/delvehold/ember-cistern-house-nine-v0.v0.json",
+  "visual_plan_ref": "examples/visual/delvehold/ember-cistern-house-nine-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "ember-cistern-house-nine-v0.one-shift-reserve",
+  "protagonist_agent_id": "rada_venn",
+  "npc_agent_ids": [
+    "kelda_moor",
+    "iven_chalk",
+    "commercial_workshop_masters",
+    "terrace_witnesses"
+  ],
+  "purpose": "A branch-and-fold pressure fixture in which a dwarf journeyworker must spend one shift of stored water across repair, ration authority, an insurance claim, or emergency output before Cistern House Nine loses its safe operating margin.",
+  "tonal_mode": "Workplace comedy tightening into hydraulic dread.",
+  "local_awareness_summary": [
+    {
+      "text": "Rada can inspect and operate House Nine's pumps, wedges, cams, hoist, intake screen, catch trays, gauges, and repair tools, but she does not own the workshop's civic seal.",
+      "source_refs": [
+        "the-greathold",
+        "runic-engineering",
+        "mastership"
+      ]
+    },
+    {
+      "text": "Rada knows the upper header holds one working shift at ordinary draw, Engine One is shedding bronze, Engine Two is isolated after a feed-side reroute, and Engine Three cannot carry overlapping bakery and laundry peaks safely.",
+      "source_refs": [
+        "the-greathold-one-shift"
+      ]
+    },
+    {
+      "text": "Rada can observe the local null loop and pressure effects but cannot know whether they arise from coupled feedback, undocumented work, or emerging machine-dungeon agency.",
+      "source_refs": [
+        "machine-dungeon",
+        "mana-and-pattern"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Rada's embodied journeyworker viewpoint inside the two-level pump house. Choices use tools, records, valves, seals held by others, and visible water clocks rather than remote infrastructure control.",
+        "source_refs": [
+          "interactive-fiction-weaver",
+          "the-greathold-one-shift"
+        ]
+      },
+      {
+        "text": "The scene establishes bread, shift handover, public recordkeeping, and predictable commercial draw before the bearing failure tightens the clock.",
+        "source_refs": [
+          "ghostlight-grounding-doctrine"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Rada can perform or refuse pump work; Kelda alone can apply House Nine's workshop seal; bakery and laundry Masters must bind their own rationed draw; the insurer judges the preserved record after the fact.",
+        "source_refs": [
+          "mastership",
+          "the-greathold-one-shift"
+        ]
+      },
+      {
+        "text": "No local actor can declare Engine Two's reroute sentient or safe by interpretation. A clean isolation test remains a material requirement.",
+        "source_refs": [
+          "machine-dungeon",
+          "runic-engineering"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Kelda holds the House Nine civic seal and cam key; Iven holds the outward-facing public slate; Rada may handle repair tools, wedges, hoist, intake screen, catch trays, and manual cams; each commercial Master holds their own seal.",
+        "source_refs": [
+          "the-greathold",
+          "mastership"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every resolution must spend at least one material value: stored water, craft time, commercial output, public trust, insurance standing, or machinery life.",
+        "source_refs": [
+          "the-greathold-one-shift",
+          "industrial-escalation"
+        ]
+      },
+      {
+        "text": "The pressure must widen from workshop maintenance to district jurisdiction before the header empties, because commercial rationing lies outside the pump workshop's single seal.",
+        "source_refs": [
+          "the-greathold-one-shift",
+          "mastership"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not repair all three engines, restore full water, preserve the claim, and keep commercial output through one clever act.",
+        "source_refs": [
+          "the-greathold-one-shift"
+        ]
+      },
+      {
+        "text": "Do not let a workshop seal ration other workshops, let an insurer decide pump safety, or treat public trust as a substitute for physical isolation.",
+        "source_refs": [
+          "mastership",
+          "the-greathold-one-shift"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through one bearing failure and one emergency district moot, then select one of eight state-gated endings.",
+    "choice_layers": [
+      "spend_the_first_hour",
+      "keep_one_failure_from_becoming_three",
+      "spend_the_last_shift"
+    ],
+    "variables": [
+      "header_hours",
+      "repair_progress",
+      "bearing_damage",
+      "public_trust",
+      "ration_seals",
+      "evidence_chain",
+      "override_exposure",
+      "flood_risk"
+    ],
+    "ending_gates": [
+      "ending_repair_success",
+      "ending_repair_cost",
+      "ending_ration_success",
+      "ending_ration_cost",
+      "ending_claim_success",
+      "ending_claim_cost",
+      "ending_override_success",
+      "ending_override_collapse"
+    ],
+    "route_split_policy": "No major route split. All early choices normalize into the shared mechanical threshold; only the ending family separates after the final allocation of water, authority, evidence, or machine life."
+  },
+  "branches": [
+    {
+      "branch_id": "prime_repair",
+      "ink_path": "shift_preparation",
+      "action_type": "stage_repair_tools",
+      "actor_intent": "Spend one header hour to remove fetching and setup delay from the half-shift sleeve repair.",
+      "state_basis": [
+        "Rada can stage the spare sleeve, lifting yoke, drift pins, catch trays, and lamps before the wet chamber is drained."
+      ],
+      "reviewed_consequences": [
+        "Raises repair_progress and evidence_chain while lowering header_hours; later changes repair readiness, public clock prose, repair-ending gate, and staged-tool visuals."
+      ],
+      "training_hooks": [
+        "preparation_as_resource_conversion",
+        "craft_time_has_public_cost"
+      ]
+    },
+    {
+      "branch_id": "prime_public_clock",
+      "ink_path": "shift_preparation",
+      "action_type": "move_public_record",
+      "actor_intent": "Make the remaining reserve and peak overlap visible to the district before failure.",
+      "state_basis": [
+        "The header board is portable and Iven owns the public record surface beyond the rail."
+      ],
+      "reviewed_consequences": [
+        "Raises public_trust and evidence_chain; later changes witness behavior, moot orientation, ration gate, claim gate, and public-board visuals."
+      ],
+      "training_hooks": [
+        "public_clock_as_shared_pressure",
+        "record_custody"
+      ]
+    },
+    {
+      "branch_id": "prime_ration_authority",
+      "ink_path": "shift_preparation",
+      "action_type": "request_emergency_moot",
+      "actor_intent": "Bring bakery and laundry seals to the consequence before their peak valves open.",
+      "state_basis": [
+        "Jurisdiction widens with a district-scale service dispute, and each workshop retains its own civic seal."
+      ],
+      "reviewed_consequences": [
+        "Raises ration_seals while lowering header_hours; later changes arrival timing, ration affordance, ration ending, and seal-board visuals."
+      ],
+      "training_hooks": [
+        "authority_before_emergency",
+        "distributed_civic_body"
+      ]
+    },
+    {
+      "branch_id": "prime_water_margin",
+      "ink_path": "shift_preparation",
+      "action_type": "feather_damaged_engine",
+      "actor_intent": "Buy reserve water by spending Engine One's remaining bearing life under an unstamped manual cam position.",
+      "state_basis": [
+        "Rada can feather the local manual cam, but the damaged bearing and insurance exception remain visible."
+      ],
+      "reviewed_consequences": [
+        "Raises header_hours, bearing_damage, and override_exposure; later changes damage prose, claim gate, override gate, and visible bronze/unstamped-plate state."
+      ],
+      "training_hooks": [
+        "immediate_service_spends_machine_life",
+        "unstamped_override_exposure"
+      ]
+    },
+    {
+      "branch_id": "commit_to_repair",
+      "ink_path": "triage_choice",
+      "action_type": "isolate_damaged_engine",
+      "actor_intent": "Give Engine One a visible boundary and begin safe access before the clock improves itself by lying.",
+      "state_basis": [
+        "Rada can seat the physical wedge and transfer the cam key to Kelda's seal chain."
+      ],
+      "reviewed_consequences": [
+        "Raises repair_progress and public_trust while lowering header_hours; later changes repair gate and isolated-engine visual state."
+      ],
+      "training_hooks": [
+        "visible_isolation_boundary",
+        "safe_work_spends_time"
+      ]
+    },
+    {
+      "branch_id": "buy_clean_water_path",
+      "ink_path": "triage_choice",
+      "action_type": "clear_intake_screen",
+      "actor_intent": "Remove loose bronze from the shared intake while Engine Three continues household flow.",
+      "state_basis": [
+        "The chain hoist can lift the common screen through a service slot from behind the safety rail."
+      ],
+      "reviewed_consequences": [
+        "Lowers bearing_damage and raises repair_progress and flood_risk; later changes intake prose, repair and override gates, wet-floor warning, and hoist visuals."
+      ],
+      "training_hooks": [
+        "embodied_maintenance_action",
+        "local_fix_moves_risk"
+      ]
+    },
+    {
+      "branch_id": "strengthen_claim_chain",
+      "ink_path": "triage_choice",
+      "action_type": "preserve_reroute_evidence",
+      "actor_intent": "Repeat and publicly copy the null-loop anomaly without declaring its cause or opening Engine Two.",
+      "state_basis": [
+        "Rada can perform the null gesture and Iven can witness the visible loop from the public record position."
+      ],
+      "reviewed_consequences": [
+        "Raises evidence_chain while lowering header_hours; later changes insurer legibility, claim gate, and slate visuals."
+      ],
+      "training_hooks": [
+        "uncertainty_preserved_as_evidence",
+        "proof_costs_service_time"
+      ]
+    },
+    {
+      "branch_id": "spend_machinery_for_water",
+      "ink_path": "triage_choice",
+      "action_type": "run_unstamped_override",
+      "actor_intent": "Refill part of the header immediately despite bearing, trunk, public-trust, and insurance costs.",
+      "state_basis": [
+        "Rada can lift Engine One's cam; Kelda may withhold the workshop stamp; Iven can preserve the act."
+      ],
+      "reviewed_consequences": [
+        "Raises header_hours, bearing_damage, override_exposure, and flood_risk while lowering public_trust; later changes every final risk surface and emergency visuals."
+      ],
+      "training_hooks": [
+        "output_now_failure_later",
+        "insurance_and_public_cost"
+      ]
+    },
+    {
+      "branch_id": "choose_repair_window",
+      "ink_path": "final_choice",
+      "action_type": "execute_half_shift_repair",
+      "actor_intent": "Spend stored water on a complete safe repair that restores the two-engine operating margin.",
+      "state_basis": [
+        "Success requires adequate repair_progress, at least two header hours, and controlled flood_risk."
+      ],
+      "reviewed_consequences": [
+        "Routes to prepared repair success or unprepared repair cost; staged tools, reserve time, and wet-floor state determine the outcome."
+      ],
+      "training_hooks": [
+        "state_gated_craft_resolution",
+        "preparation_changes_duration"
+      ]
+    },
+    {
+      "branch_id": "choose_civic_ration",
+      "ink_path": "final_choice",
+      "action_type": "ratify_district_ration",
+      "actor_intent": "Spend bakery and laundry output to keep Engine Three below its air line for one shift.",
+      "state_basis": [
+        "Success requires the affected workshop seals, public trust, and enough header time to implement the ration."
+      ],
+      "reviewed_consequences": [
+        "Routes to authorized ration success or jurisdictional delay; seal presence and shared clock state determine whether commercial draw actually falls."
+      ],
+      "training_hooks": [
+        "authority_at_point_of_consequence",
+        "commercial_output_as_emergency_resource"
+      ]
+    },
+    {
+      "branch_id": "choose_insurance_claim",
+      "ink_path": "final_choice",
+      "action_type": "preserve_claim_boundary",
+      "actor_intent": "Accept dry taps while preserving physical isolation, attribution, and contractual repair support.",
+      "state_basis": [
+        "Success requires a strong evidence chain and no material unstamped override exposure."
+      ],
+      "reviewed_consequences": [
+        "Routes to clean claim or contaminated claim; both preserve shutdown, but only the clean chain moves replacement cost away from House Nine."
+      ],
+      "training_hooks": [
+        "evidence_as_economic_leverage",
+        "correct_shutdown_still_hurts"
+      ]
+    },
+    {
+      "branch_id": "choose_emergency_output",
+      "ink_path": "final_choice",
+      "action_type": "overdrive_damaged_pump",
+      "actor_intent": "Buy immediate water by exposing the bearing, buried trunk, workshop seal, and insurer covenant to one more run.",
+      "state_basis": [
+        "Success requires bearing_damage and flood_risk below their collapse thresholds."
+      ],
+      "reviewed_consequences": [
+        "Routes to one more shift of water with worsened machinery or to outlet-trunk collapse that floods the lower floor and disables all pumps."
+      ],
+      "training_hooks": [
+        "thresholded_infrastructure_hazard",
+        "relief_can_be_deferred_failure"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose and visual callbacks",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Durable canon promotion of any character or branch outcome",
+      "Character memory and relationship updates",
+      "Insurance, workshop, or district consequences beyond the fixture",
+      "Interpretation of the Engine Two reroute as agency",
+      "Accepted corpus coverage"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex self-review using the four required Ghostlight reviewer prompts",
+    "review_status": "accepted_after_four_self_reviews",
+    "review_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 4,
+        "voice_score": 5,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "detected_tonal_mode": "Workplace comedy tightening into hydraulic dread.",
+        "findings_resolved": [
+          "Aligned the opening chalk-square prose and all prompt surfaces with header_hours = 8; the earlier draft visibly erased an hour the Ink state still retained.",
+          "Introduced the insurance covenant strip during ordinary shift routine so the claim ending does not depend on a late institutional reveal.",
+          "Made the claim choice explicitly state that the player accepts dry taps."
+        ],
+        "remaining_notes": [
+          "Technical density is deliberate and embodied in tools, bread, water, seals, and visible work rather than delivered as a setting lecture."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 5,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 4,
+        "sources_checked": [
+          "Delvehold/Lore/index.md",
+          "Delvehold/Lore/The Greathold.md",
+          "Delvehold/Lore/Industry/index.md",
+          "Delvehold/Lore/Industry/Runic Engineering.md",
+          "Delvehold/Lore/Industry/Dwarven Industry.md",
+          "Delvehold/Lore/Industry/Deep Mining.md",
+          "Delvehold/Lore/Industry/Machine-Dungeon.md",
+          "Delvehold/Lore/Crisis/index.md",
+          "Delvehold/Lore/Crisis/Industrial Escalation.md",
+          "Delvehold/Lore/Crisis/Surface Symptoms.md",
+          "Delvehold/Lore/Dungeon Ecology/index.md",
+          "Delvehold/Lore/Dungeon Ecology/Dungeon Lifecycle.md",
+          "Delvehold/Lore/Dungeon Ecology/Ecological Responses.md",
+          "Delvehold/Lore/Dungeon Ecology/Monsters.md",
+          "Delvehold/Lore/Ontology/index.md",
+          "Delvehold/Lore/Ontology/Mana and Pattern.md",
+          "Delvehold/Lore/Ontology/Dungeon Cores.md",
+          "Delvehold/Lore/Ontology/World-Spirit.md",
+          "Delvehold/Lore/Peoples/index.md",
+          "Delvehold/Lore/Peoples/Dwarves.md",
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/Peoples/Goblins.md",
+          "Delvehold/Lore/Peoples/Orcs.md"
+        ],
+        "findings_resolved": [
+          "Removed an unsupported fire-reserve dependency from the grounding digest.",
+          "Replaced an over-specific promise of bonded fitters arriving by morning with the canonical contractual consequence: covered sleeve work and replacement stock."
+        ],
+        "remaining_notes": [
+          "The Hold name, insurer identity, reroute cause, and branch-local historical outcome remain explicitly unresolved."
+        ],
+        "training_labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_infrastructure_grounding",
+          "vault_backfill_candidate"
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "overall_status": "accepted",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 5,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 4,
+        "findings_resolved": [
+          "Removed dual-state wording from ending-family base prompts and assigned success or failure appearance to explicit ending-label modifiers.",
+          "Split the BFL emergency-output prompt into separate holding-trunk and collapse prompts.",
+          "Restated room geometry and full visible character appearance in every base prompt while limiting refs to bodies actually visible in each frame."
+        ],
+        "remaining_notes": [
+          "The text scene_set is sufficient for B-level replay planning; a hand-built plan view or 3D blockout is still required before high-consistency multi-angle website rendering."
+        ],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity"
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 5,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "inferred_layout_summary": "Cistern House Nine retains its established two-level map: west public landing, east-west upper dry gallery, north conduit wall, south rail and grated stair opening, lower wet chamber, west-to-east pump row, overhead hoist, and a newly specified outlet joint turning west beneath the landing.",
+        "findings_resolved": [
+          "Corrected the first visual draft's mirrored orientation to extend the existing Cistern House Nine scene_set instead of creating an incompatible duplicate room.",
+          "Made the worker stair route, public route, hoist reach, sightlines, engine order, and lower-floor flood boundary explicit."
+        ],
+        "remaining_notes": [],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_branch_spatial_state"
+        ]
+      }
+    ],
+    "review_notes": [
+      "The fixture has not been compiled; the user explicitly deferred compiler installation and build execution."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "lore_content_readable": true,
+      "all_variables_have_later_reads": true
+    }
+  }
+}

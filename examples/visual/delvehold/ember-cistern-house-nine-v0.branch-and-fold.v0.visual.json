@@ -1,0 +1,847 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "ember-cistern-house-nine-v0-branch-and-fold-visual",
+  "ink_ref": "examples/ink/delvehold/ember-cistern-house-nine-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/delvehold/ember-cistern-house-nine-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ember-cistern-house-nine-v0.one-shift-reserve",
+  "purpose": "Illustrated replay segmentation and image prompt controls for one failing shift at Cistern House Nine.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for the ordinary second shift, first-hour preparation, bearing break, mechanical triage, emergency district moot, last-shift allocation, and four state-gated ending families.",
+    "segmentation_rule": "Give the empty room geometry, worker routine, first-hour choice, folded preparation state, bearing crack, triage choice, district arrival, final threshold, and each ending family separate visual_scene_id anchors. Let the bronze crescent striking the rail stand as its own pivotal alarm frame.",
+    "prompting_rule": "Each base prompt restates visible room geometry, material, light, interfaces, and every visible body's appearance and position. Continuity notes remain tooling constraints. Branch and state modifiers describe affirmative visible deltas only.",
+    "global_style_cue": "Style: richly textured high-fantasy industrial storybook illustration, precise dark ink lines with restrained watercolor, worn basalt and limestone, practical brass-and-iron machinery, warm amber oil lamps against cold blue mana light, readable compact silhouettes, expressive faces and hands, humane workplace detail, cinematic composition designed for interactive-fiction replay, surfaces marked with simple abstract runes and unlettered gauges.",
+    "prompt_assembly_rule": "Assemble each render from the global_style_cue, the scene base_image_prompt, visual refs only for named characters or groups listed as visible in that scene, and every triggered state or global branch modifier. A camera-specific render from the declared scene_set supplies geometry authority for each angle.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture returns to one two-level pump room from wide, rail, wet-stair, object-closeup, and public-landing angles. The draft map fixes zones, routes, cameras, sightlines, and branch-state anchors for B-level planning.",
+      "future_scene_set_need": "Before high-consistency website art, build a plan view or simple 3D blockout from this map and provide one camera-specific render for every camera slot."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "ember_house_nine_establishing",
+        "ink_anchor": "start",
+        "camera_slot": "wide_upper_gallery",
+        "base_image_prompt": "Wide establishing view of a municipal pump house carved into dark basalt beside a warm underground sea. A rectangular upper dry gallery runs east to west; an arched public doorway and street landing enter at the west end; a brass safety rail lines the south edge around a grated stair opening to the lower wet intake chamber and service floor. Three squat iron pump engines stand west to east below the gallery rail, each with a vertical rod, glass pressure float, long valve extension rising to upper-service reach, dark slate for geometric runes, and red-shouldered isolation wedge throat. A locked brass-and-gold mana conduit arch enters the north gallery wall above the middle engine and glows cold blue. Three thick outlet trunks turn west beneath the public landing. An overhead chain hoist hangs beside the south stair opening. Warm mineral mist rises through the grating. Eight empty chalk squares form a simple water clock on a black board by the public rail. Amber oil lamps reveal worn stone, damp lower grating, bronze filings in a white dish, clean catch trays, and a spare bearing sleeve on a shelf.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The upper dry gallery runs east-west; its public door is west, the stair descends south through the rail opening, the north wall carries conduit and header board, and the south rail overlooks the lower service floor.",
+          "The lower engines remain ordered west-to-east as One, Two, Three; the common intake lies below them and outlet trunks turn west beneath the public landing."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_house_nine_shift_routine",
+        "ink_anchor": "shift_routine",
+        "camera_slot": "medium_public_rail",
+        "base_image_prompt": "Medium-wide view across the brass public rail in a two-level basalt pump house lit by amber oil lamps and cold blue mana. Below the rail, three squat iron pumps stand in a west-to-east row; the left engine has bronze filings in a white dish, the middle engine is dark behind a flush red isolation wedge, and the right engine works with its glass pressure float trembling. Journeyworker Rada Venn, a compact broad-built dwarf woman with warm umber skin, black hair in a flat crown braid, moss-green wool shirt, brown leather apron, tool belt, and round goggles with one cracked lens pushed onto her brow, counts filings at the rail. Master Kelda Moor, an older deep-brown-skinned dwarf woman with silver-grey braids tucked into an indigo high-collared work coat and a heavy brass civic seal on a black chain, stands beside an unstamped brass inspection plate bordered by a narrow covenant strip with two simple geometric coverage marks. Landing clerk Iven Chalk, a tawny-skinned dwarf man with red-brown curls, short forked beard, charcoal clerk coat dusted white, slate harness, and chalk-stained fingers, copies those two marks beside eight remaining squares on the public water board. A hot seed-loaf heel passes through the rail between Iven and Rada. Red arcs above the squares show an approaching bakery and laundry peak.",
+        "visible_characters": [
+          {
+            "agent_id": "rada_venn",
+            "default_stance": "inside the workshop side of the rail, counting bronze filings while accepting bread",
+            "visual_ref": "visual_character_refs.characters.rada_venn"
+          },
+          {
+            "agent_id": "kelda_moor",
+            "default_stance": "beside the unstamped inspection plate with seal at chest height",
+            "visual_ref": "visual_character_refs.characters.kelda_moor"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "public side of the rail, chalking the header board",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The rail separates technical access from public witness while allowing small objects and records to pass across it."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_house_nine_first_hour",
+        "ink_anchor": "shift_preparation",
+        "camera_slot": "wide_upper_gallery",
+        "base_image_prompt": "Wide playable-choice frame inside a two-level basalt pump house. The upper gallery's south brass rail overlooks three west-to-east iron pump engines below; a grated stair drops south through the rail opening toward warm intake mist; a chain hoist hangs beside that opening; a blue-glowing municipal mana arch enters the north wall; the western public landing holds a black water-clock board with eight chalk squares and two red peak arcs. Rada Venn, a compact dwarf woman with warm umber skin, flat black crown braid, moss-green shirt, brown leather apron, tool belt, and cracked-lens round goggles on her brow, stands where four practical levers are readable: a spare bronze bearing sleeve with lifting yoke and white catch trays, the public header board, blank route slips beside clerk Iven Chalk, and Engine One's manual cam above a dish of bronze filings. Master Kelda Moor waits beside the bare inspection plate with her brass seal on a black chain. Iven, tawny-skinned with red-brown curls and a charcoal chalk-streaked clerk coat, holds chalk and route slips at the public rail.",
+        "visible_characters": [
+          {
+            "agent_id": "rada_venn",
+            "default_stance": "centered between repair tools, public board, route slips, and manual cam",
+            "visual_ref": "visual_character_refs.characters.rada_venn"
+          },
+          {
+            "agent_id": "kelda_moor",
+            "default_stance": "beside bare inspection plate, observing",
+            "visual_ref": "visual_character_refs.characters.kelda_moor"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "at public rail with chalk and route slips",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Each opening choice must act on one of the four objects already visible in this frame."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_house_nine_preparation_fold",
+        "ink_anchor": "routine_fold",
+        "camera_slot": "medium_public_rail",
+        "base_image_prompt": "Medium-wide status frame across the public rail in a two-level municipal pump house carved from basalt. Three iron pumps occupy the lower service floor beneath the south gallery rail: west Engine One is still with bronze dust in a white dish, middle Engine Two is dark behind a flush red wedge, east Engine Three strokes under a trembling float. The north gallery wall carries a locked blue mana arch and a black water-clock board; a grated stair descends south through the rail opening toward warm mist. Rada Venn, compact and broad in a moss-green shirt and brown leather apron with cracked round goggles on her brow, watches the three pump states. Kelda Moor, older with silver braids and indigo work coat, keeps her brass civic seal apart from the inspection plate. Iven Chalk, tawny-skinned in a charcoal chalk-streaked clerk coat, holds the outward-facing slate on the public side. The frame has clear areas for staged repair tools, moved clock board, dispatched route slips, and a shallow blue stroke in Engine One as branch-visible deltas.",
+        "visible_characters": [
+          {
+            "agent_id": "rada_venn",
+            "default_stance": "watching the engine row from inside the rail",
+            "visual_ref": "visual_character_refs.characters.rada_venn"
+          },
+          {
+            "agent_id": "kelda_moor",
+            "default_stance": "holding seal apart from inspection plate",
+            "visual_ref": "visual_character_refs.characters.kelda_moor"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "public side with outward-facing slate",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "repair_progress >= 2",
+            "modifier_prompt": "Inside a yellow repair square, show a spare bronze bearing sleeve, lifting yoke, drift pins, white catch trays, and two lit dry-work lamps arranged in reach order."
+          },
+          {
+            "trigger": "public_trust >= 4",
+            "modifier_prompt": "Place the black water-clock board directly against the public rail, facing orderly terrace witnesses who point to and repeat the same remaining chalk-square count."
+          },
+          {
+            "trigger": "ration_seals >= 2",
+            "modifier_prompt": "Show two route runners departing through the western arched doorway, each carrying a folded slate slip marked with simple geometric seal spaces."
+          },
+          {
+            "trigger": "bearing_damage >= 3",
+            "modifier_prompt": "Engine One makes a shallow blue-powered stroke; a wider crescent of bronze filings shines in its white catch dish while Kelda keeps the inspection plate bare."
+          },
+          {
+            "trigger": "header_hours <= 5",
+            "modifier_prompt": "Show five or fewer chalk squares on the public water board and terrace witnesses arranging copper vessels by capacity."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Preparation deltas alter objects and positions inside the fixed room; engine order and routes remain unchanged."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_house_nine_bearing_break",
+        "ink_anchor": "bearing_failure",
+        "camera_slot": "bearing_object_closeup",
+        "base_image_prompt": "Pivotal close action frame at the brass rail of a high-fantasy industrial pump house. A curved bronze fragment has just struck the rail in sharp amber light. Below it, the common iron intake screen is twisted sideways over warm black water, and the rightmost of three pump rods shudders while its glass pressure float falls. The left iron pump's lower bearing housing is scored and open around the rod. The middle pump remains dark behind a red-shouldered isolation wedge while one hair-thin blue mana loop curls around the feed side of that wedge toward the locked wall conduit. Rada Venn, a compact dwarf woman with warm umber skin, flat black braid, leather apron, tool belt, and cracked round goggles now lowered over her eyes, recoils with one hand raised clear of the fragment. Kelda Moor, an older dwarf woman with silver braids and indigo coat, grips the red emergency lever but holds it in place. Iven Chalk erases one square from the black water-clock board beyond the rail.",
+        "visible_characters": [
+          {
+            "agent_id": "rada_venn",
+            "default_stance": "goggles down, one hand clear of the flying fragment",
+            "visual_ref": "visual_character_refs.characters.rada_venn"
+          },
+          {
+            "agent_id": "kelda_moor",
+            "default_stance": "holding the emergency lever against reflex",
+            "visual_ref": "visual_character_refs.characters.kelda_moor"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "visible beyond the rail erasing one clock square",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The bronze fragment comes from Engine One at the west/left position; Engine Three at east/right loses pressure; Engine Two remains physically isolated."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_house_nine_triage",
+        "ink_anchor": "triage_choice",
+        "camera_slot": "high_wet_stair",
+        "base_image_prompt": "High-angle playable-choice view from the grated stair descending south through the upper gallery rail into the lower service floor of a basalt pump house. Three iron pumps line the north edge of the lower floor from west to east. Damaged Engine One has an exposed scored lower bearing and manual cam; isolated Engine Two is dark behind a flush red wedge with a faint blue loop on the feed side; overloaded Engine Three works above black water with a fluttering pressure float. The common intake screen sits in a rectangular service slot below an overhead chain hoist. A white catch tray, cam key, isolation wedge, null slate, long bronze rake, and red emergency lever are all visibly reachable from the brass-railed work path. Rada Venn, compact dwarf pumpwright in moss-green wool and brown leather apron, stands clipped to the rail with cracked-lens goggles over her eyes and both hands free to choose a tool. Kelda Moor, older with silver braids and brass civic seal, guards the cam key and emergency lever. Iven Chalk watches from the upper public landing with black slate and white chalk.",
+        "visible_characters": [
+          {
+            "agent_id": "rada_venn",
+            "default_stance": "belt clipped to rail, hands free between hoist, wedge, null slate, and cam",
+            "visual_ref": "visual_character_refs.characters.rada_venn"
+          },
+          {
+            "agent_id": "kelda_moor",
+            "default_stance": "guarding cam key and emergency lever",
+            "visual_ref": "visual_character_refs.characters.kelda_moor"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "upper public landing with slate raised",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Rada reaches the hoist chain and service slot from the clipped rail position; she reaches Engine One's wedge and cam by the lower work path."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_house_nine_pressure_fold",
+        "ink_anchor": "pressure_fold",
+        "camera_slot": "wide_upper_gallery",
+        "base_image_prompt": "Wide mechanical-status view of a two-level basalt pump house under amber lamps and cold blue mana. The upper west public landing and north-wall water-clock board overlook a lower floor beneath the south rail, with three west-to-east iron pumps, a grated stair descending south through the rail opening, overhead chain hoist, common intake service slot, and outlet trunks turning beneath the landing. Engine One stands damaged with bronze filings in its white dish; Engine Two stays dark behind a flush red wedge; Engine Three works under a trembling float. Rada Venn, compact dwarf woman in moss-green shirt and leather apron, stands between Engine One and the intake slot with tools visible. Kelda Moor, older dwarf woman with silver braids and indigo coat, holds her heavy brass seal near the bare inspection plate. Iven Chalk, tawny dwarf clerk in charcoal coat, presents a black slate outward at the rail. The clock squares, catch trays, wet grating, wedge, cam, intake screen, and slate remain fully visible for triggered state deltas.",
+        "visible_characters": [
+          {
+            "agent_id": "rada_venn",
+            "default_stance": "lower work path between Engine One and intake slot",
+            "visual_ref": "visual_character_refs.characters.rada_venn"
+          },
+          {
+            "agent_id": "kelda_moor",
+            "default_stance": "upper gallery by bare inspection plate",
+            "visual_ref": "visual_character_refs.characters.kelda_moor"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "public side presenting slate outward",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "repair_progress >= 3",
+            "modifier_prompt": "Show Engine One fully dark behind a flush red wedge, its cam key hanging from Kelda's seal chain, with staged sleeve tools inside the yellow repair square."
+          },
+          {
+            "trigger": "bearing_damage <= 1",
+            "modifier_prompt": "Show the common intake screen lifted by the chain hoist and a white catch tray holding most loose bronze fragments."
+          },
+          {
+            "trigger": "bearing_damage >= 4",
+            "modifier_prompt": "Show Engine One's catch dish filled with curled bronze pieces and the bearing housing visibly scored around its rod."
+          },
+          {
+            "trigger": "flood_risk >= 2",
+            "modifier_prompt": "Show warm black water glistening over the lower iron grating and each pump stroke making a buried outlet trunk joint tremble below the landing."
+          },
+          {
+            "trigger": "evidence_chain >= 3",
+            "modifier_prompt": "Iven's outward-facing slate shows a simple unlettered sequence of clock squares, three wedge icons, bronze crescents, a copied blue loop, and hand marks connected by white chalk lines."
+          },
+          {
+            "trigger": "public_trust <= 1",
+            "modifier_prompt": "Terrace witnesses press closer to the rail with narrowed eyes while Kelda and Rada stand separated from them by machinery and a bare plate."
+          },
+          {
+            "trigger": "override_exposure >= 2",
+            "modifier_prompt": "Engine One glows with an aggressive blue manual stroke; its scored cam and the bare inspection plate are both plainly visible to witnesses."
+          }
+        ],
+        "visual_continuity_notes": [
+          "State modifiers show mutually compatible results inside the fixed work zones; the lower floor water state must persist into the final threshold and repair or override ending."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_house_nine_emergency_moot",
+        "ink_anchor": "moot_arrival",
+        "camera_slot": "public_door_to_rail",
+        "base_image_prompt": "Medium-wide view from the western arched street doorway into the upper public landing of a basalt pump house. A south brass rail overlooks three west-to-east iron pump engines and warm mineral mist on the lower floor; a grated stair descends through its opening. The north wall holds a black water-clock board with a few chalk squares, red bakery and laundry arcs, and a locked blue-glowing mana conduit. Master Kelda Moor, an older deep-brown-skinned dwarf woman with silver braids, indigo high-collared work coat, heavy brass civic seal, and keys, lays her seal beside a bare inspection plate. Rada Venn, compact umber-skinned dwarf pumpwright in moss-green wool and brown leather apron, stands between the wet stair opening and public rail. Iven Chalk, tawny dwarf clerk in charcoal chalk-streaked coat, holds the public slate. Two visiting dwarf workshop Masters stand outside the rail: a flour-dusted baker in a quilted ochre apron carrying a round brass seal board, and a steam-damp laundry worker in rolled blue leather sleeves with copper wash tokens and a square brass seal board. Orderly terrace witnesses behind them hold copper cans, ceramic jugs, and one bakery trough.",
+        "visible_characters": [
+          {
+            "agent_id": "rada_venn",
+            "default_stance": "between wet stair and public rail, facing the arriving seals",
+            "visual_ref": "visual_character_refs.characters.rada_venn"
+          },
+          {
+            "agent_id": "kelda_moor",
+            "default_stance": "laying House Nine seal beside bare plate",
+            "visual_ref": "visual_character_refs.characters.kelda_moor"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "at the board with public slate",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          },
+          {
+            "agent_id": "commercial_workshop_masters",
+            "default_stance": "bakery and laundry Masters outside rail with their own seal boards",
+            "visual_ref": "visual_character_refs.groups.commercial_workshop_masters"
+          },
+          {
+            "agent_id": "terrace_witnesses",
+            "default_stance": "orderly vessel line behind the visiting Masters",
+            "visual_ref": "visual_character_refs.groups.terrace_witnesses"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ration_seals >= 2",
+            "modifier_prompt": "Both visiting Masters hold prepared seal boards with one-shift valve diagrams already marked, and two returned route slips rest beside Iven's slate."
+          },
+          {
+            "trigger": "ration_seals < 2",
+            "modifier_prompt": "Both visiting Masters hold loose seals at their belts and empty hands above the rail; the valve-diagram board remains blank."
+          },
+          {
+            "trigger": "public_trust >= 4",
+            "modifier_prompt": "The black water-clock board faces all participants, and several terrace witnesses hold up matching finger counts for the remaining squares."
+          },
+          {
+            "trigger": "public_trust < 4",
+            "modifier_prompt": "The water-clock board remains angled toward the workshop while visiting Masters point between Iven's slate and Kelda's gauges, disputing which count governs."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Visiting Masters remain on the public side of the rail and bring authority over their own commercial valves, not access to pump controls."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_house_nine_last_threshold",
+        "ink_anchor": "final_state|final_choice",
+        "camera_slot": "wide_upper_gallery",
+        "base_image_prompt": "Wide final-decision tableau in a two-level basalt pump house. A grated stair descends south through the upper gallery rail to a wet lower service floor; three iron pumps line the lower floor west to east from damaged One to isolated Two to overloaded Three; an overhead chain hoist hangs beside the common intake slot; three outlet trunks turn west beneath the public landing; the locked blue mana arch and black water-clock board occupy the north wall. Rada Venn, compact umber-skinned dwarf pumpwright in moss-green shirt, leather apron, tool belt, and cracked goggles, stands at the center with one hand near the staged sleeve tools and the other open toward the public rail. Kelda Moor, older with silver braids and indigo coat, holds the House Nine seal above the bare inspection plate. Iven Chalk, tawny clerk in charcoal coat, presents the evidence slate. A flour-dusted bakery Master and steam-damp laundry Master hold separate seal boards outside the rail among terrace witnesses and copper vessels. The composition makes four choices visually legible: prepared sleeve repair at the wet stair, reciprocal commercial ration at the rail, sealed evidence and bronze fragments on the slate, and Engine One's red emergency cam.",
+        "visible_characters": [
+          {
+            "agent_id": "rada_venn",
+            "default_stance": "center of four visible decision surfaces",
+            "visual_ref": "visual_character_refs.characters.rada_venn"
+          },
+          {
+            "agent_id": "kelda_moor",
+            "default_stance": "seal poised above bare plate",
+            "visual_ref": "visual_character_refs.characters.kelda_moor"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "holding evidence slate at rail",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          },
+          {
+            "agent_id": "commercial_workshop_masters",
+            "default_stance": "holding separate seal boards outside rail",
+            "visual_ref": "visual_character_refs.groups.commercial_workshop_masters"
+          },
+          {
+            "agent_id": "terrace_witnesses",
+            "default_stance": "behind Masters with copper vessels",
+            "visual_ref": "visual_character_refs.groups.terrace_witnesses"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "header_hours <= 1",
+            "modifier_prompt": "Show one chalk square or an empty row on the public water board; several copper vessels at the landing are already dry and tilted toward the light."
+          },
+          {
+            "trigger": "repair_progress >= 3",
+            "modifier_prompt": "The complete lifting yoke, spare sleeve, pins, catch trays, lamps, and Engine One cam key form an orderly ready line from repair square to wet stair."
+          },
+          {
+            "trigger": "ration_seals >= 2",
+            "modifier_prompt": "The bakery and laundry Masters press their separate brass seals onto one shared valve schedule held across the public rail."
+          },
+          {
+            "trigger": "evidence_chain >= 3",
+            "modifier_prompt": "Iven's outward slate, bagged bronze crescents, copied blue null loop, clock squares, and cam marks form one continuous visible evidence row."
+          },
+          {
+            "trigger": "flood_risk >= 3",
+            "modifier_prompt": "Warm black water covers the lower grating around the wet stair, and the buried outlet trunk joint lifts dust from the landing at every pump stroke."
+          },
+          {
+            "trigger": "override_exposure >= 2",
+            "modifier_prompt": "Engine One's manual cam is visibly scored beside an aggressive blue glow while Kelda keeps the civic seal physically separated from the inspection plate."
+          }
+        ],
+        "visual_continuity_notes": [
+          "All four final affordances occupy established zones and remain reachable only by their proper owners."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_house_nine_repair_ending",
+        "ink_anchor": "ending_repair_success|ending_repair_cost",
+        "camera_slot": "high_wet_stair",
+        "base_image_prompt": "High-angle repair frame from the grated stair descending south through the upper gallery rail of a basalt pump house. All three iron engines are dark below the brass rail with red isolation wedges seated. Warm black water has drained below the three pump feet, exposing the scored shaft of Engine One at the west end of the row. The overhead chain hoist lowers a steel yoke over the shaft. Rada Venn, compact umber-skinned dwarf pumpwright in moss-green shirt, leather apron, tool belt, and cracked goggles, braces a drift pin beside the spare bronze sleeve. Kelda Moor, older dwarf woman in an indigo work coat with silver braids, holds the sealed shutdown plate at the upper rail. Iven Chalk, tawny dwarf clerk in charcoal coat, erases chalk squares from the public board while terrace witnesses watch from the west landing. Repair tools lie around the opened shaft and only a few chalk squares remain on the header board.",
+        "visible_characters": [
+          {
+            "agent_id": "rada_venn",
+            "default_stance": "at Engine One shaft with sleeve and drift pin",
+            "visual_ref": "visual_character_refs.characters.rada_venn"
+          },
+          {
+            "agent_id": "kelda_moor",
+            "default_stance": "upper rail holding sealed shutdown plate",
+            "visual_ref": "visual_character_refs.characters.kelda_moor"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "public board erasing reserve squares",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          },
+          {
+            "agent_id": "terrace_witnesses",
+            "default_stance": "west landing watching the repair clock",
+            "visual_ref": "visual_character_refs.groups.terrace_witnesses"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The repair uses the fixed south stair opening and overhead-hoist route; success and cost modify readiness and header state, not engine positions."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_house_nine_ration_ending",
+        "ink_anchor": "ending_ration_success|ending_ration_cost",
+        "camera_slot": "public_door_to_rail",
+        "base_image_prompt": "Medium-wide civic frame from the western public doorway of a basalt pump house. The black water-clock board and three separate brass seal surfaces dominate the upper landing above the visible east/right pump's trembling pressure float. Kelda Moor, older dwarf woman with silver braids and indigo coat, holds the House Nine seal over a restricted-service diagram. Iven Chalk, tawny dwarf clerk in charcoal coat, braces a shared valve schedule on the public rail. A flour-dusted bakery Master in quilted ochre apron and a steam-damp laundry Master in rolled blue leather sleeves each hold a brass seal poised above their own commercial valve line. Rada Venn, compact dwarf pumpwright in moss-green wool and leather apron, watches Engine Three's float hover near its marked air line from inside the rail. Terrace witnesses hold copper cans and a bakery trough behind the Masters. The unmarked shared schedule waits between the three authorities.",
+        "visible_characters": [
+          {
+            "agent_id": "rada_venn",
+            "default_stance": "inside rail watching Engine Three float",
+            "visual_ref": "visual_character_refs.characters.rada_venn"
+          },
+          {
+            "agent_id": "kelda_moor",
+            "default_stance": "House Nine seal over restricted-service diagram",
+            "visual_ref": "visual_character_refs.characters.kelda_moor"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "bracing shared valve schedule at rail",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          },
+          {
+            "agent_id": "commercial_workshop_masters",
+            "default_stance": "each holding their own seal near the shared schedule",
+            "visual_ref": "visual_character_refs.groups.commercial_workshop_masters"
+          },
+          {
+            "agent_id": "terrace_witnesses",
+            "default_stance": "orderly line behind Masters",
+            "visual_ref": "visual_character_refs.groups.terrace_witnesses"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Commercial seals remain outside the pump-work boundary; the public schedule crosses the rail while control custody does not."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_house_nine_claim_ending",
+        "ink_anchor": "ending_claim_success|ending_claim_cost",
+        "camera_slot": "evidence_object_closeup",
+        "base_image_prompt": "Close-medium evidence table at the public rail of a basalt pump house. Three dark iron pumps and seated red wedges remain visible below in amber and blue light. On the rail lie a sealed shutdown plate, a clear bag of bronze crescents, a black slate with separate unlettered chalk groups for clock squares, wedge icons, hand marks and a copied blue loop, and Engine One's cam key on a black chain. Rada Venn, compact umber-skinned dwarf pumpwright in moss-green shirt and leather apron, holds the bronze bag open. Kelda Moor, older deep-brown-skinned dwarf woman with silver braids and indigo coat, presses her heavy brass civic seal into the shutdown plate. Iven Chalk, tawny dwarf clerk in charcoal coat, holds white chalk above the spaces between evidence groups. Terrace witnesses hold empty copper cans beyond the rail. The evidence pieces await a final continuous sequence and insurer mark.",
+        "visible_characters": [
+          {
+            "agent_id": "rada_venn",
+            "default_stance": "holding bagged bronze beside evidence row",
+            "visual_ref": "visual_character_refs.characters.rada_venn"
+          },
+          {
+            "agent_id": "kelda_moor",
+            "default_stance": "sealing the shutdown plate",
+            "visual_ref": "visual_character_refs.characters.kelda_moor"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "signing the public edge of the record",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          },
+          {
+            "agent_id": "terrace_witnesses",
+            "default_stance": "beyond rail with empty vessels",
+            "visual_ref": "visual_character_refs.groups.terrace_witnesses"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The claim scene preserves all three engines in shutdown; its branch delta concerns evidence continuity and cost allocation."
+        ]
+      },
+      {
+        "visual_scene_id": "ember_house_nine_override_ending",
+        "ink_anchor": "ending_override_success|ending_override_collapse",
+        "camera_slot": "low_outlet_trunk",
+        "base_image_prompt": "Low dramatic view from the lower service floor of a basalt pump house toward Engine One and the west public landing above. Damaged Engine One drives a vertical rod through warm black water while cold blue mana floods its scored channels; curled bronze fills a white catch dish. The thick outlet trunk runs overhead and west beneath the stone landing, where dust shakes from one visible joint. Rada Venn, compact dwarf pumpwright with warm umber skin, black crown braid, moss-green shirt, leather apron, and cracked goggles over her eyes, holds the red manual cam below its bucking line. Kelda Moor, older dwarf woman with silver braids and indigo coat, keeps her brass seal closed in one hand and reaches toward the row of red isolation wedges with the other. Iven Chalk stands above at the public rail with slate raised. Terrace witnesses and copper vessels frame the landing. The base state shows the joint holding under a halo of falling dust; the collapse modifier supplies the split trunk and flood.",
+        "visible_characters": [
+          {
+            "agent_id": "rada_venn",
+            "default_stance": "braced at Engine One manual cam",
+            "visual_ref": "visual_character_refs.characters.rada_venn"
+          },
+          {
+            "agent_id": "kelda_moor",
+            "default_stance": "seal closed, reaching toward wedges",
+            "visual_ref": "visual_character_refs.characters.kelda_moor"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "above at public rail with slate raised",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          },
+          {
+            "agent_id": "terrace_witnesses",
+            "default_stance": "landing line recoiling or watching",
+            "visual_ref": "visual_character_refs.groups.terrace_witnesses"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The outlet trunk joint lies directly beneath the public landing; its rupture floods the lower service floor while leaving the upper rail initially above water."
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_repair_visual",
+        "trigger": "branch_label == prime_repair",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_first_hour",
+          "ember_house_nine_preparation_fold",
+          "ember_house_nine_last_threshold"
+        ],
+        "modifier_prompt": "Rada arranges the spare bronze sleeve, lifting yoke, drift pins, white catch trays, and lit dry-work lamps inside the yellow repair square in exact reach order."
+      },
+      {
+        "modifier_id": "prime_public_clock_visual",
+        "trigger": "branch_label == prime_public_clock",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_first_hour",
+          "ember_house_nine_preparation_fold",
+          "ember_house_nine_emergency_moot"
+        ],
+        "modifier_prompt": "Rada and Iven carry the heavy black water-clock board to the brass public rail and turn its remaining chalk squares toward terrace witnesses."
+      },
+      {
+        "modifier_id": "prime_ration_authority_visual",
+        "trigger": "branch_label == prime_ration_authority",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_first_hour",
+          "ember_house_nine_emergency_moot"
+        ],
+        "modifier_prompt": "Iven hands two folded route slips to small runners departing through the western doorway; later the bakery and laundry Masters arrive with prepared valve boards and seals."
+      },
+      {
+        "modifier_id": "prime_water_margin_visual",
+        "trigger": "branch_label == prime_water_margin",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_first_hour",
+          "ember_house_nine_preparation_fold",
+          "ember_house_nine_last_threshold"
+        ],
+        "modifier_prompt": "Rada holds Engine One's manual cam at a shallow setting; the rod makes a short blue-lit stroke, the header gains two chalk squares, and curled bronze grows in the white catch dish beside a bare inspection plate."
+      },
+      {
+        "modifier_id": "commit_to_repair_visual",
+        "trigger": "branch_label == commit_to_repair",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_triage",
+          "ember_house_nine_pressure_fold",
+          "ember_house_nine_last_threshold"
+        ],
+        "modifier_prompt": "Engine One is dark behind a flush red isolation wedge; Rada transfers its cam key to Kelda's seal chain while Iven records the time."
+      },
+      {
+        "modifier_id": "buy_clean_water_path_visual",
+        "trigger": "branch_label == buy_clean_water_path",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_triage",
+          "ember_house_nine_pressure_fold",
+          "ember_house_nine_last_threshold"
+        ],
+        "modifier_prompt": "Rada clips her belt to the brass rail, lifts the dripping common intake screen with the overhead chain hoist, and rakes bronze slivers into a white tray while warm water spreads across the lower grating."
+      },
+      {
+        "modifier_id": "strengthen_claim_chain_visual",
+        "trigger": "branch_label == strengthen_claim_chain",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_triage",
+          "ember_house_nine_pressure_fold",
+          "ember_house_nine_claim_ending"
+        ],
+        "modifier_prompt": "Rada draws a crisp geometric null figure on Engine Two's slate while a thin blue loop forms around the feed side of the red wedge; Iven copies the loop and time onto the outward-facing black slate."
+      },
+      {
+        "modifier_id": "spend_machinery_for_water_visual",
+        "trigger": "branch_label == spend_machinery_for_water",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_triage",
+          "ember_house_nine_pressure_fold",
+          "ember_house_nine_last_threshold",
+          "ember_house_nine_override_ending"
+        ],
+        "modifier_prompt": "Engine One drives hard under cold blue mana; bronze curls fill the catch dish, header squares return on the black board, the buried trunk joint sheds stone dust, and Kelda's civic seal remains closed in her hand."
+      },
+      {
+        "modifier_id": "prepared_repair_success_visual",
+        "trigger": "ending_label == prepared_repair_success",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_repair_ending"
+        ],
+        "modifier_prompt": "Show the full tool line staged in reach order, the spare sleeve seated cleanly on Engine One's shaft, the last header square still present, and Engine One's return gauge rising beside still-isolated Engine Two."
+      },
+      {
+        "modifier_id": "unprepared_repair_cost_visual",
+        "trigger": "ending_label == unprepared_repair_cost",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_repair_ending"
+        ],
+        "modifier_prompt": "Show an empty header board, missing yoke pieces or lamps still being fetched down the south grated stair, wet lower grating, and the spare sleeve waiting beside an exposed shaft while terrace vessels tilt dry."
+      },
+      {
+        "modifier_id": "district_ration_success_visual",
+        "trigger": "ending_label == district_ration_success",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_ration_ending"
+        ],
+        "modifier_prompt": "Show three aligned brass seal marks on one shared valve schedule, bakery and laundry Masters pressing their own seals, Engine Three's float stable above a marked air line, and household vessels filling in measured order."
+      },
+      {
+        "modifier_id": "ration_without_authority_cost_visual",
+        "trigger": "ending_label == ration_without_authority_cost",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_ration_ending"
+        ],
+        "modifier_prompt": "Show loose unplaced seals, two conflicting slate counts, open red commercial arcs on the water board, Engine Three's float falling, and the vessel queue widening beyond the western doorway."
+      },
+      {
+        "modifier_id": "clean_claim_success_visual",
+        "trigger": "ending_label == clean_claim_success",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_claim_ending"
+        ],
+        "modifier_prompt": "Show one continuous evidence row: sealed shutdown plate, flush red wedges, bagged bronze, copied blue loop, clock squares, cam key, and three distinct witness marks connected by white chalk."
+      },
+      {
+        "modifier_id": "contaminated_claim_cost_visual",
+        "trigger": "ending_label == contaminated_claim_cost",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_claim_ending"
+        ],
+        "modifier_prompt": "Show gaps in the chalk sequence around a scored manual cam, a bare interval on the clock row, loose bronze outside its evidence bag, and a small amber claim token placed apart from the sealed shutdown plate."
+      },
+      {
+        "modifier_id": "emergency_output_success_visual",
+        "trigger": "ending_label == emergency_output_success",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_override_ending"
+        ],
+        "modifier_prompt": "Show the outlet trunk joint holding with only a dust halo, the water board gaining fresh chalk squares, Engine One's catch dish full of bronze curls, and Kelda's seal still closed while witnesses fill vessels."
+      },
+      {
+        "modifier_id": "outlet_trunk_collapse_visual",
+        "trigger": "ending_label == outlet_trunk_collapse",
+        "apply_to_visual_scene_ids": [
+          "ember_house_nine_override_ending"
+        ],
+        "modifier_prompt": "Show the buried outlet trunk split beneath the landing, warm black water blasting across the lower service floor in blue steam, drowned rune slates, all three red wedges thrown, and the upper brass rail crowded with recoiling witnesses."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "cistern_house_nine_one_shift.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Two-level compact pump house extending the established Cistern House Nine map. A rectangular upper dry gallery runs east-west and opens west to the public street landing. Its south edge is cut by a brass-rail-bounded grated stair opening to the lower wet intake chamber and service floor. The north wall carries the municipal conduit, inspection plate, public header board, and gallery-side controls. Three engines line the lower north edge west-to-east as One, Two, Three above a common wet intake; floats, valve extensions, wedge throats, and slates remain visible and reachable from the upper service path. An overhead chain hoist hangs beside the stair opening. Three outlet trunks turn west beneath the public landing.",
+      "fixed_zones": [
+        {
+          "zone_id": "west_public_landing",
+          "visible_form": "arched street doorway, yellow public line, vessel queue, visiting seal boards",
+          "used_for": "public witness, district moot arrival, commercial seals, evacuation above flood level"
+        },
+        {
+          "zone_id": "upper_dry_gallery",
+          "visible_form": "basalt work gallery with amber lamps, black water-clock board, inspection plate, locked blue mana arch, north-wall gauges",
+          "used_for": "header clock, seal custody, public record, Engine Two feed-side loop"
+        },
+        {
+          "zone_id": "south_rail_and_stair_opening",
+          "visible_form": "waist-high brass barrier along the gallery's south overlook, interrupted by a railed grated stair opening, with belt hardpoints and a narrow pass-through for tools and slates",
+          "used_for": "access boundary, witness line, Rada's hoist safety clip, stair safety, and record transfer"
+        },
+        {
+          "zone_id": "south_grated_stair",
+          "visible_form": "iron stair descending from upper gallery to lower service floor beside warm mineral mist",
+          "used_for": "worker access, repair tool route, drained wet-chamber work"
+        },
+        {
+          "zone_id": "lower_service_floor",
+          "visible_form": "stone and iron-grated floor below the south gallery rail with three west-to-east pump engines and wet service slot",
+          "used_for": "pump operation, bearing repair, fragment clearing, flood hazard"
+        },
+        {
+          "zone_id": "engine_one_west",
+          "visible_form": "leftmost squat iron pump with lower bronze bearing sleeve, manual cam, white catch dish, red wedge, float, and valve",
+          "used_for": "bearing damage, repair, unstamped override"
+        },
+        {
+          "zone_id": "engine_two_middle",
+          "visible_form": "middle iron pump dark behind a flush red wedge with null slate and feed connection beneath the mana arch",
+          "used_for": "physical isolation and observable blue reroute loop"
+        },
+        {
+          "zone_id": "engine_three_east",
+          "visible_form": "rightmost iron pump with active rod, trembling float, air-line mark, red wedge, and outlet valve",
+          "used_for": "household flow and commercial-peak overload"
+        },
+        {
+          "zone_id": "common_intake_service_slot",
+          "visible_form": "rectangular grating and removable screen above warm black water below the three pump feet",
+          "used_for": "bronze fragment migration, screen hoist, open-slot flood risk"
+        },
+        {
+          "zone_id": "overhead_chain_hoist",
+          "visible_form": "brass trolley and black chain running east-west above the lower pump row",
+          "used_for": "lifting intake screen, bearing yoke, and spare sleeve"
+        },
+        {
+          "zone_id": "outlet_trunk_joint",
+          "visible_form": "thick iron water trunk turning west under the public landing with one stone-collared joint",
+          "used_for": "water-hammer warning and collapse beneath the landing"
+        }
+      ],
+      "movement_routes": [
+        {
+          "route_id": "worker_gallery_to_lower_floor",
+          "path": "upper_dry_gallery -> south_grated_stair -> lower_service_floor",
+          "allowed_bodies": "Rada, Kelda, and equipped pump workers",
+          "branch_state": "open unless lower floor flooding forces retreat to the upper rail"
+        },
+        {
+          "route_id": "public_street_to_rail",
+          "path": "west_public_landing -> yellow public line -> south_rail_and_stair_opening",
+          "allowed_bodies": "Iven, visiting Masters, runners, and terrace witnesses",
+          "branch_state": "public bodies remain above and outside the rail"
+        },
+        {
+          "route_id": "hoist_work_line",
+          "path": "Rada clips at south_rail_and_stair_opening -> reaches overhead chain -> lifts common_intake_service_slot screen",
+          "allowed_bodies": "belt-clipped pump worker with both hands free",
+          "branch_state": "creates wet lower grating while screen is raised"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_upper_gallery",
+          "supports_visual_scene_ids": [
+            "ember_house_nine_establishing",
+            "ember_house_nine_first_hour",
+            "ember_house_nine_pressure_fold",
+            "ember_house_nine_last_threshold"
+          ]
+        },
+        {
+          "camera_id": "medium_public_rail",
+          "supports_visual_scene_ids": [
+            "ember_house_nine_shift_routine",
+            "ember_house_nine_preparation_fold"
+          ]
+        },
+        {
+          "camera_id": "bearing_object_closeup",
+          "supports_visual_scene_ids": [
+            "ember_house_nine_bearing_break"
+          ]
+        },
+        {
+          "camera_id": "high_wet_stair",
+          "supports_visual_scene_ids": [
+            "ember_house_nine_triage",
+            "ember_house_nine_repair_ending"
+          ]
+        },
+        {
+          "camera_id": "public_door_to_rail",
+          "supports_visual_scene_ids": [
+            "ember_house_nine_emergency_moot",
+            "ember_house_nine_ration_ending"
+          ]
+        },
+        {
+          "camera_id": "evidence_object_closeup",
+          "supports_visual_scene_ids": [
+            "ember_house_nine_claim_ending"
+          ]
+        },
+        {
+          "camera_id": "low_outlet_trunk",
+          "supports_visual_scene_ids": [
+            "ember_house_nine_override_ending"
+          ]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "public_pump_state",
+          "path": "west_public_landing -> south_rail_and_stair_opening -> three-engine row and glass floats",
+          "supports": [
+            "public header clock",
+            "wedge callouts",
+            "unstamped override visibility"
+          ]
+        },
+        {
+          "lane_id": "clerk_record_to_controls",
+          "path": "Iven at public rail -> inspection plate and header board -> Engine One cam, Engine Two wedge, Engine Three float",
+          "supports": [
+            "evidence chain",
+            "claim review",
+            "public trust"
+          ]
+        },
+        {
+          "lane_id": "wet_stair_to_common_intake",
+          "path": "high south stair opening -> hoist trolley -> common intake screen and three pump feet",
+          "supports": [
+            "triage choice",
+            "repair staging",
+            "flood risk"
+          ]
+        }
+      ],
+      "branch_state_anchors": [
+        {
+          "anchor_id": "header_clock",
+          "values": "zero to ten chalk squares on north-wall black board",
+          "affects": "moot urgency, repair window, ration window, dry-tap endings"
+        },
+        {
+          "anchor_id": "engine_one_bearing",
+          "values": "fine filings, crescent fragments, curled pieces, scored housing",
+          "affects": "repair readiness and override collapse threshold"
+        },
+        {
+          "anchor_id": "engine_two_isolation",
+          "values": "flush red wedge and dark slate; optional blue feed-side loop",
+          "affects": "safety boundary and evidence chain"
+        },
+        {
+          "anchor_id": "lower_floor_water",
+          "values": "dry grating, wet sheen, standing warm water, trunk-rupture flood",
+          "affects": "movement, repair time, and collapse imagery"
+        },
+        {
+          "anchor_id": "seal_geometry",
+          "values": "Kelda's single House seal, separate bakery and laundry seals, bare or stamped inspection plate",
+          "affects": "local service, district ration, and insurance exposure"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable visual identities for prompt assembly. Include only refs for characters or groups explicitly visible in a scene.",
+    "characters": {
+      "rada_venn": "Rada Venn: compact broad-built dwarf woman in mature adulthood, warm umber skin, strong square face, black hair braided flat around the crown, moss-green wool work shirt with rolled sleeves, dark brown leather pumpwright apron with brass buckles, heavy tool belt, round protective goggles with one cracked lens, calloused bare hands, grounded stance with knees bent near moving machinery. Her silhouette is short, dense, practical, and usually oriented toward the nearest physical mechanism.",
+      "kelda_moor": "Master Kelda Moor: older dwarf woman, deep brown skin, lined square face, silver-grey hair in two thick braids tucked into an indigo high-collared work coat, black work trousers, broad boots, one heavy brass civic seal on a black chain, ring of cam keys at the belt. Her posture is still and compact; she keeps the seal visibly separate from controls until a state earns it.",
+      "iven_chalk": "Iven Chalk: dwarf man in middle adulthood, tawny skin, red-brown curls and short forked beard, charcoal clerk coat streaked with white chalk, flat black slate carried on a leather chest harness, chalk-stained fingers, soft boots. His posture faces the public and machinery at once, with slate angled outward for witnesses."
+    },
+    "groups": {
+      "commercial_workshop_masters": "Two dwarf workshop Masters: one baker with flour on cheeks and beard, quilted ochre apron, broad oven mitt at belt, and round brass seal board; one laundry worker with damp dark hair, rolled blue leather sleeves, copper wash tokens at belt, and square brass seal board. Both are compact adult dwarves in work-worn clothes, standing on the public side of the pump-house rail and carrying authority over their own visible valve diagrams.",
+      "terrace_witnesses": "Terrace witnesses: six to twelve adult and adolescent dwarves in layered wool work clothes, leather aprons, headscarves, and sturdy boots, carrying copper cans, glazed ceramic jugs, laundry pails, and one wheeled bakery trough. Their posture changes from orderly counting to close public scrutiny or recoil; they remain behind the yellow line on the upper west landing."
+    }
+  },
+  "review_notes": [
+    "The visual plan includes a draft scene_set with fixed levels, engine order, routes, camera slots, sightline lanes, and visible branch-state anchors.",
+    "Every base prompt restates drawable geometry and visible character appearance for a general image model; specialized fictional systems are described through shape, material, light, placement, and use.",
+    "Prompt assembly adds the one global style cue and includes character refs only for bodies listed as visible in the selected scene.",
+    "A hand-built plan view or 3D blockout remains required before high-consistency multi-angle website rendering; no images were generated for this pass."
+  ]
+}
