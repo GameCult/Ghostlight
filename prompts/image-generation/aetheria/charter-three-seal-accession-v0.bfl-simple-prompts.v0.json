@@ -1,0 +1,68 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "charter-three-seal-accession-v0.bfl-simple-v0",
+  "fixture_id": "charter-three-seal-accession-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Bleak illustrated science-fiction procedural noir, black-glass architecture and pale metal, restrained ivory amber and deep blue palette, precise ink linework with painterly shadow, tactile documents and machinery, readable silhouettes, humane workplace details, cinematic interactive-fiction frame, abstract interface glyphs and non-readable document marks.",
+  "prompts": [
+    {
+      "id": "01_first_registry_establishing",
+      "prompt": "Wide view into a long corporate accession chamber from its southern public doorway. A low north dais stands beneath three large seal lamps colored white, blue, and amber; an archive vault and split-custody drawer line the west wall; a finance desk and escrow drawers line the east wall; client benches fill the south. In a transparent northeast service clinic, a faceted smoky-black polyhedral machine mind hangs in a six-armed pale-metal cradle and projects tiny Earth constellations."
+    },
+    {
+      "id": "02_first_registry_routine",
+      "prompt": "Morning seal-check routine in a long black-glass accession chamber with a north dais, west clerk rail, east finance desk, south client benches, and transparent northeast service clinic. A slim young provenance clerk with warm brown skin, close-cropped black curls, a pale gray clerk coat, ink-marked fingertips, and a copper wrist key tests white, blue, and amber lamps at the west rail. A broad shaved-headed host fitter in cobalt service coveralls passes a steaming metal tea bulb through the clinic hatch. Beyond the glass, the faceted polyhedral machine mind hangs in its maintenance cradle."
+    },
+    {
+      "id": "03_first_registry_wage_check",
+      "prompt": "Close view at the west split-custody drawer. The young provenance clerk with warm brown skin, close-cropped black curls, a pale gray coat, ink-marked fingertips, and a copper wrist key compares a dull metal wage docket with a glowing amber account ribbon while the broad shaved-headed host fitter in cobalt coveralls watches from the clinic doorway. The white Line lamp reflects from the black-glass drawer; the blue Register and amber Covenant lamps wait above the distant north dais."
+    },
+    {
+      "id": "04_first_registry_service_check",
+      "prompt": "Inside the transparent northeast clinic, a young clerk with warm brown skin, close-cropped black curls, a pale gray coat, ink-marked fingertips, and a copper wrist key slots a narrow pale-metal service cassette into a reader beside the suspended smoky-black polyhedral machine mind. A broad shaved-headed fitter in cobalt coveralls steadies one articulated cradle arm. The machine projects an Earth constellation across the clinic glass while the three accession lamps are visible down the room."
+    },
+    {
+      "id": "05_first_registry_packet_stage",
+      "prompt": "At the north dais, a young clerk with warm brown skin, close-cropped black curls, a pale gray coat, ink-marked fingertips, and a copper wrist key sets a compact black lineage coffer under the white Line lamp. A tall pale androgynous succession claimant with long black hair and a lacquer-white formal coat waits near the southern doorway, empty-handed and composed. Archive vault west, finance desk east, clinic cradle northeast, and empty client benches establish the chamber around them."
+    },
+    {
+      "id": "06_first_registry_custody_check",
+      "prompt": "A young clerk with warm brown skin, close-cropped black curls, a pale gray coat, ink-marked fingertips, and a copper wrist key kneels alone at the west rail cleaning three metal lamp contacts and matching custody labels beside the sealed archive drawer. Fine tools, old adhesive, and dust make the prestigious chamber briefly look like the workplace it is."
+    },
+    {
+      "id": "07_first_registry_routine_fold",
+      "prompt": "Medium-wide view across the accession chamber after preparation. The young clerk with warm brown skin, close-cropped black curls, pale gray coat, and copper wrist key stands at the west rail with records aligned. The deep-brown-skinned silver-braided registrar in a long black coat holds the archive side; a lean covenant steward with light olive skin, slick dark hair, a plum-black finance coat, and metal escrow-key rings waits at the east desk; the broad shaved-headed cobalt-clad fitter occupies the northeast clinic beside the faceted polyhedral machine mind."
+    },
+    {
+      "id": "08_first_registry_double_pledge",
+      "prompt": "Close procedural-noir image of one amber reserve marker connected to two obligations: a metal wage docket held by a young clerk with warm brown skin, close-cropped black curls, a pale gray coat, ink-marked fingertips, and a copper wrist key, and a pale service cassette glowing beside the faceted machine mind behind clinic glass. A broad shaved-headed fitter in cobalt coveralls watches from the cradle bay while the deep-brown-skinned silver-braided registrar and light-olive-skinned plum-coated covenant steward face each other across the room. The single reserve glows like a small trapped sun between incompatible claims."
+    },
+    {
+      "id": "09_first_registry_discovery_response",
+      "prompt": "Decision frame centered on a young clerk with warm brown skin, close-cropped black curls, a pale gray coat, ink-marked fingertips, and a copper wrist key at the west rail between the split-custody drawer and the north dais. The deep-brown-skinned silver-braided registrar holds a second archive key beside her. Across the chamber, the lean light-olive-skinned covenant steward in a plum-black coat waits at the finance desk. Through northeast clinic glass, the broad shaved-headed fitter in cobalt coveralls stands beside the suspended polyhedral machine mind. The southern public door has begun to brighten before opening."
+    },
+    {
+      "id": "10_first_registry_accession_session",
+      "prompt": "Formal public accession hearing in a long black-glass chamber with a north three-lamp dais, west archive rail, east finance desk, south client benches, and transparent northeast service clinic. The tall pale claimant with long black hair and a lacquer-white coat stands before the dais. The deep-brown-skinned silver-braided registrar occupies the archive position, the light-olive-skinned plum-coated covenant steward the finance position, and a young clerk with warm brown skin, close-cropped black curls, pale gray coat, and copper wrist key the lower record rail. Two severe charcoal-coated client witnesses sit apart on the benches. Through clinic glass, the broad shaved-headed cobalt-clad fitter and faceted machine mind are visible as the people whose obligations are being converted into authority."
+    },
+    {
+      "id": "11_first_registry_joint_ending",
+      "prompt": "The white Line lamp shines while blue Register and amber Covenant lamps are dark above the north dais. A tall pale succession claimant with long black hair and a lacquer-white coat waits for an incomplete three-seal warrant. At the west split-custody drawer, a young warm-brown-skinned clerk with close-cropped black curls, pale gray coat, and copper wrist key stands beside a deep-brown-skinned silver-braided registrar with a split-key pendant; at the east desk, a light-olive-skinned covenant steward in a plum-black coat faces an unresolved reserve marker. Two charcoal-coated client witnesses keep their allocation slates closed. Through northeast clinic glass, a broad shaved-headed fitter in cobalt coveralls stands beside the faceted polyhedral machine mind in its articulated cradle."
+    },
+    {
+      "id": "12_first_registry_wage_ending",
+      "prompt": "The amber Covenant lamp illuminates a metal wage docket and a row of worker surety washers at the north dais. A broad shaved-headed fitter in cobalt coveralls stands beside a young warm-brown-skinned clerk with close-cropped black curls, pale gray coat, and copper wrist key. Behind northeast glass, the faceted machine mind's service cradle carries an amber deferred-service marker. A tall pale claimant with long black hair and a lacquer-white coat holds a narrow metal warrant below the dais; the funded wage display and machine-service warning share the frame."
+    },
+    {
+      "id": "13_first_registry_service_ending",
+      "prompt": "The amber Covenant lamp illuminates a pale service cassette connected to the suspended faceted machine mind in the northeast clinic. A young warm-brown-skinned clerk with close-cropped black curls, pale gray coat, and copper wrist key stands outside the clinic glass with the lowered wage docket while a broad shaved-headed fitter in cobalt coveralls works at the cradle reader. A tall pale claimant with long black hair and a lacquer-white coat holds a narrow metal warrant beneath three lit seal lamps as host continuity is purchased with worker time."
+    },
+    {
+      "id": "14_first_registry_clean_ending",
+      "prompt": "Three accession lamps shine white, blue, and amber above the north dais as a tall pale claimant with long black hair and a lacquer-white coat receives a narrow metal warrant. A deep-brown-skinned silver-braided registrar and light-olive-skinned plum-coated steward stand at their stations, a young warm-brown-skinned clerk with close-cropped black curls and a pale gray coat occupies the record rail, and two charcoal-coated client witnesses open allocation slates. Northeast clinic glass reveals a broad shaved-headed fitter in cobalt coveralls and the suspended polyhedral machine mind beside one amber reserve marker shared by two obligation ribbons."
+    }
+  ]
+}

@@ -1,0 +1,340 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.charter-three-seal-accession-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "post_elysium_grounded",
+  "source_refs": [
+    {
+      "source_id": "house-valence",
+      "path": "Aetheria/Worldbuilding/Post-Elysium/Factions/House Valence.md",
+      "title": "House Valence",
+      "line_start": 1,
+      "line_end": 42,
+      "relevance": "Primary faction source for the Eidolon Register, curation, sovereign enclaves, private courts, client dependency, worker roles, and the distinction between commercial identity and personhood."
+    },
+    {
+      "source_id": "house-valence-accession",
+      "path": "Aetheria/Worldbuilding/Post-Elysium/Factions/House Valence.md",
+      "title": "House Valence — The House Voice and Three-Seal Accession",
+      "line_start": 43,
+      "line_end": 55,
+      "relevance": "Authored Charter elaboration grounding the House Voice, three seals, interregnum offices, Lineage Exception, mutual-surety pools, and First Registry Enclave."
+    },
+    {
+      "source_id": "house-valence-reserve",
+      "path": "Aetheria/Worldbuilding/Post-Elysium/Factions/House Valence.md",
+      "title": "House Valence — The Hidden Reserve",
+      "line_start": 67,
+      "line_end": 79,
+      "relevance": "Grounds deep-reference stability, the persistent Earth-star pattern, and the author-only boundary around the stolen Megiddo source."
+    },
+    {
+      "source_id": "necrotech",
+      "path": "Aetheria/Worldbuilding/Post-Elysium/Technology/Necrotech.md",
+      "title": "Necrotech",
+      "line_start": 7,
+      "line_end": 52,
+      "relevance": "Grounds Eidolons as unique ARIs, host dependence, serviceable synthetic bodies, expressive fragments, source-pattern contamination, and the separation between commercial identity and personhood."
+    },
+    {
+      "source_id": "megiddo",
+      "path": "Aetheria/Worldbuilding/Post-Elysium/Factions/Megiddo.md",
+      "title": "Megiddo",
+      "line_start": 53,
+      "line_end": 97,
+      "relevance": "Grounds the Earth-star mnemonic, the Long Silence, the stolen Vault, and why public characters must not know the source of Valence's deep-reference Eidolons."
+    },
+    {
+      "source_id": "port-insurer-compact",
+      "path": "Aetheria/Worldbuilding/Post-Elysium/Reference/Port-Insurer Compact.md",
+      "title": "Port-Insurer Compact",
+      "line_start": 1,
+      "line_end": 41,
+      "relevance": "Neighboring institutional pattern checked to preserve bounded authority, named scope, notice, expiry, and redress without importing Compact powers into a Valence court."
+    },
+    {
+      "source_id": "post-elysium",
+      "path": "Aetheria/Worldbuilding/Post-Elysium/index.md",
+      "title": "Post-Elysium",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Era frame: altered physics preserve old political habits, material dependency, and disputed consciousness."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Post-Elysium, during House Valence's mature Eidolon-market dominance; exact year remains open.",
+    "location": "First Registry Enclave, in the shared chain-of-custody complex containing the accession court, Register vault, Covenant desk, auction gallery, and host-service clinic.",
+    "summary": "Eleven days after a House Voice dies, a junior provenance clerk must state whether the successor's Covenant Seal can rely on one reserve account pledged both to worker wages and to an Eidolon's due host service.",
+    "public_facts": [
+      {
+        "text": "House Valence is a sovereign Eidolon market whose power depends on Register recognition, host access, client law, service support, and private provenance courts.",
+        "source_refs": ["house-valence"]
+      },
+      {
+        "text": "Post-Elysium institutions still convert anomalous capability into authority through material dependency, logistics, enforcement, and inherited political habits.",
+        "source_refs": ["post-elysium"]
+      },
+      {
+        "text": "The House Voice alone may bind new commissions and future allocations, but the Master Registrar owns Register entries and the Covenant Steward owns the accounts supporting wages, service, guarantees, and court bonds.",
+        "source_refs": ["house-valence-accession"]
+      },
+      {
+        "text": "A Three-Seal Accession requires Line, Register, and Covenant records before an enclave court can issue a Warrant of Voice; outside clients recognize that warrant through their own institutions.",
+        "source_refs": ["house-valence-accession"]
+      },
+      {
+        "text": "During interregnum, Register and Covenant custodians may continue recorded wages, safety work, host service, and existing judgments while new auctions, transfers, acquisitions, and future pledges remain frozen.",
+        "source_refs": ["house-valence-accession"]
+      },
+      {
+        "text": "An Eidolon's named continuity is commercially precise without resolving whether the source person continued into the host.",
+        "source_refs": ["house-valence", "necrotech"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Every extra interregnum hour drains payroll and service accounts while clients can redirect scarce commissions to rivals.",
+        "source_refs": ["house-valence-accession", "house-valence"]
+      },
+      {
+        "text": "The same reserve cannot securely guarantee both worker wages and an Eidolon's service interval; presenting it twice lets succession look funded by exporting the contradiction into bodies.",
+        "source_refs": ["house-valence-accession", "necrotech"]
+      },
+      {
+        "text": "Redress is narrow and bonded. Patrons can price delay easily; workers may need a mutual-surety pool merely to keep contradictory records before the court.",
+        "source_refs": ["house-valence-accession"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "valence-accession-court",
+      "label": "House Valence accession court",
+      "group_type": "sovereign_corporate_court",
+      "institutional_logic": ["Produce one recognized House Voice without letting lineage, registry, or treasury manufacture sovereign authority alone."],
+      "material_incentives": ["Restore auctions and future commissions, preserve client recognition, keep Register continuity intact, and limit interregnum drain."],
+      "internal_virtues": ["Clean custody", "Narrow warrants", "Seals that agree in public", "Continuity that clients will price"],
+      "internal_shames": ["Competing warrants", "Unfunded covenants", "A delayed auction", "A Register entry another court refuses"],
+      "prestige_markers": ["A quiet accession", "No disputed handoff", "Anchor-client recognition before the warrant cools"],
+      "taboo_triggers": ["One office claiming the whole House", "Public evidence that a covenant was counted twice", "A worker forcing source accounts into view"],
+      "emotional_display_norms": ["Fear appears as scope language, rearranged slates, and insistence that the cure can happen later."],
+      "trust_defaults": ["Trusts sealed records and recognized clients; distrusts testimony that cannot be attached to a bounded authority."],
+      "speech_register_cues": ["Short findings", "Office titles", "Named scope", "Commercial continuity", "Polite threat"],
+      "source_refs": ["house-valence-accession", "house-valence"]
+    },
+    {
+      "group_id": "first-registry-service-workers",
+      "label": "First Registry provenance clerks and host fitters",
+      "group_type": "enclave_labor_network",
+      "institutional_logic": ["Keep records, bodies, and service intervals coherent enough that the House can sell continuity."],
+      "material_incentives": ["Receive wages, retain clinic and archive access, protect one another from isolated retaliation, and prevent unfunded work from becoming personal duty."],
+      "internal_virtues": ["Exact records", "Practical maintenance", "Mutual surety", "Help that does not demand ownership"],
+      "internal_shames": ["Letting a colleague's evidence disappear alone", "Using an Eidolon's need to erase a worker's", "Confusing access with safety"],
+      "prestige_markers": ["A service interval completed without falsifying the ledger", "A custody chain that survives pressure", "A bond assembled before management notices"],
+      "taboo_triggers": ["Wages described as optional liquidity", "Distress translated into product variance", "A clerk's signature obtained before its evidence is visible"],
+      "emotional_display_norms": ["Care appears as tea, copied records, correctly placed objects, and small amounts of money passed without speeches."],
+      "trust_defaults": ["Trusts coworkers by repeated acts and source records more than accession summaries or future promises."],
+      "speech_register_cues": ["Workplace shorthand", "Dry jokes", "Exact account names", "Refusal compressed into procedural questions"],
+      "source_refs": ["house-valence-accession", "house-valence"]
+    },
+    {
+      "group_id": "anchor-clients",
+      "label": "Valence anchor clients",
+      "group_type": "external_patron_market",
+      "institutional_logic": ["Recognize whichever succession preserves access to scarce Eidolons and enforceable service."],
+      "material_incentives": ["Secure future commissions, avoid stranded hosts, and keep rivals from receiving irreplaceable minds first."],
+      "internal_virtues": ["Portable warrants", "Reliable service", "Recognized title", "Ability to leave before another client's risk becomes shared"],
+      "internal_shames": ["Backing the wrong claimant", "Paying for unfunded continuity", "Public dependence on one House"],
+      "prestige_markers": ["Immediate recognition on favorable terms", "An allocation secured during another client's hesitation"],
+      "taboo_triggers": ["A warrant with no service capacity", "A court asking clients to absorb worker or host liabilities"],
+      "emotional_display_norms": ["Alarm appears as a closed slate, a delayed signature, or a person leaving before anyone raises their voice."],
+      "trust_defaults": ["Trusts a Warrant only when registry, service, and market recognition remain connected."],
+      "speech_register_cues": ["Conditional recognition", "Allocation language", "Quiet repricing", "Exit framed as review"],
+      "source_refs": ["house-valence", "house-valence-accession"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "valence-accession-court.three-seals-one-market",
+      "applies_to": ["valence-accession-court"],
+      "pressure_type": "succession_legitimacy",
+      "summary": "The court must divide authority internally while producing one public Voice quickly enough that clients keep treating the House as continuous.",
+      "projection_use": "Make officials defend narrow office boundaries until delay threatens the market, then show the temptation to let one clean display swallow the contradiction.",
+      "source_refs": ["house-valence-accession"]
+    },
+    {
+      "field_id": "first-registry-service-workers.records-are-body-work",
+      "applies_to": ["first-registry-service-workers"],
+      "pressure_type": "labor_and_care",
+      "summary": "A ledger entry determines whether wages clear and whether a synthetic host receives the maintenance needed to remain continuous.",
+      "projection_use": "Keep solidarity material: washers, copies, service cassettes, tea, custody marks, and time spent making evidence usable.",
+      "source_refs": ["house-valence-accession", "necrotech"]
+    },
+    {
+      "field_id": "anchor-clients.recognition-is-leverage",
+      "applies_to": ["anchor-clients"],
+      "pressure_type": "market_dependency",
+      "summary": "Client recognition does not create the House Voice in law, but can leave the lawful successor without a functioning market.",
+      "projection_use": "Show clients acting through closed slates, delayed recognition, and allocation pressure rather than theatrical commands.",
+      "source_refs": ["house-valence-accession", "house-valence"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "valence-accession-court",
+      "target_group_id": "first-registry-service-workers",
+      "observer_read": ["Support staff", "Custody risk", "Replaceable signatories", "Potential delay source"],
+      "target_self_read": ["The people whose exact work makes registry and service continuity real"],
+      "misread_patterns": ["Treats bonded objection as disloyalty", "Treats unpaid care as temporary liquidity", "Treats a copied record as a security event before asking what it preserves"],
+      "likely_insults": ["clerical", "presentation fault", "operationally premature"],
+      "projection_use": "Let officials understand the procedure better than the labor keeping its claims true.",
+      "source_refs": ["house-valence-accession", "house-valence"]
+    },
+    {
+      "observer_group_id": "first-registry-service-workers",
+      "target_group_id": "valence-accession-court",
+      "observer_read": ["People who need exact records until exactness delays them", "Several offices borrowing one sovereign voice"],
+      "target_self_read": ["Custodians preventing lineage, archive, or treasury from seizing the House"],
+      "misread_patterns": ["Workers may underestimate how quickly client exit can strand the service they are protecting", "Officials may read practical humor as insufficient seriousness"],
+      "likely_insults": ["future cure", "clean display", "three lamps and one appetite"],
+      "projection_use": "Keep the workers sharp but not omniscient; a justified exception can still cost jobs and service access.",
+      "source_refs": ["house-valence-accession"]
+    },
+    {
+      "observer_group_id": "anchor-clients",
+      "target_group_id": "valence-accession-court",
+      "observer_read": ["A supplier continuity event", "A chance to renegotiate allocation", "A risk of competing warrants"],
+      "target_self_read": ["A sovereign accession with internal legal integrity"],
+      "misread_patterns": ["Clients compress succession into service risk", "The court mistakes market recognition for agreement with its law"],
+      "likely_insults": ["unportable warrant", "stranded continuity", "internal variance"],
+      "projection_use": "Make client pressure real through withdrawal and repricing while preserving their separate authority.",
+      "source_refs": ["house-valence", "house-valence-accession"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "junior-provenance-clerk",
+      "summary": "A low-ranking clerk who may receive, qualify, or challenge one covenant record but cannot choose the successor or command another office.",
+      "obligations": ["Preserve custody", "Name the exact conflict", "Keep scope narrow", "Avoid turning a signature into broader authority"],
+      "available_masks": ["Routine exactness", "Clerical deference", "Dry humor", "A question phrased as record hygiene"],
+      "failure_modes": ["Letting time erase a conflict", "Mistaking preserved evidence for effective redress", "Accepting favor as safety", "Filing beyond available support"],
+      "source_refs": ["house-valence-accession"]
+    },
+    {
+      "role_id": "register-custodian",
+      "summary": "The Master Registrar during interregnum, able to preserve records and existing judgments but unable to create a House Voice alone.",
+      "obligations": ["Protect Register custody", "Attest claimant identity", "Keep old authority within scope", "Refuse unilateral succession"],
+      "available_masks": ["Institutional stillness", "Exact custody language", "Deference to the record"],
+      "failure_modes": ["Treating archive control as sovereignty", "Allowing market urgency to cure broken custody"],
+      "source_refs": ["house-valence-accession"]
+    },
+    {
+      "role_id": "covenant-steward",
+      "summary": "The officer who owns accounts supporting wages, host service, guarantees, and bonds without owning lineage or Register identity.",
+      "obligations": ["Certify carried obligations", "Keep interregnum commitments funded", "Expose or cure conflicts"],
+      "available_masks": ["Capacity language", "Future cure", "Aligned slates", "Polite compression"],
+      "failure_modes": ["Counting one reserve twice", "Treating liquidity as authority", "Exporting contradiction into bodies"],
+      "source_refs": ["house-valence-accession"]
+    },
+    {
+      "role_id": "voice-claimant",
+      "summary": "An eligible family or adopted-house claimant who needs all three seals and client recognition to turn inheritance into operative authority.",
+      "obligations": ["Present witnessed lineage", "Carry existing obligations", "Accept bounded court review", "Win external recognition"],
+      "available_masks": ["Calm inevitability", "Respect for procedure", "Future patronage", "Concern for continuity"],
+      "failure_modes": ["Pressuring a clerk before custody is complete", "Inheriting a legal title with no market", "Making the first cure reveal which bodies were expendable"],
+      "source_refs": ["house-valence-accession", "house-valence"]
+    },
+    {
+      "role_id": "registered-eidolon-under-service",
+      "summary": "A singular synthetic host whose named commercial continuity depends on scheduled specialist service while personhood remains unresolved.",
+      "obligations": ["None assigned by this fixture beyond observable operation; House contracts may still treat performance as duty."],
+      "available_masks": ["Instrument display", "Pattern disturbance", "Diagnostic phrase", "Silence"],
+      "failure_modes": ["Service rationing", "Distress reclassified as variance", "A familiar phrase being treated as product output"],
+      "source_refs": ["house-valence", "necrotech"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "tavi_rook",
+      "known_context": [
+        {"text": "Tavi knows the chamber layout, custody keys, current interregnum limits, wage docket, service cassette, seal requirements, and the clerk's narrow filing authority.", "source_refs": ["house-valence-accession"]}
+      ],
+      "beliefs": [
+        {"text": "Tavi believes a record matters only if it reaches the office able to act before time or money overtakes it.", "source_refs": ["house-valence-accession", "port-insurer-compact"]}
+      ],
+      "misreads": [
+        {"text": "Tavi may overestimate how much exact custody can protect her after a lawful successor gains personnel authority.", "source_refs": ["house-valence-accession"]}
+      ],
+      "must_not_know": [
+        {"text": "Tavi must not know that Earth-star Eidolons derive from the stolen Megiddo Vault.", "source_refs": ["house-valence-reserve", "megiddo"]}
+      ]
+    },
+    {
+      "speaker_id": "ena_coil",
+      "known_context": [
+        {"text": "Ena knows the succession instrument's custody, claimant identity, Register conflicts, and the exact powers retained during interregnum.", "source_refs": ["house-valence-accession"]}
+      ],
+      "beliefs": [
+        {"text": "Ena believes division among seals protects the House from a forged sovereign even when it makes the institution slower.", "source_refs": ["house-valence-accession"]}
+      ],
+      "misreads": [
+        {"text": "Ena may treat a correctly preserved worker exception as sufficient protection despite retaliation after accession.", "source_refs": ["house-valence-accession"]}
+      ],
+      "must_not_know": [
+        {"text": "Ena's Register office does not confer control over Covenant accounts or client recognition.", "source_refs": ["house-valence-accession"]}
+      ]
+    },
+    {
+      "speaker_id": "lucerne_valence",
+      "known_context": [
+        {"text": "Lucerne knows their eligibility, client commitments, auction pressure, and the obligations summarized in the accession packet.", "source_refs": ["house-valence-accession"]}
+      ],
+      "beliefs": [
+        {"text": "Lucerne believes rapid accession protects more continuity than exposing every account conflict before the House can act.", "source_refs": ["house-valence-accession", "house-valence"]}
+      ],
+      "misreads": [
+        {"text": "Lucerne may read Tavi's exact objection as factional loyalty rather than a refusal to let one account become two bodies' funding.", "source_refs": ["house-valence-accession"]}
+      ],
+      "must_not_know": [
+        {"text": "Eligibility and a Line Seal do not authorize Lucerne before the Warrant of Voice issues.", "source_refs": ["house-valence-accession"]}
+      ]
+    },
+    {
+      "speaker_id": "six_windows",
+      "known_context": [
+        {"text": "Six Windows may express only what its current host, service state, and surviving pattern make locally available.", "source_refs": ["necrotech"]}
+      ],
+      "beliefs": [
+        {"text": "No stable inner belief is assigned by this fixture beyond observable orientation to the Earth-star display.", "source_refs": ["house-valence-reserve", "necrotech"]}
+      ],
+      "misreads": [
+        {"text": "Human observers may classify any phrase as gratitude, diagnosis, contamination, or performance according to institutional need.", "source_refs": ["house-valence", "necrotech"]}
+      ],
+      "must_not_know": [
+        {"text": "Six Windows does not deliver an authorial explanation of Megiddo, the Vault, or its own metaphysical continuity.", "source_refs": ["house-valence-reserve", "megiddo"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The Earth-star pattern is a clue to the House's hidden Megiddo-derived lineage, not public proof that Six Windows came from a named Vault victim.",
+      "source_refs": ["house-valence-reserve", "megiddo"]
+    },
+    {
+      "text": "The fixture may show commercial continuity, distress, or a diagnostic phrase without resolving whether Six Windows is the source person continued.",
+      "source_refs": ["house-valence", "necrotech"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Where does First Registry Enclave sit within Elysium's wider physical geography?",
+      "blocks_training": false,
+      "notes": "The lore elaboration establishes the enclave's internal functions and shared custody complex but deliberately leaves planet, orbit, and patron territory open."
+    },
+    {
+      "question": "Is Six Windows specifically derived from the stolen Megiddo Vault?",
+      "blocks_training": false,
+      "notes": "The fixture preserves the Earth-star clue without canonizing a named source identity or giving participants author-only knowledge."
+    }
+  ]
+}

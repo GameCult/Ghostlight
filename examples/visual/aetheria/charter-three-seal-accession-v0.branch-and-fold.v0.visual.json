@@ -1,0 +1,375 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "charter-three-seal-accession-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/aetheria/charter-three-seal-accession-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/charter-three-seal-accession-v0.branch-and-fold.v0.training.json",
+  "scene_id": "charter-three-seal-accession-v0.first-registry-accession",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a House Valence Three-Seal Accession at First Registry Enclave.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for the accession chamber, ordinary clerk and host-service work, the double pledge, public sealing, worker surety, and state-gated succession outcomes.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the chamber establishing view, routine seal check, each preparation focus, routine fold, the double-pledge reveal, discovery response, public accession session, and each ending family. The missing star and the four-washer surety bond receive close visual emphasis because they turn continuity and redress into visible objects.",
+    "prompting_rule": "Each base image prompt stands alone for a general image model, names camera and room geometry, describes fictional tools and bodies visibly, and includes only characters or groups present in the frame. Continuity notes remain review constraints and are excluded from assembled prompts.",
+    "global_style_cue": "Style: bleak illustrated science-fiction procedural noir, black-glass architecture and pale metal, restrained ivory amber and deep blue palette, precise ink linework with painterly shadow, tactile documents and machinery, readable silhouettes, humane workplace details, cinematic interactive-fiction frame, abstract interface glyphs and non-readable document marks.",
+    "prompt_assembly_rule": "Assemble every render prompt from global_style_cue, the scene base_image_prompt, visual refs only for named characters or groups declared visible in that scene, and triggered state_image_modifiers or global_branch_image_modifiers. Exclude off-frame refs and visual_continuity_notes. Use the camera-specific scene-set blockout as visual input for final multi-angle replay rendering.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture returns to one accession chamber from several angles and makes doors, seal lamps, record custody, gallery sightlines, and clinic access consequential. The textual scene_set is sufficient for concept planning and spatial review, but not a substitute for a plan view or 3D blockout.",
+      "future_scene_set_need": "Before high-consistency website rendering, build a camera-specific blockout of First Registry accession chamber from the fixed zones, routes, occluders, staging slots, and state anchors defined below."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "first_registry_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view from the southern public doorway into a long rectangular corporate accession chamber. A low black-glass dais stands against the north wall beneath three large seal lamps colored white, blue, and amber. The west wall contains a dark archive vault door, a narrow clerk station, and a waist-high split-custody drawer. The east wall contains a formal finance desk and stacked metal escrow drawers. Client benches run along the south half. In the northeast corner, a transparent service-clinic wall reveals a faceted black-glass polyhedral machine mind suspended in an articulated pale-metal maintenance cradle, projecting tiny Earth constellations onto the glass. Pale floors, black reflective panels, controlled museum lighting, and visible security seams make the room elegant and coercive.",
+        "visible_characters": [
+          {
+            "agent_id": "six_windows",
+            "default_stance": "suspended in the clinic cradle, projecting a steady constellation map",
+            "visual_ref": "visual_character_refs.characters.six_windows"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Coordinate frame faces north from the public entrance: Register vault and clerk station west, Covenant desk and escrow drawers east, dais north, client benches south, service clinic northeast.",
+          "The auction gallery lies beyond the east wall and is heard or glimpsed through its doorway; it is not part of the chamber floor.",
+          "Six Windows is a faceted synthetic host in a maintenance cradle, not a humanoid robot, coffin, cage, or biological brain display."
+        ]
+      },
+      {
+        "visual_scene_id": "first_registry_routine",
+        "ink_anchor": "routine",
+      "base_image_prompt": "Medium-wide morning work scene inside the long rectangular accession chamber. Tavi Rook, a slim young clerk with warm brown skin, close-cropped black curls, a pale gray coat, ink-marked fingertips, and a copper wrist key, checks three seal lamps from the west station. Ena Coil, a deep-brown-skinned older registrar with high silver braids, a long black coat, and an ivory-tabbed split-key pendant, waits by the archive vault. Pell Orra, a lean light-olive-skinned steward with slick dark hair, a plum-black finance coat, and finger rings of small escrow keys, aligns black slates at the east desk. Behind northeast clinic glass, broad shaved-headed fitter Ivo Marn holds two metal tea cups over a coolant-return warming plate beside Six Windows, a faceted smoky-black polyhedral machine mind in an articulated pale-metal cradle. Blue-gold constellations cross the glass; the room is quiet, polished, and visibly worked in.",
+        "visible_characters": [
+          {"agent_id": "tavi_rook", "default_stance": "at west clerk station, copper key at wrist, looking up at seal lamps", "visual_ref": "visual_character_refs.characters.tavi_rook"},
+          {"agent_id": "ena_coil", "default_stance": "standing by archive vault with split key visible", "visual_ref": "visual_character_refs.characters.ena_coil"},
+          {"agent_id": "pell_orra", "default_stance": "aligning covenant slates at east desk", "visual_ref": "visual_character_refs.characters.pell_orra"},
+          {"agent_id": "ivo_marn", "default_stance": "inside clinic glass with tea cups by coolant return", "visual_ref": "visual_character_refs.characters.ivo_marn"},
+          {"agent_id": "six_windows", "default_stance": "suspended in cradle with constellations projected", "visual_ref": "visual_character_refs.characters.six_windows"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Ivo reaches the warming plate from the clinic service side. Tavi remains outside at the clerk station during the opening routine."
+        ]
+      },
+      {
+        "visual_scene_id": "first_registry_wage_check",
+        "ink_anchor": "routine_choice.prime_wage_record",
+      "base_image_prompt": "Close overhead view at the west clerk station: two thin black account slates lie side by side, one showing rows of worker portraits, shift blocks, and hazard symbols, the other showing stacked reserve bars. Tavi Rook's ink-marked fingers extend from pale gray sleeves, a copper custody key looped at her left wrist, and trace the shared amber account marker at the bottom of both displays. Through northeast clinic glass, Ivo Marn, a broad shaved-headed older fitter in cobalt coveralls with insulated seams and a compact tool harness, watches from beside the maintenance cradle. Pale metal desk edges and blue Register-lamp reflections frame the documents.",
+        "visible_characters": [
+          {"agent_id": "tavi_rook", "default_stance": "leaning over paired account slates with one finger on the repeated marker", "visual_ref": "visual_character_refs.characters.tavi_rook"},
+          {"agent_id": "ivo_marn", "default_stance": "watching through clinic glass from the service side", "visual_ref": "visual_character_refs.characters.ivo_marn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "first_registry_service_check",
+        "ink_anchor": "routine_choice.prime_service_record",
+      "base_image_prompt": "Medium view inside the northeast host-service clinic. Tavi Rook, a slim young clerk with warm brown skin, close-cropped black curls, a pale gray coat, ink-marked fingertips, and a copper wrist key, carries a sealed pale-metal service cassette. Ivo Marn, a broad shaved-headed older fitter in cobalt coveralls with insulated seams and a compact tool harness, seats it into a reader on the articulated six-armed cradle. Six Windows, a smoky black-glass polyhedral machine mind, hangs securely in the service rig while blue-gold Earth constellations spread over the transparent clinic wall. Coolant hoses, bearing housings, diagnostic lights, and a small warming plate establish working maintenance infrastructure.",
+        "visible_characters": [
+          {"agent_id": "tavi_rook", "default_stance": "holding the sealed service cassette beside the cradle reader", "visual_ref": "visual_character_refs.characters.tavi_rook"},
+          {"agent_id": "ivo_marn", "default_stance": "guiding the cassette into its reader with gloved hands", "visual_ref": "visual_character_refs.characters.ivo_marn"},
+          {"agent_id": "six_windows", "default_stance": "suspended in the articulated service cradle, projecting constellations", "visual_ref": "visual_character_refs.characters.six_windows"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "first_registry_packet_stage",
+        "ink_anchor": "routine_choice.prime_successor_packet",
+      "base_image_prompt": "Medium low-angle view toward the north dais. Tavi Rook, a slim warm-brown-skinned young clerk with close-cropped black curls, a pale gray coat, ink-marked fingertips, and a copper wrist key, places a compact black lineage coffer beneath the white Line lamp. Lucerne Valence, a tall pale androgynous claimant with long black hair tied low, a lacquer-white formal coat, silver lineage embroidery, and a black-glass throat clasp, inclines their head from the partly open southern doorway. One empty custody-witness socket on the coffer is dark. Blue Register and amber Covenant lamps hang beside the white lamp, and empty client benches lead toward the claimant.",
+        "visible_characters": [
+          {"agent_id": "tavi_rook", "default_stance": "placing the coffer below the Line lamp", "visual_ref": "visual_character_refs.characters.tavi_rook"},
+          {"agent_id": "lucerne_valence", "default_stance": "beyond the partly open public door, head inclined toward Tavi", "visual_ref": "visual_character_refs.characters.lucerne_valence"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "first_registry_custody_check",
+        "ink_anchor": "routine_choice.prime_custody_marks",
+      "base_image_prompt": "Extreme close view of a warm-brown-skinned young clerk's ink-marked hands emerging from pale gray sleeves to clean three pale-metal lamp contacts with lintless cloth at the west station. Tavi Rook's narrow copper custody key rests against her left wrist. Four physical custody labels lie in a row under blue-white task light, each carrying distinct embossed handoff marks; one mark is pressed visibly deeper than the others. The north dais and three extinguished seal lamps blur in the background.",
+        "visible_characters": [
+          {"agent_id": "tavi_rook", "default_stance": "hands working carefully over lamp contacts and custody labels", "visual_ref": "visual_character_refs.characters.tavi_rook"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "first_registry_routine_fold",
+        "ink_anchor": "routine_fold",
+      "base_image_prompt": "Wide workplace view before the public doors open. Tavi Rook, a slim warm-brown-skinned young clerk with close-cropped black curls, pale gray coat, ink-marked fingertips, and copper wrist key, stands at the west rail with a metal tea cup. Behind northeast clinic glass, broad shaved-headed fitter Ivo Marn wears cobalt coveralls beside Six Windows, a faceted smoky-black polyhedral machine mind projecting constellations from an articulated cradle. Ena Coil, an older deep-brown-skinned registrar with high silver braids and a long black coat, holds the archive position. Pell Orra, a lean light-olive-skinned steward with slick dark hair and a plum-black finance coat, waits at the east desk. A black lineage coffer may occupy the north dais; the client benches are empty beneath the quiet seal lamps.",
+        "visible_characters": [
+          {"agent_id": "tavi_rook", "default_stance": "at clerk rail with tea cup and records", "visual_ref": "visual_character_refs.characters.tavi_rook"},
+          {"agent_id": "ivo_marn", "default_stance": "behind clinic glass, watching the desk", "visual_ref": "visual_character_refs.characters.ivo_marn"},
+          {"agent_id": "ena_coil", "default_stance": "still beside archive vault", "visual_ref": "visual_character_refs.characters.ena_coil"},
+          {"agent_id": "pell_orra", "default_stance": "waiting at east finance desk", "visual_ref": "visual_character_refs.characters.pell_orra"},
+          {"agent_id": "six_windows", "default_stance": "suspended in cradle with constellation projection", "visual_ref": "visual_character_refs.characters.six_windows"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "worker_trust >= 3", "modifier_prompt": "Three small brass surety washers stamped with worker payroll marks sit beside Tavi's tea cup on the safe side of the clerk rail."},
+          {"trigger": "service_margin >= 3", "modifier_prompt": "The service cassette display shows a complete row of coolant seal, memory lattice, cradle bearing, labor, and timing icons in steady blue."},
+          {"trigger": "heir_favor >= 3", "modifier_prompt": "The polished black lineage coffer is already centered beneath the white Line lamp."},
+          {"trigger": "custody_intact >= 2", "modifier_prompt": "Four custody labels form a complete linked chain beneath the blue Register lamp."},
+          {"trigger": "custody_intact <= 0", "modifier_prompt": "The lineage coffer is centered beneath the white lamp while one witness socket and one custody position remain visibly empty."}
+        ]
+      },
+      {
+        "visual_scene_id": "first_registry_double_pledge",
+        "ink_anchor": "double_pledge",
+      "base_image_prompt": "Pivotal reveal at the west clerk station. Tavi Rook, a slim warm-brown-skinned young clerk with close-cropped black curls, pale gray coat, ink-marked fingertips, and copper wrist key, faces an accession slate whose worker-wage band and machine-service band terminate at one amber reserve marker. Pell Orra, a lean light-olive-skinned steward with slick dark hair, plum-black finance coat, and escrow-key rings, stands rigid at the east desk. Ena Coil, an older deep-brown-skinned registrar with high silver braids, black coat, and split-key pendant, watches from the archive vault. Behind northeast clinic glass, broad shaved-headed fitter Ivo Marn in cobalt coveralls looks toward the slate while the blue-gold constellation projected by faceted polyhedral Six Windows carries one dark gap. The amber Covenant lamp above the north dais burns steadily.",
+        "visible_characters": [
+          {"agent_id": "tavi_rook", "default_stance": "facing the double obligation display, copper key visible", "visual_ref": "visual_character_refs.characters.tavi_rook"},
+          {"agent_id": "pell_orra", "default_stance": "still at east desk, eyes on the slate", "visual_ref": "visual_character_refs.characters.pell_orra"},
+          {"agent_id": "ena_coil", "default_stance": "watching from archive vault", "visual_ref": "visual_character_refs.characters.ena_coil"},
+          {"agent_id": "ivo_marn", "default_stance": "looking through clinic glass toward Tavi", "visual_ref": "visual_character_refs.characters.ivo_marn"},
+          {"agent_id": "six_windows", "default_stance": "suspended with one dark gap in projected stars", "visual_ref": "visual_character_refs.characters.six_windows"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "first_registry_discovery_response",
+        "ink_anchor": "discovery_choice",
+      "base_image_prompt": "Medium-wide decision frame centered on Tavi Rook, a slim warm-brown-skinned young clerk with close-cropped black curls, pale gray coat, ink-marked fingertips, and copper wrist key, at the west rail between split-custody drawer and north dais. Ena Coil, an older deep-brown-skinned registrar with high silver braids, black coat, ivory tabs, and split-key pendant, stands ready at the drawer. Pell Orra, a lean light-olive-skinned steward with slick dark hair, plum-black finance coat, and escrow-key rings, waits across the chamber at the east desk. Through northeast clinic glass, broad shaved-headed fitter Ivo Marn in cobalt coveralls stands beside Six Windows, a smoky-black faceted polyhedron in a pale articulated cradle. The southern public door shows a bright unlocked seam, and empty client benches mark the last private minute.",
+        "visible_characters": [
+          {"agent_id": "tavi_rook", "default_stance": "at the split-custody drawer, choosing which record action to take", "visual_ref": "visual_character_refs.characters.tavi_rook"},
+          {"agent_id": "ena_coil", "default_stance": "beside the archive half of the drawer with split key ready", "visual_ref": "visual_character_refs.characters.ena_coil"},
+          {"agent_id": "pell_orra", "default_stance": "watching from the east finance desk", "visual_ref": "visual_character_refs.characters.pell_orra"},
+          {"agent_id": "ivo_marn", "default_stance": "behind clinic glass with one hand near his pocket", "visual_ref": "visual_character_refs.characters.ivo_marn"},
+          {"agent_id": "six_windows", "default_stance": "suspended in the northeast clinic cradle", "visual_ref": "visual_character_refs.characters.six_windows"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "first_registry_accession_session",
+        "ink_anchor": "hearing_open",
+      "base_image_prompt": "Wide public accession session from the south benches toward the north dais. Lucerne Valence, a tall pale androgynous claimant with long black hair tied low, a lacquer-white coat, silver lineage embroidery, and a black-glass throat clasp, stands at the evidence table below bright white Line and blue Register lamps and a held amber Covenant lamp. Ena Coil, an older deep-brown-skinned registrar with high silver braids and a long black coat, occupies the archive side of the dais. Pell Orra, a lean light-olive-skinned steward with slick dark hair and a plum-black finance coat, presents a thin slate from the east. Tavi Rook, a slim warm-brown-skinned young clerk with close-cropped black curls, pale gray coat, ink-marked fingertips, and copper wrist key, stands at the west split-custody wells. Two composed witnesses in severe charcoal coats sit apart with allocation slates. Through northeast clinic glass, broad shaved-headed fitter Ivo Marn in cobalt coveralls and faceted polyhedral Six Windows occupy the articulated cradle bay.",
+        "visible_characters": [
+          {"agent_id": "tavi_rook", "default_stance": "at west clerk rail facing the court", "visual_ref": "visual_character_refs.characters.tavi_rook"},
+          {"agent_id": "ena_coil", "default_stance": "on north dais beside Register lamp", "visual_ref": "visual_character_refs.characters.ena_coil"},
+          {"agent_id": "pell_orra", "default_stance": "east of central table, presenting covenant slate", "visual_ref": "visual_character_refs.characters.pell_orra"},
+          {"agent_id": "lucerne_valence", "default_stance": "centered below dais with empty hands", "visual_ref": "visual_character_refs.characters.lucerne_valence"},
+          {"agent_id": "ivo_marn", "default_stance": "visible through clinic glass beside cradle", "visual_ref": "visual_character_refs.characters.ivo_marn"},
+          {"agent_id": "six_windows", "default_stance": "suspended in clinic cradle with stars projected", "visual_ref": "visual_character_refs.characters.six_windows"},
+          {"agent_id": "anchor_clients", "default_stance": "two witnesses seated apart with allocation slates", "visual_ref": "visual_character_refs.groups.anchor_clients"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "double_pledge_visible >= 2", "modifier_prompt": "Two original obligation ribbons glow in separate black-glass custody wells, visibly converging on the same single amber reserve marker."},
+          {"trigger": "double_pledge_visible == 1", "modifier_prompt": "A small amber discrepancy seam divides the covenant display while the source drawers remain closed."},
+          {"trigger": "double_pledge_visible == 0", "modifier_prompt": "The covenant display shows one clean continuous amber band and the cure queue is represented only by a small dim side icon."},
+          {"trigger": "bond_ready >= 2", "modifier_prompt": "Four brass surety washers stamped with different payroll marks rest in a precise square on Tavi's clerk rail."},
+          {"trigger": "hearing_minutes <= 1", "modifier_prompt": "The east auction doorway glows open and several out-of-focus formal silhouettes are gathering beyond it."},
+          {"trigger": "auction_pressure >= 4", "modifier_prompt": "One anchor client has snapped their allocation slate shut and turned their torso toward the public exit."},
+          {"trigger": "heir_favor >= 4", "modifier_prompt": "Lucerne's calm gaze is fixed directly on Tavi across the evidence table."},
+          {"trigger": "record_integrity >= 4", "modifier_prompt": "Ena's blue Register display shows a complete chain of linked custody symbols ending at the exact branch into two obligations."}
+        ]
+      },
+      {
+        "visual_scene_id": "first_registry_joint_ending",
+        "ink_anchor": "ending_joint_held|ending_joint_denied",
+      "base_image_prompt": "Accession aftermath in a long rectangular black-glass chamber with north dais, west clerk rail, east finance desk, south client benches, and transparent northeast clinic. The amber Covenant lamp is dark while white Line and blue Register are lit. Tavi Rook, a slim warm-brown-skinned young clerk with close-cropped black curls and a pale gray coat, stands at the split-custody wells. Ena Coil, an older deep-brown-skinned registrar with high silver braids and a long black coat, occupies the dais. Below it waits Lucerne Valence, a tall pale androgynous claimant in a lacquer-white coat. Pell Orra, a lean steward in a plum-black coat, holds the unsealed slate at the east desk. Through clinic glass, broad shaved-headed fitter Ivo Marn in cobalt coveralls stands beside faceted polyhedral Six Windows in its articulated cradle. Two composed charcoal-coated client witnesses occupy the benches.",
+        "visible_characters": [
+          {"agent_id": "tavi_rook", "default_stance": "at clerk rail beside custody wells", "visual_ref": "visual_character_refs.characters.tavi_rook"},
+          {"agent_id": "ena_coil", "default_stance": "on dais with Register seal active", "visual_ref": "visual_character_refs.characters.ena_coil"},
+          {"agent_id": "pell_orra", "default_stance": "holding unsealed covenant slate at east desk", "visual_ref": "visual_character_refs.characters.pell_orra"},
+          {"agent_id": "lucerne_valence", "default_stance": "waiting below dais without Warrant in hand", "visual_ref": "visual_character_refs.characters.lucerne_valence"},
+          {"agent_id": "ivo_marn", "default_stance": "inside clinic near a service contact", "visual_ref": "visual_character_refs.characters.ivo_marn"},
+          {"agent_id": "six_windows", "default_stance": "suspended in cradle with star projection", "visual_ref": "visual_character_refs.characters.six_windows"},
+          {"agent_id": "anchor_clients", "default_stance": "witnesses on south benches", "visual_ref": "visual_character_refs.groups.anchor_clients"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "first_registry_wage_ending",
+        "ink_anchor": "ending_wages_preserved|ending_wage_claim_thinned",
+      "base_image_prompt": "Wage-ruling aftermath at the west clerk station and northeast clinic sightline. Tavi Rook, a slim warm-brown-skinned young clerk with close-cropped black curls, pale gray coat, ink-marked fingertips, and copper wrist key, stands beside a glowing wage docket. Through clinic glass, Ivo Marn, a broad shaved-headed older fitter in cobalt coveralls, occupies the articulated cradle bay beside Six Windows, a smoky-black faceted polyhedral machine mind projecting blue-gold constellations. Lucerne Valence, a tall pale androgynous claimant with long black hair and a lacquer-white coat, holds a newly printed pale Warrant below three lit seal lamps. The east auction doorway is open; the funded wage display and the machine mind's service warning share the frame.",
+        "visible_characters": [
+          {"agent_id": "tavi_rook", "default_stance": "beside selected wage docket at clerk station", "visual_ref": "visual_character_refs.characters.tavi_rook"},
+          {"agent_id": "ivo_marn", "default_stance": "inside clinic beside service cradle", "visual_ref": "visual_character_refs.characters.ivo_marn"},
+          {"agent_id": "six_windows", "default_stance": "suspended in cradle with service state visible in projection", "visual_ref": "visual_character_refs.characters.six_windows"},
+          {"agent_id": "lucerne_valence", "default_stance": "below dais holding pale Warrant", "visual_ref": "visual_character_refs.characters.lucerne_valence"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "service_margin >= 3", "modifier_prompt": "A complete blue service schedule glows beside the cradle while Ivo divides the work into two safe shift blocks; the constellation map is steady."},
+          {"trigger": "service_margin < 3", "modifier_prompt": "The cradle motion is visibly locked to a narrow range and a second star point has gone dark in the projected constellation map."}
+        ]
+      },
+      {
+        "visual_scene_id": "first_registry_service_ending",
+        "ink_anchor": "ending_service_preserved|ending_service_claim_thinned",
+      "base_image_prompt": "Service-ruling aftermath focused through the northeast clinic glass. Six Windows, a smoky-black faceted polyhedral machine mind, hangs in an articulated pale-metal cradle amid coolant seals, bearing housings, and blue-gold constellation light. Ivo Marn, a broad shaved-headed older fitter in cobalt coveralls with insulated seams and a compact tool harness, works at the cradle reader. Outside the glass, Tavi Rook, a slim warm-brown-skinned young clerk with close-cropped black curls and a pale gray coat, lowers the wage docket. Lucerne Valence, a tall pale androgynous claimant with long black hair and a lacquer-white coat, holds a pale Warrant beneath three lit lamps. The east desk displays the selected host-service obligation beside dim worker payroll blocks.",
+        "visible_characters": [
+          {"agent_id": "tavi_rook", "default_stance": "outside clinic glass holding lowered wage docket", "visual_ref": "visual_character_refs.characters.tavi_rook"},
+          {"agent_id": "ivo_marn", "default_stance": "working at cradle reader", "visual_ref": "visual_character_refs.characters.ivo_marn"},
+          {"agent_id": "six_windows", "default_stance": "suspended in serviced cradle with active constellation projection", "visual_ref": "visual_character_refs.characters.six_windows"},
+          {"agent_id": "lucerne_valence", "default_stance": "below dais holding Warrant", "visual_ref": "visual_character_refs.characters.lucerne_valence"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "worker_trust >= 3", "modifier_prompt": "A small cluster of meal chits, four brass surety washers, and several worker payroll marks are divided into household piles on the clinic-side work shelf."},
+          {"trigger": "worker_trust < 3", "modifier_prompt": "The clinic work shelf is bare and Ivo's tool harness is closed as if prepared for a solitary departure."}
+        ]
+      },
+      {
+        "visual_scene_id": "first_registry_clean_ending",
+        "ink_anchor": "ending_accession_market|ending_accession_fragile",
+      "base_image_prompt": "Formal accession aftermath in a long black-glass chamber with north dais, west archive rail, east finance desk, south benches, and transparent northeast clinic. Three seal lamps burn white, blue, and amber. Lucerne Valence, a tall pale androgynous claimant with long black hair, lacquer-white coat, silver embroidery, and black-glass throat clasp, holds a pale Warrant below the dais. Ena Coil, an older deep-brown-skinned registrar with high silver braids and a long black coat, occupies the Register side. Pell Orra, a lean light-olive-skinned steward with slick dark hair and a plum-black coat, occupies the Covenant desk. Tavi Rook, a slim warm-brown-skinned young clerk with close-cropped black curls and a pale gray coat, returns a black lineage coffer to the archive. Two composed charcoal-coated clients hold allocation slates on the south benches. Through clinic glass, broad shaved-headed fitter Ivo Marn in cobalt coveralls copies a service record beside faceted polyhedral Six Windows in its articulated cradle.",
+        "visible_characters": [
+          {"agent_id": "tavi_rook", "default_stance": "returning lineage coffer toward west archive vault", "visual_ref": "visual_character_refs.characters.tavi_rook"},
+          {"agent_id": "ena_coil", "default_stance": "beside blue Register lamp", "visual_ref": "visual_character_refs.characters.ena_coil"},
+          {"agent_id": "pell_orra", "default_stance": "at east Covenant desk moving account slates", "visual_ref": "visual_character_refs.characters.pell_orra"},
+          {"agent_id": "lucerne_valence", "default_stance": "holding Warrant below dais", "visual_ref": "visual_character_refs.characters.lucerne_valence"},
+          {"agent_id": "ivo_marn", "default_stance": "copying service record inside clinic", "visual_ref": "visual_character_refs.characters.ivo_marn"},
+          {"agent_id": "six_windows", "default_stance": "suspended in cradle with most stars projected", "visual_ref": "visual_character_refs.characters.six_windows"},
+          {"agent_id": "anchor_clients", "default_stance": "two witnesses seated apart with allocation slates", "visual_ref": "visual_character_refs.groups.anchor_clients"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "double_pledge_visible >= 1", "modifier_prompt": "A small amber discrepancy seam remains visible on the public Covenant display beside the newly issued Warrant."},
+          {"trigger": "double_pledge_visible == 0", "modifier_prompt": "The public Covenant display is a clean amber band while a dim cure-queue icon sits low at the edge of Tavi's private clerk screen."}
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "expose_source_accounts_visual",
+        "trigger": "branch_label == expose_source_accounts",
+        "apply_to_visual_scene_ids": ["first_registry_discovery_response", "first_registry_accession_session"],
+        "modifier_prompt": "The split-custody drawer is open into two separate black-glass wells: one holds a glowing worker wage ribbon, the other a host-service ribbon, and both point to the same single amber reserve marker; Tavi and Ena each keep one key in place."
+      },
+      {
+        "modifier_id": "assemble_mutual_surety_visual",
+        "trigger": "branch_label == assemble_mutual_surety",
+        "apply_to_visual_scene_ids": ["first_registry_discovery_response", "first_registry_accession_session"],
+        "modifier_prompt": "Ivo extends three small brass payroll-stamped washers through the clinic document slot while Tavi places a fourth beside them in a square on the clerk rail."
+      },
+      {
+        "modifier_id": "demand_pre_accession_cure_visual",
+        "trigger": "branch_label == demand_pre_accession_cure",
+        "apply_to_visual_scene_ids": ["first_registry_discovery_response", "first_registry_accession_session"],
+        "modifier_prompt": "Tavi faces Pell across the chamber with one open hand indicating the divided obligation display; Pell's immaculate posture has tightened and his escrow-key rings are visible above the slate."
+      },
+      {
+        "modifier_id": "defer_duplicate_visual",
+        "trigger": "branch_label == defer_duplicate",
+        "apply_to_visual_scene_ids": ["first_registry_discovery_response", "first_registry_accession_session"],
+        "modifier_prompt": "The live Covenant display has one elegant amber obligation band while a small dim duplicate marker has been moved into the side cure queue; Ivo pockets the brass washers."
+      },
+      {
+        "modifier_id": "joint_exception_held_visual",
+        "trigger": "ending_label == joint_exception_held",
+        "apply_to_visual_scene_ids": ["first_registry_joint_ending"],
+        "modifier_prompt": "A narrow pale stay strip crosses only the amber Covenant lamp; white Line and blue Register remain lit. Four surety washers sit inside a small transparent bond box. One anchor client has left an empty bench while Ivo reseats a clinic contact and the missing star returns."
+      },
+      {
+        "modifier_id": "joint_exception_denied_visual",
+        "trigger": "ending_label == joint_exception_denied",
+        "apply_to_visual_scene_ids": ["first_registry_joint_ending"],
+        "modifier_prompt": "The amber Covenant lamp has turned bright and Lucerne holds the issued Warrant; Tavi's exception slate is sealed inside a low archive slot, and the brass surety washers have been removed into a forfeiture tray."
+      },
+      {
+        "modifier_id": "wages_qualified_visual",
+        "trigger": "ending_label == wages_qualified",
+        "apply_to_visual_scene_ids": ["first_registry_wage_ending"],
+        "modifier_prompt": "Worker wage portraits and shift blocks glow securely on the public display while a sharp amber warning symbol hangs over the host-service schedule."
+      },
+      {
+        "modifier_id": "wages_provisional_visual",
+        "trigger": "ending_label == wages_provisional",
+        "apply_to_visual_scene_ids": ["first_registry_wage_ending"],
+        "modifier_prompt": "Worker wage portraits have moved into a dim arrears column with review-clock symbols while the host-service schedule glows funded."
+      },
+      {
+        "modifier_id": "service_qualified_visual",
+        "trigger": "ending_label == service_qualified",
+        "apply_to_visual_scene_ids": ["first_registry_service_ending"],
+        "modifier_prompt": "The articulated cradle receives bright blue service markers and Six Windows projects a complete old sky; worker payroll blocks have shifted into a dim unsecured column."
+      },
+      {
+        "modifier_id": "service_provisional_visual",
+        "trigger": "ending_label == service_provisional",
+        "apply_to_visual_scene_ids": ["first_registry_service_ending"],
+        "modifier_prompt": "Worker payroll blocks glow funded while the cradle service indicators show an amber discretionary marker and another star fades from the projected old sky."
+      },
+      {
+        "modifier_id": "clean_accession_recognized_visual",
+        "trigger": "ending_label == clean_accession_recognized",
+        "apply_to_visual_scene_ids": ["first_registry_clean_ending"],
+        "modifier_prompt": "Both anchor clients hold open allocation slates showing bright accepted seals; the east auction doorway is full of orderly seated silhouettes."
+      },
+      {
+        "modifier_id": "clean_accession_contested_visual",
+        "trigger": "ending_label == clean_accession_contested_market",
+        "apply_to_visual_scene_ids": ["first_registry_clean_ending"],
+        "modifier_prompt": "One anchor client displays an accepted seal while the other has closed their slate and turned toward the public exit; Ivo's small copy-progress light glows behind clinic glass."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "first_registry_accession_chamber.scene_set.draft",
+      "geometry_authority_level": "draft_text_map_not_rendered_blockout",
+      "room_model": "Long rectangular accession chamber on a stable south-to-north axis, with public entry and benches south, a low three-seal dais north, Register functions west, Covenant functions east, and a glazed host-service clinic in the northeast corner.",
+      "fixed_zones": [
+        {"zone_id": "north_dais", "visible_form": "low black-glass platform beneath three large seal lamps and a narrow Warrant output slot", "used_for": "public seal presentation, Master Registrar position, and Warrant issue"},
+        {"zone_id": "west_register_wall", "visible_form": "dark archive vault door, narrow clerk station, copper-key reader, and waist-high split-custody drawer", "used_for": "Tavi's work, Register custody, source-account display, and coffer return"},
+        {"zone_id": "east_covenant_wall", "visible_form": "formal finance desk, stacked metal escrow drawers, thin slate docks, and doorway to the auction gallery", "used_for": "Pell's account authority, Covenant display, and visible auction pressure"},
+        {"zone_id": "south_public_zone", "visible_form": "wide public door and two rows of separated black client benches", "used_for": "Lucerne and client entry, public observation, and client exit"},
+        {"zone_id": "central_evidence_table", "visible_form": "low pale-metal table below the dais with sockets for lineage coffer and public covenant slate", "used_for": "claimant staging and three-seal presentation"},
+        {"zone_id": "northeast_service_clinic", "visible_form": "transparent clinic wall, side service door, document slot, coolant-return warming plate, cradle reader, hoses, bearing tools, and articulated Eidolon cradle", "used_for": "Ivo's work, Six Windows' service, worker-to-clerk object transfer, and visible body cost"}
+      ],
+      "occluders": [
+        {"occluder_id": "archive_vault_wall", "effect": "blocks the gallery and Covenant desk from seeing inside the Register vault; source records become public only in the split-custody wells"},
+        {"occluder_id": "clinic_privacy_glass", "effect": "transparent under routine light but turns smoky during invasive service; this fixture keeps it clear because no invasive service occurs"},
+        {"occluder_id": "central_evidence_screen", "effect": "a low black-glass lip hides fine record detail from the south benches while leaving seal colors and major obligation bands visible"}
+      ],
+      "camera_slots": [
+        {"camera_id": "south_wide", "supports_visual_scene_ids": ["first_registry_establishing", "first_registry_accession_session", "first_registry_clean_ending"]},
+        {"camera_id": "west_clerk_medium", "supports_visual_scene_ids": ["first_registry_routine", "first_registry_routine_fold", "first_registry_discovery_response", "first_registry_joint_ending"]},
+        {"camera_id": "west_record_close", "supports_visual_scene_ids": ["first_registry_wage_check", "first_registry_custody_check", "first_registry_double_pledge"]},
+        {"camera_id": "northeast_clinic_medium", "supports_visual_scene_ids": ["first_registry_service_check", "first_registry_wage_ending", "first_registry_service_ending"]},
+        {"camera_id": "north_dais_low", "supports_visual_scene_ids": ["first_registry_packet_stage", "first_registry_accession_session"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "clerk_to_covenant", "path": "west clerk station across central table to east Covenant desk", "supports": ["demand_pre_accession_cure", "public Covenant qualification"]},
+        {"lane_id": "clerk_to_clinic", "path": "west clerk station diagonally across chamber through northeast clinic glass", "supports": ["Ivo's object signal", "missing-star observation", "service consequences"]},
+        {"lane_id": "clients_to_seals", "path": "south benches over central evidence-screen lip to north seal lamps and broad obligation bands", "supports": ["public recognition", "visible discrepancy", "client exit pressure"]},
+        {"lane_id": "register_to_source_wells", "path": "west archive vault through split-custody drawer to public wells at clerk rail", "supports": ["source account exposure", "custody verification"]}
+      ],
+      "access_routes": [
+        {"route_id": "public_route", "path": "south public door -> client benches -> central evidence table", "users": ["Lucerne Valence", "anchor clients"], "constraints": "opens only when accession session begins"},
+        {"route_id": "register_route", "path": "west archive staff door -> archive vault -> clerk station -> north dais", "users": ["Ena Coil", "Tavi Rook"], "constraints": "copper or split-key access"},
+        {"route_id": "covenant_route", "path": "east staff door -> Covenant desk -> north dais", "users": ["Pell Orra"], "constraints": "escrow-key access"},
+        {"route_id": "clinic_route", "path": "northeast side service door -> cradle work arc -> clinic document slot", "users": ["Ivo Marn"], "constraints": "service credentials; does not enter public chamber during session"}
+      ],
+      "staging_slots": [
+        {"slot_id": "tavi_clerk", "zone_id": "west_register_wall", "allowed_agents": ["tavi_rook"]},
+        {"slot_id": "ena_register", "zone_id": "west_register_wall|north_dais", "allowed_agents": ["ena_coil"]},
+        {"slot_id": "pell_covenant", "zone_id": "east_covenant_wall", "allowed_agents": ["pell_orra"]},
+        {"slot_id": "lucerne_claimant", "zone_id": "central_evidence_table", "allowed_agents": ["lucerne_valence"]},
+        {"slot_id": "ivo_service", "zone_id": "northeast_service_clinic", "allowed_agents": ["ivo_marn"]},
+        {"slot_id": "six_windows_cradle", "zone_id": "northeast_service_clinic", "allowed_agents": ["six_windows"]},
+        {"slot_id": "client_benches", "zone_id": "south_public_zone", "allowed_agents": ["anchor_clients"]}
+      ],
+      "state_anchors": [
+        {"anchor_id": "seal_lamps", "states": ["Line white", "Register blue", "Covenant amber, held dark, or crossed by narrow stay"]},
+        {"anchor_id": "reserve_nine_display", "states": ["clean single band", "discrepancy seam", "two split-custody obligation ribbons"]},
+        {"anchor_id": "surety_washers", "states": ["absent", "three offered", "four bonded", "forfeited in tray"]},
+        {"anchor_id": "six_windows_sky", "states": ["complete constellation field", "one missing star", "additional service-loss gaps"]},
+        {"anchor_id": "anchor_client_slates", "states": ["open and observing", "accepted seals", "closed for review", "carried toward exit"]},
+        {"anchor_id": "lineage_coffer", "states": ["outside room", "staged with incomplete witness socket", "fully witnessed below Line lamp", "returned to archive"]}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for characters visible in a scene.",
+    "characters": {
+      "tavi_rook": "Tavi Rook: baseline human junior provenance clerk, late twenties to thirties, warm brown skin, close-cropped black curls, attentive dark eyes, pale gray fitted clerk coat with black cuffs, narrow copper custody key looped at the left wrist, ink-marked fingertips, practical dark boots, compact careful posture that becomes very still under pressure.",
+      "ivo_marn": "Ivo Marn: baseline human host fitter, late forties to sixties, broad sturdy build, shaved head, lined face, cobalt service coveralls with pale insulated seams, compact tool harness, heat-resistant gloves often tucked at the belt, slightly stooped work posture and economical movements.",
+      "ena_coil": "Master Registrar Ena Coil: baseline human, late middle age, deep brown skin, silver braids pinned high, long black formal coat with narrow ivory register tabs, split-key pendant at the throat, straight-backed restrained posture, hands visible and still near sealed records.",
+      "pell_orra": "Covenant Steward Pell Orra: baseline human, forties, lean build, light olive skin, slick dark hair, plum-black finance coat with amber lining, small metal escrow-key rings on two fingers, immaculate cuffs, controlled posture oriented toward slates and accounts.",
+      "lucerne_valence": "Lucerne Valence: baseline human House Voice claimant, apparent thirties, tall and androgynous, pale skin, long straight black hair tied low, lacquer-white formal coat with a black-glass throat clasp and narrow silver lineage embroidery, empty hands, calm proprietary posture that never needs to hurry visibly.",
+      "six_windows": "Six Windows: nonhumanoid registered Eidolon host, a torso-sized faceted polyhedron of smoky black glass and pale metal suspended in an articulated six-armed service cradle; thin blue-gold light points project an Earth constellation map onto nearby glass; a strictly geometric body whose visual expression is limited to projected light and cradle motion; voice emerges as low resonant chimes."
+    },
+    "groups": {
+      "anchor_clients": "Two Valence anchor-client witnesses: baseline humans in severe charcoal formal coats seated apart on the south client benches, each holding a closed thin allocation slate; composed faces, expensive understated clothing, posture changing through closed screens, withheld signatures, and quiet departure rather than raised voices."
+    }
+  },
+  "review_notes": [
+    "The visual plan includes a draft textual scene_set with fixed zones, occluders, camera slots, sightline lanes, role-compatible routes, staging slots, and branch-visible state anchors.",
+    "All base prompts restate visible geometry and use affirmative descriptions. Character refs are assembled only for characters declared visible in each frame.",
+    "A rendered plan view or 3D blockout remains required before high-consistency multi-angle website art. This pass emits manifests only and does not generate images."
+  ]
+}

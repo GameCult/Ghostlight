@@ -1,0 +1,598 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "charter-three-seal-accession-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/aetheria/charter-three-seal-accession-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/aetheria/charter-three-seal-accession-v0.v0.json",
+  "visual_plan_ref": "examples/visual/aetheria/charter-three-seal-accession-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "charter-three-seal-accession-v0.first-registry-accession",
+  "protagonist_agent_id": "tavi_rook",
+  "npc_agent_ids": [
+    "ivo_marn",
+    "ena_coil",
+    "pell_orra",
+    "lucerne_valence",
+    "six_windows",
+    "anchor_clients"
+  ],
+  "purpose": "Interactive Fiction Weaver draft about a junior House Valence provenance clerk discovering that one accession reserve has been pledged to both worker wages and an Eidolon's due host service. Tonal mode: dry workplace comedy, procedural noir, and quiet mutual-aid warmth under corporate succession pressure.",
+  "local_awareness_summary": [
+    {
+      "text": "Tavi Rook is a junior provenance clerk in the First Registry Enclave. She may inspect received records, preserve split custody, qualify one Covenant finding, or file a narrowly supported Lineage Exception; she cannot choose the House Voice, certify the Covenant accounts herself, or make anchor clients recognize a warrant.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/charter-three-seal-accession-v0.v0.json",
+        "Aetheria/Worldbuilding/Post-Elysium/Factions/House Valence.md"
+      ]
+    },
+    {
+      "text": "The disputed reserve is visibly finite. In this docket it cannot fully satisfy the fitters' recorded wages and Six Windows' scheduled host service at the same time, so every clean disposition moves cost into a body, a worker account, client confidence, or the succession clock.",
+      "source_refs": [
+        "examples/ink/aetheria/charter-three-seal-accession-v0.branch-and-fold.v0.ink"
+      ]
+    },
+    {
+      "text": "Tavi can observe the custody marks, wage docket, service cassette, Covenant slate, client behavior, and Six Windows' local display. She cannot know Lucerne's private intentions, Pell's undisclosed accounts, whether Six Windows is legally a person, or the hidden origin of its Earth-constellation pattern.",
+      "source_refs": [
+        "examples/ink/aetheria/charter-three-seal-accession-v0.branch-and-fold.v0.ink",
+        "prompts/interactive-fiction-weaver.md",
+        "Aetheria/Worldbuilding/Post-Elysium/Technology/Necrotech.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains local to Tavi's clerk station, reachable records, visible room, delegated act, and uncertainty. Information reaches her through documents, custody wells, seal lamps, clinic glass, speech, or observable posture.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/ink/aetheria/charter-three-seal-accession-v0.branch-and-fold.v0.ink"
+        ]
+      },
+      {
+        "text": "The scene establishes an ordinary accession setup, seal check, service interval, and covert tea-warming accommodation before the duplicate pledge creates pressure.",
+        "source_refs": [
+          "AGENTS.md",
+          "examples/ink/aetheria/charter-three-seal-accession-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Line witnesses establish eligibility, the Master Registrar owns Register identity and custody, the Covenant Steward owns carried accounts, the court may issue a Warrant of Voice only through all three seals, and external clients decide recognition in their own jurisdictions.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Post-Elysium/Factions/House Valence.md"
+        ]
+      },
+      {
+        "text": "Tavi owns one local clerk finding. Her signature can expose, qualify, or challenge the Covenant record but cannot repair an unfunded promise, confer personhood on Six Windows, or turn mutual surety into sovereign power.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Post-Elysium/Factions/House Valence.md",
+          "examples/ink/aetheria/charter-three-seal-accession-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The wage docket begins worker-held, the service cassette begins in the clinic chain, the lineage coffer belongs to the claimant packet, and source accounts require split custody between clerk-side handling and the Master Registrar's key.",
+        "source_refs": [
+          "examples/ink/aetheria/charter-three-seal-accession-v0.branch-and-fold.v0.ink",
+          "Aetheria/Worldbuilding/Post-Elysium/Factions/House Valence.md"
+        ]
+      },
+      {
+        "text": "Ivo's brass surety washers may support a reconciliation bond, but they remain visible worker contributions rather than becoming House generosity or erased fungible credit.",
+        "source_refs": [
+          "examples/ink/aetheria/charter-three-seal-accession-v0.branch-and-fold.v0.ink",
+          "Aetheria/Worldbuilding/Post-Elysium/Factions/House Valence.md"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every preparation and response choice changes record integrity, trust, service margin, hearing time, claimant favor, auction pressure, bond support, public visibility, or custody, and each variable is read after folding.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      },
+      {
+        "text": "The eight endings distinguish effective redress from nominal filing and show who pays for each priority: workers, Six Windows' host, the claimant, clients, or the accession timetable.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Post-Elysium/Factions/House Valence.md",
+          "examples/ink/aetheria/charter-three-seal-accession-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make one office, clerk, claimant, or sympathetic worker the complete succession authority. Three seals and external recognition remain separate dependencies.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Post-Elysium/Factions/House Valence.md"
+        ]
+      },
+      {
+        "text": "Do not resolve the contradiction through free resources, managerial benevolence, or a universal movement. The mutual-surety action is small, costly, local, and unable to erase the underlying scarcity.",
+        "source_refs": [
+          "AGENTS.md",
+          "Aetheria/Worldbuilding/Post-Elysium/Factions/House Valence.md"
+        ]
+      },
+      {
+        "text": "Do not reveal the author-only source of Six Windows' Earth-constellation pattern to any participant.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Post-Elysium/Factions/Megiddo.md",
+          "Aetheria/Worldbuilding/Post-Elysium/Factions/House Valence.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four routine preparations fold into discovery of a double pledge; four record responses fold into the public accession session; four Covenant dispositions select eight state-gated endings.",
+    "choice_layers": [
+      "accession_preparation",
+      "double_pledge_response",
+      "covenant_disposition"
+    ],
+    "variables": [
+      "record_integrity",
+      "worker_trust",
+      "service_margin",
+      "hearing_minutes",
+      "heir_favor",
+      "auction_pressure",
+      "bond_ready",
+      "double_pledge_visible",
+      "custody_intact"
+    ],
+    "ending_gates": [
+      "ending_joint_held",
+      "ending_joint_denied",
+      "ending_wages_preserved",
+      "ending_wage_claim_thinned",
+      "ending_service_preserved",
+      "ending_service_claim_thinned",
+      "ending_accession_market",
+      "ending_accession_fragile"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prepare_wage_docket",
+      "ink_path": "routine_choice",
+      "action_type": "inspect_record",
+      "actor_intent": "Check whether the fitters' recorded wages are actually carried by the Covenant account list.",
+      "state_basis": [
+        "Covenant owns wage and bond accounts while Tavi may compare received records.",
+        "Ivo's docket is worker-held evidence rather than a Covenant summary."
+      ],
+      "reviewed_consequences": [
+        "Raises record_integrity and worker_trust while spending one hearing minute; the wage disposition later reads both record and trust."
+      ],
+      "training_hooks": [
+        "wage_record_before_succession",
+        "worker_evidence_custody"
+      ]
+    },
+    {
+      "branch_id": "prepare_service_cassette",
+      "ink_path": "routine_choice",
+      "action_type": "inspect_object",
+      "actor_intent": "Verify Six Windows' due host-service interval against the clinic cassette.",
+      "state_basis": [
+        "An Eidolon's named continuity depends on a serviceable synthetic host.",
+        "The service cassette is clinic-chain evidence rather than a decorative machine detail."
+      ],
+      "reviewed_consequences": [
+        "Raises record_integrity and service_margin while spending one hearing minute; the service disposition later reads both values."
+      ],
+      "training_hooks": [
+        "host_service_as_continuity",
+        "machine_need_has_material_record"
+      ]
+    },
+    {
+      "branch_id": "prepare_lineage_coffer",
+      "ink_path": "routine_choice",
+      "action_type": "stage_object",
+      "actor_intent": "Advance the claimant's Line seal packet and create more time before the auction gallery fills.",
+      "state_basis": [
+        "Line establishes witnessed eligibility but does not own Register or Covenant.",
+        "The claimant's commercial authority depends on timely client recognition."
+      ],
+      "reviewed_consequences": [
+        "Raises heir_favor, lowers auction_pressure, and adds one hearing minute while weakening custody; all four consequences return in folded prose or ending gates."
+      ],
+      "training_hooks": [
+        "speed_for_custody_tradeoff",
+        "lineage_is_not_full_authority"
+      ]
+    },
+    {
+      "branch_id": "prepare_custody_marks",
+      "ink_path": "routine_choice",
+      "action_type": "maintain_interface",
+      "actor_intent": "Make the three seal contacts and their custody labels reliable before public pressure arrives.",
+      "state_basis": [
+        "Accession depends on three distinct seals and a record another court can inspect.",
+        "Prestigious authority still relies on maintenance labor."
+      ],
+      "reviewed_consequences": [
+        "Raises record_integrity and custody_intact while spending one hearing minute; joint redress later requires both."
+      ],
+      "training_hooks": [
+        "maintenance_under_sovereignty",
+        "custody_as_load_bearing"
+      ]
+    },
+    {
+      "branch_id": "respond_expose_source_accounts",
+      "ink_path": "discovery_choice",
+      "action_type": "open_split_custody",
+      "actor_intent": "Preserve both original obligations in separate wells where the public court can inspect the duplicate.",
+      "state_basis": [
+        "A Lineage Exception must identify the contested act and preserve split custody.",
+        "Public contradiction threatens auction timing and client confidence."
+      ],
+      "reviewed_consequences": [
+        "Strongly raises record_integrity, custody, and public visibility while spending two minutes and increasing auction pressure; these states visibly persist into the hearing."
+      ],
+      "training_hooks": [
+        "public_source_account_conflict",
+        "redress_costs_market_time"
+      ]
+    },
+    {
+      "branch_id": "respond_build_mutual_surety",
+      "ink_path": "discovery_choice",
+      "action_type": "assemble_bond",
+      "actor_intent": "Use the fitters' small pooled contributions to make a narrow reconciliation bond procedurally supportable.",
+      "state_basis": [
+        "Valence workers quietly pool mutual surety from overtime pay.",
+        "The pool can keep an objection alive but cannot create the missing reserve."
+      ],
+      "reviewed_consequences": [
+        "Raises bond_ready, worker_trust, and visibility while spending one minute and increasing auction pressure; the washers remain worker-owned evidence in later scenes."
+      ],
+      "training_hooks": [
+        "quiet_mutual_aid",
+        "bond_does_not_erase_scarcity"
+      ]
+    },
+    {
+      "branch_id": "respond_demand_public_cure",
+      "ink_path": "discovery_choice",
+      "action_type": "request_cure",
+      "actor_intent": "Force the Covenant Steward to choose or refinance one pledge before presenting the amber seal.",
+      "state_basis": [
+        "Covenant owns carried accounts and therefore owns the cure.",
+        "A public discrepancy can narrow a later seal without transferring Covenant authority to Tavi."
+      ],
+      "reviewed_consequences": [
+        "Makes the conflict visible, lowers heir_favor, spends one minute, and increases auction pressure; the hearing retains a public discrepancy mark."
+      ],
+      "training_hooks": [
+        "put_authority_at_consequence",
+        "public_cure_pressure"
+      ]
+    },
+    {
+      "branch_id": "respond_defer_duplicate",
+      "ink_path": "discovery_choice",
+      "action_type": "defer_record",
+      "actor_intent": "Keep the Covenant display clean by moving the duplicate into a post-accession cure queue.",
+      "state_basis": [
+        "A clean succession helps the claimant and prevents clients from repricing immediately.",
+        "Deferred reconciliation lets timing erase practical redress."
+      ],
+      "reviewed_consequences": [
+        "Raises heir_favor and lowers auction pressure while reducing record_integrity and public visibility; the clean display and hidden cure queue both remain present."
+      ],
+      "training_hooks": [
+        "procedural_erasure",
+        "clean_display_dirty_liability"
+      ]
+    },
+    {
+      "branch_id": "decide_joint_exception",
+      "ink_path": "accession_choice",
+      "action_type": "file_challenge",
+      "actor_intent": "Challenge the Covenant Seal on behalf of both named obligations without choosing one body as disposable.",
+      "state_basis": [
+        "The option appears only with a supported bond or a strong record.",
+        "Effective joint redress additionally requires intact custody and at least one hearing minute."
+      ],
+      "reviewed_consequences": [
+        "Routes to ending_joint_held when record, custody, and time clear threshold; otherwise routes to ending_joint_denied, where filing survives but the accession delay does not."
+      ],
+      "training_hooks": [
+        "state_gated_redress",
+        "filing_is_not_effect"
+      ]
+    },
+    {
+      "branch_id": "decide_protect_wages",
+      "ink_path": "accession_choice",
+      "action_type": "commit_finding",
+      "actor_intent": "Qualify the Covenant Seal around the fitters' recorded wage claim.",
+      "state_basis": [
+        "Tavi may qualify one received Covenant record.",
+        "A durable wage qualification needs worker trust and sufficient record integrity."
+      ],
+      "reviewed_consequences": [
+        "Routes to ending_wages_preserved when trust and record clear threshold; otherwise the wage claim remains provisional while service and succession consume leverage."
+      ],
+      "training_hooks": [
+        "state_gated_wage_priority",
+        "host_service_cost_shift"
+      ]
+    },
+    {
+      "branch_id": "decide_protect_service",
+      "ink_path": "accession_choice",
+      "action_type": "commit_finding",
+      "actor_intent": "Qualify the Covenant Seal around Six Windows' scheduled host service.",
+      "state_basis": [
+        "Commercial identity depends on host continuity.",
+        "A durable service qualification needs verified margin and sufficient record integrity."
+      ],
+      "reviewed_consequences": [
+        "Routes to ending_service_preserved when service and record clear threshold; otherwise service remains a thin aspiration while wages and succession absorb the delay."
+      ],
+      "training_hooks": [
+        "state_gated_service_priority",
+        "worker_wage_cost_shift"
+      ]
+    },
+    {
+      "branch_id": "decide_release_accession",
+      "ink_path": "accession_choice",
+      "action_type": "accept_record",
+      "actor_intent": "Accept a post-accession cure and release the Covenant Seal before one obligation is actually repaired.",
+      "state_basis": [
+        "A complete three-seal warrant restores the claimant's operative authority.",
+        "Market reception depends on accumulated favor and auction pressure, not the court's paper alone."
+      ],
+      "reviewed_consequences": [
+        "Routes to immediate market recognition only with high heir_favor and low auction_pressure; otherwise the warrant issues into fragile recognition and a live double liability."
+      ],
+      "training_hooks": [
+        "warrant_is_not_market_recognition",
+        "succession_exports_liability"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual branch-modifier selection"
+    ],
+    "manual_review_required": [
+      "Any durable relationship or memory update for Tavi, Ivo, Ena, Pell, Lucerne, or Six Windows",
+      "Any promotion of this accession outcome or cast into Aetheria history",
+      "Any ruling on Eidolon personhood or legal speech",
+      "Any disclosure of Valence's hidden Megiddo source",
+      "Any economy-schema treatment of wages, service costs, client repricing, or worker surety"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Aetheria Charter worker using the four required Ghostlight reviewer prompts as separate self-review passes",
+    "review_status": "accepted_with_visual_blockout_deferred",
+    "review_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 4,
+        "voice_score": 5,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "detected_tonal_mode": "Dry workplace comedy, procedural noir, and quiet mutual-aid warmth under corporate succession pressure.",
+        "major_findings": [],
+        "minor_findings": [],
+        "path_specific_failures": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "lore_context_bridges_needed": [],
+        "character_introduction_fixes": [],
+        "branch_fold_fixes": [],
+        "voice_and_prose_fixes": [],
+        "training_labels": [
+          "strong_contextual_onboarding",
+          "strong_branch_callback",
+          "strong_tonal_control",
+          "strong_wit_with_stakes",
+          "strong_material_lore",
+          "strong_institutional_playability"
+        ],
+        "acceptance_notes": [
+          "Routine seal testing, host service, and an illicitly legal tea-warming arrangement establish work texture before the duplicate pledge appears.",
+          "The protagonist, offices, room, authority boundary, and material stakes are introduced before the first choice, so folded scenes do not depend on optional onboarding.",
+          "All nine variables are mutated for legible tradeoffs and read after folding in conditional prose, option gates, or ending gates; eight endings distinguish formal action from effective consequence.",
+          "The humor exposes labor and status pressure without dissolving Six Windows' service risk or the workers' wage claim."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 4,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 5,
+        "sources_checked": [
+          {
+            "source_ref": "Aetheria/Worldbuilding/Post-Elysium/Factions/House Valence.md",
+            "reason_checked": "Primary source for House sovereignty, the Register, Eidolon custody, internal courts, client dependence, succession elaboration, and hidden reserve boundary.",
+            "used_for": "canon check and owning lore patch"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Post-Elysium/Factions/Daedal Houses.md",
+            "reason_checked": "Broader House form, contractual sovereignty, and dependence on specialized labor.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Post-Elysium/Technology/Necrotech.md",
+            "reason_checked": "Eidolon uniqueness, host dependence, maintenance, expressive fragments, and unresolved personhood.",
+            "used_for": "canon check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Post-Elysium/Factions/Megiddo.md",
+            "reason_checked": "Author-only source of the Earth-star mnemonic and the hidden Valence reserve.",
+            "used_for": "hidden-knowledge boundary"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Post-Elysium/Reference/Port-Insurer Compact.md",
+            "reason_checked": "Neighboring procedural pattern for bounded authority, notice, expiry, and redress.",
+            "used_for": "institutional comparison only"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Post-Elysium/Reference/Continuity Admissibility Finding.md",
+            "reason_checked": "Neighboring legal pattern separating continuity evidence from personhood and ownership.",
+            "used_for": "boundary check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Post-Elysium/Concepts/Ship Mind Custody.md",
+            "reason_checked": "Custody, personhood uncertainty, service obligation, and who may speak for synthetic minds.",
+            "used_for": "boundary check"
+          },
+          {
+            "source_ref": "Aetheria/Worldbuilding/Post-Elysium/index.md",
+            "reason_checked": "Post-Elysium material dependency, disputed consciousness, and political continuity.",
+            "used_for": "era context"
+          }
+        ],
+        "source_gaps": [],
+        "canon_drift_findings": [],
+        "unsupported_claims": [],
+        "stale_or_conflicting_lore": [],
+        "vault_backfill_candidates": [
+          {
+            "priority": "high",
+            "target_source": "Aetheria/Worldbuilding/Post-Elysium/Factions/House Valence.md",
+            "candidate_fact": "House Valence creates a House Voice through Line, Register, and Covenant seals, limits interregnum officers, and hears narrow Lineage Exceptions at the First Registry Enclave.",
+            "artifact_origin": "First Registry routine, duplicate-pledge discovery, public accession, and state-gated dispositions.",
+            "why_it_belongs": "It supplies the missing owner map for public authority, succession, dependency, procedural cost, and worker-scale redress.",
+            "how_to_add_without_bloat": "Added as one plainly marked Charter elaboration in the existing owning faction note; scheduler commit pending."
+          }
+        ],
+        "required_story_revisions": [],
+        "required_lore_patches": [],
+        "suggested_story_revisions": [],
+        "suggested_lore_patches": [],
+        "training_labels": [
+          "source_grounded",
+          "strong_material_lore",
+          "strong_faction_pressure",
+          "strong_authority_boundary",
+          "strong_procedural_grounding",
+          "vault_backfill_candidate"
+        ],
+        "acceptance_notes": [
+          "The first pass found that the Hidden Reserve source span extended two lines past the owning note. The citation now ends at the actual final line.",
+          "The accession offices and procedure are marked authored elaboration rather than retroactively presented as prior canon.",
+          "The story keeps Register, Covenant, court, claimant, client, worker, and Eidolon interests distinct; Tavi never inherits authority from narrative sympathy.",
+          "Six Windows' personhood remains unresolved and the hidden Megiddo provenance remains author-only."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "overall_status": "needs_revision",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 5,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 3,
+        "major_findings": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "The repeated multi-angle accession chamber has a textual scene-set specification but no rendered plan view or 3D blockout.",
+            "why_it_matters": "Generated images need a geometry source stronger than text to preserve the west archive, east Covenant desk, north dais, northeast clinic, object custody, and public routes across fourteen frames.",
+            "evidence": "The fixture returns to one chamber from several camera slots, and sightline plus reach carry branch meaning.",
+            "fix_direction": "Before website rendering, build a camera-specific blockout from the declared zones, occluders, routes, camera slots, staging slots, and state anchors."
+          }
+        ],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "missing_visual_scenes": [],
+        "weak_image_prompts": [],
+        "missing_scene_set_needs": [
+          {
+            "severity": "major",
+            "location": "visual_scene_plan.scene_set_guidance",
+            "problem": "The textual scene-set specification has no rendered plan view or 3D blockout.",
+            "why_it_matters": "Text alone cannot guarantee multi-angle room topology during deferred image generation.",
+            "evidence": "Fourteen scenes share fixed room geometry and branch-visible object states.",
+            "fix_direction": "Use the supplied scene-set specification as the source for a later plan view or blockout."
+          }
+        ],
+        "missing_branch_modifiers": [],
+        "review_labels": [
+          "strong_scene_segmentation",
+          "strong_imagegen_ready_prompt",
+          "strong_character_stance_control",
+          "strong_branch_visual_continuity",
+          "missing_scene_set"
+        ],
+        "acceptance_notes": [
+          "The first pass found a negative construction in the global style cue, memory-dependent room wording, name-only character descriptions, a wrong hair color for Tavi, and several BFL frames whose casts exceeded or omitted the declared visible cast. The style is now affirmative, every base prompt restates drawable geometry and visible anatomy, Tavi consistently has close-cropped black curls, and the simple-prompt casts match their visual scenes.",
+          "All Ink visual ids map to declared visual scenes, and branch modifiers carry the drawer, surety, discrepancy, deferment, seal, service, wage, and recognition deltas.",
+          "Character references are attached only to characters declared visible in a frame; every recurring named character has a stable visual description.",
+          "The current plan is concept-ready collateral, not high-consistency replay art. Image generation and the required blockout are explicitly deferred."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 5,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "inferred_layout_summary": "One long rectangular chamber runs south to north. The public entrance and client benches occupy the south, the three-lamp dais the north, the archive vault and split-custody drawer the west, the Covenant desk and escrow drawers the east, and a transparent service clinic with Six Windows' articulated cradle the northeast. Tavi moves along the west clerk route and central aisle; Ena controls the archive-side key; Pell controls the east account route; Lucerne and clients use the public aisle; Ivo remains clinic-side until an ending admits him to the public floor.",
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "suggested_revisions": [],
+        "spatial_questions": [],
+        "diagram_or_visual_plan_needs": [
+          {
+            "priority": "high",
+            "needed_artifact": "camera-specific plan view or 3D blockout",
+            "reason": "Deferred multi-angle generation needs a durable geometry reference even though the text plan is sufficient for story staging.",
+            "minimum_required_detail": "Preserve the five fixed zones, archive door and clinic-wall occlusion, four access routes, six camera slots, role staging, and branch-state anchors declared in the visual plan."
+          }
+        ],
+        "review_labels": [
+          "strong_layout_cohesion",
+          "strong_sightline_control",
+          "strong_body_affordance_staging",
+          "strong_object_custody_geometry",
+          "strong_branch_spatial_state",
+          "diagram_needed"
+        ],
+        "acceptance_notes": [
+          "The Ink and visual plan preserve one coordinate frame and stable positions for every consequential object.",
+          "The public, clerk, archive, Covenant, and clinic routes respect office authority and bodily access without impossible crossings.",
+          "Folded states remain visible through specific objects and lamps rather than relying on room memory or generic mood."
+        ]
+      }
+    ],
+    "review_notes": [
+      "One-shot authoring is bootstrap scaffolding for the fixture corpus and does not claim to be a runtime responder capture.",
+      "The four required reviewer prompts were applied as separate narrative, lore, visual-continuity, and spatial-cohesion passes after drafting.",
+      "No Ink compiler was installed or run, per task instruction; syntax received static structure and cross-manifest checks only.",
+      "No images were generated. The BFL prompt manifest is a deferred rendering input."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}
