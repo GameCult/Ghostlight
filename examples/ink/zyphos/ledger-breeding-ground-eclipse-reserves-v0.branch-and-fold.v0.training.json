@@ -1,0 +1,432 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "ledger-breeding-ground-eclipse-reserves-v0-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/zyphos/ledger-breeding-ground-eclipse-reserves-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/ledger-breeding-ground-eclipse-reserves-v0.v0.json",
+  "scene_id": "ledger-breeding-ground-eclipse-reserves-v0.west-terrace-shortfall",
+  "protagonist_agent_id": "veyr_reserve_keeper",
+  "npc_agent_ids": [
+    "ossa_old_return_delegate",
+    "rin_new_household_provider",
+    "rin_household",
+    "scored_blue_glassback",
+    "west_intake_candle_road",
+    "west_terrace_prismwake_lobe",
+    "west_lantern_grove",
+    "nursery_caretaker_ring"
+  ],
+  "purpose": "Interactive Fiction Weaver compilation of a Zyphos reserve shortfall from keeper Veyr's local perspective, dramatizing trophic credit, inherited ecological standing, present labor, and divided supply authority.",
+  "local_awareness_summary": [
+    {
+      "text": "Veyr knows the west terrace basins, current nursery demand, local public claims, and visible fungal, prismwake, glassback, and lantern signals, but not the private intent of any ecological partner.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/ledger-breeding-ground-eclipse-reserves-v0.v0.json",
+        "Eusocial Interbeing/Ecology/Breeding Grounds.md"
+      ]
+    },
+    {
+      "text": "Veyr can ration cups, inspect and publish portable records, perform low-surface repair with two chest manipulators, request heat or material flow, and witness contributions; Veyr cannot command the trophic chain to honor a claim.",
+      "source_refs": [
+        "Eusocial Interbeing/Species/Sa'ueia.md",
+        "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md"
+      ]
+    },
+    {
+      "text": "The old-return family's credit and the new household's current work are both materially real, but they are witnessed over different timescales and produce unequal access under shortage.",
+      "source_refs": [
+        "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+        "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective stays with Veyr's Sa'ueia body and reserve-keeper jurisdiction: a long hexapod folded around low basins, using facial chemical fans, throat signaling, chest manipulators, public objects, and visible ecological signals.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Sa'ueia.md",
+          "prompts/interactive-fiction-weaver.md"
+        ]
+      },
+      {
+        "text": "The opening choice establishes ordinary provisioning labor before the prismwake refusal exposes the shortfall and arrival claims.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Veyr owns nursery triage and cup allocation, while the road owns its intake channels, the mat owns sugar release, the herd owns heat transfer and departure, and the grove owns root sugar and eclipse lighting.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+          "Eusocial Interbeing/Biosphere/Primary Producers/Prismwake Mats.md",
+          "Eusocial Interbeing/Biosphere/Grazers and Browsers/Glassback Grazers.md",
+          "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+          "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md"
+        ]
+      },
+      {
+        "text": "Portable archive cords and public biological signals are receipts and claims, not commands or perfect moral verdicts.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+          "Eusocial Interbeing/Technologies/Sa'auei'a Mobile Technologies.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Three reserve basins, full and half-depth cups, Veyr's open archive, Ossa's old cords, Rin's sampled bundles and new receipt, the mat-repair mesh, the heat wick, and the ration rail retain explicit placement across folds.",
+        "source_refs": [
+          "examples/ink/zyphos/ledger-breeding-ground-eclipse-reserves-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every final allocation must expose who is fed, which partner or future obligation pays, and what breaks when Veyr treats procedure as a substitute for capacity.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md"
+        ]
+      },
+      {
+        "text": "Old credit remains a real intertemporal bargain while new-household exclusion remains a real class pressure; the fixture must not erase either truth for a clean moral binary.",
+        "source_refs": [
+          "examples/lore-grounding/zyphos/ledger-breeding-ground-eclipse-reserves-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Branch consequences must remain visible through basin fill and heat, intake candles, mat release colors, glassback posture, archive cords, cup depth, queue geometry, and state-gated endings.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "examples/visual/zyphos/ledger-breeding-ground-eclipse-reserves-v0.branch-and-fold.v0.visual.json"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let Veyr's ration authority override ecological refusal or make public bookkeeping create missing food or heat.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md"
+        ]
+      },
+      {
+        "text": "Do not treat the old family as fraudulent merely because its advantage compounds, or the new household as fully trusted merely because its present need is sympathetic.",
+        "source_refs": [
+          "examples/lore-grounding/zyphos/ledger-breeding-ground-eclipse-reserves-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Do not give any participant omniscient access to the motives of the road, mat, herd, grove, or other families.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold ordinary reserve work, a public shortfall response, a trophic bargain, and final allocation into eight state-gated endings.",
+    "choice_layers": [
+      "routine_intake_work",
+      "shortfall_response",
+      "trophic_bargain",
+      "final_allocation"
+    ],
+    "variables": [
+      "reserve_volume",
+      "reserve_heat",
+      "road_credit",
+      "mat_consent",
+      "herd_trust",
+      "nursery_pressure",
+      "public_ledger",
+      "newcomer_standing",
+      "old_family_claim",
+      "eclipse_time"
+    ],
+    "ending_gates": [
+      "ending_core_success",
+      "ending_core_cost",
+      "ending_old_credit_success",
+      "ending_old_credit_cost",
+      "ending_new_credit_success",
+      "ending_new_credit_cost",
+      "ending_shared_success",
+      "ending_shared_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_road_intake",
+      "ink_path": "routine_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Feed the fungal road clean failed tissue with explicit provenance so it can supply mineral liquor safely.",
+      "state_basis": [
+        "Candle roads digest failed grafts, remember honest material, and regulate contamination and route access.",
+        "Reserve basins depend on road-processed minerals."
+      ],
+      "reviewed_consequences": [
+        "Raises road_credit and reserve_volume; later intake-channel imagery, old-credit gate, totality threshold, and endings read those variables."
+      ],
+      "training_hooks": ["provenanced_waste_as_input", "decomposer_infrastructure"]
+    },
+    {
+      "branch_id": "prime_herd_heat",
+      "ink_path": "routine_choice",
+      "action_type": "use_object",
+      "actor_intent": "Use a removable heat wick to request voluntary heat transfer from Scored Blue before the herd departs.",
+      "state_basis": [
+        "Glassbacks store and share heat through translucent dorsal plates.",
+        "A heat-transfer contact must preserve the grazer's ability to withdraw."
+      ],
+      "reviewed_consequences": [
+        "Raises reserve_heat and herd_trust while spending eclipse_time; later herd posture, final gates, and heat-failure prose read those variables."
+      ],
+      "training_hooks": ["consensual_heat_transfer", "mobile_heat_infrastructure"]
+    },
+    {
+      "branch_id": "prime_mat_consent",
+      "ink_path": "routine_choice",
+      "action_type": "repair",
+      "actor_intent": "Repair the attached prismwake lobe before accepting its sugar release.",
+      "state_basis": [
+        "Prismwake mats remember damage and reward careful repair and harvesting.",
+        "The producer lobe retains control over what tissue it releases."
+      ],
+      "reviewed_consequences": [
+        "Raises mat_consent and reserve_volume while spending eclipse_time; later mat colors, labor-for-sugar option, shared-ration gate, and ending state read the variables."
+      ],
+      "training_hooks": ["repair_before_harvest", "producer_consent"]
+    },
+    {
+      "branch_id": "prime_public_accounts",
+      "ink_path": "routine_choice",
+      "action_type": "show_object",
+      "actor_intent": "Make outstanding claims and obligations visible before routine serving begins.",
+      "state_basis": [
+        "Sa'ueia carry route-memory instruments and portable archives.",
+        "Reserve interpretation can harden into class power when claims stay private."
+      ],
+      "reviewed_consequences": [
+        "Raises public_ledger, newcomer_standing, and nursery_pressure; later queue visibility, new-credit and shared-ration gates, and closure pressure read those variables."
+      ],
+      "training_hooks": ["public_accounting", "transparency_has_labor_cost"]
+    },
+    {
+      "branch_id": "verify_old_family_claim",
+      "ink_path": "shortfall_choice",
+      "action_type": "inspect_object",
+      "actor_intent": "Test Ossa's inherited route cord against present road and mat evidence rather than accepting or dismissing prestige alone.",
+      "state_basis": [
+        "Ossa's family has a real long return history.",
+        "Current shortage and old repayment are distinct facts."
+      ],
+      "reviewed_consequences": [
+        "Raises old_family_claim and public_ledger while spending eclipse_time; enables the old-credit bargain and strengthens the final old-credit gate."
+      ],
+      "training_hooks": ["verify_inherited_credit", "past_contribution_present_shortage"]
+    },
+    {
+      "branch_id": "witness_new_household_work",
+      "ink_path": "shortfall_choice",
+      "action_type": "repair",
+      "actor_intent": "Turn Rin's present materials and repair skill into a multi-species public receipt.",
+      "state_basis": [
+        "Rin lacks a durable archive but carries clean material and useful repair mesh.",
+        "Road sampling and mat repair can begin new standing without inventing a past."
+      ],
+      "reviewed_consequences": [
+        "Raises newcomer_standing and road_credit while spending eclipse_time; enables current-contribution recognition and strengthens the final new-credit gate."
+      ],
+      "training_hooks": ["current_labor_becomes_credit", "archive_loss_class_pressure"]
+    },
+    {
+      "branch_id": "publish_mat_damage",
+      "ink_path": "shortfall_choice",
+      "action_type": "gesture",
+      "actor_intent": "Ask the mat to display current damage provenance beside both claims without treating provenance as personal guilt.",
+      "state_basis": [
+        "Prismwake mats remember bite and visitor patterns.",
+        "A dependent grazer traveled under Ossa's family protection, but Ossa did not personally make the bite."
+      ],
+      "reviewed_consequences": [
+        "Raises mat_consent, public_ledger, and nursery_pressure while lowering old_family_claim; later public evidence and ending texture read those variables."
+      ],
+      "training_hooks": ["public_damage_provenance", "liability_not_personal_guilt"]
+    },
+    {
+      "branch_id": "ration_adults_early",
+      "ink_path": "shortfall_choice",
+      "action_type": "withhold_resource",
+      "actor_intent": "Preserve full measures for high-dependency nursery residents by reducing all adult portions before the final allocation.",
+      "state_basis": [
+        "Caretakers own triage among residents.",
+        "Cup depth makes ration categories visible to both queues."
+      ],
+      "reviewed_consequences": [
+        "Raises reserve_volume, reserve_heat, nursery_pressure, and public_ledger; later basin capacity, caretaker posture, core gate, and shared-ration visibility read those variables."
+      ],
+      "training_hooks": ["early_rationing", "equality_as_visible_tableware"]
+    },
+    {
+      "branch_id": "spend_old_route_credit",
+      "ink_path": "bargain_choice",
+      "action_type": "authorize",
+      "actor_intent": "Use a verified old claim to request a current mineral advance while recording future repair.",
+      "state_basis": [
+        "Available only when Ossa's claim is strongly verified.",
+        "Old credit can request risk-bearing supply but cannot own it."
+      ],
+      "reviewed_consequences": [
+        "Spends old_family_claim and road_credit, raises reserve_volume and nursery_pressure, and visibly opens a reluctant dark intake channel."
+      ],
+      "training_hooks": ["intertemporal_credit", "recognized_privilege"]
+    },
+    {
+      "branch_id": "recognize_current_contribution",
+      "ink_path": "bargain_choice",
+      "action_type": "authorize",
+      "actor_intent": "Create Rin's first independent public claim from sampled material and completed repair.",
+      "state_basis": [
+        "Available only after enough present work has been witnessed.",
+        "A new household can begin a record but cannot retroactively acquire old standing."
+      ],
+      "reviewed_consequences": [
+        "Raises newcomer_standing, public_ledger, and reserve_volume while spending eclipse_time; strengthens the new-credit ending gate and visual receipt."
+      ],
+      "training_hooks": ["new_credit_admission", "multi_species_receipt"]
+    },
+    {
+      "branch_id": "trade_labor_for_sugar",
+      "ink_path": "bargain_choice",
+      "action_type": "gesture",
+      "actor_intent": "Offer a future repair watch directly to the mat in exchange for one limited sugar release.",
+      "state_basis": [
+        "Available only after the mat has enough consent to negotiate.",
+        "The mat can release one handspan and mark future repair on a separate tear."
+      ],
+      "reviewed_consequences": [
+        "Spends mat_consent and eclipse_time, raises reserve_volume, and lowers nursery_pressure; later mat state and shared gate read the remaining consent."
+      ],
+      "training_hooks": ["labor_for_producer_release", "tomorrow_as_price"]
+    },
+    {
+      "branch_id": "borrow_herd_heat",
+      "ink_path": "bargain_choice",
+      "action_type": "gesture",
+      "actor_intent": "Ask Scored Blue to delay the calving route and provide one last voluntary heat transfer.",
+      "state_basis": [
+        "Glassbacks own their heat and departure timing.",
+        "Calves need retained warmth on the route."
+      ],
+      "reviewed_consequences": [
+        "Raises reserve_heat, lowers herd_trust and nursery_pressure, and spends eclipse_time; final heat gates and herd departure imagery preserve the cost."
+      ],
+      "training_hooks": ["borrowed_heat", "calving_route_debt"]
+    },
+    {
+      "branch_id": "protect_nursery_core",
+      "ink_path": "final_choice",
+      "action_type": "withhold_resource",
+      "actor_intent": "Serve high-dependency nursery residents in full and close both arrival draws.",
+      "state_basis": [
+        "Success depends on sufficient reserve volume and heat plus manageable nursery pressure."
+      ],
+      "reviewed_consequences": [
+        "Routes to protected core with two recorded exclusions, or to a closure ending proving that control cannot create missing supply."
+      ],
+      "training_hooks": ["triage_under_scarcity", "closure_not_capacity"]
+    },
+    {
+      "branch_id": "honor_old_credit",
+      "ink_path": "final_choice",
+      "action_type": "authorize",
+      "actor_intent": "Advance one ration to the old-return family while attaching visible repair obligations.",
+      "state_basis": [
+        "Success depends on remaining old_family_claim, road_credit, and reserve_volume."
+      ],
+      "reviewed_consequences": [
+        "Routes to an advance with publicly priced future labor or to an overdraw that converts inherited standing into immediate nursery loss."
+      ],
+      "training_hooks": ["credit_with_visible_price", "compounding_access"]
+    },
+    {
+      "branch_id": "honor_new_contribution",
+      "ink_path": "final_choice",
+      "action_type": "transfer_resource",
+      "actor_intent": "Feed Rin's exhausted provider and recognize present multi-species contribution as the start of independent credit.",
+      "state_basis": [
+        "Success depends on newcomer_standing, public_ledger, and reserve_heat."
+      ],
+      "reviewed_consequences": [
+        "Routes to a witnessed first claim or to relief funded only by keeper authority, leaving a split ecological account."
+      ],
+      "training_hooks": ["present_work_as_standing", "declaration_without_backing"]
+    },
+    {
+      "branch_id": "share_the_shortfall",
+      "ink_path": "final_choice",
+      "action_type": "distribute_resource",
+      "actor_intent": "Distribute one thin measure across nursery and arrivals while keeping the missing supply and future obligations public.",
+      "state_basis": [
+        "Success depends on a public ledger, remaining mat consent, herd trust, and enough eclipse time for a safe thin ration."
+      ],
+      "reviewed_consequences": [
+        "Routes to a consensual shared repair burden or to equal division below safe capacity that cools culture and spreads harm."
+      ],
+      "training_hooks": ["shared_shortfall", "fairness_below_threshold"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Any durable memory, relationship, or class-status update for Veyr, Ossa, Rin, Scored Blue, either family, or the west intake ecology",
+      "Promotion of story-local character names, family histories, flood event, or basin arrangement into Zyphos canon",
+      "Any inference that visible ecological signals reveal a private unified intent",
+      "Website replay readiness before a durable west terrace scene_set or blockout exists"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Ledger elaborator applying the four named Ghostlight reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "reviewer_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "verdict": "accepted"
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "verdict": "accepted"
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "verdict": "accepted"
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "verdict": "accepted"
+      }
+    ],
+    "review_notes": [
+      "Narrative quality review accepted at B-level or better: orientation 5/5, coherence 5/5, pacing 4/5, voice 5/5, tonal fit 5/5, IF playability 5/5. Revision applied: the prismwake bite warning and claimant arrival were split into separate Ink knots so the pivotal ecological refusal receives its own replay beat before new characters enter.",
+      "Lore grounding review accepted: source coverage 5/5, canon fit 5/5, grounding quality 5/5, vault backfill value 5/5. Revision applied: removed an unsupported quadruped comparison from Scored Blue's visual description while keeping the source-supported low body and dorsal heat plates; story-local flood loss and character names remain author-only.",
+      "Visual continuity review accepted for B-level draft replay: segmentation 5/5, prompts 5/5, character visibility 5/5, branch continuity 5/5, website replay 4/5. All fourteen base prompts are standalone, every visible named body has a matching ref, all sixteen material branches have visible modifiers, and the embedded scene_set map covers every scene; a hand-built blockout remains a future high-consistency rendering step.",
+      "Spatial cohesion review accepted: layout 5/5, sightlines 5/5, body affordance 5/5, movement/access 5/5, object geometry 5/5, branch spatial state 5/5. Revision applied: Ossa now explicitly uncoils the long archive cord across the fungal boundary and Veyr takes custody before testing its two ends; the map fixes west/routeward, east/nurseryward, mat-side, and grove-side relations."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "zyphos_lore_content_readable": true
+    }
+  }
+}

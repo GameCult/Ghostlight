@@ -1,0 +1,68 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "ledger-breeding-ground-eclipse-reserves-v0.bfl-simple-v0",
+  "fixture_id": "ledger-breeding-ground-eclipse-reserves-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Painterly speculative-ecology storybook frame, restrained gouache and ink texture, low-energy bioluminescence, readable alien anatomy, precise living infrastructure, deep eclipse blues against muted amber, teal, silver-rose, and dark mineral earth, warm workplace comedy under material scarcity, cinematic interactive-fiction composition.",
+  "prompts": [
+    {
+      "id": "01_west_terrace_establishing",
+      "prompt": "Wide elevated view of a low fan-shaped outdoor nursery terrace: two amber fungal road channels enter from the narrow west mouth; three black-glazed reserve basins and a low ration rail fill the center; three ramps descend east into nursery hollows; a silver-rose living producer mat floats in a shallow side channel; blue-glowing lantern roots and a glassback heat rail line the opposite edge. Long-bodied six-limbed Sa'ueia caretakers move low cups while a broad grazer with translucent teal dorsal plates waits under an enormous fixed black planet crossing the dim sun."
+    },
+    {
+      "id": "02_reserve_keeper_routine",
+      "prompt": "Medium view of Veyr, a rust-red long-bodied Sa'ueia hexapod with four digitigrade running legs, two small three-digit chest arms, wedge head, facial chemical fans, and a dark bare throat patch, folded around a black-glazed basin and stirring steaming mineral-sugar culture with a broad leaf paddle. Low feeding cups, amber fungal candles, silver-rose mat tissue, blue lantern knots, and Scored Blue's translucent teal dorsal plates show the living supply chain around the work."
+    },
+    {
+      "id": "03_routine_work_hub",
+      "prompt": "Veyr folds between four reachable work stations around three low reserve basins: clean failed graft strips in a separate amber fungal collection bed, a woven heat wick beside teal glassback plates, mineral repair mesh beside a torn silver-rose photosynthetic mat in shallow water, and an open portable archive of translucent membranes and braided claim cords beside full and half-depth cups. Three nursery ramps and blue lantern knots remain visible behind the low ration rail."
+    },
+    {
+      "id": "04_routine_fold",
+      "prompt": "Working nursery intake terrace under early eclipse: Veyr stirs three central black-glazed basins, six-limbed caretakers carry filled low cups down three shallow ramps, two amber fungal intake channels pass clear mineral liquor, a repaired silver-rose mat edge glows near a skim tray, and Scored Blue lends teal plate heat through a clean woven wick beneath cold-blue lantern-tree knots."
+    },
+    {
+      "id": "05_prismwake_warning",
+      "prompt": "Pivotal silver-red warning from a thin living photosynthetic mat in a shallow water channel: its torn edge lifts, its green sugar release closes, and a nearby basin falls below the dark fill mark. Veyr freezes with the leaf paddle over the basin; one of two amber fungal intake rows goes black; Scored Blue darkens translucent dorsal plates and turns toward departure under the deepening eclipse."
+    },
+    {
+      "id": "06_claimants_arrive",
+      "prompt": "At an amber fungal boundary on a fan-shaped nursery terrace, Veyr faces two Sa'ueia claimants. Ossa is an older gray-fibered long hexapod with polished old braided cords on a dark flank frame. Rin is a younger ochre-fibered long hexapod with a patched frame, clean work bundles, rolled repair mesh, and one exhausted household provider folded behind. Three reserve basins, a low ration rail, teal glassback plates, silver-red mat tissue, and blue lantern knots make the shortage visible."
+    },
+    {
+      "id": "07_shortfall_response",
+      "prompt": "Allocation puzzle under eclipse: Veyr stands between Ossa's polished old cord stretched toward road and mat evidence, Rin's clean bundles in a fungal sample bed, a lifted silver-red damage display, and stacks of full-depth and half-depth nursery cups. The two families wait beyond amber candles while long-bodied caretakers gather behind the ration rail and Scored Blue pauses between the heat rail and departure route."
+    },
+    {
+      "id": "08_public_claims",
+      "prompt": "Wide public-accounting frame on the west terrace: an open low archive displays Ossa's amber-stained old cords beside Rin's sampled fiber and mineral repair mesh; one fungal intake is dark, the mat shows silver-red damage, black-glazed basins expose their fill marks, and empty cups stack behind a growing ring of six-limbed nursery caretakers. Veyr folds between the routeward claimants and nurseryward need."
+    },
+    {
+      "id": "09_trophic_bargain",
+      "prompt": "Veyr at the center of four material bargains during near-total eclipse: an old cord crossing a dark fungal channel, a new fiber-and-mesh claim forming on an open archive, a repaired prismwake edge with a second blue-marked tear, and a woven heat wick reaching Scored Blue's translucent teal dorsal plates. Ossa, Rin, nursery caretakers, three basins, and cold-blue lantern ramps remain in one readable frame."
+    },
+    {
+      "id": "10_totality_allocation",
+      "prompt": "Wide frontal totality image of an alien nursery terrace as a living ledger: amber fungal channels at the west mouth, silver-rose prism cells in a shallow side channel, teal glassback plates at a root-lined heat rail, blue lantern knots above three eastward nursery ramps, and three black-glazed basins at center. Veyr stands over full and half cups between Ossa's old cord, Rin's fresh receipt, routeward claimants, and a low ring of nursery caretakers."
+    },
+    {
+      "id": "11_nursery_core_ending",
+      "prompt": "Under deep blue totality, Veyr lowers the ration rail while caretakers carry full cups down three nursery ramps. Ossa, Rin, and an exhausted provider remain beyond amber fungal candles beside empty route cups and water-mineral cloths. Black-glazed basins, a dim producer mat, and the grove-side heat rail make the cost of protected nursery triage visible."
+    },
+    {
+      "id": "12_old_credit_ending",
+      "prompt": "At the amber road boundary, Veyr presents one filled route cup to older gray-fibered Ossa while an old braided claim cord loops through fresh blue repair markers on an open archive. Younger ochre-fibered Rin watches beside current work bundles; reserve basins and the nursery cup stack remain visible behind Veyr; a silver-red mat damage record glows at the edge."
+    },
+    {
+      "id": "13_new_credit_ending",
+      "prompt": "Veyr sets a steaming low cup beside Rin's fresh fiber-and-mesh claim cord at the amber fungal boundary. Rin supports an exhausted Sa'ueia provider while Ossa watches from polished old cords. One green mat repair edge, a road candle, Scored Blue's teal plate at the heat wick, three basins, and blue lantern knots show whether the new claim has living backing."
+    },
+    {
+      "id": "14_shared_shortfall_ending",
+      "prompt": "Symmetrical totality aftermath: matching rows of half-depth cups cross both sides of a low ration rail, some carried down three nursery ramps and others served to Ossa, Rin, and an exhausted provider beyond amber fungal candles. Veyr stands at an open archive between old and new cords; a green mat strip, teal heat wick, thin mineral flow, and an empty warm third basin complete the shared trophic account."
+    }
+  ]
+}

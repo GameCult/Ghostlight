@@ -1,0 +1,861 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "ledger-breeding-ground-eclipse-reserves-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/zyphos/ledger-breeding-ground-eclipse-reserves-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/ledger-breeding-ground-eclipse-reserves-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ledger-breeding-ground-eclipse-reserves-v0.west-terrace-shortfall",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a Sa'ueia breeding-ground reserve shortfall during eclipse ingress.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for the west intake terrace, ordinary reserve labor, a prismwake refusal, two unequal family claims, public trophic bargaining, totality allocation, and four ending families.",
+    "segmentation_rule": "Use separate anchors for terrace orientation, keeper routine, the routine work hub, its folded result, the single prismwake warning beat, claimant arrival, the shortfall response hub, the public claims fold, the trophic bargain hub, totality threshold, and every ending family. The silver-red bite warning stands alone before Ossa and Rin enter the active frame.",
+    "prompting_rule": "Every base prompt restates camera, terrace geometry, light, materials, bodies, tools, and placements for a general image model. Character refs are assembled only for named or grouped characters visible in that frame. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Painterly speculative-ecology storybook frame, restrained gouache and ink texture, low-energy bioluminescence, readable alien anatomy, precise living infrastructure, deep eclipse blues against muted amber, teal, silver-rose, and dark mineral earth, warm workplace comedy under material scarcity, cinematic interactive-fiction composition.",
+    "prompt_assembly_rule": "Assemble the global_style_cue, each scene base_image_prompt, visual refs only for named characters or groups visible in that scene, and triggered state_image_modifiers or global_branch_image_modifiers. Every text-only render receives complete visible terrace geometry. Keep visual_continuity_notes out of prompt text.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture returns to one terrace from several angles and branches change cup placement, intake lights, mat repair, herd position, archive display, and ration-rail state. The embedded map fixes those relationships for draft replay planning.",
+      "future_scene_set_need": "Before high-consistency website rendering, build a hand-authored plan view or simple 3D blockout for the west terrace using the embedded zones, routes, camera slots, and state anchors."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "ledger_west_terrace_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide elevated establishing view of an outdoor alien nursery intake terrace shaped like a low fan of dark root-bound stone. The narrow western mouth meets a living fungal road marked by two parallel rows of thumb-sized amber fruiting candles and two shallow intake channels. The broad eastern edge descends by three low ramps into warm oval nursery hollows. A shallow water channel lined with a thin silver-rose photosynthetic mat runs along the mat-side edge. Thick lantern-tree roots, hanging cold-blue light knots, and a waist-low heat rail occupy the grove-side edge. Three round black-glazed reserve basins and a low ration rail sit in the center. Long-bodied six-limbed Sa'ueia caretakers fold around low cups; each has four tall digitigrade running legs and two smaller three-digit chest manipulators. A broad dark glassback grazer with translucent teal-glowing dorsal plates stands at the heat rail. An enormous fixed black planet begins to cover a dim sun above the terrace.",
+        "visible_characters": [
+          {
+            "agent_id": "nursery_caretaker_ring",
+            "default_stance": "several caretakers folded around basins and moving cups toward the three nursery ramps",
+            "visual_ref": "visual_character_refs.groups.nursery_caretaker_ring"
+          },
+          {
+            "agent_id": "scored_blue_glassback",
+            "default_stance": "broadside at the grove-side heat rail",
+            "visual_ref": "visual_character_refs.characters.scored_blue_glassback"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Facing nurseryward, west and routeward are behind the central basins, the wet prismwake channel is mat-side, and lantern roots plus the heat rail are grove-side.",
+          "The three basins, ration rail, two fungal channels, wet mat channel, heat rail, three nursery ramps, and west road mouth remain fixed across every camera."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_reserve_keeper_routine",
+        "ink_anchor": "routine_keeper",
+        "base_image_prompt": "Medium view across the central reserve basins on an outdoor fan-shaped stone terrace during eclipse ingress. Veyr, a rust-red long-bodied Sa'ueia hexapod, folds four digitigrade running legs around the middle black-glazed basin while two smaller chest arms stir warm mineral-sugar culture with a broad leaf paddle; paired chemical-sensing facial fans angle over faint steam and a bare throat patch shows dark work heat. Full and half-depth feeding cups stand beside a low ration rail. Other Sa'ueia caretakers carry cups toward three shallow nursery ramps in the background. At grove-side, Scored Blue, a broad low alien grazer on sturdy walking legs with translucent teal heat-storage plates, stands beside a woven heat wick and low rail. Amber fungal candles and a silver-rose wet producer mat frame the opposite edges.",
+        "visible_characters": [
+          {
+            "agent_id": "veyr_reserve_keeper",
+            "default_stance": "folded around the middle basin with both chest hands on the leaf paddle",
+            "visual_ref": "visual_character_refs.characters.veyr_reserve_keeper"
+          },
+          {
+            "agent_id": "scored_blue_glassback",
+            "default_stance": "broadside beside the clean heat wick",
+            "visual_ref": "visual_character_refs.characters.scored_blue_glassback"
+          },
+          {
+            "agent_id": "nursery_caretaker_ring",
+            "default_stance": "moving low cups between ration rail and nursery ramps",
+            "visual_ref": "visual_character_refs.groups.nursery_caretaker_ring"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Sa'ueia manipulate tools only with the smaller anterior chest limbs and support their long body on four running legs.",
+          "The reserve culture is an edible warm liquid in open low basins, not a machine display."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_routine_work_hub",
+        "ink_anchor": "routine_choice",
+        "base_image_prompt": "Wide-medium choice composition centered on Veyr at three low reserve basins. Four reachable work stations form a clear arc: routeward, a fungal collection bed holds clean pale failed-graft strips beside two amber intake channels; grove-side, a removable woven heat wick rests on a rail beside Scored Blue's teal dorsal plates; mat-side, a silver-rose photosynthetic sheet floats in a shallow water channel with one torn edge and a roll of mineral repair mesh; beside the ration rail, a portable archive case opens into layered translucent memory membranes and braided claim cords. Veyr's rust-red long hexapod body occupies the center with four folded running legs and two free chest hands, able to reach one station at a time. Nursery caretakers and three eastward ramps remain visible behind the rail under cold-blue lantern knots.",
+        "visible_characters": [
+          {
+            "agent_id": "veyr_reserve_keeper",
+            "default_stance": "folded at the basin center, facial fans scanning the four work stations",
+            "visual_ref": "visual_character_refs.characters.veyr_reserve_keeper"
+          },
+          {
+            "agent_id": "scored_blue_glassback",
+            "default_stance": "waiting beyond the empty heat wick at grove-side",
+            "visual_ref": "visual_character_refs.characters.scored_blue_glassback"
+          },
+          {
+            "agent_id": "nursery_caretaker_ring",
+            "default_stance": "working behind the ration rail",
+            "visual_ref": "visual_character_refs.groups.nursery_caretaker_ring"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The four opening choices are spatially reachable from the central basin but occur at distinct terrace edges.",
+          "Failed graft strips remain in the fungal collection bed, never in the edible basin."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide working view of the fan-shaped west intake terrace before crisis. Veyr stirs the middle of three black-glazed reserve basins while Sa'ueia caretakers move filled cups over a low ration rail toward three nursery ramps. At the western mouth, two amber fungal candle rows frame mineral intake channels and a separate waste collection bed. A silver-rose photosynthetic mat fills the shallow mat-side water channel; a repaired edge may glow green. At grove-side, Scored Blue stands at a heat rail beneath cold-blue lantern knots with a clean woven wick near the dorsal plates. A low open archive case displays translucent membranes and cords beside the cups. The fixed black planet has taken a visible bite from the dim sun.",
+        "visible_characters": [
+          {
+            "agent_id": "veyr_reserve_keeper",
+            "default_stance": "working at the middle basin",
+            "visual_ref": "visual_character_refs.characters.veyr_reserve_keeper"
+          },
+          {
+            "agent_id": "scored_blue_glassback",
+            "default_stance": "at the heat rail, able to step away",
+            "visual_ref": "visual_character_refs.characters.scored_blue_glassback"
+          },
+          {
+            "agent_id": "nursery_caretaker_ring",
+            "default_stance": "carrying cups eastward and returning empties",
+            "visual_ref": "visual_character_refs.groups.nursery_caretaker_ring"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "reserve_volume >= 4",
+            "modifier_prompt": "The first and second black-glazed basins both reach their dark fill marks with warm pale culture."
+          },
+          {
+            "trigger": "reserve_heat >= 4",
+            "modifier_prompt": "A faint gold heat ring glows around two basin collars and thin steam rises from the culture."
+          },
+          {
+            "trigger": "road_credit >= 4",
+            "modifier_prompt": "Both parallel fungal intake channels show even amber candles and clear mineral liquor moving toward the basins."
+          },
+          {
+            "trigger": "mat_consent >= 3",
+            "modifier_prompt": "The mineral-mesh repair sits flush against the mat and a pale green strip releases tissue into a low skim tray."
+          },
+          {
+            "trigger": "herd_trust >= 3",
+            "modifier_prompt": "Scored Blue rests one translucent teal plate against the clean heat wick while the herd stands in a calm loose crescent."
+          },
+          {
+            "trigger": "public_ledger >= 3",
+            "modifier_prompt": "The portable archive stands open beside the ration rail with translucent claim membranes visible to workers on both sides."
+          },
+          {
+            "trigger": "nursery_pressure >= 2",
+            "modifier_prompt": "A faster line of empty cups returns from the nursery ramps and stacks beside Veyr's forefeet."
+          }
+        ],
+        "visual_continuity_notes": [
+          "Only triggered modifiers change the opening routine result; unchosen props remain available but inactive."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_prismwake_warning",
+        "ink_anchor": "shortfall_bite",
+        "base_image_prompt": "Pivotal close-wide frame of the mat-side edge of an alien nursery terrace. A thin photosynthetic sheet floating in a shallow water channel lifts prism cells in a sharp silver-red torn-bite pattern. The sugar skim tray beside it is empty and its green release edge has closed. Veyr, a rust-red long-bodied six-limbed Sa'ueia, turns both chemical-sensing facial fans toward the flash from beside three central black-glazed reserve basins; the second basin's pale culture sits visibly below its dark fill mark. At the western road mouth one of two amber fungal intake rows has gone completely dark. At grove-side, Scored Blue darkens two translucent dorsal plates and angles the broad body toward departure. Cold-blue lantern knots brighten as the fixed black planet covers more of the dim sun.",
+        "visible_characters": [
+          {
+            "agent_id": "veyr_reserve_keeper",
+            "default_stance": "twisted toward the mat warning with paddle held still over the basin",
+            "visual_ref": "visual_character_refs.characters.veyr_reserve_keeper"
+          },
+          {
+            "agent_id": "scored_blue_glassback",
+            "default_stance": "stepping one pace away from the heat rail toward the west road",
+            "visual_ref": "visual_character_refs.characters.scored_blue_glassback"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "This warning frame precedes claimant arrival and contains no Ossa, Rin, or arriving household bodies.",
+          "The mat warning is a visible damage record, not written text or a computer alarm."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_claimants_arrive",
+        "ink_anchor": "claimants_arrive",
+        "base_image_prompt": "Medium-wide routeward view across the western mouth of a fan-shaped nursery terrace. Two rows of amber fungal candles form a bright boundary between the traveling road and three central reserve basins; one mineral intake channel is dark. Ossa, an older gray-fibered long-bodied Sa'ueia hexapod with polished braided claim cords on a dark flank frame, stands still on one side of the boundary. Rin, a younger ochre-fibered Sa'ueia with a patched flank frame, stands on the other side beside clean bundles of shed fiber, dung cake, failed tool grips, and rolled mineral repair mesh; an exhausted Sa'ueia provider from Rin's household folds low behind them. Veyr faces both claimants from the basin side. Scored Blue and a few glassback bodies wait near the grove-side heat rail; three nursery ramps and cold-blue lantern knots remain visible behind Veyr.",
+        "visible_characters": [
+          {
+            "agent_id": "veyr_reserve_keeper",
+            "default_stance": "inside the terrace boundary facing both arrivals",
+            "visual_ref": "visual_character_refs.characters.veyr_reserve_keeper"
+          },
+          {
+            "agent_id": "ossa_old_return_delegate",
+            "default_stance": "routeward of the fungal candles with polished cords displayed",
+            "visual_ref": "visual_character_refs.characters.ossa_old_return_delegate"
+          },
+          {
+            "agent_id": "rin_new_household_provider",
+            "default_stance": "routeward of the fungal candles beside clean work bundles",
+            "visual_ref": "visual_character_refs.characters.rin_new_household_provider"
+          },
+          {
+            "agent_id": "rin_household",
+            "default_stance": "one exhausted provider folded behind Rin beside the patched flank frame",
+            "visual_ref": "visual_character_refs.groups.rin_household"
+          },
+          {
+            "agent_id": "scored_blue_glassback",
+            "default_stance": "near the heat rail with plates partly dark",
+            "visual_ref": "visual_character_refs.characters.scored_blue_glassback"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Both families remain routeward of the fungal boundary until an ending explicitly serves or admits a claim.",
+          "Ossa carries archival cords but no fresh material; Rin carries fresh material and damaged archive equipment."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_shortfall_response_hub",
+        "ink_anchor": "shortfall_choice",
+        "base_image_prompt": "Wide-medium allocation puzzle on an outdoor alien terrace under deepening eclipse. Veyr stands between three low reserve basins and two Sa'ueia claimants beyond amber fungal candles. Ossa's polished old claim cord can reach a road candle and the wet silver-red mat channel; Rin's clean bundles and rolled repair mesh sit beside a separate fungal sample bed; the damaged mat lobe has lifted a visible colored edge; full-depth and half-depth feeding cups are stacked at the low ration rail leading toward three nursery ramps. Ossa holds a still gray-fibered posture, Rin guards an exhausted ochre-fibered provider, Scored Blue waits by the heat rail, and nursery caretakers gather behind Veyr. The geometry makes inspection, repair, public display, and early rationing four distinct physical actions.",
+        "visible_characters": [
+          {
+            "agent_id": "veyr_reserve_keeper",
+            "default_stance": "centered between claim cords, sample bed, mat display, and cup stacks",
+            "visual_ref": "visual_character_refs.characters.veyr_reserve_keeper"
+          },
+          {
+            "agent_id": "ossa_old_return_delegate",
+            "default_stance": "holding one polished cord toward the sample points",
+            "visual_ref": "visual_character_refs.characters.ossa_old_return_delegate"
+          },
+          {
+            "agent_id": "rin_new_household_provider",
+            "default_stance": "beside clean work bundles and repair mesh",
+            "visual_ref": "visual_character_refs.characters.rin_new_household_provider"
+          },
+          {
+            "agent_id": "rin_household",
+            "default_stance": "exhausted provider folded near Rin at the boundary",
+            "visual_ref": "visual_character_refs.groups.rin_household"
+          },
+          {
+            "agent_id": "scored_blue_glassback",
+            "default_stance": "at grove-side, body angled between heat rail and departure",
+            "visual_ref": "visual_character_refs.characters.scored_blue_glassback"
+          },
+          {
+            "agent_id": "nursery_caretaker_ring",
+            "default_stance": "forming a loose line behind the ration rail",
+            "visual_ref": "visual_character_refs.groups.nursery_caretaker_ring"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ledger_public_claims_fold",
+        "ink_anchor": "claims_fold",
+        "base_image_prompt": "Wide public-accounting view of the fan-shaped west terrace. Three central reserve basins, a low ration rail, two fungal intake channels at the western mouth, a shallow silver-red prismwake channel at mat-side, and the grove-side glassback heat rail are all visible. Veyr has opened a portable archive beside Ossa's polished old cords and Rin's clean bundles. Ossa and Rin remain beyond the amber fungal boundary while nursery caretakers gather on the eastern basin side. Scored Blue stands between the heat rail and the departing herd. The fixed black planet covers most of the dim sun and cold-blue lantern knots outline the nursery ramps.",
+        "visible_characters": [
+          {
+            "agent_id": "veyr_reserve_keeper",
+            "default_stance": "folded at the open archive with facial fans aimed between both claims",
+            "visual_ref": "visual_character_refs.characters.veyr_reserve_keeper"
+          },
+          {
+            "agent_id": "ossa_old_return_delegate",
+            "default_stance": "still beside old cords at the route boundary",
+            "visual_ref": "visual_character_refs.characters.ossa_old_return_delegate"
+          },
+          {
+            "agent_id": "rin_new_household_provider",
+            "default_stance": "beside sampled material and the exhausted provider",
+            "visual_ref": "visual_character_refs.characters.rin_new_household_provider"
+          },
+          {
+            "agent_id": "rin_household",
+            "default_stance": "one exhausted body folded behind Rin",
+            "visual_ref": "visual_character_refs.groups.rin_household"
+          },
+          {
+            "agent_id": "scored_blue_glassback",
+            "default_stance": "half-turned toward the departure road",
+            "visual_ref": "visual_character_refs.characters.scored_blue_glassback"
+          },
+          {
+            "agent_id": "nursery_caretaker_ring",
+            "default_stance": "crowding or waiting behind the ration rail according to nursery pressure",
+            "visual_ref": "visual_character_refs.groups.nursery_caretaker_ring"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "old_family_claim >= 4",
+            "modifier_prompt": "Ossa's oldest cord carries a strong amber glow reflected by a nearby road candle."
+          },
+          {
+            "trigger": "old_family_claim <= 1",
+            "modifier_prompt": "Ossa's polished cords lie beside the mat's silver-red damage display while Ossa's bare throat patch turns cold pale."
+          },
+          {
+            "trigger": "newcomer_standing >= 3",
+            "modifier_prompt": "Rin's bundles sit in a sampled amber fungal bed and a strip of mineral mesh lies fixed across the mat tear."
+          },
+          {
+            "trigger": "public_ledger >= 3",
+            "modifier_prompt": "The open archive places Ossa's old cord and Rin's sampled fiber side by side in full view of both queues."
+          },
+          {
+            "trigger": "nursery_pressure >= 3",
+            "modifier_prompt": "More Sa'ueia caretakers brace four running feet around the low ration rail while empty cups stack behind them."
+          },
+          {
+            "trigger": "reserve_volume >= 4",
+            "modifier_prompt": "Two central basins reach their dark fill marks despite the closed sugar edge."
+          },
+          {
+            "trigger": "reserve_heat <= 2",
+            "modifier_prompt": "The pale reserve culture turns dull around the basin edges with almost no steam."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The claims fold preserves every chosen material position: cord at sample points, bundles in sample bed, repair mesh on mat, or half cups at rail."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_trophic_bargain_hub",
+        "ink_anchor": "bargain_choice",
+        "base_image_prompt": "Medium-wide bargaining frame at the central basins during near-total eclipse. Veyr stands inside a square of living affordances: Ossa's old braided cord crosses toward a dark fungal intake channel at routeward; Rin's sampled fiber and new blank cord rest on the open archive beside the basin; a repaired silver-rose mat edge and a second blue-marked tear occupy the wet mat-side channel; a clean woven heat wick stretches from a black-glazed basin collar to the grove-side rail where Scored Blue can step into contact. Ossa and Rin watch from beyond amber candles, nursery caretakers wait behind the ration rail, and cold-blue lantern knots outline the three eastward ramps.",
+        "visible_characters": [
+          {
+            "agent_id": "veyr_reserve_keeper",
+            "default_stance": "at the basin center with chest hands free to place cord, knot receipt, mark repair, or clean the heat wick",
+            "visual_ref": "visual_character_refs.characters.veyr_reserve_keeper"
+          },
+          {
+            "agent_id": "ossa_old_return_delegate",
+            "default_stance": "watching the old cord from routeward",
+            "visual_ref": "visual_character_refs.characters.ossa_old_return_delegate"
+          },
+          {
+            "agent_id": "rin_new_household_provider",
+            "default_stance": "watching the blank claim cord and sampled fiber",
+            "visual_ref": "visual_character_refs.characters.rin_new_household_provider"
+          },
+          {
+            "agent_id": "scored_blue_glassback",
+            "default_stance": "one step from the heat wick, body angled toward the herd route",
+            "visual_ref": "visual_character_refs.characters.scored_blue_glassback"
+          },
+          {
+            "agent_id": "nursery_caretaker_ring",
+            "default_stance": "waiting behind the ration rail",
+            "visual_ref": "visual_character_refs.groups.nursery_caretaker_ring"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ledger_totality_allocation",
+        "ink_anchor": "totality_threshold",
+        "base_image_prompt": "Wide frontal totality frame of an outdoor fan-shaped nursery intake terrace turned into a visible material ledger. An enormous fixed black planet covers the dim sun. At the western road mouth, amber fungal candles and two shallow intake channels lead toward three black-glazed reserve basins in the center. At mat-side, silver and rose prism cells float in a shallow water channel. At grove-side, Scored Blue and a glassback herd show translucent teal dorsal plates beside a woven heat rail under cold-blue lantern-tree knots. Three nursery ramps descend eastward behind a low ration rail. Veyr stands between full-depth and half-depth cup stacks; Ossa's polished old cord and Rin's fresh fiber receipt hang beside an open portable archive. Ossa and Rin wait routeward, and a ring of long-bodied Sa'ueia caretakers waits nurseryward.",
+        "visible_characters": [
+          {
+            "agent_id": "veyr_reserve_keeper",
+            "default_stance": "standing low at the cup stacks with both chest hands open",
+            "visual_ref": "visual_character_refs.characters.veyr_reserve_keeper"
+          },
+          {
+            "agent_id": "ossa_old_return_delegate",
+            "default_stance": "beside the old cord beyond the fungal boundary",
+            "visual_ref": "visual_character_refs.characters.ossa_old_return_delegate"
+          },
+          {
+            "agent_id": "rin_new_household_provider",
+            "default_stance": "beside the new receipt and exhausted household provider",
+            "visual_ref": "visual_character_refs.characters.rin_new_household_provider"
+          },
+          {
+            "agent_id": "rin_household",
+            "default_stance": "exhausted provider folded at Rin's rear flank",
+            "visual_ref": "visual_character_refs.groups.rin_household"
+          },
+          {
+            "agent_id": "scored_blue_glassback",
+            "default_stance": "at or near the heat rail according to herd trust",
+            "visual_ref": "visual_character_refs.characters.scored_blue_glassback"
+          },
+          {
+            "agent_id": "nursery_caretaker_ring",
+            "default_stance": "forming a low six-legged semicircle behind the ration rail",
+            "visual_ref": "visual_character_refs.groups.nursery_caretaker_ring"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "reserve_volume >= 4",
+            "modifier_prompt": "Two basins reach the dark fill line; the third remains visibly empty."
+          },
+          {
+            "trigger": "reserve_volume <= 2",
+            "modifier_prompt": "Only one basin reaches its fill line and the other two show exposed black glaze."
+          },
+          {
+            "trigger": "reserve_heat >= 4",
+            "modifier_prompt": "Gold warmth rings two basin collars and steam rises into blue eclipse light."
+          },
+          {
+            "trigger": "reserve_heat <= 2",
+            "modifier_prompt": "The culture edges look dull and cool with the woven heat wick hanging slack."
+          },
+          {
+            "trigger": "road_credit <= 1",
+            "modifier_prompt": "One fungal channel is black and the other narrows to a single amber sampling candle."
+          },
+          {
+            "trigger": "mat_consent >= 3",
+            "modifier_prompt": "One handspan of prismwake cells glows release-green beside the silver-red wound record."
+          },
+          {
+            "trigger": "herd_trust <= 1",
+            "modifier_prompt": "Scored Blue has stepped clear of the heat rail and the herd's teal plates face the departure road."
+          },
+          {
+            "trigger": "nursery_pressure >= 4",
+            "modifier_prompt": "Nursery caretakers brace all four running feet in a tight semicircle behind the ration rail."
+          },
+          {
+            "trigger": "public_ledger >= 4",
+            "modifier_prompt": "Ossa's polished cord and Rin's fresh fiber receipt hang at equal height on the open archive frame."
+          }
+        ],
+        "visual_continuity_notes": [
+          "All final choices begin from this fixed power geometry: Veyr and cups at center, arrivals west of the fungal boundary, caretakers east of the ration rail, ecological suppliers at their own edges."
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_ending_nursery_core",
+        "ink_anchor": "ending_core_success|ending_core_cost",
+        "base_image_prompt": "Medium-wide aftermath at the central basins under deep blue totality. Veyr, a rust-red long-bodied Sa'ueia reserve keeper, stands at a lowered low ration rail while nursery caretakers carry full cups down three eastward ramps. Ossa, Rin, and Rin's exhausted household provider remain west of the amber fungal boundary beside water-mineral cloths and empty route cups. Three black-glazed reserve basins, the silver-rose mat channel, grove-side heat rail, and cold-blue lantern knots remain visible. The frame centers the physical separation between fed nursery residents and excluded arrival claims.",
+        "visible_characters": [
+          {
+            "agent_id": "veyr_reserve_keeper",
+            "default_stance": "beside the lowered ration rail",
+            "visual_ref": "visual_character_refs.characters.veyr_reserve_keeper"
+          },
+          {
+            "agent_id": "ossa_old_return_delegate",
+            "default_stance": "routeward, knotting the refusal into an old cord",
+            "visual_ref": "visual_character_refs.characters.ossa_old_return_delegate"
+          },
+          {
+            "agent_id": "rin_new_household_provider",
+            "default_stance": "routeward beside an empty cup and the exhausted provider",
+            "visual_ref": "visual_character_refs.characters.rin_new_household_provider"
+          },
+          {
+            "agent_id": "rin_household",
+            "default_stance": "exhausted provider folded beside Rin",
+            "visual_ref": "visual_character_refs.groups.rin_household"
+          },
+          {
+            "agent_id": "nursery_caretaker_ring",
+            "default_stance": "carrying full cups eastward",
+            "visual_ref": "visual_character_refs.groups.nursery_caretaker_ring"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == nursery_core_protected",
+            "modifier_prompt": "Two basins remain warm enough to steam faintly while a complete line of full cups travels down all three nursery ramps."
+          },
+          {
+            "trigger": "ending_label == nursery_closure_cannot_create_supply",
+            "modifier_prompt": "Only one basin contains dull cooling culture; one caretaker returns an empty graft cup while the grove-side heat rail stands unused."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_ending_old_credit",
+        "ink_anchor": "ending_old_credit_success|ending_old_credit_cost",
+        "base_image_prompt": "Medium route-boundary aftermath under totality. Veyr stands inside the terrace beside an open portable archive and extends one filled cup toward Ossa, an older gray-fibered Sa'ueia waiting beyond amber fungal candles with polished claim cords. Rin and the exhausted new-household provider watch from the other side beside sampled work bundles. Behind Veyr, three black-glazed reserve basins and the low ration rail show the cost to the nursery. At mat-side, a silver-red prismwake damage pattern remains visible; at grove-side, teal glassback plates and cold-blue lantern knots edge the frame.",
+        "visible_characters": [
+          {
+            "agent_id": "veyr_reserve_keeper",
+            "default_stance": "holding a route cup near Ossa's claim cord",
+            "visual_ref": "visual_character_refs.characters.veyr_reserve_keeper"
+          },
+          {
+            "agent_id": "ossa_old_return_delegate",
+            "default_stance": "receiving or reaching toward the advanced cup",
+            "visual_ref": "visual_character_refs.characters.ossa_old_return_delegate"
+          },
+          {
+            "agent_id": "rin_new_household_provider",
+            "default_stance": "watching beside current work bundles",
+            "visual_ref": "visual_character_refs.characters.rin_new_household_provider"
+          },
+          {
+            "agent_id": "rin_household",
+            "default_stance": "exhausted provider folded behind Rin",
+            "visual_ref": "visual_character_refs.groups.rin_household"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == old_credit_advanced_with_obligation",
+            "modifier_prompt": "Ossa's old cord loops through two fresh blue repair markers on the open archive while the nearby road candle glows amber around the served cup."
+          },
+          {
+            "trigger": "ending_label == old_credit_overdraw",
+            "modifier_prompt": "The road candle beside Ossa's cord is black, a full cup is missing from the nursery stack, and the mat displays a bright blue unpaid-repair stripe."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_ending_new_credit",
+        "ink_anchor": "ending_new_credit_success|ending_new_credit_cost",
+        "base_image_prompt": "Medium boundary aftermath under eclipse-blue light. Veyr, a rust-red long-bodied Sa'ueia, sets a warm low cup beside Rin's fresh claim cord and sampled fiber at the amber fungal boundary. Rin, an ochre-fibered Sa'ueia with a patched flank frame, supports an exhausted household provider folded close to the ground. Ossa watches from beside polished old cords. The repaired silver-rose mat lobe, western fungal intake, three central basins, grove-side glassback heat rail, and cold-blue lantern knots are all visible around the act of serving one new claim.",
+        "visible_characters": [
+          {
+            "agent_id": "veyr_reserve_keeper",
+            "default_stance": "placing the warm cup beside the fresh receipt",
+            "visual_ref": "visual_character_refs.characters.veyr_reserve_keeper"
+          },
+          {
+            "agent_id": "rin_new_household_provider",
+            "default_stance": "supporting the exhausted provider at the cup",
+            "visual_ref": "visual_character_refs.characters.rin_new_household_provider"
+          },
+          {
+            "agent_id": "rin_household",
+            "default_stance": "exhausted provider drinking low at the boundary",
+            "visual_ref": "visual_character_refs.groups.rin_household"
+          },
+          {
+            "agent_id": "ossa_old_return_delegate",
+            "default_stance": "watching from beside old cords",
+            "visual_ref": "visual_character_refs.characters.ossa_old_return_delegate"
+          },
+          {
+            "agent_id": "scored_blue_glassback",
+            "default_stance": "at or away from the heat rail according to ecological backing",
+            "visual_ref": "visual_character_refs.characters.scored_blue_glassback"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == present_contribution_recognized",
+            "modifier_prompt": "One road candle glows beside Rin's new cord, the repaired mat edge shines green, and Scored Blue holds a teal plate against the heat wick while the provider drinks."
+          },
+          {
+            "trigger": "ending_label == declared_credit_without_ecological_backing",
+            "modifier_prompt": "The cup is warm in Rin's grasp, but the road candle is dark, the mat shows no green release, Scored Blue stands away from the slack heat wick, and one nursery cup space is empty."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "ledger_ending_shared_shortfall",
+        "ink_anchor": "ending_shared_success|ending_shared_cost",
+        "base_image_prompt": "Wide symmetrical aftermath of the fan-shaped nursery terrace during totality. Half-depth cups line both sides of the low ration rail: nursery caretakers carry some eastward down three ramps, while Ossa, Rin, and Rin's exhausted provider receive cups west of the amber fungal boundary. Veyr stands beside an open portable archive that displays old and new claim cords together. Three central black-glazed basins, the silver-rose mat-side water channel, Scored Blue at the grove-side heat rail, and cold-blue lantern knots create a complete visible trophic chain around the divided ration.",
+        "visible_characters": [
+          {
+            "agent_id": "veyr_reserve_keeper",
+            "default_stance": "at the open archive between two rows of half cups",
+            "visual_ref": "visual_character_refs.characters.veyr_reserve_keeper"
+          },
+          {
+            "agent_id": "ossa_old_return_delegate",
+            "default_stance": "receiving one half-depth cup routeward",
+            "visual_ref": "visual_character_refs.characters.ossa_old_return_delegate"
+          },
+          {
+            "agent_id": "rin_new_household_provider",
+            "default_stance": "sharing a half-depth cup with the exhausted provider",
+            "visual_ref": "visual_character_refs.characters.rin_new_household_provider"
+          },
+          {
+            "agent_id": "rin_household",
+            "default_stance": "exhausted provider drinking beside Rin",
+            "visual_ref": "visual_character_refs.groups.rin_household"
+          },
+          {
+            "agent_id": "scored_blue_glassback",
+            "default_stance": "near the heat wick or turning away according to ending state",
+            "visual_ref": "visual_character_refs.characters.scored_blue_glassback"
+          },
+          {
+            "agent_id": "nursery_caretaker_ring",
+            "default_stance": "carrying half cups down the nursery ramps",
+            "visual_ref": "visual_character_refs.groups.nursery_caretaker_ring"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "ending_label == shortfall_shared_with_consent",
+            "modifier_prompt": "The mat holds one green release strip, Scored Blue keeps one teal plate at the taut heat wick, the open fungal channel passes a thin clear flow, and the third basin is empty but still gold-warm."
+          },
+          {
+            "trigger": "ending_label == distributed_harm",
+            "modifier_prompt": "The basin culture is dull and cool, fungal candles narrow, the mat folds over its regrowth nodes, Scored Blue leads teal plates toward the road, and several half cups remain visibly insufficient."
+          }
+        ]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_road_intake_visual",
+        "trigger": "branch_label == prime_road_intake",
+        "apply_to_visual_scene_ids": ["ledger_routine_work_hub", "ledger_routine_fold"],
+        "modifier_prompt": "Veyr places labeled pale failed-graft strips in the separate fungal collection bed; clear mineral liquor moves through both amber intake channels toward the first basin."
+      },
+      {
+        "modifier_id": "prime_herd_heat_visual",
+        "trigger": "branch_label == prime_herd_heat",
+        "apply_to_visual_scene_ids": ["ledger_routine_work_hub", "ledger_routine_fold"],
+        "modifier_prompt": "A clean woven heat wick touches Scored Blue's bright teal dorsal plate and runs to a gold-warm basin collar."
+      },
+      {
+        "modifier_id": "prime_mat_consent_visual",
+        "trigger": "branch_label == prime_mat_consent",
+        "apply_to_visual_scene_ids": ["ledger_routine_work_hub", "ledger_routine_fold"],
+        "modifier_prompt": "Veyr presses pale mineral mesh over the prismwake tear while a narrow green edge releases sugar tissue into the skim tray."
+      },
+      {
+        "modifier_id": "prime_public_accounts_visual",
+        "trigger": "branch_label == prime_public_accounts",
+        "apply_to_visual_scene_ids": ["ledger_routine_work_hub", "ledger_routine_fold"],
+        "modifier_prompt": "The portable archive opens beside the ration rail into translucent layered membranes and several braided claim cords visible to nearby caretakers."
+      },
+      {
+        "modifier_id": "verify_old_family_claim_visual",
+        "trigger": "branch_label == verify_old_family_claim",
+        "apply_to_visual_scene_ids": ["ledger_shortfall_response_hub", "ledger_public_claims_fold"],
+        "modifier_prompt": "Ossa's oldest polished cord stretches from an amber road candle to the edge of the silver-red mat display while Veyr holds it above the empty basin."
+      },
+      {
+        "modifier_id": "witness_new_household_work_visual",
+        "trigger": "branch_label == witness_new_household_work",
+        "apply_to_visual_scene_ids": ["ledger_shortfall_response_hub", "ledger_public_claims_fold"],
+        "modifier_prompt": "Rin and Veyr fasten mineral mesh over the mat tear with four small chest hands while clean bundles rest inside a slowly brightening fungal sample bed."
+      },
+      {
+        "modifier_id": "publish_mat_damage_visual",
+        "trigger": "branch_label == publish_mat_damage",
+        "apply_to_visual_scene_ids": ["ledger_shortfall_response_hub", "ledger_public_claims_fold"],
+        "modifier_prompt": "The lifted mat edge repeats a silver-red bite pattern and a faded dependent-grazer color beside Ossa's cord and Rin's mesh; Ossa's throat patch turns pale."
+      },
+      {
+        "modifier_id": "ration_adults_early_visual",
+        "trigger": "branch_label == ration_adults_early",
+        "apply_to_visual_scene_ids": ["ledger_shortfall_response_hub", "ledger_public_claims_fold"],
+        "modifier_prompt": "Full cups move eastward toward the nursery ramps while a row of visibly shallower half-depth cups remains beside both routeward claims."
+      },
+      {
+        "modifier_id": "spend_old_route_credit_visual",
+        "trigger": "branch_label == spend_old_route_credit",
+        "apply_to_visual_scene_ids": ["ledger_trophic_bargain_hub", "ledger_totality_allocation"],
+        "modifier_prompt": "Ossa's cord lies across the dark intake with one new blue repair marker; a narrow stream of stored mineral liquor enters the third basin through reluctant amber candles."
+      },
+      {
+        "modifier_id": "recognize_current_contribution_visual",
+        "trigger": "branch_label == recognize_current_contribution",
+        "apply_to_visual_scene_ids": ["ledger_trophic_bargain_hub", "ledger_totality_allocation"],
+        "modifier_prompt": "A fresh claim cord knots together sampled shed fiber and a cut strip of Rin's repair mesh on the open archive while one green mat skim passes toward the basin."
+      },
+      {
+        "modifier_id": "trade_labor_for_sugar_visual",
+        "trigger": "branch_label == trade_labor_for_sugar",
+        "apply_to_visual_scene_ids": ["ledger_trophic_bargain_hub", "ledger_totality_allocation"],
+        "modifier_prompt": "One handspan of the prismwake lobe releases pale green sugar tissue into the skim tray while a separate blue-lit tear remains marked for a future repair watch."
+      },
+      {
+        "modifier_id": "borrow_herd_heat_visual",
+        "trigger": "branch_label == borrow_herd_heat",
+        "apply_to_visual_scene_ids": ["ledger_trophic_bargain_hub", "ledger_totality_allocation"],
+        "modifier_prompt": "Scored Blue gives one intense teal heat pulse through a taut clean wick while glassback calves press close to adults on the delayed departure route."
+      },
+      {
+        "modifier_id": "protect_nursery_core_visual",
+        "trigger": "branch_label == protect_nursery_core",
+        "apply_to_visual_scene_ids": ["ledger_ending_nursery_core"],
+        "modifier_prompt": "The ration rail is lowered between the full nursery cups and two empty route cups held beyond the fungal boundary."
+      },
+      {
+        "modifier_id": "honor_old_credit_visual",
+        "trigger": "branch_label == honor_old_credit",
+        "apply_to_visual_scene_ids": ["ledger_ending_old_credit"],
+        "modifier_prompt": "Veyr loops Ossa's old cord through a blue repair marker and presents one filled route cup in view of Rin and the nursery stack."
+      },
+      {
+        "modifier_id": "honor_new_contribution_visual",
+        "trigger": "branch_label == honor_new_contribution",
+        "apply_to_visual_scene_ids": ["ledger_ending_new_credit"],
+        "modifier_prompt": "Veyr places a steaming low cup directly beside Rin's new fiber-and-mesh receipt for the exhausted provider."
+      },
+      {
+        "modifier_id": "share_the_shortfall_visual",
+        "trigger": "branch_label == share_the_shortfall",
+        "apply_to_visual_scene_ids": ["ledger_ending_shared_shortfall"],
+        "modifier_prompt": "Matching rows of half-depth cups appear on both sides of the ration rail while the archive remains open between old and new claim cords."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "ledger-west-intake-terrace-map-v0",
+      "authority": "Embedded authored layout for draft continuity; replace with a hand-built plan view or blockout before high-consistency multi-angle website rendering.",
+      "layout": "A low fan of root-bound stone. The narrow west/routeward mouth opens to the candle road. The broad east/nurseryward edge has three ramps. Facing east, the shallow prismwake water channel is mat-side and the lantern-root heat rail is grove-side. Three basins and a ration rail occupy the center.",
+      "zones": [
+        {
+          "zone_id": "west_road_mouth",
+          "visible_form": "narrow stone mouth with two amber fungal candle rows, two shallow intake channels, and a separate clean-material sample bed",
+          "used_for": "arrival boundary, road sampling, mineral flow, old-cord and new-bundle witness"
+        },
+        {
+          "zone_id": "central_reserve_basin_cluster",
+          "visible_form": "three round low black-glazed basins with dark fill marks, leaf paddle, skim tray, and woven heat-wick collar",
+          "used_for": "culture volume, heat, mixing, and final allocation"
+        },
+        {
+          "zone_id": "ration_rail",
+          "visible_form": "low cross-terrace rail east of the basins with full-depth and half-depth cup stacks",
+          "used_for": "boundary between route claims and nursery distribution"
+        },
+        {
+          "zone_id": "nursery_ramps",
+          "visible_form": "three shallow eastward ramps descending into warm oval hollows beneath blue lantern knots",
+          "used_for": "caretaker cup traffic and core-resident priority"
+        },
+        {
+          "zone_id": "mat_side_channel",
+          "visible_form": "shallow water channel holding a thin silver-rose prismwake lobe, torn regrowth edge, mesh repair points, and low skim tray",
+          "used_for": "sugar release, damage display, repair labor, and mat consent"
+        },
+        {
+          "zone_id": "grove_side_heat_rail",
+          "visible_form": "waist-low dark mineral rail among thick lantern roots, with removable woven heat wick and space for one glassback to stand broadside",
+          "used_for": "voluntary plate heat transfer and herd departure staging"
+        },
+        {
+          "zone_id": "archive_station",
+          "visible_form": "low open case beside the ration rail with translucent memory membranes, old braided cords, blank cords, fiber receipts, and blue repair markers",
+          "used_for": "public claims, provenance, obligations, and class visibility"
+        }
+      ],
+      "routes": [
+        {
+          "route_id": "family_arrival_route",
+          "path": "west road -> west_road_mouth -> stop at fungal candle boundary",
+          "users": ["ossa_old_return_delegate", "rin_new_household_provider", "rin_household"]
+        },
+        {
+          "route_id": "cup_distribution_route",
+          "path": "central_reserve_basin_cluster -> ration_rail -> nursery_ramps",
+          "users": ["veyr_reserve_keeper", "nursery_caretaker_ring"]
+        },
+        {
+          "route_id": "glassback_heat_route",
+          "path": "west road -> grove_side_heat_rail -> west road",
+          "users": ["scored_blue_glassback", "glassback herd"]
+        },
+        {
+          "route_id": "keeper_work_arc",
+          "path": "central_reserve_basin_cluster <-> west_road_mouth <-> mat_side_channel <-> grove_side_heat_rail <-> archive_station",
+          "users": ["veyr_reserve_keeper"]
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "high_west_terrace_establishing",
+          "supports_visual_scene_ids": ["ledger_west_terrace_establishing", "ledger_routine_fold"]
+        },
+        {
+          "camera_id": "basin_work_medium",
+          "supports_visual_scene_ids": ["ledger_reserve_keeper_routine", "ledger_routine_work_hub", "ledger_trophic_bargain_hub"]
+        },
+        {
+          "camera_id": "mat_warning_oblique",
+          "supports_visual_scene_ids": ["ledger_prismwake_warning"]
+        },
+        {
+          "camera_id": "road_boundary_medium",
+          "supports_visual_scene_ids": ["ledger_claimants_arrive", "ledger_shortfall_response_hub", "ledger_ending_old_credit", "ledger_ending_new_credit"]
+        },
+        {
+          "camera_id": "public_ledger_wide",
+          "supports_visual_scene_ids": ["ledger_public_claims_fold", "ledger_totality_allocation", "ledger_ending_nursery_core", "ledger_ending_shared_shortfall"]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "route_to_public_archive",
+          "path": "both routeward claimant positions -> archive_station beside ration rail",
+          "supports": ["verify_old_family_claim", "witness_new_household_work", "publish_mat_damage", "recognize_current_contribution"]
+        },
+        {
+          "lane_id": "nursery_to_allocation",
+          "path": "nursery_ramps -> caretaker ring -> ration_rail -> cup stacks and basin fill marks",
+          "supports": ["ration_adults_early", "protect_nursery_core", "share_the_shortfall"]
+        },
+        {
+          "lane_id": "mat_to_claims",
+          "path": "lifted prismwake edge -> archive_station -> Ossa and Rin at west boundary",
+          "supports": ["publish_mat_damage", "trade_labor_for_sugar"]
+        },
+        {
+          "lane_id": "herd_to_basin_heat",
+          "path": "Scored Blue dorsal plate -> woven heat wick -> basin collar",
+          "supports": ["prime_herd_heat", "borrow_herd_heat"]
+        }
+      ],
+      "state_anchors": [
+        {
+          "anchor_id": "basin_fill",
+          "values": ["one basin at fill mark", "two basins at fill mark", "third basin empty"],
+          "variables": ["reserve_volume"]
+        },
+        {
+          "anchor_id": "basin_heat",
+          "values": ["dull cool edge", "faint steam", "gold-warm collar"],
+          "variables": ["reserve_heat"]
+        },
+        {
+          "anchor_id": "intake_state",
+          "values": ["two amber channels", "one dark channel", "single sampling candle"],
+          "variables": ["road_credit"]
+        },
+        {
+          "anchor_id": "mat_state",
+          "values": ["silver-red damage", "green release strip", "blue repair debt", "folded regrowth nodes"],
+          "variables": ["mat_consent"]
+        },
+        {
+          "anchor_id": "herd_state",
+          "values": ["plate at wick", "body between rail and route", "herd facing departure"],
+          "variables": ["herd_trust"]
+        },
+        {
+          "anchor_id": "claim_display",
+          "values": ["old cord alone", "new sampled receipt", "old and new at equal height", "blue repair markers"],
+          "variables": ["public_ledger", "newcomer_standing", "old_family_claim"]
+        },
+        {
+          "anchor_id": "ration_state",
+          "values": ["full-depth cups", "half-depth cups", "lowered rail", "empty route cups"],
+          "variables": ["nursery_pressure"]
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for characters visible in a scene.",
+    "characters": {
+      "veyr_reserve_keeper": "Veyr: adult Sa'ueia reserve keeper, long horizontal hexapod body covered in short rust-red insulating fibers, four tall digitigrade running legs, two smaller anterior arms beneath the chest ending in three soft opposing digits, flexible neck, wedge-shaped head, paired fan-shaped chemical sensors beside the face, bare dark throat signaling patch, balanced low work harness with leaf paddle loop and cup clips, precise folded posture around ground-level tasks.",
+      "ossa_old_return_delegate": "Ossa: older Sa'ueia delegate, long gray-fibered horizontal hexapod body, four digitigrade running legs, two fine three-digit chest manipulators, wedge head with broad paired chemical-sensing facial fans, bare pale throat patch, polished dark flank frame carrying several old braided archive cords with amber mineral stains, still confident posture and carefully maintained equipment.",
+      "rin_new_household_provider": "Rin: young adult Sa'ueia household representative, long ochre-fibered horizontal hexapod body, four lean digitigrade running legs, two small three-digit chest arms, flexible neck and wedge head with paired chemical-sensing facial fans, bare throat patch showing fatigue color, patched woven flank frame holding clean fiber bundles and rolled mineral repair mesh, alert guarded posture near an exhausted companion.",
+      "scored_blue_glassback": "Scored Blue: elder alien herd grazer with a broad low dark body, sturdy walking legs, blunt grazing head, and a row of tall translucent dorsal plates covering living heat-storage tissue; one plate bears a pale healed score and the plates glow teal, fog, darken, or flare according to heat and social state; deliberate broadside posture near a removable heat-transfer wick."
+    },
+    "groups": {
+      "nursery_caretaker_ring": "Nursery caretaker ring: several Sa'ueia adults with varied muted brown, gray, and red fibers; each has a long horizontal body, four digitigrade running legs, two small three-digit chest manipulators, wedge head, paired chemical-sensing facial fans, bare throat and flank signal patches, low work frames, folded six-limbed postures, and feeding cups carried close to the ground.",
+      "rin_household": "Rin's household at the boundary: one or two long-bodied Sa'ueia hexapods with ochre or muted brown fibers, four folded digitigrade running legs, two small chest manipulators, patched flank frames, visibly tired low posture, one exhausted provider sagging between the two running-leg pairs while remaining able to drink from a ground-level cup."
+    }
+  },
+  "review_notes": [
+    "This fixture requires a durable scene_set because multiple angles and endings depend on fixed relations among the road boundary, basins, ration rail, nursery ramps, mat channel, heat rail, archive, and claimant positions.",
+    "The embedded scene_set map fixes draft zones, routes, cameras, sightlines, and state anchors; a hand-authored blockout remains required before high-consistency generated website art.",
+    "All base prompts use affirmative visible descriptions and restate the environment for text-only concept rendering.",
+    "Visual continuity self-review accepted the plan for B-level draft replay: fourteen unique scene anchors, complete camera coverage, stable refs for every visible named character or group, and one explicit modifier for each of sixteen branch labels."
+  ]
+}

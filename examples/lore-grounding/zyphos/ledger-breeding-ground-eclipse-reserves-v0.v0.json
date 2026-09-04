@@ -1,0 +1,381 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "zyphos.ledger-breeding-ground-eclipse-reserves-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "source_grounded_original_setting",
+  "source_refs": [
+    {
+      "source_id": "zyphos-index",
+      "path": "Eusocial Interbeing/index.md",
+      "title": "Zyphos",
+      "line_start": 1,
+      "line_end": 35,
+      "relevance": "World premise: low light is a scarce civic resource and Sa'ueia breeding grounds are ecological reproductive commons."
+    },
+    {
+      "source_id": "breeding-grounds",
+      "path": "Eusocial Interbeing/Ecology/Breeding Grounds.md",
+      "title": "Breeding Grounds",
+      "line_start": 1,
+      "line_end": 35,
+      "relevance": "Primary locality and authored material-economy elaboration: arrival terraces, reserve basins, trophic credit, divided flow authority, class pressure, and overdraw failure."
+    },
+    {
+      "source_id": "saueia-body",
+      "path": "Eusocial Interbeing/Species/Sa'ueia.md",
+      "title": "Sa'ueia",
+      "line_start": 1,
+      "line_end": 25,
+      "relevance": "Grounds the long-bodied hexapod body plan, low work surfaces, chest manipulators, facial fans, signaling patches, and mobile family prestige."
+    },
+    {
+      "source_id": "saueia-family-units",
+      "path": "Eusocial Interbeing/Civilizations/Sa'ueia Family Units.md",
+      "title": "Sa'ueia Family Units",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds family units as mobile kin, work, trade, care, and memory bodies whose ecological standing materially affects travel."
+    },
+    {
+      "source_id": "saueia-nomadic-civilization",
+      "path": "Eusocial Interbeing/Civilizations/Sa'ueia Nomadic Civilization.md",
+      "title": "Sa'ueia Nomadic Civilization",
+      "line_start": 1,
+      "line_end": 16,
+      "relevance": "Grounds breeding grounds and ecological partners as institutions while law, skill, and memory circulate through mobile families."
+    },
+    {
+      "source_id": "saueia-mobile-technology",
+      "path": "Eusocial Interbeing/Technologies/Sa'auei'a Mobile Technologies.md",
+      "title": "Sa'auei'a Mobile Technologies",
+      "line_start": 1,
+      "line_end": 15,
+      "relevance": "Grounds repairable flank-carried equipment, route-memory instruments, medical grafts, and portable archives."
+    },
+    {
+      "source_id": "reciprocal-ecologies",
+      "path": "Eusocial Interbeing/Ecology/Reciprocal Ecologies.md",
+      "title": "Reciprocal Ecologies",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds remembered generosity, future access, nourishment, and ecological refusal as material reciprocity."
+    },
+    {
+      "source_id": "prismwake-mats",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Prismwake Mats.md",
+      "title": "Prismwake Mats",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds light-harvesting wetland tissue, regrowth contracts, sugar release, bite history, mineral exchange, warning colors, and reprisals against overharvest."
+    },
+    {
+      "source_id": "glassback-grazers",
+      "path": "Eusocial Interbeing/Biosphere/Grazers and Browsers/Glassback Grazers.md",
+      "title": "Glassback Grazers",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds translucent heat-storage plates, plate signaling, calving routes, goods carriage, fungal-spore transport, grazing contracts, and herd refusal."
+    },
+    {
+      "source_id": "candle-fungal-roads",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+      "title": "Candle Fungal Roads",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds decomposition, mineral routing, material sampling, contamination control, remembered payment, amber beacons, and selective route access."
+    },
+    {
+      "source_id": "lantern-trees",
+      "path": "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md",
+      "title": "Umbros-Facing Lantern Trees",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds eclipse lighting, infant shelter, root sugars, neighborhood taxation, path signals, and power to starve or reroute fungal partners."
+    },
+    {
+      "source_id": "umbros-system",
+      "path": "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+      "title": "Zyphos Umbros Binary System",
+      "line_start": 1,
+      "line_end": 104,
+      "relevance": "Grounds the fixed enormous Umbros, roughly hour-long daily totality, low available energy, thermal storage, and eclipse-sensitive provisioning."
+    },
+    {
+      "source_id": "mutable-memory",
+      "path": "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+      "title": "Mutable Memory Endosymbiosis",
+      "line_start": 1,
+      "line_end": 123,
+      "relevance": "Grounds nested sentience, partial autonomy, metabolic and memory bargaining, graft compatibility, and ecological contracts across scales."
+    },
+    {
+      "source_id": "saueia-continent",
+      "path": "Eusocial Interbeing/World/Sa'ueia Continent.md",
+      "title": "Sa'ueia Continent",
+      "line_start": 1,
+      "line_end": 11,
+      "relevance": "Grounds the continent's remembered movement and the long-term cost of overdrawing routes, herds, mats, and other partners."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Undated pre-imperial-contact or early-contact Sa'ueia daily life; no exact year is canonical.",
+    "location": "The west intake terrace of a breeding ground on the sub-Umbros side of the Sa'ueia continent.",
+    "summary": "Reserve keeper Veyr must ration an eclipse-short nursery culture when a prismwake mat closes its sugar release and an old-return family and an archive-poor new household make competing claims.",
+    "public_facts": [
+      {
+        "text": "Breeding grounds concentrate infants, infirm adults, graft patients, and caretakers, so their nourishment depends on supply moving toward bodies that cannot simply follow it.",
+        "source_refs": ["breeding-grounds", "saueia-body"]
+      },
+      {
+        "text": "Nursery reserve culture joins producer sugar, road-processed minerals, glassback-carried heat, water, and low-contamination microbial renewal; no one species owns the whole input chain.",
+        "source_refs": ["breeding-grounds", "prismwake-mats", "glassback-grazers", "candle-fungal-roads", "lantern-trees"]
+      },
+      {
+        "text": "Trophic credit is witnessed by ecological partners and portable archives, so old return histories can buy earlier access while archive loss makes present contribution harder to price.",
+        "source_refs": ["breeding-grounds", "saueia-family-units", "reciprocal-ecologies"]
+      },
+      {
+        "text": "Umbros totality is regular but materially constrains warmth, fresh producer energy, visibility, and the time available to negotiate a safe ration.",
+        "source_refs": ["umbros-system", "lantern-trees"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Nursery caretakers own triage among residents but cannot command the road, mat, herd, or grove to provide missing inputs.",
+        "source_refs": ["breeding-grounds", "mutable-memory"]
+      },
+      {
+        "text": "An old family's real prior credit can compound into privileged access even when a new household supplies useful current labor and clean material.",
+        "source_refs": ["breeding-grounds", "saueia-family-units"]
+      },
+      {
+        "text": "A ration that protects this eclipse can weaken tomorrow's cycle if it overdraws mat regrowth, herd heat, road credit, lantern sugars, or caretaker labor.",
+        "source_refs": ["breeding-grounds", "prismwake-mats", "glassback-grazers", "candle-fungal-roads", "lantern-trees"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "west-terrace-reserve-keepers",
+      "label": "West terrace reserve keepers and nursery caretakers",
+      "group_type": "communal_provisioning_organ",
+      "institutional_logic": ["Keep infants, infirm residents, and graft patients fed through eclipse while exposing rather than privately owning allocation decisions."],
+      "material_incentives": ["Maintain warm clean culture, keep intake channels open, avoid exhausting staff, and preserve enough partner credit for the next cycle."],
+      "internal_virtues": ["Measurable triage", "Visible obligations", "Careful sampling", "Refusal to promise absent supply"],
+      "internal_shames": ["Private preference disguised as expertise", "Treating exclusion as costless", "Spending another organism's reserve by declaration"],
+      "prestige_markers": ["Several living partners still answer", "A reserve that survives totality", "Claims legible from both sides of the ration rail"],
+      "taboo_triggers": ["Hidden overdraft", "Contaminated culture", "A keeper claiming ownership of the whole intake seam"],
+      "emotional_display_norms": ["Pressure is shown through precise cup depth, open archives, low work posture, and visible throat or flank signals; comedy survives because the basins do not care how solemnly they are stirred."],
+      "trust_defaults": ["Trusts plural material receipts more than prestige or need stated alone."],
+      "speech_register_cues": ["Compressed work language", "Dry ration humor", "Specific measures", "Publicly named uncertainty"],
+      "source_refs": ["breeding-grounds", "saueia-body", "saueia-nomadic-civilization"]
+    },
+    {
+      "group_id": "old-return-families",
+      "label": "Families with long witnessed return histories",
+      "group_type": "mobile_high_credit_households",
+      "institutional_logic": ["Convert years of ecological repayment into advance access during shortage without admitting that repeated recognition is becoming class power."],
+      "material_incentives": ["Feed route-tired breeders before the next circuit, preserve portable archives, and keep old credit liquid across several partners."],
+      "internal_virtues": ["Long repayment memory", "Reliable return", "Archive care", "Capacity to absorb future obligation"],
+      "internal_shames": ["A dark road around a polished cord", "Public proof that dependents damaged a partner", "Being treated as ordinary current need"],
+      "prestige_markers": ["Braided archive cords recognized by several routes", "Credit received before labor", "Partners that remember grandparents' bargains"],
+      "taboo_triggers": ["Calling old standing ownership", "Erasing a valid prior contribution", "Publishing lineage-linked damage without provenance care"],
+      "emotional_display_norms": ["Confidence appears as still posture, clean equipment, and concise claims; visible offense is permitted when old credit is treated as fiction."],
+      "trust_defaults": ["Trusts durable archive witness and expects unfamiliar households to build comparable history."],
+      "speech_register_cues": ["Old obligations", "Circuit language", "Quiet expectation", "Repair promises framed as surety"],
+      "source_refs": ["breeding-grounds", "saueia-family-units", "reciprocal-ecologies"]
+    },
+    {
+      "group_id": "archive-poor-new-households",
+      "label": "Newly divided or displaced households with weak durable records",
+      "group_type": "mobile_low_credit_households",
+      "institutional_logic": ["Turn current work, clean material, and visible need into standing before exhaustion makes future repayment impossible."],
+      "material_incentives": ["Secure one warm measure, rebuild portable records, keep providers able to work, and avoid permanent dependence on another family's archive."],
+      "internal_virtues": ["Useful present labor", "Clean offerings", "Public receipt", "Refusal to borrow identity from a patron"],
+      "internal_shames": ["Need sampled as suspicion", "Work accepted while standing is refused", "A new cord held by an old family"],
+      "prestige_markers": ["Fresh work witnessed by more than one species", "A first independent claim", "A repaired partner that signals recognition"],
+      "taboo_triggers": ["Being called unremembered as if it meant useless", "Permanent probation", "Patronage that owns the household's new history"],
+      "emotional_display_norms": ["Dignity is maintained through prepared work, clean bundles, and restraint at boundaries; fatigue remains chemically visible."],
+      "trust_defaults": ["Trusts current co-work and public multi-species receipt more than inherited assurances."],
+      "speech_register_cues": ["Present-tense material claims", "Specific offered labor", "Controlled refusal of patronage"],
+      "source_refs": ["breeding-grounds", "saueia-family-units", "saueia-mobile-technology"]
+    },
+    {
+      "group_id": "west-intake-ecology",
+      "label": "Prismwake mat, glassback herd, candle road, and lantern grove",
+      "group_type": "federated_trophic_infrastructure",
+      "institutional_logic": ["Exchange sugar, heat, minerals, light, transport, and memory under separate embodied contracts rather than behaving as one utility."],
+      "material_incentives": ["Protect regrowth, calves, clean decomposition, root reserves, safe traffic, and future reciprocal labor."],
+      "internal_virtues": ["Selective release", "Readable refusal", "Sampled material", "Remembered repair"],
+      "internal_shames": ["Contamination leak", "Unrecoverable overdraw", "A warning that drives all useful traffic elsewhere"],
+      "prestige_markers": ["Warm basins", "Open intake candles", "Green mat release", "Calm herd plates", "Lit nursery ramps"],
+      "taboo_triggers": ["Torn regrowth nodes", "Forced heat extraction", "Poisoned waste", "Root injury", "A human-shaped promise substituted for material"],
+      "emotional_display_norms": ["Agreement and pressure are expressed through colored tissue, plate heat, candle spacing, root light, movement, and access geometry."],
+      "trust_defaults": ["Each partner remembers different evidence and may cooperate while another refuses."],
+      "speech_register_cues": ["Silver-red mat flashes", "Amber intake candles", "Teal dorsal heat", "Blue lantern knots"],
+      "source_refs": ["prismwake-mats", "glassback-grazers", "candle-fungal-roads", "lantern-trees", "mutable-memory"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "reserve-keepers.triage-without-supply-sovereignty",
+      "applies_to": ["west-terrace-reserve-keepers"],
+      "pressure_type": "provisioning_authority",
+      "summary": "Keepers can decide which cups leave a basin but cannot manufacture or command the inputs that fill and warm it.",
+      "projection_use": "Give Veyr choices over sampling, repair, visible claims, cup depth, and allocation; make unilateral declarations create split accounts rather than obedience.",
+      "source_refs": ["breeding-grounds", "mutable-memory"]
+    },
+    {
+      "field_id": "old-return-families.compounding-recognition",
+      "applies_to": ["old-return-families"],
+      "pressure_type": "class_advantage",
+      "summary": "Durable multi-partner credit is useful risk sharing and also lets recognized families receive present resources before present labor.",
+      "projection_use": "Keep Ossa's prior credit real while showing how advance access compounds into status and can conceal current externalized damage.",
+      "source_refs": ["breeding-grounds", "reciprocal-ecologies"]
+    },
+    {
+      "field_id": "archive-poor-households.work-before-recognition",
+      "applies_to": ["archive-poor-new-households"],
+      "pressure_type": "entry_cost",
+      "summary": "Households with lost or shallow records must spend bodily capacity and material before their contributions become durable credit.",
+      "projection_use": "Make Rin's clean bundles and repair labor visible while preserving the time and exhaustion required for several partners to sample them.",
+      "source_refs": ["breeding-grounds", "saueia-family-units"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "old-return-families",
+      "target_group_id": "archive-poor-new-households",
+      "observer_read": ["Unpriced risk", "Need without history", "Future labor offered as if already complete"],
+      "target_self_read": ["Current providers", "A household beginning its own account", "People paying in the only time available to them"],
+      "misread_patterns": ["Confuses missing archive with missing contribution", "Treats slow ecological sampling as evidence of low worth"],
+      "likely_insults": ["unremembered", "borrowed household", "first-circuit promise"],
+      "projection_use": "Let Ossa defend genuine risk accounting without turning every unfamiliar family into a moral failure.",
+      "source_refs": ["breeding-grounds", "saueia-family-units"]
+    },
+    {
+      "observer_group_id": "archive-poor-new-households",
+      "target_group_id": "old-return-families",
+      "observer_read": ["Ancestors eating first", "Polished cords substituted for current work", "Privilege presented as patience"],
+      "target_self_read": ["Reliable long-term partners", "Families drawing on obligations they actually repaid"],
+      "misread_patterns": ["May flatten real prior sacrifice into theft", "May underestimate why ecological partners price unknown claims cautiously"],
+      "likely_insults": ["ancestor-fed", "cord-rich", "already welcomed"],
+      "projection_use": "Let Rin recognize the material reality of old credit while resisting its conversion into permanent priority.",
+      "source_refs": ["breeding-grounds", "reciprocal-ecologies"]
+    },
+    {
+      "observer_group_id": "west-terrace-reserve-keepers",
+      "target_group_id": "west-intake-ecology",
+      "observer_read": ["One provisioning chain", "Several signals to reconcile", "A reserve system that can be bargained with"],
+      "target_self_read": ["Not available as one private account; each body protects a different reserve and timescale"],
+      "misread_patterns": ["Treats coincident signals as unified consent", "Mistakes a keeper's comparative expertise for command authority"],
+      "likely_insults": ["uncooperative intake", "contradictory account", "expensive breakfast"],
+      "projection_use": "Keep partner responses separate and visible; an opened road candle does not imply mat or herd consent.",
+      "source_refs": ["mutable-memory", "prismwake-mats", "glassback-grazers", "candle-fungal-roads", "lantern-trees"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "reserve-keeper",
+      "summary": "A caretaker who can measure and ration the commons' nursery culture while several other organisms retain authority over its inputs.",
+      "obligations": ["Feed high-dependency residents", "Keep claims public", "Protect future supply", "Distinguish valid credit from ownership"],
+      "available_masks": ["Dry competence", "Neutral measurement", "Ritual receipt", "Deliberate patience"],
+      "failure_modes": ["Private allocation", "Declaring ecological credit alone", "Equal division below safe thresholds", "Closing a rail as if closure made food"],
+      "source_refs": ["breeding-grounds", "saueia-body"]
+    },
+    {
+      "role_id": "old-return-delegate",
+      "summary": "A mobile family representative carrying valid inherited records and the expectation that durable repayment should provide credit under shortage.",
+      "obligations": ["Protect archive custody", "Accept visible future obligations", "Answer for dependent-route damage without accepting automatic personal guilt"],
+      "available_masks": ["Quiet standing", "Technical surety", "Offended restraint", "Confidence in recognition"],
+      "failure_modes": ["Treating recognition as ownership", "Hiding behind ancestry", "Refusing public repair terms"],
+      "source_refs": ["breeding-grounds", "saueia-family-units"]
+    },
+    {
+      "role_id": "new-household-provider",
+      "summary": "A representative whose household has useful material and skill but lacks an intact durable archive after a story-local loss.",
+      "obligations": ["Keep offerings clean", "Build independent public receipt", "Protect the exhausted provider", "Avoid patronage that owns the new account"],
+      "available_masks": ["Prepared worker", "Controlled impatience", "Specific material offer", "Refusal to beg"],
+      "failure_modes": ["Spending bodily capacity before food", "Treating need as sufficient ecological evidence", "Accepting relief that leaves no recognized claim"],
+      "source_refs": ["breeding-grounds", "saueia-mobile-technology"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "veyr_reserve_keeper",
+      "known_context": [
+        {"text": "Veyr knows the west terrace layout, basin thresholds, nursery demand, public claims, material sampling routines, and the visible signals of local road, mat, herd, and grove partners.", "source_refs": ["breeding-grounds", "saueia-body"]}
+      ],
+      "beliefs": [
+        {"text": "Veyr believes a ration is legitimate only when its costs and unfilled obligations remain visible to the people and organisms carrying them.", "source_refs": ["breeding-grounds", "reciprocal-ecologies"]}
+      ],
+      "misreads": [
+        {"text": "Veyr may overestimate how much public accounting protects a low-credit household from the immediate bodily cost of being sampled.", "source_refs": ["breeding-grounds"]}
+      ],
+      "must_not_know": [
+        {"text": "Veyr must not know private ecological intent beyond visible color, heat, route, material, and prior-conduct signals.", "source_refs": ["mutable-memory"]}
+      ]
+    },
+    {
+      "speaker_id": "ossa_old_return_delegate",
+      "known_context": [
+        {"text": "Ossa knows her family's archived repayments, current adult needs, protected dependent herds, and the obligations she can credibly pledge on the next circuit.", "source_refs": ["breeding-grounds", "saueia-family-units"]}
+      ],
+      "beliefs": [
+        {"text": "Ossa believes advance access is the proper purpose of credit whose prior costs were real.", "source_refs": ["reciprocal-ecologies"]}
+      ],
+      "misreads": [
+        {"text": "Ossa may treat archive-poor current work as socially sympathetic but institutionally weak because its future reliability has not been witnessed.", "source_refs": ["breeding-grounds"]}
+      ],
+      "must_not_know": [
+        {"text": "Ossa must not know whether the road, mat, herd, or keeper will accept the advance before their public responses.", "source_refs": ["mutable-memory"]}
+      ]
+    },
+    {
+      "speaker_id": "rin_new_household_provider",
+      "known_context": [
+        {"text": "Rin knows the household's clean bundles, completed repair, lost archive context, exhausted provider, and immediate work capacity.", "source_refs": ["breeding-grounds", "saueia-mobile-technology"]}
+      ],
+      "beliefs": [
+        {"text": "Rin believes current useful contribution should begin independent standing before the household is strong enough to complete a whole circuit.", "source_refs": ["breeding-grounds", "saueia-family-units"]}
+      ],
+      "misreads": [
+        {"text": "Rin may read caution about untested future repayment as contempt for the new household rather than a real ecological risk price.", "source_refs": ["reciprocal-ecologies"]}
+      ],
+      "must_not_know": [
+        {"text": "Rin must not know what old family obligations remain valid except what Ossa and the public archive reveal.", "source_refs": ["breeding-grounds"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Veyr, Ossa, Rin, Scored Blue, the two families, and the particular shortfall are story-local inventions and are not promoted as named vault canon.",
+      "source_refs": ["breeding-grounds", "saueia-body"]
+    },
+    {
+      "text": "The fixture does not establish one morally correct ration. Each ending exposes a different allocation, class, labor, or future-supply cost.",
+      "source_refs": ["breeding-grounds"]
+    },
+    {
+      "text": "No road, mat, herd, grove, family, or keeper has a hidden unified view of the whole intake compact; apparent coordination is a public overlap of separate interests.",
+      "source_refs": ["mutable-memory"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "What forms of archive loss, adoption, household fission, or displacement most often reset a Sa'ueia family's ecological credit?",
+      "blocks_training": false,
+      "notes": "The fixture uses a story-local flood loss without canonizing a general legal rule."
+    },
+    {
+      "question": "Which nutrient, heat, or contamination thresholds require full, half, or deferred reserve measures for different Sa'ueia life stages?",
+      "blocks_training": false,
+      "notes": "The fixture uses coarse safe/unsafe bands and visible cup depths, not a physiological table."
+    },
+    {
+      "question": "How portable are prismwake sugar tissues before their own memory-bearing cells reject storage or transit?",
+      "blocks_training": false,
+      "notes": "The fixture keeps the producer lobe physically attached to the terrace water channel and treats portable skim as immediately consumed reserve input."
+    }
+  ]
+}
