@@ -268,8 +268,13 @@ Implementation order, each pass landing tests before the next begins:
 6. `Knowledge`, `Channel`, `Fact` standing, and scoped-projection non-leakage.
 7. `Commitment`, `Pressure`, obligation → pressure → opportunity flow, and
    boundary derivation.
-8. `AdmitPatch` with boundary and seed-request binding, and the derived
-   elaborator tool catalog.
+8. `AdmitPatch` with boundary, seed-request, and scale-deficit binding;
+   `WorldScaleIntent` with structural qualification and per-jurisdiction
+   deficit derivation; and the derived elaborator tool catalog.
+9. Budgeted connected cover: agency-graph partition under the cell budget,
+   singleton detail focus, grouped coarse cells with partitioned views and
+   per-constituent attribution, debt rotation. Scheduler-owned; the kernel
+   never sees a cell.
 
 The deployment cutover (step 5) is deferred behind this stage, not cancelled. No
 world acceptance run may start while Yggdrasil serves the legacy body.

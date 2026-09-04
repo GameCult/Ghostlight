@@ -20,8 +20,13 @@ world owners, and actor-private experience.
 The world grows when committed pressure reaches a typed boundary: a new
 destination becomes relevant, an existing polity or population enters causal
 range, a person must be individuated, or an effect needs a missing primitive.
-Population totals and cover ratios are load and evaluation profiles. They do
-not define whether a world is complete.
+A world also grows toward an authored `WorldScaleIntent`: how many goal-bearing
+subjects it should hold at each level and realm. Elaborators work that deficit
+down; structural validity never waits on it. Cover budget is the deliberate
+choke: with subjects several times the cell budget, the scheduler must choose
+where attention goes, and actors pursuing their own goals at every level is
+what makes the world feel alive. Neither number gates activation or admits a
+mutation.
 
 ## Prime invariants
 
@@ -277,7 +282,11 @@ or reload repair path.
 
 Ghostlight supports two first-class decision interfaces. The ontology assigns
 each exact authority scope to one `DecisionController`; the scheduler does not
-choose a mode opportunistically. A controller changes representation and model
+choose a mode opportunistically. The scheduler does choose resolution: a
+`NarrativePersona` controller receives its prose membrane in a singleton cell
+and is represented operationally, at coarse resolution, when grouped. That is
+a budget decision, not a mode change; the controller, its scope, and its
+authority are unchanged. A controller changes representation and model
 ergonomics, never permission or commit authority.
 
 An opportunity is issued to exactly one controller. An untranslated intent or
@@ -429,9 +438,14 @@ commit the planner derives a fresh queue. Parallel inference may speculate on
 one snapshot, but stale proposals are discarded rather than rebased.
 
 Resolution covers and grouping are compute budgets for projection. They do not
-create, merge, fission, or qualify identities. A synthetic fixture may create
-1,200 action owners to pressure-test scheduling and projection; it is test data,
-not canonical lore and not a production elaboration target.
+create, merge, fission, or qualify identities. Every active subject is in the
+cover every tick; the budget decides at what resolution. Singleton cells give
+detail focus and the prose membrane; grouped cells represent their constituents
+operationally at coarse resolution with per-constituent attribution. Debt
+rotation guarantees every subject reaches detail focus within bounded ticks.
+The 2,400-subject, 240-cell profile is a design target for a living world, not
+only a load fixture: it tests the elaborators and the simulation for quality
+under scarcity of attention.
 
 ## Source grounding and open-world expansion
 

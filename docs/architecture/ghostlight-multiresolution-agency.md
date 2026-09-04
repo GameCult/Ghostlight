@@ -5,9 +5,11 @@ strategic waves, demand/deficit elaboration, and the wave-level outcome
 resolver, all on the deletion line. The current vocabulary is
 `docs/architecture/ghostlight-world-ontology.md`. It keeps the resumable
 per-jurisdiction elaborator session, compact mutation drafts, the complete
-deterministic mismatch set, deterministic clocks that advance regardless of
-attention, debt-ordered scheduling, and batched cells as runner-owned
-representation with per-constituent attribution. It drops gestalt as identity:
+deterministic mismatch set, the authored `WorldScaleIntent` and its
+deterministically derived deficit, the budgeted connected cover with singleton
+detail focus and grouped coarse cells, debt rotation, and deterministic clocks
+that advance regardless of attention. Detail first, then the ten-percent choke,
+is the operator's design and survives. It drops gestalt as identity:
 `GestaltPersonaState`, member deltas, arena knowledge union, fission as a scale
 loop, promotion and folding, and cover-completeness targets.
 

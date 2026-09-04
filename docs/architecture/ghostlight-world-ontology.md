@@ -11,8 +11,8 @@ It may not introduce a writer, a semantic gate, or a second commit path.
 
 `docs/architecture/ghostlight-transition-algebra.md` and
 `docs/architecture/ghostlight-multiresolution-agency.md` describe the
-pre-rebuild machine and are teardown evidence. Three of their ideas survive
-here, named where they are used: one mutation vocabulary across every admission
+pre-rebuild machine and are teardown evidence. Their surviving ideas are named
+where they are used: one mutation vocabulary across every admission
 lane; compact mutation drafts with a complete deterministic mismatch set; and a
 resumable per-jurisdiction elaborator session checkpointed against admitted
 commit ancestry.
@@ -97,9 +97,10 @@ resolver, or reconciler is needed.
 8. Persona material enriches and never substitutes. Values, voice, memory, and
    relationship reads cannot stand in for authority, custody, topology, or
    knowledge.
-9. Elaboration answers a derived causal boundary or an authored seed request.
-   There is no wave, quota, round budget, coverage ratio, or completeness
-   metric.
+9. Elaboration answers a derived causal boundary, an authored seed request,
+   or an authored scale deficit. Structural validity never waits on a count;
+   liveness is an authored target the elaborators pursue. There is no
+   semantic qualification, round budget, or model-owned completeness verdict.
 10. A proposal binds to the digest of the components its verification reads,
     not to the whole world digest. It commits at any later revision where that
     scope digest is unchanged, and is rejected when it is not.
@@ -364,21 +365,34 @@ own, because it is derived from the reducer's vocabulary.
 
 ```text
 loop:
-  take the oldest open boundary (or seed request) in my jurisdiction
+  take the oldest open boundary or seed request in my jurisdiction;
+    if none, take my jurisdiction's scale deficit
   retrieve evidence from the Vault for its referents; keep exact receipts
   build one WorldPatch with declaration and operation tools
   submit; on rejection, repair the same draft from the complete mismatch set
   on commit, checkpoint: admitted commit ancestry, open leads, exact rejections
-  stop when my jurisdiction has no open boundary
+  stop when my jurisdiction has no open boundary and no deficit
 ```
+
+The scale deficit is derived, not owned. The seed carries a `WorldScaleIntent`:
+a target count of qualified subjects per level (person, institution,
+population) and per realm, with realm weights that distribute the target and
+never raise it. A subject qualifies structurally: active, one controller, at
+least one `Goal` commitment, at least one executable affordance. The kernel
+recounts after every commit and publishes the deficit per jurisdiction as
+derived state. Only admitted subjects reduce it; a rejected patch leaves it
+visible. Elaborators answering a deficit declare goal-bearing subjects at the
+level the deficit names — a person with a want, an office with a mandate, a
+slice with a grievance — grounded in evidence like any other patch. Detail
+first, then scarcity of attention; that order is what makes actors at every
+level pursue their own ends rather than wait to be noticed.
 
 An elaborator session is resumable and checkpointed against admitted commit
 ancestry; raw conversation is never authority. Elaborators own no fictional
-truth, no target count, no deficit, and no round budget. They stop when the
-horizon is structurally sufficient, which is the definition of a valid sparse
-world. One elaborator may fill semantic fields — names, labels, Persona
-material — inside a typed patch; it is not a Persona, receives no prose
-membrane, and holds no authority.
+truth and no completeness verdict; the target is authored, the count is
+structural, and the reducer alone admits. One elaborator may fill semantic
+fields — names, labels, Persona material — inside a typed patch; it is not a
+Persona, receives no prose membrane, and holds no authority.
 
 Eight loops do not serialize on one another. A boundary binds to its own scope
 digest, so a patch answering it commits at any revision where that digest is
@@ -391,14 +405,22 @@ that extension is a code change, not a world patch.
 
 ## Scale: many subjects, few inferences
 
-A world may hold thousands of subjects while a tick affords a few hundred
-inferences. Four mechanisms carry that, none of which is a second identity
-layer:
+A living world holds subjects several times its cell budget on purpose. The
+2,400-subject, 240-cell profile is the design target: enough goal-bearing
+actors at every level that the world has its own ends, and few enough cells
+that attention is scarce and the scheduler must choose. Scarcity is the
+choke that produces selection, offscreen consequence, and the feeling that
+things happen whether or not anyone is watching. Four mechanisms carry that,
+none of which is a second identity layer:
 
-1. **Coarse by construction.** Populations and institutions are subjects. A
-   realm is a handful of deciding subjects until `IndividuationRequired`
-   fires, and it fires only when a pressure needs a person to bear it.
-   Individuals are not manufactured toward a count and then compressed back.
+1. **Budgeted connected cover.** Every active subject is in the cover every
+   tick. The scheduler partitions the agency graph — containment, membership,
+   jurisdiction, shared place, relation, pressure — into at most the cell
+   budget, giving singleton cells to the highest-pressure and highest-debt
+   subjects and grouping the rest by adjacency. The cover is derived and
+   disposable; the kernel never sees it. Populations and institutions are
+   subjects in their own right, and `IndividuationRequired` still fires when
+   a pressure needs a person no slice can bear.
 2. **Zero-inference motion.** `Time.advance` applies every due clock
    deterministically: a `Routine` commitment whose preconditions hold
    auto-fulfills, so ordinary life proceeds for unattended subjects; an
@@ -410,16 +432,21 @@ layer:
    readiness, and time since last opportunity, so every subject receives
    direct attention within bounded ticks absent a mandatory foreground
    override.
-4. **Batched representation.** The runner may present several
-   `OperationalAgent` opportunities that share a place or pressure to one
-   inference. Each returned proposal is attributed to its own controller and
-   verified separately by the action pipeline. The batch is derived,
-   disposable, and invisible to the kernel; it changes representation, never
-   authority, and can emit no batch-owned mutation.
+4. **Cell resolution.** A singleton cell is detail focus: a `NarrativePersona`
+   controller receives its prose membrane, an `OperationalAgent` its full
+   permissioned view. A grouped cell is one inference over its constituents'
+   partitioned views — each constituent's private knowledge stays labeled as
+   its own, never unioned — returning zero or one attributed proposal per
+   constituent, each verified separately by the action pipeline. A
+   `NarrativePersona` subject in a grouped cell is represented operationally
+   at coarse resolution this tick; its controller, scope, and authority do not
+   change. The cell can emit no cell-owned mutation, and no subject is ever
+   spoken for by an arena.
 
-A `NarrativePersona` subject not selected for attention does not act this
-tick; its collective acts at the collective level and reaches it through
-typed commitments. No subject is ever spoken for by an arena.
+Debt rotation makes the choke fair: with N subjects and budget B, every
+subject reaches a singleton cell within about N/B ticks absent a mandatory
+foreground override, and the deterministic clocks keep its commitments moving
+in between.
 
 ## What stays open
 
@@ -432,10 +459,11 @@ that are structural rather than promissory:
   anything; the Interpreter lowers what the vocabulary can carry and records
   exact gaps for the rest. Unrepresentable meaning is preserved as evidence,
   never rejected or invented.
-- **Structure is sparse.** A world needs only enough components for its current
-  horizon. Ordinary life is a recurring `Commitment`; a rite is a `Channel`
-  with a reach set; a private joke is `PersonaMaterial`. None of that requires
-  a count to be satisfied first.
+- **Structure is sparse; liveness is authored.** A world activates with enough
+  components for its current horizon, and grows toward the scale it was given.
+  Ordinary life is a recurring `Commitment`; a rite is a `Channel` with a
+  reach set; a private joke is `PersonaMaterial`. None of that waits on a
+  count, and no count admits any of it.
 
 The ontology does bound one thing on purpose: a consequence exists only if a
 component changed. Speech cannot imply an uncommitted effect. That is what
@@ -470,8 +498,8 @@ Deleted before replacement behavior is added, with no compatibility path:
   under 1 patch primitive, replacing both the mutation enum and the separate
   outcome-effect sum;
 - 5 qualification and verification types plus 1 outcome resolver → 0;
-- elaborator titles, waves, quotas, demand, deficit, and debt rotation → 4
-  derived boundaries and 1 seed request;
+- elaborator titles, semantic qualification, and round budgets → 4 derived
+  boundaries, 1 seed request, and 1 structurally counted scale deficit;
 - 2 seed admission paths → 1;
 - N model-facing tool schemas hand-written per stage → 1 derived catalog.
 
@@ -543,3 +571,10 @@ Beyond the existing kernel proofs, focused tests must prove:
 20. A batched inference returning proposals for several controllers commits
     only those that pass their own precondition and effect checks; a proposal
     attributed to a controller outside the batch is rejected.
+21. With N qualified subjects and cell budget B, the derived cover contains
+    every active subject, at most B cells, and the highest-pressure and
+    highest-debt subjects as singletons; every subject reaches a singleton
+    within bounded ticks.
+22. A subject counts toward the scale deficit only when active with one
+    controller, one `Goal`, and one executable affordance; a rejected patch
+    leaves the deficit unchanged and visible.
