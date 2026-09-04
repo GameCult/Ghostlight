@@ -12,8 +12,8 @@ use std::{
 };
 use thiserror::Error;
 
-const STATE_ROW: &str = "world_state.affordance.v1";
-const COMMIT_ROW: &str = "world_commit.affordance.v1";
+const STATE_ROW: &str = "world_state.authority.v1";
+const COMMIT_ROW: &str = "world_commit.authority.v1";
 
 #[derive(Debug, Error)]
 pub(super) enum JournalError {
@@ -526,6 +526,73 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
                     .into(),
             ));
         }
+    }
+    // The civic subgraph, in the slot the deleted `authority_scope` check
+    // occupied: a jurisdiction names live ground under a canonical kind, an
+    // office sits on an institution and lends something to a person who holds
+    // no other office there, and a forum names a live subject.
+    let target_is_canonical = |target: &super::AuthorityTarget| match target {
+        super::AuthorityTarget::Subject(subject_id) => state.subjects.contains_key(subject_id),
+        super::AuthorityTarget::PlaceSubtree(entity_id) => is_place(entity_id),
+    };
+    for (subject_id, grants) in &state.authority {
+        if !state.subjects.contains_key(subject_id)
+            || grants.is_empty()
+            || !grants.iter().all(|grant| {
+                super::patch::is_civic_name(&grant.kind.0) && target_is_canonical(&grant.over)
+            })
+        {
+            return Err(JournalError::Corrupt(
+                "authority does not name a canonical subject and live ground under a canonical kind"
+                    .into(),
+            ));
+        }
+    }
+    for (institution, offices) in &state.selection {
+        let mut incumbents = BTreeSet::new();
+        if state.subjects.get(institution).map(|subject| subject.kind)
+            != Some(super::SubjectKind::Institution)
+            || offices.is_empty()
+        {
+            return Err(JournalError::Corrupt(
+                "an office register does not name a canonical institution".into(),
+            ));
+        }
+        for (name, office) in offices {
+            let incumbent_is_person = office.incumbent.is_none_or(|incumbent| {
+                state.subjects.get(&incumbent).map(|subject| subject.kind)
+                    == Some(super::SubjectKind::Person)
+                    && incumbents.insert(incumbent)
+            });
+            if !super::patch::is_civic_name(&name.0)
+                || office.delegated.is_empty()
+                || !office
+                    .delegated
+                    .iter()
+                    .all(|kind| super::patch::is_civic_name(&kind.0))
+                || !incumbent_is_person
+            {
+                return Err(JournalError::Corrupt(
+                    "an office lends nothing, is misnamed, or is held twice or by a non-person"
+                        .into(),
+                ));
+            }
+        }
+    }
+    for (grievance, forum) in &state.redress {
+        if !super::patch::is_civic_name(&grievance.0)
+            || !state.subjects.contains_key(&forum.forum)
+            || !target_is_canonical(&forum.standing)
+        {
+            return Err(JournalError::Corrupt(
+                "a forum does not name a canonical grievance, subject, and standing".into(),
+            ));
+        }
+    }
+    if super::overlapping_holder(state).is_some() {
+        return Err(JournalError::Corrupt(
+            "one subject holds two overlapping jurisdictions of one kind".into(),
+        ));
     }
     let mut controller_ids = BTreeSet::new();
     for (subject_id, subject) in &state.subjects {
@@ -1234,6 +1301,240 @@ mod tests {
         rows.push(
             envelope(
                 "world_state.foundation.v1",
+                STATE_SCHEMA,
+                kernel.state.world_id.key(),
+                &kernel.state,
+            )
+            .unwrap(),
+        );
+        let error = recover(rows, None).unwrap_err();
+        let JournalError::Corrupt(message) = error else {
+            panic!("expected a corrupt store, got {error:?}");
+        };
+        assert!(
+            message.contains("unadmitted row type"),
+            "unexpected refusal: {message}"
+        );
+    }
+
+    /// A committed levy survives a restart exactly: the snapshot, the band, the
+    /// lowered effects, and the re-derived authority verdict all come back, and
+    /// the same envelope is already applied.
+    #[test]
+    fn restart_replay_after_a_levy_is_exact() {
+        use crate::world::tests::{affordance_named, civic_world, command, opportunity_for, owner};
+        use crate::world::{
+            DecisionInvocation, Magnitude, ProposedEffect, Quantity, Role, RoleBinding,
+            SubmitReceipt, Target,
+        };
+
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            crate::world::tests::creation(CommandId::new(), "Replayed Levy"),
+            &crate::world::tests::auth_principal(owner()),
+        )
+        .unwrap();
+        let (_, civic, active) = civic_world(&mut kernel);
+        let opportunity = opportunity_for(&active, civic.treasury);
+        let caller = CallerId::Controller(opportunity.controller_id);
+        let envelope = command(
+            &active,
+            CommandId::new(),
+            caller.clone(),
+            CommandBody::ExerciseDecision {
+                opportunity,
+                invocation: DecisionInvocation {
+                    affordance: affordance_named(&active, "levy"),
+                    bindings: vec![
+                        RoleBinding {
+                            role: Role("payer".into()),
+                            target: Target::Subject(civic.farmer),
+                        },
+                        RoleBinding {
+                            role: Role("resource".into()),
+                            target: Target::Entity(civic.grain),
+                        },
+                    ],
+                    proposed: vec![ProposedEffect {
+                        slot: 0,
+                        magnitude: Magnitude::Quantity(Quantity(3)),
+                    }],
+                    speech: None,
+                },
+            },
+        );
+        kernel
+            .submit(
+                envelope.clone(),
+                &AuthenticatedCaller::fixture(caller.clone()),
+            )
+            .unwrap();
+        let committed = kernel.snapshot().unwrap();
+        let event = kernel.state.events.last().expect("the levy event").clone();
+        let world_id = committed.world_id;
+        drop(kernel);
+
+        let mut reopened = WorldKernel::open(&path, world_id).unwrap();
+        assert_eq!(reopened.snapshot().unwrap(), committed);
+        let replayed = reopened.state.events.last().expect("the replayed event");
+        assert_eq!(replayed.band, event.band);
+        assert_eq!(replayed.effects, event.effects);
+        assert!(matches!(
+            reopened
+                .submit(envelope, &AuthenticatedCaller::fixture(caller))
+                .unwrap(),
+            SubmitReceipt::AlreadyApplied(_)
+        ));
+    }
+
+    /// Soul falsification: the civic shape checks are not decoration. A forged
+    /// store row that widens a jurisdiction, doubles an incumbency, seats an
+    /// institution, or empties a delegation is refused by `recover`.
+    #[test]
+    fn a_forged_authority_or_incumbency_is_corrupt() {
+        use crate::world::tests::{
+            BAILIFF_OFFICE, LEVY_KIND, WARDEN_OFFICE, auth_principal, authority_kind, civic_world,
+            office, owner,
+        };
+        use crate::world::{AuthorityGrant, AuthorityTarget, Office};
+        use std::collections::BTreeSet;
+
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            crate::world::tests::creation(CommandId::new(), "Forged Civics"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let (topology, civic, _) = civic_world(&mut kernel);
+        let commits: Vec<CultCacheEnvelope> = kernel
+            .journal
+            .commits
+            .values()
+            .map(|commit| {
+                envelope(COMMIT_ROW, COMMIT_SCHEMA, commit.command.id().key(), commit).unwrap()
+            })
+            .collect();
+        let rows_for = |state: &WorldState| {
+            let mut rows = commits.clone();
+            rows.push(envelope(STATE_ROW, STATE_SCHEMA, state.world_id.key(), state).unwrap());
+            rows
+        };
+        assert!(recover(rows_for(&kernel.state), None).is_ok());
+
+        let widened = {
+            let mut state = kernel.state.clone();
+            state.authority.insert(
+                civic.reeve,
+                BTreeSet::from([AuthorityGrant {
+                    kind: authority_kind(LEVY_KIND),
+                    over: AuthorityTarget::PlaceSubtree(civic.chamber),
+                }]),
+            );
+            state
+        };
+        let dangling = {
+            let mut state = kernel.state.clone();
+            state.authority.insert(
+                civic.outsider,
+                BTreeSet::from([AuthorityGrant {
+                    kind: authority_kind(LEVY_KIND),
+                    over: AuthorityTarget::PlaceSubtree(EntityId::issue()),
+                }]),
+            );
+            state
+        };
+        let doubled = {
+            let mut state = kernel.state.clone();
+            state
+                .selection
+                .get_mut(&civic.treasury)
+                .unwrap()
+                .get_mut(&office(BAILIFF_OFFICE))
+                .unwrap()
+                .incumbent = Some(civic.reeve);
+            state
+        };
+        let seated_institution = {
+            let mut state = kernel.state.clone();
+            state
+                .selection
+                .get_mut(&civic.treasury)
+                .unwrap()
+                .get_mut(&office(WARDEN_OFFICE))
+                .unwrap()
+                .incumbent = Some(civic.treasury);
+            state
+        };
+        let inert_office = {
+            let mut state = kernel.state.clone();
+            state.selection.get_mut(&civic.treasury).unwrap().insert(
+                office(WARDEN_OFFICE),
+                Office {
+                    incumbent: Some(civic.reeve),
+                    delegated: BTreeSet::new(),
+                },
+            );
+            state
+        };
+        let office_on_person = {
+            let mut state = kernel.state.clone();
+            state
+                .selection
+                .insert(topology.walker, state.selection[&civic.treasury].clone());
+            state
+        };
+        for forged in [
+            widened,
+            dangling,
+            doubled,
+            seated_institution,
+            inert_office,
+            office_on_person,
+        ] {
+            let error = recover(rows_for(&forged), None).unwrap_err();
+            assert!(
+                matches!(error, JournalError::Corrupt(_)),
+                "a forged civic row recovered: {error:?}"
+            );
+        }
+    }
+
+    /// Soul falsification: a store written before the civic partitions is
+    /// refused outright, with no migration adapter in the path.
+    #[test]
+    fn a_store_from_the_previous_schema_is_refused() {
+        use crate::world::tests::{auth_principal, civic_world, owner};
+
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            crate::world::tests::creation(CommandId::new(), "Pre-Authority"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        civic_world(&mut kernel);
+        let mut rows: Vec<CultCacheEnvelope> = kernel
+            .journal
+            .commits
+            .values()
+            .map(|commit| {
+                envelope(
+                    "world_commit.affordance.v1",
+                    COMMIT_SCHEMA,
+                    commit.command.id().key(),
+                    commit,
+                )
+                .unwrap()
+            })
+            .collect();
+        rows.push(
+            envelope(
+                "world_state.affordance.v1",
                 STATE_SCHEMA,
                 kernel.state.world_id.key(),
                 &kernel.state,

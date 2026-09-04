@@ -20,13 +20,16 @@ pub(crate) use controllers::{
 };
 pub(crate) use mailbox::{MailboxError, WorldMailbox};
 pub(crate) use patch::{
-    AccessKind, Affordance, AffordanceKindName, Bounds, ComponentOpKind, Cost, Declaration,
-    DependencyTarget, DraftHandle, EffectSlot, EntityDeclaration, EntityKind, EvidenceRef,
-    Mismatch, OutcomeBand, PatchAnswer, Position, Precondition, Quantity, Ref, RefKind, Role,
+    AccessKind, Affordance, AffordanceKindName, AuthorityGrant, AuthorityKindName, AuthorityTarget,
+    Bounds, ComponentOpKind, Cost, Declaration, DependencyTarget, DraftHandle, EffectSlot,
+    EntityDeclaration, EntityKind, EvidenceRef, Forum, GrievanceKindName, Mismatch, Office,
+    OfficeName, OutcomeBand, PatchAnswer, Position, Precondition, Quantity, Ref, RefKind, Role,
     RoleSpec, SubjectDeclaration, WorldPatch,
 };
 #[cfg(test)]
 use patch::{AffordanceDeclaration, ComponentOp, DependencyRef, RouteDeclaration};
+#[cfg(test)]
+pub(crate) use patch::{AuthorityGrantRef, AuthorityTargetRef};
 use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch};
 
 use chrono::{DateTime, Utc};
@@ -38,8 +41,8 @@ use std::path::Path;
 use thiserror::Error;
 use uuid::Uuid;
 
-pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.affordance.v1";
-pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.affordance.v1";
+pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.authority.v1";
+pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.authority.v1";
 
 /// Compatibility tag derived from [`STATE_SCHEMA`]: the trailing
 /// `<family>-<version>` pair (e.g. `foundation-v1`). Callers that publish a
@@ -480,6 +483,21 @@ struct WorldState {
     holdings: BTreeMap<SubjectId, BTreeMap<EntityId, Quantity>>,
     /// What each subject depends on. Never empty for a present key.
     dependencies: BTreeMap<SubjectId, BTreeSet<DependencyTarget>>,
+    /// What ground each subject has jurisdiction over, and under which
+    /// world-declared kind. Never empty for a present key. No subject holds two
+    /// grants of one kind over overlapping ground, so nothing ever arbitrates
+    /// between two sources of one permission.
+    authority: BTreeMap<SubjectId, BTreeSet<AuthorityGrant>>,
+    /// The offices each institution constitutes, and who sits in them. An
+    /// incumbent never exercises its institution's opportunity:
+    /// `controller_assignments` stays the sole answer to who may call, and an
+    /// office answers the different question of what its incumbent has
+    /// jurisdiction over.
+    selection: BTreeMap<SubjectId, BTreeMap<OfficeName, Office>>,
+    /// Where each kind of grievance goes, and who may bring it. Keyed by
+    /// neither a subject nor a referent, so it enters no scope digest and is
+    /// admission-only state.
+    redress: BTreeMap<GrievanceKindName, Forum>,
     controller_assignments: BTreeMap<DecisionScope, ControllerAssignment>,
     /// What an affordance *is*. World-authored, Draft-only, written by
     /// `admit_resolved` alone.
@@ -568,12 +586,41 @@ pub(crate) struct SubjectSnapshot {
     pub(crate) human_controller: Option<PrincipalId>,
     pub(crate) affordances: BTreeSet<AffordanceId>,
     pub(crate) position: Option<EntityId>,
-    /// This subject's own holdings and dependencies, and the routes incident to
-    /// its place: exactly what its scope digest reads, lowered from the one
-    /// `scope_components` owner.
+    /// Lowered from the one `scope_components` owner, so these are exactly what
+    /// the scope digest binds: this subject's own holdings, dependencies, and
+    /// grants, the routes incident to its place, and the offices it occupies
+    /// with what each lends. A counterparty's components never enter.
     pub(crate) holdings: BTreeMap<EntityId, Quantity>,
     pub(crate) dependencies: BTreeSet<DependencyTarget>,
     pub(crate) incident_routes: Vec<EdgeId>,
+    pub(crate) authority: BTreeSet<AuthorityGrant>,
+    pub(crate) offices_held: Vec<OfficeSnapshot>,
+    /// View-only, and covered by no digest: an institution's own offices, so
+    /// its controller can see what it lends and to whom. No precondition reads
+    /// it, and installing a warden therefore does not reject the institution's
+    /// in-flight proposals — what an institution lends is not what it may do.
+    pub(crate) offices_granted: Vec<OfficeSnapshot>,
+    /// View-only: the forums whose standing covers this subject, through the
+    /// same covering predicate `HasStanding` uses.
+    pub(crate) redress: Vec<ForumSnapshot>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct OfficeSnapshot {
+    pub(crate) institution: SubjectId,
+    pub(crate) office: OfficeName,
+    pub(crate) incumbent: Option<SubjectId>,
+    /// What the office actually lends: the institution's live grants whose kind
+    /// the office delegates.
+    pub(crate) authority: BTreeSet<AuthorityGrant>,
+}
+
+/// A forum a subject may petition. It carries no standing: a subject learns
+/// that it may bring a grievance, not the boundary of everyone else's standing.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct ForumSnapshot {
+    pub(crate) grievance: GrievanceKindName,
+    pub(crate) forum: SubjectId,
 }
 
 /// One catalog entry as consumers read it. The whole entry, because every
@@ -1125,6 +1172,9 @@ impl WorldState {
             positions: BTreeMap::new(),
             holdings: BTreeMap::new(),
             dependencies: BTreeMap::new(),
+            authority: BTreeMap::new(),
+            selection: BTreeMap::new(),
+            redress: BTreeMap::new(),
             controller_assignments: BTreeMap::new(),
             affordance_catalog: BTreeMap::new(),
             affordance_grants: BTreeMap::new(),
@@ -1380,6 +1430,22 @@ fn apply_operations(
     if patch::check_ledger(&deltas).is_some() {
         return Err(KernelError::Invariant("custody does not conserve".into()));
     }
+    // Disjointness, re-derived over the committed partitions for the same
+    // reason conservation is: a forged effect reaches this function without
+    // passing the resolver.
+    if operations.iter().any(|operation| {
+        matches!(
+            operation,
+            ResolvedOp::GrantAuthority { .. }
+                | ResolvedOp::OpenOffice { .. }
+                | ResolvedOp::InstallIncumbent { .. }
+        )
+    }) && overlapping_holder(state).is_some()
+    {
+        return Err(KernelError::Invariant(
+            "one subject holds two overlapping jurisdictions of one kind".into(),
+        ));
+    }
     Ok(())
 }
 
@@ -1480,12 +1546,14 @@ fn apply_operation(
                 .get(edge_id)
                 .ok_or_else(|| KernelError::Invariant("relocation names no route".into()))?;
             let (from, to) = route.endpoints();
-            if !route.is_open()
-                || route.access() != AccessKind::Public
+            let open = route.is_open();
+            let access = route.access().clone();
+            if !open
                 || state.positions.get(subject_id) != Some(&Position { place: from })
+                || !patch::route_admits(state, &subject_authority(state, *subject_id), &access, to)
             {
                 return Err(KernelError::Invariant(
-                    "relocation does not traverse an open public route from the subject's place"
+                    "relocation does not traverse an open route the subject may take from its place"
                         .into(),
                 ));
             }
@@ -1641,8 +1709,232 @@ fn apply_operation(
                 }
             }
         }
+        ResolvedOp::GrantAuthority { holder, grant }
+        | ResolvedOp::RevokeAuthority { holder, grant } => {
+            let granting = matches!(operation, ResolvedOp::GrantAuthority { .. });
+            if !state.subjects.contains_key(holder)
+                || !authority_referent_exists(state, grant.over)
+                || !patch::is_civic_name(&grant.kind.0)
+            {
+                return Err(unknown());
+            }
+            let held = state
+                .authority
+                .get(holder)
+                .is_some_and(|grants| grants.contains(grant));
+            if held == granting {
+                return Err(KernelError::Invariant(
+                    "authority operation changes nothing".into(),
+                ));
+            }
+            if granting {
+                state
+                    .authority
+                    .entry(*holder)
+                    .or_default()
+                    .insert(grant.clone());
+            } else {
+                let empty = if let Some(grants) = state.authority.get_mut(holder) {
+                    grants.remove(grant);
+                    grants.is_empty()
+                } else {
+                    false
+                };
+                if empty {
+                    state.authority.remove(holder);
+                }
+            }
+        }
+        ResolvedOp::OpenOffice {
+            institution,
+            office,
+            delegated,
+        } => {
+            require_institution(state, *institution, office)?;
+            if delegated.is_empty() || delegated.iter().any(|kind| !patch::is_civic_name(&kind.0)) {
+                return Err(KernelError::Invariant(
+                    "an office lends no canonical authority kind".into(),
+                ));
+            }
+            let current = state
+                .selection
+                .get(institution)
+                .and_then(|offices| offices.get(office));
+            if current.is_some_and(|seat| &seat.delegated == delegated) {
+                return Err(KernelError::Invariant(
+                    "office operation changes nothing".into(),
+                ));
+            }
+            // A sitting incumbent survives a reconstitution: clipping an
+            // office's powers under its holder is a political act, not a
+            // vacancy.
+            let incumbent = current.and_then(|seat| seat.incumbent);
+            state.selection.entry(*institution).or_default().insert(
+                office.clone(),
+                Office {
+                    incumbent,
+                    delegated: delegated.clone(),
+                },
+            );
+        }
+        ResolvedOp::CloseOffice {
+            institution,
+            office,
+        }
+        | ResolvedOp::VacateOffice {
+            institution,
+            office,
+        } => {
+            let closing = matches!(operation, ResolvedOp::CloseOffice { .. });
+            require_institution(state, *institution, office)?;
+            let no_office = || KernelError::Invariant("office operation names no office".into());
+            let offices = state.selection.get_mut(institution).ok_or_else(no_office)?;
+            let occupied = offices
+                .get(office)
+                .map(|seat| seat.incumbent.is_some())
+                .ok_or_else(no_office)?;
+            if closing {
+                offices.remove(office);
+                let empty = offices.is_empty();
+                if empty {
+                    state.selection.remove(institution);
+                }
+            } else if !occupied {
+                return Err(KernelError::Invariant(
+                    "office operation changes nothing".into(),
+                ));
+            } else {
+                offices.get_mut(office).ok_or_else(no_office)?.incumbent = None;
+            }
+        }
+        ResolvedOp::InstallIncumbent {
+            institution,
+            office,
+            incumbent,
+        } => {
+            require_institution(state, *institution, office)?;
+            if state.subjects.get(incumbent).map(|subject| subject.kind)
+                != Some(SubjectKind::Person)
+            {
+                return Err(KernelError::Invariant(
+                    "an office holder is not a person subject".into(),
+                ));
+            }
+            let offices = state
+                .selection
+                .get_mut(institution)
+                .ok_or_else(|| KernelError::Invariant("office operation names no office".into()))?;
+            if offices
+                .iter()
+                .any(|(name, seat)| name != office && seat.incumbent == Some(*incumbent))
+            {
+                return Err(KernelError::Invariant(
+                    "one person holds two offices of one institution".into(),
+                ));
+            }
+            let seat = offices
+                .get_mut(office)
+                .ok_or_else(|| KernelError::Invariant("office operation names no office".into()))?;
+            if seat.incumbent == Some(*incumbent) {
+                return Err(KernelError::Invariant(
+                    "office operation changes nothing".into(),
+                ));
+            }
+            seat.incumbent = Some(*incumbent);
+        }
+        ResolvedOp::OpenForum {
+            grievance,
+            forum,
+            standing,
+        } => {
+            if !state.subjects.contains_key(forum)
+                || !authority_referent_exists(state, *standing)
+                || !patch::is_civic_name(&grievance.0)
+            {
+                return Err(unknown());
+            }
+            let seat = Forum {
+                forum: *forum,
+                standing: *standing,
+            };
+            if state.redress.get(grievance) == Some(&seat) {
+                return Err(KernelError::Invariant(
+                    "forum operation changes nothing".into(),
+                ));
+            }
+            state.redress.insert(grievance.clone(), seat);
+        }
+        ResolvedOp::CloseForum { grievance } => {
+            if state.redress.remove(grievance).is_none() {
+                return Err(KernelError::Invariant(
+                    "forum operation names no forum".into(),
+                ));
+            }
+        }
     }
     Ok(())
+}
+
+/// Whether an authority target names a live subject or a live place.
+fn authority_referent_exists(state: &WorldState, target: AuthorityTarget) -> bool {
+    match target {
+        AuthorityTarget::Subject(subject_id) => state.subjects.contains_key(&subject_id),
+        AuthorityTarget::PlaceSubtree(entity_id) => state
+            .entities
+            .get(&entity_id)
+            .is_some_and(|record| record.kind == EntityKind::Place),
+    }
+}
+
+/// The shared half of every office operation: a canonical office name on a live
+/// institution subject.
+fn require_institution(
+    state: &WorldState,
+    institution: SubjectId,
+    office: &OfficeName,
+) -> Result<(), KernelError> {
+    if !patch::is_civic_name(&office.0) {
+        return Err(KernelError::Invariant(
+            "office name is not canonical".into(),
+        ));
+    }
+    if state.subjects.get(&institution).map(|subject| subject.kind)
+        != Some(SubjectKind::Institution)
+    {
+        return Err(KernelError::Invariant(
+            "an office was opened on a subject that is not an institution".into(),
+        ));
+    }
+    Ok(())
+}
+
+/// The subject, if any, whose effective authority holds two grants of one kind
+/// over overlapping ground. Re-derived over the committed partitions after every
+/// batch that could widen a jurisdiction, so a forged effect cannot install the
+/// split-brained state the resolver refuses.
+fn overlapping_holder(state: &WorldState) -> Option<SubjectId> {
+    let holders: BTreeSet<SubjectId> = state
+        .authority
+        .keys()
+        .copied()
+        .chain(
+            state
+                .selection
+                .values()
+                .flat_map(|offices| offices.values())
+                .filter_map(|office| office.incumbent),
+        )
+        .collect();
+    holders.into_iter().find(|holder| {
+        let effective: Vec<AuthorityGrant> =
+            subject_authority(state, *holder).into_iter().collect();
+        effective.iter().enumerate().any(|(index, one)| {
+            effective[index + 1..].iter().any(|other| {
+                one.kind == other.kind
+                    && patch::targets_overlap(&state.entities, one.over, other.over)
+            })
+        })
+    })
 }
 
 /// Exactly the components a subject's verification reads. One owner, consumed by
@@ -1652,12 +1944,115 @@ fn apply_operation(
 /// reading too much only costs an extra rejection. `holdings` and `dependencies`
 /// are the acting subject's own; a counterparty's holdings do not enter, because
 /// a transfer changes both subjects' components and so changes both digests.
+/// It also holds what the actor *is* authorized over, and nothing about the
+/// world the actor reaches: the target's position, the target's container
+/// chain, the forum's state, and any subordinate's components stay out. A
+/// realm-wide authority whose preimage held its jurisdiction's occupancy would
+/// conflict with every commit in the realm, which is whole-world binding
+/// restored by the front door. A target that walks out of a jurisdiction
+/// mid-flight therefore fails at `Authorized` rather than rebinding, while a
+/// revoked grant is a `ScopeChanged`.
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 pub(super) struct ScopeComponents {
     position: Option<Position>,
     routes: BTreeMap<EdgeId, EdgeRecord>,
     holdings: BTreeMap<EntityId, Quantity>,
     dependencies: BTreeSet<DependencyTarget>,
+    /// This subject's own grants.
+    authority: BTreeSet<AuthorityGrant>,
+    /// What each held office lends: for every office whose incumbent is this
+    /// subject, the institution's live grants whose kind that office delegates.
+    /// The institution's authority is copied in through the office link, so one
+    /// scope digest covers the grant, the office, and the institution's
+    /// jurisdiction, and only delegated kinds enter — an institution's `judge`
+    /// jurisdiction never churns a `levy`-only incumbent's proposals.
+    delegated: BTreeMap<SubjectId, BTreeMap<OfficeName, BTreeSet<AuthorityGrant>>>,
+}
+
+/// Whether an authority target covers a referent. The one statement of
+/// jurisdictional membership, reached by `Authorized`, `HasStanding`,
+/// `route_admits`, the delegation monotonicity rule, and the snapshot's redress
+/// projection.
+///
+/// A place subtree covers a subject standing anywhere under it, a place under
+/// it, and a route with either endpoint under it — a city must be able to close
+/// its own gate, and a gate's far end is outside the city by construction. A
+/// resource, fact, or channel is covered by nothing; `RoleKindUnfit` refuses an
+/// `Authorized` over such a role at declaration.
+fn covers(state: &WorldState, target: AuthorityTarget, of: Target) -> bool {
+    let under = |place: EntityId, root: EntityId| patch::covers_place(&state.entities, root, place);
+    match (target, of) {
+        (AuthorityTarget::Subject(holder), Target::Subject(subject_id)) => holder == subject_id,
+        (AuthorityTarget::Subject(_), _) => false,
+        (AuthorityTarget::PlaceSubtree(root), Target::Subject(subject_id)) => state
+            .positions
+            .get(&subject_id)
+            .is_some_and(|position| under(position.place, root)),
+        (AuthorityTarget::PlaceSubtree(root), Target::Entity(entity_id)) => state
+            .entities
+            .get(&entity_id)
+            .is_some_and(|record| record.kind == EntityKind::Place && under(entity_id, root)),
+        (AuthorityTarget::PlaceSubtree(root), Target::Edge(edge_id)) => {
+            state.edges.get(&edge_id).is_some_and(|record| {
+                let (from, to) = record.endpoints();
+                under(from, root) || under(to, root)
+            })
+        }
+    }
+}
+
+/// Own grants plus what every held office lends. The single statement of what a
+/// subject may invoke authority over. There is no precedence between a direct
+/// grant and a delegated one, because `OverlappingJurisdiction` makes it
+/// impossible for both to answer for one kind over overlapping ground.
+fn effective_authority(
+    own: &BTreeSet<AuthorityGrant>,
+    delegated: &BTreeMap<SubjectId, BTreeMap<OfficeName, BTreeSet<AuthorityGrant>>>,
+) -> BTreeSet<AuthorityGrant> {
+    let mut effective = own.clone();
+    for lent in delegated.values().flat_map(|offices| offices.values()) {
+        effective.extend(lent.iter().cloned());
+    }
+    effective
+}
+
+/// Every office this subject occupies, keyed by institution, with what each one
+/// lends of that institution's live grants.
+fn delegated_authority(
+    state: &WorldState,
+    subject_id: SubjectId,
+) -> BTreeMap<SubjectId, BTreeMap<OfficeName, BTreeSet<AuthorityGrant>>> {
+    let mut held: BTreeMap<SubjectId, BTreeMap<OfficeName, BTreeSet<AuthorityGrant>>> =
+        BTreeMap::new();
+    for (institution, offices) in &state.selection {
+        for (name, office) in offices {
+            if office.incumbent != Some(subject_id) {
+                continue;
+            }
+            let lent: BTreeSet<AuthorityGrant> = state
+                .authority
+                .get(institution)
+                .into_iter()
+                .flatten()
+                .filter(|grant| office.delegated.contains(&grant.kind))
+                .cloned()
+                .collect();
+            held.entry(*institution)
+                .or_default()
+                .insert(name.clone(), lent);
+        }
+    }
+    held
+}
+
+/// The effective authority of one subject read straight from the partitions,
+/// for the reducer paths that do not already hold a `ScopeComponents`.
+fn subject_authority(state: &WorldState, subject_id: SubjectId) -> BTreeSet<AuthorityGrant> {
+    let empty = BTreeSet::new();
+    effective_authority(
+        state.authority.get(&subject_id).unwrap_or(&empty),
+        &delegated_authority(state, subject_id),
+    )
 }
 
 fn scope_components(state: &WorldState, subject_id: SubjectId) -> ScopeComponents {
@@ -1684,6 +2079,12 @@ fn scope_components(state: &WorldState, subject_id: SubjectId) -> ScopeComponent
             .get(&subject_id)
             .cloned()
             .unwrap_or_default(),
+        authority: state
+            .authority
+            .get(&subject_id)
+            .cloned()
+            .unwrap_or_default(),
+        delegated: delegated_authority(state, subject_id),
     }
 }
 
@@ -1704,6 +2105,48 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                 .cloned()
                 .unwrap_or_default();
             let components = scope_components(state, *subject_id);
+            let offices_held = components
+                .delegated
+                .iter()
+                .flat_map(|(institution, offices)| {
+                    offices
+                        .iter()
+                        .map(move |(office, authority)| OfficeSnapshot {
+                            institution: *institution,
+                            office: office.clone(),
+                            incumbent: Some(*subject_id),
+                            authority: authority.clone(),
+                        })
+                })
+                .collect();
+            let offices_granted = state
+                .selection
+                .get(subject_id)
+                .into_iter()
+                .flatten()
+                .map(|(office, seat)| OfficeSnapshot {
+                    institution: *subject_id,
+                    office: office.clone(),
+                    incumbent: seat.incumbent,
+                    authority: state
+                        .authority
+                        .get(subject_id)
+                        .into_iter()
+                        .flatten()
+                        .filter(|grant| seat.delegated.contains(&grant.kind))
+                        .cloned()
+                        .collect(),
+                })
+                .collect();
+            let redress = state
+                .redress
+                .iter()
+                .filter(|(_, forum)| covers(state, forum.standing, Target::Subject(*subject_id)))
+                .map(|(grievance, forum)| ForumSnapshot {
+                    grievance: grievance.clone(),
+                    forum: forum.forum,
+                })
+                .collect();
             Ok(SubjectSnapshot {
                 id: *subject_id,
                 label: subject.label.clone(),
@@ -1716,6 +2159,10 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                 holdings: components.holdings,
                 dependencies: components.dependencies,
                 incident_routes: components.routes.into_keys().collect(),
+                authority: components.authority,
+                offices_held,
+                offices_granted,
+                redress,
             })
         })
         .collect::<Result<Vec<_>, KernelError>>()?;
@@ -1748,7 +2195,7 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                 label: record.label().to_owned(),
                 from,
                 to,
-                access: record.access(),
+                access: record.access().clone(),
                 cost: record.cost(),
                 open: record.is_open(),
             }
@@ -2324,7 +2771,9 @@ mod tests {
                     "The Toll Stair",
                     "yard",
                     "gate",
-                    AccessKind::Restricted,
+                    AccessKind::Restricted {
+                        requires: AuthorityKindName(ADMIT_KIND.into()),
+                    },
                     4,
                 ),
                 way(
@@ -2409,6 +2858,16 @@ mod tests {
         pub(super) holder: SubjectId,
         pub(super) counterparty: SubjectId,
     }
+
+    /// The seed world's authority kinds, offices, and grievance. They are world
+    /// data: the kernel compares these strings and reads them no other way.
+    pub(super) const LEVY_KIND: &str = "levy";
+    pub(super) const ADMIT_KIND: &str = "admit";
+    pub(super) const COMMAND_KIND: &str = "command";
+    pub(super) const JUDGE_KIND: &str = "judge";
+    pub(super) const WARDEN_OFFICE: &str = "warden";
+    pub(super) const BAILIFF_OFFICE: &str = "bailiff";
+    pub(super) const SEIZURE_GRIEVANCE: &str = "seizure";
 
     pub(super) const TITHE_RECEIPT: &str = "receipt:rhythm-tithe-census";
     pub(super) const OPENING_BALANCE: u64 = 7;
@@ -2706,6 +3165,428 @@ mod tests {
         let custody = admit_custody(kernel, &topology);
         let active = activate(kernel);
         (topology, custody, active)
+    }
+
+    /// The canonical IDs of the civic fixture: a hall containing a chamber, an
+    /// institution holding jurisdiction over the hall, a person who holds that
+    /// jurisdiction only through an office, a person and a resource inside the
+    /// hall, and a person standing outside it.
+    pub(super) struct Civic {
+        pub(super) hall: EntityId,
+        pub(super) chamber: EntityId,
+        pub(super) passage: EdgeId,
+        pub(super) causeway: EdgeId,
+        pub(super) postern: EdgeId,
+        pub(super) treasury: SubjectId,
+        pub(super) reeve: SubjectId,
+        pub(super) farmer: SubjectId,
+        pub(super) outsider: SubjectId,
+        pub(super) grain: EntityId,
+    }
+
+    pub(super) fn authority_kind(name: &str) -> AuthorityKindName {
+        AuthorityKindName(name.into())
+    }
+
+    pub(super) fn office(name: &str) -> OfficeName {
+        OfficeName(name.into())
+    }
+
+    pub(super) fn grievance(name: &str) -> GrievanceKindName {
+        GrievanceKindName(name.into())
+    }
+
+    pub(super) fn over_place(place: EntityId) -> AuthorityTargetRef {
+        AuthorityTargetRef::PlaceSubtree(Ref::Existing(place))
+    }
+
+    pub(super) fn over_subject(subject_id: SubjectId) -> AuthorityTargetRef {
+        AuthorityTargetRef::Subject(Ref::Existing(subject_id))
+    }
+
+    pub(super) fn grant_of(kind: &str, over: AuthorityTargetRef) -> AuthorityGrantRef {
+        AuthorityGrantRef {
+            kind: authority_kind(kind),
+            over,
+        }
+    }
+
+    pub(super) fn grant_to(holder: SubjectId, kind: &str, over: AuthorityTargetRef) -> ComponentOp {
+        ComponentOp::GrantAuthority {
+            holder: Ref::Existing(holder),
+            grant: grant_of(kind, over),
+        }
+    }
+
+    /// Six world-authored civic entries. The kernel builds none of them; each
+    /// is a worked example of what a seed author writes to make the political
+    /// layer playable rather than administratively imposed.
+    fn civic_affordances() -> Vec<Declaration> {
+        let entry = |handle: &str,
+                     kind: &str,
+                     roles: Vec<RoleSpec>,
+                     preconditions: Vec<Precondition>,
+                     effect_slots: Vec<EffectSlot>,
+                     outcome_bands: Vec<OutcomeBand>,
+                     carries_speech: bool| {
+            Declaration::Affordance(AffordanceDeclaration {
+                handle: DraftHandle::new(handle),
+                kind: AffordanceKindName(kind.into()),
+                roles,
+                preconditions,
+                effect_slots,
+                outcome_bands,
+                carries_speech,
+            })
+        };
+        let role = |name: &str, kind: RefKind| RoleSpec {
+            role: Role(name.into()),
+            kind,
+        };
+        let slot = |op_kind: ComponentOpKind, roles: Vec<&str>, bounds: Bounds| EffectSlot {
+            op_kind,
+            roles: roles.into_iter().map(|name| Role(name.into())).collect(),
+            bounds,
+        };
+        let authorized = |over: &str, kind: &str| Precondition::Authorized {
+            over: Role(over.into()),
+            kind: authority_kind(kind),
+        };
+        vec![
+            // The payee is the reserved `actor` role, so an authorized
+            // collector cannot lawfully take a tax and send it to a friend.
+            entry(
+                "levy",
+                "levy",
+                vec![
+                    role("payer", RefKind::Subject(None)),
+                    role("resource", RefKind::Entity(EntityKind::Resource)),
+                ],
+                vec![authorized("payer", LEVY_KIND)],
+                vec![slot(
+                    ComponentOpKind::Transfer,
+                    vec!["payer", "actor", "resource"],
+                    Bounds::Quantity(Quantity(10)),
+                )],
+                certain_band(),
+                false,
+            ),
+            entry(
+                "delegate",
+                "delegate",
+                vec![
+                    role("deputy", RefKind::Subject(None)),
+                    role("ground", RefKind::Entity(EntityKind::Place)),
+                ],
+                // The precondition names one kind and the slot grants another,
+                // so the monotonicity rule is the check that decides whether
+                // the granted authority is one the granter holds.
+                vec![authorized("ground", COMMAND_KIND)],
+                vec![slot(
+                    ComponentOpKind::GrantAuthority {
+                        kind: authority_kind(LEVY_KIND),
+                    },
+                    vec!["deputy", "ground"],
+                    Bounds::None,
+                )],
+                certain_band(),
+                false,
+            ),
+            entry(
+                "deploy",
+                "deploy",
+                vec![
+                    role("subordinate", RefKind::Subject(None)),
+                    role("via", RefKind::Edge(patch::EdgeKind::Route)),
+                ],
+                vec![authorized("subordinate", COMMAND_KIND)],
+                vec![slot(
+                    ComponentOpKind::Relocate,
+                    vec!["subordinate", "via"],
+                    Bounds::None,
+                )],
+                certain_band(),
+                false,
+            ),
+            // The first affordance whose effect changes shared topology under a
+            // legitimacy check; the second band is the interdiction that fails.
+            entry(
+                "sanction",
+                "sanction",
+                vec![role("road", RefKind::Edge(patch::EdgeKind::Route))],
+                vec![authorized("road", COMMAND_KIND)],
+                vec![slot(
+                    ComponentOpKind::CloseRoute,
+                    vec!["road"],
+                    Bounds::None,
+                )],
+                vec![
+                    OutcomeBand {
+                        weight: 3,
+                        effects: vec![0],
+                    },
+                    OutcomeBand {
+                        weight: 1,
+                        effects: Vec::new(),
+                    },
+                ],
+                false,
+            ),
+            // Succession is an act someone performs under authority, not a
+            // declared method string.
+            entry(
+                "appoint",
+                "appoint",
+                vec![
+                    role("institution", RefKind::Subject(None)),
+                    role("candidate", RefKind::Subject(None)),
+                ],
+                vec![authorized("institution", COMMAND_KIND)],
+                vec![slot(
+                    ComponentOpKind::InstallIncumbent {
+                        office: office(BAILIFF_OFFICE),
+                    },
+                    vec!["institution", "candidate"],
+                    Bounds::None,
+                )],
+                certain_band(),
+                false,
+            ),
+            // The reader that keeps `Redress` from being decorative.
+            entry(
+                "petition",
+                "petition",
+                Vec::new(),
+                vec![Precondition::HasStanding {
+                    grievance: grievance(SEIZURE_GRIEVANCE),
+                }],
+                Vec::new(),
+                vec![OutcomeBand {
+                    weight: 1,
+                    effects: Vec::new(),
+                }],
+                true,
+            ),
+        ]
+    }
+
+    fn civic_grants(handles: &[&str], speak: &Ref<AffordanceId>) -> BTreeSet<Ref<AffordanceId>> {
+        std::iter::once(speak.clone())
+            .chain(
+                handles
+                    .iter()
+                    .map(|handle| Ref::Draft(DraftHandle::new(*handle))),
+            )
+            .collect()
+    }
+
+    pub(super) fn civic_patch(topology: &Topology, speak: Ref<AffordanceId>) -> WorldPatch {
+        let person = |handle: &str, label: &str, place: Ref<EntityId>, handles: &[&str]| {
+            Declaration::Subject(SubjectDeclaration {
+                handle: DraftHandle::new(handle),
+                label: label.into(),
+                kind: SubjectKind::Person,
+                controller: NewController::OperationalAgent,
+                affordances: civic_grants(handles, &speak),
+                position: Some(place),
+            })
+        };
+        let declarations = civic_affordances()
+            .into_iter()
+            .chain([
+                Declaration::Entity(EntityDeclaration {
+                    handle: DraftHandle::new("hall"),
+                    label: "The Tithe Hall".into(),
+                    kind: EntityKind::Place,
+                    container: None,
+                }),
+                Declaration::Entity(EntityDeclaration {
+                    handle: DraftHandle::new("chamber"),
+                    label: "The Counting Chamber".into(),
+                    kind: EntityKind::Place,
+                    container: Some(Ref::Draft(DraftHandle::new("hall"))),
+                }),
+                resource("grain", "The Winter Grain"),
+                Declaration::Route(RouteDeclaration {
+                    handle: DraftHandle::new("passage"),
+                    label: "The Hall Passage".into(),
+                    from: Ref::Draft(DraftHandle::new("chamber")),
+                    to: Ref::Draft(DraftHandle::new("hall")),
+                    access: AccessKind::Public,
+                    cost: Cost(3),
+                }),
+                Declaration::Route(RouteDeclaration {
+                    handle: DraftHandle::new("causeway"),
+                    label: "The Hall Causeway".into(),
+                    from: Ref::Draft(DraftHandle::new("hall")),
+                    to: Ref::Existing(topology.road),
+                    access: AccessKind::Public,
+                    cost: Cost(6),
+                }),
+                Declaration::Route(RouteDeclaration {
+                    handle: DraftHandle::new("postern"),
+                    label: "The Hall Postern".into(),
+                    from: Ref::Existing(topology.yard),
+                    to: Ref::Draft(DraftHandle::new("chamber")),
+                    access: AccessKind::Restricted {
+                        requires: authority_kind(ADMIT_KIND),
+                    },
+                    cost: Cost(2),
+                }),
+                Declaration::Subject(SubjectDeclaration {
+                    handle: DraftHandle::new("treasury"),
+                    label: "The Tithe Treasury".into(),
+                    kind: SubjectKind::Institution,
+                    controller: NewController::OperationalAgent,
+                    affordances: civic_grants(
+                        &["levy", "delegate", "deploy", "sanction", "appoint"],
+                        &speak,
+                    ),
+                    position: Some(Ref::Draft(DraftHandle::new("hall"))),
+                }),
+                Declaration::Subject(SubjectDeclaration {
+                    handle: DraftHandle::new("reeve"),
+                    label: "The Hall Reeve".into(),
+                    kind: SubjectKind::Person,
+                    controller: NewController::NarrativePersona,
+                    affordances: civic_grants(
+                        &["levy", "delegate", "petition", "sanction"],
+                        &speak,
+                    ),
+                    position: Some(Ref::Draft(DraftHandle::new("chamber"))),
+                }),
+                person(
+                    "farmer",
+                    "The Winter Farmer",
+                    Ref::Draft(DraftHandle::new("chamber")),
+                    &["levy", "petition"],
+                ),
+                person(
+                    "outsider",
+                    "The Road Pedlar",
+                    Ref::Existing(topology.road),
+                    &["levy", "petition"],
+                ),
+            ])
+            .collect();
+        WorldPatch {
+            declarations,
+            operations: vec![
+                ComponentOp::Admit {
+                    holder: Ref::Draft(DraftHandle::new("farmer")),
+                    resource: Ref::Draft(DraftHandle::new("grain")),
+                    qty: Quantity(OPENING_BALANCE),
+                    evidence: EvidenceRef::new(TITHE_RECEIPT),
+                },
+                ComponentOp::Admit {
+                    holder: Ref::Draft(DraftHandle::new("outsider")),
+                    resource: Ref::Draft(DraftHandle::new("grain")),
+                    qty: Quantity(OPENING_BALANCE),
+                    evidence: EvidenceRef::new(TITHE_RECEIPT),
+                },
+                ComponentOp::GrantAuthority {
+                    holder: Ref::Draft(DraftHandle::new("treasury")),
+                    grant: AuthorityGrantRef {
+                        kind: authority_kind(LEVY_KIND),
+                        over: AuthorityTargetRef::PlaceSubtree(Ref::Draft(DraftHandle::new(
+                            "hall",
+                        ))),
+                    },
+                },
+                ComponentOp::GrantAuthority {
+                    holder: Ref::Draft(DraftHandle::new("treasury")),
+                    grant: AuthorityGrantRef {
+                        kind: authority_kind(COMMAND_KIND),
+                        over: AuthorityTargetRef::PlaceSubtree(Ref::Draft(DraftHandle::new(
+                            "hall",
+                        ))),
+                    },
+                },
+                ComponentOp::OpenOffice {
+                    institution: Ref::Draft(DraftHandle::new("treasury")),
+                    office: office(WARDEN_OFFICE),
+                    delegated: BTreeSet::from([authority_kind(LEVY_KIND)]),
+                },
+                ComponentOp::OpenOffice {
+                    institution: Ref::Draft(DraftHandle::new("treasury")),
+                    office: office(BAILIFF_OFFICE),
+                    delegated: BTreeSet::from([authority_kind(JUDGE_KIND)]),
+                },
+                ComponentOp::InstallIncumbent {
+                    institution: Ref::Draft(DraftHandle::new("treasury")),
+                    office: office(WARDEN_OFFICE),
+                    incumbent: Ref::Draft(DraftHandle::new("reeve")),
+                },
+                ComponentOp::OpenForum {
+                    grievance: grievance(SEIZURE_GRIEVANCE),
+                    forum: Ref::Draft(DraftHandle::new("treasury")),
+                    standing: AuthorityTargetRef::PlaceSubtree(Ref::Draft(DraftHandle::new(
+                        "chamber",
+                    ))),
+                },
+            ],
+            evidence: vec![EvidenceRef::new(TITHE_RECEIPT)],
+        }
+    }
+
+    pub(super) fn admit_civic(kernel: &mut WorldKernel, topology: &Topology) -> Civic {
+        let before = kernel.snapshot().unwrap();
+        let receipt = submit_owner(
+            kernel,
+            &before,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: civic_patch(topology, speak_entry(kernel)),
+            },
+        );
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+        let entity = |label: &str| {
+            *kernel
+                .state
+                .entities
+                .iter()
+                .find(|(_, record)| record.label == label)
+                .expect("a declared entity")
+                .0
+        };
+        let edge = |label: &str| {
+            *kernel
+                .state
+                .edges
+                .iter()
+                .find(|(_, record)| record.label() == label)
+                .expect("a declared route")
+                .0
+        };
+        let subject = |label: &str| {
+            *kernel
+                .state
+                .subjects
+                .iter()
+                .find(|(_, record)| record.label == label)
+                .expect("a declared subject")
+                .0
+        };
+        Civic {
+            hall: entity("The Tithe Hall"),
+            chamber: entity("The Counting Chamber"),
+            grain: entity("The Winter Grain"),
+            passage: edge("The Hall Passage"),
+            causeway: edge("The Hall Causeway"),
+            postern: edge("The Hall Postern"),
+            treasury: subject("The Tithe Treasury"),
+            reeve: subject("The Hall Reeve"),
+            farmer: subject("The Winter Farmer"),
+            outsider: subject("The Road Pedlar"),
+        }
+    }
+
+    /// Topology, the civic subgraph, then activation.
+    pub(super) fn civic_world(kernel: &mut WorldKernel) -> (Topology, Civic, WorldSnapshot) {
+        let topology = admit_topology(kernel);
+        let civic = admit_civic(kernel, &topology);
+        let active = activate(kernel);
+        (topology, civic, active)
     }
 
     /// Submits as owner and returns the complete mismatch set.
@@ -4096,6 +4977,506 @@ mod tests {
             )
             .expect("a distant route closing does not rebind this proposal");
         assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+    }
+
+    /// The mvp doc's disjointness requirement: an institution with an
+    /// operational organ and a person-shaped voice is two subjects joined by an
+    /// office, not one subject with two controllers.
+    #[test]
+    fn an_institution_and_its_voice_are_two_subjects_joined_by_an_office() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "Two");
+        let (_, civic, active) = civic_world(&mut kernel);
+
+        let treasury = opportunity_for(&active, civic.treasury);
+        let reeve = opportunity_for(&active, civic.reeve);
+        assert_ne!(treasury.controller_id, reeve.controller_id);
+        assert_eq!(
+            active
+                .opportunities
+                .iter()
+                .filter(|value| value.scope.subject_id == civic.treasury)
+                .count(),
+            1
+        );
+        assert_eq!(
+            active
+                .opportunities
+                .iter()
+                .filter(|value| value.scope.subject_id == civic.reeve)
+                .count(),
+            1
+        );
+
+        // Both are authorized over the hall — one directly, one by delegation —
+        // and neither appears in the other's components.
+        let over_hall = AuthorityGrant {
+            kind: authority_kind(LEVY_KIND),
+            over: AuthorityTarget::PlaceSubtree(civic.hall),
+        };
+        assert!(subject_authority(&kernel.state, civic.treasury).contains(&over_hall));
+        assert!(subject_authority(&kernel.state, civic.reeve).contains(&over_hall));
+        assert!(kernel.state.authority.get(&civic.reeve).is_none());
+        assert!(
+            scope_components(&kernel.state, civic.treasury)
+                .delegated
+                .is_empty()
+        );
+        assert!(
+            scope_components(&kernel.state, civic.reeve)
+                .authority
+                .is_empty()
+        );
+    }
+
+    /// A levy from catalog to conservation: one lowered `Transfer`, the ledger
+    /// total unchanged, and no other partition touched.
+    #[test]
+    fn a_levy_round_trips_from_catalog_to_conservation() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "Levy");
+        let (_, civic, active) = civic_world(&mut kernel);
+        let before_total: u64 = kernel
+            .state
+            .holdings
+            .values()
+            .filter_map(|held| held.get(&civic.grain))
+            .map(|quantity| quantity.0)
+            .sum();
+        let positions = kernel.state.positions.clone();
+        let edges = kernel.state.edges.clone();
+        let entities = kernel.state.entities.clone();
+
+        let opportunity = opportunity_for(&active, civic.treasury);
+        let caller = CallerId::Controller(opportunity.controller_id);
+        let receipt = kernel
+            .submit(
+                command(
+                    &active,
+                    CommandId::new(),
+                    caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        opportunity,
+                        invocation: DecisionInvocation {
+                            affordance: affordance_named(&active, "levy"),
+                            bindings: vec![
+                                RoleBinding {
+                                    role: Role("payer".into()),
+                                    target: Target::Subject(civic.farmer),
+                                },
+                                RoleBinding {
+                                    role: Role("resource".into()),
+                                    target: Target::Entity(civic.grain),
+                                },
+                            ],
+                            proposed: vec![ProposedEffect {
+                                slot: 0,
+                                magnitude: Magnitude::Quantity(Quantity(3)),
+                            }],
+                            speech: None,
+                        },
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .unwrap();
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+
+        let held = |holder: SubjectId| {
+            kernel
+                .state
+                .holdings
+                .get(&holder)
+                .and_then(|held| held.get(&civic.grain))
+                .map_or(0, |quantity| quantity.0)
+        };
+        assert_eq!(held(civic.farmer), OPENING_BALANCE - 3);
+        assert_eq!(held(civic.treasury), 3);
+        let after_total: u64 = kernel
+            .state
+            .holdings
+            .values()
+            .filter_map(|held| held.get(&civic.grain))
+            .map(|quantity| quantity.0)
+            .sum();
+        assert_eq!(before_total, after_total);
+        assert_eq!(
+            kernel.state.events.last().unwrap().effects,
+            vec![ResolvedOp::Transfer {
+                from: civic.farmer,
+                to: civic.treasury,
+                resource: civic.grain,
+                qty: Quantity(3),
+            }]
+        );
+        assert_eq!(kernel.state.positions, positions);
+        assert_eq!(kernel.state.edges, edges);
+        assert_eq!(kernel.state.entities, entities);
+    }
+
+    /// Representation is person-and-institution shaped, and that is the check
+    /// that stops the two-subject shape from collapsing back into one.
+    #[test]
+    fn office_admission_is_person_and_institution_shaped() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "Offices");
+        let (_, civic, _) = civic_world(&mut kernel);
+        let refuse = |kernel: &mut WorldKernel, ops: Vec<ComponentOp>| {
+            let before = kernel.snapshot().unwrap();
+            reject_owner(kernel, &before, operations(ops))
+        };
+
+        // An institution cannot occupy its own office.
+        assert_eq!(
+            refuse(
+                &mut kernel,
+                vec![ComponentOp::InstallIncumbent {
+                    institution: Ref::Existing(civic.treasury),
+                    office: office(BAILIFF_OFFICE),
+                    incumbent: Ref::Existing(civic.treasury),
+                }]
+            ),
+            vec![Mismatch::OfficeHolderNotPerson { operation: 0 }]
+        );
+        // An office cannot be opened on a person.
+        assert_eq!(
+            refuse(
+                &mut kernel,
+                vec![ComponentOp::OpenOffice {
+                    institution: Ref::Existing(civic.reeve),
+                    office: office(WARDEN_OFFICE),
+                    delegated: BTreeSet::from([authority_kind(LEVY_KIND)]),
+                }]
+            ),
+            vec![Mismatch::OfficeOnNonInstitution { operation: 0 }]
+        );
+        // One person, at most one office per institution.
+        assert_eq!(
+            refuse(
+                &mut kernel,
+                vec![ComponentOp::InstallIncumbent {
+                    institution: Ref::Existing(civic.treasury),
+                    office: office(BAILIFF_OFFICE),
+                    incumbent: Ref::Existing(civic.reeve),
+                }]
+            ),
+            vec![Mismatch::DuplicateIncumbency { operation: 0 }]
+        );
+    }
+
+    /// Disjointness in both directions: overlap inside one subject's effective
+    /// authority is refused, overlap between subjects is layered government.
+    #[test]
+    fn overlapping_jurisdiction_within_one_subject_is_rejected() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "Overlap");
+        let (_, civic, _) = civic_world(&mut kernel);
+        let refuse = |kernel: &mut WorldKernel, ops: Vec<ComponentOp>| {
+            let before = kernel.snapshot().unwrap();
+            reject_owner(kernel, &before, operations(ops))
+        };
+        let admit = |kernel: &mut WorldKernel, ops: Vec<ComponentOp>| {
+            let before = kernel.snapshot().unwrap();
+            submit_owner(kernel, &before, operations(ops))
+        };
+
+        // A direct grant under what the reeve's office already lends.
+        assert_eq!(
+            refuse(
+                &mut kernel,
+                vec![grant_to(civic.reeve, LEVY_KIND, over_place(civic.chamber))]
+            ),
+            vec![Mismatch::OverlappingJurisdiction { operation: 0 }]
+        );
+        // Two direct grants of one kind, nested, in one patch.
+        assert_eq!(
+            refuse(
+                &mut kernel,
+                vec![
+                    grant_to(civic.farmer, LEVY_KIND, over_place(civic.hall)),
+                    grant_to(civic.farmer, LEVY_KIND, over_place(civic.chamber)),
+                ]
+            ),
+            vec![Mismatch::OverlappingJurisdiction { operation: 1 }]
+        );
+        // An incumbency that would lend the farmer ground it already holds.
+        admit(
+            &mut kernel,
+            vec![grant_to(civic.farmer, LEVY_KIND, over_place(civic.chamber))],
+        );
+        assert_eq!(
+            refuse(
+                &mut kernel,
+                vec![ComponentOp::InstallIncumbent {
+                    institution: Ref::Existing(civic.treasury),
+                    office: office(WARDEN_OFFICE),
+                    incumbent: Ref::Existing(civic.farmer),
+                }]
+            ),
+            vec![Mismatch::OverlappingJurisdiction { operation: 0 }]
+        );
+
+        // A different kind over the same ground commits, and so does the same
+        // kind held by a different subject: two holders authorized over one
+        // target is not a contradiction, because nothing arbitrates.
+        assert!(matches!(
+            admit(
+                &mut kernel,
+                vec![
+                    grant_to(civic.reeve, JUDGE_KIND, over_place(civic.chamber)),
+                    grant_to(civic.outsider, LEVY_KIND, over_place(civic.chamber)),
+                ]
+            ),
+            SubmitReceipt::Applied(_)
+        ));
+    }
+
+    /// Contract 6 on the civic surface: one patch, the complete sorted set, no
+    /// allocation, and repairing exactly those failures commits.
+    #[test]
+    fn civic_operations_are_rejected_with_the_complete_set() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "CivicSet");
+        let (_, civic, _) = civic_world(&mut kernel);
+        let before = kernel.snapshot().unwrap();
+        let broken = vec![
+            ComponentOp::OpenOffice {
+                institution: Ref::Existing(civic.treasury),
+                office: office("steward"),
+                delegated: BTreeSet::new(),
+            },
+            ComponentOp::InstallIncumbent {
+                institution: Ref::Existing(civic.treasury),
+                office: office("provost"),
+                incumbent: Ref::Existing(civic.farmer),
+            },
+            ComponentOp::CloseForum {
+                grievance: grievance("eviction"),
+            },
+            ComponentOp::OpenOffice {
+                institution: Ref::Existing(civic.treasury),
+                office: office("Chief Steward"),
+                delegated: BTreeSet::from([authority_kind(JUDGE_KIND)]),
+            },
+            ComponentOp::InstallIncumbent {
+                institution: Ref::Existing(civic.treasury),
+                office: office(BAILIFF_OFFICE),
+                incumbent: Ref::Existing(civic.treasury),
+            },
+            grant_to(civic.reeve, LEVY_KIND, over_place(civic.chamber)),
+        ];
+        let mut expected = vec![
+            Mismatch::EmptyDelegation { operation: 0 },
+            Mismatch::UnknownOffice { operation: 1 },
+            Mismatch::UnknownForum { operation: 2 },
+            Mismatch::InvalidCivicName {
+                site: patch::Site::Operation(3),
+            },
+            Mismatch::OfficeHolderNotPerson { operation: 4 },
+            Mismatch::OverlappingJurisdiction { operation: 5 },
+        ];
+        expected.sort();
+        assert_eq!(
+            reject_owner(&mut kernel, &before, operations(broken)),
+            expected
+        );
+        assert_eq!(kernel.snapshot().unwrap(), before);
+
+        let repaired = vec![
+            ComponentOp::OpenOffice {
+                institution: Ref::Existing(civic.treasury),
+                office: office("steward"),
+                delegated: BTreeSet::from([authority_kind(JUDGE_KIND)]),
+            },
+            ComponentOp::InstallIncumbent {
+                institution: Ref::Existing(civic.treasury),
+                office: office("steward"),
+                incumbent: Ref::Existing(civic.farmer),
+            },
+            ComponentOp::OpenForum {
+                grievance: grievance("eviction"),
+                forum: Ref::Existing(civic.treasury),
+                standing: over_place(civic.hall),
+            },
+        ];
+        assert!(matches!(
+            submit_owner(&mut kernel, &before, operations(repaired)),
+            SubmitReceipt::Applied(_)
+        ));
+    }
+
+    /// A civic operation that changes nothing is not a canonical change.
+    #[test]
+    fn an_idempotent_civic_operation_is_no_change() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel =
+            crate::world::custody_tests::custody_kernel(directory.path(), "Idempotent");
+        let (_, civic, _) = civic_world(&mut kernel);
+        for operation in [
+            grant_to(civic.treasury, LEVY_KIND, over_place(civic.hall)),
+            ComponentOp::RevokeAuthority {
+                holder: Ref::Existing(civic.treasury),
+                grant: grant_of(JUDGE_KIND, over_place(civic.hall)),
+            },
+            ComponentOp::VacateOffice {
+                institution: Ref::Existing(civic.treasury),
+                office: office(BAILIFF_OFFICE),
+            },
+            ComponentOp::OpenForum {
+                grievance: grievance(SEIZURE_GRIEVANCE),
+                forum: Ref::Existing(civic.treasury),
+                standing: over_place(civic.chamber),
+            },
+            ComponentOp::OpenOffice {
+                institution: Ref::Existing(civic.treasury),
+                office: office(WARDEN_OFFICE),
+                delegated: BTreeSet::from([authority_kind(LEVY_KIND)]),
+            },
+        ] {
+            let before = kernel.snapshot().unwrap();
+            assert_eq!(
+                reject_owner(&mut kernel, &before, operations(vec![operation])),
+                vec![Mismatch::NoOperationEffect { operation: 0 }]
+            );
+        }
+    }
+
+    /// The digest reads what the actor is authorized over and nothing about the
+    /// world the actor reaches.
+    #[test]
+    fn scope_digest_reads_authority_and_delegation_but_not_occupancy() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "Digest");
+        let (topology, civic, _) = civic_world(&mut kernel);
+        let scope = |subject_id| DecisionScope { subject_id };
+        let digest_of = |kernel: &WorldKernel, subject_id| {
+            scope_digest(&kernel.state, scope(subject_id)).unwrap()
+        };
+        let admit = |kernel: &mut WorldKernel, ops: Vec<ComponentOp>| {
+            let before = kernel.snapshot().unwrap();
+            submit_owner(kernel, &before, operations(ops));
+        };
+
+        // Moving an unrelated subject into and out of the jurisdiction, and
+        // opening a forum, leave every digest alone.
+        let reeve_before = digest_of(&kernel, civic.reeve);
+        let treasury_before = digest_of(&kernel, civic.treasury);
+        admit(
+            &mut kernel,
+            vec![
+                ComponentOp::Relocate {
+                    subject: Ref::Existing(topology.walker),
+                    via: Ref::Existing(topology.ramp),
+                },
+                ComponentOp::OpenForum {
+                    grievance: grievance("eviction"),
+                    forum: Ref::Existing(civic.treasury),
+                    standing: over_place(civic.hall),
+                },
+            ],
+        );
+        assert_eq!(digest_of(&kernel, civic.reeve), reeve_before);
+        assert_eq!(digest_of(&kernel, civic.treasury), treasury_before);
+
+        // Installing an office the subject does not hold leaves it alone too.
+        admit(
+            &mut kernel,
+            vec![ComponentOp::InstallIncumbent {
+                institution: Ref::Existing(civic.treasury),
+                office: office(BAILIFF_OFFICE),
+                incumbent: Ref::Existing(civic.farmer),
+            }],
+        );
+        assert_eq!(digest_of(&kernel, civic.reeve), reeve_before);
+        assert_eq!(digest_of(&kernel, civic.treasury), treasury_before);
+
+        // Revoking the institution's grant for a lent kind moves the
+        // incumbent's digest, because the office copies it in.
+        admit(
+            &mut kernel,
+            vec![ComponentOp::RevokeAuthority {
+                holder: Ref::Existing(civic.treasury),
+                grant: grant_of(LEVY_KIND, over_place(civic.hall)),
+            }],
+        );
+        assert_ne!(digest_of(&kernel, civic.reeve), reeve_before);
+        assert_ne!(digest_of(&kernel, civic.treasury), treasury_before);
+
+        // Granting the actor's own, and narrowing a held office, move it too.
+        let reeve_before = digest_of(&kernel, civic.reeve);
+        admit(
+            &mut kernel,
+            vec![grant_to(civic.reeve, LEVY_KIND, over_place(civic.chamber))],
+        );
+        assert_ne!(digest_of(&kernel, civic.reeve), reeve_before);
+        let reeve_before = digest_of(&kernel, civic.reeve);
+        admit(
+            &mut kernel,
+            vec![ComponentOp::OpenOffice {
+                institution: Ref::Existing(civic.treasury),
+                office: office(WARDEN_OFFICE),
+                delegated: BTreeSet::from([authority_kind(COMMAND_KIND)]),
+            }],
+        );
+        assert_ne!(digest_of(&kernel, civic.reeve), reeve_before);
+        let reeve_before = digest_of(&kernel, civic.reeve);
+        admit(
+            &mut kernel,
+            vec![ComponentOp::VacateOffice {
+                institution: Ref::Existing(civic.treasury),
+                office: office(WARDEN_OFFICE),
+            }],
+        );
+        assert_ne!(digest_of(&kernel, civic.reeve), reeve_before);
+    }
+
+    /// The snapshot carries a subject's own civic state and no gazetteer: a
+    /// forum is visible only to its standing, and no subject sees another's
+    /// grants.
+    #[test]
+    fn a_forum_is_visible_only_to_its_standing() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "Redress");
+        let (_, civic, active) = civic_world(&mut kernel);
+        let of = |subject_id: SubjectId| {
+            active
+                .subjects
+                .iter()
+                .find(|subject| subject.id == subject_id)
+                .expect("a declared subject")
+        };
+
+        // The farmer stands in the chamber, which is the forum's standing.
+        assert_eq!(
+            of(civic.farmer).redress,
+            vec![ForumSnapshot {
+                grievance: grievance(SEIZURE_GRIEVANCE),
+                forum: civic.treasury,
+            }]
+        );
+        assert!(of(civic.outsider).redress.is_empty());
+
+        // Grants are the subject's own; offices held and offices granted are
+        // the two ends of one link and never merge.
+        assert!(of(civic.reeve).authority.is_empty());
+        assert_eq!(of(civic.reeve).offices_held.len(), 1);
+        assert!(of(civic.reeve).offices_granted.is_empty());
+        assert_eq!(of(civic.treasury).offices_granted.len(), 2);
+        assert!(of(civic.treasury).offices_held.is_empty());
+        assert!(of(civic.farmer).authority.is_empty());
+        assert_eq!(
+            of(civic.treasury).authority,
+            BTreeSet::from([
+                AuthorityGrant {
+                    kind: authority_kind(LEVY_KIND),
+                    over: AuthorityTarget::PlaceSubtree(civic.hall),
+                },
+                AuthorityGrant {
+                    kind: authority_kind(COMMAND_KIND),
+                    over: AuthorityTarget::PlaceSubtree(civic.hall),
+                },
+            ])
+        );
     }
 }
 

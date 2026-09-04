@@ -11,9 +11,9 @@ use super::patch::{
     WorldPatch,
 };
 use super::{
-    AccessKind, AffordanceId, CommandId, DecisionEvent, DecisionInvocation, DecisionOpportunity,
-    EdgeId, EntityId, EventId, GrantedAffordance, KernelError, Magnitude, SubjectId, Target,
-    WorldId, WorldState, digest,
+    AffordanceId, AuthorityGrant, AuthorityTarget, CommandId, DecisionEvent, DecisionInvocation,
+    DecisionOpportunity, EdgeId, EntityId, EventId, GrantedAffordance, KernelError, Magnitude,
+    SubjectId, Target, WorldId, WorldState, digest,
 };
 use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet};
@@ -70,6 +70,25 @@ pub(crate) enum ActionMismatch {
     SpeechRequired,
     SpeechNotCarried,
     EmptySpeech,
+    /// The acting subject's effective authority covers no such target under
+    /// this kind. A target that walked out of the jurisdiction while the
+    /// proposal was in flight arrives here, not as a rebind: what the actor is
+    /// authorized over is in the digest, the world it reaches is not.
+    NotAuthorized {
+        precondition: usize,
+    },
+    /// No forum takes this grievance, or its standing does not reach the actor.
+    NoStanding {
+        precondition: usize,
+    },
+    /// An invocation bound the reserved `actor` role.
+    ActorRoleBound,
+    /// A slot would grant authority the acting subject does not itself hold
+    /// over that ground. Without this, any holder mints unlimited authority in
+    /// one step and the whole component is decorative.
+    DelegationNotMonotone {
+        slot: usize,
+    },
 }
 
 /// The band draw's whole preimage. Five fields, none of them from the
@@ -103,9 +122,12 @@ pub(super) fn exercise(
     let actor = current.scope.subject_id;
     let mut rejections = Vec::new();
 
-    let bindings = bind_roles(state, entry, invocation, &mut rejections);
-    check_preconditions(state, actor, entry, &bindings, &mut rejections);
+    let components = super::scope_components(state, actor);
+    let authority = super::effective_authority(&components.authority, &components.delegated);
+    let bindings = bind_roles(state, actor, entry, invocation, &mut rejections);
+    check_preconditions(state, actor, &authority, entry, &bindings, &mut rejections);
     check_proposals(entry, invocation, &mut rejections);
+    check_delegation(state, &authority, entry, &bindings, &mut rejections);
 
     if !rejections.is_empty() {
         rejections.sort();
@@ -147,10 +169,13 @@ pub(super) fn exercise(
     })
 }
 
-/// Stage 2. The acting subject is never a role: it is always the scope's own
-/// subject. A binding that happens to name the actor is legal and unremarkable.
+/// Stage 2. The acting subject is never a declared role: the kernel binds the
+/// reserved name `actor` to it and refuses an invocation that tries to. A
+/// binding that happens to name the actor through a declared role is legal and
+/// unremarkable.
 fn bind_roles(
     state: &WorldState,
+    actor: SubjectId,
     entry: &Affordance,
     invocation: &DecisionInvocation,
     rejections: &mut Vec<ActionMismatch>,
@@ -163,6 +188,10 @@ fn bind_roles(
     let mut bound: BTreeMap<Role, Target> = BTreeMap::new();
     let mut seen: BTreeSet<&Role> = BTreeSet::new();
     for binding in &invocation.bindings {
+        if binding.role.0 == patch::ACTOR_ROLE {
+            rejections.push(ActionMismatch::ActorRoleBound);
+            continue;
+        }
         if !seen.insert(&binding.role) {
             rejections.push(ActionMismatch::DuplicateRoleBinding {
                 role: binding.role.clone(),
@@ -202,6 +231,12 @@ fn bind_roles(
             });
         }
     }
+    // The kernel's own binding, added after the caller's so nothing can shadow
+    // it: a slot that must land on the actor says `actor` and the proposer has
+    // no say. Without it, a levy's `Transfer` would need the proposer to name
+    // the payee, and an authorized collector could lawfully take a tax and send
+    // it to a friend.
+    bound.insert(Role(patch::ACTOR_ROLE.into()), Target::Subject(actor));
     bound
 }
 
@@ -229,6 +264,7 @@ fn live_kind(state: &WorldState, target: Target) -> Option<RefKind> {
 fn check_preconditions(
     state: &WorldState,
     actor: SubjectId,
+    authority: &BTreeSet<AuthorityGrant>,
     entry: &Affordance,
     bindings: &BTreeMap<Role, Target>,
     rejections: &mut Vec<ActionMismatch>,
@@ -249,7 +285,7 @@ fn check_preconditions(
                 let Some(Target::Entity(place)) = bindings.get(to).copied() else {
                     continue;
                 };
-                if !reachable(state, actor, place, *within) {
+                if !reachable(state, actor, authority, place, *within) {
                     rejections.push(ActionMismatch::TargetUnreachable {
                         precondition: index,
                     });
@@ -270,11 +306,83 @@ fn check_preconditions(
                     });
                 }
             }
+            Precondition::Authorized { over, kind } => {
+                let Some(target) = bindings.get(over).copied() else {
+                    continue;
+                };
+                if !authority
+                    .iter()
+                    .any(|grant| &grant.kind == kind && super::covers(state, grant.over, target))
+                {
+                    rejections.push(ActionMismatch::NotAuthorized {
+                        precondition: index,
+                    });
+                }
+            }
+            Precondition::HasStanding { grievance } => {
+                if !state.redress.get(grievance).is_some_and(|forum| {
+                    super::covers(state, forum.standing, Target::Subject(actor))
+                }) {
+                    rejections.push(ActionMismatch::NoStanding {
+                        precondition: index,
+                    });
+                }
+            }
         }
     }
 }
 
-/// Dijkstra over the live route graph, admitting only open public routes and
+/// Stage 4, beside the ceilings: an authority a slot would grant must not
+/// exceed the granter's own. Every slot is checked, not just the drawn band's,
+/// for the same reason every ceiling is — the proposer commits to a complete
+/// attempt and cannot see the band.
+///
+/// The rule is action-lane only, and that is not two truths. The patch lane's
+/// `GrantAuthority` is admitted by the world owner; monotonicity *is* the
+/// action lane's authority envelope, and both lanes reach one
+/// `apply_operation` with the identical mutation.
+fn check_delegation(
+    state: &WorldState,
+    authority: &BTreeSet<AuthorityGrant>,
+    entry: &Affordance,
+    bindings: &BTreeMap<Role, Target>,
+    rejections: &mut Vec<ActionMismatch>,
+) {
+    for (index, slot) in entry.effect_slots.iter().enumerate() {
+        let ComponentOpKind::GrantAuthority { kind } = &slot.op_kind else {
+            continue;
+        };
+        let Some(over) = slot
+            .roles
+            .get(1)
+            .and_then(|role| bindings.get(role))
+            .copied()
+            .and_then(authority_target_of)
+        else {
+            continue;
+        };
+        if !authority.iter().any(|grant| {
+            &grant.kind == kind && super::covers(state, grant.over, over.as_referent())
+        }) {
+            rejections.push(ActionMismatch::DelegationNotMonotone { slot: index });
+        }
+    }
+}
+
+/// The authority target a bound referent names. A route is jurisdictional
+/// ground but never a grant's target, so a slot bound to one lowers to nothing.
+fn authority_target_of(target: Target) -> Option<AuthorityTarget> {
+    match target {
+        Target::Subject(subject_id) => Some(AuthorityTarget::Subject(subject_id)),
+        Target::Entity(entity_id) => Some(AuthorityTarget::PlaceSubtree(entity_id)),
+        Target::Edge(_) => None,
+    }
+}
+
+/// Dijkstra over the live route graph, admitting the open routes this subject
+/// may traverse — the same `route_admits` rule the resolver applies to a
+/// `Relocate`, so a subject with the right authority can plan a path through
+/// its own restricted ground — and
 /// relaxing in `EdgeId` order, pruning any path whose accumulated cost exceeds
 /// `within`. Cost 0 — already standing there — succeeds; `Present` is the strict
 /// form. An unplaced actor reaches nothing.
@@ -284,7 +392,13 @@ fn check_preconditions(
 /// and rejects it whenever anything near the actor commits. Admission runs at
 /// commit against live state instead, so a route that closed while the proposal
 /// was in flight makes this fail rather than letting a stale path commit.
-fn reachable(state: &WorldState, actor: SubjectId, destination: EntityId, within: Cost) -> bool {
+fn reachable(
+    state: &WorldState,
+    actor: SubjectId,
+    authority: &BTreeSet<AuthorityGrant>,
+    destination: EntityId,
+    within: Cost,
+) -> bool {
     let Some(origin) = state.positions.get(&actor).map(|position| position.place) else {
         return false;
     };
@@ -307,7 +421,7 @@ fn reachable(state: &WorldState, actor: SubjectId, destination: EntityId, within
         let outbound: Vec<(EdgeId, EntityId, u64)> = state
             .edges
             .iter()
-            .filter(|(_, record)| record.is_open() && record.access() == AccessKind::Public)
+            .filter(|(_, record)| record.is_open())
             .filter_map(|(edge_id, record)| {
                 let (from, to) = record.endpoints();
                 let next = if from == place {
@@ -317,7 +431,8 @@ fn reachable(state: &WorldState, actor: SubjectId, destination: EntityId, within
                 } else {
                     return None;
                 };
-                Some((*edge_id, next, u64::from(record.cost().0)))
+                patch::route_admits(state, authority, record.access(), next)
+                    .then(|| (*edge_id, next, u64::from(record.cost().0)))
             })
             .collect();
         for (_, next, step) in outbound {
@@ -509,7 +624,18 @@ fn lower(
                 Target::Edge(edge_id) => patch::DependencyRef::Route(patch::Ref::Existing(edge_id)),
             })
         };
-        operations.push(match slot.op_kind {
+        let grant_over = |position: usize| -> Result<patch::AuthorityTargetRef, KernelError> {
+            Ok(match target(position)? {
+                Target::Subject(subject_id) => {
+                    patch::AuthorityTargetRef::Subject(patch::Ref::Existing(subject_id))
+                }
+                Target::Entity(entity_id) => {
+                    patch::AuthorityTargetRef::PlaceSubtree(patch::Ref::Existing(entity_id))
+                }
+                Target::Edge(_) => return Err(malformed()),
+            })
+        };
+        operations.push(match &slot.op_kind {
             ComponentOpKind::Relocate => patch::ComponentOp::Relocate {
                 subject: subject(0)?,
                 via: edge(1)?,
@@ -548,6 +674,29 @@ fn lower(
                 subject: subject(0)?,
                 target: dependency(1)?,
             },
+            ComponentOpKind::GrantAuthority { kind } => patch::ComponentOp::GrantAuthority {
+                holder: subject(0)?,
+                grant: patch::AuthorityGrantRef {
+                    kind: kind.clone(),
+                    over: grant_over(1)?,
+                },
+            },
+            ComponentOpKind::RevokeAuthority { kind } => patch::ComponentOp::RevokeAuthority {
+                holder: subject(0)?,
+                grant: patch::AuthorityGrantRef {
+                    kind: kind.clone(),
+                    over: grant_over(1)?,
+                },
+            },
+            ComponentOpKind::InstallIncumbent { office } => patch::ComponentOp::InstallIncumbent {
+                institution: subject(0)?,
+                office: office.clone(),
+                incumbent: subject(1)?,
+            },
+            ComponentOpKind::VacateOffice { office } => patch::ComponentOp::VacateOffice {
+                institution: subject(0)?,
+                office: office.clone(),
+            },
         });
     }
     Ok(operations)
@@ -557,14 +706,20 @@ fn lower(
 mod tests {
     use super::*;
     use crate::world::custody_tests::custody_kernel;
-    use crate::world::patch::{ComponentOp, Ref as PatchRef, ResolvedOp};
+    use crate::world::patch::{
+        AffordanceDeclaration, ComponentOp, DraftHandle, OutcomeBand, Ref as PatchRef, ResolvedOp,
+        RoleSpec,
+    };
     use crate::world::tests::{
-        OPENING_BALANCE, activate, affordance_named, auth_principal, command, custody_world,
-        operations, opportunity_for, player, submit_owner,
+        ADMIT_KIND, COMMAND_KIND, Civic, LEVY_KIND, OPENING_BALANCE, SEIZURE_GRIEVANCE, Topology,
+        WARDEN_OFFICE, activate, affordance_named, auth_principal, civic_world, command,
+        custody_world, grant_to, grievance, office, operations, opportunity_for, over_place,
+        over_subject, player, reject_owner, submit_owner,
     };
     use crate::world::{
-        AuthenticatedCaller, CallerId, CommandBody, EntityKind, ProposedEffect, RoleBinding,
-        SubmitReceipt, Utterance, WorldEffect, WorldKernel, WorldSnapshot, apply_effect,
+        AffordanceKindName, AuthenticatedCaller, CallerId, CommandBody, Declaration, EntityKind,
+        ProposedEffect, RoleBinding, SubmitReceipt, Utterance, WorldEffect, WorldKernel,
+        WorldPatch, WorldSnapshot, apply_effect,
     };
     use std::collections::BTreeSet;
 
@@ -1289,5 +1444,568 @@ mod tests {
             Some("I open the door.")
         );
         assert_eq!(kernel.state.holdings, holdings);
+    }
+
+    /// The civic bench: one world where an institution holds jurisdiction over
+    /// a hall, a person holds the same jurisdiction only through an office, and
+    /// two more people stand inside and outside that ground.
+    struct Civics {
+        kernel: WorldKernel,
+        active: WorldSnapshot,
+        topology: Topology,
+        civic: Civic,
+    }
+
+    fn civics(directory: &std::path::Path, title: &str) -> Civics {
+        let mut kernel = custody_kernel(directory, title);
+        let (topology, civic, active) = civic_world(&mut kernel);
+        Civics {
+            kernel,
+            active,
+            topology,
+            civic,
+        }
+    }
+
+    impl Civics {
+        fn refresh(&mut self) {
+            self.active = self.kernel.snapshot().unwrap();
+        }
+
+        fn call(
+            &self,
+            kind: &str,
+            bindings: Vec<RoleBinding>,
+            proposed: Vec<ProposedEffect>,
+            speech: Option<Utterance>,
+        ) -> DecisionInvocation {
+            DecisionInvocation {
+                affordance: affordance_named(&self.active, kind),
+                bindings,
+                proposed,
+                speech,
+            }
+        }
+
+        /// A levy of `qty` from `payer`, always paid to the actor: the payee is
+        /// the reserved role, so it is not a binding the caller supplies.
+        fn levy(&self, payer: SubjectId, qty: u64) -> DecisionInvocation {
+            self.call(
+                "levy",
+                vec![
+                    binding("payer", Target::Subject(payer)),
+                    binding("resource", Target::Entity(self.civic.grain)),
+                ],
+                vec![ProposedEffect {
+                    slot: 0,
+                    magnitude: Magnitude::Quantity(Quantity(qty)),
+                }],
+                None,
+            )
+        }
+
+        fn delegate(&self, deputy: SubjectId, ground: EntityId) -> DecisionInvocation {
+            self.call(
+                "delegate",
+                vec![
+                    binding("deputy", Target::Subject(deputy)),
+                    binding("ground", Target::Entity(ground)),
+                ],
+                vec![ProposedEffect {
+                    slot: 0,
+                    magnitude: Magnitude::None,
+                }],
+                None,
+            )
+        }
+
+        fn try_as(
+            &self,
+            actor: SubjectId,
+            invocation: &DecisionInvocation,
+        ) -> Result<DecisionEvent, KernelError> {
+            draw_once(
+                &self.kernel.state,
+                CommandId::issue(),
+                &opportunity_for(&self.active, actor),
+                invocation,
+            )
+        }
+
+        fn rejected_as(
+            &self,
+            actor: SubjectId,
+            invocation: &DecisionInvocation,
+        ) -> Vec<ActionMismatch> {
+            match self.try_as(actor, invocation) {
+                Err(KernelError::ActionRejected(rejected)) => rejected,
+                other => panic!("expected an action rejection, got {other:?}"),
+            }
+        }
+
+        fn commit_as(&mut self, actor: SubjectId, invocation: DecisionInvocation) -> SubmitReceipt {
+            let opportunity = opportunity_for(&self.active, actor);
+            let caller = CallerId::Controller(opportunity.controller_id);
+            let receipt = self
+                .kernel
+                .submit(
+                    command(
+                        &self.active,
+                        CommandId::new(),
+                        caller.clone(),
+                        CommandBody::ExerciseDecision {
+                            opportunity,
+                            invocation,
+                        },
+                    ),
+                    &AuthenticatedCaller::fixture(caller),
+                )
+                .expect("the invocation commits");
+            self.refresh();
+            receipt
+        }
+
+        fn admit(&mut self, ops: Vec<ComponentOp>) {
+            let before = self.kernel.snapshot().unwrap();
+            let receipt = submit_owner(&mut self.kernel, &before, operations(ops));
+            assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+            self.refresh();
+        }
+
+        fn refuse(&mut self, ops: Vec<ComponentOp>) -> Vec<crate::world::Mismatch> {
+            let before = self.kernel.snapshot().unwrap();
+            reject_owner(&mut self.kernel, &before, operations(ops))
+        }
+    }
+
+    /// Contract 7's third rejection: commanding outside authority, with the
+    /// exact failed precondition and no allocation.
+    #[test]
+    fn an_unauthorized_actor_names_the_failed_precondition() {
+        let directory = tempfile::tempdir().unwrap();
+        let bench = civics(directory.path(), "Unauthorized");
+        let before = bench.kernel.state.clone();
+        assert_eq!(
+            bench.rejected_as(bench.civic.farmer, &bench.levy(bench.civic.reeve, 1)),
+            vec![ActionMismatch::NotAuthorized { precondition: 0 }]
+        );
+        assert_eq!(bench.kernel.state.revision, before.revision);
+        assert_eq!(bench.kernel.state.holdings, before.holdings);
+        assert_eq!(bench.kernel.state.events, before.events);
+    }
+
+    /// A place jurisdiction reaches everything under it and nothing else, and
+    /// the answer is read live: a target that walks out of the subtree stops
+    /// being authorized without any digest moving.
+    #[test]
+    fn place_jurisdiction_reaches_a_containment_subtree_and_stops_at_its_edge() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut bench = civics(directory.path(), "Subtree");
+        let treasury = bench.civic.treasury;
+        let farmer = bench.civic.farmer;
+
+        // The farmer stands in the chamber, whose container is the hall.
+        assert!(bench.try_as(treasury, &bench.levy(farmer, 1)).is_ok());
+
+        // The pedlar stands on the road, outside the hall entirely, and an
+        // unplaced subject is covered by no place target.
+        assert_eq!(
+            bench.rejected_as(treasury, &bench.levy(bench.civic.outsider, 1)),
+            vec![ActionMismatch::NotAuthorized { precondition: 0 }]
+        );
+        let unplaced = *bench
+            .kernel
+            .state
+            .subjects
+            .keys()
+            .find(|subject_id| !bench.kernel.state.positions.contains_key(subject_id))
+            .expect("the genesis world declares an unplaced subject");
+        assert_eq!(
+            bench.rejected_as(treasury, &bench.levy(unplaced, 1)),
+            vec![ActionMismatch::NotAuthorized { precondition: 0 }]
+        );
+
+        // Walking the farmer out of the hall flips the same invocation, and a
+        // grant naming the subject directly authorizes it again.
+        bench.admit(vec![
+            ComponentOp::Relocate {
+                subject: PatchRef::Existing(farmer),
+                via: PatchRef::Existing(bench.civic.passage),
+            },
+            ComponentOp::Relocate {
+                subject: PatchRef::Existing(farmer),
+                via: PatchRef::Existing(bench.civic.causeway),
+            },
+        ]);
+        assert_eq!(
+            bench.rejected_as(treasury, &bench.levy(farmer, 1)),
+            vec![ActionMismatch::NotAuthorized { precondition: 0 }]
+        );
+        bench.admit(vec![grant_to(treasury, LEVY_KIND, over_subject(farmer))]);
+        assert!(bench.try_as(treasury, &bench.levy(farmer, 1)).is_ok());
+    }
+
+    /// An office lends jurisdiction its holder does not own, vacating takes it
+    /// back, and a proposal bound before the vacate rebinds rather than
+    /// rejecting: revocation mid-flight is a `ScopeChanged`.
+    #[test]
+    fn office_delegation_grants_and_vacating_revokes() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut bench = civics(directory.path(), "Office");
+        let reeve = bench.civic.reeve;
+        let farmer = bench.civic.farmer;
+        assert!(bench.kernel.state.authority.get(&reeve).is_none());
+        assert!(bench.try_as(reeve, &bench.levy(farmer, 1)).is_ok());
+
+        // A proposal bound before the vacate rebinds rather than rejecting.
+        let bound = opportunity_for(&bench.active, reeve);
+        let caller = CallerId::Controller(bound.controller_id);
+        let invocation = bench.levy(farmer, 1);
+        bench.admit(vec![ComponentOp::VacateOffice {
+            institution: PatchRef::Existing(bench.civic.treasury),
+            office: office(WARDEN_OFFICE),
+        }]);
+
+        let holdings = bench.kernel.state.holdings.clone();
+        let error = bench
+            .kernel
+            .submit(
+                command(
+                    &bench.active,
+                    CommandId::new(),
+                    caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        opportunity: bound.clone(),
+                        invocation,
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .unwrap_err();
+        let KernelError::ScopeChanged {
+            scope, expected, ..
+        } = error
+        else {
+            panic!("a vacated office is a rebind, not a rejection");
+        };
+        assert_eq!(scope, bound.scope);
+        assert_eq!(expected, bound.scope_digest);
+        assert_eq!(bench.kernel.state.holdings, holdings);
+        assert_eq!(
+            bench.rejected_as(reeve, &bench.levy(farmer, 1)),
+            vec![ActionMismatch::NotAuthorized { precondition: 0 }]
+        );
+    }
+
+    /// The reserved role in both directions: an invocation may not bind it, and
+    /// a catalog entry may not declare it.
+    #[test]
+    fn a_levy_cannot_be_directed_away_from_the_actor() {
+        let directory = tempfile::tempdir().unwrap();
+        let bench = civics(directory.path(), "ActorRole");
+        let mut redirected = bench.levy(bench.civic.farmer, 1);
+        redirected
+            .bindings
+            .push(binding("actor", Target::Subject(bench.civic.outsider)));
+        assert_eq!(
+            bench.rejected_as(bench.civic.treasury, &redirected),
+            vec![ActionMismatch::ActorRoleBound]
+        );
+
+        // The declaration half is Draft-only, so it runs against a fresh world.
+        let draft_directory = tempfile::tempdir().unwrap();
+        let mut draft = custody_kernel(draft_directory.path(), "ReservedRole");
+        let before = draft.snapshot().unwrap();
+        let handle = DraftHandle::new("thief");
+        let rejected = reject_owner(
+            &mut draft,
+            &before,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: vec![Declaration::Affordance(AffordanceDeclaration {
+                        handle: handle.clone(),
+                        kind: AffordanceKindName("thief".into()),
+                        roles: vec![RoleSpec {
+                            role: Role("actor".into()),
+                            kind: RefKind::Subject(None),
+                        }],
+                        preconditions: Vec::new(),
+                        effect_slots: Vec::new(),
+                        outcome_bands: vec![OutcomeBand {
+                            weight: 1,
+                            effects: Vec::new(),
+                        }],
+                        carries_speech: true,
+                    })],
+                    operations: Vec::new(),
+                    evidence: Vec::new(),
+                },
+            },
+        );
+        assert!(rejected.contains(&crate::world::Mismatch::ReservedRole { handle }));
+    }
+
+    /// The two rejection lanes stay distinguishable: an over-levy inside its
+    /// declared ceiling passes every affordance check and dies in the ledger.
+    #[test]
+    fn an_over_levy_fails_in_the_ledger_not_in_the_contract() {
+        let directory = tempfile::tempdir().unwrap();
+        let bench = civics(directory.path(), "OverLevy");
+        let error = bench
+            .try_as(bench.civic.treasury, &bench.levy(bench.civic.farmer, 9))
+            .unwrap_err();
+        let KernelError::PatchRejected(rejected) = error else {
+            panic!("an over-levy is a ledger rejection");
+        };
+        assert_eq!(
+            rejected,
+            vec![crate::world::Mismatch::InsufficientCustody { operation: 0 }]
+        );
+    }
+
+    /// A delegated grant may not exceed the granter's own, and the grant it
+    /// does mint is still subject to disjointness.
+    #[test]
+    fn a_delegated_grant_may_not_exceed_the_granter() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut bench = civics(directory.path(), "Monotone");
+        let treasury = bench.civic.treasury;
+        let outsider = bench.civic.outsider;
+
+        // The treasury commands the road but does not levy it, so the
+        // precondition passes and the delegation alone is refused.
+        let road = bench.topology.road;
+        bench.admit(vec![grant_to(treasury, COMMAND_KIND, over_place(road))]);
+        let outside = bench.delegate(outsider, road);
+        assert_eq!(
+            bench.rejected_as(treasury, &outside),
+            vec![ActionMismatch::DelegationNotMonotone { slot: 0 }]
+        );
+
+        // The chamber is inside it, so the same act commits and the deputy can
+        // then levy there.
+        let inside = bench.delegate(outsider, bench.civic.chamber);
+        assert!(matches!(
+            bench.commit_as(treasury, inside),
+            SubmitReceipt::Applied(_)
+        ));
+        assert!(
+            bench
+                .try_as(outsider, &bench.levy(bench.civic.farmer, 1))
+                .is_ok()
+        );
+
+        // An office lends exactly the kinds it delegates: the warden's `levy`
+        // does not make its holder a commander.
+        let again = bench.delegate(outsider, bench.civic.chamber);
+        assert_eq!(
+            bench.rejected_as(bench.civic.reeve, &again),
+            vec![ActionMismatch::NotAuthorized { precondition: 0 }]
+        );
+
+        // The minted grant is ordinary state: repeating it changes nothing, and
+        // widening it to the hall would overlap what the deputy already holds.
+        let error = bench.try_as(treasury, &again).unwrap_err();
+        let KernelError::PatchRejected(rejected) = error else {
+            panic!("a duplicate delegation is a patch rejection");
+        };
+        assert_eq!(
+            rejected,
+            vec![crate::world::Mismatch::NoOperationEffect { operation: 0 }]
+        );
+        let hall = bench.civic.hall;
+        assert_eq!(
+            bench.refuse(vec![grant_to(outsider, LEVY_KIND, over_place(hall))]),
+            vec![crate::world::Mismatch::OverlappingJurisdiction { operation: 0 }]
+        );
+    }
+
+    /// `Redress` with a reducer reader: standing is the covering predicate over
+    /// the forum's target, and closing the forum removes the verb's ground.
+    #[test]
+    fn a_petition_requires_standing() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut bench = civics(directory.path(), "Petition");
+        let petition = bench.call(
+            "petition",
+            Vec::new(),
+            Vec::new(),
+            Some(Utterance::new("The tithe was taken twice.").unwrap()),
+        );
+        assert_eq!(
+            bench.rejected_as(bench.civic.outsider, &petition),
+            vec![ActionMismatch::NoStanding { precondition: 0 }]
+        );
+
+        let farmer = bench.civic.farmer;
+        assert!(matches!(
+            bench.commit_as(farmer, petition.clone()),
+            SubmitReceipt::Applied(_)
+        ));
+        let event = bench
+            .kernel
+            .state
+            .events
+            .last()
+            .expect("the committed event");
+        assert!(event.effects.is_empty());
+        assert_eq!(
+            event.invocation.speech.as_ref().map(Utterance::as_str),
+            Some("The tithe was taken twice.")
+        );
+
+        bench.admit(vec![ComponentOp::CloseForum {
+            grievance: grievance(SEIZURE_GRIEVANCE),
+        }]);
+        assert_eq!(
+            bench.rejected_as(farmer, &petition),
+            vec![ActionMismatch::NoStanding { precondition: 0 }]
+        );
+    }
+
+    /// One predicate, two callers: the resolver's `Relocate` arm and
+    /// `Reachable`'s edge admission read the same `Restricted` rule, and a
+    /// same-patch grant then move resolves through the candidate shadow.
+    #[test]
+    fn a_restricted_route_admits_exactly_its_named_authority() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut bench = civics(directory.path(), "Restricted");
+        let walker = bench.topology.walker;
+        let step = ComponentOp::Relocate {
+            subject: PatchRef::Existing(walker),
+            via: PatchRef::Existing(bench.civic.postern),
+        };
+
+        // Holding nothing, and holding `admit` over the origin only, are both
+        // refused: the rule asks about the destination.
+        assert!(
+            bench
+                .refuse(vec![step.clone()])
+                .contains(&crate::world::Mismatch::RouteAccessRestricted { operation: 0 })
+        );
+        let yard = bench.topology.yard;
+        bench.admit(vec![grant_to(walker, ADMIT_KIND, over_place(yard))]);
+        assert!(
+            bench
+                .refuse(vec![step.clone()])
+                .contains(&crate::world::Mismatch::RouteAccessRestricted { operation: 0 })
+        );
+
+        // Reachable reads the same rule from the other side.
+        let authority = crate::world::subject_authority(&bench.kernel.state, walker);
+        assert!(!reachable(
+            &bench.kernel.state,
+            walker,
+            &authority,
+            bench.civic.chamber,
+            Cost(4)
+        ));
+
+        // A grant covering the destination, minted in the same patch as the
+        // move, resolves through the candidate authority shadow.
+        let hall = bench.civic.hall;
+        let authority = crate::world::subject_authority(&bench.kernel.state, walker);
+        assert!(!patch::route_admits(
+            &bench.kernel.state,
+            &authority,
+            bench.kernel.state.edges[&bench.civic.postern].access(),
+            bench.civic.chamber
+        ));
+        bench.admit(vec![grant_to(walker, ADMIT_KIND, over_place(hall)), step]);
+        assert_eq!(
+            bench.kernel.state.positions[&walker].place,
+            bench.civic.chamber
+        );
+        let authority = crate::world::subject_authority(&bench.kernel.state, walker);
+        assert!(patch::route_admits(
+            &bench.kernel.state,
+            &authority,
+            bench.kernel.state.edges[&bench.civic.postern].access(),
+            bench.civic.chamber
+        ));
+    }
+
+    /// The remaining institutional affordances, each proving one lowering arm:
+    /// `sanction` closes shared topology under a legitimacy check with an
+    /// interdiction band that fails, and `appoint` makes succession an act
+    /// someone performs under authority rather than a declared method string.
+    #[test]
+    fn sanction_and_appoint_reach_the_reducer_under_authority() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut bench = civics(directory.path(), "Institutional");
+        let treasury = bench.civic.treasury;
+        let passage = bench.civic.passage;
+        let sanction = bench.call(
+            "sanction",
+            vec![binding("road", Target::Edge(passage))],
+            vec![ProposedEffect {
+                slot: 0,
+                magnitude: Magnitude::None,
+            }],
+            None,
+        );
+
+        // The reeve holds the verb but its office lends only `levy`, so the same
+        // act names the precondition it failed.
+        assert_eq!(
+            bench.rejected_as(bench.civic.reeve, &sanction),
+            vec![ActionMismatch::NotAuthorized { precondition: 0 }]
+        );
+
+        // The treasury commands the hall, and the passage has both endpoints
+        // under it. The draw decides whether the interdiction lands.
+        let opportunity = opportunity_for(&bench.active, treasury);
+        let closing = (0..256)
+            .map(|_| CommandId::issue())
+            .find(|candidate| {
+                draw_once(&bench.kernel.state, *candidate, &opportunity, &sanction)
+                    .expect("the invocation is admissible")
+                    .band
+                    == 0
+            })
+            .expect("a two-band entry reaches its first band over 256 command ids");
+        let caller = CallerId::Controller(opportunity.controller_id);
+        let receipt = bench
+            .kernel
+            .submit(
+                command(
+                    &bench.active,
+                    closing,
+                    caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        opportunity,
+                        invocation: sanction,
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .expect("the sanction commits");
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+        bench.refresh();
+        assert!(!bench.kernel.state.edges[&passage].is_open());
+
+        // Appointment installs an incumbent through the action lane.
+        let farmer = bench.civic.farmer;
+        let appoint = bench.call(
+            "appoint",
+            vec![
+                binding("institution", Target::Subject(treasury)),
+                binding("candidate", Target::Subject(farmer)),
+            ],
+            vec![ProposedEffect {
+                slot: 0,
+                magnitude: Magnitude::None,
+            }],
+            None,
+        );
+        assert!(matches!(
+            bench.commit_as(treasury, appoint),
+            SubmitReceipt::Applied(_)
+        ));
+        assert_eq!(
+            bench.kernel.state.selection[&treasury][&office("bailiff")].incumbent,
+            Some(farmer)
+        );
     }
 }

@@ -31,14 +31,112 @@ pub(crate) enum EdgeKind {
     Route,
 }
 
-/// Traversal rule. `Restricted` names a route whose traversal requires authority
-/// over its destination; the `Authority` component does not exist yet, so a
-/// `Restricted` route currently admits no one.
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(rename_all = "snake_case")]
+/// Traversal rule. A `Restricted` route names the authority kind that opens it:
+/// the door names its own key, and the kernel reads neither the door nor the key
+/// beyond comparing the name. [`route_admits`] is the sole statement of who gets
+/// through, reached identically by `resolve_patch`'s `Relocate` arm and by
+/// `Precondition::Reachable`'s edge admission.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "access", rename_all = "snake_case")]
 pub(crate) enum AccessKind {
     Public,
-    Restricted,
+    Restricted { requires: AuthorityKindName },
+}
+
+/// A world-declared authority name: canonical text, `[a-z][a-z0-9_]{0,47}`. The
+/// kernel carries it, compares it for equality, and reads it no other way. A
+/// closed enum here would make "conscript" or "audit" a kernel change and put a
+/// world's political vocabulary in the reducer.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(transparent)]
+pub(crate) struct AuthorityKindName(pub(crate) String);
+
+/// What an authority covers. Distinct from `DecisionScope`, which says *whose*
+/// authority it is and stays one field.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "over", content = "id", rename_all = "snake_case")]
+pub(crate) enum AuthorityTarget {
+    Subject(SubjectId),
+    /// That place and everything contained in it, by `EntityRecord.container`.
+    PlaceSubtree(EntityId),
+}
+
+impl AuthorityTarget {
+    /// The referent this target names, so "does grant A cover grant B's ground"
+    /// is the one covering predicate rather than a second one.
+    pub(super) fn as_referent(self) -> super::Target {
+        match self {
+            Self::Subject(subject_id) => super::Target::Subject(subject_id),
+            Self::PlaceSubtree(entity_id) => super::Target::Entity(entity_id),
+        }
+    }
+}
+
+/// The proposal-time twin of [`AuthorityTarget`], carrying references.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "over", content = "ref", rename_all = "snake_case")]
+pub(crate) enum AuthorityTargetRef {
+    Subject(Ref<SubjectId>),
+    PlaceSubtree(Ref<EntityId>),
+}
+
+/// One jurisdiction: a kind and the ground it runs over. Ordered `(kind, over)`
+/// so a subject's grant set has one canonical order. A jurisdiction is a set of
+/// these, so revoking one place is not a restatement of the whole scope.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct AuthorityGrant {
+    pub(crate) kind: AuthorityKindName,
+    pub(crate) over: AuthorityTarget,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct AuthorityGrantRef {
+    pub(crate) kind: AuthorityKindName,
+    pub(crate) over: AuthorityTargetRef,
+}
+
+/// Canonical text, scoped to its institution: the pair (institution, name) is
+/// the identity, the same discipline a `Role` gets inside one affordance.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(transparent)]
+pub(crate) struct OfficeName(pub(crate) String);
+
+/// A seat inside one institution. It carries no term and no selection method:
+/// there is no clock, so nothing can expire, and a field nothing reads is a
+/// decoration the next pass has to delete. `delegated` is the field that earns
+/// its keep — `scope_components` reads it, `Authorized` resolves through it, and
+/// the scope digest binds it.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Office {
+    /// A person subject, or vacant. A vacancy is an ordinary state.
+    pub(crate) incumbent: Option<SubjectId>,
+    /// Which of the institution's authority kinds this office lends its
+    /// incumbent. Non-empty: an office lending nothing is inert.
+    pub(crate) delegated: BTreeSet<AuthorityKindName>,
+}
+
+/// World-declared canonical text, kernel-opaque, `[a-z][a-z0-9_]{0,47}`.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(transparent)]
+pub(crate) struct GrievanceKindName(pub(crate) String);
+
+/// Where one kind of grievance goes, and who may bring it. One forum per
+/// grievance kind, world-wide; per-jurisdiction forums would key this on
+/// `(GrievanceKindName, AuthorityTarget)`, and that key has no consumer yet.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Forum {
+    /// Any subject. A one-person magistrate is a legitimate forum, so the
+    /// kernel branches on `SubjectKind` here as it does everywhere else: not at
+    /// all.
+    pub(crate) forum: SubjectId,
+    /// Who may bring this grievance. It reuses `AuthorityTarget`'s type and its
+    /// covering predicate and is emphatically not stored in the `authority`
+    /// partition, so `RevokeAuthority` cannot strip standing.
+    pub(crate) standing: AuthorityTarget,
 }
 
 /// Whole minutes: the kernel's only time unit, so route cost adds and compares
@@ -162,29 +260,42 @@ pub(crate) struct RoleSpec {
 }
 
 /// What must already be true of committed state before an invocation is
-/// admitted. Only the three whose components exist: `Authorized`, `Knows`,
-/// `CanReach`, and `Committed` land in the pass that adds `Authority`,
-/// `Knowledge`, `Channel`, and `Commitment`. A variant whose only behaviour
-/// would be to be refused is a placeholder wearing a check.
+/// admitted. Only the ones whose components exist: `Knows`, `CanReach`, and
+/// `Committed` land in the pass that adds `Knowledge`, `Channel`, and
+/// `Commitment`. A variant whose only behaviour would be to be refused is a
+/// placeholder wearing a check.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "precondition", rename_all = "snake_case")]
 pub(crate) enum Precondition {
     /// The acting subject's Position names the place bound to `at`.
     Present { at: Role },
     /// A path exists from the actor's place to the place bound to `to`, over
-    /// open public routes, with summed cost at most `within`.
+    /// open routes this subject may traverse, with summed cost at most `within`.
     Reachable { to: Role, within: Cost },
     /// The acting subject's own holding of the resource bound to `resource` is
     /// at least `at_least`.
     Holds { resource: Role, at_least: Quantity },
+    /// The acting subject's effective authority — its own grants plus what
+    /// every office it occupies lends — holds a grant of `kind` whose target
+    /// covers the referent bound to `over`.
+    Authorized { over: Role, kind: AuthorityKindName },
+    /// A forum takes `grievance` and the acting subject is inside its standing.
+    HasStanding { grievance: GrievanceKindName },
 }
 
-/// Exactly the operations an affordance may propose. Nine, not the resolver's
-/// ten: `Admit` is absent because minting quantity requires an `EvidenceRef` and
-/// an invocation carries no evidence list, so admitting it here would be a
-/// second creation path beside the single evidenced one.
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(rename_all = "snake_case")]
+/// Exactly the operations an affordance may propose. `Admit` is absent because
+/// minting quantity requires an `EvidenceRef` and an invocation carries no
+/// evidence list, so admitting it here would be a second creation path beside
+/// the single evidenced one. `OpenOffice`, `CloseOffice`, `OpenForum`, and
+/// `CloseForum` are absent because constituting an office or a forum has no
+/// live in-play reader an affordance would serve; they stay patch-lane only.
+///
+/// The four civic variants carry their payload on the variant rather than on
+/// the slot or the invocation: an authority kind and an office name are not
+/// referents, so they cannot be roles, and a proposer's only degree of freedom
+/// stays magnitude. The world fixes the kind when it authors the entry.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "op", rename_all = "snake_case")]
 pub(crate) enum ComponentOpKind {
     Relocate,
     OpenRoute,
@@ -195,6 +306,10 @@ pub(crate) enum ComponentOpKind {
     Consume,
     Bind,
     Release,
+    GrantAuthority { kind: AuthorityKindName },
+    RevokeAuthority { kind: AuthorityKindName },
+    InstallIncumbent { office: OfficeName },
+    VacateOffice { office: OfficeName },
 }
 
 /// The referent shape of one operation: the single source of both the
@@ -202,6 +317,7 @@ pub(crate) enum ComponentOpKind {
 pub(super) enum RoleKindRule {
     Exact(RefKind),
     AnyDependencyTarget,
+    AnyAuthorityTarget,
 }
 
 /// Which magnitude, if any, an operation carries.
@@ -213,27 +329,39 @@ pub(super) enum BoundsDimension {
 }
 
 impl ComponentOpKind {
-    pub(super) fn arity(self) -> Vec<RoleKindRule> {
-        let subject = RoleKindRule::Exact(ANY_SUBJECT);
+    pub(super) fn arity(&self) -> Vec<RoleKindRule> {
+        let subject = || RoleKindRule::Exact(ANY_SUBJECT);
         let route = || RoleKindRule::Exact(ROUTE);
         let resource = || RoleKindRule::Exact(RefKind::Entity(EntityKind::Resource));
         match self {
-            Self::Relocate => vec![subject, route()],
+            Self::Relocate => vec![subject(), route()],
             Self::OpenRoute | Self::CloseRoute | Self::AlterCost => vec![route()],
-            Self::Transfer => vec![subject, RoleKindRule::Exact(ANY_SUBJECT), resource()],
-            Self::Transform => vec![subject, resource(), resource()],
-            Self::Consume => vec![subject, resource()],
-            Self::Bind | Self::Release => vec![subject, RoleKindRule::AnyDependencyTarget],
+            Self::Transfer => vec![subject(), subject(), resource()],
+            Self::Transform => vec![subject(), resource(), resource()],
+            Self::Consume => vec![subject(), resource()],
+            Self::Bind | Self::Release => vec![subject(), RoleKindRule::AnyDependencyTarget],
+            Self::GrantAuthority { .. } | Self::RevokeAuthority { .. } => {
+                vec![subject(), RoleKindRule::AnyAuthorityTarget]
+            }
+            Self::InstallIncumbent { .. } => vec![subject(), subject()],
+            Self::VacateOffice { .. } => vec![subject()],
         }
     }
 
-    pub(super) fn dimension(self) -> BoundsDimension {
+    pub(super) fn dimension(&self) -> BoundsDimension {
         match self {
-            Self::Relocate | Self::OpenRoute | Self::CloseRoute | Self::Bind | Self::Release => {
-                BoundsDimension::None
-            }
             Self::Transfer | Self::Transform | Self::Consume => BoundsDimension::Quantity,
             Self::AlterCost => BoundsDimension::Cost,
+            _ => BoundsDimension::None,
+        }
+    }
+
+    /// The civic names this variant carries, so one validator checks them all.
+    fn payload_names(&self) -> Vec<&str> {
+        match self {
+            Self::GrantAuthority { kind } | Self::RevokeAuthority { kind } => vec![&kind.0],
+            Self::InstallIncumbent { office } | Self::VacateOffice { office } => vec![&office.0],
+            _ => Vec::new(),
         }
     }
 }
@@ -247,6 +375,9 @@ pub(super) fn role_kind_fits(rule: &RoleKindRule, declared: RefKind) -> bool {
             declared,
             RefKind::Subject(_) | RefKind::Entity(EntityKind::Resource) | RefKind::Edge(_)
         ),
+        RoleKindRule::AnyAuthorityTarget => {
+            matches!(declared, RefKind::Subject(_) | PLACE)
+        }
     }
 }
 
@@ -438,6 +569,45 @@ pub(crate) enum ComponentOp {
         subject: Ref<SubjectId>,
         target: DependencyRef,
     },
+    /// Adds one grant. An identical grant is `NoOperationEffect`; one that
+    /// overlaps another the holder already has is `OverlappingJurisdiction`.
+    GrantAuthority {
+        holder: Ref<SubjectId>,
+        grant: AuthorityGrantRef,
+    },
+    RevokeAuthority {
+        holder: Ref<SubjectId>,
+        grant: AuthorityGrantRef,
+    },
+    /// Creates or reconstitutes an office, preserving any sitting incumbent.
+    /// Clipping an office's powers under a sitting incumbent is a political
+    /// act, and this is how it is written.
+    OpenOffice {
+        institution: Ref<SubjectId>,
+        office: OfficeName,
+        delegated: BTreeSet<AuthorityKindName>,
+    },
+    CloseOffice {
+        institution: Ref<SubjectId>,
+        office: OfficeName,
+    },
+    InstallIncumbent {
+        institution: Ref<SubjectId>,
+        office: OfficeName,
+        incumbent: Ref<SubjectId>,
+    },
+    VacateOffice {
+        institution: Ref<SubjectId>,
+        office: OfficeName,
+    },
+    OpenForum {
+        grievance: GrievanceKindName,
+        forum: Ref<SubjectId>,
+        standing: AuthorityTargetRef,
+    },
+    CloseForum {
+        grievance: GrievanceKindName,
+    },
 }
 
 /// Empty on purpose: an `Option<PatchAnswer>` can only be `None`, so the
@@ -608,6 +778,51 @@ pub(crate) enum Mismatch {
     InertAffordance {
         handle: DraftHandle,
     },
+    /// An `OfficeName`, `AuthorityKindName`, or `GrievanceKindName` that is not
+    /// `[a-z][a-z0-9_]{0,47}`.
+    InvalidCivicName {
+        site: Site,
+    },
+    /// `OpenOffice` lending no authority kind.
+    EmptyDelegation {
+        operation: usize,
+    },
+    /// The institution named by an office operation is not
+    /// `SubjectKind::Institution`.
+    OfficeOnNonInstitution {
+        operation: usize,
+    },
+    /// An incumbent that is not `SubjectKind::Person`. This is the check that
+    /// keeps an institution's operational organ and its person-shaped voice two
+    /// subjects joined by an office.
+    OfficeHolderNotPerson {
+        operation: usize,
+    },
+    /// This person already occupies another office of this institution.
+    DuplicateIncumbency {
+        operation: usize,
+    },
+    /// `InstallIncumbent`, `VacateOffice`, or `CloseOffice` naming an office the
+    /// institution does not have.
+    UnknownOffice {
+        operation: usize,
+    },
+    /// `CloseForum` naming a grievance no forum takes.
+    UnknownForum {
+        operation: usize,
+    },
+    /// One subject would hold two grants of the same kind over overlapping
+    /// targets, from any combination of direct grant and office delegation.
+    /// Overlap between *different* subjects is layered government and legal:
+    /// `Authorized` is a permission predicate, not an exclusivity claim, and
+    /// this rule exists so nothing ever has to arbitrate between two sources.
+    OverlappingJurisdiction {
+        operation: usize,
+    },
+    /// A catalog entry declares a role named `actor`, which the kernel binds.
+    ReservedRole {
+        handle: DraftHandle,
+    },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -652,9 +867,9 @@ impl EdgeRecord {
         }
     }
 
-    pub(super) fn access(&self) -> AccessKind {
+    pub(super) fn access(&self) -> &AccessKind {
         match self {
-            Self::Route { access, .. } => *access,
+            Self::Route { access, .. } => access,
         }
     }
 
@@ -762,6 +977,40 @@ pub(crate) enum ResolvedOp {
         subject: SubjectId,
         target: DependencyTarget,
     },
+    GrantAuthority {
+        holder: SubjectId,
+        grant: AuthorityGrant,
+    },
+    RevokeAuthority {
+        holder: SubjectId,
+        grant: AuthorityGrant,
+    },
+    OpenOffice {
+        institution: SubjectId,
+        office: OfficeName,
+        delegated: BTreeSet<AuthorityKindName>,
+    },
+    CloseOffice {
+        institution: SubjectId,
+        office: OfficeName,
+    },
+    InstallIncumbent {
+        institution: SubjectId,
+        office: OfficeName,
+        incumbent: SubjectId,
+    },
+    VacateOffice {
+        institution: SubjectId,
+        office: OfficeName,
+    },
+    OpenForum {
+        grievance: GrievanceKindName,
+        forum: SubjectId,
+        standing: AuthorityTarget,
+    },
+    CloseForum {
+        grievance: GrievanceKindName,
+    },
 }
 
 /// One resource's movement across a whole patch. Accumulators are `u128` so an
@@ -858,6 +1107,110 @@ enum TargetKey {
     Subject(Key<SubjectId>),
 }
 
+/// [`AuthorityTarget`] over candidate keys, so a grant over a place this patch
+/// declares is checked before any ID is minted.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum AuthorityTargetKey {
+    Subject(Key<SubjectId>),
+    PlaceSubtree(Key<EntityId>),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+struct GrantKey {
+    kind: AuthorityKindName,
+    over: AuthorityTargetKey,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct OfficeCandidate {
+    incumbent: Option<Key<SubjectId>>,
+    delegated: BTreeSet<AuthorityKindName>,
+}
+
+/// Whether two jurisdictions of one kind cover common ground. Structural on
+/// purpose: identity for named subordinates, containment for territory, and
+/// never across the two, so the answer cannot decay when a subject walks
+/// somewhere. Containment is fixed at declaration, so every way of creating an
+/// overlap is a checked operation.
+fn candidate_targets_overlap(
+    left: &AuthorityTargetKey,
+    right: &AuthorityTargetKey,
+    containers: &BTreeMap<Key<EntityId>, Key<EntityId>>,
+) -> bool {
+    match (left, right) {
+        (AuthorityTargetKey::Subject(one), AuthorityTargetKey::Subject(other)) => one == other,
+        (AuthorityTargetKey::PlaceSubtree(one), AuthorityTargetKey::PlaceSubtree(other)) => {
+            key_covers_place(one, other, containers) || key_covers_place(other, one, containers)
+        }
+        _ => false,
+    }
+}
+
+fn target_key_of(target: AuthorityTarget) -> AuthorityTargetKey {
+    match target {
+        AuthorityTarget::Subject(subject_id) => {
+            AuthorityTargetKey::Subject(Key::Existing(subject_id))
+        }
+        AuthorityTarget::PlaceSubtree(entity_id) => {
+            AuthorityTargetKey::PlaceSubtree(Key::Existing(entity_id))
+        }
+    }
+}
+
+fn grant_key_of(grant: &AuthorityGrant) -> GrantKey {
+    GrantKey {
+        kind: grant.kind.clone(),
+        over: target_key_of(grant.over),
+    }
+}
+
+/// The candidate authority of one subject, projected to the canonical referents
+/// [`covers`](super::covers) reads. A grant naming structure this patch declares
+/// cannot cover a place an already-canonical route reaches, so the projection
+/// loses nothing the `Restricted` rule asks about.
+fn canonical_grants(grants: &BTreeSet<GrantKey>) -> BTreeSet<AuthorityGrant> {
+    grants
+        .iter()
+        .filter_map(|grant| {
+            let over = match &grant.over {
+                AuthorityTargetKey::Subject(Key::Existing(subject_id)) => {
+                    AuthorityTarget::Subject(*subject_id)
+                }
+                AuthorityTargetKey::PlaceSubtree(Key::Existing(entity_id)) => {
+                    AuthorityTarget::PlaceSubtree(*entity_id)
+                }
+                _ => return None,
+            };
+            Some(AuthorityGrant {
+                kind: grant.kind.clone(),
+                over,
+            })
+        })
+        .collect()
+}
+
+/// Own grants plus what every held office lends, over the candidate graph. The
+/// canonical twin is `scope_components` plus `effective_authority`; this one
+/// answers the same question before any ID is minted.
+fn candidate_effective_authority(
+    holder: &Key<SubjectId>,
+    authority: &BTreeMap<Key<SubjectId>, BTreeSet<GrantKey>>,
+    selection: &BTreeMap<(Key<SubjectId>, OfficeName), OfficeCandidate>,
+) -> BTreeSet<GrantKey> {
+    let mut effective = authority.get(holder).cloned().unwrap_or_default();
+    for ((institution, _), office) in selection {
+        if office.incumbent.as_ref() != Some(holder) {
+            continue;
+        }
+        for grant in authority.get(institution).into_iter().flatten() {
+            if office.delegated.contains(&grant.kind) {
+                effective.insert(grant.clone());
+            }
+        }
+    }
+    effective
+}
+
 #[derive(Clone, Debug)]
 struct RouteCandidate {
     from: Key<EntityId>,
@@ -898,6 +1251,19 @@ pub(super) fn is_canonical_text(value: &str) -> bool {
 
 pub(super) fn is_valid_cost(cost: Cost) -> bool {
     (1..=MAX_ROUTE_COST).contains(&cost.0)
+}
+
+/// The one role name the kernel owns. A catalog entry may not declare it and an
+/// invocation may not bind it: stage 2 binds it to the acting subject, so a slot
+/// that must land on the actor — the payee of a levy, say — says so instead of
+/// letting the proposer point it at a friend.
+pub(super) const ACTOR_ROLE: &str = "actor";
+
+/// Authority kinds, office names, and grievance kinds share the affordance
+/// alphabet: world-declared, kernel-opaque, and safe to surface in a generated
+/// tool description.
+pub(super) fn is_civic_name(value: &str) -> bool {
+    is_tool_name(value, 48)
 }
 
 /// `[a-z][a-z0-9_]{0,max-1}`. Affordance kinds and roles become generated tool
@@ -1026,6 +1392,11 @@ fn validate_affordance(
     }
     let mut declared: BTreeMap<Role, RefKind> = BTreeMap::new();
     for spec in roles {
+        if spec.role.0 == ACTOR_ROLE {
+            mismatches.push(Mismatch::ReservedRole {
+                handle: handle.clone(),
+            });
+        }
         match declared.entry(spec.role.clone()) {
             Entry::Vacant(slot) => {
                 slot.insert(spec.kind);
@@ -1044,6 +1415,9 @@ fn validate_affordance(
             });
         }
     }
+    // The kernel binds `actor` to the acting subject, so preconditions and
+    // slots may name it like any role.
+    declared.insert(Role(ACTOR_ROLE.into()), ANY_SUBJECT);
     let require =
         |role: &Role, expected: RefKind, mismatches: &mut Vec<Mismatch>| match declared.get(role) {
             None => mismatches.push(Mismatch::UnknownRole {
@@ -1070,10 +1444,43 @@ fn validate_affordance(
             Precondition::Holds { resource, .. } => {
                 require(resource, RefKind::Entity(EntityKind::Resource), mismatches);
             }
+            Precondition::Authorized { over, kind } => {
+                // Jurisdiction runs over subjects, places, and routes. A
+                // resource, fact, or channel is covered by nothing, so a role
+                // of that kind is refused at declaration rather than always
+                // failing at invocation.
+                match declared.get(over) {
+                    None => mismatches.push(Mismatch::UnknownRole {
+                        handle: handle.clone(),
+                        role: over.clone(),
+                    }),
+                    Some(RefKind::Subject(_)) | Some(&PLACE) | Some(&ROUTE) => {}
+                    Some(_) => mismatches.push(Mismatch::RoleKindUnfit {
+                        handle: handle.clone(),
+                        role: over.clone(),
+                    }),
+                }
+                if !is_civic_name(&kind.0) {
+                    mismatches.push(Mismatch::InvalidCivicName { site: site() });
+                }
+            }
+            Precondition::HasStanding { grievance } => {
+                if !is_civic_name(&grievance.0) {
+                    mismatches.push(Mismatch::InvalidCivicName { site: site() });
+                }
+            }
         }
     }
     for (index, slot) in effect_slots.iter().enumerate() {
         let arity = slot.op_kind.arity();
+        if slot
+            .op_kind
+            .payload_names()
+            .iter()
+            .any(|name| !is_civic_name(name))
+        {
+            mismatches.push(Mismatch::InvalidCivicName { site: site() });
+        }
         if slot.roles.len() != arity.len() {
             mismatches.push(Mismatch::SlotRoleArity {
                 handle: handle.clone(),
@@ -1302,6 +1709,108 @@ fn resolve_dependency_target(
     }
 }
 
+/// Whether any subject in the candidate graph holds two grants of one kind over
+/// overlapping ground, from any combination of direct grant and office
+/// delegation.
+fn graph_overlaps(
+    authority: &BTreeMap<Key<SubjectId>, BTreeSet<GrantKey>>,
+    selection: &BTreeMap<(Key<SubjectId>, OfficeName), OfficeCandidate>,
+    containers: &BTreeMap<Key<EntityId>, Key<EntityId>>,
+) -> bool {
+    let holders: BTreeSet<&Key<SubjectId>> = authority
+        .keys()
+        .chain(
+            selection
+                .values()
+                .filter_map(|office| office.incumbent.as_ref()),
+        )
+        .collect();
+    holders.into_iter().any(|holder| {
+        let effective: Vec<GrantKey> = candidate_effective_authority(holder, authority, selection)
+            .into_iter()
+            .collect();
+        effective.iter().enumerate().any(|(index, one)| {
+            effective[index + 1..].iter().any(|other| {
+                one.kind == other.kind
+                    && candidate_targets_overlap(&one.over, &other.over, containers)
+            })
+        })
+    })
+}
+
+/// The candidate kind of a subject reference: the declared kind for a handle
+/// this patch introduces, the committed kind otherwise.
+fn subject_kind_of(
+    key: &Key<SubjectId>,
+    index: &BTreeMap<DraftHandle, RefKind>,
+    state: &super::WorldState,
+) -> Option<SubjectKind> {
+    match key {
+        Key::Existing(subject_id) => state.subjects.get(subject_id).map(|subject| subject.kind),
+        Key::Draft(handle) => match index.get(handle) {
+            Some(RefKind::Subject(kind)) => *kind,
+            _ => None,
+        },
+    }
+}
+
+/// The institution half of every office operation: one subject reference, one
+/// canonical office name, and the kind check that keeps an institution's
+/// operational organ and its person-shaped voice two subjects.
+fn resolve_office_institution(
+    position: usize,
+    institution: &Ref<SubjectId>,
+    office: &OfficeName,
+    index: &BTreeMap<DraftHandle, RefKind>,
+    state: &super::WorldState,
+    mismatches: &mut Vec<Mismatch>,
+) -> Option<Key<SubjectId>> {
+    let named = is_civic_name(&office.0);
+    if !named {
+        mismatches.push(Mismatch::InvalidCivicName {
+            site: Site::Operation(position),
+        });
+    }
+    let key = resolve_subject(
+        Site::Operation(position),
+        institution,
+        index,
+        &state.subjects,
+        mismatches,
+    )?;
+    if subject_kind_of(&key, index, state) != Some(SubjectKind::Institution) {
+        mismatches.push(Mismatch::OfficeOnNonInstitution {
+            operation: position,
+        });
+        return None;
+    }
+    named.then_some(key)
+}
+
+fn resolve_authority_target(
+    site: Site,
+    target: &AuthorityTargetRef,
+    index: &BTreeMap<DraftHandle, RefKind>,
+    state: &super::WorldState,
+    mismatches: &mut Vec<Mismatch>,
+) -> Option<AuthorityTargetKey> {
+    match target {
+        AuthorityTargetRef::Subject(reference) => {
+            resolve_subject(site, reference, index, &state.subjects, mismatches)
+                .map(AuthorityTargetKey::Subject)
+        }
+        AuthorityTargetRef::PlaceSubtree(reference) => resolve_entity(
+            site,
+            EntityKind::Place,
+            reference,
+            index,
+            &state.entities,
+            mismatches,
+        )
+        .map(AuthorityTargetKey::PlaceSubtree),
+    }
+}
+
 /// What a holder holds in the candidate map. Absence is zero, at both levels.
 fn candidate_held(
     holdings: &BTreeMap<(Key<SubjectId>, Key<EntityId>), Quantity>,
@@ -1455,7 +1964,7 @@ pub(super) fn resolve_patch(
                 RouteCandidate {
                     from: Key::Existing(from),
                     to: Key::Existing(to),
-                    access: record.access(),
+                    access: record.access().clone(),
                     cost: record.cost(),
                     open: record.is_open(),
                 },
@@ -1494,6 +2003,41 @@ pub(super) fn resolve_patch(
                     },
                 )
             })
+        })
+        .collect();
+    let mut authority: BTreeMap<Key<SubjectId>, BTreeSet<GrantKey>> = state
+        .authority
+        .iter()
+        .map(|(subject_id, grants)| {
+            (
+                Key::Existing(*subject_id),
+                grants.iter().map(grant_key_of).collect(),
+            )
+        })
+        .collect();
+    let mut selection: BTreeMap<(Key<SubjectId>, OfficeName), OfficeCandidate> = state
+        .selection
+        .iter()
+        .flat_map(|(institution, offices)| {
+            offices.iter().map(move |(name, office)| {
+                (
+                    (Key::Existing(*institution), name.clone()),
+                    OfficeCandidate {
+                        incumbent: office.incumbent.map(Key::Existing),
+                        delegated: office.delegated.clone(),
+                    },
+                )
+            })
+        })
+        .collect();
+    let mut redress: BTreeMap<GrievanceKindName, (Key<SubjectId>, AuthorityTargetKey)> = state
+        .redress
+        .iter()
+        .map(|(grievance, forum)| {
+            (
+                grievance.clone(),
+                (Key::Existing(forum.forum), target_key_of(forum.standing)),
+            )
         })
         .collect();
     let mut deltas: BTreeMap<Key<EntityId>, LedgerDelta> = BTreeMap::new();
@@ -1583,7 +2127,7 @@ pub(super) fn resolve_patch(
                         RouteCandidate {
                             from,
                             to,
-                            access: route.access,
+                            access: route.access.clone(),
                             cost: route.cost,
                             open: true,
                         },
@@ -1649,7 +2193,26 @@ pub(super) fn resolve_patch(
                     });
                     admitted = false;
                 }
-                if route.access != AccessKind::Public {
+                // The resolver reads authority for the subject being moved, not
+                // for whoever proposed the patch, which is what keeps it
+                // actor-blind: the owner-admitted lane and the action lane get
+                // the same answer for the same move. A destination this patch
+                // declares is canonically unknown, so only a `Public` route
+                // reaches it.
+                let opened = match &route.to {
+                    Key::Existing(destination) => route_admits(
+                        state,
+                        &canonical_grants(&candidate_effective_authority(
+                            &subject_key,
+                            &authority,
+                            &selection,
+                        )),
+                        &route.access,
+                        *destination,
+                    ),
+                    Key::Draft(_) => route.access == AccessKind::Public,
+                };
+                if !opened {
                     mismatches.push(Mismatch::RouteAccessRestricted {
                         operation: position,
                     });
@@ -1972,6 +2535,269 @@ pub(super) fn resolve_patch(
                     dependencies.remove(&slot);
                 }
             }
+            ComponentOp::GrantAuthority { holder, grant }
+            | ComponentOp::RevokeAuthority { holder, grant } => {
+                let granting = matches!(operation, ComponentOp::GrantAuthority { .. });
+                let holder_key = resolve_subject(
+                    Site::Operation(position),
+                    holder,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                if !is_civic_name(&grant.kind.0) {
+                    mismatches.push(Mismatch::InvalidCivicName {
+                        site: Site::Operation(position),
+                    });
+                }
+                let over = resolve_authority_target(
+                    Site::Operation(position),
+                    &grant.over,
+                    &index,
+                    state,
+                    &mut mismatches,
+                );
+                let (Some(holder_key), Some(over)) = (holder_key, over) else {
+                    continue;
+                };
+                let entry = GrantKey {
+                    kind: grant.kind.clone(),
+                    over,
+                };
+                let held = authority
+                    .get(&holder_key)
+                    .is_some_and(|grants| grants.contains(&entry));
+                if held == granting {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                } else if granting {
+                    authority.entry(holder_key).or_default().insert(entry);
+                } else {
+                    let empty = if let Some(grants) = authority.get_mut(&holder_key) {
+                        grants.remove(&entry);
+                        grants.is_empty()
+                    } else {
+                        false
+                    };
+                    if empty {
+                        authority.remove(&holder_key);
+                    }
+                }
+            }
+            ComponentOp::OpenOffice {
+                institution,
+                office,
+                delegated,
+            } => {
+                let institution_key = resolve_office_institution(
+                    position,
+                    institution,
+                    office,
+                    &index,
+                    state,
+                    &mut mismatches,
+                );
+                if delegated.is_empty() {
+                    mismatches.push(Mismatch::EmptyDelegation {
+                        operation: position,
+                    });
+                }
+                if delegated.iter().any(|kind| !is_civic_name(&kind.0)) {
+                    mismatches.push(Mismatch::InvalidCivicName {
+                        site: Site::Operation(position),
+                    });
+                }
+                let Some(institution_key) = institution_key else {
+                    continue;
+                };
+                if delegated.is_empty() {
+                    continue;
+                }
+                let slot = (institution_key, office.clone());
+                let incumbent = selection
+                    .get(&slot)
+                    .and_then(|current| current.incumbent.clone());
+                if selection
+                    .get(&slot)
+                    .is_some_and(|current| &current.delegated == delegated)
+                {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                } else {
+                    selection.insert(
+                        slot,
+                        OfficeCandidate {
+                            incumbent,
+                            delegated: delegated.clone(),
+                        },
+                    );
+                }
+            }
+            ComponentOp::CloseOffice {
+                institution,
+                office,
+            }
+            | ComponentOp::VacateOffice {
+                institution,
+                office,
+            } => {
+                let closing = matches!(operation, ComponentOp::CloseOffice { .. });
+                let Some(institution_key) = resolve_office_institution(
+                    position,
+                    institution,
+                    office,
+                    &index,
+                    state,
+                    &mut mismatches,
+                ) else {
+                    continue;
+                };
+                let slot = (institution_key, office.clone());
+                let Some(current) = selection.get(&slot).cloned() else {
+                    mismatches.push(Mismatch::UnknownOffice {
+                        operation: position,
+                    });
+                    continue;
+                };
+                if closing {
+                    selection.remove(&slot);
+                } else if current.incumbent.is_none() {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                } else {
+                    selection.insert(
+                        slot,
+                        OfficeCandidate {
+                            incumbent: None,
+                            ..current
+                        },
+                    );
+                }
+            }
+            ComponentOp::InstallIncumbent {
+                institution,
+                office,
+                incumbent,
+            } => {
+                let institution_key = resolve_office_institution(
+                    position,
+                    institution,
+                    office,
+                    &index,
+                    state,
+                    &mut mismatches,
+                );
+                let incumbent_key = resolve_subject(
+                    Site::Operation(position),
+                    incumbent,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                if let Some(incumbent_key) = &incumbent_key
+                    && subject_kind_of(incumbent_key, &index, state) != Some(SubjectKind::Person)
+                {
+                    mismatches.push(Mismatch::OfficeHolderNotPerson {
+                        operation: position,
+                    });
+                    continue;
+                }
+                let (Some(institution_key), Some(incumbent_key)) = (institution_key, incumbent_key)
+                else {
+                    continue;
+                };
+                let slot = (institution_key.clone(), office.clone());
+                let Some(current) = selection.get(&slot).cloned() else {
+                    mismatches.push(Mismatch::UnknownOffice {
+                        operation: position,
+                    });
+                    continue;
+                };
+                if selection.iter().any(|((held_by, name), other)| {
+                    *held_by == institution_key
+                        && name != office
+                        && other.incumbent.as_ref() == Some(&incumbent_key)
+                }) {
+                    mismatches.push(Mismatch::DuplicateIncumbency {
+                        operation: position,
+                    });
+                    continue;
+                }
+                if current.incumbent.as_ref() == Some(&incumbent_key) {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                } else {
+                    selection.insert(
+                        slot,
+                        OfficeCandidate {
+                            incumbent: Some(incumbent_key),
+                            ..current
+                        },
+                    );
+                }
+            }
+            ComponentOp::OpenForum {
+                grievance,
+                forum,
+                standing,
+            } => {
+                if !is_civic_name(&grievance.0) {
+                    mismatches.push(Mismatch::InvalidCivicName {
+                        site: Site::Operation(position),
+                    });
+                }
+                let forum_key = resolve_subject(
+                    Site::Operation(position),
+                    forum,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                let standing_key = resolve_authority_target(
+                    Site::Operation(position),
+                    standing,
+                    &index,
+                    state,
+                    &mut mismatches,
+                );
+                let (Some(forum_key), Some(standing_key)) = (forum_key, standing_key) else {
+                    continue;
+                };
+                if redress.get(grievance) == Some(&(forum_key.clone(), standing_key.clone())) {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                } else {
+                    redress.insert(grievance.clone(), (forum_key, standing_key));
+                }
+            }
+            ComponentOp::CloseForum { grievance } => {
+                if redress.remove(grievance).is_none() {
+                    mismatches.push(Mismatch::UnknownForum {
+                        operation: position,
+                    });
+                }
+            }
+        }
+        // Disjointness, checked against the complete candidate graph after each
+        // operation that could widen someone's jurisdiction, so two operations
+        // in one patch collide with each other and the failure names the one
+        // that created the collision. Only three operations can: a new grant, a
+        // widened office, and a new incumbency.
+        if matches!(
+            operation,
+            ComponentOp::GrantAuthority { .. }
+                | ComponentOp::OpenOffice { .. }
+                | ComponentOp::InstallIncumbent { .. }
+        ) && graph_overlaps(&authority, &selection, &containers)
+        {
+            mismatches.push(Mismatch::OverlappingJurisdiction {
+                operation: position,
+            });
         }
     }
 
@@ -2101,7 +2927,7 @@ pub(super) fn resolve_patch(
                 label: route.label.clone(),
                 from: entity_id_of(&key_of(&route.from)),
                 to: entity_id_of(&key_of(&route.to)),
-                access: route.access,
+                access: route.access.clone(),
                 cost: route.cost,
                 open: true,
             },
@@ -2258,6 +3084,22 @@ pub(super) fn resolve_patch(
             }
         }
     };
+    let authority_target_of = |target: &AuthorityTargetRef| -> AuthorityTarget {
+        match target {
+            AuthorityTargetRef::Subject(reference) => {
+                AuthorityTarget::Subject(subject_id_of(&key_of(reference)))
+            }
+            AuthorityTargetRef::PlaceSubtree(reference) => {
+                AuthorityTarget::PlaceSubtree(entity_id_of(&key_of(reference)))
+            }
+        }
+    };
+    let grant_of = |grant: &AuthorityGrantRef| -> AuthorityGrant {
+        AuthorityGrant {
+            kind: grant.kind.clone(),
+            over: authority_target_of(&grant.over),
+        }
+    };
     let operations = patch
         .operations
         .iter()
@@ -2326,6 +3168,58 @@ pub(super) fn resolve_patch(
                 subject: subject_id_of(&key_of(subject)),
                 target: target_of(target),
             },
+            ComponentOp::GrantAuthority { holder, grant } => ResolvedOp::GrantAuthority {
+                holder: subject_id_of(&key_of(holder)),
+                grant: grant_of(grant),
+            },
+            ComponentOp::RevokeAuthority { holder, grant } => ResolvedOp::RevokeAuthority {
+                holder: subject_id_of(&key_of(holder)),
+                grant: grant_of(grant),
+            },
+            ComponentOp::OpenOffice {
+                institution,
+                office,
+                delegated,
+            } => ResolvedOp::OpenOffice {
+                institution: subject_id_of(&key_of(institution)),
+                office: office.clone(),
+                delegated: delegated.clone(),
+            },
+            ComponentOp::CloseOffice {
+                institution,
+                office,
+            } => ResolvedOp::CloseOffice {
+                institution: subject_id_of(&key_of(institution)),
+                office: office.clone(),
+            },
+            ComponentOp::InstallIncumbent {
+                institution,
+                office,
+                incumbent,
+            } => ResolvedOp::InstallIncumbent {
+                institution: subject_id_of(&key_of(institution)),
+                office: office.clone(),
+                incumbent: subject_id_of(&key_of(incumbent)),
+            },
+            ComponentOp::VacateOffice {
+                institution,
+                office,
+            } => ResolvedOp::VacateOffice {
+                institution: subject_id_of(&key_of(institution)),
+                office: office.clone(),
+            },
+            ComponentOp::OpenForum {
+                grievance,
+                forum,
+                standing,
+            } => ResolvedOp::OpenForum {
+                grievance: grievance.clone(),
+                forum: subject_id_of(&key_of(forum)),
+                standing: authority_target_of(standing),
+            },
+            ComponentOp::CloseForum { grievance } => ResolvedOp::CloseForum {
+                grievance: grievance.clone(),
+            },
         })
         .collect();
 
@@ -2344,22 +3238,93 @@ pub(super) fn resolve_patch(
     })
 }
 
-/// Whether a place reaches itself through its container chain. The walk is
-/// bounded by the graph size, so a cycle that does not include the start still
-/// terminates.
-fn contains_itself(
-    start: &Key<EntityId>,
+/// Whether `place` is `root`, or reaches it through the candidate container
+/// chain. The walk is bounded by the graph size, so a cycle that does not
+/// include either end still terminates.
+fn key_covers_place(
+    root: &Key<EntityId>,
+    place: &Key<EntityId>,
     containers: &BTreeMap<Key<EntityId>, Key<EntityId>>,
 ) -> bool {
-    let mut current = containers.get(start);
+    let mut current = Some(place);
     for _ in 0..=containers.len() {
         match current {
             None => return false,
-            Some(node) if node == start => return true,
+            Some(node) if node == root => return true,
             Some(node) => current = containers.get(node),
         }
     }
     false
+}
+
+/// Whether a place reaches itself through its container chain: the same walk,
+/// started one link up so a place is not its own ancestor by definition.
+fn contains_itself(
+    start: &Key<EntityId>,
+    containers: &BTreeMap<Key<EntityId>, Key<EntityId>>,
+) -> bool {
+    containers
+        .get(start)
+        .is_some_and(|parent| key_covers_place(start, parent, containers))
+}
+
+/// Whether `place` is `root` or is contained in it, over canonical state: one
+/// upward walk in the shape of [`containment_terminates`], bounded by the graph
+/// size. It is total because `admit_resolved` refuses a non-terminating chain,
+/// so the bound is belt-and-braces rather than a repair loop. There is no
+/// downward enumeration and no child index: every jurisdictional question this
+/// kernel asks is "is this target inside my ground".
+pub(super) fn covers_place(
+    entities: &BTreeMap<EntityId, EntityRecord>,
+    root: EntityId,
+    place: EntityId,
+) -> bool {
+    let mut current = Some(place);
+    for _ in 0..=entities.len() {
+        match current {
+            None => return false,
+            Some(node) if node == root => return true,
+            Some(node) => current = entities.get(&node).and_then(|record| record.container),
+        }
+    }
+    false
+}
+
+/// The canonical twin of the candidate graph's `candidate_targets_overlap`: whether two
+/// jurisdictions of one kind cover common ground.
+pub(super) fn targets_overlap(
+    entities: &BTreeMap<EntityId, EntityRecord>,
+    left: AuthorityTarget,
+    right: AuthorityTarget,
+) -> bool {
+    match (left, right) {
+        (AuthorityTarget::Subject(one), AuthorityTarget::Subject(other)) => one == other,
+        (AuthorityTarget::PlaceSubtree(one), AuthorityTarget::PlaceSubtree(other)) => {
+            covers_place(entities, one, other) || covers_place(entities, other, one)
+        }
+        _ => false,
+    }
+}
+
+/// Whether a subject holding `grants` may traverse a route with this access
+/// rule toward `destination`. The sole statement of the `Restricted` rule,
+/// called by `resolve_patch`'s `Relocate` arm, by `apply_operation`'s, and by
+/// `Precondition::Reachable`'s edge admission — one rule, three callers, no
+/// drift. Openness is a separate claim with its own name, so it is not folded
+/// in here.
+pub(super) fn route_admits(
+    state: &super::WorldState,
+    grants: &BTreeSet<AuthorityGrant>,
+    access: &AccessKind,
+    destination: EntityId,
+) -> bool {
+    match access {
+        AccessKind::Public => true,
+        AccessKind::Restricted { requires } => grants.iter().any(|grant| {
+            &grant.kind == requires
+                && super::covers(state, grant.over, super::Target::Entity(destination))
+        }),
+    }
 }
 
 /// The same containment walk over canonical state, for the admission and replay

@@ -7,10 +7,11 @@
 //! affordance fields.
 
 use crate::world::{
-    AffordanceId, AffordanceSnapshot, Bounds, CommandId, CommitReceipt, ControllerMode, Cost,
-    DecisionInvocation, DecisionOpportunity, DependencyTarget, EdgeId, EntityId, EntityKind,
-    KernelError, Magnitude, MailboxError, ProposedEffect, Quantity, RefKind, RoleBinding,
-    SubjectId, SubjectSnapshot, SubmitReceipt, Target, Utterance, WorldMailbox, WorldSnapshot,
+    AffordanceId, AffordanceSnapshot, AuthorityGrant, Bounds, CommandId, CommitReceipt,
+    ControllerMode, Cost, DecisionInvocation, DecisionOpportunity, DependencyTarget, EdgeId,
+    EntityId, EntityKind, KernelError, Magnitude, MailboxError, OfficeSnapshot, ProposedEffect,
+    Quantity, RefKind, RoleBinding, SubjectId, SubjectSnapshot, SubmitReceipt, Target, Utterance,
+    WorldMailbox, WorldSnapshot,
 };
 use async_trait::async_trait;
 use chrono::Utc;
@@ -2602,9 +2603,57 @@ impl SelectedDecision {
             "routes": self.typed_routes(),
             "holdings": self.typed_holdings(),
             "dependencies": self.typed_dependencies(),
+            "authority": self.typed_authority(),
+            "offices_held": Self::typed_offices(&self.subject.offices_held),
+            "offices_granted": Self::typed_offices(&self.subject.offices_granted),
+            "redress": self.typed_redress(),
             "visible_events": self.typed_visible_events(),
         }))
         .map_err(|error| ControllerError::Serialization(error.to_string()))
+    }
+
+    /// The acting subject's own jurisdictions, with no label resolved for
+    /// anything inside a target: a jurisdiction may name places and subjects
+    /// this subject has never heard of, and label resolution is a `Knowledge`
+    /// question. Nothing here marks whether a jurisdiction is occupied.
+    fn typed_authority(&self) -> Vec<Value> {
+        self.subject
+            .authority
+            .iter()
+            .map(Self::typed_grant)
+            .collect()
+    }
+
+    fn typed_grant(grant: &AuthorityGrant) -> Value {
+        json!({"kind": grant.kind, "over": grant.over})
+    }
+
+    /// The offices this subject occupies, and — for an institution — the
+    /// offices it grants. No global office gazetteer, and no other subject's
+    /// grants.
+    fn typed_offices(offices: &[OfficeSnapshot]) -> Vec<Value> {
+        offices
+            .iter()
+            .map(|office| {
+                json!({
+                    "institution": office.institution,
+                    "office": office.office,
+                    "incumbent": office.incumbent,
+                    "authority": office.authority.iter().map(Self::typed_grant).collect::<Vec<_>>(),
+                })
+            })
+            .collect()
+    }
+
+    /// The forums this subject may petition. Standing is not carried: a subject
+    /// learns that it may bring a grievance, not the boundary of everyone
+    /// else's standing.
+    fn typed_redress(&self) -> Vec<Value> {
+        self.subject
+            .redress
+            .iter()
+            .map(|forum| json!({"grievance": forum.grievance, "forum": forum.forum}))
+            .collect()
     }
 
     /// Only the acting subject's own place, so the typed surface carries what a
@@ -3873,6 +3922,10 @@ mod tests {
             holdings: BTreeMap::new(),
             dependencies: BTreeSet::new(),
             incident_routes: Vec::new(),
+            authority: BTreeSet::new(),
+            offices_held: Vec::new(),
+            offices_granted: Vec::new(),
+            redress: Vec::new(),
         };
         let speaker = SubjectSnapshot {
             id: speaker_id,
@@ -3886,6 +3939,10 @@ mod tests {
             holdings: BTreeMap::new(),
             dependencies: BTreeSet::new(),
             incident_routes: Vec::new(),
+            authority: BTreeSet::new(),
+            offices_held: Vec::new(),
+            offices_granted: Vec::new(),
+            redress: Vec::new(),
         };
         let snapshot = WorldSnapshot {
             world_id: opportunity.world_id,
@@ -4005,6 +4062,10 @@ mod tests {
             holdings: BTreeMap::new(),
             dependencies: BTreeSet::new(),
             incident_routes: vec![first_edge],
+            authority: BTreeSet::new(),
+            offices_held: Vec::new(),
+            offices_granted: Vec::new(),
+            redress: Vec::new(),
         };
         let other = SubjectSnapshot {
             id: other_id,
@@ -4018,6 +4079,10 @@ mod tests {
             holdings: BTreeMap::new(),
             dependencies: BTreeSet::new(),
             incident_routes: vec![second_edge],
+            authority: BTreeSet::new(),
+            offices_held: Vec::new(),
+            offices_granted: Vec::new(),
+            redress: Vec::new(),
         };
         let named_place = |id, label: &str| PlaceSnapshot {
             id,
@@ -4113,6 +4178,34 @@ mod tests {
         for leaked in ["The Vault Hoard", "The Vault Stair"] {
             assert!(!view.contains(leaked), "the typed view leaked `{leaked}`");
         }
+
+        // The civic blocks are scoped the same way: the subject's own grants,
+        // the offices it occupies and the offices it grants, and the forums it
+        // may petition. No standing boundary, no label for anything inside a
+        // target, and no other subject's jurisdiction.
+        let mut civic = custodial;
+        let hall = EntityId::issue();
+        civic.subject.authority = BTreeSet::from([crate::world::AuthorityGrant {
+            kind: crate::world::AuthorityKindName("levy".into()),
+            over: crate::world::AuthorityTarget::PlaceSubtree(hall),
+        }]);
+        civic.subject.offices_held = vec![OfficeSnapshot {
+            institution: other_id,
+            office: crate::world::OfficeName("warden".into()),
+            incumbent: Some(actor_id),
+            authority: civic.subject.authority.clone(),
+        }];
+        civic.subject.redress = vec![crate::world::ForumSnapshot {
+            grievance: crate::world::GrievanceKindName("seizure".into()),
+            forum: other_id,
+        }];
+        let view = civic.typed_view().unwrap();
+        assert!(view.contains(r#""kind": "levy""#));
+        assert!(view.contains(r#""office": "warden""#));
+        assert!(view.contains(r#""grievance": "seizure""#));
+        assert!(view.contains(encoded_id(&hall).unwrap().as_str()));
+        assert!(!view.contains("standing"));
+        assert!(!view.contains("The Sealed Vault"));
     }
 
     #[test]
