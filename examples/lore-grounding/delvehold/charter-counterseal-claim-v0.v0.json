@@ -1,0 +1,337 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "delvehold.charter-counterseal-claim-v0.v0",
+  "source_status": "draft",
+  "fixture_status": "lore_elaboration_grounded",
+  "source_refs": [
+    {
+      "source_id": "mastership-counterseal",
+      "path": "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+      "title": "Mastership and citizenship",
+      "line_start": 25,
+      "line_end": 51,
+      "relevance": "Primary institutional source for one civic seal per workshop, civic-home answerability, foreign counterseal claims, succession of liability, remedies, widening jurisdiction, and procedural costs."
+    },
+    {
+      "source_id": "greathold-civic-cistern",
+      "path": "Delvehold/Lore/The Greathold.md",
+      "title": "The Greathold",
+      "line_start": 8,
+      "line_end": 48,
+      "relevance": "Grounds distributed government, public works, foreign presence, and the two-level Cistern House Nine locality with visible pump state and civic sealing."
+    },
+    {
+      "source_id": "halfling-fields",
+      "path": "Delvehold/Lore/Peoples/Halflings.md",
+      "title": "Halflings",
+      "line_start": 6,
+      "line_end": 16,
+      "relevance": "Grounds halfling dependence on dwarven pumps, long field records, glassy crop mutation, demand for different crystal supply, and restitution."
+    },
+    {
+      "source_id": "dwarven-industry",
+      "path": "Delvehold/Lore/Industry/Dwarven Industry.md",
+      "title": "Dwarven industry",
+      "line_start": 6,
+      "line_end": 40,
+      "relevance": "Grounds consortium, college, reserve-house, Hold-institution, labor, public-power, and essential-service pressures."
+    },
+    {
+      "source_id": "runic-engineering",
+      "path": "Delvehold/Lore/Industry/Runic Engineering.md",
+      "title": "Runic engineering",
+      "line_start": 6,
+      "line_end": 40,
+      "relevance": "Grounds iterative rune engines, crystal fuel, pumping machinery, technical maintenance, and municipal dependence."
+    },
+    {
+      "source_id": "mana-pattern",
+      "path": "Delvehold/Lore/Ontology/Mana and Pattern.md",
+      "title": "Mana and pattern",
+      "line_start": 19,
+      "line_end": 39,
+      "relevance": "Grounds patterned mana flow and crystals as fuel, strategic reserve, commodity, reagent, and ecological nutrient."
+    },
+    {
+      "source_id": "surface-symptoms",
+      "path": "Delvehold/Lore/Crisis/Surface Symptoms.md",
+      "title": "Surface symptoms",
+      "line_start": 6,
+      "line_end": 26,
+      "relevance": "Grounds crop mutation, ambiguous attribution, field-book evidence, cross-border damage, and downstream councils without direct control of the machinery."
+    },
+    {
+      "source_id": "international-dependency",
+      "path": "Delvehold/Lore/Crisis/International Crisis.md",
+      "title": "International crisis",
+      "line_start": 6,
+      "line_end": 14,
+      "relevance": "Grounds foreign irrigation dependence, contested evidence, trade escalation, and the unresolved cost of replacing dwarven power."
+    },
+    {
+      "source_id": "human-contract-dependency",
+      "path": "Delvehold/Lore/Peoples/Humans.md",
+      "title": "Humans",
+      "line_start": 6,
+      "line_end": 14,
+      "relevance": "Provides comparative grounding for foreign municipal contracts, competing domestic interests, and disputed independent evidence."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Industrial escalation before open international intervention",
+    "location": "The public street landing of Cistern House Nine in a Greathold terrace district, used by an ad hoc claim moot hearing Tansy Ford's foreign utility complaint.",
+    "summary": "A halfling field clerk brings a marked pump contract and glass-root evidence to the civic home of Stonewake Pumpworks. The hearing must preserve water, evidence, and public answerability while the workshop's successor disputes causation but continues essential service.",
+    "public_facts": [
+      {
+        "text": "One workshop civic seal remains answerable at one civic home even when the workshop operates branches elsewhere.",
+        "source_refs": ["mastership-counterseal"]
+      },
+      {
+        "text": "Foreign claimants do not need a Greathold civic seal to petition; a marked contract, council notice, and account of injury can open a public counterseal claim.",
+        "source_refs": ["mastership-counterseal"]
+      },
+      {
+        "text": "Halfling towns adopted dwarven pumps and now possess long agricultural records of crop mutation while remaining dependent on the water those engines deliver.",
+        "source_refs": ["halfling-fields", "international-dependency"]
+      },
+      {
+        "text": "A successor who accepts a workshop's name, tools, open orders, and place on the civic roll also inherits its unanswered claims.",
+        "source_refs": ["mastership-counterseal"]
+      },
+      {
+        "text": "Claim-moot remedies reach bonds, records, reserves, inspections, and eligibility for new public contracts; they do not directly operate foreign valves or create substitute power.",
+        "source_refs": ["mastership-counterseal", "dwarven-industry"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Tansy Ford needs the suspect pump to keep working even as its irrigated fields produce glassy mutations.",
+        "source_refs": ["halfling-fields", "surface-symptoms"]
+      },
+      {
+        "text": "Stonewake's current Master must answer for inherited public work while protecting reserves needed by other dependent towns.",
+        "source_refs": ["mastership-counterseal", "dwarven-industry", "international-dependency"]
+      },
+      {
+        "text": "Cause remains uncertain: sequence, samples, and correlated symptoms justify inspection but do not prove whether the fault lies in fuel, engine, ditch, mine, ecology, or their interaction.",
+        "source_refs": ["surface-symptoms", "runic-engineering", "mana-pattern"]
+      },
+      {
+        "text": "The public landing keeps civic procedure beside visible local water infrastructure, preventing both claimant injury and Greathold dependency from becoming abstractions.",
+        "source_refs": ["greathold-civic-cistern", "mastership-counterseal"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "tansy-ford-claimants",
+      "label": "Tansy Ford claim delegation",
+      "group_type": "foreign_agricultural_town",
+      "institutional_logic": ["Keep water moving, preserve the town's evidence, and make the answering workshop pay for containment and loss without surrendering future claims."],
+      "material_incentives": ["Obtain substitute crystal, water carts, independent testing, lost-planting restitution, and a durable record before the next cistern empties."],
+      "internal_virtues": ["Long field memory", "Practical thrift", "Shared recordkeeping", "Refusal to confuse continued service with harmless service"],
+      "internal_shames": ["Returning with parchment but no water", "Selling the future claim for one week's relief", "Letting distant experts erase local observation"],
+      "prestige_markers": ["A field book that survives seasons", "A cart that arrives when promised", "Evidence held by more than one keeper"],
+      "taboo_triggers": ["Treating crop mutation as rustic panic", "Calling a working pump proof that no injury exists"],
+      "emotional_display_norms": ["Anxiety is converted into inventories, food, witness lists, and dry humor; open anger is reserved for evasions that cost another planting."],
+      "trust_defaults": ["Trusts repeated local observation and divided custody; distrusts distant self-certification and final settlements written under emergency pressure."],
+      "speech_register_cues": ["Agricultural comparisons", "Exact dates and quantities", "Domestic understatement", "Plain requests attached to carts, gauges, and fields"],
+      "source_refs": ["halfling-fields", "surface-symptoms", "mastership-counterseal"]
+    },
+    {
+      "group_id": "stonewake-pumpworks",
+      "label": "Stonewake Pumpworks",
+      "group_type": "greathold_workshop",
+      "institutional_logic": ["Keep inherited engines running, defend the workshop seal, distinguish service failure from uncertain ecological causation, and avoid promises unsupported by reserves."],
+      "material_incentives": ["Preserve eligibility for new public work, limit bond draws, retain branch records, and allocate scarce clean crystal across existing customers."],
+      "internal_virtues": ["Continuous service", "Traceable maintenance", "Bounded claims", "A Master visibly answering for the workshop name"],
+      "internal_shames": ["A turned or suspended seal", "An unmarked lot", "A branch office outrunning civic answerability"],
+      "prestige_markers": ["Pumps surviving winter", "Accurate ledgers", "Reserve allocations that can be defended in public"],
+      "taboo_triggers": ["Treating succession as escape from the workshop's name", "Ordering shutdown without replacing essential water"],
+      "emotional_display_norms": ["Fear appears as narrower quantities, causation objections, and attention to the civic seal; admissions are framed as inspectable limits."],
+      "trust_defaults": ["Trusts marked contracts, meter ledgers, assays, and bounded orders; distrusts single samples and broad ecological accusations."],
+      "speech_register_cues": ["Workshop continuity", "Measures and lots", "Operational objections", "Reluctant concrete concessions"],
+      "source_refs": ["mastership-counterseal", "dwarven-industry", "runic-engineering"]
+    },
+    {
+      "group_id": "counterseal-claim-moot",
+      "label": "Counterseal claim moot",
+      "group_type": "ad_hoc_civic_hearing",
+      "institutional_logic": ["Make a workshop's civic answerability public at its registered home without creating a permanent sovereign court."],
+      "material_incentives": ["Preserve evidence, essential service, bonds, reserves, and the credibility of seals used in foreign public work."],
+      "internal_virtues": ["Disinterest in the disputed supply line", "Divided custody", "Orders with named owners, quantities, and limits", "Jurisdiction that follows consequence"],
+      "internal_shames": ["A claimant sent home to the branch that denied them", "A remedy with no supply schedule", "A suspended seal that still sells new promises"],
+      "prestige_markers": ["A public roll others can inspect", "A finding both claimant and workshop can carry", "A narrow order that actually moves material"],
+      "taboo_triggers": ["Private settlement pretending to clear civic complaint", "Consortium accounting presented as final public authority"],
+      "emotional_display_norms": ["Urgency is translated into interim orders and custody calls; sympathy may guide attention but cannot own the finding."],
+      "trust_defaults": ["Trusts visible marks, disinterested keepers, public witness, and remedies within reachable authority."],
+      "speech_register_cues": ["Call-and-response custody", "Short jurisdiction questions", "Exact remedy verbs", "Dry impatience with evasive ancestry"],
+      "source_refs": ["mastership-counterseal", "greathold-civic-cistern"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "tansy-ford.water-before-vindication",
+      "applies_to": ["tansy-ford-claimants"],
+      "pressure_type": "essential_service",
+      "summary": "The town needs immediate water and a durable claim, making every fast payment or continued-flow offer both relief and leverage loss.",
+      "projection_use": "Prompt claimant choices to price time, carts, fields, evidence custody, and settlement language rather than pursue abstract victory.",
+      "source_refs": ["halfling-fields", "mastership-counterseal"]
+    },
+    {
+      "field_id": "stonewake.name-inherits-burden",
+      "applies_to": ["stonewake-pumpworks"],
+      "pressure_type": "succession",
+      "summary": "The current Master gains the workshop's live orders and civic standing only by remaining answerable for its unresolved claims.",
+      "projection_use": "Keep Brakka's defense focused on causation and remedy scope; she cannot coherently treat succession as total escape from the answering seal.",
+      "source_refs": ["mastership-counterseal"]
+    },
+    {
+      "field_id": "counterseal-moot.reachable-remedy",
+      "applies_to": ["counterseal-claim-moot"],
+      "pressure_type": "authority_boundary",
+      "summary": "The moot can move Greathold bonds, reserves, records, inspections, and seal standing, but cannot command a foreign council or invent clean supply.",
+      "projection_use": "Frame every proposed order through a named asset or authority actually reachable from the civic home.",
+      "source_refs": ["mastership-counterseal", "dwarven-industry"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "stonewake-pumpworks",
+      "target_group_id": "tansy-ford-claimants",
+      "observer_read": ["Skilled field observers", "Politically mobilized customers", "Claimants mistaking sequence for cause"],
+      "target_self_read": ["Keepers of twelve seasons of evidence", "A town purchasing water rather than surrendering judgment", "People paying for delay in crops and bodies"],
+      "misread_patterns": ["Workshop staff may treat local language as imprecision", "Output compliance may be mistaken for absence of ecological harm"],
+      "likely_insults": ["anecdotal", "ditch fault", "customer alarm"],
+      "projection_use": "Let Brakka challenge causal overreach while still recognizing material evidence and the public duty of her seal.",
+      "source_refs": ["halfling-fields", "surface-symptoms", "mastership-counterseal"]
+    },
+    {
+      "observer_group_id": "tansy-ford-claimants",
+      "target_group_id": "stonewake-pumpworks",
+      "observer_read": ["Distant sellers hiding inside standards", "Owners of a bond that could move water today", "Successors claiming the profitable half of inheritance"],
+      "target_self_read": ["Engineers preserving essential systems", "A current workshop forced to answer uncertainty inherited with old work"],
+      "misread_patterns": ["Claimants may read reserve scarcity as pure bad faith", "Visible continuity may obscure real limits on substitute supply"],
+      "likely_insults": ["seal-polisher", "dry promise", "account-book well"],
+      "projection_use": "Keep Mira sharp about material delay without making her omniscient about Stonewake's other dependent towns or reserves.",
+      "source_refs": ["dwarven-industry", "international-dependency", "mastership-counterseal"]
+    },
+    {
+      "observer_group_id": "counterseal-claim-moot",
+      "target_group_id": "stonewake-pumpworks",
+      "observer_read": ["A seal-bearing practice with reachable bonds and records", "A necessary service provider under unresolved complaint"],
+      "target_self_read": ["A workshop whose machines still meet the written output standard"],
+      "misread_patterns": ["The moot may overvalue legible records and undervalue evidence damaged by distance", "The workshop may read procedural neutrality as sympathy"],
+      "likely_insults": ["unclear chain", "unbounded remedy", "private clearance"],
+      "projection_use": "Keep the hearing strict about custody while acknowledging that travel itself degrades foreign claimants' proof.",
+      "source_refs": ["mastership-counterseal", "surface-symptoms"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "foreign-field-clerk",
+      "summary": "A halfling town clerk carrying local authority, seasonal records, samples, travel costs, and an urgent need for water into a foreign civic process.",
+      "obligations": ["Keep the claim open", "Bring relief home", "Preserve the town's copy", "Avoid overstating uncertain cause"],
+      "available_masks": ["Domestic humor", "Clerical precision", "Agricultural plain speech", "Customer familiarity"],
+      "failure_modes": ["Trading final release for immediate carts", "Returning with a symbolic order", "Letting haste break sample custody"],
+      "source_refs": ["halfling-fields", "mastership-counterseal", "surface-symptoms"]
+    },
+    {
+      "role_id": "answering-successor-master",
+      "summary": "The current Master of an inherited workshop, entitled to its seal and open orders only while answering for its unresolved public obligations.",
+      "obligations": ["Keep existing pumps supplied", "Open reachable records", "Defend against unsupported causation", "Accept orders properly attached to the seal"],
+      "available_masks": ["Operational severity", "Exact quantities", "Respect for bounded evidence", "Predecessor distinction"],
+      "failure_modes": ["Using succession to evade liability", "Protecting bond value while fields worsen", "Promising reserves that do not exist"],
+      "source_refs": ["mastership-counterseal", "dwarven-industry"]
+    },
+    {
+      "role_id": "seal-roll-keeper",
+      "summary": "A registry clerk who makes custody, marks, and public hearing state visible without becoming the owner of the moot's remedy.",
+      "obligations": ["Call transfers aloud", "Keep the public slate outward", "Preserve the roll", "Distinguish registry custody from claimant and workshop custody"],
+      "available_masks": ["Dry literalism", "Procedural hospitality", "Chalk discipline", "Refusal to improve testimony"],
+      "failure_modes": ["Letting wit become partiality", "Accepting an object without a keeper", "Allowing private settlement to rewrite the civic roll"],
+      "source_refs": ["mastership-counterseal", "greathold-civic-cistern"]
+    },
+    {
+      "role_id": "disinterested-hearing-master",
+      "summary": "A seal-bearing Master with no share in the disputed contract or supply line, convened temporarily to order only remedies the civic home can reach.",
+      "obligations": ["Test jurisdiction", "Protect essential service", "Keep successors answerable", "Widen the moot when consequences exceed the current seals"],
+      "available_masks": ["Ancestry impatience", "Narrow questions", "Public call-and-response", "Material remedy framing"],
+      "failure_modes": ["Confusing neutral procedure with equal burden", "Issuing relief with no supply path", "Punishing a seal before the authority chain is shown"],
+      "source_refs": ["mastership-counterseal", "greathold-civic-cistern"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "mira_fen",
+      "known_context": [
+        {"text": "Mira knows Tansy Ford's contract, pump schedule, field books, crop damage, council notice, travel budget, and sample custody.", "source_refs": ["halfling-fields", "mastership-counterseal"]}
+      ],
+      "beliefs": [
+        {"text": "Mira believes the changed crystal lot is materially connected to the field injury and that continued water cannot count as complete performance while the fields change.", "source_refs": ["halfling-fields", "surface-symptoms"]}
+      ],
+      "misreads": [
+        {"text": "Mira may read Stonewake's reserve limits as evasion because she cannot inspect the workshop's obligations to other towns.", "source_refs": ["dwarven-industry", "international-dependency"]}
+      ],
+      "must_not_know": [
+        {"text": "Mira must not know the final cause of the glass-root mutation or the true state of Stonewake's remote branch meter before inspected evidence establishes it.", "source_refs": ["surface-symptoms"]}
+      ]
+    },
+    {
+      "speaker_id": "brakka_sorn",
+      "known_context": [
+        {"text": "Brakka knows Stonewake's current contracts, reserves, local assay, predecessor history, and the civic obligations attached to her seal.", "source_refs": ["mastership-counterseal", "dwarven-industry"]}
+      ],
+      "beliefs": [
+        {"text": "Brakka believes output compliance is real evidence and that shutting suspect service without replacement can create a more immediate public injury.", "source_refs": ["mastership-counterseal", "international-dependency"]}
+      ],
+      "misreads": [
+        {"text": "Brakka may undervalue Tansy Ford's seasonal records because they are not Rune College measurements.", "source_refs": ["halfling-fields", "surface-symptoms"]}
+      ],
+      "must_not_know": [
+        {"text": "Brakka must not know whether the new meter crust proves Stonewake's feed caused the mutations before independent testing.", "source_refs": ["surface-symptoms", "runic-engineering"]}
+      ]
+    },
+    {
+      "speaker_id": "dorrin_veld",
+      "known_context": [
+        {"text": "Dorrin knows the public seal roll, custody procedure, answering seal, filed council notice, and orders entered during the hearing.", "source_refs": ["mastership-counterseal"]}
+      ],
+      "beliefs": [
+        {"text": "Dorrin treats visible separation of claimant, registry, and workshop custody as protection against any one participant owning the record.", "source_refs": ["mastership-counterseal"]}
+      ],
+      "misreads": [
+        {"text": "Dorrin may mistake exact custody for equal access even though foreign travel has already degraded evidence and exhausted the claimant's money.", "source_refs": ["mastership-counterseal"]}
+      ],
+      "must_not_know": [
+        {"text": "Dorrin must not choose the remedy or speak for the claimant merely because he owns the public record surface.", "source_refs": ["mastership-counterseal"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Tansy Ford, Stonewake Pumpworks, Mira Fen, Brakka Sorn, Dorrin Veld, Tavi Mere, and Master Iven Chalk are fixture-local elaborations, not declarations that these names recur across Delvehold canon.",
+      "source_refs": ["mastership-counterseal", "halfling-fields"]
+    },
+    {
+      "text": "The scene must preserve causal uncertainty around the glass-root mutation while making the contract, succession, evidence, service, and remedy authorities legible.",
+      "source_refs": ["surface-symptoms", "mastership-counterseal"]
+    },
+    {
+      "text": "The counterseal moot is an ad hoc gathering of disinterested Masters at the answering seal's civic home, not a permanent Greathold supreme court.",
+      "source_refs": ["mastership-counterseal", "greathold-civic-cistern"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which Rune College or independent assay traditions are normally accepted for cross-border crystal-contamination claims?",
+      "blocks_training": false,
+      "notes": "The fixture names an independent Rune College examiner only as one possible divided-custody destination and does not canonize a universal laboratory or test."
+    },
+    {
+      "question": "How do foreign governments enforce Greathold counterseal findings when bonded assets and market access are insufficient?",
+      "blocks_training": false,
+      "notes": "The lore elaboration intentionally leaves final extraterritorial enforcement dependent on the claimant government, preserving a lead for later Charter work."
+    }
+  ]
+}

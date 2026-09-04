@@ -1,0 +1,348 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "charter-counterseal-claim-v0-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/delvehold/charter-counterseal-claim-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/delvehold/charter-counterseal-claim-v0.v0.json",
+  "scene_id": "charter-counterseal-claim-v0.tansy-ford-hearing",
+  "protagonist_agent_id": "mira_fen",
+  "npc_agent_ids": [
+    "dorrin_veld",
+    "brakka_sorn",
+    "iven_chalk",
+    "tavi_mere",
+    "counterseal_claim_moot",
+    "cistern_house_nine_landing_queue"
+  ],
+  "purpose": "Interactive Fiction Weaver compilation of a Delvehold branch-and-fold fixture about a halfling town taking a cross-border utility injury to the civic home of a Greathold workshop's answering seal.",
+  "local_awareness_summary": [
+    {
+      "text": "Mira is Tansy Ford's halfling field clerk. She knows the marked Stonewake contract, twelve seasons of field records, council notice, sample custody, town travel purse, and current backup-cistern limit.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/charter-counterseal-claim-v0.v0.json",
+        "Delvehold/Lore/Peoples/Halflings.md"
+      ]
+    },
+    {
+      "text": "Mira can see the public seal roll, three custody trays, route map, claim bench, municipal gauge, Cistern House Nine pumps below the landing, Brakka's current civic seal, and the evidence admitted in her presence.",
+      "source_refs": [
+        "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+        "Delvehold/Lore/The Greathold.md"
+      ]
+    },
+    {
+      "text": "Mira can argue sequence and continuing injury but cannot know whether the crystal lot, engine, ditch, mine, ecology, or an interaction caused the glass-root mutation.",
+      "source_refs": [
+        "Delvehold/Lore/Crisis/Surface Symptoms.md",
+        "examples/lore-grounding/delvehold/charter-counterseal-claim-v0.v0.json"
+      ]
+    },
+    {
+      "text": "The hearing can reach Stonewake's bond, reserves, records, inspection duties, and eligibility for new public work. It cannot directly operate Tansy Ford's valves or manufacture a clean replacement supply.",
+      "source_refs": [
+        "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+        "Delvehold/Lore/Industry/Dwarven Industry.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Mira's claimant-local view on Cistern House Nine's public landing. Choices use seals, ribbons, jars, field books, custody trays, public readings, a travel purse, and requested orders rather than omniscient legal control.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/delvehold/charter-counterseal-claim-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes an ordinary claim-registration routine and restrained hospitality before succession, causation, and failing-water pressure arrive.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "AGENTS.md"
+        ]
+      },
+      {
+        "text": "Tonal mode is warm procedural comedy turning into agrarian unease; wit exposes custody, hierarchy, distance, and material dependency without trivializing the threatened harvest.",
+        "source_refs": [
+          "AGENTS.md",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Mira owns Tansy Ford's presented claim, retained evidence, requested remedy, and whether to accept bounded settlement. She cannot suspend Stonewake's seal or draw its bond herself.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "Dorrin owns registry calls and the public roll, not the remedy. The ad hoc disinterested Masters own the counterseal order within reachable Greathold assets.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "Brakka owns Stonewake's current civic seal and workshop decisions; accepting the practice also keeps the predecessor's unanswered claim attached to the same workshop identity.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "No participant may resolve the ecological cause from the glass-root, meter vane, or timing sequence inside this hearing.",
+        "source_refs": [
+          "Delvehold/Lore/Crisis/Surface Symptoms.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The marked green contract ribbon, old and current seal impressions, field books, divided glass-root, fresh meter vane, three custody trays, public slate, Stonewake contract chest, and Tansy Ford travel purse are material records or resources whose custody changes later options and outcomes.",
+        "source_refs": [
+          "examples/ink/delvehold/charter-counterseal-claim-v0.branch-and-fold.v0.ink",
+          "examples/lore-grounding/delvehold/charter-counterseal-claim-v0.v0.json"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "The fixture must show where a foreign town files, who hears it, why succession does not erase it, which remedies the civic home can reach, and what remains beyond Greathold authority.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "Every ending must preserve some combination of water cost, evidence quality, seal standing, successor liability, or settlement scope instead of granting total procedural victory.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Delvehold/Lore/Peoples/Halflings.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not create a permanent Greathold supreme court, let a registry clerk own the judgment, or let a private branch office clear the civic claim.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/The Greathold.md"
+        ]
+      },
+      {
+        "text": "Do not make continued pump output prove absence of harm, make crop mutation prove one planetary cause, or let a written order conjure supply.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Halflings.md",
+          "Delvehold/Lore/Crisis/Surface Symptoms.md",
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four procedural choice layers fold through registration, succession defense, fresh failure, and a state-gated counterseal order with eight endings.",
+    "choice_layers": [
+      "opening_the_counterseal_claim",
+      "answering_successor_defense",
+      "interim_redress_under_pressure",
+      "requested_counterseal_order"
+    ],
+    "variables": [
+      "docket_strength",
+      "sample_integrity",
+      "town_water",
+      "seal_pressure",
+      "public_witness",
+      "successor_liability",
+      "interim_relief",
+      "hearing_trust"
+    ],
+    "ending_gates": [
+      "ending_clean_feed",
+      "ending_clean_feed_cost",
+      "ending_seal_suspension",
+      "ending_seal_suspension_cost",
+      "ending_joint_inquiry",
+      "ending_joint_inquiry_cost",
+      "ending_bounded_settlement",
+      "ending_bounded_settlement_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_answering_seal",
+      "ink_path": "opening_claim_choice",
+      "action_type": "register_seal_chain",
+      "actor_intent": "Attach the foreign injury to Stonewake's registered workshop identity before the respondent arrives.",
+      "state_basis": ["Mira possesses the marked contract ribbon.", "Dorrin can compare it against the public seal roll."],
+      "reviewed_consequences": ["Raises docket_strength, successor_liability, and public_witness; later strengthens clean-feed and seal-suspension gates."],
+      "training_hooks": ["answering_seal", "civic_home_redress", "public_registration"]
+    },
+    {
+      "branch_id": "prime_sample_custody",
+      "ink_path": "opening_claim_choice",
+      "action_type": "divide_evidence",
+      "actor_intent": "Prevent one keeper from owning or losing the only glass-root sample.",
+      "state_basis": ["The root has a natural fork and can be divided without pretending the pieces are identical tests."],
+      "reviewed_consequences": ["Raises sample_integrity and hearing_trust; later strengthens the joint-inquiry gate."],
+      "training_hooks": ["divided_custody", "material_evidence", "claimant_registry_trust"]
+    },
+    {
+      "branch_id": "prime_town_voice",
+      "ink_path": "opening_claim_choice",
+      "action_type": "request_public_reading",
+      "actor_intent": "Make Tansy Ford's authority, injury, and request audible to the public landing.",
+      "state_basis": ["The town council notice is filed and Dorrin owns the public registry reading."],
+      "reviewed_consequences": ["Raises public_witness and docket_strength while slightly lowering hearing_trust through public pressure."],
+      "training_hooks": ["foreign_town_voice", "public_claim", "procedural_pressure"]
+    },
+    {
+      "branch_id": "prime_claimant_custody",
+      "ink_path": "opening_claim_choice",
+      "action_type": "withhold_evidence",
+      "actor_intent": "Keep one sealed sample under Tansy Ford's control rather than surrender every copy to the hearing.",
+      "state_basis": ["Mira carries multiple sealed samples and may choose what to submit."],
+      "reviewed_consequences": ["Raises sample_integrity and public_witness while lowering hearing_trust; keeps claimant custody visible."],
+      "training_hooks": ["claimant_custody", "bounded_withholding", "institutional_distrust"]
+    },
+    {
+      "branch_id": "bind_successor_to_seal",
+      "ink_path": "succession_choice",
+      "action_type": "align_seal_impressions",
+      "actor_intent": "Show that the current Master accepted the same workshop identity that owns the old contract.",
+      "state_basis": ["Brakka has admitted taking Stonewake's name, tools, open orders, and roll position."],
+      "reviewed_consequences": ["Raises successor_liability, docket_strength, and seal_pressure; strengthens seal-suspension authority."],
+      "training_hooks": ["succession_liability", "visual_authority_chain", "seal_identity"]
+    },
+    {
+      "branch_id": "establish_timing",
+      "ink_path": "succession_choice",
+      "action_type": "present_records",
+      "actor_intent": "Establish a falsifiable timing sequence around the changed crystal lot without claiming final cause.",
+      "state_basis": ["Mira carries twelve years of field books and Stonewake delivery marks."],
+      "reviewed_consequences": ["Raises docket_strength, sample_integrity, and hearing_trust; improves clean-feed and inquiry gates."],
+      "training_hooks": ["sequence_not_cause", "field_memory", "material_lore"]
+    },
+    {
+      "branch_id": "invite_bounded_inspection",
+      "ink_path": "succession_choice",
+      "action_type": "share_inspection",
+      "actor_intent": "Create shared observation without moving the root from registry custody.",
+      "state_basis": ["The copper evidence cage can be lifted and inspected from both sides of the custody line."],
+      "reviewed_consequences": ["Raises hearing_trust and sample_integrity while lowering seal_pressure; supports bounded settlement and inquiry."],
+      "training_hooks": ["shared_observation", "custody_boundary", "adversarial_cooperation"]
+    },
+    {
+      "branch_id": "prioritize_interim_relief",
+      "ink_path": "succession_choice",
+      "action_type": "refuse_settlement",
+      "actor_intent": "Keep urgent water relief ahead of any payment that might close the civic complaint.",
+      "state_basis": ["Brakka offers lost-planting money while Tansy Ford's water schedule worsens."],
+      "reviewed_consequences": ["Raises seal_pressure while lowering town_water and hearing_trust; preserves the distinction between money and service."],
+      "training_hooks": ["settlement_refusal", "water_before_price", "continuing_harm"]
+    },
+    {
+      "branch_id": "preserve_sample_chain",
+      "ink_path": "interim_choice",
+      "action_type": "seal_fresh_evidence",
+      "actor_intent": "Protect the new meter vane and root chain for independent testing even though relief is delayed.",
+      "state_basis": ["Tavi has delivered a fresh marked vane and the hearing has divided custody trays."],
+      "reviewed_consequences": ["Raises sample_integrity and public_witness while lowering town_water; strongly supports joint inquiry."],
+      "training_hooks": ["evidence_over_speed", "fresh_failure", "custody_cost"]
+    },
+    {
+      "branch_id": "draw_bond_for_clean_feed",
+      "ink_path": "interim_choice",
+      "action_type": "request_bond_draw",
+      "actor_intent": "Use the answering seal's bond to stop suspected exposure before final causation is settled.",
+      "state_basis": ["The claim moot can draw the contract bond and Brakka can name a reachable reserve house."],
+      "reviewed_consequences": ["Raises interim_relief, seal_pressure, and town_water while lowering hearing_trust; strongly supports clean-feed relief."],
+      "training_hooks": ["bonded_redress", "substitute_supply", "adversarial_relief"]
+    },
+    {
+      "branch_id": "keep_water_under_meter",
+      "ink_path": "interim_choice",
+      "action_type": "propose_measured_continuance",
+      "actor_intent": "Preserve essential water under explicit measurement while substitute fuel is assembled.",
+      "state_basis": ["The pump still produces water, but the possible harm continues and Tavi can log hours."],
+      "reviewed_consequences": ["Raises interim_relief, town_water, and hearing_trust while lowering sample_integrity; supports settlement but weakens the clean evidence chain."],
+      "training_hooks": ["measured_continuance", "essential_service_tradeoff", "continuing_exposure"]
+    },
+    {
+      "branch_id": "keep_claimant_capacity",
+      "ink_path": "interim_choice",
+      "action_type": "transfer_resource",
+      "actor_intent": "Fund local water carts without allowing the branch office to convert emergency help into final settlement.",
+      "state_basis": ["Mira controls the town travel purse and Tavi can return with the public docket copy."],
+      "reviewed_consequences": ["Raises town_water, public_witness, and seal_pressure while lowering interim_relief; keeps survival attached to claimant cost."],
+      "training_hooks": ["claimant_resource_cost", "local_capacity", "public_docket"]
+    },
+    {
+      "branch_id": "seek_bonded_clean_feed",
+      "ink_path": "final_choice",
+      "action_type": "request_clean_feed_order",
+      "actor_intent": "Stop suspected exposure while preserving essential water through bonded substitution.",
+      "state_basis": ["Success depends on interim_relief and a strong docket connecting the order to reachable supply."],
+      "reviewed_consequences": ["Routes to a scheduled reserve allotment or to a correct order that arrives after the cistern fails."],
+      "training_hooks": ["state_gated_supply_remedy", "authority_needs_logistics"]
+    },
+    {
+      "branch_id": "seek_seal_suspension",
+      "ink_path": "final_choice",
+      "action_type": "request_seal_suspension",
+      "actor_intent": "Stop Stonewake from making new public promises while an inherited claim remains unanswered.",
+      "state_basis": ["Success depends on high seal_pressure and a proven successor authority chain."],
+      "reviewed_consequences": ["Routes to suspension from new work with existing service metered, or to a public warning without formal loss of authority."],
+      "training_hooks": ["state_gated_authority_remedy", "succession_accountability"]
+    },
+    {
+      "branch_id": "seek_divided_custody_inquiry",
+      "ink_path": "final_choice",
+      "action_type": "request_joint_inquiry",
+      "actor_intent": "Keep causation falsifiable across claimant, registry, workshop, and independent examiner custody.",
+      "state_basis": ["Success depends on high sample_integrity and enough public witness to preserve transfers."],
+      "reviewed_consequences": ["Routes to a four-mark inquiry or to an investigation already consumed by missing custody."],
+      "training_hooks": ["state_gated_evidence_remedy", "divided_authority"]
+    },
+    {
+      "branch_id": "seek_bounded_settlement",
+      "ink_path": "final_choice",
+      "action_type": "accept_bounded_settlement",
+      "actor_intent": "Buy immediate survival while expressly preserving final causation and future redress.",
+      "state_basis": ["Success depends on adequate town_water and hearing_trust to write and honor a narrow release."],
+      "reviewed_consequences": ["Routes to paid carts and planting loss with the civic claim open, or to vague settlement language that weakens later leverage."],
+      "training_hooks": ["state_gated_settlement", "bounded_release", "survival_without_clearance"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual state and branch trigger selection"
+    ],
+    "manual_review_required": [
+      "Promotion of Tansy Ford or Stonewake Pumpworks into recurring Delvehold canon",
+      "Any final causal finding about the glass-root mutation",
+      "Durable character memory or relationship updates",
+      "Any foreign enforcement rule beyond bonds, market access, and claimant-government action",
+      "Acceptance into any model-training corpus"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex elaborator applying the four required Ghostlight reviewer prompts as separate passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality verdict: accepted. Reader orientation, coherence, pacing, voice, tonal fit, and IF playability meet the B-level gate. Applied fixes introduced the retained sample vial before it becomes a choice and split Brakka's and Tavi's entrances into separate replay beats.",
+      "Lore grounding verdict: accepted. Nine cited Delvehold notes were inspected; the answering seal, civic-home claim, successor liability, ad hoc disinterested moot, divided custody, bonded remedies, essential-service limit, halfling field evidence, and attribution uncertainty match their source owners. Fixture-local names remain explicitly nonportable.",
+      "Visual continuity verdict: accepted_with_minor_revisions as an illustrated-IF scaffold. Sixteen stable visual scenes and sixteen BFL prompts cover the routine, entrances, evidence reveal, branch-visible state, and four ending families. All named visible characters have stable refs, off-frame refs are excluded, and prompt text contains no negative constructions. A hand-built plan view or simple 3D blockout remains required before high-consistency multi-angle rendering.",
+      "Spatial-geometric cohesion verdict: accepted_with_minor_revisions as a stageable text plan. The scene-set fixes upper and lower levels, separate public and service entrances, stair and hoist, claims table, three custody trays, bond recess, bench, public gauge, yellow boundary, pumps, intake, sightlines, staging slots, and persistent object states. The stray fourth bond tray was collapsed into the registry tray before acceptance; a durable blockout remains the only replay-readiness gap.",
+      "The Ink artifact was not compiled, per the pass constraint. JSON parsing, header inspection, variable-use audit, branch-to-sidecar comparison, anchor validation, prompt-language audit, 64-history ending reachability enumeration, and manual Ink structure review all passed."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

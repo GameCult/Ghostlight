@@ -1,0 +1,848 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "charter-counterseal-claim-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/delvehold/charter-counterseal-claim-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/delvehold/charter-counterseal-claim-v0.branch-and-fold.v0.training.json",
+  "scene_id": "charter-counterseal-claim-v0.tansy-ford-hearing",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for a foreign counterseal claim heard on Cistern House Nine's public landing.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for the pump-house landing, ordinary claim registration, answering-seal succession dispute, fresh field failure, interim relief, final remedy, and four ending families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the establishing landing, registry routine, opening evidence affordances, ordinary fold, Brakka's entrance, succession dispute, succession choice, Tavi's entrance, fresh-failure reveal, interim relief, remedy threshold, and each ending family. Entrances and the canvas-wrapped meter-vane reveal receive distinct replay beats.",
+    "prompting_rule": "Each base image prompt stands alone for a general image model: it restates visible geometry, lighting, materials, characters, tools, and evidence. Continuity notes remain tooling constraints and are excluded from prompt assembly.",
+    "global_style_cue": "Style: high-fantasy industrial storybook illustration, precise dark ink linework with restrained watercolor, worn limestone, brass, iron, clay, wool, leather, warm amber rune lamps against cold blue-white mana glints, expressive humane faces, readable silhouettes, practical public machinery, unlettered image surfaces.",
+    "prompt_assembly_rule": "Assemble every prompt from the global_style_cue, the scene base_image_prompt, visual refs only for named characters or groups visible in that frame, and triggered state_image_modifiers or global_branch_image_modifiers. Never include refs for absent characters or continuity-note prose.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture reuses Cistern House Nine from multiple angles and stages evidence transfers across fixed custody lines. A draft plan defines levels, zones, routes, sightlines, staging slots, and branch-persistent object locations.",
+      "future_scene_set_need": "Before high-consistency website rendering, make a plan view or simple 3D blockout of Cistern House Nine with the upper public landing, lower dry gallery, wet intake opening, three pumps, grated stair, hoist, street passage, lower service door, claims table, bench, route map, public gauge, yellow line, and three custody trays."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "counterseal_landing_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view inside a two-level underground public pump house carved from pale worn limestone. On the upper street landing, a short sturdy adult halfling woman with brown skin, dark curls under a green kerchief, patched russet wool coat, leather satchel, field books, a green contract ribbon, and a stoppered jar of glassy white root stands beside a long stone claims table and a wall-mounted water gauge. A yellow painted line separates the public landing from a grated stair descending to a dry service gallery. Below, three squat brass-and-iron pump engines stand behind safety rails over a misty black-water intake; red isolation wedges, glass pressure floats, outlet valves, a chain hoist, and an arched blue-glowing mana conduit are visible. Dwarf householders wait along the street wall with copper cans beneath warm amber rune lamps.",
+        "visible_characters": [
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "at the claims table with contract ribbon, field books, root jar, and satchel",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "orderly along the street wall with copper vessels",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The claims hearing occupies the upper public landing. The pump engines and service floor remain below the yellow boundary, reached by the west grated stair.",
+          "The street passage enters from the upper east wall; the lower service door enters behind the pumps. The two routes must never collapse into one doorway."
+        ]
+      },
+      {
+        "visual_scene_id": "counterseal_morning_registry",
+        "ink_anchor": "morning_registry",
+        "base_image_prompt": "Medium-wide morning registry scene on an underground limestone pump-house landing. A stocky adult dwarf clerk with copper-brown skin, gray beard held by two brass rings, blue archive apron full of chalk and seal tools, and square spectacles arranges three shallow stone custody trays on a long claims table: claimant side, central registry side, and answering-workshop side. Across from him, a short adult halfling field clerk in a green kerchief and russet coat offers a small round oatcake beside field books, a sealed root jar, and a green waxed contract ribbon. Three disinterested dwarf craft Masters sit on a low bench under a carved mountain-route map. Behind the yellow public line, townsfolk hold copper water cans; brass pump rails and three silent engines are visible below through the landing opening.",
+        "visible_characters": [
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "standing opposite Dorrin with evidence and oatcakes",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "dorrin_veld",
+            "default_stance": "behind the claims table arranging three trays",
+            "visual_ref": "visual_character_refs.characters.dorrin_veld"
+          },
+          {
+            "agent_id": "counterseal_claim_moot",
+            "default_stance": "three craft Masters seated beneath the route map",
+            "visual_ref": "visual_character_refs.groups.counterseal_claim_moot"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "waiting behind the yellow line with copper cans",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The three custody trays remain left-to-right from Mira's view: claimant, registry, answering workshop.",
+          "Food stays over an empty tray and never shares a tray with samples or contract evidence."
+        ]
+      },
+      {
+        "visual_scene_id": "counterseal_opening_affordances",
+        "ink_anchor": "opening_claim_choice",
+        "base_image_prompt": "Readable overhead-oblique view of a public claim table on a carved-stone pump-house landing. A halfling field clerk in russet wool and green kerchief can reach four distinct objects: a green contract ribbon with an old round wax impression, a stoppered jar holding a forked glassy white root, a folded town-council notice beside a large outward-facing black slate, and a tiny sealed vial at the lip of her leather satchel. Opposite her, a gray-bearded dwarf registry clerk in a blue apron holds fresh gray clay and chalk. Three shallow stone custody trays form a clear left-center-right row. A low bench of three dwarf Masters, a yellow public line, copper water cans, a wall gauge, and the pump gallery below remain visible.",
+        "visible_characters": [
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "hands poised among ribbon, root jar, council notice, and retained vial",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "dorrin_veld",
+            "default_stance": "ready with clay and chalk on the registry side",
+            "visual_ref": "visual_character_refs.characters.dorrin_veld"
+          },
+          {
+            "agent_id": "counterseal_claim_moot",
+            "default_stance": "watching from the bench beyond the table",
+            "visual_ref": "visual_character_refs.groups.counterseal_claim_moot"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "counterseal_routine_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide civic-workplace view before the answering workshop arrives. On the upper limestone landing, a halfling field clerk and gray-bearded dwarf registry clerk face each other across three stone custody trays; old wax, fresh clay, a black public slate, field books, and a copper sample cage are arranged in strict rows. Three dwarf hearing Masters wait beneath a carved route map. Behind them, a queue with copper cans watches. Below the yellow line, dwarf pump apprentices call states beside three silent brass-and-iron engines with flush red isolation wedges and low pressure floats. Warm amber lamps light wool, leather, chalk dust, and stone; the arched mana conduit gives a cold blue edge below.",
+        "visible_characters": [
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "claimant side of the table, attentive to the evidence layout",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "dorrin_veld",
+            "default_stance": "registry side with chalk and fresh clay",
+            "visual_ref": "visual_character_refs.characters.dorrin_veld"
+          },
+          {
+            "agent_id": "counterseal_claim_moot",
+            "default_stance": "waiting beneath the route map",
+            "visual_ref": "visual_character_refs.groups.counterseal_claim_moot"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "watching over copper cans from beyond the yellow line",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "docket_strength >= 4",
+            "modifier_prompt": "Old green wax, matching fresh gray clay, a council notice, and a bold chalk line visibly converge on one answering-seal place in the central registry tray."
+          },
+          {
+            "trigger": "sample_integrity >= 4",
+            "modifier_prompt": "Two matching glass-root halves sit under separate seals: one in a claimant jar and one in a square copper registry cage."
+          },
+          {
+            "trigger": "public_witness >= 3",
+            "modifier_prompt": "The outward-facing black slate is turned toward the water queue; several waiting dwarves lean forward to read the evidence arrangement."
+          },
+          {
+            "trigger": "hearing_trust <= 1",
+            "modifier_prompt": "The clerk's chalk marks form extra careful boundaries around every retained and submitted object; Mira keeps one hand near her closed satchel."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "counterseal_brakka_arrival",
+        "ink_anchor": "brakka_arrival",
+        "base_image_prompt": "Pivotal entrance on the grated west stair of a two-level underground pump house. A square-built adult dwarf woman with warm brown skin, black hair divided by one silver streak, dark green work coat, heavy brass civic seal at her belt, and an iron contract chest under one arm climbs from the lower service gallery toward the upper claims landing. Above her, a halfling field clerk in russet wool, a blue-aproned dwarf registry clerk, and three seated dwarf Masters turn toward the stair. Three brass pumps and a cold blue mana conduit frame the arriving Master from below; the claims table with three custody trays waits at the top.",
+        "visible_characters": [
+          {
+            "agent_id": "brakka_sorn",
+            "default_stance": "ascending the west grated stair with contract chest and civic seal",
+            "visual_ref": "visual_character_refs.characters.brakka_sorn"
+          },
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "turning from the claimant side toward the stair",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "dorrin_veld",
+            "default_stance": "hands clear of the trays while watching the entrance",
+            "visual_ref": "visual_character_refs.characters.dorrin_veld"
+          },
+          {
+            "agent_id": "counterseal_claim_moot",
+            "default_stance": "three Masters looking toward the arriving respondent",
+            "visual_ref": "visual_character_refs.groups.counterseal_claim_moot"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Brakka arrives from the lower service door and west stair, not from Tansy Ford's east street passage.",
+          "The iron contract chest enters in Brakka's custody and is placed only in the answering-workshop tray."
+        ]
+      },
+      {
+        "visual_scene_id": "counterseal_succession_dispute",
+        "ink_anchor": "succession_dispute",
+        "base_image_prompt": "Medium public-hearing tableau at the claims table. A square-built dwarf Master in a dark green coat places an iron contract chest into the rightmost answering-workshop tray while her brass civic seal hangs visibly at her belt. Across from her, a short adult halfling field clerk in a green kerchief stands behind field books and a glass-root jar in the left claimant tray. Between them, a gray-bearded dwarf registry clerk guards the central tray. An elderly lean dwarf Master with white beard, ochre robe, and iron spectacles leans forward from a three-person bench beneath a carved route map, pointing from the old wax mark to the current seal. The wall water gauge, yellow public line, and pump engines below keep the dispute attached to visible service.",
+        "visible_characters": [
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "claimant side, hands near field books",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "brakka_sorn",
+            "default_stance": "answering side, setting down the iron chest",
+            "visual_ref": "visual_character_refs.characters.brakka_sorn"
+          },
+          {
+            "agent_id": "dorrin_veld",
+            "default_stance": "central registry side between the two keepers",
+            "visual_ref": "visual_character_refs.characters.dorrin_veld"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "leaning from the bench and pointing between old and current seal marks",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "counterseal_succession_affordances",
+        "ink_anchor": "succession_choice",
+        "base_image_prompt": "Over-table choice composition in an underground fantasy-industrial hearing. A halfling field clerk in russet coat can align an old green-wax contract impression beneath a dwarf Master's current brass seal, open three worn field books around a marked crystal-lot date, gesture toward a divided white glass-root inside a handled copper cage, or close a small wooden settlement account board. The responding dwarf Master in dark green stands opposite beside an iron contract chest and a clean water-assay sheet. A blue-aproned registry clerk controls the central stone tray; an elderly dwarf hearing Master watches beneath the route map. The yellow line and public water gauge remain in frame.",
+        "visible_characters": [
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "poised among seal impressions, field books, sample cage, and settlement board",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "brakka_sorn",
+            "default_stance": "opposite with current seal, contract chest, and assay",
+            "visual_ref": "visual_character_refs.characters.brakka_sorn"
+          },
+          {
+            "agent_id": "dorrin_veld",
+            "default_stance": "controlling the central tray handles",
+            "visual_ref": "visual_character_refs.characters.dorrin_veld"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "watching from the hearing bench",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "counterseal_successor_fold",
+        "ink_anchor": "successor_fold",
+        "base_image_prompt": "Wide view of the public landing after a succession argument. A halfling field clerk and square-built dwarf Master face one another across a claims table holding field books, green contract ribbon, old wax, fresh clay, a copper sample cage, clean assay, and an iron contract chest in separate custody zones. The gray-bearded registry clerk marks an outward-facing black slate. Three hearing Masters sit under the route map. The wall gauge and copper-can queue are visible behind the claimant; three working pump engines below throw warm reflected light through the yellow boundary.",
+        "visible_characters": [
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "claimant side, alert and travel-worn",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "brakka_sorn",
+            "default_stance": "answering side with one hand near the seal at her belt",
+            "visual_ref": "visual_character_refs.characters.brakka_sorn"
+          },
+          {
+            "agent_id": "dorrin_veld",
+            "default_stance": "marking the public slate between them",
+            "visual_ref": "visual_character_refs.characters.dorrin_veld"
+          },
+          {
+            "agent_id": "counterseal_claim_moot",
+            "default_stance": "three Masters observing beneath the route map",
+            "visual_ref": "visual_character_refs.groups.counterseal_claim_moot"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "watching with copper cans from the street wall",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "successor_liability >= 3",
+            "modifier_prompt": "The old green-wax impression, fresh clay roll mark, and current brass seal form one clear visual chain across the table."
+          },
+          {
+            "trigger": "docket_strength >= 5",
+            "modifier_prompt": "Three open field books, a marked crystal-lot date, matching seal marks, and the council notice are aligned into a dense but readable evidence sequence."
+          },
+          {
+            "trigger": "hearing_trust >= 4",
+            "modifier_prompt": "Mira and Brakka lean toward the same copper sample cage from opposite sides while keeping hands behind their custody lines."
+          },
+          {
+            "trigger": "seal_pressure >= 3",
+            "modifier_prompt": "Brakka's hand rests protectively beside the heavy brass civic seal at her belt while the public slate faces the queue."
+          },
+          {
+            "trigger": "town_water <= 1",
+            "modifier_prompt": "Mira calculates hauling days in a field-book margin beside a small nearly empty purse; the wall gauge and copper cans crowd her side of the frame."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "counterseal_tavi_arrival",
+        "ink_anchor": "tavi_arrival",
+        "base_image_prompt": "Pivotal arrival through the east street passage of an underground pump-house landing. A young adult halfling man with freckled tan face, wind-tangled auburn curls, mustard wool scarf, patched brown vest, mud-dark wading trousers, and soaked boots runs toward the yellow public line carrying a long canvas-wrapped meter vane in both hands. A sturdy railway porter in a soot-gray coat points firmly at the floor boundary. At the claims table, a halfling woman in green kerchief, a dwarf Master in dark green, and a gray-bearded registry clerk turn toward him. Copper cans, wall gauge, route map, bench, stone trays, grated west stair, and brass pumps below establish the full public room.",
+        "visible_characters": [
+          {
+            "agent_id": "tavi_mere",
+            "default_stance": "running from the east passage with wrapped vane held level",
+            "visual_ref": "visual_character_refs.characters.tavi_mere"
+          },
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "turning from the claimant side toward Tavi",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "brakka_sorn",
+            "default_stance": "turning from the answering side toward the new evidence",
+            "visual_ref": "visual_character_refs.characters.brakka_sorn"
+          },
+          {
+            "agent_id": "dorrin_veld",
+            "default_stance": "hands lifted clear of the trays before admission",
+            "visual_ref": "visual_character_refs.characters.dorrin_veld"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Tavi enters from the east street passage. He does not cross the yellow line until Dorrin admits the wrapped vane into the claimant tray.",
+          "The porter is an unnamed adult dwarf in a soot-gray railway coat, sturdy boots, and work gloves, staged only in this arrival frame."
+        ]
+      },
+      {
+        "visual_scene_id": "counterseal_fresh_failure",
+        "ink_anchor": "fresh_failure",
+        "base_image_prompt": "Close-medium evidence reveal at a stone claims table. A young muddy halfling pump tender unwraps a copper meter vane whose comb-like teeth are crusted in blue-white crystalline growth. A short halfling field clerk in green kerchief stands beside him with one hand over a field book. Across the table, a square-built dwarf Master in a dark green coat looks briefly sick before controlling her face. A gray-bearded dwarf registry clerk lowers an empty copper custody cage toward the vane. An elderly dwarf Master watches from the bench. Warm amber pump-house lamps and a cold blue reflection from the crust make the object the center of the frame; the three custody trays remain visibly separate.",
+        "visible_characters": [
+          {
+            "agent_id": "tavi_mere",
+            "default_stance": "unwrapping the crusted meter vane inside the claimant tray",
+            "visual_ref": "visual_character_refs.characters.tavi_mere"
+          },
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "beside Tavi with hand on the field book",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "brakka_sorn",
+            "default_stance": "answering side, visibly shaken but controlled",
+            "visual_ref": "visual_character_refs.characters.brakka_sorn"
+          },
+          {
+            "agent_id": "dorrin_veld",
+            "default_stance": "preparing a copper cage without touching the vane",
+            "visual_ref": "visual_character_refs.characters.dorrin_veld"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "leaning forward from the bench toward the new object",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "counterseal_interim_affordances",
+        "ink_anchor": "interim_choice",
+        "base_image_prompt": "Over-table emergency choice scene on a public pump-house landing. The halfling field clerk in russet wool can reach four material paths: a square copper cage ready to seal the blue-white-crusted meter vane beside a glass-root sample; an empty green contract pouch placed in a small marked bond recess inside the central registry tray; a small brass meter token and pump-hour ledger for measured continued service; and a worn travel purse she can hand to the muddy halfling pump tender. The dark-green-coated dwarf Master stands opposite beside reserve ledgers. The blue-aproned registry clerk holds seal cord and chalk. An elderly hearing Master points toward the four items while working brass pumps, copper water cans, and the public gauge remain visible behind them.",
+        "visible_characters": [
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "poised among sample cage, bond pouch, meter token, and travel purse",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "tavi_mere",
+            "default_stance": "muddy and waiting beside the claimant tray",
+            "visual_ref": "visual_character_refs.characters.tavi_mere"
+          },
+          {
+            "agent_id": "brakka_sorn",
+            "default_stance": "answering side with reserve ledger open",
+            "visual_ref": "visual_character_refs.characters.brakka_sorn"
+          },
+          {
+            "agent_id": "dorrin_veld",
+            "default_stance": "holding seal cord and chalk at the registry tray",
+            "visual_ref": "visual_character_refs.characters.dorrin_veld"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "pointing from the bench toward the limited material options",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "counterseal_remedy_threshold",
+        "ink_anchor": "remedy_threshold|final_choice",
+        "base_image_prompt": "Whole-hearing threshold on Cistern House Nine's upper public landing. Three dwarf hearing Masters confer beneath a carved mountain-route map, then face a short halfling field clerk in green kerchief at the claimant side of a long stone table. Opposite stands a square-built dwarf workshop Master in dark green with a brass civic seal. The gray-bearded registry clerk remains between them. The table visibly holds old and current seal marks, three custody trays, field books, copper cages around a glass-root and crusted meter vane, a green bond pouch, reserve ledger, public slate, and travel purse. The yellow line, water queue with copper cans, wall gauge, grated stair, lower pump gallery, three brass engines, and blue mana conduit make authority, evidence, and supply readable in one frame.",
+        "visible_characters": [
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "facing the bench from the claimant side",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "brakka_sorn",
+            "default_stance": "answering side with seal and reserve ledger",
+            "visual_ref": "visual_character_refs.characters.brakka_sorn"
+          },
+          {
+            "agent_id": "dorrin_veld",
+            "default_stance": "between claimants and workshop at the public slate",
+            "visual_ref": "visual_character_refs.characters.dorrin_veld"
+          },
+          {
+            "agent_id": "counterseal_claim_moot",
+            "default_stance": "three Masters facing the claim beneath the route map",
+            "visual_ref": "visual_character_refs.groups.counterseal_claim_moot"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "watching behind copper cans at the street wall",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "sample_integrity >= 5",
+            "modifier_prompt": "Two sealed copper cages, matching root halves, the crusted meter vane, time marks, lot marks, and four distinct custody seals form an intact material chain."
+          },
+          {
+            "trigger": "sample_integrity <= 2",
+            "modifier_prompt": "One evidence cage is empty or loosely marked; moved objects and unmatched chalk lines make the material chain visibly incomplete."
+          },
+          {
+            "trigger": "town_water >= 4",
+            "modifier_prompt": "A reserve allotment tile, cart token, or measured-flow ledger sits on Mira's side, giving the town a visible water path."
+          },
+          {
+            "trigger": "town_water <= 1",
+            "modifier_prompt": "The travel purse is nearly empty, the public gauge sits low, and waiting copper cans crowd the claimant side."
+          },
+          {
+            "trigger": "seal_pressure >= 4",
+            "modifier_prompt": "Stonewake's fresh seal impression is turned sideways on the public slate while Brakka keeps her existing-service ledgers open."
+          },
+          {
+            "trigger": "interim_relief >= 2",
+            "modifier_prompt": "A reserve-house allotment tile with a quantity notch, cart seal, and departure-hour mark sits in the bond tray."
+          },
+          {
+            "trigger": "interim_relief <= 0",
+            "modifier_prompt": "The bond tray remains empty while Mira's open travel purse shows that Tansy Ford is paying for its own carts."
+          },
+          {
+            "trigger": "public_witness >= 4",
+            "modifier_prompt": "The black public slate faces the water queue, which watches the custody trays and missing or present relief tokens closely."
+          },
+          {
+            "trigger": "hearing_trust >= 4",
+            "modifier_prompt": "Mira and Brakka stand with open palms near separate tray edges, sharing a procedural frame while keeping custody distinct."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "counterseal_ending_clean_feed",
+        "ink_anchor": "ending_clean_feed|ending_clean_feed_cost",
+        "base_image_prompt": "Clean-feed order aftermath on an underground pump-house landing. A halfling field clerk in a green kerchief holds a narrow reserve allotment tile and marked cart seal beside an open green contract pouch. Across the stone claims table, a dwarf workshop Master in dark green divides crystal quantities across several small brass tokens while a gray-bearded registry clerk records the schedule on an outward-facing slate. Three hearing Masters remain under the route map. The public water gauge, copper cans, grated stair, and working brass pumps below connect the distant order to immediate infrastructure.",
+        "visible_characters": [
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "holding the reserve allotment and cart mark",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "brakka_sorn",
+            "default_stance": "dividing clean reserve tokens across existing obligations",
+            "visual_ref": "visual_character_refs.characters.brakka_sorn"
+          },
+          {
+            "agent_id": "dorrin_veld",
+            "default_stance": "recording quantity and departure schedule",
+            "visual_ref": "visual_character_refs.characters.dorrin_veld"
+          },
+          {
+            "agent_id": "counterseal_claim_moot",
+            "default_stance": "seated beneath the route map after issuing the order",
+            "visual_ref": "visual_character_refs.groups.counterseal_claim_moot"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "counterseal_ending_seal_suspension",
+        "ink_anchor": "ending_seal_suspension|ending_seal_suspension_cost",
+        "base_image_prompt": "Seal-standing aftermath at the public roll. An elderly white-bearded dwarf hearing Master turns a fresh gray impression of a mountain-and-wave workshop mark sideways on a large black slate. The current dwarf workshop Master stands below in a dark green coat with her physical brass seal still at her belt and existing-service ledgers open. A halfling field clerk watches from the claimant side beside field books and a sealed sample cage. A gray-bearded registry clerk holds chalk at the center. The water queue, wall gauge, yellow line, and pumps below show that existing service continues while future public promises are being judged.",
+        "visible_characters": [
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "turning the seal impression sideways on the public roll",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          },
+          {
+            "agent_id": "brakka_sorn",
+            "default_stance": "below the roll with physical seal and open service ledgers",
+            "visual_ref": "visual_character_refs.characters.brakka_sorn"
+          },
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "watching from the claimant side beside preserved evidence",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "dorrin_veld",
+            "default_stance": "holding chalk at the central registry position",
+            "visual_ref": "visual_character_refs.characters.dorrin_veld"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "watching the public roll from behind copper cans",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "counterseal_ending_joint_inquiry",
+        "ink_anchor": "ending_joint_inquiry|ending_joint_inquiry_cost",
+        "base_image_prompt": "Divided-custody inquiry aftermath at a public stone table. A halfling field clerk in russet coat holds one sealed jar containing half a glassy white root. A gray-bearded dwarf registry clerk keeps the matching root half in a square copper cage. A dwarf workshop Master in dark green opens an iron chest of branch meter ledgers. An elderly hearing Master secures the blue-white-crusted copper meter vane inside a long handled evidence cage bearing four differently shaped clay marks. Field books, time lines, lot tokens, the outward public slate, yellow boundary, water gauge, and brass pumps below make the chain of evidence physically legible.",
+        "visible_characters": [
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "holding Tansy Ford's sealed root half",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "dorrin_veld",
+            "default_stance": "keeping the registry root half in its copper cage",
+            "visual_ref": "visual_character_refs.characters.dorrin_veld"
+          },
+          {
+            "agent_id": "brakka_sorn",
+            "default_stance": "opening branch meter ledgers from the iron chest",
+            "visual_ref": "visual_character_refs.characters.brakka_sorn"
+          },
+          {
+            "agent_id": "iven_chalk",
+            "default_stance": "securing the long vane cage with four clay marks",
+            "visual_ref": "visual_character_refs.characters.iven_chalk"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "counterseal_ending_bounded_settlement",
+        "ink_anchor": "ending_bounded_settlement|ending_bounded_settlement_cost",
+        "base_image_prompt": "Bounded-settlement aftermath on the Cistern House Nine landing. A halfling field clerk in green kerchief and a square-built dwarf workshop Master in dark green sign separate edges of a narrow settlement board placed between claimant and answering-workshop trays. A gray-bearded registry clerk writes an exception line on an outward-facing black slate beside cart tokens, seed-money coins, field books, and sealed evidence that remains in place. The two women share a final oatcake over an empty neutral tray. Three hearing Masters, copper-can queue, public gauge, yellow line, grated stair, and working brass pumps remain visible under warm amber light.",
+        "visible_characters": [
+          {
+            "agent_id": "mira_fen",
+            "default_stance": "signing the claimant edge and sharing the oatcake",
+            "visual_ref": "visual_character_refs.characters.mira_fen"
+          },
+          {
+            "agent_id": "brakka_sorn",
+            "default_stance": "signing the workshop edge with open hands",
+            "visual_ref": "visual_character_refs.characters.brakka_sorn"
+          },
+          {
+            "agent_id": "dorrin_veld",
+            "default_stance": "writing the exception line on the public slate",
+            "visual_ref": "visual_character_refs.characters.dorrin_veld"
+          },
+          {
+            "agent_id": "counterseal_claim_moot",
+            "default_stance": "watching from the bench beneath the route map",
+            "visual_ref": "visual_character_refs.groups.counterseal_claim_moot"
+          },
+          {
+            "agent_id": "cistern_house_nine_landing_queue",
+            "default_stance": "waiting with copper cans behind the yellow line",
+            "visual_ref": "visual_character_refs.groups.cistern_house_nine_landing_queue"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_answering_seal_visual",
+        "trigger": "branch_label == prime_answering_seal",
+        "apply_to_visual_scene_ids": ["counterseal_routine_fold", "counterseal_remedy_threshold"],
+        "modifier_prompt": "Old green wax and fresh gray clay show matching mountain-and-wave impressions aligned on the central slate; Mira points to the single answering place."
+      },
+      {
+        "modifier_id": "prime_sample_custody_visual",
+        "trigger": "branch_label == prime_sample_custody",
+        "apply_to_visual_scene_ids": ["counterseal_routine_fold", "counterseal_remedy_threshold"],
+        "modifier_prompt": "The forked glass-root is visibly divided between Mira's stoppered jar and Dorrin's square copper registry cage."
+      },
+      {
+        "modifier_id": "prime_town_voice_visual",
+        "trigger": "branch_label == prime_town_voice",
+        "apply_to_visual_scene_ids": ["counterseal_routine_fold"],
+        "modifier_prompt": "Dorrin holds the unfolded council notice beside the outward black slate while the copper-can queue listens closely."
+      },
+      {
+        "modifier_id": "prime_claimant_custody_visual",
+        "trigger": "branch_label == prime_claimant_custody",
+        "apply_to_visual_scene_ids": ["counterseal_routine_fold", "counterseal_remedy_threshold"],
+        "modifier_prompt": "A tiny sealed vial remains partly visible inside Mira's closed leather satchel while submitted evidence stays on the table."
+      },
+      {
+        "modifier_id": "bind_successor_to_seal_visual",
+        "trigger": "branch_label == bind_successor_to_seal",
+        "apply_to_visual_scene_ids": ["counterseal_successor_fold", "counterseal_remedy_threshold"],
+        "modifier_prompt": "Mira aligns the old ribbon impression, fresh registry impression, and Brakka's current brass seal into one uninterrupted workshop chain."
+      },
+      {
+        "modifier_id": "establish_timing_visual",
+        "trigger": "branch_label == establish_timing",
+        "apply_to_visual_scene_ids": ["counterseal_successor_fold", "counterseal_remedy_threshold"],
+        "modifier_prompt": "Three worn field books lie open around a crystal-lot token, with matching seasonal rows before and glass-root sketches after the marked change."
+      },
+      {
+        "modifier_id": "invite_bounded_inspection_visual",
+        "trigger": "branch_label == invite_bounded_inspection",
+        "apply_to_visual_scene_ids": ["counterseal_successor_fold"],
+        "modifier_prompt": "Dorrin raises the handled copper sample cage while Mira and Brakka inspect from opposite sides with hands held behind their yellow custody edges."
+      },
+      {
+        "modifier_id": "prioritize_interim_relief_visual",
+        "trigger": "branch_label == prioritize_interim_relief",
+        "apply_to_visual_scene_ids": ["counterseal_successor_fold"],
+        "modifier_prompt": "Mira closes a small settlement account board and points instead toward the low wall gauge and empty copper vessels."
+      },
+      {
+        "modifier_id": "preserve_sample_chain_visual",
+        "trigger": "branch_label == preserve_sample_chain",
+        "apply_to_visual_scene_ids": ["counterseal_remedy_threshold", "counterseal_ending_joint_inquiry"],
+        "modifier_prompt": "The crusted meter vane and divided root are locked in separate copper cages with claimant, registry, workshop, and hearing clay marks."
+      },
+      {
+        "modifier_id": "draw_bond_for_clean_feed_visual",
+        "trigger": "branch_label == draw_bond_for_clean_feed",
+        "apply_to_visual_scene_ids": ["counterseal_remedy_threshold", "counterseal_ending_clean_feed"],
+        "modifier_prompt": "The empty green contract pouch sits in the bond tray beside a half-load reserve tile, cart seal, lot notch, and departure-hour mark."
+      },
+      {
+        "modifier_id": "keep_water_under_meter_visual",
+        "trigger": "branch_label == keep_water_under_meter",
+        "apply_to_visual_scene_ids": ["counterseal_interim_affordances"],
+        "modifier_prompt": "A small brass meter token, weighed crystal charges, and an open pump-hour ledger show continuing service under explicit measurement."
+      },
+      {
+        "modifier_id": "keep_claimant_capacity_visual",
+        "trigger": "branch_label == keep_claimant_capacity",
+        "apply_to_visual_scene_ids": ["counterseal_remedy_threshold"],
+        "modifier_prompt": "Tavi holds Mira's travel coins and a rolled public docket copy while Mira remains seated at the claim table with an empty purse."
+      },
+      {
+        "modifier_id": "ending_clean_feed_success_visual",
+        "trigger": "ending_label == bonded_clean_feed_success",
+        "apply_to_visual_scene_ids": ["counterseal_ending_clean_feed"],
+        "modifier_prompt": "A half-load reserve tile, clean lot token, two sealed cart markers, and a precise departure notch make the replacement supply visibly real but limited."
+      },
+      {
+        "modifier_id": "ending_clean_feed_cost_visual",
+        "trigger": "ending_label == bonded_clean_feed_cost",
+        "apply_to_visual_scene_ids": ["counterseal_ending_clean_feed"],
+        "modifier_prompt": "The clean-feed order board is complete while the reserve tray stays empty and the departure marker sits beyond the low cistern deadline."
+      },
+      {
+        "modifier_id": "ending_seal_suspension_success_visual",
+        "trigger": "ending_label == seal_suspension_success",
+        "apply_to_visual_scene_ids": ["counterseal_ending_seal_suspension"],
+        "modifier_prompt": "Stonewake's public roll impression is visibly turned sideways; existing-service ledgers remain open while a row for new public work is closed by a clay bar."
+      },
+      {
+        "modifier_id": "ending_seal_suspension_cost_visual",
+        "trigger": "ending_label == seal_suspension_cost",
+        "apply_to_visual_scene_ids": ["counterseal_ending_seal_suspension"],
+        "modifier_prompt": "The workshop impression remains upright beside a warning chalk ring; Brakka's new-contract tokens stay available while Mira's water tokens remain scarce."
+      },
+      {
+        "modifier_id": "ending_joint_inquiry_success_visual",
+        "trigger": "ending_label == joint_inquiry_success",
+        "apply_to_visual_scene_ids": ["counterseal_ending_joint_inquiry"],
+        "modifier_prompt": "Two matching root halves, the vane cage, four custody marks, open field books, and branch meter ledgers form a complete divided evidence chain."
+      },
+      {
+        "modifier_id": "ending_joint_inquiry_cost_visual",
+        "trigger": "ending_label == joint_inquiry_cost",
+        "apply_to_visual_scene_ids": ["counterseal_ending_joint_inquiry"],
+        "modifier_prompt": "An unmatched clay mark, an empty cage slot, and a gap between the travel wrapper and registry timeline make the evidence chain visibly frayed."
+      },
+      {
+        "modifier_id": "ending_bounded_settlement_success_visual",
+        "trigger": "ending_label == bounded_settlement_success",
+        "apply_to_visual_scene_ids": ["counterseal_ending_bounded_settlement"],
+        "modifier_prompt": "Cart tokens and seed coins sit in the claimant tray while sealed samples and the upright open-claim marker remain outside the signed settlement board."
+      },
+      {
+        "modifier_id": "ending_bounded_settlement_cost_visual",
+        "trigger": "ending_label == bounded_settlement_cost",
+        "apply_to_visual_scene_ids": ["counterseal_ending_bounded_settlement"],
+        "modifier_prompt": "Coins and cart tokens fill the claimant tray, but the vague exception line trails into the signed settlement field and the open-claim marker looks isolated."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "cistern_house_nine.counterseal_landing.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Two-level public pump house. The rectangular upper landing carries the street entrance, claims table, public gauge, yellow boundary, hearing bench, and route map. A grated stair at the west edge descends to the lower dry service gallery with three pumps; the wet intake opening lies below the service grating.",
+      "fixed_zones": [
+        {
+          "zone_id": "upper_east_street_passage",
+          "visible_form": "broad carved-stone public passage entering the upper landing beside the copper-can queue",
+          "used_for": "Mira's public access and Tavi's later arrival"
+        },
+        {
+          "zone_id": "upper_claims_table",
+          "visible_form": "long waist-high stone table parallel to the yellow boundary with claimant, registry, and answering-workshop trays in a fixed row",
+          "used_for": "all evidence custody, seal comparison, bond requests, and settlement"
+        },
+        {
+          "zone_id": "upper_public_gauge_wall",
+          "visible_form": "stone wall carrying a tall glass-and-brass terrace water gauge, black public slate, and vessel queue",
+          "used_for": "public witness and local service pressure"
+        },
+        {
+          "zone_id": "upper_hearing_bench",
+          "visible_form": "low three-seat stone bench under a carved mountain-route map opposite the claims table",
+          "used_for": "disinterested Masters and final counterseal order"
+        },
+        {
+          "zone_id": "yellow_public_boundary",
+          "visible_form": "yellow mineral-paint line along the open gallery edge and stair head",
+          "used_for": "public safety and visible custody staging"
+        },
+        {
+          "zone_id": "west_grated_stair",
+          "visible_form": "open iron stair descending from upper landing to lower dry service gallery beside the chain hoist",
+          "used_for": "Brakka's service-route arrival and sightline to pumps"
+        },
+        {
+          "zone_id": "lower_service_door",
+          "visible_form": "iron-rimmed door behind the three pump engines opening onto staff and freight passages",
+          "used_for": "workshop and maintenance access distinct from the public street"
+        },
+        {
+          "zone_id": "lower_three_pumps",
+          "visible_form": "three brass-and-iron pump engines behind safety rails, each with red isolation wedge, glass float, outlet valve, and vertical rod",
+          "used_for": "continuous visible infrastructure pressure"
+        },
+        {
+          "zone_id": "lower_mana_conduit",
+          "visible_form": "locked arched conduit in the gallery wall carrying cold blue crystal light toward the pumps",
+          "used_for": "visible power dependency and fantasy-industrial lighting"
+        },
+        {
+          "zone_id": "wet_intake_opening",
+          "visible_form": "misty black water below iron service grating with three pump rods descending into it",
+          "used_for": "water source and level separation"
+        }
+      ],
+      "staging_slots": [
+        {"slot_id": "claimant_table_left", "used_by": ["mira_fen", "tavi_mere"]},
+        {"slot_id": "registry_table_center", "used_by": ["dorrin_veld"]},
+        {"slot_id": "answering_table_right", "used_by": ["brakka_sorn"]},
+        {"slot_id": "hearing_bench_center", "used_by": ["iven_chalk", "counterseal_claim_moot"]},
+        {"slot_id": "street_queue_wall", "used_by": ["cistern_house_nine_landing_queue"]},
+        {"slot_id": "west_stair_arrival", "used_by": ["brakka_sorn"]},
+        {"slot_id": "east_passage_arrival", "used_by": ["tavi_mere"]}
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_landing_from_east",
+          "supports_visual_scene_ids": ["counterseal_landing_establishing", "counterseal_routine_fold", "counterseal_successor_fold", "counterseal_remedy_threshold"]
+        },
+        {
+          "camera_id": "claims_table_oblique",
+          "supports_visual_scene_ids": ["counterseal_morning_registry", "counterseal_opening_affordances", "counterseal_succession_dispute", "counterseal_succession_affordances", "counterseal_interim_affordances"]
+        },
+        {
+          "camera_id": "west_stair_low_angle",
+          "supports_visual_scene_ids": ["counterseal_brakka_arrival"]
+        },
+        {
+          "camera_id": "east_passage_arrival",
+          "supports_visual_scene_ids": ["counterseal_tavi_arrival"]
+        },
+        {
+          "camera_id": "evidence_table_close",
+          "supports_visual_scene_ids": ["counterseal_fresh_failure", "counterseal_ending_joint_inquiry", "counterseal_ending_bounded_settlement"]
+        },
+        {
+          "camera_id": "public_roll_front",
+          "supports_visual_scene_ids": ["counterseal_ending_clean_feed", "counterseal_ending_seal_suspension"]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "queue_to_public_record",
+          "path": "street_queue_wall -> black public slate -> three custody trays -> current civic seal",
+          "supports": ["prime_town_voice", "prime_answering_seal", "seek_seal_suspension"]
+        },
+        {
+          "lane_id": "claim_table_to_pumps",
+          "path": "upper claims table -> yellow boundary -> open west stair and landing edge -> lower three pumps and public gauge",
+          "supports": ["keep_water_under_meter", "draw_bond_for_clean_feed", "seek_bonded_clean_feed"]
+        },
+        {
+          "lane_id": "bench_to_custody_row",
+          "path": "upper hearing bench -> registry center -> claimant and answering trays",
+          "supports": ["prime_sample_custody", "invite_bounded_inspection", "preserve_sample_chain", "seek_divided_custody_inquiry"]
+        }
+      ],
+      "persistent_object_states": [
+        {
+          "object_id": "glass_root_sample",
+          "states": ["single_claimant_jar", "divided_claimant_and_registry", "sealed_four_mark_chain", "custody_incomplete"]
+        },
+        {
+          "object_id": "stonewake_answering_seal",
+          "states": ["uncompared", "aligned_old_and_current", "upright_warning", "sideways_new_work_suspension"]
+        },
+        {
+          "object_id": "fresh_meter_vane",
+          "states": ["canvas_wrapped", "open_in_claimant_tray", "sealed_copper_cage", "custody_gap"]
+        },
+        {
+          "object_id": "tansy_ford_travel_purse",
+          "states": ["held_by_mira", "transferred_to_tavi", "empty_at_claim_table"]
+        },
+        {
+          "object_id": "bond_relief",
+          "states": ["empty_bond_tray", "half_load_allotment", "measured_continuance_tokens", "cart_only_claimant_funded"]
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for characters visible in a scene.",
+    "characters": {
+      "mira_fen": "Mira Fen: adult halfling woman, about half an adult human's height with sturdy compact proportions, warm brown skin, round alert face, dark tightly curled hair braided beneath a faded green kerchief, ink-stained fingers, patched russet wool coat over cream shirt, dark practical trousers, mud-brown ankle boots, weathered leather satchel. She carries field books, green contract ribbon, stoppered sample jars, and oatcakes. Her posture is patient until a material quantity is evaded.",
+      "dorrin_veld": "Dorrin Veld: adult dwarf man, short and broad with copper-brown skin, square spectacles, thick gray beard divided by two brass rings, blue archive apron over charcoal clothes, many small pockets holding chalk, clay, seal cord, and tongs. He keeps his hands deliberate and calls every custody transfer with clerkly gravity.",
+      "brakka_sorn": "Brakka Sorn: adult dwarf woman, short square powerful build, warm brown skin, severe oval face, black hair pulled back with one clean silver streak, dark green heavy work coat with brass fasteners, black work boots, heavy mountain-and-wave civic seal at belt. She carries an iron contract chest and stands as if every promise has mass.",
+      "iven_chalk": "Master Iven Chalk: elderly dwarf man, lean compact build, pale umber skin, long white beard cut square at the end, iron spectacles, ochre wool hearing robe over plain work clothes, narrow hands stained with gray seal clay. His posture is forward and impatient with evasive lineage.",
+      "tavi_mere": "Tavi Mere: young adult halfling man, about half an adult human's height with wiry compact build, freckled tan face, wind-tangled auburn curls, mustard wool scarf, patched brown vest over rolled-sleeve cream shirt, mud-dark wading trousers, soaked leather boots. He carries a canvas-wrapped copper meter vane level in both hands and moves with exhausted urgency."
+    },
+    "groups": {
+      "counterseal_claim_moot": "Counterseal claim moot: three adult dwarf craft Masters of varied genders and ages, short sturdy bodies, plain ochre, gray, and dark red wool work robes over practical clothes, each carrying a distinct civic seal marked for masonry, public kitchens, or archive craft. They sit close together on a low stone bench beneath a carved mountain-route map and watch objects before speakers.",
+      "cistern_house_nine_landing_queue": "Cistern House Nine landing queue: adult and elderly dwarves in patched terrace work clothes, leather aprons, bakery whites, laundry wraps, and lift-maintenance coats, orderly behind a yellow floor line with copper cans, buckets, and one low wheeled trough. Their posture changes from morning patience to close public attention."
+    }
+  },
+  "review_notes": [
+    "Visual continuity self-review accepted this as an illustrated-IF scaffold with sixteen stable scene anchors, complete named-character refs, branch and state modifiers, affirmative standalone prompt content, and matching BFL manifest coverage.",
+    "Spatial-geometric self-review accepted the text plan after the bond receptacle was collapsed into a marked recess inside the central registry tray. Upper and lower levels, distinct east public and lower service routes, the west stair, claims-table custody row, sightlines, staging slots, and persistent objects are explicit.",
+    "A hand-built plan view or simple 3D blockout remains required before high-consistency multi-angle rendering; the included scene_set is a text authority map only."
+  ]
+}

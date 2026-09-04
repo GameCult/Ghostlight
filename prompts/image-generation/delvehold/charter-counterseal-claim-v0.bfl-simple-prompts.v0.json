@@ -1,0 +1,76 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "charter-counterseal-claim-v0.bfl-simple-v0",
+  "fixture_id": "charter-counterseal-claim-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "High-fantasy industrial storybook illustration, precise dark ink linework, restrained watercolor, worn limestone, brass and iron, warm amber rune lamps against cold blue-white mana, expressive humane faces, readable silhouettes, practical public machinery, unlettered image surfaces.",
+  "prompts": [
+    {
+      "id": "01_landing_establishing",
+      "prompt": "Two-level underground public pump house: halfling field clerk at stone claims table above three brass pumps and misty black-water intake, yellow boundary, grated stair, wall gauge, copper-can queue, green contract ribbon, field books, glass-root jar."
+    },
+    {
+      "id": "02_morning_registry",
+      "prompt": "Dwarf registry clerk in blue archive apron arranges three stone custody trays opposite a halfling field clerk with oatcakes and evidence; three dwarf hearing Masters sit beneath a carved route map; pumps remain visible below."
+    },
+    {
+      "id": "03_opening_affordances",
+      "prompt": "Overhead claim-table choice: halfling hands among old green-wax contract, forked glass-root jar, folded council notice beside public slate, and tiny retained vial; dwarf clerk waits with fresh clay and chalk."
+    },
+    {
+      "id": "04_routine_fold",
+      "prompt": "Public claim routine in one frame: separate stone trays, matching seal marks, field books, copper sample cage, outward black slate, watching water queue, and three silent pump engines with flush red isolation wedges below."
+    },
+    {
+      "id": "05_brakka_arrival",
+      "prompt": "Square-built dwarf woman in dark green work coat climbs an iron grated stair carrying a contract chest, heavy brass civic seal at her belt; halfling claimant and hearing bench turn toward her above the pump gallery."
+    },
+    {
+      "id": "06_succession_dispute",
+      "prompt": "Counterseal hearing table: dwarf successor Master places iron chest in answering-workshop tray, halfling claimant guards field books and root jar, elderly dwarf Master points between old wax and current brass seal."
+    },
+    {
+      "id": "07_succession_affordances",
+      "prompt": "Four legal-material choices on stone table: align old and current seal marks, open seasonal field books around crystal-lot date, share a caged glass-root inspection, or close a small settlement board."
+    },
+    {
+      "id": "08_successor_fold",
+      "prompt": "Wide public landing after succession argument: halfling claimant and dwarf Master face each other across separated records and samples; registry clerk marks outward slate; water gauge, copper cans, route map, and pumps remain visible."
+    },
+    {
+      "id": "09_tavi_arrival",
+      "prompt": "Muddy young halfling pump tender runs through stone street passage holding a long canvas-wrapped meter vane; railway porter points at yellow line; claimant, dwarf Master, and clerk turn from the evidence table."
+    },
+    {
+      "id": "10_fresh_failure",
+      "prompt": "Close evidence reveal: muddy halfling unwraps a copper meter vane crusted in blue-white crystal; halfling clerk steadies field book, dwarf Master controls visible shock, registry clerk lowers copper cage."
+    },
+    {
+      "id": "11_interim_affordances",
+      "prompt": "Emergency remedy choices on claims table: copper evidence cage, empty green bond pouch in a marked registry-tray recess, brass meter token with pump-hour ledger, and travel purse offered to muddy courier; reserve ledgers and working pumps frame the cost."
+    },
+    {
+      "id": "12_remedy_threshold",
+      "prompt": "Whole counterseal hearing: three Masters beneath route map face halfling claimant and dwarf workshop Master across seals, field books, caged root, crusted vane, bond pouch, reserve ledger, public slate, low gauge, copper cans, and pumps."
+    },
+    {
+      "id": "13_clean_feed_end",
+      "prompt": "Halfling claimant holds a narrow reserve allotment and cart seal while dwarf Master divides scarce clean-crystal tokens among existing towns; registry clerk records quantity and departure beside open bond pouch."
+    },
+    {
+      "id": "14_seal_suspension_end",
+      "prompt": "Elderly dwarf Master turns a workshop's fresh clay seal impression sideways on the public roll; current dwarf Master retains physical brass seal beside existing-service ledgers; claimant and water queue watch."
+    },
+    {
+      "id": "15_joint_inquiry_end",
+      "prompt": "Divided-custody evidence table: halfling claimant holds one sealed glass-root half, registry clerk keeps the other in copper cage, workshop Master opens meter ledgers, hearing Master secures crusted vane under four clay marks."
+    },
+    {
+      "id": "16_bounded_settlement_end",
+      "prompt": "Halfling claimant and dwarf workshop Master sign opposite edges of a narrow settlement board; cart tokens and seed coins sit beside sealed evidence and an open-claim marker; they share an oatcake over an empty neutral tray."
+    }
+  ]
+}
