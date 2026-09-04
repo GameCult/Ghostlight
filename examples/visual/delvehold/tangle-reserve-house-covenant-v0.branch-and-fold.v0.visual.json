@@ -1,0 +1,315 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "tangle-reserve-house-covenant-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/delvehold/tangle-reserve-house-covenant-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/delvehold/tangle-reserve-house-covenant-v0.branch-and-fold.v0.training.json",
+  "scene_id": "tangle-reserve-house-covenant-v0.cistern-house-nine-renewal",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for a reserve-house covenant dispute inside Cistern House Nine.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for ordinary pump work, covenant review, supply interruption, physical compatibility evidence, creditor leverage, the final seal decision, and four state-gated ending families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the pump-house establishing frame, the covenant-table routine, each opening evidence action, the black-edged supply notice, the sealed coffer response, the revealed amendment, the leverage choice, the final threshold, and each ending family. The arrival of the supply notice and the first view of the sealed coffer are separate beats.",
+    "prompting_rule": "Every base image prompt restates visible geometry, materials, light, objects, and the bodies in frame for a general image model. Character refs are assembled only for the named characters or group declared visible. Continuity notes remain reviewer and tooling constraints.",
+    "global_style_cue": "Style: richly textured high-fantasy industrial storybook illustration, precise ink drawing with restrained watercolor, worn brass and dark carved stone, warm amber lamps against cold blue mana light, clear silhouettes, humane facial acting, practical magical machinery, civic paperwork rendered as metal strips and chalk marks, cinematic interactive-fiction framing.",
+    "prompt_assembly_rule": "Assemble every prompt from global_style_cue, the selected scene base_image_prompt, visual_character_refs only for visible_characters in that scene, and all triggered state_image_modifiers and global_branch_image_modifiers. Each assembled prompt is complete and independent of prior images.",
+    "scene_set_guidance": {
+      "current_mode": "embedded_scene_set_map_draft",
+      "scope_reason": "The fixture revisits one two-level pump house from several focal distances. The embedded map fixes zones, sightlines, camera slots, coffer custody, and gauge bands for B-level draft replay planning.",
+      "future_scene_set_need": "For high-consistency website art, build a plan view or simple 3D blockout using the embedded scene_set before generating multiple camera angles."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "tangle_cistern_autumn_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of a two-level underground public pump house carved into dark stone beside a warm subterranean sea. A dry upper gallery opens to a street landing; a grated iron stair descends to a misty wet intake chamber. Three squat brass-and-iron pump engines stand behind waist-high brass safety rails with glass pressure floats and outlet valves. A locked arched conduit enters through the gallery wall, a chain hoist hangs above a marked dry delivery square, and a black public gauge slate stands beside rows of copper water cans. Amber oil lamps and cold blue mana channels light the worn stone. The pumps are running steadily and the landing queue is orderly.",
+        "visible_characters": [
+          {
+            "agent_id": "terrace_water_constituency",
+            "default_stance": "compact dwarf householders and public workers waiting with copper cans beyond the yellow line",
+            "visual_ref": "visual_character_refs.groups.terrace_water_constituency"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The street landing and public slate are above and outside the yellow access line; the pump row and conduit arch are inside the dry gallery; the wet intake is visible only through the grated stair opening.",
+          "The three pumps remain ordered Engine One, Engine Two, Engine Three from left to right when viewed from the landing."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_covenant_table_routine",
+        "ink_anchor": "covenant_table",
+        "base_image_prompt": "Medium-wide civic workplace scene in the dry gallery of an underground pump house. A very short deep-brown-skinned middle-aged dwarf woman Master with cropped iron-gray hair, one long temple braid, and a dark green wool coat stands at a stone covenant table with a heavy stepped-water bronze civic seal and maintenance book. Across from her sits an older narrow-faced dwarf man factor in a plum wool coat with a lacquered tally case and brass loan strips. A warm-brown-skinned young dwarf woman apprentice with one thick dark-copper braid and a short indigo work coat reads three glass pressure floats; a stocky ruddy-tan dwarf journeyworker with an auburn beard tied into two short forks holds a worn wooden collar gauge; a pale-olive dwarf woman clerk in a rust-red headscarf and charcoal vest writes chalk marks on a black slate beyond a yellow floor line. A dented kettle whistles on a warm pipe while three pumps run behind brass rails.",
+        "visible_characters": [
+          {"agent_id": "hessa_cairn", "default_stance": "standing beside civic seal and maintenance book", "visual_ref": "visual_character_refs.characters.hessa_cairn"},
+          {"agent_id": "tovan_marr", "default_stance": "seated opposite with tally case open", "visual_ref": "visual_character_refs.characters.tovan_marr"},
+          {"agent_id": "orsa_rill", "default_stance": "at pressure floats with chalk board", "visual_ref": "visual_character_refs.characters.orsa_rill"},
+          {"agent_id": "brin_olt", "default_stance": "by local collars with wooden gauge", "visual_ref": "visual_character_refs.characters.brin_olt"},
+          {"agent_id": "dema_sorn", "default_stance": "beyond yellow line at public slate", "visual_ref": "visual_character_refs.characters.dema_sorn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The covenant table sits between the pump rail and yellow public line, within speaking distance of Dema's slate."]
+      },
+      {
+        "visual_scene_id": "tangle_open_compatibility_test",
+        "ink_anchor": "renewal_choice.prime_open_compatibility",
+        "base_image_prompt": "Close-medium inspection beside three running brass pump engines. A very short deep-brown-skinned middle-aged dwarf woman Master in a dark green wool coat presses a worn circular wooden gauge against three heavy feed collars bearing different small maker symbols. A stocky ruddy-tan dwarf journeyworker with an auburn beard tied into two short forks calls the fit; a warm-brown-skinned young dwarf apprentice with one thick dark-copper braid and a short indigo work coat records results on a small board. Two collars align cleanly and one shows a narrow misalignment. Blue mana glows through fixed channels while the public water gauge is visible in soft focus beyond a yellow line.",
+        "visible_characters": [
+          {"agent_id": "hessa_cairn", "default_stance": "holding the wooden gauge to a collar", "visual_ref": "visual_character_refs.characters.hessa_cairn"},
+          {"agent_id": "brin_olt", "default_stance": "calling fit beside local spares", "visual_ref": "visual_character_refs.characters.brin_olt"},
+          {"agent_id": "orsa_rill", "default_stance": "recording every result", "visual_ref": "visual_character_refs.characters.orsa_rill"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_private_ledger_copy",
+        "ink_anchor": "renewal_choice.prime_factor_confidence",
+        "base_image_prompt": "Object-centered view across a stone covenant table in an underground pump gallery. An older narrow-faced dwarf factor in plum wool holds open a black lacquer tally case emitting thin blue copy-runes over a thick maintenance book. Worker names, dates, repair symbols, and costs appear as abstract luminous marks flowing into the case. A very short deep-brown-skinned dwarf woman Master in a dark green coat keeps one hand near her heavy stepped-water bronze civic seal; a warm-brown-skinned young dwarf apprentice with one thick dark-copper braid watches her own small mark enter the creditor's case. Brass pump rails and amber lamps frame the background.",
+        "visible_characters": [
+          {"agent_id": "tovan_marr", "default_stance": "copying the open maintenance book", "visual_ref": "visual_character_refs.characters.tovan_marr"},
+          {"agent_id": "hessa_cairn", "default_stance": "watching with hand near civic seal", "visual_ref": "visual_character_refs.characters.hessa_cairn"},
+          {"agent_id": "orsa_rill", "default_stance": "watching the copy-runes take her mark", "visual_ref": "visual_character_refs.characters.orsa_rill"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_public_entitlement",
+        "ink_anchor": "renewal_choice.prime_public_entitlement",
+        "base_image_prompt": "Medium public-boundary scene in a carved-stone pump house. A very short deep-brown-skinned dwarf woman Master with cropped iron-gray hair, one temple braid, and a dark green wool coat places a narrow brass covenant strip on the ledge of a tall black slate beyond a yellow floor line. A pale-olive dwarf woman clerk in a rust-red headscarf and charcoal vest writes large chalk symbols for three pumps, two reserve days, and first frost. An older dwarf factor in a plum coat leans close enough to correct the smaller condition marks. Compact dwarf householders and workers wait with copper cans behind the slate; running pumps and blue mana channels remain visible past the rail.",
+        "visible_characters": [
+          {"agent_id": "hessa_cairn", "default_stance": "placing covenant strip on public ledge", "visual_ref": "visual_character_refs.characters.hessa_cairn"},
+          {"agent_id": "dema_sorn", "default_stance": "writing entitlement and conditions at equal scale", "visual_ref": "visual_character_refs.characters.dema_sorn"},
+          {"agent_id": "tovan_marr", "default_stance": "correcting clause marks at the yellow line", "visual_ref": "visual_character_refs.characters.tovan_marr"},
+          {"agent_id": "terrace_water_constituency", "default_stance": "reading behind the public slate", "visual_ref": "visual_character_refs.groups.terrace_water_constituency"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_supply_notice_arrival",
+        "ink_anchor": "supply_notice",
+        "base_image_prompt": "Pivotal medium frame at the yellow boundary of an underground pump gallery. A pale-olive dwarf woman clerk in a rust-red headscarf and charcoal vest carries a black-edged metal route notice toward a very short deep-brown-skinned dwarf woman Master in a dark green wool coat, holding it just across the yellow line for transfer. The Master reaches with an empty hand while her stepped-water bronze civic seal remains on the stone table behind her. A stocky ruddy-tan journeyworker with an auburn beard tied in two forks sets down a wooden gauge. Three running pumps and a descending public water mark establish that work continues during the bad news.",
+        "visible_characters": [
+          {"agent_id": "dema_sorn", "default_stance": "offering the black-edged route notice across the line", "visual_ref": "visual_character_refs.characters.dema_sorn"},
+          {"agent_id": "hessa_cairn", "default_stance": "taking custody with one empty hand", "visual_ref": "visual_character_refs.characters.hessa_cairn"},
+          {"agent_id": "brin_olt", "default_stance": "setting down the wooden gauge", "visual_ref": "visual_character_refs.characters.brin_olt"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_sealed_coffer_reveal",
+        "ink_anchor": "notice_response_choice",
+        "base_image_prompt": "Wide reveal of the dry gallery inside a carved-stone pump house. An iron crystal coffer rests on a painted delivery square beneath a chain hoist beside a locked arched mana conduit. Its lid carries two distinct wax-and-metal seals, one plain reserve-house mark and one ornate six-bolt Forge Consortium mark. A polished feed collar is visible through a wire top rack. A very short deep-brown-skinned dwarf woman Master in a dark green wool coat, an older plum-coated dwarf factor, a stocky ruddy-tan journeyworker with a two-fork auburn beard, a warm-brown-skinned apprentice with one dark-copper braid and indigo work coat, and a pale-olive clerk in a rust-red headscarf stand between coffer, stone covenant table, pump rail, and public gauge. The cold blue promise of crystal sits inside iron while amber lamps warm the working room.",
+        "visible_characters": [
+          {"agent_id": "hessa_cairn", "default_stance": "between coffer and old covenant", "visual_ref": "visual_character_refs.characters.hessa_cairn"},
+          {"agent_id": "tovan_marr", "default_stance": "beside coffer with tally case", "visual_ref": "visual_character_refs.characters.tovan_marr"},
+          {"agent_id": "brin_olt", "default_stance": "watching the polished collar", "visual_ref": "visual_character_refs.characters.brin_olt"},
+          {"agent_id": "orsa_rill", "default_stance": "at the edge of the hoist square", "visual_ref": "visual_character_refs.characters.orsa_rill"},
+          {"agent_id": "dema_sorn", "default_stance": "at public slate beyond yellow line", "visual_ref": "visual_character_refs.characters.dema_sorn"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "district_water_margin <= 1", "modifier_prompt": "The public water gauge stands in its red lower band and more empty copper cans crowd the landing."},
+          {"trigger": "public_witness >= 3", "modifier_prompt": "The public slate displays large matching symbols for the reserve entitlement and the black-edged route notice."}
+        ],
+        "visual_continuity_notes": ["The coffer remains outside the pump rails and inside the hoist chain; its contents remain reserve-house custody while both seals are intact."]
+      },
+      {
+        "visual_scene_id": "tangle_compatibility_dispute",
+        "ink_anchor": "terms_fold",
+        "base_image_prompt": "Medium confrontation around a stone covenant table in an underground pump gallery. A new brass amendment strip lies between an old darker covenant strip and a heavy stepped-water bronze civic seal. An older narrow-faced dwarf factor keeps one palm on the new strip. A stocky ruddy-tan dwarf journeyworker with an auburn beard tied into two short forks holds a worn wooden circular gauge against a polished six-bolt feed collar; four holes align and two visibly miss. A very short deep-brown-skinned dwarf woman Master in a dark green wool coat watches the fit, a warm-brown-skinned apprentice with one thick dark-copper braid and short indigo work coat stands beside local spare collars, and a pale-olive clerk in a rust-red headscarf records both seals on a black public slate beyond the yellow line. The sealed iron crystal coffer waits by the arched conduit.",
+        "visible_characters": [
+          {"agent_id": "tovan_marr", "default_stance": "palm flat on amendment", "visual_ref": "visual_character_refs.characters.tovan_marr"},
+          {"agent_id": "brin_olt", "default_stance": "showing the failed six-bolt fit", "visual_ref": "visual_character_refs.characters.brin_olt"},
+          {"agent_id": "hessa_cairn", "default_stance": "between civic seal and tested part", "visual_ref": "visual_character_refs.characters.hessa_cairn"},
+          {"agent_id": "orsa_rill", "default_stance": "beside local spares", "visual_ref": "visual_character_refs.characters.orsa_rill"},
+          {"agent_id": "dema_sorn", "default_stance": "recording at public slate", "visual_ref": "visual_character_refs.characters.dema_sorn"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "open_standard_case >= 3", "modifier_prompt": "Two worn local collars sit aligned with the wooden gauge while the polished Consortium collar shows two misaligned bolt holes."},
+          {"trigger": "factor_discretion >= 4", "modifier_prompt": "Tovan's open tally case glows brighter than Dema's sparse public slate, visibly concentrating the record."},
+          {"trigger": "seal_independence <= 1", "modifier_prompt": "The new amendment strip nearly surrounds Hessa's bronze seal with linked loan and inspection tokens."},
+          {"trigger": "labour_support >= 2", "modifier_prompt": "Orsa and Brin stand together beside the local spares and inspection board, ready to carry the repair work."}
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_leverage_choice",
+        "ink_anchor": "leverage_choice",
+        "base_image_prompt": "Wide choice tableau inside Cistern House Nine. A very short deep-brown-skinned dwarf woman Master with cropped iron-gray hair, one temple braid, and a dark green wool coat stands centered between four material routes: an older plum-coated factor and old covenant at the stone table; a stocky ruddy-tan journeyworker with a two-fork auburn beard and a warm-brown-skinned apprentice with one dark-copper braid beside local fittings and wooden gauge; a sealed iron crystal coffer by the locked conduit arch; and a pale-olive clerk in a rust-red headscarf at the public slate with workshop bells visible on the street landing. Three pumps continue behind the brass rail while the water gauge falls. The room reads as finance, craft, custody, and civic assembly sharing one floor.",
+        "visible_characters": [
+          {"agent_id": "hessa_cairn", "default_stance": "centered with civic seal in hand", "visual_ref": "visual_character_refs.characters.hessa_cairn"},
+          {"agent_id": "tovan_marr", "default_stance": "at old and new covenant strips", "visual_ref": "visual_character_refs.characters.tovan_marr"},
+          {"agent_id": "brin_olt", "default_stance": "beside wooden gauge and local collars", "visual_ref": "visual_character_refs.characters.brin_olt"},
+          {"agent_id": "orsa_rill", "default_stance": "beside inspection board", "visual_ref": "visual_character_refs.characters.orsa_rill"},
+          {"agent_id": "dema_sorn", "default_stance": "at public slate near workshop bells", "visual_ref": "visual_character_refs.characters.dema_sorn"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "public_witness >= 4", "modifier_prompt": "Dema's outward-facing slate carries old covenant, route notice, gauge band, and both seal symbols in large chalk marks."},
+          {"trigger": "district_water_margin <= 1", "modifier_prompt": "The public gauge enters red while copper cans and a bakery trough crowd the landing."},
+          {"trigger": "consortium_lockin >= 3", "modifier_prompt": "A linked row of polished Consortium retrofit parts and repayment tokens runs from the coffer toward the civic seal."}
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_final_threshold",
+        "ink_anchor": "final_threshold",
+        "base_image_prompt": "High-angle final threshold inside a two-level fantasy-industrial pump house. The whole dry gallery is readable: three working brass pumps behind a safety rail; red-to-white public water gauge beyond a yellow line; sealed iron crystal coffer on the hoist square by a locked conduit arch; local feed collars and one polished six-bolt collar beside a worn wooden gauge; old covenant, new brass amendment, maintenance book, black route notice, lacquer tally case, and heavy bronze civic seal on a stone table. A short dwarf woman Master stands between table and coffer while factor, journeyworker, apprentice, clerk, and waiting district occupy their established zones.",
+        "visible_characters": [
+          {"agent_id": "hessa_cairn", "default_stance": "between table and coffer with seal unpressed", "visual_ref": "visual_character_refs.characters.hessa_cairn"},
+          {"agent_id": "tovan_marr", "default_stance": "at coffer-facing end of table", "visual_ref": "visual_character_refs.characters.tovan_marr"},
+          {"agent_id": "brin_olt", "default_stance": "by gauge and collars", "visual_ref": "visual_character_refs.characters.brin_olt"},
+          {"agent_id": "orsa_rill", "default_stance": "by pump floats and inspection board", "visual_ref": "visual_character_refs.characters.orsa_rill"},
+          {"agent_id": "dema_sorn", "default_stance": "behind yellow line with public slate", "visual_ref": "visual_character_refs.characters.dema_sorn"},
+          {"agent_id": "terrace_water_constituency", "default_stance": "waiting with vessels on street landing", "visual_ref": "visual_character_refs.groups.terrace_water_constituency"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "district_water_margin >= 4", "modifier_prompt": "The water gauge holds above its amber band and the landing vessels remain orderly, showing time available for refusal."},
+          {"trigger": "district_water_margin <= 1", "modifier_prompt": "The water gauge is deep red and empty vessels press close behind the yellow line."},
+          {"trigger": "covenant_evidence >= 4", "modifier_prompt": "Old covenant, maintenance record, and route notice are arranged in one clear chain beside Tovan's named decision token."},
+          {"trigger": "open_standard_case >= 3", "modifier_prompt": "The wooden gauge visibly aligns with two worn local collars and fails against two holes in the polished supplier collar."},
+          {"trigger": "workshop_debt >= 4", "modifier_prompt": "Several brass repayment rings encircle the amendment strip and overlap future service-revenue markers."},
+          {"trigger": "seal_independence <= 1", "modifier_prompt": "Supplier and creditor tokens crowd close around Hessa's bronze seal while her hand remains the only hand able to stamp it."},
+          {"trigger": "seal_independence >= 4", "modifier_prompt": "Hessa holds the bronze seal apart from both covenant strips in a clear open handspan of stone."}
+        ],
+        "visual_continuity_notes": ["Every ending begins from this object layout; modifiers change seal state, coffer state, gauge band, parts in use, and crowd position."]
+      },
+      {
+        "visual_scene_id": "tangle_ending_old_covenant",
+        "ink_anchor": "ending_old_covenant_honored|ending_old_covenant_refused",
+        "base_image_prompt": "Reserve-claim aftermath in the dry gallery of Cistern House Nine. The older dwarf factor and short dwarf woman Master face each other across the old covenant strip and named decision token. The iron crystal coffer remains on the marked hoist square beside the arched conduit; the clerk's public slate and water gauge are visible beyond the yellow line. The workshop seal stays separate from the polished Forge Consortium retrofit collar.",
+        "visible_characters": [
+          {"agent_id": "hessa_cairn", "default_stance": "at old covenant with civic seal", "visual_ref": "visual_character_refs.characters.hessa_cairn"},
+          {"agent_id": "tovan_marr", "default_stance": "owning approval or refusal by name", "visual_ref": "visual_character_refs.characters.tovan_marr"},
+          {"agent_id": "dema_sorn", "default_stance": "recording outcome at public slate", "visual_ref": "visual_character_refs.characters.dema_sorn"},
+          {"agent_id": "orsa_rill", "default_stance": "waiting by pump feed", "visual_ref": "visual_character_refs.characters.orsa_rill"},
+          {"agent_id": "brin_olt", "default_stance": "waiting beside crystal route", "visual_ref": "visual_character_refs.characters.brin_olt"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_ending_bounded_bridge",
+        "ink_anchor": "ending_bounded_bridge|ending_bounded_bridge_cost",
+        "base_image_prompt": "Temporary-covenant aftermath inside the pump gallery. A brass strip marked by seven large notch symbols sits beneath the heavy stepped-water bronze civic seal. The reserve-house seal on the iron coffer is open while the ornate supplier seal around the polished six-bolt collar remains intact. Worn local fittings carry blue crystal mana toward Pumps One and Three. A stocky ruddy-tan journeyworker with an auburn two-fork beard and a warm-brown-skinned apprentice with one thick dark-copper braid work at a daily inspection board while the very short deep-brown-skinned Master in dark green, older plum-coated factor, and pale-olive clerk in a rust-red headscarf watch from their established sides of the yellow line.",
+        "visible_characters": [
+          {"agent_id": "hessa_cairn", "default_stance": "beside stamped seven-day strip", "visual_ref": "visual_character_refs.characters.hessa_cairn"},
+          {"agent_id": "tovan_marr", "default_stance": "checking bounded release record", "visual_ref": "visual_character_refs.characters.tovan_marr"},
+          {"agent_id": "brin_olt", "default_stance": "working beside local feed fittings", "visual_ref": "visual_character_refs.characters.brin_olt"},
+          {"agent_id": "orsa_rill", "default_stance": "marking first daily inspection", "visual_ref": "visual_character_refs.characters.orsa_rill"},
+          {"agent_id": "dema_sorn", "default_stance": "box-marking the end date on public slate", "visual_ref": "visual_character_refs.characters.dema_sorn"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_ending_consortium",
+        "ink_anchor": "ending_consortium_water|ending_consortium_cost",
+        "base_image_prompt": "Supplier-bundle aftermath in Cistern House Nine. Both seals on the iron coffer are broken and blue crystal light spills across the dry gallery. A polished six-bolt feed collar and linked retrofit parts lie beside a fully stamped brass amendment. A short dwarf woman Master stands by the feed, an older factor checks repayment rings, a broad journeyworker hangs his wooden gauge above a scarred bench, and the public clerk marks the water gauge beyond the yellow line. Waiting dwarf householders and public workers hold copper vessels on the street landing.",
+        "visible_characters": [
+          {"agent_id": "hessa_cairn", "default_stance": "beside opened coffer and feed", "visual_ref": "visual_character_refs.characters.hessa_cairn"},
+          {"agent_id": "tovan_marr", "default_stance": "checking repayment rings", "visual_ref": "visual_character_refs.characters.tovan_marr"},
+          {"agent_id": "brin_olt", "default_stance": "hanging wooden gauge over workbench", "visual_ref": "visual_character_refs.characters.brin_olt"},
+          {"agent_id": "dema_sorn", "default_stance": "marking actual water recovery", "visual_ref": "visual_character_refs.characters.dema_sorn"},
+          {"agent_id": "terrace_water_constituency", "default_stance": "waiting with copper vessels", "visual_ref": "visual_character_refs.groups.terrace_water_constituency"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_ending_moot",
+        "ink_anchor": "ending_moot_with_margin|ending_moot_under_thirst",
+        "base_image_prompt": "District-moot aftermath on the broad carved-stone street landing outside Cistern House Nine. A very short deep-brown-skinned dwarf woman Master with cropped iron-gray hair, one temple braid, and a dark green wool coat carries an unstamped stepped-water bronze civic seal; a pale-olive dwarf woman clerk in a rust-red headscarf and charcoal vest carries separate old and new covenant strips; a warm-brown-skinned apprentice with one thick dark-copper braid and short indigo work coat holds the large public gauge board. Compact dwarf Masters from a bakery, liftworks, laundry, and clinic approach with distinct bronze civic seals while householders wait beside copper cans and a wheeled bakery trough. Through the workshop opening, three pumps and the sealed iron coffer remain visible beyond the yellow line.",
+        "visible_characters": [
+          {"agent_id": "hessa_cairn", "default_stance": "carrying unstamped seal into gathering", "visual_ref": "visual_character_refs.characters.hessa_cairn"},
+          {"agent_id": "dema_sorn", "default_stance": "carrying separate records", "visual_ref": "visual_character_refs.characters.dema_sorn"},
+          {"agent_id": "orsa_rill", "default_stance": "carrying public gauge board with both hands", "visual_ref": "visual_character_refs.characters.orsa_rill"},
+          {"agent_id": "terrace_water_constituency", "default_stance": "householders, public workers, and arriving Masters gathered with vessels and seals", "visual_ref": "visual_character_refs.groups.terrace_water_constituency"}
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {"modifier_id": "assert_current_covenant_visual", "trigger": "branch_label == assert_current_covenant", "apply_to_visual_scene_ids": ["tangle_sealed_coffer_reveal", "tangle_compatibility_dispute", "tangle_final_threshold"], "modifier_prompt": "Place Hessa's heavy bronze civic seal beside the old darker covenant strip with a full open handspan separating both from the sealed coffer and new brass amendment."},
+      {"modifier_id": "count_water_before_debt_visual", "trigger": "branch_label == count_water_before_debt", "apply_to_visual_scene_ids": ["tangle_sealed_coffer_reveal", "tangle_leverage_choice", "tangle_final_threshold"], "modifier_prompt": "Show Dema and Hessa at the public gauge with separate chalk marks for household, bakery, and lift-fire water, while the landing crowd counts copper vessels."},
+      {"modifier_id": "test_supplier_compatibility_visual", "trigger": "branch_label == test_supplier_compatibility", "apply_to_visual_scene_ids": ["tangle_sealed_coffer_reveal", "tangle_compatibility_dispute", "tangle_final_threshold"], "modifier_prompt": "Show the coffer's outer freight tie open while both custody seals remain intact; Brin's wooden gauge aligns with four holes of the polished collar and visibly misses two."},
+      {"modifier_id": "stage_emergency_stock_visual", "trigger": "branch_label == stage_emergency_stock", "apply_to_visual_scene_ids": ["tangle_sealed_coffer_reveal", "tangle_leverage_choice", "tangle_final_threshold"], "modifier_prompt": "Keep the intact sealed coffer centered on the dry hoist square, physically close to the pumps and legally outside workshop custody."},
+      {"modifier_id": "spend_public_witness_visual", "trigger": "branch_label == spend_public_witness", "apply_to_visual_scene_ids": ["tangle_compatibility_dispute", "tangle_leverage_choice", "tangle_final_threshold", "tangle_ending_old_covenant"], "modifier_prompt": "Dema's outward-facing slate shows old promise, route notice, release clause, added winter ring, and Tovan's named decision token at matching visual scale."},
+      {"modifier_id": "offer_repairable_bridge_visual", "trigger": "branch_label == offer_repairable_bridge", "apply_to_visual_scene_ids": ["tangle_leverage_choice", "tangle_final_threshold", "tangle_ending_bounded_bridge"], "modifier_prompt": "A narrow seven-notch brass strip encloses one coffer, two proven pump fittings, and a daily inspection board while Engine Two's token sits clearly outside the boundary."},
+      {"modifier_id": "accept_consortium_bundle_visual", "trigger": "branch_label == accept_consortium_bundle", "apply_to_visual_scene_ids": ["tangle_leverage_choice", "tangle_final_threshold", "tangle_ending_consortium"], "modifier_prompt": "Arrange polished six-bolt collars, linked repayment rings, inspection tokens, and future crystal-route markers in one continuous line toward Hessa's civic seal."},
+      {"modifier_id": "summon_district_moot_visual", "trigger": "branch_label == summon_district_moot", "apply_to_visual_scene_ids": ["tangle_leverage_choice", "tangle_final_threshold", "tangle_ending_moot"], "modifier_prompt": "Dema and Orsa carry four separate evidence objects toward bronze workshop bells while the sealed coffer stays on the hoist square and the public gauge falls."},
+      {"modifier_id": "old_covenant_honored_visual", "trigger": "ending_label == old_covenant_honored", "apply_to_visual_scene_ids": ["tangle_ending_old_covenant"], "modifier_prompt": "The reserve-house seal is broken, the supplier seal and polished retrofit remain intact, and Orsa and Brin carry blue crystal toward the existing pump feed while Dema adds one repayment ring beside a rising gauge."},
+      {"modifier_id": "old_covenant_refused_visual", "trigger": "ending_label == old_covenant_refused", "apply_to_visual_scene_ids": ["tangle_ending_old_covenant"], "modifier_prompt": "Both coffer seals remain intact; Tovan's named refusal token lies on the old covenant; the public gauge is red and Dema records the refusal while Hessa keeps her seal in hand."},
+      {"modifier_id": "bounded_bridge_honored_visual", "trigger": "ending_label == bounded_bridge_honored", "apply_to_visual_scene_ids": ["tangle_ending_bounded_bridge"], "modifier_prompt": "Local fittings glow with blue mana on Pumps One and Three; the daily inspection board has seven empty rows; Engine Two remains outside the stamped bridge boundary."},
+      {"modifier_id": "bounded_bridge_unsupported_visual", "trigger": "ending_label == bounded_bridge_unsupported", "apply_to_visual_scene_ids": ["tangle_ending_bounded_bridge"], "modifier_prompt": "One local collar sits visibly misaligned, only a small crystal tray has been released, and Brin and Orsa face an inspection board crowded with alternating night-shift marks."},
+      {"modifier_id": "consortium_bundle_secures_service_visual", "trigger": "ending_label == consortium_bundle_secures_service", "apply_to_visual_scene_ids": ["tangle_ending_consortium"], "modifier_prompt": "Blue crystal reaches the pumps before the public gauge enters red; waiting dwarves lift filled vessels while the new polished collar and repayment schedule remain prominent beside the seal."},
+      {"modifier_id": "consortium_bundle_arrives_late_visual", "trigger": "ending_label == consortium_bundle_arrives_late", "apply_to_visual_scene_ids": ["tangle_ending_consortium"], "modifier_prompt": "The coffer shines open beside a deeply red public gauge; empty copper cans move uphill on the landing while repayment rings already encircle the stamped amendment."},
+      {"modifier_id": "district_moot_with_time_visual", "trigger": "ending_label == district_moot_with_time", "apply_to_visual_scene_ids": ["tangle_ending_moot"], "modifier_prompt": "The public gauge remains amber, vessels stand in orderly rows, and arriving Masters arrange their seals around the separate covenant strips while the pumps continue at reduced rhythm."},
+      {"modifier_id": "district_moot_under_thirst_visual", "trigger": "ending_label == district_moot_under_thirst", "apply_to_visual_scene_ids": ["tangle_ending_moot"], "modifier_prompt": "The public gauge is red, two pumps are dark behind seated isolation wedges, and empty copper cans form a dense line facing the gathered civic seals."},
+      {"modifier_id": "enforce_existing_promise_visual", "trigger": "branch_label == enforce_existing_promise", "apply_to_visual_scene_ids": ["tangle_ending_old_covenant"], "modifier_prompt": "Hessa points her bronze seal toward the old covenant and leaves the polished supplier collar outside the claim while Tovan holds the named decision token."},
+      {"modifier_id": "bind_repairable_bridge_visual", "trigger": "branch_label == bind_repairable_bridge", "apply_to_visual_scene_ids": ["tangle_ending_bounded_bridge"], "modifier_prompt": "Hessa stamps only the seven-notch bridge strip while Engine Two's token remains beyond its boundary and Brin sets the wooden gauge beside local fittings."},
+      {"modifier_id": "bind_supplier_future_visual", "trigger": "branch_label == bind_supplier_future", "apply_to_visual_scene_ids": ["tangle_ending_consortium"], "modifier_prompt": "Hessa's bronze seal marks the full amendment and her hand breaks both coffer seals beside the polished six-bolt collar and linked repayment rings."},
+      {"modifier_id": "let_affected_seals_decide_visual", "trigger": "branch_label == let_affected_seals_decide", "apply_to_visual_scene_ids": ["tangle_ending_moot"], "modifier_prompt": "Hessa carries her unstamped bronze seal toward the landing while Dema and Orsa carry separate records and the public gauge board to the arriving workshop Masters."}
+    ],
+    "scene_set": {
+      "scene_set_id": "cistern_house_nine.reserve_covenant.scene_set.draft",
+      "geometry_authority_level": "text_layout_only_not_replay_ready",
+      "room_model": "Two-level compact pump house: a rectangular upper rune gallery connects west to the public street landing; its south edge is cut by a rail-bounded stair opening to the lower wet intake chamber and service floor; three pumps run west-to-east below the gallery rail; the locked municipal conduit enters the north wall; covenant table and coffer square occupy the upper gallery clear of the stair.",
+      "fixed_zones": [
+        {"zone_id": "street_landing_public", "visible_form": "broad carved-stone landing with copper vessels, workshop bells, black gauge slate, and public queue", "used_for": "district witness, water constituency, and widened moot"},
+        {"zone_id": "yellow_public_boundary", "visible_form": "painted yellow line and low slate ledge between street landing and workshop gallery", "used_for": "record transfer and access control"},
+        {"zone_id": "covenant_table", "visible_form": "waist-high stone table between public line and pump rail", "used_for": "maintenance book, covenant strips, tally case, civic seal, route notice, and amendment"},
+        {"zone_id": "pump_service_row", "visible_form": "three west-to-east brass-and-iron pumps on the lower service floor below the gallery rail, with floats visible above casings and valve extensions rising to upper service bays", "used_for": "water service below and fitting tests from the upper gallery service bays"},
+        {"zone_id": "locked_conduit_arch", "visible_form": "carved arched municipal mana feed entering through the gallery wall behind a locked grille", "used_for": "crystal feed and supply custody"},
+        {"zone_id": "hoist_delivery_square", "visible_form": "painted dry upper-gallery floor square north of the grated stair opening, under the brass chain hoist and beside the conduit arch", "used_for": "sealed coffer custody and delivery staging"},
+        {"zone_id": "grated_intake_stair", "visible_form": "iron stair and floor grate descending from gallery to misty black-water intake", "used_for": "vertical orientation and pump access"},
+        {"zone_id": "wet_intake_chamber", "visible_form": "lower stone chamber with black warm seawater, mist, three pump casings and rods, drain channels, and a narrow service floor", "used_for": "water source, pump motion, lower worker access, and environmental depth"}
+      ],
+      "camera_slots": [
+        {"camera_id": "landing_wide", "supports_visual_scene_ids": ["tangle_cistern_autumn_establishing", "tangle_public_entitlement", "tangle_ending_moot"]},
+        {"camera_id": "table_medium", "supports_visual_scene_ids": ["tangle_covenant_table_routine", "tangle_private_ledger_copy", "tangle_compatibility_dispute"]},
+        {"camera_id": "pump_fit_close", "supports_visual_scene_ids": ["tangle_open_compatibility_test"]},
+        {"camera_id": "public_boundary_medium", "supports_visual_scene_ids": ["tangle_supply_notice_arrival"]},
+        {"camera_id": "conduit_coffer_wide", "supports_visual_scene_ids": ["tangle_sealed_coffer_reveal", "tangle_ending_old_covenant", "tangle_ending_consortium"]},
+        {"camera_id": "gallery_choice_high", "supports_visual_scene_ids": ["tangle_leverage_choice", "tangle_final_threshold"]},
+        {"camera_id": "pump_bridge_medium", "supports_visual_scene_ids": ["tangle_ending_bounded_bridge"]}
+      ],
+      "routes": [
+        {"route_id": "public_to_covenant_boundary", "path": "street landing -> yellow line -> public face of covenant table", "access": "Dema and the district remain on the landing side; Hessa and Tovan work from the upper-gallery side"},
+        {"route_id": "gallery_to_lower_service", "path": "upper rune gallery -> grated stair -> lower wet service floor", "access": "workshop staff use the stair; the public sees the lower chamber only through the opening"},
+        {"route_id": "coffer_delivery", "path": "street freight point -> chain hoist -> upper-gallery delivery square", "access": "reserve crew lowers the sealed coffer and withdraws; custody changes only when an admitted seal is broken"}
+      ],
+      "staging_slots": [
+        {"slot_id": "master_covenant_position", "position": "upper gallery at the stone table between the yellow public line and pump rail", "supports": "Hessa's sightline to seal, documents, coffer, public gauge, and pressure floats"},
+        {"slot_id": "factor_claim_position", "position": "conduit-arch end of the covenant table beside the sealed coffer route", "supports": "Tovan's tally case, clause reading, and named release or refusal"},
+        {"slot_id": "pump_fit_service_bay", "position": "upper gallery rail bays above the three west-to-east pumps with a workbench clear of the stair", "supports": "Brin and Orsa testing collars, reading floats, and preparing local fittings"},
+        {"slot_id": "public_slate_boundary", "position": "landing side of the yellow line with slate and water gauge visible from the table and waiting queue", "supports": "Dema's independent record custody and the district's witness"},
+        {"slot_id": "coffer_hoist_square", "position": "upper gallery north of the stair opening beneath the hoist and beside the locked conduit arch", "supports": "sealed custody, outer-rack inspection, and later crystal transfer to the feed"}
+      ],
+      "occluders": [
+        {"occluder_id": "upper_gallery_slab", "effect": "blocks the public view of lower wet service work except through the grated stair opening"},
+        {"occluder_id": "pump_casings", "effect": "block cross-row views on the lower floor while pressure floats remain visible above them from the gallery"},
+        {"occluder_id": "sealed_coffer", "effect": "blocks the floor behind the hoist square while leaving both lid seals and the conduit arch visible from table and landing"}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "public_record_lane", "path": "street_landing_public -> yellow_public_boundary -> covenant_table", "supports": ["prime_public_entitlement", "assert_current_covenant", "spend_public_witness", "summon_district_moot"]},
+        {"lane_id": "coffer_to_pump_lane", "path": "hoist_delivery_square -> locked_conduit_arch -> pump_service_row", "supports": ["stage_emergency_stock", "enforce_existing_promise", "bind_repairable_bridge", "bind_supplier_future"]},
+        {"lane_id": "compatibility_evidence_lane", "path": "pump_service_row workbench -> covenant_table -> public slate", "supports": ["prime_open_compatibility", "test_supplier_compatibility", "offer_repairable_bridge"]}
+      ],
+      "object_states": [
+        {"object_id": "crystal_coffer", "states": ["sealed_in_reserve_custody", "reserve_seal_open_supplier_seal_intact", "both_seals_open", "sealed_after_refusal"]},
+        {"object_id": "public_water_gauge", "states": ["white_working_margin", "amber_deliberation_margin", "red_thirst_margin"]},
+        {"object_id": "workshop_civic_seal", "states": ["held_apart", "placed_by_old_covenant", "stamped_bounded_bridge", "stamped_supplier_amendment", "carried_to_moot"]}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable visual identities for named characters and the public group. Include only refs for bodies declared visible in each scene.",
+    "characters": {
+      "hessa_cairn": "Master Hessa Cairn: middle-aged dwarf woman, very short and square-shouldered, deep brown skin, iron-gray hair cropped close around a single long temple braid, severe rectangular face, dark green wool workshop coat with brass toggles, heavy civic seal carved with a stepped-water mark on a belt chain, still hands and economical expressions.",
+      "tovan_marr": "Factor Tovan Marr: older dwarf man, narrow lined face, iron-gray hair cut close, trimmed rectangular beard, plum wool coat with black leather cuffs, small reserve-house brass pin shaped like a closed coffer, black lacquer tally case, tidy hands and composed posture built around exact documents.",
+      "orsa_rill": "Orsa Rill: young adult dwarf apprentice, compact broad-hipped build, warm brown skin, round face with a small scar through the left eyebrow, dark copper hair in one thick practical braid wrapped in gray cord, short sleeveless indigo work coat over a cream shirt, leather apron, heavy ankle boots, chalk and blue mana stains on square fingertips, alert posture that becomes deliberately still when challenged.",
+      "brin_olt": "Brin Olt: adult dwarf journeyworker, stocky muscular build, ruddy tan skin, broad nose, auburn beard divided into two short forks bound with brass rings, rolled slate-blue sleeves, oil-dark leather apron, thick gloves tucked at belt, cautious rail-side stance and practical protective reach.",
+      "dema_sorn": "Dema Sorn: middle-aged dwarf landing clerk, narrow sturdy build, pale olive skin, black hair threaded with gray and tied under a rust-red headscarf, charcoal vest over a striped brown shirt, large chalk holster, black level slate carried against one hip, observant posture oriented toward both gauges and public witnesses."
+    },
+    "groups": {
+      "terrace_water_constituency": "Terrace water constituency: compact dwarf householders and public workers of varied ages and skin tones, practical layered wool and leather, bakery porter with wheeled trough, laundry worker with buckets, lift mechanic with tool satchel, clinic Master and other seal-bearing workshop Masters carrying distinct bronze seals, orderly copper water cans becoming denser and more urgent as the gauge falls."
+    }
+  },
+  "review_notes": [
+    "The embedded scene_set fixes the two-level pump-house geometry, custody zones, camera slots, sightline lanes, and branch-persistent object states for draft replay.",
+    "Every base prompt states visible geometry and character appearance independently; prompt assembly adds refs only for bodies declared visible.",
+    "Branch modifiers describe observable changes to coffer seals, covenant layout, part fit, gauge band, worker posture, and public crowd pressure."
+  ]
+}

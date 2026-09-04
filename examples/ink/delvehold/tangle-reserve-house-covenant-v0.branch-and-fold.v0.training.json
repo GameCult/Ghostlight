@@ -1,0 +1,369 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "tangle-reserve-house-covenant-v0-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/delvehold/tangle-reserve-house-covenant-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/delvehold/tangle-reserve-house-covenant-v0.v0.json",
+  "visual_plan_ref": "examples/visual/delvehold/tangle-reserve-house-covenant-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "tangle-reserve-house-covenant-v0.cistern-house-nine-renewal",
+  "protagonist_agent_id": "hessa_cairn",
+  "npc_agent_ids": [
+    "tovan_marr",
+    "orsa_rill",
+    "brin_olt",
+    "dema_sorn",
+    "terrace_water_constituency"
+  ],
+  "purpose": "Interactive Fiction Weaver draft dramatizing reserve-house leverage over a seal-bearing public pump workshop after a Deep Company crystal interruption.",
+  "local_awareness_summary": [
+    {
+      "text": "Hessa knows Cistern House Nine's three pumps, local spare fittings, current maintenance record, workshop debt, public water gauge, old reserve covenant, and her own authority over the workshop seal.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/tangle-reserve-house-covenant-v0.v0.json",
+        "Delvehold/Lore/The Greathold.md",
+        "Delvehold/Lore/Industry/Dwarven Industry.md",
+        "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+      ]
+    },
+    {
+      "text": "Hessa can inspect parts, publish or transfer records, place or stamp her seal, accept custody, propose bounded terms, and call affected workshop seals; she cannot redirect the reserve by herself or know every competing claim.",
+      "source_refs": [
+        "Delvehold/Lore/Industry/Dwarven Industry.md",
+        "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+      ]
+    },
+    {
+      "text": "The immediate choice is not water versus politics: water margin, debt, repairability, supplier lock-in, public evidence, and the reserve mandate are already one political system.",
+      "source_refs": [
+        "Delvehold/Lore/Industry/Dwarven Industry.md",
+        "Delvehold/Lore/Industry/Runic Engineering.md",
+        "Delvehold/Lore/Crisis/Industrial Escalation.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Hessa's workshop-local viewpoint inside Cistern House Nine. Choices use visible documents, seals, gauges, fittings, the coffer, work assignments, and the workshop bells.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/delvehold/tangle-reserve-house-covenant-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes monthly covenant routine, working pumps, ordinary relationships, and workplace humor before the supply notice arrives.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      },
+      {
+        "text": "Tonal mode is warm workplace comedy tightening into civic-debt suspense; administrative absurdity reveals power without trivializing thirst.",
+        "source_refs": [
+          "AGENTS.md",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Hessa alone owns Cistern House Nine's seal decision, but one seal cannot redirect a multi-workshop reserve mandate; widening that decision requires the affected seals.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/Industry/Dwarven Industry.md"
+        ]
+      },
+      {
+        "text": "Tovan may price risk, approve within covenant, refuse by name, and retain reserve custody. He may not purchase Hessa's seal, cast her vote, or treat a supplier preference as civic law.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Dwarven Industry.md"
+        ]
+      },
+      {
+        "text": "Brin and Orsa may establish physical fit and maintenance burden, while Dema may establish public records and water margin; none of them silently inherit Hessa's sealing authority.",
+        "source_refs": [
+          "Delvehold/Lore/The Greathold.md",
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/Industry/Runic Engineering.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Hessa owns custody of the workshop seal and maintenance book; Dema owns the district-facing copy; Tovan owns the tally case and retains the sealed coffer until a valid release is accepted.",
+        "source_refs": [
+          "examples/ink/delvehold/tangle-reserve-house-covenant-v0.branch-and-fold.v0.ink",
+          "examples/lore-grounding/delvehold/tangle-reserve-house-covenant-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Brin's wooden compatibility gauge, the locally made collars, the polished Consortium collar, old covenant strip, new brass amendment, route notice, and public water gauge remain separate visible evidence objects.",
+        "source_refs": [
+          "examples/ink/delvehold/tangle-reserve-house-covenant-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every route must show who depends on the reserve house, whom the house depends on, what the offered relief costs, and which constituency bears delay or lock-in.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Dwarven Industry.md"
+        ]
+      },
+      {
+        "text": "Every ending must preserve the difference among financial approval, civic consent, object custody, physical compatibility, and actual water service.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/Industry/Runic Engineering.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let a reserve factor seize or multiply civic seals, unilaterally change the reserve mandate, or become the sovereign of Cistern House Nine.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Dwarven Industry.md",
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "Do not turn the supply interruption into proof of one conspiracy or one directing dungeon mind; source lore preserves systemic conflict and causal uncertainty.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Deep Mining.md",
+          "Delvehold/Lore/Crisis/World Without a Villain.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through routine review, supply interruption, public covenant leverage, and a state-gated resolution with eight endings.",
+    "choice_layers": [
+      "ordinary_covenant_review",
+      "supply_interruption_response",
+      "reserve_house_leverage",
+      "covenant_resolution"
+    ],
+    "variables": [
+      "public_witness",
+      "covenant_evidence",
+      "district_water_margin",
+      "workshop_debt",
+      "open_standard_case",
+      "factor_discretion",
+      "seal_independence",
+      "consortium_lockin",
+      "labour_support"
+    ],
+    "ending_gates": [
+      "ending_old_covenant_honored",
+      "ending_old_covenant_refused",
+      "ending_bounded_bridge",
+      "ending_bounded_bridge_cost",
+      "ending_consortium_water",
+      "ending_consortium_cost",
+      "ending_moot_with_margin",
+      "ending_moot_under_thirst"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_open_compatibility",
+      "ink_path": "renewal_choice",
+      "action_type": "inspect_parts",
+      "actor_intent": "Prove that several locally made collars share a repairable physical standard.",
+      "state_basis": ["Hessa and Brin can handle the local spares and wooden gauge while the pumps run."],
+      "reviewed_consequences": ["Raises open_standard_case, covenant_evidence, and labour_support while spending district_water_margin through inspection delay."],
+      "training_hooks": ["physical_standard_as_politics", "maintenance_time_cost", "worker_knowledge"]
+    },
+    {
+      "branch_id": "prime_factor_confidence",
+      "ink_path": "renewal_choice",
+      "action_type": "transfer_record",
+      "actor_intent": "Strengthen the insurance claim through a complete private maintenance record.",
+      "state_basis": ["Hessa holds the workshop maintenance book; Tovan's tally case can copy it."],
+      "reviewed_consequences": ["Raises covenant_evidence and factor_discretion while lowering seal_independence by concentrating worker history in the creditor's record."],
+      "training_hooks": ["record_custody", "creditor_information_leverage", "privacy_for_eligibility"]
+    },
+    {
+      "branch_id": "prime_public_entitlement",
+      "ink_path": "renewal_choice",
+      "action_type": "publish_record",
+      "actor_intent": "Make the reserve promise legible to the district whose levies funded it.",
+      "state_basis": ["Hessa can carry the covenant strip to Dema's public slate without changing its terms."],
+      "reviewed_consequences": ["Raises public_witness and seal_independence while lowering factor_discretion."],
+      "training_hooks": ["public_entitlement", "distributed_record", "factor_discretion_constraint"]
+    },
+    {
+      "branch_id": "assert_current_covenant",
+      "ink_path": "notice_response_choice",
+      "action_type": "place_seal",
+      "actor_intent": "Separate the existing public promise from the new supplier bundle.",
+      "state_basis": ["Hessa controls her civic seal, and old covenant and new coffer are distinct visible objects."],
+      "reviewed_consequences": ["Raises covenant_evidence and seal_independence while lowering factor_discretion."],
+      "training_hooks": ["authority_object_staging", "old_promise_new_terms", "one_seal_one_decision"]
+    },
+    {
+      "branch_id": "count_water_before_debt",
+      "ink_path": "notice_response_choice",
+      "action_type": "inspect_public_gauge",
+      "actor_intent": "Establish how much real time the district has before accepting a financial answer.",
+      "state_basis": ["The public gauge and Dema's service records are visible from the gallery."],
+      "reviewed_consequences": ["Raises district_water_margin and public_witness through a more accurate ration forecast."],
+      "training_hooks": ["resource_margin_buys_consent", "public_arithmetic", "inspection_as_action"]
+    },
+    {
+      "branch_id": "test_supplier_compatibility",
+      "ink_path": "notice_response_choice",
+      "action_type": "inspect_supplier_part",
+      "actor_intent": "Test whether the Consortium condition reflects the existing pump geometry.",
+      "state_basis": ["The polished collar is visible through the coffer's top rack; Brin may break the freight tie without breaking either custody seal."],
+      "reviewed_consequences": ["Raises open_standard_case and labour_support while spending district_water_margin through delay."],
+      "training_hooks": ["custody_respecting_inspection", "catalogue_claim_falsification", "repair_leverage"]
+    },
+    {
+      "branch_id": "stage_emergency_stock",
+      "ink_path": "notice_response_choice",
+      "action_type": "withhold_acceptance",
+      "actor_intent": "Keep the coffer physically available without accepting custody or terms.",
+      "state_basis": ["A dry square exists inside the hoist chain and outside the pump rails."],
+      "reviewed_consequences": ["Raises factor_discretion and consortium_lockin by making supplier relief physically present before consent while leaving actual water margin unchanged."],
+      "training_hooks": ["withholding_as_action", "custody_boundary", "installed_future_pressure"]
+    },
+    {
+      "branch_id": "spend_public_witness",
+      "ink_path": "leverage_choice",
+      "action_type": "compel_public_answer",
+      "actor_intent": "Force an approval or refusal to answer the published entitlement and evidence.",
+      "state_basis": ["Available only when public_witness is high enough for Dema's slate to constrain private reinterpretation."],
+      "reviewed_consequences": ["Raises public_witness and covenant_evidence, lowers factor_discretion, and raises workshop_debt through the old covenant's extension price."],
+      "training_hooks": ["publicity_as_leverage", "named_financial_refusal", "old_debt_extended"]
+    },
+    {
+      "branch_id": "offer_repairable_bridge",
+      "ink_path": "leverage_choice",
+      "action_type": "propose_bounded_covenant",
+      "actor_intent": "Buy seven days of water without turning a supplier pattern into permanent law.",
+      "state_basis": ["Available only when the open compatibility case is developed enough to price a bounded alternative."],
+      "reviewed_consequences": ["Raises open_standard_case, labour_support, district_water_margin, workshop_debt, and seal_independence."],
+      "training_hooks": ["bounded_exception", "repairability_preserves_agency", "labour_as_capacity"]
+    },
+    {
+      "branch_id": "accept_consortium_bundle",
+      "ink_path": "leverage_choice",
+      "action_type": "accept_terms",
+      "actor_intent": "Secure immediate crystal by accepting retrofit, inspection, revenue, and future supply clauses.",
+      "state_basis": ["Hessa may bind her own workshop and the coffer is available for release."],
+      "reviewed_consequences": ["Raises district_water_margin, workshop_debt, consortium_lockin, and factor_discretion while lowering seal_independence."],
+      "training_hooks": ["relief_creates_constituency", "supplier_lockin", "consent_under_dependency"]
+    },
+    {
+      "branch_id": "summon_district_moot",
+      "ink_path": "leverage_choice",
+      "action_type": "widen_jurisdiction",
+      "actor_intent": "Move a reserve-mandate dispute to the seals and constituencies bound by it.",
+      "state_basis": ["Dema can carry separate copies and workshop bells can summon the nearest affected seals."],
+      "reviewed_consequences": ["Raises public_witness and seal_independence, lowers factor_discretion, and spends district_water_margin through delay."],
+      "training_hooks": ["local_first_federation", "jurisdiction_follows_consequence", "consent_time_cost"]
+    },
+    {
+      "branch_id": "enforce_existing_promise",
+      "ink_path": "final_choice",
+      "action_type": "claim_reserve",
+      "actor_intent": "Obtain emergency stock under the current covenant without accepting the retrofit.",
+      "state_basis": ["Success depends on covenant_evidence and constrained factor_discretion."],
+      "reviewed_consequences": ["Routes to an honored release with longer old debt or a named refusal with immediate service cost."],
+      "training_hooks": ["state_gated_claim", "institutional_memory", "refusal_has_owner"]
+    },
+    {
+      "branch_id": "bind_repairable_bridge",
+      "ink_path": "final_choice",
+      "action_type": "stamp_bounded_terms",
+      "actor_intent": "Bind a temporary repairable covenant while excluding Engine Two from the claim.",
+      "state_basis": ["Success depends on open_standard_case, labour_support, and seal_independence."],
+      "reviewed_consequences": ["Routes to a seven-day release using local fittings or a partial release whose unsupported inspections exhaust the crew."],
+      "training_hooks": ["state_gated_bridge", "material_boundary", "labour_capacity_consequence"]
+    },
+    {
+      "branch_id": "bind_supplier_future",
+      "ink_path": "final_choice",
+      "action_type": "accept_and_open",
+      "actor_intent": "Protect immediate service by accepting supplier lock-in and debt.",
+      "state_basis": ["The strongest service ending requires enough water margin and prior consortium_lockin to make the prepared schedule actionable."],
+      "reviewed_consequences": ["Routes to immediate water that creates a supplier constituency or to a late delivery where debt begins before service recovers."],
+      "training_hooks": ["state_gated_lockin", "relief_and_capture_coexist", "debt_punctuality"]
+    },
+    {
+      "branch_id": "let_affected_seals_decide",
+      "ink_path": "final_choice",
+      "action_type": "carry_dispute",
+      "actor_intent": "Widen the decision to affected seals and ration until they answer.",
+      "state_basis": ["Success depends on sufficient public_witness and district_water_margin to make deliberation materially possible."],
+      "reviewed_consequences": ["Routes to a district moot with time to govern or a legitimate moot under visible thirst and pump shutdown."],
+      "training_hooks": ["state_gated_federation", "stored_resource_buys_consent", "constituency_from_cost"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose and choice gates",
+      "Ending selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Promotion of any branch outcome into canonical Delvehold history",
+      "Durable character memory or relationship changes",
+      "Naming the Hold, reserve house, Deep Company, or Forge Consortium",
+      "Any quantitative economy values beyond the fixture's coarse narrative bands"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Tangle elaborator using the four required reviewer prompts",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality verdict: accepted. The opening establishes ordinary pump work, five roles, local authority, and warm workplace humor before the supply notice; all four choice layers alter later affordances or endings. The staged-coffer branch was revised so physical proximity does not falsely create water margin.",
+      "Lore grounding verdict: accepted. Reserve-house leverage, Forge Consortium standards, Deep Company supply, workshop seals, labour repairability, and terrace need are source-backed; named characters, contract particulars, and outcomes remain fixture-local rather than canonical history.",
+      "Visual continuity verdict: accepted_with_minor_revisions as an illustrated-IF scaffold. Fourteen visual anchors, twenty branch and ending modifiers, stable character refs, and eighteen BFL prompts cover all material paths. Prior Cistern House Nine character designs were restored. A plan view or 3D blockout remains required before high-consistency multi-angle rendering.",
+      "Spatial cohesion verdict: accepted_with_minor_revisions. The embedded set fixes upper gallery, lower pump floor, public line, conduit, hoist square, routes, staging slots, occluders, sightlines, and branch-persistent object states. The initial pump-row level mismatch was corrected against the established Cistern scene set."
+    ],
+    "self_review_verdicts": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "overall_status": "accepted",
+        "scores": {"reader_orientation": 5, "coherence": 5, "pacing": 4, "voice": 5, "tonal_fit": 5, "if_playability": 5},
+        "findings_fixed": ["Removed a false water-margin increase from the staged sealed-coffer branch.", "Kept every invented financial term attached to a visible document, object, worker, or service cost."],
+        "remaining_notes": ["The deliberate clause density is supported by embodied props and short workplace exchanges."]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "overall_status": "accepted",
+        "scores": {"source_coverage": 5, "canon_fit": 5, "grounding_quality": 5, "vault_backfill_value": 5},
+        "findings_fixed": ["Marked the reserve-house mechanism as authored elaboration in the owning lore note.", "Kept the supply interruption and all named participants inside fixture-local draft authority."],
+        "remaining_notes": ["Company and Hold names remain intentionally unresolved for later mandate owners."]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "overall_status": "accepted_with_minor_revisions",
+        "scores": {"segmentation": 5, "visual_prompt": 5, "character_visibility": 5, "branch_visual_continuity": 5, "website_replay": 4},
+        "findings_fixed": ["Replaced conflicting Hessa, Orsa, Brin, and Dema appearances with their established fixture refs.", "Added explicit visual handles for all four final branch ids as well as all eight ending states."],
+        "remaining_notes": ["Use the embedded text scene set to build a durable plan view or 3D blockout before multi-angle image rendering."]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "overall_status": "accepted_with_minor_revisions",
+        "scores": {"layout_cohesion": 5, "sightline": 5, "body_affordance": 5, "movement_access": 5, "object_system_geometry": 5, "branch_spatial_state": 5},
+        "findings_fixed": ["Moved the pump row from the dry gallery to the established lower wet service floor.", "Added three access routes, five staging slots, three occluders, three sightline lanes, and persistent coffer, gauge, and seal states."],
+        "remaining_notes": ["The text layout is stageable and internally coherent; it is not a substitute for the later render blockout."]
+      }
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true,
+      "all_declared_variables_read_later": true,
+      "all_material_branches_have_visual_handles": true
+    }
+  }
+}

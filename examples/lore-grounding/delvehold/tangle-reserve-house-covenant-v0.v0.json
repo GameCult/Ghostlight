@@ -1,0 +1,336 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "delvehold.tangle-reserve-house-covenant-v0.v0",
+  "source_status": "reviewed",
+  "fixture_status": "procedural_branch",
+  "source_refs": [
+    {
+      "source_id": "lore-index",
+      "path": "Delvehold/Lore/index.md",
+      "title": "Lore",
+      "line_start": 1,
+      "line_end": 32,
+      "relevance": "Grounds the Deep World, industrial dependence on living magical ecologies, and the difference between shared events and disputed explanations."
+    },
+    {
+      "source_id": "the-greathold",
+      "path": "Delvehold/Lore/The Greathold.md",
+      "title": "The Greathold",
+      "line_start": 1,
+      "line_end": 60,
+      "relevance": "Primary locality and political source: Cistern House Nine geometry, public pump procedure, local-first jurisdiction, distributed workshop government, and the industrial civic spine."
+    },
+    {
+      "source_id": "dwarven-industry",
+      "path": "Delvehold/Lore/Industry/Dwarven Industry.md",
+      "title": "Dwarven industry",
+      "line_start": 1,
+      "line_end": 52,
+      "relevance": "Grounds the political elaboration: reserve-house mandates, covenant leverage, public stores, Forge Consortium standards, Deep Company supply, labour pressure, and service dependency."
+    },
+    {
+      "source_id": "mastership",
+      "path": "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+      "title": "Mastership and citizenship",
+      "line_start": 1,
+      "line_end": 54,
+      "relevance": "Constrains Hessa's authority: one workshop seal, one vote, inspectable work, public complaint, and widening jurisdiction without creditor ownership of the franchise."
+    },
+    {
+      "source_id": "dwarves",
+      "path": "Delvehold/Lore/Peoples/Dwarves.md",
+      "title": "Dwarves",
+      "line_start": 1,
+      "line_end": 34,
+      "relevance": "Grounds durable craft, public infrastructure dependency, labour publication of inconvenient evidence, and winter fear as political pressure."
+    },
+    {
+      "source_id": "runic-engineering",
+      "path": "Delvehold/Lore/Industry/Runic Engineering.md",
+      "title": "Runic engineering",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds pump engines, standardized runes, maintenance skill, supplier-specific workforces, compatibility pressure, and the displacement caused by municipal engine contracts."
+    },
+    {
+      "source_id": "deep-mining",
+      "path": "Delvehold/Lore/Industry/Deep Mining.md",
+      "title": "Deep mining",
+      "line_start": 1,
+      "line_end": 26,
+      "relevance": "Grounds Deep Company supply routes, coordinated attacks on standardized substations, and the lock-in that makes pump closure precede drill closure."
+    },
+    {
+      "source_id": "industrial-escalation",
+      "path": "Delvehold/Lore/Crisis/Industrial Escalation.md",
+      "title": "Industrial escalation",
+      "line_start": 1,
+      "line_end": 27,
+      "relevance": "Grounds the debt-and-expansion loop in which pumps, rail, replacement wards, procurement, and loans intensify extraction before affected moots can compare evidence."
+    },
+    {
+      "source_id": "surface-symptoms",
+      "path": "Delvehold/Lore/Crisis/Surface Symptoms.md",
+      "title": "Surface symptoms",
+      "line_start": 1,
+      "line_end": 26,
+      "relevance": "Grounds attribution uncertainty and the political spread of extraction injury through water, fields, tariffs, and constituencies unable to vote on the responsible machinery."
+    },
+    {
+      "source_id": "world-without-villain",
+      "path": "Delvehold/Lore/Crisis/World Without a Villain.md",
+      "title": "A world without a villain",
+      "line_start": 1,
+      "line_end": 16,
+      "relevance": "Constrains the scene against a simple villain: reserve supply and company contracts keep pumps running even while extraction injures the deeper ecology."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Industrial Greathold during early coordinated dungeon responses and before a viable contraction plan exists",
+    "location": "Cistern House Nine, a public pump workshop serving terraces beside one Hold's warm underground sea.",
+    "summary": "A routine monthly covenant review becomes a political choice when a Deep Company halves its crystal shipment and the reserve house conditions emergency stock on a Forge Consortium retrofit and longer debt.",
+    "public_facts": [
+      {
+        "text": "Cistern House Nine has a public landing, dry rune gallery, wet intake chamber, three visible pumps, locked municipal crystal feed, pressure floats, isolation hardware, and a workshop civic seal.",
+        "source_refs": ["the-greathold", "runic-engineering", "mastership"]
+      },
+      {
+        "text": "Reserve houses hold crystal, parts, and callable credit for named infrastructure webs under mandates assembled by affected workshop seals.",
+        "source_refs": ["dwarven-industry"]
+      },
+      {
+        "text": "A reserve factor may approve or refuse a claim and impose financial consequences, but cannot seize a workshop's civic seal or multiply votes.",
+        "source_refs": ["dwarven-industry", "mastership"]
+      },
+      {
+        "text": "Standardized supplier parts may be cheaper to insure while narrowing the skills, spares, and contracts available to a municipal workshop.",
+        "source_refs": ["dwarven-industry", "runic-engineering"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "The terrace public needs water now, while the reserve mandate and supplier terms distribute costs across later winters.",
+        "source_refs": ["the-greathold", "dwarven-industry", "dwarves"]
+      },
+      {
+        "text": "Deep Company route failure and attacks on standardized substations make both supply scarcity and the proposed standard materially plausible without proving a single directing mind.",
+        "source_refs": ["deep-mining", "industrial-escalation"]
+      },
+      {
+        "text": "Every available response has a constituency: factors want insurable risk, consortiums want a stable standard, workers want repairable machinery, and water users want service plus an answerable owner.",
+        "source_refs": ["dwarven-industry", "mastership", "runic-engineering"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "cistern-house-nine-workshop",
+      "label": "Cistern House Nine workshop",
+      "group_type": "seal_bearing_public_works_workshop",
+      "institutional_logic": ["Keep terrace water moving through inspectable, repairable machinery.", "Bind service decisions to one answerable workshop seal."],
+      "material_incentives": ["Obtain emergency crystal.", "Keep debt service below workshop revenue.", "Preserve local parts and repair knowledge."],
+      "internal_virtues": ["Visible craft", "Repairability", "Named responsibility", "A boundary that exists in iron as well as ink"],
+      "internal_shames": ["Ceremonial sealing", "A part nobody local can repair", "Hiding a public cost in a private ledger"],
+      "prestige_markers": ["A gauge the landing can read", "A part that fits more than one maker's engine", "A service record usable by the next shift"],
+      "taboo_triggers": ["A creditor treating the civic seal as collateral", "A catalogue declaring compatibility against a failed physical gauge"],
+      "emotional_display_norms": ["Anxiety becomes measurement, dry jokes, work assignments, and exact objections before it becomes confession."],
+      "trust_defaults": ["Trusts physical fits, public records, known workers, and covenants whose limits can be pointed to."],
+      "speech_register_cues": ["Compressed craft language", "Specific prices and durations", "Understated workplace humor", "Public call-and-response"],
+      "source_refs": ["the-greathold", "dwarven-industry", "mastership", "runic-engineering"]
+    },
+    {
+      "group_id": "terrace-reserve-house",
+      "label": "The reserve house serving the terrace infrastructure web",
+      "group_type": "seal_mandated_finance_and_continuity_institution",
+      "institutional_logic": ["Keep bounded emergency stores credible across several dependent services.", "Price claims so one district's release does not consume another district's winter."],
+      "material_incentives": ["Preserve crystal stocks and repayments.", "Prefer systems with legible maintenance and replaceable parts.", "Avoid publicly owning an arbitrary refusal."],
+      "internal_virtues": ["Solvency", "Published mandate", "Bounded exception", "Records that survive the claimant"],
+      "internal_shames": ["An empty reserve", "A release outside mandate", "Private capture disguised as actuarial necessity"],
+      "prestige_markers": ["A winter survived without default", "A claim priced before panic", "Several workshops honoring one clear covenant"],
+      "taboo_triggers": ["Treating emergency stock as unallocated charity", "Being forced to admit that a favored standard is merely a favored supplier"],
+      "emotional_display_norms": ["Fear is translated into eligibility, duration, collateral, and confidence in the record."],
+      "trust_defaults": ["Trusts complete ledgers, certified parts, declared routes, and obligations with a named repayment stream."],
+      "speech_register_cues": ["Risk bands", "Clauses read literally", "Polite narrowing", "Dry refusal to personify the institution"],
+      "source_refs": ["dwarven-industry", "industrial-escalation"]
+    },
+    {
+      "group_id": "forge-consortium-supply-bloc",
+      "label": "Forge Consortium suppliers and Deep Company contractors",
+      "group_type": "industrial_supply_alignment",
+      "institutional_logic": ["Turn standardized engines, parts, crystal supply, and finance into a dependable integrated market."],
+      "material_incentives": ["Make Consortium-compatible systems cheaper to finance.", "Secure longer crystal contracts after route reopening.", "Convert installed infrastructure into future demand."],
+      "internal_virtues": ["Scale", "Predictable replacement", "Continuous operation", "Catalogued compatibility"],
+      "internal_shames": ["A standard local workers can disprove", "Idle installed machinery", "A contract exposed as the cause of its own necessity"],
+      "prestige_markers": ["A civic system bearing one recognized pattern", "A route reopened on schedule", "A reserve house willing to insure the bundle"],
+      "taboo_triggers": ["Interchangeable local parts undercutting vendor control", "Workers naming discarded skills as a public loss"],
+      "emotional_display_norms": ["Political appetite appears as technical inevitability and attractive continuity terms."],
+      "trust_defaults": ["Trusts standardized arrays, volume commitments, and institutions already exposed to switching costs."],
+      "speech_register_cues": ["Catalogue claims", "Continuity language", "Bundled schedules", "Future savings used to compress present consent"],
+      "source_refs": ["dwarven-industry", "runic-engineering", "deep-mining"]
+    },
+    {
+      "group_id": "terrace-water-constituency",
+      "label": "Terrace households and dependent public workshops",
+      "group_type": "affected_civic_constituency",
+      "institutional_logic": ["Keep water available for homes, bakeries, laundries, lifts, and clinics.", "Move a dispute outward when its material consequence already crosses workshop boundaries."],
+      "material_incentives": ["Avoid dry taps and emergency hauling.", "Preserve the reserve their earlier levies purchased.", "Prevent long debt from disappearing behind immediate relief."],
+      "internal_virtues": ["Public arithmetic", "Patient witness", "Shared rationing", "Calling affected seals before rumor does"],
+      "internal_shames": ["Taking private priority from a common reserve", "Cheering water so loudly that nobody records its price"],
+      "prestige_markers": ["A legible gauge", "A clerk's copy beyond the workshop rail", "A moot held before the smallest cistern empties"],
+      "taboo_triggers": ["Being told that financial refusal is only technical", "A supplier term becoming public law without a seal vote"],
+      "emotional_display_norms": ["Pressure appears through vessel counts, ration proposals, exact repetition, and workshop bells before open anger."],
+      "trust_defaults": ["Trusts water levels, public copies, and people who attach future payments to present promises."],
+      "speech_register_cues": ["Household quantities", "Service consequences", "Specific names and times", "Humor sharpened by bodily need"],
+      "source_refs": ["the-greathold", "dwarven-industry", "mastership"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "terrace-reserve-house.solvency-is-public-power",
+      "applies_to": ["terrace-reserve-house"],
+      "pressure_type": "financial_leverage",
+      "summary": "A factor cannot own a civic vote, but can surround that vote with unaffordable alternatives through insurance, credit, and reserve eligibility.",
+      "projection_use": "Make Tovan's leverage concrete through the sealed coffer, risk record, loan duration, and approval language rather than threats or secret command authority.",
+      "source_refs": ["dwarven-industry", "mastership"]
+    },
+    {
+      "field_id": "cistern-house-nine.repairability-is-political",
+      "applies_to": ["cistern-house-nine-workshop", "forge-consortium-supply-bloc"],
+      "pressure_type": "standards_conflict",
+      "summary": "Compatibility decides whose parts, skills, and future contracts remain usable, so a bolt pattern can carry political authority.",
+      "projection_use": "Use Brin's wooden gauge, local collars, the polished Consortium collar, and daily inspection labour as the visible argument.",
+      "source_refs": ["dwarven-industry", "runic-engineering"]
+    },
+    {
+      "field_id": "terrace-public.stored-water-buys-consent-time",
+      "applies_to": ["terrace-water-constituency"],
+      "pressure_type": "resource_margin",
+      "summary": "Stored water determines whether wider consent is a live option or an honest choice made under thirst.",
+      "projection_use": "Make every delay read through the public gauge, copper cans, closed laundries, and workshop bells.",
+      "source_refs": ["the-greathold", "dwarven-industry"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "terrace-reserve-house",
+      "target_group_id": "cistern-house-nine-workshop",
+      "observer_read": ["Technically competent borrower", "Concentrated public-service risk", "Workshop attached to nonstandard parts"],
+      "target_self_read": ["Answerable custodian of repairable pumps", "One civic seal carrying a district obligation"],
+      "misread_patterns": ["The factor may treat local repair knowledge as variance rather than resilience.", "A complete creditor copy may be mistaken for creditor ownership of the decision."],
+      "likely_insults": ["bespoke risk", "sentimental inventory"],
+      "projection_use": "Let Tovan respect the workshop's record while undervaluing the local knowledge that makes it useful.",
+      "source_refs": ["dwarven-industry", "runic-engineering", "mastership"]
+    },
+    {
+      "observer_group_id": "cistern-house-nine-workshop",
+      "target_group_id": "terrace-reserve-house",
+      "observer_read": ["Keeper of public stock", "Creditor turning shortage into supplier control", "Necessary institution with private discretion"],
+      "target_self_read": ["Steward of several districts' future claims", "Institution preventing one emergency from consuming the reserve"],
+      "misread_patterns": ["Workers may read every condition as capture and miss genuine cross-district scarcity.", "The house may use genuine scarcity to shelter a favored standard."],
+      "likely_insults": ["thirst accountants", "seal-adjacent owners"],
+      "projection_use": "Preserve both the real reserve constraint and the political use made of it.",
+      "source_refs": ["dwarven-industry", "world-without-villain"]
+    },
+    {
+      "observer_group_id": "terrace-water-constituency",
+      "target_group_id": "forge-consortium-supply-bloc",
+      "observer_read": ["Source of immediate crystal and future debt", "Engine sellers using water as a demonstration"],
+      "target_self_read": ["Integrated supplier able to restore reliable service"],
+      "misread_patterns": ["Immediate relief can hide switching costs.", "Hostility to the supplier can hide the fact that local reserves are already inadequate."],
+      "likely_insults": ["six-bolt law", "catalogue mercy"],
+      "projection_use": "Let relief and resentment coexist when the coffer opens.",
+      "source_refs": ["dwarven-industry", "industrial-escalation", "world-without-villain"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "workshop-master-borrower",
+      "summary": "A seal-bearing Master who can bind her workshop to a covenant but cannot spend another district's reserve or pretend debt is a civic vote.",
+      "obligations": ["Keep water moving", "Protect repairability", "Name future revenue claims", "Widen jurisdiction when the reserve mandate is implicated"],
+      "available_masks": ["Craft severity", "Borrower competence", "Dry procedural humor", "Public accountability"],
+      "failure_modes": ["Treating immediate service as permission for permanent lock-in", "Protecting seal autonomy while the district runs dry", "Signing a bounded bridge without parts or labour"],
+      "source_refs": ["mastership", "dwarven-industry", "the-greathold"]
+    },
+    {
+      "role_id": "reserve-house-factor",
+      "summary": "A claims and credit officer who can price risk, approve within mandate, or issue a named refusal, but cannot own the workshop franchise.",
+      "obligations": ["Preserve the reserve", "Apply published covenants", "Keep claims attributable", "Price exceptions without silently changing the mandate"],
+      "available_masks": ["Literal clause reading", "Institutional modesty", "Private discretion", "Professional calm"],
+      "failure_modes": ["Mistaking a favored vendor for neutral compatibility", "Using record custody as decision ownership", "Saving the reserve by defeating its purpose"],
+      "source_refs": ["dwarven-industry", "mastership"]
+    },
+    {
+      "role_id": "journeyworker-repair-witness",
+      "summary": "A skilled worker who can prove physical compatibility and labour cost but cannot sign the covenant or diagnose the whole supply crisis.",
+      "obligations": ["Test the parts", "Name discarded repair capacity", "Keep sealed stock in proper custody", "Refuse impossible maintenance promises"],
+      "available_masks": ["Workshop comedy", "Literal fit test", "Silence while counting cost", "Solidarity with apprentice labour"],
+      "failure_modes": ["Treating one failed collar as proof every Consortium standard is false", "Offering inspection labour the crew cannot sustain"],
+      "source_refs": ["runic-engineering", "dwarven-industry"]
+    },
+    {
+      "role_id": "public-landing-clerk",
+      "summary": "A keeper of the district-facing record who can preserve evidence, gauge time, and call affected seals without claiming technical or credit authority.",
+      "obligations": ["Keep clauses and benefits equally legible", "Track water margin", "Separate custody from belief", "Carry the dispute to the proper moot"],
+      "available_masks": ["Literal repetition", "Public arithmetic", "Administrative deadpan", "Refusal to shrink conditions into footnotes"],
+      "failure_modes": ["Turning a public copy into a settled accusation", "Ignoring real reserve scarcity", "Calling a moot after its material option has already vanished"],
+      "source_refs": ["the-greathold", "mastership", "dwarven-industry"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "hessa_cairn",
+      "known_context": [{"text": "Hessa knows Cistern House Nine's pumps, seal obligations, current covenant, repair capacity, and public water margin shown in the room.", "source_refs": ["the-greathold", "mastership", "dwarven-industry"]}],
+      "beliefs": [{"text": "Hessa believes a covenant should bind an inspectable service state without converting creditor leverage into ownership of the civic seal.", "source_refs": ["dwarven-industry", "mastership"]}],
+      "misreads": [{"text": "Hessa may read a genuine cross-district reserve constraint as mere supplier capture because capture is also present.", "source_refs": ["dwarven-industry", "world-without-villain"]}],
+      "must_not_know": [{"text": "Hessa cannot know the cause of the distant coordinated attacks or the needs of every other reserve claimant.", "source_refs": ["deep-mining", "surface-symptoms"]}]
+    },
+    {
+      "speaker_id": "tovan_marr",
+      "known_context": [{"text": "Tovan knows the reserve mandate, claim rules, loan schedules, recorded workshop risk, and the offered supplier bundle.", "source_refs": ["dwarven-industry"]}],
+      "beliefs": [{"text": "Tovan believes insurable compatibility and bounded discretion protect more services than improvised generosity.", "source_refs": ["dwarven-industry", "runic-engineering"]}],
+      "misreads": [{"text": "Tovan may undervalue local repair knowledge because it is difficult to transfer into a reserve-wide risk schedule.", "source_refs": ["runic-engineering"]}],
+      "must_not_know": [{"text": "Tovan cannot decide that the reserve mandate has changed or that his factor's preference carries a civic vote.", "source_refs": ["dwarven-industry", "mastership"]}]
+    },
+    {
+      "speaker_id": "brin_olt",
+      "known_context": [{"text": "Brin knows the pump fittings, the wooden compatibility gauge, local spares, and the labour required for daily inspection.", "source_refs": ["the-greathold", "runic-engineering"]}],
+      "beliefs": [{"text": "Brin treats repairable compatibility as a public capability rather than catalogue decoration.", "source_refs": ["runic-engineering", "dwarven-industry"]}],
+      "misreads": [{"text": "Brin may compress the reserve house's wider obligations into hostility toward workshop craft.", "source_refs": ["dwarven-industry"]}],
+      "must_not_know": [{"text": "Brin cannot know whether the supply route will reopen or whether the new standard will reduce failures elsewhere.", "source_refs": ["deep-mining"]}]
+    },
+    {
+      "speaker_id": "dema_sorn",
+      "known_context": [{"text": "Dema knows the public gauge, posted entitlement, visible documents, named refusals, and needs voiced on the landing.", "source_refs": ["the-greathold", "mastership", "dwarven-industry"]}],
+      "beliefs": [{"text": "Dema believes conditions and benefits must be recorded at equal scale for public consent to mean anything.", "source_refs": ["mastership", "dwarven-industry"]}],
+      "misreads": [{"text": "Dema may read factor caution as arbitrary when some withheld stock is genuinely bound to other districts.", "source_refs": ["dwarven-industry", "world-without-villain"]}],
+      "must_not_know": [{"text": "Dema cannot infer private reserve exposure or Deep Company motives from the route notice alone.", "source_refs": ["deep-mining", "industrial-escalation"]}]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Hessa, Tovan, Orsa, Brin, Dema, the specific interrupted shipment, and every branch outcome are fixture-local draft material, not canonical historical events.",
+      "source_refs": ["the-greathold", "dwarven-industry"]
+    },
+    {
+      "text": "The source establishes political-economic pressure, not secret coordination: the artifact must not resolve the Deep Company failure, reserve-house terms, or ecological attack as one authored conspiracy.",
+      "source_refs": ["deep-mining", "industrial-escalation", "world-without-villain"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which named Hold contains Cistern House Nine and which other districts share its reserve house?",
+      "blocks_training": false,
+      "notes": "The fixture uses the canonically unnamed terraced Hold and a functional reserve-house scope without inventing a Greathold map."
+    },
+    {
+      "question": "Which Deep Company and Forge Consortium issued the supply notice and bundled retrofit?",
+      "blocks_training": false,
+      "notes": "The political mechanism matters here; company names and corporate personalities remain open for a later Ledger or Herald pass."
+    },
+    {
+      "question": "How are claims ranked when several affected infrastructure webs call on the same reserve during one winter?",
+      "blocks_training": false,
+      "notes": "The lore elaboration establishes named mandates and gathered-seal authority but leaves inter-house priority law for a future Tangle pass."
+    }
+  ]
+}

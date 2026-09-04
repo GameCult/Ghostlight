@@ -1,0 +1,84 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "tangle-reserve-house-covenant-v0.bfl-simple-v0",
+  "fixture_id": "tangle-reserve-house-covenant-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Richly textured high-fantasy industrial storybook illustration, precise ink drawing with restrained watercolor, worn brass and dark carved stone, warm amber lamps against cold blue mana light, clear silhouettes, humane facial acting, practical magical machinery, civic paperwork as metal strips and chalk marks, cinematic interactive-fiction framing, unlettered surfaces.",
+  "prompts": [
+    {
+      "id": "01_cistern_autumn_establishing",
+      "prompt": "Two-level underground public pump house beside a warm black sea: dry upper gallery, grated stair to misty intake, three working brass-and-iron pumps, safety rail, arched mana conduit, chain hoist, black public gauge, orderly dwarves with copper water cans."
+    },
+    {
+      "id": "02_covenant_table_routine",
+      "prompt": "Dwarven public-works covenant review beside running pumps: very short deep-brown-skinned woman Master in dark green with stepped-water bronze seal, older factor with lacquer tally case, warm-brown-skinned apprentice with one dark-copper braid at floats, ruddy-tan journeyworker with two-fork auburn beard and wooden gauge, pale-olive clerk in rust-red headscarf at public slate, dented kettle on warm pipe."
+    },
+    {
+      "id": "03_open_compatibility_test",
+      "prompt": "Close pump-parts inspection: dwarf Master presses a worn circular wooden gauge to three heavy feed collars from different makers; journeyworker calls each fit; apprentice records two aligned collars and one narrow mismatch; blue mana glows behind brass rails."
+    },
+    {
+      "id": "04_private_ledger_copy",
+      "prompt": "Stone covenant table close-up: thin blue copy-runes carry worker marks and repair symbols from a thick maintenance book into an older dwarf factor's black lacquer case while a woman Master guards her bronze seal and a young apprentice watches."
+    },
+    {
+      "id": "05_public_entitlement",
+      "prompt": "Public boundary of a carved-stone pump gallery: very short deep-brown-skinned woman Master in dark green places a brass covenant strip on a black slate ledge; pale-olive dwarf clerk in rust-red headscarf chalks large reserve symbols; older factor corrects conditions; householders read behind rows of copper cans."
+    },
+    {
+      "id": "06_supply_notice",
+      "prompt": "Pivotal transfer at a yellow workshop line: pale-olive dwarf clerk in rust-red headscarf offers a black-edged metal route notice to a very short deep-brown-skinned woman Master in dark green; ruddy-tan worker with two-fork auburn beard lowers his gauge; three pumps keep running as the public water mark descends."
+    },
+    {
+      "id": "07_sealed_coffer",
+      "prompt": "Iron crystal coffer on a dry hoist square beside a locked arched mana conduit, lid bearing a plain reserve seal and ornate six-bolt supplier seal, polished feed collar behind wire rack, dwarf Master and factor facing it while workers and clerk hold their established stations."
+    },
+    {
+      "id": "08_compatibility_dispute",
+      "prompt": "Financial and engineering dispute at one stone table: new brass amendment between old covenant and bronze civic seal; dwarf factor's palm on terms; journeyworker's wooden gauge aligns with four holes and misses two on a polished supplier collar; local spares and sealed crystal coffer nearby."
+    },
+    {
+      "id": "09_leverage_choice",
+      "prompt": "Wide underground pump-gallery choice tableau: dwarf woman Master centered with bronze seal between creditor covenant table, workers and local fittings, sealed crystal coffer, public clerk and workshop bells; three pumps run while a visible water gauge falls."
+    },
+    {
+      "id": "10_final_threshold",
+      "prompt": "High-angle complete pump-house decision: three engines, red-to-white water gauge, sealed coffer, arched conduit, wooden fit gauge, local and polished collars, old covenant, new amendment, route notice, tally case, and one civic seal surrounded by factor, workers, clerk, and waiting district."
+    },
+    {
+      "id": "11_old_covenant_honored",
+      "prompt": "Reserve claim honored: plain coffer seal broken while ornate supplier seal stays intact; apprentice and journeyworker carry blue crystal to existing pump feed; clerk marks another repayment ring beside a rising public gauge; Master signs delivery record."
+    },
+    {
+      "id": "12_old_covenant_refused",
+      "prompt": "Reserve claim refused: both coffer seals intact, older dwarf factor's named refusal token on old covenant, woman Master holding civic seal apart, clerk recording at a red water gauge, empty copper cans gathering beyond yellow line."
+    },
+    {
+      "id": "13_bounded_bridge_honored",
+      "prompt": "Seven-day repairable bridge: reserve coffer open, polished supplier collar still sealed, worn local fittings glowing on Pumps One and Three, Engine Two token outside a notched covenant boundary, apprentice and journeyworker starting a daily inspection board."
+    },
+    {
+      "id": "14_bounded_bridge_cost",
+      "prompt": "Unsupported temporary bridge: one local feed collar visibly misaligned, only a small crystal tray released, dwarf apprentice and exhausted journeyworker facing an inspection board crowded with alternating night-shift marks, pumps working unevenly."
+    },
+    {
+      "id": "15_consortium_water",
+      "prompt": "Supplier bundle restores water: both coffer seals broken, blue crystal light feeds three pumps, polished six-bolt parts and repayment rings beside stamped amendment, waiting dwarves lift filled copper vessels while journeyworker hangs obsolete wooden gauge over bench."
+    },
+    {
+      "id": "16_consortium_cost",
+      "prompt": "Late supplier relief: crystal coffer shines open beside a deeply red water gauge, stamped amendment already encircled by repayment rings, empty copper cans moving uphill while blue mana has only begun reaching the pumps."
+    },
+    {
+      "id": "17_district_moot_with_time",
+      "prompt": "Dwarven district moot on broad stone landing: woman Master carries unstamped bronze seal, clerk and apprentice carry separate covenant strips and public gauge, bakery, liftworks, laundry, and clinic Masters arrange seals while amber water margin and reduced pumps preserve time."
+    },
+    {
+      "id": "18_district_moot_under_thirst",
+      "prompt": "Dwarven district moot under thirst: public gauge deep red, two pumps dark behind isolation wedges, sealed coffer visible inside workshop, dense rows of empty copper cans facing gathered civic seals and outward-turned evidence slate."
+    }
+  ]
+}
