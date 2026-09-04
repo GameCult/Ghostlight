@@ -1,0 +1,733 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "tangle-continuity-rider-v0-branch-and-fold-visual",
+  "ink_ref": "examples/ink/aetheria/tangle-continuity-rider-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/tangle-continuity-rider-v0.branch-and-fold.v0.training.json",
+  "scene_id": "tangle-continuity-rider-v0.transfer-wheel-six-galley",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for a 2092 contract dispute among a Horizon freight-habitat crew, Tactical Solutions International, and lunar shipping underwriters.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary galley work, four preparatory choices, the C-12 alarm, management arrival, incident classification, insurer review, and four ending families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the empty-room orientation, inhabited breakfast routine, each ordinary-life branch, the folded serving line, the C-12 alarm and authority entrance, the incident choice, the insurer call, the final evidence threshold, and each ending family. The amber alarm and Yara Dast's appearance each receive a new frame because they change the room's power geometry.",
+    "prompting_rule": "Each base image prompt repeats the visible room geometry, lighting, materials, interfaces, and full appearance of every visible named character or group. Prompt assembly adds the global style cue plus only the visual refs for characters visible in that frame and any triggered state or branch modifiers.",
+    "global_style_cue": "Style: bleak corporate science-fiction editorial illustration, restrained ink lines and matte gouache color, bruised amber and desaturated teal palette, tactile worn metal and cheap polymer, cinematic staging with readable interactive-fiction silhouettes, humane faces, precise institutional absurdity, practical work grime.",
+    "prompt_assembly_rule": "Assemble each image prompt from the global_style_cue, the complete scene base_image_prompt, visual refs only for visible named characters or groups, and triggered state_image_modifiers or global_branch_image_modifiers. Keep visual_continuity_notes in reviewer tooling. Use the draft scene_set camera and staging slots as geometry authority for every angle.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture returns to one galley from several angles and uses sightlines, doors, badge custody, an archive dock, and a hot soup pot as branch-relevant geometry. A draft plan map is included to hold those relations.",
+      "future_scene_set_need": "Before high-consistency website rendering, turn the draft map into a simple 3D blockout with the curved outer-hull floor, forward serving counter, port maintenance door and status panel, aft TSI booth, starboard management vestibule, six tables, roster reader, and fixed camera slots."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "tangle_wheel_six_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide empty-room establishing frame inside a compact freight-habitat galley at Earth–Luna L1. The rectangular room is twelve meters long and eight meters wide, with a subtly curved dark rubberized floor following the rotating wheel's outer hull and a low ribbed metal ceiling. Six bolted rectangular tables occupy the center aisle. A stainless serving counter and soup warmer run along the forward bulkhead. The port bulkhead holds a sealed industrial maintenance door and a wide hull-status panel of teal equipment diagrams. The aft bulkhead contains a two-chair counseling booth behind frosted glass, with a small locked archive dock beside it. The starboard bulkhead contains a clean management vestibule and a waist-high roster badge reader. Amber strip lights, teal screens, patched gray wall panels, stacked cups, ration sleeves, and exposed fasteners make the room practical, worn, and tightly owned.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Local gravity points toward the curved floor. Forward, aft, port, and starboard remain stable plan directions.",
+          "The serving counter, port maintenance door, hull-status panel, aft TSI booth, starboard vestibule, roster reader, table three, and soup pot keep fixed positions."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_breakfast_routine",
+        "ink_anchor": "breakfast_routine",
+        "base_image_prompt": "Medium-wide breakfast frame in the same twelve-by-eight-meter freight galley: curved dark floor, six bolted tables, forward stainless serving counter, port maintenance door and teal hull-status panel, aft frosted two-chair counseling booth, starboard management vestibule and roster reader. Inez Ramires, a baseline human woman in her mid-thirties with medium-brown skin, compact build, short black curls held by a red cloth band, worn orange maintenance coveralls, dark apron, and a brass rota badge, stands behind the soup pot holding a ladle. Sima Ko, a lean baseline human in their early forties with light-brown skin, a shaved black undercut, tired eyes, gray seal-technician coveralls, magnetic work boots, and grease-dark gloves, sits at table three beside a leaking blue cup and a grease-marked paper ledger. Through the frosted booth glass, Dr. Leena Aro, a tall baseline human woman in her forties with dark skin, silver-threaded braids, a cream TSI jacket, slate, breathing cards, and folded towels, prepares two chairs. The C-12 status tile glows green while the paper ledger remains visible in the foreground.",
+        "visible_characters": [
+          {
+            "agent_id": "inez_ramires",
+            "default_stance": "behind the forward serving counter with ladle and rota badge",
+            "visual_ref": "visual_character_refs.characters.inez_ramires"
+          },
+          {
+            "agent_id": "sima_ko",
+            "default_stance": "seated at table three beside leaking cup and ledger",
+            "visual_ref": "visual_character_refs.characters.sima_ko"
+          },
+          {
+            "agent_id": "leena_aro",
+            "default_stance": "inside the aft booth arranging towels and breathing cards",
+            "visual_ref": "visual_character_refs.characters.leena_aro"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_prime_mechanical_evidence",
+        "ink_anchor": "routine_choice.prime_mechanical_evidence",
+        "base_image_prompt": "Close work-table frame inside a worn freight galley with curved dark floor, bolted tables, forward serving counter, port maintenance door and teal status panel, aft frosted counseling booth, and amber strip lights. Inez Ramires, medium-brown skin, short black curls under a red cloth band, orange maintenance coveralls and dark apron, bends over table three writing pressure-loss times into a grease-marked paper menu ledger. Sima Ko, light-brown skin, shaved black undercut, gray seal-technician coveralls and grease-dark gloves, adds a maintenance ticket number. A leaking blue cup, mushroom broth stain, blunt pencil, and the green C-12 tile are all visible in one composition.",
+        "visible_characters": [
+          {
+            "agent_id": "inez_ramires",
+            "default_stance": "leaning over table three and writing",
+            "visual_ref": "visual_character_refs.characters.inez_ramires"
+          },
+          {
+            "agent_id": "sima_ko",
+            "default_stance": "adding a ticket number beside Inez",
+            "visual_ref": "visual_character_refs.characters.sima_ko"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_prime_tsi_relationship",
+        "ink_anchor": "routine_choice.prime_tsi_relationship",
+        "base_image_prompt": "Intimate two-person frame inside the aft counseling booth of a freight galley. Frosted glass panels reveal blurred shapes of six bolted tables, a forward serving counter, the port hull-status panel, and amber strip lights outside. The booth contains two plain padded chairs bolted to the curved floor, a shelf of breathing cards and clean towels, and a locked black archive dock with one amber indicator. Inez Ramires, medium-brown skin, short black curls with a red cloth band, orange maintenance coveralls and brass rota badge, sits holding a warm towel. Dr. Leena Aro, tall, dark-skinned, silver-threaded braids, cream TSI jacket and slim slate, sits opposite with a calm professional posture while both glance toward the archive dock.",
+        "visible_characters": [
+          {
+            "agent_id": "inez_ramires",
+            "default_stance": "seated with warm towel, alert after breathing exercise",
+            "visual_ref": "visual_character_refs.characters.inez_ramires"
+          },
+          {
+            "agent_id": "leena_aro",
+            "default_stance": "seated opposite with slate angled toward archive dock",
+            "visual_ref": "visual_character_refs.characters.leena_aro"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_prime_mutual_cover",
+        "ink_anchor": "routine_choice.prime_mutual_cover",
+        "base_image_prompt": "Medium galley frame with a subtly curved dark floor, six bolted tables, forward stainless serving counter, low rectangular air-return grille, port maintenance door and status panel, aft frosted counseling booth, starboard roster reader, amber strips, and teal screen glow. Inez Ramires, medium-brown skin, short black curls under a red cloth band, orange maintenance coveralls and dark apron, cuts one translucent citrus gel into eight narrow slivers beside bowls of mushroom broth. Sima Ko, light-brown skin, shaved black undercut, gray seal-technician coveralls and grease-dark gloves, kneels at the return grille fitting a pleated white filter patch while one sealed patch packet remains under the counter. Six tired baseline dock workers of varied ages, skin tones, builds, and genders wear patched blue-gray coveralls, magnetic boots, gloves clipped to belts, and numbered work badges as they gather close to the counter.",
+        "visible_characters": [
+          {
+            "agent_id": "inez_ramires",
+            "default_stance": "dividing citrus gel behind serving counter",
+            "visual_ref": "visual_character_refs.characters.inez_ramires"
+          },
+          {
+            "agent_id": "sima_ko",
+            "default_stance": "kneeling at the return grille with one filter patch",
+            "visual_ref": "visual_character_refs.characters.sima_ko"
+          },
+          {
+            "agent_id": "wheel_six_dock_crew",
+            "default_stance": "gathered around the counter with bowls",
+            "visual_ref": "visual_character_refs.groups.wheel_six_dock_crew"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_prime_bond_continuity",
+        "ink_anchor": "routine_choice.prime_bond_continuity",
+        "base_image_prompt": "Medium administrative frame in a worn freight galley with curved dark floor, six bolted tables, forward serving counter, port maintenance door and teal hull-status panel, aft frosted counseling booth, starboard roster reader, amber strip lights, and a green departure schedule rail. Inez Ramires, medium-brown skin, short black curls held by a red cloth band, orange maintenance coveralls, dark apron, and brass rota badge, presses six crew names onto a green loading roster. Sima Ko, light-brown skin, shaved black undercut, gray seal-technician coveralls and grease-dark gloves, stands at table three while broth from a leaking blue cup runs down one sleeve. The bright green schedule and Sima's wet sleeve share the center of the image.",
+        "visible_characters": [
+          {
+            "agent_id": "inez_ramires",
+            "default_stance": "authorizing names at the roster rail",
+            "visual_ref": "visual_character_refs.characters.inez_ramires"
+          },
+          {
+            "agent_id": "sima_ko",
+            "default_stance": "standing with broth leaking down one sleeve",
+            "visual_ref": "visual_character_refs.characters.sima_ko"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_serving_line_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide inhabited view of a twelve-by-eight-meter rotating freight galley: subtly curved dark floor under low centrifugal gravity, six bolted tables, forward steel serving counter and soup pot, port maintenance door beside a wide teal hull-status panel, aft frosted TSI booth, starboard management vestibule and roster badge reader, amber strip lights and patched gray panels. Inez Ramires, medium-brown skin, short black curls with red cloth band, worn orange coveralls and dark apron, serves mushroom broth. Sima Ko, light-brown skin, shaved black undercut and gray seal coveralls, sits at table three by a paper ledger and leaking blue cup. Leena Aro, dark skin, silver-threaded braids and cream TSI jacket, takes appointments in the booth. Six tired baseline dock workers in patched blue-gray coveralls and magnetic boots enter through the port door in pairs, carrying work gloves and meal chits.",
+        "visible_characters": [
+          {
+            "agent_id": "inez_ramires",
+            "default_stance": "serving bowls at the forward counter",
+            "visual_ref": "visual_character_refs.characters.inez_ramires"
+          },
+          {
+            "agent_id": "sima_ko",
+            "default_stance": "at table three beside ledger",
+            "visual_ref": "visual_character_refs.characters.sima_ko"
+          },
+          {
+            "agent_id": "leena_aro",
+            "default_stance": "visible through booth glass taking an appointment",
+            "visual_ref": "visual_character_refs.characters.leena_aro"
+          },
+          {
+            "agent_id": "wheel_six_dock_crew",
+            "default_stance": "entering in pairs and filling tables",
+            "visual_ref": "visual_character_refs.groups.wheel_six_dock_crew"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "evidence_integrity >= 3",
+            "modifier_prompt": "The paper ledger lies open at table three, showing a compact handwritten pressure sequence, ticket number, grease mark, broth stain, and two distinct signatures."
+          },
+          {
+            "trigger": "mutual_cover >= 4",
+            "modifier_prompt": "Workers sit shoulder-to-shoulder around shared bowls; citrus slivers pass between open hands and Sima places one sliver beside the emergency filter sleeve."
+          },
+          {
+            "trigger": "mutual_cover <= 1",
+            "modifier_prompt": "Workers occupy separated tables with empty seats between groups; Inez stands alone at the bright green roster display."
+          },
+          {
+            "trigger": "crew_fatigue >= 3",
+            "modifier_prompt": "One dropped spoon hangs mid-bounce on the curved floor while three exhausted workers flinch and grip table edges."
+          },
+          {
+            "trigger": "bond_status >= 3",
+            "modifier_prompt": "The departure schedule rail glows a confident saturated green above the roster reader."
+          },
+          {
+            "trigger": "filter_reserve <= 1",
+            "modifier_prompt": "A single sealed emergency filter-patch packet rests under the serving counter beside an almost empty ration sleeve."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_pressure_arrival",
+        "ink_anchor": "pressure_arrival",
+        "base_image_prompt": "Wide confrontation frame inside the same mapped freight galley: curved dark floor, six bolted tables, forward serving counter with mushroom soup pot, port maintenance door now sealed beneath an amber indicator, wide hull-status panel flashing BAY C-12 LOAD DEVIATION, aft frosted TSI booth and black archive dock, starboard management vestibule and roster reader. Inez Ramires, medium-brown skin, short black curls with red cloth band, orange coveralls and dark apron, stands behind the soup pot. Sima Ko, light-brown skin, shaved black undercut and gray seal coveralls, sits at table three by the ledger. Leena Aro, dark skin, silver-threaded braids, cream TSI jacket and slate, has stepped out of the booth. Oren Vey, a pale baseline human man in his early fifties with close-cropped ash hair, narrow face, immaculate navy Horizon uniform and silver collar tabs, enters from the starboard vestibule carrying an incident form. Two baseline security contractors in matte-gray pressure vests, dark utility trousers, soft helmets clipped to belts, and gloved hands stand behind him. Six tired baseline dock workers in patched blue-gray coveralls and magnetic boots remain around the central tables with half-filled bowls and numbered badges. Amber light divides the breakfast room.",
+        "visible_characters": [
+          {
+            "agent_id": "inez_ramires",
+            "default_stance": "behind soup pot facing the entry",
+            "visual_ref": "visual_character_refs.characters.inez_ramires"
+          },
+          {
+            "agent_id": "sima_ko",
+            "default_stance": "seated at table three beside ledger",
+            "visual_ref": "visual_character_refs.characters.sima_ko"
+          },
+          {
+            "agent_id": "leena_aro",
+            "default_stance": "outside booth with TSI slate",
+            "visual_ref": "visual_character_refs.characters.leena_aro"
+          },
+          {
+            "agent_id": "oren_vey",
+            "default_stance": "entering from starboard vestibule with incident form",
+            "visual_ref": "visual_character_refs.characters.oren_vey"
+          },
+          {
+            "agent_id": "horizon_security_contractors",
+            "default_stance": "two people behind Vey at the vestibule threshold",
+            "visual_ref": "visual_character_refs.groups.horizon_security_contractors"
+          },
+          {
+            "agent_id": "wheel_six_dock_crew",
+            "default_stance": "around the central tables with unfinished bowls",
+            "visual_ref": "visual_character_refs.groups.wheel_six_dock_crew"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_incident_choice",
+        "ink_anchor": "incident_choice",
+        "base_image_prompt": "Medium-wide decision frame in a twelve-by-eight-meter freight galley under amber alarm strips: curved floor, central bolted tables, forward soup counter, sealed port maintenance door and C-12 status panel, aft frosted counseling booth with locked archive dock, starboard vestibule and roster reader. Inez Ramires, medium-brown skin, short black curls with red cloth band, orange coveralls and apron, stands between the soup pot and table three with one hand near the paper ledger and the other near six crew badges at the roster reader. Sima Ko, light-brown skin, shaved black undercut and gray seal coveralls, keeps one grease-dark glove on the ledger. Leena Aro, dark skin, silver-threaded braids and cream TSI jacket, holds a slate showing a geometric contract page. Oren Vey, pale, ash-haired and immaculate in navy Horizon uniform, places an incident form by the soup pot. Two matte-gray security contractors wait at the starboard threshold. Six tired baseline dock workers in patched blue-gray coveralls and magnetic boots sit or stand behind Inez around the central tables.",
+        "visible_characters": [
+          {
+            "agent_id": "inez_ramires",
+            "default_stance": "between ledger, soup pot, and roster reader",
+            "visual_ref": "visual_character_refs.characters.inez_ramires"
+          },
+          {
+            "agent_id": "sima_ko",
+            "default_stance": "hand on ledger at table three",
+            "visual_ref": "visual_character_refs.characters.sima_ko"
+          },
+          {
+            "agent_id": "leena_aro",
+            "default_stance": "holding TSI slate near booth",
+            "visual_ref": "visual_character_refs.characters.leena_aro"
+          },
+          {
+            "agent_id": "oren_vey",
+            "default_stance": "beside soup pot and incident form",
+            "visual_ref": "visual_character_refs.characters.oren_vey"
+          },
+          {
+            "agent_id": "horizon_security_contractors",
+            "default_stance": "waiting at starboard threshold",
+            "visual_ref": "visual_character_refs.groups.horizon_security_contractors"
+          },
+          {
+            "agent_id": "wheel_six_dock_crew",
+            "default_stance": "behind Inez around the central tables",
+            "visual_ref": "visual_character_refs.groups.wheel_six_dock_crew"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_insurer_fold",
+        "ink_anchor": "insurer_fold",
+        "base_image_prompt": "Wide evidence-arbitration frame in the mapped freight galley: curved dark floor, six bolted tables, forward serving counter and steaming soup pot, sealed port maintenance door, aft frosted TSI booth and locked archive dock, starboard management vestibule and roster reader, amber strips and gray patched walls. The wide hull-status panel is split between an amber C-12 pressure trace and a live video portrait of Yara Dast, a baseline human woman in her late forties with deep-brown skin, shaved head, rectangular copper spectacles, charcoal underwriting jacket, and a severe composed expression against a pale lunar office. Inez Ramires in orange coveralls stands by the pot and badges; Sima Ko in gray seal coveralls points toward the ledger; Leena Aro in a cream TSI jacket holds her slate; Oren Vey in immaculate navy uniform stands near the starboard vestibule. Six tired baseline dock workers in patched blue-gray coveralls and magnetic boots occupy the central tables behind Inez. The screen, paper ledger, archive slate, badges, and incident form form five competing records around the room.",
+        "visible_characters": [
+          {
+            "agent_id": "inez_ramires",
+            "default_stance": "beside soup pot and badges",
+            "visual_ref": "visual_character_refs.characters.inez_ramires"
+          },
+          {
+            "agent_id": "sima_ko",
+            "default_stance": "pointing toward ledger at table three",
+            "visual_ref": "visual_character_refs.characters.sima_ko"
+          },
+          {
+            "agent_id": "leena_aro",
+            "default_stance": "holding TSI slate near archive booth",
+            "visual_ref": "visual_character_refs.characters.leena_aro"
+          },
+          {
+            "agent_id": "oren_vey",
+            "default_stance": "near starboard vestibule and roster reader",
+            "visual_ref": "visual_character_refs.characters.oren_vey"
+          },
+          {
+            "agent_id": "yara_dast",
+            "default_stance": "visible as live video portrait on hull-status panel",
+            "visual_ref": "visual_character_refs.characters.yara_dast"
+          },
+          {
+            "agent_id": "wheel_six_dock_crew",
+            "default_stance": "at the central tables behind Inez",
+            "visual_ref": "visual_character_refs.groups.wheel_six_dock_crew"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "horizon_pressure >= 4",
+            "modifier_prompt": "Vey places his body between the starboard vestibule and roster reader, one palm held into the vestibule as he protects the cheaper version of events."
+          },
+          {
+            "trigger": "bond_status <= 0",
+            "modifier_prompt": "The departure rail and roster reader glow red; workers at the central tables look toward the single filter sleeve under the counter."
+          },
+          {
+            "trigger": "bond_status >= 3",
+            "modifier_prompt": "The departure rail remains bright green while Vey gestures toward it as material proof of continuity."
+          },
+          {
+            "trigger": "archive_access >= 2",
+            "modifier_prompt": "Aro's slate displays a large amber claim-review seal linked by a cable icon to the locked black archive dock."
+          },
+          {
+            "trigger": "privacy_cost >= 1",
+            "modifier_prompt": "Inez's portrait thumbnail and session timestamp appear on Aro's slate beneath the claim-review seal."
+          },
+          {
+            "trigger": "work_stoppage >= 2",
+            "modifier_prompt": "Six numbered crew badges sit beneath the metal soup pot; steam curls around their edges while the roster reader glows amber."
+          },
+          {
+            "trigger": "seal_risk >= 3",
+            "modifier_prompt": "The C-12 pressure graph drops sharply in a bright amber stair-step while every visible face turns toward it."
+          },
+          {
+            "trigger": "rider_entrenched >= 1",
+            "modifier_prompt": "The incident form shows a narrow handwritten amendment and two signatures beside a green renewal icon."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_final_threshold",
+        "ink_anchor": "final_choice",
+        "base_image_prompt": "Centered final-choice tableau inside the same twelve-by-eight-meter freight galley: curved dark floor and central bolted tables; forward soup counter with hot metal pot; port maintenance door and split C-12 pressure screen; aft frosted TSI booth with locked archive dock; starboard management vestibule and roster reader; amber alarm lighting. Inez Ramires, medium-brown skin, short black curls with red cloth band, orange coveralls, apron and rota badge, stands at table three between the open paper ledger, Aro's archive slate, Vey's incident form, six crew badges, and the filter-patch sleeve. Sima Ko, light-brown skin, shaved black undercut, gray seal coveralls and grease-dark gloves, stands beside the ledger. Leena Aro, dark skin, silver-threaded braids and cream TSI jacket, waits by the booth. Oren Vey, pale and ash-haired in immaculate navy uniform, waits by the vestibule. Yara Dast, deep-brown skin, shaved head, copper spectacles and charcoal jacket, watches from the split wall screen. Six tired baseline dock workers in patched blue-gray coveralls and magnetic boots wait around the central tables behind Inez. Every route to a decision is a visible object.",
+        "visible_characters": [
+          {
+            "agent_id": "inez_ramires",
+            "default_stance": "centered between the five evidence and resource objects",
+            "visual_ref": "visual_character_refs.characters.inez_ramires"
+          },
+          {
+            "agent_id": "sima_ko",
+            "default_stance": "beside ledger",
+            "visual_ref": "visual_character_refs.characters.sima_ko"
+          },
+          {
+            "agent_id": "leena_aro",
+            "default_stance": "beside booth and archive dock",
+            "visual_ref": "visual_character_refs.characters.leena_aro"
+          },
+          {
+            "agent_id": "oren_vey",
+            "default_stance": "beside starboard vestibule",
+            "visual_ref": "visual_character_refs.characters.oren_vey"
+          },
+          {
+            "agent_id": "yara_dast",
+            "default_stance": "watching from split wall screen",
+            "visual_ref": "visual_character_refs.characters.yara_dast"
+          },
+          {
+            "agent_id": "wheel_six_dock_crew",
+            "default_stance": "waiting around the central tables behind Inez",
+            "visual_ref": "visual_character_refs.groups.wheel_six_dock_crew"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_ending_mechanical",
+        "ink_anchor": "ending_mechanical_review|ending_mechanical_exposure",
+        "base_image_prompt": "Mechanical-evidence aftermath in seal bay C-12 beyond the port maintenance door. A compact cylindrical docking collar and its bolted retaining-ring access cover fill the center under hard white work lights; pressure hoses, paired manual gauges, tool trays, and ribbed gray bulkheads surround the seal. Inez Ramires, medium-brown skin, short black curls under a red cloth band, orange maintenance coveralls and brass rota badge, holds the photographed galley ledger. Sima Ko, light-brown skin, shaved black undercut, gray seal-technician coveralls, magnetic boots and grease-dark gloves, crouches at the access cover with a torque tool. A portable screen shows Yara Dast, deep-brown skin, shaved head and copper spectacles, observing the inspection. The evidence chain and physical inspection occupy the same frame while the ending modifier supplies the opened or sealed state.",
+        "visible_characters": [
+          {
+            "agent_id": "inez_ramires",
+            "default_stance": "standing with photographed ledger",
+            "visual_ref": "visual_character_refs.characters.inez_ramires"
+          },
+          {
+            "agent_id": "sima_ko",
+            "default_stance": "crouched at the retaining ring with torque tool",
+            "visual_ref": "visual_character_refs.characters.sima_ko"
+          },
+          {
+            "agent_id": "yara_dast",
+            "default_stance": "visible on portable inspection screen",
+            "visual_ref": "visual_character_refs.characters.yara_dast"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_ending_archive",
+        "ink_anchor": "ending_bounded_archive|ending_archive_capture",
+        "base_image_prompt": "Archive-custody aftermath in the freight galley's aft counseling booth. The booth has frosted glass, two bolted chairs, breathing cards, folded warm towels, and a locked black archive dock with two dark key sockets and a blank waveform display. Inez Ramires, medium-brown skin, short black curls with red cloth band and orange coveralls, sits beside the display. Sima Ko, light-brown skin, shaved black undercut and gray seal coveralls, holds one physical key token near a socket. Leena Aro, dark skin, silver-threaded braids and cream TSI jacket, holds the other key token near the archive dock. Through the frosted glass, Oren Vey's pale face and immaculate navy collar appear as a blurred waiting silhouette. The ending modifier supplies the bounded or expanded archive state.",
+        "visible_characters": [
+          {
+            "agent_id": "inez_ramires",
+            "default_stance": "seated beside the bounded waveform display",
+            "visual_ref": "visual_character_refs.characters.inez_ramires"
+          },
+          {
+            "agent_id": "sima_ko",
+            "default_stance": "holding one key token",
+            "visual_ref": "visual_character_refs.characters.sima_ko"
+          },
+          {
+            "agent_id": "leena_aro",
+            "default_stance": "holding the other key token at archive dock",
+            "visual_ref": "visual_character_refs.characters.leena_aro"
+          },
+          {
+            "agent_id": "oren_vey",
+            "default_stance": "blurred through frosted glass",
+            "visual_ref": "visual_character_refs.characters.oren_vey"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_ending_supply",
+        "ink_anchor": "ending_supply_preserved|ending_supply_mislabeled",
+        "base_image_prompt": "Supply-continuity aftermath in the same mapped freight galley: curved dark floor, six bolted tables, forward steel serving counter with a clear cargo staging strip beside it, port maintenance door and hull-status panel, aft frosted TSI booth and archive dock, starboard management vestibule and roster reader. Inez Ramires, medium-brown skin, short black curls with red cloth band, worn orange coveralls and dark apron, holds an amended incident form. Oren Vey, pale, close-cropped ash hair, immaculate navy Horizon uniform and silver collar tabs, stands beside the departure and renewal display. Leena Aro, dark skin, silver-threaded braids and cream TSI jacket, stands at the booth with fresh breathing cards. The ending modifier supplies arrived cargo or failed approach state.",
+        "visible_characters": [
+          {
+            "agent_id": "inez_ramires",
+            "default_stance": "signing amended incident form",
+            "visual_ref": "visual_character_refs.characters.inez_ramires"
+          },
+          {
+            "agent_id": "oren_vey",
+            "default_stance": "beside green renewal display",
+            "visual_ref": "visual_character_refs.characters.oren_vey"
+          },
+          {
+            "agent_id": "leena_aro",
+            "default_stance": "opening booth with breathing cards",
+            "visual_ref": "visual_character_refs.characters.leena_aro"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_ending_mutual",
+        "ink_anchor": "ending_mutual_interval|ending_refusal_fracture",
+        "base_image_prompt": "Local-refusal aftermath in the same freight galley under amber-red roster light: curved dark floor, six bolted tables, forward serving counter and cold soup pot, sealed port maintenance door and amber C-12 panel, aft frosted TSI booth, starboard vestibule and roster reader with six blank individual status tiles. Inez Ramires, medium-brown skin, short black curls under a red cloth band, orange coveralls and dark apron, stands at table three beside the tiles. Sima Ko, light-brown skin, shaved black undercut, gray seal coveralls and grease-dark gloves, holds the paper ledger above one filter-patch packet. Six baseline dock workers of varied ages, skin tones, builds and genders wear patched blue-gray coveralls and magnetic boots as they sit with cold broth, pencils, and ledger paper. The ending modifier supplies collective or fractured posture and roster colors.",
+        "visible_characters": [
+          {
+            "agent_id": "inez_ramires",
+            "default_stance": "standing by individual refusal tiles",
+            "visual_ref": "visual_character_refs.characters.inez_ramires"
+          },
+          {
+            "agent_id": "sima_ko",
+            "default_stance": "closing ledger over filter packet",
+            "visual_ref": "visual_character_refs.characters.sima_ko"
+          },
+          {
+            "agent_id": "wheel_six_dock_crew",
+            "default_stance": "seated around cold broth and copied records",
+            "visual_ref": "visual_character_refs.groups.wheel_six_dock_crew"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "contest_with_repair_record_visual",
+        "trigger": "branch_label == contest_with_repair_record",
+        "apply_to_visual_scene_ids": [
+          "tangle_incident_choice",
+          "tangle_insurer_fold",
+          "tangle_final_threshold"
+        ],
+        "modifier_prompt": "Place the open grease-marked galley ledger beside Vey's clean incident form; Sima keeps one glove on the ledger while Inez angles the page toward the C-12 panel."
+      },
+      {
+        "modifier_id": "invoke_tsi_custody_visual",
+        "trigger": "branch_label == invoke_tsi_custody",
+        "apply_to_visual_scene_ids": [
+          "tangle_incident_choice",
+          "tangle_insurer_fold",
+          "tangle_final_threshold"
+        ],
+        "modifier_prompt": "Aro turns her cream-jacketed body between Vey and the booth; her slate shows an amber claim-review seal and Inez's session thumbnail."
+      },
+      {
+        "modifier_id": "create_unverified_interval_visual",
+        "trigger": "branch_label == create_unverified_interval",
+        "apply_to_visual_scene_ids": [
+          "tangle_incident_choice",
+          "tangle_insurer_fold",
+          "tangle_final_threshold"
+        ],
+        "modifier_prompt": "Six numbered crew badges sit beneath the hot steel soup pot while the roster reader changes from green to amber."
+      },
+      {
+        "modifier_id": "preserve_bond_narrowly_visual",
+        "trigger": "branch_label == preserve_bond_narrowly",
+        "apply_to_visual_scene_ids": [
+          "tangle_incident_choice",
+          "tangle_insurer_fold",
+          "tangle_final_threshold"
+        ],
+        "modifier_prompt": "The incident form carries a heavy strike-through, a handwritten mechanical-cause amendment, and Inez's and Aro's initials beside a green bond icon."
+      },
+      {
+        "modifier_id": "mechanical_review_success_visual",
+        "trigger": "ending_label == mechanical_review_won",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_mechanical"
+        ],
+        "modifier_prompt": "The access cover lies on the tool tray, exposing a visibly warped and discolored retaining ring; the portable insurer screen shows a green six-hour bond extension while Inez's photographed ledger displays two signatures."
+      },
+      {
+        "modifier_id": "mechanical_review_cost_visual",
+        "trigger": "ending_label == mechanical_claim_insufficient",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_mechanical"
+        ],
+        "modifier_prompt": "The retaining-ring access cover stays bolted shut behind a red hold marker; a security evidence sleeve contains the galley ledger while the resupply schedule on the portable screen glows red."
+      },
+      {
+        "modifier_id": "bounded_archive_success_visual",
+        "trigger": "ending_label == bounded_data_custody_won",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_archive"
+        ],
+        "modifier_prompt": "Both key tokens enter their sockets and glow green at the same time; the display shows one compact ninety-second segment bounded by hard amber endpoints."
+      },
+      {
+        "modifier_id": "archive_capture_cost_visual",
+        "trigger": "ending_label == archive_boundary_failed",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_archive"
+        ],
+        "modifier_prompt": "Both key tokens remain in the workers' hands while a long waveform spills beyond the requested ninety-second bracket across several private session thumbnails; Vey's silhouette behind the frosted glass holds an active request slate."
+      },
+      {
+        "modifier_id": "insured_supply_success_visual",
+        "trigger": "ending_label == insured_continuity_preserved",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_supply"
+        ],
+        "modifier_prompt": "White filter-mesh cases, food canisters, and replacement valve crates fill the cargo staging strip under green departure lights; the renewal display links Inez's amended finding to a larger TSI service contract."
+      },
+      {
+        "modifier_id": "insured_supply_cost_visual",
+        "trigger": "ending_label == continuity_claim_too_late",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_supply"
+        ],
+        "modifier_prompt": "The cargo staging strip remains empty; the display shows either a red suspended bond or a green bond beside an aborted approach marker and collapsing C-12 trace, while the booth screen fills with mandatory appointments and the incident form remains classified as collective fatigue."
+      },
+      {
+        "modifier_id": "mutual_interval_success_visual",
+        "trigger": "ending_label == local_mutual_refusal_holds",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_mutual"
+        ],
+        "modifier_prompt": "Six separate refusal tiles glow red in a row; workers pair off over three copied ledger pages while Sima opens the filter packet beside the cold soup."
+      },
+      {
+        "modifier_id": "mutual_refusal_cost_visual",
+        "trigger": "ending_label == local_refusal_fractures",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_mutual"
+        ],
+        "modifier_prompt": "Two red refusal tiles face four green return-to-work tiles; workers sit in separated groups with the closed ledger and empty filter sleeve between them."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "transfer_wheel_six_galley.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Rectangular twelve-meter fore-aft by eight-meter port-starboard galley on a rotating wheel. Centrifugal gravity points toward the subtly curved outer-hull floor. The forward bulkhead holds the serving counter; the aft bulkhead holds the TSI booth; the port bulkhead holds maintenance access and the status panel; the starboard bulkhead holds management access and the roster reader.",
+      "fixed_zones": [
+        {
+          "zone_id": "forward_serving_counter",
+          "visible_form": "stainless counter, soup warmer, steel pot, stacked cups, ration sleeves, low air-return grille, and a shelf holding emergency filter patches",
+          "used_for": "ordinary meal work, soup-pot badge custody, food and filter reserve"
+        },
+        {
+          "zone_id": "central_tables",
+          "visible_form": "six bolted rectangular tables in two rows with a clear center aisle; table three is port-aft of center",
+          "used_for": "crew routine, galley ledger, shared meals, refusal assembly"
+        },
+        {
+          "zone_id": "port_maintenance_access",
+          "visible_form": "sealed industrial door in the port bulkhead with amber-green latch light and a corridor to seal bay C-12",
+          "used_for": "worker entry, security pressure, route to the mechanical ending"
+        },
+        {
+          "zone_id": "port_hull_status_panel",
+          "visible_form": "wide wall panel immediately forward of the maintenance door, capable of splitting between C-12 traces and a live underwriting call",
+          "used_for": "official evidence, Yara Dast's remote presence, bond and seal state"
+        },
+        {
+          "zone_id": "aft_tsi_booth",
+          "visible_form": "two-chair frosted-glass counseling booth with breathing cards, towels, slate shelf, and locked black archive dock",
+          "used_for": "care routine, archive custody, bounded data release"
+        },
+        {
+          "zone_id": "starboard_management_vestibule",
+          "visible_form": "clean sealed vestibule in the starboard bulkhead opposite the maintenance door",
+          "used_for": "Vey and security entrance, role-separated access"
+        },
+        {
+          "zone_id": "starboard_roster_reader",
+          "visible_form": "waist-high badge reader beside the management vestibule with green, amber, and red status strips",
+          "used_for": "rota authorization, badge removal, individual refusals"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_forward_to_aft",
+          "supports_visual_scene_ids": [
+            "tangle_wheel_six_establishing",
+            "tangle_serving_line_fold",
+            "tangle_pressure_arrival",
+            "tangle_ending_supply",
+            "tangle_ending_mutual"
+          ]
+        },
+        {
+          "camera_id": "table_three_close",
+          "supports_visual_scene_ids": [
+            "tangle_breakfast_routine",
+            "tangle_prime_mechanical_evidence",
+            "tangle_final_threshold"
+          ]
+        },
+        {
+          "camera_id": "aft_booth_interior",
+          "supports_visual_scene_ids": [
+            "tangle_prime_tsi_relationship",
+            "tangle_ending_archive"
+          ]
+        },
+        {
+          "camera_id": "forward_counter_oblique",
+          "supports_visual_scene_ids": [
+            "tangle_prime_mutual_cover",
+            "tangle_prime_bond_continuity",
+            "tangle_incident_choice"
+          ]
+        },
+        {
+          "camera_id": "port_panel_centerline",
+          "supports_visual_scene_ids": [
+            "tangle_insurer_fold"
+          ]
+        },
+        {
+          "camera_id": "c12_inspection_close",
+          "supports_visual_scene_ids": [
+            "tangle_ending_mechanical"
+          ]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "table_three_to_status_panel",
+          "path": "table_three -> clear center aisle -> port_hull_status_panel",
+          "supports": [
+            "prime_mechanical_evidence",
+            "contest_with_repair_record",
+            "prioritize_mechanical_truth"
+          ]
+        },
+        {
+          "lane_id": "booth_to_management_entry",
+          "path": "aft_tsi_booth transparent door -> central aisle -> starboard_management_vestibule",
+          "supports": [
+            "invoke_tsi_custody",
+            "prioritize_bounded_data"
+          ]
+        },
+        {
+          "lane_id": "counter_to_roster_reader",
+          "path": "forward_serving_counter -> starboard aisle -> starboard_roster_reader",
+          "supports": [
+            "create_unverified_interval",
+            "prioritize_local_mutual_refusal"
+          ]
+        }
+      ],
+      "occluders": [
+        {
+          "occluder_id": "frosted_booth_glass",
+          "effect": "Shows silhouettes and posture but hides slate details from the galley unless the booth door is open."
+        },
+        {
+          "occluder_id": "soup_pot",
+          "effect": "Conceals crew badges from a standing observer at the starboard vestibule until they approach the forward counter."
+        }
+      ],
+      "route_states": [
+        {
+          "route_id": "port_maintenance_door",
+          "baseline_state": "open_for_shift_entry",
+          "pressure_state": "sealed_on_c12_alarm",
+          "ending_state": "opened_only_for_witnessed_inspection_or_authorized_restart"
+        },
+        {
+          "route_id": "starboard_management_vestibule",
+          "baseline_state": "closed",
+          "pressure_state": "opens_for_vey_and_security",
+          "ending_state": "remains management-controlled"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for characters visible in a scene.",
+    "characters": {
+      "inez_ramires": "Inez Ramires: baseline human woman in her mid-thirties, medium-brown skin, compact practical build, short black curls held by a red cloth headband, worn orange maintenance coveralls under a dark galley apron, magnetic work boots, brass rota-delegate badge, expressive tired eyes, hands usually carrying a ladle, pencil, badge, or record. Stable silhouette: red headband, orange coveralls, dark apron.",
+      "sima_ko": "Sima Ko: lean baseline human in their early forties, light-brown skin, shaved black undercut, tired narrow eyes, gray seal-technician coveralls with darker reinforced knees, magnetic work boots, grease-dark gloves, small torque tool at the belt. Stable silhouette: shaved undercut, gray coveralls, dark gloves.",
+      "leena_aro": "Dr. Leena Aro: tall baseline human woman in her forties, dark skin, long braids threaded with silver, cream Tactical Solutions jacket over charcoal work clothes, slim slate, calm grounded stance, careful hands often holding a towel or key token. Stable silhouette: silver-threaded braids and cream jacket.",
+      "oren_vey": "Oren Vey: baseline human man in his early fifties, pale skin, close-cropped ash hair, narrow clean-shaven face, immaculate navy Horizon uniform with silver collar tabs, polished magnetic boots, rigid economical posture. Stable silhouette: sharp navy uniform and silver collar.",
+      "yara_dast": "Yara Dast: baseline human woman in her late forties, deep-brown skin, shaved head, rectangular copper spectacles, charcoal underwriting jacket with narrow gray piping, still unsmiling posture, usually visible on a wall or portable video screen. Stable silhouette: shaved head, copper spectacles, charcoal jacket."
+    },
+    "groups": {
+      "wheel_six_dock_crew": "Wheel Six dock crew: six baseline human adults of varied ages, skin tones, builds, and genders in patched blue-gray maintenance coveralls, magnetic boots, gloves clipped to belts, numbered work badges, visible fatigue in bent posture and careful grip; they cluster or separate according to mutual_cover state.",
+      "horizon_security_contractors": "Horizon security contractors: two baseline human adults in matte-gray pressure vests over dark utility trousers, soft helmets clipped to belts, heavy magnetic boots, gloved hands, compact restraint kits on their waists, disciplined paired posture at the starboard vestibule."
+    }
+  },
+  "review_notes": [
+    "Visual continuity self-review accepted this plan after restoring the dock crew to shared frames, making the return-grille filter cost visible, and neutralizing grouped ending bases so success and cost modifiers remain additive.",
+    "The included scene_set map is geometry authority for draft replay; a real blockout remains necessary for high-consistency production art.",
+    "All base prompts use affirmative visible geometry, repeat the visible room or ending location as standalone frames, and include refs only for characters shown in that frame."
+  ]
+}

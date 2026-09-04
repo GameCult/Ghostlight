@@ -1,0 +1,72 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "tangle-continuity-rider-v0.bfl-simple-v0",
+  "fixture_id": "tangle-continuity-rider-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Bleak corporate science-fiction editorial illustration, restrained ink lines, matte gouache color, bruised amber and desaturated teal palette, tactile worn metal, humane faces, readable silhouettes, practical work grime, symbol-only interfaces.",
+  "prompts": [
+    {
+      "id": "01_wheel_six_establishing",
+      "prompt": "Wide freight-habitat galley on a subtly curved floor: six bolted tables, forward soup counter, port maintenance door and hull-status panel, aft frosted counseling booth, starboard management vestibule and roster reader."
+    },
+    {
+      "id": "02_breakfast_routine",
+      "prompt": "Maintenance delegate in orange coveralls serves mushroom broth while a gray-suited seal technician guards a grease-marked ledger and a cream-jacketed assessor arranges towels behind frosted glass."
+    },
+    {
+      "id": "03_mechanical_evidence",
+      "prompt": "Two tired workers write a C-12 pressure sequence and ticket number into a stained galley menu ledger beside a leaking blue cup and falsely green status panel."
+    },
+    {
+      "id": "04_tsi_relationship",
+      "prompt": "Inside a two-chair counseling booth, an orange-suited worker holds a warm towel opposite a silver-braided assessor; both watch a locked black session-archive dock."
+    },
+    {
+      "id": "05_mutual_cover",
+      "prompt": "A seal technician fits an emergency filter patch over a whining galley return grille while a worker cuts one citrus gel into eight slivers for the exhausted dock crew."
+    },
+    {
+      "id": "06_bond_continuity",
+      "prompt": "A rota delegate authorizes six names on a green loading schedule while broth from a leaking cup runs down the seal technician's sleeve."
+    },
+    {
+      "id": "07_serving_line",
+      "prompt": "Ordinary breakfast fills the curved galley: patched coveralls, meal chits, soup bowls, a menu ledger, frosted care booth, green C-12 panel, and the last filter packet under the counter."
+    },
+    {
+      "id": "08_pressure_arrival",
+      "prompt": "Amber C-12 alarm divides the galley as an immaculate navy-uniform manager and two gray security contractors enter from a separate vestibule carrying an incident form."
+    },
+    {
+      "id": "09_incident_choice",
+      "prompt": "The orange-suited delegate stands between five levers: worker ledger, hot soup pot, six clearance badges, contractor archive slate, and management incident form."
+    },
+    {
+      "id": "10_underwriter_call",
+      "prompt": "Split wall screen shows an amber seal trace and a severe lunar underwriter while worker, assessor, and manager point to competing records around the galley."
+    },
+    {
+      "id": "11_final_threshold",
+      "prompt": "Centered political still life: paper repair ledger, locked care archive, incident form, crew badges beneath a soup pot, filter packet, and a red-green convoy bond surrounding one worker delegate."
+    },
+    {
+      "id": "12_mechanical_ending",
+      "prompt": "Hard-lit docking collar inspection reveals a heat-warped retaining ring while two workers hold their stained repair record under a remote underwriter's witness screen."
+    },
+    {
+      "id": "13_archive_ending",
+      "prompt": "Two key tokens meet at a locked counseling archive while a bounded ninety-second waveform glows and a manager waits as a blurred silhouette beyond frosted glass."
+    },
+    {
+      "id": "14_supply_ending",
+      "prompt": "Filter mesh, food canisters, and replacement valves arrive under green departure lights while a signed fatigue finding feeds a larger contractor renewal display."
+    },
+    {
+      "id": "15_mutual_ending",
+      "prompt": "Six exhausted workers eat cold broth under red roster light, copy a grease-marked ledger three times, and open one emergency filter packet beside six individual refusal tiles."
+    }
+  ]
+}

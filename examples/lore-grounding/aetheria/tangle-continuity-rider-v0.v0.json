@@ -1,0 +1,699 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.tangle-continuity-rider-v0",
+  "source_status": "draft",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "tactical-solutions-international",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Defunct/Tactical Solutions International.md",
+      "title": "Tactical Solutions International",
+      "line_start": 1,
+      "line_end": 19,
+      "relevance": "Primary owning note and authored elaboration: TSI's security-to-alignment transition, the Continuity Assurance Rider, Transfer Wheel Six, insurer dependence, archive custody, worker counter-evidence, and the 2091 convoy-failure context."
+    },
+    {
+      "source_id": "framgang",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Framgång.md",
+      "title": "Framgång",
+      "line_start": 1,
+      "line_end": 33,
+      "relevance": "Grounds TSI as Framgång's predecessor and establishes the durable combination of real care, behavioral assessment, employer use, insurer incentives, and renewable dependence."
+    },
+    {
+      "source_id": "horizon-ventures",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Defunct/Horizon Ventures.md",
+      "title": "Horizon Ventures",
+      "line_start": 1,
+      "line_end": 5,
+      "relevance": "Grounds Horizon's transport, fuel, habitat-provisioning, worker-debt, and creditor pressure after the 2091 convoy failures."
+    },
+    {
+      "source_id": "corporate-exodus",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Corporate Exodus.md",
+      "title": "Corporate Exodus",
+      "line_start": 1,
+      "line_end": 23,
+      "relevance": "Grounds the 2092 era, private life-support sovereignty, employer-managed settlement life, interface data markets, and Framgång's monetization of anxiety."
+    },
+    {
+      "source_id": "colonizing-sol",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Colonizing Sol.md",
+      "title": "Colonizing Sol",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds off-world settlements as debt-bound employment environments and regulators as dependent on the same firms they nominally constrain."
+    },
+    {
+      "source_id": "territories",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+      "title": "Territories",
+      "line_start": 1,
+      "line_end": 7,
+      "relevance": "Grounds early off-world territory as overlapping life-support, dock, lease, security, supply, and insurance authority."
+    },
+    {
+      "source_id": "aetheria-index",
+      "path": "Aetheria/index.md",
+      "title": "Aetheria",
+      "line_start": 1,
+      "line_end": 117,
+      "relevance": "Grounds the setting pressure of institutional mutual dependence and the counter-pressure of material care, truthful records, and shared refusal."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Corporate Exodus, 2092, after Horizon Ventures' 2091 convoy failures and before its 2095 merger into SolEx.",
+    "location": "The crew galley on Transfer Wheel Six, an Earth–Luna L1 Horizon freight habitat with a port maintenance corridor, a management vestibule, a hull-status panel, and a TSI resilience booth.",
+    "summary": "A bad docking seal is being classified as collective fatigue because Horizon needs TSI's continuity finding to preserve insurer confidence and a bonded resupply departure. The maintenance crew can counter only through witnessed repair records, carefully bounded use of TSI's archive, or a costly local refusal supported by food and filter reserves.",
+    "public_facts": [
+      {
+        "text": "Horizon joined transport, fuel refining, debt contracts, and habitat provisioning, then came under shipping-insurer and lunar-creditor pressure after the 2091 convoy failures.",
+        "source_refs": [
+          "horizon-ventures",
+          "corporate-exodus"
+        ]
+      },
+      {
+        "text": "TSI sold security and behavioral stability to executives and employers before turning those services into Framgång's alignment market.",
+        "source_refs": [
+          "tactical-solutions-international",
+          "framgang"
+        ]
+      },
+      {
+        "text": "The Continuity Assurance Rider gives Horizon an insurance discount while TSI can classify shifts as stable, retain raw behavioral records, and mark revoked or transferred records as unverified intervals.",
+        "source_refs": [
+          "tactical-solutions-international"
+        ]
+      },
+      {
+        "text": "Maintenance delegates contesting a dangerous rotation use duplicate work orders, meal rosters, and private check-ins as alternate evidence outside TSI's archive.",
+        "source_refs": [
+          "tactical-solutions-international"
+        ]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Horizon needs TSI to reassure insurers without admitting that delayed parts and debt discipline made the wheel unsafe; TSI needs access to Horizon's operations and worker participation so its finding survives review.",
+        "source_refs": [
+          "tactical-solutions-international",
+          "horizon-ventures"
+        ]
+      },
+      {
+        "text": "Workers can refuse behavioral-record access on paper, but an unverified shift can lose clearance and weaken the bond supporting resupply.",
+        "source_refs": [
+          "tactical-solutions-international",
+          "colonizing-sol"
+        ]
+      },
+      {
+        "text": "Useful fatigue care and predatory record custody coexist in the same booth, so accepting help is neither simple consent nor simple collaboration.",
+        "source_refs": [
+          "framgang",
+          "tactical-solutions-international"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "wheel-six-maintenance-crew",
+      "label": "Transfer Wheel Six maintenance crew",
+      "group_type": "debt_bound_workforce",
+      "institutional_logic": [
+        "Keep the freight habitat physically operating while preserving enough collective knowledge to contest false incident classifications."
+      ],
+      "material_incentives": [
+        "Secure filter mesh, food, replacement valves, safe loading rotations, and records that can prove a mechanical stop."
+      ],
+      "internal_virtues": [
+        "Accurate handoff",
+        "Paired inspection",
+        "Shared meals",
+        "Specific consent"
+      ],
+      "internal_shames": [
+        "Sending an exhausted worker back alone",
+        "Losing the only duplicate record",
+        "Calling a coerced rota unanimous"
+      ],
+      "prestige_markers": [
+        "A repair note that survives management",
+        "A reserve shared before panic",
+        "Knowing which panel is lying and why"
+      ],
+      "taboo_triggers": [
+        "Distress used to erase technical testimony",
+        "A delegate claiming consent for absent workers"
+      ],
+      "emotional_display_norms": [
+        "Fear is carried through jokes, food service, work details, and precise refusals; private collapse belongs with trusted coworkers rather than the personnel system."
+      ],
+      "trust_defaults": [
+        "Trusts witnessed maintenance records and repeated acts of cover; distrusts any wellness record that travels farther than the care relationship."
+      ],
+      "speech_register_cues": [
+        "Work-order shorthand",
+        "Dry equipment jokes",
+        "Plain causal claims",
+        "Names and times repeated for witnesses"
+      ],
+      "source_refs": [
+        "tactical-solutions-international",
+        "colonizing-sol"
+      ]
+    },
+    {
+      "group_id": "horizon-wheel-management",
+      "label": "Horizon Ventures wheel management",
+      "group_type": "habitat_employer",
+      "institutional_logic": [
+        "Keep dock throughput, resupply bonds, creditor confidence, and local labor discipline inside one administrable schedule."
+      ],
+      "material_incentives": [
+        "Avoid an uninsured delay, preserve the continuity covenant, and classify stoppage as worker instability rather than deferred maintenance."
+      ],
+      "internal_virtues": [
+        "Green schedules",
+        "Continuous loading",
+        "Insurer confidence",
+        "No unpriced interruption"
+      ],
+      "internal_shames": [
+        "A worker-kept record outperforming the official panel",
+        "A creditor learning that deferred maintenance caused a stop"
+      ],
+      "prestige_markers": [
+        "A bonded departure",
+        "A stable shift classification",
+        "A problem resolved without opening the bay"
+      ],
+      "taboo_triggers": [
+        "Independent worker custody of operational evidence",
+        "TSI or an insurer refusing Horizon's causal story"
+      ],
+      "emotional_display_norms": [
+        "Fear appears as scheduling urgency, narrow legal language, and immaculate presentation."
+      ],
+      "trust_defaults": [
+        "Trusts records that preserve throughput and treats unscheduled worker knowledge as a control failure."
+      ],
+      "speech_register_cues": [
+        "Departure windows",
+        "Collective fatigue",
+        "Operational continuity",
+        "Temporary classifications"
+      ],
+      "source_refs": [
+        "horizon-ventures",
+        "corporate-exodus",
+        "tactical-solutions-international"
+      ]
+    },
+    {
+      "group_id": "tsi-continuity-service",
+      "label": "Tactical Solutions continuity service",
+      "group_type": "security_and_resilience_contractor",
+      "institutional_logic": [
+        "Turn observed distress into a portable stability finding while remaining independent enough that insurers value the result."
+      ],
+      "material_incentives": [
+        "Retain archive custody, renew the Horizon contract, preserve insurer recognition, and keep workers participating in care sessions."
+      ],
+      "internal_virtues": [
+        "Calm rooms",
+        "Controlled release",
+        "Independent classification",
+        "Useful recovery"
+      ],
+      "internal_shames": [
+        "A finding disproved by a repair log",
+        "An archive empty because workers refuse participation",
+        "Being treated as Horizon's editable form"
+      ],
+      "prestige_markers": [
+        "A finding accepted by hostile parties",
+        "A de-escalation that protects the bond",
+        "A renewal clause"
+      ],
+      "taboo_triggers": [
+        "Employer alteration of raw sessions",
+        "Evidence that the assessor ignored a mechanical cause"
+      ],
+      "emotional_display_norms": [
+        "Care is calm and concrete; institutional conflict is translated into custody and classification language."
+      ],
+      "trust_defaults": [
+        "Trusts its own archive and method; cooperates with workers or employers when doing so preserves the finding's market value."
+      ],
+      "speech_register_cues": [
+        "Claim review",
+        "Bounded release",
+        "Observed fatigue",
+        "Independent custody"
+      ],
+      "source_refs": [
+        "tactical-solutions-international",
+        "framgang"
+      ]
+    },
+    {
+      "group_id": "shipping-underwriters",
+      "label": "Lunar shipping underwriters",
+      "group_type": "insurance_constituency",
+      "institutional_logic": [
+        "Price whether a damaged, debt-bound habitat and its workforce can receive cargo without transferring unknown risk to the convoy."
+      ],
+      "material_incentives": [
+        "Obtain evidence that survives claims, avoid bonding a concealed mechanical failure, and avoid paying for an employer's labor dispute."
+      ],
+      "internal_virtues": [
+        "Narrow findings",
+        "Independent witnesses",
+        "Priceable uncertainty"
+      ],
+      "internal_shames": [
+        "Accepting a calm score that conceals a seal fault",
+        "Financing preventable loss"
+      ],
+      "prestige_markers": [
+        "A bond preserved on defensible evidence",
+        "A costly unknown converted into a bounded interval"
+      ],
+      "taboo_triggers": [
+        "Conflicting timelines",
+        "A contractor finding that cannot survive claim review"
+      ],
+      "emotional_display_norms": [
+        "Concern appears as exclusions, temporary holds, and requests for records that can survive dispute."
+      ],
+      "trust_defaults": [
+        "Trusts independent custody and corroborated physical evidence more than either employer reassurance or unsupported worker testimony."
+      ],
+      "speech_register_cues": [
+        "Bond status",
+        "Unknown interval",
+        "Narrow data release",
+        "Independent inspection"
+      ],
+      "source_refs": [
+        "horizon-ventures",
+        "tactical-solutions-international",
+        "territories"
+      ]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "wheel-six-crew.unowned-truth",
+      "applies_to": [
+        "wheel-six-maintenance-crew"
+      ],
+      "pressure_type": "evidence_and_mutual_aid",
+      "summary": "The crew needs records and reserves outside the employer and contractor systems before refusal can become a shared act instead of an individual symptom.",
+      "projection_use": "Prompt workers to build leverage through duplicate work orders, paired witness, food, filter patches, and explicit individual consent.",
+      "source_refs": [
+        "tactical-solutions-international",
+        "aetheria-index"
+      ]
+    },
+    {
+      "field_id": "horizon-wheel-management.throughput-as-safety",
+      "applies_to": [
+        "horizon-wheel-management"
+      ],
+      "pressure_type": "debt_and_schedule",
+      "summary": "Horizon treats bonded throughput as the condition of survival and can therefore call a dangerous restart prudent.",
+      "projection_use": "Management dialogue should connect every coercive request to real cargo, filter, creditor, or schedule pressure.",
+      "source_refs": [
+        "horizon-ventures",
+        "corporate-exodus"
+      ]
+    },
+    {
+      "field_id": "tsi-continuity-service.care-as-finding",
+      "applies_to": [
+        "tsi-continuity-service"
+      ],
+      "pressure_type": "contract_custody",
+      "summary": "TSI must help people enough to produce credible stability evidence while keeping the records and interpretive authority renewable.",
+      "projection_use": "Show assessors giving competent immediate care and defending archive boundaries for motives that remain institutionally mixed.",
+      "source_refs": [
+        "tactical-solutions-international",
+        "framgang"
+      ]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "horizon-wheel-management",
+      "target_group_id": "wheel-six-maintenance-crew",
+      "observer_read": [
+        "Collective fatigue",
+        "Delegate overreach",
+        "Schedule-sensitive distress"
+      ],
+      "target_self_read": [
+        "Witnesses to a bad seal",
+        "People protecting the next shift",
+        "A workforce with no clean exit"
+      ],
+      "misread_patterns": [
+        "Treats refusal as evidence of impairment",
+        "Treats an unofficial ledger as social agitation rather than maintenance evidence"
+      ],
+      "likely_insults": [
+        "unstable shift",
+        "support case",
+        "unverified operator"
+      ],
+      "projection_use": "Keep Horizon's misread useful to its contract position rather than cartoonishly ignorant of the physical risk.",
+      "source_refs": [
+        "tactical-solutions-international",
+        "horizon-ventures"
+      ]
+    },
+    {
+      "observer_group_id": "wheel-six-maintenance-crew",
+      "target_group_id": "tsi-continuity-service",
+      "observer_read": [
+        "Kind hands attached to an archive lock",
+        "Employer wellness with independent stationery"
+      ],
+      "target_self_read": [
+        "A stabilizing service",
+        "An independent evidence custodian",
+        "A restraint on employer panic"
+      ],
+      "misread_patterns": [
+        "Workers may underestimate how TSI's rivalry with Horizon can protect a record",
+        "TSI may mistake attendance for trust"
+      ],
+      "likely_insults": [
+        "hostage keeper",
+        "soft security",
+        "breathing police"
+      ],
+      "projection_use": "Allow practical cooperation without converting it into trust or shared political purpose.",
+      "source_refs": [
+        "tactical-solutions-international",
+        "framgang"
+      ]
+    },
+    {
+      "observer_group_id": "shipping-underwriters",
+      "target_group_id": "horizon-wheel-management",
+      "observer_read": [
+        "A borrower trying to keep a maintenance failure inside labor classification"
+      ],
+      "target_self_read": [
+        "A life-support operator protecting necessary supply continuity"
+      ],
+      "misread_patterns": [
+        "Underwriters may value worker evidence only while it reduces claim uncertainty",
+        "Horizon may interpret a preserved bond as agreement with its authority"
+      ],
+      "likely_insults": [
+        "concealed condition",
+        "unpriced interval",
+        "borrower-controlled finding"
+      ],
+      "projection_use": "Use insurer skepticism as leverage that can help workers incidentally while remaining governed by price.",
+      "source_refs": [
+        "horizon-ventures",
+        "tactical-solutions-international"
+      ]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "maintenance-rota-delegate",
+      "summary": "A worker with narrow authority over local staffing and the social burden of asking whether coworkers can afford to refuse.",
+      "obligations": [
+        "Keep people off an unsafe rotation",
+        "Protect resupply",
+        "Avoid claiming consent she does not have",
+        "Preserve usable evidence"
+      ],
+      "available_masks": [
+        "Galley humor",
+        "Routine scheduling",
+        "Form correction",
+        "Practical concern"
+      ],
+      "failure_modes": [
+        "Spending the reserve before refusal",
+        "Treating solidarity as automatic",
+        "Trading privacy without custody",
+        "Preserving supply by entrenching the Rider"
+      ],
+      "source_refs": [
+        "tactical-solutions-international",
+        "colonizing-sol"
+      ]
+    },
+    {
+      "role_id": "tsi-continuity-assessor",
+      "summary": "A care worker and contractor representative whose useful treatment, archive authority, and commercial credibility cannot be separated cleanly.",
+      "obligations": [
+        "Reduce acute distress",
+        "Protect TSI archive custody",
+        "Issue a defensible finding",
+        "Keep the client relationship"
+      ],
+      "available_masks": [
+        "Clinical calm",
+        "Independent professional",
+        "Contract literalist"
+      ],
+      "failure_modes": [
+        "Letting Horizon dictate the finding",
+        "Exposing more private data than the claim requires",
+        "Ignoring a mechanical cause"
+      ],
+      "source_refs": [
+        "tactical-solutions-international",
+        "framgang"
+      ]
+    },
+    {
+      "role_id": "horizon-wheel-manager",
+      "summary": "A habitat manager whose authority depends on keeping resupply, insurance, schedules, and worker clearance aligned.",
+      "obligations": [
+        "Keep the bond green",
+        "Maintain dock throughput",
+        "Preserve creditor confidence",
+        "Avoid a visible maintenance default"
+      ],
+      "available_masks": [
+        "Schedule realism",
+        "Concern for supply",
+        "Temporary classification"
+      ],
+      "failure_modes": [
+        "Forcing work through a real seal fault",
+        "Making TSI too visibly client-controlled",
+        "Turning a worker ledger into the insurer's best evidence"
+      ],
+      "source_refs": [
+        "horizon-ventures",
+        "tactical-solutions-international"
+      ]
+    },
+    {
+      "role_id": "lunar-shipping-underwriter",
+      "summary": "A remote risk authority able to preserve or suspend the convoy bond but unable to determine local truth without other parties' records.",
+      "obligations": [
+        "Price uncertainty",
+        "Avoid concealed loss",
+        "Demand a defensible evidence chain"
+      ],
+      "available_masks": [
+        "Neutral record request",
+        "Narrow bond exception",
+        "Temporary suspension"
+      ],
+      "failure_modes": [
+        "Turning coerced care into admissible evidence",
+        "Confusing a costly compromise with safety",
+        "Helping workers only until the price changes"
+      ],
+      "source_refs": [
+        "horizon-ventures",
+        "territories"
+      ]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "inez_ramires",
+      "known_context": [
+        {
+          "text": "Inez knows the galley, rota, reserve, C-12 status, and who has seen the unofficial ledger.",
+          "source_refs": [
+            "tactical-solutions-international"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Inez believes a refusal survives only if another person and a material reserve can carry it.",
+          "source_refs": [
+            "tactical-solutions-international",
+            "aetheria-index"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Inez may treat TSI custody as identical to Horizon custody and miss a narrow rivalry she can use.",
+          "source_refs": [
+            "tactical-solutions-international"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Inez must not know that TSI will become Framgång or that this contract mechanism will scale into the later alignment market.",
+          "source_refs": [
+            "framgang"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "leena_aro",
+      "known_context": [
+        {
+          "text": "Aro knows the Rider, TSI's archive boundary, Inez's sessions, and the evidentiary limits of her own finding.",
+          "source_refs": [
+            "tactical-solutions-international"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Aro believes independent contractor custody is better than employer alteration, even though workers still do not own the archive.",
+          "source_refs": [
+            "tactical-solutions-international",
+            "framgang"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Aro may mistake useful treatment and repeated attendance for durable worker trust.",
+          "source_refs": [
+            "framgang"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Aro must not know the contents of Sima's unofficial ledger until it is shown in the room.",
+          "source_refs": [
+            "tactical-solutions-international"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "oren_vey",
+      "known_context": [
+        {
+          "text": "Vey knows the bond deadline, official panel, incident-classification options, local security posture, and Horizon's creditor exposure.",
+          "source_refs": [
+            "horizon-ventures",
+            "tactical-solutions-international"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Vey believes preserving bonded resupply is the least harmful available choice and evidence of his right to command.",
+          "source_refs": [
+            "horizon-ventures",
+            "corporate-exodus"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Vey may read alternate worker records as political theater until an insurer treats them as claim evidence.",
+          "source_refs": [
+            "tactical-solutions-international"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Vey must not know what Inez said in a private TSI session unless she authorizes a release.",
+          "source_refs": [
+            "tactical-solutions-international"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "yara_dast",
+      "known_context": [
+        {
+          "text": "Dast knows the bond terms, Horizon's official incident submission, and any evidence transmitted during the call.",
+          "source_refs": [
+            "horizon-ventures",
+            "tactical-solutions-international"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Dast believes uncertainty must be bounded by independent custody, corroborated records, or price.",
+          "source_refs": [
+            "tactical-solutions-international",
+            "territories"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Dast may interpret worker-held evidence as valuable only insofar as it sharpens the insurer's risk model.",
+          "source_refs": [
+            "tactical-solutions-international"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Dast cannot know the physical seal condition before an inspection or a live pressure trace reveals it.",
+          "source_refs": [
+            "tactical-solutions-international"
+          ]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "TSI later becomes Framgång and generalizes the Rider's combination of care, classification, renewal, and institutional portability, but no 2092 participant can know that afterlife.",
+      "source_refs": [
+        "tactical-solutions-international",
+        "framgang"
+      ]
+    },
+    {
+      "text": "The named participants and exact incident outcomes are fixture-local unless separately promoted; the contract mechanism and locality are the durable authored elaboration.",
+      "source_refs": [
+        "tactical-solutions-international"
+      ]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Does Transfer Wheel Six recur often enough to justify a durable plan view or standard Horizon habitat-layout note?",
+      "blocks_training": false,
+      "notes": "This fixture supplies a draft scene_set for one galley. Keep the geometry fixture-local unless later stories need the same wheel."
+    }
+  ]
+}

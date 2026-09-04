@@ -1,0 +1,448 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "tangle-continuity-rider-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/aetheria/tangle-continuity-rider-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/aetheria/tangle-continuity-rider-v0.v0.json",
+  "visual_plan_ref": "examples/visual/aetheria/tangle-continuity-rider-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "tangle-continuity-rider-v0.transfer-wheel-six-galley",
+  "protagonist_agent_id": "inez_ramires",
+  "npc_agent_ids": [
+    "sima_ko",
+    "leena_aro",
+    "oren_vey",
+    "yara_dast",
+    "wheel_six_dock_crew"
+  ],
+  "purpose": "Historical branch-and-fold fixture dramatizing how Tactical Solutions International, Horizon Ventures, an insurer, and a debt-bound maintenance workforce use contract classification and behavioral-record custody as leverage after the 2091 convoy failures.",
+  "tonal_mode": "Workplace gallows comedy with procedural dread and domestic warmth.",
+  "local_awareness_summary": [
+    {
+      "text": "Inez is a Horizon maintenance worker and elected rota delegate in Transfer Wheel Six's galley. She controls no station systems beyond ordinary roster authorization, but can serve food, write and transmit records, handle crew badges, ask coworkers for individual consent, and declare a shift stop within her local role.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/tangle-continuity-rider-v0.v0.json",
+        "examples/ink/aetheria/tangle-continuity-rider-v0.branch-and-fold.v0.ink"
+      ]
+    },
+    {
+      "text": "Inez knows that TSI sessions can provide real short-term relief and that session classifications affect work clearance. She does not initially know the archive's claim-review boundary unless she asks Aro.",
+      "source_refs": [
+        "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Defunct/Tactical Solutions International.md",
+        "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Framgång.md"
+      ]
+    },
+    {
+      "text": "The galley ledger, TSI archive, Horizon panel, clearance badges, filter packet, incident form, and insurer bond are separate evidence or resource surfaces; no single actor controls all of them.",
+      "source_refs": [
+        "examples/lore-grounding/aetheria/tangle-continuity-rider-v0.v0.json",
+        "examples/ink/aetheria/tangle-continuity-rider-v0.branch-and-fold.v0.ink"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Inez's baseline-human viewpoint inside the galley. Choices use delegated rota authority, physical objects, witnessed records, speech, consent requests, and negotiated data release.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/ink/aetheria/tangle-continuity-rider-v0.branch-and-fold.v0.ink"
+        ]
+      },
+      {
+        "text": "Routine, food, friendship, and petty equipment failure establish ordinary life before the contract dispute arrives.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Inez may stop or staff her rota but cannot order the insurer, open TSI's archive, override Horizon security, or prove a seal fault without a record and witness chain.",
+        "source_refs": [
+          "examples/ink/aetheria/tangle-continuity-rider-v0.branch-and-fold.v0.ink"
+        ]
+      },
+      {
+        "text": "Aro owns TSI's local finding and claim-review action, Vey owns Horizon's incident classification request and local security posture, and Dast owns underwriting acceptance. Their rivalry can open seams without making any of them worker liberators.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Defunct/Tactical Solutions International.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Defunct/Horizon Ventures.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Sima keeps the galley ledger; Aro controls the TSI archive dock; Inez handles roster badges and the incident form; Horizon controls the status panel and security doors; Dast controls whether submitted evidence preserves the bond.",
+        "source_refs": [
+          "examples/ink/aetheria/tangle-continuity-rider-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every ending must expose a different political settlement among mechanical truth, data custody, insured supply, and local mutual refusal.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md"
+        ]
+      },
+      {
+        "text": "The mutual-aid route must remain small, costly, materially supported, and non-messianic.",
+        "source_refs": [
+          "Aetheria/index.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Colonizing Sol.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let one brave speech cancel the Rider, debt, insurer leverage, or material dependence on resupply.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Corporate Exodus.md"
+        ]
+      },
+      {
+        "text": "Do not flatten Aro's useful care into fraud or turn TSI's independent archive custody into worker ownership.",
+        "source_refs": [
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Framgång.md",
+          "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Defunct/Tactical Solutions International.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through breakfast routine, incident classification, and insurer review, then select one of eight state-gated endings.",
+    "choice_layers": [
+      "ordinary_shift_preparation",
+      "incident_classification",
+      "choose_whose_record_travels"
+    ],
+    "variables": [
+      "mutual_cover",
+      "evidence_integrity",
+      "filter_reserve",
+      "bond_status",
+      "tsi_leverage",
+      "horizon_pressure",
+      "archive_access",
+      "work_stoppage",
+      "privacy_cost",
+      "seal_risk",
+      "crew_fatigue",
+      "rider_entrenched"
+    ],
+    "ending_gates": [
+      "ending_mechanical_review",
+      "ending_mechanical_exposure",
+      "ending_bounded_archive",
+      "ending_archive_capture",
+      "ending_supply_preserved",
+      "ending_supply_mislabeled",
+      "ending_mutual_interval",
+      "ending_refusal_fracture"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_mechanical_evidence",
+      "ink_path": "routine_choice",
+      "action_type": "write_object",
+      "actor_intent": "Duplicate Sima's C-12 repair record outside Horizon's personnel system.",
+      "state_basis": [
+        "Inez can write in the galley ledger and Sima can supply the ticket number."
+      ],
+      "reviewed_consequences": [
+        "Raises evidence_integrity, mutual_cover, and horizon_pressure; enables the witnessed mechanical-stop response and the stronger mechanical ending."
+      ],
+      "training_hooks": [
+        "worker_record_as_leverage",
+        "ordinary_recordkeeping"
+      ]
+    },
+    {
+      "branch_id": "prime_tsi_relationship",
+      "ink_path": "routine_choice",
+      "action_type": "speak",
+      "actor_intent": "Use a real care appointment to learn and strengthen the claim-review relationship with Aro.",
+      "state_basis": [
+        "TSI supplies behavioral stability services and keeps the archive used for its finding."
+      ],
+      "reviewed_consequences": [
+        "Raises tsi_leverage and archive_access while lowering crew_fatigue; enables the TSI-custody response."
+      ],
+      "training_hooks": [
+        "care_and_coercion_coexist",
+        "contract_boundary_discovery"
+      ]
+    },
+    {
+      "branch_id": "prime_mutual_cover",
+      "ink_path": "routine_choice",
+      "action_type": "distribute_object",
+      "actor_intent": "Spend one emergency filter patch on the galley return grille, then share a scarce comfort item to strengthen practical worker care.",
+      "state_basis": [
+        "Inez controls the serving counter, and Sima can fit one of the two emergency filter patches to the galley return grille."
+      ],
+      "reviewed_consequences": [
+        "Raises mutual_cover and lowers crew_fatigue at a cost to filter_reserve; strengthens collective refusal only if one filter patch remains."
+      ],
+      "training_hooks": [
+        "mutual_aid_as_material_capacity",
+        "resource_tradeoff"
+      ]
+    },
+    {
+      "branch_id": "prime_bond_continuity",
+      "ink_path": "routine_choice",
+      "action_type": "authorize",
+      "actor_intent": "Protect the bonded resupply schedule by returning tired workers to the loading rota early.",
+      "state_basis": [
+        "Inez is the elected rota delegate and can approve local staffing."
+      ],
+      "reviewed_consequences": [
+        "Raises bond_status, crew_fatigue, and seal_risk while lowering mutual_cover; strengthens the insured-supply route."
+      ],
+      "training_hooks": [
+        "supply_dependency",
+        "delegate_complicity"
+      ]
+    },
+    {
+      "branch_id": "contest_with_repair_record",
+      "ink_path": "incident_choice",
+      "action_type": "show_object",
+      "actor_intent": "Classify C-12 as mechanical and force the galley record into view.",
+      "state_basis": [
+        "Available only when the earlier duplication created a witnessed ticket chain."
+      ],
+      "reviewed_consequences": [
+        "Raises evidence_integrity, work_stoppage, and horizon_pressure while lowering seal_risk through an enforced stop."
+      ],
+      "training_hooks": [
+        "state_gated_evidence",
+        "mechanical_truth_vs_behavioral_classification"
+      ]
+    },
+    {
+      "branch_id": "invoke_tsi_custody",
+      "ink_path": "incident_choice",
+      "action_type": "speak",
+      "actor_intent": "Use Aro's own archive promise to open a claim review before Horizon controls the classification.",
+      "state_basis": [
+        "Available only when Inez learned the archive boundary and built enough local leverage."
+      ],
+      "reviewed_consequences": [
+        "Raises archive_access, horizon_pressure, and privacy_cost while spending tsi_leverage."
+      ],
+      "training_hooks": [
+        "subsidiary_rivalry_as_seam",
+        "privacy_as_cost"
+      ]
+    },
+    {
+      "branch_id": "create_unverified_interval",
+      "ink_path": "incident_choice",
+      "action_type": "move_objects",
+      "actor_intent": "Create a formal gap in the insured roster by removing physical clearance badges.",
+      "state_basis": [
+        "Inez can handle the crew badges at the galley roster reader."
+      ],
+      "reviewed_consequences": [
+        "Raises work_stoppage, mutual_cover, and horizon_pressure while sharply lowering bond_status."
+      ],
+      "training_hooks": [
+        "non_speech_contract_leverage",
+        "data_hostage_backfires"
+      ]
+    },
+    {
+      "branch_id": "preserve_bond_narrowly",
+      "ink_path": "incident_choice",
+      "action_type": "write_object",
+      "actor_intent": "Keep the shift classifiable while refusing Horizon's preferred causal claim.",
+      "state_basis": [
+        "Inez can qualify what she signs, and Aro can accept or reject the amended finding."
+      ],
+      "reviewed_consequences": [
+        "Raises bond_status, rider_entrenched, and privacy_cost while lowering immediate horizon_pressure."
+      ],
+      "training_hooks": [
+        "bounded_concession",
+        "contract_entrenchment"
+      ]
+    },
+    {
+      "branch_id": "prioritize_mechanical_truth",
+      "ink_path": "final_choice",
+      "action_type": "transmit_object",
+      "actor_intent": "Send the worker-kept repair record and maintain a physical stop.",
+      "state_basis": [
+        "Success requires evidence_integrity and work_stoppage."
+      ],
+      "reviewed_consequences": [
+        "Routes to a mechanical review or to worker exposure under an incomplete chain."
+      ],
+      "training_hooks": [
+        "state_gated_ending",
+        "evidence_chain"
+      ]
+    },
+    {
+      "branch_id": "prioritize_bounded_data",
+      "ink_path": "final_choice",
+      "action_type": "negotiate_custody",
+      "actor_intent": "Release only the part of Inez's session that proves the time sequence, with Sima as co-custodian.",
+      "state_basis": [
+        "Success requires archive_access, remaining tsi_leverage, and mutual_cover."
+      ],
+      "reviewed_consequences": [
+        "Routes to two-key bounded release or to archive capture and expanded privacy loss."
+      ],
+      "training_hooks": [
+        "data_custody",
+        "care_record_as_hostage"
+      ]
+    },
+    {
+      "branch_id": "prioritize_insured_supply",
+      "ink_path": "final_choice",
+      "action_type": "authorize",
+      "actor_intent": "Accept TSI's finding to keep material resupply bonded.",
+      "state_basis": [
+        "Success requires a bond_status high enough to survive the incident and seal_risk low enough for reduced-load operation."
+      ],
+      "reviewed_consequences": [
+        "Routes to supply preserved with an entrenched Rider, or to a failed concession caused by weak bond status or a live seal risk that still blames workers."
+      ],
+      "training_hooks": [
+        "material_dependency",
+        "compromised_success"
+      ]
+    },
+    {
+      "branch_id": "prioritize_local_mutual_refusal",
+      "ink_path": "final_choice",
+      "action_type": "collective_withhold",
+      "actor_intent": "Ask workers individually to withdraw archive consent and sustain a local stop from their own ledger and reserve.",
+      "state_basis": [
+        "Success requires high mutual_cover and at least one remaining filter reserve."
+      ],
+      "reviewed_consequences": [
+        "Routes to a costly six-hour mutual interval or to a fractured refusal."
+      ],
+      "training_hooks": [
+        "consent_not_assumed",
+        "solidarity_requires_reserve"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Promotion of named workers or the incident as fixed timeline canon",
+      "Durable relationship or memory updates",
+      "Any broader claim that the two-key release became standard",
+      "Accepted corpus inclusion"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex self-review using the four required Ghostlight reviewer prompts",
+    "review_status": "accepted",
+    "review_passes": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "initial_status": "needs_revision",
+        "final_status": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 5,
+          "pacing": 4,
+          "voice": 5,
+          "tonal_fit": 5,
+          "if_playability": 5
+        },
+        "fixed_findings": [
+          "Made high seal_risk block the clean insured-supply ending and added the aborted-approach consequence.",
+          "Removed an unsupported exact convoy count and a broad exact transfer-wheel count from the prose."
+        ],
+        "acceptance_notes": [
+          "The opening establishes ordinary food service, work friendship, place, date, hierarchy, and the bad seal before authority enters.",
+          "Inez, Sima, Aro, Vey, and Dast have distinct roles and registers; all twelve choices alter a later callback, gate, visible state, or ending."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "initial_status": "accepted",
+        "final_status": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 5,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "fixed_findings": [],
+        "acceptance_notes": [
+          "Checked the TSI and Framgång lineage, Horizon and the 2091 convoy failures, Corporate Exodus labor and data markets, early territory, and the setting's material-care counter-pressure.",
+          "The durable contract mechanism was backfilled into the owning TSI note; named people and branch outcomes remain fixture-local."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "initial_status": "needs_revision",
+        "final_status": "accepted",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompt": 5,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 4
+        },
+        "fixed_findings": [
+          "Restored the dock crew to every shared galley frame after their entrance.",
+          "Rewrote grouped ending base prompts to neutral geometry so success and cost modifiers add visible state instead of erasing baked-in objects.",
+          "Made the filter-patch expenditure visible at the return grille and kept every named visible body tied to a stable visual ref."
+        ],
+        "acceptance_notes": [
+          "Fifteen click-through anchors, fifteen BFL prompts, a global style cue, complete standalone base prompts, and explicit branch and ending deltas support B-level draft replay.",
+          "A real blockout remains required before high-consistency production art; the included scene_set map is the draft geometry authority."
+        ]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "initial_status": "needs_revision",
+        "final_status": "accepted",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightline": 4,
+          "body_affordance": 5,
+          "movement_access": 5,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "fixed_findings": [
+          "Replaced spin-direction wall labels with a stable forward, aft, port, starboard frame and named centrifugal gravity toward the curved floor.",
+          "Repaired the false resource relationship by physically spending one filter patch at the galley return grille before later refusal depends on the remaining patch.",
+          "Corrected the Earth–Luna call distance to a short signal hop."
+        ],
+        "acceptance_notes": [
+          "The twelve-by-eight-meter galley has fixed doors, booth, panel, counter, tables, badge reader, occluders, routes, and camera slots; branch-created objects persist through folds."
+        ]
+      }
+    ],
+    "review_notes": [
+      "All four required self-review passes reached B-level acceptance after their named repairs.",
+      "The Ink source was not compiled because this bounded swarm pass forbids installing or running an Ink compiler; static audits confirmed twelve sidecar-matched branches, eight visually covered ending labels, and a later conditional read for every declared variable."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}
