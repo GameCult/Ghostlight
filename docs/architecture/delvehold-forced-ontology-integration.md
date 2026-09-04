@@ -28,7 +28,7 @@ switches on those names or that ID.
 
 ## Authority map
 
-- **Delvehold owner:** Greathold players, workshops, parties, civic seals, graph, dungeon ecology, quantitative resources, custody, recipes, facilities, capacity, inventories, orders, prices, contracts, expeditions, and local consequences.
+- **Delvehold owner:** Greathold players, workshops, parties, civic seals, graph, dungeon ecology, and its own quantitative economy: recipes, facilities, capacity, inventories, orders, prices, exchange rates, contracts, expeditions, and local consequences. Custody of Greathold-owned resources changes only through Delvehold.
 - **Ghostlight owner:** external regions, actors, institutions, Gestalts, their knowledge, relationships, goals, posture, pressures, strategic choices, external events, and news.
 - **Configured boundary subject:** Delvehold configures stable ID `greathold`
   through Ghostlight's generic external-subject authority contract. The ID has
@@ -42,7 +42,7 @@ switches on those names or that ID.
   cannot repair either canonical domain after rejection.
 - **Forbidden writers:** Ghostlight Personas and strategic cells cannot mutate `greathold`; Delvehold cannot mutate foreign private state; the adapter cannot repair either owner after rejection.
 
-Ghostlight's current string resource handles are sufficient for strategic narrative context. They are not a quantitative economy. Prices, quantities, production, capacity, orders, contracts, and conservation remain Delvehold-owned unless a future deliberate Ghostlight economic algebra is designed and admitted.
+Ghostlight owns a narrative-scale conserved quantity for the subjects it simulates: `Custody` holds a unitless `Quantity` per subject and resource, `Transfer`/`Consume`/`Transform` conserve it, and `Admit` creates it only with evidence (`docs/architecture/ghostlight-world-ontology.md`, Invariant 5). That is a ledger, not an economy. `Transform` is one-to-one with no unit, rate, yield, facility, or capacity field anywhere on a Ghostlight type, so prices, production, orders, and contracts are unrepresentable in Ghostlight rather than merely unwritten; they remain Delvehold-owned, and any resource an external mirror holds changes only through its admitted owner.
 
 ## Greathold boundary subject
 
