@@ -308,8 +308,8 @@ Required black-box proofs:
 9. An external crate cannot obtain mutable aggregate state, invoke the canonical
    ID allocator, call the reducer, or write the journal; a caller-supplied
    unknown ID is rejected rather than admitted.
-10. A decision proposal is rejected when its revision-bound opportunity,
-    controller, scope, or currently executable affordance is wrong; the
+10. A decision proposal is rejected when its opportunity's scope digest has
+    changed or its controller or currently executable affordance is wrong; the
     scheduler cannot manufacture or consume authority.
 
 A 1,200-actor synthetic fixture may measure load after these pass. It cannot

@@ -2,10 +2,10 @@
 
 ## Current Subgoal
 
-Plan step 6 pass 4 mid-cut in `.claude/worktrees/agent-a8828a054fe108277`
-(`c9fd9bf` landed there, `action.rs` in progress). Specs `imagination-pass4..8.md`
-and maps `modeling-pass4..8.md` in the session scratchpad; Modeling pass 9
-running. Main tip `bec8004`; nothing beyond pass 3 integrated.
+Plan step 6 pass 5 (`Authority`, `Selection`, `Redress`) with Hands in a fresh
+worktree from `0f21a49`; first commit makes the grant structural in
+`exercise`. Specs/maps 1-9 in the session scratchpad. Main tip `0f21a49`,
+passes 1-4 integrated, push may lag.
 
 ## Working Notes
 
