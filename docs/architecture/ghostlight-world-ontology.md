@@ -35,8 +35,8 @@ not from a model agreeing that the world is deep.
 
 ## Current mechanism
 
-Passes 1 through 7 of the widening are landed (`5e53beb`, `e99af63`,
-`d2805fe`, `0f21a49`, `dbe176d`, `cb6a126`, `1852ddd`). The sealed kernel holds subjects with a label and a
+Passes 1 through 8 of the widening are landed (`5e53beb`, `e99af63`,
+`d2805fe`, `0f21a49`, `dbe176d`, `cb6a126`, `1852ddd`, `3ed3868`). The sealed kernel holds subjects with a label and a
 kind (`Person | Institution | Population`); a `positions` partition with
 `Position`; entities with `container` under containment acyclicity; `Route`
 as an `EdgeRecord` variant carrying `AccessKind { Public, Restricted }`, a
@@ -139,17 +139,38 @@ deficit and satisfy it (`AnswerRequired`, `AnswerNotDerived`,
 `AnswerNotSatisfied`); a component-only patch answers nothing; Draft answers
 nothing.
 
+`AdmitPatch` has two authors. The owner is unconfined. The elaborator is
+`CallerId::System(SystemCapability::Elaborator { jurisdiction })`, a caller
+identity whose only door is `WorldMailbox::submit_elaboration`; there is no
+HTTP ingress for a patch before pass 10. `require_patch_author` and
+`confine_to_jurisdiction` run in `reduce` and again in `apply_effect`: an
+elaborator may answer only a boundary or deficit row under its root
+(boundaries cover transitively, deficit rows by exact key, so a parent root
+cannot answer a child row and double-count it), and may declare places,
+relocate, or open routes only inside that root (`Mismatch::OutsideJurisdiction`,
+decided by `operation_ground`, which is total over `ResolvedOp`). Placeless
+referents (resources, catalog entries, facts) are not confined. The model's
+tool surface is `PATCH_TOOLS`: one tool per non-genesis `Declaration` and
+`ComponentOp` variant plus two session tools, emitted through
+`world/tool_schema.rs` from one schema spelling per type.
+`world/elaboration.rs` owns the repair loop: a session keyed by a
+deterministic command id (sha256 over world, jurisdiction, answer digest)
+submits a draft, persists the resolver's complete mismatch set under that id,
+and re-prompts with it, bounded by `ELABORATION_ROUND_BUDGET` and the
+`MAX_DRAFT_*` size caps. Evidence a model cites must come from the round's
+`EvidenceSource` receipts (`filter_evidence`); with `NullEvidenceSource` no
+canonical fact and no `Admit` can land from the elaborator lane.
+
 Opportunities bind to a `ScopeDigest` over one `scope_components` owner
 (controller assignment, grants, delegated grants, own authority, position,
 incident routes, own holdings, own dependencies, known fact ids, controlled
 channels, own commitments; never `now`, occupancy, forum state, or another
 subject's knowledge); a proposal commits at any later revision with unchanged scope and is
 rejected with `KernelError::ScopeChanged` otherwise. State schema is
-`world_state.commitment.v1`, commit schema `world_commit.commitment.v1`,
-controller work `controller_work.v6`; earlier stores are refused. Ghostlight owns a conserved narrative ledger;
+`world_state.elaboration.v1`, commit schema `world_commit.elaboration.v1`,
+controller work `controller_work.v7`; earlier stores are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
-Passes 8 and 9 add boundary elaboration and the budgeted cover; pass 10
-adds the consumer ingress.
+Pass 9 adds the budgeted cover; pass 10 adds the consumer ingress.
 
 ## The failure this vocabulary is designed against
 
@@ -214,7 +235,8 @@ resolver, or reconciler is needed.
     scope digest is unchanged, and is rejected when it is not.
 11. Every tool a model may call is a projection of this vocabulary. The tool
     catalog is derived state and cannot carry an operation the reducer does not
-    own.
+    own. The expansion rule: the tool surface is exactly the variants a
+    non-genesis patch may carry, with every always-refused choice removed.
 
 ## Identity
 
@@ -670,7 +692,9 @@ Beyond the existing kernel proofs, focused tests must prove:
 15. Two patches answering disjoint boundaries at different revisions both
     commit; two touching the same components conflict on scope digest.
 16. The generated elaborator tool catalog contains exactly the operation set
-    and declaration kinds in this document and nothing else.
+    and declaration kinds in this document and nothing else: every variant has
+    one tool, every emitted branch decodes, and the counts match the exemplar
+    lists.
 17. Seed admission and boundary elaboration reach the same reducer and CAS.
 18. A structurally sparse world — few subjects, complete references — activates
     and runs; no count or ratio blocks it.

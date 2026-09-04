@@ -3,7 +3,13 @@
 Status: drift. Names `CampaignRegistry`, `WorldSeed`, and `publish_session_zero`,
 which do not exist in the sealed kernel. Pending rewrite against
 `docs/architecture/ghostlight-world-ontology.md`; read for consumer-boundary
-intent only.
+intent only. Pass 10 owns the rewrite and carries four debts the ingress must
+settle before a consumer patch can reach `AdmitPatch`: caller authority (which
+`CallerId` a consumer lowers to), decode-time size bounds on the patch,
+phase (Draft seed versus Active elaboration), and boundary answering (an
+Active consumer patch that declares must answer a derived boundary like any
+other author). The transport is an inbound `mesh.rs` path, not a fifth
+`execute_world` operation literal.
 
 ## Objective
 

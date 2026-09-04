@@ -225,56 +225,56 @@ outcome bands, four derived `CausalBoundary` kinds, scope-digest binding, one
 are teardown evidence. Plan step 6 is nine implementation passes; pass 1 is
 landed, passes 2 through 9 are not.
 
-1. Passes 1 through 7 are integrated; nothing beyond pass 7 is.
-   `codex/ghostlight-dungeon-mvp` tip is `1852ddd` (Soul, boundary digest
-   bound to its own structure) over `5771ce6` (Soul), `2a8cec6` (Hands
-   falsification), and `d7fba90` (pass 7 machine), on `76999de` (pass-6 doc
-   and handoff) and `54e9d39` (pass-6 follow-ups). Earlier passes:
-   `5e53beb`, `e99af63`, `d2805fe`, `0f21a49`, `dbe176d`, `cb6a126`. The
-   push follows a background crate test and the branch read `ahead 4` at the
-   time of writing; `git status -sb` is the witness.
+1. Passes 1 through 8 are integrated; nothing beyond pass 8 is.
+   `codex/ghostlight-dungeon-mvp` tip is `3ed3868` (Soul) over `2252370`
+   (pass 8 machine), on `106e7ef` (pass-7 docs and handoff) and `5874fc2`
+   (pass-7 follow-ups). Earlier passes: `5e53beb`, `e99af63`, `d2805fe`,
+   `0f21a49`, `dbe176d`, `cb6a126`, `1852ddd`. The push follows a background
+   crate test and the branch read `ahead 2` at the time of writing;
+   `git status -sb` is the witness.
 
-   Pass 7 facts: new module `world/clock.rs`; partitions `commitments`,
-   `pressures`, `last_opportunity_at`; scalars `now` and `scale_intent`;
-   `CommandBody::AdvanceTime` accepted only from
-   `CallerId::System(SystemCapability::Clock)`, which the mailbox mints;
-   `CausalBoundary` with the two derived variants `UnelaboratedDestination`
-   and `MissingStructure`, each carrying its own `BoundaryDigest`; scale
-   deficit rows; schemas `world_state.commitment.v1` /
-   `world_commit.commitment.v1` and `controller_work.v6`, earlier stores
-   refused. The operation set is 27. Pressure is stored by two writer
-   families, ops and the tick, never derived at read; ordering is a pure
-   re-order by pressure then debt (`last_opportunity_at`), never a filter.
-   Ruling adopted at the one fork of the pass, now structural: in Active, a
-   patch that declares or admits evidence must answer a derived
-   `CausalBoundary` or a nonzero scale deficit and satisfy it
-   (`AnswerRequired`, `AnswerNotDerived`, `AnswerNotSatisfied` in
-   `world/mod.rs`); component-only patches answer nothing; Draft answers
-   nothing. Baseline at `1852ddd`: 215 test functions in `world/*.rs`, 254
-   crate source, plus one integration test (the focused `world::` run
-   reports 214 / 249; different counting rules, compare like with like).
-   `EvidenceRef::new` is still `#[cfg(test)]`; nothing deserializes a
-   `WorldPatch` before pass 10.
+   Pass 8 facts: new modules `world/tool_schema.rs` and
+   `world/elaboration.rs`; `SystemCapability::Elaborator { jurisdiction }`;
+   `require_patch_author` and `confine_to_jurisdiction` at both `reduce` and
+   `apply_effect`; `Mismatch::OutsideJurisdiction`; `PATCH_TOOLS` (37
+   tools); `ElaborationPort` with `submit_elaboration` is the only authoring
+   door into the world; `ControllerWork::Elaboration` and `WorkLane`;
+   `ElaborationRunner` wired to the runtime task `elaborate_world`
+   (`runtime.rs`) with `ControllerModels.elaborator` from the environment
+   variable `GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL`; `NullEvidenceSource`
+   is what production supplies today. Schemas are
+   `world_state.elaboration.v1` / `world_commit.elaboration.v1` and
+   `controller_work.v7`, earlier stores refused. Soul drove the repair loop
+   end to end (spec test 20 exists in `controllers.rs`). Rulings adopted:
+   the owner remains unconfined; the elaborator is confined at both answer
+   and write; boundaries cover transitively and deficit rows are exact-key;
+   canonical facts from the elaborator lane are bounded by `filter_evidence`,
+   and with `NullEvidenceSource` none can land; one spelling of the patch
+   schema, `composite_schema` owns and the example derives from it (that
+   last one is a follow-up in flight). Baseline at `3ed3868`: 253 test
+   functions in `world/*.rs`, 293 crate source, plus one integration test
+   (the focused `world::` run reports 252 / 288; different counting rules,
+   compare like with like). The ontology doc operation count now reads 27
+   at all three sites; that queued item is closed.
 
-   In flight, not landed, both branched from `1852ddd` with no commits yet at
+   In flight, not landed, both branched from `3ed3868` with no commits yet at
    the time of writing:
-   - `hands/pass7-followups` in the worktree `F:\Projects\Ghostlight-pass7fu`:
-     the routine period bound enforced in `verify_state_shape`;
-     `JurisdictionKey::Unplaced` renamed `Uncovered` with the deficit total
-     over subjects; the runtime tick submits the constant
-     `CLOCK_TICK_MINUTES` (`runtime.rs`), never a measured duration; dead
-     import removal.
-   - `hands/pass8` in the worktree `F:\Projects\Ghostlight-pass8`: boundary
-     elaboration, from `imagination-pass8.md`.
-   The main tree also holds uncommitted coordinator edits to
-   `docs/architecture/ghostlight-dungeon-mvp.md` (the four subject-readiness
-   sentences are now `Commitment.due` plus derived debt; that queued item is
-   done) and `docs/architecture/ghostlight-world-ontology.md` (the
-   `Commitment` and `Pressure` rows and the operation count). Witness for any
-   later pass: main-branch `git log` past `1852ddd`, and `git worktree list`
-   for the two trees.
+   - `hands/pass8-followups` in the worktree `F:\Projects\Ghostlight-pass8fu`:
+     `variant_content` spells unit variants so `Bounds::None` is reachable;
+     `composite_example` deleted and derived from the schema; the forged-row
+     test fixed or deleted; `every_declaration` / `every_component_op`
+     exemplar lists; the dead-code expectation removed.
+   - `hands/pass9` in the worktree `F:\Projects\Ghostlight-pass9`: budgeted
+     connected cover, from `imagination-pass9.md`.
+   Main carries uncommitted coordinator edits to
+   `docs/architecture/ghostlight-world-ontology.md` and
+   `docs/architecture/ghostlight-world-consumer-api.md` (in progress at the
+   time of writing); the pass-8 "Current mechanism" text is owed and lands
+   with the follow-ups. Witness
+   for any later pass: main-branch `git log` past `3ed3868`, and
+   `git worktree list` for the two trees.
 
-   Pipeline for passes 8 through 9: specs `imagination-pass1.md` through
+   Pipeline for pass 9 and pass 10: specs `imagination-pass1.md` through
    `imagination-pass9.md` and maps `modeling-pass1.md` through
    `modeling-pass9.md` are on disk in the session scratchpad
    `C:\Users\Meta\AppData\Local\Temp\claude\F--Projects-Ghostlight\2fd50f5e-f7ba-4e5d-82bc-c7033e6074d2\scratchpad`,
@@ -291,22 +291,19 @@ landed, passes 2 through 9 are not.
    ingress, in the plan); pass 9 must not enable `uuid/v5` and derives each
    `CommandId` via sha256 into `Uuid::from_bytes` like `derive_id`.
 
-   Adopted design from the specs that changes steering: pass 8 allows Active
-   declarations only inside a patch whose `PatchAnswer` is derived and
-   proven satisfied (the pass-7 answer rule applied to elaboration), adds
-   `SystemCapability::Elaborator { jurisdiction }`, the in-process
-   `ElaborationRunner`, and a derived elaborator tool catalog sharing one
-   property emitter with pass 4. `PolityInCausalRange`,
-   `IndividuationRequired`, and Verification 13 remain deferred until
-   relations and population slices exist.
+   Still deferred by design: `PolityInCausalRange`, `IndividuationRequired`,
+   and Verification 13 wait for relations and population slices. Pass 10
+   (consumer ingress) carries four named debts: authority, decode-time size
+   bounds, phase, and boundary answering, plus the `mesh.rs` inbound ruling.
 
-   Queued doc edits, coordinator-owned: the ontology doc operation count is
-   only partly at 27 in the uncommitted working copy (line 342 says
-   twenty-seven; line 288 "Twenty-nine operations" and line 605 "-> 29 named
-   operations" still say 29); after pass 9, the ontology doc phrase "within
-   about N/B ticks" becomes ceil(N/R) with R the rotation reserve; after
-   every integration, the ontology doc "Current mechanism" section is
-   rewritten from the steward proposal.
+   Queued doc edits, coordinator-owned: the pass-8 "Current mechanism"
+   section; ontology Invariant 11 and Verification 16 for the expansion rule
+   and covering asymmetry; the Active phase bounded by the answer with two
+   `AdmitPatch` authors; `ghostlight-world-consumer-api.md` stays marked
+   drift until pass 10 and should name its four debts and the `mesh.rs`
+   inbound ruling; the `GHOSTLIGHT_CONTROLLER_ELABORATOR_MODEL` setting in
+   the config doc; after pass 9, the ontology doc phrase "within about N/B
+   ticks" becomes ceil(N/R) with R the rotation reserve.
 2. First-generation world fixtures are banked and pushed, one per world, each
    with Ink, training sidecar, visual plan, lore grounding, and BFL manifest,
    reviewer-accepted except visual replay, which waits on a scene-set
