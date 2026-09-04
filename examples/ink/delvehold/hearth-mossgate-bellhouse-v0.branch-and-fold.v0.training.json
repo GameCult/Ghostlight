@@ -1,0 +1,402 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "hearth-mossgate-bellhouse-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/delvehold/hearth-mossgate-bellhouse-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/delvehold/hearth-mossgate-bellhouse-v0.v0.json",
+  "scene_id": "hearth-mossgate-bellhouse-v0.the-silent-return-bell",
+  "protagonist_agent_id": "brunna_slatewise",
+  "npc_agent_ids": [
+    "tamsin_reed",
+    "nell_reed",
+    "hesta_flint",
+    "jory_reed",
+    "old_emet",
+    "mossgate_platform_households",
+    "south_cut_rail_fitters"
+  ],
+  "purpose": "Branch-and-fold illustrated IF fixture dramatizing how a mixed-species household and its bellhouse neighbours absorb a foreign rail outage before the operator admits the cost.",
+  "local_awareness_summary": [
+    {
+      "text": "Brunna is a young dwarf railway apprentice lodged with a human household in Mossgate. She knows the local lamp and signal engines, null termination, station routine, household chores, and the personal meaning of the waiting board, but not the cause or full extent of the south-cut feed failure.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/hearth-mossgate-bellhouse-v0.v0.json",
+        "Delvehold/Lore/Industry/Runic Engineering.md",
+        "Delvehold/Lore/Peoples/Humans.md"
+      ]
+    },
+    {
+      "text": "The scene begins during an ordinary breakfast and lamp-inspection routine before the noon orchard freight fails to return. Jory Reed is aboard that train, and the shared rail crystal schedule also drives local irrigation pumps.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/hearth-mossgate-bellhouse-v0.v0.json",
+        "Delvehold/Lore/Peoples/Humans.md"
+      ]
+    },
+    {
+      "text": "Brunna's leverage is bounded: she has apprentice skill, household trust, an observable public record, prepared food and water, and the bellhouse custom. She cannot command the railway, certify the outage, conjure supplies, or know where the missing train is without evidence.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/hearth-mossgate-bellhouse-v0.v0.json",
+        "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+        "Delvehold/Lore/Industry/Dwarven Industry.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Brunna's embodied position between the East Bellhouse kitchen, attached platform, alley stair, signal cabinet, and engine-shed gate. Choices use bread, water jars, waiting cords, a tool roll, null practice, public chalk, physical movement, refusal, and negotiation.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/delvehold/hearth-mossgate-bellhouse-v0.v0.json"
+        ]
+      },
+      {
+        "text": "Tonal mode is domestic warmth and dry civic comedy under material pressure. Breakfast routine, teasing, household work, and reciprocal care precede the service failure.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "AGENTS.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Brunna may isolate and inspect the Mossgate signal cabinet under her apprenticeship but cannot repair or diagnose the distant south-cut supply network from the station.",
+        "source_refs": [
+          "Delvehold/Lore/Industry/Runic Engineering.md",
+          "Delvehold/Lore/Peoples/Humans.md"
+        ]
+      },
+      {
+        "text": "Hesta can direct the local repair crew and release company stores, while the company record determines contractual outage compensation. Neither authority owns the household's decision to open its table.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Humans.md",
+          "Delvehold/Lore/Industry/Dwarven Industry.md"
+        ]
+      },
+      {
+        "text": "Table-kin is a reciprocal Mossgate household expectation, not adoption, inheritance, a Greathold civic seal, or automatic labor authority.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Humans.md",
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Travel loaves, blue-glazed water jars, the waiting board and cords, Brunna's tool roll, the signal-cabinet key, Hesta's feed key, Jory's bowl, the white ladle, and the company notice remain material objects whose preparation, visibility, or custody affects later choices and endings.",
+        "source_refs": [
+          "examples/ink/delvehold/hearth-mossgate-bellhouse-v0.branch-and-fold.v0.ink",
+          "examples/lore-grounding/delvehold/hearth-mossgate-bellhouse-v0.v0.json"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every response must leave a cost somewhere legible: household stores and strain, apprenticeship standing, repair time, missing-person knowledge, or operator liability.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Humans.md",
+          "Delvehold/Lore/Industry/Dwarven Industry.md",
+          "docs/architecture/ink-branching-scenes.md"
+        ]
+      },
+      {
+        "text": "Endings distinguish restoring service, sustaining care, forcing cost recognition, and negotiating reciprocity. None resolves the wider extraction crisis or proves the outage's ecological cause.",
+        "source_refs": [
+          "Delvehold/Lore/Crisis/International Crisis.md",
+          "Delvehold/Lore/Crisis/Industrial Escalation.md",
+          "examples/lore-grounding/delvehold/hearth-mossgate-bellhouse-v0.v0.json"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make household affection erase the company's housing subsidy, divided labor obligation, or material depletion.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Humans.md"
+        ]
+      },
+      {
+        "text": "Do not treat Brunna's apprenticeship as Greathold Mastership, give her a civic seal, or let one repair choice settle municipal or international policy.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/Crisis/International Crisis.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through the silent return bell and company arrival, then select one of eight state-gated endings.",
+    "choice_layers": [
+      "morning_preparation",
+      "first_outage_response",
+      "allocate_the_night"
+    ],
+    "variables": [
+      "pantry_reserve",
+      "water_reserve",
+      "apprentice_readiness",
+      "outage_record",
+      "household_strain",
+      "family_trust",
+      "repair_progress",
+      "open_table",
+      "company_pressure"
+    ],
+    "ending_gates": [
+      "ending_repair_success",
+      "ending_repair_cost",
+      "ending_table_success",
+      "ending_table_cost",
+      "ending_record_success",
+      "ending_record_cost",
+      "ending_reciprocal_success",
+      "ending_reciprocal_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prepare_extra_bread",
+      "ink_path": "breakfast_routine",
+      "action_type": "use_object",
+      "actor_intent": "Spend scarce sweet flour before pressure arrives so the household can feed more people later.",
+      "state_basis": [
+        "Brunna shares household work and can prepare food with Tamsin.",
+        "Bellhouse response draws directly on household pantry stores."
+      ],
+      "reviewed_consequences": [
+        "Raises pantry_reserve and family_trust while raising household_strain through immediate expense; enables the strongest open-table route."
+      ],
+      "training_hooks": [
+        "care_preparation_cost",
+        "domestic_work_as_infrastructure",
+        "material_branch_setup"
+      ]
+    },
+    {
+      "branch_id": "rehearse_null",
+      "ink_path": "breakfast_routine",
+      "action_type": "touch_object",
+      "actor_intent": "Use quiet morning time to make Brunna's first safety action reliable under later pressure.",
+      "state_basis": [
+        "Runic apprentices learn live null termination under supervision before useful effects."
+      ],
+      "reviewed_consequences": [
+        "Raises apprentice_readiness and repair_progress; enables a competent repair route or strengthens a reciprocal crew rotation."
+      ],
+      "training_hooks": [
+        "apprentice_routine",
+        "safety_skill_before_crisis",
+        "practice_changes_affordance"
+      ]
+    },
+    {
+      "branch_id": "prepare_waiting_board",
+      "ink_path": "breakfast_routine",
+      "action_type": "write_record",
+      "actor_intent": "Turn habitual family travel into an accountable list before anyone is missing.",
+      "state_basis": [
+        "The bellhouse watch checks named household and neighbourhood obligations when the return bell fails."
+      ],
+      "reviewed_consequences": [
+        "Raises outage_record and family_trust; identifies Jory's last confirmed route later and enables the strongest public-outage claim."
+      ],
+      "training_hooks": [
+        "ordinary_record_becomes_evidence",
+        "kinship_accounting",
+        "missing_person_visibility"
+      ]
+    },
+    {
+      "branch_id": "bank_household_water",
+      "ink_path": "breakfast_routine",
+      "action_type": "move_object",
+      "actor_intent": "Store water before the shared rail-and-pump crystal schedule can fail.",
+      "state_basis": [
+        "Mossgate's imported crystal schedule drives both rail service and irrigation pumps.",
+        "Brunna can carry jars between the alley spout and kitchen."
+      ],
+      "reviewed_consequences": [
+        "Raises water_reserve and household_strain; changes later care capacity, reciprocal leverage, and the final image of depletion."
+      ],
+      "training_hooks": [
+        "infrastructure_dependency_domesticated",
+        "embodied_preparation",
+        "care_resource"
+      ]
+    },
+    {
+      "branch_id": "open_bellhouse_table",
+      "ink_path": "first_response",
+      "action_type": "open_route",
+      "actor_intent": "Signal immediate hospitality and feed the first stranded people before the operator classifies the event.",
+      "state_basis": [
+        "The white ladle marks an open bellhouse table.",
+        "The household controls its own rail-side door and pantry."
+      ],
+      "reviewed_consequences": [
+        "Sets open_table, spends pantry_reserve, and raises both household_strain and family_trust; opens the reciprocal-bargain gate."
+      ],
+      "training_hooks": [
+        "hospitality_as_action",
+        "care_spends_inventory",
+        "household_authority"
+      ]
+    },
+    {
+      "branch_id": "inspect_signal_feed",
+      "ink_path": "first_response",
+      "action_type": "inspect_object",
+      "actor_intent": "Use Brunna's bounded technical authority to rule out the local signal cabinet before the repair crew arrives.",
+      "state_basis": [
+        "Brunna knows the local engine model and null safety sequence.",
+        "The distant south-cut feed remains outside her sight and authority."
+      ],
+      "reviewed_consequences": [
+        "Raises repair_progress, apprentice_readiness, and company_pressure while lowering family_trust; enables the competent repair ending after morning rehearsal."
+      ],
+      "training_hooks": [
+        "bounded_technical_diagnosis",
+        "work_claim_over_family_claim",
+        "narrow_training"
+      ]
+    },
+    {
+      "branch_id": "carry_neighbor_water",
+      "ink_path": "first_response",
+      "action_type": "carry_object",
+      "actor_intent": "Meet an elder's foreseeable water need before the lift and alley spout fail together.",
+      "state_basis": [
+        "Old Emet depends on the station lift and pump-fed alley spout.",
+        "Brunna can carry one stored jar up the adjacent stairs."
+      ],
+      "reviewed_consequences": [
+        "Spends water_reserve and raises household_strain, family_trust, and outage_record through a timed witnessed delivery."
+      ],
+      "training_hooks": [
+        "nonverbal_neighbor_care",
+        "elder_access_dependency",
+        "private_record_public_value"
+      ]
+    },
+    {
+      "branch_id": "make_public_record",
+      "ink_path": "first_response",
+      "action_type": "show_object",
+      "actor_intent": "Place the household's named absences and failure time beside the blank company slate.",
+      "state_basis": [
+        "Brunna can carry the waiting board from the kitchen through the rail door to the platform.",
+        "The station clerk has not yet recorded an outage."
+      ],
+      "reviewed_consequences": [
+        "Raises outage_record, company_pressure, and household_strain; strengthens the later claim while making Brunna more exposed to the operator."
+      ],
+      "training_hooks": [
+        "show_object_as_testimony",
+        "record_authority_conflict",
+        "witness_cost"
+      ]
+    },
+    {
+      "branch_id": "prioritize_rail_repair",
+      "ink_path": "final_choice",
+      "action_type": "accept_duty",
+      "actor_intent": "Answer apprenticeship duty and try to restore the line, accepting that the bellhouse loses Brunna's hands.",
+      "state_basis": [
+        "The successful route requires both practiced null skill and completed local diagnosis."
+      ],
+      "reviewed_consequences": [
+        "Routes to repair success or cost based on apprentice_readiness and repair_progress; later prose reads outage_record, family_trust, and household_strain."
+      ],
+      "training_hooks": [
+        "apprenticeship_duty",
+        "skill_gated_service_restoration",
+        "care_displacement"
+      ]
+    },
+    {
+      "branch_id": "prioritize_open_table",
+      "ink_path": "final_choice",
+      "action_type": "refuse_duty",
+      "actor_intent": "Keep the bellhouse open and preserve immediate care even if the railway reviews Brunna's placement.",
+      "state_basis": [
+        "The household owns its table; Brunna can refuse the assignment while Hesta can place her apprenticeship under review.",
+        "A sustainable route requires prepared food and sufficient family trust."
+      ],
+      "reviewed_consequences": [
+        "Sets open_table and routes to table success or cost based on pantry_reserve and family_trust; later prose reads outage_record and company_pressure."
+      ],
+      "training_hooks": [
+        "refusal_as_care",
+        "materially_gated_hospitality",
+        "household_network"
+      ]
+    },
+    {
+      "branch_id": "prioritize_public_outage",
+      "ink_path": "final_choice",
+      "action_type": "challenge_record",
+      "actor_intent": "Force the operator to recognize the stopped line as an outage so company stores and compensation become available.",
+      "state_basis": [
+        "The strongest route requires repeated ordinary and public record work, not one dramatic accusation."
+      ],
+      "reviewed_consequences": [
+        "Raises outage_record and routes to record success or cost at the threshold; success releases company stores but does not restore the line."
+      ],
+      "training_hooks": [
+        "record_threshold",
+        "cost_recognition_without_full_resolution",
+        "domestic_evidence"
+      ]
+    },
+    {
+      "branch_id": "prioritize_reciprocal_plan",
+      "ink_path": "final_choice",
+      "action_type": "negotiate_reciprocity",
+      "actor_intent": "Trade beds and supper for company stores and a repair rotation that leaves one apprentice on bellhouse watch.",
+      "state_basis": [
+        "The route requires an already open table plus credible technical, record, or water preparation.",
+        "Hesta needs bellhouse beds and meals for her exhausted crew."
+      ],
+      "reviewed_consequences": [
+        "Routes to reciprocal success or cost based on open_table and prepared leverage; the cost route shows hospitality being accepted while the terms are refused."
+      ],
+      "training_hooks": [
+        "reciprocity_over_charity",
+        "table_kin_divided_obligation",
+        "leverage_requires_preparation"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "State-gated ending selection",
+      "Visual modifier selection from explicit branch and state triggers"
+    ],
+    "manual_review_required": [
+      "Durable character memory or relationship updates",
+      "Promotion of fixture events into canonical Delvehold history",
+      "Any claim about the south-cut fault's ecological, political, or intentional cause",
+      "Changes to railway contracts, apprenticeship law, or Mossgate municipal policy beyond the authored lore elaboration"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex root applying the four required Ghostlight reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality verdict: accepted. Reader orientation 5/5, coherence 5/5, pacing 4/5, voice 5/5, tonal fit 5/5, and IF playability 4/5. Breakfast establishes place, roles, table-kin, Jory's absence risk, and Hesta's work claim before the bell fails; all twelve choices alter later gates, callbacks, resources, appraisal, or endings.",
+      "Lore grounding verdict: accepted. Source coverage 5/5, canon fit 5/5, grounding quality 5/5, and vault backfill value 5/5. Nine Delvehold lore notes plus the Peoples index were checked. The review made station emergency-store release explicit in the owning Humans note and softened the sidecar's refusal claim so table-kin does not impersonate Greathold civic or labor authority.",
+      "Visual continuity verdict: accepted_with_minor_revisions as an illustrated-IF scaffold. Segmentation 5/5, prompt readiness 4/5, character visibility 5/5, branch continuity 4/5, and website replay 4/5. Twenty-three visual scenes have twenty-three BFL prompts, stable visible-character refs, affirmative standalone geometry, and explicit state or ending deltas. Review split successful and failed repair homecomings and separated station modifiers from south-cut modifiers. A durable plan view or 3D blockout remains required before multi-angle rendering.",
+      "Spatial-geometric cohesion verdict: accepted_with_minor_revisions as a stageable text plan. Layout 5/5, sightlines 4/5, body affordance 5/5, movement access 5/5, object-system geometry 5/5, and branch spatial state 4/5. The embedded map fixes the kitchen, covered platform, signal cabinet, record/store face, engine gate, rear alley, remote feed trench, camera slots, sightlines, movement routes, and persistent object states. High-consistency replay still requires the declared blockout.",
+      "JSON parsing, variable-use audit, branch/sidecar parity, ending parity, unique visual-scene ids, camera coverage, visual-ref resolution, prompt-count parity, and negative-prompt scan passed. Ink was not compiled because the mandate forbids installing an Ink compiler; no compiler was invoked."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

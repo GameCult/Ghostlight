@@ -1,0 +1,909 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "hearth-mossgate-bellhouse-v0-branch-and-fold-visual",
+  "ink_ref": "examples/ink/delvehold/hearth-mossgate-bellhouse-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/delvehold/hearth-mossgate-bellhouse-v0.branch-and-fold.v0.training.json",
+  "scene_id": "hearth-mossgate-bellhouse-v0.the-silent-return-bell",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for one Mossgate household living inside a foreign rail-and-pump dependency.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for East Bellhouse routine, four preparations, the silent return bell, four immediate responses, Hesta's service-pause notice, the final allocation, and state-gated repair, table, record, and reciprocal aftermaths.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the kitchen-platform establishing view, breakfast routine, each preparation, the prepared fold, the bell's failed stroke, each first response, the household-and-rail fold, Hesta's arrival, the final threshold, the south-cut repair, and each ending family. The silent half-stroke and Jory's possible return receive distinct replay frames.",
+    "prompting_rule": "Each base image prompt restates visible geometry, materials, light, bodies, tools, and staging in plain terms for a general image model. Prompt assembly adds only refs for characters visible in that frame. Continuity notes remain reviewer constraints rather than prompt text.",
+    "global_style_cue": "Style: richly textured high-fantasy industrial storybook illustration, precise ink drawing with restrained watercolor, honey limestone and dark iron, warm hearth amber against cold blue rune light, practical worn magic, readable silhouettes, humane facial acting, cinematic composition suitable for illustrated interactive fiction, unlettered signs and slates.",
+    "prompt_assembly_rule": "Assemble each image prompt from global_style_cue, the scene base_image_prompt, visual refs only for named characters and groups listed as visible in that scene, and triggered state_image_modifiers or global_branch_image_modifiers. Keep continuity notes out of the assembled prompt. Use the camera-specific scene-set blockout when one exists.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture revisits one connected house-platform-alley complex from several angles and briefly visits the remote south cutting. The embedded map fixes zones, doors, routes, sightlines, props, and camera slots for draft replay planning.",
+      "future_scene_set_need": "Before high-consistency multi-angle rendering, build a plan view or simple 3D blockout for East Bellhouse and its platform, plus one camera-specific blockout for the south-cut feed manifold."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "mossgate_station_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide cutaway establishing view of a high-fantasy market-town rail stop built from honey-colored limestone. A long black-iron platform and two parallel rails run along the outer wall of a narrow household kitchen. A cold blue crystal conduit lies in a protected channel between the rails and continues through the wall toward orchard pump pipes. The kitchen has a black iron stove, long scrubbed table, serving hatch facing the platform, rail-side door, street-side door, and blue-glazed water jars beneath the hatch. A red bronze return bell hangs above the platform signal. Orchard baskets, handcarts, a small engine shed, an alley stair, and a cage lift establish the surrounding working neighbourhood.",
+        "visible_characters": [
+          {
+            "agent_id": "mossgate_platform_households",
+            "default_stance": "small human market-town figures moving through ordinary platform and alley routines",
+            "visual_ref": "visual_character_refs.groups.mossgate_platform_households"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "East Bellhouse is a narrow kitchen sharing its rail-side wall with the platform; the serving hatch and rail door both open directly to the platform.",
+          "The alley stair and cage lift rise behind the street-side door, on the opposite side of the kitchen from the tracks.",
+          "The blue crystal conduit runs between the two rails and branches toward visible orchard-pump pipes beyond the station."
+        ]
+      },
+      {
+        "visual_scene_id": "mossgate_breakfast_routine",
+        "ink_anchor": "breakfast_routine",
+        "base_image_prompt": "Warm medium-wide kitchen view inside the narrow station-side house. A young broad-built dwarf woman in a blue railway coat draws a geometric rune in spilled flour at the long table. A dark-skinned human woman in a rust-red dress and work apron slices yesterday's round loaf by the black stove. A ten-year-old human girl with two puff braids ties red and white cords to a small wooden family board hung beside the platform serving hatch. Three pottery bowls wait at habitual places. Through the open hatch, the red return bell, black rails, blue conduit, and green arrival rune are visible in clear morning light.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "standing at the table, one square hand tracing flour",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "slicing bread beside the stove",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "nell_reed",
+            "default_stance": "tying cords at the family board",
+            "visual_ref": "visual_character_refs.characters.nell_reed"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The waiting board hangs on the kitchen wall immediately beside the serving hatch and can be lifted from two hooks.",
+          "Jory's fourth bowl stays at the platform end of the table."
+        ]
+      },
+      {
+        "visual_scene_id": "mossgate_prepare_bread",
+        "ink_anchor": "breakfast_routine.prepare_extra_bread",
+        "base_image_prompt": "Close domestic work frame at a scrubbed wooden table beside a black iron stove. A young dwarf railway apprentice with copper-brown skin, black work braids, cropped jaw beard, blue coat, and square hands leans her weight into pale bread dough. A human bellhouse host with deep-brown skin, cropped curls, rust dress, floury apron, and steady expression checks an almost empty flour bin. A human girl watches with amused seriousness. A folded tool roll and small brass lamp engine hang near the rail door; warm amber stove light falls across flour, dough, bowls, and worn wood.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "kneading with both hands and shoulders",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "holding the depleted flour bin",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "nell_reed",
+            "default_stance": "watching from the end of the table",
+            "visual_ref": "visual_character_refs.characters.nell_reed"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "mossgate_null_rehearsal",
+        "ink_anchor": "breakfast_routine.rehearse_null",
+        "base_image_prompt": "Close technical-domestic frame on the long kitchen table. A young broad-built dwarf apprentice in a blue railway coat braces a small brass lamp engine with one hand and draws a crisp right-to-left geometric null stroke above a cold blue practice crystal with the other. The blue line folds dark cleanly. A ten-year-old human girl applauds from a safe distance; her human mother watches beside the stove with practical caution. Flour dust, breakfast bowls, a tool roll, and the rail platform visible through the serving hatch make the lesson part of household routine.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "balanced over the lamp engine, finishing the null stroke",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "nell_reed",
+            "default_stance": "applauding beyond the table edge",
+            "visual_ref": "visual_character_refs.characters.nell_reed"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "watching from beside the stove",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "mossgate_waiting_board",
+        "ink_anchor": "breakfast_routine.prepare_waiting_board",
+        "base_image_prompt": "Medium close view of a portable household waiting board on a honey-stone kitchen wall beside a platform serving hatch. Red and white cords run between carved route pegs; small black beads mark last confirmed stations. A young dwarf railway apprentice with work-braided black hair reties the cords in a clean row while a human girl holds one deliberately crooked cord and studies the organized pattern. Through the hatch, two black rails, a blue crystal conduit, a red return bell, and orchard freight baskets establish what the cords track.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "retieing route cords with careful square fingers",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "nell_reed",
+            "default_stance": "holding a crooked red cord",
+            "visual_ref": "visual_character_refs.characters.nell_reed"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "mossgate_water_jars",
+        "ink_anchor": "breakfast_routine.bank_household_water",
+        "base_image_prompt": "Morning alley behind a high-fantasy rail-side household. A young broad-built dwarf woman in a blue railway coat fills two large blue-glazed ceramic jars at a brass public spout set into honey-colored stone. A narrow stone stair climbs beside an iron cage lift. On the upper landing, an elderly human man with a lean frame, white beard, patched green robe, and cane lowers a copper pot on a rope. Blue runic light pulses faintly through a pump pipe beneath the spout; the dwarf apprentice lifts one heavy jar with practiced posture.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "braced beside the spout, lifting a full jar",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "old_emet",
+            "default_stance": "leaning over the upper landing rail with copper pot and rope",
+            "visual_ref": "visual_character_refs.characters.old_emet"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "mossgate_morning_ready",
+        "ink_anchor": "morning_fold",
+        "base_image_prompt": "Wide interior view of East Bellhouse ready for an ordinary day: long table with four pottery bowls, black stove, platform serving hatch, rail-side door, portable waiting board beside the hatch, folded blue railway tool roll on a wall peg, blue-glazed water jars below, and a small brass lamp engine on the table. A dwarf apprentice hangs the tool roll between household and platform while a human woman opens the serving hatch and a human girl arranges bowls. The red bell and green arrival rune are visible outside.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "hanging her tool roll beside the rail door",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "opening the serving hatch",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "nell_reed",
+            "default_stance": "placing bowls at the long table",
+            "visual_ref": "visual_character_refs.characters.nell_reed"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "pantry_reserve >= 4",
+            "modifier_prompt": "Two round travel loaves cool beneath a clean cloth near the stove; the flour bin is visibly low."
+          },
+          {
+            "trigger": "apprentice_readiness >= 4",
+            "modifier_prompt": "Three precise chalk null strokes sit beside a dark, safely terminated brass lamp engine."
+          },
+          {
+            "trigger": "outage_record >= 3",
+            "modifier_prompt": "The portable waiting board carries a neat dense pattern of red and white cords with black route beads."
+          },
+          {
+            "trigger": "water_reserve >= 4",
+            "modifier_prompt": "Four full blue-glazed water jars line the wall beneath the serving hatch."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "mossgate_silent_bell",
+        "ink_anchor": "silent_bell",
+        "base_image_prompt": "Pivotal high-fantasy industrial platform frame at noon. A red bronze return bell above two black iron rails has lifted slightly on its striker and hangs in failed silence. The green arrival rune on a stone signal drains to flat gray. Cold blue light flickers in the crystal conduit between the rails and in an orchard pump pipe leaving the station. Inside the adjacent serving hatch, a dwarf apprentice, a human mother, and a human girl all turn toward the bell; the girl holds an empty fourth pottery bowl. Bright noon light and the frozen bell make the interruption visible before a crowd forms.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "turned sharply from the table toward the bell",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "still beside the serving hatch, looking at the gray signal",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "nell_reed",
+            "default_stance": "holding the fourth bowl with both hands",
+            "visual_ref": "visual_character_refs.characters.nell_reed"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The bell failure, gray arrival rune, and blue-conduit stutter occur on the same platform centerline and are visible through the kitchen serving hatch."
+        ]
+      },
+      {
+        "visual_scene_id": "mossgate_first_response",
+        "ink_anchor": "first_response",
+        "base_image_prompt": "Choice tableau spanning the connected bellhouse and platform. A young dwarf railway apprentice stands at the rail-side doorway with four reachable claims around her: a white wooden ladle hanging by the door, a blue tool roll beside a waist-high signal cabinet across the platform, a full blue-glazed water jar near the rear alley stair, and a portable corded waiting board beside the serving hatch. The red return bell is still, the arrival rune is gray, and people begin to gather beneath an iron-and-glass awning. The geometry makes each physical route distinct and reachable.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "centered at the rail door between table, cabinet, alley, and platform board",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "mossgate_platform_households",
+            "default_stance": "small groups beginning to gather under the awning",
+            "visual_ref": "visual_character_refs.groups.mossgate_platform_households"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "mossgate_open_table",
+        "ink_anchor": "first_response.open_bellhouse_table",
+        "base_image_prompt": "Warm crowded serving-hatch frame in a rail-side household kitchen. A young dwarf apprentice hangs a white wooden ladle from an exterior hook above the open rail door. A human bellhouse host slices a round loaf at the long table. A human girl gathers three stacked lunch tins while two orchard workers, a wet nurse carrying a bundled infant, and a school-age boy wait beneath the platform awning. Steam from a soup pot crosses cold blue light from the dead rail conduit; bowls and bread make hospitality visibly finite.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "one hand on the white ladle cord at the open rail door",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "cutting bread at the long table",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "nell_reed",
+            "default_stance": "collecting lunch tins near the hatch",
+            "visual_ref": "visual_character_refs.characters.nell_reed"
+          },
+          {
+            "agent_id": "mossgate_platform_households",
+            "default_stance": "orchard workers, wet nurse, infant, and boy waiting in an orderly cluster",
+            "visual_ref": "visual_character_refs.groups.mossgate_platform_households"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "mossgate_signal_cabinet",
+        "ink_anchor": "first_response.inspect_signal_feed",
+        "base_image_prompt": "Medium technical frame on a honey-stone railway platform. A young broad-built dwarf apprentice kneels at an open waist-high iron signal cabinet beside two rails. She draws a precise pale-blue null rune before touching exposed brass terminals and a gray crystal-feed gauge. Her rolled blue coat sleeves, leather tool belt, copper measuring fork, and chalk marks show careful bounded diagnosis. The dead blue conduit runs south under the rails; East Bellhouse's open serving hatch and red return bell remain visible behind her across a short clear distance.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "kneeling squarely at the cabinet with hands clear of the feed until null closes",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The signal cabinet stands across the platform from the serving hatch and remains fully visible from the kitchen."
+        ]
+      },
+      {
+        "visual_scene_id": "mossgate_old_emet_water",
+        "ink_anchor": "first_response.carry_neighbor_water",
+        "base_image_prompt": "Low-angle alley stair frame beside East Bellhouse. A young dwarf railway apprentice climbs narrow honey-stone steps with one blue-glazed water jar braced against her shoulder and hip. An iron cage lift stands motionless beside the stair. An elderly human man in patched green robes waits on the upper landing with a cane and a chalk-tagged copper pot. From the landing, the gray station signal and silent red bell are visible above the roofline; the brass alley spout below has weak blue runic light.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "climbing with a heavy jar in stable short steps",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "old_emet",
+            "default_stance": "waiting at the upper landing rail with cane and copper pot",
+            "visual_ref": "visual_character_refs.characters.old_emet"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "mossgate_public_record",
+        "ink_anchor": "first_response.make_public_record",
+        "base_image_prompt": "Medium-wide public-evidence frame on the Mossgate platform. A young dwarf railway apprentice props a portable wooden household board covered in red and white cords and black route beads against the station's large blank black slate below the gray arrival rune. She writes a precise failure time in chalk. Behind a ticket window, a human clerk pulls a small brass shutter closed. Waiting human orchard workers and market families watch beneath the iron-and-glass awning; the silent red bell and dead blue conduit remain visible along the track centerline.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "kneeling beside the two contrasting record surfaces with chalk raised",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "mossgate_platform_households",
+            "default_stance": "watching from beneath the awning with baskets, lunch tins, and empty hands",
+            "visual_ref": "visual_character_refs.groups.mossgate_platform_households"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "mossgate_response_fold",
+        "ink_anchor": "response_fold",
+        "base_image_prompt": "Wide afternoon view from the platform into East Bellhouse. The gray arrival rune, silent red bell, waist-high signal cabinet, closed serving hatch, portable corded waiting board, water-jar row, long household table, and engine-shed gate are all visible in one coherent stage. A young dwarf apprentice stands in the disputed middle between the platform and kitchen; the human host works at the table; her daughter guards the fourth bowl; stranded market-town people gather under the awning.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "between rail door and platform centerline",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "working behind the serving hatch",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "nell_reed",
+            "default_stance": "holding or standing beside the fourth bowl",
+            "visual_ref": "visual_character_refs.characters.nell_reed"
+          },
+          {
+            "agent_id": "mossgate_platform_households",
+            "default_stance": "stranded people gathered beneath the awning",
+            "visual_ref": "visual_character_refs.groups.mossgate_platform_households"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "open_table == 1",
+            "modifier_prompt": "The white ladle hangs outside an open rail door; steam fills the serving hatch and people hold bowls near the long table."
+          },
+          {
+            "trigger": "repair_progress >= 3",
+            "modifier_prompt": "The signal cabinet stands safely open with a dark local branch, clean chalk marks, and tools placed in an orderly row."
+          },
+          {
+            "trigger": "outage_record >= 3",
+            "modifier_prompt": "The corded household board is publicly displayed beside the blank company slate, dense red routes making named absences visible."
+          },
+          {
+            "trigger": "water_reserve <= 1",
+            "modifier_prompt": "One blue-glazed jar lies on its side beneath the hatch, visibly empty."
+          },
+          {
+            "trigger": "family_trust >= 4",
+            "modifier_prompt": "The human girl solemnly presents the fourth bowl to the dwarf apprentice, who receives it with both square hands."
+          },
+          {
+            "trigger": "family_trust <= 1",
+            "modifier_prompt": "The human host and dwarf apprentice occupy opposite sides of the rail door with closed posture and a clear gap between them."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "mossgate_hesta_arrival",
+        "ink_anchor": "company_arrival",
+        "base_image_prompt": "Authority-arrival frame on the Mossgate platform. A stocky older dwarf forewoman with iron-gray braids, indigo work coat, heavy feed key, and rolled company notice steps through the black iron engine-shed gate with two exhausted dwarf fitters carrying insulated tools. At the East Bellhouse serving hatch, a dark-skinned human host holds a bread knife flat on the board; a young dwarf apprentice stands between her and the forewoman; a human girl grips an empty fourth bowl. The silent red bell, gray arrival rune, sealed store door, waiting board, water jars, and crowded awning make every claim visible.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "between Hesta's feed key and Tamsin's table",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "at the serving hatch with bread knife flat on the board",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "nell_reed",
+            "default_stance": "inside the hatch holding the fourth bowl",
+            "visual_ref": "visual_character_refs.characters.nell_reed"
+          },
+          {
+            "agent_id": "hesta_flint",
+            "default_stance": "just outside the engine-shed gate with feed key and notice",
+            "visual_ref": "visual_character_refs.characters.hesta_flint"
+          },
+          {
+            "agent_id": "south_cut_rail_fitters",
+            "default_stance": "two tired dwarves behind Hesta with insulated tools and slumped shoulders",
+            "visual_ref": "visual_character_refs.groups.south_cut_rail_fitters"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "company_pressure >= 3",
+            "modifier_prompt": "The rolled company notice bears two large wax-and-metal seals; Hesta holds it beside Brunna's apprentice badge."
+          },
+          {
+            "trigger": "household_strain >= 3",
+            "modifier_prompt": "The remaining loaf is sliced paper-thin; the flour bin and nearby shelf show only crumbs and one small coin jar."
+          },
+          {
+            "trigger": "apprentice_readiness >= 4",
+            "modifier_prompt": "Hesta extends the heavy feed key toward Brunna while watching the clean null marks on Brunna's glove."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "mossgate_final_threshold",
+        "ink_anchor": "final_choice",
+        "base_image_prompt": "Wide final-choice tableau across the connected platform and bellhouse. At center, a young dwarf apprentice stands beside a heavy brass feed key. To one side, an older dwarf forewoman and two exhausted fitters wait at the engine-shed gate with insulated tool rolls. To the other, a human bellhouse host, her daughter, a long table, remaining bread, water jars, white ladle, and fourth bowl occupy the warm serving hatch. In front, the portable corded waiting board leans against the blank company slate. Behind all of them, the return bell is silent, the arrival rune is gray, the sealed store door is closed, and stranded families wait beneath the awning.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "centered with hands between feed key, ladle cord, and waiting board",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "inside the serving hatch beside the remaining loaf",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "nell_reed",
+            "default_stance": "holding the fourth bowl at the table edge",
+            "visual_ref": "visual_character_refs.characters.nell_reed"
+          },
+          {
+            "agent_id": "hesta_flint",
+            "default_stance": "at the engine-shed side with company notice",
+            "visual_ref": "visual_character_refs.characters.hesta_flint"
+          },
+          {
+            "agent_id": "south_cut_rail_fitters",
+            "default_stance": "waiting behind Hesta with repair tools",
+            "visual_ref": "visual_character_refs.groups.south_cut_rail_fitters"
+          },
+          {
+            "agent_id": "mossgate_platform_households",
+            "default_stance": "waiting beneath the awning behind the record board",
+            "visual_ref": "visual_character_refs.groups.mossgate_platform_households"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "pantry_reserve < 3",
+            "modifier_prompt": "Only one heel of bread remains beside several empty bowls."
+          },
+          {
+            "trigger": "water_reserve <= 1",
+            "modifier_prompt": "The blue-glazed jars are empty, with one tipped to show its dry interior."
+          },
+          {
+            "trigger": "outage_record >= 5",
+            "modifier_prompt": "The waiting board carries several precise chalk times and witness marks beside dense red route cords."
+          },
+          {
+            "trigger": "open_table == 1",
+            "modifier_prompt": "The rail door and serving hatch stand open under the white ladle, with steam and occupied benches joining house to platform."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "mossgate_repair_south_cut",
+        "ink_anchor": "ghostlight.scene: repair_south_cut",
+        "base_image_prompt": "Night repair frame at a remote high-fantasy railway cutting between wet orchard banks. Black iron rails enter a stone retaining trench where a large brass-and-iron feed manifold divides cold blue crystal power between a locomotive branch and thick irrigation pump pipes. A young dwarf apprentice in a blue coat works beside an older gray-braided dwarf forewoman and two exhausted dwarf fitters under hooded amber lamps. Insulated tools, ceramic breaker wedges, pressure floats, and a narrow service cart fill the trench; rain shines on stone and metal.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "at the locomotive branch with null hand raised and tools placed clear",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "hesta_flint",
+            "default_stance": "guarding the feed key and watching manifold pressure",
+            "visual_ref": "visual_character_refs.characters.hesta_flint"
+          },
+          {
+            "agent_id": "south_cut_rail_fitters",
+            "default_stance": "braced along the pump branch with insulated tools",
+            "visual_ref": "visual_character_refs.groups.south_cut_rail_fitters"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "mossgate_repair_homecoming_success",
+        "ink_anchor": "ghostlight.scene: repair_homecoming_success",
+        "base_image_prompt": "Before-dawn homecoming through the East Bellhouse rail door. Warm stove light falls across the long table, fourth bowl, portable waiting board, white ladle, and depleted shelves. A tired young dwarf apprentice in a damp blue railway coat stands at the threshold. A human bellhouse host waits beside the stove while her daughter wakes around the fourth pottery bowl. Outside, a dim blue rune locomotive stands on the black rails and a lean human porter in a moss-green coat steps through the rail door beneath the swinging red return bell.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "exhausted at the rail-door threshold",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "waiting beside the stove",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "nell_reed",
+            "default_stance": "waking at the table around the fourth bowl",
+            "visual_ref": "visual_character_refs.characters.nell_reed"
+          },
+          {
+            "agent_id": "jory_reed",
+            "default_stance": "stepping through the rail door from the returned train",
+            "visual_ref": "visual_character_refs.characters.jory_reed"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "mossgate_repair_homecoming_cost",
+        "ink_anchor": "ghostlight.scene: repair_homecoming_cost",
+        "base_image_prompt": "Before-dawn return to East Bellhouse after a failed repair. Warm stove light falls across a long table, fourth bowl, portable waiting board, white ladle, depleted shelves, one bread heel, and empty blue-glazed jars. A tired young dwarf apprentice in a rain-dark blue railway coat stands alone in the rail-door threshold. A human bellhouse host waits beside the stove while her daughter sleeps with both arms around the fourth pottery bowl. Outside, the arrival rune and two black rails stay gray beneath the still red return bell.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "exhausted and alone at the rail-door threshold",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "waiting beside the stove",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "nell_reed",
+            "default_stance": "asleep at the table around the fourth bowl",
+            "visual_ref": "visual_character_refs.characters.nell_reed"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "mossgate_ending_table",
+        "ink_anchor": "ending_table_success|ending_table_cost",
+        "base_image_prompt": "Night inside East Bellhouse with the rail door and serving hatch as the center of care. A young dwarf apprentice in a flour-marked apron serves soup beside a human host and her daughter. Human orchard workers, a wet nurse with bundled infant, and a school-age boy occupy benches and the awning outside. The long table, round loaves, blue-glazed water jars, stacked lunch tins, white ladle, portable waiting board, gray signal, and silent red bell make food, water, people, and absence countable.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "serving at the open hatch in a spare apron",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "cutting and distributing food at the table",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "nell_reed",
+            "default_stance": "guarding lunch tins near the stove",
+            "visual_ref": "visual_character_refs.characters.nell_reed"
+          },
+          {
+            "agent_id": "mossgate_platform_households",
+            "default_stance": "seated or waiting with bowls beneath warm light and the cold awning",
+            "visual_ref": "visual_character_refs.groups.mossgate_platform_households"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "mossgate_ending_record",
+        "ink_anchor": "ending_record_success|ending_record_cost",
+        "base_image_prompt": "Night record confrontation on the Mossgate platform. A young dwarf railway apprentice and an older dwarf forewoman face each other across a portable board of red and white cords laid over a company notice beside the station's black service slate. A dark-skinned human bellhouse host watches from the open serving hatch; platform families stand beneath the awning with empty bowls, copper pots, orchard baskets, and lunch tins. A sealed store door, gray arrival rune, silent red bell, and rain at the platform edge make official recognition materially consequential.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "holding the corded board level between household and company records",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "hesta_flint",
+            "default_stance": "facing the board with notice and chalk",
+            "visual_ref": "visual_character_refs.characters.hesta_flint"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "watching from the serving hatch",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "mossgate_platform_households",
+            "default_stance": "standing as witnesses beneath the awning",
+            "visual_ref": "visual_character_refs.groups.mossgate_platform_households"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "mossgate_ending_reciprocal",
+        "ink_anchor": "ending_reciprocal_success|ending_reciprocal_cost",
+        "base_image_prompt": "Night reciprocal-bargain tableau joining platform and bellhouse. A young dwarf apprentice stands with one hand near a heavy feed key and the other near the white ladle cord. An older dwarf forewoman holds a rolled notice by the engine-shed gate. Two exhausted dwarf fitters sit on the edge of the household bench with insulated tools at their boots. A human host portions supper behind the serving hatch while her daughter tends the waiting board. The sealed company store door, remaining bread, water jars, bedrolls, gray signal, and silent bell show the exchange of care, rest, stores, and repair labor.",
+        "visible_characters": [
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "bridging feed key and white ladle cord",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          },
+          {
+            "agent_id": "hesta_flint",
+            "default_stance": "considering the terms at the engine-shed gate",
+            "visual_ref": "visual_character_refs.characters.hesta_flint"
+          },
+          {
+            "agent_id": "south_cut_rail_fitters",
+            "default_stance": "seated exhausted on the household bench with tools grounded",
+            "visual_ref": "visual_character_refs.groups.south_cut_rail_fitters"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "portioning supper at the hatch",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "nell_reed",
+            "default_stance": "moving cords on the waiting board",
+            "visual_ref": "visual_character_refs.characters.nell_reed"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "mossgate_dawn_return",
+        "ink_anchor": "ghostlight.scene: reciprocal_dawn_return",
+        "base_image_prompt": "Dawn homecoming at East Bellhouse. The red bronze return bell swings above a black iron platform washed with pale morning light. A slow rune locomotive glows dim blue along the rails. A tired human rail porter in a moss-green coat steps through the open rail door toward a human woman, their ten-year-old daughter, and a young dwarf apprentice setting out the fourth pottery bowl. The white ladle, corded waiting board, empty jars, thin bread, feed key, and sleeping repair tools remain visible as evidence of the night.",
+        "visible_characters": [
+          {
+            "agent_id": "jory_reed",
+            "default_stance": "stepping through the rail door from the returned train",
+            "visual_ref": "visual_character_refs.characters.jory_reed"
+          },
+          {
+            "agent_id": "tamsin_reed",
+            "default_stance": "standing just inside the doorway",
+            "visual_ref": "visual_character_refs.characters.tamsin_reed"
+          },
+          {
+            "agent_id": "nell_reed",
+            "default_stance": "moving toward Jory with the fourth bowl",
+            "visual_ref": "visual_character_refs.characters.nell_reed"
+          },
+          {
+            "agent_id": "brunna_slatewise",
+            "default_stance": "at the table setting down the fourth bowl",
+            "visual_ref": "visual_character_refs.characters.brunna_slatewise"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prepare_extra_bread_visual",
+        "trigger": "branch_label == prepare_extra_bread",
+        "apply_to_visual_scene_ids": ["mossgate_morning_ready", "mossgate_response_fold", "mossgate_final_threshold"],
+        "modifier_prompt": "Two round travel loaves sit beneath a cloth near the stove, with a visibly depleted flour bin beside them."
+      },
+      {
+        "modifier_id": "rehearse_null_visual",
+        "trigger": "branch_label == rehearse_null",
+        "apply_to_visual_scene_ids": ["mossgate_morning_ready", "mossgate_signal_cabinet", "mossgate_final_threshold"],
+        "modifier_prompt": "Clean right-to-left chalk null strokes mark Brunna's glove cuff and practice slate; her tools are ordered for safe isolation."
+      },
+      {
+        "modifier_id": "prepare_waiting_board_visual",
+        "trigger": "branch_label == prepare_waiting_board",
+        "apply_to_visual_scene_ids": ["mossgate_morning_ready", "mossgate_response_fold", "mossgate_final_threshold", "mossgate_ending_record"],
+        "modifier_prompt": "The portable waiting board displays a complete web of red and white route cords with black last-station beads."
+      },
+      {
+        "modifier_id": "bank_water_visual",
+        "trigger": "branch_label == bank_household_water",
+        "apply_to_visual_scene_ids": ["mossgate_morning_ready", "mossgate_response_fold", "mossgate_final_threshold", "mossgate_ending_reciprocal"],
+        "modifier_prompt": "Four full blue-glazed water jars stand in a stable row beneath the serving hatch."
+      },
+      {
+        "modifier_id": "open_table_visual",
+        "trigger": "branch_label == open_bellhouse_table",
+        "apply_to_visual_scene_ids": ["mossgate_response_fold", "mossgate_hesta_arrival", "mossgate_final_threshold", "mossgate_ending_table", "mossgate_ending_reciprocal"],
+        "modifier_prompt": "The white ladle hangs outside the open rail door; steam, bowls, occupied benches, and thinner bread connect kitchen and platform."
+      },
+      {
+        "modifier_id": "inspect_feed_visual",
+        "trigger": "branch_label == inspect_signal_feed",
+        "apply_to_visual_scene_ids": ["mossgate_response_fold", "mossgate_hesta_arrival", "mossgate_final_threshold", "mossgate_repair_south_cut"],
+        "modifier_prompt": "A clean chalk cabinet diagram marks the Mossgate local branch dark and safe, with the fault arrow pointing south."
+      },
+      {
+        "modifier_id": "carry_water_visual",
+        "trigger": "branch_label == carry_neighbor_water",
+        "apply_to_visual_scene_ids": ["mossgate_response_fold", "mossgate_final_threshold", "mossgate_ending_reciprocal"],
+        "modifier_prompt": "One water-jar space is empty; a chalk-tagged copper pot appears near the alley stair as evidence of the completed delivery."
+      },
+      {
+        "modifier_id": "public_record_visual",
+        "trigger": "branch_label == make_public_record",
+        "apply_to_visual_scene_ids": ["mossgate_response_fold", "mossgate_hesta_arrival", "mossgate_final_threshold", "mossgate_ending_record"],
+        "modifier_prompt": "The corded household board stands in public beside the blank station slate with a fresh failure-time mark and watching witnesses."
+      },
+      {
+        "modifier_id": "ending_repair_success_manifold_visual",
+        "trigger": "ending_label == rail_repair_success",
+        "apply_to_visual_scene_ids": ["mossgate_repair_south_cut"],
+        "modifier_prompt": "The locomotive branch glows with a narrow steady blue current beside the already lit orchard pump branch; the fitters secure one ceramic breaker wedge while Brunna records restored pressure."
+      },
+      {
+        "modifier_id": "ending_repair_cost_manifold_visual",
+        "trigger": "ending_label == rail_repair_cost",
+        "apply_to_visual_scene_ids": ["mossgate_repair_south_cut"],
+        "modifier_prompt": "The manifold diagram and physical fittings visibly disagree; open manuals, measuring forks, and insulated tools accumulate while the locomotive rail stays dark."
+      },
+      {
+        "modifier_id": "ending_table_success_visual",
+        "trigger": "ending_label == open_table_success",
+        "apply_to_visual_scene_ids": ["mossgate_ending_table"],
+        "modifier_prompt": "Other bellhouses answer with two fresh water jars and a covered loaf; people redistribute along the platform while East Bellhouse remains open."
+      },
+      {
+        "modifier_id": "ending_table_cost_visual",
+        "trigger": "ending_label == open_table_cost",
+        "apply_to_visual_scene_ids": ["mossgate_ending_table"],
+        "modifier_prompt": "The serving hatch is lowered to a narrow gap; one last loaf heel and an empty jar remain inside while waiting people are still visible under the awning."
+      },
+      {
+        "modifier_id": "ending_record_success_visual",
+        "trigger": "ending_label == public_outage_success",
+        "apply_to_visual_scene_ids": ["mossgate_ending_record"],
+        "modifier_prompt": "Hesta writes a fresh classification on the station slate; the company store door stands open and workers roll out sealed water drums and meal crates toward the bellhouse tables."
+      },
+      {
+        "modifier_id": "ending_record_cost_visual",
+        "trigger": "ending_label == public_outage_cost",
+        "apply_to_visual_scene_ids": ["mossgate_ending_record"],
+        "modifier_prompt": "The company slate stays blank and the store door stays sealed; rain reaches the platform board and draws the chalk time downward in gray streaks."
+      },
+      {
+        "modifier_id": "ending_reciprocal_terms_success_visual",
+        "trigger": "ending_label == reciprocal_watch_success",
+        "apply_to_visual_scene_ids": ["mossgate_ending_reciprocal"],
+        "modifier_prompt": "The company store stands open; meal crates, water drums, bedrolls, repair tools, and a simple rotating watch board are shared between fitters and householders."
+      },
+      {
+        "modifier_id": "ending_reciprocal_cost_visual",
+        "trigger": "ending_label == reciprocal_watch_cost",
+        "apply_to_visual_scene_ids": ["mossgate_ending_reciprocal"],
+        "modifier_prompt": "The exhausted fitters occupy the household bench while the store door stays sealed; Brunna wears her tool belt over a flour-marked apron and the water-jar row is nearly empty."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "mossgate_east_bellhouse.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "One narrow rectangular kitchen shares its long rail-side wall with a straight two-track platform. The serving hatch and rail door face the platform; the street door faces the rear alley stair and lift. The signal cabinet sits across the platform, the ticket window and company store are east, and the engine-shed gate is west. A second camera-specific unit covers the remote south-cut feed trench.",
+      "fixed_zones": [
+        {
+          "zone_id": "bellhouse_kitchen",
+          "visible_form": "narrow honey-stone room with long table, black stove, four bowls, pantry shelves, water-jar row, waiting-board hooks, serving hatch, and two doors",
+          "used_for": "breakfast, food preparation, household care, waiting, and return"
+        },
+        {
+          "zone_id": "platform_centerline",
+          "visible_form": "two straight black rails under an iron-and-glass awning with a protected blue crystal conduit between them, red return bell above, and arrival rune on a stone signal",
+          "used_for": "silent bell, public gathering, arriving trains, and visible infrastructure state"
+        },
+        {
+          "zone_id": "signal_cabinet",
+          "visible_form": "waist-high iron cabinet across the platform from the serving hatch with brass terminals, feed gauge, local branch diagram, and apprentice lock",
+          "used_for": "bounded local diagnosis and visible repair-progress marks"
+        },
+        {
+          "zone_id": "record_and_store_face",
+          "visible_form": "large black station slate, small shuttered ticket window, and sealed company store door east of the bellhouse",
+          "used_for": "service classification, public record conflict, and release of food and water stores"
+        },
+        {
+          "zone_id": "engine_shed_gate",
+          "visible_form": "black iron gate west of the bellhouse opening from a low tool shed onto the platform",
+          "used_for": "Hesta and fitter arrival, feed-key authority, and crew departure"
+        },
+        {
+          "zone_id": "rear_alley_access",
+          "visible_form": "narrow honey-stone stair and adjacent iron cage lift beside a brass pump-fed spout",
+          "used_for": "Old Emet's water delivery and elder access consequences"
+        },
+        {
+          "zone_id": "south_cut_feed_trench",
+          "visible_form": "wet stone railway cutting with a brass-and-iron manifold dividing blue crystal pressure between locomotive rail and orchard pump pipes",
+          "used_for": "remote repair ending only"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_house_platform_cutaway",
+          "supports_visual_scene_ids": ["mossgate_station_establishing", "mossgate_response_fold", "mossgate_final_threshold"]
+        },
+        {
+          "camera_id": "kitchen_table_medium",
+          "supports_visual_scene_ids": ["mossgate_breakfast_routine", "mossgate_prepare_bread", "mossgate_null_rehearsal", "mossgate_waiting_board", "mossgate_morning_ready"]
+        },
+        {
+          "camera_id": "platform_bell_centerline",
+          "supports_visual_scene_ids": ["mossgate_silent_bell", "mossgate_first_response", "mossgate_hesta_arrival", "mossgate_ending_record"]
+        },
+        {
+          "camera_id": "signal_cabinet_medium",
+          "supports_visual_scene_ids": ["mossgate_signal_cabinet"]
+        },
+        {
+          "camera_id": "record_and_store_medium",
+          "supports_visual_scene_ids": ["mossgate_public_record"]
+        },
+        {
+          "camera_id": "rear_alley_low_angle",
+          "supports_visual_scene_ids": ["mossgate_water_jars", "mossgate_old_emet_water"]
+        },
+        {
+          "camera_id": "serving_hatch_night",
+          "supports_visual_scene_ids": ["mossgate_open_table", "mossgate_ending_table", "mossgate_ending_reciprocal", "mossgate_repair_homecoming_success", "mossgate_repair_homecoming_cost", "mossgate_dawn_return"]
+        },
+        {
+          "camera_id": "south_cut_manifold",
+          "supports_visual_scene_ids": ["mossgate_repair_south_cut"]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "kitchen_to_platform_signals",
+          "path": "bellhouse_kitchen serving hatch -> platform_centerline red bell and arrival rune -> signal cabinet",
+          "supports": ["silent_bell", "inspect_signal_feed", "family_waiting_callbacks"]
+        },
+        {
+          "lane_id": "public_record_witness",
+          "path": "platform awning crowd -> corded waiting board -> black station slate -> shuttered ticket window",
+          "supports": ["make_public_record", "prioritize_public_outage"]
+        },
+        {
+          "lane_id": "divided_apprentice_claim",
+          "path": "engine_shed gate and feed key -> Brunna at platform center -> white ladle, table, and Jory's bowl in serving hatch",
+          "supports": ["company_arrival", "allocate_the_night"]
+        }
+      ],
+      "movement_routes": [
+        {
+          "route_id": "kitchen_to_platform",
+          "path": "bellhouse kitchen rail door -> covered platform strip between house wall and nearest rail",
+          "users": ["Brunna", "Tamsin", "Nell", "bellhouse guests"]
+        },
+        {
+          "route_id": "kitchen_to_upper_alley",
+          "path": "bellhouse street door -> brass alley spout -> narrow stair or adjacent cage lift -> Old Emet's upper landing",
+          "users": ["Brunna carrying one jar", "Old Emet using lift or landing"]
+        },
+        {
+          "route_id": "platform_service_face",
+          "path": "rail door -> serving hatch -> signal cabinet -> record slate and ticket window -> company store -> engine-shed gate, all along the covered platform side of the nearest rail",
+          "users": ["households", "station staff", "repair crew"]
+        },
+        {
+          "route_id": "mossgate_to_south_cut",
+          "path": "engine-shed gate -> low service cart -> southbound maintenance rail -> remote south-cut feed trench",
+          "users": ["Hesta", "Brunna", "south-cut fitters"]
+        }
+      ],
+      "bellhouse_object_states": [
+        {
+          "object_id": "serving_hatch_and_white_ladle",
+          "states": ["closed routine", "open watch with white ladle", "narrowed after depletion"]
+        },
+        {
+          "object_id": "waiting_board",
+          "states": ["partial household cords", "complete route cords", "public evidence beside station slate", "rain-streaked failed claim"]
+        },
+        {
+          "object_id": "company_store_door",
+          "states": ["sealed during service pause", "open after recorded outage or reciprocal bargain"]
+        },
+        {
+          "object_id": "arrival_system",
+          "states": ["green rune and ready bell", "gray rune and silent half-stroke", "dim blue returning train and ringing bell"]
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group appearances for prompt assembly. Include only refs for characters listed as visible in the current scene.",
+    "characters": {
+      "brunna_slatewise": "Brunna Slatewise: young adult dwarf woman, about four and a half feet tall, broad compact build, copper-brown skin, square face, black hair in two work braids, short cropped jaw beard braided with one blue thread, dark eyes, thick square hands, blue wool railway coat with rolled sleeves, leather apron or tool belt as the task requires, heavy brown boots, brass apprentice badge, posture planted and practical; the same blue thread, badge, braids, and broad silhouette remain stable.",
+      "tamsin_reed": "Tamsin Reed: human woman in her early forties, tall compared with Brunna, deep-brown skin, strong narrow face, cropped black curls threaded with a little gray, rust-red wool dress, cream work apron dusted with flour, dark practical shoes, steady direct gaze, economical movements; the same rust dress, cropped curls, apron, and long silhouette remain stable.",
+      "nell_reed": "Nell Reed: ten-year-old human girl, deep-brown skin, round alert face, black hair in two puff braids tied with red cord, mustard tunic, dark green skirt over leggings, small scuffed boots, expressive literal seriousness, often holding a route cord, lunch tin, or fourth pottery bowl; the same red hair cords, mustard tunic, and small silhouette remain stable.",
+      "hesta_flint": "Master Hesta Flint: older dwarf woman, stocky broad build, weathered umber skin, iron-gray hair and jaw beard in thick paired braids held by plain brass cuffs, dark indigo railway coat, leather tool belt, heavy black boots, large brass feed key, controlled low-voiced authority expressed through still posture; the same gray braids, indigo coat, feed key, and stocky silhouette remain stable.",
+      "jory_reed": "Jory Reed: human man in his forties, deep-brown skin, lean porter build, close-cropped black hair, tired kind face, moss-green rail-porter's coat with brass buttons, brown shoulder satchel, mud-dark trousers and boots; the same moss coat, satchel, and lean silhouette remain stable.",
+      "old_emet": "Old Emet: elderly human man, pale-brown weathered skin, lean stooped frame, wispy white hair and short white beard, patched dark-green robe over a cream shirt, wooden cane, copper water pot and rope, careful stance shaped by painful knees; the same green robe, cane, copper pot, and stooped silhouette remain stable."
+    },
+    "groups": {
+      "mossgate_platform_households": "Mossgate platform households: human orchard workers, market porters, caregivers, school-age children, and elders in layered wool tunics, aprons, work coats, scarves, and practical boots; they carry orchard baskets, lunch tins, copper pots, folded blankets, and infants, forming orderly waiting clusters and mutual-aid lines rather than a military crowd.",
+      "south_cut_rail_fitters": "South-cut rail fitters: two or three adult dwarves with broad compact builds, blue and indigo railway work coats, leather aprons, heavy boots, brass badges, insulated tool rolls, ceramic breaker wedges, hooded amber lamps, and visibly exhausted posture; hands stay clear of live blue conduit until isolation is shown."
+    }
+  },
+  "review_notes": [
+    "Draft visual plan deliberately treats the generated images as illustrations, not geometry authority.",
+    "The embedded scene-set map fixes the house-platform-alley layout, the separate south-cut unit, camera slots, public sightlines, and branch-persistent object states for review.",
+    "A plan view or simple 3D blockout remains required before high-consistency multi-angle rendering; image generation is deferred by mandate."
+  ]
+}

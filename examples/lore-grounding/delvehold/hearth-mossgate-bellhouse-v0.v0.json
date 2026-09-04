@@ -1,0 +1,338 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "delvehold.hearth-mossgate-bellhouse-v0.v0",
+  "source_status": "draft_authored_elaboration",
+  "fixture_status": "grounded_draft",
+  "source_refs": [
+    {
+      "source_id": "delvehold-lore-index",
+      "path": "Delvehold/Lore/index.md",
+      "title": "Lore",
+      "line_start": 1,
+      "line_end": 32,
+      "relevance": "Grounds Delvehold's living-dungeon ontology, iterative runic industry, Greathold dependence, and the rule that in-world observers disagree about causes."
+    },
+    {
+      "source_id": "humans",
+      "path": "Delvehold/Lore/Peoples/Humans.md",
+      "title": "Humans",
+      "line_start": 1,
+      "line_end": 28,
+      "relevance": "Primary owner for fragmented human politics, foreign dwarven rail and pump dependence, Mossgate bellhouses, table-kin apprentices, outage compensation, and household failure costs."
+    },
+    {
+      "source_id": "dwarves",
+      "path": "Delvehold/Lore/Peoples/Dwarves.md",
+      "title": "Dwarves",
+      "line_start": 6,
+      "line_end": 24,
+      "relevance": "Grounds durable-work prestige, rail and household dependence, apprenticeship, and an ancestry-open path to Greathold Mastership without granting Brunna a civic seal."
+    },
+    {
+      "source_id": "mastership",
+      "path": "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+      "title": "Mastership and citizenship",
+      "line_start": 6,
+      "line_end": 50,
+      "relevance": "Grounds the limits of apprenticeship and civic authority, apprentice rights to food, instruction, tools, appeal, and refusal, and the distinction between household custom and civic sealing."
+    },
+    {
+      "source_id": "runic-engineering",
+      "path": "Delvehold/Lore/Industry/Runic Engineering.md",
+      "title": "Runic engineering",
+      "line_start": 6,
+      "line_end": 44,
+      "relevance": "Grounds spell-engine operation, the manual origin of reliable runes, null-first apprentice training, rail engines, and narrow model-specific technician displacement."
+    },
+    {
+      "source_id": "dwarven-industry",
+      "path": "Delvehold/Lore/Industry/Dwarven Industry.md",
+      "title": "Dwarven industry",
+      "line_start": 6,
+      "line_end": 40,
+      "relevance": "Grounds rune locomotives, public infrastructure, company and labor interests, local rationing institutions, and the shared crystal-contract dependency of rail, food, heat, and drainage."
+    },
+    {
+      "source_id": "international-crisis",
+      "path": "Delvehold/Lore/Crisis/International Crisis.md",
+      "title": "International crisis",
+      "line_start": 6,
+      "line_end": 18,
+      "relevance": "Grounds foreign fields and harvests using dwarven pumps and rail, tightening trade conflict, and the civilian reach of attempts to interrupt extraction systems."
+    },
+    {
+      "source_id": "industrial-escalation",
+      "path": "Delvehold/Lore/Crisis/Industrial Escalation.md",
+      "title": "Industrial escalation",
+      "line_start": 6,
+      "line_end": 27,
+      "relevance": "Grounds the causal loop in which pumps enable seams, output pays for rail, defensive failures drive new orders, and honest reporting still assumes service must continue."
+    },
+    {
+      "source_id": "greathold",
+      "path": "Delvehold/Lore/The Greathold.md",
+      "title": "The Greathold",
+      "line_start": 6,
+      "line_end": 60,
+      "relevance": "Grounds the foreign infrastructure's Greathold origin, distributed civic authority, rail corridors, apprenticeship practice, and centuries of mixed-species institutions along the mountain spine."
+    }
+  ],
+  "historical_context": {
+    "time_period": "During tightening foreign trade restrictions and infrastructure dependency, before direct military intervention becomes ordinary.",
+    "location": "East Bellhouse, attached to the rail platform and alley lift of Mossgate, a human orchard-market town using a dwarven-built rail spur and imported crystal pump schedule.",
+    "summary": "A silent return bell makes the foreign rail contract domestic. A dwarf apprentice lodged with a human household must allocate the same hands among repair duty, food, water, missing-person accounting, and pressure on an operator that has not admitted an outage.",
+    "public_facts": [
+      {
+        "text": "Human cities buy dwarven rail and pump systems, creating constituencies for open crystal trade while displacing local magical work.",
+        "source_refs": ["humans", "international-crisis"]
+      },
+      {
+        "text": "Mossgate's rail spur carries orchard produce, and its imported crystal schedule also drives local irrigation pumps.",
+        "source_refs": ["humans"]
+      },
+      {
+        "text": "Bellhouse households respond when the return bell fails by collecting children, checking infrastructure-dependent neighbours, feeding stranded workers, and lodging repair crews.",
+        "source_refs": ["humans"]
+      },
+      {
+        "text": "Table-kin is a reciprocal household relationship for foreign apprentices and grants neither inheritance nor a Greathold civic seal.",
+        "source_refs": ["humans", "mastership"]
+      },
+      {
+        "text": "Runic apprentices learn null termination before useful effects, while industrial employers may narrow training to one engine model.",
+        "source_refs": ["runic-engineering"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "The operator owes registered bellhouses compensation only after it records an outage, so calling a stopped line a service pause leaves the first-night costs in homes.",
+        "source_refs": ["humans"]
+      },
+      {
+        "text": "The households feeding and bedding stranded people are also feeding and bedding the repair crews needed to restore the line.",
+        "source_refs": ["humans", "dwarven-industry"]
+      },
+      {
+        "text": "The scene cannot prove whether the south-cut failure comes from shortage, policy, sabotage, ordinary breakdown, or ecological response; in-world knowledge remains partial.",
+        "source_refs": ["delvehold-lore-index", "international-crisis", "industrial-escalation"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "mossgate-bellhouses",
+      "label": "Mossgate platform bellhouses",
+      "group_type": "neighbourhood_care_network",
+      "institutional_logic": ["Answer the silent return bell before absence becomes injury, while keeping participation owned by households rather than the station."],
+      "material_incentives": ["Keep children, elders, commuters, and repair crews fed, watered, accounted for, and locally housed during interruptions."],
+      "internal_virtues": ["Answering another table's watch", "Naming who is absent", "Returning borrowed stores", "Preserving dignity while giving care"],
+      "internal_shames": ["Taking hospitality while hiding available stores", "Letting a neighbour's child remain uncollected", "Calling preventable exhaustion community spirit"],
+      "prestige_markers": ["A reliable waiting board", "A white ladle answered by other houses", "Stores that circulate and return"],
+      "taboo_triggers": ["The operator treating voluntary care as free contracted capacity", "Affectionate language used to erase a household's cost"],
+      "emotional_display_norms": ["Fear becomes soup, cord knots, water carrying, dry jokes, and repeated glances toward the rail door."],
+      "trust_defaults": ["Trusts named reciprocal acts and witnessed records more than distant assurances or blank company slates."],
+      "speech_register_cues": ["Domestic compression", "Platform jokes", "Specific quantities", "Oblique worry", "Practical refusal"],
+      "source_refs": ["humans"]
+    },
+    {
+      "group_id": "foreign-rail-branch",
+      "label": "Dwarven railway branch staff in Mossgate",
+      "group_type": "foreign_infrastructure_operator",
+      "institutional_logic": ["Keep the contracted rail and pump schedule operating with standardized engines, bounded crews, and attributable service records."],
+      "material_incentives": ["Restore the south-cut feed, preserve apprentice placements, limit compensable outage hours, and keep scarce company stores controlled."],
+      "internal_virtues": ["Clean null work", "A restored line", "Accurate local isolation", "Crew discipline"],
+      "internal_shames": ["A preventable service loss", "An apprentice unable to service the assigned model", "A company record overruled by household evidence"],
+      "prestige_markers": ["Feed-key custody", "Repairs completed before the next schedule", "Engine knowledge that survives pressure"],
+      "taboo_triggers": ["Foreign households claiming rail authority", "Service language exposed as cost avoidance"],
+      "emotional_display_norms": ["Alarm is translated into schedules, keys, fault boundaries, and clipped work assignments."],
+      "trust_defaults": ["Trusts sealed notices, trained hands, cabinet marks, and engine readings; depends on household care while treating it as external to the machine."],
+      "speech_register_cues": ["Fault location", "Shift allocation", "Service classification", "Understated threat to placement"],
+      "source_refs": ["humans", "runic-engineering", "dwarven-industry"]
+    },
+    {
+      "group_id": "mossgate-platform-families",
+      "label": "Mossgate platform families and dependent neighbours",
+      "group_type": "local_household_public",
+      "institutional_logic": ["Organize daily life around reliable trains, pumps, school collection, market shifts, and the expectation that known people return."],
+      "material_incentives": ["Locate absent wage earners, preserve water and medicine access, move produce, and keep children supervised."],
+      "internal_virtues": ["Showing up for collection", "Leaving a usable route record", "Not making need perform for help"],
+      "internal_shames": ["Using private carts while leaving shared costs behind", "Letting uncertainty become somebody else's domestic labor"],
+      "prestige_markers": ["A household whose members are accounted for", "A useful borrowed jar", "A shift covered without hiding the cost"],
+      "taboo_triggers": ["Blank official records during visible interruption", "Outsiders treating the platform ward as politically passive dependence"],
+      "emotional_display_norms": ["Worry is often carried through bowls kept warm, cords left red, and precise complaints about timetables."],
+      "trust_defaults": ["Trusts bellhouse response, visible signal state, and last-confirmed-route knowledge."],
+      "speech_register_cues": ["Route names", "Meal counts", "Family teasing", "Suspicion of contractual euphemism"],
+      "source_refs": ["humans", "international-crisis"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "mossgate-bellhouses.care-before-classification",
+      "applies_to": ["mossgate-bellhouses", "mossgate-platform-families"],
+      "pressure_type": "care_obligation",
+      "summary": "The neighbourhood must act while the operator is still deciding whether the stoppage counts, so care begins before reimbursement authority does.",
+      "projection_use": "Offer food, water, child collection, naming, and open-door choices before procedural recognition arrives.",
+      "source_refs": ["humans"]
+    },
+    {
+      "field_id": "foreign-rail-branch.same-hands-double-owed",
+      "applies_to": ["foreign-rail-branch", "mossgate-bellhouses"],
+      "pressure_type": "divided_obligation",
+      "summary": "Foreign apprentices owe technical duty to the railway and reciprocal care to the households that lodge them; an outage intensifies both claims at the same time.",
+      "projection_use": "Make Brunna choose where her body, skill, and time go without treating either work or kinship as unreal.",
+      "source_refs": ["humans", "runic-engineering", "mastership"]
+    },
+    {
+      "field_id": "foreign-rail-branch.recorded-costs",
+      "applies_to": ["foreign-rail-branch"],
+      "pressure_type": "contract_liability",
+      "summary": "Service classification decides whether household depletion appears as compensable infrastructure cost or disappears as private generosity.",
+      "projection_use": "Use the blank station slate, the household waiting board, sealed stores, and Hesta's notice as material record conflict.",
+      "source_refs": ["humans", "dwarven-industry"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "foreign-rail-branch",
+      "target_group_id": "mossgate-bellhouses",
+      "observer_read": ["Helpful local lodging", "Informal meal capacity", "Community resilience outside the service contract"],
+      "target_self_read": ["Households keeping named people alive and accounted for", "Reciprocal care that creates claims of its own"],
+      "misread_patterns": ["Treats voluntary response as spare capacity", "Counts repair labor but not the labor making repair shifts possible"],
+      "likely_insults": ["community spirit", "informal support", "non-service cost"],
+      "projection_use": "Let Hesta understand the human cost while still carrying the notice that externalizes it; institutional dependence need not require personal stupidity.",
+      "source_refs": ["humans", "dwarven-industry"]
+    },
+    {
+      "observer_group_id": "mossgate-bellhouses",
+      "target_group_id": "foreign-rail-branch",
+      "observer_read": ["Distant owner of the timetable", "Keeper of locked stores", "Employer claiming the same apprentice the household needs"],
+      "target_self_read": ["Skilled crew protecting shared infrastructure under a bounded contract"],
+      "misread_patterns": ["May treat every technical delay as cost avoidance", "May underestimate the genuine limits of a starved feed and narrow crew"],
+      "likely_insults": ["foreign timetable", "sealed cupboard with wheels", "pause merchants"],
+      "projection_use": "Keep household anger precise while allowing the technical fault to remain real and difficult.",
+      "source_refs": ["humans", "runic-engineering", "international-crisis"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "table-kin-rail-apprentice",
+      "summary": "A foreign dwarf apprentice whose technical training, placement, household belonging, and care work make simultaneous claims on the same body.",
+      "obligations": ["Use null before touching a live feed", "Answer lawful work direction", "Contribute to the household", "Answer the bellhouse watch", "Do not pretend uncertainty is diagnosis"],
+      "available_masks": ["Apprentice obedience", "Household joking", "Technical literalism", "Busy hands instead of open worry"],
+      "failure_modes": ["Mistaking company approval for competence", "Letting care consume stores invisibly", "Using kin language to hide exploitation", "Claiming a distant fault from local evidence"],
+      "source_refs": ["humans", "runic-engineering", "mastership"]
+    },
+    {
+      "role_id": "bellhouse-host",
+      "summary": "A human household head who can open her own table but cannot classify the railway's failure or refill stores by moral force.",
+      "obligations": ["Collect and feed dependants", "Track absent household members", "Preserve enough for tomorrow", "Keep care reciprocal where possible"],
+      "available_masks": ["Kitchen command", "Dry complaint", "Exact slicing", "Hospitality that withholds sentiment"],
+      "failure_modes": ["Spending the household past recovery", "Protecting family by abandoning neighbours", "Treating an apprentice as either labor only or kin without work claims"],
+      "source_refs": ["humans"]
+    },
+    {
+      "role_id": "foreign-rail-forewoman",
+      "summary": "A dwarven Master responsible for an exhausted repair crew, apprentice training, a dead feed, sealed company stores, and a service classification that protects the operator.",
+      "obligations": ["Restore service", "Protect workers from live patterns", "Allocate scarce stores", "Preserve attributable records", "Answer for apprentice work"],
+      "available_masks": ["Fault language", "Low-voiced assignment", "Paper authority", "Recognition expressed through tool custody"],
+      "failure_modes": ["Accepting household support while refusing its terms", "Sending narrow-trained workers into unfamiliar machinery", "Letting schedule pressure outrun null safety"],
+      "source_refs": ["humans", "runic-engineering", "dwarven-industry", "mastership"]
+    },
+    {
+      "role_id": "waiting-child",
+      "summary": "A child who understands rail dependence through bowls, cords, collection, and whether adults can say where her father is.",
+      "obligations": ["Stay within the bellhouse watch", "Help with small routine tasks", "Keep the family board legible"],
+      "available_masks": ["Literal questions", "Teasing", "Guarding an object", "Falling asleep beside the place kept open"],
+      "failure_modes": ["Being used as a speech about stakes", "Knowing company or technical facts no one has told her"],
+      "source_refs": ["humans", "mastership"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "brunna_slatewise",
+      "known_context": [
+        {"text": "Brunna knows East Bellhouse routine, its members and neighbours, the local station layout, her assigned engine model, null safety, and her own placement terms.", "source_refs": ["humans", "runic-engineering"]}
+      ],
+      "beliefs": [
+        {"text": "Brunna believes useful work should survive inspection and that table-kin obligations are real even where the company does not record them.", "source_refs": ["dwarves", "humans"]}
+      ],
+      "misreads": [
+        {"text": "Brunna may overestimate how far a correct local diagnosis or household record can move distant company authority.", "source_refs": ["runic-engineering", "humans"]}
+      ],
+      "must_not_know": [
+        {"text": "Brunna must not know the south-cut failure's cause, Jory's exact position, or Hesta's final response before observable evidence reveals it.", "source_refs": ["delvehold-lore-index", "international-crisis"]}
+      ]
+    },
+    {
+      "speaker_id": "tamsin_reed",
+      "known_context": [
+        {"text": "Tamsin knows household stores, the bellhouse roster, platform routine, Jory's expected train, and what the operator compensates after a recorded outage.", "source_refs": ["humans"]}
+      ],
+      "beliefs": [
+        {"text": "Tamsin believes a household may owe care without granting the railway free ownership of that capacity.", "source_refs": ["humans"]}
+      ],
+      "misreads": [
+        {"text": "Tamsin may read genuine technical uncertainty as another contractual euphemism because the material cost reaches her before the explanation does.", "source_refs": ["humans", "runic-engineering"]}
+      ],
+      "must_not_know": [
+        {"text": "Tamsin must not know whether the south-cut feed can be restored or where Jory's train stopped until the board or returning crew supplies evidence.", "source_refs": ["humans"]}
+      ]
+    },
+    {
+      "speaker_id": "hesta_flint",
+      "known_context": [
+        {"text": "Hesta knows the fault is on the south-cut feed, which workers are available, what stores she can release, and the service classification on her notice.", "source_refs": ["humans", "runic-engineering", "dwarven-industry"]}
+      ],
+      "beliefs": [
+        {"text": "Hesta believes restoring the feed is the fastest way to reduce every dependent burden, while the service record remains a separate company obligation.", "source_refs": ["dwarven-industry", "humans"]}
+      ],
+      "misreads": [
+        {"text": "Hesta may count bellhouse beds and meals as ambient neighbourhood capacity instead of labor and inventory with claims on the railway.", "source_refs": ["humans"]}
+      ],
+      "must_not_know": [
+        {"text": "Hesta must not know whether a proposed crew rotation will hold until households, fitters, and prepared stores visibly support it.", "source_refs": ["humans"]}
+      ]
+    },
+    {
+      "speaker_id": "nell_reed",
+      "known_context": [
+        {"text": "Nell knows who normally sits at the table, how waiting cords mark expected people, and that the silent bell means the household begins its watch.", "source_refs": ["humans"]}
+      ],
+      "beliefs": [
+        {"text": "Nell treats Brunna as household kin because Brunna repeatedly shares work, worry, and return routines.", "source_refs": ["humans"]}
+      ],
+      "misreads": [
+        {"text": "Nell may interpret a closed serving hatch as loss of belonging rather than depleted capacity.", "source_refs": ["humans"]}
+      ],
+      "must_not_know": [
+        {"text": "Nell must not speak with adult knowledge of outage compensation, rail-feed engineering, or international crystal politics.", "source_refs": ["humans", "international-crisis"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Mossgate, its bellhouse watch, and table-kin custom are the authored lore elaboration. The exact branch outcome and named household incident remain fixture-local rather than canonical history.",
+      "source_refs": ["humans"]
+    },
+    {
+      "text": "The scene may show a starved south-cut feed but must not canonize sabotage, sanctions, ecological attack, or machine awakening as its cause.",
+      "source_refs": ["delvehold-lore-index", "international-crisis", "industrial-escalation"]
+    },
+    {
+      "text": "Brunna's employer title Master describes Hesta's established professional authority; the fixture does not grant Brunna a Masterwork, independent workshop, or Greathold civic seal.",
+      "source_refs": ["mastership", "humans"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which Greathold workshop or consortium owns the Mossgate rail-and-pump service contract?",
+      "blocks_training": false,
+      "notes": "The fixture keeps the operator generic because ownership is not needed to dramatize household dependence and has not been supplied by the vault."
+    },
+    {
+      "question": "How portable are model-specific railway apprenticeships between foreign branches and Greathold Mastership examinations?",
+      "blocks_training": false,
+      "notes": "The scene uses only Brunna's local placement and narrow engine training; a later Hearth or Ledger pass could ground credential portability."
+    }
+  ]
+}

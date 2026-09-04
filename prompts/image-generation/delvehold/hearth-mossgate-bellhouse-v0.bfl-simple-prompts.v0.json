@@ -1,0 +1,104 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "hearth-mossgate-bellhouse-v0.bfl-simple-v0",
+  "fixture_id": "hearth-mossgate-bellhouse-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Richly textured high-fantasy industrial storybook illustration, precise ink drawing, restrained watercolor, honey limestone, dark iron, warm hearth amber against cold blue rune light, practical worn magic, readable silhouettes, humane facial acting, cinematic interactive-fiction frame, unlettered signs and slates.",
+  "prompts": [
+    {
+      "id": "01_station_establishing",
+      "prompt": "Cutaway of a narrow stone household kitchen sharing a wall with a two-track market-town platform: long table, black stove, serving hatch, rail door, blue water jars, black iron rails, blue crystal conduit, red return bell, green signal rune, orchard baskets, alley stair and cage lift."
+    },
+    {
+      "id": "02_breakfast_routine",
+      "prompt": "Warm station-house kitchen: young broad-built dwarf woman in a blue railway coat draws a rune in spilled flour, dark-skinned human mother slices bread, ten-year-old girl ties red and white route cords to a wooden family board, four pottery bowls wait by the platform hatch."
+    },
+    {
+      "id": "03_prepare_bread",
+      "prompt": "Young dwarf railway apprentice with black work braids kneads two travel loaves at a worn table while a human bellhouse host checks an almost empty flour bin and a child watches; stove light, tool roll, lamp engine and breakfast bowls make the work domestic and finite."
+    },
+    {
+      "id": "04_null_rehearsal",
+      "prompt": "Close safe-magic lesson: dwarf apprentice draws a crisp right-to-left null stroke over a small brass lamp engine and cold blue practice crystal, human girl applauds from beyond the table, cautious mother watches beside the black stove."
+    },
+    {
+      "id": "05_waiting_board",
+      "prompt": "Portable wooden family board beside a station serving hatch, red and white cords connecting carved route pegs with black last-station beads; dwarf apprentice reties the routes while a human girl holds one crooked red cord, rails and orchard baskets visible outside."
+    },
+    {
+      "id": "06_water_jars",
+      "prompt": "Honey-stone alley beside a railway house: broad dwarf apprentice fills large blue-glazed jars at a brass runic spout, elderly human man with cane lowers a copper pot from an upper landing, narrow stairs climb beside an iron cage lift."
+    },
+    {
+      "id": "07_morning_ready",
+      "prompt": "East Bellhouse ready for the day: human host opens the platform hatch, child arranges four bowls, dwarf apprentice hangs a blue tool roll beside the rail door; loaves, lamp engine, waiting board, water jars, red bell and green signal are all visible."
+    },
+    {
+      "id": "08_silent_bell",
+      "prompt": "Pivotal noon platform: red bronze return bell lifts slightly in silence, green arrival rune drains gray, blue rail-and-pump conduit flickers; through the serving hatch a dwarf apprentice and human mother turn while a human girl grips an empty fourth bowl."
+    },
+    {
+      "id": "09_first_response",
+      "prompt": "Dwarf apprentice centered at a rail-side doorway between four reachable claims: white ladle and open table, blue tool roll and signal cabinet, full water jar and alley stair, corded waiting board and blank station slate; stranded people begin gathering under the awning."
+    },
+    {
+      "id": "10_open_table",
+      "prompt": "Warm crowded serving hatch: dwarf apprentice hangs a white ladle outside the open rail door, human host slices bread, child gathers lunch tins, orchard workers and a wet nurse wait beneath the awning; soup steam crosses cold blue light from dead rails."
+    },
+    {
+      "id": "11_signal_cabinet",
+      "prompt": "Young dwarf railway apprentice kneels at an open iron signal cabinet, drawing a pale-blue null rune before exposed brass terminals; gray feed gauge, orderly insulated tools, dead blue conduit, silent red bell and station-house hatch establish bounded diagnosis."
+    },
+    {
+      "id": "12_neighbor_water",
+      "prompt": "Low-angle alley stair: dwarf apprentice climbs with a heavy blue ceramic water jar, iron cage lift stalled beside her, elderly human man waits above with cane and copper pot, gray station signal visible beyond the roofs."
+    },
+    {
+      "id": "13_public_record",
+      "prompt": "Dwarf apprentice props a corded household waiting board against a large blank station slate and writes the failure time; ticket clerk closes a small brass shutter while human orchard workers and market families watch beneath the awning."
+    },
+    {
+      "id": "14_response_fold",
+      "prompt": "Wide platform-to-kitchen stage: silent bell, gray signal, open cabinet, serving hatch, waiting board, water jars and long table all visible; dwarf apprentice stands between railway and household while human host, child and stranded neighbours occupy both sides."
+    },
+    {
+      "id": "15_hesta_arrival",
+      "prompt": "Older stocky dwarf forewoman in indigo coat enters from engine-shed gate with heavy feed key, sealed notice and two exhausted dwarf fitters; young apprentice stands between them and a human host at the serving hatch while a child holds the fourth bowl."
+    },
+    {
+      "id": "16_final_threshold",
+      "prompt": "Whole choice visible at once: dwarf apprentice between forewoman's feed key and household's white ladle, repair crew and engine gate to one side, human mother, child, bread and water to the other, corded board against blank slate, sealed stores and waiting families behind."
+    },
+    {
+      "id": "17_south_cut_repair",
+      "prompt": "Rainy night railway cutting: brass-and-iron feed manifold divides cold blue crystal power between locomotive rail and thick orchard pump pipes; young dwarf apprentice, gray-braided forewoman and exhausted fitters work under amber lamps with breaker wedges and pressure floats."
+    },
+    {
+      "id": "18_repair_home_success",
+      "prompt": "Before-dawn rail-door homecoming: wet dwarf apprentice stands beside human mother and waking daughter while a lean porter in moss-green coat enters from a dim blue train beneath the swinging red bell; fourth bowl, thin bread and waiting board remain visible."
+    },
+    {
+      "id": "19_repair_home_cost",
+      "prompt": "Before-dawn failed return: wet dwarf apprentice stands alone in the rail-door threshold, human mother waits by the stove, daughter sleeps around the fourth bowl, one bread heel and empty jars sit under the still red bell and gray track."
+    },
+    {
+      "id": "20_bellhouse_night",
+      "prompt": "Night bellhouse care: dwarf apprentice in flour-marked apron serves soup beside human host and child; orchard workers, wet nurse and boy occupy benches; loaves, jars, lunch tins, waiting cords, gray signal and silent bell make finite care visible."
+    },
+    {
+      "id": "21_record_end",
+      "prompt": "Night platform record dispute: dwarf apprentice holds a corded family board across a sealed company notice while older dwarf forewoman faces her; human host and waiting families witness beside blank slate, locked stores, gray signal and rain."
+    },
+    {
+      "id": "22_reciprocal_end",
+      "prompt": "Platform bargain under amber lamps: young dwarf apprentice bridges heavy feed key and white ladle; older forewoman considers terms, exhausted fitters sit with grounded tools, human host portions supper beside company stores, water jars, bedrolls and watch board."
+    },
+    {
+      "id": "23_dawn_return",
+      "prompt": "Dawn at East Bellhouse: red return bell swings above a dim blue rune locomotive, tired human porter in moss-green coat steps through the rail door toward his partner, daughter and dwarf table-kin setting out the fourth bowl; empty jars and repair tools show the night."
+    }
+  ]
+}
