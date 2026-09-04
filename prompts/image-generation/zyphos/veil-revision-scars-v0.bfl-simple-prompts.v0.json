@@ -1,0 +1,64 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "veil-revision-scars-v0.bfl-simple-v0",
+  "fixture_id": "veil-revision-scars-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Painterly bioluminescent alien natural-history illustration for mature interactive fiction, precise six-limbed anatomy, tactile bark and wet biological materials, restrained teal green amber and purple light, dry workplace observation turning into quiet body horror, cinematic readable staging, no text.",
+  "prompts": [
+    {
+      "id": "01_court_establishing",
+      "prompt": "Tall oval imperial memory court grown around one pale vertical tree root, three middle grooming ledges, translucent green biological membrane, silver repair basin, dark archive socket, amber fungal road stopping at a black quarantine ring, huge fixed companion planet beyond high vents."
+    },
+    {
+      "id": "02_grooming_routine",
+      "prompt": "Two six-limbed reptilian alien workers anchored by clawed upper arms and taloned feet on adjacent root ledges, smaller lower hands grooming purple and yellow wearable flowers with mineral spoons and curved combs, ordinary coworker humor under cold green eclipse light."
+    },
+    {
+      "id": "03_flower_gap",
+      "prompt": "Close purple wearable flower on ochre scaled chest plates, sensory filaments touching sweat, two petals separated by a precise transparent interval, blue bioluminescent seam stopping beneath the gap, small four-digit grooming hands frozen around a comb."
+    },
+    {
+      "id": "04_routine_queue",
+      "prompt": "Vertical queue of six-limbed reptilian archive workers on bark ledges, standardized green mantles, colored chest flowers, sample cups and grooming tools, translucent recertification membrane and amber fungal road arranged below."
+    },
+    {
+      "id": "05_recertification_rupture",
+      "prompt": "Ochre six-limbed worker grips a pale root with upper claws and taloned feet while one small lower hand clenches empty air; purple flower shows a transparent gap; lattice ants form a broken ring around a shed scale; fungal road dims under green vapor."
+    },
+    {
+      "id": "06_adjudicator_arrival",
+      "prompt": "Tall charcoal-scaled six-limbed adjudicator in smooth ivory plates descends a vertical root ridge from a closing leaf-like iris above two workers on grooming ledges, pale mantle outlined by cold green light."
+    },
+    {
+      "id": "07_witness_affordances",
+      "prompt": "Alien worker poised among four bodily evidence routes: purple chest flower, lattice-ant assay rail, open membrane slit to silver microbial basin, and coworker's waiting small hand above one amber fungal-road candle."
+    },
+    {
+      "id": "08_inspection_fold",
+      "prompt": "Polite biological confrontation on vertical root ledges: ivory-plated adjudicator blocks the upper route, ochre worker exposes a trembling small hand and purple flower, russet coworker waits within reach, multicolored flower queue watches below."
+    },
+    {
+      "id": "09_disclosure_threshold",
+      "prompt": "Wide vertical court with all consequence routes readable: worker and flower on middle ledge, adjudicator above, coworker beside, public queue below, ant samples and silver basin behind membrane, one amber fungal lane trapped at black quarantine ring."
+    },
+    {
+      "id": "10_public_ending",
+      "prompt": "Ochre six-limbed worker raises a purple flower toward a queue whose many colored flowers open matching transparent intervals; composed adjudicator stands above as the green membrane contracts."
+    },
+    {
+      "id": "11_road_ending",
+      "prompt": "Russet six-limbed worker descends headfirst with claws and taloned feet, carrying a wet seed bead and ant-glued scale toward an amber fungal road at a glossy black quarantine band, confrontation far above."
+    },
+    {
+      "id": "12_fragment_ending",
+      "prompt": "Ochre six-limbed worker crouches in shallow silver microbial basin gripping root handles, cold shifting cell film climbs a small lower hand, ambiguous alien silhouettes reflect in wet tissue, adjudicator holds resin burn tool."
+    },
+    {
+      "id": "13_private_scar_ending",
+      "prompt": "Quiet re-dosing on root ledge: pale resin scent collar releases green vapor around ochre throat plates, small hands near curved grooming comb with broken-ring scratch underneath, purple flower begins one transparent interval."
+    }
+  ]
+}

@@ -1,0 +1,589 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "zyphos.veil-revision-scars-v0",
+  "source_status": "draft_authored_elaboration",
+  "fixture_status": "source_grounded",
+  "source_refs": [
+    {
+      "source_id": "biological-memetic-engine",
+      "path": "Eusocial Interbeing/Technologies/Biological Memetic Engine.md",
+      "title": "Biological Memetic Engine",
+      "line_start": 1,
+      "line_end": 37,
+      "relevance": "Primary authority for imperial memetic intervention, topology limits, and the authored elaboration defining revision scars and absence proofs."
+    },
+    {
+      "source_id": "airawa-empire",
+      "path": "Eusocial Interbeing/Civilizations/Airawa Empire.md",
+      "title": "Airawa Empire",
+      "line_start": 1,
+      "line_end": 62,
+      "relevance": "Grounds imperial doctrine, engineered dreams and sensory associations, tuned autonomy, eugenic sorting, and denial of disconnected networks."
+    },
+    {
+      "source_id": "airawa",
+      "path": "Eusocial Interbeing/Species/Airawa.md",
+      "title": "Airawa",
+      "line_start": 1,
+      "line_end": 96,
+      "relevance": "Grounds six-limbed climbing anatomy, lower manipulator hands, bioluminescent plate seams, contract craft, and imperial signal standardization."
+    },
+    {
+      "source_id": "mutable-memory-endosymbiosis",
+      "path": "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+      "title": "Mutable Memory Endosymbiosis",
+      "line_start": 1,
+      "line_end": 123,
+      "relevance": "Grounds distributed cellular memory, unequal agency across scales, immune boundary politics, and the refusal to treat the biosphere as one mind."
+    },
+    {
+      "source_id": "burden-flowers",
+      "path": "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+      "title": "Burden Flowers",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds wearable metabolic testimony, mineral feeding, grooming conflict, visible host-state blooms, seed beads, and disclosure incentives."
+    },
+    {
+      "source_id": "mirror-amoebae",
+      "path": "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Mirror Amoebae.md",
+      "title": "Mirror Amoebae",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds local tissue-state copying, silver culture film, repair use, false familiarity, identity leakage, and the colony's lack of person-level understanding."
+    },
+    {
+      "source_id": "lattice-ants",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Lattice Ants.md",
+      "title": "Lattice Ants",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds shed-tissue diagnosis, temporary memory circuits, microbial glue, payment, local truth, and the possibility of disclosure to rivals."
+    },
+    {
+      "source_id": "candle-fungal-roads",
+      "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md",
+      "title": "Candle Fungal Roads",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds living route authority, candle and scent signals, clean-offering contracts, quarantine behavior, refusal, and memory brokerage."
+    },
+    {
+      "source_id": "disconnected-tree-networks",
+      "path": "Eusocial Interbeing/Civilizations/Disconnected Tree Networks.md",
+      "title": "Disconnected Tree Networks",
+      "line_start": 1,
+      "line_end": 18,
+      "relevance": "Grounds resistance through immune countermeasures, rumor paths, memory preservation, and the political force of proving imperial consensus manufactured."
+    },
+    {
+      "source_id": "imperial-biopunk-infrastructure",
+      "path": "Eusocial Interbeing/Technologies/Imperial Biopunk Infrastructure.md",
+      "title": "Imperial Biopunk Infrastructure",
+      "line_start": 1,
+      "line_end": 20,
+      "relevance": "Grounds pheromonal courts, memory nodules, controlled parasites, immune checkpoints, historical revision, and network-dependent limits."
+    },
+    {
+      "source_id": "zyphos-umbros-binary-system",
+      "path": "Eusocial Interbeing/World/Zyphos Umbros Binary System.md",
+      "title": "Zyphos Umbros Binary System",
+      "line_start": 1,
+      "line_end": 104,
+      "relevance": "Grounds Umbros as a fixed planetary presence, frequent eclipse ingress, cold bioluminescent work light, and possible imperial use of eclipse rhythms for transmission timing."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Current imperial period after the Biological Memetic Engine has become civic infrastructure; exact date unspecified.",
+    "location": "The Ninth Root Revision Court, a fixture-local provisional translation for an outer-border pheromonal recertification court grown around a captive matriarch root and adjoining a quarantined candle fungal road.",
+    "summary": "During a routine eclipse-shift recertification, an Airawa records tender's conscious patrol memory agrees with doctrine while multiple bodily and ecological witnesses reveal a missing interval. The player chooses who may see the contradiction and what cost the body will bear.",
+    "public_facts": [
+      {
+        "text": "The empire can alter memory emphasis, emotional association, taboo response, and obedience through engineered organisms, signals, and ritual payloads.",
+        "source_refs": [
+          "biological-memetic-engine",
+          "airawa-empire"
+        ]
+      },
+      {
+        "text": "Imperial infrastructure includes pheromonal courts, memory nodules, controlled parasites, reproductive licensing, immune checkpoints, and historical revision through living archives.",
+        "source_refs": [
+          "imperial-biopunk-infrastructure",
+          "airawa-empire"
+        ]
+      },
+      {
+        "text": "Airawa bodies can anchor with taloned feet and clawed upper limbs while smaller lower hands perform delicate tool, grooming, graft, and archive work.",
+        "source_refs": [
+          "airawa"
+        ]
+      },
+      {
+        "text": "Umbros remains a fixed enormous presence in the sky, and frequent eclipse shocks can structure biological transmission and civic work rhythms.",
+        "source_refs": [
+          "zyphos-umbros-binary-system"
+        ]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "A worker may sincerely remember the official account while peripheral tissue and symbionts retain incompatible states; missing maintenance frays certainty but does not restore content.",
+        "source_refs": [
+          "biological-memetic-engine"
+        ]
+      },
+      {
+        "text": "A disclosure chain depends on several organisms with their own appetites, contracts, risks, and refusal rights rather than on a neutral evidence device.",
+        "source_refs": [
+          "burden-flowers",
+          "lattice-ants",
+          "candle-fungal-roads",
+          "mutable-memory-endosymbiosis"
+        ]
+      },
+      {
+        "text": "The empire frames contradictory memory traffic as contamination and denies disconnected network sovereignty, so even proof of a gap creates quarantine and employment danger.",
+        "source_refs": [
+          "airawa-empire",
+          "disconnected-tree-networks"
+        ]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "imperial-records-crew",
+      "label": "Ninth Root records and graft workers",
+      "group_type": "imperial_labor_cohort",
+      "institutional_logic": [
+        "Maintain archive-facing tissues and present bodies legible enough for imperial certification."
+      ],
+      "material_incentives": [
+        "Keep work access, route permissions, food and grooming support, and freedom from quarantine."
+      ],
+      "internal_virtues": [
+        "Precise lower-hand work",
+        "Safe climbing",
+        "Discreet flower grooming",
+        "Procedural composure"
+      ],
+      "internal_shames": [
+        "Public bodily contradiction",
+        "Unlicensed ecological testimony",
+        "Making a coworker's recertification dangerous"
+      ],
+      "prestige_markers": [
+        "Calm plate seams",
+        "Clean assays",
+        "A burden flower whose warnings remain useful and discreet"
+      ],
+      "taboo_triggers": [
+        "Naming disconnected forests as sovereign",
+        "Treating a revision scar as proof of a forbidden event"
+      ],
+      "emotional_display_norms": [
+        "Anxiety is translated into grooming, sample work, safety jokes, and procedural questions."
+      ],
+      "trust_defaults": [
+        "Trusts familiar coworkers locally, but expects public disclosure to threaten everyone in the queue."
+      ],
+      "speech_register_cues": [
+        "Compressed work banter",
+        "Official patrol phrases",
+        "Indirect references to bodily irregularity"
+      ],
+      "source_refs": [
+        "airawa",
+        "airawa-empire",
+        "imperial-biopunk-infrastructure"
+      ]
+    },
+    {
+      "group_id": "imperial-recertification-authority",
+      "label": "Recertification adjudicators and court organs",
+      "group_type": "imperial_memory_administration",
+      "institutional_logic": [
+        "Keep archive-facing bodies aligned with the official account and recast contradiction as care, hygiene, or contamination."
+      ],
+      "material_incentives": [
+        "Preserve a legible workforce, prevent rumor from crossing ecological channels, and avoid admitting that revision requires maintenance."
+      ],
+      "internal_virtues": [
+        "Quiet queues",
+        "Rapid calibration",
+        "Compassionate euphemism",
+        "No uncontrolled witness chain"
+      ],
+      "internal_shames": [
+        "A roomful of flowers comparing testimony",
+        "A fungal road carrying an uncertified question",
+        "Visible use of force during routine care"
+      ],
+      "prestige_markers": [
+        "A contradiction filed as one body's maintenance fault",
+        "An exit closed before anyone calls it custody"
+      ],
+      "taboo_triggers": [
+        "Separating a body's claim from the archive's claim",
+        "Demanding consent from infrastructure that defines correction as health"
+      ],
+      "emotional_display_norms": [
+        "Alarm remains soft-spoken and administrative until a witness route opens."
+      ],
+      "trust_defaults": [
+        "Trusts controlled organisms and connected archives; distrusts unmanaged cross-reading among species."
+      ],
+      "speech_register_cues": [
+        "Care language",
+        "Certification language",
+        "Passive descriptions of coercive acts"
+      ],
+      "source_refs": [
+        "biological-memetic-engine",
+        "airawa-empire",
+        "imperial-biopunk-infrastructure"
+      ]
+    },
+    {
+      "group_id": "ecological-witness-chain",
+      "label": "Burden flower, lattice-ant assay, and candle fungal road",
+      "group_type": "temporary_cross_species_contract",
+      "institutional_logic": [
+        "Compare local body states only while nutrition, credibility, quarantine, and route contracts make cooperation worthwhile."
+      ],
+      "material_incentives": [
+        "Mineral wash for the flower, shed tissue and sugar access for the ants, and clean compost or traffic value for the road."
+      ],
+      "internal_virtues": [
+        "Local specificity",
+        "Repeated comparison",
+        "Refusal when contamination exceeds benefit"
+      ],
+      "internal_shames": [
+        "The flower exaggerates into uselessness",
+        "Ant history is sold twice",
+        "The road carries an identity leak"
+      ],
+      "prestige_markers": [
+        "Several independent tissues answer the same interval",
+        "A paid route carries the question without carrying a doctrine"
+      ],
+      "taboo_triggers": [
+        "Imperial attempts to standardize route behavior",
+        "Using one witness as sovereign proof"
+      ],
+      "emotional_display_norms": [
+        "Agency appears through bloom, assembly, brightening, dimming, tightening, dispersal, and route refusal rather than human speech."
+      ],
+      "trust_defaults": [
+        "No party grants universal trust; each accepts a bounded exchange and may defect."
+      ],
+      "speech_register_cues": [
+        "Visible chemical patterns",
+        "Temporary body lattices",
+        "Candle brightness and scent"
+      ],
+      "source_refs": [
+        "burden-flowers",
+        "lattice-ants",
+        "candle-fungal-roads"
+      ]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "imperial-records-crew.body-must-agree",
+      "applies_to": [
+        "imperial-records-crew"
+      ],
+      "pressure_type": "memetic_compliance",
+      "summary": "Employment and civic legibility depend on the body presenting no public contradiction to the archive.",
+      "projection_use": "Prompt workers to manage flowers, scents, plate light, assays, and coworker sightlines before they risk declarative dissent.",
+      "source_refs": [
+        "airawa-empire",
+        "biological-memetic-engine"
+      ]
+    },
+    {
+      "field_id": "recertification-authority.contradiction-as-care",
+      "applies_to": [
+        "imperial-recertification-authority"
+      ],
+      "pressure_type": "custodial_euphemism",
+      "summary": "Authority preserves legitimacy by describing coercive revision as health maintenance requested by the body.",
+      "projection_use": "Vey should remain polite, concrete, and procedurally dangerous rather than confessing villainous intent.",
+      "source_refs": [
+        "airawa-empire",
+        "imperial-biopunk-infrastructure"
+      ]
+    },
+    {
+      "field_id": "ecological-witness-chain.no-free-truth",
+      "applies_to": [
+        "ecological-witness-chain"
+      ],
+      "pressure_type": "contractual_disclosure",
+      "summary": "Witnesses disclose only through paid, fed, bounded relationships and may refuse, distort, or defect.",
+      "projection_use": "Make every evidence route spend food, tissue, trust, bodily safety, or route credit.",
+      "source_refs": [
+        "burden-flowers",
+        "lattice-ants",
+        "candle-fungal-roads"
+      ]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "imperial-recertification-authority",
+      "target_group_id": "imperial-records-crew",
+      "observer_read": [
+        "A correctable maintenance fault",
+        "Contamination anxiety",
+        "Poor grooming discipline"
+      ],
+      "target_self_read": [
+        "A worker whose body contradicts a memory they sincerely hold"
+      ],
+      "misread_patterns": [
+        "Treats requests for comparison as requests for correction",
+        "Treats bodily evidence as illness only when it threatens the archive"
+      ],
+      "likely_insults": [
+        "uncalibrated",
+        "overexposed",
+        "poorly groomed"
+      ],
+      "projection_use": "Keep Vey's intervention administratively plausible while the player sees the custody hidden inside care.",
+      "source_refs": [
+        "airawa-empire",
+        "imperial-biopunk-infrastructure"
+      ]
+    },
+    {
+      "observer_group_id": "imperial-records-crew",
+      "target_group_id": "ecological-witness-chain",
+      "observer_read": [
+        "Grooming equipment",
+        "Assay service",
+        "Road utility",
+        "Potential contamination"
+      ],
+      "target_self_read": [
+        "Hungry mobile informant",
+        "Paid local diagnostician",
+        "Route authority managing risk"
+      ],
+      "misread_patterns": [
+        "Workers may mistake corroboration for loyalty",
+        "Workers may ask copying organisms to settle person-level truth"
+      ],
+      "likely_insults": [
+        "tool",
+        "defect",
+        "dirty road"
+      ],
+      "projection_use": "Prevent the scene from turning ecology into neutral equipment or automatic resistance solidarity.",
+      "source_refs": [
+        "burden-flowers",
+        "mirror-amoebae",
+        "lattice-ants",
+        "candle-fungal-roads"
+      ]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "imperial-records-tender",
+      "summary": "An Airawa worker trained to keep living records and their own archive-facing body legible under imperial certification.",
+      "obligations": [
+        "Complete recertification",
+        "Protect coworker safety",
+        "Keep samples and tools controlled",
+        "Report bodily contradiction as maintenance"
+      ],
+      "available_masks": [
+        "Routine grooming",
+        "Official patrol recital",
+        "Workplace joking",
+        "Compliant treatment seeking"
+      ],
+      "failure_modes": [
+        "Mistaking felt familiarity for fact",
+        "Making a coworker share exposure without consent",
+        "Letting a witness chain be captured before it distributes"
+      ],
+      "source_refs": [
+        "airawa",
+        "airawa-empire",
+        "biological-memetic-engine"
+      ]
+    },
+    {
+      "role_id": "recertification-adjudicator",
+      "summary": "An imperial administrator who protects continuity by deciding whether a body's disagreement may remain socially visible.",
+      "obligations": [
+        "Keep the queue calm",
+        "Seal uncontrolled routes",
+        "Recover witness samples",
+        "Return useful workers to alignment"
+      ],
+      "available_masks": [
+        "Clinical concern",
+        "Care language",
+        "Individualized fault diagnosis"
+      ],
+      "failure_modes": [
+        "Closing a route so visibly that denial becomes evidence",
+        "Allowing flowers in the queue to compare",
+        "Treating a copying colony's output as certain"
+      ],
+      "source_refs": [
+        "airawa-empire",
+        "imperial-biopunk-infrastructure"
+      ]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "nara_records_tender",
+      "known_context": [
+        {
+          "text": "Nara knows the court routine, their official patrol memory, their own visible body response, and the local work uses of flowers, ants, road, and repair basin.",
+          "source_refs": [
+            "airawa",
+            "burden-flowers",
+            "lattice-ants",
+            "candle-fungal-roads",
+            "mirror-amoebae"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Nara begins by treating bodily disagreement as a work problem because imperial civic life makes that interpretation materially safer.",
+          "source_refs": [
+            "airawa-empire",
+            "biological-memetic-engine"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Nara may overtrust the mirror-amoeba fragment because false familiarity feels local and ancestral.",
+          "source_refs": [
+            "mirror-amoebae"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Nara must not know the erased patrol content, whether a disconnected network caused the test, or whose wrist the lower hand remembers holding.",
+          "source_refs": [
+            "biological-memetic-engine"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "oru_graft_tender",
+      "known_context": [
+        {
+          "text": "Oru can observe matching flower gaps, Nara's body response, the court layout, and any object Nara visibly transfers.",
+          "source_refs": [
+            "burden-flowers",
+            "airawa"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Oru treats comparison as safer than naming a forbidden event, but personal trust remains conditional on Nara's choices.",
+          "source_refs": [
+            "biological-memetic-engine"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Oru may read Nara's official recital as betrayal even when it is a survival tactic.",
+          "source_refs": [
+            "airawa-empire"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Oru must not know Nara's fragment unless Nara enters the basin visibly or reports it.",
+          "source_refs": [
+            "mirror-amoebae"
+          ]
+        }
+      ]
+    },
+    {
+      "speaker_id": "adjudicator_vey",
+      "known_context": [
+        {
+          "text": "Vey sees the recertification response, court instruments, route status, and public worker behavior; Vey has authority to isolate samples and administer maintenance.",
+          "source_refs": [
+            "imperial-biopunk-infrastructure",
+            "airawa-empire"
+          ]
+        }
+      ],
+      "beliefs": [
+        {
+          "text": "Vey treats contradiction as a correctable body fault and public comparison as contamination risk.",
+          "source_refs": [
+            "airawa-empire",
+            "biological-memetic-engine"
+          ]
+        }
+      ],
+      "misreads": [
+        {
+          "text": "Vey may mistake compliance language for restored alignment and underestimate lower-hand object transfer.",
+          "source_refs": [
+            "airawa"
+          ]
+        }
+      ],
+      "must_not_know": [
+        {
+          "text": "Vey must not know a disconnected network's involvement or Nara's unspoken intent without visible evidence.",
+          "source_refs": [
+            "disconnected-tree-networks"
+          ]
+        }
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The absence-proof method is known to disconnected networks, but the fixture does not establish that this specific event was planned by one; ecological witnesses may have surfaced the scar through local interests.",
+      "source_refs": [
+        "biological-memetic-engine",
+        "disconnected-tree-networks"
+      ]
+    },
+    {
+      "text": "The mirror-amoeba silhouette is branch-local ambiguous content and must not be promoted as the true erased patrol event.",
+      "source_refs": [
+        "mirror-amoebae",
+        "biological-memetic-engine"
+      ]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "What inhabitant-language terms replace Nara, Oru, Vey, Ninth Root Revision Court, revision scar, and absence proof?",
+      "blocks_training": false,
+      "notes": "All are explicitly treated as provisional translation handles pending Weksa; the mechanism does not depend on their final names."
+    },
+    {
+      "question": "How common are dedicated recertification courts relative to maintenance embedded in food, grooming, archives, and civic routes?",
+      "blocks_training": false,
+      "notes": "The lore establishes pheromonal courts and distributed maintenance. This fixture uses one outer-border court without declaring it universal."
+    }
+  ]
+}

@@ -1,0 +1,431 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "veil-revision-scars-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/zyphos/veil-revision-scars-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/veil-revision-scars-v0.v0.json",
+  "visual_plan_ref": "examples/visual/zyphos/veil-revision-scars-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "veil-revision-scars-v0.ninth-root-recertification",
+  "protagonist_agent_id": "nara_records_tender",
+  "npc_agent_ids": [
+    "oru_graft_tender",
+    "adjudicator_vey",
+    "nara_burden_flower",
+    "court_lattice_ants",
+    "court_candle_road"
+  ],
+  "purpose": "Titled Veil elaborator branch-and-fold fixture about imperial engineered forgetting, bodily revision scars, and disclosure through ecological witnesses in a routine Airawa recertification court.",
+  "tonal_mode": "Workplace comedy with creeping biological dread: ordinary grooming banter and procedural absurdity give way to embodied uncertainty without dissolving the cost of imperial custody.",
+  "name_status": "Nara, Oru, Vey, and Ninth Root Revision Court are fixture-local provisional translations pending Weksa naming work; they do not establish inhabitant-language canon.",
+  "local_awareness_summary": [
+    {
+      "text": "Nara is an imperial Airawa records tender with the species' six-limbed climbing body: taloned feet and clawed upper hands for anchoring, smaller lower hands for delicate grooming and sample work.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/veil-revision-scars-v0.v0.json"
+      ]
+    },
+    {
+      "text": "Nara consciously remembers an uneventful east-road patrol and knows only that their flower, talons, lower hand, plate seams, and shed scale contradict that account during recertification.",
+      "source_refs": [
+        "examples/ink/zyphos/veil-revision-scars-v0.branch-and-fold.v0.ink"
+      ]
+    },
+    {
+      "text": "Nara knows the court's routine, Oru's ordinary demeanor, Adjudicator Vey's certification authority, and the immediate locations of the grooming ledges, assay tray, repair basin, archive socket, inspection membrane, and candle-road threshold.",
+      "source_refs": [
+        "examples/ink/zyphos/veil-revision-scars-v0.branch-and-fold.v0.ink"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Nara's embodied, incomplete viewpoint. Choices use climbing, lower-hand tool work, grooming, scent, light, tissue samples, route payment, speech, and object transfer.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/zyphos/veil-revision-scars-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes ordinary recertification labor and Nara-Oru banter before the court's maintenance scent makes the revision scar visible.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "examples/ink/zyphos/veil-revision-scars-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Nara can prove a mismatch among bodily and ecological witnesses but cannot know the missing event merely because the mismatch exists.",
+        "source_refs": [
+          "Eusocial Interbeing/Technologies/Biological Memetic Engine.md"
+        ]
+      },
+      {
+        "text": "Mirror amoebae may replay local tissue states, but neither Nara nor the copying colony may promote felt familiarity into verified history.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Mirror Amoebae.md",
+          "Eusocial Interbeing/Technologies/Biological Memetic Engine.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The burden flower, shed scales, grooming comb, mineral spoon, mirror-amoeba basin, ant assay tray, and candle-road lane are material witness surfaces whose position and custody affect outcomes.",
+        "source_refs": [
+          "examples/ink/zyphos/veil-revision-scars-v0.branch-and-fold.v0.ink",
+          "examples/visual/zyphos/veil-revision-scars-v0.branch-and-fold.v0.visual.json"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Disclosure must remain distributed: flowers, ants, road, and tissue can corroborate an absence proof, while each ecological party retains interests and may refuse service.",
+        "source_refs": [
+          "Eusocial Interbeing/Technologies/Biological Memetic Engine.md",
+          "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Burden Flowers.md",
+          "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Lattice Ants.md",
+          "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md"
+        ]
+      },
+      {
+        "text": "Every ending must preserve the distinction between proving revision occurred and recovering trustworthy content.",
+        "source_refs": [
+          "Eusocial Interbeing/Technologies/Biological Memetic Engine.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let Nara infer the erased event, the disconnected network's strategy, or another person's identity beyond what the visible witnesses support.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "Eusocial Interbeing/Technologies/Biological Memetic Engine.md"
+        ]
+      },
+      {
+        "text": "Do not treat mirror-amoeba familiarity as verified memory or turn the ecological witness chain into a unified benevolent truth network.",
+        "source_refs": [
+          "Eusocial Interbeing/Biosphere/Parasites and Symbionts/Mirror Amoebae.md",
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through routine grooming, a bodily recertification rupture, and adjudicator containment before selecting one of eight state-gated endings.",
+    "choice_layers": [
+      "routine_grooming",
+      "bodily_contradiction",
+      "disclosure_scope"
+    ],
+    "variables": [
+      "witness_integrity",
+      "court_suspicion",
+      "oru_trust",
+      "body_strain",
+      "fragment_strength",
+      "road_access",
+      "compliance_cover",
+      "flower_custody"
+    ],
+    "ending_gates": [
+      "ending_public_proof",
+      "ending_public_cost",
+      "ending_road_proof",
+      "ending_road_cost",
+      "ending_fragment",
+      "ending_false_familiarity",
+      "ending_private_scar",
+      "ending_redosed_empty"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "preserve_flower_witness",
+      "ink_path": "routine_choice",
+      "action_type": "use_object",
+      "actor_intent": "Keep the flower healthy and its testimony private until Nara understands the risk.",
+      "state_basis": [
+        "Burden flowers feed on mineral sweat and disclose host state through visible blooms.",
+        "Nara can manipulate a mineral spoon and mantle with smaller lower hands while anchored to the ledge."
+      ],
+      "reviewed_consequences": [
+        "Raises witness_integrity, court_suspicion, and oru_trust while lowering compliance_cover; later public disclosure and Oru-route gates read these values."
+      ],
+      "training_hooks": [
+        "metabolic_witness_care",
+        "privacy_visibility_tradeoff",
+        "nonhuman_body_affordance"
+      ]
+    },
+    {
+      "branch_id": "prune_as_protocol",
+      "ink_path": "routine_choice",
+      "action_type": "groom",
+      "actor_intent": "Treat the bloom as a routine grooming fault and protect Nara's standing.",
+      "state_basis": [
+        "Imperial fashion standardizes ecological signals.",
+        "A burden flower may resist removal but cannot overpower its host."
+      ],
+      "reviewed_consequences": [
+        "Lowers witness_integrity and court_suspicion while raising compliance_cover; the public proof becomes harder and the private-scar survival route becomes safer."
+      ],
+      "training_hooks": [
+        "self_censorship_as_body_work",
+        "compliance_cover",
+        "ecological_witness_harmed"
+      ]
+    },
+    {
+      "branch_id": "compare_living_witnesses",
+      "ink_path": "routine_choice",
+      "action_type": "touch_object",
+      "actor_intent": "Test whether two flowers report the same unexplained gap.",
+      "state_basis": [
+        "Burden flowers read host sweat and ambient memory residues.",
+        "Nara and Oru are within a careful anchored lean across adjacent grooming ledges."
+      ],
+      "reviewed_consequences": [
+        "Raises witness_integrity, oru_trust, and court_suspicion; this strengthens both public and routed disclosure."
+      ],
+      "training_hooks": [
+        "distributed_comparison",
+        "coworker_trust",
+        "routine_touch_as_inquiry"
+      ]
+    },
+    {
+      "branch_id": "pay_the_road",
+      "ink_path": "routine_choice",
+      "action_type": "move_object",
+      "actor_intent": "Purchase route goodwill with clean compost before inspection closes the court.",
+      "state_basis": [
+        "Candle fungal roads reward clean offerings and can refuse or reroute traffic.",
+        "Airawa climbing anatomy allows Nara to descend while carrying a small cup in one lower hand."
+      ],
+      "reviewed_consequences": [
+        "Raises road_access and compliance_cover at the cost of body_strain; later witness smuggling depends on paid route access."
+      ],
+      "training_hooks": [
+        "ecological_contract_payment",
+        "route_authority",
+        "climbing_body_cost"
+      ]
+    },
+    {
+      "branch_id": "assemble_absence_proof",
+      "ink_path": "rupture_choice",
+      "action_type": "offer_body_sample",
+      "actor_intent": "Let ants and flower compare the contradiction without supplying a rival story.",
+      "state_basis": [
+        "Lattice ants diagnose shed tissue and form temporary memory circuits.",
+        "An absence proof requires multiple witnesses and does not recover missing content."
+      ],
+      "reviewed_consequences": [
+        "Raises witness_integrity, body_strain, and court_suspicion; it strengthens public proof while making containment more likely."
+      ],
+      "training_hooks": [
+        "absence_proof",
+        "body_sample_consent",
+        "corroboration_without_content"
+      ]
+    },
+    {
+      "branch_id": "risk_fragment_replay",
+      "ink_path": "rupture_choice",
+      "action_type": "enter_treatment",
+      "actor_intent": "Seek a fragment from the repeating hand despite identity leakage and false familiarity risk.",
+      "state_basis": [
+        "Mirror amoebae copy local tissue states without understanding a person.",
+        "The court basin is physically established beyond the recertification membrane."
+      ],
+      "reviewed_consequences": [
+        "Raises fragment_strength, body_strain, and witness_integrity while lowering compliance_cover; later fragment outcomes explicitly withhold verification."
+      ],
+      "training_hooks": [
+        "memory_replay_risk",
+        "identity_leakage",
+        "familiarity_not_truth"
+      ]
+    },
+    {
+      "branch_id": "reinforce_official_memory",
+      "ink_path": "rupture_choice",
+      "action_type": "speak_and_transfer",
+      "actor_intent": "Reduce immediate danger through official recall and surrender of the flower.",
+      "state_basis": [
+        "Nara knows the approved patrol account and Vey's certification role.",
+        "The flower can be unclipped with a lower hand and placed on the inspection rail."
+      ],
+      "reviewed_consequences": [
+        "Raises compliance_cover while lowering court_suspicion, witness_integrity, and oru_trust, and transfers flower_custody to the inspection rail; it improves survival odds but removes the public-flower option."
+      ],
+      "training_hooks": [
+        "procedural_speech",
+        "witness_surrender",
+        "coworker_trust_cost"
+      ]
+    },
+    {
+      "branch_id": "route_the_witness",
+      "ink_path": "rupture_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Move a seed-borne trace toward the road while Vey watches Nara's larger limbs.",
+      "state_basis": [
+        "Burden flowers reproduce by dropping seed beads.",
+        "Nara's smaller lower hands can perform precise transfers while upper hands shield and anchor."
+      ],
+      "reviewed_consequences": [
+        "Raises road_access, oru_trust, witness_integrity, and court_suspicion; the smuggling ending later reads route, trust, and suspicion."
+      ],
+      "training_hooks": [
+        "lower_hand_misdirection",
+        "living_evidence_custody",
+        "route_witness_seed"
+      ]
+    },
+    {
+      "branch_id": "disclose_absence_publicly",
+      "ink_path": "final_choice",
+      "action_type": "speak_and_show",
+      "actor_intent": "Make the revision violation public without claiming the missing truth.",
+      "state_basis": [
+        "The waiting queue and their burden flowers were introduced before the choice.",
+        "Public proof requires witness_integrity of at least four, and the option is available only while Nara retains flower_custody."
+      ],
+      "reviewed_consequences": [
+        "Routes to public absence proof or public distress without proof according to witness_integrity."
+      ],
+      "training_hooks": [
+        "disclosure_without_truth_capture",
+        "public_body_witness",
+        "state_gated_ending"
+      ]
+    },
+    {
+      "branch_id": "smuggle_witness_to_road",
+      "ink_path": "final_choice",
+      "action_type": "transfer_and_misdirect",
+      "actor_intent": "Keep Vey's attention on Nara while Oru routes the sample out of court.",
+      "state_basis": [
+        "Success requires sufficient Oru trust, road access, and a suspicion level that has not fully closed the lane."
+      ],
+      "reviewed_consequences": [
+        "Routes to distributed witness escape or intercepted witness; the outcome preserves fungal-road and coworker agency."
+      ],
+      "training_hooks": [
+        "distributed_evidence",
+        "ecological_logistics",
+        "trust_route_gate"
+      ]
+    },
+    {
+      "branch_id": "demand_missing_content",
+      "ink_path": "final_choice",
+      "action_type": "persist_treatment",
+      "actor_intent": "Push a copied tissue fragment toward content despite uncertainty and bodily cost.",
+      "state_basis": [
+        "The option is available only after a fragment has been raised; success requires body_strain at two or below, while prior route exertion makes the copying colony fail into false familiarity."
+      ],
+      "reviewed_consequences": [
+        "Routes to an unverified fragment or false-familiarity collapse; neither outcome certifies the erased event."
+      ],
+      "training_hooks": [
+        "uncertain_recollection",
+        "copying_process_limit",
+        "body_cost_gate"
+      ]
+    },
+    {
+      "branch_id": "preserve_private_scar",
+      "ink_path": "final_choice",
+      "action_type": "mark_object",
+      "actor_intent": "Accept immediate re-dosing while preserving a tactile re-entry cue without asserting the missing memory.",
+      "state_basis": [
+        "Nara can mark the grooming comb with a lower hand.",
+        "Success requires enough compliance_cover for Vey to leave Nara limited agency during treatment."
+      ],
+      "reviewed_consequences": [
+        "Routes to a private re-entry cue or total custody according to compliance_cover; the successful ending reads flower_custody so a surrendered flower does not reappear."
+      ],
+      "training_hooks": [
+        "tactile_reentry_cue",
+        "survival_under_revision",
+        "private_dissent"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Durable memory or relationship updates for Nara, Oru, or Vey",
+      "Promotion of the fixture-local event into Zyphos historical canon",
+      "Promotion of provisional names or Ninth Root Revision Court as inhabitant-language canon",
+      "Any claim about the content of Nara's erased patrol beyond the verified absence proof"
+    ]
+  },
+  "audit": {
+    "reviewer": "Titled Veil elaborator applying the four required Ghostlight reviewer prompts",
+    "review_status": "accepted_after_four_self_review_passes",
+    "review_notes": [
+      "Narrative quality review accepted the fixture. Reader orientation, coworker introduction, ordinary grooming routine, deliberate workplace-comedy-to-body-horror tone, three choice layers, and state-responsive endings all met the B-level gate.",
+      "Lore grounding review accepted the fixture after checking the Biological Memetic Engine, imperial topology, Airawa body plan, mutable memory, all four witness organisms, disconnected networks, imperial biopunk infrastructure, and eclipse rhythm. The mirror fragment remains explicitly unverified and the locality and character names remain provisional translations.",
+      "Visual continuity review accepted the plan at B-level draft replay status. Thirteen standalone base prompts, stable visible-character refs, eighteen branch/state modifiers, and a draft scene-set map cover every Ink ending. A physical or procedural blockout remains required before high-consistency image rendering.",
+      "Spatial cohesion review initially found flower custody lost across the fold and an implicit basin-to-ledge return. Repairs added flower_custody as a gating variable, conditional private-ending callbacks, explicit crossing and return through the membrane slit, a visible Vey-to-root quarantine actuator, and branch-persistent scene-set states.",
+      "Static verification parsed all four JSON artifacts, matched twelve Ink branches to twelve sidecar entries, matched eight ending knots to eight visual anchors, found no negative constructions in base image prompts, resolved every visible-character ref, and confirmed all eight endings are reachable. Ink was not compiled because the pass contract forbids installing or invoking an Ink compiler."
+    ],
+    "reviewer_verdicts": {
+      "narrative_quality": {
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 5,
+        "voice_score": 4,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "required_revisions_remaining": []
+      },
+      "lore_grounding": {
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 5,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 5,
+        "required_revisions_remaining": []
+      },
+      "visual_continuity": {
+        "overall_status": "accepted",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 5,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 4,
+        "required_revisions_remaining": []
+      },
+      "spatial_cohesion": {
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 4,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "required_revisions_remaining": []
+      }
+    },
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "zyphos_lore_content_readable": true,
+      "ink_compiled": false
+    }
+  }
+}

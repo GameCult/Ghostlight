@@ -1,0 +1,736 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "veil-revision-scars-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/zyphos/veil-revision-scars-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/veil-revision-scars-v0.branch-and-fold.v0.training.json",
+  "scene_id": "veil-revision-scars-v0.ninth-root-recertification",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for the Veil revision-scars fixture.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for routine Airawa flower grooming, the recertification rupture, ecological cross-reading, adjudicator containment, disclosure choices, and state-gated aftermaths.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the court establishing view, coworker routine, the anomalous flower closeup, the waiting queue, maintenance-scent rupture, adjudicator arrival, witness affordances, containment fold, final disclosure threshold, and each ending family. The moment Nara's conscious memory agrees while the body contradicts it stands alone.",
+    "prompting_rule": "Each base image prompt describes a complete frame with visible geometry, materials, lighting, bodies, tools, ecological witnesses, and staging in plain visual language. Prompt assembly includes only the visual refs for characters present in that frame. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Style: painterly bioluminescent alien natural-history illustration for mature interactive fiction, precise six-limbed anatomy, tactile bark and wet biological materials, restrained teal green amber and purple light, dry workplace observation turning into quiet body horror, cinematic composition with readable staging and expressive nonhuman posture.",
+    "prompt_assembly_rule": "Assemble each image prompt from global_style_cue, the scene base_image_prompt, visual refs only for visible named characters or groups, and triggered state_image_modifiers or global_branch_image_modifiers. Every render starts from its full assembled text or the declared camera-specific scene-set blockout.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture returns to one vertical chamber from several angles and branches move bodies, samples, flowers, and route access. The draft map is sufficient for planning and self-review; a blockout is required before high-consistency rendered replay.",
+      "future_scene_set_need": "Build a simple 3D blockout of the tall root chamber with three middle grooming ledges, rear root ridge, translucent recertification membrane, lower pass-through, silver repair basin, ant assay rail, archive socket, bottom fungal-road threshold, black quarantine ring, high vents, and upper inspection iris."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "veil_court_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide cutaway view of a tall oval chamber grown around a massive pale tree root used as imperial memory infrastructure. Three narrow bark-and-resin grooming ledges cross the middle height and face a translucent green biological membrane. A shallow silver repair basin sits in the correction bay behind the membrane beside a dark oval archive socket. At floor level, an amber-beaded fungal road enters through a low arch and stops at a black circular quarantine band. Climbing ridges run vertically along the rear root. Narrow high vents frame a huge fixed companion planet in the dim sky. Cold blue bioluminescent seams shift toward green during eclipse ingress; wet bark, woven fungal cables, grown plates, and resin rails make the chamber visibly alive and administrative.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The court is one tall oval root chamber. Bottom road threshold, middle ledges, membrane and correction bay, rear climbing ridge, and upper inspection iris remain in the same vertical order.",
+          "The translucent membrane has a lower pass-through that opens during recertification, allowing access from the grooming ledges to the repair basin."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_grooming_routine",
+        "ink_anchor": "routine_people",
+        "base_image_prompt": "Medium-wide view of two six-limbed reptilian-adjacent Airawa workers on adjacent middle-height grooming ledges inside the tall pale-root court. Nara has tiny ochre scales, a narrow wedge-shaped head, minimal facial slits, pale grown chest plates with fine blue luminous seams, long digitigrade legs, grasping four-toed feet with hooked climbing talons, two large clawed upper arms braced on vertical root ridges, and two smaller blunt four-digit lower hands combing a purple burden flower clipped to a standardized moss-green mantle. Oru has russet scales, darker rib plates with amber seams, the same six-limbed climbing anatomy, a gray-green mantle, and a bright yellow burden flower. Mineral spoons, curved grooming combs, small compost cups, and a resin safety rail lie between them. Their anchored postures and sideways glances carry ordinary coworker humor under cold green eclipse light.",
+        "visible_characters": [
+          {
+            "agent_id": "nara_records_tender",
+            "default_stance": "taloned feet and both upper claws anchored to the middle root ridge, both lower hands grooming the chest flower",
+            "visual_ref": "visual_character_refs.characters.nara_records_tender"
+          },
+          {
+            "agent_id": "oru_graft_tender",
+            "default_stance": "anchored on the adjacent ledge, one lower hand holding a grooming comb beside the yellow flower",
+            "visual_ref": "visual_character_refs.characters.oru_graft_tender"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Nara occupies the middle grooming ledge and Oru the adjacent ledge, separated by one careful anchored lean.",
+          "Airawa upper arms and taloned feet bear climbing loads; smaller lower hands perform delicate grooming and transfers."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_flower_gap_closeup",
+        "ink_anchor": "routine_stakes",
+        "base_image_prompt": "Close view of Nara's ochre scaled chest and four small lower-hand digits holding a grooming comb beside a living burden flower clipped to a moss-green harness. The flower has clasping rootlets, flat purple photosynthetic petals, and a cup of fine sensory filaments touching sweat-darkened plate seams. Two purple petals open with a precise transparent colorless interval between them. Fine blue light in Nara's pale chest-plate seams stops directly beneath that gap. In soft background focus, Oru's russet six-limbed face has lost its smile, and a yellow burden flower leans toward Nara. Resin tool slots and a measured mineral spoon establish a practical grooming workstation.",
+        "visible_characters": [
+          {
+            "agent_id": "nara_records_tender",
+            "default_stance": "lower hands paused around comb and anomalous flower",
+            "visual_ref": "visual_character_refs.characters.nara_records_tender"
+          },
+          {
+            "agent_id": "oru_graft_tender",
+            "default_stance": "soft background focus, watching the colorless gap",
+            "visual_ref": "visual_character_refs.characters.oru_graft_tender"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The anomalous witness mark is a visible colorless interval between purple petals, echoed later by a broken ant ring and interrupted plate light."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_routine_queue_fold",
+        "ink_anchor": "routine_fold",
+        "base_image_prompt": "Wide interior view of the same tall oval pale-root court during an ordinary work queue. Nara and Oru occupy adjacent middle grooming ledges while six-limbed Airawa archive clerks, graft tenders, and two pollinator-route inspectors wait on the lower ledge in standardized green and gray mantles. Every worker anchors with long taloned feet and large clawed upper arms while smaller lower hands hold sample cups, grooming tools, or harness straps. Small burden flowers in purple, yellow, rust, and white sit against chest plates. The translucent green recertification membrane fills the inner wall; an ant assay rail runs along its base; the amber candle fungal road ends below at the black quarantine ring. Cold green eclipse light makes the routine neat and faintly damp.",
+        "visible_characters": [
+          {
+            "agent_id": "nara_records_tender",
+            "default_stance": "middle ledge, flower near chest and grooming tools close",
+            "visual_ref": "visual_character_refs.characters.nara_records_tender"
+          },
+          {
+            "agent_id": "oru_graft_tender",
+            "default_stance": "adjacent ledge within lower-hand reach",
+            "visual_ref": "visual_character_refs.characters.oru_graft_tender"
+          },
+          {
+            "agent_id": "waiting_workers",
+            "default_stance": "orderly queue on the lower ledge with mixed flower colors",
+            "visual_ref": "visual_character_refs.groups.waiting_workers"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "witness_integrity >= 3",
+            "modifier_prompt": "Nara's well-fed purple flower is partly sheltered beneath the standardized mantle, with the colorless petal interval glowing warm against pale chest plates."
+          },
+          {
+            "trigger": "witness_integrity <= 0",
+            "modifier_prompt": "Nara's purple flower has a freshly cut petal edge and tight bitter rootlets; the compost cup holds the clipped translucent petal."
+          },
+          {
+            "trigger": "oru_trust >= 4",
+            "modifier_prompt": "Oru has shifted one taloned foot onto Nara's root ridge and keeps an open lower hand near Nara's ledge."
+          },
+          {
+            "trigger": "road_access >= 3",
+            "modifier_prompt": "One lane of amber fungal candles shines clearly through the black quarantine ring beside a clean compost offering."
+          },
+          {
+            "trigger": "body_strain >= 1",
+            "modifier_prompt": "Nara's lower right hand trembles visibly around the curved grooming comb."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "veil_recertification_rupture",
+        "ink_anchor": "recertification_rupture",
+        "base_image_prompt": "Pivotal medium shot in the tall root court as the translucent membrane exhales green maintenance vapor. Nara, a six-limbed ochre Airawa worker, remains anchored to the middle ledge with both clawed upper hands and four-toed taloned feet, while the smaller lower right hand clenches empty air as if gripping a wrist. Hooked foot talons score the pale root ridge. Fine blue light races through pale chest-plate seams and stops beneath the burden flower's colorless purple-petal interval. On the assay rail below, small jointed lattice ants link their bodies and microbial glue around a shed scale to form a broken ring. The amber fungal road at floor level darkens to one bead. Oru watches from the adjacent ledge through cold green haze.",
+        "visible_characters": [
+          {
+            "agent_id": "nara_records_tender",
+            "default_stance": "talons locked into ridge, upper claws braced, lower right hand clenched in an unexplained grip",
+            "visual_ref": "visual_character_refs.characters.nara_records_tender"
+          },
+          {
+            "agent_id": "oru_graft_tender",
+            "default_stance": "adjacent ledge, body angled toward Nara in alarm",
+            "visual_ref": "visual_character_refs.characters.oru_graft_tender"
+          },
+          {
+            "agent_id": "court_lattice_ants",
+            "default_stance": "assembled as a broken ring around one shed scale on the assay rail",
+            "visual_ref": "visual_character_refs.groups.court_lattice_ants"
+          },
+          {
+            "agent_id": "court_candle_road",
+            "default_stance": "dark route body with one uncertain amber candle below the ledges",
+            "visual_ref": "visual_character_refs.groups.court_candle_road"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "This beat visually links three interrupted forms: colorless flower interval, broken ant ring, and plate light stopping beneath the flower."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_adjudicator_arrival",
+        "ink_anchor": "rupture_witness",
+        "base_image_prompt": "Low upward view inside the tall oval root court. Adjudicator Vey, a tall six-limbed Airawa with deep charcoal scales, smooth ivory formal plates, narrow white bioluminescent seams, and a severe pale mantle, appears through the upper inspection iris and begins descending the rear root ridges. The iris closes behind Vey like overlapping living leaves. On the middle ledges below, ochre-scaled Nara clings to fresh talon scores with a purple burden flower open at the chest, while russet-scaled Oru leans closer from the adjacent ledge. The translucent green recertification membrane, silver repair basin, ant assay rail, dark fungal road, and black quarantine ring remain visible in vertical layers.",
+        "visible_characters": [
+          {
+            "agent_id": "nara_records_tender",
+            "default_stance": "middle ledge below Vey, lower right hand still clenched",
+            "visual_ref": "visual_character_refs.characters.nara_records_tender"
+          },
+          {
+            "agent_id": "oru_graft_tender",
+            "default_stance": "adjacent ledge, close enough to speak softly",
+            "visual_ref": "visual_character_refs.characters.oru_graft_tender"
+          },
+          {
+            "agent_id": "adjudicator_vey",
+            "default_stance": "descending from the upper inspection iris with measured control",
+            "visual_ref": "visual_character_refs.characters.adjudicator_vey"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Vey enters only after the rupture frame has established the room before authority arrives.",
+          "Vey's descent route follows the rear root ridge from upper iris to middle ledges."
+        ]
+      },
+      {
+        "visual_scene_id": "veil_witness_affordances",
+        "ink_anchor": "rupture_choice",
+        "base_image_prompt": "Medium-wide decision frame centered on Nara at the middle grooming ledge of the pale-root court. Four reachable witness surfaces are clearly staged: a resin ant assay rail directly below the ledge holds one shed scale and a broken ring of linked insects; the purple burden flower rests on Nara's chest harness within reach of both lower hands; an open lower slit in the translucent membrane leads down two body lengths to a shallow silver mirror-amoeba basin with scored stone footing; Oru's open lower hand waits across the adjacent ledge above an amber fungal candle at the black quarantine ring. Vey descends the rear ridge from the upper iris. Nara's clawed upper hands and taloned feet remain anchored while the smaller lower hands can sample, transfer, uncover, or surrender.",
+        "visible_characters": [
+          {
+            "agent_id": "nara_records_tender",
+            "default_stance": "anchored at middle ledge with both lower hands free between flower, assay, membrane slit, and Oru",
+            "visual_ref": "visual_character_refs.characters.nara_records_tender"
+          },
+          {
+            "agent_id": "oru_graft_tender",
+            "default_stance": "adjacent ledge with one open lower hand",
+            "visual_ref": "visual_character_refs.characters.oru_graft_tender"
+          },
+          {
+            "agent_id": "adjudicator_vey",
+            "default_stance": "descending the rear ridge toward the ledges",
+            "visual_ref": "visual_character_refs.characters.adjudicator_vey"
+          },
+          {
+            "agent_id": "court_lattice_ants",
+            "default_stance": "broken ring on assay rail below Nara",
+            "visual_ref": "visual_character_refs.groups.court_lattice_ants"
+          },
+          {
+            "agent_id": "court_candle_road",
+            "default_stance": "one amber lane below Oru at quarantine ring",
+            "visual_ref": "visual_character_refs.groups.court_candle_road"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_inspection_fold",
+        "ink_anchor": "inspection_fold",
+        "base_image_prompt": "Confrontation frame on the middle ledges of the tall oval court. Vey has descended to the root ridge between the upper iris and Nara, ivory formal plates and pale mantle composed under green light. Nara clings to the middle ledge, purple flower at the chest and lower right hand held away from the body. Oru occupies the adjacent ledge within careful reach. The waiting Airawa workers watch from the lower ledge with their own colored burden flowers. The translucent membrane glows behind the ledges; the silver repair basin sits through its lower slit; the ant assay rail, archive socket, black quarantine ring, and amber candle road are visible below.",
+        "visible_characters": [
+          {
+            "agent_id": "nara_records_tender",
+            "default_stance": "anchored below Vey with lower right hand exposed",
+            "visual_ref": "visual_character_refs.characters.nara_records_tender"
+          },
+          {
+            "agent_id": "oru_graft_tender",
+            "default_stance": "adjacent ledge, position varies with trust",
+            "visual_ref": "visual_character_refs.characters.oru_graft_tender"
+          },
+          {
+            "agent_id": "adjudicator_vey",
+            "default_stance": "on rear ridge above and between the workers and exits",
+            "visual_ref": "visual_character_refs.characters.adjudicator_vey"
+          },
+          {
+            "agent_id": "waiting_workers",
+            "default_stance": "lower ledge queue watching through their own flowers",
+            "visual_ref": "visual_character_refs.groups.waiting_workers"
+          },
+          {
+            "agent_id": "court_lattice_ants",
+            "default_stance": "assay rail below Nara",
+            "visual_ref": "visual_character_refs.groups.court_lattice_ants"
+          },
+          {
+            "agent_id": "court_candle_road",
+            "default_stance": "at the bottom quarantine ring",
+            "visual_ref": "visual_character_refs.groups.court_candle_road"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "witness_integrity >= 4",
+            "modifier_prompt": "Nara's purple flower displays a broad colorless petal interval while lattice ants repeatedly assemble two shed scales into a broken ring."
+          },
+          {
+            "trigger": "witness_integrity <= 1",
+            "modifier_prompt": "Nara's flower has a clipped or exhausted edge, and the assay rail holds one damaged scale with a loose incomplete ant cluster."
+          },
+          {
+            "trigger": "fragment_strength >= 2",
+            "modifier_prompt": "Silver mirror-amoeba film coats Nara's lower right hand; the fingers hold the same repeated grip while Nara's head pulls away."
+          },
+          {
+            "trigger": "oru_trust >= 4",
+            "modifier_prompt": "Oru stays inside lower-hand reach with one palm partly closed around a wet seed bead."
+          },
+          {
+            "trigger": "oru_trust <= 1",
+            "modifier_prompt": "Oru has stepped back into rigid queue spacing with both lower hands visible and empty."
+          },
+          {
+            "trigger": "court_suspicion >= 4",
+            "modifier_prompt": "The black quarantine band seals into a glossy continuous ring; every fungal candle is dark except one trapped amber bead."
+          },
+          {
+            "trigger": "compliance_cover >= 4",
+            "modifier_prompt": "Nara holds the surrendered or subdued flower near the inspection rail and adopts a formally aligned posture toward Vey."
+          },
+          {
+            "trigger": "body_strain >= 3",
+            "modifier_prompt": "Pulses of fever-blue light run through Nara's chest and wrist plate seams; one hooked foot talon slips along the scored ridge."
+          },
+          {
+            "trigger": "flower_custody == 0",
+            "modifier_prompt": "Nara's purple burden flower rests on the inspection rail within Vey's small lower-hand reach; Nara's chest harness shows an empty clasp."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "veil_disclosure_threshold",
+        "ink_anchor": "final_choice",
+        "base_image_prompt": "Wide threshold view of the same vertical court with every consequence route legible. Nara is centered on the middle ledge beneath Vey, anchored by upper claws and taloned feet, purple flower and trembling lower hands visible. Oru waits on the adjacent ledge. A queue of six-limbed Airawa workers with colored burden flowers fills the lower ledge. The ant assay rail and silver repair basin sit behind the open lower membrane slit; the archive socket is dark above them; the candle fungal road meets the sealed black quarantine ring at floor level. Vey's body blocks the rear ridge route to the upper iris. Cold green light and one amber road bead divide public disclosure, sample transfer, risky basin treatment, and quiet re-dosing into visible choices.",
+        "visible_characters": [
+          {
+            "agent_id": "nara_records_tender",
+            "default_stance": "center middle ledge, flower and lower hands exposed",
+            "visual_ref": "visual_character_refs.characters.nara_records_tender"
+          },
+          {
+            "agent_id": "oru_graft_tender",
+            "default_stance": "adjacent ledge between Nara and road sightline",
+            "visual_ref": "visual_character_refs.characters.oru_graft_tender"
+          },
+          {
+            "agent_id": "adjudicator_vey",
+            "default_stance": "rear ridge above Nara, physically controlling the upper route",
+            "visual_ref": "visual_character_refs.characters.adjudicator_vey"
+          },
+          {
+            "agent_id": "waiting_workers",
+            "default_stance": "lower ledge queue watching through colored flowers",
+            "visual_ref": "visual_character_refs.groups.waiting_workers"
+          },
+          {
+            "agent_id": "court_lattice_ants",
+            "default_stance": "on assay rail beside shed scales",
+            "visual_ref": "visual_character_refs.groups.court_lattice_ants"
+          },
+          {
+            "agent_id": "court_candle_road",
+            "default_stance": "one amber candle at bottom quarantine ring",
+            "visual_ref": "visual_character_refs.groups.court_candle_road"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_ending_public",
+        "ink_anchor": "ending_public_proof|ending_public_cost",
+        "base_image_prompt": "Public-disclosure aftermath in the tall pale-root court. Nara stands high on the middle ledge beneath the composed dark-scaled adjudicator, one clawed upper arm braced to the ridge and one smaller lower hand lifting the purple burden flower toward the lower queue. Six-limbed Airawa workers face upward from the lower ledge, their green and gray mantles carrying burden flowers in purple, yellow, rust, and white. The translucent recertification membrane glows green behind Nara; the black quarantine ring and dark fungal road seal the bottom route; cold eclipse light turns the chamber into a public witness space.",
+        "visible_characters": [
+          {
+            "agent_id": "nara_records_tender",
+            "default_stance": "high on middle ledge, flower raised toward queue",
+            "visual_ref": "visual_character_refs.characters.nara_records_tender"
+          },
+          {
+            "agent_id": "adjudicator_vey",
+            "default_stance": "above Nara near closing membrane controls",
+            "visual_ref": "visual_character_refs.characters.adjudicator_vey"
+          },
+          {
+            "agent_id": "waiting_workers",
+            "default_stance": "lower ledge facing upward with flowers visible",
+            "visual_ref": "visual_character_refs.groups.waiting_workers"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_ending_road",
+        "ink_anchor": "ending_road_proof|ending_road_cost",
+        "base_image_prompt": "Route-disclosure aftermath at the bottom of the same tall root court. Oru, a russet six-limbed Airawa in a gray-green mantle, descends headfirst along the rear ridges with upper claws and taloned feet carrying the load while one small lower hand holds a wet flower seed bead and an ant-glued shed scale. Below, an amber-beaded candle fungal road meets the glossy black quarantine band at the low arch. Nara and the ivory-plated adjudicator remain visible far above on the middle ledge, their confrontation pulling attention away from the transfer. The composition emphasizes vertical distance, one paid route lane, and fragile object custody.",
+        "visible_characters": [
+          {
+            "agent_id": "oru_graft_tender",
+            "default_stance": "descending headfirst toward the road with seed bead and glued scale",
+            "visual_ref": "visual_character_refs.characters.oru_graft_tender"
+          },
+          {
+            "agent_id": "nara_records_tender",
+            "default_stance": "far above on middle ledge holding Vey's attention",
+            "visual_ref": "visual_character_refs.characters.nara_records_tender"
+          },
+          {
+            "agent_id": "adjudicator_vey",
+            "default_stance": "far above focused on Nara's repeating hand",
+            "visual_ref": "visual_character_refs.characters.adjudicator_vey"
+          },
+          {
+            "agent_id": "court_candle_road",
+            "default_stance": "at bottom arch waiting at the quarantine band",
+            "visual_ref": "visual_character_refs.groups.court_candle_road"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_ending_fragment",
+        "ink_anchor": "ending_fragment|ending_false_familiarity",
+        "base_image_prompt": "Mirror-fragment aftermath in the correction bay behind the translucent membrane. Nara crouches in a shallow oval silver basin with scored stone footing, taloned feet planted and both clawed upper hands gripping pale root handles. A cold silver film of soft shifting cell clusters and tiny memory vesicles climbs the smaller lower right hand. Nara's fingers form an intense repeated grip while unresolved pale shapes move in the wet reflection. Oru watches through the membrane from the middle ledge; the dark-scaled adjudicator stands at the basin rim with a resin culture-burn tool. Green court light, silver tissue shimmer, and fever-blue plate seams create intimate biological uncertainty.",
+        "visible_characters": [
+          {
+            "agent_id": "nara_records_tender",
+            "default_stance": "crouched in basin with lower right hand submerged and upper claws on root handles",
+            "visual_ref": "visual_character_refs.characters.nara_records_tender"
+          },
+          {
+            "agent_id": "oru_graft_tender",
+            "default_stance": "watching through membrane from middle ledge",
+            "visual_ref": "visual_character_refs.characters.oru_graft_tender"
+          },
+          {
+            "agent_id": "adjudicator_vey",
+            "default_stance": "at basin rim with culture-burn tool",
+            "visual_ref": "visual_character_refs.characters.adjudicator_vey"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "veil_ending_private",
+        "ink_anchor": "ending_private_scar|ending_redosed_empty",
+        "base_image_prompt": "Quiet re-dosing aftermath on Nara's middle grooming ledge. A living scent collar of pale resin petals rests around the ochre Airawa worker's throat plates, feeding green vapor into luminous chest seams. Nara remains anchored to the root ridge by upper claws and taloned feet while the small lower hands rest close to the chest harness beside a resin tool rail. Adjudicator Vey stands above on the rear ridge in ivory formal plates. Oru waits at the translucent membrane's edge. The amber fungal road and ant assay rail are dim below.",
+        "visible_characters": [
+          {
+            "agent_id": "nara_records_tender",
+            "default_stance": "anchored under active scent collar with lower hands near grooming comb",
+            "visual_ref": "visual_character_refs.characters.nara_records_tender"
+          },
+          {
+            "agent_id": "oru_graft_tender",
+            "default_stance": "waiting at the translucent membrane's edge",
+            "visual_ref": "visual_character_refs.characters.oru_graft_tender"
+          },
+          {
+            "agent_id": "adjudicator_vey",
+            "default_stance": "above Nara on rear ridge supervising re-dosing",
+            "visual_ref": "visual_character_refs.characters.adjudicator_vey"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "preserve_flower_witness_visual",
+        "trigger": "branch_label == preserve_flower_witness",
+        "apply_to_visual_scene_ids": [
+          "veil_routine_queue_fold",
+          "veil_recertification_rupture",
+          "veil_inspection_fold"
+        ],
+        "modifier_prompt": "Nara's purple burden flower is visibly well-fed and partly hidden beneath the moss-green mantle, with a warm colorless interval held open between two petals."
+      },
+      {
+        "modifier_id": "prune_as_protocol_visual",
+        "trigger": "branch_label == prune_as_protocol",
+        "apply_to_visual_scene_ids": [
+          "veil_routine_queue_fold",
+          "veil_recertification_rupture",
+          "veil_inspection_fold"
+        ],
+        "modifier_prompt": "The purple flower has a sharp fresh cut at one petal; a translucent clipped petal lies in the small compost cup."
+      },
+      {
+        "modifier_id": "compare_living_witnesses_visual",
+        "trigger": "branch_label == compare_living_witnesses",
+        "apply_to_visual_scene_ids": [
+          "veil_routine_queue_fold",
+          "veil_recertification_rupture"
+        ],
+        "modifier_prompt": "Nara's purple flower and Oru's yellow flower lean together across the ledge gap, each displaying the same transparent interval."
+      },
+      {
+        "modifier_id": "pay_the_road_visual",
+        "trigger": "branch_label == pay_the_road",
+        "apply_to_visual_scene_ids": [
+          "veil_routine_queue_fold",
+          "veil_witness_affordances",
+          "veil_disclosure_threshold"
+        ],
+        "modifier_prompt": "A clean compost cup sits beside the black quarantine band and one continuous lane of amber fungal candles remains bright."
+      },
+      {
+        "modifier_id": "assemble_absence_proof_visual",
+        "trigger": "branch_label == assemble_absence_proof",
+        "apply_to_visual_scene_ids": [
+          "veil_inspection_fold",
+          "veil_disclosure_threshold",
+          "veil_ending_public"
+        ],
+        "modifier_prompt": "Two shed scales are joined by microbial glue while small lattice ants rebuild a broken ring; Nara's flower echoes the same interval."
+      },
+      {
+        "modifier_id": "risk_fragment_replay_visual",
+        "trigger": "branch_label == risk_fragment_replay",
+        "apply_to_visual_scene_ids": [
+          "veil_inspection_fold",
+          "veil_disclosure_threshold",
+          "veil_ending_fragment"
+        ],
+        "modifier_prompt": "Cold silver mirror-amoeba film coats Nara's lower right hand and the fingers repeat a tight grip while fever-blue light pulses through wrist seams."
+      },
+      {
+        "modifier_id": "reinforce_official_memory_visual",
+        "trigger": "branch_label == reinforce_official_memory",
+        "apply_to_visual_scene_ids": [
+          "veil_inspection_fold",
+          "veil_disclosure_threshold"
+        ],
+        "modifier_prompt": "Nara's purple flower rests on the inspection rail within Vey's reach; Nara's head and chest plates align formally toward the adjudicator."
+      },
+      {
+        "modifier_id": "route_the_witness_visual",
+        "trigger": "branch_label == route_the_witness",
+        "apply_to_visual_scene_ids": [
+          "veil_inspection_fold",
+          "veil_disclosure_threshold",
+          "veil_ending_road"
+        ],
+        "modifier_prompt": "Oru's small lower hand is closed around a wet purple seed bead while Nara's large upper claw shields the transfer from the upper ridge sightline."
+      },
+      {
+        "modifier_id": "public_absence_proof_visual",
+        "trigger": "ending_label == public_absence_proof",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_public"
+        ],
+        "modifier_prompt": "Burden flowers across the waiting queue open in many colors with matching transparent intervals; workers compare one another while the green membrane contracts overhead."
+      },
+      {
+        "modifier_id": "public_distress_cost_visual",
+        "trigger": "ending_label == public_distress_without_proof",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_public"
+        ],
+        "modifier_prompt": "Nara raises a clipped exhausted flower while most waiting workers turn their faces and flowers back toward regulation spacing; Oru alone keeps watching."
+      },
+      {
+        "modifier_id": "road_proof_escape_visual",
+        "trigger": "ending_label == distributed_witness_escapes",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_road"
+        ],
+        "modifier_prompt": "Oru places the wet seed bead and ant-glued scale beyond the black quarantine band; amber fungal candles brighten outward in a receding sequence."
+      },
+      {
+        "modifier_id": "road_cost_visual",
+        "trigger": "ending_label == witness_route_intercepted",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_road"
+        ],
+        "modifier_prompt": "The fungal road remains dark, lattice ants disperse from harsh inspection resin, and Vey's pale resin sample cup receives the shed scale."
+      },
+      {
+        "modifier_id": "fragment_unverified_visual",
+        "trigger": "ending_label == fragment_without_verdict",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_fragment"
+        ],
+        "modifier_prompt": "One indistinct six-limbed Airawa silhouette appears in the silver basin reflection with a damaged climbing foot and a flattened flower at the throat; the reflection remains soft and incomplete."
+      },
+      {
+        "modifier_id": "false_familiarity_visual",
+        "trigger": "ending_label == identity_leak_overwrites_gap",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_fragment"
+        ],
+        "modifier_prompt": "Many overlapping Airawa faces and plate patterns bloom across the silver film while Nara's lower hand grips hard enough to strain the joints and Vey raises the culture-burn tool."
+      },
+      {
+        "modifier_id": "private_scar_visual",
+        "trigger": "ending_label == private_reentry_cue_survives",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_private"
+        ],
+        "modifier_prompt": "Nara's lower fingertips touch a small broken-ring mark scratched into the underside of the curved grooming comb."
+      },
+      {
+        "modifier_id": "private_scar_flower_retained_visual",
+        "trigger": "ending_label == private_reentry_cue_survives && flower_custody == 1",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_private"
+        ],
+        "modifier_prompt": "Nara's purple burden flower remains clipped to the chest harness and opens one precise transparent interval."
+      },
+      {
+        "modifier_id": "private_scar_flower_surrendered_visual",
+        "trigger": "ending_label == private_reentry_cue_survives && flower_custody == 0",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_private"
+        ],
+        "modifier_prompt": "Nara's chest harness has an empty flower clasp pressing a small geometric indentation into the pale chest plates."
+      },
+      {
+        "modifier_id": "redosed_empty_visual",
+        "trigger": "ending_label == recertification_erases_reentry",
+        "apply_to_visual_scene_ids": [
+          "veil_ending_private"
+        ],
+        "modifier_prompt": "Vey holds the unmarked grooming comb and a compost cup containing the removed purple flower; Oru is separated behind the translucent membrane; Nara's ledge is orderly, empty-handed, and lit by smooth green plate seams."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "ninth_root_revision_court.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Tall oval chamber wrapped around one pale vertical matriarch root, with a bottom route threshold, middle work ledges, inner correction bay behind a translucent membrane, rear climbing ridge, and upper inspection iris.",
+      "fixed_zones": [
+        {
+          "zone_id": "bottom_fungal_road_threshold",
+          "visible_form": "low arch where amber fungal candles stop at a glossy black quarantine band",
+          "used_for": "road payment, route refusal, sample escape, and sealed-lane consequences"
+        },
+        {
+          "zone_id": "lower_waiting_ledge",
+          "visible_form": "wide resin-and-bark ledge above the road arch with climbing grips for a recertification queue",
+          "used_for": "waiting workers and public flower comparison"
+        },
+        {
+          "zone_id": "middle_grooming_ledges",
+          "visible_form": "three narrow ledges with tool slots, mineral spoons, compost cups, safety rails, and adjacent root ridges",
+          "used_for": "Nara and Oru routine, sample work, object transfer, public disclosure, and re-dosing"
+        },
+        {
+          "zone_id": "ant_assay_rail",
+          "visible_form": "resin rail directly below the middle ledges where small ants assemble around shed scales and microbial glue",
+          "used_for": "absence-proof comparison and sample custody"
+        },
+        {
+          "zone_id": "recertification_membrane",
+          "visible_form": "translucent green biological sheet facing the grooming ledges with an openable lower pass-through slit",
+          "used_for": "maintenance scent delivery, visual separation, route closure, and correction-bay access"
+        },
+        {
+          "zone_id": "correction_bay",
+          "visible_form": "small bay behind the membrane containing a shallow silver repair basin with scored footing, root handles, a dark oval archive socket, and scent-collar storage",
+          "used_for": "mirror-amoeba treatment, archive contact, and re-dosing"
+        },
+        {
+          "zone_id": "rear_root_ridge",
+          "visible_form": "continuous vertical path of bark ridges connecting bottom, ledges, correction-bay rim, and upper iris",
+          "used_for": "Airawa climbing, Vey's arrival, Oru's road descent, and authority control of exits"
+        },
+        {
+          "zone_id": "upper_inspection_iris",
+          "visible_form": "overlapping leaf-like aperture high above the ledges with pale inspection light",
+          "used_for": "Vey's entrance and upper-route closure"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_vertical_cutaway",
+          "supports_visual_scene_ids": [
+            "veil_court_establishing",
+            "veil_routine_queue_fold",
+            "veil_disclosure_threshold"
+          ]
+        },
+        {
+          "camera_id": "middle_ledge_two_shot",
+          "supports_visual_scene_ids": [
+            "veil_grooming_routine",
+            "veil_flower_gap_closeup",
+            "veil_inspection_fold",
+            "veil_ending_private"
+          ]
+        },
+        {
+          "camera_id": "rupture_centerline",
+          "supports_visual_scene_ids": [
+            "veil_recertification_rupture",
+            "veil_witness_affordances"
+          ]
+        },
+        {
+          "camera_id": "low_upward_authority",
+          "supports_visual_scene_ids": [
+            "veil_adjudicator_arrival",
+            "veil_ending_public"
+          ]
+        },
+        {
+          "camera_id": "bottom_road_vertical",
+          "supports_visual_scene_ids": [
+            "veil_ending_road"
+          ]
+        },
+        {
+          "camera_id": "correction_bay_close",
+          "supports_visual_scene_ids": [
+            "veil_ending_fragment"
+          ]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "vey_to_middle_ledges",
+          "path": "upper_inspection_iris -> rear_root_ridge -> middle_grooming_ledges",
+          "supports": [
+            "adjudicator_arrival",
+            "route_the_witness",
+            "preserve_private_scar"
+          ]
+        },
+        {
+          "lane_id": "nara_to_public_queue",
+          "path": "middle_grooming_ledges -> lower_waiting_ledge",
+          "supports": [
+            "disclose_absence_publicly"
+          ]
+        },
+        {
+          "lane_id": "oru_to_road",
+          "path": "middle_grooming_ledges -> rear_root_ridge -> bottom_fungal_road_threshold",
+          "supports": [
+            "route_the_witness",
+            "smuggle_witness_to_road"
+          ]
+        }
+      ],
+      "branch_spatial_states": [
+        {
+          "trigger": "court_suspicion >= 4",
+          "visible_form": "black quarantine band sealed across the road lane while the upper iris closes behind Vey"
+        },
+        {
+          "trigger": "road_access >= 3",
+          "visible_form": "one continuous amber candle lane remains lit from the court side to the road arch"
+        },
+        {
+          "trigger": "branch_label == risk_fragment_replay",
+          "visible_form": "Nara crosses the lower membrane slit and enters the shallow correction-bay basin; silver film remains on the lower right hand after returning to the ledge"
+        },
+        {
+          "trigger": "branch_label == reinforce_official_memory",
+          "visible_form": "Nara's burden flower leaves chest custody and rests on the inspection rail within Vey's reach"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for bodies visible in a scene.",
+    "characters": {
+      "nara_records_tender": "Nara, provisional fixture name: adult six-limbed reptilian-adjacent Airawa with tiny ochre scales, narrow wedge-shaped head, minimal slit-like nose and ears, pale grown chest and wrist plates with fine blue bioluminescent seams, two large clawed upper arms used for climbing and bracing, two smaller blunt lower hands with four soft digits in two opposing pairs, long digitigrade legs, grasping four-toed feet with hooked climbing talons, standardized moss-green mantle and chest harness carrying a purple burden flower. Precise worker posture; anxiety appears through talon pressure, lower-hand tremor, plate light, and head angle.",
+      "oru_graft_tender": "Oru, provisional fixture name: adult six-limbed reptilian-adjacent Airawa with russet scales, darker grown rib plates with amber bioluminescent seams, two large clawed climbing arms, two smaller four-digit lower hands, long digitigrade legs and four-toed taloned climbing feet, gray-green standardized mantle and chest harness carrying a bright yellow burden flower. Slightly broader silhouette than Nara; dry humor appears through lateral head tilt, relaxed upper-claw grip, and deliberately open lower hands.",
+      "adjudicator_vey": "Adjudicator Vey, provisional fixture name: tall adult six-limbed reptilian-adjacent Airawa with deep charcoal scales, smooth ivory formal plates at chest, forearms, and shins, narrow white bioluminescent seams, long digitigrade legs, hooked four-toed climbing feet, two controlled clawed upper arms, two smaller lower hands kept precisely visible, and a severe pale mantle with a green resin scent-collar case. Authority appears through measured descent, stable anchoring, and calm route-blocking posture."
+    },
+    "groups": {
+      "waiting_workers": "Waiting records workers: six-limbed reptilian-adjacent Airawa adults with varied muted scale colors, grown plate seams glowing blue or green, two large clawed upper climbing arms, two small four-digit lower hands, long digitigrade legs, four-toed taloned climbing feet, standardized green and gray work mantles, sample cups and grooming combs, and burden flowers in purple, yellow, rust, or white clipped to chest harnesses. Queue posture uses root grips and staggered vertical spacing.",
+      "court_lattice_ants": "Court lattice-ant assay: many small dark jointed insects whose bodies lock into thin bridges and broken rings around shed scales; translucent microbial glue stretches between them and stores brief chemical impressions. The colony's visible intelligence exists in the assembled shape on a resin rail.",
+      "court_candle_road": "Court candle fungal road: a braided mycelial route body under dark moist ground with small amber fruiting candles and pale chemical vents; brightness, spacing, and scent communicate route willingness. At the court it stops against a glossy black quarantine band and can brighten one lane, dim, or refuse passage."
+    }
+  },
+  "review_notes": [
+    "The accepted B-level visual plan includes a draft scene_set map, fixed zones, camera slots, sightline lanes, and branch-persistent spatial states.",
+    "Every base image prompt is standalone and translates Airawa anatomy, court geometry, ecological witnesses, materials, and lighting into visible terms.",
+    "Visual review found no off-frame character refs or negative base-prompt constructions. Branch modifiers preserve flower custody, road state, sample state, mirror film, public comparison, and re-dosing outcomes.",
+    "A physical or procedural blockout is still required before high-consistency rendering; no images were generated in this pass."
+  ]
+}
