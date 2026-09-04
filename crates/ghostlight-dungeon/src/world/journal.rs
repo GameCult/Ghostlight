@@ -1550,6 +1550,83 @@ mod tests {
             "unexpected refusal: {message}"
         );
     }
+
+    /// Soul falsification of the structural-overlap decision: disjointness is
+    /// decided by target shape, not by where anybody is standing, so no
+    /// `Relocate` out of the jurisdiction can produce a
+    /// store the shape checks call corrupt. The grant pair used here is exactly
+    /// the one a covering-predicate overlap rule would have had to reject on
+    /// arrival and could not have kept rejected afterwards.
+    #[test]
+    fn a_relocation_never_corrupts_a_civic_store() {
+        use crate::world::tests::{
+            LEVY_KIND, auth_principal, civic_world, operations, over_subject, owner, submit_owner,
+        };
+        use crate::world::{ComponentOp, SubmitReceipt};
+
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            crate::world::tests::creation(CommandId::new(), "Moving Civics"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let (_, civic, _) = civic_world(&mut kernel);
+
+        let admit = |kernel: &mut WorldKernel, ops: Vec<ComponentOp>| {
+            let before = kernel.snapshot().unwrap();
+            assert!(matches!(
+                submit_owner(kernel, &before, operations(ops)),
+                SubmitReceipt::Applied(_)
+            ));
+            verify_state_shape(&kernel.state).expect("the committed store keeps its shape");
+            assert!(
+                crate::world::overlapping_holder(&kernel.state).is_none(),
+                "a committed store never holds two overlapping jurisdictions"
+            );
+        };
+
+        // The treasury levies the hall the farmer stands in, and now also the
+        // farmer by name.
+        admit(
+            &mut kernel,
+            vec![crate::world::tests::grant_to(
+                civic.treasury,
+                LEVY_KIND,
+                over_subject(civic.farmer),
+            )],
+        );
+        // Both grants answer for the same subject, and the store is admitted.
+        let place_covers = |kernel: &WorldKernel| {
+            crate::world::covers(
+                &kernel.state,
+                crate::world::AuthorityTarget::PlaceSubtree(civic.hall),
+                crate::world::Target::Subject(civic.farmer),
+            )
+        };
+        assert!(place_covers(&kernel) && kernel.state.authority[&civic.treasury].len() >= 3);
+
+        // Out of the subtree, one route at a time.
+        for edge in [civic.passage, civic.causeway] {
+            admit(
+                &mut kernel,
+                vec![ComponentOp::Relocate {
+                    subject: Ref::Existing(civic.farmer),
+                    via: Ref::Existing(edge),
+                }],
+            );
+        }
+        // The move dissolved the double cover without any operation naming it,
+        // which is why the disjointness rule cannot be occupancy-sensitive.
+        assert!(!place_covers(&kernel));
+
+        // The whole history replays, and the reopened world is identical.
+        let committed = kernel.snapshot().unwrap();
+        drop(kernel);
+        let reopened = WorldKernel::open(&path, committed.world_id).unwrap();
+        assert_eq!(reopened.snapshot().unwrap(), committed);
+    }
 }
 
 #[cfg(test)]

@@ -2008,4 +2008,246 @@ mod tests {
             Some(farmer)
         );
     }
+
+    // --- Soul: pass-5 falsification -------------------------------------
+
+    /// Submits an invocation through the real command path and hands back
+    /// whatever the kernel decided, refusal included.
+    fn soul_submit(
+        bench: &mut Civics,
+        actor: SubjectId,
+        invocation: DecisionInvocation,
+    ) -> Result<SubmitReceipt, KernelError> {
+        let opportunity = opportunity_for(&bench.active, actor);
+        let caller = CallerId::Controller(opportunity.controller_id);
+        bench.kernel.submit(
+            command(
+                &bench.active,
+                CommandId::new(),
+                caller.clone(),
+                CommandBody::ExerciseDecision {
+                    opportunity,
+                    invocation,
+                },
+            ),
+            &AuthenticatedCaller::fixture(caller),
+        )
+    }
+
+    /// `DelegationNotMonotone` is not a fixture-only verdict: the real `submit`
+    /// path reaches it, and the refused act commits nothing.
+    #[test]
+    fn soul_delegation_not_monotone_reaches_the_real_command_path() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut bench = civics(directory.path(), "SoulMonotone");
+        let treasury = bench.civic.treasury;
+        let road = bench.topology.road;
+        let outsider = bench.civic.outsider;
+        bench.admit(vec![grant_to(treasury, COMMAND_KIND, over_place(road))]);
+        let invocation = bench.delegate(outsider, road);
+        let before = bench.kernel.state.clone();
+        let error = soul_submit(&mut bench, treasury, invocation).unwrap_err();
+        let KernelError::ActionRejected(rejected) = error else {
+            panic!("an over-wide delegation is an action rejection");
+        };
+        assert_eq!(
+            rejected,
+            vec![ActionMismatch::DelegationNotMonotone { slot: 0 }]
+        );
+        assert_eq!(bench.kernel.state.revision, before.revision);
+        assert_eq!(bench.kernel.state.authority, before.authority);
+        assert_eq!(bench.kernel.state.events.len(), before.events.len());
+    }
+
+    /// The `Restricted` rule is enforced by the component writer, not only by
+    /// the resolver: a forged `ResolvedOp` that skipped `resolve_patch` still
+    /// cannot walk a subject through a door it holds no key to, and the same
+    /// operation succeeds the moment the key exists.
+    #[test]
+    fn soul_a_restricted_relocate_is_refused_by_the_component_writer() {
+        let directory = tempfile::tempdir().unwrap();
+        let bench = civics(directory.path(), "SoulReducerGate");
+        let walker = bench.topology.walker;
+        let step = ResolvedOp::Relocate {
+            subject_id: walker,
+            edge_id: bench.civic.postern,
+        };
+
+        let mut forged = bench.kernel.state.clone();
+        forged.positions.insert(
+            walker,
+            crate::world::patch::Position {
+                place: bench.topology.yard,
+            },
+        );
+        let mut refused = forged.clone();
+        let error = crate::world::apply_operations(&mut refused, std::slice::from_ref(&step), &[])
+            .unwrap_err();
+        assert!(matches!(error, KernelError::Invariant(_)));
+
+        let mut admitted = forged;
+        admitted.authority.insert(
+            walker,
+            BTreeSet::from([crate::world::AuthorityGrant {
+                kind: crate::world::tests::authority_kind(ADMIT_KIND),
+                over: crate::world::AuthorityTarget::PlaceSubtree(bench.civic.hall),
+            }]),
+        );
+        crate::world::apply_operations(&mut admitted, std::slice::from_ref(&step), &[])
+            .expect("the named key opens the door at the component writer too");
+        assert_eq!(admitted.positions[&walker].place, bench.civic.chamber);
+    }
+
+    /// The rebind requirement at the layer the operator sees it: a grant change
+    /// on the *granter* invalidates the delegate's bound opportunity, and the
+    /// refusal is `ScopeChanged`, not `ActionRejected`.
+    #[test]
+    fn soul_a_granter_revocation_rebinds_the_delegate() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut bench = civics(directory.path(), "SoulRebind");
+        let reeve = bench.civic.reeve;
+        let farmer = bench.civic.farmer;
+        let treasury = bench.civic.treasury;
+        let hall = bench.civic.hall;
+
+        // Bound before the revocation, submitted after it.
+        let bound = bench.active.clone();
+        let opportunity = opportunity_for(&bound, reeve);
+        let caller = CallerId::Controller(opportunity.controller_id);
+        let invocation = bench.levy(farmer, 1);
+        bench.admit(vec![ComponentOp::RevokeAuthority {
+            holder: PatchRef::Existing(treasury),
+            grant: crate::world::tests::grant_of(LEVY_KIND, over_place(hall)),
+        }]);
+        // The envelope carries the current revision, so only the stale scope
+        // digest can refuse it.
+        assert_ne!(bound.revision, bench.active.revision);
+        let error = bench
+            .kernel
+            .submit(
+                command(
+                    &bench.active,
+                    CommandId::new(),
+                    caller.clone(),
+                    CommandBody::ExerciseDecision {
+                        opportunity,
+                        invocation,
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .unwrap_err();
+        assert!(
+            matches!(error, KernelError::ScopeChanged { .. }),
+            "a revoked lend is a rebind, not a rejection: {error:?}"
+        );
+    }
+
+    /// Structural overlap does not see a `Subject` grant sitting inside a
+    /// `PlaceSubtree` grant of the same kind, so one subject can hold two
+    /// sources of one permission and revoking the wider one leaves the act
+    /// standing through the narrower. Nothing arbitrates between them, so this
+    /// is a gap in the disjointness rule rather than the precedence hazard the
+    /// rule was written to prevent.
+    #[test]
+    fn soul_a_subject_grant_inside_a_place_grant_is_a_second_source() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut bench = civics(directory.path(), "SoulOverlap");
+        let treasury = bench.civic.treasury;
+        let farmer = bench.civic.farmer;
+        let hall = bench.civic.hall;
+
+        // The farmer stands under the hall the treasury already levies, so the
+        // covering predicate says both grants answer for the same target.
+        assert!(crate::world::covers(
+            &bench.kernel.state,
+            crate::world::AuthorityTarget::PlaceSubtree(hall),
+            Target::Subject(farmer)
+        ));
+        bench.admit(vec![grant_to(treasury, LEVY_KIND, over_subject(farmer))]);
+
+        // Revoking the wider grant leaves the levy authorized through the
+        // narrower one.
+        bench.admit(vec![ComponentOp::RevokeAuthority {
+            holder: PatchRef::Existing(treasury),
+            grant: crate::world::tests::grant_of(LEVY_KIND, over_place(hall)),
+        }]);
+        assert!(
+            bench.try_as(treasury, &bench.levy(farmer, 1)).is_ok(),
+            "the narrower grant still authorizes the act"
+        );
+    }
+
+    /// Replay for the new arms is not a separate machine: `reduce` is a pure
+    /// function of committed state and the envelope, so running it twice on the
+    /// same pre-state yields the same effect, and that effect is exactly what
+    /// the commit stored. No clock and no draw entropy enter.
+    #[test]
+    fn soul_reduce_is_pure_for_every_new_civic_arm() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut bench = civics(directory.path(), "SoulReplay");
+        let treasury = bench.civic.treasury;
+        let farmer = bench.civic.farmer;
+        let outsider = bench.civic.outsider;
+        let chamber = bench.civic.chamber;
+        let passage = bench.civic.passage;
+
+        let sanction = bench.call(
+            "sanction",
+            vec![binding("road", Target::Edge(passage))],
+            vec![ProposedEffect {
+                slot: 0,
+                magnitude: Magnitude::None,
+            }],
+            None,
+        );
+        let appoint = bench.call(
+            "appoint",
+            vec![
+                binding("institution", Target::Subject(treasury)),
+                binding("candidate", Target::Subject(farmer)),
+            ],
+            vec![ProposedEffect {
+                slot: 0,
+                magnitude: Magnitude::None,
+            }],
+            None,
+        );
+        for invocation in [
+            bench.levy(farmer, 2),
+            bench.delegate(outsider, chamber),
+            sanction,
+            appoint,
+        ] {
+            let before = bench.kernel.state.clone();
+            let opportunity = opportunity_for(&bench.active, treasury);
+            let caller = CallerId::Controller(opportunity.controller_id);
+            let envelope = command(
+                &bench.active,
+                CommandId::new(),
+                caller.clone(),
+                CommandBody::ExerciseDecision {
+                    opportunity,
+                    invocation,
+                },
+            );
+            let first = crate::world::reduce(&before, &envelope).expect("the act reduces");
+            let second = crate::world::reduce(&before, &envelope).expect("the act reduces again");
+            assert_eq!(first, second, "reduce is not a pure function of the state");
+            let receipt = bench
+                .kernel
+                .submit(envelope, &AuthenticatedCaller::fixture(caller))
+                .expect("the act commits");
+            assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+            bench.refresh();
+            let WorldEffect::DecisionExercised { event, .. } = first else {
+                panic!("an exercised decision");
+            };
+            assert_eq!(
+                bench.kernel.state.events.last().expect("a committed event"),
+                &event,
+                "the committed event is not what reduce produced"
+            );
+        }
+    }
 }

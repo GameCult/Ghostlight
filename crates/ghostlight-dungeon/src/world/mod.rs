@@ -5478,6 +5478,67 @@ mod tests {
             ])
         );
     }
+
+    /// Soul falsification of the candidate authority shadow's reach: a grant
+    /// minted in the same patch resolves, but a *destination* declared in the
+    /// same patch does not, because the shadow is projected to canonical
+    /// referents before the covering predicate runs. A genesis patch therefore
+    /// cannot declare a restricted room and walk anyone into it in one batch.
+    #[test]
+    fn a_same_patch_destination_is_covered_by_no_grant() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = crate::world::custody_tests::custody_kernel(directory.path(), "DraftDoor");
+        let topology = admit_topology(&mut kernel);
+        let before = kernel.snapshot().unwrap();
+        let patch = WorldPatch {
+            declarations: vec![
+                Declaration::Entity(EntityDeclaration {
+                    handle: DraftHandle::new("keep"),
+                    label: "The Inner Keep".into(),
+                    kind: EntityKind::Place,
+                    container: None,
+                }),
+                Declaration::Route(RouteDeclaration {
+                    handle: DraftHandle::new("keepgate"),
+                    label: "The Keep Gate".into(),
+                    from: Ref::Existing(topology.yard),
+                    to: Ref::Draft(DraftHandle::new("keep")),
+                    access: AccessKind::Restricted {
+                        requires: authority_kind(ADMIT_KIND),
+                    },
+                    cost: Cost(2),
+                }),
+            ],
+            operations: vec![
+                ComponentOp::GrantAuthority {
+                    holder: Ref::Existing(topology.walker),
+                    grant: AuthorityGrantRef {
+                        kind: authority_kind(ADMIT_KIND),
+                        over: AuthorityTargetRef::PlaceSubtree(Ref::Draft(DraftHandle::new(
+                            "keep",
+                        ))),
+                    },
+                },
+                ComponentOp::Relocate {
+                    subject: Ref::Existing(topology.walker),
+                    via: Ref::Draft(DraftHandle::new("keepgate")),
+                },
+            ],
+            evidence: Vec::new(),
+        };
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &before,
+                CommandBody::AdmitPatch {
+                    answers: None,
+                    patch
+                }
+            ),
+            vec![Mismatch::RouteAccessRestricted { operation: 1 }],
+            "the key covers the door, but the door's far side is still a draft"
+        );
+    }
 }
 
 #[cfg(test)]
