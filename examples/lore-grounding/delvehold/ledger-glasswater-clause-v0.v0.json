@@ -1,0 +1,430 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "delvehold.ledger-glasswater-clause-v0.v0",
+  "source_status": "canonical_with_fixture_elaboration",
+  "fixture_status": "grounded_draft",
+  "source_refs": [
+    {
+      "source_id": "delvehold-index",
+      "path": "Delvehold/index.md",
+      "title": "DELVE/HOLD",
+      "line_start": 1,
+      "line_end": 37,
+      "relevance": "Places shared infrastructure, workshop supply chains, and persistent economic consequence inside the same Delvehold world."
+    },
+    {
+      "source_id": "lore-index",
+      "path": "Delvehold/Lore/index.md",
+      "title": "Lore",
+      "line_start": 1,
+      "line_end": 32,
+      "relevance": "Grounds runic industry, crystallized mana, dungeon ecology, and the rule that different communities share events without sharing explanations."
+    },
+    {
+      "source_id": "halflings",
+      "path": "Delvehold/Lore/Peoples/Halflings.md",
+      "title": "Halflings",
+      "line_start": 1,
+      "line_end": 26,
+      "relevance": "Primary owner for halfling agricultural dependence, glassy crop mutation, Mallowfen, Nine-Reed's leased Copper Mantle pump, the Third Bell policy, and the Glasswater Clause."
+    },
+    {
+      "source_id": "humans",
+      "path": "Delvehold/Lore/Peoples/Humans.md",
+      "title": "Humans",
+      "line_start": 1,
+      "line_end": 18,
+      "relevance": "Grounds fragmented human merchant and state interests, imported dwarven systems, evidence disputes, and policy that mixes precaution with protectionism."
+    },
+    {
+      "source_id": "dwarves",
+      "path": "Delvehold/Lore/Peoples/Dwarves.md",
+      "title": "Dwarves",
+      "line_start": 1,
+      "line_end": 34,
+      "relevance": "Grounds dwarven craft accountability, foreign dependence on runic infrastructure, and the political claim that engines supplying food and water cannot simply stop."
+    },
+    {
+      "source_id": "industry-index",
+      "path": "Delvehold/Lore/Industry/index.md",
+      "title": "Industry",
+      "line_start": 1,
+      "line_end": 20,
+      "relevance": "Grounds spell engines as emancipatory shared infrastructure that becomes load-bearing and shares supply with extraction."
+    },
+    {
+      "source_id": "dwarven-industry",
+      "path": "Delvehold/Lore/Industry/Dwarven Industry.md",
+      "title": "Dwarven industry",
+      "line_start": 1,
+      "line_end": 40,
+      "relevance": "Grounds forge consortiums, standardized civic machinery, labor displacement, crystal contracts, and dependence linking pumps to extraction."
+    },
+    {
+      "source_id": "core-farming",
+      "path": "Delvehold/Lore/Industry/Core Farming.md",
+      "title": "Core farming",
+      "line_start": 1,
+      "line_end": 35,
+      "relevance": "Grounds farmed crystals as the first industrial supply, the industry's narrow incident categories, and the transition toward deeper sources when demand outgrows farms."
+    },
+    {
+      "source_id": "deep-mining",
+      "path": "Delvehold/Lore/Industry/Deep Mining.md",
+      "title": "Deep mining",
+      "line_start": 1,
+      "line_end": 26,
+      "relevance": "Grounds richer crystal supply, distributed injury, the limits of local assessors, and political lock-in once pumps and other infrastructure require deep power."
+    },
+    {
+      "source_id": "runic-engineering",
+      "path": "Delvehold/Lore/Industry/Runic Engineering.md",
+      "title": "Runic engineering",
+      "line_start": 1,
+      "line_end": 44,
+      "relevance": "Grounds iterative pump engines, null termination, model-specific technicians, rune graphs, material channels, and owner-controlled service knowledge."
+    },
+    {
+      "source_id": "mana-and-pattern",
+      "path": "Delvehold/Lore/Ontology/Mana and Pattern.md",
+      "title": "Mana and pattern",
+      "line_start": 1,
+      "line_end": 45,
+      "relevance": "Grounds consequential history in mana flow, participating conduit materials, dangerous working patterns, and crystals as industrial fuel and ecological reserve."
+    },
+    {
+      "source_id": "dungeon-lifecycle",
+      "path": "Delvehold/Lore/Dungeon Ecology/Dungeon Lifecycle.md",
+      "title": "Dungeon lifecycle",
+      "line_start": 1,
+      "line_end": 36,
+      "relevance": "Grounds the metabolic exchange industrial extraction bypasses and why crystal removal can provoke effects beyond an ordinary equipment fault."
+    },
+    {
+      "source_id": "ecological-responses",
+      "path": "Delvehold/Lore/Dungeon Ecology/Ecological Responses.md",
+      "title": "Ecological responses",
+      "line_start": 1,
+      "line_end": 26,
+      "relevance": "Grounds functional attacks on standardized infrastructure, specialized responses, competing causal vocabularies, and the danger of treating any one interpretation as neutral."
+    },
+    {
+      "source_id": "crisis-index",
+      "path": "Delvehold/Lore/Crisis/index.md",
+      "title": "The deep crisis",
+      "line_start": 1,
+      "line_end": 15,
+      "relevance": "Grounds the feedback loop in which energy dependence exists before the mine failures are understood together."
+    },
+    {
+      "source_id": "surface-symptoms",
+      "path": "Delvehold/Lore/Crisis/Surface Symptoms.md",
+      "title": "Surface symptoms",
+      "line_start": 1,
+      "line_end": 26,
+      "relevance": "Grounds crop mutation, difficult attribution, halfling field records, and the conversion of downstream evidence into tariffs and conflict."
+    },
+    {
+      "source_id": "international-crisis",
+      "path": "Delvehold/Lore/Crisis/International Crisis.md",
+      "title": "International crisis",
+      "line_start": 1,
+      "line_end": 18,
+      "relevance": "Grounds foreign reliance on dwarven irrigation and rail, trade restrictions, competing evidence, and the lack of a contraction plan."
+    },
+    {
+      "source_id": "industrial-escalation",
+      "path": "Delvehold/Lore/Crisis/Industrial Escalation.md",
+      "title": "Industrial escalation",
+      "line_start": 1,
+      "line_end": 27,
+      "relevance": "Grounds machinery loans, pump-driven expansion, institutional reinforcement, and contracts that survive ecological response."
+    },
+    {
+      "source_id": "world-without-villain",
+      "path": "Delvehold/Lore/Crisis/World Without a Villain.md",
+      "title": "A world without a villain",
+      "line_start": 1,
+      "line_end": 16,
+      "relevance": "Grounds the moral structure: closing an injurious supply can also cut food and water, while no single removed decision-maker ends the dependency."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Early international phase of the deep crisis, after halfling crop mutation is observable but before attribution or cross-border liability is settled",
+    "location": "The Four-Course Pump House at Mallowfen, where Nine-Reed Water Fellowship divides lifted spring water among a village cistern, millcourse, farm furrows, and old stone holding beds.",
+    "summary": "An ordinary irrigation handover becomes a loss inspection when the Copper Mantle pump meets every mechanical measure while the first watered barley roots turn translucent under the Glasswater Clause.",
+    "public_facts": [
+      {
+        "text": "Mallowfen's Nine-Reed Water Fellowship owes a joint seven-harvest lease on a Copper Mantle lifting engine; the consortium retains title and its standardized governor seal until final payment.",
+        "source_refs": ["halflings"]
+      },
+      {
+        "text": "The Charterhouse of the Third Bell covers measurable breakage and stoppage but excludes crop, soil, pest, and patterned-water losses unless an internal mechanical fault is proven.",
+        "source_refs": ["halflings"]
+      },
+      {
+        "text": "Mana can carry consequential history through runes and conduit materials, so clear water and correct pressure do not establish that downstream effects are harmless.",
+        "source_refs": ["mana-and-pattern", "runic-engineering"]
+      },
+      {
+        "text": "Glassy weeds and crop mutation are observed surface symptoms whose individual causes remain contestable even when cross-regional correlations strengthen the wider case.",
+        "source_refs": ["halflings", "surface-symptoms"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Nine-Reed must pay at the first grain auction even if a contaminated harvest reduces the grain available to sell.",
+        "source_refs": ["halflings"]
+      },
+      {
+        "text": "Stopping the pump protects fields but threatens water reserves, policy cover, and the fellowship's continued possession of the machine.",
+        "source_refs": ["halflings", "world-without-villain"]
+      },
+      {
+        "text": "The vendor, insurer, service worker, and farm fellowship each possess different evidence and authority, allowing a materially connected loss to be divided into institutionally convenient categories.",
+        "source_refs": ["halflings", "humans", "dwarven-industry"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "nine-reed-water-fellowship",
+      "label": "Nine-Reed Water Fellowship",
+      "group_type": "joint_irrigation_borrower",
+      "institutional_logic": [
+        "Allocate scarce lifted water among nine farms, the village cistern, and the millcourse.",
+        "Meet one joint pump instalment from harvest proceeds while keeping evidence and labor costs shared."
+      ],
+      "material_incentives": [
+        "Keep title to the lifting engine.",
+        "Protect seed fields from patterned-water injury.",
+        "Hold enough clean reserve to make shutdown possible."
+      ],
+      "internal_virtues": ["Measured sharing", "Field memory", "Public tallies", "Work before speeches"],
+      "internal_shames": ["Leaving one farm to carry a joint loss", "Private wells during a common shortage", "Unrecorded diversion"],
+      "prestige_markers": ["A full cistern before dry weather", "A true seed ledger", "Nine marks on one loss record"],
+      "taboo_triggers": ["Treating a damaged field as the grower's private error", "Repossessing water infrastructure before sowing"],
+      "emotional_display_norms": ["Fear appears first as gate work, bucket counts, food sharing, and exact arguments about whose course is open."],
+      "trust_defaults": ["Trusts paired samples, remembered fields, shared custody, and neighbours who arrive with carts."],
+      "speech_register_cues": ["Agrarian comparison", "Water arithmetic", "Dry breakfast humor", "Specific debt terms"],
+      "source_refs": ["halflings", "surface-symptoms"]
+    },
+    {
+      "group_id": "copper-mantle",
+      "label": "Copper Mantle forge consortium and service chain",
+      "group_type": "dwarven_engine_vendor",
+      "institutional_logic": [
+        "Sell repeatable lifting engines through standard governors, registered fuel, service certificates, and retained title.",
+        "Keep failures measurable at the machinery boundary the consortium can inspect and price."
+      ],
+      "material_incentives": ["Collect seven harvest instalments", "Protect standardization", "Avoid downstream ecological liability", "Keep local technicians model-dependent"],
+      "internal_virtues": ["True pressure", "Stable lift", "Intact seals", "Traceable crystal lots"],
+      "internal_shames": ["A field modification blamed on the standard engine", "A cut seal", "A service story that cannot be reproduced"],
+      "prestige_markers": ["An engine inside tolerance", "A service network spanning foreign farms", "Low stoppage rates"],
+      "taboo_triggers": ["Unregistered crystal", "Local alteration of the governor plate", "Calling a functioning engine failed"],
+      "emotional_display_norms": ["Anxiety is compressed into measurements, warranty status, and the precise second a seal ceased to be intact."],
+      "trust_defaults": ["Trusts standardized gauges and service custody above downstream testimony."],
+      "speech_register_cues": ["Measured callouts", "Contract tolerances", "Craft understatement", "Warranty boundaries"],
+      "source_refs": ["halflings", "dwarven-industry", "runic-engineering"]
+    },
+    {
+      "group_id": "third-bell-charterhouse",
+      "label": "Charterhouse of the Third Bell",
+      "group_type": "human_merchant_underwriter",
+      "institutional_logic": [
+        "Convert cross-border infrastructure risk into loss categories that can be observed, priced, and denied consistently.",
+        "Keep crop and ecological causation outside machinery cover until a claimant can join them to an internal fault."
+      ],
+      "material_incentives": ["Avoid unbounded correlated losses", "Preserve premium income", "Keep contract definitions portable across states"],
+      "internal_virtues": ["Narrow scope", "Sealed evidence", "Repeatable inspection", "Prompt refusal"],
+      "internal_shames": ["Paying an unpriced systemic loss", "An assessor admitting sympathy as causation", "A private denial becoming a public pattern"],
+      "prestige_markers": ["A clean claim file", "A defensible exclusion", "A contract that survives foreign courts"],
+      "taboo_triggers": ["An inspection widened by a crowd", "Evidence that makes separate policy categories look materially continuous"],
+      "emotional_display_norms": ["Alarm appears as narrower wording, cleaner folios, and insistence on the insured object."],
+      "trust_defaults": ["Trusts admitted scope, custody, and visible breakage over ecological interpretation."],
+      "speech_register_cues": ["Loss categories", "Admission language", "Causation caveats", "Portable legal phrasing"],
+      "source_refs": ["halflings", "humans", "surface-symptoms"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "nine-reed-water-fellowship.joint-debt-needs-joint-evidence",
+      "applies_to": ["nine-reed-water-fellowship"],
+      "pressure_type": "class_and_resource_dependency",
+      "summary": "The lease makes nine farms jointly liable while the policy tries to isolate the injury as one grower's crop loss.",
+      "projection_use": "Make Pella choose whether to distribute evidence, thirst, labor, and default as collectively as the contract distributes debt.",
+      "source_refs": ["halflings"]
+    },
+    {
+      "field_id": "copper-mantle.functioning-machine-boundary",
+      "applies_to": ["copper-mantle"],
+      "pressure_type": "vendor_liability",
+      "summary": "Correct pressure and clear delivery protect the seller even when a wider material route appears harmful.",
+      "projection_use": "Keep Dorrin honest about observed measures and unable to promise that those measures settle downstream harm.",
+      "source_refs": ["halflings", "runic-engineering", "mana-and-pattern"]
+    },
+    {
+      "field_id": "third-bell-charterhouse.correlated-loss-exclusion",
+      "applies_to": ["third-bell-charterhouse"],
+      "pressure_type": "insurance_scope",
+      "summary": "The Charterhouse's solvency depends on treating ecological changes as unadmitted external causes rather than one connected industrial loss.",
+      "projection_use": "Make Cal narrow the claim through categories, not cartoon malice; a wider record threatens the underwriter's whole model.",
+      "source_refs": ["halflings", "surface-symptoms", "industrial-escalation"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "third-bell-charterhouse",
+      "target_group_id": "nine-reed-water-fellowship",
+      "observer_read": ["Borrowers converting agrarian variance into machinery loss", "A crowd pressuring an assessor beyond policy scope"],
+      "target_self_read": ["Joint buyers documenting a connected injury", "People preserving the only evidence available before another irrigation turn"],
+      "misread_patterns": ["The underwriter reads field knowledge as claimant interest", "The fellowship reads categorical caution as proof of conspiracy"],
+      "likely_insults": ["cultivation variance", "bell-fed quill"],
+      "projection_use": "Let each side understand the other's leverage incompletely while keeping the contract language legible.",
+      "source_refs": ["halflings", "surface-symptoms"]
+    },
+    {
+      "observer_group_id": "copper-mantle",
+      "target_group_id": "nine-reed-water-fellowship",
+      "observer_read": ["Foreign customers tempted to alter a standardized engine", "A joint debtor with weak internal discipline"],
+      "target_self_read": ["Skilled water users forced to operate a sealed machine they do not fully own", "The people carrying downstream consequence"],
+      "misread_patterns": ["Vendor measures compress field injury into non-mechanical loss", "Borrowers may mistake a technician's bounded authority for bad faith"],
+      "likely_insults": ["unauthorized cultivator repair", "wax worshipper"],
+      "projection_use": "Keep the seal a genuine reliability boundary and a genuine ownership boundary at once.",
+      "source_refs": ["halflings", "runic-engineering", "dwarven-industry"]
+    },
+    {
+      "observer_group_id": "nine-reed-water-fellowship",
+      "target_group_id": "third-bell-charterhouse",
+      "observer_read": ["A distant buyer of premiums who recognizes stone before soil", "The institution that profits from separating water from its destination"],
+      "target_self_read": ["A solvent underwriter distinguishing observable loss from unbounded causation"],
+      "misread_patterns": ["The fellowship may treat Cal as owner of rules he only applies", "Cal may treat coordinated testimony as social pressure rather than distributed observation"],
+      "likely_insults": ["clause farmer", "unpriced mob"],
+      "projection_use": "Give Cal some room to widen the record while keeping payment authority outside his hands.",
+      "source_refs": ["halflings", "humans"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "fellowship-pumpkeeper-ledger-hand",
+      "summary": "A halfling infrastructure worker who can route water, stop the engine, preserve samples, summon members, and file records but cannot rewrite the lease or force payment.",
+      "obligations": ["Keep water allocated", "Protect seed fields", "Preserve custody", "Keep joint liability publicly joint"],
+      "available_masks": ["Routine competence", "Contract literalism", "Dry humor", "Neighbourly practicality"],
+      "failure_modes": ["Spreading injury to create proof", "Stopping without reserve", "Confusing a public record with an admitted claim", "Preserving title while losing the crop"],
+      "source_refs": ["halflings", "runic-engineering"]
+    },
+    {
+      "role_id": "seedkeeper-grower",
+      "summary": "A halfling grower whose field supplies the first visible injury and whose records can become either shared evidence or a private loss.",
+      "obligations": ["Protect seed", "Remember field behavior", "Share water labor", "Keep the loss attached to the route that caused it"],
+      "available_masks": ["Breakfast banter", "Agrarian exactness", "Public indignation"],
+      "failure_modes": ["Letting urgency outrun custody", "Demanding solidarity before building it", "Treating the technician as the consortium"],
+      "source_refs": ["halflings", "surface-symptoms"]
+    },
+    {
+      "role_id": "vendor-service-journeyworker",
+      "summary": "A dwarven technician with exact knowledge of the engine and narrow authority under Copper Mantle's seal.",
+      "obligations": ["Call true measures", "Preserve safety", "Protect service custody", "Name warranty consequences before acting"],
+      "available_masks": ["Craft compression", "Procedural neutrality", "Measured dissent"],
+      "failure_modes": ["Letting the form speak as if it were the world", "Breaking the seal without evidence custody", "Claiming ecological certainty from a pump gauge"],
+      "source_refs": ["halflings", "runic-engineering", "dwarven-industry"]
+    },
+    {
+      "role_id": "cross-border-loss-assessor",
+      "summary": "A human underwriter's field agent who can admit evidence and scope but cannot settle the planetary causation dispute or authorize payment alone.",
+      "obligations": ["Inspect the insured object", "Preserve claim custody", "Apply exclusions consistently", "Avoid promising payment"],
+      "available_masks": ["Narrow courtesy", "Legal precision", "Visible discomfort with crowds"],
+      "failure_modes": ["Erasing the field at the delivery lip", "Treating coordinated witnesses as one claimant", "Allowing solvency fear to impersonate physical truth"],
+      "source_refs": ["halflings", "humans", "surface-symptoms"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "pella_reedbank",
+      "known_context": [
+        {"text": "Pella knows the Four-Course layout, Nine-Reed lease, water levels, gate schedule, sample custody, and every action she performs.", "source_refs": ["halflings"]}
+      ],
+      "beliefs": [
+        {"text": "Pella believes a connected material loss should remain connected in the public record even when the contract divides it.", "source_refs": ["halflings", "surface-symptoms"]}
+      ],
+      "misreads": [
+        {"text": "Pella may overestimate what a widened assessor record can force the Charterhouse to pay.", "source_refs": ["halflings"]}
+      ],
+      "must_not_know": [
+        {"text": "Pella cannot know which deep extraction site, ecological process, crystal lot, or deliberate actor caused the local mutation.", "source_refs": ["surface-symptoms", "world-without-villain"]}
+      ]
+    },
+    {
+      "speaker_id": "senn_cloverrow",
+      "known_context": [
+        {"text": "Senn knows his field history, seed stock, water timing, the joint instalment, and visible changes in the wetted furrows.", "source_refs": ["halflings", "surface-symptoms"]}
+      ],
+      "beliefs": [
+        {"text": "Senn believes the field is part of the pump's material outcome even when the policy treats it as a separate object.", "source_refs": ["halflings"]}
+      ],
+      "misreads": [
+        {"text": "Senn may treat Dorrin's exact service language as loyalty to Copper Mantle rather than a limit on what Dorrin can prove.", "source_refs": ["runic-engineering"]}
+      ],
+      "must_not_know": [
+        {"text": "Senn cannot infer a world-scale cause from one luminous root.", "source_refs": ["surface-symptoms"]}
+      ]
+    },
+    {
+      "speaker_id": "dorrin_valevein",
+      "known_context": [
+        {"text": "Dorrin knows mechanical tolerances, feed channels, registered crystal lots, service custody, and the guarantee consequence of cutting the governor seal.", "source_refs": ["halflings", "runic-engineering"]}
+      ],
+      "beliefs": [
+        {"text": "Dorrin believes correct measures deserve to be reported exactly and do not settle every downstream question.", "source_refs": ["mana-and-pattern", "runic-engineering"]}
+      ],
+      "misreads": [
+        {"text": "Dorrin may initially compress agrarian harm into a service form because the form is the authority he can exercise.", "source_refs": ["halflings"]}
+      ],
+      "must_not_know": [
+        {"text": "Dorrin cannot name the after-pattern as cognition, sabotage, or deep ecological injury from this inspection.", "source_refs": ["surface-symptoms", "lore-index"]}
+      ]
+    },
+    {
+      "speaker_id": "caldris_morren",
+      "known_context": [
+        {"text": "Cal knows the Third Bell policy, admitted mechanical failures, inspection scope, and what evidence enters his folio.", "source_refs": ["halflings"]}
+      ],
+      "beliefs": [
+        {"text": "Cal believes unbounded ecological causation cannot be paid from a machinery policy without a defensible admitted boundary.", "source_refs": ["halflings", "surface-symptoms"]}
+      ],
+      "misreads": [
+        {"text": "Cal may read public farm marks as pressure rather than independent observations joined by one water route.", "source_refs": ["halflings"]}
+      ],
+      "must_not_know": [
+        {"text": "Cal cannot decide mine responsibility, planetary causation, or claim payment during one field inspection.", "source_refs": ["surface-symptoms", "international-crisis"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Mallowfen, Nine-Reed, Copper Mantle, the Third Bell policy, and the Glasswater Clause are authored material-economy elaboration in the Halflings owner note; the named characters and every branch outcome remain fixture-local draft events.",
+      "source_refs": ["halflings"]
+    },
+    {
+      "text": "The fixture may produce local evidence that water carries different after-patterns, but it must preserve uncertainty about mine origin, intent, world-scale cognition, and legal liability.",
+      "source_refs": ["mana-and-pattern", "surface-symptoms", "world-without-villain"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "How widely have forge consortiums and foreign underwriters copied Glasswater-like delivery-lip exclusions?",
+      "blocks_training": false,
+      "notes": "The fixture canonizes one policy at Mallowfen and does not universalize it into all cross-border pump finance."
+    },
+    {
+      "question": "Which mine, core farm, or mixed crystal reserve supplied the numbered lots used at Mallowfen?",
+      "blocks_training": false,
+      "notes": "The lots are traceable objects, but their extraction origin remains outside Pella's local knowledge."
+    },
+    {
+      "question": "Will any court or parliament join crop mutation to the machinery policy before the international crisis hardens?",
+      "blocks_training": false,
+      "notes": "The endings create portable evidence or refusal records, not settled legal canon."
+    }
+  ]
+}

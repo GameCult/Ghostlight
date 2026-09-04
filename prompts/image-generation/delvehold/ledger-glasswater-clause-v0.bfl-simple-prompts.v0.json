@@ -1,0 +1,100 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "ledger-glasswater-clause-v0.bfl-simple-v0",
+  "fixture_id": "ledger-glasswater-clause-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Richly textured high-fantasy industrial storybook illustration, precise ink drawing, restrained watercolor, weathered fieldstone, worn brass, oak and wax, soft green daylight against blue-white mana and eerie glass-green roots, readable silhouettes, humane facial acting, practical magical machinery, unlettered surfaces.",
+  "prompts": [
+    {
+      "id": "01_pump_house_establishing",
+      "prompt": "Wide dawn view of a low round fieldstone irrigation pump house built into a green canal bank, central brass-and-black-iron lifting engine visible through the west arch, blue-white crystal glow, south spring grate, east three-way water splitter, north cistern dome, east millcourse, two shallow stone holding beds and barley furrows in reed mist."
+    },
+    {
+      "id": "02_morning_routine",
+      "prompt": "Inside a compact round pump house, a short chestnut-curled halfling woman in moss-green work vest stands on a fixed oak tread to read a high gauge, a broad halfling farmer in patched rust coat offers an oatcake by a low gate wheel, and a copper-bearded dwarf technician in leather apron inspects a red-wax governor seal on the central brass engine."
+    },
+    {
+      "id": "03_allocation_choice",
+      "prompt": "Playable work tableau: short halfling pumpkeeper stands between two sample bottles, low cistern and furrow gate wheels, waxed tally board, and dwarf technician's service lens; central crystal-powered pump glows while holding beds and barley furrows wait through the south doorway."
+    },
+    {
+      "id": "04_paired_samples",
+      "prompt": "A short halfling pumpkeeper fills two stoppered glass bottles at the south spring grate and east delivery lip while a broad halfling farmer presses the same crystal-lot number into both wax collars; the village cistern gauge drops one mark behind them."
+    },
+    {
+      "id": "05_water_reserve",
+      "prompt": "A short halfling pumpkeeper turns a low brass gate so water climbs a northern masonry cistern gauge while a broad halfling farmer rakes silt from two shallow stone holding beds and leaves their drain stones open; the southern barley course waits and a copper-bearded dwarf technician points to a delayed-flow schedule."
+    },
+    {
+      "id": "06_first_furrow_routine",
+      "prompt": "Two halfling farm workers share a low south gate wheel and a torn oatcake on the stone apron as clear water reaches the first barley furrow on schedule; the round pump house and blue-white crystal engine stand behind them in warm green dawn light."
+    },
+    {
+      "id": "07_vendor_certificate",
+      "prompt": "A copper-bearded dwarf journeyworker in soot-brown leather apron calls pump measures beside an intact red wax governor seal while a short halfling woman in green vest records them on a waxed tally board; the east mill wheel waits still during inspection."
+    },
+    {
+      "id": "08_glasswater_reveal",
+      "prompt": "Low close view in a wet barley furrow: broad halfling farmer in patched rust coat and straw hat lifts a root with translucent edges on a small field knife, pale green light splitting through it; a glass-green weed unfolds by his muddy boot while a short halfling pumpkeeper traces the clear water route back to a steady brass engine."
+    },
+    {
+      "id": "09_null_shutdown",
+      "prompt": "A short halfling pumpkeeper pulls a low red-braided null chain beneath the central stone plinth; the black flywheel slows, blue-white runes close from right to left, delivery water thins to drops, and eight southern furrows remain dry behind one luminous wet row."
+    },
+    {
+      "id": "10_holding_bed_diversion",
+      "prompt": "Clear suspect water spreads across two bare shallow stone holding beds under numbered willow stakes while the south furrow gate stays shut; a short halfling pumpkeeper braces the low sluice wheel and the narrow east mill wheel slows beside the round fieldstone pump house."
+    },
+    {
+      "id": "11_controlled_field_evidence",
+      "prompt": "A short halfling pumpkeeper and broad halfling farmer measure one irrigation row between willow stakes as glass-green root hairs appear behind the advancing wet edge; the farmer closes the low gate at the last stake while a copper-bearded dwarf technician steps back from the visible change."
+    },
+    {
+      "id": "12_crystal_lot_custody",
+      "prompt": "Inside the pump house, a short halfling woman and copper-bearded dwarf technician place two blue-white crystal cartridges in separate padded wooden boxes, pressing distinct fellowship and workshop marks into each wax collar while the brass lifting engine waits to reprime."
+    },
+    {
+      "id": "13_assessor_arrival",
+      "prompt": "Tall lean human assessor in neat deep-blue travelling coat, brass bell badge, and waxed folio ducks under a low west stone arch; he sees a perfect central pump gauge first and a broad halfling farmer holding a luminous translucent root through the south doorway second."
+    },
+    {
+      "id": "14_whole_route_inspection",
+      "prompt": "A short halfling pumpkeeper leads a tall blue-coated human assessor along one visible route from spring grate to paired sample bottles, clear delivery lip, south stone apron, willow stakes, and glass-green barley roots; the assessor writes with his folio braced on one knee."
+    },
+    {
+      "id": "15_fellowship_bell",
+      "prompt": "A short halfling woman pulls an iron bell rope above the pump-house west door as halfling farm households arrive along muddy ditch paths with irrigation keys, tally slips, handcarts, barrels, bundled infant and livestock buckets, forming an orderly witness line around a tall human assessor."
+    },
+    {
+      "id": "16_open_governor",
+      "prompt": "Close view of a copper-bearded dwarf technician cutting fresh red wax and opening a brass governor plate, revealing fine gold rune channels with faint glass-green after-lines downstream of a blue-white crystal socket; halfling hands steady tally board and two custody boxes while a tall human assessor leans close with open folio."
+    },
+    {
+      "id": "17_claim_threshold",
+      "prompt": "Wide noon pump-house tableau: perfect gauge over central brass engine, short halfling pumpkeeper between a tall human assessor's folio and a low shelf of samples, root jar, tally board and crystal boxes, copper-bearded dwarf at governor plate, broad halfling farmer in south doorway, willow-staked altered furrows visible outside."
+    },
+    {
+      "id": "18_joined_claim",
+      "prompt": "Tall human assessor seals a thick joined claim packet beside paired water samples, luminous root jar, crystal numbers and route diagram while a short halfling pumpkeeper keeps the matching fellowship copy; the perfect gauge and changed field remain visible in one frame."
+    },
+    {
+      "id": "19_delivery_lip_denial",
+      "prompt": "Tall human assessor closes a thin claim folio beside a perfect gauge and clear stone delivery lip; a luminous root jar and field tally sit outside the folio under the hand of a short halfling pumpkeeper, with glass-green furrow edges visible through the south doorway."
+    },
+    {
+      "id": "20_title_preserved",
+      "prompt": "Late-afternoon irrigation scene: central crystal pump continues under an intact red wax seal, water fills the northern cistern and bare stone holding beds, a short halfling pumpkeeper closes the south gate, a broad halfling farmer stands by dry barley, and the east mill wheel is still."
+    },
+    {
+      "id": "21_fellowship_hauling",
+      "prompt": "Evening ditch path beside a silent round pump house: halfling farm households form a practical hauling line with barrel carts, small shoulder yokes, livestock buckets and ration marks; short chestnut-curled pumpkeeper carries two buckets while broad farmer rolls a barrel from the upstream ford."
+    },
+    {
+      "id": "22_independent_trace",
+      "prompt": "Evening independent pump test: open brass governor plate with cut red wax, two separated crystal custody boxes, adult halfling enchanter in indigo work apron shaping blue-white mana through a temporary copper rune pattern on a stone board into one wooden test barrel, short halfling ledger worker, copper-bearded dwarf measuring channels, broad halfling guarding crystals, and tall blue-coated assessor recording the comparison."
+    }
+  ]
+}

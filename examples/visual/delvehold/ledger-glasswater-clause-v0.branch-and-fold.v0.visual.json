@@ -1,0 +1,377 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "ledger-glasswater-clause-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/delvehold/ledger-glasswater-clause-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/delvehold/ledger-glasswater-clause-v0.branch-and-fold.v0.training.json",
+  "scene_id": "ledger-glasswater-clause-v0.mallowfen-first-furrow",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for the Mallowfen Glasswater Clause fixture.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary pump-house work, the first glasswater root, competing containment and evidence actions, the assessor's arrival, the policy boundary, and four state-gated ending families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for establishing geometry, character routine, each choice threshold, the glasswater reveal, the assessor's arrival, the claim threshold, and each ending family. Selected branch actions use explicit additive modifiers on the relevant choice-result frame. The first luminous root and the cut governor seal each receive a focused visual beat.",
+    "prompting_rule": "Each base image prompt states visible geometry, materials, light, bodies, tools, and positions in plain language. Character refs are assembled only for visible named characters or groups. Continuity notes remain tooling constraints.",
+    "global_style_cue": "Style: richly textured high-fantasy industrial storybook illustration, precise ink drawing with restrained watercolor, weathered fieldstone, worn brass, oak and wax, soft green dawn light against blue-white mana and eerie glass-green roots, readable silhouettes, humane facial acting, practical magical machinery, unlettered surfaces.",
+    "prompt_assembly_rule": "Assemble every generation prompt from global_style_cue, the selected scene base_image_prompt, visual refs only for characters or groups listed as visible in that scene, and all triggered state_image_modifiers and global_branch_image_modifiers. Each generation begins from this complete assembled text or a camera-specific scene-set input; generated images do not own room geometry.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture moves between one pump-house interior, its east delivery apron, two southern holding beds, and the adjacent first furrows. A draft plan fixes routes, camera slots, sightlines, and object states for review.",
+      "future_scene_set_need": "Before high-consistency illustrated website replay, build a simple plan view or 3D blockout of the Four-Course Pump House and adjacent apron, holding beds, first furrows, millcourse gate, and arrival path. Use camera-specific renders as geometry input for image generation."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "mallowfen_pump_house_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide dawn establishing view of a low round fieldstone irrigation pump house built into a green canal bank in a high-fantasy farming village. A west arched doorway faces a muddy path. Through the open doorway, one brass-and-black-iron lifting engine stands on a central stone plinth, lit by a blue-white crystal cartridge. A grated spring intake descends on the south side. On the east wall, water crosses a carved stone delivery lip into a three-way splitter with low brass gate wheels. Outside the south door are two shallow empty stone holding beds and parallel barley furrows. A raised village cistern dome sits north of the building; a narrow millcourse runs east. Damp dawn light, reed mist, worn tools, and precise working geometry make the whole water route readable.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The pump house remains a compact round single-level room with west entry, south intake grate and field door, central engine plinth, east delivery lip and splitter, and north contract shelf.",
+          "The exterior water layout remains village cistern north, millcourse east, holding beds southeast, and Nine-Reed furrows south."
+        ]
+      },
+      {
+        "visual_scene_id": "mallowfen_morning_routine",
+        "ink_anchor": "morning_routine",
+        "base_image_prompt": "Medium-wide interior at green dawn. Pella Reedbank, a short adult halfling woman with chestnut curls, moss-green wool vest, rolled cream linen sleeves, brown work trousers, muddy calf boots, brass keys, and a waxed tally board, stands on a fixed oak tread to read the high governor gauge. Senn Cloverrow, a broad middle-aged halfling man in a patched rust coat, straw field hat, muddy boots, and seed satchel, offers an oatcake beside the low south gate wheel. Dorrin Valevein, a compact dwarf journeyworker with a forked copper beard, soot-brown leather apron, dark wool work clothes, magnifying lens, and service satchel, inspects the red wax seal on the brass governor plate. The engine occupies the central plinth; the east delivery lip, south grate, low null chain, and north contract shelf are visible.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "standing on the fixed oak tread with tally board raised to the governor gauge", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "senn_cloverrow", "default_stance": "beside the south wheel offering an oatcake", "visual_ref": "visual_character_refs.characters.senn_cloverrow"},
+          {"agent_id": "dorrin_valevein", "default_stance": "leaning toward the sealed governor plate with a magnifying lens", "visual_ref": "visual_character_refs.characters.dorrin_valevein"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["This frame introduces Pella, Senn, Dorrin, their scales, and their work positions before player choice."]
+      },
+      {
+        "visual_scene_id": "mallowfen_allocation_choice",
+        "ink_anchor": "allocation_choice",
+        "base_image_prompt": "Wide playable work frame inside and through the south doorway of the round pump house. Pella, the short chestnut-curled halfling pumpkeeper in green vest and muddy boots, stands between four reachable affordances: two stoppered glass sample bottles on a low shelf, the north cistern wheel, the south furrow wheel shared with Senn, and the waxed tally board held beside Dorrin's service lens. The central brass engine glows blue-white from its crystal cartridge. Beyond the south doorway, old stone holding beds and barley furrows wait in dawn mist. Every choice object is spatially distinct and readable.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "centered between low sample shelf, gate wheels, and tally board", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "senn_cloverrow", "default_stance": "at the south wheel with seed satchel and oatcakes", "visual_ref": "visual_character_refs.characters.senn_cloverrow"},
+          {"agent_id": "dorrin_valevein", "default_stance": "at the engine plate with lens and service folio", "visual_ref": "visual_character_refs.characters.dorrin_valevein"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Choice-result modifiers move hands and objects while preserving engine, doors, gate wheels, and shelf locations."]
+      },
+      {
+        "visual_scene_id": "mallowfen_glasswater_reveal",
+        "ink_anchor": "glasswater_appears",
+        "base_image_prompt": "Low close view at the first barley furrow south of the pump house. Senn Cloverrow, a broad middle-aged halfling in patched rust coat and straw hat, kneels in wet soil and lifts one barley root on the point of a small field knife. The root edges have become translucent and split sunlight into pale green needles. A glass-green weed unfolds beside his muddy boot. Pella Reedbank, a short halfling pumpkeeper with chestnut curls, green vest, brass keys, and tally board, stands behind him staring from the root toward the clear stream arriving from the stone delivery apron. Dorrin Valevein, copper-bearded dwarf in leather apron, watches from the south doorway with a pressure gauge visible behind him inside the pump house.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "standing behind Senn, sightline joining luminous root to clear water", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "senn_cloverrow", "default_stance": "kneeling and lifting one altered root with a field knife", "visual_ref": "visual_character_refs.characters.senn_cloverrow"},
+          {"agent_id": "dorrin_valevein", "default_stance": "in the south doorway with gauge behind him", "visual_ref": "visual_character_refs.characters.dorrin_valevein"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The visible mutation begins only inside wetted furrow soil; the clear delivery stream and mechanically steady engine remain simultaneous facts."]
+      },
+      {
+        "visual_scene_id": "mallowfen_first_response_choice",
+        "ink_anchor": "first_response_choice",
+        "base_image_prompt": "Medium-wide threshold view joining pump-house interior to the southern apron. Pella, short halfling pumpkeeper in green vest, stands on the stone floor within reach of the low red-braided null chain, south gate wheel, padded crystal cradle, and open doorway toward willow stakes and the first luminous furrow. Senn waits outside at the furrow wheel with field knife and seed satchel. Dorrin stands beside the central brass engine and its intact red-wax governor seal. Clear water crosses the east delivery lip while a pale glass-green root glows outside. The frame presents stoppage, diversion, controlled field exposure, and crystal-lot custody as distinct physical actions.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "between null chain, south wheel, and crystal cradle", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "senn_cloverrow", "default_stance": "outside beside first furrow and willow stakes", "visual_ref": "visual_character_refs.characters.senn_cloverrow"},
+          {"agent_id": "dorrin_valevein", "default_stance": "beside the engine feed latch and governor plate", "visual_ref": "visual_character_refs.characters.dorrin_valevein"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Pella can reach the low null chain and gate handles from floor level; the governor gauge requires the oak tread."]
+      },
+      {
+        "visual_scene_id": "mallowfen_assessor_arrival",
+        "ink_anchor": "loss_pressure_fold",
+        "base_image_prompt": "Medium exterior-to-interior arrival frame at the west arch of the round pump house. Caldris Morren, a tall lean human man with close dark hair, neat blue travelling coat, small brass bell badge, black boots, and a waxed claim folio beneath one arm, ducks under the low fieldstone lintel. Inside, the brass pump engine and gauge occupy the center. Dorrin, a copper-bearded dwarf service worker, waits by the plate. Through the south doorway, Senn, a broad halfling farmer in straw hat and rust coat, holds a luminous translucent root at the assessor's eye height. Pella, a short halfling pumpkeeper in green vest, stands at the low tally shelf between machinery and field evidence.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "at the low tally shelf facing the arriving assessor", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "senn_cloverrow", "default_stance": "in the south doorway holding the luminous root", "visual_ref": "visual_character_refs.characters.senn_cloverrow"},
+          {"agent_id": "dorrin_valevein", "default_stance": "beside the engine plate and gauge", "visual_ref": "visual_character_refs.characters.dorrin_valevein"},
+          {"agent_id": "caldris_morren", "default_stance": "ducking under the west lintel with claim folio", "visual_ref": "visual_character_refs.characters.caldris_morren"}
+        ],
+        "state_image_modifiers": [
+          {"modifier_id": "arrival_low_water", "trigger": "water_security <= 0", "modifier_prompt": "The north cistern gauge visible through a small wall opening sits in a red lower band; empty household pitchers and one livestock bucket have gathered by the west path."},
+          {"modifier_id": "arrival_high_evidence", "trigger": "public_evidence >= 3", "modifier_prompt": "Paired wax-sealed sample bottles, willow stakes, custody marks, and timed tally entries form a clear evidence line from low shelf to south doorway."}
+        ],
+        "visual_continuity_notes": ["Cal enters only after the pre-arrival pump-house routine and glasswater response have been visually established."]
+      },
+      {
+        "visual_scene_id": "mallowfen_assessor_choice",
+        "ink_anchor": "assessor_choice",
+        "base_image_prompt": "Wide decision tableau spanning the compact pump house and visible southern apron. Caldris, tall human assessor in blue coat with brass bell badge, holds an open claim folio near the perfect engine gauge. Pella, short halfling pumpkeeper in green vest, stands between him and the south doorway with paired bottles and tally board. Senn, broad halfling farmer in rust coat and straw hat, waits by willow-staked furrows. Dorrin, copper-bearded dwarf in leather apron, rests a small seal knife beside the red-wax governor plate. An iron fellowship bell hangs above the west door. The delivery lip, route to field, public tally, bell rope, and sealed plate are all visible choices.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "between Cal and south route holding evidence objects", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "senn_cloverrow", "default_stance": "at willow-staked first furrows", "visual_ref": "visual_character_refs.characters.senn_cloverrow"},
+          {"agent_id": "dorrin_valevein", "default_stance": "beside intact governor seal with knife still on service cloth", "visual_ref": "visual_character_refs.characters.dorrin_valevein"},
+          {"agent_id": "caldris_morren", "default_stance": "by delivery gauge with open folio", "visual_ref": "visual_character_refs.characters.caldris_morren"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The bell rope is reachable from the west side; the governor plate and knife remain on the east face of the central engine plinth."]
+      },
+      {
+        "visual_scene_id": "mallowfen_governor_open",
+        "ink_anchor": "assessor_choice.open_the_governor",
+        "base_image_prompt": "Close object-and-hands frame at the central pump plinth. Dorrin Valevein, a compact dwarf journeyworker with forked copper beard and soot-brown leather apron, lifts a small seal knife through a freshly parted red wax seal on the brass governor plate. Inside, fine gold rune channels carry faint glass-green after-lines downstream of the blue-white crystal socket. Pella Reedbank's small halfling hand steadies the low tally board at the plate edge. Caldris Morren, tall human assessor in blue coat, leans close with waxed folio open. Senn Cloverrow holds two padded crystal custody boxes at the lower edge, both numbered collars and mixed fellowship-workshop wax marks visible.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "one hand steadying the tally board beside opened plate", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "senn_cloverrow", "default_stance": "holding two crystal custody boxes low and visible", "visual_ref": "visual_character_refs.characters.senn_cloverrow"},
+          {"agent_id": "dorrin_valevein", "default_stance": "cutting wax and opening the governor plate", "visual_ref": "visual_character_refs.characters.dorrin_valevein"},
+          {"agent_id": "caldris_morren", "default_stance": "leaning close with folio open", "visual_ref": "visual_character_refs.characters.caldris_morren"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["This scene exists only for the open_the_governor branch; later shared frames must show the cut wax when service_guarantee is low."]
+      },
+      {
+        "visual_scene_id": "mallowfen_claim_threshold",
+        "ink_anchor": "claim_fold",
+        "base_image_prompt": "Wide noon tableau of the round pump house carrying too many kinds of evidence. The central brass engine and high perfect gauge dominate the room. Pella, short chestnut-curled halfling in green vest, stands between the delivery lip and a low shelf holding sample bottles, tally board, root jar, and crystal boxes. Caldris, tall human in blue coat and brass bell badge, points with his quill from the folio toward the delivery lip. Dorrin, copper-bearded dwarf in leather apron, stands beside the governor plate. Senn, broad halfling in rust coat and straw hat, holds a luminous root at the south doorway. Through that doorway, willow stakes, holding beds, and altered furrows show where the water went. Farmers may gather outside according to state.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "centered between policy folio and material route", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "senn_cloverrow", "default_stance": "at south doorway with root jar", "visual_ref": "visual_character_refs.characters.senn_cloverrow"},
+          {"agent_id": "dorrin_valevein", "default_stance": "beside governor plate", "visual_ref": "visual_character_refs.characters.dorrin_valevein"},
+          {"agent_id": "caldris_morren", "default_stance": "at delivery lip with quill and folio", "visual_ref": "visual_character_refs.characters.caldris_morren"}
+        ],
+        "state_image_modifiers": [
+          {"modifier_id": "threshold_public_fellowship", "trigger": "fellowship_cohesion >= 4", "modifier_prompt": "Nine-Reed farmers crowd the west doorway and south apron in muddy farm clothes, each carrying a small irrigation key or marked tally slip; their bodies form an orderly witness line with individually readable tools and faces."},
+          {"modifier_id": "threshold_cut_seal", "trigger": "service_guarantee <= 1", "modifier_prompt": "The governor plate stands open and its red sealing wax lies visibly cut on the low shelf beside the exposed gold rune channels."},
+          {"modifier_id": "threshold_high_exposure", "trigger": "field_exposure >= 4", "modifier_prompt": "Two southern furrows beyond the doorway carry a thin visible shimmer of glass-green roots between willow stakes."}
+        ],
+        "visual_continuity_notes": ["Every material state is located: engine measures at plinth, policy at delivery lip, evidence on low shelf, field loss south, witnesses west."]
+      },
+      {
+        "visual_scene_id": "mallowfen_ending_claim",
+        "ink_anchor": "ending_claim_admitted|ending_claim_denied",
+        "base_image_prompt": "Medium noon claim frame at the low evidence shelf. Caldris Morren, tall human assessor in neat blue coat and brass bell badge, presses a small wax seal onto a folio packet beside paired glass bottles, a jarred luminous root, willow-stake measurements, and crystal custody numbers. Pella Reedbank, short halfling pumpkeeper with chestnut curls and green vest, keeps one hand on the fellowship copy. Senn Cloverrow, broad halfling farmer in rust coat and straw hat, watches from the south doorway. The perfect engine gauge and clear delivery lip remain visible behind the packet, while glass-green furrow edges show beyond the doorway.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "hand on fellowship copy at evidence shelf", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "senn_cloverrow", "default_stance": "watching from south doorway", "visual_ref": "visual_character_refs.characters.senn_cloverrow"},
+          {"agent_id": "caldris_morren", "default_stance": "sealing or closing claim folio", "visual_ref": "visual_character_refs.characters.caldris_morren"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Ending-label modifiers distinguish an admitted dispute packet from a narrow denial packet without changing room geometry."]
+      },
+      {
+        "visual_scene_id": "mallowfen_ending_title",
+        "ink_anchor": "ending_title_preserved|ending_title_cost",
+        "base_image_prompt": "Wide late-afternoon view from the southern apron into the pump house. The brass lifting engine continues under blue-white mana light. Pella Reedbank, short halfling pumpkeeper in green vest and muddy boots, closes the south furrow wheel. Water moves toward the north cistern channel and shallow empty-field holding stone. Senn Cloverrow stands beside dry barley rows with seed satchel against his patched rust coat. The narrow east millcourse turns slowly or stands still according to ending state. Copper Mantle's governor plate and the water route remain prominent.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "closing south wheel on exterior apron", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "senn_cloverrow", "default_stance": "standing beside dry barley rows with seed satchel", "visual_ref": "visual_character_refs.characters.senn_cloverrow"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The title strategy keeps the engine physically present while water use and legal security differ by ending label."]
+      },
+      {
+        "visual_scene_id": "mallowfen_ending_fellowship",
+        "ink_anchor": "ending_fellowship_holds|ending_fellowship_frays",
+        "base_image_prompt": "Wide evening view along Mallowfen's ditch path beside the silent round pump house. Pella Reedbank, short halfling pumpkeeper in green vest, carries a wooden shoulder yoke sized to her body with two small water buckets. Senn Cloverrow, broad halfling farmer in rust coat and straw hat, rolls a barrel cart from the upstream path. Nine-Reed farm households gather in patched work clothes with handcarts, barrels, livestock buckets, and irrigation keys according to ending state. The north cistern gauge, stopped engine window, dry south gate, and protected barley furrows remain visible.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "carrying a halfling-sized shoulder yoke on ditch path", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "senn_cloverrow", "default_stance": "rolling one barrel cart from upstream", "visual_ref": "visual_character_refs.characters.senn_cloverrow"},
+          {"agent_id": "nine_reed_water_fellowship", "default_stance": "arriving with practical water-hauling tools or leaving gaps according to state", "visual_ref": "visual_character_refs.groups.nine_reed_water_fellowship"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Group density and cistern level change by ending modifier; the pump remains stopped and fields remain unwatered in both variants."]
+      },
+      {
+        "visual_scene_id": "mallowfen_ending_trace",
+        "ink_anchor": "ending_trace_survives|ending_trace_collapses",
+        "base_image_prompt": "Medium evening independent-test frame inside the pump house. The Copper Mantle governor plate stands open on the central brass engine with red wax cut. Two padded crystal custody boxes sit apart on the low shelf. A local halfling enchanter in an indigo work apron kneels at a separate stone test board, shaping blue-white mana through a temporary hand-cut copper rune pattern into one wooden water barrel. Pella Reedbank, short halfling in green vest with tally board, watches the barrel sample. Dorrin Valevein, copper-bearded dwarf in leather apron, measures the exposed gold channels. Senn Cloverrow guards the crystal boxes. Caldris Morren, tall human in blue coat, keeps his folio open at the delivery lip. The arrangement reads as a controlled comparison whose quality changes with the ending.",
+        "visible_characters": [
+          {"agent_id": "pella_reedbank", "default_stance": "watching test barrel with tally board", "visual_ref": "visual_character_refs.characters.pella_reedbank"},
+          {"agent_id": "senn_cloverrow", "default_stance": "guarding separated crystal boxes", "visual_ref": "visual_character_refs.characters.senn_cloverrow"},
+          {"agent_id": "dorrin_valevein", "default_stance": "measuring exposed governor channels", "visual_ref": "visual_character_refs.characters.dorrin_valevein"},
+          {"agent_id": "caldris_morren", "default_stance": "recording from delivery lip", "visual_ref": "visual_character_refs.characters.caldris_morren"},
+          {"agent_id": "local_mallowfen_enchanter", "default_stance": "kneeling at the separate stone test board and shaping mana through the copper rune pattern", "visual_ref": "visual_character_refs.groups.local_mallowfen_enchanter"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The independent test uses a temporary copper pattern on a separate stone board and one barrel; it does not alter the fixed water-route geometry."]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_paired_record_visual",
+        "trigger": "branch_label == prime_paired_record",
+        "apply_to_visual_scene_ids": ["mallowfen_allocation_choice", "mallowfen_assessor_arrival", "mallowfen_claim_threshold"],
+        "modifier_prompt": "Pella and Senn hold two stoppered sample bottles at spring grate and delivery lip; matching cartridge numbers are pressed into both wax collars on the low evidence shelf."
+      },
+      {
+        "modifier_id": "prime_water_reserve_visual",
+        "trigger": "branch_label == prime_water_reserve",
+        "apply_to_visual_scene_ids": ["mallowfen_allocation_choice", "mallowfen_first_response_choice"],
+        "modifier_prompt": "The north cistern gauge sits high and both shallow stone holding beds outside are raked clean with open drain stones and visible empty bottoms; the south furrow gate remains delayed."
+      },
+      {
+        "modifier_id": "prime_first_furrow_visual",
+        "trigger": "branch_label == prime_first_furrow",
+        "apply_to_visual_scene_ids": ["mallowfen_allocation_choice", "mallowfen_glasswater_reveal"],
+        "modifier_prompt": "Pella and Senn share the low south gate wheel; one torn oatcake rests on the stone apron while water reaches the first barley furrow on schedule."
+      },
+      {
+        "modifier_id": "prime_vendor_certificate_visual",
+        "trigger": "branch_label == prime_vendor_certificate",
+        "apply_to_visual_scene_ids": ["mallowfen_allocation_choice", "mallowfen_assessor_arrival"],
+        "modifier_prompt": "Dorrin calls measures beside an intact red wax governor seal while Pella records them; a signed service line is clipped to the waxed tally board."
+      },
+      {
+        "modifier_id": "stop_before_spread_visual",
+        "trigger": "branch_label == stop_before_spread",
+        "apply_to_visual_scene_ids": ["mallowfen_first_response_choice", "mallowfen_assessor_arrival", "mallowfen_claim_threshold"],
+        "modifier_prompt": "Pella pulls the low red-braided null chain; the black flywheel slows, blue-white rune channels dim from right to left, and the delivery stream thins to drops while eight furrows remain dry."
+      },
+      {
+        "modifier_id": "divert_to_holding_beds_visual",
+        "trigger": "branch_label == divert_to_holding_beds",
+        "apply_to_visual_scene_ids": ["mallowfen_first_response_choice", "mallowfen_assessor_arrival"],
+        "modifier_prompt": "The south furrow gate is shut and suspect clear water spreads across two bare shallow stone holding beds under numbered stakes; the narrow east mill wheel slows."
+      },
+      {
+        "modifier_id": "buy_field_evidence_visual",
+        "trigger": "branch_label == buy_field_evidence",
+        "apply_to_visual_scene_ids": ["mallowfen_first_response_choice", "mallowfen_assessor_arrival", "mallowfen_claim_threshold"],
+        "modifier_prompt": "Willow stakes mark a second measured wet row where fine glass-green root hairs appear behind the advancing water edge; Pella closes the gate at the final stake."
+      },
+      {
+        "modifier_id": "trace_crystal_lot_visual",
+        "trigger": "branch_label == trace_crystal_lot",
+        "apply_to_visual_scene_ids": ["mallowfen_first_response_choice", "mallowfen_assessor_arrival", "mallowfen_claim_threshold"],
+        "modifier_prompt": "Two blue-white crystal cartridges rest in separate padded wooden boxes on the low shelf, each collar bearing distinct numbers and mixed fellowship-workshop custody wax."
+      },
+      {
+        "modifier_id": "preserve_mechanical_claim_visual",
+        "trigger": "branch_label == preserve_mechanical_claim",
+        "apply_to_visual_scene_ids": ["mallowfen_assessor_choice", "mallowfen_claim_threshold"],
+        "modifier_prompt": "Cal and Dorrin stand tightly beside the perfect gauge and clear delivery lip while Senn and the luminous root remain visually separated at the south doorway."
+      },
+      {
+        "modifier_id": "make_field_part_of_claim_visual",
+        "trigger": "branch_label == make_field_part_of_claim",
+        "apply_to_visual_scene_ids": ["mallowfen_assessor_choice", "mallowfen_claim_threshold"],
+        "modifier_prompt": "Pella leads Cal along one continuous visible route from spring grate to paired bottles, delivery lip, south doorway, willow stakes, and glass-green barley roots; Cal writes with the folio braced on one knee."
+      },
+      {
+        "modifier_id": "collectivize_the_loss_record_visual",
+        "trigger": "branch_label == collectivize_the_loss_record",
+        "apply_to_visual_scene_ids": ["mallowfen_assessor_choice", "mallowfen_claim_threshold"],
+        "modifier_prompt": "Pella pulls the iron bell rope above the west door; Nine-Reed farmers arrive in muddy work clothes with irrigation keys and individual tally slips, forming a witness line on the path and apron."
+      },
+      {
+        "modifier_id": "open_the_governor_visual",
+        "trigger": "branch_label == open_the_governor",
+        "apply_to_visual_scene_ids": ["mallowfen_governor_open", "mallowfen_claim_threshold", "mallowfen_ending_trace"],
+        "modifier_prompt": "The red governor wax lies freshly cut; the brass plate stands open to show fine gold channels carrying faint glass-green after-lines downstream of the crystal socket."
+      },
+      {
+        "modifier_id": "ending_claim_admitted_visual",
+        "trigger": "ending_label == connected_claim_admitted",
+        "apply_to_visual_scene_ids": ["mallowfen_ending_claim"],
+        "modifier_prompt": "Cal seals a thick joined packet containing paired samples, field stakes, crystal custody numbers, and one continuous route diagram; Pella holds a matching fellowship copy."
+      },
+      {
+        "modifier_id": "ending_claim_denied_visual",
+        "trigger": "ending_label == connected_claim_denied",
+        "apply_to_visual_scene_ids": ["mallowfen_ending_claim"],
+        "modifier_prompt": "Cal closes a thin denial packet beside the perfect delivery gauge; the luminous root jar and field tally sit outside the folio on Pella's side of the low shelf."
+      },
+      {
+        "modifier_id": "ending_title_preserved_visual",
+        "trigger": "ending_label == engine_title_preserved",
+        "apply_to_visual_scene_ids": ["mallowfen_ending_title"],
+        "modifier_prompt": "The governor's red seal remains intact, the north cistern gauge is high, and water fills bare holding stone while the millcourse wheel stands still and the south barley gate stays shut."
+      },
+      {
+        "modifier_id": "ending_title_cost_visual",
+        "trigger": "ending_label == engine_title_cost",
+        "apply_to_visual_scene_ids": ["mallowfen_ending_title"],
+        "modifier_prompt": "The pump remains on its plinth beside a cut or disputed seal, a red low cistern gauge, and a Copper Mantle notice fastened to the west door; water routing looks materially insecure."
+      },
+      {
+        "modifier_id": "ending_fellowship_holds_visual",
+        "trigger": "ending_label == fellowship_mutual_aid_holds",
+        "apply_to_visual_scene_ids": ["mallowfen_ending_fellowship"],
+        "modifier_prompt": "Nine-Reed households form a dense practical hauling line with full carts, barrels, yokes, livestock buckets, and ration marks; the cistern gauge remains above red and the miller contributes extra barrels."
+      },
+      {
+        "modifier_id": "ending_fellowship_frays_visual",
+        "trigger": "ending_label == fellowship_mutual_aid_frays",
+        "apply_to_visual_scene_ids": ["mallowfen_ending_fellowship"],
+        "modifier_prompt": "Large gaps break the hauling line, several private-well paths turn away, the cistern gauge glows red, and Pella carries two buckets past empty cart ruts."
+      },
+      {
+        "modifier_id": "ending_trace_survives_visual",
+        "trigger": "ending_label == independent_trace_survives",
+        "apply_to_visual_scene_ids": ["mallowfen_ending_trace"],
+        "modifier_prompt": "The two crystal lots, paired samples, exposed channels, copper test pattern, and test barrel form an orderly comparison; Cal's folio and a courier tube wait together at the delivery lip."
+      },
+      {
+        "modifier_id": "ending_trace_collapses_visual",
+        "trigger": "ending_label == independent_trace_collapses",
+        "apply_to_visual_scene_ids": ["mallowfen_ending_trace"],
+        "modifier_prompt": "One crystal box lacks matching wax, sample bottles carry mismatched collars, the temporary copper pattern has several altered joints, and Cal closes the folio beside the cut seal."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "mallowfen_four_course_pump_house.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Compact round single-level fieldstone pump house built into a canal bank, with a central engine plinth and four fixed cardinal interfaces connecting the interior to exterior water routes.",
+      "fixed_zones": [
+        {"zone_id": "west_entry_and_bell", "visible_form": "low arched fieldstone doorway opening to muddy village path, iron fellowship bell and rope above it", "used_for": "Cal's arrival and Nine-Reed witness entry"},
+        {"zone_id": "south_intake_and_field_door", "visible_form": "iron spring grate inside the south quadrant beside a low door onto the field apron", "used_for": "inlet samples and inspection route to holding beds and furrows"},
+        {"zone_id": "central_engine_plinth", "visible_form": "waist-high round stone base carrying brass pump body, black flywheel, blue-white crystal socket, east-facing governor plate, and low null chain", "used_for": "pump operation, shutdown, service, seal break, and crystal transfer"},
+        {"zone_id": "oak_tread_and_low_controls", "visible_form": "fixed oak step at north side of plinth plus floor-level gate handles and red-braided null chain", "used_for": "halfling reach to high gauge and direct access to emergency controls"},
+        {"zone_id": "east_delivery_lip_and_splitter", "visible_form": "carved stone lip spilling into three short channels with low brass wheels for cistern, millcourse, and furrows", "used_for": "contracted delivery measurement and policy boundary"},
+        {"zone_id": "north_contract_and_evidence_shelf", "visible_form": "halfling-height oak shelf holding waxed tally board, sample bottles, root jar, crystal boxes, service lines, and claim packet", "used_for": "public records and custody"},
+        {"zone_id": "south_exterior_apron", "visible_form": "flat stone work apron immediately beyond south door with willow stakes and access to low gate wheels", "used_for": "route inspection and staging between room and fields"},
+        {"zone_id": "holding_beds_southeast", "visible_form": "two shallow oval stone basins beside the southern apron", "used_for": "temporary suspect-water containment and visible growth observation"},
+        {"zone_id": "nine_reed_furrows_south", "visible_form": "parallel barley rows descending gently from the south gate", "used_for": "crop exposure, staked test strip, and visible glasswater consequence"},
+        {"zone_id": "north_cistern_and_east_millcourse", "visible_form": "raised masonry cistern dome north of the house and narrow stone-lined mill channel east toward a wooden wheel", "used_for": "water security and opportunity cost"}
+      ],
+      "camera_slots": [
+        {"camera_id": "wide_bank_establishing", "supports_visual_scene_ids": ["mallowfen_pump_house_establishing"]},
+        {"camera_id": "interior_west_to_east", "supports_visual_scene_ids": ["mallowfen_morning_routine", "mallowfen_allocation_choice", "mallowfen_assessor_choice", "mallowfen_claim_threshold"]},
+        {"camera_id": "south_furrow_low", "supports_visual_scene_ids": ["mallowfen_glasswater_reveal"]},
+        {"camera_id": "south_threshold_to_plinth", "supports_visual_scene_ids": ["mallowfen_first_response_choice", "mallowfen_ending_title"]},
+        {"camera_id": "west_entry_arrival", "supports_visual_scene_ids": ["mallowfen_assessor_arrival"]},
+        {"camera_id": "governor_macro", "supports_visual_scene_ids": ["mallowfen_governor_open"]},
+        {"camera_id": "low_shelf_claim", "supports_visual_scene_ids": ["mallowfen_ending_claim", "mallowfen_ending_trace"]},
+        {"camera_id": "ditch_path_evening", "supports_visual_scene_ids": ["mallowfen_ending_fellowship"]}
+      ],
+      "staging_slots": [
+        {"slot_id": "pella_oak_tread", "zone_id": "oak_tread_and_low_controls", "supports": ["gauge reading", "engine overview"]},
+        {"slot_id": "pella_low_controls", "zone_id": "central_engine_plinth", "supports": ["null chain", "gate operation"]},
+        {"slot_id": "dorrin_governor_face", "zone_id": "central_engine_plinth", "supports": ["service lens", "feed latch", "seal knife"]},
+        {"slot_id": "cal_delivery_boundary", "zone_id": "east_delivery_lip_and_splitter", "supports": ["narrow inspection", "claim folio"]},
+        {"slot_id": "senn_field_threshold", "zone_id": "south_exterior_apron", "supports": ["root display", "furrow gate", "field testimony"]},
+        {"slot_id": "fellowship_west_line", "zone_id": "west_entry_and_bell", "supports": ["witness arrival", "tally marking"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "delivery_to_field", "path": "east_delivery_lip_and_splitter -> south_exterior_apron -> nine_reed_furrows_south", "supports": ["glasswater reveal", "make_field_part_of_claim", "claim threshold"]},
+        {"lane_id": "entry_to_engine_and_root", "path": "west entry frames the central engine; a slight turn around the plinth's south edge opens the separate south-door sightline to Senn and the root", "supports": ["assessor arrival sees engine first and Senn's root second without seeing through the plinth"]},
+        {"lane_id": "public_custody_line", "path": "west_entry_and_bell -> north_contract_and_evidence_shelf -> east_delivery_lip_and_splitter", "supports": ["collectivize_the_loss_record", "claim ending"]}
+      ],
+      "object_states": [
+        {"object_id": "governor_seal", "states": ["intact red wax over closed brass plate", "cut red wax beside open plate and exposed gold channels"]},
+        {"object_id": "crystal_lots", "states": ["one active numbered cartridge", "two numbered cartridges in separate padded boxes under mixed custody wax"]},
+        {"object_id": "water_route", "states": ["south furrow flow", "holding-bed diversion", "cistern-priority flow", "full engine stoppage"]},
+        {"object_id": "field_exposure", "states": ["one altered wet row", "two willow-staked altered rows", "dry protected rows beyond the marked edge"]},
+        {"object_id": "claim_packet", "states": ["thin machinery-only folio", "joined route packet with samples and field record", "denial packet with field evidence excluded"]}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for bodies listed as visible in a scene.",
+    "characters": {
+      "pella_reedbank": "Pella Reedbank: adult halfling woman, about three and a half feet tall, sturdy compact build, warm brown skin, round alert face, chestnut curls tied back with green cord, moss-green wool vest over rolled cream linen sleeves, brown work trousers, muddy calf boots, brass irrigation keys at belt, waxed tally board often under one arm; quick practical posture, reaches high governor gauge from a fixed oak tread.",
+      "senn_cloverrow": "Senn Cloverrow: middle-aged halfling man, broad compact build, weathered tan face, dark hair graying at the temples, patched rust-red field coat, straw hat with green binding, muddy short boots, canvas seed satchel, small curved field knife; generous food-sharing gestures and stubborn field-rooted stance.",
+      "dorrin_valevein": "Dorrin Valevein: adult dwarf journeyworker, compact square build, forked copper beard bound with two brass clips, soot-brown leather apron over charcoal wool work clothes, reinforced boots, magnifying lens, service satchel, stamped work gloves, small seal knife; precise posture close to gauges, bearings, crystal socket, and governor plate.",
+      "caldris_morren": "Caldris Morren: tall lean adult human man, close dark hair, narrow clean-shaven face, neat deep-blue travelling coat with a small brass bell badge at the collar, pale waistcoat, black riding boots, waxed leather claim folio and dark quill; careful contained posture, physically folds under the low pump-house lintel and narrows attention through paperwork."
+    },
+    "groups": {
+      "nine_reed_water_fellowship": "Nine-Reed Water Fellowship households: halfling farm workers of varied ages and builds in patched wool vests, linen shirts, skirts or work trousers, muddy ankle or calf boots, straw hats and headscarves; each carries a practical item such as irrigation key, marked tally slip, small barrel, handcart, shoulder yoke, livestock bucket, or bundled infant; group posture ranges from a dense orderly hauling line to visibly missing households and turning paths.",
+      "local_mallowfen_enchanter": "Local Mallowfen enchanter: adult halfling craft worker with compact build, dark indigo work apron over pale linen clothes, protective copper finger guards, chalk pouch, and steady kneeling posture at a portable stone rune board; one hand shapes blue-white mana while the other checks the temporary copper channels."
+    }
+  },
+  "review_notes": [
+    "Initial visual plan provides a draft scene_set map with fixed zones, camera slots, staging slots, sightline lanes, and branch-persistent object states.",
+    "A plan view or simple 3D blockout remains required before high-consistency multi-angle website rendering; generated images are presentation output, not geometry authority.",
+    "Prompts use affirmative visible description and character refs only for bodies declared visible in each frame.",
+    "Four required reviewer verdicts are recorded in the training sidecar after self-review."
+  ]
+}

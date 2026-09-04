@@ -1,0 +1,355 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "ledger-glasswater-clause-v0-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/delvehold/ledger-glasswater-clause-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/delvehold/ledger-glasswater-clause-v0.v0.json",
+  "scene_id": "ledger-glasswater-clause-v0.mallowfen-first-furrow",
+  "protagonist_agent_id": "pella_reedbank",
+  "npc_agent_ids": [
+    "senn_cloverrow",
+    "dorrin_valevein",
+    "caldris_morren",
+    "local_mallowfen_enchanter",
+    "nine_reed_water_fellowship"
+  ],
+  "purpose": "Interactive Fiction Weaver draft of a Delvehold branch-and-fold fixture in warm agrarian workplace satire tightening into economic dread: a halfling pumpkeeper must allocate water, evidence, warranty, and joint debt after a mechanically perfect leased engine produces a visibly altered first furrow.",
+  "local_awareness_summary": [
+    {
+      "text": "Pella knows the Four-Course Pump House, its reachable low null chain and gate handles, Nine-Reed's water schedule and joint lease, the village cistern level, sample custody, and every action she personally performs.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/ledger-glasswater-clause-v0.v0.json",
+        "Delvehold/Lore/Peoples/Halflings.md"
+      ]
+    },
+    {
+      "text": "Pella can observe clear delivery water, true gauges, changed roots, numbered crystal lots, sealed or opened governor channels, public farm marks, and Cal's admitted claim scope; she cannot infer a deep source or world-scale intention from them.",
+      "source_refs": [
+        "Delvehold/Lore/Ontology/Mana and Pattern.md",
+        "Delvehold/Lore/Crisis/Surface Symptoms.md"
+      ]
+    },
+    {
+      "text": "The Glasswater Clause makes the crop loss external to pump cover unless an internal mechanical fault is proven, while the joint instalment remains due even after harvest damage.",
+      "source_refs": [
+        "Delvehold/Lore/Peoples/Halflings.md"
+      ]
+    },
+    {
+      "text": "Pella's immediate leverage is physical and social: she can stop or route water, preserve samples and crystal custody, widen the inspection route, ring the fellowship bell, or ask Dorrin to cut a seal whose loss she cannot undo.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/ledger-glasswater-clause-v0.v0.json",
+        "Delvehold/Lore/Industry/Runic Engineering.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Pella's embodied halfling viewpoint in and immediately outside the Four-Course Pump House. Her fixed tread, low null chain, low gate handles, tally board, samples, and reachable routes bound her actions.",
+        "source_refs": [
+          "examples/lore-grounding/delvehold/ledger-glasswater-clause-v0.v0.json",
+          "examples/ink/delvehold/ledger-glasswater-clause-v0.branch-and-fold.v0.ink"
+        ]
+      },
+      {
+        "text": "The scene establishes water work, food sharing, route geometry, contract roles, and the scheduled assessor before the first glasswater reveal.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "Delvehold/Lore/Peoples/Halflings.md"
+        ]
+      },
+      {
+        "text": "Tonal mode is warm agrarian workplace satire tightening into economic dread; jokes must expose work, scale mismatch, debt, or institutional absurdity without dissolving the field loss.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Pella can control local water routing and fellowship records but cannot rewrite the lease, declare insurance payment, restore a cut vendor seal, or prove international causation.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Halflings.md",
+          "Delvehold/Lore/Crisis/Surface Symptoms.md"
+        ]
+      },
+      {
+        "text": "Dorrin can certify measures and open the governor only with local consent; he does not own Copper Mantle's title decision or Third Bell's claim scope.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Halflings.md",
+          "Delvehold/Lore/Industry/Runic Engineering.md"
+        ]
+      },
+      {
+        "text": "Cal can admit evidence and inspection scope into his folio but cannot settle payment, mine responsibility, or the global ecological dispute at the pump house.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Halflings.md",
+          "Delvehold/Lore/Crisis/International Crisis.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The governor seal, two numbered crystal cartridges, paired sample bottles, waxed tally board, luminous root jar, claim folio, gate wheels, null chain, and fellowship bell retain distinct custody and consequence across branches.",
+        "source_refs": [
+          "examples/ink/delvehold/ledger-glasswater-clause-v0.branch-and-fold.v0.ink",
+          "Delvehold/Lore/Peoples/Halflings.md"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every final strategy must reveal who carries the loss: underwriter, vendor title, fellowship labor, crop acreage, water reserve, or forfeited guarantee.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Halflings.md",
+          "Delvehold/Lore/Crisis/World Without a Villain.md"
+        ]
+      },
+      {
+        "text": "Correct pump function and clear water at the delivery lip must coexist with downstream harm; the scene cannot solve the dispute by discovering an ordinary broken gear.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Halflings.md",
+          "Delvehold/Lore/Ontology/Mana and Pattern.md"
+        ]
+      },
+      {
+        "text": "Choices must branch locally and fold through compact resource, evidence, contract, warranty, and solidarity state into materially distinct endings.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "prompts/interactive-fiction-weaver.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not prove that one mine, core, god, or awakened machine deliberately caused Mallowfen's glasswater.",
+        "source_refs": [
+          "Delvehold/Lore/Crisis/Surface Symptoms.md",
+          "Delvehold/Lore/Crisis/World Without a Villain.md"
+        ]
+      },
+      {
+        "text": "Do not make Cal personally able to pay the claim, Dorrin able to preserve a cut guarantee, or Pella able to escape the joint instalment by moral force.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Halflings.md"
+        ]
+      },
+      {
+        "text": "Do not treat mutual aid as costless: hauling requires carts, labor, water reserve, and enough prior cohesion to assemble in time.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Halflings.md",
+          "prompts/interactive-fiction-weaver.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through routine allocation, the first altered furrow, the assessor's policy boundary, and four state-gated loss strategies with eight endings.",
+    "choice_layers": [
+      "ordinary_water_handover",
+      "first_glasswater_response",
+      "define_the_insured_failure",
+      "who_carries_the_loss"
+    ],
+    "variables": [
+      "contract_standing",
+      "water_security",
+      "field_exposure",
+      "public_evidence",
+      "crystal_trace",
+      "fellowship_cohesion",
+      "service_guarantee",
+      "assessor_scope"
+    ],
+    "ending_gates": [
+      "ending_claim_admitted",
+      "ending_claim_denied",
+      "ending_title_preserved",
+      "ending_title_cost",
+      "ending_fellowship_holds",
+      "ending_fellowship_frays",
+      "ending_trace_survives",
+      "ending_trace_collapses"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_paired_record",
+      "ink_path": "allocation_choice",
+      "action_type": "sample_water",
+      "actor_intent": "Create a public inlet/outlet comparison tied to the active crystal lot before ordinary flow begins.",
+      "state_basis": ["Pella can reach both sampling points and Senn holds the fellowship stamp."],
+      "reviewed_consequences": ["Raises public_evidence and crystal_trace while the sampling delay lowers water_security."],
+      "training_hooks": ["paired_evidence_before_crisis", "custody_costs_time", "routine_as_preparation"]
+    },
+    {
+      "branch_id": "prime_water_reserve",
+      "ink_path": "allocation_choice",
+      "action_type": "route_water",
+      "actor_intent": "Buy shutdown time by filling the village cistern and clearing containment beds before contracted furrow flow.",
+      "state_basis": ["Pella can operate the north wheel while Senn clears the holding-bed drains; the lease schedule expects south-course flow."],
+      "reviewed_consequences": ["Raises water_security while lowering contract_standing through delayed contracted flow."],
+      "training_hooks": ["reserve_as_agency", "contract_schedule_tradeoff", "infrastructure_routine"]
+    },
+    {
+      "branch_id": "prime_first_furrow",
+      "ink_path": "allocation_choice",
+      "action_type": "open_gate",
+      "actor_intent": "Protect ordinary crop timing and fellowship relationship by watering Senn's course on schedule.",
+      "state_basis": ["Pella and Senn can operate the south wheel together."],
+      "reviewed_consequences": ["Raises fellowship_cohesion and contract_standing while adding early field_exposure."],
+      "training_hooks": ["ordinary_life_before_pressure", "shared_food_and_work", "timely_flow_hidden_risk"]
+    },
+    {
+      "branch_id": "prime_vendor_certificate",
+      "ink_path": "allocation_choice",
+      "action_type": "request_service",
+      "actor_intent": "Protect the guarantee and title position with a complete vendor service record.",
+      "state_basis": ["Dorrin may certify pressure, lift, seal, bearing heat, and delivery clarity."],
+      "reviewed_consequences": ["Raises service_guarantee and contract_standing while the inspection delay lowers water_security."],
+      "training_hooks": ["certificate_as_leverage", "mechanical_truth_is_partial", "delay_cost"]
+    },
+    {
+      "branch_id": "stop_before_spread",
+      "ink_path": "first_response_choice",
+      "action_type": "stop_engine",
+      "actor_intent": "Prevent more fields from taking suspect water despite voluntary-stoppage and reserve costs.",
+      "state_basis": ["Pella can reach the low null chain; a stopped service can breach contract and policy conditions."],
+      "reviewed_consequences": ["Lowers water_security, contract_standing, and service_guarantee while containing further field exposure."],
+      "training_hooks": ["non_speech_emergency_action", "field_safety_vs_title", "stoppage_has_teeth"]
+    },
+    {
+      "branch_id": "divert_to_holding_beds",
+      "ink_path": "first_response_choice",
+      "action_type": "divert_water",
+      "actor_intent": "Keep the engine operating while routing suspect water onto observable bare stone.",
+      "state_basis": ["The south splitter reaches old holding beds; diverting it reduces usable village and mill water."],
+      "reviewed_consequences": ["Raises public_evidence and contract_standing while lowering water_security."],
+      "training_hooks": ["containment_without_shutdown", "millcourse_cost", "visible_route_state"]
+    },
+    {
+      "branch_id": "buy_field_evidence",
+      "ink_path": "first_response_choice",
+      "action_type": "controlled_exposure",
+      "actor_intent": "Spend a measured strip of crop to make the downstream transformation repeatable and visible.",
+      "state_basis": ["Senn can open a marked row and Pella can close it at willow stakes."],
+      "reviewed_consequences": ["Raises field_exposure, public_evidence, and contract_standing."],
+      "training_hooks": ["evidence_costs_acreage", "controlled_harm", "repeatable_sequence"]
+    },
+    {
+      "branch_id": "trace_crystal_lot",
+      "ink_path": "first_response_choice",
+      "action_type": "transfer_and_replace_fuel",
+      "actor_intent": "Preserve both crystal lots under joint custody and test whether the local pattern follows the fuel path.",
+      "state_basis": ["Dorrin can close the feed latch; Pella and Dorrin have separate marks; a registered spare lot is present."],
+      "reviewed_consequences": ["Raises crystal_trace and public_evidence while reprime time lowers water_security."],
+      "training_hooks": ["commodity_provenance", "joint_custody", "test_costs_reserve"]
+    },
+    {
+      "branch_id": "preserve_mechanical_claim",
+      "ink_path": "assessor_choice",
+      "action_type": "narrow_inspection",
+      "actor_intent": "Keep the inspection inside the insured machinery boundary to preserve title and guarantee.",
+      "state_basis": ["Cal's default policy scope ends at the delivery lip; Dorrin can call the mechanical measures."],
+      "reviewed_consequences": ["Raises contract_standing and service_guarantee while lowering fellowship_cohesion; assessor_scope remains narrow."],
+      "training_hooks": ["category_acceptance", "private_crop_loss", "contract_over_solidarity"]
+    },
+    {
+      "branch_id": "make_field_part_of_claim",
+      "ink_path": "assessor_choice",
+      "action_type": "widen_inspection",
+      "actor_intent": "Join spring, engine, and field sequence in one admitted inspection record.",
+      "state_basis": ["Pella can walk the physical route and present paired samples or visible field markers."],
+      "reviewed_consequences": ["Raises assessor_scope and public_evidence while lowering contract_standing."],
+      "training_hooks": ["material_route_vs_policy_boundary", "scope_admission", "evidence_portability"]
+    },
+    {
+      "branch_id": "collectivize_the_loss_record",
+      "ink_path": "assessor_choice",
+      "action_type": "summon_witnesses",
+      "actor_intent": "Make nine jointly liable farms share the evidence record as well as the debt.",
+      "state_basis": ["Pella can ring the fellowship bell; members can mark only losses personally observed."],
+      "reviewed_consequences": ["Raises fellowship_cohesion and public_evidence while lowering contract_standing through public escalation."],
+      "training_hooks": ["distributed_testimony", "public_meeting_as_action", "joint_liability"]
+    },
+    {
+      "branch_id": "open_the_governor",
+      "ink_path": "assessor_choice",
+      "action_type": "break_vendor_seal",
+      "actor_intent": "Trade the guarantee for direct inspection of feed-channel after-patterns.",
+      "state_basis": ["Available only after crystal_trace establishes relevant custody; Dorrin has the skill and knife to open the plate."],
+      "reviewed_consequences": ["Sets service_guarantee to zero while raising public_evidence and assessor_scope; the cut wax becomes a persistent visual and contractual state."],
+      "training_hooks": ["ownership_boundary_cut", "warranty_for_evidence", "state_gated_object_action"]
+    },
+    {
+      "branch_id": "contest_glasswater_clause",
+      "ink_path": "final_choice",
+      "action_type": "file_claim",
+      "actor_intent": "Force the underwriter's record to follow the whole material route rather than stop at the delivery lip.",
+      "state_basis": ["Success requires widened assessor_scope and enough public_evidence."],
+      "reviewed_consequences": ["Routes to admitted-for-dispute or denied claim ending; neither promises payment or erases the instalment."],
+      "training_hooks": ["state_gated_legal_outcome", "admission_not_payment", "portable_refusal"]
+    },
+    {
+      "branch_id": "protect_engine_title",
+      "ink_path": "final_choice",
+      "action_type": "preserve_contract",
+      "actor_intent": "Keep title prospects and warranty alive while containing output in cistern and holding stone.",
+      "state_basis": ["Success requires contract standing, intact service guarantee, and enough water security."],
+      "reviewed_consequences": ["Routes to temporary physical possession with mill and field cost, or a failed contract strategy when its material prerequisites are absent."],
+      "training_hooks": ["asset_title_vs_use_value", "empty_bed_output", "resource_gated_ending"]
+    },
+    {
+      "branch_id": "stop_and_share_default",
+      "ink_path": "final_choice",
+      "action_type": "organize_mutual_aid",
+      "actor_intent": "Stop suspect flow and turn joint debt into joint hauling and ration work.",
+      "state_basis": ["Success requires prior fellowship cohesion and enough reserve for carts to matter."],
+      "reviewed_consequences": ["Routes to a one-day collective survival margin or a failed mobilization that leaves thirst and blame unevenly distributed."],
+      "training_hooks": ["solidarity_requires_capacity", "collective_labor", "default_pressure"]
+    },
+    {
+      "branch_id": "trace_the_pattern_outside_contract",
+      "ink_path": "final_choice",
+      "action_type": "commission_independent_test",
+      "actor_intent": "Sacrifice guarantee protection to produce a controlled comparison portable beyond vendor and insurer custody.",
+      "state_basis": ["Success requires strong crystal_trace and public_evidence before the governor is opened and a hand-cast lift is compared."],
+      "reviewed_consequences": ["Routes to portable but causally bounded evidence, or to an uninsured tampering record when custody and controls are insufficient."],
+      "training_hooks": ["independent_test_cost", "evidence_quality_gate", "uncertainty_preserved"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks and option gates",
+      "State-gated ending selection"
+    ],
+    "manual_review_required": [
+      "Any durable character memory, relationship, debt, claim, or contract-state mutation",
+      "Any canon promotion of one branch outcome at Mallowfen",
+      "Any conclusion connecting the local after-pattern to a particular mine, core, god, or planetary intention",
+      "Any generalization of the Glasswater Clause beyond the Mallowfen policy described in the owning lore note",
+      "Accepted corpus and visual replay promotion"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Ledger elaborator applying the four required Ghostlight reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality verdict: accepted. Reader orientation 5/5, coherence 5/5, pacing 4/5, voice 5/5, tonal fit 5/5, and IF playability 5/5. The review removed a folded-path assumption that every independent-test ending had nine farm marks and narrowed the trace result to the measured water after-pattern; all important roles, the debt, the insured boundary, and the local stakes are introduced before their payoff.",
+      "Lore grounding verdict: accepted. Source coverage, canon fit, grounding quality, and vault-backfill value each meet the B-level gate across eighteen checked Delvehold vault notes. Mallowfen's contract facts live in the Halflings owner note, while branch outcomes preserve uncertainty about crystal origin, ecological cause, intention, and legal payment.",
+      "Visual continuity verdict: accepted_with_minor_revisions as an illustrated-IF scaffold. Thirteen visual scene anchors, twenty explicit branch or ending modifiers, six character/group refs, one global style cue, and twenty-two BFL prompts cover the playable focal changes. Review replaced one negative prompt construction and staged the previously off-frame local enchanter. A plan view or simple 3D blockout remains required before high-consistency multi-angle website rendering.",
+      "Spatial-geometric cohesion verdict: accepted_with_minor_revisions as a stageable text plan. The draft scene set fixes the round room, cardinal interfaces, adjacent exterior routes, camera slots, staging slots, sightlines, reachable halfling controls, and branch-persistent seal, crystal, water, field, and claim states. Review separated cistern reserve from empty holding-bed capacity and clarified that Cal sees the engine, then gains the south-door root sightline by turning around the plinth. A durable blockout remains the geometry authority required for replay-ready art.",
+      "Mechanical verification: all four new JSON artifacts parse; sixteen Ink branch ids match sixteen training receipts; all eight variables are read after mutation; eight ending labels match visual ending triggers; every visual character ref resolves; every modifier target resolves; and sixty-two assembled visual prompt components contain no negative-construction hits. Repository lore and Ink validator commands exited successfully but do not recurse into the Delvehold subdirectories, so targeted parsing and audits are the relevant checks for this fixture.",
+      "No Ink compiler was installed or invoked. Ink syntax, knot flow, conditions, and branch folds received manual structure review only, as required by the pass contract."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}
