@@ -1,0 +1,31 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "charter-three-witness-succession-v0.bfl-simple-v0",
+  "fixture_id": "charter-three-witness-succession-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Luminous ecological science-fiction storybook illustration, fine ink contours, layered gouache color, dim mineral blue and fungal amber, precise readable alien anatomy, wet bark and stone, quiet ritual composition, expressive posture, unlettered surfaces.",
+  "prompts": [
+    {"id": "01_terrace_establishing", "prompt": "Wide crescent stone terrace above a blackwater river cleft: immense scarred elder tree uphill, pale copper juvenile tree in a central basin, amber fungal road entering west, woven flying-animal roost overhead, ant cavities east, sealed gestation hollows and six-limbed scaled families downslope, giant companion planet fixed in the sky."},
+    {"id": "02_joint_keeper_office", "prompt": "Six-limbed reptilian-adjacent Airawa hangs from an immense tree using taloned feet and clawed upper hands while two smaller soft lower hands separate green root resin, white courier fiber, and amber fungal witness cords above a young tree basin."},
+    {"id": "03_debt_witness_work", "prompt": "Scaled six-limbed Airawa places pale failed graft tissue between two rows of finger-high amber fungal candles; a pale copper juvenile tree sends a sugar-wet root toward one bright receipt bead; impatient families wait beside baskets."},
+    {"id": "04_route_witness_work", "prompt": "Six-limbed Airawa braces beneath a woven roost arch, cleaning resin cups and preening parasites from small gliding animals whose wings are many ribbonlike sensory vanes; giant blue planet above wet roots."},
+    {"id": "05_ant_baseline", "prompt": "Hundreds of small jointed ants lock into a living diagnostic sheet across a kneeling six-limbed Airawa's contract bindings, three separate colored cords, and damp stone; one tiny accusation glyph points to breakfast sugar on a claw."},
+    {"id": "06_open_shelter", "prompt": "Six-limbed scaled Airawa hangs above a bark-sealed shelter, using delicate lower hands to part living fibers while a pale copper juvenile tree relaxes roots around warm amber air; pulsing gestation hollows downslope."},
+    {"id": "07_morning_rehearsal", "prompt": "Public ritual-work tableau at an alien archive grove: old tree, young tree basin, three separate witness cords, amber fungal road, ribbon-winged couriers, living ant lattice, nutrient baskets, and six-limbed families under a huge blue companion planet."},
+    {"id": "08_grievance_arrival", "prompt": "Exhausted ribbon-winged courier strikes a woven roost arch beneath a giant planet; white shed fiber stained with bitter pollen coils around one leg; an Airawa keeper, young tree, darkening fungal candle, and streaming ants turn toward it."},
+    {"id": "09_preserve_evidence", "prompt": "Close chain-of-custody image: two small soft Airawa hands lay a stained white courier fiber across a sheet of interlocked ants; old roots, young roots, green resin cord, and amber fungal cord all stop short of the evidence."},
+    {"id": "10_candidate_openness", "prompt": "Airawa guides a pale juvenile rootlet beside an ant-held grievance fiber; a translucent blank memory band opens in copper bark with distinct source, refusal, and uncertainty light; thick elder roots tense across wet stone."},
+    {"id": "11_road_diagnostic", "prompt": "Amber fungal candles reconstruct last eclipse as dense six-limbed foot-pressure marks entering an open shelter while small white nesting fibers, waste, and courier traces reach a sealed threshold and turn back; keeper feeds the road pale graft tissue."},
+    {"id": "12_sealed_grievance", "prompt": "Airawa keeper seals a bitter-pollen-stained white fiber inside a clear resin capsule; ribbon-winged couriers launch together from an emptying arch while relieved families raise nutrient baskets and the fungal road dims."},
+    {"id": "13_public_hearing", "prompt": "Wide multispecies hearing on wet stone: elder tree drives a command root north, juvenile tree opens three root cups at center, fungal road west, courier arch overhead, ant lattice east, gestation hollows south, Airawa keeper between separate cords."},
+    {"id": "14_quorum_response", "prompt": "Airawa keeper steps back with four hands open while root pulses, white courier fibers, amber fungal receipts, living ant glyphs, and waiting families answer around a pale copper successor tree beneath cold planetary light."},
+    {"id": "15_witnessed_succession", "prompt": "Young copper-barked tree receives three independent witnesses into three open root cups: green memory from elder tree, white fibers from ribbon-winged couriers, amber secretion from fungal road; ant lattice records an open warm shelter."},
+    {"id": "16_darkened_succession", "prompt": "Living young tree remains rooted with receiving cups closed; grievance fiber rests on a dense ant lattice, every fungal candle darkens westward, a gestation hollow goes silent, and a carved nutrient basket handle splits on stone."},
+    {"id": "17_interim_closure", "prompt": "White courier fibers fill a roost arch and a living ant lattice seals the ground beneath three witness cords; young tree bends toward closed gestation hollows while existing warm shelter roots remain open."},
+    {"id": "18_politically_mute", "prompt": "Bright local celebration crowds around a young tree with resin-marked six-limbed families and raised baskets; beyond them fungal roads are black and ribbon-winged couriers circle away from an empty arch."},
+    {"id": "19_unfinished_quorum", "prompt": "Patient unresolved hearing under a huge companion planet: three cords hang over open roots, one witness touches, one waits, one ends over empty space; one fungal candle relights as families open food baskets."}
+  ]
+}

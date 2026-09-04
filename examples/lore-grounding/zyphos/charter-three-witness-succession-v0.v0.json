@@ -1,0 +1,134 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "zyphos.charter-three-witness-succession-v0",
+  "source_status": "authored_elaboration",
+  "fixture_status": "source_grounded_dramatization",
+  "source_refs": [
+    {"source_id": "zyphos-index", "path": "Eusocial Interbeing/index.md", "title": "Zyphos", "line_start": 1, "line_end": 35, "relevance": "Establishes the mutable-memory world, Airawa dependence on Matriarchs, imperial rupture, and the rule that institutions must be ecological deals or memory technologies."},
+    {"source_id": "matriarch-trees", "path": "Eusocial Interbeing/Species/Matriarch Trees.md", "title": "Matriarch Trees", "line_start": 1, "line_end": 79, "relevance": "Owning source for Matriarch archive, gestation, coercive leverage, and the authored witnessed-succession procedure dramatized by the fixture."},
+    {"source_id": "mother-tree-networks", "path": "Eusocial Interbeing/Ecology/Mother Tree Networks.md", "title": "Mother Tree Networks", "line_start": 1, "line_end": 15, "relevance": "Grounds the roots, archives, chemical and fungal channels through which Matriarch obligations and failures travel."},
+    {"source_id": "airawa", "path": "Eusocial Interbeing/Species/Airawa.md", "title": "Airawa", "line_start": 1, "line_end": 96, "relevance": "Grounds six-limbed Airawa anatomy, Matriarch gestation contracts, ecological bargaining, and contract dress as public obligation surface."},
+    {"source_id": "pre-imperial-airawa", "path": "Eusocial Interbeing/Civilizations/Pre-Imperial Airawa Tribes.md", "title": "Pre-Imperial Airawa Tribes", "line_start": 1, "line_end": 34, "relevance": "Grounds local memory-dependent politics and contract craft linking Airawa persons to trees, couriers, roads, archives, and symbionts."},
+    {"source_id": "disconnected-networks", "path": "Eusocial Interbeing/Civilizations/Disconnected Tree Networks.md", "title": "Disconnected Tree Networks", "line_start": 1, "line_end": 18, "relevance": "Grounds unconquered tree ecologies that severed imperial transmission and now preserve heterogeneous local authority."},
+    {"source_id": "airawa-empire", "path": "Eusocial Interbeing/Civilizations/Airawa Empire.md", "title": "Airawa Empire", "line_start": 1, "line_end": 62, "relevance": "Grounds the threat of uniform, root-authored authority and the empire's denial of native multispecies sovereignty."},
+    {"source_id": "memetic-engine", "path": "Eusocial Interbeing/Technologies/Biological Memetic Engine.md", "title": "Biological Memetic Engine", "line_start": 1, "line_end": 27, "relevance": "Grounds why independent witness bodies and routes matter: the engine can edit memory and consensus across compatible channels."},
+    {"source_id": "mutable-memory", "path": "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md", "title": "Mutable Memory Endosymbiosis", "line_start": 1, "line_end": 123, "relevance": "Grounds memory-bearing cells, negotiated partial autonomy, nested sentience, and specific memory channels rather than universal telepathy."},
+    {"source_id": "fractal-web", "path": "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md", "title": "Fractal Eusocial Web", "line_start": 1, "line_end": 146, "relevance": "Grounds route, archive, commons, and nation-scale authority, local contradiction, and granular relation channels."},
+    {"source_id": "nation-interbeings", "path": "Eusocial Interbeing/Ecology/Nation Scale Interbeings.md", "title": "Nation Scale Interbeings", "line_start": 1, "line_end": 135, "relevance": "Grounds mother-tree archival polities, sovereignty as boundary management, channel-specific treaties, and nonuniform native policy."},
+    {"source_id": "ecological-bargaining", "path": "Eusocial Interbeing/Themes/Ecological Bargaining.md", "title": "Ecological Bargaining", "line_start": 1, "line_end": 9, "relevance": "Grounds nonhuman organisms as partners with memory, leverage, and reproductive interests."},
+    {"source_id": "memory-hostage", "path": "Eusocial Interbeing/Themes/Memory as Hostage.md", "title": "Memory as Hostage", "line_start": 1, "line_end": 7, "relevance": "Grounds the danger of allowing one Matriarch or one replacement system to control communal continuity."},
+    {"source_id": "threadwings", "path": "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md", "title": "Threadwing Couriers", "line_start": 1, "line_end": 44, "relevance": "Grounds mobile route memory, shed sensory fibers, clean-roost contracts, withholding, and grievance delivery."},
+    {"source_id": "candle-roads", "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md", "title": "Candle Fungal Roads", "line_start": 1, "line_end": 44, "relevance": "Grounds fungal logistics, material accounting, failed-graft consumption, route closure, and visible amber receipts."},
+    {"source_id": "lattice-ants", "path": "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Lattice Ants.md", "title": "Lattice Ants", "line_start": 1, "line_end": 44, "relevance": "Grounds temporary body-circuit diagnostics, courier-fiber reading, public accusation glyphs, neutrality pressure, and local evidence."},
+    {"source_id": "lantern-trees", "path": "Eusocial Interbeing/Biosphere/Primary Producers/Umbros-Facing Lantern Trees.md", "title": "Umbros-Facing Lantern Trees", "line_start": 1, "line_end": 44, "relevance": "Grounds cold bioluminescent grove light, shelter duty, route taxation, and treaties between lantern trees and Matriarchs."},
+    {"source_id": "airawa-continent", "path": "Eusocial Interbeing/World/Airawa Home Continent.md", "title": "Airawa Home Continent", "line_start": 1, "line_end": 28, "relevance": "Grounds the locality as one native archival polity within the unconquered continental patchwork."}
+  ],
+  "historical_context": {
+    "time_period": "Present condition after the imperial rupture; exact local calendar and proper names remain unassigned pending Weksa language work.",
+    "location": "A descriptive river-cleft Matriarch archive grove in the unconquered Airawa Home Continent, outside direct imperial topology.",
+    "summary": "A declining elder Matriarch is preparing to transfer archive and gestation authority to a rooted juvenile. During an ordinary witness rehearsal, threadwings return an omitted shelter grievance that forces the local succession procedure to prove whether memory continuity can preserve dissent.",
+    "public_facts": [
+      {"text": "Matriarchs store communal memory, gestate Airawa young, and mediate multispecies obligations.", "source_refs": ["matriarch-trees", "mother-tree-networks", "airawa"]},
+      {"text": "A successor's biological maturity does not grant archive, gestation-ranking, or treaty authority; recognition requires independent root, route, and debt witnesses.", "source_refs": ["matriarch-trees"]},
+      {"text": "Threadwing sensory fibers can carry route testimony that lattice ants inspect as local material evidence.", "source_refs": ["threadwings", "lattice-ants"]},
+      {"text": "Candle fungal roads can reconstruct material traffic and withhold recognition by dimming routes.", "source_refs": ["candle-roads", "matriarch-trees"]},
+      {"text": "An omitted party can darken the succession through two independent witness channels, suspending disputed authority while preserving the candidate's bodily autonomy.", "source_refs": ["matriarch-trees"]}
+    ],
+    "ambient_pressures": [
+      {"text": "Airawa households need gestation access before a narrowing biological window, so delay has reproductive and political cost.", "source_refs": ["airawa", "matriarch-trees"]},
+      {"text": "The elder Matriarch controls inherited memory and may have incentives to omit a debt that would stain her continuity.", "source_refs": ["matriarch-trees", "memory-hostage"]},
+      {"text": "Native networks accept slow heterogeneous witness because one fast shared channel can be infected or coerced by the Biological Memetic Engine.", "source_refs": ["matriarch-trees", "memetic-engine", "disconnected-networks"]}
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "archive-grove-succession-quorum",
+      "label": "River-cleft archive-grove succession quorum",
+      "group_type": "multispecies_public_authority",
+      "institutional_logic": ["Transfer deep archive, gestation ranking, and treaty voice only when root memory, mobile route testimony, and a materially performed debt can be inspected independently."],
+      "material_incentives": ["Preserve local continuity", "Prevent a forged heir", "Keep roads and couriers recognizing the grove", "Avoid losing a gestation season"],
+      "internal_virtues": ["Separate witness channels", "Sourced dissent", "Costly proof", "Narrow emergency power"],
+      "internal_shames": ["Letting one lineage explain every witness", "Calling biological growth public consent", "Erasing a creditor to save time"],
+      "prestige_markers": ["A debt preserved against the winner", "A route that still carries the verdict", "A joint-keeper whose cords remain readable under pressure"],
+      "taboo_triggers": ["Cross-contaminating witness media", "Unsourced memory claims", "Gestation priority used as ratification"],
+      "emotional_display_norms": ["Pressure is made visible through route light, cord placement, root openness, basket posture, and witness withdrawal before anyone trusts a speech."],
+      "trust_defaults": ["Trusts convergence across differently embodied channels more than unanimity inside one network."],
+      "speech_register_cues": ["Short procedural translations", "Named sources", "Material costs", "Uncertainty preserved as uncertainty"],
+      "source_refs": ["matriarch-trees", "fractal-web", "nation-interbeings"]
+    },
+    {
+      "group_id": "matriarch-continuity",
+      "label": "Elder and juvenile Matriarch continuity",
+      "group_type": "archive_and_gestation_line",
+      "institutional_logic": ["Transfer enough memory and obligation to preserve the grove without letting inheritance erase the parties who made the archive possible."],
+      "material_incentives": ["Protect roots and stored memory", "Maintain gestation traffic", "Retain partner routes", "Limit contamination"],
+      "internal_virtues": ["Accurate bounded replay", "Open shelter", "Dissent marked by source", "Obligations paid from the successor's own reserves"],
+      "internal_shames": ["Recent desire presented as ancestry", "Creditor omission", "Demanding obedience before recognition"],
+      "prestige_markers": ["Long archive continuity", "Many recognized partner species", "Costly duties fulfilled before acclaim"],
+      "taboo_triggers": ["Deep archive copying without permission", "Foreign root access", "Memory packets stripped of source"],
+      "emotional_display_norms": ["Trees express insistence and refusal through root pressure, bark light, sugar flow, shelter state, chemical signals, and selective access."],
+      "trust_defaults": ["Trusts long root memory but requires mobile and material correction when succession is disputed."],
+      "speech_register_cues": ["Repeated memory braids", "Pressure pulses", "Open or closed root cups", "Chemical invitation and refusal"],
+      "source_refs": ["matriarch-trees", "mother-tree-networks", "mutable-memory"]
+    },
+    {
+      "group_id": "mobile-and-ground-witnesses",
+      "label": "Threadwing route flock and lattice-ant auditors",
+      "group_type": "mobile_and_local_evidence_partners",
+      "institutional_logic": ["Carry claims beyond root control and make their contact history locally inspectable."],
+      "material_incentives": ["Clean roosts", "Parasite removal", "Sugar", "Shelter", "Reliable routes", "Payment for diagnostics"],
+      "internal_virtues": ["Route independence", "Readable residue", "Public refusal", "Precise questions"],
+      "internal_shames": ["Planted residue", "Sold testimony hidden from other buyers", "A courier route made captive to one grove"],
+      "prestige_markers": ["A grievance delivered intact", "A lattice that exposes its own chain", "A withdrawal every neighbor can read"],
+      "taboo_triggers": ["Forced capture", "Memory editing", "Glue poisoning", "Monopolized reports"],
+      "emotional_display_norms": ["Threadwings use vane spread, landing, silence, and departure; ants use lattice density, glyphs, and refusal to sample."],
+      "trust_defaults": ["Trusts clean custody and paid care more than a grove's claim to ancestral innocence."],
+      "speech_register_cues": ["Carried fibers", "Accusation glyphs", "Landing refusal", "Coordinated launch"],
+      "source_refs": ["threadwings", "lattice-ants"]
+    },
+    {
+      "group_id": "waiting-airawa-households",
+      "label": "Airawa households awaiting gestation access",
+      "group_type": "local_reproductive_claimants",
+      "institutional_logic": ["Keep local continuity alive by securing timely gestation while remaining bound to ecological partners whose routes and memory make future children viable."],
+      "material_incentives": ["Open gestation hollows", "Recognition before the biological window closes", "Preserved lineage memory", "Continued route access"],
+      "internal_virtues": ["Nutrient contribution", "Legible contract dress", "Care for future young", "Patience that has an endpoint"],
+      "internal_shames": ["Winning birth access by silencing another species", "Making private lineage need masquerade as grove authority"],
+      "prestige_markers": ["Well-maintained contract bindings", "Generous nutrient baskets", "A child admitted into many living obligations"],
+      "taboo_triggers": ["Arbitrary reproductive exclusion", "Archive edits that reorder contributor standing", "A lost season treated as an abstract procedural cost"],
+      "emotional_display_norms": ["Urgency appears in talon rhythm, basket placement, plate-seam glow, and withdrawal of material support."],
+      "trust_defaults": ["Trusts the quorum while it visibly bears the same delay it imposes."],
+      "speech_register_cues": ["Compressed jokes", "Cost accounting", "Household acclaim", "Gestation timing"],
+      "source_refs": ["airawa", "pre-imperial-airawa", "ecological-bargaining"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {"field_id": "native-archive-polity.independent-witness", "applies_to": ["archive-grove-succession-quorum", "matriarch-continuity", "mobile-and-ground-witnesses"], "pressure_type": "legitimacy", "summary": "A clean succession is suspicious when every agreeing witness shares the elder's transmission path.", "projection_use": "Prompt characters to ask which body carried a memory and what appetite could make that body disagree.", "source_refs": ["matriarch-trees", "memetic-engine"]},
+    {"field_id": "waiting-households.gestation-clock", "applies_to": ["waiting-airawa-households", "archive-grove-succession-quorum"], "pressure_type": "reproductive_urgency", "summary": "Every additional check can protect public authority and still close a real gestation window.", "projection_use": "Keep delay embodied in pulsing hollows, spent graft tissue, nutrient baskets, and households leaving.", "source_refs": ["airawa", "matriarch-trees"]},
+    {"field_id": "route-witness.recognition-withdrawal", "applies_to": ["mobile-and-ground-witnesses", "matriarch-continuity"], "pressure_type": "external_recognition", "summary": "A successor seated without route testimony may rule locally while neighboring roads and couriers refuse to carry her authority.", "projection_use": "Show political muteness through dark roads, empty roosts, and a treaty scent with no carrier.", "source_refs": ["matriarch-trees", "threadwings", "candle-roads"]}
+  ],
+  "factional_misread_matrix": [
+    {"observer_group_id": "waiting-airawa-households", "target_group_id": "mobile-and-ground-witnesses", "observer_read": ["A distant route grievance delaying local births", "Paid specialists inflating uncertainty"], "target_self_read": ["Creditors preserving the condition that makes grove authority portable"], "misread_patterns": ["Treats mobility as weak attachment", "Treats nonverbal withdrawal as absence rather than verdict"], "likely_insults": ["late wings", "sugar court"], "projection_use": "Let household impatience remain morally intelligible while showing the jurisdiction it cannot replace.", "source_refs": ["airawa", "threadwings", "lattice-ants"]},
+    {"observer_group_id": "matriarch-continuity", "target_group_id": "mobile-and-ground-witnesses", "observer_read": ["Contamination risk", "Shallow recent residue challenging deep memory"], "target_self_read": ["Independent correction for a rooted archive with power to omit"], "misread_patterns": ["Confuses age with accuracy", "Treats sourced accusation as infection"], "likely_insults": ["surface memory", "carried noise"], "projection_use": "Keep the elder's coercion rooted in timescale and archive control instead of human courtroom villainy.", "source_refs": ["matriarch-trees", "memory-hostage", "threadwings"]}
+  ],
+  "role_pressure_fields": [
+    {"role_id": "airawa-joint-keeper", "summary": "A temporary Airawa office that separates witness media, names sources through contract dress, translates signals, and invokes procedures without owning the verdict.", "obligations": ["Keep cords separate", "Preserve dissent and source", "Declare conflicts of gestation interest", "Stop when witness predicates fail"], "available_masks": ["Dry procedural calm", "Physical busyness", "Deference to elder memory", "Sympathy for waiting households"], "failure_modes": ["Treating interpretation as decision", "Sealing evidence for convenience", "Allowing lineage need to become jurisdiction"], "source_refs": ["matriarch-trees", "airawa"]},
+    {"role_id": "juvenile-successor", "summary": "A biologically mature young Matriarch seeking archive and gestation authority while still dependent on witnesses she cannot command.", "obligations": ["Replay bounded memory", "Preserve sourced dissent", "Perform inherited debt", "Keep body autonomy distinct from public authority"], "available_masks": ["Contamination caution", "Obedience to the elder", "Open shelter", "Costly sugar payment"], "failure_modes": ["Copying accusation as fact", "Erasing accusation as contamination", "Accepting local acclaim as complete recognition"], "source_refs": ["matriarch-trees", "mutable-memory"]},
+    {"role_id": "waiting-gestation-claimant", "summary": "An Airawa household under a real reproductive deadline whose need can expose procedural cruelty or be used to capture succession.", "obligations": ["Supply nutrients", "Keep contract standing legible", "Accept route and archive obligations inherited by future young"], "available_masks": ["Humor", "Conspicuous patience", "Basket display", "Local acclaim"], "failure_modes": ["Calling urgency sovereignty", "Silencing a creditor to save the season", "Withdrawing support before alternatives exist"], "source_refs": ["airawa", "pre-imperial-airawa"]}
+  ],
+  "speaker_lore_boundaries": [
+    {"speaker_id": "airawa_joint_keeper", "known_context": [{"text": "The keeper knows the local procedure, witness media, visible contract marks, current gestation pressure, and signals presented on the terrace.", "source_refs": ["matriarch-trees", "airawa"]}], "beliefs": [{"text": "The keeper believes separate appetites make forgery harder, even when they make justice slower.", "source_refs": ["matriarch-trees", "fractal-web"]}], "misreads": [{"text": "The keeper may overvalue clean procedure when households are bearing an irreversible biological cost.", "source_refs": ["airawa"]}], "must_not_know": [{"text": "The keeper must not know whether the elder truly promised the shelter or privately intends to coerce the juvenile; only presented signals and evidence are available.", "source_refs": ["mutable-memory"]}]},
+    {"speaker_id": "elder_matriarch", "known_context": [{"text": "The elder controls her transmitted archive braid, remembers local obligations, and perceives root, fungal, chemical, and partner signals within the grove.", "source_refs": ["matriarch-trees", "mother-tree-networks"]}], "beliefs": [{"text": "The elder treats unsourced or foreign memory as contamination risk and her own continuity as necessary to the grove.", "source_refs": ["matriarch-trees", "memory-hostage"]}], "misreads": [{"text": "The elder may treat the depth and age of her archive as proof that a recent mobile witness is mistaken.", "source_refs": ["memory-hostage", "threadwings"]}], "must_not_know": [{"text": "The elder must not automatically know what a distant courier experienced beyond the local network or what ants infer before their lattice reports it.", "source_refs": ["threadwings", "lattice-ants"]}]},
+    {"speaker_id": "juvenile_successor", "known_context": [{"text": "The juvenile knows the bounded memories transferred into her, current root pressure, shelter and sugar costs, and testimony physically presented to her roots.", "source_refs": ["matriarch-trees"]}], "beliefs": [{"text": "The juvenile initially trusts elder-root continuity but can learn that preserving a sourced accusation is different from absorbing it as truth.", "source_refs": ["matriarch-trees"]}], "misreads": [{"text": "The juvenile may classify contradiction as contamination because inherited memory and immune politics share a substrate.", "source_refs": ["mutable-memory"]}], "must_not_know": [{"text": "The juvenile must not retrieve an omitted debt from a universal planetary mind; no such authority exists.", "source_refs": ["mutable-memory", "fractal-web"]}]}
+  ],
+  "author_only_boundaries": [
+    {"text": "The river-cleft grove, the omitted shelter grievance, the joint-keeper in this scene, and every branch outcome are fixture-local dramatization, not established historical events.", "source_refs": ["matriarch-trees"]},
+    {"text": "Descriptive English labels are translation handles. The fixture does not settle culture-specific Weksa names, exact calendar terms, or a universal Matriarch succession vocabulary.", "source_refs": ["zyphos-index", "nation-interbeings"]},
+    {"text": "The witnessed-succession elaboration belongs to native Matriarch archive polities and must not be generalized to the Airawa Empire, Sa'ueia, reefs, roads, or all Zyphos nations without new source work.", "source_refs": ["matriarch-trees", "airawa-empire", "nation-interbeings"]}
+  ],
+  "open_questions": [
+    {"question": "How long is a normal Airawa gestation admission window, and which ecological signals define its closing?", "blocks_training": false, "notes": "The fixture uses coarse urgency bands and visible hollow pulses so it does not invent a universal calendar."},
+    {"question": "Which contracted pollinator lineages carry Airawa gametes in this region?", "blocks_training": false, "notes": "Threadwings serve only as route witnesses here; the fixture does not assign them Airawa gamete transport."},
+    {"question": "How frequently do native Matriarch polities use this exact three-channel procedure versus local variants?", "blocks_training": false, "notes": "The lore patch defines the common witnessed shape while leaving regional media and offices variable."}
+  ]
+}

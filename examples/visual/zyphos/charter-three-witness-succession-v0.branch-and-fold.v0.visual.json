@@ -1,0 +1,391 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "charter-three-witness-succession-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/zyphos/charter-three-witness-succession-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/charter-three-witness-succession-v0.branch-and-fold.v0.training.json",
+  "scene_id": "charter-three-witness-succession-v0.river-cleft-grove-hearing",
+  "purpose": "Illustrated Ink replay segmentation and prompt controls for a multispecies Matriarch succession hearing at a river-cleft archive grove.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for the terrace, ordinary witness labor, a returned route grievance, the succession hearing, and five authority outcomes.",
+    "segmentation_rule": "Use distinct scene anchors for the establishing view, joint-keeper office, each ordinary work choice, the folded rehearsal, the courier's pivotal arrival, each first response, the folded grievance, the public quorum response, and each ending. The courier impact and the elder's command receive separate replay beats.",
+    "prompting_rule": "Each base prompt supplies complete visible geometry, light, materials, bodies, positions, and props for a general image model. Character refs are assembled only for agents visible in that frame. Continuity notes remain tool-facing.",
+    "global_style_cue": "Style: luminous ecological science-fiction storybook illustration, fine ink contours with layered gouache color, dim mineral blues and fungal amber, precise readable nonhuman anatomy, wet bark and stone textures, quiet ritual composition, expressive posture, civic stakes carried by living infrastructure, cinematic interactive-fiction frame.",
+    "prompt_assembly_rule": "Assemble every prompt from global_style_cue, the scene base_image_prompt, visual refs only for visible characters or groups, and triggered state_image_modifiers or global_branch_image_modifiers. Use the scene_set camera and staging slots as geometry authority. Exclude visual_continuity_notes from generated prompts.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture returns to one terrace from wide, medium, close, and downslope angles, and branch actions change roots, witness cords, route lights, roost occupancy, and shelter state. A draft map fixes those relations for review.",
+      "future_scene_set_need": "Before high-consistency website rendering, build a plan-view or 3D blockout from the declared zones, camera slots, sightlines, and state anchors."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "zyphos_succession_terrace_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide elevated view of a crescent stone terrace above a narrow blackwater river cleft on an alien dim world. A colossal old tree with a chambered, scarred trunk grows along the uphill northern rim. A young tree with pale copper bark rises from a circular wet-stone basin at the center. Two rows of small amber fungal fruiting bodies enter through a western rock cleft and braid beneath exposed roots. A woven branch roost arch spans above that road. A low eastern wall is riddled with sugar cavities for a living ant colony. Several sealed root-and-stone gestation hollows line the downslope southern edge. Six-limbed reptilian-adjacent Airawa wait near nutrient baskets. A huge fixed companion planet fills the dark blue sky; its cold reflected light turns wet roots silver.",
+        "visible_characters": [
+          {"agent_id": "elder_matriarch", "default_stance": "rooted along the uphill rim, broad canopy leaning over the terrace", "visual_ref": "visual_character_refs.characters.elder_matriarch"},
+          {"agent_id": "juvenile_successor", "default_stance": "rooted upright in the central basin", "visual_ref": "visual_character_refs.characters.juvenile_successor"},
+          {"agent_id": "candle_fungal_road", "default_stance": "two amber lines entering through the western cleft", "visual_ref": "visual_character_refs.characters.candle_fungal_road"},
+          {"agent_id": "waiting_airawa_households", "default_stance": "small groups downslope beside nutrient baskets and sealed hollows", "visual_ref": "visual_character_refs.groups.waiting_airawa_households"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Stable terrace coordinates: elder north/uphill, juvenile center, fungal road west, ant wall east, roost arch above west-center, gestation hollows south/downslope, blackwater cleft below south edge.",
+          "Umbros remains fixed high over the cleft and provides cold blue reflected light; amber fungal candles and bioluminescent Airawa plate seams provide warm accents."
+        ]
+      },
+      {
+        "visual_scene_id": "zyphos_joint_keeper_office",
+        "ink_anchor": "ordinary_office",
+        "base_image_prompt": "Medium view against the scarred uphill trunk of an immense old tree on a wet stone terrace. A six-limbed Airawa joint-keeper hangs vertically from bark using long digitigrade feet with hooked climbing talons and two strong clawed upper hands. Two smaller clawless lower hands with four soft opposing digits sort three witness cords that remain visibly separate: green translucent root resin, white braided courier fiber, and amber fungal thread. Below, a pale copper juvenile tree opens root hollows in a central basin. Airawa households and nutrient baskets wait by sealed stone gestation hollows downslope under the huge companion planet's blue light.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "hanging from elder bark while separating three cords with lower hands", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "elder_matriarch", "default_stance": "old trunk supporting the keeper", "visual_ref": "visual_character_refs.characters.elder_matriarch"},
+          {"agent_id": "juvenile_successor", "default_stance": "central basin with open root cups", "visual_ref": "visual_character_refs.characters.juvenile_successor"},
+          {"agent_id": "waiting_airawa_households", "default_stance": "downslope beside gestation hollows", "visual_ref": "visual_character_refs.groups.waiting_airawa_households"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The witness cords remain separate until a branch explicitly places one onto an independent witness surface."]
+      },
+      {
+        "visual_scene_id": "zyphos_prime_debt_witness",
+        "ink_anchor": "routine_choice.prime_debt_witness",
+        "base_image_prompt": "Low western view across a wet crescent terrace above blackwater. A six-limbed scaled Airawa climbs headfirst down the old tree, weight held by clawed upper hands and taloned feet, while two small lower hands place pale failed graft tissue between parallel rows of amber fungal fruiting bodies. One bright fungal bead rises beside the central basin where a pale copper juvenile tree extends a thin sugary root secretion toward it. Airawa households wait downslope with woven nutrient baskets; one adult taps hooked foot talons against stone. Cold blue planet light and warm amber fungal light meet on the ground.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "placing graft tissue between western fungal candle lines", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "juvenile_successor", "default_stance": "extending a sugar-wet root toward the bright bead", "visual_ref": "visual_character_refs.characters.juvenile_successor"},
+          {"agent_id": "candle_fungal_road", "default_stance": "brightening around the offered tissue", "visual_ref": "visual_character_refs.characters.candle_fungal_road"},
+          {"agent_id": "waiting_airawa_households", "default_stance": "waiting near baskets at the south edge", "visual_ref": "visual_character_refs.groups.waiting_airawa_households"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_prime_route_witness",
+        "ink_anchor": "routine_choice.prime_route_witness",
+        "base_image_prompt": "Medium western view of a woven branch roost arch above two lines of amber fungal candles on a river-cleft terrace. A six-limbed reptilian-adjacent Airawa braces beneath the arch with long taloned feet and clawed upper hands while two smaller soft lower hands preen parasites from gliding animals whose wings carry many ribbonlike sensory vanes instead of feathers. Clean resin roost cups hang along the arch. The old tree rises uphill, the juvenile tree stands in a central stone basin, and waiting Airawa turn decorated nutrient baskets downslope under cold blue light from a huge companion planet.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "braced under the arch, preening sensory vanes with lower hands", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "threadwing_route_flock", "default_stance": "standing along roost cups with vanes extended", "visual_ref": "visual_character_refs.groups.threadwing_route_flock"},
+          {"agent_id": "waiting_airawa_households", "default_stance": "downslope, turning decorated baskets toward the hearing", "visual_ref": "visual_character_refs.groups.waiting_airawa_households"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_prime_evidence_integrity",
+        "ink_anchor": "routine_choice.prime_evidence_integrity",
+        "base_image_prompt": "Close-medium eastern view of a wet stone terrace. A six-limbed scaled Airawa kneels low on all limbs beside three separated green, white, and amber cords. Hundreds of small jointed ants lock their bodies into a living diagnostic sheet across the Airawa's woven contract bindings, tiny bioluminescent plate seams, cord knots, and damp ground. The ants form one compact accusation glyph near a smear of breakfast sugar on an upper claw. The old tree trunk looms uphill and the ant colony's sugar-cavity wall runs behind the scene.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "lowered for inspection with all six limbs accessible", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "lattice_ant_colony", "default_stance": "assembled as a living sheet and small glyph", "visual_ref": "visual_character_refs.groups.lattice_ant_colony"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_prime_candidate_duty",
+        "ink_anchor": "routine_choice.prime_candidate_duty",
+        "base_image_prompt": "Medium eastern view of the central basin on a crescent stone terrace. A pale copper juvenile tree grows from wet stones, its roots wrapped around a low bark-sealed infant shelter. A six-limbed Airawa hangs above the shelter using hooked feet and two clawed upper hands; two smaller soft lower hands tease living seal fibers apart while the juvenile relaxes thick roots around the opening. Warm amber air emerges from the hollow into cold blue planet light. Sealed gestation hollows and waiting nutrient baskets are visible farther downslope.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "anchored above the shelter while opening seal fibers", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "juvenile_successor", "default_stance": "roots relaxing around the warm shelter opening", "visual_ref": "visual_character_refs.characters.juvenile_successor"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_morning_rehearsal_fold",
+        "ink_anchor": "morning_fold",
+        "base_image_prompt": "Wide ritual-work tableau on a crescent wet-stone archive terrace: immense scarred elder tree uphill, pale copper juvenile tree in a central basin, separate green root, white route, and amber debt cords hanging from the elder trunk, amber fungal road entering from the west, woven threadwing roost above it, ant sugar wall to the east, and Airawa households at sealed gestation hollows downslope. A six-limbed Airawa joint-keeper stands between the cords and the basin while the elder's roots press visibly through wet stone. Cold blue light from a giant companion planet mixes with fungal amber and faint bioluminescent body seams.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "standing between witness cords and juvenile basin", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "elder_matriarch", "default_stance": "roots pressing through the northern stone", "visual_ref": "visual_character_refs.characters.elder_matriarch"},
+          {"agent_id": "juvenile_successor", "default_stance": "central basin with root cups open", "visual_ref": "visual_character_refs.characters.juvenile_successor"},
+          {"agent_id": "threadwing_route_flock", "default_stance": "scattered along the western arch", "visual_ref": "visual_character_refs.groups.threadwing_route_flock"},
+          {"agent_id": "lattice_ant_colony", "default_stance": "near the eastern wall", "visual_ref": "visual_character_refs.groups.lattice_ant_colony"},
+          {"agent_id": "candle_fungal_road", "default_stance": "two amber lines through the west cleft", "visual_ref": "visual_character_refs.characters.candle_fungal_road"},
+          {"agent_id": "waiting_airawa_households", "default_stance": "near baskets and hollows downslope", "visual_ref": "visual_character_refs.groups.waiting_airawa_households"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "debt_witness >= 2", "modifier_prompt": "One bright amber fungal bead stands beside the amber debt cord and central basin."},
+          {"trigger": "route_witness >= 2", "modifier_prompt": "Groomed threadwings crowd the roost arch with clean ribbonlike sensory vanes held open toward the keeper."},
+          {"trigger": "evidence_integrity >= 1", "modifier_prompt": "A clean living ant lattice spans the stone between all three cords while keeping them physically separate."},
+          {"trigger": "candidate_openness >= 2", "modifier_prompt": "The juvenile's eastern root shelter stands visibly open with warm air rising."},
+          {"trigger": "household_patience <= 1", "modifier_prompt": "Waiting Airawa hold decorated nutrient baskets forward in tense, conspicuous silence."},
+          {"trigger": "gestation_window <= 2", "modifier_prompt": "The nearest sealed gestation hollow emits one low blue-green pulse beneath the waiting households."}
+        ]
+      },
+      {
+        "visual_scene_id": "zyphos_returned_route_grievance",
+        "ink_anchor": "grievance_arrival",
+        "base_image_prompt": "Pivotal medium-wide frame at the western roost arch of a wet stone terrace. A gliding threadwing courier strikes the woven arch awkwardly beneath a gigantic fixed planet, ribbonlike wing vanes ragged from distance. A white shed fiber coils around one leg, stained with dark bitter pollen and pale cold-nest residue. Other threadwings crowd nearby while preserving a clear gap around the fiber. A six-limbed scaled Airawa joint-keeper faces the arrival from the center. The pale copper juvenile tree's root cups close slightly; the old tree's roots rise through northern stone; one amber fungal candle dims; ants pour from eastern sugar cavities toward the empty hearing space.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "center terrace, all four hands lowered toward the arriving fiber", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "elder_matriarch", "default_stance": "roots lifted beneath the northern stone", "visual_ref": "visual_character_refs.characters.elder_matriarch"},
+          {"agent_id": "juvenile_successor", "default_stance": "central basin with root cups partly closed", "visual_ref": "visual_character_refs.characters.juvenile_successor"},
+          {"agent_id": "threadwing_route_flock", "default_stance": "one exhausted courier on the arch and others leaving a gap around its fiber", "visual_ref": "visual_character_refs.groups.threadwing_route_flock"},
+          {"agent_id": "lattice_ant_colony", "default_stance": "streaming from east wall toward center", "visual_ref": "visual_character_refs.groups.lattice_ant_colony"},
+          {"agent_id": "candle_fungal_road", "default_stance": "western amber rows with one visibly dark bead", "visual_ref": "visual_character_refs.characters.candle_fungal_road"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The grievance fiber begins on the courier's leg and changes custody only in the selected branch."]
+      },
+      {
+        "visual_scene_id": "zyphos_preserve_route_grievance",
+        "ink_anchor": "grievance_choice.preserve_route_grievance",
+        "base_image_prompt": "Close evidence frame on the center-east stones of a river-cleft archive terrace. A six-limbed Airawa holds a white courier fiber with two soft lower hands and lays it across a living sheet of interlocked small ants. The green root cord, white route cord, and amber fungal cord hang separately overhead. Old and juvenile tree roots stop short of the ant sheet. Ant bodies arrange into two linked glyphs beside visible traces of bitter dark pollen, pale cold residue, and the courier's skin cells. Cold blue planet light makes the chain of contact stark and readable.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "lower hands releasing the fiber onto the ant sheet", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "lattice_ant_colony", "default_stance": "living evidence sheet with two linked glyphs", "visual_ref": "visual_character_refs.groups.lattice_ant_colony"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_test_candidate_openness",
+        "ink_anchor": "grievance_choice.test_candidate_openness",
+        "base_image_prompt": "Close-medium view of the pale copper juvenile tree in the circular central basin of a wet terrace. A six-limbed Airawa guides one thin juvenile rootlet to the edge of an ant evidence sheet holding a white courier fiber stained with bitter pollen. A clean translucent band opens in the juvenile's outer bark memory, marked by three distinct color pulses for source, refusal, and uncertainty. Thick roots from the immense elder tree strain under northern stones toward the basin. White threadwings watch from a woven western arch under cold companion-planet light.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "lower hands guiding one juvenile rootlet beside the evidence lattice", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "elder_matriarch", "default_stance": "thick roots visibly tense beneath northern stones", "visual_ref": "visual_character_refs.characters.elder_matriarch"},
+          {"agent_id": "juvenile_successor", "default_stance": "outer bark opening a blank translucent memory band", "visual_ref": "visual_character_refs.characters.juvenile_successor"},
+          {"agent_id": "threadwing_route_flock", "default_stance": "watching from the western arch", "visual_ref": "visual_character_refs.groups.threadwing_route_flock"},
+          {"agent_id": "lattice_ant_colony", "default_stance": "supporting the fiber below the juvenile rootlet", "visual_ref": "visual_character_refs.groups.lattice_ant_colony"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_buy_debt_testimony",
+        "ink_anchor": "grievance_choice.buy_debt_testimony",
+        "base_image_prompt": "Low western diagnostic view along two rows of amber fungal fruiting bodies entering a crescent wet-stone terrace. A six-limbed scaled Airawa gives the final pieces of pale failed graft tissue to the road. Fungal candles illuminate sequentially into the distance, then reproduce a material traffic diagram on the ground: many dense amber Airawa foot-pressure traces enter an eastern shelter while small threadwing waste marks and white nesting fibers reach its sealed threshold and turn back. The pale copper juvenile tree stands in the central basin and sealed gestation hollows pulse downslope under blue planet light.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "placing the last graft tissue into the western road", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "juvenile_successor", "default_stance": "central basin facing the material trace display", "visual_ref": "visual_character_refs.characters.juvenile_successor"},
+          {"agent_id": "candle_fungal_road", "default_stance": "displaying warm admitted tracks and cold refused route traces in amber sequence", "visual_ref": "visual_character_refs.characters.candle_fungal_road"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_defer_grievance",
+        "ink_anchor": "grievance_choice.defer_grievance",
+        "base_image_prompt": "Medium western view beneath a woven roost arch on a crescent archive terrace. A six-limbed Airawa joint-keeper closes a bitter-pollen-stained white courier fiber inside a clear amber resin capsule and hangs it from the separate white route cord. Every ribbon-winged threadwing launches away from the arch in one coordinated departure, leaving empty resin roost cups. Airawa households near the southern gestation hollows raise nutrient baskets with visible relief. The western fungal road dims and the pale copper juvenile tree remains rooted in the central basin beneath cold blue companion-planet light.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "hanging the sealed fiber capsule from the white cord", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "juvenile_successor", "default_stance": "central basin facing the emptying arch", "visual_ref": "visual_character_refs.characters.juvenile_successor"},
+          {"agent_id": "threadwing_route_flock", "default_stance": "launching away together from the western arch", "visual_ref": "visual_character_refs.groups.threadwing_route_flock"},
+          {"agent_id": "waiting_airawa_households", "default_stance": "downslope lifting nutrient baskets in relief", "visual_ref": "visual_character_refs.groups.waiting_airawa_households"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_grievance_hearing_fold",
+        "ink_anchor": "grievance_fold",
+        "base_image_prompt": "Wide public hearing tableau on a crescent stone terrace above blackwater. The immense elder tree occupies the uphill north edge and drives thick roots toward the center. A pale copper juvenile tree stands in a circular central basin with three open root cups beneath separate green, white, and amber cords. The western fungal road, overhead roost arch, eastern ant wall, and southern gestation hollows form four visible sides of the assembly. A six-limbed Airawa joint-keeper stands back from the cords while Airawa households wait beside nutrient baskets. Cold blue planet light, wet silver roots, amber fungal beads, and faint plate-seam glow make every witness channel visible.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "between the cords and households, hands open", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "elder_matriarch", "default_stance": "thick command root pressed into center stone", "visual_ref": "visual_character_refs.characters.elder_matriarch"},
+          {"agent_id": "juvenile_successor", "default_stance": "three root cups open beneath separated cords", "visual_ref": "visual_character_refs.characters.juvenile_successor"},
+          {"agent_id": "lattice_ant_colony", "default_stance": "assembled between east wall and center basin", "visual_ref": "visual_character_refs.groups.lattice_ant_colony"},
+          {"agent_id": "candle_fungal_road", "default_stance": "western amber rows", "visual_ref": "visual_character_refs.characters.candle_fungal_road"},
+          {"agent_id": "waiting_airawa_households", "default_stance": "downslope near pulsing hollows", "visual_ref": "visual_character_refs.groups.waiting_airawa_households"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "evidence_integrity >= 2", "modifier_prompt": "The stained white courier fiber lies exposed across a readable ant lattice with open space around its chain of contact."},
+          {"trigger": "evidence_integrity <= 0", "modifier_prompt": "The white grievance fiber is visibly trapped inside a clear resin capsule hanging beyond the ants' reach."},
+          {"trigger": "route_witness >= 2", "modifier_prompt": "Threadwings line the entire roost arch with ribbonlike vanes aimed inward."},
+          {"trigger": "route_witness <= 0", "modifier_prompt": "The woven roost arch and every resin cup stand conspicuously empty."},
+          {"trigger": "debt_witness >= 3", "modifier_prompt": "The western road shows an alternating sequence of warm admitted footprints and pale refused nesting traces."},
+          {"trigger": "candidate_openness >= 3", "modifier_prompt": "A clean translucent band remains open in the juvenile's outer bark beside the disputed fiber."},
+          {"trigger": "keeper_trust <= 0", "modifier_prompt": "Waiting Airawa turn their faces from the cords toward the keeper's contract bindings with rigid upper-arm posture."},
+          {"trigger": "gestation_window <= 1", "modifier_prompt": "The nearest southern gestation hollow pulses urgently through wet stone."}
+        ],
+        "visual_continuity_notes": ["The elder command root enters the center from north but never touches the independent ant lattice or route fiber."]
+      },
+      {
+        "visual_scene_id": "zyphos_quorum_response",
+        "ink_anchor": "quorum_response",
+        "base_image_prompt": "Medium-wide outcome threshold on a crescent archive terrace. Three separate witness cords hang above three open root cups of a pale copper juvenile tree in the central wet-stone basin. A six-limbed Airawa joint-keeper has stepped backward with all four hands open, leaving the answer to bodies around the basin. The scarred elder tree and command root occupy the uphill edge; amber fungal candles enter from the western cleft; a woven branch roost arch spans overhead; a living ant lattice reaches in from the eastern wall; Airawa households and sealed gestation hollows wait downslope. Cold blue light from a giant fixed planet outlines roots, cords, baskets, and wet stone.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "stepped back with four hands open", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "elder_matriarch", "default_stance": "uphill with command root at center edge", "visual_ref": "visual_character_refs.characters.elder_matriarch"},
+          {"agent_id": "juvenile_successor", "default_stance": "central basin beneath the three cords", "visual_ref": "visual_character_refs.characters.juvenile_successor"},
+          {"agent_id": "lattice_ant_colony", "default_stance": "eastern lattice reaching toward the cords", "visual_ref": "visual_character_refs.groups.lattice_ant_colony"},
+          {"agent_id": "candle_fungal_road", "default_stance": "western candle rows according to witness state", "visual_ref": "visual_character_refs.characters.candle_fungal_road"},
+          {"agent_id": "waiting_airawa_households", "default_stance": "downslope beside baskets and hollows", "visual_ref": "visual_character_refs.groups.waiting_airawa_households"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "root_concordance >= 3", "modifier_prompt": "Matching green pulses travel from elder root to the juvenile's open outer-memory band, with the white grievance mark preserved distinctly inside the pattern."},
+          {"trigger": "root_concordance <= 1", "modifier_prompt": "Elder and juvenile roots display matching closed green pulses while the white grievance mark remains outside both patterns."},
+          {"trigger": "route_witness >= 2", "modifier_prompt": "Small gliding threadwings with wings made from ribbonlike sensory vanes land on the juvenile's route cup and leave white shed fibers in plain sight."},
+          {"trigger": "route_witness <= 0", "modifier_prompt": "Pale scented vapor rises from the juvenile and drifts across an empty woven roost arch toward the river cleft."},
+          {"trigger": "debt_witness >= 2", "modifier_prompt": "A single bright amber receipt bead rises beside the juvenile's open shelter."},
+          {"trigger": "household_patience <= 0", "modifier_prompt": "Airawa households turn downslope carrying their nutrient baskets away from the silent hollows."},
+          {"trigger": "household_patience >= 4", "modifier_prompt": "Airawa households crowd close to the basin with raised baskets and eager glowing plate seams."}
+        ]
+      },
+      {
+        "visual_scene_id": "zyphos_ending_witnessed_succession",
+        "ink_anchor": "ending_witnessed_succession",
+        "base_image_prompt": "Ceremonial medium-wide view of a pale copper successor tree in the central basin of a wet crescent terrace. Three distinct inputs enter three open root cups: a green translucent memory cord from the scarred elder uphill, white courier fibers from ribbon-winged threadwings on the western arch, and an amber fungal secretion from two candle-road rows. A living ant lattice records the meeting from the eastern stone. The juvenile keeps an eastern warm shelter visibly open while a six-limbed Airawa joint-keeper stands back and households answer from the southern gestation hollows. Cold blue planet light and warm amber receipts balance across the frame.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "standing back from the completed three-channel contact", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "elder_matriarch", "default_stance": "uphill transmitting the green bounded braid", "visual_ref": "visual_character_refs.characters.elder_matriarch"},
+          {"agent_id": "juvenile_successor", "default_stance": "receiving all three witnesses while holding the shelter open", "visual_ref": "visual_character_refs.characters.juvenile_successor"},
+          {"agent_id": "threadwing_route_flock", "default_stance": "landing white fibers on the route cup", "visual_ref": "visual_character_refs.groups.threadwing_route_flock"},
+          {"agent_id": "lattice_ant_colony", "default_stance": "recording the meeting in an eastern living lattice", "visual_ref": "visual_character_refs.groups.lattice_ant_colony"},
+          {"agent_id": "candle_fungal_road", "default_stance": "feeding one amber secretion into the debt cup", "visual_ref": "visual_character_refs.characters.candle_fungal_road"},
+          {"agent_id": "waiting_airawa_households", "default_stance": "responding from the downslope hollows", "visual_ref": "visual_character_refs.groups.waiting_airawa_households"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_ending_darkened_succession",
+        "ink_anchor": "ending_darkened_succession",
+        "base_image_prompt": "Somber wide view of a succession suspended on a wet stone terrace. The pale copper juvenile tree remains alive in the central basin, root cups closed and outer memory band visible. A white courier grievance rests on a dense living ant lattice to the east. Every amber fungal candle extinguishes along the western road. The scarred elder tree looms uphill. A southern gestation hollow has gone dark beside Airawa households; one carved nutrient-basket handle lies freshly split on stone. The six-limbed joint-keeper stands beside separated cords under cold blue companion-planet light.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "beside the suspended cords, lower hands empty", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "elder_matriarch", "default_stance": "looming uphill", "visual_ref": "visual_character_refs.characters.elder_matriarch"},
+          {"agent_id": "juvenile_successor", "default_stance": "alive in the basin with root cups closed", "visual_ref": "visual_character_refs.characters.juvenile_successor"},
+          {"agent_id": "lattice_ant_colony", "default_stance": "holding the grievance in a dense eastern lattice", "visual_ref": "visual_character_refs.groups.lattice_ant_colony"},
+          {"agent_id": "candle_fungal_road", "default_stance": "fully dark along the western cleft", "visual_ref": "visual_character_refs.characters.candle_fungal_road"},
+          {"agent_id": "waiting_airawa_households", "default_stance": "at the dark hollow around a split basket", "visual_ref": "visual_character_refs.groups.waiting_airawa_households"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_ending_interim_closure",
+        "ink_anchor": "ending_interim_closure",
+        "base_image_prompt": "Quiet procedural aftermath on a crescent archive terrace: a woven western roost arch is dense with white courier fibers, and a broad living ant lattice seals the center stones beneath three hanging witness cords. The pale copper juvenile tree bends from its central basin toward closed southern gestation hollows while existing warm shelter roots remain open at the east. Amber fungal candles are sparse but lit along the western route. A six-limbed Airawa joint-keeper watches from beside the scarred elder trunk under cold blue light from a fixed companion planet.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "watching the bounded closure beside the elder trunk", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "elder_matriarch", "default_stance": "scarred trunk uphill", "visual_ref": "visual_character_refs.characters.elder_matriarch"},
+          {"agent_id": "juvenile_successor", "default_stance": "bending toward the closed gestation hollows", "visual_ref": "visual_character_refs.characters.juvenile_successor"},
+          {"agent_id": "threadwing_route_flock", "default_stance": "occupying the arch among white fibers", "visual_ref": "visual_character_refs.groups.threadwing_route_flock"},
+          {"agent_id": "lattice_ant_colony", "default_stance": "forming the closure lattice across center stones", "visual_ref": "visual_character_refs.groups.lattice_ant_colony"},
+          {"agent_id": "candle_fungal_road", "default_stance": "sparse lit amber candles at west", "visual_ref": "visual_character_refs.characters.candle_fungal_road"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_ending_politically_mute",
+        "ink_anchor": "ending_politically_mute",
+        "base_image_prompt": "Wide divided-authority view at a river-cleft terrace. Airawa households crowd around a pale copper juvenile tree in the central basin, pressing fresh translucent resin onto woven bindings and raising nutrient baskets beside one open gestation hollow. At the western edge every fungal candle is dark, and ribbon-winged threadwings circle once above an empty roost arch before flying toward the blackwater cleft. The immense elder tree stands uphill and the six-limbed joint-keeper holds separated cords that the crowd has ignored. Cold blue planet light makes the bright local celebration and dark outward routes visibly incompatible.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "outside the crowd holding ignored cords", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "elder_matriarch", "default_stance": "uphill behind the acclaim", "visual_ref": "visual_character_refs.characters.elder_matriarch"},
+          {"agent_id": "juvenile_successor", "default_stance": "central basin surrounded by local resin marks", "visual_ref": "visual_character_refs.characters.juvenile_successor"},
+          {"agent_id": "threadwing_route_flock", "default_stance": "circling away above the empty western arch", "visual_ref": "visual_character_refs.groups.threadwing_route_flock"},
+          {"agent_id": "candle_fungal_road", "default_stance": "dark from basin to western cleft", "visual_ref": "visual_character_refs.characters.candle_fungal_road"},
+          {"agent_id": "waiting_airawa_households", "default_stance": "crowding the basin with baskets and resin-marked bindings", "visual_ref": "visual_character_refs.groups.waiting_airawa_households"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "zyphos_ending_unfinished_quorum",
+        "ink_anchor": "ending_unfinished_quorum",
+        "base_image_prompt": "Patient twilight view of an unresolved hearing on a wet crescent terrace. Three green, white, and amber witness cords hang over open root cups of a pale copper juvenile tree in the center basin. One cord touches its witness, one hangs still, and one ends above an empty gap. The old tree's roots wait uphill, threadwings hold the western arch at a distance, and ants maintain a small eastern lattice. One fungal candle has relit beside clean failed-graft remains at the western cleft. Airawa households open food baskets beside the southern gestation hollows while the six-limbed joint-keeper sits on stone under the huge fixed planet.",
+        "visible_characters": [
+          {"agent_id": "airawa_joint_keeper", "default_stance": "sitting near the separated cords during a food pause", "visual_ref": "visual_character_refs.characters.airawa_joint_keeper"},
+          {"agent_id": "elder_matriarch", "default_stance": "roots waiting uphill", "visual_ref": "visual_character_refs.characters.elder_matriarch"},
+          {"agent_id": "juvenile_successor", "default_stance": "central basin with root cups still open", "visual_ref": "visual_character_refs.characters.juvenile_successor"},
+          {"agent_id": "threadwing_route_flock", "default_stance": "holding distance on the western arch", "visual_ref": "visual_character_refs.groups.threadwing_route_flock"},
+          {"agent_id": "lattice_ant_colony", "default_stance": "maintaining a small eastern evidence sheet", "visual_ref": "visual_character_refs.groups.lattice_ant_colony"},
+          {"agent_id": "candle_fungal_road", "default_stance": "one amber candle relit at west", "visual_ref": "visual_character_refs.characters.candle_fungal_road"},
+          {"agent_id": "waiting_airawa_households", "default_stance": "opening food baskets by the southern hollows", "visual_ref": "visual_character_refs.groups.waiting_airawa_households"}
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "darken_succession_visual",
+        "trigger": "branch_label == darken_succession",
+        "apply_to_visual_scene_ids": ["zyphos_quorum_response"],
+        "modifier_prompt": "The white route cord lies across the ant lattice, the amber debt cord ends beside the fungal road, and all western candles extinguish in order while the southern gestation hollow goes dark."
+      },
+      {
+        "modifier_id": "perform_inherited_debt_visual",
+        "trigger": "branch_label == perform_inherited_debt",
+        "apply_to_visual_scene_ids": ["zyphos_quorum_response"],
+        "modifier_prompt": "The juvenile tree holds the eastern shelter wide with warm air rising, sends a bright sugar line into the road, and receives cautious threadwings one body at a time."
+      },
+      {
+        "modifier_id": "hold_interim_authority_visual",
+        "trigger": "branch_label == hold_interim_authority",
+        "apply_to_visual_scene_ids": ["zyphos_quorum_response"],
+        "modifier_prompt": "White courier fibers bind the roost arch and a dense ant lattice seals the ground beneath the three cords while the juvenile's new-authority root cups close."
+      },
+      {
+        "modifier_id": "seat_by_household_acclaim_visual",
+        "trigger": "branch_label == seat_by_household_acclaim",
+        "apply_to_visual_scene_ids": ["zyphos_quorum_response"],
+        "modifier_prompt": "Airawa households crowd the juvenile with raised nutrient baskets and fresh translucent resin on their bindings while the western road turns fully dark and ribbon-winged threadwings lift away from the arch."
+      },
+      {
+        "modifier_id": "visible_sealed_grievance",
+        "trigger": "evidence_integrity <= 0",
+        "apply_to_visual_scene_ids": ["zyphos_grievance_hearing_fold", "zyphos_quorum_response"],
+        "modifier_prompt": "A bitter-pollen-stained white fiber remains sealed inside a clear resin capsule hanging beyond the ant lattice's reach."
+      },
+      {
+        "modifier_id": "urgent_gestation_hollow",
+        "trigger": "gestation_window <= 1",
+        "apply_to_visual_scene_ids": ["zyphos_grievance_hearing_fold", "zyphos_quorum_response"],
+        "modifier_prompt": "The nearest southern gestation hollow pulses urgently in blue-green light while waiting Airawa tighten around their baskets."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "river_cleft_archive_terrace.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Open crescent terrace with stable north/uphill, south/downslope, west-route, and east-audit edges around one central successor basin.",
+      "fixed_zones": [
+        {"zone_id": "elder_north_rootwall", "visible_form": "immense scarred Matriarch trunk and exposed roots along the uphill northern rim", "used_for": "elder memory output, keeper climbing, command-root pressure"},
+        {"zone_id": "successor_center_basin", "visible_form": "round wet-stone basin with juvenile tree, three root cups, and eastern warm shelter", "used_for": "candidate testimony, duty performance, recognition state"},
+        {"zone_id": "western_candle_road", "visible_form": "two rows of amber fungal candles entering through a rock cleft", "used_for": "material payment, traffic reconstruction, route recognition"},
+        {"zone_id": "western_roost_arch", "visible_form": "woven branch arch with resin cups above the candle road", "used_for": "threadwing arrival, route testimony, visible withdrawal"},
+        {"zone_id": "eastern_ant_wall", "visible_form": "low stone wall riddled with sugar cavities", "used_for": "ant colony shelter and origin of temporary evidence lattices"},
+        {"zone_id": "southern_gestation_hollows", "visible_form": "sealed root-and-stone hollows beside waiting areas and nutrient baskets", "used_for": "gestation timing pressure and visible cost of delay"},
+        {"zone_id": "blackwater_cleft", "visible_form": "narrow dark river below the southern terrace edge", "used_for": "terrain boundary, cold reflected light, route depth"},
+        {"zone_id": "three_witness_cords", "visible_form": "green resin, white fiber, and amber fungal cords suspended separately between elder trunk and successor basin", "used_for": "source custody and hearing legibility"}
+      ],
+      "camera_slots": [
+        {"camera_id": "terrace_wide_southwest", "supports_visual_scene_ids": ["zyphos_succession_terrace_establishing", "zyphos_morning_rehearsal_fold", "zyphos_grievance_hearing_fold", "zyphos_ending_politically_mute", "zyphos_ending_unfinished_quorum"]},
+        {"camera_id": "elder_trunk_medium", "supports_visual_scene_ids": ["zyphos_joint_keeper_office"]},
+        {"camera_id": "western_road_low", "supports_visual_scene_ids": ["zyphos_prime_debt_witness", "zyphos_buy_debt_testimony"]},
+        {"camera_id": "western_roost_medium", "supports_visual_scene_ids": ["zyphos_prime_route_witness", "zyphos_returned_route_grievance", "zyphos_defer_grievance"]},
+        {"camera_id": "eastern_evidence_close", "supports_visual_scene_ids": ["zyphos_prime_evidence_integrity", "zyphos_preserve_route_grievance"]},
+        {"camera_id": "successor_basin_medium", "supports_visual_scene_ids": ["zyphos_prime_candidate_duty", "zyphos_test_candidate_openness", "zyphos_quorum_response", "zyphos_ending_witnessed_succession"]},
+        {"camera_id": "terrace_wide_northwest", "supports_visual_scene_ids": ["zyphos_ending_darkened_succession", "zyphos_ending_interim_closure"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "elder_to_successor", "path": "elder_north_rootwall -> three_witness_cords -> successor_center_basin", "supports": ["root_concordance", "test_candidate_openness", "witnessed_succession"]},
+        {"lane_id": "route_to_evidence", "path": "western_roost_arch -> open center stone -> eastern ant wall", "supports": ["returned_route_grievance", "preserve_route_grievance", "darken_succession"]},
+        {"lane_id": "road_to_shelter", "path": "western_candle_road -> south edge of center basin -> eastern warm shelter", "supports": ["buy_debt_testimony", "perform_inherited_debt"]},
+        {"lane_id": "household_pressure", "path": "southern_gestation_hollows -> successor_center_basin -> three_witness_cords", "supports": ["gestation_window", "seat_by_household_acclaim"]}
+      ],
+      "branch_state_anchors": [
+        {"state": "grievance_exposed", "visible_form": "white fiber on ant lattice at center-east"},
+        {"state": "grievance_sealed", "visible_form": "white fiber in clear resin capsule hanging from route cord"},
+        {"state": "route_withdrawn", "visible_form": "empty western roost arch and drifting uncarried scented vapor"},
+        {"state": "road_refusal", "visible_form": "western fungal candles dark from basin to cleft"},
+        {"state": "shelter_performed", "visible_form": "eastern root shelter open with warm air and sugar line"},
+        {"state": "authority_frozen", "visible_form": "ant lattice sealing center ground and successor root cups closed"}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable visual identities for recurring persons, trees, distributed actors, and groups. Prompt assembly includes only refs for agents visible in a frame.",
+    "characters": {
+      "airawa_joint_keeper": "Airawa joint-keeper: mature six-limbed reptilian-adjacent person with fine blue-gray scales, minimal slit-like nose and ears, grown shoulder and hip plates traced by faint cyan bioluminescent seams, two long strong upper arms ending in dark climbing claws, two smaller lower arms ending in clawless four-digit hands arranged as two opposing soft pairs, long digitigrade legs, four-toed grasping feet with hooked climbing talons, woven moss-green contract mantle with three separate cord loops, compact resin tools at the waist, precise lower-hand gestures and load-bearing upper-limb posture.",
+      "elder_matriarch": "Elder Matriarch: immense ancient tree with a broad chambered gray-brown trunk, deep scar seams lit by slow green memory pulses, buttress roots pushing through wet stone, layered archive bark, sparse dark canopy leaning over the terrace, root motion used as deliberate pressure and refusal.",
+      "juvenile_successor": "Juvenile successor tree: young Matriarch with pale copper bark, translucent green memory bands beneath thin outer bark, flexible rootlets filling a circular wet-stone basin, three cup-shaped receiving roots, one eastern warm shelter root, posture expressed through root opening, pressure, bark light, sugar secretion, and canopy angle.",
+      "candle_fungal_road": "Candle fungal road: distributed mycelial route visible as two parallel rows of finger-height amber fruiting bodies, braided pale mycelium, mineral threads, damp dark soil, beads that brighten, dim, or extinguish in sequence, material memory expressed through heat-colored tracks and bitter raised beads."
+    },
+    "groups": {
+      "threadwing_route_flock": "Threadwing route flock: small gliding alien animals with narrow bodies, grasping feet, alert dark eyes, and wings formed from many long ribbonlike sensory vanes instead of feathers; vanes hold pressure, chemical, static, heat, and memory residues; body language uses vane spread, roost distance, circling, landing refusal, and coordinated launch.",
+      "lattice_ant_colony": "Lattice ant colony: hundreds of small dark jointed insects with pale microbial glue along their legs; they lock bodies into bridges, sheets, loops, and compact public glyphs; readable posture comes from lattice density, orientation, broken links, and the traces arranged beside them.",
+      "waiting_airawa_households": "Waiting Airawa households: mixed-age six-limbed reptilian-adjacent people with fine scales, faint bioluminescent plate seams, two clawed load-bearing upper arms, two smaller soft lower hands, digitigrade legs, and four-toed taloned climbing feet; each wears distinct woven bindings, carved plate inlays, fungal threads, resins, and pollinator-shell contract marks; they hold woven nutrient baskets and express pressure through talon rhythm, basket placement, plate glow, and upper-arm bracing."
+    }
+  },
+  "review_notes": [
+    "Narrative, lore-grounding, visual-continuity, and spatial-cohesion self-review verdicts are recorded in the training sidecar; all four accepted after targeted revisions.",
+    "The draft scene_set fixes one terrace layout across the multi-angle replay; a durable blockout remains required before high-consistency final image rendering.",
+    "All prompts use visible geometry, bodies, light, materials, and branch state rather than unexplained setting labels.",
+    "Visual review removed threadwing refs from shared frames where route withdrawal can make the roost empty; conditional modifiers now describe those bodies only when present."
+  ]
+}

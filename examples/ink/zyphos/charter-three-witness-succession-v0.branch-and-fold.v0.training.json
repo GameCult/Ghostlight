@@ -1,0 +1,349 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "charter-three-witness-succession-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/zyphos/charter-three-witness-succession-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/charter-three-witness-succession-v0.v0.json",
+  "visual_plan_ref": "examples/visual/zyphos/charter-three-witness-succession-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "charter-three-witness-succession-v0.river-cleft-grove-hearing",
+  "protagonist_agent_id": "airawa_joint_keeper",
+  "npc_agent_ids": [
+    "elder_matriarch",
+    "juvenile_successor",
+    "threadwing_route_flock",
+    "lattice_ant_colony",
+    "candle_fungal_road",
+    "waiting_airawa_households"
+  ],
+  "purpose": "Charter-mandate branch-and-fold fixture dramatizing how an unconquered Airawa grove transfers archive and gestation authority through independent ecological witnesses and preserves redress when the inherited record omits a creditor.",
+  "tonal_mode": "Ritual workplace comedy with civic stakes: patient procedural texture, ordinary maintenance, and dry wit before a costly succession challenge.",
+  "local_awareness_summary": [
+    {
+      "text": "The joint-keeper is an Airawa translator and evidence custodian. They can keep witness media separate, commission diagnostics, present claims, and invoke procedures whose predicates are met; they cannot personally ratify a Matriarch.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/charter-three-witness-succession-v0.v0.json",
+        "Eusocial Interbeing/Species/Matriarch Trees.md"
+      ]
+    },
+    {
+      "text": "The keeper perceives root pressure, courier fibers, ant glyphs, fungal candle patterns, contract dress, household behavior, shelter heat, and the juvenile's visible root actions, but cannot directly inspect another organism's private memory.",
+      "source_refs": [
+        "Eusocial Interbeing/Species/Airawa.md",
+        "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md",
+        "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Lattice Ants.md",
+        "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md"
+      ]
+    },
+    {
+      "text": "Waiting households need the succession settled before a narrowing gestation window, while the returned threadwing grievance alleges that the elder Matriarch diverted a promised shelter to an Airawa gestation cohort.",
+      "source_refs": [
+        "Eusocial Interbeing/Species/Matriarch Trees.md",
+        "Eusocial Interbeing/Species/Airawa.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains with the joint-keeper on one river-cleft archive terrace. Choices use the Airawa six-limbed body, physical witness media, public signals, and bounded procedural acts.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "Eusocial Interbeing/Species/Airawa.md"
+        ]
+      },
+      {
+        "text": "The scene establishes a routine succession rehearsal before the route grievance changes the hearing.",
+        "source_refs": [
+          "prompts/narrative-quality-reviewer.md",
+          "examples/ink/zyphos/charter-three-witness-succession-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "The joint-keeper owns separation, source naming, and procedural invocation, not succession outcome. Root, route, and debt witnesses jointly determine recognition.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md"
+        ]
+      },
+      {
+        "text": "A juvenile Matriarch owns her metabolism, growth, and wound response before recognition but not the elder's deep archive, reproductive ranking, or treaty voice.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The green root cord, white route cord, amber debt cord, returned courier fiber, ant evidence lattice, failed graft tissue, and household nutrient baskets remain distinct material state anchors.",
+        "source_refs": [
+          "examples/ink/zyphos/charter-three-witness-succession-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Recognition must require independent ecological witnesses; Airawa acclaim and biological maturity cannot substitute for them.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md",
+          "Eusocial Interbeing/Ecology/Nation Scale Interbeings.md"
+        ]
+      },
+      {
+        "text": "Redress must have a material cost in delayed gestation, dimmed routes, quarantined authority, or lost trust.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md",
+          "Eusocial Interbeing/Themes/Ecological Bargaining.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let the joint-keeper, elder, candidate, or Airawa households decide succession alone.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md"
+        ]
+      },
+      {
+        "text": "Do not resolve contradictory memory through intuition, telepathy, or a universal network voice; evidence travels through specific bodies and media.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+          "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through a shared grievance hearing. Ordinary witness work changes what can be proved, the first response changes evidence and time, and the hearing move yields one of five materially distinct authority states.",
+    "choice_layers": [
+      "morning_witness_work",
+      "first_response_to_omitted_claim",
+      "succession_hearing_move"
+    ],
+    "variables": [
+      "root_concordance",
+      "route_witness",
+      "debt_witness",
+      "evidence_integrity",
+      "candidate_openness",
+      "household_patience",
+      "gestation_window",
+      "keeper_trust",
+      "challenge_state",
+      "emergency_closure"
+    ],
+    "ending_gates": [
+      "ending_witnessed_succession",
+      "ending_darkened_succession",
+      "ending_interim_closure",
+      "ending_politically_mute",
+      "ending_unfinished_quorum"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_debt_witness",
+      "ink_path": "routine_choice",
+      "action_type": "carry_and_feed",
+      "actor_intent": "Strengthen the material debt channel by feeding failed graft tissue to the candle road.",
+      "state_basis": ["Candle fungal roads digest failed grafts, remember payment, and report material history."],
+      "reviewed_consequences": ["Raises debt_witness and candidate_openness while spending one band of gestation_window."],
+      "training_hooks": ["ecological_accounting", "routine_labor_as_public_law", "time_cost"]
+    },
+    {
+      "branch_id": "prime_route_witness",
+      "ink_path": "routine_choice",
+      "action_type": "tend_bodies",
+      "actor_intent": "Strengthen mobile testimony by cleaning roost cups and threadwing vanes.",
+      "state_basis": ["Threadwings carry route memory in sensory vanes and value clean roosts and parasite removal."],
+      "reviewed_consequences": ["Raises route_witness and keeper_trust while lowering household_patience."],
+      "training_hooks": ["care_as_institutional_work", "mobile_witness", "patience_cost"]
+    },
+    {
+      "branch_id": "prime_evidence_integrity",
+      "ink_path": "routine_choice",
+      "action_type": "submit_to_inspection",
+      "actor_intent": "Establish a clean baseline so later planted residue can be detected.",
+      "state_basis": ["Lattice ants read recent pressure, immune residue, fibers, and ground history through temporary body circuits."],
+      "reviewed_consequences": ["Raises evidence_integrity and keeper_trust while lowering household_patience."],
+      "training_hooks": ["auditor_is_species", "public_chain_of_contact", "non_speech_action"]
+    },
+    {
+      "branch_id": "prime_candidate_duty",
+      "ink_path": "routine_choice",
+      "action_type": "open_shelter",
+      "actor_intent": "Test whether the candidate can spend stored resources on an inherited shelter duty.",
+      "state_basis": ["Succession requires performance of an inherited obligation at material cost."],
+      "reviewed_consequences": ["Raises candidate_openness and root_concordance while spending one band of gestation_window."],
+      "training_hooks": ["authority_proved_by_cost", "airawa_body_affordance", "shelter_duty"]
+    },
+    {
+      "branch_id": "preserve_route_grievance",
+      "ink_path": "grievance_choice",
+      "action_type": "preserve_evidence",
+      "actor_intent": "Keep the courier fiber independent of root and Airawa contact while ants establish its chain.",
+      "state_basis": ["Threadwing fibers retain route residues that lattice ants can inspect."],
+      "reviewed_consequences": ["Raises evidence_integrity, route_witness, and keeper_trust while lowering household_patience."],
+      "training_hooks": ["chain_of_custody", "redress_input", "source_uncertainty_preserved"]
+    },
+    {
+      "branch_id": "test_candidate_openness",
+      "ink_path": "grievance_choice",
+      "action_type": "present_claim_to_candidate",
+      "actor_intent": "Ask the juvenile to preserve a sourced claim before accepting it as truth.",
+      "state_basis": ["A recognized successor must preserve dissent and source rather than erase or automatically concede it."],
+      "reviewed_consequences": ["Raises candidate_openness, root_concordance, and keeper_trust while spending one band of gestation_window."],
+      "training_hooks": ["dissent_as_archive_state", "candidate_character_test", "elder_successor_conflict"]
+    },
+    {
+      "branch_id": "buy_debt_testimony",
+      "ink_path": "grievance_choice",
+      "action_type": "commission_diagnostic",
+      "actor_intent": "Buy the candle road's material reconstruction of last eclipse's traffic.",
+      "state_basis": ["Candle roads remember traffic, corpses, waste, disease, shelter, and payment through material traces."],
+      "reviewed_consequences": ["Raises debt_witness and evidence_integrity while spending gestation_window and household_patience."],
+      "training_hooks": ["truth_has_metabolism", "partial_proof", "resource_cost"]
+    },
+    {
+      "branch_id": "defer_grievance",
+      "ink_path": "grievance_choice",
+      "action_type": "withhold_evidence",
+      "actor_intent": "Protect immediate births by sealing route testimony until after recognition.",
+      "state_basis": ["The keeper physically controls evidence handling but not whether mobile witnesses continue recognizing the process."],
+      "reviewed_consequences": ["Lowers evidence_integrity, route_witness, and keeper_trust; raises household_patience and gestation_window; opens a challenge."],
+      "training_hooks": ["urgency_as_capture_pressure", "evidence_hostage", "route_withdrawal"]
+    },
+    {
+      "branch_id": "darken_succession",
+      "ink_path": "hearing_choice",
+      "action_type": "invoke_redress",
+      "actor_intent": "Suspend disputed authority through ant and fungal witness channels.",
+      "state_basis": ["Available only when evidence_integrity and debt_witness are sufficient for two independent channels."],
+      "reviewed_consequences": ["Sets challenge_state to sustained, spends gestation_window and household_patience, raises keeper_trust, and routes to a darkened succession ending."],
+      "training_hooks": ["redress_closes_authority", "lost_season_cost", "joint_witness"]
+    },
+    {
+      "branch_id": "perform_inherited_debt",
+      "ink_path": "hearing_choice",
+      "action_type": "offer_costly_cure",
+      "actor_intent": "Give the candidate a chance to inherit the grievance by performing its disputed shelter duty.",
+      "state_basis": ["Available only when candidate_openness is high enough to preserve the claim without calling it contamination."],
+      "reviewed_consequences": ["Raises candidate_openness, root_concordance, route_witness, debt_witness, and evidence_integrity while spending gestation_window."],
+      "training_hooks": ["costly_signal", "earned_concordance", "succession_success_gate"]
+    },
+    {
+      "branch_id": "hold_interim_authority",
+      "ink_path": "hearing_choice",
+      "action_type": "convene_temporary_closure",
+      "actor_intent": "Use two witness bodies to freeze new authority without pretending to ratify a successor.",
+      "state_basis": ["Available only when keeper_trust is sufficient; temporary closure is narrower than succession."],
+      "reviewed_consequences": ["Sets emergency_closure, spends two bands of gestation_window and one household_patience, and raises keeper_trust."],
+      "training_hooks": ["narrow_emergency_power", "authority_boundary", "delay_cost"]
+    },
+    {
+      "branch_id": "seat_by_household_acclaim",
+      "ink_path": "hearing_choice",
+      "action_type": "solicit_acclaim",
+      "actor_intent": "Save the gestation window by treating Airawa need as public recognition.",
+      "state_basis": ["Airawa households can make their support visible but cannot replace independent ecological witnesses."],
+      "reviewed_consequences": ["Raises household_patience and gestation_window while lowering route_witness and keeper_trust and opening a challenge."],
+      "training_hooks": ["majority_is_not_jurisdiction", "politically_mute_successor", "future_birth_inherits_silence"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Choice gate visibility",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Durable character memory or relationship updates",
+      "Promotion of fixture events into Zyphos history",
+      "Any extension of witnessed succession beyond native Matriarch archive polities",
+      "Acceptance into the training corpus"
+    ]
+  },
+  "audit": {
+    "reviewer": "Charter elaborator using the four required Ghostlight reviewer contracts",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative review confirmed that the joint-keeper's bounded office, the three witness channels, and the household gestation pressure are introduced before choices depend on them; three branch layers produce five materially distinct authority outcomes.",
+      "Lore review replaced an unsupported treaty-pollen authority token with contract resin and sourced chemical signaling, and replaced fungal heat-memory language with grounded pressure, waste, and nesting residue.",
+      "Visual review removed threadwing character refs from shared frames where route withdrawal can leave the roost empty; triggered modifiers now describe visible ribbon-winged bodies only when present.",
+      "Spatial review confirmed one stable terrace layout, plausible Airawa reach and climbing, protected evidence custody, and branch-persistent shelter, road, roost, cord, and gestation-hollow state.",
+      "Mechanical audit parsed all four JSON artifacts, found 10 declared Ink variables all read later, matched all 12 Ink branch ids to sidecar entries, found 19 unique visual scene ids and 19 unique BFL prompt ids, and found all required ghostlight headers."
+    ],
+    "review_verdicts": {
+      "narrative_quality": {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "overall_status": "accepted",
+        "reader_orientation_score": 5,
+        "coherence_score": 5,
+        "pacing_score": 4,
+        "voice_score": 4,
+        "tonal_fit_score": 5,
+        "if_playability_score": 5,
+        "detected_tonal_mode": "Ritual workplace comedy with civic and reproductive stakes.",
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "training_labels": ["strong_contextual_onboarding", "strong_wit_with_stakes", "strong_branch_callback", "strong_material_lore"],
+        "acceptance_notes": ["Routine witness labor establishes place, bodies, office, and costs before the grievance arrives; choices include care, inspection, evidence handling, withholding, invocation, and acclaim."]
+      },
+      "lore_grounding": {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "overall_status": "accepted",
+        "source_coverage_score": 5,
+        "canon_fit_score": 4,
+        "grounding_quality_score": 5,
+        "vault_backfill_value_score": 5,
+        "canon_drift_findings": [],
+        "unsupported_claims": [],
+        "required_story_revisions": [],
+        "required_lore_patches": [],
+        "training_labels": ["source_grounded", "strong_material_lore", "strong_body_affordance_grounding", "strong_infrastructure_grounding", "vault_backfill_candidate"],
+        "acceptance_notes": ["The durable succession rule was added to the owning Matriarch Trees note; the river-cleft grove and its grievance remain fixture-local rather than canonized history.", "Threadwings are route witnesses only in this fixture and are not assigned Airawa gamete transport."]
+      },
+      "visual_continuity": {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "overall_status": "accepted",
+        "segmentation_score": 5,
+        "visual_prompt_score": 5,
+        "character_visibility_score": 4,
+        "branch_visual_continuity_score": 5,
+        "website_replay_score": 4,
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "missing_scene_set_needs": [],
+        "review_labels": ["strong_scene_segmentation", "strong_imagegen_ready_prompt", "strong_character_stance_control", "strong_branch_visual_continuity"],
+        "acceptance_notes": ["Nineteen standalone visual anchors cover routine actions, grievance custody, shared folds, quorum response, and all endings.", "The draft scene-set map is sufficient for B-level planning; a plan-view or 3D blockout is still needed before high-consistency final rendering."]
+      },
+      "spatial_cohesion": {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "overall_status": "accepted",
+        "layout_cohesion_score": 5,
+        "sightline_score": 5,
+        "body_affordance_score": 5,
+        "movement_access_score": 5,
+        "object_system_geometry_score": 5,
+        "branch_spatial_state_score": 5,
+        "inferred_layout_summary": "Crescent open terrace: elder Matriarch north/uphill, successor basin center, candle road and roost west, ant wall east, gestation hollows south/downslope, blackwater cleft below; witness cords span north to center while evidence moves west to east across open stone.",
+        "major_findings": [],
+        "minor_findings": [],
+        "required_revisions": [],
+        "review_labels": ["strong_layout_cohesion", "strong_sightline_control", "strong_body_affordance_staging", "strong_branch_spatial_state"],
+        "acceptance_notes": ["Airawa climbing and fine manipulation use the correct limb pairs; root, fiber, ant, road, shelter, and basket states retain stable locations through folds."]
+      }
+    },
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "zyphos_lore_content_readable": true,
+      "all_declared_variables_read": true
+    }
+  }
+}
