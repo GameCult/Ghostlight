@@ -1,0 +1,296 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "numen-first-answer-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/delvehold/numen-first-answer-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/delvehold/numen-first-answer-v0.v0.json",
+  "scene_id": "numen-first-answer-v0.fourth-drain-first-answer-vigil",
+  "protagonist_agent_id": "dagna_rill",
+  "npc_agent_ids": [
+    "sennik_reedcap",
+    "brunna_coil",
+    "vey_marr",
+    "fourth_drain_core"
+  ],
+  "purpose": "Interactive Fiction Weaver compilation of a Delvehold branch-and-fold fixture about a First Answer vigil at an old brine gate where a living runic organ makes a counteroffer and an industrial command path tries to overwrite it.",
+  "local_awareness_summary": [
+    {
+      "text": "Dagna is a dwarven journey-priest and null-trained enchanter who may lay and close the answering array, preserve the route-book record, and propose terms, but cannot grant civic citizenship, Mastership, divinity, or a permanent Hold bargain.",
+      "source_refs": [
+        "examples/lore-grounding/delvehold/numen-first-answer-v0.v0.json",
+        "Delvehold/Lore/Ontology/Dungeon Cores.md",
+        "Delvehold/Lore/Industry/Runic Engineering.md",
+        "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+      ]
+    },
+    {
+      "text": "Dagna can see the exposed three-branch array, pale calcite gills, municipal bypass, Deep Company conduit, route book, reserve cage, inspection plate, and the other witnesses' public actions; she cannot know the core's inner motive or which scale of nested dungeon answered.",
+      "source_refs": [
+        "Delvehold/Lore/Ontology/Dungeon Cores.md",
+        "Delvehold/Lore/Ontology/Nested Dungeons.md",
+        "examples/ink/delvehold/numen-first-answer-v0.branch-and-fold.v0.ink"
+      ]
+    },
+    {
+      "text": "The immediate stakes are a single watch of district water, one or two reserve crystals, a damaged living rune surface, a company lease, and whether refusal was structurally possible when the apparent answer arrived.",
+      "source_refs": [
+        "Delvehold/Lore/The Greathold.md",
+        "Delvehold/Lore/Industry/Dwarven Industry.md",
+        "Delvehold/Lore/Ontology/Dungeon Cores.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Dagna's embodied position between the rune table, witness dais, southern bypass, northern conduit, and eastern brine throat. Choices use reachable runes, wedges, records, tools, valves, spoken terms, and bounded bargains.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/delvehold/numen-first-answer-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes ordinary ritual work, food, signatures, witness roles, and the one-watch water margin before the living rune grows a fourth branch.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "AGENTS.md"
+        ]
+      },
+      {
+        "text": "Tonal mode is ritual workplace comedy turning into numinous wonder and civic dread; humor exposes property seals and evidentiary habits without trivializing injury or thirst.",
+        "source_refs": [
+          "AGENTS.md",
+          "prompts/narrative-quality-reviewer.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "The First Answer is recognition under witness, not a mechanism that creates personhood or conclusively identifies whether a local, regional, or deeper core spoke.",
+        "source_refs": [
+          "Delvehold/Lore/Ontology/Dungeon Cores.md",
+          "Delvehold/Lore/Ontology/Nested Dungeons.md"
+        ]
+      },
+      {
+        "text": "Dagna can enter her witnessed finding and make a short emergency offer. Brunna owns the municipal workshop seal; a wider moot must decide durable public obligations; Vey can invoke company and insurer pressure but cannot make a command terminator into consent.",
+        "source_refs": [
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md",
+          "Delvehold/Lore/Industry/Dwarven Industry.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The civic reserve crystals, null isolation wedge, route book, Toman Valehand's returned sounding weight, insulated hook, municipal drain keys, and exposed company terminator are material objects whose custody and visibility change later gates and endings.",
+        "source_refs": [
+          "Delvehold/Lore/Ontology/Mana and Pattern.md",
+          "Delvehold/Lore/Ontology/Dungeon Cores.md",
+          "examples/ink/delvehold/numen-first-answer-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "A valid petition visibly includes exchange, amendment, and safe refusal; the apparent answer changes the offered relation by distinguishing municipal water from the company draw and returning a named object from old route memory.",
+        "source_refs": [
+          "Delvehold/Lore/Ontology/Dungeon Cores.md"
+        ]
+      },
+      {
+        "text": "Every final route preserves a material cost: reduced water margin or reserve, contested evidence, sealed infrastructure, damaged gills, closed company access, or a delayed civic decision.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Delvehold/Lore/Industry/Dwarven Industry.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not let one vigil prove the core benevolent, divine, legally enfranchised, or identical with the entire mountain-range intelligence.",
+        "source_refs": [
+          "Delvehold/Lore/Ontology/Gods and Religion.md",
+          "Delvehold/Lore/Ontology/Nested Dungeons.md",
+          "Delvehold/Lore/Peoples/Mastership and Citizenship.md"
+        ]
+      },
+      {
+        "text": "Do not treat silence, conditioned repetition, or an effect produced through a hidden command terminator as clean consent or a clean answer.",
+        "source_refs": [
+          "Delvehold/Lore/Ontology/Dungeon Cores.md",
+          "Delvehold/Lore/Industry/Core Farming.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through the witnessed fourth-branch counteroffer and route to seven state-gated endings about recognition, delay, deferral, or forced service continuity.",
+    "choice_layers": [
+      "prepare_the_petition",
+      "protect_answer_or_flow",
+      "record_and_bargain"
+    ],
+    "variables": [
+      "answer_legibility",
+      "witness_cohesion",
+      "district_reserve",
+      "company_pressure",
+      "refusal_path",
+      "gills_integrity",
+      "resident_trust",
+      "public_record",
+      "water_margin",
+      "command_terminator_exposed"
+    ],
+    "ending_gates": [
+      "ending_recognition",
+      "ending_contested_recognition",
+      "ending_stay_accepted",
+      "ending_stay_uncertain",
+      "ending_deferral",
+      "ending_force_exposed",
+      "ending_force_scar"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "offer_real_reserve",
+      "ink_path": "preparation_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Make exchange costly and legible by offering part of Hearthcoil's real pump reserve.",
+      "state_basis": ["Mana crystal is fuel, commodity, reserve, and ecological nutrient; a costless offering would not test a reciprocal relation."],
+      "reviewed_consequences": ["Raises answer_legibility and company_pressure while reducing district_reserve and water_margin; remaining reserve gates the later three-day offer."],
+      "training_hooks": ["ritual_cost_is_material", "mana_as_ecological_nutrient", "public_service_tradeoff"]
+    },
+    {
+      "branch_id": "trust_resident_listener",
+      "ink_path": "preparation_choice",
+      "action_type": "speak",
+      "actor_intent": "Let Sennik map the living gills before instruments or cleaning alter them.",
+      "state_basis": ["Goblin residents often read core moods and architectural intent before formal surveys do."],
+      "reviewed_consequences": ["Raises answer_legibility and resident_trust at the cost of more company pressure; later prose and the contested-recognition signature read resident_trust."],
+      "training_hooks": ["resident_knowledge_as_evidence", "institutional_misread", "ritual_listening"]
+    },
+    {
+      "branch_id": "strengthen_public_record",
+      "ink_path": "preparation_choice",
+      "action_type": "write",
+      "actor_intent": "Make the array and witness chain inspectable before mana flows.",
+      "state_basis": ["Dwarven institutions value seals, route books, visible connections, and answerable craft."],
+      "reviewed_consequences": ["Raises public_record, witness_cohesion, and answer_legibility; later deferral and forced-flow routes read the evidence threshold."],
+      "training_hooks": ["inspectable_ritual", "record_as_civic_leverage", "witness_chain"]
+    },
+    {
+      "branch_id": "make_refusal_safe",
+      "ink_path": "preparation_choice",
+      "action_type": "use_object",
+      "actor_intent": "Make refusal physically complete with a null isolation wedge.",
+      "state_basis": ["The null rune closes active patterns without an effect-producing draw; the First Answer fails when refusal is absent or punished."],
+      "reviewed_consequences": ["Sets refusal_path and raises witness_cohesion and company_pressure; clean recognition later requires the safe refusal path."],
+      "training_hooks": ["consent_as_structure", "null_rune_theology", "safe_refusal_costs_time"]
+    },
+    {
+      "branch_id": "null_the_forced_working",
+      "ink_path": "intervention_choice",
+      "action_type": "cast",
+      "actor_intent": "Protect the answer surface by ending every active effect, accepting a dry district interval.",
+      "state_basis": ["Dagna knows the null gesture; the hidden terminator is burning the gills while the district depends on flow."],
+      "reviewed_consequences": ["Raises answer_legibility, gills_integrity, public_record, company_pressure, and exposes the command terminator while reducing water_margin."],
+      "training_hooks": ["null_as_protective_action", "service_continuity_tradeoff", "command_exposure"]
+    },
+    {
+      "branch_id": "trust_the_resident_cut",
+      "ink_path": "intervention_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Hold the blank branch while Sennik removes the hidden lead from the route he can physically reach.",
+      "state_basis": ["Sennik knows the east ledge and can reach the underside of the company plate with an insulated hook."],
+      "reviewed_consequences": ["Raises answer_legibility, gills_integrity, resident_trust, and witness_cohesion while exposing the terminator and increasing company pressure."],
+      "training_hooks": ["shared_embodied_intervention", "resident_route_authority", "tool_transfer"]
+    },
+    {
+      "branch_id": "save_the_water_margin",
+      "ink_path": "intervention_choice",
+      "action_type": "redirect_magic",
+      "actor_intent": "Use the forced draw for municipal water even though it smears the distinction between counteroffer and command.",
+      "state_basis": ["The southern bypass can accept the flow, but the same draw crosses the living calcite branch."],
+      "reviewed_consequences": ["Raises water_margin while lowering gills_integrity, answer_legibility, and resident_trust; later witness prose and recognition gates expose the cost."],
+      "training_hooks": ["infrastructure_need_over_witness", "injured_interface", "short_term_relief"]
+    },
+    {
+      "branch_id": "make_the_breach_public",
+      "ink_path": "intervention_choice",
+      "action_type": "speak",
+      "actor_intent": "Preserve an attributable record of the hidden command before Brunna destroys its casing.",
+      "state_basis": ["Brunna holds the municipal keys and workshop seal; the plate's serial and ownership can survive as evidence only if witnessed before it breaks."],
+      "reviewed_consequences": ["Raises public_record, witness_cohesion, company_pressure, and exposes the terminator while reducing water_margin and gills_integrity through delay."],
+      "training_hooks": ["evidence_costs_time", "workshop_accountability", "injury_during_procedure"]
+    },
+    {
+      "branch_id": "recognize_the_answer",
+      "ink_path": "final_choice",
+      "action_type": "write",
+      "actor_intent": "Record that someone answered and accept the visible distinction between municipal water and the company draw.",
+      "state_basis": ["Clean recognition requires adequate answer legibility, living gills, and structurally safe refusal."],
+      "reviewed_consequences": ["Routes to recorded or contested recognition; both close the company draw and preserve uncertainty about name, scale, law, divinity, and benevolence."],
+      "training_hooks": ["recognition_not_creation", "personhood_without_benevolence", "state_gated_recognition"]
+    },
+    {
+      "branch_id": "buy_three_days",
+      "ink_path": "final_choice",
+      "action_type": "bargain",
+      "actor_intent": "Spend the remaining reserve on a bounded pause long enough to gather a wider civic moot.",
+      "state_basis": ["Available only if a reserve crystal remains; acceptance depends on coherent witnesses and an intact answer surface."],
+      "reviewed_consequences": ["Consumes district_reserve and routes to an accepted rationed-flow stay or an uncertain silence with bucket labor."],
+      "training_hooks": ["bounded_bargain", "reserve_spent_for_time", "local_authority_limit"]
+    },
+    {
+      "branch_id": "defer_recognition",
+      "ink_path": "final_choice",
+      "action_type": "use_object",
+      "actor_intent": "Preserve uncertainty and the damaged site by sealing both flows for later witness.",
+      "state_basis": ["Gate wedges can stop both conduits; route-book evidence quality determines whether the hidden terminator remains in a sealed chain."],
+      "reviewed_consequences": ["Ends with preserved gills and evidence at the direct public cost of stopped water."],
+      "training_hooks": ["uncertainty_preservation", "public_cost_of_restraint", "sealed_site"]
+    },
+    {
+      "branch_id": "force_municipal_flow",
+      "ink_path": "final_choice",
+      "action_type": "redirect_magic",
+      "actor_intent": "Use the command path for immediate municipal continuity despite the First Answer's terms.",
+      "state_basis": ["A public evidence threshold distinguishes an attributable breach from a clean-looking stabilization report."],
+      "reviewed_consequences": ["Routes to forced flow with a public record or to an unwitnessed scar that destroys the repeatable answer surface."],
+      "training_hooks": ["necessity_is_not_consent", "visible_or_erased_injury", "service_continuity_breach"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for the local playthrough",
+      "Conditional prose and choice gates",
+      "Ending selection"
+    ],
+    "manual_review_required": [
+      "Durable recognition of the Fourth Drain core as a named legal or religious person",
+      "Any continuing bargain between Hearthcoil Hold and the answering core",
+      "Character memories, relationships, or disciplinary outcomes",
+      "Promotion of scene events into canonical Delvehold history"
+    ]
+  },
+  "audit": {
+    "reviewer": "Numen elaborator self-review using all four required Ghostlight reviewer prompts",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality verdict: accepted after clarifying Dagna's limited authority, introducing every named participant before choice, and making ritual comedy yield to material thirst and wonder.",
+      "Lore grounding verdict: accepted after keeping personhood recognition distinct from awakening, law, divinity, benevolence, and nested-core identity; every durable ritual fact is present in the authored Dungeon Cores elaboration.",
+      "Visual continuity verdict: accepted as a replay-planning draft; each major beat and branch-visible object change has an anchor or modifier, every base prompt stands alone, visible-character refs are frame-local, and final multi-angle art remains gated on the declared blockout.",
+      "Spatial cohesion verdict: accepted after fixing the room to west stair, east throat, south municipal bypass, north company conduit, central table, east ledge, and reachable inspection plate; branch-created damage and object state persist through the fold.",
+      "Ink was authored from the reference shape but was not compiled, per dispatch. JSON artifacts were parsed and cross-reference audited."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

@@ -1,0 +1,317 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "numen-first-answer-v0-branch-and-fold-visual",
+  "ink_ref": "examples/ink/delvehold/numen-first-answer-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/delvehold/numen-first-answer-v0.branch-and-fold.v0.training.json",
+  "scene_id": "numen-first-answer-v0.fourth-drain-first-answer-vigil",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for the First Answer vigil at Hearthcoil Hold's Fourth Drain Gate.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for ordinary vigil preparation, four petition choices, the first pulse, the living fourth branch, the hidden command terminator, four interventions, and four state-gated aftermath families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the gate establishing view, character and ritual setup, every branch action that changes a visible object or position, the isolated three-branch failure, the calcite counteroffer, the command flare, the witness threshold, and each ending family. The line 'None of them takes the flow' receives its own quiet frame before the fourth branch appears.",
+    "prompting_rule": "Every base image prompt is a complete visible frame for a general image model, including camera, chamber geometry, carved stone and metal materials, light, water, runes, bodies, clothing, tools, and current object placement. Character refs are assembled only for named people visible in that frame. State and branch modifiers add concrete visible deltas.",
+    "global_style_cue": "Style: richly textured high-fantasy industrial storybook illustration, precise ink drawing under layered gouache and restrained watercolor, monumental carved stone, weathered brass and iron, pale mineral growth, amber work lamps against blue-white mana, readable silhouettes, humane facial acting, numinous scale held inside practical civic machinery, cinematic framing for interactive-fiction replay.",
+    "prompt_assembly_rule": "Assemble every image prompt from global_style_cue plus the scene base_image_prompt, then append visual refs only for visible named characters and any triggered state_image_modifiers or global_branch_image_modifiers. Use the camera-specific scene-set blockout when it exists. Keep visual_continuity_notes in tooling, outside prompt prose.",
+    "scene_set_guidance": {
+      "current_mode": "text_layout_only_blockout_required",
+      "scope_reason": "The fixture revisits one rectangular gate chamber from west-stair, Hold-facing, throat-facing, table-close, north-plate, and east-ledge angles. Sightlines must preserve the returned sounding weight, the two conduits, the answering array, and every branch-created wound or seal state.",
+      "future_scene_set_need": "Before high-consistency website rendering, build a plan view or simple 3D blockout using the fixed zones, routes, cameras, staging slots, and object-state anchors declared below. Generated frames are paint passes over that geometry, not the room map."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "fourth_drain_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide view from the west stair into a long rectangular underground gate chamber beneath a dwarven city. A waist-high stone rune table stands at center. At the east end, an iron grate with an ankle-high return slot spans a black brine throat under pale calcite folds shaped like thin ribbed gills. A thick municipal bypass pipe runs along the south wall with a wheel valve; near the throat, a newer dark-metal extraction conduit pierces the north wall beneath a polished brass inspection plate. Amber caged work lamps light wet gray stone, salt marks, iron drains, copper leads, and mist; faint blue-white mana sleeps in the calcite edges. The chamber is empty and legible as a civic work site built around a living geological organ.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "West stair, east brine throat, south municipal bypass, north company conduit, central rune table, east ledge, and overhead calcite gills keep these relative positions in every view.",
+          "The calcite gills are living mineral folds integrated into the gate ecology, not letters painted onto a wall."
+        ]
+      },
+      {
+        "visual_scene_id": "fourth_drain_morning_preparations",
+        "ink_anchor": "morning_preparations",
+        "base_image_prompt": "Medium-wide view around the central rune table in the same long stone drain chamber. Dagna Rill, a sturdy young-adult dwarf with warm brown skin, one dark braid threaded through a brass temple ring, indigo work-priest coat, leather rune apron, chalk-stained hands, and a slate-gray null wedge at her belt, sets three pottery cups beside a sealed blue-white crystal cage. Master Brunna Coil, an older broad-shouldered dwarf with iron-gray side braids, russet pump coat, heavy key ring, and square civic seal, carries a thick route book. Sennik Reedcap, a small adult goblin with moss-green skin, long alert ears, amber eyes, patched olive fungus-dyed coat, salt-stained boots, and a parcel of mushroom cakes, stands by the east ledge. Vey Marr, a narrow middle-aged dwarf with ash-blond beard clips, round spectacles, immaculate gray assessor coat, ledger case, and silver watch, waits under the north-wall brass inspection plate. Amber lamps warm the practical morning routine while the pale gills hang above black water in the background.",
+        "visible_characters": [
+          {"agent_id": "dagna_rill", "default_stance": "at the west side of the rune table setting cups beside the crystal cage", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "brunna_coil", "default_stance": "approaching the table with route book and keys", "visual_ref": "visual_character_refs.characters.brunna_coil"},
+          {"agent_id": "sennik_reedcap", "default_stance": "near the east ledge holding a paper food parcel", "visual_ref": "visual_character_refs.characters.sennik_reedcap"},
+          {"agent_id": "vey_marr", "default_stance": "under the north inspection plate with ledger case and watch", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["All four named witnesses are introduced before later folded scenes depend on them."]
+      },
+      {
+        "visual_scene_id": "answering_array_setup",
+        "ink_anchor": "laying_the_question",
+        "base_image_prompt": "High three-quarter view over the central stone rune table in a wet dwarven drain chamber. Three separate copper rune branches begin at one blue-white mana feed: the left branch ends at a small measured brass valve and stone offering dish, the center branch ends at an empty silver socket, and the right branch ends at an empty wedge slot for a null terminator. Fine copper leads visibly run from the table toward the south municipal pipe, north company conduit, eastern brine water, gate stones, and pale calcite gills. Dagna Rill, a brown-skinned dwarf with a dark brass-ringed braid, indigo work-priest coat, and leather rune apron, points through the connections. Brunna Coil, an older dwarf in a russet pump coat, holds open a thick route book; Sennik Reedcap, a small moss-green goblin in a patched olive coat, studies the gills; Vey Marr, a narrow dwarf in an immaculate gray coat and round spectacles, watches his silver timepiece. Amber lamps and blue mana make every physical connection readable.",
+        "visible_characters": [
+          {"agent_id": "dagna_rill", "default_stance": "leaning over the table and exposing all three branches", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "brunna_coil", "default_stance": "table-side with the route book open", "visual_ref": "visual_character_refs.characters.brunna_coil"},
+          {"agent_id": "sennik_reedcap", "default_stance": "on the east side looking between copper lead and calcite gills", "visual_ref": "visual_character_refs.characters.sennik_reedcap"},
+          {"agent_id": "vey_marr", "default_stance": "north side timing the setup", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "petition_offer_reserve",
+        "ink_anchor": "preparation_choice.offer_real_reserve",
+        "base_image_prompt": "Close action view at the central rune table in a long wet stone drain gate. Dagna Rill, a sturdy brown-skinned dwarf with dark brass-ringed braid, indigo work-priest coat, leather rune apron, and chalk-stained hands, breaks one civic wax seal and lowers a bright blue-white mana crystal into the exchange dish. The opened iron reserve cage shows one empty socket behind her. Brunna Coil, an older dwarf in a russet pump coat with heavy keys and civic seal, winces at the visible public cost. Vey Marr, a narrow dwarf in round spectacles and an immaculate gray assessor coat, writes in a ledger. Blue crystal light sharpens their faces against amber work lamps; the south municipal pipe and pale eastern gills remain visible beyond the table.",
+        "visible_characters": [
+          {"agent_id": "dagna_rill", "default_stance": "placing the opened reserve crystal in the exchange dish", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "brunna_coil", "default_stance": "beside the open reserve cage, visibly measuring the cost", "visual_ref": "visual_character_refs.characters.brunna_coil"},
+          {"agent_id": "vey_marr", "default_stance": "recording the expenditure in his ledger", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "petition_resident_mapping",
+        "ink_anchor": "preparation_choice.trust_resident_listener",
+        "base_image_prompt": "Low east-facing view along a narrow stone ledge beside the iron-grated brine throat. Sennik Reedcap, a small moss-green adult goblin with long alert ears, amber eyes, patched olive fungus-dyed coat, salt-stained boots, and careful compact posture, crouches within arm's reach of pale calcite gills and holds a strip of dry tan fungus paper beneath them. Damp salt traces form branching abstract marks on the paper. Dagna Rill, a brown-skinned dwarf in an indigo work-priest coat and leather rune apron, has moved one fine copper lead to follow Sennik's map. Vey Marr, an immaculate gray-coated dwarf in round spectacles, stands farther west with skeptical ledger. Black brine, amber lamps, wet gray stone, and blue-white mineral edges make the resident method visually concrete.",
+        "visible_characters": [
+          {"agent_id": "sennik_reedcap", "default_stance": "crouched safely on the east ledge mapping damp gill marks", "visual_ref": "visual_character_refs.characters.sennik_reedcap"},
+          {"agent_id": "dagna_rill", "default_stance": "at the ledge entrance moving a copper lead to match the map", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "vey_marr", "default_stance": "west of the ledge, recording with skeptical distance", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "petition_public_record",
+        "ink_anchor": "preparation_choice.strengthen_public_record",
+        "base_image_prompt": "Table-height view of a thick route book beside an exposed three-branched copper rune array in a dwarven drain chamber. Dagna Rill, a brown-skinned dwarf with one dark brass-ringed braid, indigo coat, leather rune apron, and chalk-stained fingers, writes each lead into the book. Brunna Coil, an older dwarf with iron-gray side braids, russet pump coat, heavy keys, and a square civic seal, stamps the page. Sennik Reedcap, a small moss-green goblin in a patched olive coat, adds a three-pronged hand mark. Vey Marr, a narrow ash-blond-bearded dwarf in an immaculate gray assessor coat and round spectacles, reluctantly signs the remaining line. The route book, seals, signatures, visible copper branches, southern pipe, northern plate, and pale gills all share the frame under amber and blue-white light.",
+        "visible_characters": [
+          {"agent_id": "dagna_rill", "default_stance": "writing at the table", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "brunna_coil", "default_stance": "pressing the square civic seal", "visual_ref": "visual_character_refs.characters.brunna_coil"},
+          {"agent_id": "sennik_reedcap", "default_stance": "adding a small three-pronged witness mark", "visual_ref": "visual_character_refs.characters.sennik_reedcap"},
+          {"agent_id": "vey_marr", "default_stance": "signing from the north side of the table", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "petition_safe_refusal",
+        "ink_anchor": "preparation_choice.make_refusal_safe",
+        "base_image_prompt": "Kneeling close view beneath a waist-high rune table in a wet stone gate chamber. Dagna Rill, a sturdy brown-skinned dwarf with dark brass-ringed braid, indigo work-priest coat, leather rune apron, and chalk-stained hands, drives a slate-gray isolation wedge into the feed slot below the rune branch ending in a clean right-to-left null mark. Brunna Coil, an older broad-shouldered dwarf in a russet pump coat, braces the wedge with both hands and tests its physical break. Sennik Reedcap, a small moss-green goblin in a patched olive coat, watches the pale calcite gills across the room. Vey Marr, a narrow gray-coated dwarf with spectacles, checks his watch. Copper channels, stone slot, wedge seam, south pipe, north conduit, and eastern brine throat are visibly connected.",
+        "visible_characters": [
+          {"agent_id": "dagna_rill", "default_stance": "kneeling at the table feed and seating the null wedge", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "brunna_coil", "default_stance": "bracing and testing the wedge", "visual_ref": "visual_character_refs.characters.brunna_coil"},
+          {"agent_id": "sennik_reedcap", "default_stance": "watching gill response from the east side", "visual_ref": "visual_character_refs.characters.sennik_reedcap"},
+          {"agent_id": "vey_marr", "default_stance": "north of the table watching his silver timepiece", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "petition_watch_fold",
+        "ink_anchor": "preparation_fold",
+        "base_image_prompt": "Quiet medium-wide view of four witnesses eating mushroom cakes during a stopped-drain watch inside a long rectangular dwarven gate chamber. Dagna Rill, brown-skinned dwarf in indigo work-priest coat and leather rune apron, sits at the central rune table beside three complete copper branches. Brunna Coil, older dwarf in russet pump coat with keys and civic seal, reads names from a thick route book. Sennik Reedcap, small moss-green goblin in a patched olive coat, kneels by salt marks near the eastern ledge. Vey Marr, narrow dwarf in an immaculate gray coat and spectacles, holds cake paper in one hand and his watch in the other. The south pipe is still, the north conduit dark, water drops count time at the iron grate, and pale calcite gills hang above black brine under amber lamps.",
+        "visible_characters": [
+          {"agent_id": "dagna_rill", "default_stance": "seated at the ready array", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "brunna_coil", "default_stance": "standing with route book open", "visual_ref": "visual_character_refs.characters.brunna_coil"},
+          {"agent_id": "sennik_reedcap", "default_stance": "kneeling near salt mapping marks", "visual_ref": "visual_character_refs.characters.sennik_reedcap"},
+          {"agent_id": "vey_marr", "default_stance": "north of the table checking the stopped-watch time", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "district_reserve <= 1", "modifier_prompt": "The iron reserve cage shows one dark empty socket and one remaining blue-white crystal."},
+          {"trigger": "resident_trust >= 4", "modifier_prompt": "Three salt diagrams on the floor align precisely with copper leads and pale gill folds."},
+          {"trigger": "public_record >= 2", "modifier_prompt": "The open route book visibly carries four different witness marks beside a diagram of the array."},
+          {"trigger": "refusal_path == 1", "modifier_prompt": "A slate-gray isolation wedge is firmly seated below the null branch with its physical break visible."}
+        ]
+      },
+      {
+        "visual_scene_id": "answer_first_pulse",
+        "ink_anchor": "first_pulse",
+        "base_image_prompt": "Silent close-wide frame centered on the stone rune table in the long wet drain chamber. Three copper branches glow blue-white from one feed: a measured exchange valve at left, a blank silver amendment socket at center, and a null branch at right. The light reaches toward the south pipe, north conduit, east water, and pale calcite gills, yet every terminator remains still. Dagna Rill, a brown-skinned dwarf in an indigo work-priest coat, holds one hand over the released mana with arrested concentration. Brunna Coil, older dwarf in russet, Sennik Reedcap, small moss-green goblin in olive, and Vey Marr, narrow gray-coated dwarf in spectacles, wait around the table. The isolated stillness is the subject; black brine and amber lamps surround the unanswered three-way question.",
+        "visible_characters": [
+          {"agent_id": "dagna_rill", "default_stance": "hand held over the mana feed", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "brunna_coil", "default_stance": "still beside the route book", "visual_ref": "visual_character_refs.characters.brunna_coil"},
+          {"agent_id": "sennik_reedcap", "default_stance": "watching the eastern gills", "visual_ref": "visual_character_refs.characters.sennik_reedcap"},
+          {"agent_id": "vey_marr", "default_stance": "watching the three inert branches", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "answer_fourth_branch",
+        "ink_anchor": "fourth_branch",
+        "base_image_prompt": "Numinous medium-wide view from the west end of a rectangular dwarven drain gate. Above the eastern iron grate and black brine throat, one pale calcite gill splits along a wet seam and grows a thin luminous mineral edge across the chamber into the blank silver socket on the central rune table, forming a fourth blue-white branch. The south-wall municipal valve opens one finger while the north-wall company conduit wheel grinds shut. An old green-salted brass sounding weight rolls through the grate's ankle-high return slot and rests against an open route book. Dagna Rill, brown-skinned dwarf with dark brass-ringed braid and indigo work-priest coat, stands frozen at the table; Brunna Coil, older dwarf in russet with heavy keys, holds rigid with breath arrested; Sennik Reedcap, small moss-green goblin in patched olive, remains steady by the east ledge; Vey Marr, narrow gray-coated dwarf in spectacles, recoils beneath the inspection plate. Pale mineral growth, blue mana, black water, wet stone, and amber lamps make the wonder physical and bounded.",
+        "visible_characters": [
+          {"agent_id": "dagna_rill", "default_stance": "frozen at the table following the fourth line", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "brunna_coil", "default_stance": "beside the route book staring at the returned weight", "visual_ref": "visual_character_refs.characters.brunna_coil"},
+          {"agent_id": "sennik_reedcap", "default_stance": "steady at the east ledge watching the gills", "visual_ref": "visual_character_refs.characters.sennik_reedcap"},
+          {"agent_id": "vey_marr", "default_stance": "under the north inspection plate recoiling", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "hidden_terminator_flare",
+        "ink_anchor": "hidden_terminator",
+        "base_image_prompt": "Crisis frame inside the same rectangular gate chamber. The polished brass inspection plate on the north wall shines harsh white as a compact hidden rune terminator beneath it drags blue fire backward through exposed copper leads. The north extraction conduit strains open. Across the room, the new fourth calcite branch from the eastern gills blackens along one edge; the southern municipal pipe bucks under pressure. Dagna Rill, brown-skinned dwarf in indigo work-priest coat and leather apron, reaches toward the central null branch. Brunna Coil, older russet-coated dwarf with heavy keys, turns toward the company plate. Sennik Reedcap, small moss-green goblin in patched olive, braces on the east ledge near an insulated hook. Vey Marr, narrow gray-coated dwarf with round spectacles, stands beneath the plate defending the device. Amber lamps, blue-white fire, wet gray stone, black brine, and pale wounded mineral fill one legible power geometry.",
+        "visible_characters": [
+          {"agent_id": "dagna_rill", "default_stance": "at the table reaching toward the null branch", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "brunna_coil", "default_stance": "turning from table toward north plate with keys ready", "visual_ref": "visual_character_refs.characters.brunna_coil"},
+          {"agent_id": "sennik_reedcap", "default_stance": "braced on the east ledge beside an insulated hook", "visual_ref": "visual_character_refs.characters.sennik_reedcap"},
+          {"agent_id": "vey_marr", "default_stance": "under the north plate between witnesses and hidden device", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "intervention_choice_web",
+        "ink_anchor": "intervention_choice",
+        "base_image_prompt": "Wide playable-choice composition in a long rectangular dwarven drain chamber under blue-white magical strain. At center, Dagna Rill, a sturdy brown-skinned dwarf with dark brass-ringed braid, indigo work-priest coat, leather rune apron, and chalk-stained hands, stands between four reachable interventions: the right-to-left null branch on the central table, an insulated hook beside Sennik on the eastern ledge, the wheel valve of the south municipal bypass, and Brunna's heavy key aligned with the north brass inspection plate. Sennik Reedcap is a small moss-green goblin in a patched olive coat near the ledge; Brunna Coil is an older russet-coated dwarf with iron-gray side braids and keys; Vey Marr is a narrow gray-coated dwarf beneath the north plate. The fourth calcite line burns between eastern gills and table while black brine and hammering pipes show time pressure.",
+        "visible_characters": [
+          {"agent_id": "dagna_rill", "default_stance": "central, able to reach null branch or south valve and signal either witness", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "sennik_reedcap", "default_stance": "east ledge beside the insulated hook", "visual_ref": "visual_character_refs.characters.sennik_reedcap"},
+          {"agent_id": "brunna_coil", "default_stance": "northwest of the table with drain key ready", "visual_ref": "visual_character_refs.characters.brunna_coil"},
+          {"agent_id": "vey_marr", "default_stance": "guarding the north plate", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "witness_threshold",
+        "ink_anchor": "witness_fold",
+        "base_image_prompt": "Aftermath threshold view from the west stair into a long rectangular dwarven gate chamber. The central rune table holds an open route book and an old green-salted brass sounding weight. A fourth pale calcite line still reaches from the eastern gills toward the blank silver socket, while the south municipal pipe and north company conduit show different valve positions. Dagna Rill, brown-skinned dwarf in indigo work-priest coat and leather apron, stands ready to write. Brunna Coil, older dwarf in russet pump coat with heavy keys and square civic seal, waits beside the valves. Sennik Reedcap, small moss-green goblin in patched olive coat and salt boots, listens near the eastern salt marks. Vey Marr, narrow dwarf in immaculate gray assessor coat and spectacles, stands beneath a damaged brass plate with ledger open. Amber work light returns around blue-white residue, black brine, wet stone, and wounded mineral folds.",
+        "visible_characters": [
+          {"agent_id": "dagna_rill", "default_stance": "at the west side of table with pen over route book", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "brunna_coil", "default_stance": "between table and pipe controls with keys", "visual_ref": "visual_character_refs.characters.brunna_coil"},
+          {"agent_id": "sennik_reedcap", "default_stance": "near the eastern salt marks listening to the gills", "visual_ref": "visual_character_refs.characters.sennik_reedcap"},
+          {"agent_id": "vey_marr", "default_stance": "under the north plate with ledger open", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "answer_legibility >= 4", "modifier_prompt": "The fourth calcite line is crisp and continuous, visibly opening the south bypass while turning away from the closed north conduit."},
+          {"trigger": "answer_legibility <= 2", "modifier_prompt": "The fourth calcite line is heat-blurred and broken into ambiguous glowing segments between gills and table."},
+          {"trigger": "gills_integrity >= 3", "modifier_prompt": "The pale gill folds keep opening around one narrow charcoal wound while carrying blue-white flow."},
+          {"trigger": "gills_integrity <= 1", "modifier_prompt": "Two calcite folds hang black, curled, and rigid above the grate, leaving only a faint surviving pale edge."},
+          {"trigger": "public_record >= 3", "modifier_prompt": "The route book visibly holds multiple seals beside the exposed compact company terminator and split brass plate."},
+          {"trigger": "water_margin <= 1", "modifier_prompt": "A runner with empty brass gauge tokens appears at the west stair, backlit by anxious Hold lanterns."},
+          {"trigger": "water_margin >= 3", "modifier_prompt": "The south pipe carries a steady visible vibration and its glass flow gauge remains high."},
+          {"trigger": "refusal_path == 1", "modifier_prompt": "The slate-gray null wedge remains seated and visibly complete beneath the fourth line."}
+        ]
+      },
+      {
+        "visual_scene_id": "ending_recognition_family",
+        "ink_anchor": "ending_recognition|ending_contested_recognition",
+        "base_image_prompt": "Recognition aftermath at the central rune table of a long dwarven drain chamber. Dagna Rill, brown-skinned dwarf with dark brass-ringed braid, indigo work-priest coat, leather apron, and chalk-stained hands, writes a formal route-book entry beside the returned green-salted sounding weight. Brunna Coil, older russet-coated dwarf with heavy keys and civic seal, closes the north company valve. Vey Marr, narrow gray-coated assessor in spectacles, protests with open contract ledger. Sennik Reedcap, small moss-green goblin in a patched olive coat, places a mushroom cake beside the eastern pale calcite gills. The southern pipe shows a narrow rationed flow under amber lamps and soft blue-white mineral light; north conduit, south bypass, route book, sounding weight, and living gills remain readable.",
+        "visible_characters": [
+          {"agent_id": "dagna_rill", "default_stance": "writing the recognition entry", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "brunna_coil", "default_stance": "closing the northern company valve", "visual_ref": "visual_character_refs.characters.brunna_coil"},
+          {"agent_id": "sennik_reedcap", "default_stance": "near the gills offering the remaining cake", "visual_ref": "visual_character_refs.characters.sennik_reedcap"},
+          {"agent_id": "vey_marr", "default_stance": "north side protesting from the contract ledger", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ending_stay_family",
+        "ink_anchor": "ending_stay_accepted|ending_stay_uncertain",
+        "base_image_prompt": "Three-day-stay aftermath in a long stone drain gate beneath a dwarven city. At the central table, Dagna Rill, brown-skinned dwarf in indigo work-priest coat and leather rune apron, places the last blue-white reserve crystal into the blank silver branch. Brunna Coil, older dwarf in russet pump coat with keys, sends a young lantern-bearing runner up the west stair. Sennik Reedcap, small moss-green goblin in patched olive, kneels at salt marks near the eastern calcite gills and counts their rhythm. Vey Marr, narrow gray-coated dwarf with spectacles, writes a legal message. The iron reserve cage is empty; the south municipal pipe, north dark conduit, pale gills, wet gray stone, black brine, amber lamps, and fourth mineral branch fill the complete frame.",
+        "visible_characters": [
+          {"agent_id": "dagna_rill", "default_stance": "placing the last reserve into the amendment socket", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "brunna_coil", "default_stance": "at the west stair dispatching a runner", "visual_ref": "visual_character_refs.characters.brunna_coil"},
+          {"agent_id": "sennik_reedcap", "default_stance": "kneeling near the gills and counting flow", "visual_ref": "visual_character_refs.characters.sennik_reedcap"},
+          {"agent_id": "vey_marr", "default_stance": "north side writing a legal message", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "ending_deferral",
+        "ink_anchor": "ending_deferral",
+        "base_image_prompt": "Sealed-site aftermath viewed from the west stair into a long dwarven drain chamber. Both south municipal bypass and north company conduit are dark and physically wedged. The central rune table holds a closed thick route book, a wrapped green-salted sounding weight, and a sealed evidence packet. Dagna Rill, brown-skinned dwarf in indigo work-priest coat and leather apron, stands with empty hands beside the table. Brunna Coil, older russet-coated dwarf with heavy keys, has just seated the gate wedges. Sennik Reedcap, small moss-green goblin in patched olive, listens from the east ledge. Vey Marr, narrow gray-coated dwarf with spectacles, watches the evidence seals. Above black brine, the pale calcite gills still move under amber lamps while distant bucket carriers gather as silhouettes at the top of the west stair.",
+        "visible_characters": [
+          {"agent_id": "dagna_rill", "default_stance": "empty-handed beside the closed route book", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "brunna_coil", "default_stance": "at the pipe controls after seating both wedges", "visual_ref": "visual_character_refs.characters.brunna_coil"},
+          {"agent_id": "sennik_reedcap", "default_stance": "listening from the east ledge", "visual_ref": "visual_character_refs.characters.sennik_reedcap"},
+          {"agent_id": "vey_marr", "default_stance": "north of the table watching the evidence packet", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "public_record >= 3", "modifier_prompt": "The split brass plate and compact hidden terminator sit inside a transparent sealed evidence wrap carrying four distinct wax and ink marks."},
+          {"trigger": "public_record < 3", "modifier_prompt": "Vey holds the polished brass inspection plate while Dagna retains only a charcoal sketch beside the wrapped sounding weight."}
+        ]
+      },
+      {
+        "visual_scene_id": "ending_force_family",
+        "ink_anchor": "ending_force_exposed|ending_force_scar",
+        "base_image_prompt": "Forced-flow aftermath in a long rectangular dwarven gate chamber. The south municipal pipe roars with bright blue-white mana and a high glass flow gauge. At the central rune table, Dagna Rill, brown-skinned dwarf with dark brass-ringed braid, indigo work-priest coat, leather apron, and chalk-stained hands, grips an exposed copper command lead redirected from the north wall. Brunna Coil, older russet-coated dwarf with heavy keys and civic seal, watches the water return with a stricken face. Sennik Reedcap, small moss-green goblin in patched olive coat, is moving toward the west stair. Vey Marr, narrow dwarf in immaculate gray assessor coat and spectacles, writes beneath the damaged inspection plate. Above the eastern black brine throat, the fourth calcite branch is fractured and the pale gills carry blackened edges; amber lamps and hard blue light show service restored through injury.",
+        "visible_characters": [
+          {"agent_id": "dagna_rill", "default_stance": "at the table gripping the redirected command lead", "visual_ref": "visual_character_refs.characters.dagna_rill"},
+          {"agent_id": "brunna_coil", "default_stance": "beside the south valve watching the restored gauge", "visual_ref": "visual_character_refs.characters.brunna_coil"},
+          {"agent_id": "sennik_reedcap", "default_stance": "turning away toward the west stair", "visual_ref": "visual_character_refs.characters.sennik_reedcap"},
+          {"agent_id": "vey_marr", "default_stance": "under the north plate writing the official account", "visual_ref": "visual_character_refs.characters.vey_marr"}
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {"modifier_id": "offer_real_reserve_visible", "trigger": "branch_label == offer_real_reserve", "apply_to_visual_scene_ids": ["petition_watch_fold", "witness_threshold"], "modifier_prompt": "The exchange dish contains one bright civic reserve crystal with a visibly broken wax seal, and the iron reserve cage shows one dark socket."},
+      {"modifier_id": "resident_map_visible", "trigger": "branch_label == trust_resident_listener", "apply_to_visual_scene_ids": ["petition_watch_fold", "witness_threshold"], "modifier_prompt": "Salt marks on fungus paper and floor align three gill folds with specific copper leads; Sennik remains close to the eastern ledge."},
+      {"modifier_id": "public_record_visible", "trigger": "branch_label == strengthen_public_record", "apply_to_visual_scene_ids": ["petition_watch_fold", "witness_threshold", "ending_deferral"], "modifier_prompt": "The route book displays a complete connection diagram and four witness marks, including Sennik's three-pronged sign."},
+      {"modifier_id": "safe_refusal_visible", "trigger": "branch_label == make_refusal_safe", "apply_to_visual_scene_ids": ["petition_watch_fold", "answer_first_pulse", "witness_threshold"], "modifier_prompt": "The slate-gray null isolation wedge is visibly seated beneath the rightmost branch with the broken-feed seam readable."},
+      {"modifier_id": "null_intervention_visible", "trigger": "branch_label == null_the_forced_working", "apply_to_visual_scene_ids": ["intervention_choice_web", "witness_threshold"], "modifier_prompt": "Dagna's chalk-stained hand completes a right-to-left null stroke; all table light falls dark except a faint surviving fourth mineral line, and the split company seal is visible."},
+      {"modifier_id": "resident_cut_visible", "trigger": "branch_label == trust_the_resident_cut", "apply_to_visual_scene_ids": ["intervention_choice_web", "witness_threshold"], "modifier_prompt": "Sennik grips an insulated iron hook under the north plate while Dagna braces the blank socket and Brunna blocks Vey with her heavy key ring."},
+      {"modifier_id": "water_reroute_visible", "trigger": "branch_label == save_the_water_margin", "apply_to_visual_scene_ids": ["intervention_choice_web", "witness_threshold"], "modifier_prompt": "The south pipe gauge rises under strong blue flow while a fresh black line spreads across the nearest calcite gill and Sennik steps away from Dagna."},
+      {"modifier_id": "public_breach_visible", "trigger": "branch_label == make_the_breach_public", "apply_to_visual_scene_ids": ["intervention_choice_web", "witness_threshold"], "modifier_prompt": "Brunna levers the numbered brass inspection plate away with a square drain key, exposing a compact standardized rune terminator and burning copper lead."},
+      {"modifier_id": "recognition_success_visible", "trigger": "ending_label == first_answer_recorded", "apply_to_visual_scene_ids": ["ending_recognition_family"], "modifier_prompt": "The fourth calcite line remains pale and complete, the null wedge stays seated, the north valve is locked shut, and the route book receives a clear new entry."},
+      {"modifier_id": "recognition_contested_visible", "trigger": "ending_label == first_answer_contested", "apply_to_visual_scene_ids": ["ending_recognition_family"], "modifier_prompt": "The fourth line is blurred and partly blackened; an empty or incomplete null slot remains conspicuous, and Sennik either signs beneath Dagna or leaves the witness line visibly blank according to resident_trust."},
+      {"modifier_id": "stay_accepted_visible", "trigger": "ending_label == three_day_stay_accepted", "apply_to_visual_scene_ids": ["ending_stay_family"], "modifier_prompt": "The fourth mineral line curves around the last crystal and the south bypass opens to a narrow steady flow while the north conduit remains dark."},
+      {"modifier_id": "stay_uncertain_visible", "trigger": "ending_label == three_day_stay_uncertain", "apply_to_visual_scene_ids": ["ending_stay_family"], "modifier_prompt": "The last crystal is dim inside wet calcite, the south pipe gauge hangs low after one cough, and the iron reserve cage stands empty."},
+      {"modifier_id": "force_exposed_visible", "trigger": "ending_label == forced_flow_with_public_breach", "apply_to_visual_scene_ids": ["ending_force_family"], "modifier_prompt": "The exposed terminator, split company seal, and open route book remain together in the foreground as the fourth line fractures under forced flow."},
+      {"modifier_id": "force_scar_visible", "trigger": "ending_label == forced_flow_unwitnessed_scar", "apply_to_visual_scene_ids": ["ending_force_family"], "modifier_prompt": "The brass inspection plate glows clean over the hidden route, the route-book signature line is empty, Sennik's cake parcel lies abandoned, and the last gill edges are black and curled."}
+    ],
+    "scene_set": {
+      "scene_set_id": "hearthcoil_fourth_drain_gate.scene_set.draft",
+      "geometry_authority_level": "text_plan_with_fixed_coordinates_not_3d_blockout",
+      "room_model": "Long rectangular barrel-vaulted chamber aligned west to east; west stair enters a dry witness end, east end terminates at the grated brine throat and narrow service ledge; north and south pipes oppose each other across a central waist-high rune table.",
+      "fixed_zones": [
+        {"zone_id": "west_hold_stair", "visible_form": "broad worn stone stair rising west toward Hearthcoil, sized for workers, runners, keys, and bucket traffic", "used_for": "public arrivals, district pressure, Sennik's exit"},
+        {"zone_id": "central_rune_table", "visible_form": "waist-high rectangular stone table with exposed copper channels, exchange dish, blank silver socket, null slot, and reserve cage", "used_for": "petition, intervention, route-book decision"},
+        {"zone_id": "east_brine_throat", "visible_form": "black water channel behind a full-width iron grate with an ankle-high return slot beneath pale calcite gills", "used_for": "core response, returned sounding weight, living fourth branch"},
+        {"zone_id": "east_service_ledge", "visible_form": "narrow dry stone ledge along the north edge of the brine throat with iron handholds", "used_for": "resident listening and insulated-hook access"},
+        {"zone_id": "south_municipal_bypass", "visible_form": "thick aged brass-and-iron pipe with wheel valve and glass flow gauge along south wall", "used_for": "Hearthcoil water and counteroffer"},
+        {"zone_id": "north_company_conduit", "visible_form": "newer dark-metal extraction pipe in the eastern half of the north wall under a polished numbered brass inspection plate, close enough for the east ledge hook route", "used_for": "deep draw, hidden command terminator, lease pressure"},
+        {"zone_id": "calcite_gills", "visible_form": "several pale ribbed mineral folds above the eastern grate, opening with water and carrying naturally grown rune-like edges", "used_for": "living magic, answer surface, visible injury"}
+      ],
+      "routes": [
+        {"route_id": "hold_to_table", "path": "west_hold_stair -> dry west floor -> central_rune_table", "access": "all witnesses and runners"},
+        {"route_id": "table_to_south_valve", "path": "central_rune_table -> two clear paces south -> south_municipal_bypass", "access": "Dagna and Brunna"},
+        {"route_id": "table_to_north_plate", "path": "central_rune_table -> three clear paces north -> north_company_conduit", "access": "Brunna and Vey from floor"},
+        {"route_id": "ledge_hook_route", "path": "central_rune_table east side -> iron handhold -> east_service_ledge -> underside of north inspection plate", "access": "Sennik's smaller body and insulated hook"}
+      ],
+      "camera_slots": [
+        {"camera_id": "west_wide", "supports_visual_scene_ids": ["fourth_drain_establishing", "petition_watch_fold", "answer_fourth_branch", "witness_threshold", "ending_deferral"]},
+        {"camera_id": "table_medium", "supports_visual_scene_ids": ["fourth_drain_morning_preparations", "answering_array_setup", "petition_public_record", "answer_first_pulse", "ending_recognition_family", "ending_stay_family"]},
+        {"camera_id": "table_low_close", "supports_visual_scene_ids": ["petition_offer_reserve", "petition_safe_refusal"]},
+        {"camera_id": "east_ledge_low", "supports_visual_scene_ids": ["petition_resident_mapping"]},
+        {"camera_id": "north_plate_diagonal", "supports_visual_scene_ids": ["hidden_terminator_flare", "intervention_choice_web", "ending_force_family"]}
+      ],
+      "staging_slots": [
+        {"slot_id": "dagna_table_west", "zone": "central_rune_table", "reach": ["exchange dish", "blank socket", "null branch", "route book", "south valve after two paces"]},
+        {"slot_id": "brunna_table_southwest", "zone": "central_rune_table", "reach": ["route book", "reserve cage", "south valve", "north plate after three paces"]},
+        {"slot_id": "sennik_east_ledge", "zone": "east_service_ledge", "reach": ["calcite gills", "salt marks", "underside of north plate with hook"]},
+        {"slot_id": "vey_north_plate", "zone": "north_company_conduit", "reach": ["inspection plate", "ledger", "hidden command casing"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "table_to_gills", "path": "central_rune_table -> unobstructed east floor -> calcite_gills", "supports": ["all petition and answer scenes"]},
+        {"lane_id": "table_to_plate", "path": "central_rune_table -> unobstructed north wall -> inspection plate", "supports": ["hidden_terminator", "make_the_breach_public"]},
+        {"lane_id": "west_stair_to_gauges", "path": "top of west stair -> central table edges -> south pipe gauge", "supports": ["district runner pressure"]}
+      ],
+      "object_states": [
+        {"object_id": "null_wedge", "states": ["on Dagna's belt", "seated beneath refusal branch", "holding a completed null break"]},
+        {"object_id": "company_plate", "states": ["polished and closed", "flaring over hidden terminator", "split or removed with terminator exposed", "clean and concealing command route"]},
+        {"object_id": "calcite_gills", "states": ["pale and breathing", "carrying fourth line", "narrowly wounded", "multiple black rigid folds"]},
+        {"object_id": "sounding_weight", "states": ["beneath brine before scene", "rolled against route book", "wrapped as evidence", "resting beside recognition entry"]}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character visual identities for prompt assembly. Include only refs for people visible in a scene.",
+    "characters": {
+      "dagna_rill": "Dagna Rill: sturdy young-adult dwarf, warm brown skin, one dark braid threaded through a plain brass temple ring, strong nose, alert dark eyes, indigo work-priest coat over practical wool, leather rune apron, chalk-stained hands, slate-gray null wedge and small copper stylus at belt; compact grounded silhouette; concentration shown through hand placement and stillness.",
+      "sennik_reedcap": "Sennik Reedcap: small adult goblin, moss-green skin, long alert ears with one nick in the left rim, amber eyes, short dark hair under a soft reed cap, patched olive coat dyed with dungeon fungus, narrow tool sash, salt-stained boots, quick low center of gravity; attentive posture through ear angle, crouch, and exact tool placement.",
+      "brunna_coil": "Master Brunna Coil: older broad-shouldered dwarf, weathered umber skin, iron-gray hair in two short side braids, soot-red russet pump coat, heavy square civic seal on chain, thick iron key ring, scar across right thumb; stable workshop silhouette; authority shown through planted stance and custody of book, keys, and valves.",
+      "vey_marr": "Assessor Vey Marr: narrow middle-aged dwarf, pale ruddy skin, ash-blond beard clipped into two geometric points, round brass spectacles, immaculate gray assessor coat with silver piping, hard ledger case, silver watch, polished boots; upright tidy silhouette; pressure shown through watch, ledger, and controlled distance from wet machinery."
+    },
+    "groups": {}
+  },
+  "review_notes": [
+    "Visual self-review checked every base prompt as a standalone frame with explicit room geometry, light, materials, bodies, clothing, tools, and object state; fictional labels are translated into visible forms.",
+    "Character refs are attached only to characters listed as visible in each frame. The fourth_drain_core remains environmental presence through water, mineral folds, valves, and returned matter rather than a humanoid body invented for illustration.",
+    "Branch and ending modifiers carry reserve loss, salt mapping, witness marks, the safe-refusal wedge, command exposure, gill injury, flow state, and resident posture across folds.",
+    "The text scene_set is sufficient for drafting and spatial review. High-consistency multi-angle rendering remains gated on a hand-built plan view or 3D blockout."
+  ]
+}

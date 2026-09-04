@@ -1,0 +1,80 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "numen-first-answer-v0.bfl-simple-v0",
+  "fixture_id": "numen-first-answer-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Richly textured high-fantasy industrial storybook illustration, precise ink under layered gouache and restrained watercolor, monumental carved stone, weathered brass and iron, pale living mineral growth, amber work lamps against blue-white mana, readable silhouettes, humane faces, numinous wonder inside practical civic machinery.",
+  "prompts": [
+    {
+      "id": "01_fourth_drain_establishing",
+      "prompt": "Wide empty rectangular underground gate chamber: west stone stair, central waist-high rune table, east iron grate with low return slot over black brine, pale ribbed calcite gills overhead, old municipal pipe on south wall, newer extraction conduit and polished brass plate on the northeast wall."
+    },
+    {
+      "id": "02_morning_preparations",
+      "prompt": "Four witnesses around a central rune table in a wet stone drain chamber: sturdy brown-skinned dwarf priest in indigo work coat setting cups by a crystal cage, older russet-coated dwarf Master with route book and heavy keys, small moss-green goblin drain keeper carrying mushroom cakes, narrow gray-coated dwarf assessor beneath a brass inspection plate."
+    },
+    {
+      "id": "03_answering_array_setup",
+      "prompt": "High view of an exposed three-branched copper rune question on a stone table: measured exchange valve and offering dish, blank silver amendment socket, null wedge slot, fine leads visibly connecting black water, gate stones, two opposing pipes, and pale mineral gills while four witnesses inspect it."
+    },
+    {
+      "id": "04_real_reserve_offering",
+      "prompt": "Close dwarf priest breaking a civic wax seal and placing a bright blue-white mana crystal into a stone offering dish; open iron reserve cage has one dark socket, older pump Master winces, immaculate assessor writes the cost."
+    },
+    {
+      "id": "05_resident_gill_mapping",
+      "prompt": "Small moss-green goblin drain keeper crouches on a narrow ledge beside black brine, holding tan fungus paper under pale ribbed calcite gills as damp salt forms branching marks; indigo-coated dwarf priest moves a copper lead to match the map."
+    },
+    {
+      "id": "06_public_witness_record",
+      "prompt": "Route-book close view beside a glowing copper rune array: dwarf priest writes connections, older dwarf Master presses a square civic seal, small goblin adds a three-pronged mark, gray-coated assessor reluctantly signs the remaining line."
+    },
+    {
+      "id": "07_safe_null_refusal",
+      "prompt": "Dwarf priest kneels under a stone rune table and seats a slate-gray isolation wedge beneath a clean right-to-left null branch; older pump Master braces the wedge, goblin watches distant calcite gills, assessor checks a silver watch."
+    },
+    {
+      "id": "08_stopped_drain_watch",
+      "prompt": "Quiet ritual work in a damp gate chamber: four witnesses eat mushroom cakes around an exposed rune table while route names are read, water drops count time at an iron grate, two wall pipes stay dark, pale gills hang over black brine."
+    },
+    {
+      "id": "09_three_branches_unanswered",
+      "prompt": "Silent close-wide frame: three blue-white copper rune branches glow on a central stone table—exchange, blank amendment, safe null—yet every endpoint remains still; dwarf priest and three witnesses wait between black brine and amber lamps."
+    },
+    {
+      "id": "10_living_fourth_branch",
+      "prompt": "A pale calcite gill above an eastern brine grate grows a luminous fourth mineral branch across the chamber into the table's blank silver socket; south municipal valve opens, north extraction conduit shuts, old green-salted brass sounding weight rolls through a low return slot against an open route book as four witnesses stare."
+    },
+    {
+      "id": "11_hidden_command_flare",
+      "prompt": "North-wall brass inspection plate flares white over a hidden rune terminator, blue fire runs backward through copper leads, extraction conduit strains open, living calcite branch blackens, municipal pipe bucks; dwarf priest reaches for null while goblin, pump Master, and assessor occupy distinct sides of the chamber."
+    },
+    {
+      "id": "12_intervention_choice_web",
+      "prompt": "Playable wide composition: dwarf priest stands between four reachable actions in one drain chamber—the null rune on the central table, insulated hook beside goblin on east ledge, south municipal wheel valve, and older Master's heavy key aimed at north brass plate—while a blue-white calcite branch burns."
+    },
+    {
+      "id": "13_witness_threshold",
+      "prompt": "After magical strain, a central rune table holds open route book and returned brass sounding weight; wounded pale gills carry a surviving fourth line, south and north pipe valves disagree, dwarf priest holds pen while older Master, goblin listener, and company assessor wait for the record."
+    },
+    {
+      "id": "14_recognition_end",
+      "prompt": "Dwarf priest writes a First Answer in a thick route book beside returned sounding weight; older pump Master locks the north company valve, goblin places a mushroom cake beside living calcite gills, assessor protests from a contract ledger, south municipal pipe runs at a narrow rationed flow."
+    },
+    {
+      "id": "15_three_day_stay_end",
+      "prompt": "Last blue-white reserve crystal rests in the blank branch of a stone rune table; empty reserve cage behind it, south pipe carries narrow water, north conduit dark, goblin counts pale gill rhythm, older dwarf dispatches a lantern runner upstairs, gray assessor writes to lawyers."
+    },
+    {
+      "id": "16_deferral_end",
+      "prompt": "Both drain pipes sit physically wedged and dark; closed route book, wrapped sounding weight, and sealed evidence packet remain on central table while four witnesses hold distance, pale calcite gills still move above black brine, bucket carriers gather at the west stair."
+    },
+    {
+      "id": "17_forced_flow_end",
+      "prompt": "South municipal pipe roars with blue-white mana as dwarf priest grips an exposed redirected command lead; older pump Master watches the restored gauge, goblin leaves toward west stair, assessor writes beneath north plate, fractured fourth calcite branch and blackened gill edges show the cost."
+    }
+  ]
+}
