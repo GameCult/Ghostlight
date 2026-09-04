@@ -1,0 +1,76 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "tangle-ceres-continuity-roster-v0.bfl-simple-v0",
+  "fixture_id": "tangle-ceres-continuity-roster-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Humane retro-industrial science-fiction storybook illustration, precise ink linework under thin gouache color, graphite-gray collar machinery, sodium amber work lamps, cold cyan pressure displays, small areas of union red, tactile worn materials, readable silhouettes and interfaces, cinematic workplace framing.",
+  "prompts": [
+    {
+      "id": "01_collarfour_establishing",
+      "prompt": "Wedge-shaped rotating-side transfer-collar bay: layered pressure collar around a frame-transfer bearing, ribbed supports, coolant trunks, cyan manifold, round low-gravity freight iris, black ore handwheel, white safety bypass, three consoles around a meal table, four officials and tired workers."
+    },
+    {
+      "id": "02_continuity_routine",
+      "prompt": "Industrial maintenance shift beside a wall roster split between staffed life-safety work and empty production work; pressure mechanic, Forge planner, AU administrator, SolEx auditor, tea, tools, and one small parts crate."
+    },
+    {
+      "id": "03_mutual_aid",
+      "prompt": "Pressure mechanic pours dark tea while five exhausted workers divide sleep, medicine runs, child watch, and valve rounds around a scarred metal table beneath amber lamps."
+    },
+    {
+      "id": "04_forge_walkdown",
+      "prompt": "Two maintenance specialists clipped to a narrow yellow service rail inspect three temporary patches across a curved layered pressure collar, frame-transfer bearing, coolant cuffs, pressure taps, and cable trays."
+    },
+    {
+      "id": "05_union_locker",
+      "prompt": "Mechanic distributes three red-sealed memory wafers between a bolted union locker, tethered repair slate, and transparent public reader while a formal auditor watches."
+    },
+    {
+      "id": "06_hearing_open",
+      "prompt": "Remote classification hearing in one transfer bay: red union console, ochre repair slate, amber AU ledger, white SolEx baseline, twelve-segment clock, tired crew, green pressure lines across curved machinery wall."
+    },
+    {
+      "id": "07_sensor_gap",
+      "prompt": "Pivotal data rupture: seventeen-minute black gap in cyan pressure history enclosed by a red bracket while live manifold stays green; mechanic, planner, administrator, auditor, and workers freeze under amber clock."
+    },
+    {
+      "id": "08_air_ore_gate",
+      "prompt": "Stocky mechanic dogs black ore-gate teeth shut by hand while a narrow white life-safety bypass remains bright cyan above the freight track and a formal auditor watches."
+    },
+    {
+      "id": "09_forge_provenance",
+      "prompt": "Lean planner with silver left forearm opens one narrow repair-provenance pane under a ceiling camera; part ancestry and installer seal glow while the larger tethered archive stays dark."
+    },
+    {
+      "id": "10_au_exception",
+      "prompt": "Silver-haired administrator opens amber biometric safety exception as red union records remain behind transparent glass; mechanic turns display toward camera and SolEx auditor reads across scarred table."
+    },
+    {
+      "id": "11_witness_glass",
+      "prompt": "Close transparent evidence reader: red-sealed handover wafers show witness marks, pressure taps, and missing interval; mechanic guards a capped transfer port while auditor inspects with hands behind back."
+    },
+    {
+      "id": "12_disposition_threshold",
+      "prompt": "Four amber clock segments remain over a round freight iris; mechanic stands between union console and ore wheel while Forge planner, AU administrator, SolEx auditor, workers, records, and parts occupy fixed stations."
+    },
+    {
+      "id": "13_split_custody_end",
+      "prompt": "Four separate evidence lanes - union red, Forge ochre, AU amber, SolEx white - meet only in a composite classification above the meal table; ore gate shut, safety bypass cyan, parts crate inside."
+    },
+    {
+      "id": "14_au_addendum_end",
+      "prompt": "AU administrator and union mechanic sign an amber continuity addendum while five workers read together, red source wafers remain locked, actuator crate opens, black ore gate stays shut."
+    },
+    {
+      "id": "15_solex_exchange_end",
+      "prompt": "One compact ore train crosses a round transfer iris as claimshare blocks clear; mechanic keeps hand on black gate wheel, auditor watches, red custody wafers count cargo, white bypass stays cyan."
+    },
+    {
+      "id": "16_local_hold_end",
+      "prompt": "Quiet late shift in industrial collar bay: workers divide meals, medicine, sleep, child watch, and pressure tools around scarred table while ore gate stays shut and old actuator glows cyan."
+    }
+  ]
+}

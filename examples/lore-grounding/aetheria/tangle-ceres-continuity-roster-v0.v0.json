@@ -1,0 +1,387 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "aetheria.tangle-ceres-continuity-roster-v0",
+  "source_status": "authored_elaboration",
+  "fixture_status": "historical_grounded",
+  "source_refs": [
+    {
+      "source_id": "ceres-control-war",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Timeline/Events/Ceres Control War.md",
+      "title": "Ceres Control War",
+      "line_start": 1,
+      "line_end": 21,
+      "relevance": "Primary event and authored elaboration: combat, labor mutiny, enclosure politics, and maintenance-continuity rosters with split record custody."
+    },
+    {
+      "source_id": "aeronautics-unlimited",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Aeronautics Unlimited.md",
+      "title": "Aeronautics Unlimited",
+      "line_start": 1,
+      "line_end": 29,
+      "relevance": "Grounds Ramp Administration authority, safety exceptions, berth and freight access, claimshares, and AU's alliance of necessity with Belt labor and Forge."
+    },
+    {
+      "source_id": "orbital-forge",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/Orbital Forge.md",
+      "title": "Orbital Forge",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds portable standards, forked repair practice, salvage culture, and Forge's commercially necessary refusal of clean alignment."
+    },
+    {
+      "source_id": "solex",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Minor/SolEx.md",
+      "title": "SolEx",
+      "line_start": 1,
+      "line_end": 5,
+      "relevance": "Grounds SolEx rule through throughput, audit, contract inheritance, and linked inventory."
+    },
+    {
+      "source_id": "pan-solar-consortium",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Factions/Powers/Major/Pan-Solar Consortium.md",
+      "title": "Pan-Solar Consortium",
+      "line_start": 1,
+      "line_end": 23,
+      "relevance": "Grounds PSC observers, clearing dependence, classification power, conflict permits, sanctions, and internal SolEx pressure."
+    },
+    {
+      "source_id": "restrictions-on-warfare",
+      "path": "Aetheria/Worldbuilding/Politics/Restrictions on Warfare.md",
+      "title": "Restrictions on Warfare",
+      "line_start": 1,
+      "line_end": 37,
+      "relevance": "Grounds evidence, escrow, bonds, neutral docks, contested records, and market recognition as coercive political instruments."
+    },
+    {
+      "source_id": "bloom",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom.md",
+      "title": "Bloom",
+      "line_start": 1,
+      "line_end": 41,
+      "relevance": "Grounds Bloom manufacture, Ceres research lineage, recurring certification, Ramp authority, and dependencies between local repair and distant supply."
+    },
+    {
+      "source_id": "bloom-anatomy",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Technology/Bloom Habitat Anatomy.md",
+      "title": "Bloom Habitat Anatomy",
+      "line_start": 1,
+      "line_end": 66,
+      "relevance": "Grounds rotating/despun frame transfer, shell service systems, pressure and cooling routes, isolation, access politics, and maintenance fault propagation."
+    },
+    {
+      "source_id": "territories",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Territories.md",
+      "title": "Territories",
+      "line_start": 1,
+      "line_end": 61,
+      "relevance": "Grounds layered custody of life-support, docks, routes, records, Ceres, and AU/Forge Belt authority."
+    },
+    {
+      "source_id": "colonizing-sol",
+      "path": "Aetheria/Worldbuilding/Pre-Elysium/Colonizing Sol.md",
+      "title": "Colonizing Sol",
+      "line_start": 1,
+      "line_end": 9,
+      "relevance": "Grounds transport debt, employer scrip, company-settlement authority, and worker dependence on the physical plant."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Identity Abyss era, middle years of the Ceres Control War (2688-2702)",
+    "location": "Fixture-local Ceres Bloom Eighteen, Transfer Collar Four, in the rotating-side frame-transfer structure beside a nonrotating freight hub.",
+    "summary": "A union continuity crew must answer a seventeen-minute sensor-history gap before a PSC classification window closes. The crew can preserve life safety while withholding production, but every supporting institution offers evidence, parts, or recognition in exchange for a different piece of authority.",
+    "public_facts": [
+      {
+        "text": "The Ceres Control War was decided as much by labor mutiny, sabotage, and enclosure politics as by permitted fighting.",
+        "source_refs": ["ceres-control-war"]
+      },
+      {
+        "text": "AU Ramp Administrations control berths, shifts, safety exceptions, maintenance budgets, freight, and claims against future production.",
+        "source_refs": ["aeronautics-unlimited", "bloom"]
+      },
+      {
+        "text": "Maintenance-continuity rosters separate life-safety work from extraction and divide necessary evidence among union crews, Forge, AU, SolEx, and PSC observers.",
+        "source_refs": ["ceres-control-war"]
+      },
+      {
+        "text": "PSC recognition depends on records, bonds, escrow, and future access rather than a neutral guarantee of worker safety.",
+        "source_refs": ["pan-solar-consortium", "restrictions-on-warfare"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Workers must maintain pressure and cooling for their own households while refusing the production that funds claimshares and supply access.",
+        "source_refs": ["ceres-control-war", "aeronautics-unlimited", "colonizing-sol"]
+      },
+      {
+        "text": "Forge needs AU freight and labor while resisting proprietary custody; AU needs local competence while converting temporary administration into government.",
+        "source_refs": ["orbital-forge", "aeronautics-unlimited", "bloom"]
+      },
+      {
+        "text": "SolEx benefits if fragmented local records fail because failure supports its case for consolidated audit and emergency custody.",
+        "source_refs": ["solex", "ceres-control-war"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "collarfour-continuity-crew",
+      "label": "Collar Four union continuity crew",
+      "group_type": "labor_local",
+      "institutional_logic": ["Keep the habitat safe while refusing extraction and prevent any employer from turning life-safety duty into production obedience."],
+      "material_incentives": ["Preserve air, cooling, medication access, neutral-dock parts, household claimshares, and local custody of witnessed handovers."],
+      "internal_virtues": ["Accurate handover", "Visible load limits", "Shared sleep", "Refusal that does not spend neighbors as leverage"],
+      "internal_shames": ["Quietly restoring throughput", "Letting one exhausted specialist become indispensable", "Losing custody of witness records"],
+      "prestige_markers": ["A fault caught before the dashboard", "A clean countersignature", "A safe shift with ORE still shut"],
+      "taboo_triggers": ["Calling life-safety work proof that the strike has ended", "Treating claimshare hunger as consent"],
+      "emotional_display_norms": ["Fear is compressed into work checks, dry jokes, food distribution, and insistence on names beside handovers."],
+      "trust_defaults": ["Trusts witnessed local records and known hands; accepts institutional evidence only with bounded custody."],
+      "speech_register_cues": ["Maintenance shorthand", "Contract clauses translated into physical consequences", "Dry shift humor"],
+      "source_refs": ["ceres-control-war", "aeronautics-unlimited", "bloom-anatomy"]
+    },
+    {
+      "group_id": "au-ramp-administration",
+      "label": "AU Ramp Administration",
+      "group_type": "corporate_operating_authority",
+      "institutional_logic": ["Keep the ramp intact, supplied, and locally adaptable while retaining authority over access, exceptions, and future claims."],
+      "material_incentives": ["Defeat SolEx consolidation, preserve assets, retain dock revenue, and make local autonomy legible as AU administration."],
+      "internal_virtues": ["Fast exception", "Recoverable project", "Flexible local fix", "Throughput preserved later"],
+      "internal_shames": ["A ramp declared a loss", "SolEx emergency custody", "Local competence functioning beyond AU records"],
+      "prestige_markers": ["Parts released at the decisive hour", "A council decision made possible by an AU gate", "An exception that becomes precedent"],
+      "taboo_triggers": ["Calling Ramp authority permanent government", "Showing how often temporary exceptions carry the system"],
+      "emotional_display_norms": ["Concern appears as scheduling, access release, and narrowly worded concessions."],
+      "trust_defaults": ["Trusts local crews to keep assets alive but not to allocate freight or define recognized risk alone."],
+      "speech_register_cues": ["Operational flexibility", "Project survival", "Exception scope", "Claim continuity"],
+      "source_refs": ["aeronautics-unlimited", "bloom", "ceres-control-war"]
+    },
+    {
+      "group_id": "orbital-forge-planners",
+      "label": "Orbital Forge planners",
+      "group_type": "independent_supplier_network",
+      "institutional_logic": ["Keep repair knowledge portable and forkable without surrendering the commercial expertise that makes Forge necessary."],
+      "material_incentives": ["Protect part provenance, local archives, access to freight, and the Belt constituency that uses Forge-compatible systems."],
+      "internal_virtues": ["Repairable interface", "Readable fork", "Useful leak", "Local modification with provenance"],
+      "internal_shames": ["A proprietary repair no local yard can repeat", "An open archive captured by a consolidator"],
+      "prestige_markers": ["A patch surviving multiple owners", "A standard altered safely in the field"],
+      "taboo_triggers": ["Equating portability with unrestricted corporate ingestion", "Certification used as enclosure"],
+      "emotional_display_norms": ["Allegiance is expressed through what documentation is opened, withheld, or left locally usable."],
+      "trust_defaults": ["Trusts competent maintainers and inspectable repairs; distrusts fixed custody and clean alignment."],
+      "speech_register_cues": ["Part ancestry", "Interface compatibility", "Fork provenance", "Hostile jokes about furniture"],
+      "source_refs": ["orbital-forge", "bloom"]
+    },
+    {
+      "group_id": "solex-throughput-audit",
+      "label": "SolEx throughput audit",
+      "group_type": "extractive_bureaucracy",
+      "institutional_logic": ["Convert habitats, labor, and routes into certified linked inventory under inherited audit authority."],
+      "material_incentives": ["Restore freight, capture complete records, trigger emergency custody, and prove local modification unsafe."],
+      "internal_virtues": ["Single baseline", "Audited cycle", "Contract inheritance", "Comparable throughput"],
+      "internal_shames": ["A local fork that outlives certification", "Pay or access released before production"],
+      "prestige_markers": ["A disputed site returned to schedule", "An exception absorbed into the certified chain"],
+      "taboo_triggers": ["Evidence that the habitat is safe while extraction remains shut", "Inspection access without transfer custody"],
+      "emotional_display_norms": ["Threat appears as patient procedure and clauses timed to physical dependency."],
+      "trust_defaults": ["Trusts inherited baselines and synchronized records; treats local witness knowledge as provisional."],
+      "speech_register_cues": ["Void exception", "Emergency certification", "Audited freight cycle", "Incomplete history"],
+      "source_refs": ["solex", "ceres-control-war", "colonizing-sol"]
+    },
+    {
+      "group_id": "psc-observer",
+      "label": "PSC classification observer",
+      "group_type": "supraterritorial_market_regulator",
+      "institutional_logic": ["Classify conflict precisely enough that bonds, docks, sanctions, and clearing remain usable."],
+      "material_incentives": ["Prevent corridor contagion, preserve an admissible record, and avoid owning the dispute's moral outcome."],
+      "internal_virtues": ["Priced exposure", "Recognized custody", "Bounded disruption", "Reviewable evidence"],
+      "internal_shames": ["A classification no counterparty will honor", "Infrastructure loss during a supposedly bounded dispute"],
+      "prestige_markers": ["A bond held through conflict", "A neutral dock obeying the classification"],
+      "taboo_triggers": ["Being asked to guarantee justice rather than future interoperability"],
+      "emotional_display_norms": ["Distance, clocks, categories, and requests for disposition replace visible feeling."],
+      "trust_defaults": ["Trusts composite evidence only when counterparties remain exposed to later review."],
+      "speech_register_cues": ["Bounded labor action", "Uninsured disruption", "Corridor-breaking sabotage", "Escrow window"],
+      "source_refs": ["pan-solar-consortium", "restrictions-on-warfare"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "collarfour-continuity-crew.air-is-not-ore",
+      "applies_to": ["collarfour-continuity-crew"],
+      "pressure_type": "labor_refusal",
+      "summary": "Life-safety competence must not be administratively converted into consent to extraction.",
+      "projection_use": "Give crew choices that preserve air and neighbors while physically, contractually, or evidentially keeping production shut.",
+      "source_refs": ["ceres-control-war", "bloom-anatomy"]
+    },
+    {
+      "field_id": "au-ramp-administration.flexibility-as-custody",
+      "applies_to": ["au-ramp-administration"],
+      "pressure_type": "administrative_capture",
+      "summary": "AU can materially support local freedom while using that support to make Ramp authority permanent.",
+      "projection_use": "AU concessions should buy real parts or access and also seek a bounded ownership advantage.",
+      "source_refs": ["aeronautics-unlimited", "bloom"]
+    },
+    {
+      "field_id": "solex-throughput-audit.failure-proves-consolidation",
+      "applies_to": ["solex-throughput-audit"],
+      "pressure_type": "institutional_rivalry",
+      "summary": "A failed local roster is more useful to SolEx than open fighting because it makes consolidation look necessary.",
+      "projection_use": "SolEx pressure should exploit missing records, supply timing, and household need rather than default to armed force.",
+      "source_refs": ["solex", "ceres-control-war"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "solex-throughput-audit",
+      "target_group_id": "collarfour-continuity-crew",
+      "observer_read": ["Uncertified operators", "Selective compliance", "Fragmented custody", "Idle production capacity"],
+      "target_self_read": ["The people keeping the pressure line honest", "A union with the right to separate safety from output"],
+      "misread_patterns": ["Treats local witness knowledge as missing data", "Treats safe refusal as incomplete operation"],
+      "likely_insults": ["informal", "uncertified", "schedule obstruction"],
+      "projection_use": "Let SolEx recognize crew competence only as evidence that the site can resume production.",
+      "source_refs": ["solex", "ceres-control-war"]
+    },
+    {
+      "observer_group_id": "collarfour-continuity-crew",
+      "target_group_id": "au-ramp-administration",
+      "observer_read": ["Useful dock key", "Temporary government with a permanent calendar", "Liability seeking a constituency"],
+      "target_self_read": ["Flexible frontier authority", "Only institution able to release parts quickly"],
+      "misread_patterns": ["Workers may discount real supply constraints as pure leverage", "AU may call dependency consent"],
+      "likely_insults": ["ramp lord", "exception landlord"],
+      "projection_use": "Keep AU aid materially real while making its desired authority visible in the clause attached to that aid.",
+      "source_refs": ["aeronautics-unlimited", "bloom"]
+    },
+    {
+      "observer_group_id": "psc-observer",
+      "target_group_id": "collarfour-continuity-crew",
+      "observer_read": ["Bonded claimant", "Potential infrastructure risk", "One source in a composite record"],
+      "target_self_read": ["Residents maintaining their own survival conditions", "Workers refusing an employer"],
+      "misread_patterns": ["Prices the distinction between strike and sabotage without protecting the people who must enact it"],
+      "likely_insults": ["exposure", "disruption class", "local claimant"],
+      "projection_use": "PSC intervention should change dock and bond access, never become rescue or democratic judgment.",
+      "source_refs": ["pan-solar-consortium", "restrictions-on-warfare"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "union-shift-delegate",
+      "summary": "A pressure mechanic responsible for both technical continuity and the political boundary between life safety and extraction.",
+      "obligations": ["Keep pressure and cooling safe", "Protect handover custody", "Prevent exhaustion", "Make each concession legible to the crew"],
+      "available_masks": ["Routine mechanic", "Dry humor", "Procedural cooperation", "Visible literalism about gates"],
+      "failure_modes": ["Trading future authority for tonight's part", "Letting care labor disappear", "Opening production while the emergency clause is live"],
+      "source_refs": ["ceres-control-war", "bloom-anatomy"]
+    },
+    {
+      "role_id": "forge-cavity-planner",
+      "summary": "An independent planner who can authenticate a local repair but must bound what the larger Forge archive reveals.",
+      "obligations": ["Preserve part provenance", "Keep the patch locally repeatable", "Avoid archive capture", "Support the worker who knows the installed body"],
+      "available_masks": ["Supplier neutrality", "Technical annoyance", "Narrow disclosure"],
+      "failure_modes": ["Withholding enough to sink classification", "Opening enough to enable enclosure"],
+      "source_refs": ["orbital-forge", "bloom"]
+    },
+    {
+      "role_id": "ramp-administrator",
+      "summary": "An AU official who can release parts and admit liability while trying to own the recognized exception surface.",
+      "obligations": ["Keep the ramp viable", "Defeat SolEx custody", "Control freight and exception precedent", "Avoid declaring the project a loss"],
+      "available_masks": ["Neutral logistics", "Practical ally", "Temporary authority"],
+      "failure_modes": ["Turning aid into capture too visibly", "Losing the habitat to SolEx", "Letting local decisions bypass AU records"],
+      "source_refs": ["aeronautics-unlimited", "ceres-control-war"]
+    },
+    {
+      "role_id": "solex-throughput-auditor",
+      "summary": "A consolidator whose strongest move is to make fragmented evidence fail at the exact moment supply and pay depend on recognition.",
+      "obligations": ["Protect the certified baseline", "Restore throughput", "Invoke inherited clauses on admissible evidence", "Avoid appearing to endanger the collar"],
+      "available_masks": ["Patient procedure", "Safety concern", "Conditional pay release"],
+      "failure_modes": ["Releasing value before production", "Accepting inspection without transfer", "Proving the habitat safe under local refusal"],
+      "source_refs": ["solex", "restrictions-on-warfare"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "len_rusk",
+      "known_context": [
+        {"text": "Len knows Collar Four's live pressure systems, crew capacity, witnessed handovers, physical gate states, and household needs.", "source_refs": ["ceres-control-war", "bloom-anatomy"]}
+      ],
+      "beliefs": [
+        {"text": "Len believes a safe habitat and a productive habitat are separable states, and custody should remain divided when trust is absent.", "source_refs": ["ceres-control-war"]}
+      ],
+      "misreads": [
+        {"text": "Len may interpret every AU delay as leverage even when supply scarcity is materially real.", "source_refs": ["aeronautics-unlimited"]}
+      ],
+      "must_not_know": [
+        {"text": "Len must not know who caused the seventeen-minute history gap or how the PSC observer will classify an incomplete composite.", "source_refs": ["restrictions-on-warfare"]}
+      ]
+    },
+    {
+      "speaker_id": "pax_ader",
+      "known_context": [
+        {"text": "Pax knows the controller fork, part ancestry, local repair annotations, and which narrow provenance pane can authenticate the splice.", "source_refs": ["orbital-forge", "bloom"]}
+      ],
+      "beliefs": [
+        {"text": "Pax believes repair knowledge must stay portable without becoming a free corporate ingestion surface.", "source_refs": ["orbital-forge"]}
+      ],
+      "misreads": [
+        {"text": "Pax may underweight how quickly delayed supplier freight becomes a household danger.", "source_refs": ["territories", "bloom"]}
+      ],
+      "must_not_know": [
+        {"text": "Pax must not know SolEx's private threshold for invoking emergency custody.", "source_refs": ["solex"]}
+      ]
+    },
+    {
+      "speaker_id": "vela_quist",
+      "known_context": [
+        {"text": "Vela knows AU's safety-exception ledger, berth access, part-release authority, claimshare relief options, and proposed addendum.", "source_refs": ["aeronautics-unlimited"]}
+      ],
+      "beliefs": [
+        {"text": "Vela believes local authority is viable only when an AU ramp can keep it supplied and recognized.", "source_refs": ["aeronautics-unlimited", "bloom"]}
+      ],
+      "misreads": [
+        {"text": "Vela may interpret dependence on AU access as agreement with AU governance.", "source_refs": ["aeronautics-unlimited"]}
+      ],
+      "must_not_know": [
+        {"text": "Vela must not know the contents of sealed union handovers that Len has not displayed.", "source_refs": ["ceres-control-war"]}
+      ]
+    },
+    {
+      "speaker_id": "imri_senn",
+      "known_context": [
+        {"text": "Imri knows the inherited SolEx baseline, throughput schedule, frozen claimshare account, and emergency-custody language.", "source_refs": ["solex", "ceres-control-war"]}
+      ],
+      "beliefs": [
+        {"text": "Imri believes a fragmented record cannot safely govern a shared transport collar.", "source_refs": ["solex"]}
+      ],
+      "misreads": [
+        {"text": "Imri may mistake the crew's performed continuity for willingness to restore extraction.", "source_refs": ["ceres-control-war"]}
+      ],
+      "must_not_know": [
+        {"text": "Imri must not know the private Forge archive or union witness packet beyond what the others expose under glass.", "source_refs": ["orbital-forge", "ceres-control-war"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Maintenance-continuity rosters are authored historical elaboration in the Ceres Control War note; the fixture dramatizes their general political structure.",
+      "source_refs": ["ceres-control-war"]
+    },
+    {
+      "text": "Ceres Bloom Eighteen, Transfer Collar Four, Len Rusk, Pax Ader, Vela Quist, Imri Senn, the sensor gap, and all branch outcomes are fixture-local draft elements, not promoted historical canon.",
+      "source_refs": ["ceres-control-war", "bloom-anatomy"]
+    },
+    {
+      "text": "The cause of the missing seventeen-minute history remains unresolved. No branch may reveal sabotage by a named party without additional source authority.",
+      "source_refs": ["restrictions-on-warfare"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which Belt labor unions or shop committees became durable institutions after the Ceres Control War?",
+      "blocks_training": false,
+      "notes": "The source names Belt labor unions collectively. The fixture keeps the Collar Four crew local and does not found a named movement."
+    },
+    {
+      "question": "What standard clauses governed maintenance-continuity roster recognition across different PSC panels?",
+      "blocks_training": false,
+      "notes": "The elaboration establishes the political mechanism, not a universal legal template."
+    },
+    {
+      "question": "What exact economy schema should represent claimshare freezes, neutral-dock escrow, and replacement-part windows?",
+      "blocks_training": false,
+      "notes": "The fixture uses coarse variables and material consequences rather than inventing a universal currency implementation."
+    }
+  ]
+}

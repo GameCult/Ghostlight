@@ -1,0 +1,376 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "tangle-ceres-continuity-roster-v0-visual",
+  "ink_ref": "examples/ink/aetheria/tangle-ceres-continuity-roster-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/aetheria/tangle-ceres-continuity-roster-v0.branch-and-fold.v0.training.json",
+  "scene_id": "tangle-ceres-continuity-roster-v0.collarfour-roster-hearing",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a Ceres Control War maintenance-continuity roster hearing.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary continuity work, split record custody, the missing sensor interval, four political responses, and four state-gated ending families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the collar overview, ordinary shift, each preparation choice, classification opening, sensor-history rupture, each evidence response, final disposition, and each ending family. The missing seventeen minutes stand alone as the power geometry change.",
+    "prompting_rule": "Each base image prompt restates the visible collar geometry, light, materials, bodies, interfaces, and relevant records in plain visual language. Character refs are assembled only for named characters visible in that frame.",
+    "global_style_cue": "Humane retro-industrial science-fiction storybook illustration, precise ink linework under thin gouache color, graphite-gray collar machinery, sodium amber work lamps, cold cyan pressure displays, small areas of union red, tactile worn materials, readable silhouettes and interfaces, cinematic workplace framing.",
+    "prompt_assembly_rule": "Assemble each image prompt from the global_style_cue, the complete scene base_image_prompt, visual refs only for visible named characters or groups, and triggered state or global branch image modifiers. Generated images provide illustration and material mood; the scene_set map owns layout continuity.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture returns to one transfer-collar bay from several angles and moves records and bodies between fixed stations, so a draft scene_set map is required for review continuity.",
+      "future_scene_set_need": "Before high-consistency website rendering, build a plan view or simple 3D blockout for the continuity desk, collar-service wall, crew ramp, hubward freight iris, ore handwheel, white life-safety bypass, three consoles, meal table, union locker, public reader, and outer service rail."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "collarfour_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide view from the inward crew ramp of a compact rotating-side transfer-collar maintenance bay inside an asteroid-built habitat near Ceres. The outward side curves in graphite-gray layered steel and dark structural composite around a massive frame-transfer bearing, crossed by ribbed supports, bundled coolant trunks, pressure taps, cable trays, and a cyan-lit seal manifold. Boots, cups, and tools settle toward the grated outward deck. Hubward, a round freight iris opens toward a guide-railed low-gravity transfer tube; beside it sit a black ore-gate handwheel and a narrow white life-safety bypass pipe. Three waist-high consoles form a triangle around a scarred metal meal table: red-sealed union handovers, amber AU safety exceptions, and white SolEx certification history. A red union locker is bolted under the table; a yellow clipped service rail continues through an outward hatch. Len Rusk, a stocky brown mechanic in patched gray coveralls and red union armband, pours tea while lean Pax Ader studies a tethered slate, pale Vela Quist stands at the amber console, and dark-skinned Imri Senn sits at the white console. Five tired maintenance workers occupy the ramp and table under sodium work lamps.",
+        "visible_characters": [
+          {"agent_id": "len_rusk", "default_stance": "standing at the meal table with dented thermal flask", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "pax_ader", "default_stance": "leaning over a wrist-tethered repair slate", "visual_ref": "visual_character_refs.characters.pax_ader"},
+          {"agent_id": "vela_quist", "default_stance": "upright at the amber AU exception console", "visual_ref": "visual_character_refs.characters.vela_quist"},
+          {"agent_id": "imri_senn", "default_stance": "seated at the white SolEx baseline console", "visual_ref": "visual_character_refs.characters.imri_senn"},
+          {"agent_id": "collarfour_night_crew", "default_stance": "resting at the table and inward ramp with tools still clipped on", "visual_ref": "visual_character_refs.groups.collarfour_night_crew"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The bay is one wedge-shaped room on the rotating side of a frame-transfer collar beside a nonrotating hub, with outward bearing machinery opposite the inward crew ramp and the freight iris on the hubward end.",
+          "The three consoles and meal table occupy the center; the union locker stays under the table."
+        ]
+      },
+      {
+        "visual_scene_id": "collarfour_routine",
+        "ink_anchor": "routine",
+        "base_image_prompt": "Medium-wide diagonal view across a compact rotating-side transfer-collar bay with a round hubward freight iris, curved frame-transfer bearing wall, ribbed supports, bundled coolant trunks, three waist-high consoles around a scarred meal table, and a grated inward crew ramp. A wall roster beside the ramp is split into a cyan life-safety column and an unstaffed dark production column, represented by simple icons and rows of illuminated shift marks. Len Rusk, stocky brown pressure mechanic with shaved head, patched gray coveralls, red armband, and black tool harness, checks a pressure gauge. Pax Ader, lean olive-skinned planner in a faded ochre work jacket with a silver prosthetic left forearm, compares the cyan seal controller with a tethered slate. Vela Quist, pale administrator in an immaculate navy pressure coat with copper collar tabs, releases a small actuator crate through an amber-lock cabinet. Imri Senn, tall dark-skinned auditor in a charcoal suit with white seam piping, watches from the SolEx console. Five mixed-gender workers in patched pressure coveralls sit beneath sodium lamps around tea and tool rolls.",
+        "visible_characters": [
+          {"agent_id": "len_rusk", "default_stance": "one gloved hand on a pressure gauge", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "pax_ader", "default_stance": "comparing controller and slate", "visual_ref": "visual_character_refs.characters.pax_ader"},
+          {"agent_id": "vela_quist", "default_stance": "releasing one small parts crate", "visual_ref": "visual_character_refs.characters.vela_quist"},
+          {"agent_id": "imri_senn", "default_stance": "watching from the baseline console", "visual_ref": "visual_character_refs.characters.imri_senn"},
+          {"agent_id": "collarfour_night_crew", "default_stance": "seated in a staggered rest order around tools and tea", "visual_ref": "visual_character_refs.groups.collarfour_night_crew"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The roster is mounted beside the inward ramp and remains separate from the three institutional consoles.",
+          "The production column is visually empty while the life-safety column remains staffed."
+        ]
+      },
+      {
+        "visual_scene_id": "collarfour_mutual_aid",
+        "ink_anchor": "preparation_choice.prepare_mutual_aid",
+        "base_image_prompt": "Close-medium view of the scarred meal table at the center of a graphite-gray transfer-collar bay. Len Rusk, a stocky brown mechanic with shaved head, patched coveralls, red union armband, black tool harness, and chipped enamel cup, pours dark tea from a dented thermal flask. Five exhausted maintenance workers in patched gray and blue pressure coveralls sit or stand in a deliberate rest order; one ties a medication pouch to another worker's tool bag while a third points to new sleep, medicine-run, and child-watch marks on the cyan side of the wall roster. The round freight iris, black ore handwheel, three institutional consoles, ribbed collar supports, bundled pipes, and sodium work lamps remain visible around them.",
+        "visible_characters": [
+          {"agent_id": "len_rusk", "default_stance": "pouring tea and writing the sleep order", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "collarfour_night_crew", "default_stance": "sharing cups, medication pouch, and coverage marks", "visual_ref": "visual_character_refs.groups.collarfour_night_crew"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Mutual aid uses the central table and roster; it does not relocate the crew to a separate domestic room."]
+      },
+      {
+        "visual_scene_id": "collarfour_forge_walkdown",
+        "ink_anchor": "preparation_choice.prepare_forge_walkdown",
+        "base_image_prompt": "Medium view along a narrow yellow service rail on the outward side of a rotating transfer-collar bay. A curved layered-steel pressure collar and dark structural composite surround a massive frame-transfer bearing behind ribbed supports, silver coolant cuffs, cyan pressure taps, braided cables, and three visibly different temporary repair patches. Len Rusk, stocky brown mechanic in patched gray coveralls and red armband, clips his black harness to the rail and touches one pressure tap. Pax Ader, lean olive-skinned planner in faded ochre jacket with silver prosthetic left forearm, follows with a dark repair slate tethered to the right wrist, displaying part diagrams and countersignature marks. Sodium lamps create hard shadows along the rail; the central meal table and round freight iris are visible through the open service hatch behind them.",
+        "visible_characters": [
+          {"agent_id": "len_rusk", "default_stance": "clipped to the rail with one hand on a pressure tap", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "pax_ader", "default_stance": "clipped behind Len with repair slate open", "visual_ref": "visual_character_refs.characters.pax_ader"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The outer service rail begins at the outward hatch inside the bay and runs beside the collar bearing and pressure structure."]
+      },
+      {
+        "visual_scene_id": "collarfour_union_locker",
+        "ink_anchor": "preparation_choice.prepare_local_custody",
+        "base_image_prompt": "Low close view beneath the scarred meal table in a transfer-collar maintenance bay. Len Rusk, stocky brown mechanic in patched gray coveralls and red union armband, places three dull rectangular memory wafers into separate positions: one inside a red bolted union locker, one into the sleeve of a tethered Forge slate, and one beneath a transparent public reader facing a ceiling camera. Each wafer gains a red illuminated custody seal. Imri Senn, tall dark-skinned auditor with close curls, charcoal suit, white seam piping, and a square baseline token, watches from the white SolEx console in the background. The black ore handwheel, narrow white life-safety pipe, ribbed machinery wall, and inward crew ramp locate the action inside the same bay.",
+        "visible_characters": [
+          {"agent_id": "len_rusk", "default_stance": "crouched beneath the table distributing memory wafers", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "imri_senn", "default_stance": "watching each red seal from the SolEx console", "visual_ref": "visual_character_refs.characters.imri_senn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The red locker is fixed under the meal table; the public reader faces both the room and the ceiling PSC camera."]
+      },
+      {
+        "visual_scene_id": "collarfour_hearing_open",
+        "ink_anchor": "hearing_fold",
+        "base_image_prompt": "Symmetrical medium-wide view of the transfer-collar continuity desk as a remote classification hearing opens. Twelve white clock segments float above the round freight iris. Len Rusk stands at the red union handover console; Pax Ader keeps a tethered repair slate closed beside the collar-service wall; Vela Quist opens an amber AU safety-exception ledger; Imri Senn opens a white SolEx certification baseline. The three consoles form a triangle around the scarred meal table and red union locker. Five tired workers remain on the inward ramp under sodium lamps. Cyan pressure lines on the curved bearing wall agree across all displays for one calm moment.",
+        "visible_characters": [
+          {"agent_id": "len_rusk", "default_stance": "standing at the union console with both hands visible", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "pax_ader", "default_stance": "holding the closed Forge slate near the outward hatch", "visual_ref": "visual_character_refs.characters.pax_ader"},
+          {"agent_id": "vela_quist", "default_stance": "opening the amber exception ledger", "visual_ref": "visual_character_refs.characters.vela_quist"},
+          {"agent_id": "imri_senn", "default_stance": "opening the white baseline display", "visual_ref": "visual_character_refs.characters.imri_senn"},
+          {"agent_id": "collarfour_night_crew", "default_stance": "watching from the inward ramp and table", "visual_ref": "visual_character_refs.groups.collarfour_night_crew"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "mutual_aid >= 3", "prompt": "Cups, a medication pouch, and an orderly sleep roster are visible among the night crew."},
+          {"trigger": "local_custody >= 4", "prompt": "Three red-sealed memory wafers remain visibly divided between locker, Forge sleeve, and public reader."}
+        ],
+        "visual_continuity_notes": ["The PSC observer is represented by the clock and ceiling camera, not a person in the room."]
+      },
+      {
+        "visual_scene_id": "collarfour_telemetry_break",
+        "ink_anchor": "telemetry_break",
+        "base_image_prompt": "Pivotal medium-wide frame inside the transfer-collar bay. A cyan pressure history crossing the three consoles contains a sharp seventeen-minute black gap enclosed by a red bracket; the twelve-segment clock above the freight iris has turned amber. Live pressure remains green on the collar manifold. Len Rusk freezes at the red union console. Pax Ader holds the Forge slate closed against a faded ochre jacket, silver prosthetic forearm catching red light. Vela Quist stands at the amber exception display in a navy pressure coat. Imri Senn sits composed at the white baseline console in a charcoal suit with white piping. Five workers on the inward ramp look from the missing data to the physical pipes. The curved bearing wall, black ore handwheel, white life-safety bypass, meal table, and red locker remain sharply readable.",
+        "visible_characters": [
+          {"agent_id": "len_rusk", "default_stance": "frozen at the union console, eyes on the black data gap", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "pax_ader", "default_stance": "holding the closed slate against the jacket", "visual_ref": "visual_character_refs.characters.pax_ader"},
+          {"agent_id": "vela_quist", "default_stance": "upright beside the amber exception ledger", "visual_ref": "visual_character_refs.characters.vela_quist"},
+          {"agent_id": "imri_senn", "default_stance": "seated with hands folded at the baseline console", "visual_ref": "visual_character_refs.characters.imri_senn"},
+          {"agent_id": "collarfour_night_crew", "default_stance": "watching the pipes and displays from the inward ramp", "visual_ref": "visual_character_refs.groups.collarfour_night_crew"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The sensor-history gap is digital evidence; the live physical pressure line remains green."]
+      },
+      {
+        "visual_scene_id": "collarfour_ore_gate",
+        "ink_anchor": "record_choice.respond_physical_boundary",
+        "base_image_prompt": "Low medium action frame at the hubward freight iris of a compact transfer-collar bay. Len Rusk, stocky brown mechanic with shaved head, patched gray coveralls, red armband, black tool harness, and chipped enamel cup clipped at the belt, strains both gloved hands against a large black ore-gate handwheel until metal teeth meet across the lower freight track. Above the shut ore teeth, a narrow white life-safety bypass pipe remains open with bright cyan flow indicators feeding pressure and fire-isolation instruments. Len presses a red custody wafer into a socket beside the wheel. Imri Senn stands several steps away at the white console, composed but intent. Curved collar ribs, amber clock segments, central meal table, and inward crew ramp define the bay.",
+        "visible_characters": [
+          {"agent_id": "len_rusk", "default_stance": "braced at the black handwheel with both hands", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "imri_senn", "default_stance": "watching from the baseline console", "visual_ref": "visual_character_refs.characters.imri_senn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The black ore gate and white life-safety bypass are mechanically separate paths beside the same freight iris."]
+      },
+      {
+        "visual_scene_id": "collarfour_forge_provenance",
+        "ink_anchor": "record_choice.respond_forge_provenance",
+        "base_image_prompt": "Close-medium view at the transparent public reader beside the central meal table in a transfer-collar bay. Pax Ader, lean olive-skinned planner with short black hair, faded ochre work jacket, silver prosthetic left forearm, and dark slate tethered to the right wrist, opens one narrow luminous pane showing controller geometry, part ancestry, checksum blocks, and an installer seal. The surrounding slate stays dark. Len Rusk stands beside Pax in patched gray coveralls and red armband. Imri Senn watches from the white certification console across the table. Overhead, the ceiling camera and amber PSC clock capture the narrow disclosure; the ribbed collar wall, cyan manifold, freight iris, and red union locker remain visible.",
+        "visible_characters": [
+          {"agent_id": "pax_ader", "default_stance": "holding one narrow provenance pane beneath the camera", "visual_ref": "visual_character_refs.characters.pax_ader"},
+          {"agent_id": "len_rusk", "default_stance": "standing beside Pax with hands clear of the slate", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "imri_senn", "default_stance": "watching from across the meal table", "visual_ref": "visual_character_refs.characters.imri_senn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Only the narrow repair-provenance pane is illuminated; the larger Forge archive remains visibly closed."]
+      },
+      {
+        "visual_scene_id": "collarfour_au_exception",
+        "ink_anchor": "record_choice.respond_au_exception",
+        "base_image_prompt": "Medium view across the three-console triangle in the transfer-collar bay. Vela Quist, pale middle-aged administrator with silver bob, immaculate navy pressure coat, copper collar tabs, and amber credential ring, opens a bright amber safety-exception record bearing her biometric seal. Len Rusk rotates the red union handover screen toward the ceiling camera while the actual red-sealed wafers remain behind transparent glass beside the capped transfer port. Imri Senn reads from the white SolEx console. The scarred meal table separates all three. Curved collar plating, coolant trunks, cyan manifold, round freight iris, black handwheel, white bypass, and inward ramp stay visible under sodium light.",
+        "visible_characters": [
+          {"agent_id": "vela_quist", "default_stance": "one hand on the signed amber exception record", "visual_ref": "visual_character_refs.characters.vela_quist"},
+          {"agent_id": "len_rusk", "default_stance": "turning the union display toward the ceiling camera", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "imri_senn", "default_stance": "reading the exception from the baseline console", "visual_ref": "visual_character_refs.characters.imri_senn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The union record remains behind glass even while AU's exception enters the public display."]
+      },
+      {
+        "visual_scene_id": "collarfour_witness_glass",
+        "ink_anchor": "record_choice.respond_witnessed_handovers",
+        "base_image_prompt": "Close view of a transparent evidence reader built into the central continuity desk of a transfer-collar bay. Beneath thick clear glass lie red-sealed memory wafers projecting witness silhouettes, timestamps, pressure tap diagrams, and a black seventeen-minute interval; a round transfer port beside them is covered by a solid red cap. Len Rusk, stocky brown mechanic in patched gray coveralls and red armband, keeps one gloved palm on the cap. Imri Senn, tall dark-skinned auditor with close curls, charcoal suit, white seam piping, and square baseline token, leans close enough to inspect while keeping hands behind the back. The ceiling camera, amber clock, three consoles, collar-service pipes, and freight iris place the closeup inside the same bay.",
+        "visible_characters": [
+          {"agent_id": "len_rusk", "default_stance": "one palm on the capped transfer port", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "imri_senn", "default_stance": "leaning to inspect with hands held behind the back", "visual_ref": "visual_character_refs.characters.imri_senn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Inspection happens through the glass; the capped transfer port is a distinct adjacent component."]
+      },
+      {
+        "visual_scene_id": "collarfour_disposition_threshold",
+        "ink_anchor": "classification_fold",
+        "base_image_prompt": "Wide centered decision frame inside the wedge-shaped transfer-collar bay. Four amber PSC clock segments remain above the round freight iris. Len Rusk stands between the red union console and black ore handwheel. Pax Ader holds the Forge slate near the outward collar-service hatch. Vela Quist waits at the amber AU exception console with an actuator-crate release control. Imri Senn stands at the white SolEx baseline console beside a red emergency-custody bracket. Five tired workers line the inward ramp around the scarred meal table. The curved bearing wall shows layered steel and dark structural composite, ribbed supports, coolant trunks, cable trays, cyan pressure manifold, and the separate white life-safety bypass. Red-sealed wafers, a capped reader port, and the small parts crate make every option physically present.",
+        "visible_characters": [
+          {"agent_id": "len_rusk", "default_stance": "centered between union console and ore handwheel", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "pax_ader", "default_stance": "holding the tethered slate near the outward hatch", "visual_ref": "visual_character_refs.characters.pax_ader"},
+          {"agent_id": "vela_quist", "default_stance": "waiting beside amber ledger and parts release", "visual_ref": "visual_character_refs.characters.vela_quist"},
+          {"agent_id": "imri_senn", "default_stance": "standing beside the red emergency-custody bracket", "visual_ref": "visual_character_refs.characters.imri_senn"},
+          {"agent_id": "collarfour_night_crew", "default_stance": "watching from the inward ramp around the meal table", "visual_ref": "visual_character_refs.groups.collarfour_night_crew"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "crew_endurance <= 2", "prompt": "Workers lean against the ramp rail and table, faces gray with fatigue, tool grips careful and slow."},
+          {"trigger": "replacement_window <= 1", "prompt": "The actuator crate icon shifts away from the bay along a small amber dock diagram."},
+          {"trigger": "solex_case >= 4", "prompt": "A red emergency-custody bracket expands beside Imri's white baseline console."}
+        ],
+        "visual_continuity_notes": ["Every final option is represented by an already established object or station in the room."]
+      },
+      {
+        "visual_scene_id": "collarfour_ending_split",
+        "ink_anchor": "ending_split_custody_holds",
+        "base_image_prompt": "Aftermath in the transfer-collar bay centered on a luminous composite record suspended above the scarred meal table. Four colored evidence lanes remain visibly separate: red union witness marks from the locked wafers, ochre Forge part diagrams from Pax Ader's tethered slate, amber AU exception seal, and white SolEx baseline lines. Len Rusk stands at the union console while Pax keeps the larger slate dark. Five maintenance workers gather around tea and the wall roster. The black ore gate remains shut, the white life-safety bypass glows cyan, and a small actuator crate waits inside the inward ramp under sodium work lamps. The curved collar-service wall and round freight iris preserve the transfer-collar setting.",
+        "visible_characters": [
+          {"agent_id": "len_rusk", "default_stance": "standing at the union console beside the separate evidence lanes", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "pax_ader", "default_stance": "holding the dark larger archive beside one open narrow pane", "visual_ref": "visual_character_refs.characters.pax_ader"},
+          {"agent_id": "collarfour_night_crew", "default_stance": "gathered around tea and the shift roster", "visual_ref": "visual_character_refs.groups.collarfour_night_crew"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The split-custody ending uses four separate evidence lanes; the source records do not merge into one console."]
+      },
+      {
+        "visual_scene_id": "collarfour_ending_au",
+        "ink_anchor": "ending_au_addendum_holds",
+        "base_image_prompt": "Medium aftermath at the central meal table of the transfer-collar bay. Vela Quist, pale administrator with silver bob, immaculate navy pressure coat, copper collar tabs, and amber credential ring, signs an amber continuity addendum. Len Rusk, stocky brown mechanic in patched gray coveralls and red armband, signs below while red-sealed union handover wafers remain locked beneath transparent glass. An opened actuator crate and several meal packs sit on the inward side of the table. Five workers read the projected clause together. The black ore gate stays shut beside the round freight iris, the white life-safety bypass remains cyan, and AU amber light spreads across the three-console triangle.",
+        "visible_characters": [
+          {"agent_id": "vela_quist", "default_stance": "signing first at the amber addendum", "visual_ref": "visual_character_refs.characters.vela_quist"},
+          {"agent_id": "len_rusk", "default_stance": "signing below while watching the custody boundary", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "collarfour_night_crew", "default_stance": "reading the clause together around the table", "visual_ref": "visual_character_refs.groups.collarfour_night_crew"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["AU gains only the authority shown by the triggered ending modifier; the red source wafers stay physically separate."]
+      },
+      {
+        "visual_scene_id": "collarfour_ending_solex",
+        "ink_anchor": "ending_solex_exchange_holds",
+        "base_image_prompt": "Hubward medium-wide aftermath inside the transfer-collar bay. Len Rusk stands at the black handwheel beside the round freight iris while one compact ore train crosses the low-gravity transfer tube through open black gate teeth. A white life-safety bypass above it remains cyan and separate. Imri Senn, tall dark-skinned auditor in charcoal suit with white seam piping, stands at the white SolEx console where claimshare account blocks change from amber to clear. Red union custody wafers log the passing cargo at the gate socket. The scarred meal table, three consoles, inward ramp, curved collar ribs, coolant trunks, and sodium lamps remain visible.",
+        "visible_characters": [
+          {"agent_id": "len_rusk", "default_stance": "one hand on the black gate wheel, ready to close it", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "imri_senn", "default_stance": "watching claimshare blocks clear at the baseline console", "visual_ref": "visual_character_refs.characters.imri_senn"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The freight exchange occurs through the established hubward iris and physical ore gate."]
+      },
+      {
+        "visual_scene_id": "collarfour_ending_local",
+        "ink_anchor": "ending_local_hold_holds",
+        "base_image_prompt": "Quiet late-shift aftermath in a compact rotating-side transfer-collar bay. The black ore gate is shut, the white life-safety bypass glows cyan, and one amber classification segment has faded above the round freight iris. Len Rusk sits at the scarred meal table with a chipped enamel cup and red union armband. Pax Ader leaves one narrow repair pane open on a tethered slate beside the red locker. Five exhausted workers divide meal packs, medication pouch, child-watch marker, sleep blanket, and pressure-round tools. Vela Quist is visible only through an open inward-corridor hatch placing two meal packs on the deck, her navy sleeve and copper cuff clear. Curved layered-steel collar plating, dark structural composite, frame-transfer bearing, structural ribs, coolant trunks, pressure manifold, and sodium lamps make the small act occur inside the industrial body it sustains.",
+        "visible_characters": [
+          {"agent_id": "len_rusk", "default_stance": "seated with cup beside the shift roster", "visual_ref": "visual_character_refs.characters.len_rusk"},
+          {"agent_id": "pax_ader", "default_stance": "leaving one narrow repair pane open near the red locker", "visual_ref": "visual_character_refs.characters.pax_ader"},
+          {"agent_id": "vela_quist", "default_stance": "at the inward hatch placing two meal packs on the deck", "visual_ref": "visual_character_refs.characters.vela_quist"},
+          {"agent_id": "collarfour_night_crew", "default_stance": "dividing care work and pressure tools around the table", "visual_ref": "visual_character_refs.groups.collarfour_night_crew"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The hopeful ending remains inside one work bay and one shift; it does not depict a rally or named movement."]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "mutual_aid_visible",
+        "trigger": "branch_label == prepare_mutual_aid",
+        "apply_to_visual_scene_ids": ["collarfour_hearing_open", "collarfour_disposition_threshold", "collarfour_ending_au", "collarfour_ending_local"],
+        "modifier_prompt": "Add orderly tea cups, a medication pouch, sleep markers, and shared care assignments among the maintenance crew."
+      },
+      {
+        "modifier_id": "forge_walkdown_visible",
+        "trigger": "branch_label == prepare_forge_walkdown",
+        "apply_to_visual_scene_ids": ["collarfour_hearing_open", "collarfour_disposition_threshold", "collarfour_ending_split"],
+        "modifier_prompt": "Add countersignature marks and three authenticated temporary repair symbols on Pax's narrow Forge pane."
+      },
+      {
+        "modifier_id": "distributed_wafers_visible",
+        "trigger": "branch_label == prepare_local_custody",
+        "apply_to_visual_scene_ids": ["collarfour_hearing_open", "collarfour_disposition_threshold", "collarfour_ending_split"],
+        "modifier_prompt": "Show three red-sealed memory wafers divided among the union locker, Forge sleeve, and transparent public reader."
+      },
+      {
+        "modifier_id": "physical_air_ore_boundary",
+        "trigger": "branch_label == respond_physical_boundary",
+        "apply_to_visual_scene_ids": ["collarfour_disposition_threshold", "collarfour_ending_split", "collarfour_ending_au", "collarfour_ending_local"],
+        "modifier_prompt": "Show black ore-gate teeth fully shut and the separate white life-safety bypass glowing cyan above them."
+      },
+      {
+        "modifier_id": "forge_provenance_visible",
+        "trigger": "branch_label == respond_forge_provenance",
+        "apply_to_visual_scene_ids": ["collarfour_disposition_threshold", "collarfour_ending_split"],
+        "modifier_prompt": "Add one narrow illuminated repair-provenance pane with part ancestry, checksum blocks, and installer seal while the larger slate remains dark."
+      },
+      {
+        "modifier_id": "au_exception_visible",
+        "trigger": "branch_label == respond_au_exception",
+        "apply_to_visual_scene_ids": ["collarfour_disposition_threshold", "collarfour_ending_au"],
+        "modifier_prompt": "Add Vela's bright amber biometric exception seal to the public display while red union wafers remain behind glass."
+      },
+      {
+        "modifier_id": "inspection_without_transfer_visible",
+        "trigger": "branch_label == respond_witnessed_handovers",
+        "apply_to_visual_scene_ids": ["collarfour_disposition_threshold", "collarfour_ending_split"],
+        "modifier_prompt": "Show union witness names and pressure diagrams readable beneath transparent glass with the adjacent transfer port firmly capped red."
+      },
+      {
+        "modifier_id": "split_custody_success_visual",
+        "trigger": "ending_label == bounded_labor_action_recognized",
+        "apply_to_visual_scene_ids": ["collarfour_ending_split"],
+        "modifier_prompt": "Four separate evidence lanes converge only on a green bounded-labor classification symbol; the actuator crate sits inside the crew ramp."
+      },
+      {
+        "modifier_id": "split_custody_cost_visual",
+        "trigger": "ending_label == composite_record_insufficient",
+        "apply_to_visual_scene_ids": ["collarfour_ending_split"],
+        "modifier_prompt": "The composite ends in an amber unresolved symbol; the actuator crate is visible behind a sealed dock diagram while Pax begins another walkdown."
+      },
+      {
+        "modifier_id": "au_addendum_success_visual",
+        "trigger": "ending_label == au_roster_recognition",
+        "apply_to_visual_scene_ids": ["collarfour_ending_au"],
+        "modifier_prompt": "The addendum projects a narrow amber summary-ownership bracket; the red source wafers stay locked and the actuator crate stands open."
+      },
+      {
+        "modifier_id": "au_addendum_cost_visual",
+        "trigger": "ending_label == au_continuity_capture",
+        "apply_to_visual_scene_ids": ["collarfour_ending_au"],
+        "modifier_prompt": "A broad amber Ramp Administration frame encloses the wall roster; the workers face the captured roster while untouched tea cups cool."
+      },
+      {
+        "modifier_id": "solex_exchange_success_visual",
+        "trigger": "ending_label == limited_throughput_exchange",
+        "apply_to_visual_scene_ids": ["collarfour_ending_solex"],
+        "modifier_prompt": "Claimshare blocks clear before one short ore train crosses; Len keeps one hand on the wheel and red custody marks count each cargo unit."
+      },
+      {
+        "modifier_id": "solex_exchange_cost_visual",
+        "trigger": "ending_label == emergency_custody_triggered",
+        "apply_to_visual_scene_ids": ["collarfour_ending_solex"],
+        "modifier_prompt": "A red SolEx emergency-custody frame locks over the production controls while the ore train occupies the iris and union access marks turn gray."
+      },
+      {
+        "modifier_id": "local_hold_success_visual",
+        "trigger": "ending_label == local_refusal_survives",
+        "apply_to_visual_scene_ids": ["collarfour_ending_local"],
+        "modifier_prompt": "Workers divide meals, medicine, sleep, child watch, and pressure rounds in a calm small circle while the old actuator remains cyan."
+      },
+      {
+        "modifier_id": "local_hold_cost_visual",
+        "trigger": "ending_label == local_refusal_exhausted",
+        "apply_to_visual_scene_ids": ["collarfour_ending_local"],
+        "modifier_prompt": "The old actuator is half-dogged with a flashing amber fault; two exhausted workers hold the white bypass handwheel while Pax opens a stripped inspection-cart motor."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "ceres_bloom18_collarfour.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Compact wedge-shaped bay on the rotating side of a Bloom frame-transfer collar beside a nonrotating freight hub, with light apparent gravity toward the grated outward deck, one inward crew ramp, one hubward low-gravity freight iris, one outward service hatch and rail, and a central continuity desk.",
+      "fixed_zones": [
+        {"zone_id": "outward_collar_service_wall", "visible_form": "curved layered-steel pressure collar and dark structural composite around a frame-transfer bearing with structural ribs, coolant trunks, cable trays, pressure taps, and cyan manifold", "used_for": "live safety evidence and repair walkdown"},
+        {"zone_id": "hubward_freight_iris", "visible_form": "round low-gravity transfer opening with black ore-gate teeth, large handwheel, custody socket, and separate white life-safety bypass", "used_for": "production boundary and freight-cycle endings"},
+        {"zone_id": "inward_crew_ramp", "visible_form": "grated rising ramp to crew corridor with roster wall and parts-release cabinet", "used_for": "worker entrance, rest staging, parts arrival, and Vela's meal-pack delivery"},
+        {"zone_id": "continuity_desk_triangle", "visible_form": "red union, amber AU, and white SolEx waist-high consoles around a scarred meal table", "used_for": "record comparison and political disposition"},
+        {"zone_id": "union_locker_and_reader", "visible_form": "red bolted locker beneath meal table and transparent reader with distinct capped transfer port", "used_for": "distributed custody and inspection without transfer"},
+        {"zone_id": "outward_service_hatch_and_rail", "visible_form": "small hatch from the bay onto a narrow yellow clipped rail beside the collar bearing and pressure structure", "used_for": "Len and Pax repair-provenance walkdown"}
+      ],
+      "camera_slots": [
+        {"camera_id": "inward_wide", "supports_visual_scene_ids": ["collarfour_establishing", "collarfour_hearing_open", "collarfour_disposition_threshold"]},
+        {"camera_id": "desk_diagonal", "supports_visual_scene_ids": ["collarfour_routine", "collarfour_mutual_aid", "collarfour_au_exception", "collarfour_ending_au", "collarfour_ending_local"]},
+        {"camera_id": "outward_rail_medium", "supports_visual_scene_ids": ["collarfour_forge_walkdown"]},
+        {"camera_id": "locker_reader_close", "supports_visual_scene_ids": ["collarfour_union_locker", "collarfour_forge_provenance", "collarfour_witness_glass", "collarfour_ending_split"]},
+        {"camera_id": "hubward_gate_low", "supports_visual_scene_ids": ["collarfour_ore_gate", "collarfour_ending_solex"]},
+        {"camera_id": "rupture_centerline", "supports_visual_scene_ids": ["collarfour_telemetry_break"]}
+      ],
+      "routes": [
+        {"route_id": "crew_entry", "path": "crew corridor -> inward_crew_ramp -> central meal table and consoles", "users": ["workers", "Vela", "Imri"]},
+        {"route_id": "collar_walkdown", "path": "continuity desk -> outward service hatch -> clipped yellow rail beside frame-transfer bearing", "users": ["Len", "Pax"]},
+        {"route_id": "freight_transfer", "path": "nonrotating hub tube -> round freight iris -> rotating-side cargo route", "users": ["ore train", "actuator crate"]}
+      ],
+      "sightline_lanes": [
+        {"lane_id": "psc_public_record", "path": "union glass and three consoles -> ceiling camera -> amber classification clock", "supports": ["respond_forge_provenance", "respond_au_exception", "respond_witnessed_handovers", "decide_split_custody"]},
+        {"lane_id": "crew_live_system_check", "path": "inward ramp and meal table -> collar manifold -> ore gate and white bypass", "supports": ["telemetry_break", "respond_physical_boundary", "decide_local_hold"]}
+      ],
+      "ore_gate_states": [
+        {"label": "production_closed_safety_open", "visible_form": "black freight teeth meet across ore track while the separate white bypass remains cyan"},
+        {"label": "limited_cycle_open", "visible_form": "black freight teeth retract for one short train while red custody marks count cargo and the white bypass remains cyan"},
+        {"label": "emergency_custody_locked", "visible_form": "red SolEx frame controls the open production gate while union access marks turn gray"}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group designs for prompt assembly. Include only refs for characters visible in each scene.",
+    "characters": {
+      "len_rusk": "Len Rusk: baseline human pressure mechanic and union shift delegate, stocky middle-aged brown man, shaved head, tired dark eyes, broad nose, patched graphite-gray pressure coveralls with worn knees, red union armband on right sleeve, black tool harness, gray work gloves, chipped cream enamel cup clipped at belt. Body language is planted feet, literal hand placement on mechanisms, and dry patience. Stable details: shaved head, red right-arm band, patched gray coveralls, black harness, chipped cream cup.",
+      "pax_ader": "Pax Ader: baseline human Orbital Forge cavity planner, lean olive-skinned adult, short black hair with one white forelock, faded ochre work jacket over dark pressure layer, silver industrial prosthetic left forearm with three flat tool sockets, dark repair slate tethered to right wrist, yellow rail clip at belt. Body language favors angled stance, close material inspection, and guarding the slate against the torso. Stable details: white forelock, ochre jacket, silver left forearm, right-wrist slate, yellow rail clip.",
+      "vela_quist": "Vela Quist: baseline human AU Ramp Administrator, pale middle-aged woman, precise silver bob, narrow face, immaculate navy pressure coat with copper collar tabs and copper cuff seams, amber credential ring on left hand, black soft-soled deck boots. Body language is economical stillness, open palm near access controls, and clauses presented like practical tools. Stable details: silver bob, navy coat, copper tabs, amber ring.",
+      "imri_senn": "Imri Senn: baseline human SolEx throughput auditor, tall dark-skinned nonbinary adult, close black curls, rectangular face, charcoal pressure suit with thin white seam piping, square white baseline token at sternum, clean black gloves usually folded or held behind the back. Body language is patient upright alignment and minimal motion timed to dependency. Stable details: close curls, charcoal suit, white piping, square sternum token, clean black gloves."
+    },
+    "groups": {
+      "collarfour_night_crew": "Collar Four night crew: five baseline human maintenance workers of varied ages, genders, skin tones, and builds in patched gray or faded blue pressure coveralls, soft work boots, utility belts, pressure tags, and tired faces; one carries a green medication pouch, one a rolled sleep blanket, and two keep compact valve tools clipped at the hip. Group posture shifts between orderly rest, watchful standing, and exhausted support against the ramp rail."
+    }
+  },
+  "review_notes": [
+    "Draft scene_set map supplies one stable local coordinate frame, routes, camera slots, evidence sightlines, and ore-gate states for multi-angle review.",
+    "Every scene prompt restates visible geometry and character appearance; modifiers express only branch or ending deltas.",
+    "The PSC observer remains an off-frame camera and classification clock, so no absent character ref is assembled."
+  ]
+}
