@@ -6,6 +6,7 @@
 //! it never promotes its route or manufactures Ready.
 
 use anyhow::{Context, Result, anyhow, bail, ensure};
+use crate::world::{STATE_SCHEMA, state_schema_compatibility_tag};
 #[cfg(test)]
 use cultcache_rs::CacheBackingStore;
 use cultcache_rs::{CultCacheEnvelope, DatabaseEntry, SingleFileMessagePackBackingStore};
@@ -924,8 +925,8 @@ fn actual_capabilities() -> Vec<GameCultRuntimeCapability> {
         },
         GameCultRuntimeCapability {
             capability: "ghostlight.world-service".into(),
-            schema: "ghostlight.world_state.foundation.v0".into(),
-            compatibility: "foundation-v0".into(),
+            schema: STATE_SCHEMA.into(),
+            compatibility: state_schema_compatibility_tag(),
             capacity: 1,
         },
     ]
@@ -1212,8 +1213,8 @@ pub(crate) mod tests {
                 },
                 IdunnExpectedCapability {
                     capability: "ghostlight.world-service".into(),
-                    schema: "ghostlight.world_state.foundation.v0".into(),
-                    compatibility: "foundation-v0".into(),
+                    schema: STATE_SCHEMA.into(),
+                    compatibility: state_schema_compatibility_tag(),
                     minimum_capacity: 1,
                 },
             ],

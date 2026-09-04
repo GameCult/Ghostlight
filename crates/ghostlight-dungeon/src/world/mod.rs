@@ -32,8 +32,19 @@ use std::path::Path;
 use thiserror::Error;
 use uuid::Uuid;
 
-const STATE_SCHEMA: &str = "ghostlight.world_state.foundation.v1";
-const COMMIT_SCHEMA: &str = "ghostlight.world_commit.foundation.v2";
+pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.foundation.v1";
+pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.foundation.v2";
+
+/// Compatibility tag derived from [`STATE_SCHEMA`]: the trailing
+/// `<family>-<version>` pair (e.g. `foundation-v1`). Callers that publish a
+/// compatibility marker alongside the schema string must derive it from here
+/// rather than hand-copying a second literal that can drift from the schema.
+pub(crate) fn state_schema_compatibility_tag() -> String {
+    let mut segments = STATE_SCHEMA.rsplit('.');
+    let version = segments.next().unwrap_or_default();
+    let family = segments.next().unwrap_or_default();
+    format!("{family}-{version}")
+}
 
 macro_rules! opaque_uuid {
     ($name:ident) => {
@@ -663,7 +674,7 @@ fn prepare_creation(
         world_id,
         input.id,
         &input.patch,
-        true,
+        admits_human(0, &BTreeMap::new()),
     )
     .map_err(KernelError::PatchRejected)?;
     Ok(PreparedCreation {
@@ -955,7 +966,7 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
                 state.world_id,
                 command.id,
                 patch,
-                admits_human(state),
+                admits_human(state.revision, &state.subjects),
             )
             .map_err(KernelError::PatchRejected)?;
             Ok(WorldEffect::PatchAdmitted { resolved })
@@ -965,9 +976,12 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
 
 /// A human principal joins `required_approvers`, so only the lane that builds
 /// revision 0 from nothing may bind one. The predicate reads state, never the
-/// caller.
-fn admits_human(state: &WorldState) -> bool {
-    state.revision == 0 && state.subjects.is_empty()
+/// caller. It takes the two fields it inspects rather than a whole
+/// `WorldState` so the genesis lane, which resolves declarations before any
+/// `WorldState` exists, can call the same owner instead of hand-copying the
+/// literal it would otherwise always evaluate to.
+fn admits_human(revision: u64, subjects: &BTreeMap<SubjectId, SubjectState>) -> bool {
+    revision == 0 && subjects.is_empty()
 }
 
 impl WorldState {
@@ -1002,7 +1016,7 @@ impl WorldState {
             world_id,
             command.id,
             &command.patch,
-            true,
+            admits_human(0, &BTreeMap::new()),
         )
         .map_err(KernelError::PatchRejected)?;
         if &expected != resolved {
@@ -1043,7 +1057,7 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
             "admitted patch carries no canonical change".into(),
         ));
     }
-    let humans_admitted = admits_human(state);
+    let humans_admitted = admits_human(state.revision, &state.subjects);
     for entity in &resolved.entities {
         if !patch::is_canonical_text(&entity.entity.label) {
             return Err(KernelError::Invariant(

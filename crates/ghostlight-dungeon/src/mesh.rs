@@ -3,7 +3,10 @@
 //! The mesh publishes the world owner's current surface. It never pulls or
 //! repairs world state and it has no command authority.
 
-use crate::{eve, world::WorldSnapshot};
+use crate::{
+    eve,
+    world::{STATE_SCHEMA, WorldSnapshot},
+};
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use cultcache_rs::DatabaseEntry;
@@ -238,7 +241,7 @@ pub(crate) fn provider_advertisement(identity: &MeshRuntimeIdentity, updated_at:
             "gamecult.eve.command_invocation.v1",
             COMMAND_RESULT_SCHEMA,
             "heimdall.access_gate_state.v1",
-            "ghostlight.world_state.foundation.v0"
+            STATE_SCHEMA
         ],
         "witnesses":[{
             "kind":"source-commit",
@@ -254,7 +257,7 @@ pub(crate) fn provider_advertisement(identity: &MeshRuntimeIdentity, updated_at:
             "interactionModel":"typed-command-receipts",
             "worldInteraction":{
                 "projectionKind":"owner-derived",
-                "stateSchemas":["ghostlight.world_state.foundation.v0"],
+                "stateSchemas":[STATE_SCHEMA],
                 "commandBoundary":COMMAND_BOUNDARY,
                 "receiptSchema":COMMAND_RESULT_SCHEMA,
                 "loweringTargets":["browser","eve-native","tui"],

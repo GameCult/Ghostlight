@@ -55,7 +55,7 @@ impl DraftHandle {
 
 /// A reference is an exact canonical ID or a handle resolved in the same patch.
 /// There is no third form and no `From<String>`.
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(tag = "ref", content = "value", rename_all = "snake_case")]
 pub(crate) enum Ref<Id> {
     Existing(Id),
@@ -126,16 +126,17 @@ pub(crate) enum Mismatch {
         handle: DraftHandle,
     },
     UnresolvedDraft {
-        handle: DraftHandle,
+        referent: DraftHandle,
         expected: RefKind,
     },
     WrongKind {
-        handle: DraftHandle,
+        referrer: DraftHandle,
+        referent: Ref<EntityId>,
         expected: RefKind,
         actual: RefKind,
     },
     UnknownCanonical {
-        handle: DraftHandle,
+        referrer: DraftHandle,
         expected: RefKind,
     },
     UnadmittedController {
@@ -151,6 +152,11 @@ pub(crate) enum Mismatch {
         handle: DraftHandle,
     },
     NoCanonicalChange,
+    /// A genesis-lane resolution (the same empty-state case `admits_human`
+    /// tests) declared no subject, so the world would have no decision
+    /// subject to admit. This is a rejected patch, not a corrupt journal: the
+    /// mailbox actor must survive it.
+    NoDecisionSubject,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -309,11 +315,12 @@ pub(super) fn resolve_declarations(
         match reference {
             Ref::Draft(named) => match index.get(named) {
                 None => mismatches.push(Mismatch::UnresolvedDraft {
-                    handle: named.clone(),
+                    referent: named.clone(),
                     expected: PLACE,
                 }),
                 Some(kind) if *kind != PLACE => mismatches.push(Mismatch::WrongKind {
-                    handle: named.clone(),
+                    referrer: subject.handle.clone(),
+                    referent: Ref::Draft(named.clone()),
                     expected: PLACE,
                     actual: *kind,
                 }),
@@ -321,12 +328,13 @@ pub(super) fn resolve_declarations(
             },
             Ref::Existing(entity_id) => match state_entities.get(entity_id) {
                 None => mismatches.push(Mismatch::UnknownCanonical {
-                    handle: subject.handle.clone(),
+                    referrer: subject.handle.clone(),
                     expected: PLACE,
                 }),
                 Some(record) if record.kind != EntityKind::Place => {
                     mismatches.push(Mismatch::WrongKind {
-                        handle: subject.handle.clone(),
+                        referrer: subject.handle.clone(),
+                        referent: Ref::Existing(*entity_id),
                         expected: PLACE,
                         actual: RefKind::Entity(record.kind),
                     });
@@ -338,6 +346,15 @@ pub(super) fn resolve_declarations(
 
     if patch.declarations.is_empty() {
         mismatches.push(Mismatch::NoCanonicalChange);
+    }
+
+    if admits_human
+        && !patch
+            .declarations
+            .iter()
+            .any(|declaration| matches!(declaration, Declaration::Subject(_)))
+    {
+        mismatches.push(Mismatch::NoDecisionSubject);
     }
 
     if !mismatches.is_empty() {
@@ -546,7 +563,7 @@ mod tests {
         assert_eq!(
             mismatches,
             vec![Mismatch::UnresolvedDraft {
-                handle: DraftHandle::new("kharad-rhythm-road"),
+                referent: DraftHandle::new("kharad-rhythm-road"),
                 expected: PLACE,
             }]
         );
@@ -633,7 +650,8 @@ mod tests {
         assert_eq!(
             mismatches,
             vec![Mismatch::WrongKind {
-                handle: DraftHandle::new("rhythm-tithe"),
+                referrer: DraftHandle::new("rhythm-authority"),
+                referent: Ref::Draft(DraftHandle::new("rhythm-tithe")),
                 expected: PLACE,
                 actual: RefKind::Entity(EntityKind::Resource),
             }]
@@ -691,7 +709,7 @@ mod tests {
                 handle: DraftHandle::new("rhythm-road"),
             },
             Mismatch::UnresolvedDraft {
-                handle: DraftHandle::new("cavity-yard"),
+                referent: DraftHandle::new("cavity-yard"),
                 expected: PLACE,
             },
             Mismatch::UnadmittedController {

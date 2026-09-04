@@ -446,8 +446,9 @@ async fn run_owner(mut owned: OwnedWorld, mut receiver: mpsc::Receiver<Request>)
 mod tests {
     use super::*;
     use crate::world::{
-        AffordanceKind, CallerId, CommandBody, Declaration, DraftHandle, Mismatch, NewController,
-        PrincipalId, SubjectDeclaration, SubjectKind, WorldId,
+        AffordanceKind, CallerId, CommandBody, Declaration, DraftHandle, EntityDeclaration,
+        EntityKind, Mismatch, NewController, PrincipalId, SubjectDeclaration, SubjectKind,
+        WorldId,
     };
     use std::{collections::BTreeSet, path::PathBuf};
     use tempfile::TempDir;
@@ -570,6 +571,48 @@ mod tests {
             mailbox.snapshot().await,
             Err(MailboxError::Kernel(KernelError::WorldNotCreated))
         ));
+        assert!(
+            mailbox
+                .create_fixture(creation(CommandId::new(), "Valid"), &authenticated)
+                .await
+                .is_ok()
+        );
+
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// A creation patch that declares only entities passes structural and
+    /// reference resolution, so it must not reach the journal at all: an
+    /// empty subject set at genesis is a rejected patch, not a corrupt
+    /// journal that kills the owner actor.
+    #[tokio::test]
+    async fn genesis_without_a_subject_is_a_mismatch_not_a_journal_fault() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let authenticated = authenticated_owner();
+        let (mailbox, task) = WorldMailbox::open(&path).unwrap();
+
+        let mut subjectless = creation(CommandId::new(), "No Subject");
+        subjectless.patch.declarations = vec![Declaration::Entity(EntityDeclaration {
+            handle: DraftHandle::new("empty-hall"),
+            label: "The Empty Hall".into(),
+            kind: EntityKind::Place,
+        })];
+
+        let Err(MailboxError::Kernel(KernelError::PatchRejected(rejected))) =
+            mailbox.create_fixture(subjectless, &authenticated).await
+        else {
+            panic!("expected a rejected creation patch");
+        };
+        assert_eq!(rejected, vec![Mismatch::NoDecisionSubject]);
+        assert!(matches!(
+            mailbox.snapshot().await,
+            Err(MailboxError::Kernel(KernelError::WorldNotCreated))
+        ));
+
+        // The mailbox actor is still alive: a valid creation on the same
+        // kernel still succeeds.
         assert!(
             mailbox
                 .create_fixture(creation(CommandId::new(), "Valid"), &authenticated)
