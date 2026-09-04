@@ -51,6 +51,39 @@ pub(crate) struct Cost(pub(crate) u32);
 /// One year of minutes; bounds path sums.
 pub(super) const MAX_ROUTE_COST: u32 = 525_600;
 
+/// A conserved count. Unsigned because a holding can never be negative: a signed
+/// type would make "owes 3 iron" representable and push the real check to runtime
+/// anyway. Subtraction is `checked_sub` and its failure is `InsufficientCustody`;
+/// addition is `checked_add` and its failure is `QuantityOverflow`. No saturating
+/// arithmetic anywhere, because a silent clamp is a silent conservation break.
+/// There is no maximum: nothing sums quantities across resources, so the honest
+/// bound is the type's. There is no unit, because a unit is where prices enter.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(transparent)]
+pub(crate) struct Quantity(pub(crate) u64);
+
+/// What a subject depends on. A dependency is a bare relation: no magnitude, no
+/// kind beyond its target namespace, no clock, no cost. The variant selects the
+/// resolver, so the target kind is carried by the type rather than checked after
+/// the fact.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "target", content = "id", rename_all = "snake_case")]
+pub(crate) enum DependencyTarget {
+    Resource(EntityId),
+    Route(EdgeId),
+    Subject(SubjectId),
+}
+
+/// The proposal-time twin of [`DependencyTarget`], carrying references rather
+/// than canonical IDs.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "target", content = "ref", rename_all = "snake_case")]
+pub(crate) enum DependencyRef {
+    Resource(Ref<EntityId>),
+    Route(Ref<EdgeId>),
+    Subject(Ref<SubjectId>),
+}
+
 /// Where a subject stands. One place, derived from nothing else.
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(deny_unknown_fields)]
@@ -111,6 +144,16 @@ pub(crate) enum Site {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(transparent)]
 pub(crate) struct EvidenceRef(String);
+
+impl EvidenceRef {
+    /// Gated because no `AdmitPatch` ingress exists yet: every caller that
+    /// builds a patch today is a test. It loses the gate in the same commit as
+    /// the first production patch author.
+    #[cfg(test)]
+    pub(super) fn new(value: impl Into<String>) -> Self {
+        Self(value.into())
+    }
+}
 
 /// `position` is the subject's presence: one place it stands in. A subject
 /// declared without one is unplaced until a later pass gives placement an owner.
@@ -173,6 +216,46 @@ pub(crate) enum ComponentOp {
     AlterCost {
         route: Ref<EdgeId>,
         cost: Cost,
+    },
+    Transfer {
+        from: Ref<SubjectId>,
+        to: Ref<SubjectId>,
+        resource: Ref<EntityId>,
+        qty: Quantity,
+    },
+    /// One-for-one relabel: the same `qty` leaves `from_resource` and arrives in
+    /// `into_resource`, held by the same subject. A ratio would be a recipe, and
+    /// recipes belong to the consumer that owns production; the op shape makes a
+    /// non-conserving transform unrepresentable rather than merely checkable. A
+    /// world that needs lossy conversion writes `Transform` plus `Consume`, and
+    /// both terms then appear in the ledger.
+    Transform {
+        holder: Ref<SubjectId>,
+        from_resource: Ref<EntityId>,
+        into_resource: Ref<EntityId>,
+        qty: Quantity,
+    },
+    Consume {
+        holder: Ref<SubjectId>,
+        resource: Ref<EntityId>,
+        qty: Quantity,
+    },
+    /// The only creation path for quantity, in every lane including genesis. Its
+    /// `evidence` must appear in the same patch's `evidence` list, which makes
+    /// creation attributable; the commit chain then makes it tamper-evident.
+    Admit {
+        holder: Ref<SubjectId>,
+        resource: Ref<EntityId>,
+        qty: Quantity,
+        evidence: EvidenceRef,
+    },
+    Bind {
+        subject: Ref<SubjectId>,
+        target: DependencyRef,
+    },
+    Release {
+        subject: Ref<SubjectId>,
+        target: DependencyRef,
     },
 }
 
@@ -260,6 +343,33 @@ pub(crate) enum Mismatch {
     /// An operation that changes nothing is not a canonical change.
     NoOperationEffect {
         operation: usize,
+    },
+    /// The holder does not hold enough. Absence is zero, so "holds none at all"
+    /// is this variant at the boundary rather than a second name.
+    InsufficientCustody {
+        operation: usize,
+    },
+    /// A custody operation naming `Quantity(0)`: it moves nothing.
+    ZeroQuantity {
+        operation: usize,
+    },
+    /// A credit that would leave a holding above `u64::MAX`.
+    QuantityOverflow {
+        operation: usize,
+    },
+    /// An `Admit` whose `EvidenceRef` is not listed in this patch's `evidence`.
+    AdmitWithoutEvidence {
+        operation: usize,
+    },
+    /// A `Bind` or `Release` naming the acting subject as its own target.
+    SelfDependency {
+        operation: usize,
+    },
+    /// The candidate ledger does not balance for this resource: the total after
+    /// the patch is not the total before plus what was admitted and gained, less
+    /// what was consumed and spent.
+    CustodyNotConserved {
+        resource: RefName,
     },
 }
 
@@ -376,6 +486,76 @@ pub(super) enum ResolvedOp {
         edge_id: EdgeId,
         cost: Cost,
     },
+    Transfer {
+        from: SubjectId,
+        to: SubjectId,
+        resource: EntityId,
+        qty: Quantity,
+    },
+    Transform {
+        holder: SubjectId,
+        from_resource: EntityId,
+        into_resource: EntityId,
+        qty: Quantity,
+    },
+    Consume {
+        holder: SubjectId,
+        resource: EntityId,
+        qty: Quantity,
+    },
+    Admit {
+        holder: SubjectId,
+        resource: EntityId,
+        qty: Quantity,
+        evidence: EvidenceRef,
+    },
+    Bind {
+        subject: SubjectId,
+        target: DependencyTarget,
+    },
+    Release {
+        subject: SubjectId,
+        target: DependencyTarget,
+    },
+}
+
+/// One resource's movement across a whole patch. Accumulators are `u128` so an
+/// intermediate total cannot overflow while a stored per-holder `Quantity` stays
+/// `u64`.
+#[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
+pub(super) struct LedgerDelta {
+    pub(super) before: u128,
+    pub(super) after: u128,
+    pub(super) admitted: u128,
+    pub(super) consumed: u128,
+    pub(super) gained: u128,
+    pub(super) spent: u128,
+}
+
+/// The only statement of custody conservation, called by the resolver over the
+/// candidate map and again by `admit_resolved` over the committed partitions.
+/// Returns the first resource whose ledger does not balance, in key order, so
+/// the verdict is deterministic.
+///
+/// `Transfer` contributes to no term: its correctness is *proven by* this
+/// equation, because a transfer that moved a different amount out than in breaks
+/// the total for that resource. `Transform` contributes the same `qty` to one
+/// `spent` and one `gained`, so the one-for-one rule is this equation restricted
+/// to a single operation. Nothing else states conservation anywhere.
+pub(super) fn check_ledger<R: Ord + Clone>(deltas: &BTreeMap<R, LedgerDelta>) -> Option<R> {
+    deltas
+        .iter()
+        .find(|(_, delta)| {
+            let credited = delta
+                .before
+                .checked_add(delta.admitted)
+                .and_then(|total| total.checked_add(delta.gained));
+            let expected = credited
+                .and_then(|total| total.checked_sub(delta.consumed))
+                .and_then(|total| total.checked_sub(delta.spent));
+            expected != Some(delta.after)
+        })
+        .map(|(resource, _)| resource.clone())
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -420,6 +600,15 @@ fn key_of<Id: Copy>(reference: &Ref<Id>) -> Key<Id> {
         Ref::Existing(id) => Key::Existing(*id),
         Ref::Draft(handle) => Key::Draft(handle.clone()),
     }
+}
+
+/// [`DependencyTarget`] over candidate keys, so a dependency on a structure this
+/// patch declares is checked before any ID is minted.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum TargetKey {
+    Resource(Key<EntityId>),
+    Route(Key<EdgeId>),
+    Subject(Key<SubjectId>),
 }
 
 #[derive(Clone, Debug)]
@@ -470,28 +659,32 @@ pub(super) fn is_valid_cost(cost: Cost) -> bool {
     (1..=MAX_ROUTE_COST).contains(&cost.0)
 }
 
-fn resolve_place(
+/// The one entity resolver. `expected` names the kind the referring site
+/// requires; a handle or ID that answers with another kind is `WrongKind`.
+fn resolve_entity(
     site: Site,
+    expected_kind: EntityKind,
     reference: &Ref<EntityId>,
     index: &BTreeMap<DraftHandle, RefKind>,
     entities: &BTreeMap<EntityId, EntityRecord>,
     mismatches: &mut Vec<Mismatch>,
 ) -> Option<Key<EntityId>> {
+    let expected = RefKind::Entity(expected_kind);
     match reference {
         Ref::Draft(named) => match index.get(named) {
             None => {
                 mismatches.push(Mismatch::UnresolvedDraft {
                     site,
                     referent: named.clone(),
-                    expected: PLACE,
+                    expected,
                 });
                 None
             }
-            Some(kind) if *kind != PLACE => {
+            Some(kind) if *kind != expected => {
                 mismatches.push(Mismatch::WrongKind {
                     site,
                     referent: RefName::Entity(reference.clone()),
-                    expected: PLACE,
+                    expected,
                     actual: *kind,
                 });
                 None
@@ -500,17 +693,14 @@ fn resolve_place(
         },
         Ref::Existing(entity_id) => match entities.get(entity_id) {
             None => {
-                mismatches.push(Mismatch::UnknownCanonical {
-                    site,
-                    expected: PLACE,
-                });
+                mismatches.push(Mismatch::UnknownCanonical { site, expected });
                 None
             }
-            Some(record) if record.kind != EntityKind::Place => {
+            Some(record) if record.kind != expected_kind => {
                 mismatches.push(Mismatch::WrongKind {
                     site,
                     referent: RefName::Entity(reference.clone()),
-                    expected: PLACE,
+                    expected,
                     actual: RefKind::Entity(record.kind),
                 });
                 None
@@ -601,6 +791,59 @@ fn resolve_route(
                 None
             }
         }
+    }
+}
+
+fn resolve_dependency_target(
+    site: Site,
+    target: &DependencyRef,
+    index: &BTreeMap<DraftHandle, RefKind>,
+    state: &super::WorldState,
+    mismatches: &mut Vec<Mismatch>,
+) -> Option<TargetKey> {
+    match target {
+        DependencyRef::Resource(reference) => resolve_entity(
+            site,
+            EntityKind::Resource,
+            reference,
+            index,
+            &state.entities,
+            mismatches,
+        )
+        .map(TargetKey::Resource),
+        DependencyRef::Route(reference) => {
+            resolve_route(site, reference, index, &state.edges, mismatches).map(TargetKey::Route)
+        }
+        DependencyRef::Subject(reference) => {
+            resolve_subject(site, reference, index, &state.subjects, mismatches)
+                .map(TargetKey::Subject)
+        }
+    }
+}
+
+/// What a holder holds in the candidate map. Absence is zero, at both levels.
+fn candidate_held(
+    holdings: &BTreeMap<(Key<SubjectId>, Key<EntityId>), Quantity>,
+    holder: &Key<SubjectId>,
+    resource: &Key<EntityId>,
+) -> u64 {
+    holdings
+        .get(&(holder.clone(), resource.clone()))
+        .map_or(0, |quantity| quantity.0)
+}
+
+/// Zero removes the slot, so one representation of nothing survives the patch.
+fn candidate_set(
+    holdings: &mut BTreeMap<(Key<SubjectId>, Key<EntityId>), Quantity>,
+    holder: &Key<SubjectId>,
+    resource: &Key<EntityId>,
+    value: u64,
+) {
+    let slot = (holder.clone(), resource.clone());
+    if value == 0 {
+        holdings.remove(&slot);
+    } else {
+        holdings.insert(slot, Quantity(value));
     }
 }
 
@@ -704,6 +947,36 @@ pub(super) fn resolve_patch(
         .iter()
         .map(|(subject_id, position)| (Key::Existing(*subject_id), Key::Existing(position.place)))
         .collect();
+    let mut holdings: BTreeMap<(Key<SubjectId>, Key<EntityId>), Quantity> = state
+        .holdings
+        .iter()
+        .flat_map(|(subject_id, held)| {
+            held.iter().map(move |(entity_id, quantity)| {
+                (
+                    (Key::Existing(*subject_id), Key::Existing(*entity_id)),
+                    *quantity,
+                )
+            })
+        })
+        .collect();
+    let seeded_holdings = holdings.clone();
+    let mut dependencies: BTreeSet<(Key<SubjectId>, TargetKey)> = state
+        .dependencies
+        .iter()
+        .flat_map(|(subject_id, bound)| {
+            bound.iter().map(move |target| {
+                (
+                    Key::Existing(*subject_id),
+                    match target {
+                        DependencyTarget::Resource(id) => TargetKey::Resource(Key::Existing(*id)),
+                        DependencyTarget::Route(id) => TargetKey::Route(Key::Existing(*id)),
+                        DependencyTarget::Subject(id) => TargetKey::Subject(Key::Existing(*id)),
+                    },
+                )
+            })
+        })
+        .collect();
+    let mut deltas: BTreeMap<Key<EntityId>, LedgerDelta> = BTreeMap::new();
     let mut declared_places: Vec<(DraftHandle, Key<EntityId>)> = Vec::new();
 
     for declaration in &patch.declarations {
@@ -721,8 +994,9 @@ pub(super) fn resolve_patch(
                             expected: PLACE,
                             actual: RefKind::Entity(entity.kind),
                         });
-                    } else if let Some(parent) = resolve_place(
+                    } else if let Some(parent) = resolve_entity(
                         Site::Declaration(entity.handle.clone()),
+                        EntityKind::Place,
                         reference,
                         &index,
                         &state.entities,
@@ -734,8 +1008,9 @@ pub(super) fn resolve_patch(
             }
             Declaration::Subject(subject) => {
                 if let Some(reference) = &subject.position
-                    && let Some(place) = resolve_place(
+                    && let Some(place) = resolve_entity(
                         Site::Declaration(subject.handle.clone()),
+                        EntityKind::Place,
                         reference,
                         &index,
                         &state.entities,
@@ -746,15 +1021,17 @@ pub(super) fn resolve_patch(
                 }
             }
             Declaration::Route(route) => {
-                let from = resolve_place(
+                let from = resolve_entity(
                     Site::Declaration(route.handle.clone()),
+                    EntityKind::Place,
                     &route.from,
                     &index,
                     &state.entities,
                     &mut mismatches,
                 );
-                let to = resolve_place(
+                let to = resolve_entity(
                     Site::Declaration(route.handle.clone()),
+                    EntityKind::Place,
                     &route.to,
                     &index,
                     &state.entities,
@@ -900,7 +1177,297 @@ pub(super) fn resolve_patch(
                     candidate.cost = *cost;
                 }
             }
+            ComponentOp::Transfer {
+                from,
+                to,
+                resource,
+                qty,
+            } => {
+                let from_key = resolve_subject(
+                    Site::Operation(position),
+                    from,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                let to_key = resolve_subject(
+                    Site::Operation(position),
+                    to,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                let resource_key = resolve_entity(
+                    Site::Operation(position),
+                    EntityKind::Resource,
+                    resource,
+                    &index,
+                    &state.entities,
+                    &mut mismatches,
+                );
+                if qty.0 == 0 {
+                    mismatches.push(Mismatch::ZeroQuantity {
+                        operation: position,
+                    });
+                }
+                let (Some(from_key), Some(to_key), Some(resource_key)) =
+                    (from_key, to_key, resource_key)
+                else {
+                    continue;
+                };
+                if from_key == to_key {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                    continue;
+                }
+                if qty.0 == 0 {
+                    continue;
+                }
+                let held = candidate_held(&holdings, &from_key, &resource_key);
+                let Some(remaining) = held.checked_sub(qty.0) else {
+                    mismatches.push(Mismatch::InsufficientCustody {
+                        operation: position,
+                    });
+                    continue;
+                };
+                let Some(credited) =
+                    candidate_held(&holdings, &to_key, &resource_key).checked_add(qty.0)
+                else {
+                    mismatches.push(Mismatch::QuantityOverflow {
+                        operation: position,
+                    });
+                    continue;
+                };
+                candidate_set(&mut holdings, &from_key, &resource_key, remaining);
+                candidate_set(&mut holdings, &to_key, &resource_key, credited);
+                // A transfer contributes to no ledger term: the equation proves
+                // it, because moving a different amount out than in breaks the
+                // resource's total.
+                deltas.entry(resource_key).or_default();
+            }
+            ComponentOp::Transform {
+                holder,
+                from_resource,
+                into_resource,
+                qty,
+            } => {
+                let holder_key = resolve_subject(
+                    Site::Operation(position),
+                    holder,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                let from_key = resolve_entity(
+                    Site::Operation(position),
+                    EntityKind::Resource,
+                    from_resource,
+                    &index,
+                    &state.entities,
+                    &mut mismatches,
+                );
+                let into_key = resolve_entity(
+                    Site::Operation(position),
+                    EntityKind::Resource,
+                    into_resource,
+                    &index,
+                    &state.entities,
+                    &mut mismatches,
+                );
+                if qty.0 == 0 {
+                    mismatches.push(Mismatch::ZeroQuantity {
+                        operation: position,
+                    });
+                }
+                let (Some(holder_key), Some(from_key), Some(into_key)) =
+                    (holder_key, from_key, into_key)
+                else {
+                    continue;
+                };
+                if from_key == into_key {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                    continue;
+                }
+                if qty.0 == 0 {
+                    continue;
+                }
+                let Some(remaining) =
+                    candidate_held(&holdings, &holder_key, &from_key).checked_sub(qty.0)
+                else {
+                    mismatches.push(Mismatch::InsufficientCustody {
+                        operation: position,
+                    });
+                    continue;
+                };
+                let Some(gained) =
+                    candidate_held(&holdings, &holder_key, &into_key).checked_add(qty.0)
+                else {
+                    mismatches.push(Mismatch::QuantityOverflow {
+                        operation: position,
+                    });
+                    continue;
+                };
+                candidate_set(&mut holdings, &holder_key, &from_key, remaining);
+                candidate_set(&mut holdings, &holder_key, &into_key, gained);
+                deltas.entry(from_key).or_default().spent += u128::from(qty.0);
+                deltas.entry(into_key).or_default().gained += u128::from(qty.0);
+            }
+            ComponentOp::Consume {
+                holder,
+                resource,
+                qty,
+            } => {
+                let holder_key = resolve_subject(
+                    Site::Operation(position),
+                    holder,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                let resource_key = resolve_entity(
+                    Site::Operation(position),
+                    EntityKind::Resource,
+                    resource,
+                    &index,
+                    &state.entities,
+                    &mut mismatches,
+                );
+                if qty.0 == 0 {
+                    mismatches.push(Mismatch::ZeroQuantity {
+                        operation: position,
+                    });
+                }
+                let (Some(holder_key), Some(resource_key)) = (holder_key, resource_key) else {
+                    continue;
+                };
+                if qty.0 == 0 {
+                    continue;
+                }
+                let Some(remaining) =
+                    candidate_held(&holdings, &holder_key, &resource_key).checked_sub(qty.0)
+                else {
+                    mismatches.push(Mismatch::InsufficientCustody {
+                        operation: position,
+                    });
+                    continue;
+                };
+                candidate_set(&mut holdings, &holder_key, &resource_key, remaining);
+                deltas.entry(resource_key).or_default().consumed += u128::from(qty.0);
+            }
+            ComponentOp::Admit {
+                holder,
+                resource,
+                qty,
+                evidence,
+            } => {
+                let holder_key = resolve_subject(
+                    Site::Operation(position),
+                    holder,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                let resource_key = resolve_entity(
+                    Site::Operation(position),
+                    EntityKind::Resource,
+                    resource,
+                    &index,
+                    &state.entities,
+                    &mut mismatches,
+                );
+                if qty.0 == 0 {
+                    mismatches.push(Mismatch::ZeroQuantity {
+                        operation: position,
+                    });
+                }
+                let evidenced = is_canonical_text(&evidence.0) && patch.evidence.contains(evidence);
+                if !evidenced {
+                    mismatches.push(Mismatch::AdmitWithoutEvidence {
+                        operation: position,
+                    });
+                }
+                let (Some(holder_key), Some(resource_key)) = (holder_key, resource_key) else {
+                    continue;
+                };
+                if qty.0 == 0 || !evidenced {
+                    continue;
+                }
+                let Some(admitted) =
+                    candidate_held(&holdings, &holder_key, &resource_key).checked_add(qty.0)
+                else {
+                    mismatches.push(Mismatch::QuantityOverflow {
+                        operation: position,
+                    });
+                    continue;
+                };
+                candidate_set(&mut holdings, &holder_key, &resource_key, admitted);
+                deltas.entry(resource_key).or_default().admitted += u128::from(qty.0);
+            }
+            ComponentOp::Bind { subject, target } | ComponentOp::Release { subject, target } => {
+                let bind = matches!(operation, ComponentOp::Bind { .. });
+                let subject_key = resolve_subject(
+                    Site::Operation(position),
+                    subject,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                let target_key = resolve_dependency_target(
+                    Site::Operation(position),
+                    target,
+                    &index,
+                    state,
+                    &mut mismatches,
+                );
+                let (Some(subject_key), Some(target_key)) = (subject_key, target_key) else {
+                    continue;
+                };
+                if target_key == TargetKey::Subject(subject_key.clone()) {
+                    mismatches.push(Mismatch::SelfDependency {
+                        operation: position,
+                    });
+                    continue;
+                }
+                let slot = (subject_key, target_key);
+                if dependencies.contains(&slot) == bind {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                } else if bind {
+                    dependencies.insert(slot);
+                } else {
+                    dependencies.remove(&slot);
+                }
+            }
         }
+    }
+
+    // Conservation, over the complete candidate after every operation has been
+    // applied in order. Never per operation: a patch whose operations
+    // individually balance but whose net does not is impossible, and an
+    // intermediate negative was already caught above as `InsufficientCustody`.
+    for (resource_key, delta) in &mut deltas {
+        delta.before = seeded_holdings
+            .iter()
+            .filter(|((_, resource), _)| resource == resource_key)
+            .map(|(_, quantity)| u128::from(quantity.0))
+            .sum();
+        delta.after = holdings
+            .iter()
+            .filter(|((_, resource), _)| resource == resource_key)
+            .map(|(_, quantity)| u128::from(quantity.0))
+            .sum();
+    }
+    if let Some(resource) = check_ledger(&deltas) {
+        mismatches.push(Mismatch::CustodyNotConserved {
+            resource: RefName::Entity(match resource {
+                Key::Existing(entity_id) => Ref::Existing(entity_id),
+                Key::Draft(handle) => Ref::Draft(handle),
+            }),
+        });
     }
 
     if patch.declarations.is_empty() && patch.operations.is_empty() {
@@ -952,12 +1519,12 @@ pub(super) fn resolve_patch(
             },
         });
     }
-    let place_id = |key: &Key<EntityId>| -> EntityId {
+    let entity_id_of = |key: &Key<EntityId>| -> EntityId {
         match key {
             Key::Existing(entity_id) => *entity_id,
             Key::Draft(handle) => *allocated_entities
                 .get(handle)
-                .expect("a draft place reference resolved above"),
+                .expect("a draft entity reference resolved above"),
         }
     };
     for (resolved, declaration) in entities
@@ -975,7 +1542,7 @@ pub(super) fn resolve_patch(
         resolved.entity.container = declaration
             .container
             .as_ref()
-            .map(|reference| place_id(&key_of(reference)));
+            .map(|reference| entity_id_of(&key_of(reference)));
     }
 
     let mut allocated_routes: BTreeMap<DraftHandle, EdgeId> = BTreeMap::new();
@@ -1002,8 +1569,8 @@ pub(super) fn resolve_patch(
             edge_id,
             edge: EdgeRecord::Route {
                 label: route.label.clone(),
-                from: place_id(&key_of(&route.from)),
-                to: place_id(&key_of(&route.to)),
+                from: entity_id_of(&key_of(&route.from)),
+                to: entity_id_of(&key_of(&route.to)),
                 access: route.access,
                 cost: route.cost,
                 open: true,
@@ -1074,7 +1641,7 @@ pub(super) fn resolve_patch(
             controller,
             affordances,
             position: input.position.as_ref().map(|reference| Position {
-                place: place_id(&key_of(reference)),
+                place: entity_id_of(&key_of(reference)),
             }),
         });
     }
@@ -1095,6 +1662,19 @@ pub(super) fn resolve_patch(
                 .expect("a draft route reference resolved above"),
         }
     };
+    let target_of = |target: &DependencyRef| -> DependencyTarget {
+        match target {
+            DependencyRef::Resource(reference) => {
+                DependencyTarget::Resource(entity_id_of(&key_of(reference)))
+            }
+            DependencyRef::Route(reference) => {
+                DependencyTarget::Route(edge_id_of(&key_of(reference)))
+            }
+            DependencyRef::Subject(reference) => {
+                DependencyTarget::Subject(subject_id_of(&key_of(reference)))
+            }
+        }
+    };
     let operations = patch
         .operations
         .iter()
@@ -1112,6 +1692,56 @@ pub(super) fn resolve_patch(
             ComponentOp::AlterCost { route, cost } => ResolvedOp::AlterCost {
                 edge_id: edge_id_of(&key_of(route)),
                 cost: *cost,
+            },
+            ComponentOp::Transfer {
+                from,
+                to,
+                resource,
+                qty,
+            } => ResolvedOp::Transfer {
+                from: subject_id_of(&key_of(from)),
+                to: subject_id_of(&key_of(to)),
+                resource: entity_id_of(&key_of(resource)),
+                qty: *qty,
+            },
+            ComponentOp::Transform {
+                holder,
+                from_resource,
+                into_resource,
+                qty,
+            } => ResolvedOp::Transform {
+                holder: subject_id_of(&key_of(holder)),
+                from_resource: entity_id_of(&key_of(from_resource)),
+                into_resource: entity_id_of(&key_of(into_resource)),
+                qty: *qty,
+            },
+            ComponentOp::Consume {
+                holder,
+                resource,
+                qty,
+            } => ResolvedOp::Consume {
+                holder: subject_id_of(&key_of(holder)),
+                resource: entity_id_of(&key_of(resource)),
+                qty: *qty,
+            },
+            ComponentOp::Admit {
+                holder,
+                resource,
+                qty,
+                evidence,
+            } => ResolvedOp::Admit {
+                holder: subject_id_of(&key_of(holder)),
+                resource: entity_id_of(&key_of(resource)),
+                qty: *qty,
+                evidence: evidence.clone(),
+            },
+            ComponentOp::Bind { subject, target } => ResolvedOp::Bind {
+                subject: subject_id_of(&key_of(subject)),
+                target: target_of(target),
+            },
+            ComponentOp::Release { subject, target } => ResolvedOp::Release {
+                subject: subject_id_of(&key_of(subject)),
+                target: target_of(target),
             },
         })
         .collect();

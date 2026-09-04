@@ -18,12 +18,12 @@ pub(crate) use controllers::{
 };
 pub(crate) use mailbox::{MailboxError, WorldMailbox};
 pub(crate) use patch::{
-    AccessKind, Cost, Declaration, DraftHandle, EntityDeclaration, EntityKind, Mismatch,
-    PatchAnswer, Position, Ref, SubjectDeclaration, WorldPatch,
+    AccessKind, Cost, Declaration, DependencyTarget, DraftHandle, EntityDeclaration, EntityKind,
+    EvidenceRef, Mismatch, PatchAnswer, Position, Quantity, Ref, SubjectDeclaration, WorldPatch,
 };
 #[cfg(test)]
-use patch::{ComponentOp, RouteDeclaration};
-use patch::{EdgeRecord, EntityRecord, ResolvedOp, ResolvedPatch};
+use patch::{ComponentOp, DependencyRef, RouteDeclaration};
+use patch::{EdgeRecord, EntityRecord, LedgerDelta, ResolvedOp, ResolvedPatch};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -34,8 +34,8 @@ use std::path::Path;
 use thiserror::Error;
 use uuid::Uuid;
 
-pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.topology.v1";
-pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.topology.v1";
+pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.custody.v1";
+pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.custody.v1";
 
 /// Compatibility tag derived from [`STATE_SCHEMA`]: the trailing
 /// `<family>-<version>` pair (e.g. `foundation-v1`). Callers that publish a
@@ -262,8 +262,7 @@ struct ScopePreimage<'a> {
     subject_id: SubjectId,
     controller: &'a ControllerAssignment,
     affordances: BTreeMap<AffordanceId, &'a AffordanceGrant>,
-    position: Option<&'a Position>,
-    routes: BTreeMap<EdgeId, &'a EdgeRecord>,
+    components: &'a ScopeComponents,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -427,6 +426,12 @@ struct WorldState {
     entities: BTreeMap<EntityId, EntityRecord>,
     edges: BTreeMap<EdgeId, EdgeRecord>,
     positions: BTreeMap<SubjectId, Position>,
+    /// What each subject holds. Absence is zero at both levels: no stored
+    /// `Quantity(0)` and no empty inner map, so a duplicate holding is
+    /// unrepresentable and "nothing" has one shape.
+    holdings: BTreeMap<SubjectId, BTreeMap<EntityId, Quantity>>,
+    /// What each subject depends on. Never empty for a present key.
+    dependencies: BTreeMap<SubjectId, BTreeSet<DependencyTarget>>,
     controller_assignments: BTreeMap<DecisionScope, ControllerAssignment>,
     affordance_grants: BTreeMap<AffordanceId, AffordanceGrant>,
     events: Vec<DecisionEvent>,
@@ -510,6 +515,18 @@ pub(crate) struct SubjectSnapshot {
     pub(crate) human_controller: Option<PrincipalId>,
     pub(crate) affordances: BTreeMap<AffordanceKind, AffordanceId>,
     pub(crate) position: Option<EntityId>,
+    /// This subject's own holdings and dependencies, and the routes incident to
+    /// its place: exactly what its scope digest reads, lowered from the one
+    /// `scope_components` owner.
+    pub(crate) holdings: BTreeMap<EntityId, Quantity>,
+    pub(crate) dependencies: BTreeSet<DependencyTarget>,
+    pub(crate) incident_routes: Vec<EdgeId>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct ResourceSnapshot {
+    pub(crate) id: EntityId,
+    pub(crate) label: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -541,6 +558,7 @@ pub(crate) struct WorldSnapshot {
     pub(crate) required_approvers: BTreeSet<PrincipalId>,
     pub(crate) subjects: Vec<SubjectSnapshot>,
     pub(crate) places: Vec<PlaceSnapshot>,
+    pub(crate) resources: Vec<ResourceSnapshot>,
     pub(crate) routes: Vec<RouteSnapshot>,
     pub(crate) events: Vec<DecisionEvent>,
     pub(crate) opportunities: Vec<DecisionOpportunity>,
@@ -1064,6 +1082,8 @@ impl WorldState {
             entities: BTreeMap::new(),
             edges: BTreeMap::new(),
             positions: BTreeMap::new(),
+            holdings: BTreeMap::new(),
+            dependencies: BTreeMap::new(),
             controller_assignments: BTreeMap::new(),
             affordance_grants: BTreeMap::new(),
             events: Vec::new(),
@@ -1262,15 +1282,133 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
             }
         }
     }
+    // A forged `PatchAdmitted` reaches this function without ever passing the
+    // resolver, so conservation is re-derived here over the committed
+    // partitions, against the same equation, with `before` read from state
+    // rather than from anything the effect asserts.
+    let mut deltas: BTreeMap<EntityId, LedgerDelta> = BTreeMap::new();
     for operation in &resolved.operations {
-        apply_operation(state, operation)?;
+        for resource in operation_resources(operation) {
+            deltas.entry(resource).or_default().before = resource_total(state, resource);
+        }
+    }
+    for operation in &resolved.operations {
+        apply_operation(state, operation, &resolved.evidence)?;
+        match operation {
+            ResolvedOp::Transform {
+                from_resource,
+                into_resource,
+                qty,
+                ..
+            } => {
+                deltas.entry(*from_resource).or_default().spent += u128::from(qty.0);
+                deltas.entry(*into_resource).or_default().gained += u128::from(qty.0);
+            }
+            ResolvedOp::Consume { resource, qty, .. } => {
+                deltas.entry(*resource).or_default().consumed += u128::from(qty.0);
+            }
+            ResolvedOp::Admit { resource, qty, .. } => {
+                deltas.entry(*resource).or_default().admitted += u128::from(qty.0);
+            }
+            _ => {}
+        }
+    }
+    for (resource, delta) in &mut deltas {
+        delta.after = resource_total(state, *resource);
+    }
+    if patch::check_ledger(&deltas).is_some() {
+        return Err(KernelError::Invariant("custody does not conserve".into()));
     }
     Ok(())
 }
 
+/// Every resource an operation names, so `admit_resolved` can read its committed
+/// total before touching it.
+fn operation_resources(operation: &ResolvedOp) -> Vec<EntityId> {
+    match operation {
+        ResolvedOp::Transfer { resource, .. }
+        | ResolvedOp::Consume { resource, .. }
+        | ResolvedOp::Admit { resource, .. } => vec![*resource],
+        ResolvedOp::Transform {
+            from_resource,
+            into_resource,
+            ..
+        } => vec![*from_resource, *into_resource],
+        _ => Vec::new(),
+    }
+}
+
+fn resource_total(state: &WorldState, resource: EntityId) -> u128 {
+    state
+        .holdings
+        .values()
+        .filter_map(|held| held.get(&resource))
+        .map(|quantity| u128::from(quantity.0))
+        .sum()
+}
+
+/// What a holder holds. Absence is zero.
+fn held(state: &WorldState, holder: SubjectId, resource: EntityId) -> u64 {
+    state
+        .holdings
+        .get(&holder)
+        .and_then(|held| held.get(&resource))
+        .map_or(0, |quantity| quantity.0)
+}
+
+/// Zero removes the resource key, and an emptied holder removes the holder key,
+/// so `holdings` has exactly one representation of nothing.
+fn set_held(state: &mut WorldState, holder: SubjectId, resource: EntityId, value: u64) {
+    if value == 0 {
+        let empty = if let Some(held) = state.holdings.get_mut(&holder) {
+            held.remove(&resource);
+            held.is_empty()
+        } else {
+            false
+        };
+        if empty {
+            state.holdings.remove(&holder);
+        }
+    } else {
+        state
+            .holdings
+            .entry(holder)
+            .or_default()
+            .insert(resource, Quantity(value));
+    }
+}
+
+/// Whether a subject and a resource are both canonical and of the right kind.
+fn custody_referents_exist(state: &WorldState, holder: SubjectId, resource: EntityId) -> bool {
+    state.subjects.contains_key(&holder)
+        && state
+            .entities
+            .get(&resource)
+            .is_some_and(|record| record.kind == EntityKind::Resource)
+}
+
+fn dependency_target_exists(state: &WorldState, target: DependencyTarget) -> bool {
+    match target {
+        DependencyTarget::Resource(entity_id) => state
+            .entities
+            .get(&entity_id)
+            .is_some_and(|record| record.kind == EntityKind::Resource),
+        DependencyTarget::Route(edge_id) => state.edges.contains_key(&edge_id),
+        DependencyTarget::Subject(subject_id) => state.subjects.contains_key(&subject_id),
+    }
+}
+
 /// The component half of admission. Every precondition is re-derived from the
 /// partitions, so a forged operation cannot assert a move the topology refuses.
-fn apply_operation(state: &mut WorldState, operation: &ResolvedOp) -> Result<(), KernelError> {
+fn apply_operation(
+    state: &mut WorldState,
+    operation: &ResolvedOp,
+    evidence: &[EvidenceRef],
+) -> Result<(), KernelError> {
+    let insufficient = || KernelError::Invariant("holder does not hold enough".into());
+    let overflow = || KernelError::Invariant("holding would overflow".into());
+    let unknown = || KernelError::Invariant("custody operation names no canonical referent".into());
+    let zero = || KernelError::Invariant("custody operation moves nothing".into());
     match operation {
         ResolvedOp::Relocate {
             subject_id,
@@ -1322,8 +1460,170 @@ fn apply_operation(state: &mut WorldState, operation: &ResolvedOp) -> Result<(),
             }
             route.set_cost(*cost);
         }
+        ResolvedOp::Transfer {
+            from,
+            to,
+            resource,
+            qty,
+        } => {
+            if !custody_referents_exist(state, *from, *resource) || !state.subjects.contains_key(to)
+            {
+                return Err(unknown());
+            }
+            if qty.0 == 0 || from == to {
+                return Err(zero());
+            }
+            let remaining = held(state, *from, *resource)
+                .checked_sub(qty.0)
+                .ok_or_else(insufficient)?;
+            let credited = held(state, *to, *resource)
+                .checked_add(qty.0)
+                .ok_or_else(overflow)?;
+            set_held(state, *from, *resource, remaining);
+            set_held(state, *to, *resource, credited);
+        }
+        ResolvedOp::Transform {
+            holder,
+            from_resource,
+            into_resource,
+            qty,
+        } => {
+            if !custody_referents_exist(state, *holder, *from_resource)
+                || !custody_referents_exist(state, *holder, *into_resource)
+            {
+                return Err(unknown());
+            }
+            if qty.0 == 0 || from_resource == into_resource {
+                return Err(zero());
+            }
+            let remaining = held(state, *holder, *from_resource)
+                .checked_sub(qty.0)
+                .ok_or_else(insufficient)?;
+            let gained = held(state, *holder, *into_resource)
+                .checked_add(qty.0)
+                .ok_or_else(overflow)?;
+            set_held(state, *holder, *from_resource, remaining);
+            set_held(state, *holder, *into_resource, gained);
+        }
+        ResolvedOp::Consume {
+            holder,
+            resource,
+            qty,
+        } => {
+            if !custody_referents_exist(state, *holder, *resource) {
+                return Err(unknown());
+            }
+            if qty.0 == 0 {
+                return Err(zero());
+            }
+            let remaining = held(state, *holder, *resource)
+                .checked_sub(qty.0)
+                .ok_or_else(insufficient)?;
+            set_held(state, *holder, *resource, remaining);
+        }
+        ResolvedOp::Admit {
+            holder,
+            resource,
+            qty,
+            evidence: cited,
+        } => {
+            if !custody_referents_exist(state, *holder, *resource) {
+                return Err(unknown());
+            }
+            if qty.0 == 0 {
+                return Err(zero());
+            }
+            if !evidence.contains(cited) {
+                return Err(KernelError::Invariant(
+                    "admitted quantity cites no evidence in its patch".into(),
+                ));
+            }
+            let admitted = held(state, *holder, *resource)
+                .checked_add(qty.0)
+                .ok_or_else(overflow)?;
+            set_held(state, *holder, *resource, admitted);
+        }
+        ResolvedOp::Bind { subject, target } | ResolvedOp::Release { subject, target } => {
+            let bind = matches!(operation, ResolvedOp::Bind { .. });
+            if !state.subjects.contains_key(subject) || !dependency_target_exists(state, *target) {
+                return Err(unknown());
+            }
+            if *target == DependencyTarget::Subject(*subject) {
+                return Err(KernelError::Invariant(
+                    "a subject cannot depend on itself".into(),
+                ));
+            }
+            let bound = state
+                .dependencies
+                .get(subject)
+                .is_some_and(|targets| targets.contains(target));
+            if bound == bind {
+                return Err(KernelError::Invariant(
+                    "dependency operation changes nothing".into(),
+                ));
+            }
+            if bind {
+                state
+                    .dependencies
+                    .entry(*subject)
+                    .or_default()
+                    .insert(*target);
+            } else {
+                let empty = if let Some(targets) = state.dependencies.get_mut(subject) {
+                    targets.remove(target);
+                    targets.is_empty()
+                } else {
+                    false
+                };
+                if empty {
+                    state.dependencies.remove(subject);
+                }
+            }
+        }
     }
     Ok(())
+}
+
+/// Exactly the components a subject's verification reads. One owner, consumed by
+/// the scope digest and by the snapshot, so the two cannot drift. `routes` is
+/// every edge whose `from` or `to` is the subject's place: an inbound route
+/// decides who can arrive, and reading too little is a correctness hole while
+/// reading too much only costs an extra rejection. `holdings` and `dependencies`
+/// are the acting subject's own; a counterparty's holdings do not enter, because
+/// a transfer changes both subjects' components and so changes both digests.
+#[derive(Clone, Debug, Serialize, PartialEq, Eq)]
+pub(super) struct ScopeComponents {
+    position: Option<Position>,
+    routes: BTreeMap<EdgeId, EdgeRecord>,
+    holdings: BTreeMap<EntityId, Quantity>,
+    dependencies: BTreeSet<DependencyTarget>,
+}
+
+fn scope_components(state: &WorldState, subject_id: SubjectId) -> ScopeComponents {
+    let position = state.positions.get(&subject_id).copied();
+    let routes = position
+        .map(|position| {
+            state
+                .edges
+                .iter()
+                .filter(|(_, record)| {
+                    let (from, to) = record.endpoints();
+                    from == position.place || to == position.place
+                })
+                .map(|(edge_id, record)| (*edge_id, record.clone()))
+                .collect()
+        })
+        .unwrap_or_default();
+    ScopeComponents {
+        position,
+        routes,
+        holdings: state.holdings.get(&subject_id).cloned().unwrap_or_default(),
+        dependencies: state
+            .dependencies
+            .get(&subject_id)
+            .cloned()
+            .unwrap_or_default(),
+    }
 }
 
 fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
@@ -1343,6 +1643,7 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                 .filter(|(_, grant)| grant.scope == scope)
                 .map(|(affordance_id, grant)| (grant.kind, *affordance_id))
                 .collect();
+            let components = scope_components(state, *subject_id);
             Ok(SubjectSnapshot {
                 id: *subject_id,
                 label: subject.label.clone(),
@@ -1351,10 +1652,10 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                 controller_mode: controller.mode(),
                 human_controller: controller.human_principal().cloned(),
                 affordances,
-                position: state
-                    .positions
-                    .get(subject_id)
-                    .map(|position| position.place),
+                position: components.position.map(|position| position.place),
+                holdings: components.holdings,
+                dependencies: components.dependencies,
+                incident_routes: components.routes.into_keys().collect(),
             })
         })
         .collect::<Result<Vec<_>, KernelError>>()?;
@@ -1366,6 +1667,15 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
             id: *entity_id,
             label: record.label.clone(),
             container: record.container,
+        })
+        .collect();
+    let resources = state
+        .entities
+        .iter()
+        .filter(|(_, record)| record.kind == EntityKind::Resource)
+        .map(|(entity_id, record)| ResourceSnapshot {
+            id: *entity_id,
+            label: record.label.clone(),
         })
         .collect();
     let routes = state
@@ -1394,6 +1704,7 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
         required_approvers: required_approvers(state),
         subjects,
         places,
+        resources,
         routes,
         events: state.events.clone(),
         opportunities: derive_opportunities(state)?,
@@ -1434,10 +1745,8 @@ fn derive_opportunities(state: &WorldState) -> Result<Vec<DecisionOpportunity>, 
         .collect()
 }
 
-/// The sole producer of a `ScopeDigest`. `routes` holds every edge whose `from`
-/// or `to` is the subject's place: an inbound route decides who can arrive, and
-/// reading too little is a correctness hole while reading too much only costs an
-/// extra rejection.
+/// The sole producer of a `ScopeDigest`. The components it reads come from
+/// `scope_components`, which the snapshot reads too.
 fn scope_digest(state: &WorldState, scope: DecisionScope) -> Result<ScopeDigest, KernelError> {
     let controller = state
         .controller_assignments
@@ -1449,27 +1758,13 @@ fn scope_digest(state: &WorldState, scope: DecisionScope) -> Result<ScopeDigest,
         .filter(|(_, grant)| grant.scope == scope)
         .map(|(affordance_id, grant)| (*affordance_id, grant))
         .collect();
-    let position = state.positions.get(&scope.subject_id);
-    let routes = position
-        .map(|position| {
-            state
-                .edges
-                .iter()
-                .filter(|(_, record)| {
-                    let (from, to) = record.endpoints();
-                    from == position.place || to == position.place
-                })
-                .map(|(edge_id, record)| (*edge_id, record))
-                .collect()
-        })
-        .unwrap_or_default();
+    let components = scope_components(state, scope.subject_id);
     digest(&ScopePreimage {
         world_id: state.world_id,
         subject_id: scope.subject_id,
         controller,
         affordances,
-        position,
-        routes,
+        components: &components,
     })
     .map(ScopeDigest)
 }
@@ -1942,6 +2237,141 @@ mod tests {
                 .find(|(_, subject)| subject.label == "The Walker")
                 .expect("the walker is admitted")
                 .0,
+        }
+    }
+
+    /// The canonical IDs of the custody fixture: two resources and two holder
+    /// subjects standing in the topology, with the first holder carrying an
+    /// evidenced opening balance.
+    pub(super) struct Custody {
+        pub(super) tithe: EntityId,
+        pub(super) ingot: EntityId,
+        pub(super) holder: SubjectId,
+        pub(super) counterparty: SubjectId,
+    }
+
+    pub(super) const TITHE_RECEIPT: &str = "receipt:rhythm-tithe-census";
+    pub(super) const OPENING_BALANCE: u64 = 7;
+
+    fn resource(handle: &str, label: &str) -> Declaration {
+        Declaration::Entity(EntityDeclaration {
+            handle: DraftHandle::new(handle),
+            label: label.into(),
+            kind: EntityKind::Resource,
+            container: None,
+        })
+    }
+
+    fn holder(handle: &str, label: &str, place: EntityId) -> Declaration {
+        Declaration::Subject(SubjectDeclaration {
+            handle: DraftHandle::new(handle),
+            label: label.into(),
+            kind: SubjectKind::Institution,
+            controller: NewController::OperationalAgent,
+            affordances: BTreeSet::from([AffordanceKind::Speak]),
+            position: Some(Ref::Existing(place)),
+        })
+    }
+
+    /// Declarations and evidence are Draft-only, so the resources, the holders,
+    /// and the one evidenced `Admit` that creates the opening balance all land
+    /// before activation. There is no holdings declaration field: quantity is
+    /// created by `Admit` and by nothing else, in this lane as in every other.
+    pub(super) fn custody_patch(topology: &Topology) -> WorldPatch {
+        WorldPatch {
+            declarations: vec![
+                resource("tithe", "The Rhythm Tithe"),
+                resource("ingot", "The Cut Ingot"),
+                holder("clerk", "The Ledger Clerk", topology.yard),
+                holder("keeper", "The Gate Keeper", topology.gate),
+            ],
+            operations: vec![ComponentOp::Admit {
+                holder: Ref::Draft(DraftHandle::new("clerk")),
+                resource: Ref::Draft(DraftHandle::new("tithe")),
+                qty: Quantity(OPENING_BALANCE),
+                evidence: EvidenceRef::new(TITHE_RECEIPT),
+            }],
+            evidence: vec![EvidenceRef::new(TITHE_RECEIPT)],
+        }
+    }
+
+    pub(super) fn admit_custody(kernel: &mut WorldKernel, topology: &Topology) -> Custody {
+        let before = kernel.snapshot().unwrap();
+        let receipt = submit_owner(
+            kernel,
+            &before,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: custody_patch(topology),
+            },
+        );
+        assert!(matches!(receipt, SubmitReceipt::Applied(_)));
+        let entity = |label: &str| {
+            *kernel
+                .state
+                .entities
+                .iter()
+                .find(|(_, record)| record.label == label)
+                .expect("a declared resource")
+                .0
+        };
+        let subject = |label: &str| {
+            *kernel
+                .state
+                .subjects
+                .iter()
+                .find(|(_, record)| record.label == label)
+                .expect("a declared holder")
+                .0
+        };
+        Custody {
+            tithe: entity("The Rhythm Tithe"),
+            ingot: entity("The Cut Ingot"),
+            holder: subject("The Ledger Clerk"),
+            counterparty: subject("The Gate Keeper"),
+        }
+    }
+
+    /// Topology, custody, then activation: everything a custody test needs, in
+    /// the one order the phase rules allow.
+    pub(super) fn custody_world(kernel: &mut WorldKernel) -> (Topology, Custody, WorldSnapshot) {
+        let topology = admit_topology(kernel);
+        let custody = admit_custody(kernel, &topology);
+        let active = activate(kernel);
+        (topology, custody, active)
+    }
+
+    /// Submits as owner and returns the complete mismatch set.
+    pub(super) fn reject_owner(
+        kernel: &mut WorldKernel,
+        snapshot: &WorldSnapshot,
+        body: CommandBody,
+    ) -> Vec<Mismatch> {
+        let error = kernel
+            .submit(
+                command(
+                    snapshot,
+                    CommandId::new(),
+                    CallerId::Principal(owner()),
+                    body,
+                ),
+                &auth_principal(owner()),
+            )
+            .unwrap_err();
+        let KernelError::PatchRejected(mismatches) = error else {
+            panic!("expected a rejected patch, got {error:?}");
+        };
+        mismatches
+    }
+
+    pub(super) fn operations(operations: Vec<ComponentOp>) -> CommandBody {
+        CommandBody::AdmitPatch {
+            answers: None,
+            patch: WorldPatch {
+                declarations: Vec::new(),
+                operations,
+                evidence: Vec::new(),
+            },
         }
     }
 
@@ -3117,5 +3547,549 @@ mod tests {
             .unwrap_err();
         assert!(matches!(error, KernelError::AffordanceDenied));
         assert_eq!(kernel.snapshot().unwrap(), active);
+    }
+}
+
+#[cfg(test)]
+mod custody_tests {
+    use super::tests::{
+        OPENING_BALANCE, TITHE_RECEIPT, activate, admit_custody, admit_topology, auth_principal,
+        command, creation, custody_world, operations, opportunity_for, owner, reject_owner,
+        submit_owner,
+    };
+    use super::*;
+
+    fn custody_kernel(path: &Path, title: &str) -> WorldKernel {
+        WorldKernel::create(
+            path.join("world.cc"),
+            creation(CommandId::new(), title),
+            &auth_principal(owner()),
+        )
+        .expect("a created world")
+        .0
+    }
+
+    fn holding(kernel: &WorldKernel, holder: SubjectId, resource: EntityId) -> u64 {
+        held(&kernel.state, holder, resource)
+    }
+
+    /// A forged `PatchAdmitted` never passes the resolver, so `admit_resolved`
+    /// re-derives every custody precondition from the committed partitions and
+    /// commits nothing when one fails.
+    ///
+    /// Deviation from the spec's wording, decided here: `ResolvedOp::Transfer`
+    /// carries one `qty`, so "a transfer whose debit and credit differ" is
+    /// unrepresentable — which is the stronger outcome that shape was chosen
+    /// for. The reachable forgery is a transfer the holder cannot cover, and
+    /// the conservation equation itself is falsified directly beside it.
+    #[test]
+    fn a_non_conserving_transfer_effect_does_not_apply() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "Forged");
+        let (_, custody, _) = custody_world(&mut kernel);
+        let before = kernel.state.holdings.clone();
+
+        let mut candidate = kernel.state.clone();
+        let forged = WorldEffect::PatchAdmitted {
+            resolved: ResolvedPatch {
+                subjects: Vec::new(),
+                entities: Vec::new(),
+                routes: Vec::new(),
+                operations: vec![ResolvedOp::Transfer {
+                    from: custody.holder,
+                    to: custody.counterparty,
+                    resource: custody.tithe,
+                    qty: Quantity(OPENING_BALANCE + 1),
+                }],
+                evidence: Vec::new(),
+            },
+        };
+        let error =
+            apply_effect(&mut candidate, &CallerId::Principal(owner()), &forged).unwrap_err();
+        assert!(matches!(error, KernelError::Invariant(_)));
+        assert_eq!(candidate.holdings, before);
+
+        // The conservation equation is the one owner, and it refuses a ledger
+        // that does not balance regardless of which operation produced it.
+        let unbalanced = BTreeMap::from([(
+            custody.tithe,
+            LedgerDelta {
+                before: 7,
+                after: 9,
+                admitted: 1,
+                ..LedgerDelta::default()
+            },
+        )]);
+        assert_eq!(patch::check_ledger(&unbalanced), Some(custody.tithe));
+        let balanced = BTreeMap::from([(
+            custody.tithe,
+            LedgerDelta {
+                before: 7,
+                after: 8,
+                admitted: 1,
+                ..LedgerDelta::default()
+            },
+        )]);
+        assert_eq!(patch::check_ledger(&balanced), None);
+    }
+
+    /// Creation of quantity is attributable: an `Admit` whose ref is not in the
+    /// patch's own evidence list mints nothing and allocates no ID.
+    #[test]
+    fn an_admit_without_evidence_is_rejected() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "Unevidenced");
+        let topology = admit_topology(&mut kernel);
+        let before = kernel.snapshot().unwrap();
+        let commits = kernel.journal.commit_count();
+
+        let mismatches = reject_owner(
+            &mut kernel,
+            &before,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: vec![
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("tithe"),
+                            label: "The Rhythm Tithe".into(),
+                            kind: EntityKind::Resource,
+                            container: None,
+                        }),
+                        Declaration::Subject(SubjectDeclaration {
+                            handle: DraftHandle::new("clerk"),
+                            label: "The Ledger Clerk".into(),
+                            kind: SubjectKind::Institution,
+                            controller: NewController::OperationalAgent,
+                            affordances: BTreeSet::from([AffordanceKind::Speak]),
+                            position: Some(Ref::Existing(topology.yard)),
+                        }),
+                    ],
+                    operations: vec![ComponentOp::Admit {
+                        holder: Ref::Draft(DraftHandle::new("clerk")),
+                        resource: Ref::Draft(DraftHandle::new("tithe")),
+                        qty: Quantity(4),
+                        evidence: EvidenceRef::new("receipt:never-listed"),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        );
+
+        assert_eq!(
+            mismatches,
+            vec![Mismatch::AdmitWithoutEvidence { operation: 0 }]
+        );
+        assert!(kernel.state.holdings.is_empty());
+        assert_eq!(kernel.journal.commit_count(), commits);
+        assert_eq!(kernel.snapshot().unwrap(), before);
+    }
+
+    #[test]
+    fn a_transfer_moves_the_exact_quantity_and_nothing_else() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "Transfer");
+        let (_, custody, active) = custody_world(&mut kernel);
+        let entities = kernel.state.entities.clone();
+        let edges = kernel.state.edges.clone();
+        let positions = kernel.state.positions.clone();
+
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::Transfer {
+                from: Ref::Existing(custody.holder),
+                to: Ref::Existing(custody.counterparty),
+                resource: Ref::Existing(custody.tithe),
+                qty: Quantity(3),
+            }]),
+        );
+
+        assert_eq!(holding(&kernel, custody.holder, custody.tithe), 4);
+        assert_eq!(holding(&kernel, custody.counterparty, custody.tithe), 3);
+        assert_eq!(resource_total(&kernel.state, custody.tithe), 7);
+        assert_eq!(kernel.state.entities, entities);
+        assert_eq!(kernel.state.edges, edges);
+        assert_eq!(kernel.state.positions, positions);
+    }
+
+    /// Absence is zero at both levels, so emptying a holding removes the
+    /// resource key and emptying a holder removes the holder key.
+    #[test]
+    fn consume_reduces_the_holding_and_emptying_removes_the_key() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "Consume");
+        let (_, custody, active) = custody_world(&mut kernel);
+
+        let after_three = submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::Consume {
+                holder: Ref::Existing(custody.holder),
+                resource: Ref::Existing(custody.tithe),
+                qty: Quantity(3),
+            }]),
+        );
+        assert!(matches!(after_three, SubmitReceipt::Applied(_)));
+        assert_eq!(holding(&kernel, custody.holder, custody.tithe), 4);
+
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            operations(vec![ComponentOp::Consume {
+                holder: Ref::Existing(custody.holder),
+                resource: Ref::Existing(custody.tithe),
+                qty: Quantity(4),
+            }]),
+        );
+        assert!(!kernel.state.holdings.contains_key(&custody.holder));
+        let subject = kernel
+            .snapshot()
+            .unwrap()
+            .subjects
+            .into_iter()
+            .find(|subject| subject.id == custody.holder)
+            .expect("the holder is in the snapshot");
+        assert!(subject.holdings.is_empty());
+    }
+
+    #[test]
+    fn a_transform_conserves_one_for_one() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "Transform");
+        let (_, custody, active) = custody_world(&mut kernel);
+
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::Transform {
+                holder: Ref::Existing(custody.holder),
+                from_resource: Ref::Existing(custody.tithe),
+                into_resource: Ref::Existing(custody.ingot),
+                qty: Quantity(5),
+            }]),
+        );
+
+        assert_eq!(holding(&kernel, custody.holder, custody.tithe), 2);
+        assert_eq!(holding(&kernel, custody.holder, custody.ingot), 5);
+        assert_eq!(resource_total(&kernel.state, custody.tithe), 2);
+        assert_eq!(resource_total(&kernel.state, custody.ingot), 5);
+    }
+
+    #[test]
+    fn spending_more_than_held_is_rejected_with_insufficient_custody() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "Insufficient");
+        let (_, custody, _) = custody_world(&mut kernel);
+        let too_much = Quantity(OPENING_BALANCE + 1);
+        let attempts = [
+            ComponentOp::Transfer {
+                from: Ref::Existing(custody.holder),
+                to: Ref::Existing(custody.counterparty),
+                resource: Ref::Existing(custody.tithe),
+                qty: too_much,
+            },
+            ComponentOp::Transform {
+                holder: Ref::Existing(custody.holder),
+                from_resource: Ref::Existing(custody.tithe),
+                into_resource: Ref::Existing(custody.ingot),
+                qty: too_much,
+            },
+            ComponentOp::Consume {
+                holder: Ref::Existing(custody.holder),
+                resource: Ref::Existing(custody.tithe),
+                qty: too_much,
+            },
+        ];
+
+        for attempt in attempts {
+            let snapshot = kernel.snapshot().unwrap();
+            let commits = kernel.journal.commit_count();
+            let mismatches = reject_owner(&mut kernel, &snapshot, operations(vec![attempt]));
+            assert_eq!(
+                mismatches,
+                vec![Mismatch::InsufficientCustody { operation: 0 }]
+            );
+            assert_eq!(kernel.journal.commit_count(), commits);
+            assert_eq!(kernel.snapshot().unwrap(), snapshot);
+        }
+    }
+
+    /// A holder with no entry holds zero: there is no second name for it and no
+    /// zero entry anywhere in the snapshot.
+    #[test]
+    fn an_absent_holding_is_zero() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "Absent");
+        let (_, custody, active) = custody_world(&mut kernel);
+
+        let mismatches = reject_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::Consume {
+                holder: Ref::Existing(custody.counterparty),
+                resource: Ref::Existing(custody.tithe),
+                qty: Quantity(1),
+            }]),
+        );
+        assert_eq!(
+            mismatches,
+            vec![Mismatch::InsufficientCustody { operation: 0 }]
+        );
+        let counterparty = kernel
+            .snapshot()
+            .unwrap()
+            .subjects
+            .into_iter()
+            .find(|subject| subject.id == custody.counterparty)
+            .expect("the counterparty is in the snapshot");
+        assert!(counterparty.holdings.is_empty());
+    }
+
+    #[test]
+    fn a_zero_quantity_operation_is_rejected() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "Zero");
+        let topology = admit_topology(&mut kernel);
+        let custody = admit_custody(&mut kernel, &topology);
+
+        // `Admit` is Draft-only, because Active refuses a patch carrying
+        // evidence, so its zero case is proven before activation.
+        let draft = kernel.snapshot().unwrap();
+        let mismatches = reject_owner(
+            &mut kernel,
+            &draft,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![ComponentOp::Admit {
+                        holder: Ref::Existing(custody.holder),
+                        resource: Ref::Existing(custody.tithe),
+                        qty: Quantity(0),
+                        evidence: EvidenceRef::new(TITHE_RECEIPT),
+                    }],
+                    evidence: vec![EvidenceRef::new(TITHE_RECEIPT)],
+                },
+            },
+        );
+        assert_eq!(mismatches, vec![Mismatch::ZeroQuantity { operation: 0 }]);
+
+        let active = activate(&mut kernel);
+        for attempt in [
+            ComponentOp::Transfer {
+                from: Ref::Existing(custody.holder),
+                to: Ref::Existing(custody.counterparty),
+                resource: Ref::Existing(custody.tithe),
+                qty: Quantity(0),
+            },
+            ComponentOp::Consume {
+                holder: Ref::Existing(custody.holder),
+                resource: Ref::Existing(custody.tithe),
+                qty: Quantity(0),
+            },
+        ] {
+            let snapshot = kernel.snapshot().unwrap();
+            let mismatches = reject_owner(&mut kernel, &snapshot, operations(vec![attempt]));
+            assert_eq!(mismatches, vec![Mismatch::ZeroQuantity { operation: 0 }]);
+        }
+        assert_eq!(kernel.snapshot().unwrap(), active);
+    }
+
+    #[test]
+    fn dependency_bind_and_release_round_trip() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "Dependency");
+        let (_, custody, active) = custody_world(&mut kernel);
+        let before = kernel.state.dependencies.clone();
+
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::Bind {
+                subject: Ref::Existing(custody.holder),
+                target: DependencyRef::Resource(Ref::Existing(custody.tithe)),
+            }]),
+        );
+        assert_eq!(
+            kernel.state.dependencies.get(&custody.holder),
+            Some(&BTreeSet::from([DependencyTarget::Resource(custody.tithe)]))
+        );
+
+        let bound = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &bound,
+            operations(vec![ComponentOp::Release {
+                subject: Ref::Existing(custody.holder),
+                target: DependencyRef::Resource(Ref::Existing(custody.tithe)),
+            }]),
+        );
+        assert_eq!(kernel.state.dependencies, before);
+        assert!(!kernel.state.dependencies.contains_key(&custody.holder));
+    }
+
+    /// A bind that changes nothing is `NoOperationEffect`, the name pass 2
+    /// already owns; a subject bound to itself is `SelfDependency`.
+    #[test]
+    fn a_duplicate_dependency_bind_is_rejected_as_no_effect() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "Duplicate");
+        let (_, custody, active) = custody_world(&mut kernel);
+
+        let bind = ComponentOp::Bind {
+            subject: Ref::Existing(custody.holder),
+            target: DependencyRef::Resource(Ref::Existing(custody.tithe)),
+        };
+        submit_owner(&mut kernel, &active, operations(vec![bind.clone()]));
+
+        let bound = kernel.snapshot().unwrap();
+        assert_eq!(
+            reject_owner(&mut kernel, &bound, operations(vec![bind])),
+            vec![Mismatch::NoOperationEffect { operation: 0 }]
+        );
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &bound,
+                operations(vec![ComponentOp::Release {
+                    subject: Ref::Existing(custody.holder),
+                    target: DependencyRef::Resource(Ref::Existing(custody.ingot)),
+                }]),
+            ),
+            vec![Mismatch::NoOperationEffect { operation: 0 }]
+        );
+        assert_eq!(
+            reject_owner(
+                &mut kernel,
+                &bound,
+                operations(vec![ComponentOp::Bind {
+                    subject: Ref::Existing(custody.holder),
+                    target: DependencyRef::Subject(Ref::Existing(custody.holder)),
+                }]),
+            ),
+            vec![Mismatch::SelfDependency { operation: 0 }]
+        );
+    }
+
+    /// Pass 3 owns the representation of a dependency, not its consequence. A
+    /// dependency on a closed route commits and shows up in the subject's
+    /// components; nothing rejects it and nothing fires from it.
+    #[test]
+    fn a_dependency_on_a_closed_route_is_representable_and_visible() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "Closed");
+        let (topology, custody, active) = custody_world(&mut kernel);
+        assert!(!kernel.state.edges[&topology.shutter].is_open());
+
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::Bind {
+                subject: Ref::Existing(custody.holder),
+                target: DependencyRef::Route(Ref::Existing(topology.shutter)),
+            }]),
+        );
+
+        let subject = kernel
+            .snapshot()
+            .unwrap()
+            .subjects
+            .into_iter()
+            .find(|subject| subject.id == custody.holder)
+            .expect("the holder is in the snapshot");
+        assert_eq!(
+            subject.dependencies,
+            BTreeSet::from([DependencyTarget::Route(topology.shutter)])
+        );
+    }
+
+    /// The digest reads the acting subject's own holdings and dependencies, and
+    /// only its own: a counterparty's churn does not move it.
+    #[test]
+    fn scope_digest_reads_holdings_and_dependencies() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "ScopeCustody");
+        let topology = admit_topology(&mut kernel);
+        let custody = admit_custody(&mut kernel, &topology);
+        activate(&mut kernel);
+        let scope = DecisionScope {
+            subject_id: custody.holder,
+        };
+        let base = scope_digest(&kernel.state, scope).unwrap();
+
+        let mut spent = kernel.state.clone();
+        set_held(&mut spent, custody.holder, custody.tithe, 1);
+        assert_ne!(scope_digest(&spent, scope).unwrap(), base);
+
+        let mut gained = kernel.state.clone();
+        set_held(&mut gained, custody.holder, custody.ingot, 1);
+        assert_ne!(scope_digest(&gained, scope).unwrap(), base);
+
+        let mut bound = kernel.state.clone();
+        bound
+            .dependencies
+            .entry(custody.holder)
+            .or_default()
+            .insert(DependencyTarget::Resource(custody.tithe));
+        assert_ne!(scope_digest(&bound, scope).unwrap(), base);
+
+        let mut elsewhere = kernel.state.clone();
+        set_held(&mut elsewhere, custody.counterparty, custody.tithe, 9);
+        elsewhere
+            .dependencies
+            .entry(custody.counterparty)
+            .or_default()
+            .insert(DependencyTarget::Resource(custody.ingot));
+        assert_eq!(scope_digest(&elsewhere, scope).unwrap(), base);
+    }
+
+    /// A proposal bound while its subject held seven must not commit after
+    /// someone took six. Custody churn rejects more bound proposals than route
+    /// churn did; that is the binding working.
+    #[test]
+    fn a_spend_bound_to_a_stale_balance_is_rejected() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut kernel = custody_kernel(directory.path(), "Stale");
+        let (_, custody, active) = custody_world(&mut kernel);
+        let bound = opportunity_for(&active, custody.holder);
+
+        submit_owner(
+            &mut kernel,
+            &active,
+            operations(vec![ComponentOp::Transfer {
+                from: Ref::Existing(custody.holder),
+                to: Ref::Existing(custody.counterparty),
+                resource: Ref::Existing(custody.tithe),
+                qty: Quantity(6),
+            }]),
+        );
+
+        let moved = kernel.snapshot().unwrap();
+        let commits = kernel.journal.commit_count();
+        let error = kernel
+            .submit(
+                command(
+                    &moved,
+                    CommandId::new(),
+                    CallerId::Controller(bound.controller_id),
+                    CommandBody::ExerciseDecision {
+                        opportunity: bound.clone(),
+                        invocation: DecisionInvocation {
+                            affordance_id: bound.affordance_ids[0],
+                            action: DecisionAction::Speak {
+                                text: "The tithe is short.".into(),
+                            },
+                        },
+                    },
+                ),
+                &AuthenticatedCaller::fixture(CallerId::Controller(bound.controller_id)),
+            )
+            .unwrap_err();
+
+        assert!(matches!(error, KernelError::ScopeChanged { .. }));
+        assert_eq!(kernel.journal.commit_count(), commits);
+        assert_eq!(kernel.snapshot().unwrap(), moved);
     }
 }

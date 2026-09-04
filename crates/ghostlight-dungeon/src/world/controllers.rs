@@ -8,8 +8,8 @@
 
 use crate::world::{
     AffordanceId, AffordanceKind, CommandId, CommitReceipt, ControllerMode, DecisionAction,
-    DecisionInvocation, DecisionOpportunity, KernelError, MailboxError, SubjectId, SubjectSnapshot,
-    SubmitReceipt, WorldMailbox, WorldSnapshot,
+    DecisionInvocation, DecisionOpportunity, DependencyTarget, KernelError, MailboxError,
+    SubjectId, SubjectSnapshot, SubmitReceipt, WorldMailbox, WorldSnapshot,
 };
 use async_trait::async_trait;
 use chrono::Utc;
@@ -2567,7 +2567,9 @@ impl SelectedDecision {
             "permission": {
                 "speak": true,
             },
-            "routes": self.typed_incident_routes(),
+            "routes": self.typed_routes(),
+            "holdings": self.typed_holdings(),
+            "dependencies": self.typed_dependencies(),
             "visible_events": self.typed_visible_events(),
         }))
         .map_err(|error| ControllerError::Serialization(error.to_string()))
@@ -2590,15 +2592,19 @@ impl SelectedDecision {
             )
     }
 
-    /// The routes incident to that place: the same set the scope digest reads.
-    fn typed_incident_routes(&self) -> Vec<Value> {
-        let Some(place) = self.subject.position else {
-            return Vec::new();
-        };
-        self.snapshot
-            .routes
+    /// The routes incident to that place, named by the kernel rather than
+    /// recomputed here: the same set the scope digest reads, because both come
+    /// from the one `scope_components` derivation.
+    fn typed_routes(&self) -> Vec<Value> {
+        self.subject
+            .incident_routes
             .iter()
-            .filter(|route| route.from == place || route.to == place)
+            .filter_map(|edge_id| {
+                self.snapshot
+                    .routes
+                    .iter()
+                    .find(|route| route.id == *edge_id)
+            })
             .map(|route| {
                 json!({
                     "id": route.id,
@@ -2609,6 +2615,45 @@ impl SelectedDecision {
                     "cost": route.cost,
                     "open": route.open,
                 })
+            })
+            .collect()
+    }
+
+    /// Only the acting subject's own holdings. No other subject's, and no
+    /// resource gazetteer: labels are resolved for what this subject holds and
+    /// for nothing else.
+    fn typed_holdings(&self) -> Vec<Value> {
+        self.subject
+            .holdings
+            .iter()
+            .map(|(resource, quantity)| {
+                let label = self
+                    .snapshot
+                    .resources
+                    .iter()
+                    .find(|candidate| candidate.id == *resource)
+                    .map(|candidate| candidate.label.clone());
+                json!({"id": resource, "label": label, "quantity": quantity})
+            })
+            .collect()
+    }
+
+    /// The acting subject's dependencies, with no label and no target state. A
+    /// target's label would name places, routes, or subjects this subject may
+    /// not know, and a dependency on a closed route appears here unmarked: the
+    /// crisis is the world's to derive, not this view's to editorialize.
+    fn typed_dependencies(&self) -> Vec<Value> {
+        self.subject
+            .dependencies
+            .iter()
+            .map(|target| match target {
+                DependencyTarget::Resource(id) => {
+                    json!({"target_kind": "resource", "target_id": id})
+                }
+                DependencyTarget::Route(id) => json!({"target_kind": "route", "target_id": id}),
+                DependencyTarget::Subject(id) => {
+                    json!({"target_kind": "subject", "target_id": id})
+                }
             })
             .collect()
     }
@@ -3574,6 +3619,9 @@ mod tests {
             human_controller: None,
             affordances: BTreeMap::from([(AffordanceKind::Speak, speak_affordance)]),
             position: None,
+            holdings: BTreeMap::new(),
+            dependencies: BTreeSet::new(),
+            incident_routes: Vec::new(),
         };
         let speaker = SubjectSnapshot {
             id: speaker_id,
@@ -3584,6 +3632,9 @@ mod tests {
             human_controller: None,
             affordances: BTreeMap::new(),
             position: None,
+            holdings: BTreeMap::new(),
+            dependencies: BTreeSet::new(),
+            incident_routes: Vec::new(),
         };
         let snapshot = WorldSnapshot {
             world_id: opportunity.world_id,
@@ -3595,6 +3646,7 @@ mod tests {
             required_approvers: BTreeSet::new(),
             subjects: vec![actor.clone(), speaker],
             places: Vec::new(),
+            resources: Vec::new(),
             routes: Vec::new(),
             events: vec![crate::world::DecisionEvent {
                 id: EventId::for_command(CommandId::new()),
@@ -3653,7 +3705,10 @@ mod tests {
     /// and a route that touches neither endpoint stay out of the surface.
     #[test]
     fn soul_the_typed_view_exposes_only_the_actors_place_and_incident_routes() {
-        use crate::world::{AccessKind, Cost, EdgeId, EntityId, PlaceSnapshot, RouteSnapshot};
+        use crate::world::{
+            AccessKind, Cost, EdgeId, EntityId, PlaceSnapshot, Quantity, ResourceSnapshot,
+            RouteSnapshot,
+        };
 
         let actor_id = SubjectId::issue();
         let other_id = SubjectId::issue();
@@ -3693,6 +3748,9 @@ mod tests {
             human_controller: None,
             affordances: BTreeMap::from([(AffordanceKind::Speak, speak_affordance)]),
             position: Some(yard),
+            holdings: BTreeMap::new(),
+            dependencies: BTreeSet::new(),
+            incident_routes: vec![first_edge],
         };
         let other = SubjectSnapshot {
             id: other_id,
@@ -3703,6 +3761,9 @@ mod tests {
             human_controller: None,
             affordances: BTreeMap::new(),
             position: Some(vault),
+            holdings: BTreeMap::new(),
+            dependencies: BTreeSet::new(),
+            incident_routes: vec![second_edge],
         };
         let named_place = |id, label: &str| PlaceSnapshot {
             id,
@@ -3732,6 +3793,7 @@ mod tests {
                 named_place(road, "The Rhythm Road"),
                 named_place(vault, "The Sealed Vault"),
             ],
+            resources: Vec::new(),
             routes: vec![
                 named_route(first_edge, "The Yard Ramp", yard, road),
                 named_route(second_edge, "The Vault Stair", road, vault),
@@ -3761,11 +3823,41 @@ mod tests {
         }
 
         // A subject standing nowhere gets a null place and no routes at all.
+        // `scope_components` derives both together, so the fixture clears both.
         let mut unplaced = selected;
         unplaced.subject.position = None;
+        unplaced.subject.incident_routes.clear();
         let view = unplaced.typed_view().unwrap();
         assert!(!view.contains("The Cavity Yard"));
         assert!(!view.contains("The Yard Ramp"));
+
+        // Holdings are the acting subject's own, with labels resolved only for
+        // what it holds; a dependency carries its target kind and ID and no
+        // label at all, because a target's name may be something this subject
+        // does not know. A dependency on a closed route appears unmarked.
+        let mut custodial = unplaced;
+        let tithe = EntityId::issue();
+        let hoard = EntityId::issue();
+        custodial.snapshot.resources = vec![
+            ResourceSnapshot {
+                id: tithe,
+                label: "The Rhythm Tithe".into(),
+            },
+            ResourceSnapshot {
+                id: hoard,
+                label: "The Vault Hoard".into(),
+            },
+        ];
+        custodial.subject.holdings = BTreeMap::from([(tithe, Quantity(7))]);
+        custodial.subject.dependencies = BTreeSet::from([DependencyTarget::Route(second_edge)]);
+        let view = custodial.typed_view().unwrap();
+        assert!(view.contains("The Rhythm Tithe"));
+        assert!(view.contains(r#""quantity": 7"#));
+        assert!(view.contains(r#""target_kind": "route""#));
+        assert!(view.contains(encoded_id(&second_edge).unwrap().as_str()));
+        for leaked in ["The Vault Hoard", "The Vault Stair"] {
+            assert!(!view.contains(leaked), "the typed view leaked `{leaked}`");
+        }
     }
 
     #[test]

@@ -12,8 +12,8 @@ use std::{
 };
 use thiserror::Error;
 
-const STATE_ROW: &str = "world_state.topology.v1";
-const COMMIT_ROW: &str = "world_commit.topology.v1";
+const STATE_ROW: &str = "world_state.custody.v1";
+const COMMIT_ROW: &str = "world_commit.custody.v1";
 
 #[derive(Debug, Error)]
 pub(super) enum JournalError {
@@ -484,6 +484,46 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
         if !state.subjects.contains_key(subject_id) || !is_place(&position.place) {
             return Err(JournalError::Corrupt(
                 "position does not name a canonical subject and place".into(),
+            ));
+        }
+    }
+    let is_resource = |entity_id: &super::EntityId| {
+        state
+            .entities
+            .get(entity_id)
+            .is_some_and(|record| record.kind == super::EntityKind::Resource)
+    };
+    // Absence is zero and one slot holds one pair, so a store satisfying these
+    // clauses cannot carry a zero, an empty holder, a duplicate, or a dangling
+    // holding — with no scan for any of them.
+    for (subject_id, held) in &state.holdings {
+        if !state.subjects.contains_key(subject_id)
+            || held.is_empty()
+            || held
+                .iter()
+                .any(|(resource, quantity)| !is_resource(resource) || quantity.0 == 0)
+        {
+            return Err(JournalError::Corrupt(
+                "holding does not name a canonical subject and resource at a nonzero quantity"
+                    .into(),
+            ));
+        }
+    }
+    for (subject_id, targets) in &state.dependencies {
+        let target_is_canonical = |target: &super::DependencyTarget| match target {
+            super::DependencyTarget::Resource(entity_id) => is_resource(entity_id),
+            super::DependencyTarget::Route(edge_id) => state.edges.contains_key(edge_id),
+            super::DependencyTarget::Subject(other) => {
+                other != subject_id && state.subjects.contains_key(other)
+            }
+        };
+        if !state.subjects.contains_key(subject_id)
+            || targets.is_empty()
+            || !targets.iter().all(target_is_canonical)
+        {
+            return Err(JournalError::Corrupt(
+                "dependency does not name a canonical subject and a distinct canonical target"
+                    .into(),
             ));
         }
     }
@@ -1081,5 +1121,151 @@ mod tests {
             message.contains("unadmitted row type"),
             "unexpected refusal: {message}"
         );
+    }
+}
+
+#[cfg(test)]
+mod custody_tests {
+    use super::*;
+    use crate::world::{
+        CallerId, CommandBody, CommandId, ComponentOp, EntityKind, Quantity, Ref, SubmitReceipt,
+        WorldKernel, WorldPatch,
+        tests::{admit_custody, admit_topology, auth_principal, command, creation, owner},
+    };
+
+    /// Replay re-derives the custody partitions from the commit log alone: a
+    /// world reopened after a transfer is byte-identical, and the transfer's own
+    /// envelope is idempotent.
+    #[test]
+    fn restart_replay_after_a_transfer_is_exact() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let authenticated = auth_principal(owner());
+        let (mut kernel, _) =
+            WorldKernel::create(&path, creation(CommandId::new(), "Replay"), &authenticated)
+                .unwrap();
+        let topology = admit_topology(&mut kernel);
+        let custody = admit_custody(&mut kernel, &topology);
+        let active = crate::world::tests::activate(&mut kernel);
+
+        let envelope = command(
+            &active,
+            CommandId::new(),
+            CallerId::Principal(owner()),
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: Vec::new(),
+                    operations: vec![ComponentOp::Transfer {
+                        from: Ref::Existing(custody.holder),
+                        to: Ref::Existing(custody.counterparty),
+                        resource: Ref::Existing(custody.tithe),
+                        qty: Quantity(3),
+                    }],
+                    evidence: Vec::new(),
+                },
+            },
+        );
+        let SubmitReceipt::Applied(receipt) =
+            kernel.submit(envelope.clone(), &authenticated).unwrap()
+        else {
+            panic!("expected an applied transfer");
+        };
+        let accepted = kernel.snapshot().unwrap();
+        let world_id = accepted.world_id;
+        drop(kernel);
+
+        let mut reopened = WorldKernel::open(&path, world_id).unwrap();
+        assert_eq!(reopened.snapshot().unwrap(), accepted);
+        assert_eq!(
+            reopened.submit(envelope, &authenticated).unwrap(),
+            SubmitReceipt::AlreadyApplied(receipt)
+        );
+    }
+
+    /// A store written at the pass-2 schema is refused outright. There is no
+    /// migration adapter, and the refusal is the behaviour.
+    #[test]
+    fn a_store_from_the_previous_schema_is_refused() {
+        let row = CultCacheEnvelope {
+            key: "state".into(),
+            r#type: "world_state.topology.v1".into(),
+            payload: Vec::new(),
+            stored_at: Utc::now().to_rfc3339(),
+            schema_id: Some("ghostlight.world_state.topology.v1".into()),
+        };
+        let error = recover(vec![row], None).unwrap_err();
+        let JournalError::Corrupt(message) = error else {
+            panic!("expected a corrupt store");
+        };
+        assert!(
+            message.contains("unadmitted row type"),
+            "unexpected refusal: {message}"
+        );
+    }
+
+    /// Absence is zero and one slot holds one pair, so a stored zero, an empty
+    /// holder, and a holding on something that is not a resource are each
+    /// corrupt at replay.
+    ///
+    /// Deviation from the spec's wording, decided here: the assertion is against
+    /// `verify_state_shape`, which owns these clauses. Routing through
+    /// `verify_history` would also fail on replay-equality, so it would pass
+    /// even if the shape clauses were deleted — which is the opposite of a
+    /// falsification.
+    #[test]
+    fn a_zero_or_dangling_holding_is_corrupt() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let authenticated = auth_principal(owner());
+        let (mut kernel, _) =
+            WorldKernel::create(&path, creation(CommandId::new(), "Shape"), &authenticated)
+                .unwrap();
+        let topology = admit_topology(&mut kernel);
+        let custody = admit_custody(&mut kernel, &topology);
+        crate::world::tests::activate(&mut kernel);
+        verify_state_shape(&kernel.state).expect("the admitted world has a canonical shape");
+
+        let mut zero = kernel.state.clone();
+        zero.holdings
+            .get_mut(&custody.holder)
+            .unwrap()
+            .insert(custody.tithe, Quantity(0));
+        assert!(matches!(
+            verify_state_shape(&zero),
+            Err(JournalError::Corrupt(_))
+        ));
+
+        let mut emptied = kernel.state.clone();
+        emptied.holdings.get_mut(&custody.holder).unwrap().clear();
+        assert!(matches!(
+            verify_state_shape(&emptied),
+            Err(JournalError::Corrupt(_))
+        ));
+
+        let mut not_a_resource = kernel.state.clone();
+        assert_eq!(
+            not_a_resource.entities[&topology.yard].kind,
+            EntityKind::Place
+        );
+        not_a_resource
+            .holdings
+            .get_mut(&custody.holder)
+            .unwrap()
+            .insert(topology.yard, Quantity(1));
+        assert!(matches!(
+            verify_state_shape(&not_a_resource),
+            Err(JournalError::Corrupt(_))
+        ));
+
+        let mut dangling = kernel.state.clone();
+        dangling.dependencies.insert(
+            custody.holder,
+            BTreeSet::from([crate::world::DependencyTarget::Subject(custody.holder)]),
+        );
+        assert!(matches!(
+            verify_state_shape(&dangling),
+            Err(JournalError::Corrupt(_))
+        ));
     }
 }
