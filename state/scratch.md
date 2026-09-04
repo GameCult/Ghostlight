@@ -2,10 +2,10 @@
 
 ## Current Subgoal
 
-Plan step 6 pass 5 (`Authority`, `Selection`, `Redress`) with Hands in a fresh
-worktree from `0f21a49`; first commit makes the grant structural in
-`exercise`. Specs/maps 1-9 in the session scratchpad. Main tip `0f21a49`,
-passes 1-4 integrated, push may lag.
+Plan step 6 pass 6 (`Knowledge`, `Channel`, `Fact` standing) with Hands in
+`F:\Projects\Ghostlight-pass6` on `hands/pass6`, alongside the pass-5
+follow-ups in `F:\Projects\Ghostlight-pass5fu` on `hands/pass5-followups`;
+both from `dbe176d`. Main tip `dbe176d`, passes 1-5 integrated and pushed.
 
 ## Working Notes
 

@@ -225,55 +225,46 @@ outcome bands, four derived `CausalBoundary` kinds, scope-digest binding, one
 are teardown evidence. Plan step 6 is nine implementation passes; pass 1 is
 landed, passes 2 through 9 are not.
 
-1. Passes 1 through 4 are integrated locally; nothing beyond pass 4 is.
-   `codex/ghostlight-dungeon-mvp` tip is `0f21a49` (Soul) over `f9cd017`
-   (pass 4) and `0ca51cf` (`apply_operations` owner), on `138ff69`; those
-   three were `c9fd9bf`, `870d86a`, `7650d72` before rebase. Passes 1 through
-   3 are `5e53beb`, `e99af63`, `d2805fe`. The push of the three was launched
-   in the background and may lag origin by minutes: run `git status -sb` and
-   trust `ahead N` over any note here.
+1. Passes 1 through 5 are integrated and pushed; nothing beyond pass 5 is.
+   `codex/ghostlight-dungeon-mvp` tip is `dbe176d` (Soul) over `fa3d95d`
+   (pass 5: `Authority`, `Selection`, `Redress` subgraph) and `40e4efc`
+   (grant made structural in `exercise`, the pass-4 follow-up), on `d589ea0`
+   (ontology doc "Current mechanism" for pass 4 and plan invariant 10 moved
+   to scope-digest wording). Earlier passes: `5e53beb`, `e99af63`, `d2805fe`,
+   `0f21a49`. Run `git status -sb` before trusting any tip written here.
 
-   Pass 4 facts: `world/action.rs` owns `exercise()`, called from `reduce` and
-   `apply_effect`. An `affordance_catalog` partition holds world-authored
-   entries declared through `Declaration::Affordance`; grants are
-   `BTreeMap<DecisionScope, BTreeSet<AffordanceId>>`; `Precondition` is
-   exactly `{ Present, Reachable, Holds }`; `ActionMismatch` (17 variants) is
-   the sibling of `Mismatch` and surfaces as `KernelError::ActionRejected`.
-   Band selection is `BandPreimage { world_id, revision, command_id,
-   affordance, band_count }` through `digest()`, no RNG; `DecisionEvent {
-   band, effects }`. `Speak` is a kernel-built catalog entry (zero
-   preconditions, empty band, `carries_speech`) synthesized only at genesis.
-   `DecisionAction`, `AffordanceKind`, `AffordanceGrant`,
-   `operational_tools()`, the prose `available_tools` string, and the
-   permission block are deleted; `catalog_tools`, `catalog_signatures`, and
-   `catalog_permissions` in `world/controllers.rs` derive the controller
-   surface from granted entries. `RefKind` has adjacently tagged serde,
-   round-trip proven. Schemas are `world_state.affordance.v1` /
-   `world_commit.affordance.v1`; earlier stores refused. Baseline at
-   `0f21a49`: 123 test functions in `world/*.rs`, 162 crate source, plus one
-   integration test. `EvidenceRef::new` is still `#[cfg(test)]`; the gate
-   remains that nothing deserializes a `WorldPatch` until pass 10.
+   Pass 5 facts: schemas are `world_state.authority.v1` /
+   `world_commit.authority.v1`, earlier stores refused. `world/action.rs`
+   carries `check_delegation` under `exercise`, the `ActionMismatch` variant
+   `DelegationNotMonotone` (name kept), and `ComponentOpKind::RevokeAuthority`.
+   Rulings adopted in pass 5: overlap is checked at admission only and is
+   structural in `verify_state_shape`; revoke is gated exactly like grant
+   through `check_delegation`. Baseline at `dbe176d`: 150 test functions in
+   `world/*.rs`, 189 crate source, plus one integration test (the focused
+   `world::` run reports 149 / 184; the two counts use different rules, so
+   the next pass must compare like with like). `EvidenceRef::new` is still
+   `#[cfg(test)]`; nothing deserializes a `WorldPatch` before pass 10.
 
-   Soul follow-ups from pass 4: (a) make the grant structural inside
-   `exercise` when a third caller arrives, assigned to pass-5 Hands as its
-   first commit; (b) the pass-4 spec band clause for `verify_state_shape`
-   overstates what is implemented (bounds plus emptiness, replay proves the
-   rest), a spec/doc correction the coordinator owns.
+   In flight, not landed, both branched from `dbe176d` with no commits yet at
+   the time of writing:
+   - `hands/pass5-followups` in the worktree `F:\Projects\Ghostlight-pass5fu`:
+     admission-time `Subject`/`PlaceSubtree` nesting check, `RevokeAuthority`
+     under `check_delegation`, and a deploy test.
+   - `hands/pass6` in the worktree `F:\Projects\Ghostlight-pass6`:
+     `Knowledge`, `Channel`, `Fact` standing, scoped-projection non-leakage,
+     from `imagination-pass6.md`.
+   The main tree also holds an uncommitted coordinator edit to
+   `docs/architecture/ghostlight-world-ontology.md` describing pass 5; it
+   lands with the follow-ups. Witness for any later pass: main-branch
+   `git log` past `dbe176d`, and `git worktree list` for the two trees.
 
-   Pass 5 (`Authority`, `Selection`, `Redress`, institutional affordances) is
-   with Hands in a fresh worktree from `0f21a49`; at the time of writing
-   `.claude/worktrees/agent-a8828a054fe108277` sits at `0f21a49` unlocked and
-   the locked `agent-ae5caadd09b38df59` sits at `8cad6b9`, a pre-rebuild
-   commit that is not a pass tree. Witness for any later pass: main-branch
-   `git log` past `0f21a49`.
-
-   Pipeline for passes 5 through 9: specs `imagination-pass1.md` through
+   Pipeline for passes 6 through 9: specs `imagination-pass1.md` through
    `imagination-pass9.md` and maps `modeling-pass1.md` through
-   `modeling-pass9.md` are all on disk in the session scratchpad
+   `modeling-pass9.md` are on disk in the session scratchpad
    `C:\Users\Meta\AppData\Local\Temp\claude\F--Projects-Ghostlight\2fd50f5e-f7ba-4e5d-82bc-c7033e6074d2\scratchpad`,
-   not in `state/`; if that directory is gone, the specs must be regenerated
-   from `docs/architecture/ghostlight-world-ontology.md`. Each pass: Hands in
-   an isolation worktree whose first line is `git reset --hard
+   not in `state/`; if that directory is gone, regenerate the specs from
+   `docs/architecture/ghostlight-world-ontology.md`. Each pass: Hands in an
+   isolation worktree whose first line is `git reset --hard
    codex/ghostlight-dungeon-mvp`, then Soul in that tree, then the coordinator
    integrates with `git -C <wt> rebase -q codex/ghostlight-dungeon-mvp && git
    merge --ff-only <wt-branch> && cargo test -q -p ghostlight-dungeon --bin
@@ -281,8 +272,8 @@ landed, passes 2 through 9 are not.
    <wt> && git branch -D <wt-branch>`, then a steward pass and the doc
    proposal. Rulings that bind Hands: pass 7 keeps `check_ledger` single-site;
    pass 8 adds no HTTP `AdmitPatch` ingress (that is pass 10, consumer
-   ingress, now in the plan); pass 9 must not enable `uuid/v5` and derives
-   each `CommandId` via sha256 into `Uuid::from_bytes` like `derive_id`.
+   ingress, in the plan); pass 9 must not enable `uuid/v5` and derives each
+   `CommandId` via sha256 into `Uuid::from_bytes` like `derive_id`.
 
    Adopted design from the specs that changes steering: pass 7 gives the world
    its first clock, `WorldState.now`, advanced only by
@@ -302,8 +293,8 @@ landed, passes 2 through 9 are not.
 
    Queued doc edits, coordinator-owned: after pass 7, the four
    `ghostlight-dungeon-mvp.md` subject-readiness sentences (lines 65, 153,
-   211, 433) become `Commitment.due` plus derived debt, and the ontology
-   doc operation count (lines 222, 276, 537) becomes 27; after pass 9, the
+   211, 433) become `Commitment.due` plus derived debt, and the ontology doc
+   operation count (lines 222, 276, 537) becomes 27; after pass 9, the
    ontology doc phrase "within about N/B ticks" becomes ceil(N/R) with R the
    rotation reserve; after every integration, the ontology doc "Current
    mechanism" section is rewritten from the steward proposal.
@@ -320,15 +311,14 @@ landed, passes 2 through 9 are not.
      lore on Zyphos `codex/ghostlight-worlds` at `2fef909`.
    - Kalsa `stormshield-handoff-v0`: `codex/world-kalsa` tip `489c541`; lore
      on Kalsa `codex/ghostlight-worlds` at `c9f4c5c`.
-   The elaborator swarm is paused by operator order and this session no
-   longer owns it. The stop flag `C:\Users\Meta\.claude\worlds\logs\elab-stop.flag`
-   was set at 2026-09-04 20:10 with 66 passes finished in
-   `logs\elab-done.csv`; in-flight slots drain and are pushed, so
-   the final row count is whatever that file holds after the drain. The
-   successor handoff is `C:\Users\Meta\.claude\worlds\README.md` (written
-   20:09; final counts and the Charter idea are filled in at drain). Resume or
-   restart of the loop waits on operator adjustments and belongs to the
-   successor, not to a Ghostlight kernel session. What remains owed and is
+   The elaborator swarm is drained and handed off; this session does not own
+   it. The stop flag `C:\Users\Meta\.claude\worlds\logs\elab-stop.flag` was
+   set at 2026-09-04 20:10; the drain completed at 21:10 with 98 finished
+   passes in `logs\elab-done.csv`, ledgers republished to the
+   world branches, and the successor handoff finalized at
+   `C:\Users\Meta\.claude\worlds\README.md` with final counts and the Charter
+   idea. Resume or restart of the loop waits on operator adjustments and
+   belongs to the successor, not to a Ghostlight kernel session. What remains owed and is
    deliberately deferred: integration of the `slot/<world>/<title>/<stamp>`
    branches into the lore vaults on `codex/ghostlight-worlds` and into
    `codex/world-<world>`. The idea index is the four world-branch ledger

@@ -35,8 +35,8 @@ not from a model agreeing that the world is deep.
 
 ## Current mechanism
 
-Passes 1 through 4 of the widening are landed (`5e53beb`, `e99af63`,
-`d2805fe`, `0f21a49`). The sealed kernel holds subjects with a label and a
+Passes 1 through 5 of the widening are landed (`5e53beb`, `e99af63`,
+`d2805fe`, `0f21a49`, `dbe176d`). The sealed kernel holds subjects with a label and a
 kind (`Person | Institution | Population`); a `positions` partition with
 `Position`; entities with `container` under containment acyclicity; `Route`
 as an `EdgeRecord` variant carrying `AccessKind { Public, Restricted }`, a
@@ -44,8 +44,9 @@ minute `Cost` in `1..=525_600`, and an open flag; subject-keyed `holdings` of
 `Quantity(u64)` per entity, absence meaning zero, checked arithmetic with
 u128 ledger accumulators; subject-keyed `dependencies` on
 `DependencyTarget { Resource, Route, Subject }`; and an `affordance_catalog`
-partition of world-authored entries. There is no relation, fact, commitment,
-pressure, or clock yet.
+partition of world-authored entries; and `authority`, `selection`, and
+`redress` partitions. There is no relation, fact, commitment, pressure, or
+clock yet.
 
 `world/patch.rs` owns typed `SubjectId`/`EntityId`/`EdgeId`/`AffordanceId`
 namespaces, `Ref<Id>` with `DraftHandle` (adjacently tagged `RefKind`), and a
@@ -79,16 +80,31 @@ genesis. A controller's tools, signatures, and permissions are derived from
 its granted entries by `catalog_tools`, `catalog_signatures`, and
 `catalog_permissions`; no hand-written permission surface remains.
 
+Authority is a grant of `(kind, AuthorityTarget)` where the target is a
+`Subject` or a `PlaceSubtree`; one predicate, `covers`, decides membership for
+the `Authorized` and `HasStanding` preconditions, `route_admits` on
+`AccessKind::Restricted { requires }`, the delegation monotonicity rule, and
+the redress projection. Same-kind grants with overlapping targets are rejected
+at admission (`targets_overlap` is structural: identity for subjects,
+containment for places, plus a same-revision nesting check between the two
+shapes) and `verify_state_shape` re-checks only the structural rule. An
+`Office` joins an institution to a person; `open_office`, `close_office`,
+`install`, and `vacate` are the selection operations, and an incumbent's
+delegated grants are copied into its own `ScopeComponents`. A `Forum` admits
+petitions from subjects with standing. Authority-writing slots (`grant`,
+`revoke`) are gated by one rule: the actor's own authority must cover the
+target, otherwise `ActionMismatch::DelegationNotMonotone`.
+
 Opportunities bind to a `ScopeDigest` over one `scope_components` owner
-(controller assignment, grants, position, incident routes, own holdings, own
-dependencies); a proposal commits at any later revision with unchanged scope
-and is rejected with `KernelError::ScopeChanged` otherwise. State schema is
-`world_state.affordance.v1`, commit schema `world_commit.affordance.v1`;
+(controller assignment, grants, delegated grants, own authority, position,
+incident routes, own holdings, own dependencies; never occupancy or forum
+state); a proposal commits at any later revision with unchanged scope and is
+rejected with `KernelError::ScopeChanged` otherwise. State schema is
+`world_state.authority.v1`, commit schema `world_commit.authority.v1`;
 earlier stores are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
-Passes 5 through 9 add authority, knowledge, the clock and pressure flow,
-boundary elaboration, and the budgeted cover; pass 10 adds the consumer
-ingress.
+Passes 6 through 9 add knowledge, the clock and pressure flow, boundary
+elaboration, and the budgeted cover; pass 10 adds the consumer ingress.
 
 ## The failure this vocabulary is designed against
 
@@ -213,7 +229,7 @@ Custody          transfer(from, to, resource, qty), transform(resource, into, qt
                  consume(holder, resource, qty), admit(holder, resource, qty, evidence)
 Dependency       bind, release
 Authority        grant(subject, scope, kind), revoke
-Selection        install(office, incumbent), vacate, set_method
+Selection        open_office, close_office, install(office, incumbent), vacate
 Redress          open_forum(kind, forum, standing), close_forum
 Knowledge        acquire(subject, fact, source, confidence), communicate(speaker, fact,
                  channel), forget
@@ -280,7 +296,7 @@ counts do not appear here and may not be added.
 The kernel owns component operations. A **world** owns its affordance catalog.
 This is the generality lever: a setting with spellcraft, insurance claims,
 oath-rhythms, or memetic sovereignty authors affordances from the same
-twenty-nine operations, and the kernel never learns a genre.
+thirty operations, and the kernel never learns a genre.
 
 ```text
 Affordance
