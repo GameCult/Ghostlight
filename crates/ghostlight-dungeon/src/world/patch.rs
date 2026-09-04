@@ -6519,6 +6519,236 @@ mod catalog_tests {
             "the elaborator has no source prose and no byte span"
         );
     }
+
+    // ---- Soul: the emitter against the decoder -------------------------
+    //
+    // `patch_tool_arguments_round_trip_into_the_vocabulary` proves that a
+    // hand-written *example* decodes. It never checks that example against the
+    // *emitted schema*, so `composite_example` is a third spelling of the same
+    // vocabulary beside `composite_schema` and serde. The tests below close the
+    // direction that matters for a model: an instance built from the emitted
+    // schema must decode, for every branch of every sum the schema offers.
+
+    const ANY_STRING: &str = "00000000-0000-0000-0000-000000000000";
+
+    /// One instance of `schema`, taking `branch` at the top-level `oneOf` and
+    /// the first alternative everywhere below it. Nothing here reads the const
+    /// list: the schema is the only input, which is what makes the decode a
+    /// statement about the schema.
+    fn instance_of(schema: &Value, branch: usize) -> Value {
+        if let Some(alternatives) = schema.get("oneOf").and_then(Value::as_array) {
+            let index = branch.min(alternatives.len().saturating_sub(1));
+            return instance_of(&alternatives[index], 0);
+        }
+        if let Some(constant) = schema.get("const") {
+            return constant.clone();
+        }
+        if let Some(values) = schema.get("enum").and_then(Value::as_array) {
+            return values.first().cloned().unwrap_or(Value::Null);
+        }
+        match schema.get("type").and_then(Value::as_str) {
+            Some("object") => Value::Object(
+                schema
+                    .get("properties")
+                    .and_then(Value::as_object)
+                    .map(|properties| {
+                        properties
+                            .iter()
+                            .map(|(name, property)| (name.clone(), instance_of(property, 0)))
+                            .collect()
+                    })
+                    .unwrap_or_default(),
+            ),
+            Some("array") => Value::Array(vec![instance_of(
+                schema.get("items").unwrap_or(&Value::Null),
+                0,
+            )]),
+            Some("integer") => schema.get("minimum").cloned().unwrap_or_else(|| json!(1)),
+            Some("boolean") => json!(false),
+            Some("string") => json!(ANY_STRING),
+            _ => Value::Null,
+        }
+    }
+
+    fn branch_count(schema: &Value) -> usize {
+        schema
+            .get("oneOf")
+            .and_then(Value::as_array)
+            .map_or(1, Vec::len)
+    }
+
+    /// A structural reader of exactly the shapes `tool_schema` emits: `oneOf`,
+    /// `const`, `enum`, closed objects with every property required, arrays,
+    /// bounded integers, strings, booleans, null.
+    fn admits(schema: &Value, value: &Value) -> bool {
+        if let Some(alternatives) = schema.get("oneOf").and_then(Value::as_array) {
+            return alternatives
+                .iter()
+                .any(|alternative| admits(alternative, value));
+        }
+        if let Some(constant) = schema.get("const") {
+            return constant == value;
+        }
+        if let Some(values) = schema.get("enum").and_then(Value::as_array) {
+            return values.contains(value);
+        }
+        match schema.get("type").and_then(Value::as_str) {
+            Some("object") => {
+                let Some(fields) = value.as_object() else {
+                    return false;
+                };
+                let empty = serde_json::Map::new();
+                let properties = schema
+                    .get("properties")
+                    .and_then(Value::as_object)
+                    .unwrap_or(&empty);
+                if schema.get("additionalProperties") == Some(&json!(false))
+                    && fields.keys().any(|name| !properties.contains_key(name))
+                {
+                    return false;
+                }
+                if let Some(required) = schema.get("required").and_then(Value::as_array)
+                    && required
+                        .iter()
+                        .any(|name| name.as_str().is_none_or(|name| !fields.contains_key(name)))
+                {
+                    return false;
+                }
+                properties.iter().all(|(name, property)| {
+                    fields.get(name).is_none_or(|field| admits(property, field))
+                })
+            }
+            Some("array") => value.as_array().is_some_and(|items| {
+                let inner = schema.get("items").unwrap_or(&Value::Null);
+                items.iter().all(|item| admits(inner, item))
+            }),
+            Some("integer") => value.as_u64().is_some_and(|number| {
+                schema
+                    .get("minimum")
+                    .and_then(Value::as_u64)
+                    .is_none_or(|minimum| number >= minimum)
+                    && schema
+                        .get("maximum")
+                        .and_then(Value::as_u64)
+                        .is_none_or(|maximum| number <= maximum)
+            }),
+            Some("boolean") => value.is_boolean(),
+            Some("string") => value.is_string(),
+            Some("null") => value.is_null(),
+            _ => true,
+        }
+    }
+
+    fn emitted_schema(name: &str) -> Value {
+        let definition = patch_tools()
+            .into_iter()
+            .find(|definition| definition.name == name)
+            .unwrap_or_else(|| panic!("{name} is not emitted"));
+        serde_json::from_str(&definition.parameters_json).expect("an emitted schema is JSON")
+    }
+
+    fn decodes(
+        entry: &PatchTool,
+        mut arguments: serde_json::Map<String, Value>,
+    ) -> Result<(), String> {
+        match entry.shape {
+            PatchToolShape::Declare { variant, fixed } => {
+                arguments.insert("type".into(), Value::String(variant.into()));
+                for (key, value) in fixed {
+                    arguments.insert((*key).into(), Value::String((*value).into()));
+                }
+                serde_json::from_value::<Declaration>(Value::Object(arguments))
+                    .map(|_| ())
+                    .map_err(|error| error.to_string())
+            }
+            PatchToolShape::Operate { variant } => {
+                arguments.insert("op".into(), Value::String(variant.into()));
+                serde_json::from_value::<ComponentOp>(Value::Object(arguments))
+                    .map(|_| ())
+                    .map_err(|error| error.to_string())
+            }
+            PatchToolShape::Session => Ok(()),
+        }
+    }
+
+    /// The direction a model actually travels: it reads the emitted schema and
+    /// writes an instance of it. Every branch the schema offers, in every
+    /// argument of every tool, must decode into the vocabulary — otherwise the
+    /// catalog advertises a shape the reducer cannot read and the model
+    /// discovers it through a gap.
+    #[test]
+    fn soul_every_branch_the_emitted_schema_offers_decodes_into_the_vocabulary() {
+        for entry in PATCH_TOOLS {
+            let schema = emitted_schema(entry.name);
+            let empty = serde_json::Map::new();
+            let properties = schema
+                .get("properties")
+                .and_then(Value::as_object)
+                .unwrap_or(&empty)
+                .clone();
+            let widest = properties.values().map(branch_count).max().unwrap_or(1);
+            for branch in 0..widest {
+                let arguments: serde_json::Map<String, Value> = properties
+                    .iter()
+                    .map(|(name, property)| (name.clone(), instance_of(property, branch)))
+                    .collect();
+                let rendered = Value::Object(arguments.clone());
+                assert!(
+                    admits(&schema, &rendered),
+                    "{}: the instance built from its own schema does not satisfy it: {rendered}",
+                    entry.name
+                );
+                if let Err(error) = decodes(entry, arguments) {
+                    panic!(
+                        "{} branch {branch}: the emitted schema offers a shape the decoder refuses ({error}): {rendered}",
+                        entry.name
+                    );
+                }
+            }
+        }
+    }
+
+    /// The round-trip test's examples are a third spelling, not a projection of
+    /// the schema. This pins the exact place where the two disagree today, so a
+    /// fix removes an entry here and a new drift adds one.
+    #[test]
+    fn soul_the_round_trip_examples_are_a_second_spelling_of_the_emitted_schema() {
+        let mut disagree: Vec<&str> = Vec::new();
+        for entry in PATCH_TOOLS {
+            for field in entry.fields {
+                if !admits(&field_schema(field.kind), &field_example(field.kind)) {
+                    disagree.push(field.name);
+                }
+            }
+        }
+        disagree.sort_unstable();
+        disagree.dedup();
+        assert_eq!(
+            disagree,
+            vec!["effect_slots"],
+            "the example/schema disagreement set moved"
+        );
+    }
+
+    /// `Bounds::None` is a live variant of the vocabulary — an effect slot with
+    /// no ceiling — and `variant_content` cannot spell a unit variant, so the
+    /// emitted schema offers only `quantity` and `cost`. A world author using
+    /// the catalog cannot declare an unbounded effect slot.
+    #[test]
+    fn soul_the_catalog_cannot_express_an_unbounded_effect_slot() {
+        let unbounded = serde_json::to_value(Bounds::None).expect("bounds encode");
+        assert_eq!(unbounded, json!({"bound": "none"}));
+        let slot = field_schema(PatchFieldKind::CompositeList(CompositeShape::EffectSlot));
+        let bounds = slot["items"]["properties"]["bounds"].clone();
+        assert!(
+            admits(&bounds, &json!({"bound": "quantity", "max": 1})),
+            "the bounded spelling is offered"
+        );
+        assert!(
+            !admits(&bounds, &unbounded),
+            "the unbounded spelling is now offered; delete this test"
+        );
+    }
 }
 
 #[cfg(test)]

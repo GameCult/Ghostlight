@@ -12833,4 +12833,348 @@ mod clock_tests {
             assert!(!text.contains(tag), "{tag} reached world state");
         }
     }
+
+    // ---- Soul: the confinement predicate past its declaration lane ------
+
+    /// Confinement is claimed for every referent a jurisdictional author
+    /// writes, not only for declarations. An operation naming a route with one
+    /// endpoint outside the jurisdiction is outside, and the site it reports is
+    /// the operation's.
+    #[test]
+    fn soul_an_operation_naming_a_half_outside_route_is_outside_the_jurisdiction() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "OperationLane");
+        let answered = dead_end_boundary(&kernel);
+        let revision = kernel.state.revision;
+        // The Field Gate runs hall -> dead end. The dead end's elaborator holds
+        // one of its two ends and therefore holds neither.
+        let mut patch = shed_under(clockwork.dead_end, "shed");
+        patch.operations = vec![ComponentOp::AlterCost {
+            route: Ref::Existing(clockwork.gate),
+            cost: Cost(2),
+        }];
+        let error = submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered.clone())),
+                patch,
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+                if set == &vec![Mismatch::OutsideJurisdiction { site: Site::Operation(0) }]),
+            "{error:?}"
+        );
+        assert_eq!(kernel.state.revision, revision);
+
+        // The owner is unconfined and the identical patch commits.
+        let snapshot = kernel.snapshot().unwrap();
+        let mut owner_patch = shed_under(clockwork.dead_end, "shed");
+        owner_patch.operations = vec![ComponentOp::AlterCost {
+            route: Ref::Existing(clockwork.gate),
+            cost: Cost(2),
+        }];
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered)),
+                patch: owner_patch,
+            },
+        );
+    }
+
+    /// The fifth body the capability rule refuses. `ExerciseDecision` is the
+    /// one the existing negative omits, and it is the one a subject's lane uses.
+    #[test]
+    fn soul_an_elaborator_cannot_exercise_a_decision() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, active) = clock_kernel(directory.path(), "NoExercise");
+        let revision = kernel.state.revision;
+        let error = submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            CommandBody::ExerciseDecision {
+                opportunity: opportunity_for(&active, clockwork.reeve),
+                invocation: DecisionInvocation {
+                    affordance: clockwork.deliver,
+                    bindings: Vec::new(),
+                    proposed: Vec::new(),
+                    speech: None,
+                },
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::Unauthorized), "{error:?}");
+        assert_eq!(kernel.state.revision, revision);
+    }
+
+    /// Two boundaries under two disjoint roots, opened by one owner patch.
+    /// Answering one leaves the other derived with its digest unmoved, so the
+    /// second elaborator commits afterwards at a later revision. Answering the
+    /// first a second time is not derived.
+    #[test]
+    fn soul_disjoint_boundaries_commit_independently_and_a_spent_answer_is_not_derived() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Disjoint");
+        let road = dead_end_boundary(&kernel);
+        let hall = kernel.state.entities[&clockwork.yard]
+            .container
+            .expect("the yard sits in the hall");
+
+        // One unconfined patch answers the road and opens one dead end under
+        // each root: a cellar under the yard, an annex off the road.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(road)),
+                patch: WorldPatch {
+                    declarations: vec![
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("cellar"),
+                            label: "The Yard Cellar".into(),
+                            kind: EntityKind::Place,
+                            container: Some(Ref::Existing(clockwork.yard)),
+                        }),
+                        Declaration::Route(RouteDeclaration {
+                            handle: DraftHandle::new("hatch"),
+                            label: "The Cellar Hatch".into(),
+                            from: Ref::Existing(clockwork.yard),
+                            to: Ref::Draft(DraftHandle::new("cellar")),
+                            access: AccessKind::Public,
+                            cost: Cost(1),
+                        }),
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("annex"),
+                            label: "The Road Annex".into(),
+                            kind: EntityKind::Place,
+                            container: Some(Ref::Existing(clockwork.dead_end)),
+                        }),
+                        Declaration::Route(RouteDeclaration {
+                            handle: DraftHandle::new("spur"),
+                            label: "The Road Spur".into(),
+                            from: Ref::Existing(clockwork.dead_end),
+                            to: Ref::Draft(DraftHandle::new("annex")),
+                            access: AccessKind::Public,
+                            cost: Cost(1),
+                        }),
+                    ],
+                    operations: Vec::new(),
+                    evidence: Vec::new(),
+                },
+            },
+        );
+
+        let place_named = |kernel: &WorldKernel, label: &str| {
+            kernel
+                .state
+                .entities
+                .iter()
+                .find(|(_, entity)| entity.label == label)
+                .map(|(id, _)| *id)
+                .expect("the declared place")
+        };
+        let cellar = place_named(&kernel, "The Yard Cellar");
+        let annex = place_named(&kernel, "The Road Annex");
+        let boundary_at = |kernel: &WorldKernel, place: EntityId| {
+            derive_boundaries(&kernel.state)
+                .unwrap()
+                .into_iter()
+                .find(|boundary| {
+                    matches!(boundary, CausalBoundary::UnelaboratedDestination { place: at, .. } if *at == place)
+                })
+                .unwrap_or_else(|| panic!("no boundary at {place:?}"))
+        };
+        // Both are derived at the same revision, and both are read before
+        // either is answered.
+        let cellar_answer = boundary_at(&kernel, cellar);
+        let annex_answer = boundary_at(&kernel, annex);
+
+        submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(hall)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(cellar_answer.clone())),
+                patch: shed_under(cellar, "crock"),
+            },
+        )
+        .expect("the hall's elaborator answers the cellar");
+        let after_first = kernel.state.revision;
+
+        // The other root's answer is untouched by that commit: same value,
+        // same digest, still derived.
+        assert!(
+            derive_boundaries(&kernel.state)
+                .unwrap()
+                .contains(&annex_answer)
+        );
+        submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(annex_answer)),
+                patch: shed_under(annex, "barrow"),
+            },
+        )
+        .expect("the road's elaborator answers the annex");
+        assert!(kernel.state.revision > after_first);
+
+        // The spent answer is a value nothing derives any more.
+        let error = submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(hall)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(cellar_answer)),
+                patch: shed_under(cellar, "second_crock"),
+            },
+        )
+        .unwrap_err();
+        assert!(matches!(error, KernelError::AnswerNotDerived), "{error:?}");
+    }
+
+    /// The third structural bound, reached through the elaborator lane: the
+    /// answer must be derived, every write must be inside the jurisdiction, and
+    /// the answer must stop being derived after the write.
+    #[test]
+    fn soul_an_elaborator_patch_that_does_not_satisfy_its_answer_is_refused() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Unsatisfied");
+        let road = dead_end_boundary(&kernel);
+        let hall = kernel.state.entities[&clockwork.yard]
+            .container
+            .expect("the yard sits in the hall");
+
+        // One owner patch answers the road and opens a cellar dead end inside
+        // the hall, so the hall's elaborator has an answer it covers and a
+        // legal write that does not satisfy it.
+        let snapshot = kernel.snapshot().unwrap();
+        submit_owner(
+            &mut kernel,
+            &snapshot,
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(road)),
+                patch: WorldPatch {
+                    declarations: vec![
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("shed"),
+                            label: "The Roadside Shed".into(),
+                            kind: EntityKind::Place,
+                            container: Some(Ref::Existing(clockwork.dead_end)),
+                        }),
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("cellar"),
+                            label: "The Yard Cellar".into(),
+                            kind: EntityKind::Place,
+                            container: Some(Ref::Existing(clockwork.yard)),
+                        }),
+                        Declaration::Route(RouteDeclaration {
+                            handle: DraftHandle::new("hatch"),
+                            label: "The Cellar Hatch".into(),
+                            from: Ref::Existing(clockwork.yard),
+                            to: Ref::Draft(DraftHandle::new("cellar")),
+                            access: AccessKind::Public,
+                            cost: Cost(1),
+                        }),
+                    ],
+                    operations: Vec::new(),
+                    evidence: Vec::new(),
+                },
+            },
+        );
+        let cellar = kernel
+            .state
+            .entities
+            .iter()
+            .find(|(_, entity)| entity.label == "The Yard Cellar")
+            .map(|(id, _)| *id)
+            .expect("the declared cellar");
+        let cellar_answer = derive_boundaries(&kernel.state)
+            .unwrap()
+            .into_iter()
+            .find(|boundary| {
+                matches!(boundary, CausalBoundary::UnelaboratedDestination { place, .. } if *place == cellar)
+            })
+            .expect("the cellar is a dead end");
+        let revision = kernel.state.revision;
+
+        // Inside the hall, so confinement passes; nowhere near the cellar, so
+        // the answered boundary is still derived after the write.
+        let error = submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(hall)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(cellar_answer.clone())),
+                patch: shed_under(clockwork.yard, "yardshed"),
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(error, KernelError::AnswerNotSatisfied),
+            "{error:?}"
+        );
+        assert_eq!(kernel.state.revision, revision);
+        assert!(
+            derive_boundaries(&kernel.state)
+                .unwrap()
+                .contains(&cellar_answer),
+            "a refused patch left the boundary derived"
+        );
+
+        // The same author satisfying the same answer commits.
+        submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(hall)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(cellar_answer.clone())),
+                patch: shed_under(cellar, "crock"),
+            },
+        )
+        .expect("the satisfying patch commits");
+        assert!(
+            !derive_boundaries(&kernel.state)
+                .unwrap()
+                .contains(&cellar_answer)
+        );
+    }
+
+    /// Pass 6's rule survives the ungating of `EvidenceRef::new`: a canonical
+    /// fact still needs its receipt listed on the patch that declares it, and an
+    /// elaborator gets the same refusal the owner does.
+    #[test]
+    fn soul_an_elaborator_cannot_mint_a_canonical_fact_without_a_listed_receipt() {
+        let directory = tempfile::tempdir().unwrap();
+        let (mut kernel, clockwork, _) = clock_kernel(directory.path(), "Provenance");
+        let answered = dead_end_boundary(&kernel);
+        let revision = kernel.state.revision;
+        let mut patch = shed_under(clockwork.dead_end, "shed");
+        patch.declarations.push(Declaration::Fact(FactDeclaration {
+            handle: DraftHandle::new("flood"),
+            label: "The Flooded Hinge".into(),
+            statement: Statement::new("The lower hinge flooded.").expect("a canonical statement"),
+            standing: FactStandingRef::Canonical {
+                evidence: EvidenceRef::new("vault:forged"),
+            },
+        }));
+        let error = submit_as(
+            &mut kernel,
+            elaborator(JurisdictionKey::PlaceSubtree(clockwork.dead_end)),
+            CommandBody::AdmitPatch {
+                answers: Some(PatchAnswer::Boundary(answered)),
+                patch,
+            },
+        )
+        .unwrap_err();
+        assert!(
+            matches!(&error, KernelError::PatchRejected(set)
+            if set.contains(&Mismatch::FactWithoutEvidence {
+                handle: DraftHandle::new("flood"),
+            })),
+            "{error:?}"
+        );
+        assert_eq!(kernel.state.revision, revision);
+    }
 }

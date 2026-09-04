@@ -5879,4 +5879,392 @@ mod tests {
         std::io::Write::write_all(&mut persona_file, persona_prose.as_bytes()).unwrap();
         persona_file.sync_all().unwrap();
     }
+
+    // ---- Soul: the elaboration runner, which nothing drove -------------
+
+    /// A scripted provider for the authoring lane. It records the exact
+    /// prepared invocations it was asked to run, so the repaired round's prompt
+    /// can be read back out of the wire rather than out of the checkpoint.
+    struct ElaborationScript {
+        outputs: Mutex<Vec<Result<InferenceOutput, InferenceFault>>>,
+        seen: Mutex<Vec<PreparedInference>>,
+    }
+
+    #[async_trait]
+    impl InferencePort for ElaborationScript {
+        fn prepare(&self, request: InferenceRequest) -> Result<PreparedInference, InferenceFault> {
+            fixture_prepared(request)
+        }
+
+        async fn infer(
+            &self,
+            request: PreparedInference,
+        ) -> Result<InferenceOutput, InferenceFault> {
+            self.seen.lock().unwrap().push(request);
+            let mut outputs = self.outputs.lock().unwrap();
+            assert!(!outputs.is_empty(), "the script ran out of rounds");
+            outputs.remove(0)
+        }
+    }
+
+    fn tool_round(
+        calls: Vec<(&str, Value)>,
+        receipt: &str,
+    ) -> Result<InferenceOutput, InferenceFault> {
+        output(
+            calls
+                .into_iter()
+                .enumerate()
+                .map(|(index, (name, arguments))| InferenceEvent::ToolCall {
+                    call_id: format!("call-{index}"),
+                    name: name.to_owned(),
+                    arguments: arguments.to_string(),
+                })
+                .collect(),
+            receipt,
+        )
+    }
+
+    /// An Active world with one dead end: a road nothing has grown into, one
+    /// route away from an inhabited commons.
+    async fn elaboration_mailbox() -> (
+        tempfile::TempDir,
+        WorldMailbox,
+        tokio::task::JoinHandle<()>,
+        crate::world::EntityId,
+        crate::world::EntityId,
+    ) {
+        let directory = tempfile::tempdir().unwrap();
+        let (mailbox, task) = WorldMailbox::open(directory.path().join("world.cc")).unwrap();
+        let owner = PrincipalId::new("owner");
+        let authenticated = AuthenticatedCaller::fixture(CallerId::Principal(owner.clone()));
+        let creation = mailbox
+            .create_fixture(
+                CreateWorld {
+                    id: CommandId::new(),
+                    owner: owner.clone(),
+                    title: "Elaboration Fixture".into(),
+                    patch: WorldPatch {
+                        declarations: vec![
+                            Declaration::Entity(crate::world::EntityDeclaration {
+                                handle: DraftHandle::new("commons"),
+                                label: "The Commons".into(),
+                                kind: EntityKind::Place,
+                                container: None,
+                            }),
+                            Declaration::Entity(crate::world::EntityDeclaration {
+                                handle: DraftHandle::new("road"),
+                                label: "The Unwalked Road".into(),
+                                kind: EntityKind::Place,
+                                container: Some(crate::world::Ref::Draft(DraftHandle::new(
+                                    "commons",
+                                ))),
+                            }),
+                            Declaration::Route(crate::world::RouteDeclaration {
+                                handle: DraftHandle::new("lane"),
+                                label: "The Long Lane".into(),
+                                from: crate::world::Ref::Draft(DraftHandle::new("commons")),
+                                to: crate::world::Ref::Draft(DraftHandle::new("road")),
+                                access: crate::world::AccessKind::Public,
+                                cost: Cost(1),
+                            }),
+                            Declaration::Subject(SubjectDeclaration {
+                                handle: DraftHandle::new("subject"),
+                                label: "Subject".into(),
+                                kind: SubjectKind::Person,
+                                controller: NewController::NarrativePersona,
+                                affordances: kernel_speak_grant(),
+                                position: Some(crate::world::Ref::Draft(DraftHandle::new(
+                                    "commons",
+                                ))),
+                            }),
+                        ],
+                        operations: Vec::new(),
+                        evidence: Vec::new(),
+                    },
+                    scale_intent: WorldScaleIntentRef::default(),
+                },
+                &authenticated,
+            )
+            .await
+            .unwrap();
+        let mut snapshot = mailbox.snapshot().await.unwrap();
+        for body in [CommandBody::ApproveDraft, CommandBody::ActivateWorld] {
+            mailbox
+                .submit_fixture(
+                    CommandEnvelope {
+                        id: CommandId::new(),
+                        world_id: creation.world_id,
+                        expected_revision: snapshot.revision,
+                        caller: CallerId::Principal(owner.clone()),
+                        body,
+                    },
+                    &authenticated,
+                )
+                .await
+                .unwrap();
+            snapshot = mailbox.snapshot().await.unwrap();
+        }
+        assert_eq!(snapshot.phase, WorldPhase::Active);
+        let place = |label: &str| {
+            snapshot
+                .places
+                .iter()
+                .find(|entry| entry.label == label)
+                .expect("the declared place")
+                .id
+        };
+        let (commons, road) = (place("The Commons"), place("The Unwalked Road"));
+        assert_eq!(snapshot.boundaries.len(), 1, "one dead end, and only one");
+        (directory, mailbox, task, commons, road)
+    }
+
+    /// Spec test 20, which the pass wired and did not write. Round one submits a
+    /// draft the kernel refuses; the complete mismatch set is persisted against
+    /// the same command id; a **fresh** runner over the same store resumes,
+    /// renders those mismatches into the round-two prompt, and the repaired
+    /// draft commits under the same identity.
+    #[tokio::test]
+    async fn soul_an_elaboration_session_resumes_and_repairs_from_its_mismatch_set() {
+        let (_directory, mailbox, task, commons, road) = elaboration_mailbox().await;
+        let jurisdiction = crate::world::JurisdictionKey::PlaceSubtree(commons);
+        let road_id = serde_json::to_value(road).unwrap();
+        let store = Arc::new(RecordingWorkStore {
+            persisted: Arc::new(AtomicBool::new(false)),
+            work: Mutex::new(BTreeMap::new()),
+        });
+        let script = Arc::new(ElaborationScript {
+            outputs: Mutex::new(vec![
+                // Round one: a shed whose container is a handle nothing
+                // declares, then a submit.
+                tool_round(
+                    vec![
+                        (
+                            "declare_place",
+                            json!({
+                                "handle": "shed",
+                                "label": "The Roadside Shed",
+                                "container": {"ref": "draft", "value": "nowhere"},
+                            }),
+                        ),
+                        ("submit", json!({})),
+                    ],
+                    "elaboration-round-zero",
+                ),
+                // Round two: the same shed, repaired onto the answered place.
+                tool_round(
+                    vec![
+                        (
+                            "declare_place",
+                            json!({
+                                "handle": "shed",
+                                "label": "The Roadside Shed",
+                                "container": {"ref": "existing", "value": road_id},
+                            }),
+                        ),
+                        ("submit", json!({})),
+                    ],
+                    "elaboration-round-one",
+                ),
+            ]),
+            seen: Mutex::new(Vec::new()),
+        });
+
+        let first = ElaborationRunner::new(
+            ElaborationPort::new(mailbox.clone()),
+            script.clone(),
+            Arc::new(NullEvidenceSource),
+            store.clone(),
+            models().elaborator,
+        );
+        let outcome = first.step(jurisdiction).await.unwrap();
+        assert_eq!(
+            outcome,
+            crate::world::elaboration::ElaborationOutcome::Rejected
+        );
+        drop(first);
+
+        // The kernel's complete set is what the checkpoint carries, under the
+        // same command id, and it is not empty.
+        let (command_id, mismatches, resumed_prompt) = {
+            let stored = store.work.lock().unwrap();
+            assert_eq!(stored.len(), 1, "one session, one row");
+            let ControllerWork::Elaboration(ElaborationCheckpoint::ElaboratorInFlight {
+                command_id,
+                last_mismatches,
+                agent_prompt,
+                completed,
+                ..
+            }) = stored.values().next().unwrap().clone()
+            else {
+                panic!("the rejection did not reopen the session for repair");
+            };
+            assert!(!last_mismatches.is_empty(), "the repair set is empty");
+            assert!(completed.is_empty(), "a rejected round kept its evidence");
+            (command_id, last_mismatches, agent_prompt)
+        };
+        assert!(
+            resumed_prompt.contains("Your previous patch was refused"),
+            "{resumed_prompt}"
+        );
+        for mismatch in &mismatches {
+            let rendered = serde_json::to_string(mismatch).unwrap();
+            assert!(
+                resumed_prompt.contains(&rendered),
+                "the round-two prompt dropped {rendered}"
+            );
+        }
+
+        // A fresh runner over the same store, holding nothing from the first.
+        let second = ElaborationRunner::new(
+            ElaborationPort::new(mailbox.clone()),
+            script.clone(),
+            Arc::new(NullEvidenceSource),
+            store.clone(),
+            models().elaborator,
+        );
+        let outcome = second.step(jurisdiction).await.unwrap();
+        assert_eq!(
+            outcome,
+            crate::world::elaboration::ElaborationOutcome::Committed
+        );
+
+        // One identity across the whole session, and the answered boundary is
+        // no longer derived because the commit made the predicate stop holding.
+        {
+            let stored = store.work.lock().unwrap();
+            assert_eq!(stored.len(), 1);
+            assert_eq!(stored.values().next().unwrap().command_id(), command_id);
+        }
+        let snapshot = mailbox.snapshot().await.unwrap();
+        assert!(snapshot.boundaries.is_empty(), "the boundary survived");
+        assert!(
+            snapshot
+                .places
+                .iter()
+                .any(|place| place.label == "The Roadside Shed")
+        );
+
+        // The wire agrees with the checkpoint: the second invocation carried
+        // the repaired prompt.
+        let seen = script.seen.lock().unwrap();
+        assert_eq!(seen.len(), 2, "two rounds, two invocations");
+        let second_wire = serde_json::to_string(&seen[1]).unwrap();
+        assert!(second_wire.contains("previous patch was refused"));
+
+        drop(second);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// A jurisdiction with no boundary and no deficit is the terminating
+    /// condition, and it spends no inference.
+    #[tokio::test]
+    async fn soul_a_clean_jurisdiction_ends_the_loop_without_an_inference_call() {
+        let (_directory, mailbox, task, commons, _road) = elaboration_mailbox().await;
+        let store = Arc::new(RecordingWorkStore {
+            persisted: Arc::new(AtomicBool::new(false)),
+            work: Mutex::new(BTreeMap::new()),
+        });
+        let script = Arc::new(ElaborationScript {
+            outputs: Mutex::new(Vec::new()),
+            seen: Mutex::new(Vec::new()),
+        });
+        let runner = ElaborationRunner::new(
+            ElaborationPort::new(mailbox.clone()),
+            script.clone(),
+            Arc::new(NullEvidenceSource),
+            store.clone(),
+            models().elaborator,
+        );
+        // The road's own subtree holds the road's boundary; a leaf with nothing
+        // under it and no deficit row is clean.
+        let outcome = runner
+            .step(crate::world::JurisdictionKey::Uncovered)
+            .await
+            .unwrap();
+        assert_eq!(
+            outcome,
+            crate::world::elaboration::ElaborationOutcome::Clean
+        );
+        assert!(script.seen.lock().unwrap().is_empty());
+        assert!(store.work.lock().unwrap().is_empty());
+        let _ = commons;
+
+        drop(runner);
+        drop(mailbox);
+        task.await.unwrap();
+    }
+
+    /// The store refuses the version immediately before it, not merely some
+    /// older one: `v7` is the bump this pass made and `v6` is what a store
+    /// written before it holds.
+    #[test]
+    fn soul_a_controller_work_row_from_v6_is_refused_at_open() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("controller-work.cc");
+        let command_id = CommandId::new();
+        let opportunity = fixture_opportunity(ControllerMode::OperationalAgent);
+        let work = operational_in_flight(
+            command_id,
+            &opportunity,
+            "Hold the bridge.",
+            "operational-model",
+            vec![],
+        );
+        {
+            let mut store = OwnedRedbMessagePackBackingStore::new(&path).unwrap();
+            store
+                .push(&CultCacheEnvelope {
+                    key: store_key(command_id).unwrap(),
+                    r#type: "controller_work.v6".into(),
+                    payload: rmp_serde::to_vec_named(&work).unwrap(),
+                    stored_at: Utc::now().to_rfc3339(),
+                    schema_id: Some("ghostlight.controller_work.v6".into()),
+                })
+                .unwrap();
+        }
+        let Err(error) = CultCacheControllerWorkStore::open(&path) else {
+            panic!("a v6 row was accepted by the v7 store");
+        };
+        assert!(matches!(error, ControllerWorkStoreError::Fault { .. }));
+    }
+
+    /// The custody discriminator names the lane, and `Uncertain` round-trips
+    /// through the probe with the authoring lane's own name rather than a
+    /// subject's control mode.
+    #[test]
+    fn soul_controller_work_custody_names_the_authoring_lane() {
+        let command_id = CommandId::new();
+        let uncertain = ControllerWorkCustody::Uncertain {
+            command_id,
+            lane: WorkLane::Elaboration,
+        };
+        assert_eq!(
+            uncertain,
+            ControllerWorkCustody::Uncertain {
+                command_id,
+                lane: WorkLane::Elaboration,
+            }
+        );
+        assert_ne!(
+            uncertain,
+            ControllerWorkCustody::Uncertain {
+                command_id,
+                lane: WorkLane::Operational,
+            }
+        );
+        assert_ne!(
+            ControllerWorkCustody::Owned {
+                narrative_commands: 0,
+                operational_commands: 0,
+                elaboration_commands: 1,
+            },
+            ControllerWorkCustody::Owned {
+                narrative_commands: 0,
+                operational_commands: 1,
+                elaboration_commands: 0,
+            }
+        );
+    }
 }

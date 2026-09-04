@@ -1205,4 +1205,95 @@ mod tests {
         assert_eq!(first, session_command_id(&session("sha256:one")).unwrap());
         assert_ne!(first, session_command_id(&session("sha256:two")).unwrap());
     }
+
+    // ---- Soul --------------------------------------------------------
+
+    /// The identity's preimage is (world, jurisdiction, answer digest) and all
+    /// three separate. The ancestry is deliberately not in it for the boundary
+    /// lane: a boundary that survives a repair keeps its id, which is what
+    /// makes the resume idempotent rather than orphaning a store row.
+    #[test]
+    fn soul_a_session_identity_separates_world_jurisdiction_and_answer() {
+        let root = EntityId(Uuid::from_u128(1));
+        let sibling = EntityId(Uuid::from_u128(2));
+        let session =
+            |world: WorldId, jurisdiction: JurisdictionKey, digest: &str, ancestry: &str| {
+                ElaboratorSession {
+                    world_id: world,
+                    jurisdiction,
+                    answer: PatchAnswer::Deficit(jurisdiction),
+                    answer_digest: BoundaryDigest::from_digest(digest.to_owned()),
+                    ancestry: ancestry.to_owned(),
+                }
+            };
+        let base = session(
+            WorldId::nil_for_test(),
+            JurisdictionKey::PlaceSubtree(root),
+            "sha256:one",
+            "sha256:ancestry",
+        );
+        let id = |value: &ElaboratorSession| session_command_id(value).unwrap();
+
+        assert_ne!(
+            id(&base),
+            id(&session(
+                WorldId::nil_for_test(),
+                JurisdictionKey::PlaceSubtree(sibling),
+                "sha256:one",
+                "sha256:ancestry",
+            )),
+            "two jurisdictions on one world share an identity"
+        );
+        assert_eq!(
+            id(&base),
+            id(&session(
+                WorldId::nil_for_test(),
+                JurisdictionKey::PlaceSubtree(root),
+                "sha256:one",
+                "sha256:later",
+            )),
+            "the boundary lane's identity moved when only the ancestry did"
+        );
+    }
+
+    /// The pass ungates `EvidenceRef::new`, so the question is whether a
+    /// model-authored patch can now mint a canonical fact on a receipt nobody
+    /// retrieved. It cannot: the citation is carried into `patch.evidence` by
+    /// the evaluator and then dropped by `filter_evidence`, and the resolver
+    /// refuses a canonical fact whose reference the patch does not list.
+    #[test]
+    fn soul_a_canonical_fact_cannot_be_minted_on_an_unretrieved_receipt() {
+        let completed = vec![output(vec![
+            (
+                "declare_fact",
+                serde_json::json!({
+                    "handle": "flood",
+                    "label": "The Flooded Hinge",
+                    "statement": "The lower hinge flooded.",
+                    "standing": {"standing": "canonical", "evidence": "vault:forged"},
+                }),
+            ),
+            (SUBMIT_PATCH_TOOL, serde_json::json!({})),
+        ])];
+        let capture = capture(&completed);
+        assert_eq!(
+            capture.draft.evidence,
+            vec![EvidenceRef::new("vault:forged")],
+            "the citation is carried, so the runner is the one that must drop it"
+        );
+
+        // Nothing was retrieved this round, which is what `NullEvidenceSource`
+        // supplies in production today.
+        let filtered = filter_evidence(capture.draft, &BTreeSet::new());
+        assert!(filtered.evidence.is_empty());
+        // The declaration survives with its reference intact, which is exactly
+        // the shape `Mismatch::FactWithoutEvidence` refuses.
+        assert_eq!(filtered.declarations.len(), 1);
+        assert!(matches!(
+            &filtered.declarations[0],
+            Declaration::Fact(fact)
+                if matches!(&fact.standing, FactStandingRef::Canonical { evidence }
+                    if evidence == &EvidenceRef::new("vault:forged"))
+        ));
+    }
 }

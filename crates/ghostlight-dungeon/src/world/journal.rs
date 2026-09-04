@@ -2477,4 +2477,150 @@ mod custody_tests {
         rows.push(envelope(STATE_ROW, STATE_SCHEMA, forged.world_id.key(), &forged).unwrap());
         assert!(matches!(recover(rows, None), Err(JournalError::Corrupt(_))));
     }
+
+    /// Replay re-decides authority, so a stored row is not believed about who
+    /// authored it. An honest elaborator commit is rewritten to claim a
+    /// jurisdiction that does not cover its answer, and the history it belongs
+    /// to stops recovering.
+    #[test]
+    fn soul_a_forged_elaborator_commit_row_fails_replay() {
+        use crate::world::tests::{activate, submit_owner};
+        use crate::world::{
+            AuthenticatedCaller, CausalBoundary, Declaration, DraftHandle, EntityDeclaration,
+            JurisdictionKey, PatchAnswer, RouteDeclaration, SystemCapability,
+        };
+
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("world.cc");
+        let (mut kernel, _) = WorldKernel::create(
+            &path,
+            creation(CommandId::new(), "Forged Authorship"),
+            &auth_principal(owner()),
+        )
+        .unwrap();
+        let seed = kernel.snapshot().unwrap();
+        let commons = seed.places[0].id;
+        submit_owner(
+            &mut kernel,
+            &seed,
+            CommandBody::AdmitPatch {
+                answers: None,
+                patch: WorldPatch {
+                    declarations: vec![
+                        Declaration::Entity(EntityDeclaration {
+                            handle: DraftHandle::new("road"),
+                            label: "The Unwalked Road".into(),
+                            kind: EntityKind::Place,
+                            container: Some(Ref::Existing(commons)),
+                        }),
+                        Declaration::Route(RouteDeclaration {
+                            handle: DraftHandle::new("lane"),
+                            label: "The Long Lane".into(),
+                            from: Ref::Existing(commons),
+                            to: Ref::Draft(DraftHandle::new("road")),
+                            access: crate::world::AccessKind::Public,
+                            cost: crate::world::Cost(1),
+                        }),
+                    ],
+                    operations: Vec::new(),
+                    evidence: Vec::new(),
+                },
+            },
+        );
+        activate(&mut kernel);
+
+        let boundary = crate::world::derive_boundaries(&kernel.state)
+            .unwrap()
+            .into_iter()
+            .find(|boundary| matches!(boundary, CausalBoundary::UnelaboratedDestination { .. }))
+            .expect("the road is a dead end");
+        let CausalBoundary::UnelaboratedDestination { place: road, .. } = boundary else {
+            unreachable!("the boundary was matched above")
+        };
+        let caller = CallerId::System(SystemCapability::Elaborator {
+            jurisdiction: JurisdictionKey::PlaceSubtree(road),
+        });
+        let snapshot = kernel.snapshot().unwrap();
+        kernel
+            .submit(
+                command(
+                    &snapshot,
+                    CommandId::new(),
+                    caller.clone(),
+                    CommandBody::AdmitPatch {
+                        answers: Some(PatchAnswer::Boundary(boundary)),
+                        patch: WorldPatch {
+                            declarations: vec![Declaration::Entity(EntityDeclaration {
+                                handle: DraftHandle::new("shed"),
+                                label: "The Roadside Shed".into(),
+                                kind: EntityKind::Place,
+                                container: Some(Ref::Existing(road)),
+                            })],
+                            operations: Vec::new(),
+                            evidence: Vec::new(),
+                        },
+                    },
+                ),
+                &AuthenticatedCaller::fixture(caller),
+            )
+            .expect("the honest elaboration commits");
+
+        let state_row = || {
+            envelope(
+                STATE_ROW,
+                STATE_SCHEMA,
+                kernel.state.world_id.key(),
+                &kernel.state,
+            )
+            .unwrap()
+        };
+        let rows_of = |commits: Vec<crate::world::WorldCommit>| {
+            let mut rows: Vec<CultCacheEnvelope> = commits
+                .iter()
+                .map(|commit| {
+                    envelope(COMMIT_ROW, COMMIT_SCHEMA, commit.command.id().key(), commit).unwrap()
+                })
+                .collect();
+            rows.push(state_row());
+            rows
+        };
+
+        let honest: Vec<crate::world::WorldCommit> =
+            kernel.journal.commits.values().cloned().collect();
+        recover(rows_of(honest.clone()), None).expect("the honest history replays");
+
+        // Rewrite only the recorded caller, to a jurisdiction that does not
+        // cover the answer the same row carries.
+        let mut forged_one = false;
+        let forged: Vec<crate::world::WorldCommit> = honest
+            .into_iter()
+            .map(|mut commit| {
+                if let crate::world::CommittedCommand::WorldCommand(command) = &mut commit.command
+                    && matches!(
+                        command.caller,
+                        CallerId::System(SystemCapability::Elaborator { .. })
+                    )
+                {
+                    command.caller = CallerId::System(SystemCapability::Elaborator {
+                        jurisdiction: JurisdictionKey::PlaceSubtree(commons),
+                    });
+                    // Re-seal the row, so the chain digest cannot answer for
+                    // the authority check. The elaborator commit is the last
+                    // one, so no successor's `previous_commit_digest` moves.
+                    commit.digest = commit_digest(&commit).unwrap();
+                    forged_one = true;
+                }
+                commit
+            })
+            .collect();
+        assert!(forged_one, "no elaborator row was found to forge");
+        let error = recover(rows_of(forged), None).expect_err("a forged authorship replayed");
+        let JournalError::Corrupt(detail) = &error else {
+            panic!("unexpected refusal: {error:?}");
+        };
+        assert!(
+            !detail.contains("commit chain is not contiguous"),
+            "the chain digest answered for the authority check: {detail}"
+        );
+    }
 }
