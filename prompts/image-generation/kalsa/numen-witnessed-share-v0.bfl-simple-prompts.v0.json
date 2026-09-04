@@ -1,0 +1,72 @@
+{
+    "schema_version":  "ghostlight.bfl_prompt_batch.v0",
+    "batch_id":  "numen-witnessed-share-v0.bfl-simple-v0",
+    "fixture_id":  "numen-witnessed-share-v0",
+    "model":  "flux-2-pro-preview",
+    "width":  1024,
+    "height":  1024,
+    "output_format":  "jpeg",
+    "style_prefix":  "Painterly high-fantasy industrial illustration, precise black-stone and iron architecture, charcoal soot, furnace amber, quench-water blue, restrained white divine glare, tactile cloth and metal, expressive work-worn faces, solemn wonder sharpened by dry human detail.",
+    "prompts":  [
+                    {
+                        "id":  "01_court_routine",
+                        "prompt":  "Wide rectangular furnace court from a raised west landing: central iron fitting circle, four scale racks and hanging counterweights on the north wall, black quench trough on the south wall, tall heat-gate arch in the east, soot-clad workers counting parts, stocky grey-bearded custodian marking a gear tooth with yellow chalk."
+                    },
+                    {
+                        "id":  "02_witness_landing",
+                        "prompt":  "West stair landing above a furnace court: tall copper-brown man in a dark indigo coat holds a folded parchment roll beside an older dark-skinned woman with silver braids, grey robes, red witness cords, and a sealed document case; wired champion waits below while an iron-grey-robed intermediary with a copper throat plate, a rust-red clerk with a waxed board, and a black-scale-mantled branch holder prepare around him."
+                    },
+                    {
+                        "id":  "03_preparation_choice",
+                        "prompt":  "High oblique view of four ritual choices inside a black-stone furnace court: open witness roll on west landing, long hook at south drain grate, copper-throated intermediary at central fitting ring, perfectly still black water in the trough; orange furnace light and blue stair steam divide the room."
+                    },
+                    {
+                        "id":  "04_first_horn",
+                        "prompt":  "First brass horn sounds beneath the east gate arch; forge workers open four iron-scale racks, furnace draft lifts ash in sheets, towering dark-brown champion stands in padded charcoal cloth and slack copper wires at center, witnesses guard rolls on the west landing."
+                    },
+                    {
+                        "id":  "05_first_face",
+                        "prompt":  "Close view of a pale face beneath still blue-black water in a long iron quench trough; the face is sharp from the west angle while a polished copper splint reflects an empty gate arch, with an indigo sleeve and a leather-gloved hand holding a grate hook at opposite edges."
+                    },
+                    {
+                        "id":  "06_recorded_gesture",
+                        "prompt":  "Underwater left hand closes twice around the empty space of a missing right wrist; indigo-coated recognizer and silver-braided death witness watch from the west landing, wired champion at center sees only empty water, intermediary reaches for the heavy iron cover, custodian waits at the grate."
+                    },
+                    {
+                        "id":  "07_petition_threshold",
+                        "prompt":  "Threshold dispute in a working furnace court: indigo-coated recognizer stands between a red-corded witness roll and a long drain hook; copper-throated intermediary holds the trough cover halfway raised; elderly ochre-robed registrar waits with pen at a separate east desk; second horn hangs ready."
+                    },
+                    {
+                        "id":  "08_share_hearing",
+                        "prompt":  "Formal hearing before the second horn: heavyset intermediary in iron-grey robes and a three-piece copper throat plate holds one palm open before the wired champion; household recognizer and silver-braided witness face her from the west landing; registrar writes separately under the holder\u0027s stare."
+                    },
+                    {
+                        "id":  "09_route_opens",
+                        "prompt":  "Divine armament opens in a black-stone furnace court: white heat fills copper wires around a towering champion, four racks lean inward and iron scales turn toward him, an empty-hand gesture moves through the wire loops, custodian grips the south stop lever, witnesses watch from the west landing."
+                    },
+                    {
+                        "id":  "10_final_choice",
+                        "prompt":  "High southwest view of an active ritual showing four reachable actions: recognizer poised to speak to the copper-throated intermediary, square stop lever under the custodian\u0027s hands, yellow-marked channel toward an empty cooling bay, wired champion beneath falling scale racks; branch holder watches from the east arch."
+                    },
+                    {
+                        "id":  "11_warning_aftermath",
+                        "prompt":  "Three separately held records form a triangle on a west landing: an open household roll and fresh branch return bear matching wet thumbprints on blank identity lines, while a third print darkens the outside of a red-corded sealed leather case; indigo-coated recognizer keeps hands away as silver-braided witness compares the marks."
+                    },
+                    {
+                        "id":  "12_departure_aftermath",
+                        "prompt":  "Black water climbs the dry inner wall of a covered iron trough, crosses its lip, then runs downhill through a yellow-chalk-marked channel toward an empty cooling bay and forms a handprint in white steam; stocky custodian braces the stop lever while indigo-coated recognizer looks at a second face through the west-edge inspection slit."
+                    },
+                    {
+                        "id":  "13_stop_aftermath",
+                        "prompt":  "Emergency stop in a furnace court: second iron rack frozen just above a kneeling wired champion, healers press wet cloth to his ribs, grey-bearded custodian locks a square stop bar, indigo-coated recognizer lowers a fist, tiny wet fingerprints cross a hot yellow-marked ceramic pipe."
+                    },
+                    {
+                        "id":  "14_refusal_aftermath",
+                        "prompt":  "Armoured champion kneels as a ghostly left hand closes around his living right wrist inside a tightened copper loop; indigo-coated recognizer speaks refusal toward a copper-throated intermediary; mortuary roll and branch return remain held apart while the branch holder waits beneath the sounding east horn."
+                    },
+                    {
+                        "id":  "15_interception_aftermath",
+                        "prompt":  "Complete incandescent iron raiment encloses the champion at center while empty rack chains swing inward; indigo-coated recognizer stands silent on the west landing; silver-braided witness presses a still-sealed red-corded document case to one ear as three unseen knocks disturb it."
+                    }
+                ]
+}

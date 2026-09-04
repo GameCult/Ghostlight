@@ -1,0 +1,1004 @@
+{
+    "schema_version":  "ghostlight.ink_visual_plan.v0",
+    "visual_plan_id":  "numen-witnessed-share-v0.branch-and-fold-v0",
+    "ink_ref":  "examples/ink/kalsa/numen-witnessed-share-v0.branch-and-fold.v0.ink",
+    "source_training_annotation_ref":  "examples/ink/kalsa/numen-witnessed-share-v0.branch-and-fold.v0.training.json",
+    "scene_id":  "numen-witnessed-share-v0.ash-halo-share-before-second-horn",
+    "purpose":  "Provide replay-ready illustrated beats for a procedural divine hearing inside an active furnace court, with stable routes, authority positions, witness objects, and branch-visible costs.",
+    "visual_scene_plan":  {
+                              "purpose":  "Segment routine, manifestation, hearing, opened route, and five aftermath states into distinct illustrated screens.",
+                              "segmentation_rule":  "Use a new visual scene for every change of focal area, horn state, visible divine response, authority geometry, or branch-persistent material consequence.",
+                              "prompting_rule":  "Each base prompt restates the visible court geometry, lighting, people, objects, and staging in plain terms suitable for a general image model; modifiers describe only visible deltas.",
+                              "global_style_cue":  "Painterly high-fantasy industrial illustration with precise stone-and-iron architecture, charcoal blacks, furnace amber, quench-water blue, restrained white divine glare, tactile soot and cloth, expressive work-worn faces, cinematic depth, and solemn wonder sharpened by dry human detail.",
+                              "prompt_assembly_rule":  "Assemble the global style cue, then only the visual character refs for characters listed as visible in the selected scene, then the complete base image prompt, then every triggered state and branch modifier. Use the embedded Ash-Halo Court scene set as geometry authority for every camera slot.",
+                              "scene_set_guidance":  {
+                                                         "current_mode":  "embedded_scene_set_map",
+                                                         "scope_reason":  "The fixture returns to one two-level court from wide, landing, trough, fitting-circle, and aftermath angles; branches alter drains, covers, racks, and character positions, so text-only memory is insufficient.",
+                                                         "future_scene_set_need":  "If rendered, build a simple blockout from the embedded room model and camera slots before painterly generation; use camera-specific blockout frames as visual input."
+                                                     },
+                              "scenes":  [
+                                             {
+                                                 "visual_scene_id":  "ash_halo_01_court_routine",
+                                                 "ink_anchor":  "start",
+                                                 "base_image_prompt":  "Wide view from the west upper landing into a rectangular black-stone furnace court twenty-four meters long and fourteen meters wide. A waist-high iron heat trunk crosses the floor toward a tall east gate arch. Four racks of overlapping iron scales and ceramic splints stand along the north wall beneath chain-hung counterweights. A long black iron quench trough and grated drain run along the south wall. Broad-shouldered forge workers in soot-dark sleeveless wool, leather aprons, cloth mouth wraps, and heavy gloves count rack marks under orange furnace light. Sedren, a stocky middle-aged custodian with brown skin, a shaved head, a square grey beard, a yellow chalk strap, and a long iron hook, marks one gear tooth. The central fitting circle is empty. Pale steam hangs low while cold blue light rises from the stair to the under-gallery.",
+                                                 "visible_characters":  [
+                                                                            {
+                                                                                "agent_id":  "sedren_forge_custodian",
+                                                                                "default_stance":  "Crouched at the north counterweight track, marking a gear tooth with yellow chalk.",
+                                                                                "visual_ref":  "visual_character_refs.characters.sedren_forge_custodian"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "ash_halo_forge_workers",
+                                                                                "default_stance":  "Working in practiced pairs at the north racks and counterweight track.",
+                                                                                "visual_ref":  "visual_character_refs.groups.ash_halo_forge_workers"
+                                                                            }
+                                                                        ],
+                                                 "state_image_modifiers":  [
+
+                                                                           ],
+                                                 "visual_continuity_notes":  [
+                                                                                 "West landing overlooks the entire upper court; the under-gallery itself is not visible from this camera.",
+                                                                                 "North racks, south trough, central fitting circle, west stair, and east gate arch keep the same orientation in every scene."
+                                                                             ]
+                                             },
+                                             {
+                                                 "visual_scene_id":  "ash_halo_02_witness_landing",
+                                                 "ink_anchor":  "witness_landing",
+                                                 "base_image_prompt":  "Medium-wide view on the west stone stair landing of an industrial fantasy furnace court. Taru, a tall broad-shouldered adult with copper-brown skin, a broken nose, close black curls, a dark indigo coat, a narrow bronze wrist guard, and a folded parchment roll inside the coat, stands beside Melka. Melka is an older lean woman with deep brown skin, silver braids bound in red cord, a smoke-grey layered robe, a square leather document case, and a sealed parchment roll weighted by red witness cords. Below them, Daro waits in the central fitting circle wearing padded charcoal cloth and loose copper anchor wires while two healers in pale ash-grey wrap robes with rolled sleeves, leather satchels, cloths, shears, and bowls of oil tend the wires. Orsa, a pale heavyset woman in iron-grey robes with a copper throat plate, rehearses beside him. Vael, a narrow-faced clerk in rust-red layers, studies a waxed allocation board. Iresa, a muscular older woman in a black scale mantle with an iron clasp, stands near the east gate arch. North racks and hanging weights, south quench trough, orange furnace light, and blue under-gallery steam establish the full court.",
+                                                 "visible_characters":  [
+                                                                            {
+                                                                                "agent_id":  "taru_ash_halo_recognizer",
+                                                                                "default_stance":  "Standing on the landing with one hand over the folded household copy inside his coat.",
+                                                                                "visual_ref":  "visual_character_refs.characters.taru_ash_halo_recognizer"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "melka_death_witness",
+                                                                                "default_stance":  "Checking red cords around the sealed answer roll on the landing table.",
+                                                                                "visual_ref":  "visual_character_refs.characters.melka_death_witness"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "daro_branch_champion",
+                                                                                "default_stance":  "Standing still in the fitting circle with slack anchor wires around padded cloth.",
+                                                                                "visual_ref":  "visual_character_refs.characters.daro_branch_champion"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "orsa_iron_shelter_intermediary",
+                                                                                "default_stance":  "Facing Daro with one hand on her copper throat plate.",
+                                                                                "visual_ref":  "visual_character_refs.characters.orsa_iron_shelter_intermediary"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "vael_potential_steward",
+                                                                                "default_stance":  "Bent over a waxed allocation board beside the fitting circle.",
+                                                                                "visual_ref":  "visual_character_refs.characters.vael_potential_steward"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "iresa_ninth_furnace_holder",
+                                                                                "default_stance":  "Watching from the east gate arch with arms behind her back.",
+                                                                                "visual_ref":  "visual_character_refs.characters.iresa_ninth_furnace_holder"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "ash_halo_healers",
+                                                                                "default_stance":  "Tending Daro\u0027s slack anchor wires just outside the fitting circle.",
+                                                                                "visual_ref":  "visual_character_refs.groups.ash_halo_healers"
+                                                                            }
+                                                                        ],
+                                                 "state_image_modifiers":  [
+
+                                                                           ],
+                                                 "visual_continuity_notes":  [
+                                                                                 "The witness table sits on the west landing, physically separate from Nema\u0027s east-side registrar desk.",
+                                                                                 "Daro remains in the fitting circle until an ending explicitly moves or drops him."
+                                                                             ]
+                                             },
+                                             {
+                                                 "visual_scene_id":  "ash_halo_03_preparation_choice",
+                                                 "ink_anchor":  "prepare_choice",
+                                                 "base_image_prompt":  "High oblique view from the southwest corner of a black-stone furnace court showing four actionable stations at once: Taru and Melka beside sealed and folded parchment rolls on the west landing; Sedren and a long iron grate hook beside the south quench trough; Orsa at the copper-wired fitting circle in the center; and the dark reflective trough water beneath an iron cover leaning against the wall. Taru is a tall broad-shouldered copper-brown man in an indigo coat with a bronze wrist guard. Melka is a lean older dark-skinned woman with silver braids, red cords, and a grey robe. Sedren is a stocky brown-skinned custodian with a square grey beard, leather apron, yellow chalk strap, and iron hook. Orsa is a pale heavyset intermediary in iron-grey robes and a copper throat plate. Orange furnace light crosses cold blue steam; four north-wall racks and the east gate arch remain visible.",
+                                                 "visible_characters":  [
+                                                                            {
+                                                                                "agent_id":  "taru_ash_halo_recognizer",
+                                                                                "default_stance":  "Centered on the landing between the roll, route, and intermediary sightlines.",
+                                                                                "visual_ref":  "visual_character_refs.characters.taru_ash_halo_recognizer"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "melka_death_witness",
+                                                                                "default_stance":  "At the witness table with both hands beside the sealed roll.",
+                                                                                "visual_ref":  "visual_character_refs.characters.melka_death_witness"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "sedren_forge_custodian",
+                                                                                "default_stance":  "At the trough grate holding the long hook upright.",
+                                                                                "visual_ref":  "visual_character_refs.characters.sedren_forge_custodian"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "orsa_iron_shelter_intermediary",
+                                                                                "default_stance":  "At the fitting-circle edge facing the landing.",
+                                                                                "visual_ref":  "visual_character_refs.characters.orsa_iron_shelter_intermediary"
+                                                                            }
+                                                                        ],
+                                                 "state_image_modifiers":  [
+
+                                                                           ],
+                                                 "visual_continuity_notes":  [
+                                                                                 "This choice frame must show the three physical affordances and the option to wait without moving them closer together.",
+                                                                                 "The south trough and west witness table are separated by the three-step landing descent."
+                                                                             ]
+                                             },
+                                             {
+                                                 "visual_scene_id":  "ash_halo_04_first_horn",
+                                                 "ink_anchor":  "preparation_fold",
+                                                 "base_image_prompt":  "Wide east-facing view across a rectangular black-stone furnace court at the first horn. A horn keeper in a soot-black tabard raises a curved brass horn beneath the tall east gate arch. Broad-shouldered forge workers in soot-dark sleeveless wool, leather aprons, cloth mouth wraps, heavy gloves, and hard-soled boots open four north-wall iron-scale racks as furnace draft lifts ash in narrow grey sheets. The central fitting circle holds Daro, a very tall muscular dark-brown man with a shaved scalp, padded charcoal garment, copper anchor wires, and white clay marks across both cheeks. On the west landing, Taru in an indigo coat stands beside Melka\u0027s red-corded sealed roll. Along the south wall, a black quench trough waits beside its grated drain. Orange furnace light intensifies around the floor heat trunk while the under-gallery stair remains cold blue.",
+                                                 "visible_characters":  [
+                                                                            {
+                                                                                "agent_id":  "daro_branch_champion",
+                                                                                "default_stance":  "Rigid in the fitting circle with open hands and slack wires.",
+                                                                                "visual_ref":  "visual_character_refs.characters.daro_branch_champion"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "taru_ash_halo_recognizer",
+                                                                                "default_stance":  "Watching from the west landing.",
+                                                                                "visual_ref":  "visual_character_refs.characters.taru_ash_halo_recognizer"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "melka_death_witness",
+                                                                                "default_stance":  "Guarding the sealed roll at the landing table.",
+                                                                                "visual_ref":  "visual_character_refs.characters.melka_death_witness"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "ash_halo_forge_workers",
+                                                                                "default_stance":  "Opening the four north-wall racks in practiced pairs.",
+                                                                                "visual_ref":  "visual_character_refs.groups.ash_halo_forge_workers"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "ash_halo_horn_keeper",
+                                                                                "default_stance":  "Standing beneath the east arch with the first brass horn raised.",
+                                                                                "visual_ref":  "visual_character_refs.groups.ash_halo_horn_keeper"
+                                                                            }
+                                                                        ],
+                                                 "state_image_modifiers":  [
+                                                                               {
+                                                                                   "trigger":  "answer_roll_open == 1",
+                                                                                   "modifier_prompt":  "Place Taru\u0027s second household roll open under two small seal weights beside Melka\u0027s still-sealed red-corded original."
+                                                                               },
+                                                                               {
+                                                                                   "trigger":  "route_safety \u003e= 3",
+                                                                                   "modifier_prompt":  "Add a bright yellow chalk line from the south trough grate toward a rectangular cooling-bay doorway and a square yellow stop mark across the darker old throat."
+                                                                               },
+                                                                               {
+                                                                                   "trigger":  "branch_pressure \u003e= 3",
+                                                                                   "modifier_prompt":  "Turn Iresa\u0027s posture away from the east arch so her fixed attention falls on Taru at the west landing."
+                                                                               }
+                                                                           ],
+                                                 "visual_continuity_notes":  [
+                                                                                 "First-horn state opens racks but leaves anchor wires slack and scale pieces on racks.",
+                                                                                 "Any open copy is Taru\u0027s household copy; Melka\u0027s original keeps its red cords."
+                                                                             ]
+                                             },
+                                             {
+                                                 "visual_scene_id":  "ash_halo_05_first_face",
+                                                 "ink_anchor":  "first_face",
+                                                 "base_image_prompt":  "Tight low-angle closeup of a long black iron quench trough along the south wall of a soot-dark stone furnace court. In perfectly still blue-black water, a pale adult face has formed beneath the surface, sharp only from the westward viewing angle. Orange furnace light reflects from the trough rim while ash hangs above it. A copper splint held near the water reflects the empty east gate arch instead of the face. Taru\u0027s indigo sleeve and bronze wrist guard enter at the left edge; Sedren\u0027s leather glove and long iron grate hook enter at the right edge. The iron cover leans against the wall behind the trough. The moment is quiet, physically specific, and uncanny.",
+                                                 "visible_characters":  [
+                                                                            {
+                                                                                "agent_id":  "taru_ash_halo_recognizer",
+                                                                                "default_stance":  "Only his left forearm and indigo sleeve are visible at the west edge as he leans toward the trough.",
+                                                                                "visual_ref":  "visual_character_refs.characters.taru_ash_halo_recognizer"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "sedren_forge_custodian",
+                                                                                "default_stance":  "Only his gloved hand and hook are visible near the grate at the east edge.",
+                                                                                "visual_ref":  "visual_character_refs.characters.sedren_forge_custodian"
+                                                                            }
+                                                                        ],
+                                                 "state_image_modifiers":  [
+
+                                                                           ],
+                                                 "visual_continuity_notes":  [
+                                                                                 "The face exists in water and only from the west landing sightline; it is absent in the copper reflection.",
+                                                                                 "This single pivotal sentence receives its own screen before the gesture appears."
+                                                                             ]
+                                             },
+                                             {
+                                                 "visual_scene_id":  "ash_halo_06_recorded_gesture",
+                                                 "ink_anchor":  "face_holds",
+                                                 "base_image_prompt":  "Medium view from the west stair landing toward the south-wall quench trough in a black-stone furnace court. Beneath blue-black water, a pale left hand closes twice around the empty space where a right wrist should be. Taru, a tall copper-brown man with close black curls, broken nose, indigo coat, and bronze wrist guard, stands rigid beside Melka, a lean older dark-skinned woman with silver braids, red cords, grey robe, and sealed roll case. Across the court, Daro in padded charcoal cloth looks toward a trough that appears empty from his central position. Orsa in iron-grey robes reaches toward the heavy iron trough cover. Sedren stands at the grate with his hook planted, waiting. Orange furnace light and cold blue water divide the frame.",
+                                                 "visible_characters":  [
+                                                                            {
+                                                                                "agent_id":  "taru_ash_halo_recognizer",
+                                                                                "default_stance":  "Rigid on the west landing, eyes fixed on the underwater gesture.",
+                                                                                "visual_ref":  "visual_character_refs.characters.taru_ash_halo_recognizer"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "melka_death_witness",
+                                                                                "default_stance":  "Beside Taru with one hand on her sealed case.",
+                                                                                "visual_ref":  "visual_character_refs.characters.melka_death_witness"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "daro_branch_champion",
+                                                                                "default_stance":  "In the center, looking toward apparently empty water.",
+                                                                                "visual_ref":  "visual_character_refs.characters.daro_branch_champion"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "orsa_iron_shelter_intermediary",
+                                                                                "default_stance":  "At the trough-cover edge with an open commanding hand.",
+                                                                                "visual_ref":  "visual_character_refs.characters.orsa_iron_shelter_intermediary"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "sedren_forge_custodian",
+                                                                                "default_stance":  "Beside the drain grate with both hands on the planted hook.",
+                                                                                "visual_ref":  "visual_character_refs.characters.sedren_forge_custodian"
+                                                                            }
+                                                                        ],
+                                                 "state_image_modifiers":  [
+
+                                                                           ],
+                                                 "visual_continuity_notes":  [
+                                                                                 "Daro\u0027s central sightline does not reveal the face; Taru\u0027s west sightline does.",
+                                                                                 "The gesture contains an absent right wrist and must not become an ordinary pair of hands."
+                                                                             ]
+                                             },
+                                             {
+                                                 "visual_scene_id":  "ash_halo_07_petition_choice",
+                                                 "ink_anchor":  "face_choice",
+                                                 "base_image_prompt":  "Medium-wide west-side view of the Ash-Halo furnace court during a threshold dispute. Taru, a tall copper-brown man in an indigo coat and bronze wrist guard, stands between Melka\u0027s red-corded answer-roll case on the landing and Sedren\u0027s long grate hook by the south trough. Orsa, a pale heavyset woman in iron-grey robes and copper throat plate, holds the iron trough cover halfway raised. Nema, a small elderly registrar with warm-brown skin, shaved white hair, ochre layered robes, ink-stained fingers, and a narrow writing board, waits at a separate east-side desk. Daro stands in the central fitting circle under loose copper wires. Iresa watches from the east arch. The north racks are open, ash drifts through orange light, and the second brass horn waits at the arch.",
+                                                 "visible_characters":  [
+                                                                            {
+                                                                                "agent_id":  "taru_ash_halo_recognizer",
+                                                                                "default_stance":  "At the decision line between landing and trough.",
+                                                                                "visual_ref":  "visual_character_refs.characters.taru_ash_halo_recognizer"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "melka_death_witness",
+                                                                                "default_stance":  "At the west table, ready to receive Taru\u0027s copy.",
+                                                                                "visual_ref":  "visual_character_refs.characters.melka_death_witness"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "sedren_forge_custodian",
+                                                                                "default_stance":  "Beside the trough grate and stop route.",
+                                                                                "visual_ref":  "visual_character_refs.characters.sedren_forge_custodian"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "orsa_iron_shelter_intermediary",
+                                                                                "default_stance":  "Holding the trough cover and facing Taru.",
+                                                                                "visual_ref":  "visual_character_refs.characters.orsa_iron_shelter_intermediary"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "nema_branch_registrar",
+                                                                                "default_stance":  "At the east writing desk with pen poised.",
+                                                                                "visual_ref":  "visual_character_refs.characters.nema_branch_registrar"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "daro_branch_champion",
+                                                                                "default_stance":  "Waiting under slack wires at center.",
+                                                                                "visual_ref":  "visual_character_refs.characters.daro_branch_champion"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "iresa_ninth_furnace_holder",
+                                                                                "default_stance":  "Still and watchful beneath the east arch.",
+                                                                                "visual_ref":  "visual_character_refs.characters.iresa_ninth_furnace_holder"
+                                                                            }
+                                                                        ],
+                                                 "state_image_modifiers":  [
+                                                                               {
+                                                                                   "trigger":  "answer_roll_open == 1",
+                                                                                   "modifier_prompt":  "Show Taru\u0027s household copy open on the west table while Melka\u0027s original remains bound with red cords."
+                                                                               },
+                                                                               {
+                                                                                   "trigger":  "route_safety \u003e= 3",
+                                                                                   "modifier_prompt":  "Show the yellow chalk departure line and the square stop mark beside Sedren\u0027s boots."
+                                                                               }
+                                                                           ],
+                                                 "visual_continuity_notes":  [
+                                                                                 "Nema\u0027s branch desk remains east of the fitting circle and separate from Melka\u0027s west witness table.",
+                                                                                 "The second horn is visible but has not yet been lifted."
+                                                                             ]
+                                             },
+                                             {
+                                                 "visual_scene_id":  "ash_halo_08_share_hearing",
+                                                 "ink_anchor":  "share_hearing",
+                                                 "base_image_prompt":  "Frontal medium shot across the central fitting circle of a black-stone furnace court just before the second horn. Orsa, a pale heavyset intermediary in iron-grey robes with a copper throat plate, stands between Daro and the west witness landing, one palm open as she states an offer. Daro, a very tall muscular dark-brown man with shaved scalp, white clay cheek marks, padded charcoal cloth, and copper anchor wires, waits behind her. Taru in an indigo coat and Melka with silver braids and a red-corded roll stand on the landing. Nema writes at the separate east desk; Iresa in a black scale mantle watches beneath the east arch. The south trough is covered by a flat iron lid. Four north racks remain open and orange furnace light draws long shadows toward the cold blue west stair.",
+                                                 "visible_characters":  [
+                                                                            {
+                                                                                "agent_id":  "orsa_iron_shelter_intermediary",
+                                                                                "default_stance":  "At the fitting-circle edge, open palm toward the witness landing.",
+                                                                                "visual_ref":  "visual_character_refs.characters.orsa_iron_shelter_intermediary"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "daro_branch_champion",
+                                                                                "default_stance":  "Centered behind Orsa under slack wires.",
+                                                                                "visual_ref":  "visual_character_refs.characters.daro_branch_champion"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "taru_ash_halo_recognizer",
+                                                                                "default_stance":  "Facing Orsa from the west landing.",
+                                                                                "visual_ref":  "visual_character_refs.characters.taru_ash_halo_recognizer"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "melka_death_witness",
+                                                                                "default_stance":  "Beside Taru with the roll case held against her chest.",
+                                                                                "visual_ref":  "visual_character_refs.characters.melka_death_witness"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "nema_branch_registrar",
+                                                                                "default_stance":  "Writing at the east desk.",
+                                                                                "visual_ref":  "visual_character_refs.characters.nema_branch_registrar"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "iresa_ninth_furnace_holder",
+                                                                                "default_stance":  "Watching from the east arch with controlled impatience.",
+                                                                                "visual_ref":  "visual_character_refs.characters.iresa_ninth_furnace_holder"
+                                                                            }
+                                                                        ],
+                                                 "state_image_modifiers":  [
+                                                                               {
+                                                                                   "trigger":  "petition_status == 3",
+                                                                                   "modifier_prompt":  "Place Taru\u0027s open household copy beside Melka and add one thin copper share token on Nema\u0027s docket board."
+                                                                               },
+                                                                               {
+                                                                                   "trigger":  "petition_status == 0",
+                                                                                   "modifier_prompt":  "Keep Taru\u0027s folded copy visibly inside his coat and leave Nema\u0027s share line empty."
+                                                                               },
+                                                                               {
+                                                                                   "trigger":  "daro_condition \u003c= 1",
+                                                                                   "modifier_prompt":  "Show Daro\u0027s fingers trembling against tightened anchor loops while a healer watches his breathing."
+                                                                               },
+                                                                               {
+                                                                                   "trigger":  "manifestation_pressure \u003e= 3",
+                                                                                   "modifier_prompt":  "Raise two separate rings of condensation on the underside edge of the iron trough cover."
+                                                                               }
+                                                                           ],
+                                                 "visual_continuity_notes":  [
+                                                                                 "A copper token is only a docket marker, not a vessel or measurable portion of magic.",
+                                                                                 "The iron cover fully hides the water from this camera."
+                                                                             ]
+                                             },
+                                             {
+                                                 "visual_scene_id":  "ash_halo_09_route_opens",
+                                                 "ink_anchor":  "route_opens",
+                                                 "base_image_prompt":  "Dramatic wide shot down the length of a rectangular black-stone furnace court as the second horn opens a divine armament. Daro, a towering dark-brown champion in padded charcoal cloth and copper anchor wires, stands in the central circle while white heat runs through the wires. Four north-wall racks lean inward and hundreds of iron scales turn edge-first toward him. Orsa, a pale heavyset intermediary with a copper throat plate, stands close enough to speak into the route. Taru and Melka watch from the west landing; Sedren grips the south-wall stop lever; Vael in rust-red clerk layers holds a waxed allocation board; Iresa stands beneath the east gate arch. The covered quench trough runs along the south wall. A human-hand gesture travels through empty spaces in the anchor loops, each loop closing around an absent wrist. Orange furnace glare, cold blue drain mist, and a restrained white divine light create a clear three-color frame.",
+                                                 "visible_characters":  [
+                                                                            {
+                                                                                "agent_id":  "daro_branch_champion",
+                                                                                "default_stance":  "Braced in the fitting circle as white heat enters the wires.",
+                                                                                "visual_ref":  "visual_character_refs.characters.daro_branch_champion"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "orsa_iron_shelter_intermediary",
+                                                                                "default_stance":  "Facing Daro and speaking with one hand on her throat plate.",
+                                                                                "visual_ref":  "visual_character_refs.characters.orsa_iron_shelter_intermediary"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "taru_ash_halo_recognizer",
+                                                                                "default_stance":  "Leaning forward on the west landing with hands visible.",
+                                                                                "visual_ref":  "visual_character_refs.characters.taru_ash_halo_recognizer"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "melka_death_witness",
+                                                                                "default_stance":  "Standing behind Taru with the sealed roll case.",
+                                                                                "visual_ref":  "visual_character_refs.characters.melka_death_witness"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "sedren_forge_custodian",
+                                                                                "default_stance":  "At the south stop lever with both boots planted.",
+                                                                                "visual_ref":  "visual_character_refs.characters.sedren_forge_custodian"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "vael_potential_steward",
+                                                                                "default_stance":  "Beside the fitting circle, allocation board raised toward the light.",
+                                                                                "visual_ref":  "visual_character_refs.characters.vael_potential_steward"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "iresa_ninth_furnace_holder",
+                                                                                "default_stance":  "Framed by the east gate arch, staring at the armour route.",
+                                                                                "visual_ref":  "visual_character_refs.characters.iresa_ninth_furnace_holder"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "ash_halo_healers",
+                                                                                "default_stance":  "Appearing just outside the fitting circle when Daro shows visible strain.",
+                                                                                "visual_ref":  "visual_character_refs.groups.ash_halo_healers"
+                                                                            }
+                                                                        ],
+                                                 "state_image_modifiers":  [
+                                                                               {
+                                                                                   "trigger":  "petition_status == 3",
+                                                                                   "modifier_prompt":  "Add a narrow copper-lit line from Orsa\u0027s throat plate toward the covered trough before joining Daro\u0027s white-lit anchor wires."
+                                                                               },
+                                                                               {
+                                                                                   "trigger":  "petition_status \u003c 3",
+                                                                                   "modifier_prompt":  "Concentrate every white-lit line tightly inward toward Daro, leaving the covered trough in hard shadow."
+                                                                               },
+                                                                               {
+                                                                                   "trigger":  "daro_condition \u003c= 1",
+                                                                                   "modifier_prompt":  "Bend Daro\u0027s knees slightly and place one healer just outside the fitting-circle boundary with wet cloth ready."
+                                                                               }
+                                                                           ],
+                                                 "visual_continuity_notes":  [
+                                                                                 "The hand gesture is a sequence of empty-space distortions in the wires, not a fully present extra person.",
+                                                                                 "Sedren can see Daro and the rack falls from the stop lever; the trough cover blocks the water."
+                                                                             ]
+                                             },
+                                             {
+                                                 "visual_scene_id":  "ash_halo_10_route_choice",
+                                                 "ink_anchor":  "route_choice",
+                                                 "base_image_prompt":  "High southwest view of the active Ash-Halo furnace court showing Taru\u0027s final four physical options. Taru, a tall copper-brown man in an indigo coat and bronze wrist guard, stands at the lower west landing with open hands between Orsa\u0027s copper-lit speaking position, Sedren\u0027s square stop lever beside the south trough, the yellow-marked cooling-bay outlet, and Daro\u0027s white-lit fitting circle. Orsa is pale and heavyset in iron-grey robes at center; Sedren is stocky with brown skin, square grey beard, leather apron, chalk strap, and planted boots; Daro is very tall and muscular in padded charcoal cloth under converging iron scales. Melka guards the red-corded roll behind Taru. Iresa stands at the east arch. The visual composition makes speech, lever use, refusal, and stillness distinct, while north racks, south trough, west stair, and east gate remain fixed.",
+                                                 "visible_characters":  [
+                                                                            {
+                                                                                "agent_id":  "taru_ash_halo_recognizer",
+                                                                                "default_stance":  "At the lower landing, body angled equally toward Orsa, Sedren, and Daro.",
+                                                                                "visual_ref":  "visual_character_refs.characters.taru_ash_halo_recognizer"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "orsa_iron_shelter_intermediary",
+                                                                                "default_stance":  "Inside the active route at the fitting-circle edge.",
+                                                                                "visual_ref":  "visual_character_refs.characters.orsa_iron_shelter_intermediary"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "sedren_forge_custodian",
+                                                                                "default_stance":  "At the marked stop lever beside the trough.",
+                                                                                "visual_ref":  "visual_character_refs.characters.sedren_forge_custodian"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "daro_branch_champion",
+                                                                                "default_stance":  "Braced under partly moving scale racks.",
+                                                                                "visual_ref":  "visual_character_refs.characters.daro_branch_champion"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "melka_death_witness",
+                                                                                "default_stance":  "One step above Taru holding the sealed roll case.",
+                                                                                "visual_ref":  "visual_character_refs.characters.melka_death_witness"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "iresa_ninth_furnace_holder",
+                                                                                "default_stance":  "Rigid beneath the east arch.",
+                                                                                "visual_ref":  "visual_character_refs.characters.iresa_ninth_furnace_holder"
+                                                                            }
+                                                                        ],
+                                                 "state_image_modifiers":  [
+                                                                               {
+                                                                                   "trigger":  "petition_status == 3 \u0026\u0026 divine_terms \u003e= 2",
+                                                                                   "modifier_prompt":  "Make Orsa\u0027s copper throat plate glow in three short segments, representing the publicly stated service, departure, and binding offers."
+                                                                               },
+                                                                               {
+                                                                                   "trigger":  "petition_status == 3 \u0026\u0026 route_safety \u003e= 3",
+                                                                                   "modifier_prompt":  "Illuminate the yellow-marked channel toward the empty cooling bay with a thin blue reflection while the old throat stop stays visibly closed."
+                                                                               },
+                                                                               {
+                                                                                   "trigger":  "branch_pressure \u003e= 3",
+                                                                                   "modifier_prompt":  "Place two large adult branch guards in soot-black scale vests over dark wool, short iron helmets, and lowered hooked polearms at the east arch behind Iresa, watching Taru rather than the machinery."
+                                                                               }
+                                                                           ],
+                                                 "visual_continuity_notes":  [
+                                                                                 "The final choice is staged before the second rack falls; all available objects are reachable from Taru\u0027s lower-landing position.",
+                                                                                 "Branch pressure changes Iresa\u0027s visible position and warning posture; it introduces no new body or authority."
+                                                                             ]
+                                             },
+                                             {
+                                                 "visual_scene_id":  "ash_halo_11_warning_aftermath",
+                                                 "ink_anchor":  "ending_witnessed_warning",
+                                                 "base_image_prompt":  "Close tableau on the west witness landing after a partial divine fitting. Taru, a tall copper-brown man in an indigo coat and bronze wrist guard, stares at three separately held records arranged in a triangle: his open household roll bears a wet thumbprint on its blank identity line; Nema\u0027s fresh return bears the same print; Melka\u0027s original remains hidden inside a red-corded square leather case whose outside darkens with a third matching print at the height of the line within. Melka, a lean older dark-skinned woman with silver braids and grey robes, compares the visible prints with a magnifying glass. Nema, a small elderly warm-brown registrar in ochre robes with ink-stained fingers, holds her pen away from the wet return. In the background, Daro wears lighter incomplete iron raiment with one shoulder visible while Vael separates glowing allocation cords. Orange furnace light softens and cold blue moisture defines the three impossible marks.",
+                                                 "visible_characters":  [
+                                                                            {
+                                                                                "agent_id":  "taru_ash_halo_recognizer",
+                                                                                "default_stance":  "Standing over the three copies with both hands withdrawn from them.",
+                                                                                "visual_ref":  "visual_character_refs.characters.taru_ash_halo_recognizer"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "melka_death_witness",
+                                                                                "default_stance":  "Bent over the prints with a lens, preserving separation among documents.",
+                                                                                "visual_ref":  "visual_character_refs.characters.melka_death_witness"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "nema_branch_registrar",
+                                                                                "default_stance":  "Holding her pen clear of the wet return.",
+                                                                                "visual_ref":  "visual_character_refs.characters.nema_branch_registrar"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "daro_branch_champion",
+                                                                                "default_stance":  "In the background wearing incomplete shoulder-bare iron raiment.",
+                                                                                "visual_ref":  "visual_character_refs.characters.daro_branch_champion"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "vael_potential_steward",
+                                                                                "default_stance":  "Separating two dim allocation cords behind Daro.",
+                                                                                "visual_ref":  "visual_character_refs.characters.vael_potential_steward"
+                                                                            }
+                                                                        ],
+                                                 "state_image_modifiers":  [
+                                                                               {
+                                                                                   "trigger":  "branch_pressure \u003e= 3",
+                                                                                   "modifier_prompt":  "Add Iresa at the far east edge, face controlled and one hand pointing toward Nema\u0027s return rather than the documents themselves."
+                                                                               }
+                                                                           ],
+                                                 "visual_continuity_notes":  [
+                                                                                 "The household copy and branch return show prints on exposed blank lines; Melka\u0027s original stays inside its red-corded case and carries the third print on the case exterior.",
+                                                                                 "Daro\u0027s lighter raiment visibly differs from the complete-armour interception ending."
+                                                                             ]
+                                             },
+                                             {
+                                                 "visual_scene_id":  "ash_halo_12_departure_aftermath",
+                                                 "ink_anchor":  "ending_marked_departure",
+                                                 "base_image_prompt":  "Long view along the south wall of the black-stone furnace court toward an empty rectangular cooling bay. Black quench water climbs the dry inner wall of the covered trough, crosses its iron lip, then runs downhill inside a shallow yellow-chalk-marked channel, reflecting cold blue light. Sedren, a stocky brown-skinned custodian with shaved head, square grey beard, leather apron, yellow chalk strap, and both hands on the stop lever, watches the closed old throat. Taru, a tall copper-brown man in an indigo coat, stands at the covered trough where a pale face remains visible through a narrow west-edge inspection slit. In the distant cooling bay, a separate human handprint forms in white steam. Orsa and Vael watch Daro\u0027s slower three-part armour closure at the central circle. North racks, east gate arch, west stair, and orange furnaces preserve the court layout.",
+                                                 "visible_characters":  [
+                                                                            {
+                                                                                "agent_id":  "sedren_forge_custodian",
+                                                                                "default_stance":  "Braced at the lever, eyes on both the rising water and closed old throat.",
+                                                                                "visual_ref":  "visual_character_refs.characters.sedren_forge_custodian"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "taru_ash_halo_recognizer",
+                                                                                "default_stance":  "Beside the trough inspection slit, looking between the face and distant steam print.",
+                                                                                "visual_ref":  "visual_character_refs.characters.taru_ash_halo_recognizer"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "orsa_iron_shelter_intermediary",
+                                                                                "default_stance":  "Near Daro, turned toward the departure route.",
+                                                                                "visual_ref":  "visual_character_refs.characters.orsa_iron_shelter_intermediary"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "vael_potential_steward",
+                                                                                "default_stance":  "With allocation board raised beside the fitting circle.",
+                                                                                "visual_ref":  "visual_character_refs.characters.vael_potential_steward"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "daro_branch_champion",
+                                                                                "default_stance":  "Standing with incomplete raiment and one shoulder bare.",
+                                                                                "visual_ref":  "visual_character_refs.characters.daro_branch_champion"
+                                                                            }
+                                                                        ],
+                                                 "state_image_modifiers":  [
+                                                                               {
+                                                                                   "trigger":  "branch_pressure \u003e= 3",
+                                                                                   "modifier_prompt":  "Place Iresa under the east arch speaking to Nema while pointing toward the public cooling-bay route."
+                                                                               }
+                                                                           ],
+                                                 "visual_continuity_notes":  [
+                                                                                 "The cooling bay lies eastward along the south wall and is distinct from the old downward slag-cistern throat.",
+                                                                                 "The face and steam handprint are simultaneous; the illustration must not visually settle whether they are one presence or two."
+                                                                             ]
+                                             },
+                                             {
+                                                 "visual_scene_id":  "ash_halo_13_stop_aftermath",
+                                                 "ink_anchor":  "ending_material_stop",
+                                                 "base_image_prompt":  "Wide side view across the central fitting circle after an emergency material stop. The second north-wall rack hangs frozen half a handspan above Daro, a very tall muscular dark-brown man now on one knee in padded charcoal cloth and hot loose anchor wires. Two healers in pale ash-grey work robes press wet cloth against his ribs. Sedren, a stocky brown-skinned custodian in a leather apron with yellow chalk strap, leans his full weight against a locked square stop bar beside the south trough. Taru in an indigo coat stands near the lever with one fist lowered after giving the signal. Iresa in a black scale mantle watches from the east arch as the unused third horn hangs beside her. On a thin ceramic pipe near the south wall, a row of tiny wet fingerprints crosses yellow chalk despite the dry furnace heat. Orange light is fading and blue drain steam is spreading.",
+                                                 "visible_characters":  [
+                                                                            {
+                                                                                "agent_id":  "daro_branch_champion",
+                                                                                "default_stance":  "On one knee under the arrested rack while healers reach him.",
+                                                                                "visual_ref":  "visual_character_refs.characters.daro_branch_champion"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "sedren_forge_custodian",
+                                                                                "default_stance":  "Holding the locked stop bar with both hands and planted boots.",
+                                                                                "visual_ref":  "visual_character_refs.characters.sedren_forge_custodian"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "taru_ash_halo_recognizer",
+                                                                                "default_stance":  "Beside the lever with his square-stop fist lowered.",
+                                                                                "visual_ref":  "visual_character_refs.characters.taru_ash_halo_recognizer"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "iresa_ninth_furnace_holder",
+                                                                                "default_stance":  "At the east arch facing the stopped machinery and silent third horn.",
+                                                                                "visual_ref":  "visual_character_refs.characters.iresa_ninth_furnace_holder"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "ash_halo_healers",
+                                                                                "default_stance":  "Kneeling outside the stopped fitting circle and pressing wet cloth to Daro\u0027s ribs.",
+                                                                                "visual_ref":  "visual_character_refs.groups.ash_halo_healers"
+                                                                            }
+                                                                        ],
+                                                 "state_image_modifiers":  [
+                                                                               {
+                                                                                   "trigger":  "route_safety \u003e= 3",
+                                                                                   "modifier_prompt":  "Show blue-black water contained in the yellow-marked cooling channel and the old throat sealed beneath Sedren\u0027s square stop mark."
+                                                                               },
+                                                                               {
+                                                                                   "trigger":  "route_safety \u003c 3",
+                                                                                   "modifier_prompt":  "Show blue-black water dividing beneath the grate into the newer channel and the dark downward slag-cistern throat."
+                                                                               }
+                                                                           ],
+                                                 "visual_continuity_notes":  [
+                                                                                 "The second rack is mechanically arrested above Daro and never touches him.",
+                                                                                 "Wet fingerprints belong on the hot thin ceramic run, not on the rolls in this ending."
+                                                                             ]
+                                             },
+                                             {
+                                                 "visual_scene_id":  "ash_halo_14_refusal_aftermath",
+                                                 "ink_anchor":  "ending_refusal_witnessed",
+                                                 "base_image_prompt":  "Medium dramatic view of Daro at the central fitting circle as iron raiment has closed around torso and shoulders but a copper wrist loop cuts tight around his bare right wrist. Daro, a very tall muscular dark-brown man with shaved scalp and white clay cheek marks, kneels and refuses to rise while a healer reaches with cutters. In the loop, a ghostly left hand closes over Daro\u0027s living right wrist. Taru, a tall copper-brown man in an indigo coat and bronze wrist guard, stands on the lower west landing speaking toward Orsa. Orsa, pale and heavyset in iron-grey robes with a copper throat plate, visibly carries the refusal into white-lit scales. Melka with silver braids holds the sealed red-corded roll apart from Nema\u0027s east-side return. Iresa waits beneath the east arch while the third horn sounds beyond her. White divine glare, orange furnace light, and blue trough shadow remain distinct.",
+                                                 "visible_characters":  [
+                                                                            {
+                                                                                "agent_id":  "daro_branch_champion",
+                                                                                "default_stance":  "Kneeling in closed torso armour with his trapped wrist extended toward a healer.",
+                                                                                "visual_ref":  "visual_character_refs.characters.daro_branch_champion"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "taru_ash_halo_recognizer",
+                                                                                "default_stance":  "Standing on the lower west landing, voice and gaze aimed at Orsa.",
+                                                                                "visual_ref":  "visual_character_refs.characters.taru_ash_halo_recognizer"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "orsa_iron_shelter_intermediary",
+                                                                                "default_stance":  "Facing the armour with one hand pressed to the glowing throat plate.",
+                                                                                "visual_ref":  "visual_character_refs.characters.orsa_iron_shelter_intermediary"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "melka_death_witness",
+                                                                                "default_stance":  "Holding the sealed roll against her body on the west landing.",
+                                                                                "visual_ref":  "visual_character_refs.characters.melka_death_witness"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "nema_branch_registrar",
+                                                                                "default_stance":  "Writing at the east desk while keeping her board physically separate from Melka\u0027s case.",
+                                                                                "visual_ref":  "visual_character_refs.characters.nema_branch_registrar"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "iresa_ninth_furnace_holder",
+                                                                                "default_stance":  "Under the east arch, unable to move the kneeling champion by command alone.",
+                                                                                "visual_ref":  "visual_character_refs.characters.iresa_ninth_furnace_holder"
+                                                                            }
+                                                                        ],
+                                                 "state_image_modifiers":  [
+                                                                               {
+                                                                                   "trigger":  "petition_status == 3",
+                                                                                   "modifier_prompt":  "Add one copper share token split by a dark crack on Nema\u0027s docket board."
+                                                                               },
+                                                                               {
+                                                                                   "trigger":  "petition_status \u003c 3",
+                                                                                   "modifier_prompt":  "Leave Nema\u0027s share line empty and place a sharp black diversion mark beside it."
+                                                                               },
+                                                                               {
+                                                                                   "trigger":  "branch_pressure \u003e= 3",
+                                                                                   "modifier_prompt":  "Move Iresa toward Nema\u0027s east desk with one hand aimed at the branch return while Melka keeps the sealed roll against her body on the west landing."
+                                                                               }
+                                                                           ],
+                                                 "visual_continuity_notes":  [
+                                                                                 "The ghostly hand changes the recorded gesture by closing over Daro\u0027s real wrist.",
+                                                                                 "The route is forceful, but the image does not assign a moral or metaphysical identity to the hand."
+                                                                             ]
+                                             },
+                                             {
+                                                 "visual_scene_id":  "ash_halo_15_interception_aftermath",
+                                                 "ink_anchor":  "ending_interception",
+                                                 "base_image_prompt":  "Long east-facing view through the black-stone Ash-Halo furnace court after forceful divine interception. Daro, a towering dark-brown champion with shaved scalp and white clay cheek marks, stands or kneels at center inside complete overlapping iron raiment glowing white between every scale. The north racks are empty and their chains swing inward. Taru, a tall copper-brown man in an indigo coat, stands silent on the west landing with both hands visible. Melka, a lean older dark-skinned woman with silver braids and grey robes, holds her still-sealed red-corded answer-roll case to one ear as three new knocks sound from inside it. Orsa watches the complete armour; Sedren remains at the unused stop lever; Iresa is framed by the east arch and third horn. The covered south trough sits in blue shadow. The composition gives equal visual weight to the public victory and the impossible sealed sound, preserving the unresolved relation between them.",
+                                                 "visible_characters":  [
+                                                                            {
+                                                                                "agent_id":  "daro_branch_champion",
+                                                                                "default_stance":  "At center inside complete incandescent iron raiment.",
+                                                                                "visual_ref":  "visual_character_refs.characters.daro_branch_champion"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "taru_ash_halo_recognizer",
+                                                                                "default_stance":  "Silent on the west landing with empty hands held away from his coat.",
+                                                                                "visual_ref":  "visual_character_refs.characters.taru_ash_halo_recognizer"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "melka_death_witness",
+                                                                                "default_stance":  "Holding the sealed roll case to one ear.",
+                                                                                "visual_ref":  "visual_character_refs.characters.melka_death_witness"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "orsa_iron_shelter_intermediary",
+                                                                                "default_stance":  "Facing Daro\u0027s completed armour.",
+                                                                                "visual_ref":  "visual_character_refs.characters.orsa_iron_shelter_intermediary"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "sedren_forge_custodian",
+                                                                                "default_stance":  "At the stop lever with hands lowered but close.",
+                                                                                "visual_ref":  "visual_character_refs.characters.sedren_forge_custodian"
+                                                                            },
+                                                                            {
+                                                                                "agent_id":  "iresa_ninth_furnace_holder",
+                                                                                "default_stance":  "Beneath the east arch beside the sounding third horn.",
+                                                                                "visual_ref":  "visual_character_refs.characters.iresa_ninth_furnace_holder"
+                                                                            }
+                                                                        ],
+                                                 "state_image_modifiers":  [
+                                                                               {
+                                                                                   "trigger":  "daro_condition \u003c 2",
+                                                                                   "modifier_prompt":  "Place Daro on one armoured knee with both hands braced before he forces himself upright."
+                                                                               },
+                                                                               {
+                                                                                   "trigger":  "daro_condition \u003e= 2",
+                                                                                   "modifier_prompt":  "Keep Daro upright and moving one armoured foot toward the east gate arch."
+                                                                               }
+                                                                           ],
+                                                 "visual_continuity_notes":  [
+                                                                                 "Complete raiment covers Daro more fully than every other ending state.",
+                                                                                 "The three knocks are represented by Melka\u0027s listening pose and three small vibrations in the closed case, never by visible writing or a resolved speaker."
+                                                                             ]
+                                             }
+                                         ],
+                              "global_branch_image_modifiers":  [
+                                                                    {
+                                                                        "modifier_id":  "prepare_open_copy",
+                                                                        "trigger":  "branch:prepare_open_copy",
+                                                                        "apply_to_visual_scene_ids":  [
+                                                                                                          "ash_halo_04_first_horn",
+                                                                                                          "ash_halo_07_petition_choice",
+                                                                                                          "ash_halo_08_share_hearing"
+                                                                                                      ],
+                                                                        "modifier_prompt":  "Place Taru\u0027s household copy open under two seal weights while Melka\u0027s original remains closed with red cords."
+                                                                    },
+                                                                    {
+                                                                        "modifier_id":  "prepare_safe_outlet",
+                                                                        "trigger":  "branch:prepare_safe_outlet",
+                                                                        "apply_to_visual_scene_ids":  [
+                                                                                                          "ash_halo_04_first_horn",
+                                                                                                          "ash_halo_07_petition_choice",
+                                                                                                          "ash_halo_10_route_choice",
+                                                                                                          "ash_halo_12_departure_aftermath"
+                                                                                                      ],
+                                                                        "modifier_prompt":  "Add a continuous yellow chalk line from the trough grate to the cooling-bay outlet and Sedren\u0027s square stop mark over the old downward throat."
+                                                                    },
+                                                                    {
+                                                                        "modifier_id":  "prepare_public_terms",
+                                                                        "trigger":  "branch:prepare_public_terms",
+                                                                        "apply_to_visual_scene_ids":  [
+                                                                                                          "ash_halo_04_first_horn",
+                                                                                                          "ash_halo_08_share_hearing",
+                                                                                                          "ash_halo_10_route_choice"
+                                                                                                      ],
+                                                                        "modifier_prompt":  "Show Nema\u0027s return board bearing three small copper marks and Orsa\u0027s copper throat plate divided into three dimly lit segments."
+                                                                    },
+                                                                    {
+                                                                        "modifier_id":  "prepare_watch_silently",
+                                                                        "trigger":  "branch:prepare_watch_silently",
+                                                                        "apply_to_visual_scene_ids":  [
+                                                                                                          "ash_halo_04_first_horn",
+                                                                                                          "ash_halo_06_recorded_gesture",
+                                                                                                          "ash_halo_07_petition_choice"
+                                                                                                      ],
+                                                                        "modifier_prompt":  "Keep Taru\u0027s folded roll visibly inside his indigo coat and place his attention on Vael\u0027s repeated glances toward the trough."
+                                                                    },
+                                                                    {
+                                                                        "modifier_id":  "petition_formally",
+                                                                        "trigger":  "branch:petition_formally",
+                                                                        "apply_to_visual_scene_ids":  [
+                                                                                                          "ash_halo_08_share_hearing",
+                                                                                                          "ash_halo_09_route_opens",
+                                                                                                          "ash_halo_10_route_choice"
+                                                                                                      ],
+                                                                        "modifier_prompt":  "Move Taru\u0027s household copy into Melka\u0027s two-handed custody and add a clearly separate petition line to Nema\u0027s board."
+                                                                    },
+                                                                    {
+                                                                        "modifier_id":  "petition_by_sign",
+                                                                        "trigger":  "branch:petition_by_sign",
+                                                                        "apply_to_visual_scene_ids":  [
+                                                                                                          "ash_halo_08_share_hearing",
+                                                                                                          "ash_halo_09_route_opens"
+                                                                                                      ],
+                                                                        "modifier_prompt":  "Show Taru\u0027s left hand closed over his bare right wrist while a third matching ripple disturbs the covered trough."
+                                                                    },
+                                                                    {
+                                                                        "modifier_id":  "secure_route_before_hearing",
+                                                                        "trigger":  "branch:secure_route_before_hearing",
+                                                                        "apply_to_visual_scene_ids":  [
+                                                                                                          "ash_halo_08_share_hearing",
+                                                                                                          "ash_halo_09_route_opens",
+                                                                                                          "ash_halo_10_route_choice"
+                                                                                                      ],
+                                                                        "modifier_prompt":  "Lock a thick iron stop plate across the old throat, show fresh tool scratches, and tighten Daro\u0027s anchor wires as a healer counts his breathing."
+                                                                    },
+                                                                    {
+                                                                        "modifier_id":  "suppress_claim",
+                                                                        "trigger":  "branch:suppress_claim",
+                                                                        "apply_to_visual_scene_ids":  [
+                                                                                                          "ash_halo_08_share_hearing",
+                                                                                                          "ash_halo_09_route_opens",
+                                                                                                          "ash_halo_10_route_choice"
+                                                                                                      ],
+                                                                        "modifier_prompt":  "Cover the trough completely with flat black iron, keep Taru\u0027s copy folded inside his coat, and leave Nema\u0027s share line visibly empty."
+                                                                    },
+                                                                    {
+                                                                        "modifier_id":  "accept_living_service",
+                                                                        "trigger":  "branch:accept_living_service",
+                                                                        "apply_to_visual_scene_ids":  [
+                                                                                                          "ash_halo_11_warning_aftermath"
+                                                                                                      ],
+                                                                        "modifier_prompt":  "Show Taru pointing only to his own feet and mouth while the three separately held documents gain matching wet prints."
+                                                                    },
+                                                                    {
+                                                                        "modifier_id":  "open_marked_departure",
+                                                                        "trigger":  "branch:open_marked_departure",
+                                                                        "apply_to_visual_scene_ids":  [
+                                                                                                          "ash_halo_12_departure_aftermath"
+                                                                                                      ],
+                                                                        "modifier_prompt":  "Open the marked cooling-bay outlet, close the old throat, and show black water climbing the shallow uphill channel toward a steam handprint."
+                                                                    },
+                                                                    {
+                                                                        "modifier_id":  "use_material_stop",
+                                                                        "trigger":  "branch:use_material_stop",
+                                                                        "apply_to_visual_scene_ids":  [
+                                                                                                          "ash_halo_13_stop_aftermath"
+                                                                                                      ],
+                                                                        "modifier_prompt":  "Lock the square stop bar, freeze the second rack above Daro, and reveal tiny wet prints crossing the hot yellow-marked ceramic pipe."
+                                                                    },
+                                                                    {
+                                                                        "modifier_id":  "refuse_dead_binding",
+                                                                        "trigger":  "branch:refuse_dead_binding",
+                                                                        "apply_to_visual_scene_ids":  [
+                                                                                                          "ash_halo_14_refusal_aftermath"
+                                                                                                      ],
+                                                                        "modifier_prompt":  "Tighten the changed ghostly hand gesture around Daro\u0027s living wrist while Taru speaks toward Orsa and the records remain physically separated."
+                                                                    },
+                                                                    {
+                                                                        "modifier_id":  "permit_interception",
+                                                                        "trigger":  "branch:permit_interception",
+                                                                        "apply_to_visual_scene_ids":  [
+                                                                                                          "ash_halo_15_interception_aftermath"
+                                                                                                      ],
+                                                                        "modifier_prompt":  "Complete Daro\u0027s incandescent iron raiment, leave Sedren\u0027s stop untouched, and show Melka listening to three vibrations inside the sealed roll case."
+                                                                    }
+                                                                ],
+                              "scene_set":  {
+                                                "scene_set_id":  "ash-halo-court-fixture-map-v0",
+                                                "geometry_authority_level":  "fixture_local_embedded_layout",
+                                                "room_model":  "A rectangular upper furnace court twenty-four meters east-west by fourteen meters north-south. The west stair landing is 1.5 meters above the court floor and descends three steps near the southwest corner. A tall heat-gate arch opens at the east end. The fitting circle occupies the center. Four source racks and counterweight tracks line the north wall. A quench trough, grate, stop lever, and two drain branches line the south wall. The newer branch runs east down a shallow grade to an empty cooling bay; the old branch drops through a maintenance throat to an under-gallery and slag cistern below the south-central floor. The trough cover has one narrow west-edge inspection slit. Nema\u0027s registrar desk stands east of the fitting circle; Melka\u0027s witness table stands on the west landing.",
+                                                "fixed_zones":  [
+                                                                    {
+                                                                        "zone_id":  "west_witness_landing",
+                                                                        "visible_form":  "Raised black-stone landing with three steps, a waist-high witness table, seal weights, and cold blue vapor from the descending stair.",
+                                                                        "used_for":  "Taru and Melka\u0027s custody, west-only trough sightline, and the opening and comparison of rolls."
+                                                                    },
+                                                                    {
+                                                                        "zone_id":  "central_fitting_circle",
+                                                                        "visible_form":  "Four-meter iron ring set into the floor around a low anchor channel, directly beneath the counterweight reach.",
+                                                                        "used_for":  "Daro\u0027s preparation, divine route, rack closure, healer access, and bodily stop consequences."
+                                                                    },
+                                                                    {
+                                                                        "zone_id":  "north_source_racks",
+                                                                        "visible_form":  "Four waist-high iron frames loaded with scales, copper wire, and pale ceramic splints beneath chain-hung weights and toothed tracks.",
+                                                                        "used_for":  "Material source, first and second rack falls, complete or incomplete raiment, and arrested machinery."
+                                                                    },
+                                                                    {
+                                                                        "zone_id":  "south_quench_trough",
+                                                                        "visible_form":  "Long black iron trough with blue-black water, removable flat cover, floor grate, long hook, and nearby square stop lever.",
+                                                                        "used_for":  "First face, recorded gesture, cover order, route choice, and manifestation pressure."
+                                                                    },
+                                                                    {
+                                                                        "zone_id":  "new_cooling_route",
+                                                                        "visible_form":  "Shallow iron-lined drain running east along the south wall to a rectangular empty cooling bay, legible when marked by yellow chalk.",
+                                                                        "used_for":  "Prepared departure and visible uphill black-water aftermath."
+                                                                    },
+                                                                    {
+                                                                        "zone_id":  "old_cistern_throat",
+                                                                        "visible_form":  "Dark downward drain behind the same grate, isolatable by a thick iron plate and descending to the unseen slag cistern.",
+                                                                        "used_for":  "Hidden feeder risk, unsafe split flow, and material stop state."
+                                                                    },
+                                                                    {
+                                                                        "zone_id":  "east_gate_arch",
+                                                                        "visible_form":  "Tall iron-edged arch with a shuttered heat gate, horn hooks, and a narrow position for Iresa and branch guards.",
+                                                                        "used_for":  "Assault clock, holder pressure, Daro\u0027s possible departure, and third-horn aftermath."
+                                                                    },
+                                                                    {
+                                                                        "zone_id":  "east_registrar_desk",
+                                                                        "visible_form":  "Narrow standing desk east of the fitting circle with waxed boards, loose return sheets, ink, and a single copper share token.",
+                                                                        "used_for":  "Branch record, accepted or empty share line, and visible separation from mortuary custody."
+                                                                    }
+                                                                ],
+                                                "camera_slots":  [
+                                                                     {
+                                                                         "camera_id":  "west_landing_wide",
+                                                                         "supports_visual_scene_ids":  [
+                                                                                                           "ash_halo_01_court_routine",
+                                                                                                           "ash_halo_04_first_horn",
+                                                                                                           "ash_halo_15_interception_aftermath"
+                                                                                                       ]
+                                                                     },
+                                                                     {
+                                                                         "camera_id":  "west_landing_medium",
+                                                                         "supports_visual_scene_ids":  [
+                                                                                                           "ash_halo_02_witness_landing",
+                                                                                                           "ash_halo_06_recorded_gesture",
+                                                                                                           "ash_halo_07_petition_choice",
+                                                                                                           "ash_halo_11_warning_aftermath"
+                                                                                                       ]
+                                                                     },
+                                                                     {
+                                                                         "camera_id":  "southwest_oblique",
+                                                                         "supports_visual_scene_ids":  [
+                                                                                                           "ash_halo_03_preparation_choice",
+                                                                                                           "ash_halo_10_route_choice"
+                                                                                                       ]
+                                                                     },
+                                                                     {
+                                                                         "camera_id":  "trough_close_west",
+                                                                         "supports_visual_scene_ids":  [
+                                                                                                           "ash_halo_05_first_face"
+                                                                                                       ]
+                                                                     },
+                                                                     {
+                                                                         "camera_id":  "central_frontal",
+                                                                         "supports_visual_scene_ids":  [
+                                                                                                           "ash_halo_08_share_hearing",
+                                                                                                           "ash_halo_09_route_opens",
+                                                                                                           "ash_halo_14_refusal_aftermath"
+                                                                                                       ]
+                                                                     },
+                                                                     {
+                                                                         "camera_id":  "south_route_long",
+                                                                         "supports_visual_scene_ids":  [
+                                                                                                           "ash_halo_12_departure_aftermath",
+                                                                                                           "ash_halo_13_stop_aftermath"
+                                                                                                       ]
+                                                                     }
+                                                                 ],
+                                                "sightline_lanes":  [
+                                                                        {
+                                                                            "lane_id":  "west_face_lane",
+                                                                            "path":  "West witness landing down the three steps across the southwest corner to the quench-water surface.",
+                                                                            "supports":  [
+                                                                                             "Taru and Melka can see the water face",
+                                                                                             "Daro at center sees an empty trough",
+                                                                                             "Copper splints reflect the east arch instead of the face"
+                                                                                         ]
+                                                                        },
+                                                                        {
+                                                                            "lane_id":  "sedren_stop_lane",
+                                                                            "path":  "South stop lever across the trough edge and central fitting circle to the north rack tracks.",
+                                                                            "supports":  [
+                                                                                             "Sedren sees the first and second rack falls",
+                                                                                             "Sedren can reach the lever without entering the fitting circle",
+                                                                                             "Taru can reach Sedren from the lower west landing before the second rack falls"
+                                                                                         ]
+                                                                        },
+                                                                        {
+                                                                            "lane_id":  "holder_clock_lane",
+                                                                            "path":  "East gate arch across the fitting circle toward the west landing and witness table.",
+                                                                            "supports":  [
+                                                                                             "Iresa sees delays and public petitions",
+                                                                                             "Iresa cannot see inside the covered trough",
+                                                                                             "The horn keeper can see Iresa and the fitting circle"
+                                                                                         ]
+                                                                        }
+                                                                    ],
+                                                "route_states":  [
+                                                                     {
+                                                                         "value":  1,
+                                                                         "label":  "uninspected_split",
+                                                                         "visible_form":  "One grated opening feeds both the shallow cooling route and the dark downward throat."
+                                                                     },
+                                                                     {
+                                                                         "value":  2,
+                                                                         "label":  "old_throat_barred",
+                                                                         "visible_form":  "A thick scratched stop plate closes the downward throat while the newer route remains available."
+                                                                     },
+                                                                     {
+                                                                         "value":  3,
+                                                                         "label":  "marked_departure",
+                                                                         "visible_form":  "Yellow chalk marks a continuous path from trough grate to cooling bay and a square stop mark seals the old throat."
+                                                                     },
+                                                                     {
+                                                                         "value":  4,
+                                                                         "label":  "departure_open",
+                                                                         "visible_form":  "The cooling-bay outlet stands open with black water visible inside the marked shallow channel."
+                                                                     }
+                                                                 ]
+                                            }
+                          },
+    "visual_character_refs":  {
+                                  "purpose":  "Stable visible identities for recurring named participants; include only refs for characters listed in each rendered scene.",
+                                  "characters":  {
+                                                     "taru_ash_halo_recognizer":  "Tall broad-shouldered adult man with copper-brown skin, close black curls, broken nose, tired dark eyes, long dark-indigo wool coat over soot-grey work layers, narrow bronze guard on the right wrist, folded household roll kept inside the left coat panel, deliberate hands, posture held between grief and public refusal. Keep the indigo coat, bronze right-wrist guard, broken nose, and folded roll placement stable.",
+                                                     "melka_death_witness":  "Lean older woman with deep brown skin, fine-lined face, silver braids bound in red cord, smoke-grey layered robe with square sleeves, flat leather document case, sealed parchment answer roll tied with two red witness cords, calm economical movement. Keep the silver braids, red cords, grey robe, and sealed case stable.",
+                                                     "orsa_iron_shelter_intermediary":  "Heavyset middle-aged woman with pale olive skin, cropped salt-black hair, broad solemn face, iron-grey layered robes, hammered copper throat plate made of three overlapping segments, bare hands, still frontal posture that becomes strained when divine speech passes through her. Keep the three-segment throat plate and iron-grey robes stable.",
+                                                     "sedren_forge_custodian":  "Stocky middle-aged man with warm brown skin, shaved head, square grey beard, soot-dark sleeveless wool, thick leather apron, heavy gloves, yellow chalk strap across the chest, long iron grate hook, planted worker stance. Keep the square beard, yellow chalk strap, apron, and long hook stable.",
+                                                     "daro_branch_champion":  "Very tall muscular adult man with dark brown skin, shaved scalp, white clay bars across both cheeks, padded charcoal fitting garment, copper anchor wires looped around torso and wrists, bare feet inside the iron fitting ring, controlled soldierly stillness. Keep the white cheek bars, charcoal padding, copper wires, and great height stable; armour state changes by branch.",
+                                                     "iresa_ninth_furnace_holder":  "Muscular older woman with umber skin, short iron-grey twists, one cloudy left eye, black mantle of small overlapping iron scales over deep red wool, heavy iron clasp at the throat, erect command posture with hands behind her back. Keep the cloudy left eye, black scale mantle, red wool, and iron clasp stable.",
+                                                     "vael_potential_steward":  "Narrow-faced middle-aged man with tawny skin, long black hair tied low, rust-red layered clerk coat, waxed wooden allocation board hung from a shoulder cord, two dim copper tally cords, habitually counting with one thumb. Keep the rust-red coat, waxed board, two copper cords, and low-tied hair stable.",
+                                                     "nema_branch_registrar":  "Small elderly person with warm brown skin, shaved white hair, sharp dark eyes, ochre layered robes, black ink stains across three fingers, narrow standing writing board, reed pen, precise unsmiling posture. Keep the ochre robes, shaved white hair, three ink-stained fingers, and narrow board stable."
+                                                 },
+                                  "groups":  {
+                                                 "ash_halo_forge_workers":  "Broad-shouldered adult workers of varied brown and olive skin tones wearing soot-dark sleeveless wool, thick leather aprons, cloth mouth wraps, heavy gloves, and hard-soled boots; they carry hooks, chalk, tongs, seal weights, and wet cloths, moving in practiced pairs around racks and drains.",
+                                                 "ash_halo_healers":  "Two adult healers in pale ash-grey wrap robes with rolled sleeves, leather satchels of cloth and shears, bowls of oil and water, and attentive crouched posture just outside the fitting-circle line.",
+                                                 "ash_halo_horn_keeper":  "One adult worker in a soot-black wool tabard over a leather apron, heavy boots, and a cloth mouth wrap lowered below the chin, holding a curved brass horn at the east gate arch; ceremonial stance supported by the same work clothing as the forge crew."
+                                             }
+                              },
+    "review_notes":  [
+                         "The embedded scene set owns fixture-local geometry; generated images are painterly render passes, not alternate floor plans.",
+                         "Every recurring named character has a stable visual reference, and each scene includes refs only for bodies visible in that frame.",
+                         "The first face is isolated as a pivotal screen before the gesture, preserving click-through rhythm and the west-only sightline.",
+                         "Branch modifiers carry open-roll custody, marked routes, stopped racks, armour completeness, bodily strain, and impossible traces into later frames."
+                     ]
+}

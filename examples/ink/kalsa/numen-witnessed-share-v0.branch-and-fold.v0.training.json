@@ -1,0 +1,410 @@
+{
+    "schema_version":  "ghostlight.ink_training_annotation.v0",
+    "annotation_id":  "numen-witnessed-share-v0.branch-and-fold-v0",
+    "ink_ref":  "examples/ink/kalsa/numen-witnessed-share-v0.branch-and-fold.v0.ink",
+    "source_fixture_ref":  "examples/lore-grounding/kalsa/numen-witnessed-share-v0.v0.json",
+    "scene_id":  "numen-witnessed-share-v0.ash-halo-share-before-second-horn",
+    "protagonist_agent_id":  "taru_ash_halo_recognizer",
+    "npc_agent_ids":  [
+                          "melka_death_witness",
+                          "orsa_iron_shelter_intermediary",
+                          "sedren_forge_custodian",
+                          "daro_branch_champion",
+                          "iresa_ninth_furnace_holder",
+                          "vael_potential_steward",
+                          "nema_branch_registrar"
+                      ],
+    "purpose":  "Dramatize a recognized ritual share as a bounded admission procedure inside a concentrated divine working, preserving the God’s agency, the offices’ separate authorities, and the unresolved identity of what answers.",
+    "local_awareness_summary":  [
+                                    {
+                                        "text":  "Taru knows the defeated champion’s recorded hand sign, the household copy in his custody, his authority to request warning or withdrawal, and his refusal to accept binding in the dead person’s name.",
+                                        "source_refs":  [
+                                                            "soirui-sects",
+                                                            "ash-halo-court"
+                                                        ]
+                                    },
+                                    {
+                                        "text":  "Taru can see the court, fitting circle, trough, rolls, branch officers, and horn sequence; he cannot inspect the God’s thought, the claimant’s identity, or the slag-cistern feeder’s complete route.",
+                                        "source_refs":  [
+                                                            "ash-halo-court",
+                                                            "projections-gods-thaumavores"
+                                                        ]
+                                    },
+                                    {
+                                        "text":  "Taru understands that delay can cost the East Collar assault and the cold-water households while haste can expose Daro, the withdrawn shrines, and the dead to an unrecorded interception.",
+                                        "source_refs":  [
+                                                            "ash-halo-court",
+                                                            "potential-economy"
+                                                        ]
+                                    }
+                                ],
+    "projection_controls":  {
+                                "frame_controls":  [
+                                                       {
+                                                           "text":  "Use ritual procedure as visible action with rolls, seals, marked routes, spoken offers, horns, material stops, and aftermath returns.",
+                                                           "source_refs":  [
+                                                                               "god-cult-covenants",
+                                                                               "death-binding-law"
+                                                                           ]
+                                                       },
+                                                       {
+                                                           "text":  "Keep the tone as furnace-workplace wit turning into bounded numinous dread; routine must exist before the face appears.",
+                                                           "source_refs":  [
+                                                                               "ash-halo-event",
+                                                                               "ash-halo-court"
+                                                                           ]
+                                                       }
+                                                   ],
+                                "authority_boundaries":  [
+                                                             {
+                                                                 "text":  "Taru can recognize a sign and promise his own service; he cannot certify the dead identity or consent to binding for it.",
+                                                                 "source_refs":  [
+                                                                                     "soirui-sects",
+                                                                                     "witnessed-share-elaboration"
+                                                                                 ]
+                                                             },
+                                                             {
+                                                                 "text":  "Sedren owns the physical stop, Vael owns allocation records, Melka owns mortuary observation, Orsa carries the hierarchy’s offer, and none owns the others’ decision.",
+                                                                 "source_refs":  [
+                                                                                     "ash-halo-court",
+                                                                                     "god-cult-covenants"
+                                                                                 ]
+                                                             }
+                                                         ],
+                                "object_custody":  [
+                                                       {
+                                                           "text":  "Taru holds a household copy, Melka holds the sealed original answer roll, Nema holds the branch return, and Sedren controls the drain grate and stop lever.",
+                                                           "source_refs":  [
+                                                                               "ash-halo-court",
+                                                                               "death-binding-law"
+                                                                           ]
+                                                       }
+                                                   ],
+                                "required_semantics":  [
+                                                           {
+                                                               "text":  "A recognized ritual share is an admitted interval and procedure, not a universal unit or guaranteed quantity of potential.",
+                                                               "source_refs":  [
+                                                                                   "witnessed-share-elaboration",
+                                                                                   "potential-economy"
+                                                                               ]
+                                                           },
+                                                           {
+                                                               "text":  "Every successful or failed route must leave support, record, bodily, political, or protection consequences after the horns.",
+                                                               "source_refs":  [
+                                                                                   "witnessed-share-elaboration",
+                                                                                   "ash-halo-event"
+                                                                               ]
+                                                           }
+                                                       ],
+                                "forbidden_resolutions":  [
+                                                              {
+                                                                  "text":  "Do not identify the quench-water presence as the defeated champion, a thaumavore, a Beast remnant, or a divine agent.",
+                                                                  "source_refs":  [
+                                                                                      "ash-halo-court",
+                                                                                      "projections-gods-thaumavores"
+                                                                                  ]
+                                                              },
+                                                              {
+                                                                  "text":  "Do not make the Iron Shelter omniscient, compelled by mortal procedure, or able to turn silence into proven consent.",
+                                                                  "source_refs":  [
+                                                                                      "god-cult-covenants",
+                                                                                      "projections-gods-thaumavores"
+                                                                                  ]
+                                                              }
+                                                          ]
+                            },
+    "branch_and_fold_plan":  {
+                                 "mode":  "three local choice layers folded through the first and second horn, followed by state-gated ritual outcomes",
+                                 "summary":  "Preparation changes evidentiary clarity, the safe physical route, public divine terms, or hidden pressure. The first manifestation forces a petition, route, or suppression decision. The opened divine route then permits only choices earned by the earlier procedure, while all paths preserve separate returns and unresolved identity.",
+                                 "choice_layers":  [
+                                                       "ordinary_preparation",
+                                                       "first_manifestation_response",
+                                                       "route_open_response"
+                                                   ],
+                                 "variables":  [
+                                                   "share_clarity",
+                                                   "route_safety",
+                                                   "branch_pressure",
+                                                   "divine_terms",
+                                                   "answer_roll_open",
+                                                   "petition_status",
+                                                   "daro_condition",
+                                                   "support_due",
+                                                   "manifestation_pressure"
+                                               ],
+                                 "ending_gates":  [
+                                                      "accept_living_service requires an admitted petition and publicly stated divine terms",
+                                                      "open_marked_departure requires an admitted petition and a marked safe outlet",
+                                                      "use_material_stop remains available because the forge custodian’s authority survives the rite",
+                                                      "refuse_dead_binding preserves the living advocate’s refusal but cannot determine the God’s response",
+                                                      "permit_interception lets the hierarchy act on an empty or contested docket and carries bodily and mortuary cost"
+                                                  ]
+                             },
+    "branches":  [
+                     {
+                         "branch_id":  "prepare_open_copy",
+                         "ink_path":  "prepare_choice.prepare_open_copy",
+                         "action_type":  "show_object",
+                         "actor_intent":  "Put the known sign and unresolved identity into witnessed custody before the rite begins.",
+                         "state_basis":  [
+                                             "Taru holds a household copy.",
+                                             "Melka and Nema can preserve distinct mortuary and branch records."
+                                         ],
+                         "reviewed_consequences":  [
+                                                       "Raises share clarity and branch pressure, opens the answer-roll state, and supports formal admission later."
+                                                   ],
+                         "training_hooks":  [
+                                                "evidence_disclosure",
+                                                "ritual_record_custody",
+                                                "branch_pressure_from_public_claim"
+                                            ]
+                     },
+                     {
+                         "branch_id":  "prepare_safe_outlet",
+                         "ink_path":  "prepare_choice.prepare_safe_outlet",
+                         "action_type":  "move_and_mark",
+                         "actor_intent":  "Give any negotiated departure a visible physical route that avoids the old slag-cistern throat.",
+                         "state_basis":  [
+                                             "Sedren owns the drain configuration.",
+                                             "Taru can accompany and visibly mark the route."
+                                         ],
+                         "reviewed_consequences":  [
+                                                       "Raises route safety and procedural clarity, incurs labor/support cost, and can unlock the marked-departure ending after a formal petition."
+                                                   ],
+                         "training_hooks":  [
+                                                "non_speech_procedure",
+                                                "material_route_before_metaphysics",
+                                                "custodian_authority"
+                                            ]
+                     },
+                     {
+                         "branch_id":  "prepare_public_terms",
+                         "ink_path":  "prepare_choice.prepare_public_terms",
+                         "action_type":  "speak",
+                         "actor_intent":  "Force the intermediary to state what the hierarchy offers before urgency launders it into certainty.",
+                         "state_basis":  [
+                                             "Orsa knows the allowed offers.",
+                                             "The return can preserve her stated limits."
+                                         ],
+                         "reviewed_consequences":  [
+                                                       "Raises divine-term clarity and branch pressure and can unlock a living-service bargain."
+                                                   ],
+                         "training_hooks":  [
+                                                "god_as_bounded_political_actor",
+                                                "terms_before_power",
+                                                "public_commitment"
+                                            ]
+                     },
+                     {
+                         "branch_id":  "prepare_watch_silently",
+                         "ink_path":  "prepare_choice.prepare_watch_silently",
+                         "action_type":  "wait",
+                         "actor_intent":  "Observe hidden attention around the trough without exposing the household record.",
+                         "state_basis":  [
+                                             "Taru can withhold his copy.",
+                                             "The court is still in routine preparation."
+                                         ],
+                         "reviewed_consequences":  [
+                                                       "Reduces immediate political pressure but lowers share clarity and allows manifestation pressure to grow."
+                                                   ],
+                         "training_hooks":  [
+                                                "silence_as_action",
+                                                "custody_vs_admission",
+                                                "hidden_pressure"
+                                            ]
+                     },
+                     {
+                         "branch_id":  "petition_formally",
+                         "ink_path":  "face_choice.petition_formally",
+                         "action_type":  "speak_and_transfer_record",
+                         "actor_intent":  "Seek one warning or withdrawal while recording that no binding is accepted for the dead.",
+                         "state_basis":  [
+                                             "The sign appeared.",
+                                             "Taru and Melka can submit the household copy before the second horn."
+                                         ],
+                         "reviewed_consequences":  [
+                                                       "Creates the strongest petition, increases support owed and branch pressure, and reaches admission when earlier clarity is sufficient."
+                                                   ],
+                         "training_hooks":  [
+                                                "bounded_petition",
+                                                "no_proxy_consent",
+                                                "recorded_cost"
+                                            ]
+                     },
+                     {
+                         "branch_id":  "petition_by_sign",
+                         "ink_path":  "face_choice.petition_by_sign",
+                         "action_type":  "gesture_and_speak",
+                         "actor_intent":  "Ask for one warning by repeating the sign without surrendering the copy.",
+                         "state_basis":  [
+                                             "Taru recognizes the recorded gesture.",
+                                             "A repeated gesture is observation, not identity proof."
+                                         ],
+                         "reviewed_consequences":  [
+                                                       "Improves clarity but increases manifestation pressure; admission depends on preparation."
+                                                   ],
+                         "training_hooks":  [
+                                                "embodied_ritual_action",
+                                                "recognition_without_identity",
+                                                "danger_of_testing"
+                                            ]
+                     },
+                     {
+                         "branch_id":  "secure_route_before_hearing",
+                         "ink_path":  "face_choice.secure_route_before_hearing",
+                         "action_type":  "use_object",
+                         "actor_intent":  "Protect the court from an unbounded diversion before asking what the presence wants.",
+                         "state_basis":  [
+                                             "The old throat and new drain are both reachable at the grate.",
+                                             "Sedren retains the stop."
+                                         ],
+                         "reviewed_consequences":  [
+                                                       "Improves route safety while delay worsens Daro’s condition and sharply raises branch pressure."
+                                                   ],
+                         "training_hooks":  [
+                                                "safety_before_hearing",
+                                                "time_cost_bites",
+                                                "body_bears_delay"
+                                            ]
+                     },
+                     {
+                         "branch_id":  "suppress_claim",
+                         "ink_path":  "face_choice.suppress_claim",
+                         "action_type":  "withhold_object",
+                         "actor_intent":  "Avoid delaying the armament by allowing the branch to treat the presence as unrecognized.",
+                         "state_basis":  [
+                                             "Orsa ordered the trough covered.",
+                                             "Taru can retain the household copy."
+                                         ],
+                         "reviewed_consequences":  [
+                                                       "Lowers immediate branch pressure but leaves no admitted share and increases hidden manifestation pressure."
+                                                   ],
+                         "training_hooks":  [
+                                                "suppression_as_recorded_action",
+                                                "political_convenience",
+                                                "unrecognized_diversion"
+                                            ]
+                     },
+                     {
+                         "branch_id":  "accept_living_service",
+                         "ink_path":  "route_choice.accept_living_service",
+                         "action_type":  "speak",
+                         "actor_intent":  "Spend only Taru’s own service in exchange for one warning, preserving the dead claimant’s unresolved consent.",
+                         "state_basis":  [
+                                             "The share was admitted.",
+                                             "The intermediary’s service offer was stated before the route opened."
+                                         ],
+                         "reviewed_consequences":  [
+                                                       "Produces an ambiguous warning, a lighter armament, added support obligations, and three impossible matching prints."
+                                                   ],
+                         "training_hooks":  [
+                                                "living_service_boundary",
+                                                "numinous_answer_without_explanation",
+                                                "distributed_records"
+                                            ]
+                     },
+                     {
+                         "branch_id":  "open_marked_departure",
+                         "ink_path":  "route_choice.open_marked_departure",
+                         "action_type":  "use_object",
+                         "actor_intent":  "Use the prepared outlet to offer departure while preserving the custodian’s physical authority.",
+                         "state_basis":  [
+                                             "The share was admitted.",
+                                             "Sedren and Taru marked and isolated the cooling-bay route."
+                                         ],
+                         "reviewed_consequences":  [
+                                                       "Moves visible flow toward the cooling bay, weakens the armament spectacle, and leaves two simultaneous manifestations unresolved."
+                                                   ],
+                         "training_hooks":  [
+                                                "route_based_negotiation",
+                                                "material_and_divine_shared_path",
+                                                "bounded_strangeness"
+                                            ]
+                     },
+                     {
+                         "branch_id":  "use_material_stop",
+                         "ink_path":  "route_choice.use_material_stop",
+                         "action_type":  "gesture",
+                         "actor_intent":  "Invoke the forge stop before the second rack fall makes the fitting irreversible.",
+                         "state_basis":  [
+                                             "Sedren retains stop authority.",
+                                             "Taru can give the visible square-stop signal."
+                                         ],
+                         "reviewed_consequences":  [
+                                                       "Aborts the armament, protects the material route according to prior preparation, costs Daro bodily strain, and exposes Taru to review."
+                                                   ],
+                         "training_hooks":  [
+                                                "ritual_cannot_override_material_stop",
+                                                "aborted_miracle_has_cost",
+                                                "wet_prints_on_hot_ceramic"
+                                            ]
+                     },
+                     {
+                         "branch_id":  "refuse_dead_binding",
+                         "ink_path":  "route_choice.refuse_dead_binding",
+                         "action_type":  "speak",
+                         "actor_intent":  "Refuse proxy consent and make the hierarchy’s chosen response part of the witnessed return.",
+                         "state_basis":  [
+                                             "Taru is authorized to refuse binding offered in the defeated champion’s name.",
+                                             "Orsa can carry the refusal but cannot command the God."
+                                         ],
+                         "reviewed_consequences":  [
+                                                       "The hierarchy responds with force, Daro refuses the march, and mortuary and cult interpretations remain separately recorded."
+                                                   ],
+                         "training_hooks":  [
+                                                "refusal_under_divine_pressure",
+                                                "god_not_omniscient",
+                                                "separated_record_authority"
+                                            ]
+                     },
+                     {
+                         "branch_id":  "permit_interception",
+                         "ink_path":  "route_choice.permit_interception",
+                         "action_type":  "silence",
+                         "actor_intent":  "Let the hierarchy defend its route without adding a claim, offer, or stop.",
+                         "state_basis":  [
+                                             "The God controls its actual route response.",
+                                             "An empty or contested docket leaves the presence unrecognized."
+                                         ],
+                         "reviewed_consequences":  [
+                                                       "The armour closes at bodily cost while the sealed roll answers with a new three-knock rhythm that no office can classify."
+                                                   ],
+                         "training_hooks":  [
+                                                "silence_does_not_prove_consent",
+                                                "victory_and_mortuary_returns_diverge",
+                                                "strange_remains_strange"
+                                            ]
+                     }
+                 ],
+    "mutation_policy":  {
+                            "automated":  [
+                                              "Ink-local variable updates and branch gates",
+                                              "branch id, knot path, and visual trigger validation",
+                                              "playthrough-local ending selection"
+                                          ],
+                            "manual_review_required":  [
+                                                           "Any durable relationship or standing change for Taru, Orsa, Iresa, Sedren, Melka, Daro, Vael, or Nema",
+                                                           "Any claim that the presence is the defeated champion or another named entity",
+                                                           "Any promotion of a branch outcome into Kalsa canon",
+                                                           "Any lasting status of the East Collar assault, the Iron Shelter, the withdrawn shrines, or the reopened court"
+                                                       ]
+                        },
+    "audit":  {
+                  "reviewer":  "four-pass self-review: narrative quality, lore grounding, visual continuity, spatial cohesion",
+                  "review_status":  "accepted",
+                  "review_notes":  [
+                                       "Narrative quality reviewer — accepted (orientation 4/5, coherence 5/5, pacing 5/5, voice 4/5, tonal fit 5/5, IF playability 5/5). Fixed Nema\u0027s branch-only introduction and the unreachable marked-departure gate; routine, pressure, and all five endings now carry readable consequence.",
+                                       "Lore grounding reviewer — accepted (source coverage 5/5, canon fit 5/5, grounding quality 5/5, vault-backfill value 5/5). Checked all cited Public and Spoilers owners; the God remains bounded, identity and consent remain unresolved, and visual designs plus playthrough outcomes remain fixture-local.",
+                                       "Visual continuity reviewer — accepted (segmentation 5/5, prompt readiness 5/5, character visibility 4/5, branch continuity 5/5, replay value 5/5). Removed unstaged branch guards, declared every visible worker/healer group, isolated the first face as a pivotal screen, and retained the embedded scene set as geometry authority.",
+                                       "Spatial cohesion reviewer — accepted (layout 5/5, sightlines 5/5, body affordance 5/5, movement 5/5, object geometry 5/5, branch spatial state 5/5). Fixed Taru\u0027s return to the west landing, made the cooling route descend after the uncanny trough climb, and kept sealed-roll traces physically legible.",
+                                       "Ink was not compiled, per the pass contract. Static review matched 13 Ink branch labels to 13 sidecar branches, 15 visual anchors to existing knots, 15 BFL prompts to 15 visual scenes, all visual refs to declared refs, and all lore source paths to files."
+                                   ],
+                  "checks":  {
+                                 "uses_standard_branching_format":  true,
+                                 "actor_local_context_only":  true,
+                                 "includes_non_speech_actions":  true,
+                                 "fuzzy_updates_marked_for_manual_review":  true,
+                                 "aetheria_lore_content_readable":  true
+                             }
+              }
+}

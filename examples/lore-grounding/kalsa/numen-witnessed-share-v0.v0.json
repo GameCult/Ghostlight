@@ -1,0 +1,372 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "numen-witnessed-share-v0",
+  "source_status": "Kalsa tiered canon: Public sources provide inhabitant-facing witness material; Spoilers sources provide author and GM truth, current situation state, and explicit unresolved boundaries.",
+  "fixture_status": "Illustrated branch-and-fold training fixture with noncanonical playthrough outcomes grounded in the current Ash-Halo Court situation.",
+  "source_refs": [
+    {
+      "source_id": "god-cult-covenants",
+      "path": "Kalsa/Spoilers/Institutions/God-Cult Covenants.md",
+      "title": "God-Cult Covenants",
+      "line_start": 1,
+      "line_end": 309,
+      "relevance": "Spoilers tier. Owns cult covenant procedure, divine route authority, great-rite terms, recognized shares, and the authored witnessed-share elaboration."
+    },
+    {
+      "source_id": "witnessed-share-elaboration",
+      "path": "Kalsa/Spoilers/Institutions/God-Cult Covenants.md",
+      "title": "God-Cult Covenants — Authored elaboration: recognized ritual shares",
+      "line_start": 187,
+      "line_end": 221,
+      "relevance": "Spoilers tier. Defines a recognized ritual share as bounded lower-world admission rather than measured potential, names participants and costs, and preserves failures that priests cannot resolve."
+    },
+    {
+      "source_id": "death-binding-law",
+      "path": "Kalsa/Spoilers/Institutions/Death and Binding Law.md",
+      "title": "Death and Binding Law",
+      "line_start": 1,
+      "line_end": 287,
+      "relevance": "Spoilers tier. Owns answer rolls, mortuary witness limits, proxy-consent problems, later silence, and separated custody."
+    },
+    {
+      "source_id": "potential-economy",
+      "path": "Kalsa/Spoilers/Institutions/The Potential Economy.md",
+      "title": "The Potential Economy",
+      "line_start": 1,
+      "line_end": 302,
+      "relevance": "Spoilers tier. Grounds finite routed potential, the absence of a universal measure, withdrawals, concentration dockets, returns, recovery reserves, and leakage costs."
+    },
+    {
+      "source_id": "projections-gods-thaumavores",
+      "path": "Kalsa/Spoilers/Foundations/Projections, God Beasts, and Thaumavores.md",
+      "title": "Projections, God Beasts, and Thaumavores",
+      "line_start": 1,
+      "line_end": 156,
+      "relevance": "Spoilers tier. Owns divine limits, non-omniscience, feeding and interception, acquired potential bodies, unresolved identity, and manifestation signs."
+    },
+    {
+      "source_id": "soirui-sects",
+      "path": "Kalsa/Spoilers/Institutions/Soiru'i Sects.md",
+      "title": "Soiru'i Sects",
+      "line_start": 1,
+      "line_end": 246,
+      "relevance": "Spoilers tier. Grounds Taru’s championing role, answer-roll custody, requests for warning/share/withdrawal, sect limits, mutual aid, and refusal to speak unquestionable commands for the dead."
+    },
+    {
+      "source_id": "ash-halo-event",
+      "path": "Kalsa/Spoilers/Events/The Ash-Halo Armament.md",
+      "title": "The Ash-Halo Armament",
+      "line_start": 1,
+      "line_end": 119,
+      "relevance": "Spoilers tier. Owns the first armament history, furnace materials, unopened roll, flashes, later silences, blocked drain, diverging records, and unresolved aftermath."
+    },
+    {
+      "source_id": "ash-halo-court",
+      "path": "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md",
+      "title": "The Ash-Halo Court",
+      "line_start": 1,
+      "line_end": 246,
+      "relevance": "Spoilers tier. Owns the current locality, named actors and authorities, three-horn clock, physical routes, first face, recognized-share petition, and reachable noncanonical play outcomes."
+    },
+    {
+      "source_id": "jamnai-terjamna",
+      "path": "Kalsa/Spoilers/Polities/Sorcery - Jamnai and the Terjamna.md",
+      "title": "Sorcery — Jamnai and the Terjamna",
+      "line_start": 1,
+      "line_end": 158,
+      "relevance": "Spoilers tier. Grounds the geothermal arcology, submission politics, Soiru'i practice, office limits, ordinary work, refusal, and Ash-Halo admission dispute."
+    },
+    {
+      "source_id": "faces-public",
+      "path": "Kalsa/Public/Sources/The Faces in the Ash Halo.md",
+      "title": "The Faces in the Ash Halo",
+      "line_start": 1,
+      "line_end": 73,
+      "relevance": "Public tier. Grounds the inhabitant-facing armament account, sealed roll, recognizable signs, later shrine silences, and unresolved identity."
+    },
+    {
+      "source_id": "gods-public",
+      "path": "Kalsa/Public/World/Gods and the Dead.md",
+      "title": "Gods and the Dead",
+      "line_start": 1,
+      "line_end": 90,
+      "relevance": "Public tier. Grounds gods as active but non-omniscient powers, separate records, the unquiet dead, and hungry holy places."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Current Kalsa; exact date and Crown district unresolved.",
+    "location": "The reopened Ash-Halo Court in a Jamnai Crown district: an upper furnace court above an under-gallery and slag cistern, preparing an armament for the East Collar heat-gate assault.",
+    "summary": "Taru, a Soiru'i household recognizer, must decide whether and how to admit a familiar sign into a concentrated divine rite before the second horn opens the Iron Shelter’s grant.",
+    "public_facts": [
+      {
+        "text": "An earlier answer roll reached a furnace court before divine armour was made and remained sealed until after faces appeared in the working.",
+        "source_refs": ["faces-public", "ash-halo-event"]
+      },
+      {
+        "text": "Three familiar presences later went silent while something new answered at the slag cistern.",
+        "source_refs": ["faces-public", "ash-halo-event"]
+      },
+      {
+        "text": "Some Soiru'i sects now carry answer rolls to great workings and may be kept outside with the names they brought.",
+        "source_refs": ["faces-public", "soirui-sects"]
+      },
+      {
+        "text": "Gods can protect and bargain while remaining unable to establish omniscience or explain every dead presence around their miracles.",
+        "source_refs": ["gods-public", "projections-gods-thaumavores"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "Ninth Furnace wants rapid armament to retake the East Collar and restore heat, but combat around a damaged collar could flood lower galleries with steam.",
+        "source_refs": ["ash-halo-court", "jamnai-terjamna"]
+      },
+      {
+        "text": "The armament draws grants away from a branch hostel and furnace-family shrine, so every delay, diversion, and recovery promise has household consequences.",
+        "source_refs": ["ash-halo-court", "potential-economy"]
+      },
+      {
+        "text": "Recognition can create a legible negotiation path but can also feed a dangerous claimant or give a branch a pretext to bind what it cannot identify.",
+        "source_refs": ["witnessed-share-elaboration", "death-binding-law", "projections-gods-thaumavores"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "ninth-furnace-branch",
+      "label": "Ninth Furnace branch",
+      "group_type": "jamnai_political_cult_branch",
+      "institutional_logic": ["Protect branch dependants and rank by converting divine potential, prepared machinery, and champion force into control of the East Collar."],
+      "material_incentives": ["Recover hot water, preserve hostel stores, hold the heat gate, and restore the withdrawn shrine grants after victory."],
+      "internal_virtues": ["Protection that arrives", "Recorded obedience", "Visible strength", "Completion before the horn expires"],
+      "internal_shames": ["An unarmed gate", "A public divine hesitation", "A subordinate office stopping the branch spectacle"],
+      "prestige_markers": ["Complete raiment", "A held gate", "Returns that make hierarchy look coherent"],
+      "taboo_triggers": ["Calling conquest a maintenance failure", "Admitting an unranked claimant into the divine route"],
+      "emotional_display_norms": ["Urgency is spoken as protection and rank; fear of divine uncertainty is displaced into docket and admission control."],
+      "trust_defaults": ["Trusts recognized officers, witnessed submission, usable champions, and outcomes that restore heat."],
+      "speech_register_cues": ["Compressed orders", "Protection claims", "Rank language", "Threats framed as review", "Disdain for delay"],
+      "source_refs": ["ash-halo-court", "jamnai-terjamna", "god-cult-covenants"]
+    },
+    {
+      "group_id": "soirui-household-witnesses",
+      "label": "Soiru'i household witnesses",
+      "group_type": "mortuary_and_mutual_aid_network",
+      "institutional_logic": ["Keep living hierarchy from becoming the only institution allowed to say what the defeated dead wanted or what happened to their signs."],
+      "material_incentives": ["Preserve copies, obtain warning or withdrawal, restore silent shrine support, and keep witnesses housed during appeal."],
+      "internal_virtues": ["Exact copying", "Refusal without false certainty", "Support before verdict", "Memory that includes defeat"],
+      "internal_shames": ["Inventing a dead command", "Trading recognition for compulsory binding", "Leaving households to bear the hearing’s cost"],
+      "prestige_markers": ["A copy that survives seizure", "A champion who carries appeal", "A shrine store that outlasts censure"],
+      "taboo_triggers": ["Consent spoken for a silent dead person", "A branch victory return erasing later silence"],
+      "emotional_display_norms": ["Grief and suspicion are translated into copied signs, witnessed refusal, guarded rolls, and material support."],
+      "trust_defaults": ["Trusts corroborated household memory and separated custody more than a branch officer’s complete explanation."],
+      "speech_register_cues": ["Observed sign before interpretation", "Named refusal", "Household copy references", "Brief petitions", "Dry suspicion"],
+      "source_refs": ["soirui-sects", "death-binding-law", "ash-halo-event"]
+    },
+    {
+      "group_id": "ash-halo-forge",
+      "label": "Ash-Halo forge workers and custodians",
+      "group_type": "relic_dependent_work_crew",
+      "institutional_logic": ["Keep the furnace, racks, drains, and fitting path materially safe even when branch and divine authority demand speed."],
+      "material_incentives": ["Avoid burns and steam flooding, preserve production, keep quench routes usable, and make repairs visible in the return."],
+      "internal_virtues": ["A stop used before catastrophe", "Marks another worker can follow", "Failed work preserved", "Competence under pressure"],
+      "internal_shames": ["A copied return that lies about the machine", "Rank overruling a known hazard", "Workers disappearing from miracle accounts"],
+      "prestige_markers": ["A signed configuration", "A clean isolation", "A crew that gets home with its hands"],
+      "taboo_triggers": ["Treating ritual authority as technical competence", "Opening heat across an uninspected route"],
+      "emotional_display_norms": ["Fear becomes measurements, chalk, tool placement, bad jokes, and refusal at the mechanism."],
+      "trust_defaults": ["Trusts visible geometry, witnessed tests, experienced hands, and the person authorized to stop the weights."],
+      "speech_register_cues": ["Concrete nouns", "Measured sarcasm", "Work sequence", "Hazard language", "Refusal stated as configuration fact"],
+      "source_refs": ["ash-halo-event", "ash-halo-court", "jamnai-terjamna"]
+    },
+    {
+      "group_id": "iron-shelter-hierarchy",
+      "label": "The Iron Shelter divine hierarchy",
+      "group_type": "god_cult_hierarchy",
+      "institutional_logic": ["Route finite divine capacity through recognized intermediaries and defend the champion’s working against diversions it cannot safely classify."],
+      "material_incentives": ["Keep its foothold, champion, branch dependants, and strategic route intact while avoiding uncontrolled feeding."],
+      "internal_virtues": ["Protection", "Recognized service", "Route discipline", "Decisive response"],
+      "internal_shames": ["Unseen feeding", "A rival using its grant", "Mortal records exposing divine uncertainty"],
+      "prestige_markers": ["A completed miracle", "A surviving champion", "Dependants who attribute order to the God"],
+      "taboo_triggers": ["Unrecognized diversion", "A binding refused inside an open route"],
+      "emotional_display_norms": ["The hierarchy communicates through offers, retraction, pressure, manifestation, and the intermediary’s interpreted speech; its complete inner state remains unavailable."],
+      "trust_defaults": ["Treats recognized relations as safer than unnamed feeders but cannot infer identity or loyalty from procedure alone."],
+      "speech_register_cues": ["Short declarative terms", "Protection as ownership pressure", "Admitted uncertainty under witness", "Force carried through material"],
+      "source_refs": ["god-cult-covenants", "projections-gods-thaumavores", "ash-halo-court"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "ninth-furnace.protection-must-look-complete",
+      "applies_to": ["ninth-furnace-branch"],
+      "pressure_type": "political_legitimacy",
+      "summary": "The branch needs the armament to restore heat and to look like one coherent act of divine protection, making admitted uncertainty politically expensive.",
+      "projection_use": "Let Iresa tolerate only delays attached to an existing authority, and make public procedural success invite later review rather than gratitude.",
+      "source_refs": ["ash-halo-court", "god-cult-covenants"]
+    },
+    {
+      "field_id": "soirui-witnesses.recognition-without-custody",
+      "applies_to": ["soirui-household-witnesses"],
+      "pressure_type": "memory_and_consent",
+      "summary": "Witnesses must make a dead claim legible enough to hear while refusing to make their own recognition proof of identity or consent.",
+      "projection_use": "Taru should use exact signs, copies, and narrow requests and resist any line that speaks an unquestionable command for the dead.",
+      "source_refs": ["soirui-sects", "death-binding-law", "witnessed-share-elaboration"]
+    },
+    {
+      "field_id": "ash-halo-forge.material-stop-survives-miracle",
+      "applies_to": ["ash-halo-forge", "iron-shelter-hierarchy"],
+      "pressure_type": "authority_boundary",
+      "summary": "The forge custodian’s stop remains valid during a divine rite because the God and branch do not gain material competence by opening a route.",
+      "projection_use": "Keep Sedren’s lever, marks, sightline, and consequences available on every branch even when the divine voice dominates the scene.",
+      "source_refs": ["ash-halo-court", "god-cult-covenants"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "ninth-furnace-branch",
+      "target_group_id": "soirui-household-witnesses",
+      "observer_read": ["Delay under siege", "An attempt to feed a claimant", "A rival memory seeking standing"],
+      "target_self_read": ["Witness protection", "Refusal of proxy consent", "A claim for warning or withdrawal"],
+      "misread_patterns": ["Treats procedural friction as disloyalty", "Treats every familiar sign as a sect bid for power"],
+      "likely_insults": ["grave-feeder", "ink champion", "threshold petitioner"],
+      "projection_use": "Iresa can recognize Taru’s standing while treating his timing as aid to Ash Hook.",
+      "source_refs": ["ash-halo-court", "soirui-sects"]
+    },
+    {
+      "observer_group_id": "soirui-household-witnesses",
+      "target_group_id": "iron-shelter-hierarchy",
+      "observer_read": ["A conqueror willing to call ignorance an attack", "A protector whose victory copy ends too early"],
+      "target_self_read": ["A defender of dependants", "A route under active predation", "A hierarchy offering bounded terms"],
+      "misread_patterns": ["May treat every forceful interception as deliberate erasure", "May underweight how quickly a feeding route can become a fountain"],
+      "likely_insults": ["the sheltered hunger", "iron mouth", "victor without a witness"],
+      "projection_use": "Keep Taru’s distrust sharp but prevent him from knowing whether the hierarchy faces a person, predator, rival, or mixed event.",
+      "source_refs": ["ash-halo-event", "projections-gods-thaumavores", "god-cult-covenants"]
+    },
+    {
+      "observer_group_id": "ash-halo-forge",
+      "target_group_id": "ninth-furnace-branch",
+      "observer_read": ["People who believe an order repairs a pipe", "Patrons who count completion and externalize cleanup"],
+      "target_self_read": ["Protectors paying for necessary force", "A branch accepting siege risk to restore heat"],
+      "misread_patterns": ["Workers may treat strategic urgency as mere vanity", "Branch officers may treat technical refusal as political theater"],
+      "likely_insults": ["paper furnace", "horn mechanic", "dry-handed custodian"],
+      "projection_use": "Use Sedren’s humor to expose the authority conflict without making him omniscient about war or gods.",
+      "source_refs": ["ash-halo-court", "jamnai-terjamna"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "soirui-household-recognizer",
+      "summary": "A living carrier who can recognize one recorded sign, request a bounded act, and refuse binding in the dead claimant’s name.",
+      "obligations": ["Preserve the household copy", "Distinguish sign from identity", "Name the requested act", "Keep support costs visible"],
+      "available_masks": ["Dry procedural patience", "Branch loyalty", "Grieving kin", "Unimpressed witness"],
+      "failure_modes": ["Speaking consent for the dead", "Hiding the copy until it cannot help", "Feeding the sign through repeated tests", "Mistaking refusal for safety"],
+      "source_refs": ["soirui-sects", "ash-halo-court"]
+    },
+    {
+      "role_id": "death-witness",
+      "summary": "A mortuary officer who can preserve signs, copies, later silence, and custody without declaring metaphysical identity.",
+      "obligations": ["Record observation separately", "Protect the roll", "Preserve adverse outcomes", "Keep identity blank when evidence is insufficient"],
+      "available_masks": ["Ceremonial calm", "Clerkly exactness", "Protective silence", "Public correction"],
+      "failure_modes": ["Letting branch custody swallow the roll", "Interpreting for the dead", "Prolonging a dangerous hearing", "Calling silence release"],
+      "source_refs": ["death-binding-law", "ash-halo-event"]
+    },
+    {
+      "role_id": "divine-intermediary",
+      "summary": "A recognized speaker who can carry the hierarchy’s offers and responses without possessing the God’s complete knowledge.",
+      "obligations": ["State the offer", "Preserve accepted limits", "Carry refusal", "Distinguish doctrine from observed response"],
+      "available_masks": ["Divine certainty", "Procedural humility", "Branch loyalty", "Ritual authority"],
+      "failure_modes": ["Pretending inference is revelation", "Accepting proxy consent", "Hiding a changed offer", "Confusing recognition with control"],
+      "source_refs": ["god-cult-covenants", "projections-gods-thaumavores"]
+    },
+    {
+      "role_id": "forge-custodian",
+      "summary": "The worker who owns the inspected material configuration and the stop while divine and political authorities act through it.",
+      "obligations": ["Inspect the route", "Mark substitutions", "Keep workers and champion reachable", "Use the stop at the failure boundary"],
+      "available_masks": ["Workplace humor", "Technical literalism", "Deference with a hand on the lever", "Public refusal"],
+      "failure_modes": ["Yielding competence to rank", "Hiding an unsafe substitution", "Stopping too late", "Claiming metaphysical expertise from material evidence"],
+      "source_refs": ["ash-halo-event", "ash-halo-court"]
+    },
+    {
+      "role_id": "branch-champion",
+      "summary": "The living body through which the armament closes, able to report pressure and refuse the march but unable to identify what touches the grant.",
+      "obligations": ["Report divided motion", "Keep agreed signs", "Protect branch dependants", "Refuse when the body cannot carry the route"],
+      "available_masks": ["Bravado", "Soldierly patience", "Ritual stillness", "Humor about being equipment"],
+      "failure_modes": ["Letting spectacle hide injury", "Mistaking force for clarity", "Marching after loss of control", "Becoming the branch’s only witness"],
+      "source_refs": ["ash-halo-court", "ash-halo-event"]
+    },
+    {
+      "role_id": "branch-holder",
+      "summary": "The patron who needs a champion before the assault interval closes and can punish delay without acquiring forge, mortuary, or divine authority.",
+      "obligations": ["Restore heat", "Fund the armament", "Honor recognized stops", "Carry the consequences of withdrawn grants"],
+      "available_masks": ["Protector under siege", "Impatient patron", "Lawful superior", "Custodian of branch dignity"],
+      "failure_modes": ["Turning review into retaliation", "Treating delay as treason", "Erasing support costs", "Claiming the God’s uncertainty as her own certainty"],
+      "source_refs": ["ash-halo-court", "jamnai-terjamna"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "taru_ash_halo_recognizer",
+      "known_context": [
+        {"text": "Taru knows the household copy, the defeated champion’s recorded sign, the court’s visible procedure, and what he personally refuses.", "source_refs": ["ash-halo-court", "soirui-sects"]}
+      ],
+      "beliefs": [
+        {"text": "Taru believes a great rite must hear the named dead before the branch turns every diversion into an enemy.", "source_refs": ["soirui-sects", "death-binding-law"]}
+      ],
+      "misreads": [
+        {"text": "Taru may treat the Iron Shelter’s force as intentional erasure even when the hierarchy cannot classify the route safely.", "source_refs": ["projections-gods-thaumavores", "god-cult-covenants"]}
+      ],
+      "must_not_know": [
+        {"text": "Taru must not know whether the presence is the defeated champion, what survives interception, or what the God perceives beyond its spoken response.", "source_refs": ["projections-gods-thaumavores", "ash-halo-court"]}
+      ]
+    },
+    {
+      "speaker_id": "melka_death_witness",
+      "known_context": [
+        {"text": "Melka knows prior signs, custody, witness identities, current observations, and the mortuary distinction between later silence and release.", "source_refs": ["death-binding-law", "ash-halo-event"]}
+      ],
+      "beliefs": [
+        {"text": "Melka believes every interpretation becomes safer when the observation and its custodian remain separately named.", "source_refs": ["death-binding-law"]}
+      ],
+      "misreads": [
+        {"text": "Melka may privilege recordable signs over urgent strategic consequences she is not charged to solve.", "source_refs": ["death-binding-law", "ash-halo-court"]}
+      ],
+      "must_not_know": [
+        {"text": "Melka must not infer identity, divine intent, release, or survival merely because copies and signs agree.", "source_refs": ["death-binding-law", "projections-gods-thaumavores"]}
+      ]
+    },
+    {
+      "speaker_id": "orsa_iron_shelter_intermediary",
+      "known_context": [
+        {"text": "Orsa knows the offers she is authorized to carry, the hierarchy’s immediate response, and the branch rite’s admitted relations.", "source_refs": ["ash-halo-court", "god-cult-covenants"]}
+      ],
+      "beliefs": [
+        {"text": "Orsa believes recognized procedure gives the hierarchy a safer choice than unnamed diversion, while accepting that it cannot create certainty.", "source_refs": ["witnessed-share-elaboration", "god-cult-covenants"]}
+      ],
+      "misreads": [
+        {"text": "Orsa may mistake the God’s decisive route defense for a complete judgment about the claimant.", "source_refs": ["projections-gods-thaumavores"]}
+      ],
+      "must_not_know": [
+        {"text": "Orsa must not know the claimant’s complete identity, the God’s unexpressed reasoning, or which memory survives a forceful interception.", "source_refs": ["ash-halo-court", "projections-gods-thaumavores"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "The fixture may use the backstage model of divine routes and thaumavore feeding to keep consequences coherent, but no participant may speak that complete taxonomy as settled local knowledge.",
+      "source_refs": ["projections-gods-thaumavores", "god-cult-covenants"]
+    },
+    {
+      "text": "Every ending is a playthrough possibility at the current Ash-Halo Court, not an adopted Kalsa event; later canonization would require event receipts and review.",
+      "source_refs": ["ash-halo-court"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which presence, if any, performs the defeated champion’s sign at the reopened court?",
+      "blocks_training": false,
+      "notes": "The fixture preserves this as the central unresolved numinous pressure and does not privilege a branch answer."
+    },
+    {
+      "question": "What exact Crown district and inherited architectural plan contain Ninth Furnace and the East Collar?",
+      "blocks_training": false,
+      "notes": "The visual plan uses one fixture-local court map for staging and marks it as scene-set authority for this fixture, not continent-wide architecture canon."
+    }
+  ]
+}
