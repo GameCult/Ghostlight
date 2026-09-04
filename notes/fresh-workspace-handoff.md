@@ -239,7 +239,7 @@ the last two records in `state/evidence.jsonl`.
    `AffordanceKind` is still `{ Speak }`, and `crates/ghostlight-dungeon/src/world/*.rs`
    holds 43 test functions (mod 16, controllers 12, mailbox 12, journal 3; 83
    across the whole crate). If `git log` shows no pass-1 commit and
-   `git worktree list` shows only the main tree, the cut has not landed. Nine
+   `git worktree list` shows only the main tree, the cut has not landed. Eight
    elaborators are one `OperationalAgent` loop whose tool catalog is a
    projection of the operation set; no elaborator gets a tool the reducer
    cannot validate.
