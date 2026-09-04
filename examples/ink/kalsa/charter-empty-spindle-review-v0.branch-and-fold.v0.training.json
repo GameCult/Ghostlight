@@ -1,0 +1,384 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "kalsa-charter-empty-spindle-review-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/kalsa/charter-empty-spindle-review-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/kalsa/charter-empty-spindle-review-v0.v0.json",
+  "visual_plan_ref": "examples/visual/kalsa/charter-empty-spindle-review-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "charter-empty-spindle-review-v0.cistern-house-review",
+  "protagonist_agent_id": "bel_orra",
+  "npc_agent_ids": [
+    "sera_venn",
+    "maro_seln",
+    "ressa_orr",
+    "teren_vey",
+    "tavi_kes"
+  ],
+  "purpose": "Interactive Fiction Weaver draft of Low Sere's empty-spindle appointment review from a lower-step water witness's bounded perspective, with routine sampling before a shutter failure exposes succession and redress pressure.",
+  "tonal_mode": "Dry communal workplace wit under procedural dread, with domestic stakes carried by water, wet rooms, crop work, broth, and public marks.",
+  "artifact_role": "Playable illustrated-fiction website collateral and lore stress test; not canonical adjudication, simulation state, or core model-training signal.",
+  "local_awareness_summary": [
+    {
+      "text": "Bel can compare water she carried from her lower-step room with the Cistern House sample, present a returned Grey Bed tile, observe the board and spindle, call local witnesses, and demand immediate material redress.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/charter-empty-spindle-review-v0.v0.json",
+        "Kalsa/Spoilers/Places/Low Sere.md"
+      ]
+    },
+    {
+      "text": "Bel can hear Sera, Maro, Ressa, Teren, and Tavi and observe their tools, records, positions, and public acts; she cannot know the sealed Intake Crown state or privately settle their motives.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/charter-empty-spindle-review-v0.v0.json",
+        "Kalsa/Spoilers/Dungeons/The Ashen Intake.md"
+      ]
+    },
+    {
+      "text": "The scene begins with ordinary sampling, notice, Grey Bed, relief, and work-watch tasks before another shutter mark goes dark and compresses the review.",
+      "source_refs": [
+        "Kalsa/Spoilers/Places/Low Sere.md",
+        "Kalsa/Public/Sources/At the Basin Table.md"
+      ]
+    },
+    {
+      "text": "The eight-tooth spindle, stone cradle, paired marked vessels, work-watch tiles, name cloths, copied warnings, and return-mark clay halves are material handles. None decides appointment, technical truth, guilt, or compensation by itself.",
+      "source_refs": [
+        "Kalsa/Spoilers/Places/Low Sere.md",
+        "Kalsa/Spoilers/Institutions/Relic Custody.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Bel's lower-step water-witness viewpoint in the Cistern House. Narration can translate public authority boundaries for the reader but cannot reveal the true intake state below the black pressure door.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/kalsa/charter-empty-spindle-review-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes Bel's wet room, lost Grey Bed shift, paired sampling routine, named office holders, basin geometry, and ordinary record work before the emergency beat.",
+        "source_refs": [
+          "AGENTS.md",
+          "Kalsa/Spoilers/Places/Low Sere.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Bel owns her observed household and work loss, her evidence, her request, and which public priority she argues for. She does not appoint the custodian alone or decide the technical comparison.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "Kalsa/Spoilers/Institutions/Relic Custody.md"
+        ]
+      },
+      {
+        "text": "Maro owns the drain wheel, surface admission, and basin-table record. Sera owns bounded pressure-seal operation. Ressa owns only her independent comparison. Teren retains testimony and appeal but no threshold control.",
+        "source_refs": [
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md",
+          "Kalsa/Public/Sources/At the Basin Table.md"
+        ]
+      },
+      {
+        "text": "Emergency service can authorize one witnessed act while leaving the office publicly vacant. Survival, key possession, lineage prestige, and machine response cannot silently produce permanent appointment.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "Kalsa/Spoilers/Institutions/Relic Custody.md",
+          "Kalsa/Spoilers/Institutions/Measures, Formulae, and Machine Speech.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Sera initially controls the eight-tooth spindle; Maro controls the drain wheel and record board; Bel controls her household vessel and any returned clay half; Ressa controls her comparison mark; Tavi controls the Ash Names' cloths; each record moves only through the branch action that names it.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "examples/ink/kalsa/charter-empty-spindle-review-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Every branch must keep technical comparison, appointment, emergency operation, public notice, former-custodian appeal, and commoner redress as separate authorities that can affect one another without merging.",
+        "source_refs": [
+          "Kalsa/Spoilers/Events/The Grey Scald.md",
+          "Kalsa/Spoilers/Institutions/Relic Custody.md"
+        ]
+      },
+      {
+        "text": "Bel's redress must remain available through observed difference and witness rather than requiring her to diagnose the Ashen Intake or prove a particular custodian guilty.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "Kalsa/Spoilers/Institutions/Measures, Formulae, and Machine Speech.md"
+        ]
+      },
+      {
+        "text": "Endings must make service continuity, public review, outside comparison, and immediate commoner relief produce different material costs while preserving the unresolved final appointment and appeal.",
+        "source_refs": [
+          "docs/architecture/ink-branching-scenes.md",
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not decide Sera's final appointment, Teren's appeal, Eighth Baffle title, the long-term intake outcome, or the identity of the knocks below.",
+        "source_refs": [
+          "Kalsa/Spoilers/Places/Low Sere.md",
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md"
+        ]
+      },
+      {
+        "text": "Do not turn the empty-spindle review or return mark into universal Kalsan law, a standardized calendar, a city court, or a Techpriest rank system.",
+        "source_refs": [
+          "examples/lore-grounding/kalsa/charter-empty-spindle-review-v0.v0.json",
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md"
+        ]
+      },
+      {
+        "text": "Do not make Bel, the basin table, or Ressa know whether a formula would restore the sealed Intake Crown; surface evidence remains bounded.",
+        "source_refs": [
+          "Kalsa/Spoilers/Dungeons/The Ashen Intake.md",
+          "Kalsa/Spoilers/Institutions/Measures, Formulae, and Machine Speech.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through morning accounting, empty-spindle emergency response, commoner claim receipt, and final review priority, then select one of eight state-gated endings.",
+    "choice_layers": [
+      "morning_account",
+      "empty_spindle_response",
+      "commoner_redress",
+      "review_priority"
+    ],
+    "variables": [
+      "record_integrity",
+      "public_notice",
+      "technical_comparison",
+      "lower_step_relief",
+      "sera_exhaustion",
+      "service_margin",
+      "return_mark_state",
+      "outside_leverage",
+      "worker_witness",
+      "teren_appeal_visible",
+      "spindle_state",
+      "claim_misattributed"
+    ],
+    "ending_gates": [
+      "ending_bounded_service_success",
+      "ending_bounded_service_cost",
+      "ending_full_review_success",
+      "ending_full_review_cost",
+      "ending_comparison_success",
+      "ending_comparison_cost",
+      "ending_return_mark_success",
+      "ending_return_mark_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prepare_paired_vessels",
+      "ink_path": "preparation_choice",
+      "action_type": "use_object",
+      "actor_intent": "Put household and Cistern House water in the same public frame before either cools or is tidied away.",
+      "state_basis": ["Bel carries one lower-step sample and can take one Cistern House sample into the witnessed account."],
+      "reviewed_consequences": ["Raises record_integrity and worker_witness; later folds show the two observations preserved together."],
+      "training_hooks": ["material_comparison", "commoner_evidence", "record_before_blame"]
+    },
+    {
+      "branch_id": "prepare_grey_bed_tile",
+      "ink_path": "preparation_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Bring the Grey Beds' returned-delivery record into the appointment account.",
+      "state_basis": ["The lower head-sluice records accepted, diverted, and returned deliveries on work-watch tiles."],
+      "reviewed_consequences": ["Raises worker_witness and lower_step_relief while spending service_margin through delayed ordinary work."],
+      "training_hooks": ["work_surface_evidence", "crop_loss", "routine_has_cost"]
+    },
+    {
+      "branch_id": "prepare_custodian_relief",
+      "ink_path": "preparation_choice",
+      "action_type": "give_object",
+      "actor_intent": "Make Sera's missing rest and support part of the appointment account while providing immediate care.",
+      "state_basis": ["Relief, livelihood, and support are appointment inputs because an exhausted operator endangers every dependent."],
+      "reviewed_consequences": ["Lowers sera_exhaustion, raises service_margin and record_integrity, and changes later service gates."],
+      "training_hooks": ["care_as_infrastructure", "support_term", "broth_with_consequence"]
+    },
+    {
+      "branch_id": "prepare_warning_history",
+      "ink_path": "preparation_choice",
+      "action_type": "speak",
+      "actor_intent": "Preserve Teren's disputed warning beside the Ash Names without combining technical defense and mortuary claim.",
+      "state_basis": ["The Grey Scald left a late public warning, two named dead, and a separate former-custodian appeal."],
+      "reviewed_consequences": ["Raises teren_appeal_visible, public_notice, and worker_witness; later review text preserves the claims separately."],
+      "training_hooks": ["separate_claims", "historical_warning", "appeal_visibility"]
+    },
+    {
+      "branch_id": "post_empty_spindle",
+      "ink_path": "suspension_choice",
+      "action_type": "speak",
+      "actor_intent": "Make the vacancy public before emergency operation can look like permanent succession.",
+      "state_basis": ["The local elaboration uses a stone cradle and public vacancy notices when the intake office is unsettled."],
+      "reviewed_consequences": ["Raises public_notice and record_integrity, moves spindle_state to the cradle, and lowers service_margin through delay."],
+      "training_hooks": ["public_vacancy", "anti_inertia", "continuity_tradeoff"]
+    },
+    {
+      "branch_id": "witness_one_service_act",
+      "ink_path": "suspension_choice",
+      "action_type": "speak",
+      "actor_intent": "Preserve one bounded degraded-service act under an explicit limit.",
+      "state_basis": ["Sera may inspect, isolate, stop, and preserve degraded service within her witnessed formation."],
+      "reviewed_consequences": ["Raises service_margin and record_integrity while increasing sera_exhaustion; later ending gates can show continuity spending its operator."],
+      "training_hooks": ["bounded_emergency_act", "operator_exhaustion", "service_not_succession"]
+    },
+    {
+      "branch_id": "require_live_comparison",
+      "ink_path": "suspension_choice",
+      "action_type": "use_object",
+      "actor_intent": "Require Ressa to compare the surface marks before any further spindle act.",
+      "state_basis": ["Ressa can compare part of the intake practice while the missing Ashen Measure limits her conclusion."],
+      "reviewed_consequences": ["Raises technical_comparison, outside_leverage, and public_notice while spending service_margin and leaving the spindle in the cradle."],
+      "training_hooks": ["independent_comparison", "missing_evidence", "outside_service_cost"]
+    },
+    {
+      "branch_id": "accept_quiet_overseer",
+      "ink_path": "suspension_choice",
+      "action_type": "write",
+      "actor_intent": "Use Ressa's presence as informal oversight so Sera can keep water moving.",
+      "state_basis": ["Maro wants continuity, Ressa refuses borrowed authority, and warm flow can politically defend a bad record."],
+      "reviewed_consequences": ["Raises service_margin and outside_leverage, lowers record_integrity, and leaves the spindle in Sera's hands."],
+      "training_hooks": ["quiet_replacement", "borrowed_signature", "bad_record_has_beneficiaries"]
+    },
+    {
+      "branch_id": "score_return_mark",
+      "ink_path": "claim_choice",
+      "action_type": "use_object",
+      "actor_intent": "Receive Bel's claim on two matching clay halves without deciding liability.",
+      "state_basis": ["Any resident may present an observed difference and receive a return mark under the local elaboration."],
+      "reviewed_consequences": ["Sets return_mark_state, raises record_integrity and public_notice, and enables the final redress gate."],
+      "training_hooks": ["claim_receipt", "return_path", "material_due_process"]
+    },
+    {
+      "branch_id": "call_claim_now",
+      "ink_path": "claim_choice",
+      "action_type": "present_object",
+      "actor_intent": "Match the return mark immediately and seek household heat and work credit before craft allocation.",
+      "state_basis": ["Immediate redress can precede final technical liability, but relief spends current service and stores."],
+      "reviewed_consequences": ["Advances return_mark_state, lower_step_relief, and worker_witness while lowering service_margin."],
+      "training_hooks": ["interim_relief", "allocation_priority", "redress_before_verdict"]
+    },
+    {
+      "branch_id": "attach_claim_to_custodian",
+      "ink_path": "claim_choice",
+      "action_type": "consent",
+      "actor_intent": "Accept faster relief by attaching Bel's loss to Sera's suspension charge.",
+      "state_basis": ["Notice, allocation, support, and technical operation have different owners even when the nearest operator is easiest to blame."],
+      "reviewed_consequences": ["Raises lower_step_relief, claim_misattributed, and public_notice; later text can correct or expose the convenient attribution."],
+      "training_hooks": ["fast_relief_wrong_owner", "blame_pressure", "separate_liability"]
+    },
+    {
+      "branch_id": "widen_commoner_witness",
+      "ink_path": "claim_choice",
+      "action_type": "call_witness",
+      "actor_intent": "Keep the claim open through Grey Bed and household witnesses at the cost of more interrupted labor.",
+      "state_basis": ["Workers and dependants may testify to harm without their dependence becoming technical truth."],
+      "reviewed_consequences": ["Sets return_mark_state, raises worker_witness and lower_step_relief, and lowers service_margin."],
+      "training_hooks": ["mutual_witness", "hearing_participation_cost", "commoner_standing"]
+    },
+    {
+      "branch_id": "prioritize_bounded_service",
+      "ink_path": "final_choice",
+      "action_type": "speak",
+      "actor_intent": "Offer public witness for one act whose scope, evidence, service need, and operator capacity the basin table and Sera must accept.",
+      "state_basis": ["Success depends on record_integrity, service_margin, and sera_exhaustion."],
+      "reviewed_consequences": ["Routes to a temporary service act with the office left empty or to succession-by-exhaustion cost."],
+      "training_hooks": ["emergency_scope", "operator_capacity_gate", "temporary_authority"]
+    },
+    {
+      "branch_id": "prioritize_full_review",
+      "ink_path": "final_choice",
+      "action_type": "present_object",
+      "actor_intent": "Put the sealed observations under the reeve's hand and demand a public review before another hand takes the spindle.",
+      "state_basis": ["Success depends on public_notice and lower_step_relief sufficient to keep affected households present and supported."],
+      "reviewed_consequences": ["Routes to a supported public review or to a procedurally pure hearing captured by households able to endure the cold."],
+      "training_hooks": ["supported_stop", "participation_materiality", "public_review"]
+    },
+    {
+      "branch_id": "prioritize_independent_comparison",
+      "ink_path": "final_choice",
+      "action_type": "speak",
+      "actor_intent": "Call for the basin table to fund Ressa's bounded comparison while refusing to call her service an appointment.",
+      "state_basis": ["Success depends on technical_comparison, record_integrity, and keeping outside_leverage bounded."],
+      "reviewed_consequences": ["Routes to competence without title or to an empty chair acquiring a transborder creditor."],
+      "training_hooks": ["competence_not_sovereignty", "service_dependency", "outside_leverage_gate"]
+    },
+    {
+      "branch_id": "prioritize_return_mark",
+      "ink_path": "final_choice",
+      "action_type": "present_object",
+      "actor_intent": "Make the table answer immediate material redress before it decides permanent office merit.",
+      "state_basis": ["Success depends on a return mark and enough worker witness to keep the claim legible at the basin lip."],
+      "reviewed_consequences": ["Routes to interim heat and work credit with liability open or to a received claim whose road back is still too weak."],
+      "training_hooks": ["redress_first", "witness_gate", "relief_not_verdict"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose and ending gates",
+      "Ending selection",
+      "Visual modifier trigger selection"
+    ],
+    "manual_review_required": [
+      "Any durable relationship or memory update for Bel, Sera, Maro, Ressa, Teren, or Tavi",
+      "Any promotion of one branch outcome into Kalsa's standing present",
+      "Any universalization of Low Sere's empty-spindle, return-mark, office, mark, or hearing practice",
+      "Any use of the fixture as core social-model training signal rather than reviewed website collateral and lore stress-test material"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex world worker applying four repository reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative review introduced Tavi before the optional warning-history branch and rewrote Bel's final choices as witness, petition, and evidence presentation rather than appointment or command authority.",
+      "Lore review separated Bel's current late reduction notice from Teren's copied Grey Scald warning, replaced an unsupported clerk reference with the existing recorder role, and accepted the fixture as a locality-bound elaboration that leaves Sera's appointment and Teren's appeal unresolved.",
+      "Visual review made the shared full-review and return-mark ending prompts branch-neutral before success or cost modifiers apply. It still returns needs_revision for illustrated replay because the declared durable camera-specific Cistern House scene-set blockout does not yet exist.",
+      "Spatial review accepted the fixed basin, pressure-door, witness-rail, sampling-ledge, notice-wall, and passage relationships; custody and movement remain stageable across all branches.",
+      "Ink compilation was not run because the task forbids installing an Ink compiler. JSON parsing, branch and annotation cross-reference checks, variable-use checks, visual-scene uniqueness, modifier targets, character refs, and affirmative prompt checks passed."
+    ],
+    "review_passes": {
+      "narrative_quality": {
+        "verdict": "accepted",
+        "scores": {"reader_orientation": 5, "coherence": 5, "pacing": 4, "voice": 5, "tonal_fit": 5, "if_playability": 5},
+        "findings": ["Introduced Tavi before the optional branch that calls on Tavi's mortuary witness.", "Demoted Bel's final commands to public witness, petition, and evidence presentation so the basin table retains appointment and closure authority."],
+        "labels": ["strong_contextual_onboarding", "strong_wit_with_stakes", "strong_branch_callback", "strong_character_voice", "strong_material_lore"]
+      },
+      "lore_grounding": {
+        "verdict": "accepted",
+        "scores": {"source_coverage": 5, "canon_fit": 5, "grounding_quality": 5, "vault_backfill_value": 5},
+        "findings": ["Corrected a temporal conflation between the current household reduction notice and Teren's copied Grey Scald warning.", "Kept the empty-spindle review, return mark, and basin-table procedure explicitly local to Low Sere and provisional at author tier."],
+        "labels": ["source_grounded", "strong_material_lore", "strong_infrastructure_grounding", "lore_gap_discovered", "vault_backfill_candidate"]
+      },
+      "visual_continuity": {
+        "verdict": "needs_revision",
+        "scores": {"segmentation": 5, "visual_prompt": 5, "character_visibility": 5, "branch_visual_continuity": 5, "website_replay": 3},
+        "findings": ["Repaired success-state leakage in two shared ending prompts by moving joined marks and supplied relief into ending modifiers.", "A durable camera-specific Cistern House scene-set blockout is required before multi-angle illustrated replay can be called ready; the current textual map is planning data only."],
+        "labels": ["strong_scene_segmentation", "strong_imagegen_ready_prompt", "strong_character_stance_control", "strong_branch_visual_continuity", "missing_scene_set"]
+      },
+      "spatial_cohesion": {
+        "verdict": "accepted",
+        "scores": {"layout_cohesion": 5, "sightline": 5, "body_affordance": 4, "movement_access": 5, "object_system_geometry": 5, "branch_spatial_state": 5},
+        "findings": ["The textual scene plan is stageable and keeps large groups at the witness rail and passage rather than crowding the six-person dry basin lip.", "Replay promotion still requires the declared durable scene-set artifact."],
+        "labels": ["strong_layout_cohesion", "strong_sightline_control", "strong_body_affordance_staging", "strong_branch_spatial_state", "diagram_needed"]
+      }
+    },
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

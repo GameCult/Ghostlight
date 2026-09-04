@@ -1,0 +1,76 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "kalsa-charter-empty-spindle-review-v0.bfl-simple-v0",
+  "fixture_id": "charter-empty-spindle-review-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, sharp readable silhouettes, cold grey stone and mineral water, warm mist and amber lamplight, restrained relic mystery, practical worn tools, expressive grounded body language, abstract unlettered record marks.",
+  "prompts": [
+    {
+      "id": "01_cistern_establishing",
+      "prompt": "Low heavy stone cistern hall spanning two rectangular settling basins; steaming grey water, black timber beams, broad stone work lip, marked ceramic vessels, work tiles, iron drain wheel, inner stair, black pressure door, pale indicators; compact lower-step water witness enters carrying two vessels."
+    },
+    {
+      "id": "02_office_holders",
+      "prompt": "Basin-lip authority tableau: broad cistern reeve at iron drain wheel and ration board, lean exhausted custodian kneeling at black door with eight-tooth spindle, tall travel-worn priest comparing service marks, older removed keeper behind low witness rail."
+    },
+    {
+      "id": "03_morning_work",
+      "prompt": "Close public water comparison on stone ledge: two equal-fill ceramic vessels with different grey ash deposits, damp work tiles, folded filters, scoop, covered broth cup; work-hardened witness leans over samples while custodian waits by distant pressure door."
+    },
+    {
+      "id": "04_preparation_choice",
+      "prompt": "Cistern House work choice around one witness: paired water vessels, returned Grey Bed tile, covered broth cup beside exhausted custodian, copied warning beneath two pale knotted name cloths; reeve watches from crowded board."
+    },
+    {
+      "id": "05_preparation_fold",
+      "prompt": "Ordinary basin account: reeve opens work-watch board, custodian recites limits by black door, itinerant priest compares marks, removed keeper waits behind rail, lower-step witness stands among water samples, tile, cup, warning, and name cloths."
+    },
+    {
+      "id": "06_shutter_darkens",
+      "prompt": "Pivotal close frame of black pressure door: one of three pale shutter indicators fades to black through mineral mist; exhausted custodian turns sharply with eight-tooth spindle; water witness and cistern reeve freeze on opposite sides of stone lip."
+    },
+    {
+      "id": "07_emergency_words",
+      "prompt": "Hot grey water leaps at sampling run; reeve closes small sluice; custodian raises spindle; travelling priest covers her own comparison marks in refusal; removed keeper speaks behind rail; water witness stands between office dispute and paired samples."
+    },
+    {
+      "id": "08_suspension_choice",
+      "prompt": "Office-boundary decision: carved stone spindle cradle at center, custodian holding eight-tooth spindle between cradle and black door, priest kneeling over compared marks, reeve holding pale vacancy strip, lower-step witness indicating four procedural levers."
+    },
+    {
+      "id": "09_suspension_fold",
+      "prompt": "Whole Cistern House after emergency choice: two pale door indicators, spindle and stone cradle, vacancy board, warm east-basin flow, sampling ledge, drain wheel, witness rail; five adults occupy distinct work stations under amber mist."
+    },
+    {
+      "id": "10_claim_choice",
+      "prompt": "Close commoner claim at basin lip: work-hardened witness holds damp clay strip above scored stone; paired water vessels and returned crop-work tile beside it; reeve waits with blunt scoring tool; lower-step workers approach with cold moss and rolled wet bedding."
+    },
+    {
+      "id": "11_claim_fold",
+      "prompt": "Overhead public record surface on broad stone lip: separated clusters of water vessels and work tile, technical comparison marks, spindle appointment strip, copied warning and name cloths, damp clay claim halves; several hands point through warm mist."
+    },
+    {
+      "id": "12_final_threshold",
+      "prompt": "Whole-room commitment: narrowed steam over east basin, iron drain wheel, paired vessels, work tile, clay return mark, comparison record, empty-office strip, name cloths, spindle between black door and stone cradle; five people hold separate stations."
+    },
+    {
+      "id": "13_bounded_service_end",
+      "prompt": "Bounded service aftermath: exhausted custodian makes one witnessed spindle turn at black pressure door, travelling priest records the limit, lower-step witness reads public act, reeve watches returning warm flow, empty stone cradle waits beside them."
+    },
+    {
+      "id": "14_full_review_end",
+      "prompt": "Stopped-feed review at basin lip: spindle rests in stone cradle beneath pale vacancy strips, reeve holds iron wheel closed, lower-step witness raises paired vessels, custodian and comparer stand apart; cold moss, wet bedding, returned work tiles, closed provision chest, and bare blanket pegs expose the cost of remaining present."
+    },
+    {
+      "id": "15_comparison_end",
+      "prompt": "Independent comparison on sampling ledge: travel-worn priest arranges service marks, paired water vessels, darkened indicator copy, and a blank comb-shaped space; spindle cradle and appointment strip remain separate; guest bedding and tool rolls show the price of expertise."
+    },
+    {
+      "id": "16_return_mark_end",
+      "prompt": "Commoner redress at center stone: lower-step witness holds one scored clay half above its matching half with a narrow gap between them; empty relief notches, closed water jar, and bare blanket pegs stand behind the claim; reeve faces both halves while custodian and comparer remain at separate stations."
+    }
+  ]
+}
