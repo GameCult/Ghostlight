@@ -35,8 +35,8 @@ not from a model agreeing that the world is deep.
 
 ## Current mechanism
 
-Passes 1 through 6 of the widening are landed (`5e53beb`, `e99af63`,
-`d2805fe`, `0f21a49`, `dbe176d`, `cb6a126`). The sealed kernel holds subjects with a label and a
+Passes 1 through 7 of the widening are landed (`5e53beb`, `e99af63`,
+`d2805fe`, `0f21a49`, `dbe176d`, `cb6a126`, `1852ddd`). The sealed kernel holds subjects with a label and a
 kind (`Person | Institution | Population`); a `positions` partition with
 `Position`; entities with `container` under containment acyclicity; `Route`
 as an `EdgeRecord` variant carrying `AccessKind { Public, Restricted }`, a
@@ -45,8 +45,9 @@ minute `Cost` in `1..=525_600`, and an open flag; subject-keyed `holdings` of
 u128 ledger accumulators; subject-keyed `dependencies` on
 `DependencyTarget { Resource, Route, Subject }`; and an `affordance_catalog`
 partition of world-authored entries; `authority`, `selection`, and
-`redress` partitions; and `facts`, `channels`, and `knowledge` partitions.
-There is no relation, commitment, pressure, or clock yet.
+`redress` partitions; `facts`, `channels`, and `knowledge` partitions;
+`commitments`, `pressures`, and `last_opportunity_at` partitions; and the
+scalars `now` and `scale_intent`. There is no relation yet.
 
 `world/patch.rs` owns typed `SubjectId`/`EntityId`/`EdgeId`/`AffordanceId`
 namespaces, `Ref<Id>` with `DraftHandle` (adjacently tagged `RefKind`), and a
@@ -115,16 +116,40 @@ controller lane cannot name because `ControllerRunner` holds a
 `ControllerPort`, not the mailbox. `WorldMailbox::create` declares the genesis
 place `commons` and stands genesis subjects there.
 
+Time is `now: FictionalMinutes`, moved only by `CommandBody::AdvanceTime`
+from `CallerId::System(SystemCapability::Clock)`; the runtime tick submits
+the constant `CLOCK_TICK_MINUTES`, never a measured duration. `world/clock.rs`
+owns `derive_motion`, pure over state and tick: routines re-arm by exactly one
+`period`, past-due obligations and goals write `Pressure` on their subject by
+the `step` table, and an unavailable dependency does the same. A
+`Commitment` is `(kind: Routine | Obligation | Goal, counterparty, due,
+period, checks)`, created and discharged by two operations; `Pressure` is a
+magnitude per source and target with `set_pressure` as its one writer, zero
+spelled by key removal, and three operations (`advance`, `reduce`,
+`resolve`). `order_opportunities` is total: pressure, then time since last
+opportunity, then `SubjectId`. `derive_boundaries` is pure over state and
+yields `CausalBoundary::{UnelaboratedDestination, MissingStructure}` with a
+`BoundaryDigest` over structure only, never the clock; `IndividuationRequired`
+and `PolityInCausalRange` are representable and not yet derived.
+`derive_scale_deficit` reads the write-once `WorldScaleIntent` set at genesis
+and counts every subject in exactly one jurisdiction row (`Uncovered` for a
+subject under no root, placed or not). In Active, a patch
+that declares or admits evidence must answer a derived boundary or a nonzero
+deficit and satisfy it (`AnswerRequired`, `AnswerNotDerived`,
+`AnswerNotSatisfied`); a component-only patch answers nothing; Draft answers
+nothing.
+
 Opportunities bind to a `ScopeDigest` over one `scope_components` owner
 (controller assignment, grants, delegated grants, own authority, position,
 incident routes, own holdings, own dependencies, known fact ids, controlled
-channels; never occupancy, forum state, or another subject's knowledge); a proposal commits at any later revision with unchanged scope and is
+channels, own commitments; never `now`, occupancy, forum state, or another
+subject's knowledge); a proposal commits at any later revision with unchanged scope and is
 rejected with `KernelError::ScopeChanged` otherwise. State schema is
-`world_state.knowledge.v1`, commit schema `world_commit.knowledge.v1`,
-controller work `controller_work.v5`; earlier stores are refused. Ghostlight owns a conserved narrative ledger;
+`world_state.commitment.v1`, commit schema `world_commit.commitment.v1`,
+controller work `controller_work.v6`; earlier stores are refused. Ghostlight owns a conserved narrative ledger;
 Delvehold owns the economy (`delvehold-forced-ontology-integration.md`).
-Passes 7 through 9 add the clock and pressure flow, boundary elaboration,
-and the budgeted cover; pass 10 adds the consumer ingress.
+Passes 8 and 9 add boundary elaboration and the budgeted cover; pass 10
+adds the consumer ingress.
 
 ## The failure this vocabulary is designed against
 
@@ -220,8 +245,8 @@ which noun a component is; it cares what it constrains.
 | `Redress` | grievance kind → forum, standing | where conflict goes when it cannot be fought |
 | `Knowledge` | subject → fact: confidence, source | what a subject may act on at all |
 | `Channel` | channel: reach set, controller (latency arrives with the clock, pass 7) | how facts travel; who can be silenced |
-| `Commitment` | subject → counterparty: kind (`Routine`, `Obligation`, `Goal`), due, stake | obligation with a clock; autonomous motion |
-| `Pressure` | source → target: magnitude, unresolved | the causal boundary trigger |
+| `Commitment` | subject → counterparty: kind (`Routine`, `Obligation`, `Goal`), due, period | obligation with a clock; autonomous motion |
+| `Pressure` | source → target: magnitude | the causal boundary trigger |
 | `PersonaMaterial` | subject: values, voice, memories, reads | lived meaning; never authority |
 
 A `Fact` carries a `standing`: `Canonical` (admitted with evidence) or
@@ -254,15 +279,14 @@ Redress          open_forum(kind, forum, standing), close_forum
 Knowledge        acquire(subject, fact, source, confidence), communicate(speaker, fact,
                  channel), forget
 Channel          set_reach, set_controller
-Commitment       create(subject, counterparty, kind, due, stake), fulfill, default,
-                 release
-Pressure         create(source, target, magnitude), advance, reduce, resolve
+Commitment       create(subject, counterparty, kind, due, period, checks), discharge
+Pressure         advance, reduce, resolve
 PersonaMaterial  set(subject, material)
 Retirement       retire(referent, reason)
 Time             advance(minutes)
 ```
 
-Twenty-nine operations. Adding one is a design change to this document and a
+Twenty-seven operations. Adding one is a design change to this document and a
 code change to the reducer; it is never a runtime patch.
 
 ## Patch construction
@@ -316,7 +340,7 @@ counts do not appear here and may not be added.
 The kernel owns component operations. A **world** owns its affordance catalog.
 This is the generality lever: a setting with spellcraft, insurance claims,
 oath-rhythms, or memetic sovereignty authors affordances from the same
-thirty operations, and the kernel never learns a genre.
+twenty-seven operations, and the kernel never learns a genre.
 
 ```text
 Affordance
@@ -579,7 +603,7 @@ Deleted before replacement behavior is added, with no compatibility path:
 
 ## Subtraction budget
 
-- 20 component kinds → 12; 18 `WorldMutation` variants → 29 named operations
+- 20 component kinds → 12; 18 `WorldMutation` variants → 27 named operations
   under 1 patch primitive, replacing both the mutation enum and the separate
   outcome-effect sum;
 - 5 qualification and verification types plus 1 outcome resolver → 0;

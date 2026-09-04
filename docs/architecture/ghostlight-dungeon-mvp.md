@@ -62,7 +62,7 @@ multiple process attempts.
 - membership, contract, boundaries, and approvals;
 - the typed world ontology;
 - committed events and fictional time;
-- subject readiness and other causal state that must survive restart;
+- fictional time, commitments, and pressures;
 - command idempotency and the commit digest chain.
 
 There is no separate Session Zero owner, component-world owner, aggregate
@@ -150,7 +150,7 @@ WorldState
     pressures and commitments
     facts, knowledge grants, and provenance
     external-owner grants
-  time: fictional clock and subject readiness
+  time: fictional clock
   events: committed factual and speech events
   applied_commands: bounded idempotency ledger
 ```
@@ -208,7 +208,7 @@ Subject and world behavior is composed from narrow typed components:
 - decision controllers, authority scopes, and executable affordances;
 - resource quantity, custody, and dependency;
 - knowledge of exact fact IDs and communication access;
-- commitments, pressures, readiness, and exposure;
+- commitments, pressures, and dependency exposure;
 - Persona material: values, voice, goals, memories, and relationship reads;
 - source provenance and external ownership.
 
@@ -430,8 +430,9 @@ primitive.
 ## Autonomous scheduling
 
 The scheduler is a pure planner over one revision. It orders eligible subjects
-using committed readiness, causal exposure, unresolved pressure, and time since
-the last opportunity. It emits `DecisionOpportunity` values and cannot commit.
+using unresolved pressure and time since the last opportunity, with subject id
+as the final tiebreak. Causal exposure is derivable from `dependencies` and is
+not an ordering input. It emits `DecisionOpportunity` values and cannot commit.
 
 The kernel commits one decision at a time through the mailbox. After each
 commit the planner derives a fresh queue. Parallel inference may speculate on

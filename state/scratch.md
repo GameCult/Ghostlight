@@ -2,11 +2,11 @@
 
 ## Current Subgoal
 
-Plan step 6 pass 7 (clock `WorldState.now`, `Commitment`, `Pressure`, boundary
-derivation) with Hands in `F:\Projects\Ghostlight-pass7` on `hands/pass7`,
-alongside the pass-6 follow-ups in `F:\Projects\Ghostlight-pass6fu` on
-`hands/pass6-followups`; both from `cb6a126`. Main tip `cb6a126`, passes 1-6
-integrated.
+Plan step 6 pass 8 (boundary elaboration: `AdmitPatch` answers, `WorldScaleIntent`
+deficit, `ElaborationRunner`, derived elaborator tool catalog) with Hands in
+`F:\Projects\Ghostlight-pass8` on `hands/pass8`, alongside the pass-7
+follow-ups in `F:\Projects\Ghostlight-pass7fu` on `hands/pass7-followups`;
+both from `1852ddd`. Main tip `1852ddd`, passes 1-7 integrated.
 
 ## Working Notes
 

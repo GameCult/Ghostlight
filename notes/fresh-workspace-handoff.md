@@ -225,49 +225,56 @@ outcome bands, four derived `CausalBoundary` kinds, scope-digest binding, one
 are teardown evidence. Plan step 6 is nine implementation passes; pass 1 is
 landed, passes 2 through 9 are not.
 
-1. Passes 1 through 6 are integrated; nothing beyond pass 6 is.
-   `codex/ghostlight-dungeon-mvp` tip is `cb6a126` (Soul) over `b8ff182`
-   (pass 6: `Knowledge`, `Channel`, `Fact` standing), `43e8042` (pass-5 doc
-   and handoff), and `65ee2be` (pass-5 follow-ups: overlap admission, revoke
-   envelope, deploy coverage). Earlier passes: `5e53beb`, `e99af63`,
-   `d2805fe`, `0f21a49`, `dbe176d`. The push followed a background crate
-   test; `git status -sb` is the witness for whether origin has the tip.
+1. Passes 1 through 7 are integrated; nothing beyond pass 7 is.
+   `codex/ghostlight-dungeon-mvp` tip is `1852ddd` (Soul, boundary digest
+   bound to its own structure) over `5771ce6` (Soul), `2a8cec6` (Hands
+   falsification), and `d7fba90` (pass 7 machine), on `76999de` (pass-6 doc
+   and handoff) and `54e9d39` (pass-6 follow-ups). Earlier passes:
+   `5e53beb`, `e99af63`, `d2805fe`, `0f21a49`, `dbe176d`, `cb6a126`. The
+   push follows a background crate test and the branch read `ahead 4` at the
+   time of writing; `git status -sb` is the witness.
 
-   Pass 6 facts: schemas are `world_state.knowledge.v1` /
-   `world_commit.knowledge.v1` and the controller work row is
-   `controller_work.v5`; earlier stores refused. `Precondition` gained
-   `HasStanding`, `CanBroadcast`, and `CanReach` beside `Present`,
-   `Reachable`, `Holds`. `WorldMailbox::create` declares the genesis place
-   `commons` (`GENESIS_PLACE` in `world/mailbox.rs`) and stands genesis
-   subjects there, a product-path change that goes through `derive_id`.
-   `WorldSnapshot.events` is deleted; `operator_log` is the story-feed
-   projection. Rulings adopted in pass 6: audience means declared reach;
-   controller privilege is broadcast-only; a statement has two homes, the
-   fact and the committed `AssertClaim` as replay witness, and that is the
-   rule rather than a leak; `operator_log` becomes owner-only by type once
-   the controller port lands. Baseline at `cb6a126`: 179 test functions in
-   `world/*.rs`, 218 crate source, plus one integration test (the focused
-   `world::` run reports 178 / 213; different counting rules, compare like
-   with like). `EvidenceRef::new` is still `#[cfg(test)]`; nothing
-   deserializes a `WorldPatch` before pass 10.
+   Pass 7 facts: new module `world/clock.rs`; partitions `commitments`,
+   `pressures`, `last_opportunity_at`; scalars `now` and `scale_intent`;
+   `CommandBody::AdvanceTime` accepted only from
+   `CallerId::System(SystemCapability::Clock)`, which the mailbox mints;
+   `CausalBoundary` with the two derived variants `UnelaboratedDestination`
+   and `MissingStructure`, each carrying its own `BoundaryDigest`; scale
+   deficit rows; schemas `world_state.commitment.v1` /
+   `world_commit.commitment.v1` and `controller_work.v6`, earlier stores
+   refused. The operation set is 27. Pressure is stored by two writer
+   families, ops and the tick, never derived at read; ordering is a pure
+   re-order by pressure then debt (`last_opportunity_at`), never a filter.
+   Ruling adopted at the one fork of the pass, now structural: in Active, a
+   patch that declares or admits evidence must answer a derived
+   `CausalBoundary` or a nonzero scale deficit and satisfy it
+   (`AnswerRequired`, `AnswerNotDerived`, `AnswerNotSatisfied` in
+   `world/mod.rs`); component-only patches answer nothing; Draft answers
+   nothing. Baseline at `1852ddd`: 215 test functions in `world/*.rs`, 254
+   crate source, plus one integration test (the focused `world::` run
+   reports 214 / 249; different counting rules, compare like with like).
+   `EvidenceRef::new` is still `#[cfg(test)]`; nothing deserializes a
+   `WorldPatch` before pass 10.
 
-   In flight, not landed, both branched from `cb6a126` with no commits yet at
+   In flight, not landed, both branched from `1852ddd` with no commits yet at
    the time of writing:
-   - `hands/pass6-followups` in the worktree `F:\Projects\Ghostlight-pass6fu`:
-     audience equals declared reach with the controller no longer folded into
-     the audience; a `ControllerPort` narrowing the mailbox access of
-     `ControllerRunner`; a length-prefixed `derive_id` discriminator, so
-     derived IDs change; comment fixes; a v4 controller-work refusal test; a
-     resolver blind-spot comment plus a no-`Told`-writer test.
-   - `hands/pass7` in the worktree `F:\Projects\Ghostlight-pass7`: the clock
-     and pressure flow, from `imagination-pass7.md`.
-   The main tree also holds an uncommitted coordinator edit to
-   `docs/architecture/ghostlight-world-ontology.md` (the `Channel` row and the
-   `Precondition` block with `HasStanding`, `CanBroadcast`, `CanReach`); it
-   lands with the follow-ups. Witness for any later pass: main-branch
-   `git log` past `cb6a126`, and `git worktree list` for the two trees.
+   - `hands/pass7-followups` in the worktree `F:\Projects\Ghostlight-pass7fu`:
+     the routine period bound enforced in `verify_state_shape`;
+     `JurisdictionKey::Unplaced` renamed `Uncovered` with the deficit total
+     over subjects; the runtime tick submits the constant
+     `CLOCK_TICK_MINUTES` (`runtime.rs`), never a measured duration; dead
+     import removal.
+   - `hands/pass8` in the worktree `F:\Projects\Ghostlight-pass8`: boundary
+     elaboration, from `imagination-pass8.md`.
+   The main tree also holds uncommitted coordinator edits to
+   `docs/architecture/ghostlight-dungeon-mvp.md` (the four subject-readiness
+   sentences are now `Commitment.due` plus derived debt; that queued item is
+   done) and `docs/architecture/ghostlight-world-ontology.md` (the
+   `Commitment` and `Pressure` rows and the operation count). Witness for any
+   later pass: main-branch `git log` past `1852ddd`, and `git worktree list`
+   for the two trees.
 
-   Pipeline for passes 7 through 9: specs `imagination-pass1.md` through
+   Pipeline for passes 8 through 9: specs `imagination-pass1.md` through
    `imagination-pass9.md` and maps `modeling-pass1.md` through
    `modeling-pass9.md` are on disk in the session scratchpad
    `C:\Users\Meta\AppData\Local\Temp\claude\F--Projects-Ghostlight\2fd50f5e-f7ba-4e5d-82bc-c7033e6074d2\scratchpad`,
@@ -284,29 +291,22 @@ landed, passes 2 through 9 are not.
    ingress, in the plan); pass 9 must not enable `uuid/v5` and derives each
    `CommandId` via sha256 into `Uuid::from_bytes` like `derive_id`.
 
-   Adopted design from the specs that changes steering: pass 7 gives the world
-   its first clock, `WorldState.now`, advanced only by
-   `CommandBody::AdvanceTime` from `CallerId::System(SystemCapability::Clock)`
-   minted by the mailbox, and cuts the operation set from 30 to 27
-   (`Commitment` stake/fulfill/default/release and `Pressure.create` removed;
-   `Routine.period` required). Pressure is stored by two writer families, ops
-   and the tick, never derived at read. Ordering is a pure re-order by
-   pressure then debt (`last_opportunity_at`), never a filter. Only
-   `UnelaboratedDestination` and `MissingStructure` boundaries are derivable;
-   `PolityInCausalRange`, `IndividuationRequired`, and Verification 13 are
-   deferred. Pass 8 allows Active declarations only inside a patch whose
-   `PatchAnswer` is derived and proven satisfied, adds
+   Adopted design from the specs that changes steering: pass 8 allows Active
+   declarations only inside a patch whose `PatchAnswer` is derived and
+   proven satisfied (the pass-7 answer rule applied to elaboration), adds
    `SystemCapability::Elaborator { jurisdiction }`, the in-process
    `ElaborationRunner`, and a derived elaborator tool catalog sharing one
-   property emitter with pass 4.
+   property emitter with pass 4. `PolityInCausalRange`,
+   `IndividuationRequired`, and Verification 13 remain deferred until
+   relations and population slices exist.
 
-   Queued doc edits, coordinator-owned: after pass 7, the four
-   `ghostlight-dungeon-mvp.md` subject-readiness sentences (lines 65, 153,
-   211, 433) become `Commitment.due` plus derived debt, and the ontology doc
-   operation count (lines 222, 276, 537) becomes 27; after pass 9, the
-   ontology doc phrase "within about N/B ticks" becomes ceil(N/R) with R the
-   rotation reserve; after every integration, the ontology doc "Current
-   mechanism" section is rewritten from the steward proposal.
+   Queued doc edits, coordinator-owned: the ontology doc operation count is
+   only partly at 27 in the uncommitted working copy (line 342 says
+   twenty-seven; line 288 "Twenty-nine operations" and line 605 "-> 29 named
+   operations" still say 29); after pass 9, the ontology doc phrase "within
+   about N/B ticks" becomes ceil(N/R) with R the rotation reserve; after
+   every integration, the ontology doc "Current mechanism" section is
+   rewritten from the steward proposal.
 2. First-generation world fixtures are banked and pushed, one per world, each
    with Ink, training sidecar, visual plan, lore grounding, and BFL manifest,
    reviewer-accepted except visual replay, which waits on a scene-set
