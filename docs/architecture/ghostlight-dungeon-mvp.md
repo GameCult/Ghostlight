@@ -433,9 +433,12 @@ The scheduler is a pure planner over one revision. It orders eligible subjects
 using committed readiness, causal exposure, unresolved pressure, and time since
 the last opportunity. It emits `DecisionOpportunity` values and cannot commit.
 
-The kernel commits at most one revision-bound decision at a time. After each
+The kernel commits one decision at a time through the mailbox. After each
 commit the planner derives a fresh queue. Parallel inference may speculate on
-one snapshot, but stale proposals are discarded rather than rebased.
+one snapshot; a proposal binds to the scope digest of the components its
+verification reads, commits at any later revision where that digest is
+unchanged, and is rejected with a typed `ScopeChanged` when it is not. Nothing
+is rebased and nothing is discarded merely because the world moved elsewhere.
 
 Resolution covers and grouping are compute budgets for projection. They do not
 create, merge, fission, or qualify identities. Every active subject is in the
