@@ -1,0 +1,64 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "kalsa-tangle-disclosure-laundry-v0.bfl-simple-v0",
+  "fixture_id": "tangle-disclosure-laundry-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Hand-painted high-fantasy civic-noir interactive-fiction illustration, gouache and ink on textured paper, crisp readable silhouettes, permanent-twilight blue stone and charcoal cloth, warm amber oil lamps, restrained rust-red accents, tactile paper and clay records, dry humane mood, abstract unlettered marks.",
+  "prompts": [
+    {
+      "id": "01_copy_room_establishing",
+      "prompt": "Wide empty shallow stone copy room beneath a colossal vertical farm and cargo wall: court stair rising rear left, lift stair descending front right, barred service door on right wall, three slanted desks around an iron-banded two-lock oak chest, clay document tubes in wall niches, amber lamps, cold twilight, cargo dust."
+    },
+    {
+      "id": "02_morning_routine",
+      "prompt": "Medium office routine: lean umber-skinned copyist with cropped black hair and ink-stained fingers sharpens reed pens at three document trays; broad gray-braided lift worker in blue-gray coat sets down chipped tea beside a wooden load tablet; clay tubes, amber lamp, and descending stair behind them."
+    },
+    {
+      "id": "03_three_leaves",
+      "prompt": "Overhead evidence desk: cream forecast leaf with branching abstract diagrams, tan shrine request with four cart marks, gray garrison receipt with guard tallies, separate clay seals and cords sharing one rust-red fiber, reed pen, sand shaker, knife, tea cup, two ink-stained hands."
+    },
+    {
+      "id": "04_preparation_choice",
+      "prompt": "Medium-wide copyist decision frame showing four physical options: three records under lamp, broad lift worker with load tablet at descending stair, tied ward packet on rising court stair, and open clay filing tubes; two-lock chest centered and reachable."
+    },
+    {
+      "id": "05_routine_fold",
+      "prompt": "Wide twilight copy office during ordinary filing: lean copyist sands a record at central desk, broad lift worker turns toward descending stair, ward packet waits on rising stair, barred service door shut, two-lock chest and tube wall fixed under amber lamps."
+    },
+    {
+      "id": "06_cutout_arrival",
+      "prompt": "Medium view along barred service door: lean shaved-headed messenger with narrow beard, dusted brown layers, and rust-red provisioner's sash offers a bronze safe-conduct token; umber-skinned copyist stands behind records; a narrow twilight lane and folded dark wool market awning show outside; cart wheels move below the lift stair."
+    },
+    {
+      "id": "07_cutout_choice",
+      "prompt": "Medium-wide choice around two-lock oak chest: copyist between aligned records and brass keys, shaved-headed messenger extending token and receipt hand, broad lift worker waiting at descending stair; cold door light and warm desk light divide the room."
+    },
+    {
+      "id": "08_pressure_fold",
+      "prompt": "Wide pressure view of the same shallow room and three exits: copyist at central desk, messenger near barred right-wall door, lift worker on front-right stair, armed silhouettes outside bars, court stair rear left, copy chest and clay tubes fixed as cargo dust falls."
+    },
+    {
+      "id": "09_second_bell",
+      "prompt": "Whole-room threshold: copyist at records, lift worker arriving with operating leaf, messenger by barred door, young gray-cloaked ward runner reaching from court stair, armored officer demanding entry outside bars, three routes and two-lock chest clearly readable."
+    },
+    {
+      "id": "10_court_aftermath",
+      "prompt": "View up the court stair: young gray-cloaked ward runner climbs with three differently colored leaves bound as one exhibit; ink-stained copyist remains below; armed silhouettes stay behind right-wall bars; amber light catches papers above the two-lock chest."
+    },
+    {
+      "id": "11_load_aftermath",
+      "prompt": "View down stone stair into cargo-lift gallery: broad gray-braided worker at timber brake lever beside six-cart operating leaf; grain carts on iron-shod rails, small pressure refuge clear of track, copyist watching from landing, amber work lamps through blue twilight and brake dust."
+    },
+    {
+      "id": "12_testimony_aftermath",
+      "prompt": "Close-medium bargaining at central desk: lean ink-stained copyist faces lean shaved-headed messenger in rust-red sash; bronze token, reed pen, and unsigned leaf with four linked abstract symbols between them; barred door and armored silhouettes behind messenger."
+    },
+    {
+      "id": "13_cover_aftermath",
+      "prompt": "Protected-lane threshold through barred door: lean copyist raises bronze safe-conduct toward adult sister in dark shawl; two guards in quilted storm coats and iron scale control passage; separate sealed clay tubes behind copyist and grain carts under garrison seal behind guards."
+    }
+  ]
+}

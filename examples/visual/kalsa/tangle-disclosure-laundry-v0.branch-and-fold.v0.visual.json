@@ -1,0 +1,261 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "kalsa-tangle-disclosure-laundry-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/kalsa/tangle-disclosure-laundry-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/kalsa/tangle-disclosure-laundry-v0.branch-and-fold.v0.training.json",
+  "scene_id": "tangle-disclosure-laundry-v0.lower-shadow-copy-room",
+  "purpose": "Illustrated replay segmentation and prompt controls for a disclosure-laundry confrontation under a Sunwall cargo gate.",
+  "visual_scene_plan": {
+    "purpose": "Click-through anchors for office routine, three linked records, cutout pressure, garrison arrival, and four ending families.",
+    "segmentation_rule": "Separate the room establishment, worker routine, evidence closeup, each power-geometry change, final threshold, and aftermath family. The cutout arrival and second bell each receive their own screen.",
+    "prompting_rule": "Every base prompt restates visible room geometry, material, light, bodies, and props in plain terms. Character refs are assembled only for named people visible in the frame; modifiers describe visible deltas.",
+    "global_style_cue": "Hand-painted high-fantasy civic-noir interactive-fiction illustration, gouache and ink on textured paper, crisp readable silhouettes, permanent-twilight blue stone and charcoal cloth, warm amber oil lamps, restrained rust-red accents, tactile paper and clay records, dry humane mood, abstract unlettered marks.",
+    "prompt_assembly_rule": "Assemble the global_style_cue, the selected base_image_prompt, visual refs only for characters visible in that scene, and triggered state or branch modifiers. Continuity notes are reviewer-only. Use the draft scene-set camera slot or a future blockout as geometry input for consistent multi-angle rendering.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture returns to one room from several angles and moves people among three doors, desks, and the copy chest, so a geometry map is required.",
+      "future_scene_set_need": "Create a plan view or simple 3D blockout from the declared zones, routes, occluders, and camera slots before high-consistency website rendering."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "tangle_copy_room_establishing",
+        "ink_anchor": "start",
+        "camera_slot": "wide_from_court_stair",
+        "base_image_prompt": "Wide view down a shallow stone civic copy room beneath a colossal vertical farm and cargo wall in permanent twilight. An open stair rises at rear left toward a ward court, a steep stair descends at front right toward a lift gallery, and a barred iron service door fills the right wall. Three slanted wooden writing desks stand around a waist-high iron-banded oak copy chest with two separate keyholes. Clay document tubes fill wall niches; amber oil lamps warm blue-gray stone; fine dust trembles from cargo machinery overhead. No people are visible.",
+        "visible_characters": [],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Court stair is rear left, lift stair front right, barred service door right wall, and copy chest centered among three desks."]
+      },
+      {
+        "visual_scene_id": "tangle_morning_routine",
+        "ink_anchor": "routine_introductions",
+        "camera_slot": "medium_three_desks",
+        "base_image_prompt": "Medium view across three slanted desks in a twilight stone copy room. Nara Ves, a lean human civic copyist with deep umber skin, close-cropped black hair, ink-stained fingers, a charcoal layered tunic, and a bronze civic cord, sharpens reed pens beside three document trays. Talen Or, a broad middle-aged human with weathered brown skin, gray-streaked braid, blue-gray work coat, leather knee guards, brake-dust boots, and a wooden measuring tablet, sets down a chipped tea cup. Behind them, clay record tubes line the wall; an amber lamp lights paper while the lift stair descends beside a timber handrail.",
+        "visible_characters": [
+          {"agent_id": "nara_ves", "default_stance": "seated at the central desk sharpening pens", "visual_ref": "visual_character_refs.characters.nara_ves"},
+          {"agent_id": "talen_or", "default_stance": "standing by the lift stair with tablet and tea", "visual_ref": "visual_character_refs.characters.talen_or"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Nara's desk owns the three trays; tea stays on its bare front-left corner."]
+      },
+      {
+        "visual_scene_id": "tangle_three_leaves_closeup",
+        "ink_anchor": "three_leaves",
+        "camera_slot": "overhead_evidence_desk",
+        "base_image_prompt": "Overhead closeup of three separate high-fantasy records on a scarred slanted desk under an amber lamp: one cream forecast leaf bearing branching abstract diagrams, one tan shrine cart request with four square cart marks, and one gray garrison receipt with guard tally marks. Each has its own clay seal and thin tying cord, but one rust-red fiber appears in all three cords. A reed pen, sand shaker, small knife, chipped tea cup, and three labeled clay tubes frame the papers. Only two ink-stained human hands are visible at the desk edge.",
+        "visible_characters": [
+          {"agent_id": "nara_ves", "default_stance": "hands at the edges of the three records", "visual_ref": "visual_character_refs.characters.nara_ves"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The records use abstract unlettered marks; the shared rust-red fiber is small but readable."]
+      },
+      {
+        "visual_scene_id": "tangle_preparation_choice",
+        "ink_anchor": "preparation_choice",
+        "camera_slot": "medium_three_desks",
+        "base_image_prompt": "Medium-wide decision frame inside the stone copy room. Nara Ves, lean with close-cropped black hair and charcoal clerk layers, stands at the central desk between four physical affordances: three separate record leaves under an amber lamp, Talen Or with a wooden load tablet beside the descending lift stair, a tied ward packet resting on the first court-stair step, and three open clay tubes waiting in the wall. The iron-banded two-lock copy chest sits within reach. The composition clearly shows inspection, consultation, copying, and ordinary filing as different actions.",
+        "visible_characters": [
+          {"agent_id": "nara_ves", "default_stance": "standing between evidence desk, packet, tubes, and Talen", "visual_ref": "visual_character_refs.characters.nara_ves"},
+          {"agent_id": "talen_or", "default_stance": "waiting at the lift stair with load tablet", "visual_ref": "visual_character_refs.characters.talen_or"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["All four choice objects remain reachable from the central desk or one step away."]
+      },
+      {
+        "visual_scene_id": "tangle_routine_fold",
+        "ink_anchor": "routine_fold",
+        "camera_slot": "wide_from_court_stair",
+        "base_image_prompt": "Wide routine view of the same shallow stone copy room beneath the cargo wall: Nara Ves sands a fresh record at the central desk; Talen Or turns toward the front-right lift stair; the court stair rises rear left with a ward packet on its first step; the barred service door remains shut on the right; the two-lock oak chest stands centered; clay tubes fill the wall. Amber lamps and cold twilight from the barred door divide the room into warm work and blue institutional shadow.",
+        "visible_characters": [
+          {"agent_id": "nara_ves", "default_stance": "sanding a copy at the central desk", "visual_ref": "visual_character_refs.characters.nara_ves"},
+          {"agent_id": "talen_or", "default_stance": "turning toward the lift stair", "visual_ref": "visual_character_refs.characters.talen_or"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "link_evidence >= 3", "modifier_prompt": "Arrange the three leaves edge to edge under Nara's hands, with matching bell diagrams and rust-red cord fibers aligned."},
+          {"trigger": "independent_copy >= 1", "modifier_prompt": "Make the tied ward packet visibly thicker, with one fresh gray copy edge inside it."},
+          {"trigger": "load_control >= 3", "modifier_prompt": "Place a separate wooden-backed operating leaf beside Talen showing six cart boxes and a two-crew refuge diagram."},
+          {"trigger": "personal_cover >= 3", "modifier_prompt": "Show every leaf neatly sealed inside its separate clay tube while Nara's desk appears officially undisturbed."}
+        ],
+        "visual_continuity_notes": ["Choice-created evidence positions must persist into the messenger scene through modifiers."]
+      },
+      {
+        "visual_scene_id": "tangle_cutout_arrival",
+        "ink_anchor": "messenger_arrival",
+        "camera_slot": "service_door_axis",
+        "base_image_prompt": "Medium dramatic view along the barred service-door axis of a blue-gray stone copy room. Vek Iras, a lean middle-aged human with olive-brown skin, shaved head, narrow beard, dusted brown travel layers, and a rust-red shrine provisioner's sash, steps inside holding a small bronze safe-conduct token between two fingers. Nara Ves stands behind the central desk, ink-stained hands near three trays. Through the bars behind Vek, a narrow twilight lane and one corner of a folded dark wool market awning are visible. The lift stair at frame left shows blurred cart wheels beginning to move below.",
+        "visible_characters": [
+          {"agent_id": "vek_iras", "default_stance": "inside the service door offering the bronze token", "visual_ref": "visual_character_refs.characters.vek_iras"},
+          {"agent_id": "nara_ves", "default_stance": "behind the desk watching Vek's receipt hand", "visual_ref": "visual_character_refs.characters.nara_ves"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Vek enters only through the service door; guards gather outside after his arrival and remain there until the final threshold."]
+      },
+      {
+        "visual_scene_id": "tangle_cutout_choice",
+        "ink_anchor": "cutout_choice",
+        "camera_slot": "medium_copy_chest",
+        "base_image_prompt": "Medium-wide choice frame around the central two-lock oak copy chest. Nara Ves stands between Vek Iras and four usable routes: aligned records on the desk, two brass chest keys, the front-right lift stair where Talen Or waits, and Vek's bronze safe-conduct token beside an outstretched receipt hand. Nara is a lean umber-skinned copyist in charcoal layers; Vek is a lean shaved-headed provisioner in dusted brown cloth with a rust-red sash; Talen is a broad gray-braided lift worker in a blue-gray coat. Cold light from the barred door meets amber desk light on the chest.",
+        "visible_characters": [
+          {"agent_id": "nara_ves", "default_stance": "at the copy chest between records, keys, stair, and token", "visual_ref": "visual_character_refs.characters.nara_ves"},
+          {"agent_id": "vek_iras", "default_stance": "opposite Nara with receipt hand extended", "visual_ref": "visual_character_refs.characters.vek_iras"},
+          {"agent_id": "talen_or", "default_stance": "at the lift stair awaiting a signal", "visual_ref": "visual_character_refs.characters.talen_or"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The keys are within Nara's reach; Talen can descend without crossing the barred door lane."]
+      },
+      {
+        "visual_scene_id": "tangle_pressure_fold",
+        "ink_anchor": "pressure_fold",
+        "camera_slot": "wide_from_court_stair",
+        "base_image_prompt": "Wide pressure view of the same shallow stone room with three exits: court stair rear left, lift stair front right, barred service door on the right wall. Nara Ves stands at the central desk; Vek Iras is near the barred door; Talen Or is visible at the lift stair landing; armed shadows gather outside the bars. The iron-banded copy chest, clay record tubes, ward packet, three desks, amber lamps, and cold twilight remain fixed. Fine dust falls from cargo machinery as the room's ordinary geometry becomes political.",
+        "visible_characters": [
+          {"agent_id": "nara_ves", "default_stance": "at the central desk facing three routes", "visual_ref": "visual_character_refs.characters.nara_ves"},
+          {"agent_id": "vek_iras", "default_stance": "near the service door calculating an exit", "visual_ref": "visual_character_refs.characters.vek_iras"},
+          {"agent_id": "talen_or", "default_stance": "at the lift stair landing", "visual_ref": "visual_character_refs.characters.talen_or"},
+          {"agent_id": "garrison_guards", "default_stance": "armed silhouettes outside the bars", "visual_ref": "visual_character_refs.groups.garrison_guards"}
+        ],
+        "state_image_modifiers": [
+          {"trigger": "cutout_testimony >= 2", "modifier_prompt": "Show Vek staring at the shared rust-red cords while Nara's note leaf records his reaction."},
+          {"trigger": "independent_copy >= 1", "modifier_prompt": "Show the two-lock chest shut or the ward packet visibly carrying a fresh duplicate beyond Vek's reach."},
+          {"trigger": "load_control >= 3", "modifier_prompt": "Show Talen holding the six-cart operating leaf as a lower warning bell swings behind him."},
+          {"trigger": "personal_cover >= 3", "modifier_prompt": "Place the bronze safe-conduct token in Nara's palm while every official tube remains neatly sealed."},
+          {"trigger": "cell_pressure >= 4", "modifier_prompt": "Show a mailed fist striking the barred door, iron bars vibrating and lamp flames leaning from the impact."}
+        ],
+        "visual_continuity_notes": ["No guard crosses the service door before final threshold; state props preserve earlier custody."]
+      },
+      {
+        "visual_scene_id": "tangle_second_bell_threshold",
+        "ink_anchor": "final_threshold",
+        "camera_slot": "wide_centerline",
+        "base_image_prompt": "Whole-room threshold at second bell in the same twilight civic copy office. Nara Ves stands at the central desk with records and keys. Talen Or appears from the front-right lift stair holding a wooden operating leaf. Vek Iras waits by the barred right-wall service door with the bronze token. A young ward runner in a short gray cloak leans down from the rear-left court stair, empty packet strap ready. Beyond the bars, an armored garrison officer in a quilted storm coat and dark iron scale vest demands entry. The two-lock chest, clay tubes, three desks, amber lamps, and all three routes are clearly readable.",
+        "visible_characters": [
+          {"agent_id": "nara_ves", "default_stance": "centered at the records", "visual_ref": "visual_character_refs.characters.nara_ves"},
+          {"agent_id": "talen_or", "default_stance": "at the lift stair with operating leaf", "visual_ref": "visual_character_refs.characters.talen_or"},
+          {"agent_id": "vek_iras", "default_stance": "by the barred door", "visual_ref": "visual_character_refs.characters.vek_iras"},
+          {"agent_id": "ward_runner", "default_stance": "on the court stair reaching for a packet", "visual_ref": "visual_character_refs.characters.ward_runner"},
+          {"agent_id": "garrison_officer", "default_stance": "outside the barred door demanding entry", "visual_ref": "visual_character_refs.characters.garrison_officer"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Every final route is physically present: court runner, lift operator, cutout, and protected lane."]
+      },
+      {
+        "visual_scene_id": "tangle_ending_court",
+        "ink_anchor": "ending_court_success|ending_court_cost",
+        "camera_slot": "court_stair_upward",
+        "base_image_prompt": "Aftermath looking up the rear-left court stair from the same stone copy room. A young gray-cloaked ward runner climbs with a bound exhibit of three differently colored leaves; Nara Ves stands below beside the central desk, lean and ink-stained in charcoal clerk layers; garrison silhouettes remain behind the right-wall bars. Amber light catches the bound papers while cold twilight holds the armed lane. The two-lock chest and clay tubes remain visible below.",
+        "visible_characters": [
+          {"agent_id": "nara_ves", "default_stance": "below the court stair watching the packet leave", "visual_ref": "visual_character_refs.characters.nara_ves"},
+          {"agent_id": "ward_runner", "default_stance": "climbing with the joined exhibit", "visual_ref": "visual_character_refs.characters.ward_runner"},
+          {"agent_id": "garrison_guards", "default_stance": "still outside the barred door", "visual_ref": "visual_character_refs.groups.garrison_guards"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The court ending transfers papers upward, not people or operational control."]
+      },
+      {
+        "visual_scene_id": "tangle_ending_load",
+        "ink_anchor": "ending_load_success|ending_load_cost",
+        "camera_slot": "lift_stair_downward",
+        "base_image_prompt": "Aftermath looking down the front-right stone stair into a high-fantasy cargo-lift gallery. Talen Or, broad and gray-braided in a blue-gray work coat, stands at a timber brake lever with a wooden six-cart operating leaf fixed beside it. Grain carts wait on iron-shod rails under massive wall ribs; a small pressure refuge door and crew tally board sit clear of the track. Nara Ves watches from the copy-room landing above. Amber work lamps cut through blue twilight and brake dust.",
+        "visible_characters": [
+          {"agent_id": "talen_or", "default_stance": "at the brake lever and operating leaf", "visual_ref": "visual_character_refs.characters.talen_or"},
+          {"agent_id": "nara_ves", "default_stance": "watching from the upper landing", "visual_ref": "visual_character_refs.characters.nara_ves"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The gallery is reached only by the lift stair; carts move on rails and the refuge stays beside, not on, the track."]
+      },
+      {
+        "visual_scene_id": "tangle_ending_testimony",
+        "ink_anchor": "ending_testimony_success|ending_testimony_cost",
+        "camera_slot": "medium_copy_chest",
+        "base_image_prompt": "Close-medium bargaining aftermath at the central desk in the twilight copy room. Nara Ves, a lean umber-skinned copyist with cropped black hair and ink-stained hands, faces Vek Iras, a lean shaved-headed provisioner with narrow beard and rust-red sash. Between them lie a bronze safe-conduct token, a fresh reed pen, and an activation-chain leaf with four linked abstract symbols for forecast, carts, guards, and custody. The barred service door and waiting armored silhouettes remain behind Vek; the two-lock chest stands beside Nara.",
+        "visible_characters": [
+          {"agent_id": "nara_ves", "default_stance": "guarding the record side of the desk", "visual_ref": "visual_character_refs.characters.nara_ves"},
+          {"agent_id": "vek_iras", "default_stance": "opposite the pen and token", "visual_ref": "visual_character_refs.characters.vek_iras"},
+          {"agent_id": "garrison_guards", "default_stance": "armored silhouettes beyond the bars", "visual_ref": "visual_character_refs.groups.garrison_guards"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["The signed chain exists only in the success modifier; the base shows an unsigned offered leaf."]
+      },
+      {
+        "visual_scene_id": "tangle_ending_cover",
+        "ink_anchor": "ending_cover_success|ending_cover_cost",
+        "camera_slot": "service_lane_outward",
+        "base_image_prompt": "Protected-lane aftermath viewed through the barred service door from the copy room. Nara Ves, lean in charcoal clerk layers, holds a small bronze safe-conduct token while reaching toward an adult sister in a plain dark shawl on the twilight lane. Two armed human guards in quilted storm coats and dark iron scale vests control the passage. Behind Nara, separate sealed clay record tubes stand neatly in their wall niches; behind the guards, grain carts wait under a fresh garrison seal. Cold blue outdoor light meets a thin amber line from the office.",
+        "visible_characters": [
+          {"agent_id": "nara_ves", "default_stance": "at the bars with safe-conduct raised", "visual_ref": "visual_character_refs.characters.nara_ves"},
+          {"agent_id": "nara_sister", "default_stance": "outside the lane checkpoint reaching toward Nara", "visual_ref": "visual_character_refs.characters.nara_sister"},
+          {"agent_id": "garrison_guards", "default_stance": "controlling the lane between the sisters", "visual_ref": "visual_character_refs.groups.garrison_guards"}
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": ["Nara's sister appears only in this ending family; her relationship is visually clear through mirrored reach."]
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {"modifier_id": "join_three_leaves_visual", "trigger": "branch_label == join_three_leaves", "apply_to_visual_scene_ids": ["tangle_preparation_choice", "tangle_routine_fold"], "modifier_prompt": "Align the three leaves side by side with matching bell diagrams and rust-red cord fibers under Nara's pointing finger."},
+      {"modifier_id": "material_limit_visual", "trigger": "branch_label == establish_material_limit", "apply_to_visual_scene_ids": ["tangle_preparation_choice", "tangle_routine_fold"], "modifier_prompt": "Show Talen drawing six cart boxes and a two-crew refuge diagram on a separate wooden-backed operating leaf."},
+      {"modifier_id": "independent_copy_visual", "trigger": "branch_label == seed_independent_copy", "apply_to_visual_scene_ids": ["tangle_routine_fold", "tangle_pressure_fold"], "modifier_prompt": "Show Nara sliding a fresh gray copy into the tied ward packet on the court stair."},
+      {"modifier_id": "personal_cover_visual", "trigger": "branch_label == preserve_personal_cover", "apply_to_visual_scene_ids": ["tangle_routine_fold", "tangle_pressure_fold"], "modifier_prompt": "Show each leaf sealed inside a separate clay tube and Nara's desk perfectly orderly."},
+      {"modifier_id": "confront_cutout_visual", "trigger": "branch_label == confront_cutout", "apply_to_visual_scene_ids": ["tangle_cutout_choice", "tangle_pressure_fold"], "modifier_prompt": "Vek's eyes drop toward the shared red cord fibers while Nara holds the three linked leaves between them."},
+      {"modifier_id": "lock_record_visual", "trigger": "branch_label == lock_independent_record", "apply_to_visual_scene_ids": ["tangle_cutout_choice", "tangle_pressure_fold"], "modifier_prompt": "Both brass keys are turned in the iron-banded oak chest and Vek's empty receipt hand remains extended above the locked lid."},
+      {"modifier_id": "warn_owner_visual", "trigger": "branch_label == warn_material_owner", "apply_to_visual_scene_ids": ["tangle_cutout_choice", "tangle_pressure_fold"], "modifier_prompt": "Talen descends the lift stair with one hand on the timber rail while a bronze warning bell swings below."},
+      {"modifier_id": "safe_conduct_visual", "trigger": "branch_label == accept_safe_conduct", "apply_to_visual_scene_ids": ["tangle_cutout_choice", "tangle_pressure_fold"], "modifier_prompt": "The bronze safe-conduct token rests in Nara's ink-stained palm while Vek holds a clean single-leaf receipt."},
+      {"modifier_id": "court_success_visual", "trigger": "ending_label == court_exposure_success", "apply_to_visual_scene_ids": ["tangle_ending_court"], "modifier_prompt": "Bind all three leaves with a fresh civic cord; include a visible duplicate edge in the ward packet and guards held outside the bars."},
+      {"modifier_id": "court_cost_visual", "trigger": "ending_label == court_exposure_cost", "apply_to_visual_scene_ids": ["tangle_ending_court"], "modifier_prompt": "The packet contains three leaves but no visible duplicate; an order officer's empty charge slate waits beside Nara below."},
+      {"modifier_id": "load_success_visual", "trigger": "ending_label == material_control_success", "apply_to_visual_scene_ids": ["tangle_ending_load"], "modifier_prompt": "Exactly six grain carts move down the civic rail while three empty carts and armed guards remain behind a closed side barrier."},
+      {"modifier_id": "load_cost_visual", "trigger": "ending_label == material_control_cost", "apply_to_visual_scene_ids": ["tangle_ending_load"], "modifier_prompt": "The brake lever is locked, all grain carts stand still, and lower-shadow ration baskets wait empty at the gallery edge."},
+      {"modifier_id": "testimony_success_visual", "trigger": "ending_label == cutout_testimony_success", "apply_to_visual_scene_ids": ["tangle_ending_testimony"], "modifier_prompt": "Vek's hand signs the four-symbol activation chain while Nara protects a drying duplicate beneath a mesh screen."},
+      {"modifier_id": "testimony_cost_visual", "trigger": "ending_label == cutout_testimony_cost", "apply_to_visual_scene_ids": ["tangle_ending_testimony"], "modifier_prompt": "Vek pockets the safe-conduct token, leaves the activation-chain leaf unsigned, and points an accusing hand toward Nara."},
+      {"modifier_id": "cover_success_visual", "trigger": "ending_label == private_cover_success", "apply_to_visual_scene_ids": ["tangle_ending_cover"], "modifier_prompt": "One guard recognizes the bronze token and opens a narrow passage while the sisters cross the checkpoint together."},
+      {"modifier_id": "cover_cost_visual", "trigger": "ending_label == private_cover_cost", "apply_to_visual_scene_ids": ["tangle_ending_cover"], "modifier_prompt": "A guard turns the bronze token edge-on in rejection; iron bars and spear shafts keep the sisters on opposite sides."}
+    ],
+    "scene_set": {
+      "scene_set_id": "sunwall_lower_shadow_copy_room.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "Shallow rectangular stone office with a rear-left upward court stair, front-right downward lift stair, right-wall barred service door, three central desks, and a two-lock copy chest.",
+      "fixed_zones": [
+        {"zone_id": "court_stair", "visible_form": "open stone stair rising rear left with timber rail", "used_for": "ward packets, runners, court transfer"},
+        {"zone_id": "lift_stair", "visible_form": "steep stone stair descending front right beside brake-dust rail", "used_for": "Talen, warning bell, lift gallery access"},
+        {"zone_id": "service_door", "visible_form": "barred iron door in right wall opening to protected lane", "used_for": "Vek, guards, safe-conduct pressure"},
+        {"zone_id": "central_desks", "visible_form": "three slanted desks under amber lamps", "used_for": "copying, evidence comparison, testimony"},
+        {"zone_id": "copy_chest", "visible_form": "waist-high iron-banded oak chest with two keyholes", "used_for": "divided civic and Sunwall custody"},
+        {"zone_id": "tube_wall", "visible_form": "blue-gray stone wall niches filled with sealed clay document tubes", "used_for": "separate official filing and personal-cover imagery"}
+      ],
+      "routes": [
+        {"route_id": "court_route", "path": "central_desks -> court_stair -> ward court", "access": "civic staff and ward runner"},
+        {"route_id": "lift_route", "path": "central_desks -> lift_stair -> cargo gallery", "access": "Sunwall crew and authorized clerks"},
+        {"route_id": "protected_lane_route", "path": "central_desks -> service_door -> garrison lane", "access": "service traffic subject to guard and safe-conduct"}
+      ],
+      "occluders": ["tube wall blocks the lift gallery", "stair angle hides the ward court", "bars reveal bodies in the lane but not the whole street"],
+      "camera_slots": [
+        {"camera_id": "wide_from_court_stair", "supports_visual_scene_ids": ["tangle_copy_room_establishing", "tangle_routine_fold", "tangle_pressure_fold"]},
+        {"camera_id": "medium_three_desks", "supports_visual_scene_ids": ["tangle_morning_routine", "tangle_preparation_choice"]},
+        {"camera_id": "overhead_evidence_desk", "supports_visual_scene_ids": ["tangle_three_leaves_closeup"]},
+        {"camera_id": "service_door_axis", "supports_visual_scene_ids": ["tangle_cutout_arrival"]},
+        {"camera_id": "medium_copy_chest", "supports_visual_scene_ids": ["tangle_cutout_choice", "tangle_ending_testimony"]},
+        {"camera_id": "wide_centerline", "supports_visual_scene_ids": ["tangle_second_bell_threshold"]},
+        {"camera_id": "court_stair_upward", "supports_visual_scene_ids": ["tangle_ending_court"]},
+        {"camera_id": "lift_stair_downward", "supports_visual_scene_ids": ["tangle_ending_load"]},
+        {"camera_id": "service_lane_outward", "supports_visual_scene_ids": ["tangle_ending_cover"]}
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable character and group identities for prompt assembly; include only refs for bodies visible in a scene.",
+    "characters": {
+      "nara_ves": "Nara Ves: lean adult human civic copyist, deep umber skin, close-cropped black hair, observant dark eyes, ink-stained fingers, charcoal layered tunic and knee-length clerk coat, narrow bronze civic cord at the shoulder, reed pens and small sand pouch, controlled posture that becomes still under pressure.",
+      "talen_or": "Talen Or: broad middle-aged human Sunwall lift worker, weathered brown skin, gray-streaked hair in one practical braid, blue-gray heavy work coat, leather knee guards, brake-dust boots, wooden load tablet, chipped tea cup, posture grounded toward stairs, rails, and machinery.",
+      "vek_iras": "Vek Iras: lean middle-aged human contract messenger, olive-brown skin, shaved head, narrow dark beard, dusted brown travel layers, rust-red shrine provisioner's sash, soft boots, small bronze safe-conduct token, courteous posture with watchful hands.",
+      "ward_runner": "Ward runner: young adult human, compact build, short gray wool cloak over practical dark clothes, cross-body packet strap, soft stair shoes, one hand usually free for a sealed packet.",
+      "garrison_officer": "Garrison officer: tall adult human in a quilted charcoal storm coat over dark iron scale vest, leather gloves, practical open-faced helm, short spear held upright, squared posture at the barred service door.",
+      "nara_sister": "Nara's sister: adult human with deep umber skin and family resemblance around the eyes, dark hair wrapped in a plain cloth, practical lower-shadow dress under a dark wool shawl, small market basket, wary posture reaching across a controlled threshold."
+    },
+    "groups": {
+      "garrison_guards": "Garrison guards: adult humans in quilted charcoal storm coats over dark iron scale vests, leather gloves, open-faced practical helms, short spears and hooded lamps, disciplined two-person checkpoint posture in the cold twilight lane."
+    }
+  },
+  "review_notes": [
+    "The draft scene_set owns the room's three routes and repeated camera positions; generated art is not geometry authority.",
+    "All base prompts use concrete visible geometry and character appearance; modifiers carry branch deltas and ending state.",
+    "No prompt supplies a character reference for an absent person."
+  ]
+}

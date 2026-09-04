@@ -1,0 +1,281 @@
+{
+  "schema_version": "ghostlight.lore_grounding_digest.v0",
+  "digest_id": "kalsa.tangle-disclosure-laundry-v0",
+  "source_status": "canonical_with_authored_elaboration",
+  "fixture_status": "present-day-grounded-fictional-instance",
+  "source_refs": [
+    {
+      "source_id": "forecast-courts",
+      "path": "Kalsa/Spoilers/Institutions/Forecast Evidence and Courts.md",
+      "title": "Forecast Evidence and Courts",
+      "tier": "Spoilers",
+      "relevance": "Owns court authority, forecast disclosure, civic copies, sponsor intervention, remedies, and the authored disclosure-laundry pattern."
+    },
+    {
+      "source_id": "prophetic-houses",
+      "path": "Kalsa/Spoilers/Institutions/Prophetic Houses.md",
+      "title": "Prophetic Houses",
+      "tier": "Spoilers",
+      "relevance": "Owns assignment records, service stewards, briefing custody, archive pressure, hosted providers, and unresolved house identities."
+    },
+    {
+      "source_id": "divided-city",
+      "path": "Kalsa/Spoilers/Polities/Prophecy - The Divided City.md",
+      "title": "Prophecy — The Divided City",
+      "tier": "Spoilers",
+      "relevance": "Owns the condominium, lower-shadow class pressure, Sunwall and civic offices, imperial claims, and separate operational authority."
+    },
+    {
+      "source_id": "closed-lift-history",
+      "path": "Kalsa/Spoilers/Events/The Closed Lift Appeal.md",
+      "title": "The Closed Lift Appeal",
+      "tier": "Spoilers",
+      "relevance": "Historical precedent for sponsor-intervention disclosure, independent civic copies, staged loads, and material remedy."
+    },
+    {
+      "source_id": "three-orders-history",
+      "path": "Kalsa/Spoilers/Events/The Three Orders at Sunwall.md",
+      "title": "The Three Orders at Sunwall",
+      "tier": "Spoilers",
+      "relevance": "Historical pressure showing how sponsor plans and Sunwall intervention must travel on separate leaves."
+    },
+    {
+      "source_id": "canon-policy",
+      "path": "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+      "title": "Canon and Provenance",
+      "tier": "Spoilers",
+      "relevance": "Controls knowledge layers, unresolved claims, provenance, and the distinction between institution and metaphysical truth."
+    },
+    {
+      "source_id": "public-peoples",
+      "path": "Kalsa/Public/World/Peoples and Polities.md",
+      "title": "Peoples and Polities",
+      "tier": "Public",
+      "relevance": "Reader-facing account of the Divided City, Sunwall work, imperial claims, and the Closed Lift precedent."
+    },
+    {
+      "source_id": "public-magic",
+      "path": "Kalsa/Public/World/Magic and Miracles.md",
+      "title": "Magic and Miracles",
+      "tier": "Public",
+      "relevance": "Reader-facing account of crowded horizons, sponsor response, and material interventions."
+    },
+    {
+      "source_id": "public-closed-lift",
+      "path": "Kalsa/Public/Sources/The Closed Lift Appeal.md",
+      "title": "The Closed Lift Appeal",
+      "tier": "Public",
+      "relevance": "Accessible presentation of disclosure, staged movement, civic correction, and incomplete restoration."
+    },
+    {
+      "source_id": "public-three-orders",
+      "path": "Kalsa/Public/Sources/The Three Orders at Sunwall.md",
+      "title": "The Three Orders at Sunwall",
+      "tier": "Public",
+      "relevance": "Accessible presentation of separate forecast, military, and operating owners at the Sunwall."
+    }
+  ],
+  "historical_context": {
+    "time_period": "Present practice after the Closed Lift Appeal and the Three Orders at Sunwall; exact date unresolved",
+    "location": "A lower-shadow civic copy room beneath an unnamed Sunwall cargo gate in the Divided City",
+    "summary": "A civic copyist receives three separately valid records whose shared timing would let a patron manufacture a forecast-backed grain seizure.",
+    "public_facts": [
+      {
+        "text": "The Divided City remains under overlapping Ju'onai, Terjamna, and local civic authority, while Sunwall workers retain operational control of lifts and farms.",
+        "source_refs": ["public-peoples", "public-three-orders"]
+      },
+      {
+        "text": "Courts require a sponsor's intended response to travel with a forecast offered as evidence, but correction does not automatically restore wages, housing, or standing.",
+        "source_refs": ["public-closed-lift", "public-magic"]
+      }
+    ],
+    "ambient_pressures": [
+      {
+        "text": "A disclosure laundry exploits divided custody by making every leaf separately truthful while concealing the operational relationship among them.",
+        "source_refs": ["forecast-courts"]
+      },
+      {
+        "text": "Lower-shadow households encounter prophecy through delays, rations, closures, and protected-lane access rather than direct visions.",
+        "source_refs": ["divided-city", "prophetic-houses"]
+      },
+      {
+        "text": "Exposing a cutout can narrow one act without removing the tribute, garrison, house, housing, or archive leverage behind it.",
+        "source_refs": ["forecast-courts", "divided-city"]
+      }
+    ]
+  },
+  "groups": [
+    {
+      "group_id": "civic-copy-office",
+      "label": "Divided City civic copy office",
+      "group_type": "civic_record_office",
+      "institutional_logic": ["Preserve notices, exhibits, corrections, and independent forecast copies across hostile claims."],
+      "material_incentives": ["Keep employment, office access, ward records, and a defensible chain of custody."],
+      "internal_virtues": ["Exact custody", "Scoped filing", "Copies outside sponsor control"],
+      "internal_shames": ["A missing page", "An altered receipt", "Pretending a filing decision is a verdict"],
+      "prestige_markers": ["A correction that survives occupation", "A packet served before its subject can vanish"],
+      "taboo_triggers": ["Sponsor summary passed off as witness text", "One claimant owning the only copy"],
+      "emotional_display_norms": ["Fear is compressed into procedure, dry jokes, extra copies, and careful hands."],
+      "trust_defaults": ["Trusts divided custody and material receipts more than patron assurances."],
+      "speech_register_cues": ["Short office wit", "Custody verbs", "Precise distinctions between record and order"],
+      "source_refs": ["forecast-courts", "divided-city"]
+    },
+    {
+      "group_id": "sunwall-lift-crew",
+      "label": "Sunwall lift crew",
+      "group_type": "infrastructure_workforce",
+      "institutional_logic": ["Keep loads within material limits and make operating changes independently legible."],
+      "material_incentives": ["Prevent crush, brake failure, refuge overload, lost wages, and military capture of work routes."],
+      "internal_virtues": ["Measured loads", "Named stops", "Workers counted as bodies the refuge must hold"],
+      "internal_shames": ["Moving an unsafe load for prestige", "Letting a forecast impersonate inspection"],
+      "prestige_markers": ["A difficult load staged safely", "A refusal that keeps its record"],
+      "taboo_triggers": ["Orders that omit refuge capacity", "Patrons claiming operational competence"],
+      "emotional_display_norms": ["Concern appears as numbers, tool checks, and gallows humor."],
+      "trust_defaults": ["Trusts current inspection, crew testimony, and operating leaves."],
+      "speech_register_cues": ["Load counts", "Brake intervals", "Blunt material correction"],
+      "source_refs": ["divided-city", "three-orders-history", "closed-lift-history"]
+    },
+    {
+      "group_id": "disclosure-laundry-cell",
+      "label": "Disclosure laundry cell",
+      "group_type": "cross_institution_conspiracy",
+      "institutional_logic": ["Separate the forecast premise, activation order, logistics, and action lever so disclosure never joins them."],
+      "material_incentives": ["Gain grain custody, strategic surprise, house patronage, safe conduct, protected housing, and plausible deniability."],
+      "internal_virtues": ["Narrow truth", "Replaceable messengers", "Existing authority used as fallback"],
+      "internal_shames": ["A joined activation chain", "Acting before the record can be separated", "A cutout who knows the plan-holder"],
+      "prestige_markers": ["Every leaf passes review alone", "Exposure stops at the expendable role"],
+      "taboo_triggers": ["Independent cross-office copies", "Material owners changing the system before actuation"],
+      "emotional_display_norms": ["Pressure arrives as favors, timing, housing, and calm procedural requests."],
+      "trust_defaults": ["Trusts leverage and compartmentation; treats members as replaceable interfaces."],
+      "speech_register_cues": ["Each office names only its own piece", "Passive descriptions of coordinated timing"],
+      "source_refs": ["forecast-courts", "prophetic-houses", "divided-city"]
+    },
+    {
+      "group_id": "lower-shadow-ward",
+      "label": "Lower-shadow ward households",
+      "group_type": "affected_constituency",
+      "institutional_logic": ["Keep grain, work, housing, kin routes, and appeals usable under three authorities."],
+      "material_incentives": ["Receive rations, preserve lane access, avoid collective punishment, and retain proof of losses."],
+      "internal_virtues": ["Remembering who moved first", "Sharing notice", "Counting costs after correction"],
+      "internal_shames": ["No universal internal shame is established"],
+      "prestige_markers": ["A household that can make an omitted cost enter the record"],
+      "taboo_triggers": ["Elite precaution charged to ward rations", "Protection that becomes grain custody"],
+      "emotional_display_norms": ["The sources support petitions, work records, and hostile readings, not one shared emotional style."],
+      "trust_defaults": ["Trust is local and constrained by dependence on ward, house, garrison, and Sunwall routes."],
+      "speech_register_cues": ["Concrete losses", "Who held the key", "Which bell and which load"],
+      "source_refs": ["divided-city", "public-peoples", "public-closed-lift"]
+    }
+  ],
+  "cultural_pressure_fields": [
+    {
+      "field_id": "divided-city.record-is-not-owner",
+      "applies_to": ["civic-copy-office", "sunwall-lift-crew"],
+      "pressure_type": "authority_separation",
+      "summary": "Every institution must preserve its own leaf without letting record, forecast, verdict, and operation collapse into one authority.",
+      "projection_use": "Give Nara evidence actions and Talen material actions; neither can perform the other's office.",
+      "source_refs": ["forecast-courts", "divided-city"]
+    },
+    {
+      "field_id": "lower-shadow.precaution-cost",
+      "applies_to": ["lower-shadow-ward"],
+      "pressure_type": "class_and_dependency",
+      "summary": "Even a reversible stop moves ration, work, housing, and safety costs downward before an appeal can correct its premise.",
+      "projection_use": "Every successful resistance path must name who still pays for delay or exposure.",
+      "source_refs": ["closed-lift-history", "divided-city"]
+    }
+  ],
+  "factional_misread_matrix": [
+    {
+      "observer_group_id": "disclosure-laundry-cell",
+      "target_group_id": "civic-copy-office",
+      "observer_read": ["Replaceable filing labor", "A custody seam purchasable through family need"],
+      "target_self_read": ["The office that preserves contestable memory"],
+      "misread_patterns": ["Mistakes procedural modesty for political passivity"],
+      "likely_insults": ["copy hand", "tube keeper"],
+      "projection_use": "Let the cell pressure Nara through access and family without assuming she is powerless.",
+      "source_refs": ["forecast-courts", "divided-city"]
+    },
+    {
+      "observer_group_id": "sunwall-lift-crew",
+      "target_group_id": "disclosure-laundry-cell",
+      "observer_read": ["People trying to make paper carry more bodies than the refuge can"],
+      "target_self_read": ["Separate lawful offices responding independently"],
+      "misread_patterns": ["Crew may see a joined plot where timing could still be coincidence; the cell relies on that evidentiary caution."],
+      "likely_insults": ["nine-cart confidence"],
+      "projection_use": "Keep Talen materially sharp but not omniscient about the plan-holder.",
+      "source_refs": ["three-orders-history", "forecast-courts"]
+    }
+  ],
+  "role_pressure_fields": [
+    {
+      "role_id": "civic-copyist",
+      "summary": "A low-ranking custodian who can join, duplicate, lock, route, or withhold records but cannot decide the case.",
+      "obligations": ["Preserve exact text", "Serve the right forum", "Keep corrections and custody visible"],
+      "available_masks": ["Routine filing", "Literal compliance", "Harmless office humor"],
+      "failure_modes": ["Joining weak evidence too early", "Keeping the only connection in memory", "Trading public proof for family access"],
+      "source_refs": ["forecast-courts"]
+    },
+    {
+      "role_id": "cutout",
+      "summary": "A replaceable carrier who links offices while owning no complete plan.",
+      "obligations": ["Deliver activation terms", "Keep sponsors separate", "Remain deniable"],
+      "available_masks": ["Shrine provisioner", "Contract messenger", "Safe-conduct broker"],
+      "failure_modes": ["Recognizing joined evidence", "Signing the activation chain", "Believing protected status survives exposure"],
+      "source_refs": ["forecast-courts"]
+    }
+  ],
+  "speaker_lore_boundaries": [
+    {
+      "speaker_id": "nara_ves",
+      "known_context": [
+        {"text": "Nara knows office custody, the three leaves, their shared bell, and visible arrivals.", "source_refs": ["forecast-courts"]}
+      ],
+      "beliefs": [
+        {"text": "Nara believes joined records can make a relationship contestable even when each leaf is true.", "source_refs": ["forecast-courts"]}
+      ],
+      "misreads": [
+        {"text": "Nara may overestimate how quickly a court packet can restrain armed and material action.", "source_refs": ["closed-lift-history"]}
+      ],
+      "must_not_know": [
+        {"text": "Nara must not know the plan-holder, house identity, divine alignment, or final court outcome unless observable action reveals it.", "source_refs": ["canon-policy", "prophetic-houses"]}
+      ]
+    },
+    {
+      "speaker_id": "talen_or",
+      "known_context": [
+        {"text": "Talen knows lift load, brake interval, refuge capacity, crew route, and guards visible in the receiving gallery.", "source_refs": ["divided-city", "three-orders-history"]}
+      ],
+      "beliefs": [
+        {"text": "Talen treats a material limit as work evidence, not prophecy or civic verdict.", "source_refs": ["forecast-courts"]}
+      ],
+      "misreads": [
+        {"text": "Talen may compress every patron maneuver into unsafe loading because that is the layer he can act upon.", "source_refs": ["divided-city"]}
+      ],
+      "must_not_know": [
+        {"text": "Talen cannot know what a prophet observed or which patron supplied hidden instructions from load evidence alone.", "source_refs": ["forecast-courts"]}
+      ]
+    }
+  ],
+  "author_only_boundaries": [
+    {
+      "text": "Nara, Talen, Vek, the specific cargo gate, and this exact cell are fixture inventions and are not promoted as canonical Kalsan people or events.",
+      "source_refs": ["canon-policy"]
+    },
+    {
+      "text": "The fixture may dramatize the canonical disclosure-laundry pattern but may not resolve house count, names, divine affiliations, city name, sector borders, or present imperial successors.",
+      "source_refs": ["prophetic-houses", "divided-city"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which native terms do Divided City workers use for disclosure laundries and their component roles?",
+      "blocks_training": false,
+      "notes": "The lore patch explicitly marks the current phrase and roles as translated functional labels."
+    },
+    {
+      "question": "What standard document materials, seal forms, and gate-office layouts recur across the Sunwall?",
+      "blocks_training": false,
+      "notes": "The fixture uses one bounded room-scale instance and does not universalize it."
+    }
+  ]
+}

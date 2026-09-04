@@ -1,0 +1,303 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "kalsa-tangle-disclosure-laundry-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/kalsa/tangle-disclosure-laundry-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/kalsa/tangle-disclosure-laundry-v0.json",
+  "visual_plan_ref": "examples/visual/kalsa/tangle-disclosure-laundry-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "tangle-disclosure-laundry-v0.lower-shadow-copy-room",
+  "protagonist_agent_id": "nara_ves",
+  "npc_agent_ids": [
+    "talen_or",
+    "vek_iras",
+    "ward_runner",
+    "garrison_officer"
+  ],
+  "purpose": "Branch-and-fold fixture dramatizing a Divided City disclosure laundry from a civic copyist's bounded viewpoint.",
+  "tonal_mode": "dry civic noir with humane workplace wit",
+  "local_awareness_summary": [
+    {
+      "text": "Nara knows the copy room's three routes, document custody, ordinary filing sequence, and the visible relationship among a house forecast, shrine cart request, and garrison guard receipt; she does not know the plan-holder's identity or any divine intent.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/tangle-disclosure-laundry-v0.json",
+        "Kalsa/Spoilers/Institutions/Forecast Evidence and Courts.md"
+      ]
+    },
+    {
+      "text": "Talen owns the lift crew's material account and can inspect, stage, stop, or limit loads inside Sunwall competence; Nara can preserve or transfer records but cannot operate the lift or command the garrison.",
+      "source_refs": [
+        "Kalsa/Spoilers/Polities/Prophecy - The Divided City.md",
+        "Kalsa/Spoilers/Institutions/Forecast Evidence and Courts.md"
+      ]
+    },
+    {
+      "text": "The conspiracy survives individual exposure because house patronage, garrison force, protected-lane access, and civic dependence remain real authorities after a cutout or scribe is sacrificed.",
+      "source_refs": [
+        "Kalsa/Spoilers/Institutions/Forecast Evidence and Courts.md#Authored elaboration: disclosure laundries"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective stays with Nara inside the copy room; choices use inspection, copying, locks, messengers, record transfer, and scoped authorization.",
+        "source_refs": ["prompts/interactive-fiction-weaver.md"]
+      },
+      {
+        "text": "Routine tea, pen sharpening, capacity copying, and divided key custody establish ordinary office life before the cutout and garrison apply pressure.",
+        "source_refs": ["AGENTS.md#Aetheria Grounding Doctrine"]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "A forecast remains expert evidence; Nara cannot turn it into a verdict, Talen cannot turn an operating limit into civic law, and the garrison cannot turn protection into Sunwall competence.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Forecast Evidence and Courts.md",
+          "Kalsa/Spoilers/Polities/Prophecy - The Divided City.md"
+        ]
+      },
+      {
+        "text": "No branch proves which god, Projection, or magical influence stands behind a patron, and no character can see a complete future from the joined papers.",
+        "source_refs": [
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "The three leaves begin in separate trays; the ward packet, Sunwall operating leaf, copy chest, two keys, tying cords, safe-conduct token, and any signed activation chain change custody only through explicit actions.",
+        "source_refs": [
+          "examples/ink/kalsa/tangle-disclosure-laundry-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Exposure must change this order without dissolving the offices and dependencies behind the conspiracy.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Forecast Evidence and Courts.md#Authored elaboration: disclosure laundries"
+        ]
+      },
+      {
+        "text": "Every ending must show who controls the office, archive copy, court route, or lift lever, and who pays the remaining cost.",
+        "source_refs": ["prompts/interactive-fiction-weaver.md"]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not name an unresolved Prophetic House, city, sector border, armistice, or native office title.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Prophetic Houses.md",
+          "Kalsa/Spoilers/Polities/Prophecy - The Divided City.md"
+        ]
+      },
+      {
+        "text": "Do not make disclosure automatically abolish tribute, garrison presence, house patronage, or ward dependence.",
+        "source_refs": [
+          "Kalsa/Spoilers/Polities/Prophecy - The Divided City.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Three choice layers fold through routine filing and cutout pressure into four priorities with state-gated success and cost endings.",
+    "choice_layers": [
+      "morning_copy_routine",
+      "cutout_pressure",
+      "disclosure_commitment"
+    ],
+    "variables": [
+      "link_evidence",
+      "talen_trust",
+      "cell_pressure",
+      "ward_exposure",
+      "independent_copy",
+      "load_control",
+      "cutout_testimony",
+      "personal_cover"
+    ],
+    "ending_gates": [
+      "ending_court_success",
+      "ending_court_cost",
+      "ending_load_success",
+      "ending_load_cost",
+      "ending_testimony_success",
+      "ending_testimony_cost",
+      "ending_cover_success",
+      "ending_cover_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "join_three_leaves",
+      "ink_path": "preparation_choice",
+      "action_type": "inspect_objects",
+      "actor_intent": "Join the bell interval, beneficiaries, and cord fibers into relationship evidence.",
+      "state_basis": ["Nara can inspect all three records while they are in civic receipt custody."],
+      "reviewed_consequences": ["Raises link_evidence and cell_pressure; enables direct cutout confrontation and strengthens the court ending."],
+      "training_hooks": ["conspiracy_relationship_evidence", "record_joining"]
+    },
+    {
+      "branch_id": "establish_material_limit",
+      "ink_path": "preparation_choice",
+      "action_type": "speak",
+      "actor_intent": "Ask the material owner to create an independent capacity leaf.",
+      "state_basis": ["Talen can attest lift and refuge capacity within Sunwall operation."],
+      "reviewed_consequences": ["Raises talen_trust and load_control; strengthens staged material action."],
+      "training_hooks": ["authority_separation", "material_limit"]
+    },
+    {
+      "branch_id": "seed_independent_copy",
+      "ink_path": "preparation_choice",
+      "action_type": "copy_object",
+      "actor_intent": "Place a garrison receipt beyond sponsor custody before pressure arrives.",
+      "state_basis": ["Civic clerks preserve independent copies and serve ward packets."],
+      "reviewed_consequences": ["Raises independent_copy and ward_exposure; strengthens court proof while attracting ward attention."],
+      "training_hooks": ["archive_custody", "evidence_visibility_tradeoff"]
+    },
+    {
+      "branch_id": "preserve_personal_cover",
+      "ink_path": "preparation_choice",
+      "action_type": "withhold_action",
+      "actor_intent": "Keep the connection in memory while making the official room look ordinary.",
+      "state_basis": ["Separate truthful filing is the laundry's camouflage and gives the copyist deniability."],
+      "reviewed_consequences": ["Raises personal_cover and lowers immediate cell_pressure; strengthens the private-cover ending while weakening durable proof."],
+      "training_hooks": ["silence_as_action", "precarious_worker_cover"]
+    },
+    {
+      "branch_id": "confront_cutout",
+      "ink_path": "cutout_choice",
+      "action_type": "speak",
+      "actor_intent": "Use joined records to force a revealing response from Vek.",
+      "state_basis": ["Available only when link_evidence is high enough to name the shared mechanism."],
+      "reviewed_consequences": ["Raises cutout_testimony and cell_pressure; enables a strong testimony ending."],
+      "training_hooks": ["cutout_pressure", "bounded_inference"]
+    },
+    {
+      "branch_id": "lock_independent_record",
+      "ink_path": "cutout_choice",
+      "action_type": "lock_object",
+      "actor_intent": "Put received records behind divided civic and Sunwall custody.",
+      "state_basis": ["The copy chest has two physical locks held by separate offices."],
+      "reviewed_consequences": ["Raises independent_copy and cell_pressure while lowering personal_cover."],
+      "training_hooks": ["non_speech_refusal", "divided_key_custody"]
+    },
+    {
+      "branch_id": "warn_material_owner",
+      "ink_path": "cutout_choice",
+      "action_type": "move_ally",
+      "actor_intent": "Spend trust to trigger a real gallery inspection before the hidden plan actuates.",
+      "state_basis": ["Talen can reach the lift gallery by the lower stair and issue an operating warning."],
+      "reviewed_consequences": ["Raises load_control and ward_exposure while spending talen_trust."],
+      "training_hooks": ["trust_spend", "material_owner_intervention"]
+    },
+    {
+      "branch_id": "accept_safe_conduct",
+      "ink_path": "cutout_choice",
+      "action_type": "exchange_object",
+      "actor_intent": "Protect Nara's sister through the garrison lane at public cost.",
+      "state_basis": ["Vek offers a bronze lane token as constituency leverage, not proof of loyalty."],
+      "reviewed_consequences": ["Raises personal_cover and ward_exposure while lowering cell_pressure; strengthens the private-cover ending."],
+      "training_hooks": ["family_leverage", "survival_without_consent"]
+    },
+    {
+      "branch_id": "prioritize_court_exposure",
+      "ink_path": "final_choice",
+      "action_type": "transfer_evidence",
+      "actor_intent": "Join and transfer the conspiracy relationship for civic review.",
+      "state_basis": ["Success requires strong linkage and a copy beyond sponsor custody."],
+      "reviewed_consequences": ["Routes to court success or cost; stays or narrows this seizure but leaves patron powers intact."],
+      "training_hooks": ["state_gated_ending", "exposure_not_dissolution"]
+    },
+    {
+      "branch_id": "prioritize_material_control",
+      "ink_path": "final_choice",
+      "action_type": "authorize_material_action",
+      "actor_intent": "Change the material system so the hidden forecast plan loses its lever.",
+      "state_basis": ["Success requires prepared load authority and enough working trust."],
+      "reviewed_consequences": ["Routes to staged-load success or closure cost; the ward may still pay for delay."],
+      "training_hooks": ["state_gated_ending", "material_owner_changes_field"]
+    },
+    {
+      "branch_id": "prioritize_cutout_testimony",
+      "ink_path": "final_choice",
+      "action_type": "bargain",
+      "actor_intent": "Convert the cutout's exposure into a signed activation chain.",
+      "state_basis": ["Success requires Vek's earlier revealing response."],
+      "reviewed_consequences": ["Routes to testimony success or bargaining backfire; exposes the chain while the offices sacrifice the cutout."],
+      "training_hooks": ["state_gated_ending", "cutout_is_fallback"]
+    },
+    {
+      "branch_id": "prioritize_private_cover",
+      "ink_path": "final_choice",
+      "action_type": "withhold_evidence",
+      "actor_intent": "Use the offered leverage to protect family and retain future office access.",
+      "state_basis": ["Success requires enough personal cover assembled through tidy filing or safe conduct."],
+      "reviewed_consequences": ["Routes to family passage or public scapegoating; the laundry captures the load in both variants."],
+      "training_hooks": ["state_gated_ending", "constituency_cost", "future_access_hook"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for the local playthrough",
+      "Conditional callbacks and branch gates",
+      "Ending selection"
+    ],
+    "manual_review_required": [
+      "Promotion of Nara, Talen, Vek, this cargo gate, or this specific conspiracy cell into Kalsa canon",
+      "Durable character memory and relationship changes",
+      "Claims about unresolved house, sector, city, or divine identities"
+    ]
+  },
+  "audit": {
+    "reviewer": "Tangle elaborator self-review using the four required Ghostlight reviewer prompts",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative review split the three-record closeup into its own Ink knot and established Nara's sister and lane routine before the private-cover ending.",
+      "Lore review removed an uninspected Oracle Ecology citation, preserved unresolved house, sector, city, date, and divine identities, and confirmed that each authority acts only through its owned layer.",
+      "Visual review delayed guard imagery until after the cutout arrives and retained branch-specific visible deltas for every material choice and ending family.",
+      "Spatial review confirmed a stable three-route room: court stair rear left, lift stair front right, barred service door on the right wall, central desks and chest between them; a draft scene-set map owns repeat staging."
+    ],
+    "review_verdicts": [
+      {
+        "reviewer_id": "ghostlight_narrative_quality_reviewer",
+        "overall_status": "accepted",
+        "scores": {"reader_orientation": 5, "coherence": 5, "pacing": 4, "voice": 5, "tonal_fit": 5, "if_playability": 5},
+        "detected_tonal_mode": "dry civic noir with humane workplace wit",
+        "required_revisions_applied": ["Added a dedicated three_leaves screen knot", "Established the sister and protected lane before the ending"],
+        "training_labels": ["strong_contextual_onboarding", "strong_wit_with_stakes", "strong_branch_callback", "strong_material_lore"]
+      },
+      {
+        "reviewer_id": "ghostlight_lore_grounding_reviewer",
+        "overall_status": "accepted",
+        "scores": {"source_coverage": 5, "canon_fit": 5, "grounding_quality": 5, "vault_backfill_value": 5},
+        "sources_checked": ["Forecast Evidence and Courts", "Prophetic Houses", "Prophecy — The Divided City", "The Closed Lift Appeal", "The Three Orders at Sunwall", "Canon and Provenance", "Public reader-path counterparts"],
+        "required_revisions_applied": ["Removed an unneeded source citation beyond the inspected subject scope", "Kept fixture people and gate explicitly noncanonical"],
+        "training_labels": ["source_grounded", "strong_material_lore", "strong_faction_pressure", "vault_backfill_candidate"]
+      },
+      {
+        "reviewer_id": "ghostlight_visual_scene_continuity_reviewer",
+        "overall_status": "accepted",
+        "scores": {"segmentation": 5, "visual_prompt": 5, "character_visibility": 5, "branch_visual_continuity": 5, "website_replay": 4},
+        "required_revisions_applied": ["Corrected the record closeup to a real Ink anchor", "Removed pre-arrival guards from the cutout-arrival frame"],
+        "review_labels": ["strong_scene_segmentation", "strong_imagegen_ready_prompt", "strong_character_stance_control", "strong_branch_visual_continuity"],
+        "acceptance_notes": ["Draft scene-set map is sufficient for B-level planning; a plan view or 3D blockout remains required before high-consistency multi-angle rendering."]
+      },
+      {
+        "reviewer_id": "ghostlight_spatial_geometric_cohesion_reviewer",
+        "overall_status": "accepted",
+        "scores": {"layout_cohesion": 5, "sightline": 4, "body_affordance": 5, "movement_access": 5, "object_system_geometry": 5, "branch_spatial_state": 5},
+        "inferred_layout_summary": "Shallow rectangular stone office with court stair rear left, lift stair front right, service door right wall, central desks and two-lock chest, plus tube-wall occlusion.",
+        "required_revisions_applied": ["Established the sister's visible awning before the protected-lane ending", "Made cart movement an audible rail-grind from below"],
+        "review_labels": ["strong_layout_cohesion", "strong_sightline_control", "strong_branch_spatial_state"]
+      }
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "kalsa_lore_content_readable": true
+    }
+  }
+}
