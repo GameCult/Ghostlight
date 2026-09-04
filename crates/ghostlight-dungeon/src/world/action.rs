@@ -7,13 +7,13 @@
 //! draws a band, and the draw goes through the one `digest()` owner.
 
 use super::patch::{
-    self, Affordance, Audience, AudienceSpec, Bounds, ComponentOpKind, Cost, Precondition,
-    Quantity, RefKind, Role, WorldPatch,
+    self, Affordance, Audience, AudienceSpec, BoundPrecondition, Bounds, CommitmentKind,
+    ComponentOpKind, Cost, Precondition, Quantity, RefKind, Role, WorldPatch,
 };
 use super::{
     AffordanceId, AuthorityGrant, AuthorityTarget, CommandId, DecisionEvent, DecisionInvocation,
-    DecisionOpportunity, EdgeId, EntityId, EventId, GrantedAffordance, KernelError, Magnitude,
-    SubjectId, Target, WorldId, WorldState, digest,
+    DecisionOpportunity, EdgeId, EntityId, EventId, FictionalMinutes, GrantedAffordance,
+    KernelError, Magnitude, SubjectId, Target, WorldId, WorldState, digest,
 };
 use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet};
@@ -106,6 +106,10 @@ pub(crate) enum ActionMismatch {
     CannotReach {
         precondition: usize,
     },
+    /// The actor holds no commitment of that kind to the bound referent.
+    NotCommitted {
+        precondition: usize,
+    },
 }
 
 /// The band draw's whole preimage. Five fields, none of them from the
@@ -152,7 +156,7 @@ pub(super) fn exercise(
     }
 
     let band = select_band(state, command_id, granted.id, entry)?;
-    let operations = lower(entry, band, invocation, &bindings)?;
+    let operations = lower(entry, band, actor, state.now, invocation, &bindings)?;
     let mut effects = if operations.is_empty() {
         Vec::new()
     } else {
@@ -166,6 +170,7 @@ pub(super) fn exercise(
                 operations,
                 evidence: Vec::new(),
             },
+            None,
         )
         .map_err(KernelError::PatchRejected)?
         .operations
@@ -342,7 +347,10 @@ fn live_kind(state: &WorldState, target: Target) -> Option<RefKind> {
 }
 
 /// Stage 3, in declaration order, each failure carrying its index so a test can
-/// name the exact precondition that refused.
+/// name the exact precondition that refused. Role binding is this caller's job:
+/// each declared `Precondition` is lowered through stage 2's bindings into a
+/// `BoundPrecondition` and handed to the one evaluator. A precondition whose
+/// role stage 2 left unbound is skipped here, because stage 2 already named it.
 fn check_preconditions(
     state: &WorldState,
     actor: SubjectId,
@@ -352,104 +360,172 @@ fn check_preconditions(
     rejections: &mut Vec<ActionMismatch>,
 ) {
     for (index, precondition) in entry.preconditions.iter().enumerate() {
-        match precondition {
-            Precondition::Present { at } => {
-                let Some(Target::Entity(place)) = bindings.get(at).copied() else {
-                    continue;
-                };
-                if state.positions.get(&actor).map(|position| position.place) != Some(place) {
-                    rejections.push(ActionMismatch::ActorNotPresent {
-                        precondition: index,
-                    });
-                }
-            }
-            Precondition::Reachable { to, within } => {
-                let Some(Target::Entity(place)) = bindings.get(to).copied() else {
-                    continue;
-                };
-                if !reachable(state, actor, authority, place, *within) {
-                    rejections.push(ActionMismatch::TargetUnreachable {
-                        precondition: index,
-                    });
-                }
-            }
-            Precondition::Holds { resource, at_least } => {
-                let Some(Target::Entity(entity_id)) = bindings.get(resource).copied() else {
-                    continue;
-                };
-                let held = state
-                    .holdings
-                    .get(&actor)
-                    .and_then(|held| held.get(&entity_id))
-                    .map_or(0, |quantity| quantity.0);
-                if held < at_least.0 {
-                    rejections.push(ActionMismatch::InsufficientHolding {
-                        precondition: index,
-                    });
-                }
-            }
-            Precondition::Authorized { over, kind } => {
-                let Some(target) = bindings.get(over).copied() else {
-                    continue;
-                };
-                if !authority
-                    .iter()
-                    .any(|grant| &grant.kind == kind && super::covers(state, grant.over, target))
-                {
-                    rejections.push(ActionMismatch::NotAuthorized {
-                        precondition: index,
-                    });
-                }
-            }
-            Precondition::HasStanding { grievance } => {
-                if !state.redress.get(grievance).is_some_and(|forum| {
-                    super::covers(state, forum.standing, Target::Subject(actor))
-                }) {
-                    rejections.push(ActionMismatch::NoStanding {
-                        precondition: index,
-                    });
-                }
-            }
-            Precondition::Knows { fact, at_least } => {
-                let Some(Target::Entity(entity_id)) = bindings.get(fact).copied() else {
-                    continue;
-                };
-                if !state
-                    .knowledge
-                    .get(&actor)
-                    .and_then(|held| held.get(&entity_id))
-                    .is_some_and(|held| held.confidence >= *at_least)
-                {
-                    rejections.push(ActionMismatch::FactUnknown {
-                        precondition: index,
-                    });
-                }
-            }
-            Precondition::CanBroadcast { via } => {
-                let Some(audience) = bound_audience(via, bindings) else {
-                    continue;
-                };
-                if !super::can_broadcast(state, actor, &audience) {
-                    rejections.push(ActionMismatch::NoAudience {
-                        precondition: index,
-                    });
-                }
-            }
-            Precondition::CanReach { subject, via } => {
-                let Some(Target::Subject(target)) = bindings.get(subject).copied() else {
-                    continue;
-                };
-                let Some(audience) = bound_audience(via, bindings) else {
-                    continue;
-                };
-                if !super::audience(state, actor, &audience).contains(&target) {
-                    rejections.push(ActionMismatch::CannotReach {
-                        precondition: index,
-                    });
-                }
-            }
+        let Some(bound) = bind_precondition(precondition, bindings) else {
+            continue;
+        };
+        if let Some(mismatch) = evaluate(state, actor, authority, index, &bound) {
+            rejections.push(mismatch);
         }
     }
+}
+
+/// The catalog's role indirection lowered to canonical referents. `None` means
+/// a role is unbound or bound to the wrong namespace, which stage 2 named.
+fn bind_precondition(
+    precondition: &Precondition,
+    bindings: &BTreeMap<Role, Target>,
+) -> Option<BoundPrecondition> {
+    let place = |role: &Role| match bindings.get(role)? {
+        Target::Entity(entity_id) => Some(*entity_id),
+        _ => None,
+    };
+    Some(match precondition {
+        Precondition::Present { at } => BoundPrecondition::Present { at: place(at)? },
+        Precondition::Reachable { to, within } => BoundPrecondition::Reachable {
+            to: place(to)?,
+            within: *within,
+        },
+        Precondition::Holds { resource, at_least } => BoundPrecondition::Holds {
+            resource: place(resource)?,
+            at_least: *at_least,
+        },
+        Precondition::Authorized { over, kind } => BoundPrecondition::Authorized {
+            over: bindings.get(over).copied()?,
+            kind: kind.clone(),
+        },
+        Precondition::HasStanding { grievance } => BoundPrecondition::HasStanding {
+            grievance: grievance.clone(),
+        },
+        Precondition::Knows { fact, at_least } => BoundPrecondition::Knows {
+            fact: place(fact)?,
+            at_least: *at_least,
+        },
+        Precondition::CanBroadcast { via } => BoundPrecondition::CanBroadcast {
+            via: bound_audience(via, bindings)?,
+        },
+        Precondition::CanReach { subject, via } => BoundPrecondition::CanReach {
+            subject: match bindings.get(subject)? {
+                Target::Subject(subject_id) => *subject_id,
+                _ => return None,
+            },
+            via: bound_audience(via, bindings)?,
+        },
+        Precondition::Committed { to, kind } => BoundPrecondition::Committed {
+            to: match bindings.get(to)? {
+                Target::Subject(subject_id) => *subject_id,
+                _ => return None,
+            },
+            kind: *kind,
+        },
+    })
+}
+
+/// The one precondition reader, over referents that are already canonical.
+/// Returns the complete set in declaration order; an empty set is "all hold".
+/// The tick reads only its emptiness — an `ActionMismatch` never surfaces to
+/// anyone from there.
+pub(super) fn preconditions_hold(
+    state: &WorldState,
+    actor: SubjectId,
+    checks: &[BoundPrecondition],
+) -> Vec<ActionMismatch> {
+    let components = super::scope_components(state, actor);
+    let authority = super::effective_authority(&components.authority, &components.delegated);
+    checks
+        .iter()
+        .enumerate()
+        .filter_map(|(index, check)| evaluate(state, actor, &authority, index, check))
+        .collect()
+}
+
+/// One check against committed state. `index` is the position within the slice
+/// the caller passed in, which is what every `precondition: usize` means.
+fn evaluate(
+    state: &WorldState,
+    actor: SubjectId,
+    authority: &BTreeSet<AuthorityGrant>,
+    index: usize,
+    check: &BoundPrecondition,
+) -> Option<ActionMismatch> {
+    let holds = match check {
+        BoundPrecondition::Present { at } => {
+            return (state.positions.get(&actor).map(|position| position.place) != Some(*at))
+                .then_some(ActionMismatch::ActorNotPresent {
+                    precondition: index,
+                });
+        }
+        BoundPrecondition::Reachable { to, within } => {
+            return (!reachable(state, actor, authority, *to, *within)).then_some(
+                ActionMismatch::TargetUnreachable {
+                    precondition: index,
+                },
+            );
+        }
+        BoundPrecondition::Holds { resource, at_least } => {
+            state
+                .holdings
+                .get(&actor)
+                .and_then(|held| held.get(resource))
+                .map_or(0, |quantity| quantity.0)
+                >= at_least.0
+        }
+        BoundPrecondition::Authorized { over, kind } => {
+            return (!authority
+                .iter()
+                .any(|grant| &grant.kind == kind && super::covers(state, grant.over, *over)))
+            .then_some(ActionMismatch::NotAuthorized {
+                precondition: index,
+            });
+        }
+        BoundPrecondition::HasStanding { grievance } => {
+            return (!state.redress.get(grievance).is_some_and(|forum| {
+                super::covers(state, forum.standing, Target::Subject(actor))
+            }))
+            .then_some(ActionMismatch::NoStanding {
+                precondition: index,
+            });
+        }
+        BoundPrecondition::Knows { fact, at_least } => {
+            return (!state
+                .knowledge
+                .get(&actor)
+                .and_then(|held| held.get(fact))
+                .is_some_and(|held| held.confidence >= *at_least))
+            .then_some(ActionMismatch::FactUnknown {
+                precondition: index,
+            });
+        }
+        BoundPrecondition::CanBroadcast { via } => {
+            return (!super::can_broadcast(state, actor, via)).then_some(
+                ActionMismatch::NoAudience {
+                    precondition: index,
+                },
+            );
+        }
+        BoundPrecondition::CanReach { subject, via } => {
+            return (!super::audience(state, actor, via).contains(subject)).then_some(
+                ActionMismatch::CannotReach {
+                    precondition: index,
+                },
+            );
+        }
+        // A linear scan of one subject's own small map. No key lookup is needed
+        // and none is offered, which is why a `CommitmentKey` never has to be
+        // guessable.
+        BoundPrecondition::Committed { to, kind } => {
+            return (!state.commitments.get(&actor).is_some_and(|held| {
+                held.values().any(|commitment| {
+                    commitment.counterparty == Some(*to) && commitment.kind == *kind
+                })
+            }))
+            .then_some(ActionMismatch::NotCommitted {
+                precondition: index,
+            });
+        }
+    };
+    (!holds).then_some(ActionMismatch::InsufficientHolding {
+        precondition: index,
+    })
 }
 
 /// The catalog's role indirection lowered to the canonical audience: the entry
@@ -704,6 +780,8 @@ fn select_band(
 fn lower(
     entry: &Affordance,
     band: usize,
+    actor: SubjectId,
+    now: FictionalMinutes,
     invocation: &DecisionInvocation,
     bindings: &BTreeMap<Role, Target>,
 ) -> Result<Vec<patch::ComponentOp>, KernelError> {
@@ -775,6 +853,34 @@ fn lower(
             })
         };
         operations.push(match &slot.op_kind {
+            // `due` is computed here, so a proposer cannot set one, and the
+            // pressure source is the acting subject, so it cannot be forged.
+            ComponentOpKind::CreateCommitment {
+                kind,
+                horizon,
+                period,
+            } => patch::ComponentOp::CreateCommitment {
+                subject: subject(0)?,
+                counterparty: Some(subject(1)?),
+                kind: *kind,
+                due: now.checked_add(*horizon).ok_or_else(malformed)?,
+                period: *period,
+                checks: Vec::new(),
+            },
+            ComponentOpKind::AdvancePressure { by } => patch::ComponentOp::AdvancePressure {
+                source: patch::PressureSourceRef::Subject(patch::Ref::Existing(actor)),
+                target: subject(0)?,
+                by: *by,
+            },
+            ComponentOpKind::ReducePressure { by } => patch::ComponentOp::ReducePressure {
+                source: patch::PressureSourceRef::Subject(patch::Ref::Existing(actor)),
+                target: subject(0)?,
+                by: *by,
+            },
+            ComponentOpKind::ResolvePressure => patch::ComponentOp::ResolvePressure {
+                source: patch::PressureSourceRef::Subject(patch::Ref::Existing(actor)),
+                target: subject(0)?,
+            },
             ComponentOpKind::Relocate => patch::ComponentOp::Relocate {
                 subject: subject(0)?,
                 via: edge(1)?,

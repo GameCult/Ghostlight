@@ -6,12 +6,14 @@
 //! opportunities, reduction, or persistence.
 
 mod action;
+mod clock;
 mod controllers;
 mod journal;
 mod mailbox;
 mod patch;
 
 pub(crate) use action::ActionMismatch;
+pub(crate) use clock::{FictionalMinutes, Motion, TickMinutes};
 pub(crate) use controllers::{
     ControllerError, ControllerModels, ControllerOpenError, ControllerPendingReason,
     ControllerRunner, ControllerWorkCustody, NarrativeCapture, NarrativeDecision, NarrativePending,
@@ -21,16 +23,19 @@ pub(crate) use controllers::{
 pub(crate) use mailbox::{ControllerPort, MailboxError, WorldMailbox};
 pub(crate) use patch::{
     AccessKind, Affordance, AffordanceKindName, Audience, AuthoredSource, AuthorityGrant,
-    AuthorityKindName, AuthorityTarget, Bounds, ChannelRecord, ComponentOpKind, Confidence, Cost,
-    Declaration, DependencyTarget, DraftHandle, EffectSlot, EntityDeclaration, EntityKind,
-    EvidenceRef, FactRecord, FactStanding, Forum, GrievanceKindName, Knowledge, KnowledgeSource,
-    Mismatch, Office, OfficeName, OutcomeBand, PatchAnswer, Position, Precondition, Quantity,
-    Reach, Ref, RefKind, Role, RoleSpec, Statement, SubjectDeclaration, WorldPatch,
+    AuthorityKindName, AuthorityTarget, BoundPrecondition, Bounds, ChannelRecord, Commitment,
+    CommitmentKey, CommitmentKind, ComponentOpKind, Confidence, Cost, Declaration,
+    DependencyTarget, DraftHandle, EffectSlot, EntityDeclaration, EntityKind, EvidenceRef,
+    FactRecord, FactStanding, Forum, GrievanceKindName, JurisdictionKey, Knowledge,
+    KnowledgeSource, Mismatch, Office, OfficeName, OutcomeBand, PatchAnswer, Position,
+    Precondition, PressureMagnitude, PressureSource, Quantity, Reach, Ref, RefKind, Role, RoleSpec,
+    Statement, SubjectDeclaration, WorldPatch, WorldScaleIntent, WorldScaleIntentRef,
 };
 #[cfg(test)]
 use patch::{
     AffordanceDeclaration, AudienceRef, AudienceSpec, ChannelDeclaration, ComponentOp,
-    DependencyRef, FactDeclaration, FactStandingRef, ReachRef, RouteDeclaration,
+    DependencyRef, FactDeclaration, FactStandingRef, PreconditionRef, PressureSourceRef, ReachRef,
+    RouteDeclaration,
 };
 #[cfg(test)]
 pub(crate) use patch::{AuthorityGrantRef, AuthorityTargetRef};
@@ -45,8 +50,8 @@ use std::path::Path;
 use thiserror::Error;
 use uuid::Uuid;
 
-pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.knowledge.v1";
-pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.knowledge.v1";
+pub(crate) const STATE_SCHEMA: &str = "ghostlight.world_state.commitment.v1";
+pub(crate) const COMMIT_SCHEMA: &str = "ghostlight.world_commit.commitment.v1";
 
 /// Compatibility tag derived from [`STATE_SCHEMA`]: the trailing
 /// `<family>-<version>` pair (e.g. `foundation-v1`). Callers that publish a
@@ -195,6 +200,9 @@ struct CreateWorld {
     owner: PrincipalId,
     title: String,
     patch: WorldPatch,
+    /// Authored once, here, and never mutated: `CommandBody::AdmitPatch` carries
+    /// no intent, so write-once is the command shape rather than a check.
+    scale_intent: WorldScaleIntentRef,
 }
 
 /// Unattributed creation intent. World ingress derives ownership, controller
@@ -213,6 +221,15 @@ pub(crate) struct CreateWorldIntent {
 enum CallerId {
     Principal(PrincipalId),
     Controller(ControllerId),
+    /// An internal capability. Never derived from session evidence, never
+    /// minted by ingress, and admitted for exactly one command body.
+    System(SystemCapability),
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum SystemCapability {
+    Clock,
 }
 
 #[derive(Clone, Debug)]
@@ -230,6 +247,14 @@ impl AuthenticatedCaller {
     fn verified_controller(controller: ControllerId) -> Self {
         Self {
             caller: CallerId::Controller(controller),
+        }
+    }
+
+    /// Visible only inside the `world` subtree and called only by
+    /// `WorldMailbox::submit_clock`. Runtime ingress cannot reach it.
+    fn verified_system(capability: SystemCapability) -> Self {
+        Self {
+            caller: CallerId::System(capability),
         }
     }
 
@@ -375,10 +400,16 @@ pub(crate) enum CommandBody {
         opportunity: DecisionOpportunity,
     },
     AdmitPatch {
-        /// Structurally `None` until boundary answers exist: `PatchAnswer` is
-        /// uninhabited.
+        /// Draft answers nothing. Active must answer a currently derived
+        /// boundary or a jurisdiction whose deficit is nonzero, and the commit
+        /// must satisfy what it answered.
         answers: Option<PatchAnswer>,
         patch: WorldPatch,
+    },
+    /// The world's only clock advance. Owner or the clock capability, and the
+    /// clock capability may do nothing else.
+    AdvanceTime {
+        minutes: TickMinutes,
     },
 }
 
@@ -503,6 +534,22 @@ struct WorldState {
     /// neither a subject nor a referent, so it enters no scope digest and is
     /// admission-only state.
     redress: BTreeMap<GrievanceKindName, Forum>,
+    /// What each subject has promised. Never empty for a present key.
+    commitments: BTreeMap<SubjectId, BTreeMap<CommitmentKey, Commitment>>,
+    /// Pressure *on* each subject, keyed target-major then source. Never empty
+    /// for a present key; no stored zero magnitude.
+    pressures: BTreeMap<SubjectId, BTreeMap<PressureSource, PressureMagnitude>>,
+    /// When each subject was last given a decision opportunity it consumed.
+    /// Absence means never. The debt term of the attention order and nothing
+    /// else.
+    last_opportunity_at: BTreeMap<SubjectId, FictionalMinutes>,
+    /// Minutes since genesis. The world's only clock, advanced by exactly one
+    /// command body and read by no wall clock. It enters `state_digest` and no
+    /// `ScopePreimage`: it is world truth, and it is read by no precondition, so
+    /// a tick that only advances pressure moves no proposal's binding.
+    now: FictionalMinutes,
+    /// The authored scale target, written once by genesis and never mutated.
+    scale_intent: WorldScaleIntent,
     controller_assignments: BTreeMap<DecisionScope, ControllerAssignment>,
     /// What an affordance *is*. World-authored, Draft-only, written by
     /// `admit_resolved` alone.
@@ -524,6 +571,9 @@ enum WorldEffect {
         resolved: ResolvedPatch,
     },
     PatchAdmitted {
+        /// What this commit answered, so `apply_effect` re-decides the same
+        /// rule `reduce` decided and then proves the answer was satisfied.
+        answers: Option<PatchAnswer>,
         resolved: ResolvedPatch,
     },
     DraftApproved {
@@ -540,6 +590,15 @@ enum WorldEffect {
     },
     DecisionDeclined {
         opportunity: DecisionOpportunity,
+    },
+    /// The first effect that mutates state for subjects other than one scope.
+    /// Its gate is the clock capability or the owner, and `apply_effect`
+    /// re-derives the whole motion, so a forged fulfilment, magnitude, row, or
+    /// target is one comparison rather than a clause apiece.
+    TimeAdvanced {
+        minutes: TickMinutes,
+        to: FictionalMinutes,
+        motion: Motion,
     },
 }
 
@@ -619,6 +678,32 @@ pub(crate) struct SubjectSnapshot {
     /// The channels this subject controls, by id. Not their reach: who else is
     /// in earshot is a question about other subjects.
     pub(crate) controls: BTreeSet<EntityId>,
+    /// Digest-bound, lowered from the one `scope_components` call `snapshot`
+    /// already makes, so view and digest cannot drift.
+    pub(crate) commitments: Vec<CommitmentSnapshot>,
+    /// Pressure on self. View-only: read by no precondition, so covered by no
+    /// digest. Pressure this subject *sources* is excluded — it is another
+    /// subject's state, and the actor already sees the commitment that produced
+    /// it.
+    pub(crate) pressures: Vec<PressureSnapshot>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct CommitmentSnapshot {
+    pub(crate) key: CommitmentKey,
+    pub(crate) kind: CommitmentKind,
+    pub(crate) counterparty: Option<SubjectId>,
+    pub(crate) due: FictionalMinutes,
+    pub(crate) period: Option<TickMinutes>,
+    /// Derived in `snapshot` so a controller does not recompute it against a
+    /// clock it must be handed anyway.
+    pub(crate) past_due: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct PressureSnapshot {
+    pub(crate) source: PressureSource,
+    pub(crate) magnitude: PressureMagnitude,
 }
 
 /// What a subject knows of one fact. `standing` carries no `EvidenceRef`: a
@@ -712,7 +797,17 @@ pub(crate) struct WorldSnapshot {
     pub(crate) places: Vec<PlaceSnapshot>,
     pub(crate) resources: Vec<ResourceSnapshot>,
     pub(crate) routes: Vec<RouteSnapshot>,
+    /// Already ordered by pressure, then attention debt, then id: one owner, so
+    /// Eve, the mesh projection, and any future driver read the same order and
+    /// none computes its own.
     pub(crate) opportunities: Vec<DecisionOpportunity>,
+    /// Everyone in a world shares the clock, and no controller can read a `due`
+    /// without it.
+    pub(crate) now: FictionalMinutes,
+    /// The elaborator's surface. There is no global pressure register and no
+    /// commitment gazetteer.
+    pub(crate) boundaries: Vec<CausalBoundary>,
+    pub(crate) scale_deficit: Vec<ScaleDeficitRow>,
     pub(crate) state_digest: String,
     pub(crate) last_commit_digest: Option<String>,
 }
@@ -847,6 +942,12 @@ pub(crate) enum KernelError {
     CorruptJournal(String),
     #[error("private reducer invariant failed: {0}")]
     Invariant(String),
+    #[error("an active patch must answer a derived boundary or a nonzero deficit")]
+    AnswerRequired,
+    #[error("this world derives no such boundary or deficit")]
+    AnswerNotDerived,
+    #[error("the admitted patch does not satisfy the boundary or deficit it answered")]
+    AnswerNotSatisfied,
 }
 
 impl KernelError {
@@ -908,6 +1009,7 @@ fn prepare_creation(
         &WorldState::empty(world_id, input.owner.clone(), title.clone()),
         input.id,
         &input.patch,
+        Some(&input.scale_intent),
     )
     .map_err(KernelError::PatchRejected)?;
     Ok(PreparedCreation {
@@ -1121,6 +1223,10 @@ impl WorldKernel {
 }
 
 fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, KernelError> {
+    // The one admission rule for internal capabilities, stated here and again
+    // at the top of `apply_effect`: `reduce` decides and `apply_effect`
+    // re-decides, which is how every gate in this file is written.
+    require_system_capability(&command.caller, &command.body)?;
     match &command.body {
         CommandBody::ApproveDraft => {
             require_phase(state, WorldPhase::Draft)?;
@@ -1184,25 +1290,105 @@ fn reduce(state: &WorldState, command: &CommandEnvelope) -> Result<WorldEffect, 
                 opportunity: current,
             })
         }
-        CommandBody::AdmitPatch { answers: _, patch } => {
+        CommandBody::AdvanceTime { minutes } => {
+            // There is no time in Draft: a world under construction has no due
+            // dates to cross.
+            require_phase(state, WorldPhase::Active)?;
+            require_clock_caller(state, &command.caller)?;
+            let to = state
+                .now
+                .checked_add(*minutes)
+                .ok_or_else(|| KernelError::Serialization("world clock overflow".into()))?;
+            // A tick with an empty motion is still a commit: the clock moved,
+            // which is a canonical change. That is why the clock is a state
+            // field rather than a patch operation.
+            Ok(WorldEffect::TimeAdvanced {
+                minutes: *minutes,
+                to,
+                motion: clock::derive_motion(state, to),
+            })
+        }
+        CommandBody::AdmitPatch { answers, patch } => {
             require_owner(state, &command.caller)?;
-            // Draft admits declarations, evidence, and operations; Active admits
-            // operations only. The patch lane therefore structurally cannot mint
-            // the claim every utterance asserts, which is why `action::exercise`
-            // is the second `derive_id` call site.
-            if state.phase == WorldPhase::Active
-                && !(patch.declarations.is_empty() && patch.evidence.is_empty())
-            {
-                return Err(KernelError::WrongPhase {
-                    expected: WorldPhase::Draft,
-                    actual: WorldPhase::Active,
-                });
-            }
-            let resolved = patch::resolve_patch(state, command.id, patch)
+            require_answer(
+                state,
+                answers.as_ref(),
+                !(patch.declarations.is_empty() && patch.evidence.is_empty()),
+            )?;
+            let resolved = patch::resolve_patch(state, command.id, patch, None)
                 .map_err(KernelError::PatchRejected)?;
-            Ok(WorldEffect::PatchAdmitted { resolved })
+            Ok(WorldEffect::PatchAdmitted {
+                answers: answers.clone(),
+                resolved,
+            })
         }
     }
+}
+
+/// A system capability is admitted for exactly one command body and nothing
+/// else. Stated once here, reached by `reduce` and by `apply_effect`.
+fn require_system_capability(caller: &CallerId, body: &CommandBody) -> Result<(), KernelError> {
+    match caller {
+        CallerId::System(SystemCapability::Clock)
+            if !matches!(body, CommandBody::AdvanceTime { .. }) =>
+        {
+            Err(KernelError::Unauthorized)
+        }
+        _ => Ok(()),
+    }
+}
+
+/// The owner may tick from Eve; the tick task may tick with no session. Nothing
+/// else may tick.
+fn require_clock_caller(state: &WorldState, caller: &CallerId) -> Result<(), KernelError> {
+    if caller == &CallerId::System(SystemCapability::Clock) {
+        Ok(())
+    } else {
+        require_owner(state, caller)
+    }
+}
+
+/// Answering is what lets an Active patch declare. Draft answers nothing:
+/// `SeedRequest` — the ontology's draft-phase answer — is not inhabited, so
+/// genesis and draft elaboration answer nothing. In Active, a patch that only
+/// changes components of existing structure is the operator's hand and answers
+/// nothing; a patch that declares or admits evidence is elaboration, and
+/// elaboration answers a boundary the kernel currently derives or a
+/// jurisdiction whose deficit is nonzero.
+fn require_answer(
+    state: &WorldState,
+    answers: Option<&PatchAnswer>,
+    declares: bool,
+) -> Result<(), KernelError> {
+    match (state.phase, answers) {
+        (WorldPhase::Draft, None) => Ok(()),
+        (WorldPhase::Draft, Some(_)) => Err(KernelError::AnswerNotDerived),
+        (WorldPhase::Active, None) if declares => Err(KernelError::AnswerRequired),
+        (WorldPhase::Active, None) => Ok(()),
+        (WorldPhase::Active, Some(PatchAnswer::Boundary(claimed))) => {
+            exact_boundary(state, claimed).map(|_| ())
+        }
+        (WorldPhase::Active, Some(PatchAnswer::Deficit(jurisdiction))) => {
+            if jurisdiction_deficit(state, *jurisdiction)? > 0 {
+                Ok(())
+            } else {
+                Err(KernelError::AnswerNotDerived)
+            }
+        }
+    }
+}
+
+/// The total deficit of one jurisdiction, which is what an answer must strictly
+/// reduce.
+fn jurisdiction_deficit(
+    state: &WorldState,
+    jurisdiction: JurisdictionKey,
+) -> Result<u64, KernelError> {
+    Ok(derive_scale_deficit(state)?
+        .into_iter()
+        .filter(|row| row.jurisdiction == jurisdiction)
+        .map(|row| u64::from(row.deficit))
+        .sum())
 }
 
 /// A human principal joins `required_approvers`, so only the lane that builds
@@ -1240,6 +1426,11 @@ impl WorldState {
             authority: BTreeMap::new(),
             selection: BTreeMap::new(),
             redress: BTreeMap::new(),
+            commitments: BTreeMap::new(),
+            pressures: BTreeMap::new(),
+            last_opportunity_at: BTreeMap::new(),
+            now: FictionalMinutes::default(),
+            scale_intent: WorldScaleIntent::default(),
             controller_assignments: BTreeMap::new(),
             affordance_catalog: BTreeMap::new(),
             affordance_grants: BTreeMap::new(),
@@ -1275,8 +1466,13 @@ impl WorldState {
         // every other command. Deterministic allocation is what lets one
         // equality replace a field-by-field binding zip.
         let mut state = Self::empty(world_id, owner.clone(), title.clone());
-        let expected = patch::resolve_patch(&state, command.id, &command.patch)
-            .map_err(KernelError::PatchRejected)?;
+        let expected = patch::resolve_patch(
+            &state,
+            command.id,
+            &command.patch,
+            Some(&command.scale_intent),
+        )
+        .map_err(KernelError::PatchRejected)?;
         if &expected != resolved {
             return Err(KernelError::Invariant(
                 "genesis effect does not derive from its creation command".into(),
@@ -1496,6 +1692,9 @@ fn admit_resolved(state: &mut WorldState, resolved: &ResolvedPatch) -> Result<()
                 "admitted channel ID collision".into(),
             ));
         }
+    }
+    if let Some(intent) = &resolved.scale_intent {
+        state.scale_intent = intent.clone();
     }
     apply_operations(state, &resolved.operations, &resolved.evidence)
 }
@@ -2150,8 +2349,174 @@ fn apply_operation(
             }
             seat.controller = *controller;
         }
+        ResolvedOp::CreateCommitment {
+            subject,
+            key,
+            commitment,
+        } => {
+            if !state.subjects.contains_key(subject)
+                || !commitment_is_live(state, *subject, commitment)
+            {
+                return Err(KernelError::Invariant(
+                    "a commitment names no live promisor, counterparty, or check".into(),
+                ));
+            }
+            if state
+                .commitments
+                .entry(*subject)
+                .or_default()
+                .insert(*key, commitment.clone())
+                .is_some()
+            {
+                return Err(KernelError::Invariant("commitment key collision".into()));
+            }
+        }
+        ResolvedOp::DischargeCommitment { subject, key } => {
+            // One removal, two writes, one owner: the commitment and every
+            // pressure row it sourced.
+            let discharged = || KernelError::Invariant("discharge names no live commitment".into());
+            let held = state.commitments.get_mut(subject).ok_or_else(discharged)?;
+            held.remove(key).ok_or_else(discharged)?;
+            let empty = held.is_empty();
+            if empty {
+                state.commitments.remove(subject);
+            }
+            let sourced = PressureSource::Commitment {
+                subject: *subject,
+                key: *key,
+            };
+            state.pressures.retain(|_, held| {
+                held.remove(&sourced);
+                !held.is_empty()
+            });
+        }
+        ResolvedOp::AdvancePressure { source, target, by }
+        | ResolvedOp::ReducePressure { source, target, by } => {
+            let advancing = matches!(operation, ResolvedOp::AdvancePressure { .. });
+            if !state.subjects.contains_key(target) || !pressure_source_is_live(state, source) {
+                return Err(unknown());
+            }
+            let current = state
+                .pressures
+                .get(target)
+                .and_then(|held| held.get(source))
+                .map_or(0, |magnitude| magnitude.0);
+            let next = if advancing {
+                current.saturating_add(by.0)
+            } else {
+                current.saturating_sub(by.0)
+            };
+            if next == current {
+                return Err(KernelError::Invariant(
+                    "pressure operation changes nothing".into(),
+                ));
+            }
+            set_pressure(state, *target, *source, next);
+        }
+        ResolvedOp::ResolvePressure { source, target } => {
+            if state
+                .pressures
+                .get(target)
+                .is_none_or(|held| !held.contains_key(source))
+            {
+                return Err(KernelError::Invariant(
+                    "pressure operation changes nothing".into(),
+                ));
+            }
+            set_pressure(state, *target, *source, 0);
+        }
     }
     Ok(())
+}
+
+/// Zero removes the source key, and an emptied target removes the target key,
+/// so `pressures` has exactly one representation of nothing.
+fn set_pressure(state: &mut WorldState, target: SubjectId, source: PressureSource, value: u32) {
+    if value == 0 {
+        let empty = if let Some(held) = state.pressures.get_mut(&target) {
+            held.remove(&source);
+            held.is_empty()
+        } else {
+            false
+        };
+        if empty {
+            state.pressures.remove(&target);
+        }
+    } else {
+        state
+            .pressures
+            .entry(target)
+            .or_default()
+            .insert(source, PressureMagnitude(value));
+    }
+}
+
+/// Whether every referent a commitment names is live and its shape holds.
+/// Re-derived over the committed partitions, because a forged effect reaches
+/// `apply_operation` without ever passing the resolver.
+fn commitment_is_live(state: &WorldState, subject: SubjectId, commitment: &Commitment) -> bool {
+    let counterparty_is_live = match commitment.counterparty {
+        Some(counterparty) => {
+            counterparty != subject
+                && state.subjects.contains_key(&counterparty)
+                && commitment.kind != CommitmentKind::Goal
+        }
+        None => true,
+    };
+    counterparty_is_live
+        && (commitment.kind == CommitmentKind::Routine) == commitment.period.is_some()
+        && (commitment.kind == CommitmentKind::Routine || commitment.checks.is_empty())
+        && commitment.due > state.now
+        && commitment
+            .checks
+            .iter()
+            .all(|check| bound_precondition_is_live(state, check))
+}
+
+fn bound_precondition_is_live(state: &WorldState, check: &BoundPrecondition) -> bool {
+    let is_kind = |entity_id: &EntityId, kind: EntityKind| {
+        state
+            .entities
+            .get(entity_id)
+            .is_some_and(|record| record.kind == kind)
+    };
+    let audience_is_live = |via: &Audience| match via {
+        Audience::Colocated => true,
+        Audience::Channel(entity_id) => state.channels.contains_key(entity_id),
+    };
+    match check {
+        BoundPrecondition::Present { at } => is_kind(at, EntityKind::Place),
+        BoundPrecondition::Reachable { to, within } => {
+            is_kind(to, EntityKind::Place) && patch::is_valid_cost(*within)
+        }
+        BoundPrecondition::Holds { resource, .. } => is_kind(resource, EntityKind::Resource),
+        BoundPrecondition::Authorized { over, kind } => {
+            patch::is_civic_name(&kind.0)
+                && match over {
+                    Target::Subject(subject_id) => state.subjects.contains_key(subject_id),
+                    Target::Entity(entity_id) => is_kind(entity_id, EntityKind::Place),
+                    Target::Edge(edge_id) => state.edges.contains_key(edge_id),
+                }
+        }
+        BoundPrecondition::HasStanding { grievance } => patch::is_civic_name(&grievance.0),
+        BoundPrecondition::Knows { fact, .. } => is_kind(fact, EntityKind::Fact),
+        BoundPrecondition::CanBroadcast { via } => audience_is_live(via),
+        BoundPrecondition::CanReach { subject, via } => {
+            state.subjects.contains_key(subject) && audience_is_live(via)
+        }
+        BoundPrecondition::Committed { to, .. } => state.subjects.contains_key(to),
+    }
+}
+
+fn pressure_source_is_live(state: &WorldState, source: &PressureSource) -> bool {
+    match source {
+        PressureSource::Commitment { subject, key } => state
+            .commitments
+            .get(subject)
+            .is_some_and(|held| held.contains_key(key)),
+        PressureSource::Dependency(target) => dependency_target_exists(state, *target),
+        PressureSource::Subject(subject_id) => state.subjects.contains_key(subject_id),
+    }
 }
 
 /// The label every minted claim carries. A label is a name, not a transcript:
@@ -2369,6 +2734,11 @@ pub(super) struct ScopeComponents {
     /// a thousand digests per membership change, which is whole-world binding by
     /// the front door.
     controls: BTreeMap<EntityId, ChannelRecord>,
+    /// This subject's own commitments. `Precondition::Committed` reads them, so
+    /// the digest must bind them. Pressure, the clock, and the attention stamp
+    /// stay out: no precondition reads any of the three, so a tick that only
+    /// advances pressure invalidates no in-flight proposal.
+    commitments: BTreeMap<CommitmentKey, Commitment>,
 }
 
 /// Whether an authority target covers a referent. The one statement of
@@ -2500,6 +2870,11 @@ fn scope_components(state: &WorldState, subject_id: SubjectId) -> ScopeComponent
             .filter(|(_, record)| record.controller == Some(subject_id))
             .map(|(entity_id, record)| (*entity_id, record.clone()))
             .collect(),
+        commitments: state
+            .commitments
+            .get(&subject_id)
+            .cloned()
+            .unwrap_or_default(),
     }
 }
 
@@ -2638,6 +3013,28 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
                 redress,
                 knowledge,
                 controls: components.controls.into_keys().collect(),
+                commitments: components
+                    .commitments
+                    .into_iter()
+                    .map(|(key, commitment)| CommitmentSnapshot {
+                        key,
+                        kind: commitment.kind,
+                        counterparty: commitment.counterparty,
+                        due: commitment.due,
+                        period: commitment.period,
+                        past_due: commitment.due <= state.now,
+                    })
+                    .collect(),
+                pressures: state
+                    .pressures
+                    .get(subject_id)
+                    .into_iter()
+                    .flatten()
+                    .map(|(source, magnitude)| PressureSnapshot {
+                        source: *source,
+                        magnitude: *magnitude,
+                    })
+                    .collect(),
             })
         })
         .collect::<Result<Vec<_>, KernelError>>()?;
@@ -2696,10 +3093,324 @@ fn snapshot(state: &WorldState) -> Result<WorldSnapshot, KernelError> {
         places,
         resources,
         routes,
-        opportunities: derive_opportunities(state)?,
+        opportunities: order_opportunities(state, derive_opportunities(state)?),
+        now: state.now,
+        boundaries: derive_boundaries(state)?,
+        scale_deficit: derive_scale_deficit(state)?,
         state_digest: state.state_digest.clone(),
         last_commit_digest: state.last_commit_digest.clone(),
     })
+}
+
+/// A place in the world's causal reach that the world has not yet grown into.
+/// Derived, never stored, and cleared by no writer: a boundary stops being
+/// derived when its predicate stops holding.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "boundary", rename_all = "snake_case")]
+pub(crate) enum CausalBoundary {
+    UnelaboratedDestination {
+        route: EdgeId,
+        place: EntityId,
+        scope: BoundaryDigest,
+    },
+    MissingStructure {
+        subject: SubjectId,
+        key: CommitmentKey,
+        scope: BoundaryDigest,
+    },
+    /// Declared, never derived: no relations partition exists. Answering one is
+    /// `AnswerNotDerived`.
+    PolityInCausalRange {
+        subject: SubjectId,
+        scope: BoundaryDigest,
+    },
+    /// Declared, never derived: no population membership and no slice concept
+    /// exists. Answering one is `AnswerNotDerived`.
+    IndividuationRequired {
+        population: SubjectId,
+        scope: BoundaryDigest,
+    },
+}
+
+/// The digest of exactly the components that derive one boundary, produced by
+/// the one `digest()` owner, in the `ScopeDigest` idiom.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(transparent)]
+pub(crate) struct BoundaryDigest(String);
+
+#[derive(Serialize)]
+struct UnelaboratedDestinationPreimage<'a> {
+    world_id: WorldId,
+    route: &'a EdgeRecord,
+    place: &'a EntityRecord,
+    contained: BTreeSet<EntityId>,
+    occupants: BTreeSet<SubjectId>,
+    incident: BTreeSet<EdgeId>,
+}
+
+#[derive(Serialize)]
+struct MissingStructurePreimage<'a> {
+    world_id: WorldId,
+    subject: SubjectId,
+    key: CommitmentKey,
+    commitment: &'a Commitment,
+    counterparty_authority: BTreeSet<AuthorityGrant>,
+    redress: &'a BTreeMap<GrievanceKindName, Forum>,
+}
+
+/// Beside `derive_opportunities`, and reached from `snapshot` and from
+/// `reduce`'s `AdmitPatch` arm. The same shape as the opportunity derivation,
+/// not the same function: the inputs and the consumers differ, and a shared
+/// derivation returning a sum type would be a generic helper wearing a name.
+fn derive_boundaries(state: &WorldState) -> Result<Vec<CausalBoundary>, KernelError> {
+    let mut boundaries = Vec::new();
+    for (edge_id, record) in &state.edges {
+        let (from, to) = record.endpoints();
+        for place in [from, to] {
+            let contained: BTreeSet<EntityId> = state
+                .entities
+                .iter()
+                .filter(|(_, entity)| entity.container == Some(place))
+                .map(|(entity_id, _)| *entity_id)
+                .collect();
+            let occupants: BTreeSet<SubjectId> = state
+                .positions
+                .iter()
+                .filter(|(_, position)| position.place == place)
+                .map(|(subject_id, _)| *subject_id)
+                .collect();
+            let incident: BTreeSet<EdgeId> = state
+                .edges
+                .iter()
+                .filter(|(_, candidate)| {
+                    let (candidate_from, candidate_to) = candidate.endpoints();
+                    candidate_from == place || candidate_to == place
+                })
+                .map(|(candidate_id, _)| *candidate_id)
+                .collect();
+            if !contained.is_empty()
+                || !occupants.is_empty()
+                || incident.len() != 1
+                || !incident.contains(edge_id)
+            {
+                continue;
+            }
+            let entity = state
+                .entities
+                .get(&place)
+                .ok_or_else(|| KernelError::Invariant("a route names no canonical place".into()))?;
+            boundaries.push(CausalBoundary::UnelaboratedDestination {
+                route: *edge_id,
+                place,
+                scope: BoundaryDigest(digest(&UnelaboratedDestinationPreimage {
+                    world_id: state.world_id,
+                    route: record,
+                    place: entity,
+                    contained,
+                    occupants,
+                    incident,
+                })?),
+            });
+        }
+    }
+    // A commitment the counterparty can neither command nor litigate. Both
+    // clauses read the civic partitions through their own predicates, so
+    // jurisdiction lent by an office counts and no second covering rule exists.
+    // A `Goal` derives nothing: a promise to oneself needs no forum.
+    for (subject, held) in &state.commitments {
+        for (key, commitment) in held {
+            let Some(counterparty) = commitment.counterparty else {
+                continue;
+            };
+            let counterparty_authority = subject_authority(state, counterparty);
+            let commandable = counterparty_authority
+                .iter()
+                .any(|grant| covers(state, grant.over, Target::Subject(*subject)));
+            let litigable = state
+                .redress
+                .values()
+                .any(|forum| covers(state, forum.standing, Target::Subject(counterparty)));
+            if commandable || litigable {
+                continue;
+            }
+            boundaries.push(CausalBoundary::MissingStructure {
+                subject: *subject,
+                key: *key,
+                scope: BoundaryDigest(digest(&MissingStructurePreimage {
+                    world_id: state.world_id,
+                    subject: *subject,
+                    key: *key,
+                    commitment,
+                    counterparty_authority,
+                    redress: &state.redress,
+                })?),
+            });
+        }
+    }
+    Ok(boundaries)
+}
+
+/// The sole validator of a claimed boundary, mirroring `exact_opportunity`.
+fn exact_boundary(
+    state: &WorldState,
+    claimed: &CausalBoundary,
+) -> Result<CausalBoundary, KernelError> {
+    derive_boundaries(state)?
+        .into_iter()
+        .find(|current| current == claimed)
+        .ok_or(KernelError::AnswerNotDerived)
+}
+
+/// One region's count for one subject kind.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) struct ScaleDeficitRow {
+    pub(crate) jurisdiction: JurisdictionKey,
+    pub(crate) kind: SubjectKind,
+    pub(crate) target: u32,
+    pub(crate) qualified: u32,
+    pub(crate) deficit: u32,
+}
+
+/// Whether a subject counts toward the world's scale target. Three of the four
+/// clauses cannot currently fail — the world-level phase gate, the one-
+/// controller rule, and the non-empty grant set are already enforced elsewhere
+/// — so `Goal` carries the whole discrimination at this pass. The conjunction
+/// is written once anyway, because retirement and grant revocation make two of
+/// the clauses live later and a scattered count would then be wrong in three
+/// places. "Executable" is structural, never "preconditions currently hold":
+/// evaluating them per subject per snapshot would make the deficit flicker as
+/// routes open and close.
+fn qualifies(state: &WorldState, subject_id: SubjectId) -> bool {
+    let scope = DecisionScope { subject_id };
+    state.phase == WorldPhase::Active
+        && state.controller_assignments.contains_key(&scope)
+        && state
+            .affordance_grants
+            .get(&scope)
+            .is_some_and(|granted| !granted.is_empty())
+        && state.commitments.get(&subject_id).is_some_and(|held| {
+            held.values()
+                .any(|commitment| commitment.kind == CommitmentKind::Goal)
+        })
+}
+
+/// Derived in `snapshot`, never stored. `snapshot` is the recount: it already
+/// re-derives everything, and a second after-every-commit step would be a
+/// second owner. Only admitted subjects reduce it, so a rejected patch leaves
+/// it visible, which is free — a rejection mutates nothing.
+fn derive_scale_deficit(state: &WorldState) -> Result<Vec<ScaleDeficitRow>, KernelError> {
+    let mut counted: BTreeMap<(JurisdictionKey, SubjectKind), u32> = BTreeMap::new();
+    for (subject_id, subject) in &state.subjects {
+        if !qualifies(state, *subject_id) {
+            continue;
+        }
+        match state.positions.get(subject_id) {
+            // A subject under nested roots counts toward both: layered
+            // jurisdiction applied to counting.
+            Some(position) => {
+                for root in state.scale_intent.jurisdictions.keys() {
+                    if patch::covers_place(&state.entities, *root, position.place) {
+                        *counted
+                            .entry((JurisdictionKey::PlaceSubtree(*root), subject.kind))
+                            .or_default() += 1;
+                    }
+                }
+            }
+            // Counted, visible, and reducing no target.
+            None => {
+                *counted
+                    .entry((JurisdictionKey::Unplaced, subject.kind))
+                    .or_default() += 1;
+            }
+        }
+    }
+    let mut rows: BTreeMap<(JurisdictionKey, SubjectKind), ScaleDeficitRow> = BTreeMap::new();
+    for (kind, world_target) in &state.scale_intent.targets {
+        for (root, permille) in &state.scale_intent.jurisdictions {
+            let jurisdiction = JurisdictionKey::PlaceSubtree(*root);
+            let target = u32::try_from(
+                u64::from(*world_target)
+                    .checked_mul(u64::from(*permille))
+                    .ok_or_else(|| KernelError::Invariant("scale target overflow".into()))?
+                    / 1000,
+            )
+            .map_err(|_| KernelError::Invariant("scale target overflow".into()))?;
+            let qualified = counted
+                .get(&(jurisdiction, *kind))
+                .copied()
+                .unwrap_or_default();
+            rows.insert(
+                (jurisdiction, *kind),
+                ScaleDeficitRow {
+                    jurisdiction,
+                    kind: *kind,
+                    target,
+                    qualified,
+                    deficit: target.saturating_sub(qualified),
+                },
+            );
+        }
+    }
+    for ((jurisdiction, kind), qualified) in counted {
+        rows.entry((jurisdiction, kind))
+            .or_insert(ScaleDeficitRow {
+                jurisdiction,
+                kind,
+                target: 0,
+                qualified,
+                deficit: 0,
+            })
+            .qualified = qualified;
+    }
+    Ok(rows
+        .into_values()
+        .filter(|row| row.target > 0 || row.qualified > 0)
+        .collect())
+}
+
+/// A pure re-ordering of `derive_opportunities`' output: same values, same
+/// length, same set. Never a filter — filtering by readiness would drag
+/// precondition reads into `ScopePreimage`, and a tick could then withdraw an
+/// opportunity a controller is mid-inference on, which `exact_opportunity`
+/// would report as `OpportunityMismatch` rather than the honest `ScopeChanged`.
+///
+/// A subject never attended sorts ahead of every subject that has, and a
+/// subject with no pressure still climbs one tick at a time, so the order
+/// starves nobody. `SubjectId` is the final tiebreak, so the order is total and
+/// identical on every machine.
+fn order_opportunities(
+    state: &WorldState,
+    mut opportunities: Vec<DecisionOpportunity>,
+) -> Vec<DecisionOpportunity> {
+    opportunities.sort_by_key(|opportunity| {
+        let subject_id = opportunity.scope.subject_id;
+        (
+            std::cmp::Reverse(pressure_total(state, subject_id)),
+            std::cmp::Reverse(attention_debt(state, subject_id)),
+            subject_id,
+        )
+    });
+    opportunities
+}
+
+fn pressure_total(state: &WorldState, subject_id: SubjectId) -> u64 {
+    state
+        .pressures
+        .get(&subject_id)
+        .into_iter()
+        .flat_map(BTreeMap::values)
+        .fold(0u64, |total, magnitude| {
+            total.saturating_add(u64::from(magnitude.0))
+        })
+}
+
+/// Minutes since this subject last consumed an opportunity. Absence is
+/// `u64::MAX`: never attended outranks every subject that has.
+fn attention_debt(state: &WorldState, subject_id: SubjectId) -> u64 {
+    state
+        .last_opportunity_at
+        .get(&subject_id)
+        .map_or(u64::MAX, |stamp| state.now.since(*stamp))
 }
 
 fn derive_opportunities(state: &WorldState) -> Result<Vec<DecisionOpportunity>, KernelError> {
@@ -2906,21 +3617,52 @@ fn apply_effect(
     caller: &CallerId,
     effect: &WorldEffect,
 ) -> Result<(), KernelError> {
+    // The capability rule `reduce` decided, re-decided here against the effect
+    // the command produced.
+    if matches!(caller, CallerId::System(SystemCapability::Clock))
+        && !matches!(effect, WorldEffect::TimeAdvanced { .. })
+    {
+        return Err(KernelError::Unauthorized);
+    }
     match effect {
         WorldEffect::WorldCreated { .. } => {
             return Err(KernelError::Invariant(
                 "world genesis cannot be applied as a mutable effect".into(),
             ));
         }
-        WorldEffect::PatchAdmitted { resolved } => {
-            if caller != &CallerId::Principal(state.owner.clone())
-                || (state.phase == WorldPhase::Active && !resolved.declares_nothing())
-            {
+        WorldEffect::PatchAdmitted { answers, resolved } => {
+            if caller != &CallerId::Principal(state.owner.clone()) {
                 return Err(KernelError::Invariant(
                     "admitted patch does not satisfy admission authority".into(),
                 ));
             }
+            require_answer(state, answers.as_ref(), !resolved.declares_nothing())?;
+            // The deficit before the write, so "strictly decreased" is a
+            // comparison rather than a claim the effect makes.
+            let before = match answers {
+                Some(PatchAnswer::Deficit(jurisdiction)) => {
+                    jurisdiction_deficit(state, *jurisdiction)?
+                }
+                _ => 0,
+            };
             admit_resolved(state, resolved)?;
+            // What makes "a commit clears exactly the boundary it answers"
+            // structural rather than hoped for. "Nothing else clears one" is
+            // true by construction: boundaries are derived and no writer
+            // clears one.
+            match answers {
+                Some(PatchAnswer::Boundary(answered)) => {
+                    if exact_boundary(state, answered).is_ok() {
+                        return Err(KernelError::AnswerNotSatisfied);
+                    }
+                }
+                Some(PatchAnswer::Deficit(jurisdiction)) => {
+                    if jurisdiction_deficit(state, *jurisdiction)? >= before {
+                        return Err(KernelError::AnswerNotSatisfied);
+                    }
+                }
+                None => {}
+            }
         }
         WorldEffect::DraftApproved { principal } => {
             if state.phase != WorldPhase::Draft
@@ -2975,6 +3717,9 @@ fn apply_effect(
             if !event.effects.is_empty() {
                 apply_operations(state, &event.effects, &[])?;
             }
+            state
+                .last_opportunity_at
+                .insert(current.scope.subject_id, state.now);
         }
         WorldEffect::DecisionDeclined { opportunity } => {
             let current = exact_opportunity(state, opportunity)?;
@@ -2988,6 +3733,51 @@ fn apply_effect(
                 return Err(KernelError::Invariant(
                     "decline effect does not match exact opportunity authority".into(),
                 ));
+            }
+            // A decline consumed the turn: a controller that keeps declining
+            // must not keep the head of the queue.
+            state
+                .last_opportunity_at
+                .insert(current.scope.subject_id, state.now);
+        }
+        WorldEffect::TimeAdvanced {
+            minutes,
+            to,
+            motion,
+        } => {
+            require_phase(state, WorldPhase::Active)?;
+            require_clock_caller(state, caller)?;
+            let derived_to = state
+                .now
+                .checked_add(*minutes)
+                .ok_or_else(|| KernelError::Serialization("world clock overflow".into()))?;
+            // The whole motion is re-derived rather than trusted field by
+            // field, so a forged fulfilment, magnitude, row, and target are one
+            // comparison.
+            if derived_to != *to || clock::derive_motion(state, derived_to) != *motion {
+                return Err(KernelError::Invariant(
+                    "time effect does not derive from the world clock".into(),
+                ));
+            }
+            state.now = *to;
+            for rolled in &motion.fulfilled {
+                let commitment = state
+                    .commitments
+                    .get_mut(&rolled.subject)
+                    .and_then(|held| held.get_mut(&rolled.key))
+                    .ok_or_else(|| {
+                        KernelError::Invariant("a fulfilled routine has no commitment".into())
+                    })?;
+                commitment.due = rolled.next_due;
+            }
+            // No inner map is ever left empty, because `derive_motion` emits no
+            // zero magnitude.
+            for written in &motion.pressed {
+                state
+                    .pressures
+                    .entry(written.target)
+                    .or_default()
+                    .insert(written.source, written.magnitude);
             }
         }
     }
@@ -3155,6 +3945,7 @@ mod tests {
                     }),
                 ],
             },
+            scale_intent: WorldScaleIntentRef::default(),
         }
     }
 
@@ -6343,7 +7134,9 @@ mod custody_tests {
                     qty: Quantity(OPENING_BALANCE + 1),
                 }],
                 evidence: Vec::new(),
+                scale_intent: None,
             },
+            answers: None,
         };
         let error = apply_effect(
             &mut candidate,
@@ -6929,7 +7722,9 @@ mod custody_tests {
                 channels: Vec::new(),
                 operations,
                 evidence: Vec::new(),
+                scale_intent: None,
             },
+            answers: None,
         };
         let transfer = |qty: u64| ResolvedOp::Transfer {
             from: custody.holder,
@@ -8606,14 +9401,8 @@ mod soul_knowledge_tests {
             )
             .unwrap_err();
         assert!(
-            matches!(
-                error,
-                KernelError::WrongPhase {
-                    expected: WorldPhase::Draft,
-                    actual: WorldPhase::Active,
-                }
-            ),
-            "an active world admitted a declaration: {error:?}"
+            matches!(error, KernelError::AnswerRequired),
+            "an active world admitted an unanswered declaration: {error:?}"
         );
         assert_eq!(kernel.state, before);
         drop(kernel);

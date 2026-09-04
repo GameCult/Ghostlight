@@ -3,7 +3,8 @@ use super::{
     CreateWorldIntent, CreationReceipt, DecisionInvocation, DecisionOpportunity, Declaration,
     DraftHandle, EntityDeclaration, EntityKind, KernelError, NewController, OperatorEvent,
     PrincipalCommandIntent, PrincipalId, Ref, SubjectDeclaration, SubjectKind, SubmitReceipt,
-    WorldKernel, WorldPatch, WorldSnapshot, journal, patch::kernel_speak_grant, prepare_creation,
+    SystemCapability, TickMinutes, WorldKernel, WorldPatch, WorldScaleIntentRef, WorldSnapshot,
+    journal, patch::kernel_speak_grant, prepare_creation,
 };
 use crate::app_session::VerifiedPrincipalEvidence;
 use std::path::Path;
@@ -156,6 +157,9 @@ impl WorldMailbox {
                     operations: Vec::new(),
                     evidence: Vec::new(),
                 },
+                // World ingress authors no scale target: the intent names
+                // jurisdiction roots, and genesis declares only the commons.
+                scale_intent: WorldScaleIntentRef::default(),
             },
             AuthenticatedCaller::verified_principal(principal_id),
         )
@@ -302,6 +306,24 @@ impl WorldMailbox {
                 opportunity: opportunity.clone(),
             },
             AuthenticatedCaller::verified_controller(controller_id),
+        )
+        .await
+    }
+
+    /// The clock port. Stamped, like every opportunity-bearing command, because
+    /// the tick task cannot know the live revision either. It is visible inside
+    /// the world subtree and unreachable from runtime ingress, which builds
+    /// `CallerId::Principal` from verified evidence and nothing else.
+    pub(crate) async fn submit_clock(
+        &self,
+        command_id: CommandId,
+        minutes: TickMinutes,
+    ) -> Result<SubmitReceipt, MailboxError> {
+        self.submit_stamped(
+            command_id,
+            CallerId::System(SystemCapability::Clock),
+            CommandBody::AdvanceTime { minutes },
+            AuthenticatedCaller::verified_system(SystemCapability::Clock),
         )
         .await
     }
@@ -671,6 +693,7 @@ mod tests {
                 operations: Vec::new(),
                 evidence: Vec::new(),
             },
+            scale_intent: WorldScaleIntentRef::default(),
         }
     }
 
@@ -1078,6 +1101,7 @@ mod tests {
                         operations: Vec::new(),
                         evidence: Vec::new(),
                     },
+                    scale_intent: WorldScaleIntentRef::default(),
                 },
                 &authenticated,
             )

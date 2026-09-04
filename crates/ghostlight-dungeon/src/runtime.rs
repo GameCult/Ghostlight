@@ -14,7 +14,7 @@ use crate::{
         ControllerPendingReason, ControllerRunner, ControllerWorkCustody, CreateWorldIntent,
         DecisionInvocation, DecisionOpportunity, KernelError, MailboxError, NarrativeRun,
         OperationalRun, PrincipalCommandIntent, PrincipalId, Statement, SubmissionDisposition,
-        SubmitReceipt, WorldMailbox, WorldSnapshot,
+        SubmitReceipt, TickMinutes, WorldMailbox, WorldSnapshot,
     },
 };
 use anyhow::{Context, bail, ensure};
@@ -85,6 +85,12 @@ struct SpeakPayload {
     text: String,
     opportunity: DecisionOpportunity,
     affordance_id: AffordanceId,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AdvanceTimePayload {
+    minutes: u32,
 }
 
 #[derive(Debug, Deserialize)]
@@ -248,6 +254,7 @@ pub(crate) async fn run(state_root_binding: Option<PathBuf>) -> anyhow::Result<(
         _ => bail!("managed runtime health authority is partial"),
     };
     tokio::spawn(maintain_mesh_projection(state.clone()));
+    tokio::spawn(advance_world_clock(state.clone()));
     let app = app_router(state.clone(), web_root);
     tracing::info!(address = %bound_address, "Ghostlight Dungeon world owner serving");
     let server = axum::serve(
@@ -1249,6 +1256,15 @@ async fn execute_world(
                 },
             }
         }
+        "world.advance_time" => {
+            let payload: AdvanceTimePayload = serde_json::from_value(invocation.payload.clone())
+                .map_err(|error| RuntimeCommandError::Payload(error.to_string()))?;
+            CommandBody::AdvanceTime {
+                minutes: TickMinutes::new(payload.minutes).ok_or_else(|| {
+                    RuntimeCommandError::Payload("time span is outside one year of minutes".into())
+                })?,
+            }
+        }
         operation => {
             return Err(RuntimeCommandError::Payload(format!(
                 "unknown world operation {operation}"
@@ -1420,6 +1436,31 @@ async fn maintain_mesh_projection(state: AppState) {
         interval.tick().await;
         if let Err(error) = refresh_mesh_projection(&state).await {
             tracing::warn!(%error, "derived CultMesh projection remains degraded");
+        }
+    }
+}
+
+/// How often the tick task submits, and how many fictional minutes each
+/// submission names. The wall clock decides *when* to submit and this constant
+/// decides *how many minutes* the command carries; neither reaches `reduce`.
+const CLOCK_TICK_INTERVAL: Duration = Duration::from_secs(60);
+const CLOCK_TICK_MINUTES: u32 = 60;
+
+/// The world clock's only driver. A refused tick — no world yet, a Draft world,
+/// a stale revision — is logged and skipped: the next tick re-reads live state.
+async fn advance_world_clock(state: AppState) {
+    let Some(minutes) = TickMinutes::new(CLOCK_TICK_MINUTES) else {
+        tracing::error!("the configured clock tick is outside one year of minutes");
+        return;
+    };
+    let mut interval = tokio::time::interval(CLOCK_TICK_INTERVAL);
+    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    interval.tick().await;
+    loop {
+        interval.tick().await;
+        match state.world.submit_clock(CommandId::new(), minutes).await {
+            Ok(_) => {}
+            Err(error) => tracing::debug!(%error, "world clock tick was not admitted"),
         }
     }
 }

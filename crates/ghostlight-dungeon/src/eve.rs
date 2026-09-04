@@ -182,7 +182,7 @@ pub(crate) fn authenticated_surface(
             children.push(json!({
                 "id":"world.summary",
                 "kind":"card",
-                "props":{"title":world.title,"subtitle":format!("{:?} · revision {}", world.phase, world.revision)},
+                "props":{"title":world.title,"subtitle":format!("{:?} · revision {} · minute {}", world.phase, world.revision, world.now.0)},
                 "children":[{
                     "id":"world.summary.body",
                     "kind":"text",
@@ -232,6 +232,30 @@ pub(crate) fn authenticated_surface(
                     }
                 }
                 WorldPhase::Active => {
+                    if world.owner == crate::world::PrincipalId::new(account) {
+                        children.extend([
+                            json!({
+                                "id":"world.advance_time.minutes",
+                                "kind":"control.input.number",
+                                "props":{"label":"Advance minutes","min":1,"max":525_600},
+                                "stateBindings":[local_draft("minutes", "number")],
+                                "children":[]
+                            }),
+                            command_button(
+                                "world.advance_time",
+                                "Advance time",
+                                "world.advance_time",
+                                json!({}),
+                                &["minutes"],
+                            ),
+                        ]);
+                        commands.push(command_descriptor(
+                            "world.advance_time",
+                            "ghostlight.world_advance_time.v0",
+                            &["minutes"],
+                            "WorldMailbox",
+                        ));
+                    }
                     let story = operator_log
                         .iter()
                         .filter_map(|event| {
@@ -315,9 +339,19 @@ pub(crate) fn authenticated_surface(
                                 continue;
                             };
                             has_controller_command = true;
+                            // The kernel owns the order; the head is simply the
+                            // first row it returned.
+                            let head = world
+                                .opportunities
+                                .first()
+                                .is_some_and(|first| first.scope == opportunity.scope);
                             children.push(command_button(
                                 &format!("world.controller.act.{index}"),
-                                &format!("Let {} act", subject.label),
+                                &format!(
+                                    "Let {} act{}",
+                                    subject.label,
+                                    if head { " (next)" } else { "" }
+                                ),
                                 "world.controller.act",
                                 json!({"opportunity":opportunity}),
                                 &[],

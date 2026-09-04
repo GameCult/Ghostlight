@@ -47,8 +47,8 @@ const MAX_CONNECTOR_FRAME_BYTES: usize = 1_052_672;
 const REQUEST_EXPIRY: Duration = Duration::from_secs(300);
 const TOOL_STEP_BUDGET: usize = 4;
 const PERSONA_WORD_BUDGET: usize = 180;
-const CONTROLLER_WORK_ROW: &str = "controller_work.v5";
-const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v5";
+const CONTROLLER_WORK_ROW: &str = "controller_work.v6";
+const CONTROLLER_WORK_SCHEMA: &str = "ghostlight.controller_work.v6";
 
 /// The Interpreter's byte-span capture tool. It is not the generated `speak`
 /// affordance tool: one captures an utterance out of preserved prose, the other
@@ -2586,6 +2586,7 @@ impl SelectedDecision {
                 "label": self.subject.label,
                 "kind": self.subject.kind,
             },
+            "now": self.snapshot.now,
             "permission": catalog_permissions(&self.granted),
         }))
         .map_err(|error| ControllerError::Serialization(error.to_string()))
@@ -2614,8 +2615,41 @@ impl SelectedDecision {
             "redress": self.typed_redress(),
             "knowledge": self.typed_knowledge(),
             "channels": self.typed_channels(),
+            "now": self.snapshot.now,
+            "commitments": self.typed_commitments(),
+            "pressures": self.typed_pressures(),
         }))
         .map_err(|error| ControllerError::Serialization(error.to_string()))
+    }
+
+    /// The acting subject's own promises. IDs, not labels: resolving a
+    /// counterparty's name is a `Knowledge` question.
+    fn typed_commitments(&self) -> Vec<Value> {
+        self.subject
+            .commitments
+            .iter()
+            .map(|commitment| {
+                json!({
+                    "key": commitment.key,
+                    "kind": commitment.kind,
+                    "counterparty": commitment.counterparty,
+                    "due": commitment.due,
+                    "period": commitment.period,
+                    "past_due": commitment.past_due,
+                })
+            })
+            .collect()
+    }
+
+    /// Pressure on self. Pressure this subject sources is another subject's
+    /// state and never enters: the actor already sees the commitment that
+    /// produced it.
+    fn typed_pressures(&self) -> Vec<Value> {
+        self.subject
+            .pressures
+            .iter()
+            .map(|pressure| json!({"source": pressure.source, "magnitude": pressure.magnitude}))
+            .collect()
     }
 
     /// The acting subject's own jurisdictions, with no label resolved for
@@ -3763,6 +3797,7 @@ fn purpose_name(purpose: InferencePurpose) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::world::WorldScaleIntentRef;
     use crate::world::patch::{kernel_speak_entry, kernel_speak_grant};
 
     /// The granted catalog every controller fixture works against: the
@@ -4007,6 +4042,8 @@ mod tests {
                 spoken_at: Some(40),
             }],
             controls: BTreeSet::new(),
+            commitments: Vec::new(),
+            pressures: Vec::new(),
         };
         let speaker = SubjectSnapshot {
             id: speaker_id,
@@ -4033,6 +4070,8 @@ mod tests {
                 spoken_at: None,
             }],
             controls: BTreeSet::new(),
+            commitments: Vec::new(),
+            pressures: Vec::new(),
         };
         let snapshot = WorldSnapshot {
             world_id: opportunity.world_id,
@@ -4050,6 +4089,9 @@ mod tests {
             opportunities: vec![opportunity.clone()],
             state_digest: "sha256:projector-must-not-see-this-digest".into(),
             last_commit_digest: Some("sha256:projector-must-not-see-the-commit".into()),
+            now: crate::world::FictionalMinutes::default(),
+            boundaries: Vec::new(),
+            scale_deficit: Vec::new(),
         };
         let selected = SelectedDecision {
             snapshot,
@@ -4240,6 +4282,8 @@ mod tests {
             redress: Vec::new(),
             knowledge: Vec::new(),
             controls: BTreeSet::new(),
+            commitments: Vec::new(),
+            pressures: Vec::new(),
         };
         let other = SubjectSnapshot {
             id: other_id,
@@ -4259,6 +4303,8 @@ mod tests {
             redress: Vec::new(),
             knowledge: Vec::new(),
             controls: BTreeSet::new(),
+            commitments: Vec::new(),
+            pressures: Vec::new(),
         };
         let named_place = |id, label: &str| PlaceSnapshot {
             id,
@@ -4297,6 +4343,9 @@ mod tests {
             opportunities: vec![opportunity.clone()],
             state_digest: "sha256:state".into(),
             last_commit_digest: None,
+            now: crate::world::FictionalMinutes::default(),
+            boundaries: Vec::new(),
+            scale_deficit: Vec::new(),
         };
         let selected = SelectedDecision {
             snapshot,
@@ -4857,6 +4906,7 @@ mod tests {
                         operations: Vec::new(),
                         evidence: Vec::new(),
                     },
+                    scale_intent: WorldScaleIntentRef::default(),
                 },
                 &authenticated,
             )
@@ -5467,6 +5517,7 @@ mod tests {
                         operations: Vec::new(),
                         evidence: Vec::new(),
                     },
+                    scale_intent: WorldScaleIntentRef::default(),
                 },
                 &owner_caller,
             )

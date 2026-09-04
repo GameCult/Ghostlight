@@ -12,8 +12,8 @@ use std::{
 };
 use thiserror::Error;
 
-const STATE_ROW: &str = "world_state.knowledge.v1";
-const COMMIT_ROW: &str = "world_commit.knowledge.v1";
+const STATE_ROW: &str = "world_state.commitment.v1";
+const COMMIT_ROW: &str = "world_commit.commitment.v1";
 
 #[derive(Debug, Error)]
 pub(super) enum JournalError {
@@ -389,6 +389,7 @@ fn verify_history(
     let mut replay = WorldState::genesis(state.world_id, genesis_command, &genesis.effect)
         .map_err(kernel_error)?;
     verify_state_shape(&replay)?;
+    verify_commitments_are_future(&replay, &BTreeMap::new())?;
     if replay.state_digest != genesis.resulting_state_digest {
         return Err(JournalError::Corrupt(
             "genesis resulting state digest is invalid".into(),
@@ -409,7 +410,18 @@ fn verify_history(
                 "commit chain is not contiguous or verifiable".into(),
             ));
         }
+        let previous_now = replay.now;
+        let previous_commitments = replay.commitments.clone();
         apply_committed_command(&mut replay, commit)?;
+        // Two chain checks one state cannot make: the clock never runs
+        // backwards, and it advances only on a tick.
+        let advanced = matches!(commit.effect, WorldEffect::TimeAdvanced { .. });
+        if replay.now < previous_now || (replay.now > previous_now) != advanced {
+            return Err(JournalError::Corrupt(
+                "the world clock moved without a time-advanced commit, or ran backwards".into(),
+            ));
+        }
+        verify_commitments_are_future(&replay, &previous_commitments)?;
         replay.revision = commit.resulting_revision;
         replay.state_digest = state_digest(&replay).map_err(kernel_error)?;
         if replay.state_digest != commit.resulting_state_digest {
@@ -423,6 +435,28 @@ fn verify_history(
         return Err(JournalError::Corrupt(
             "head state does not equal replayed history".into(),
         ));
+    }
+    Ok(())
+}
+
+/// The replay-side twin of `Mismatch::CommitmentDueInThePast`: every commitment
+/// key this commit introduced is due after the post-commit clock. Replay already
+/// reconstructs both sides, so this is a set difference over one partition.
+fn verify_commitments_are_future(
+    state: &WorldState,
+    before: &BTreeMap<super::SubjectId, BTreeMap<super::CommitmentKey, super::Commitment>>,
+) -> Result<(), JournalError> {
+    for (subject_id, held) in &state.commitments {
+        for (key, commitment) in held {
+            let existed = before
+                .get(subject_id)
+                .is_some_and(|previous| previous.contains_key(key));
+            if !existed && commitment.due <= state.now {
+                return Err(JournalError::Corrupt(
+                    "a commitment was born at or after its own due date".into(),
+                ));
+            }
+        }
     }
     Ok(())
 }
@@ -600,6 +634,89 @@ fn verify_state_shape(state: &WorldState) -> Result<(), JournalError> {
                 "knowledge does not name a canonical subject, fact, and source".into(),
             ));
         }
+    }
+    // Commitments, pressures, attention stamps, and the authored scale target.
+    // Absence is the only spelling of nothing at every level, so a store
+    // satisfying these clauses carries no empty inner map, no zero magnitude,
+    // and no dangling row — with no scan for any of them.
+    for (subject_id, held) in &state.commitments {
+        let commitment_is_canonical = |commitment: &super::Commitment| {
+            (commitment.kind == super::CommitmentKind::Routine) == commitment.period.is_some()
+                && (commitment.kind == super::CommitmentKind::Routine
+                    || commitment.checks.is_empty())
+                && match commitment.counterparty {
+                    Some(counterparty) => {
+                        counterparty != *subject_id
+                            && state.subjects.contains_key(&counterparty)
+                            && commitment.kind != super::CommitmentKind::Goal
+                    }
+                    None => true,
+                }
+                && commitment
+                    .checks
+                    .iter()
+                    .all(|check| super::bound_precondition_is_live(state, check))
+        };
+        if !state.subjects.contains_key(subject_id)
+            || held.is_empty()
+            || !held.values().all(commitment_is_canonical)
+        {
+            return Err(JournalError::Corrupt(
+                "a commitment does not name a canonical promisor, counterparty, shape, or check"
+                    .into(),
+            ));
+        }
+    }
+    for (target, held) in &state.pressures {
+        let source_is_live = |source: &super::PressureSource| match source {
+            super::PressureSource::Commitment { subject, key } => state
+                .commitments
+                .get(subject)
+                .is_some_and(|commitments| commitments.contains_key(key)),
+            super::PressureSource::Dependency(dependency) => state
+                .dependencies
+                .get(target)
+                .is_some_and(|targets| targets.contains(dependency)),
+            super::PressureSource::Subject(subject_id) => state.subjects.contains_key(subject_id),
+        };
+        if !state.subjects.contains_key(target)
+            || held.is_empty()
+            || held
+                .iter()
+                .any(|(source, magnitude)| magnitude.0 == 0 || !source_is_live(source))
+        {
+            return Err(JournalError::Corrupt(
+                "a pressure row does not name a canonical target, live source, and nonzero \
+                 magnitude"
+                    .into(),
+            ));
+        }
+    }
+    if state
+        .last_opportunity_at
+        .iter()
+        .any(|(subject_id, stamp)| !state.subjects.contains_key(subject_id) || *stamp > state.now)
+    {
+        return Err(JournalError::Corrupt(
+            "an attention stamp names an unknown subject or a future minute".into(),
+        ));
+    }
+    if state
+        .scale_intent
+        .jurisdictions
+        .keys()
+        .any(|root| !is_place(root))
+        || state
+            .scale_intent
+            .jurisdictions
+            .values()
+            .map(|weight| u64::from(*weight))
+            .sum::<u64>()
+            > 1000
+    {
+        return Err(JournalError::Corrupt(
+            "the scale intent names a non-place root or distributes more than the whole".into(),
+        ));
     }
     // The civic subgraph, in the slot the deleted `authority_scope` check
     // occupied: a jurisdiction names live ground under a canonical kind, an
@@ -867,6 +984,7 @@ fn kernel_error(error: KernelError) -> JournalError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::world::WorldScaleIntentRef;
     use crate::world::patch::kernel_speak_grant;
     use crate::world::tests::speak_entry;
     use crate::world::{
@@ -920,6 +1038,7 @@ mod tests {
                 affordances: kernel_speak_grant(),
                 position: None,
             }),
+            scale_intent: WorldScaleIntentRef::default(),
         };
         let (mut kernel, _) = WorldKernel::create(&path, creation, &authenticated).unwrap();
         let snapshot = kernel.snapshot().unwrap();
@@ -1000,6 +1119,7 @@ mod tests {
                 affordances: kernel_speak_grant(),
                 position: None,
             }),
+            scale_intent: WorldScaleIntentRef::default(),
         };
         let (mut kernel, _) = WorldKernel::create(&path, creation, &authenticated).unwrap();
         let snapshot = kernel.snapshot().unwrap();
@@ -1042,7 +1162,7 @@ mod tests {
         let mut forged_head = kernel.state.clone();
         let mut forged_commits = kernel.journal.commits.clone();
         let forged = forged_commits.get_mut(&command_id).unwrap();
-        let WorldEffect::PatchAdmitted { resolved } = &mut forged.effect else {
+        let WorldEffect::PatchAdmitted { resolved, .. } = &mut forged.effect else {
             panic!("expected an admitted patch effect");
         };
         resolved.subjects[0].position = Some(Position {
@@ -1100,7 +1220,7 @@ mod tests {
         let mut forged_head = kernel.state.clone();
         let mut forged_commits = kernel.journal.commits.clone();
         let forged = forged_commits.get_mut(&command_id).unwrap();
-        let WorldEffect::PatchAdmitted { resolved } = &mut forged.effect else {
+        let WorldEffect::PatchAdmitted { resolved, .. } = &mut forged.effect else {
             panic!("expected an admitted patch effect");
         };
         let crate::world::ResolvedOp::Relocate { subject_id, .. } = &mut resolved.operations[0]
@@ -1244,6 +1364,7 @@ mod tests {
                 affordances: kernel_speak_grant(),
                 position: None,
             }),
+            scale_intent: WorldScaleIntentRef::default(),
         };
         let (kernel, _) = WorldKernel::create(&path, creation, &authenticated).unwrap();
         let mut forged_head = kernel.state.clone();

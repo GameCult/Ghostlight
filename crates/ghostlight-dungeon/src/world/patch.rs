@@ -11,6 +11,7 @@
 //! Resolution accumulates the complete mismatch set first and allocates only
 //! after that set is empty, so a rejected patch never mints an ID.
 
+use super::clock::{FictionalMinutes, TickMinutes};
 use super::{
     AffordanceId, CommandId, ControllerAssignment, ControllerId, EdgeId, EntityId, NewController,
     SubjectId, SubjectKind, SubjectState, WorldId,
@@ -426,10 +427,199 @@ pub(crate) enum AudienceSpec {
     Channel(Role),
 }
 
+/// What a subject has promised. The kernel branches on this twice — the tick
+/// behaves differently per kind and the scale count reads `Goal` — so it is a
+/// closed enum rather than a world-declared name.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum CommitmentKind {
+    Routine,
+    Obligation,
+    Goal,
+}
+
+/// Deterministic from the creating command and the operation's index within
+/// that command's lowered operations. No `EdgeId`: nothing references a
+/// commitment by identity, so a structural key is the whole answer.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct CommitmentKey {
+    pub(crate) command: CommandId,
+    pub(crate) index: u32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct Commitment {
+    pub(crate) kind: CommitmentKind,
+    /// `None` is a promise to oneself: a personal `Goal`. A counterparty equal
+    /// to the subject is refused.
+    pub(crate) counterparty: Option<SubjectId>,
+    /// Absolute. "Past due" is `due <= now`: one comparison, no countdown
+    /// fanned across the partition.
+    pub(crate) due: FictionalMinutes,
+    /// Required for `Routine` — that is what makes it recur — and forbidden
+    /// otherwise. On auto-fulfilment `due` rolls forward by this.
+    pub(crate) period: Option<TickMinutes>,
+    /// What must hold for a `Routine` to auto-fulfil. Role-free canonical
+    /// checks. Empty for `Obligation` and `Goal`.
+    pub(crate) checks: Vec<BoundPrecondition>,
+}
+
+/// Nonzero by construction; saturating in both directions. A separate newtype
+/// from [`super::Magnitude`], which is an effect ceiling and shares nothing with
+/// this but a word.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(transparent)]
+pub(crate) struct PressureMagnitude(pub(crate) u32);
+
+/// Target-major, because every reader is: the attention order reads pressure
+/// *on* a subject and the typed view shows pressure on self. Source-major has no
+/// reader.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "from", rename_all = "snake_case")]
+pub(crate) enum PressureSource {
+    /// A past-due commitment. Carries the promisor and the structural key.
+    Commitment {
+        subject: SubjectId,
+        key: CommitmentKey,
+    },
+    /// An unavailable dependency of the pressed subject. This is how a closed
+    /// route in one realm becomes a political problem in another without anyone
+    /// deciding that it should be.
+    Dependency(DependencyTarget),
+    /// Another subject, pressing directly through an affordance effect.
+    Subject(SubjectId),
+}
+
+/// The proposal-time twin of [`PressureSource`].
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "from", rename_all = "snake_case")]
+pub(crate) enum PressureSourceRef {
+    Commitment {
+        subject: Ref<SubjectId>,
+        key: CommitmentKey,
+    },
+    Dependency(DependencyRef),
+    Subject(Ref<SubjectId>),
+}
+
+/// The role-free canonical twin of [`Precondition`]. A `Precondition` names
+/// roles; a `BoundPrecondition` names referents, so a commitment's checks are
+/// storable with no second binding path and one evaluator serves both the
+/// invocation pipeline and the tick.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "precondition", rename_all = "snake_case")]
+pub(crate) enum BoundPrecondition {
+    Present {
+        at: EntityId,
+    },
+    Reachable {
+        to: EntityId,
+        within: Cost,
+    },
+    Holds {
+        resource: EntityId,
+        at_least: Quantity,
+    },
+    Authorized {
+        over: super::Target,
+        kind: AuthorityKindName,
+    },
+    HasStanding {
+        grievance: GrievanceKindName,
+    },
+    Knows {
+        fact: EntityId,
+        at_least: Confidence,
+    },
+    CanBroadcast {
+        via: Audience,
+    },
+    CanReach {
+        subject: SubjectId,
+        via: Audience,
+    },
+    Committed {
+        to: SubjectId,
+        kind: CommitmentKind,
+    },
+}
+
+/// The proposal-time twin of [`BoundPrecondition`], carried by
+/// `CreateCommitment` so a patch may name a check over structure it declares.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(tag = "precondition", rename_all = "snake_case")]
+pub(crate) enum PreconditionRef {
+    Present {
+        at: Ref<EntityId>,
+    },
+    Reachable {
+        to: Ref<EntityId>,
+        within: Cost,
+    },
+    Holds {
+        resource: Ref<EntityId>,
+        at_least: Quantity,
+    },
+    Authorized {
+        over: AuthorityTargetRef,
+        kind: AuthorityKindName,
+    },
+    HasStanding {
+        grievance: GrievanceKindName,
+    },
+    Knows {
+        fact: Ref<EntityId>,
+        at_least: Confidence,
+    },
+    CanBroadcast {
+        via: AudienceRef,
+    },
+    CanReach {
+        subject: Ref<SubjectId>,
+        via: AudienceRef,
+    },
+    Committed {
+        to: Ref<SubjectId>,
+        kind: CommitmentKind,
+    },
+}
+
+/// The authored scale target: how many qualified subjects of each kind the
+/// world means to hold, and how that target distributes over jurisdiction
+/// roots. Written once by genesis and never mutated. Not a component of any
+/// referent, so not a `Declaration` and not a partition.
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WorldScaleIntent {
+    /// Target qualified subjects per kind, world-wide.
+    pub(crate) targets: BTreeMap<SubjectKind, u32>,
+    /// Jurisdiction roots and their share, in permille. Weights distribute the
+    /// target and never raise it: the sum is checked `<= 1000`.
+    pub(crate) jurisdictions: BTreeMap<EntityId, u32>,
+}
+
+/// The genesis-lane twin: the intent names places the same patch declares, and
+/// there is no other way to name them before they exist.
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct WorldScaleIntentRef {
+    pub(crate) targets: BTreeMap<SubjectKind, u32>,
+    pub(crate) jurisdictions: BTreeMap<DraftHandle, u32>,
+}
+
+/// One counted region of the scale deficit. `Unplaced` is the residual: a
+/// subject standing nowhere is counted and visible while reducing no target.
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(tag = "jurisdiction", content = "root", rename_all = "snake_case")]
+pub(crate) enum JurisdictionKey {
+    PlaceSubtree(EntityId),
+    Unplaced,
+}
+
 /// What must already be true of committed state before an invocation is
-/// admitted. Only the ones whose components exist: `Committed` lands in the pass
-/// that adds `Commitment`. A variant whose only behaviour would be to be refused
-/// is a placeholder wearing a check.
+/// admitted.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "precondition", rename_all = "snake_case")]
 pub(crate) enum Precondition {
@@ -457,6 +647,10 @@ pub(crate) enum Precondition {
     /// The referent bound to `subject` is inside that audience. Addressing does
     /// not narrow the audience: a telling still lands on everyone in it.
     CanReach { subject: Role, via: AudienceSpec },
+    /// The acting subject holds a commitment of `kind` to the referent bound to
+    /// `to`. This is what lets a world author an affordance whose legitimacy is
+    /// a promise rather than a jurisdiction.
+    Committed { to: Role, kind: CommitmentKind },
 }
 
 /// Exactly the operations an affordance may propose. `Admit` is absent because
@@ -500,6 +694,24 @@ pub(crate) enum ComponentOpKind {
         confidence: Confidence,
     },
     Forget,
+    /// The kind, the horizon, and the period are fixed on the variant, so a
+    /// proposer's only degree of freedom stays magnitude. `due` is
+    /// `now + horizon`, computed by the kernel at lowering: an absolute due on
+    /// a catalog entry would be a fixed date the world outgrows.
+    CreateCommitment {
+        kind: CommitmentKind,
+        horizon: TickMinutes,
+        period: Option<TickMinutes>,
+    },
+    /// The source is fixed to the acting subject, so it cannot be forged. A
+    /// world authoring `threaten`, `reassure`, or `forgive` needs these three.
+    AdvancePressure {
+        by: PressureMagnitude,
+    },
+    ReducePressure {
+        by: PressureMagnitude,
+    },
+    ResolvePressure,
 }
 
 /// The referent shape of one operation: the single source of both the
@@ -537,6 +749,14 @@ impl ComponentOpKind {
             Self::VacateOffice { .. } => vec![subject()],
             Self::AcquireKnowledge { .. } | Self::Forget => {
                 vec![subject(), RoleKindRule::Exact(FACT)]
+            }
+            // Promisor and counterparty. A `Goal` slot is refused at admission
+            // with `GoalWithCounterparty`: a promise to oneself has no second
+            // referent to bind, so the action lane authors `Routine` and
+            // `Obligation` and the patch lane authors goals.
+            Self::CreateCommitment { .. } => vec![subject(), subject()],
+            Self::AdvancePressure { .. } | Self::ReducePressure { .. } | Self::ResolvePressure => {
+                vec![subject()]
             }
         }
     }
@@ -858,12 +1078,55 @@ pub(crate) enum ComponentOp {
         channel: Ref<EntityId>,
         controller: Option<Ref<SubjectId>>,
     },
+    /// Two identical creations are two commitments, not `NoOperationEffect`:
+    /// the key is command-derived so they cannot collide, and two promises of
+    /// the same thing to the same counterparty are two promises. This is where
+    /// a commitment differs from a grant, a holding, and a dependency, all of
+    /// which are set-shaped.
+    CreateCommitment {
+        subject: Ref<SubjectId>,
+        counterparty: Option<Ref<SubjectId>>,
+        kind: CommitmentKind,
+        due: FictionalMinutes,
+        period: Option<TickMinutes>,
+        checks: Vec<PreconditionRef>,
+    },
+    /// Removes the commitment and every pressure row sourced by it. Fulfilment,
+    /// default, and release are one write: the kernel never learns who invoked
+    /// an operation, so three names would be three spellings of one removal
+    /// with a distinction only a consumer can read.
+    DischargeCommitment {
+        subject: Ref<SubjectId>,
+        key: CommitmentKey,
+    },
+    /// Insert-or-add, saturating. With absence meaning zero, creation and
+    /// advance are the same write.
+    AdvancePressure {
+        source: PressureSourceRef,
+        target: Ref<SubjectId>,
+        by: PressureMagnitude,
+    },
+    /// Saturating subtract; removal at zero.
+    ReducePressure {
+        source: PressureSourceRef,
+        target: Ref<SubjectId>,
+        by: PressureMagnitude,
+    },
+    ResolvePressure {
+        source: PressureSourceRef,
+        target: Ref<SubjectId>,
+    },
 }
 
-/// Empty on purpose: an `Option<PatchAnswer>` can only be `None`, so the
-/// answers-are-None rule is compile-enforced.
+/// What an Active `AdmitPatch` answers. Draft answers nothing; Active must
+/// answer a boundary the kernel currently derives or a jurisdiction whose
+/// deficit is nonzero, and the commit must satisfy what it answered.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub(crate) enum PatchAnswer {}
+#[serde(tag = "answer", rename_all = "snake_case")]
+pub(crate) enum PatchAnswer {
+    Boundary(super::CausalBoundary),
+    Deficit(JurisdictionKey),
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -1105,6 +1368,39 @@ pub(crate) enum Mismatch {
     AmbiguousSpeechAudience {
         handle: DraftHandle,
     },
+    /// A `Routine` with no period, or a non-`Routine` with one.
+    CommitmentPeriodMismatch {
+        operation: usize,
+    },
+    /// A non-`Routine` carrying checks. Nothing would ever evaluate them.
+    ChecksOnNonRoutine {
+        operation: usize,
+    },
+    /// `due <= now` at creation. A promise cannot be born past due; it would
+    /// press on its subject on the very next tick with no chance to act.
+    CommitmentDueInThePast {
+        operation: usize,
+    },
+    /// `counterparty == subject`.
+    SelfCommitment {
+        operation: usize,
+    },
+    /// A goal is a promise to oneself, and a promise to another is an
+    /// obligation. This keeps the scale count's `Goal` clause meaning one thing.
+    GoalWithCounterparty {
+        operation: usize,
+    },
+    /// `DischargeCommitment` naming a key the subject does not hold.
+    UnknownCommitment {
+        operation: usize,
+    },
+    /// A scale-intent jurisdiction root that is not a declared place.
+    UnknownJurisdictionRoot {
+        handle: DraftHandle,
+    },
+    /// The permille weights sum over 1000: weights distribute the target and
+    /// never raise it.
+    ScaleWeightsExceedWhole,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -1347,6 +1643,29 @@ pub(crate) enum ResolvedOp {
         statement: Statement,
         by: SubjectId,
     },
+    CreateCommitment {
+        subject: SubjectId,
+        key: CommitmentKey,
+        commitment: Commitment,
+    },
+    DischargeCommitment {
+        subject: SubjectId,
+        key: CommitmentKey,
+    },
+    AdvancePressure {
+        source: PressureSource,
+        target: SubjectId,
+        by: PressureMagnitude,
+    },
+    ReducePressure {
+        source: PressureSource,
+        target: SubjectId,
+        by: PressureMagnitude,
+    },
+    ResolvePressure {
+        source: PressureSource,
+        target: SubjectId,
+    },
 }
 
 /// One resource's movement across a whole patch. Accumulators are `u128` so an
@@ -1398,6 +1717,10 @@ pub(super) struct ResolvedPatch {
     pub(super) channels: Vec<ResolvedChannel>,
     pub(super) operations: Vec<ResolvedOp>,
     pub(super) evidence: Vec<EvidenceRef>,
+    /// `Some` on the genesis lane and nowhere else: `CommandBody::AdmitPatch`
+    /// carries no intent, so the write-once rule is the command shape rather
+    /// than a check.
+    pub(super) scale_intent: Option<WorldScaleIntent>,
 }
 
 impl ResolvedPatch {
@@ -1446,6 +1769,17 @@ fn key_of<Id: Copy>(reference: &Ref<Id>) -> Key<Id> {
 enum TargetKey {
     Resource(Key<EntityId>),
     Route(Key<EdgeId>),
+    Subject(Key<SubjectId>),
+}
+
+/// [`PressureSource`] over candidate keys.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum PressureSourceKey {
+    Commitment {
+        subject: Key<SubjectId>,
+        key: CommitmentKey,
+    },
+    Dependency(TargetKey),
     Subject(Key<SubjectId>),
 }
 
@@ -1953,6 +2287,7 @@ fn validate_affordance(
                 require_subject(subject, mismatches);
                 require_audience(via, mismatches);
             }
+            Precondition::Committed { to, .. } => require_subject(to, mismatches),
         }
     }
     // A speech-carrying entry must name exactly one audience: the lowering reads
@@ -2423,6 +2758,7 @@ pub(super) fn resolve_patch(
     state: &super::WorldState,
     command_id: CommandId,
     patch: &WorldPatch,
+    scale_intent: Option<&WorldScaleIntentRef>,
 ) -> Result<ResolvedPatch, Vec<Mismatch>> {
     let world_id = state.world_id;
     let admits_human = super::admits_human(state.revision, &state.subjects);
@@ -2714,6 +3050,56 @@ pub(super) fn resolve_patch(
             })
         })
         .collect();
+    // Presence is all a discharge asks, and a create cannot collide: the key is
+    // command-derived and the index is unique within one patch.
+    let mut commitments: BTreeSet<(Key<SubjectId>, CommitmentKey)> = state
+        .commitments
+        .iter()
+        .flat_map(|(subject_id, held)| {
+            held.keys()
+                .map(move |key| (Key::Existing(*subject_id), *key))
+        })
+        .collect();
+    let mut pressures: BTreeMap<(Key<SubjectId>, PressureSourceKey), u32> = state
+        .pressures
+        .iter()
+        .flat_map(|(target, held)| {
+            held.iter().map(move |(source, magnitude)| {
+                (
+                    (
+                        Key::Existing(*target),
+                        match source {
+                            PressureSource::Commitment { subject, key } => {
+                                PressureSourceKey::Commitment {
+                                    subject: Key::Existing(*subject),
+                                    key: *key,
+                                }
+                            }
+                            PressureSource::Dependency(DependencyTarget::Resource(entity_id)) => {
+                                PressureSourceKey::Dependency(TargetKey::Resource(Key::Existing(
+                                    *entity_id,
+                                )))
+                            }
+                            PressureSource::Dependency(DependencyTarget::Route(edge_id)) => {
+                                PressureSourceKey::Dependency(TargetKey::Route(Key::Existing(
+                                    *edge_id,
+                                )))
+                            }
+                            PressureSource::Dependency(DependencyTarget::Subject(subject_id)) => {
+                                PressureSourceKey::Dependency(TargetKey::Subject(Key::Existing(
+                                    *subject_id,
+                                )))
+                            }
+                            PressureSource::Subject(subject_id) => {
+                                PressureSourceKey::Subject(Key::Existing(*subject_id))
+                            }
+                        },
+                    ),
+                    magnitude.0,
+                )
+            })
+        })
+        .collect();
     let mut deltas: BTreeMap<Key<EntityId>, LedgerDelta> = BTreeMap::new();
     let mut declared_places: Vec<(DraftHandle, Key<EntityId>)> = Vec::new();
 
@@ -2861,7 +3247,159 @@ pub(super) fn resolve_patch(
     }
 
     for (position, operation) in patch.operations.iter().enumerate() {
+        let site = Site::Operation(position);
         match operation {
+            ComponentOp::CreateCommitment {
+                subject,
+                counterparty,
+                kind,
+                due,
+                period,
+                checks,
+            } => {
+                let subject_key = resolve_subject(
+                    site.clone(),
+                    subject,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                let counterparty_key = counterparty.as_ref().map(|reference| {
+                    resolve_subject(
+                        site.clone(),
+                        reference,
+                        &index,
+                        &state.subjects,
+                        &mut mismatches,
+                    )
+                });
+                let mut checks_resolve = true;
+                for check in checks {
+                    checks_resolve &=
+                        resolve_check(site.clone(), check, &index, state, &mut mismatches);
+                }
+                if (*kind == CommitmentKind::Routine) != period.is_some() {
+                    mismatches.push(Mismatch::CommitmentPeriodMismatch {
+                        operation: position,
+                    });
+                }
+                if let Some(period) = period
+                    && !is_valid_cost(Cost(period.minutes()))
+                {
+                    mismatches.push(Mismatch::InvalidCost { site: site.clone() });
+                }
+                if *kind != CommitmentKind::Routine && !checks.is_empty() {
+                    mismatches.push(Mismatch::ChecksOnNonRoutine {
+                        operation: position,
+                    });
+                }
+                // A promise cannot be born past due: it would press on its
+                // subject on the very next tick with no chance to act.
+                if *due <= state.now {
+                    mismatches.push(Mismatch::CommitmentDueInThePast {
+                        operation: position,
+                    });
+                }
+                if counterparty.is_some() && *kind == CommitmentKind::Goal {
+                    mismatches.push(Mismatch::GoalWithCounterparty {
+                        operation: position,
+                    });
+                }
+                let Some(subject_key) = subject_key else {
+                    continue;
+                };
+                if let Some(counterparty_key) = &counterparty_key {
+                    match counterparty_key {
+                        None => continue,
+                        Some(counterparty_key) if *counterparty_key == subject_key => {
+                            mismatches.push(Mismatch::SelfCommitment {
+                                operation: position,
+                            });
+                            continue;
+                        }
+                        Some(_) => {}
+                    }
+                }
+                if !checks_resolve {
+                    continue;
+                }
+                commitments.insert((
+                    subject_key,
+                    CommitmentKey {
+                        command: command_id,
+                        index: position as u32,
+                    },
+                ));
+            }
+            ComponentOp::DischargeCommitment { subject, key } => {
+                let Some(subject_key) = resolve_subject(
+                    site.clone(),
+                    subject,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                ) else {
+                    continue;
+                };
+                if !commitments.remove(&(subject_key, *key)) {
+                    mismatches.push(Mismatch::UnknownCommitment {
+                        operation: position,
+                    });
+                }
+            }
+            ComponentOp::AdvancePressure { source, target, by }
+            | ComponentOp::ReducePressure { source, target, by } => {
+                let advancing = matches!(operation, ComponentOp::AdvancePressure { .. });
+                let target_key = resolve_subject(
+                    site.clone(),
+                    target,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                let source_key =
+                    resolve_pressure_source(site.clone(), source, &index, state, &mut mismatches);
+                let (Some(target_key), Some(source_key)) = (target_key, source_key) else {
+                    continue;
+                };
+                let slot = (target_key, source_key);
+                let current = pressures.get(&slot).copied().unwrap_or_default();
+                let next = if advancing {
+                    current.saturating_add(by.0)
+                } else {
+                    current.saturating_sub(by.0)
+                };
+                // A zero step and a subtraction that hits a floor both change
+                // nothing, which is one name and not three.
+                if next == current {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                } else if next == 0 {
+                    pressures.remove(&slot);
+                } else {
+                    pressures.insert(slot, next);
+                }
+            }
+            ComponentOp::ResolvePressure { source, target } => {
+                let target_key = resolve_subject(
+                    site.clone(),
+                    target,
+                    &index,
+                    &state.subjects,
+                    &mut mismatches,
+                );
+                let source_key =
+                    resolve_pressure_source(site.clone(), source, &index, state, &mut mismatches);
+                let (Some(target_key), Some(source_key)) = (target_key, source_key) else {
+                    continue;
+                };
+                if pressures.remove(&(target_key, source_key)).is_none() {
+                    mismatches.push(Mismatch::NoOperationEffect {
+                        operation: position,
+                    });
+                }
+            }
             ComponentOp::Relocate { subject, via } => {
                 let subject_key = resolve_subject(
                     Site::Operation(position),
@@ -3739,6 +4277,26 @@ pub(super) fn resolve_patch(
         });
     }
 
+    if let Some(intent) = scale_intent {
+        for handle in intent.jurisdictions.keys() {
+            if index.get(handle) != Some(&PLACE) {
+                mismatches.push(Mismatch::UnknownJurisdictionRoot {
+                    handle: handle.clone(),
+                });
+            }
+        }
+        // Weights distribute the target and never raise it.
+        if intent
+            .jurisdictions
+            .values()
+            .map(|weight| u64::from(*weight))
+            .sum::<u64>()
+            > 1000
+        {
+            mismatches.push(Mismatch::ScaleWeightsExceedWhole);
+        }
+    }
+
     if patch.declarations.is_empty() && patch.operations.is_empty() {
         mismatches.push(Mismatch::NoCanonicalChange);
     }
@@ -4099,10 +4657,101 @@ pub(super) fn resolve_patch(
             over: authority_target_of(&grant.over),
         }
     };
+    let precondition_of = |check: &PreconditionRef| -> BoundPrecondition {
+        match check {
+            PreconditionRef::Present { at } => BoundPrecondition::Present {
+                at: entity_id_of(&key_of(at)),
+            },
+            PreconditionRef::Reachable { to, within } => BoundPrecondition::Reachable {
+                to: entity_id_of(&key_of(to)),
+                within: *within,
+            },
+            PreconditionRef::Holds { resource, at_least } => BoundPrecondition::Holds {
+                resource: entity_id_of(&key_of(resource)),
+                at_least: *at_least,
+            },
+            PreconditionRef::Authorized { over, kind } => BoundPrecondition::Authorized {
+                over: authority_target_of(over).as_referent(),
+                kind: kind.clone(),
+            },
+            PreconditionRef::HasStanding { grievance } => BoundPrecondition::HasStanding {
+                grievance: grievance.clone(),
+            },
+            PreconditionRef::Knows { fact, at_least } => BoundPrecondition::Knows {
+                fact: entity_id_of(&key_of(fact)),
+                at_least: *at_least,
+            },
+            PreconditionRef::CanBroadcast { via } => BoundPrecondition::CanBroadcast {
+                via: audience_of(via),
+            },
+            PreconditionRef::CanReach { subject, via } => BoundPrecondition::CanReach {
+                subject: subject_id_of(&key_of(subject)),
+                via: audience_of(via),
+            },
+            PreconditionRef::Committed { to, kind } => BoundPrecondition::Committed {
+                to: subject_id_of(&key_of(to)),
+                kind: *kind,
+            },
+        }
+    };
+    let pressure_source_of = |source: &PressureSourceRef| -> PressureSource {
+        match source {
+            PressureSourceRef::Commitment { subject, key } => PressureSource::Commitment {
+                subject: subject_id_of(&key_of(subject)),
+                key: *key,
+            },
+            PressureSourceRef::Dependency(target) => PressureSource::Dependency(target_of(target)),
+            PressureSourceRef::Subject(reference) => {
+                PressureSource::Subject(subject_id_of(&key_of(reference)))
+            }
+        }
+    };
     let operations = patch
         .operations
         .iter()
-        .map(|operation| match operation {
+        .enumerate()
+        .map(|(position, operation)| match operation {
+            ComponentOp::CreateCommitment {
+                subject,
+                counterparty,
+                kind,
+                due,
+                period,
+                checks,
+            } => ResolvedOp::CreateCommitment {
+                subject: subject_id_of(&key_of(subject)),
+                key: CommitmentKey {
+                    command: command_id,
+                    index: position as u32,
+                },
+                commitment: Commitment {
+                    kind: *kind,
+                    counterparty: counterparty
+                        .as_ref()
+                        .map(|reference| subject_id_of(&key_of(reference))),
+                    due: *due,
+                    period: *period,
+                    checks: checks.iter().map(precondition_of).collect(),
+                },
+            },
+            ComponentOp::DischargeCommitment { subject, key } => ResolvedOp::DischargeCommitment {
+                subject: subject_id_of(&key_of(subject)),
+                key: *key,
+            },
+            ComponentOp::AdvancePressure { source, target, by } => ResolvedOp::AdvancePressure {
+                source: pressure_source_of(source),
+                target: subject_id_of(&key_of(target)),
+                by: *by,
+            },
+            ComponentOp::ReducePressure { source, target, by } => ResolvedOp::ReducePressure {
+                source: pressure_source_of(source),
+                target: subject_id_of(&key_of(target)),
+                by: *by,
+            },
+            ComponentOp::ResolvePressure { source, target } => ResolvedOp::ResolvePressure {
+                source: pressure_source_of(source),
+                target: subject_id_of(&key_of(target)),
+            },
             ComponentOp::Relocate { subject, via } => ResolvedOp::Relocate {
                 subject_id: subject_id_of(&key_of(subject)),
                 edge_id: edge_id_of(&key_of(via)),
@@ -4267,7 +4916,112 @@ pub(super) fn resolve_patch(
         channels: declared_channels,
         operations,
         evidence: patch.evidence.clone(),
+        scale_intent: scale_intent.map(|intent| WorldScaleIntent {
+            targets: intent.targets.clone(),
+            jurisdictions: intent
+                .jurisdictions
+                .iter()
+                .map(|(handle, weight)| {
+                    (
+                        *allocated_entities
+                            .get(handle)
+                            .expect("a jurisdiction root resolved above"),
+                        *weight,
+                    )
+                })
+                .collect(),
+        }),
     })
+}
+
+/// Whether every referent one stored check names resolves. The canonical
+/// lowering runs after allocation, so a check that does not resolve here would
+/// have nothing to lower to.
+fn resolve_check(
+    site: Site,
+    check: &PreconditionRef,
+    index: &BTreeMap<DraftHandle, RefKind>,
+    state: &super::WorldState,
+    mismatches: &mut Vec<Mismatch>,
+) -> bool {
+    let entity = |kind: EntityKind, reference: &Ref<EntityId>, mismatches: &mut Vec<Mismatch>| {
+        resolve_entity(
+            site.clone(),
+            kind,
+            reference,
+            index,
+            &state.entities,
+            mismatches,
+        )
+        .is_some()
+    };
+    let audience = |via: &AudienceRef, mismatches: &mut Vec<Mismatch>| {
+        resolve_audience(site.clone(), via, index, state, mismatches).is_some()
+    };
+    let subject = |reference: &Ref<SubjectId>, mismatches: &mut Vec<Mismatch>| {
+        resolve_subject(site.clone(), reference, index, &state.subjects, mismatches).is_some()
+    };
+    match check {
+        PreconditionRef::Present { at } => entity(EntityKind::Place, at, mismatches),
+        PreconditionRef::Reachable { to, within } => {
+            let resolved = entity(EntityKind::Place, to, mismatches);
+            if !is_valid_cost(*within) {
+                mismatches.push(Mismatch::InvalidCost { site: site.clone() });
+                return false;
+            }
+            resolved
+        }
+        PreconditionRef::Holds { resource, .. } => {
+            entity(EntityKind::Resource, resource, mismatches)
+        }
+        PreconditionRef::Authorized { over, kind } => {
+            let resolved =
+                resolve_authority_target(site.clone(), over, index, state, mismatches).is_some();
+            if !is_civic_name(&kind.0) {
+                mismatches.push(Mismatch::InvalidCivicName { site: site.clone() });
+                return false;
+            }
+            resolved
+        }
+        PreconditionRef::HasStanding { grievance } => {
+            if is_civic_name(&grievance.0) {
+                true
+            } else {
+                mismatches.push(Mismatch::InvalidCivicName { site: site.clone() });
+                false
+            }
+        }
+        PreconditionRef::Knows { fact, .. } => entity(EntityKind::Fact, fact, mismatches),
+        PreconditionRef::CanBroadcast { via } => audience(via, mismatches),
+        PreconditionRef::CanReach {
+            subject: named,
+            via,
+        } => subject(named, mismatches) & audience(via, mismatches),
+        PreconditionRef::Committed { to, .. } => subject(to, mismatches),
+    }
+}
+
+fn resolve_pressure_source(
+    site: Site,
+    source: &PressureSourceRef,
+    index: &BTreeMap<DraftHandle, RefKind>,
+    state: &super::WorldState,
+    mismatches: &mut Vec<Mismatch>,
+) -> Option<PressureSourceKey> {
+    match source {
+        PressureSourceRef::Commitment { subject, key } => {
+            resolve_subject(site, subject, index, &state.subjects, mismatches)
+                .map(|subject| PressureSourceKey::Commitment { subject, key: *key })
+        }
+        PressureSourceRef::Dependency(target) => {
+            resolve_dependency_target(site, target, index, state, mismatches)
+                .map(PressureSourceKey::Dependency)
+        }
+        PressureSourceRef::Subject(reference) => {
+            resolve_subject(site, reference, index, &state.subjects, mismatches)
+                .map(PressureSourceKey::Subject)
+        }
+    }
 }
 
 /// Whether `place` is `root`, or reaches it through the candidate container
@@ -5116,13 +5870,9 @@ mod tests {
                     &auth_principal(owner()),
                 )
                 .unwrap_err();
-            assert!(matches!(
-                error,
-                KernelError::WrongPhase {
-                    expected: WorldPhase::Draft,
-                    actual: WorldPhase::Active,
-                }
-            ));
+            // Declaring in Active is elaboration, and elaboration answers a
+            // boundary. An unanswered one is refused before resolution.
+            assert!(matches!(error, KernelError::AnswerRequired));
         }
         assert_eq!(kernel.journal.commit_count(), commits_before);
         assert_eq!(kernel.snapshot().unwrap(), active);
@@ -5532,8 +6282,8 @@ mod tests {
         assert_ne!(admitted, genesis_player);
 
         let command_id = CommandId::new();
-        let first = resolve_patch(&kernel.state, command_id, &patch).unwrap();
-        let second = resolve_patch(&kernel.state, command_id, &patch).unwrap();
+        let first = resolve_patch(&kernel.state, command_id, &patch, None).unwrap();
+        let second = resolve_patch(&kernel.state, command_id, &patch, None).unwrap();
         assert_eq!(first, second);
     }
 
@@ -5676,9 +6426,10 @@ mod tests {
                 Some(Ref::Draft(DraftHandle::new("rhythm-road"))),
             ),
         ]);
-        let resolved = resolve_patch(&kernel.state, CommandId::new(), &patch).unwrap();
+        let resolved = resolve_patch(&kernel.state, CommandId::new(), &patch, None).unwrap();
         let honest = super::super::WorldEffect::PatchAdmitted {
             resolved: resolved.clone(),
+            answers: None,
         };
 
         // Forged: the position names a place no partition holds, and the effect
@@ -5693,7 +6444,10 @@ mod tests {
             &mut candidate,
             CommandId::issue(),
             &CallerId::Principal(owner()),
-            &super::super::WorldEffect::PatchAdmitted { resolved: forged },
+            &super::super::WorldEffect::PatchAdmitted {
+                answers: None,
+                resolved: forged,
+            },
         )
         .unwrap_err();
         assert!(matches!(forged_error, KernelError::Invariant(_)));
@@ -5728,18 +6482,19 @@ mod tests {
         assert!(matches!(unauthorized, KernelError::Invariant(_)));
         assert_eq!(candidate, kernel.state);
 
-        // And the Active phase is refused before any partition is touched.
+        // And an unanswered declaring effect is refused in Active before any
+        // partition is touched.
         let active = activate(&mut kernel);
         assert_eq!(active.revision, before.revision + 3);
         let mut candidate = kernel.state.clone();
-        let wrong_phase = super::super::apply_effect(
+        let unanswered = super::super::apply_effect(
             &mut candidate,
             CommandId::issue(),
             &CallerId::Principal(owner()),
             &honest,
         )
         .unwrap_err();
-        assert!(matches!(wrong_phase, KernelError::Invariant(_)));
+        assert!(matches!(unanswered, KernelError::AnswerRequired));
         assert_eq!(candidate, kernel.state);
     }
 
@@ -5885,7 +6640,9 @@ mod tests {
                         edge_id,
                     }],
                     evidence: Vec::new(),
+                    scale_intent: None,
                 },
+                answers: None,
             };
             let mut candidate = kernel.state.clone();
             let error = super::super::apply_effect(
