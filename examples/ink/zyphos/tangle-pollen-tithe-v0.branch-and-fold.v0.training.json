@@ -1,0 +1,448 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "tangle-pollen-tithe-v0-branch-and-fold-training",
+  "ink_ref": "examples/ink/zyphos/tangle-pollen-tithe-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/zyphos/tangle-pollen-tithe-v0.v0.json",
+  "scene_id": "tangle-pollen-tithe-v0.shared-pollen-terrace",
+  "protagonist_agent_id": "junior_tithe_tender",
+  "npc_agent_ids": [
+    "elder_contract_tender",
+    "boundary_matriarch",
+    "scar_vane_threadwing_broker",
+    "route_lantern_tree",
+    "candle_road_edge",
+    "lattice_ant_audit_colony",
+    "rival_matriarch"
+  ],
+  "purpose": "Branch-and-fold fixture dramatizing a pre-imperial pollen tithe hearing in which an Airawa tender must navigate Matriarch rivalry through existing pollinator, route-light, recycler, and diagnostic partners.",
+  "local_awareness_summary": [
+    {
+      "text": "The junior tithe-tender knows the shared terrace routine, their household's salt and road accounts, the local Matriarch's gestation leverage, and the visible signals of threadwings, lantern knots, fungal beads, and lattice-ant glyphs.",
+      "source_refs": [
+        "examples/lore-grounding/zyphos/tangle-pollen-tithe-v0.v0.json",
+        "Eusocial Interbeing/Species/Airawa.md",
+        "Eusocial Interbeing/Species/Matriarch Trees.md"
+      ]
+    },
+    {
+      "text": "The tender can climb with taloned feet and clawed upper hands while using two smaller lower hands for precise salt, ribbon, seal, and assay work.",
+      "source_refs": [
+        "Eusocial Interbeing/Species/Airawa.md"
+      ]
+    },
+    {
+      "text": "The tender can interpret local public contract signals but cannot read either Matriarch's private archive state or command threadwings, lantern trees, fungal roads, or lattice ants.",
+      "source_refs": [
+        "Eusocial Interbeing/Civilizations/Pre-Imperial Airawa Tribes.md",
+        "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+        "Eusocial Interbeing/Species/Matriarch Trees.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains the junior tithe-tender's embodied position on one shared root terrace during eclipse ingress; choices use climbing, lower-hand craft, speech, resource transfer, public seals, evidence custody, and route support.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "Eusocial Interbeing/Species/Airawa.md"
+        ]
+      },
+      {
+        "text": "The scene establishes ordinary pollen-tithe work before the rival grievance arrives and turns routine accounting into a coercive gestation bargain.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md",
+          "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "The local Matriarch controls its archive and gestation scheduling but does not own courier route choice, lantern light, fungal traffic, ant testimony, or Airawa household consent as automatic extensions of itself.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md",
+          "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md"
+        ]
+      },
+      {
+        "text": "The tender can pledge household resources and testimony, but cannot settle the rival canopy's archive demand or make a nonhuman partner accept a route.",
+        "source_refs": [
+          "Eusocial Interbeing/Civilizations/Pre-Imperial Airawa Tribes.md",
+          "Eusocial Interbeing/Themes/Ecological Bargaining.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Three salt measures, the household road ribbon, the household seal, the rival-facing courier fiber, the dropped grievance pellet, and the public ant glyph have explicit custody and affect later options and outcomes.",
+        "source_refs": [
+          "examples/ink/zyphos/tangle-pollen-tithe-v0.branch-and-fold.v0.ink",
+          "Eusocial Interbeing/Civilizations/Pre-Imperial Airawa Tribes.md",
+          "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Lattice Ants.md"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "Matriarch power must appear as a coalition of dependencies across reproduction, pollination, route light, mineral recycling, public memory, and household labor rather than as direct magical command.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md",
+          "Eusocial Interbeing/Ecology/Mother Tree Networks.md"
+        ]
+      },
+      {
+        "text": "Every ending must expose what breaks when one party wins too hard: carriers leave, route traffic starves, proof fails, constituency support collapses, or retaliation becomes precise.",
+        "source_refs": [
+          "Eusocial Interbeing/Species/Matriarch Trees.md",
+          "Eusocial Interbeing/Biosphere/Couriers and Pollinators/Threadwing Couriers.md",
+          "Eusocial Interbeing/Biosphere/Decomposers and Recyclers/Candle Fungal Roads.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not make the local Matriarch a unitary commander whose wishes automatically control the other species on the terrace.",
+        "source_refs": [
+          "Eusocial Interbeing/Ecology/Mutable Memory Endosymbiosis.md",
+          "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md"
+        ]
+      },
+      {
+        "text": "Do not invent Weksa-language proper names or let one Airawa speech solve dependencies that remain materially unpaid.",
+        "source_refs": [
+          "Eusocial Interbeing/index.md",
+          "Eusocial Interbeing/Ecology/Fractal Eusocial Web.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through one shared pollen-tithe hearing and select one of eight state-gated ecological-political outcomes.",
+    "choice_layers": [
+      "morning_tithe",
+      "grievance_hearing",
+      "coalition_terms",
+      "pollen_tithe_outcome"
+    ],
+    "variables": [
+      "threadwing_trust",
+      "road_credit",
+      "ant_testimony",
+      "matriarch_favor",
+      "rival_relief",
+      "salt_reserve",
+      "household_standing",
+      "route_light"
+    ],
+    "ending_gates": [
+      "ending_local_success",
+      "ending_local_cost",
+      "ending_audit_success",
+      "ending_audit_cost",
+      "ending_relief_success",
+      "ending_relief_cost",
+      "ending_compact_success",
+      "ending_compact_cost"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_courier_credit",
+      "ink_path": "opening_hub",
+      "action_type": "transfer_resource",
+      "actor_intent": "Pay the courier colony promptly and make the household's reliability public.",
+      "state_basis": [
+        "Threadwings accept salt and punish unreliable route partners.",
+        "The household controls three salt measures at scene start."
+      ],
+      "reviewed_consequences": [
+        "Spends one salt_reserve and raises threadwing_trust and household_standing; later trust gates audit and partner-compact outcomes."
+      ],
+      "training_hooks": [
+        "resource_payment_as_diplomacy",
+        "courier_constituency",
+        "visible_contract_reputation"
+      ]
+    },
+    {
+      "branch_id": "prime_road_credit",
+      "ink_path": "opening_hub",
+      "action_type": "transfer_resource",
+      "actor_intent": "Feed the fungal road clean recyclable matter before asking it to carry political traffic.",
+      "state_basis": [
+        "Candle fungal roads remember clean offerings and price route continuity through credit."
+      ],
+      "reviewed_consequences": [
+        "Raises road_credit and matriarch_favor; road credit later enables a rival mineral corridor or partner compact."
+      ],
+      "training_hooks": [
+        "decomposer_as_logistics_party",
+        "credit_before_crisis"
+      ]
+    },
+    {
+      "branch_id": "prime_route_light",
+      "ink_path": "opening_hub",
+      "action_type": "repair_object",
+      "actor_intent": "Improve the threadwing roost and earn additional lantern light before eclipse.",
+      "state_basis": [
+        "Airawa can perform precise craft while anchored by climbing limbs.",
+        "Lantern trees exchange route light and roost access for careful route labor."
+      ],
+      "reviewed_consequences": [
+        "Raises route_light and threadwing_trust; light later gates safe launch and coalition outcomes."
+      ],
+      "training_hooks": [
+        "airawa_six_limb_affordance",
+        "light_as_infrastructure"
+      ]
+    },
+    {
+      "branch_id": "prime_public_account",
+      "ink_path": "opening_hub",
+      "action_type": "speak",
+      "actor_intent": "Preserve a rival-facing contract fiber long enough for public diagnosis.",
+      "state_basis": [
+        "Contract ribbons make ecological obligations publicly legible.",
+        "Lattice ants can read shed threadwing fibers."
+      ],
+      "reviewed_consequences": [
+        "Raises ant_testimony and household_standing while lowering matriarch_favor."
+      ],
+      "training_hooks": [
+        "public_accounting",
+        "speech_as_custody_request"
+      ]
+    },
+    {
+      "branch_id": "hear_courier_first",
+      "ink_path": "grievance_choice",
+      "action_type": "offer_resource",
+      "actor_intent": "Pay for the courier's grievance to be heard before endorsing the local Matriarch's demand.",
+      "state_basis": [
+        "Available only while at least one salt measure remains.",
+        "Threadwing route memory can travel in shed vane fiber."
+      ],
+      "reviewed_consequences": [
+        "Spends one salt_reserve and raises threadwing_trust and ant_testimony."
+      ],
+      "training_hooks": [
+        "listen_by_feeding",
+        "courier_owned_message"
+      ]
+    },
+    {
+      "branch_id": "audit_diversion",
+      "ink_path": "grievance_choice",
+      "action_type": "request_diagnosis",
+      "actor_intent": "Ask the lattice colony whether the failure was weather, contamination, or chosen closure.",
+      "state_basis": [
+        "Lattice ants diagnose trail residue for payment.",
+        "The assay consumes the remaining eclipse-light window."
+      ],
+      "reviewed_consequences": [
+        "Raises ant_testimony while lowering route_light; strong testimony later exposes deliberate diversion."
+      ],
+      "training_hooks": [
+        "forensic_colony",
+        "truth_costs_time"
+      ]
+    },
+    {
+      "branch_id": "endorse_local_terms",
+      "ink_path": "grievance_choice",
+      "action_type": "speak",
+      "actor_intent": "Publicly support the local Matriarch's demand and improve the household's gestation priority.",
+      "state_basis": [
+        "The local Matriarch can schedule gestation access and reads public household markers."
+      ],
+      "reviewed_consequences": [
+        "Raises matriarch_favor and household_standing while lowering rival_relief; courier distance visibly increases."
+      ],
+      "training_hooks": [
+        "gestation_as_leverage",
+        "constituency_self_interest"
+      ]
+    },
+    {
+      "branch_id": "shelter_rival_claim",
+      "ink_path": "grievance_choice",
+      "action_type": "take_custody",
+      "actor_intent": "Put the rival's grievance under household protection until the hearing ends.",
+      "state_basis": [
+        "Airawa contract dress can display debts, refusals, and protected obligations."
+      ],
+      "reviewed_consequences": [
+        "Raises rival_relief and household_standing while lowering matriarch_favor."
+      ],
+      "training_hooks": [
+        "contract_dress_as_custody",
+        "public_dissent"
+      ]
+    },
+    {
+      "branch_id": "bind_local_coalition",
+      "ink_path": "terms_choice",
+      "action_type": "certify_claim",
+      "actor_intent": "Certify the rival's default and bind the household to the local diversion coalition.",
+      "state_basis": [
+        "The household seal can make its support legible but cannot force other species to comply."
+      ],
+      "reviewed_consequences": [
+        "Raises matriarch_favor and household_standing while lowering rival_relief; later gates local success or exposes overreach."
+      ],
+      "training_hooks": [
+        "coalition_certification",
+        "family_interest_vs_food_web"
+      ]
+    },
+    {
+      "branch_id": "publish_ant_finding",
+      "ink_path": "terms_choice",
+      "action_type": "speak",
+      "actor_intent": "Publish a sufficiently supported finding that the local diversion was deliberate.",
+      "state_basis": [
+        "Available only with ant_testimony at two or higher.",
+        "The public rack can carry a living ant glyph."
+      ],
+      "reviewed_consequences": [
+        "Raises ant_testimony and rival_relief while sharply lowering matriarch_favor; road and lantern partners visibly preserve a minimum rival route."
+      ],
+      "training_hooks": [
+        "portable_contradiction",
+        "evidence_reprices_power"
+      ]
+    },
+    {
+      "branch_id": "fund_fungal_corridor",
+      "ink_path": "terms_choice",
+      "action_type": "spend_credit",
+      "actor_intent": "Spend accumulated road credit to keep minerals moving toward the rival canopy.",
+      "state_basis": [
+        "Available only with road_credit at two or higher.",
+        "The fungal road prefers future traffic to a victory that starves its route."
+      ],
+      "reviewed_consequences": [
+        "Spends road_credit, raises rival_relief and route_light, and lowers matriarch_favor."
+      ],
+      "training_hooks": [
+        "credit_spend",
+        "food_web_self_interest"
+      ]
+    },
+    {
+      "branch_id": "fund_neutral_passage",
+      "ink_path": "terms_choice",
+      "action_type": "transfer_resource",
+      "actor_intent": "Spend two salt measures to make one courier passage on each fork materially neutral.",
+      "state_basis": [
+        "Available only with two salt measures remaining.",
+        "Threadwings accept salt but retain route choice."
+      ],
+      "reviewed_consequences": [
+        "Spends two salt_reserve, raises threadwing_trust, rival_relief, and household_standing, and lowers matriarch_favor."
+      ],
+      "training_hooks": [
+        "paid_neutrality",
+        "resource_backed_speech"
+      ]
+    },
+    {
+      "branch_id": "prioritize_local_matriarch",
+      "ink_path": "final_choice",
+      "action_type": "enforce_sanction",
+      "actor_intent": "Enforce the diversion in exchange for household gestation priority.",
+      "state_basis": [
+        "Success requires high matriarch_favor and enough route_light to keep the local coalition functioning."
+      ],
+      "reviewed_consequences": [
+        "Routes to local success or overreach cost; both expose downstream courier and road costs."
+      ],
+      "training_hooks": [
+        "brittle_ecological_victory",
+        "state_gated_ending"
+      ]
+    },
+    {
+      "branch_id": "prioritize_public_audit",
+      "ink_path": "final_choice",
+      "action_type": "disclose_evidence",
+      "actor_intent": "Publish the diagnosis and leave route choice to trusted couriers.",
+      "state_basis": [
+        "Success requires strong ant_testimony and threadwing_trust."
+      ],
+      "reviewed_consequences": [
+        "Routes to an audit success that makes contradiction portable or an audit cost that arms both factions with ambiguity."
+      ],
+      "training_hooks": [
+        "neutral_testimony",
+        "courier_agency"
+      ]
+    },
+    {
+      "branch_id": "prioritize_rival_relief",
+      "ink_path": "final_choice",
+      "action_type": "hold_route",
+      "actor_intent": "Keep a minimum corridor open even if the household loses gestation priority.",
+      "state_basis": [
+        "Success requires accumulated rival_relief and visible household support."
+      ],
+      "reviewed_consequences": [
+        "Routes to food-web preservation with household cost or unsupported dissent with precise retaliation."
+      ],
+      "training_hooks": [
+        "constituency_cost",
+        "minimum_viable_corridor"
+      ]
+    },
+    {
+      "branch_id": "prioritize_partner_compact",
+      "ink_path": "final_choice",
+      "action_type": "convene_partners",
+      "actor_intent": "Let route-owning ecological parties set terms before either Matriarch speaks again.",
+      "state_basis": [
+        "Success requires road credit, courier trust, route light, and at least one usable ant account across multiple parties."
+      ],
+      "reviewed_consequences": [
+        "Routes to a partner compact that forces Matriarch renegotiation or a failed coalition bought apart through private deals."
+      ],
+      "training_hooks": [
+        "multi_species_coalition",
+        "alliance_requires_shared_credit"
+      ]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection"
+    ],
+    "manual_review_required": [
+      "Durable household, Matriarch, courier, road, lantern, or ant relationship updates",
+      "Promotion of a selected ending into canonical Zyphos history",
+      "Any Weksa-language naming of the locality, roles, species, or institutions",
+      "Accepted corpus coverage"
+    ]
+  },
+  "audit": {
+    "reviewer": "Codex Tangle elaborator applying the four required reviewer prompts",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative quality reviewer: accepted. Scores — reader orientation 5, coherence 5, pacing 4, voice 5, tonal fit 5, IF playability 5. Deliberate tonal mode is ritual workplace comedy with ecological menace. Routine work establishes bodies, locality, roles, objects, and dependency before pressure arrives.",
+      "Lore grounding reviewer: accepted. Scores — source coverage 5, canon fit 5, grounding quality 5, vault backfill value 5. Every leverage path terminates in established Matriarch, Airawa, threadwing, lantern-tree, fungal-road, lattice-ant, eclipse, or contract-dress constraints; translated handles preserve the Weksa naming reservation.",
+      "Visual continuity reviewer: accepted. Scores — segmentation 5, visual prompts 5, character visibility 5, branch visual continuity 5, website replay 4. Fourteen visual anchors and twenty additive modifiers share one explicit draft scene_set; a plan view or 3D blockout remains required before high-consistency rendered website art.",
+      "Spatial cohesion reviewer: accepted. Scores — layout 5, sightlines 5, body affordances 5, movement and access 5, object and system geometry 5, branch spatial state 5. The stage preserves uphill lantern rim, downhill root arch, local-right and rival-left fungal forks, Airawa climbing support, courier launch arcs, public-rack sightlines, and corridor state.",
+      "Repairs from review: made the partner-compact success gate reachable and dependent on a usable ant account; clarified that four lower hands belong to two Airawa; changed outcome-ambiguous ending base prompts to neutral staging; moved success and cost movement into modifiers; removed unsupported exact threadwing foot count, body scale, and cargo-pouch anatomy; expressed carried pollen through existing sensory-ribbon morphology; and added the public warm or dark gestation-marker mechanism to the owning Matriarch lore elaboration.",
+      "Mechanical review found sixteen Ink branch labels matched by sixteen sidecar records, eight ending labels matched by eight visual outcome modifiers, no missing divert targets, balanced Ink condition braces, every tracked variable read after mutation or used as an option gate, and a reachable success path for all four ending families. Ink was not compiled because this pass forbids installing or running an Ink compiler."
+    ],
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

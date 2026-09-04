@@ -1,0 +1,68 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "tangle-pollen-tithe-v0.bfl-simple-v0",
+  "fixture_id": "tangle-pollen-tithe-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Intricate ecological science-fiction storybook illustration, translucent ink washes, precise natural-history linework, restrained mineral green amber rose and cold blue palette, tactile bark fiber fungus salt and living tissue, expressive nonhuman body language, readable silhouettes, humane wit under quiet political menace, wordless cinematic frame.",
+  "prompts": [
+    {
+      "id": "01_terrace_establishing",
+      "prompt": "Wide living bark terrace between two colossal silver-brown buttress roots; uphill lantern tree with hanging cold blue-green knots; downhill root arch with a white mycelial road splitting into two amber-beaded forks; salt basins, woven courier roosts, assay slab, colored contract rack, ribbon-vaned gliders, and a huge fixed planet in a dim sky."
+    },
+    {
+      "id": "02_routine_bodies",
+      "prompt": "Young teal-gray six-limbed Airawa descends a ridged root face using taloned feet and large clawed upper hands while two smaller clawless lower hands carry salt and ribbons; older ochre-gray six-limbed tender waits on the bark shelf in a braided contract mantle beside cold lantern knots and amber fungal beads."
+    },
+    {
+      "id": "03_courier_broker",
+      "prompt": "Close small dark-green gliding courier with small gripping feet, pointed beak, and long translucent ribbon vanes; one pale scar crosses the left outer vane as it taps a salt basin, woven roost, and red-edged contract fiber before two six-limbed Airawa workers."
+    },
+    {
+      "id": "04_morning_tithe",
+      "prompt": "Overhead-oblique account station on living bark: young six-limbed Airawa centered among three mineral-salt basins, two woven roosts, cold lantern knots, a colored contract rack, a low assay slab crossed by copper lattice ants, and two amber fungal road forks; scar-vane courier watches from the rack."
+    },
+    {
+      "id": "05_grievance_arrival",
+      "prompt": "Ribbon-vaned courier flock lands along an unclaimed assay edge with vanes ragged and streaked red and amber; scar-vane broker drops a pellet of lantern seed, salt dust, root residue, and curled pollen tissue between road forks as copper lattice ants assemble an angular accusation around it."
+    },
+    {
+      "id": "06_diversion_order",
+      "prompt": "Colossal sentient buttress roots flex a bark terrace and shake colored ribbons; a separate lantern tree lights only the local route; a fungal road closes the rival amber fork; young six-limbed Airawa braces on the shifting shelf while a scar-vane courier bites a white salt spoon until it bends."
+    },
+    {
+      "id": "07_grievance_hearing",
+      "prompt": "Public ecological hearing around a low assay slab: grievance pellet between bright local and dark rival fungal forks, incomplete copper-ant glyph, red-edged courier fiber, salt basin, sugar flake, household marker, two six-limbed Airawa tenders, and a waiting ribbon-vane courier delegation under directional cold lantern light."
+    },
+    {
+      "id": "08_coalition_muster",
+      "prompt": "Wide coalition tableau on one bark shelf: young teal-gray Airawa and ochre-gray elder at a colored contract rack; scar-vane broker with sensory ribbons spread; courier flock along the downhill edge; ants around a grievance pellet; cold lantern routes above; bitter amber fungal beads across the rival fork; massive roots enclosing every party."
+    },
+    {
+      "id": "09_coalition_terms",
+      "prompt": "Close playable choice geometry: six-limbed Airawa braced between a carved household seal over soft root clay, a living ant glyph, a braided road-credit ribbon beside fungal beads, and two salt basins flanking local and rival routes; threadwing broker and elder watch under advancing eclipse shadow."
+    },
+    {
+      "id": "10_eclipse_accounting",
+      "prompt": "Wide threshold during eclipse ingress: giant planet crossing the dim sun, cold shadow moving over a buttress-root terrace, blue-green lantern knots above two roosts, white mycelial road dividing into amber forks, public ribbon rack and ant glyph at center, two six-limbed Airawa and a poised ribbon-vane courier flock."
+    },
+    {
+      "id": "11_local_aftermath",
+      "prompt": "Eclipsed root terrace with a warm oval household gestation marker glowing beside a seal, bright lantern and fungal routes into the local canopy, rival fork dark, young teal-gray Airawa and ochre-gray elder below, scar-vane broker deciding whether to launch with the ribbon-vane flock."
+    },
+    {
+      "id": "12_audit_aftermath",
+      "prompt": "Vertical contract rack between two route forks carries a living angular lattice-ant glyph, household seal, and red-edged rival fiber; young six-limbed Airawa steps back with lower hands open while elder watches and scar-vane courier holds the grievance pellet before a flock facing both routes."
+    },
+    {
+      "id": "13_relief_aftermath",
+      "prompt": "Deep-eclipse terrace with a thin amber fungal corridor beneath a colored household ribbon through the downhill root arch; young six-limbed Airawa anchors the ribbon with taloned feet and clawed upper hand, elder offers a bent salt spoon, and ribbon-vane couriers cluster around warm pollen cargo beside a dark gestation marker."
+    },
+    {
+      "id": "14_partner_compact_aftermath",
+      "prompt": "Two modest lantern lanes, two priced amber fungal forks, and a split living ant glyph converge at the public rack; young six-limbed Airawa stands empty-handed at center, elder waits upslope, scar-vane broker and courier flock form shared route lines or separated private clusters between colossal sentient roots."
+    }
+  ]
+}

@@ -1,0 +1,958 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "tangle-pollen-tithe-v0-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/zyphos/tangle-pollen-tithe-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/zyphos/tangle-pollen-tithe-v0.branch-and-fold.v0.training.json",
+  "scene_id": "tangle-pollen-tithe-v0.shared-pollen-terrace",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for a pre-imperial Matriarch pollen-tithe hearing.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for ordinary terrace work, courier grievance, Matriarch diversion pressure, public coalition accounting, eclipse route choice, and four state-gated aftermath families.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for the terrace establishing shot, Airawa work routine, courier broker introduction, morning tithe actions, grievance arrival, diversion order, grievance hearing, coalition muster, terms actions, eclipse accounting threshold, and each ending family. The arriving flock and the local Matriarch's diversion order receive separate replay screens because each changes the terrace's power geometry.",
+    "prompting_rule": "Each base image prompt is a complete standalone frame for a general image model, with concrete geometry, materials, light sources, body anatomy, interfaces, props, and visible positions. Continuity notes remain tooling constraints and are excluded from prompt assembly.",
+    "global_style_cue": "Style: intricate ecological science-fiction storybook illustration, translucent ink washes and precise natural-history linework, restrained mineral green amber rose and cold blue palette, tactile bark fiber fungus salt and living tissue, expressive nonhuman body language, readable silhouettes, humane wit under quiet political menace, cinematic framing suitable for illustrated interactive fiction.",
+    "prompt_assembly_rule": "Assemble every generated prompt from global_style_cue, the selected scene base_image_prompt, visual refs only for agents actually listed in visible_characters, and triggered state_image_modifiers or global_branch_image_modifiers. A camera-specific scene_set blockout supplies geometry for multi-angle rendering; generated art supplies material and mood.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The shared pollen terrace returns across multiple angles and branch states, so a draft geometry map fixes the root buttress shelf, root arch, road forks, lantern rim, roosts, assay slab, public rack, and climbing routes.",
+      "future_scene_set_need": "Before high-consistency website art, create a plan view or simple 3D blockout with the listed camera slots, Airawa climbing staging, courier flight arcs, root occlusion, route-light anchors, and branch-visible lane states."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "tangle_terrace_establishing",
+        "ink_anchor": "start",
+        "base_image_prompt": "Wide establishing view of a living pollen-tithe terrace on a dim alien world during late morning: a broad shelf of silver-brown bark spans between two enormous buttress roots of a sentient gestator tree; an uphill lantern tree leans over the shelf with cold blue-green bioluminescent knots hanging beneath dark leaves; a low arch between roots opens downhill onto a candle fungal road made of white mycelial braids and evenly spaced amber fruiting beads, splitting into a bright local fork and a weaker rival-facing fork. Three shallow mineral-salt basins, woven oval courier roosts, a waist-low stone-and-bark assay slab, and a vertical public rack of colored contract ribbons occupy the middle. Small ribbon-vaned flying animals circle above. A huge fixed planet hangs in the darkening sky. Intricate ecological science-fiction storybook illustration, translucent ink washes, precise natural-history linework, restrained mineral green amber rose and cold blue palette, readable wide composition.",
+        "visible_characters": [
+          {
+            "agent_id": "boundary_matriarch",
+            "default_stance": "visible as two enclosing buttress roots and the living bark shelf",
+            "visual_ref": "visual_character_refs.characters.boundary_matriarch"
+          },
+          {
+            "agent_id": "route_lantern_tree",
+            "default_stance": "rooted on the uphill rim with route knots lit",
+            "visual_ref": "visual_character_refs.characters.route_lantern_tree"
+          },
+          {
+            "agent_id": "candle_road_edge",
+            "default_stance": "emerging through the downhill root arch and splitting into two forks",
+            "visual_ref": "visual_character_refs.characters.candle_road_edge"
+          },
+          {
+            "agent_id": "terrace_threadwing_flock",
+            "default_stance": "circling over roosts in a loose route pattern",
+            "visual_ref": "visual_character_refs.groups.terrace_threadwing_flock"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The terrace is one bark shelf between local Matriarch buttresses. Uphill is the lantern rim; downhill is the root arch and two fungal road forks; the public rack and assay slab divide the forks; salt basins and roosts sit upslope of the rack.",
+          "The rival Matriarch is beyond the downhill ridge and never visible as a body in this fixture. Its presence is carried by the rival fork, couriers, residue, and remote route state."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_routine_bodies",
+        "ink_anchor": "routine_bodies",
+        "base_image_prompt": "Medium-wide work scene on the living bark terrace: a young adult six-limbed Airawa descends the vertical buttress face, tiny soft teal-gray scales, narrow reptilian head with minimal nose and ear slits, grown shoulder and chest plates traced by faint blue bioluminescent seams. Two taloned digitigrade feet and two large clawed upper hands anchor to bark ridges while two smaller clawless lower hands carry a salt spoon and tied ribbons. On the shelf, an older six-limbed Airawa with weathered ochre-gray scales and scarred plate edges waits beside salt basins, wearing an asymmetrical mantle braided from pale lantern fibers, amber fungal threads, and colored contract loops. Cold lantern knots light the woven roosts; amber fungal beads trace both road forks; huge lattice-textured roots frame the workers. Intricate ecological science-fiction storybook illustration, translucent ink washes, precise natural-history anatomy, restrained mineral palette, medium camera, ordinary skilled labor with dry warmth.",
+        "visible_characters": [
+          {
+            "agent_id": "junior_tithe_tender",
+            "default_stance": "four climbing limbs anchored on the buttress, two lower hands holding account tools",
+            "visual_ref": "visual_character_refs.characters.junior_tithe_tender"
+          },
+          {
+            "agent_id": "elder_contract_tender",
+            "default_stance": "standing beside the salt basins and public contract rack",
+            "visual_ref": "visual_character_refs.characters.elder_contract_tender"
+          },
+          {
+            "agent_id": "boundary_matriarch",
+            "default_stance": "buttress face supporting the tender and terrace",
+            "visual_ref": "visual_character_refs.characters.boundary_matriarch"
+          },
+          {
+            "agent_id": "route_lantern_tree",
+            "default_stance": "uphill canopy opening three cold light knots",
+            "visual_ref": "visual_character_refs.characters.route_lantern_tree"
+          },
+          {
+            "agent_id": "candle_road_edge",
+            "default_stance": "amber beads brightening one by one under the root arch",
+            "visual_ref": "visual_character_refs.characters.candle_road_edge"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "Airawa climbing always uses taloned feet and clawed upper hands for load bearing; lower paired hands perform precise account work."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_courier_broker",
+        "ink_anchor": "routine_courier",
+        "base_image_prompt": "Close-medium introduction at the public contract rack: a small gliding courier animal perches on a horizontal fiber bar, narrow dark-green body, small gripping feet, pointed beak, and many long translucent sensory ribbons overlapping like streamers along its wings and tail. One pale scar crosses a left-side ribbon vane. The courier taps a shallow white salt basin, a woven oval roost membrane, and a red-edged rival contract fiber. A young six-limbed teal-gray Airawa tender watches with two lower hands poised over salt and ribbons; an older ochre-gray Airawa in a braided contract mantle stands behind with amused caution. Cold lantern knots glow above; amber fungal beads and tiny lattice ants remain visible below. Intricate ecological science-fiction storybook illustration, precise natural-history linework, translucent ink color, close readable composition, familiar workplace negotiation.",
+        "visible_characters": [
+          {
+            "agent_id": "scar_vane_threadwing_broker",
+            "default_stance": "perched on the public rack, tapping three invoice objects",
+            "visual_ref": "visual_character_refs.characters.scar_vane_threadwing_broker"
+          },
+          {
+            "agent_id": "junior_tithe_tender",
+            "default_stance": "beside the rack with lower hands near salt and ribbons",
+            "visual_ref": "visual_character_refs.characters.junior_tithe_tender"
+          },
+          {
+            "agent_id": "elder_contract_tender",
+            "default_stance": "behind the tender, observing the broker",
+            "visual_ref": "visual_character_refs.characters.elder_contract_tender"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The scarred sensory vane stays on the broker's left side in every frame."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_morning_tithe",
+        "ink_anchor": "opening_hub",
+        "base_image_prompt": "Medium overhead-oblique view of the terrace's ordinary accounting stations: a six-limbed teal-gray Airawa tender stands between three shallow mineral-salt basins, two woven oval threadwing roosts under cold blue-green lantern knots, a public vertical rack crowded with colored contract ribbons, a low assay slab crossed by tiny jointed lattice ants, and two amber-beaded fungal road forks passing beneath. The dark-green scar-vane courier broker watches from the rack while the older ochre-gray Airawa elder holds a scraper beside yesterday's spent fungal beads. The living buttress floor offers clear climbing ridges and a root arch downhill. Intricate ecological science-fiction storybook illustration, translucent ink washes, precise natural-history detail, restrained mineral colors, visible tools and routes, calm before pressure.",
+        "visible_characters": [
+          {
+            "agent_id": "junior_tithe_tender",
+            "default_stance": "centered between salt, roost, contract rack, and assay slab",
+            "visual_ref": "visual_character_refs.characters.junior_tithe_tender"
+          },
+          {
+            "agent_id": "elder_contract_tender",
+            "default_stance": "beside the assay slab with fungal-bead scraper",
+            "visual_ref": "visual_character_refs.characters.elder_contract_tender"
+          },
+          {
+            "agent_id": "scar_vane_threadwing_broker",
+            "default_stance": "watching from the public rack",
+            "visual_ref": "visual_character_refs.characters.scar_vane_threadwing_broker"
+          },
+          {
+            "agent_id": "lattice_ant_audit_colony",
+            "default_stance": "small bodies crossing the low assay slab",
+            "visual_ref": "visual_character_refs.groups.lattice_ant_audit_colony"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "threadwing_trust >= 4",
+            "modifier_prompt": "The scar-vane courier eats from a filled salt basin with both feet planted; a clean shed ribbon lies beside the household marker."
+          },
+          {
+            "trigger": "road_credit >= 4",
+            "modifier_prompt": "A rich bright fungal lane opens beneath the assay slab, white mycelial braid carrying fresh mineral color."
+          },
+          {
+            "trigger": "ant_testimony >= 1",
+            "modifier_prompt": "Lattice ants join into a narrow living loop that preserves the red-edged rival contract fiber on the assay slab."
+          },
+          {
+            "trigger": "route_light >= 4",
+            "modifier_prompt": "Four cold blue-green lantern knots illuminate the repaired roost membrane and its taut woven fibers."
+          },
+          {
+            "trigger": "matriarch_favor <= 1",
+            "modifier_prompt": "A cool desaturated patch spreads through the buttress bark directly beneath the junior tender's taloned feet."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_grievance_arrival",
+        "ink_anchor": "grievance_arrival",
+        "base_image_prompt": "Pivotal wide-medium frame as a threadwing delegation arrives at the unclaimed downhill edge of the assay slab: several small gliding animals with dark narrow bodies and long translucent ribbon vanes land away from the local markers, their vanes ragged and streaked with red root residue and amber fungal bitterness. The left-scarred broker drops a compact pellet of half-digested pale lantern seed, salt dust, red residue, and curled pollen tissue between the two road forks. Hundreds of tiny jointed lattice ants lock together around the pellet in three angular lines. The young six-limbed teal-gray Airawa tender and older ochre-gray elder turn toward the arrival; cold lantern knots and a giant planet hang above the buttress terrace. Intricate ecological science-fiction storybook illustration, translucent ink washes, precise anatomy, restrained mineral palette, a quiet room becoming a public incident.",
+        "visible_characters": [
+          {
+            "agent_id": "scar_vane_threadwing_broker",
+            "default_stance": "dropping the grievance pellet between road forks",
+            "visual_ref": "visual_character_refs.characters.scar_vane_threadwing_broker"
+          },
+          {
+            "agent_id": "terrace_threadwing_flock",
+            "default_stance": "landing along the unclaimed assay edge with ragged vanes spread",
+            "visual_ref": "visual_character_refs.groups.terrace_threadwing_flock"
+          },
+          {
+            "agent_id": "lattice_ant_audit_colony",
+            "default_stance": "forming a three-line accusation glyph around the pellet",
+            "visual_ref": "visual_character_refs.groups.lattice_ant_audit_colony"
+          },
+          {
+            "agent_id": "junior_tithe_tender",
+            "default_stance": "turning from the public rack toward the pellet",
+            "visual_ref": "visual_character_refs.characters.junior_tithe_tender"
+          },
+          {
+            "agent_id": "elder_contract_tender",
+            "default_stance": "still beside the assay scraper, attention fixed downhill",
+            "visual_ref": "visual_character_refs.characters.elder_contract_tender"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The arriving flock lands on the downhill unclaimed edge, distinct from the local roosts upslope."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_diversion_order",
+        "ink_anchor": "diversion_order",
+        "base_image_prompt": "Medium-wide power-geometry frame on the root terrace: the enormous sentient Matriarch buttress swells with visible sap pressure and curls the bark shelf slightly upward; colored contract ribbons tremble on the public rack. The uphill lantern tree extinguishes every cold knot facing the rival downhill fork while keeping the local-side knots lit. The candle fungal road closes two amber beads on the rival fork, leaving the local fork bright. A young teal-gray six-limbed Airawa tender stands with taloned feet spread on the shifting bark, two smaller lower hands holding household ribbons; the older ochre-gray elder in a braided mantle translates beside them. The dark-green scar-vane courier broker bites a thin white salt spoon hard enough to bend it. Intricate ecological science-fiction storybook illustration, translucent ink and natural-history linework, cold eclipse shadow approaching, coercion expressed through living infrastructure.",
+        "visible_characters": [
+          {
+            "agent_id": "boundary_matriarch",
+            "default_stance": "buttress roots pressuring the terrace and shaking contract ribbons",
+            "visual_ref": "visual_character_refs.characters.boundary_matriarch"
+          },
+          {
+            "agent_id": "route_lantern_tree",
+            "default_stance": "local knots lit and rival-facing knots extinguished",
+            "visual_ref": "visual_character_refs.characters.route_lantern_tree"
+          },
+          {
+            "agent_id": "candle_road_edge",
+            "default_stance": "local amber fork open and rival fork pinched dark",
+            "visual_ref": "visual_character_refs.characters.candle_road_edge"
+          },
+          {
+            "agent_id": "junior_tithe_tender",
+            "default_stance": "braced on shifting bark with household ribbons",
+            "visual_ref": "visual_character_refs.characters.junior_tithe_tender"
+          },
+          {
+            "agent_id": "elder_contract_tender",
+            "default_stance": "beside the tender translating the demand",
+            "visual_ref": "visual_character_refs.characters.elder_contract_tender"
+          },
+          {
+            "agent_id": "scar_vane_threadwing_broker",
+            "default_stance": "on the public rack biting the bent salt spoon",
+            "visual_ref": "visual_character_refs.characters.scar_vane_threadwing_broker"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The Matriarch changes root pressure and warmth; the separate lantern tree owns route-light changes; the fungal road owns amber lane changes."
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_grievance_hearing",
+        "ink_anchor": "grievance_choice",
+        "base_image_prompt": "Medium overhead-oblique hearing frame centered on the assay slab and public rack: a grievance pellet rests between bright local and dark rival fungal-road forks; tiny lattice ants surround it in an incomplete angular glyph; a red-edged courier fiber hangs from the contract rack beside an Airawa household marker. The young teal-gray six-limbed Airawa tender stands within reach of a shallow salt basin, a sugar flake, the red-edged fiber, and the household marker. The older ochre-gray elder watches from the upslope side. The dark-green scar-vane threadwing broker perches at the downhill edge beside a delegation of ribbon-vaned couriers. Cold lantern knots cast directional pools of light across bark, white mycelium, colored ribbons, and mineral salt. Intricate ecological science-fiction storybook illustration, precise natural-history detail, tactile contract objects, restrained ink palette, legible choice geometry.",
+        "visible_characters": [
+          {
+            "agent_id": "junior_tithe_tender",
+            "default_stance": "between salt, sugar, rival fiber, and household marker",
+            "visual_ref": "visual_character_refs.characters.junior_tithe_tender"
+          },
+          {
+            "agent_id": "elder_contract_tender",
+            "default_stance": "upslope of the assay slab observing the public choice",
+            "visual_ref": "visual_character_refs.characters.elder_contract_tender"
+          },
+          {
+            "agent_id": "scar_vane_threadwing_broker",
+            "default_stance": "on the unclaimed downhill edge beside the delegation",
+            "visual_ref": "visual_character_refs.characters.scar_vane_threadwing_broker"
+          },
+          {
+            "agent_id": "terrace_threadwing_flock",
+            "default_stance": "spaced behind the broker with ragged vanes visible",
+            "visual_ref": "visual_character_refs.groups.terrace_threadwing_flock"
+          },
+          {
+            "agent_id": "lattice_ant_audit_colony",
+            "default_stance": "forming an incomplete glyph around the pellet",
+            "visual_ref": "visual_character_refs.groups.lattice_ant_audit_colony"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_coalition_muster",
+        "ink_anchor": "coalition_muster",
+        "base_image_prompt": "Wide-medium coalition frame across the same bark shelf: the young teal-gray six-limbed Airawa tender stands beside the public rack, older ochre-gray elder behind; the left-scarred dark-green threadwing broker occupies either the rack or the unclaimed assay edge; small ribbon-vaned couriers line the downhill border; tiny lattice ants hold the grievance pellet; the lantern tree's cold knots divide local and rival light; the candle fungal road raises a row of bitter amber beads across the rival fork; massive Matriarch buttresses enclose the scene. Contract ribbons, salt basins, roost membranes, household markers, and both road forks remain fully visible. Intricate ecological science-fiction storybook illustration, translucent ink, precise living-infrastructure detail, late eclipse light, a coalition becoming materially legible.",
+        "visible_characters": [
+          {
+            "agent_id": "junior_tithe_tender",
+            "default_stance": "beside the public rack facing the route parties",
+            "visual_ref": "visual_character_refs.characters.junior_tithe_tender"
+          },
+          {
+            "agent_id": "elder_contract_tender",
+            "default_stance": "one pace upslope behind the junior tender",
+            "visual_ref": "visual_character_refs.characters.elder_contract_tender"
+          },
+          {
+            "agent_id": "scar_vane_threadwing_broker",
+            "default_stance": "reading the terrace with sensory ribbons spread",
+            "visual_ref": "visual_character_refs.characters.scar_vane_threadwing_broker"
+          },
+          {
+            "agent_id": "terrace_threadwing_flock",
+            "default_stance": "arrayed along the downhill edge",
+            "visual_ref": "visual_character_refs.groups.terrace_threadwing_flock"
+          },
+          {
+            "agent_id": "lattice_ant_audit_colony",
+            "default_stance": "assembled around pellet and public rack",
+            "visual_ref": "visual_character_refs.groups.lattice_ant_audit_colony"
+          },
+          {
+            "agent_id": "boundary_matriarch",
+            "default_stance": "buttress roots enclosing the lateral edges of the frame",
+            "visual_ref": "visual_character_refs.characters.boundary_matriarch"
+          },
+          {
+            "agent_id": "route_lantern_tree",
+            "default_stance": "uphill light knots divided between route faces",
+            "visual_ref": "visual_character_refs.characters.route_lantern_tree"
+          },
+          {
+            "agent_id": "candle_road_edge",
+            "default_stance": "two downhill forks divided by bitter beads",
+            "visual_ref": "visual_character_refs.characters.candle_road_edge"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "threadwing_trust >= 4",
+            "modifier_prompt": "The scar-vane broker remains on the public rack within lower-hand reach, feet planted and cargo pouch closed safely."
+          },
+          {
+            "trigger": "threadwing_trust <= 2",
+            "modifier_prompt": "The scar-vane broker retreats to the far downhill assay edge with wings half-open for immediate departure."
+          },
+          {
+            "trigger": "ant_testimony >= 3",
+            "modifier_prompt": "Lattice ants form three clean joined lines on the public rack: one from paid salt, one from clean cargo, one from chosen route closure."
+          },
+          {
+            "trigger": "rival_relief >= 2",
+            "modifier_prompt": "The red-edged rival fiber is braided securely into the junior tender's mantle loop above the household marker."
+          },
+          {
+            "trigger": "matriarch_favor >= 4",
+            "modifier_prompt": "Warm amber sap light spreads through the buttress directly behind the household marker, outlining an unopened gestation sign."
+          },
+          {
+            "trigger": "household_standing >= 4",
+            "modifier_prompt": "Several neighboring household ribbons rotate faceout beside the junior tender's marker, forming a visible bloc."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_coalition_terms",
+        "ink_anchor": "terms_choice",
+        "base_image_prompt": "Medium close choice frame at the junction of clay, rack, and road: the young teal-gray six-limbed Airawa tender braces with taloned feet on bark and one clawed upper hand on the public rack while two smaller lower hands hover among four concrete actions: a carved household seal above soft root clay on the bright local fork, a living three-line lattice-ant glyph beside the grievance pellet, a braided household road-credit ribbon laid near bitter amber fungal beads, and two shallow salt basins flanking the local and rival routes. The dark-green left-scarred courier broker watches from the rack; the older ochre-gray elder stands behind; cold lantern knots and advancing shadow reveal both forks. Intricate ecological science-fiction storybook illustration, precise nonhuman anatomy, tactile objects, restrained ink color, clear playable affordances under political pressure.",
+        "visible_characters": [
+          {
+            "agent_id": "junior_tithe_tender",
+            "default_stance": "braced between household seal, ant glyph, road ribbon, and salt basins",
+            "visual_ref": "visual_character_refs.characters.junior_tithe_tender"
+          },
+          {
+            "agent_id": "elder_contract_tender",
+            "default_stance": "behind the tender with mantle ribbons visible",
+            "visual_ref": "visual_character_refs.characters.elder_contract_tender"
+          },
+          {
+            "agent_id": "scar_vane_threadwing_broker",
+            "default_stance": "on the rack facing the offered route terms",
+            "visual_ref": "visual_character_refs.characters.scar_vane_threadwing_broker"
+          },
+          {
+            "agent_id": "lattice_ant_audit_colony",
+            "default_stance": "holding a living glyph beside the pellet",
+            "visual_ref": "visual_character_refs.groups.lattice_ant_audit_colony"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_eclipse_accounting",
+        "ink_anchor": "eclipse_accounting",
+        "base_image_prompt": "Wide threshold view of the pollen terrace during eclipse ingress: a vast dark planet covers part of the dim sun, casting a cold moving shadow across enormous Matriarch buttresses and the bark shelf. The uphill lantern tree hangs blue-green knots above two woven courier roosts. Below, a white braided fungal road divides under a root arch into local and rival amber-beaded forks. The public contract rack, assay slab, grievance pellet, ant glyph, salt basins, household seal, and colored ribbons are readable at center. A young teal-gray six-limbed Airawa tender stands beside the older ochre-gray elder; a dark-green left-scarred threadwing broker and ribbon-vaned flock wait along launch lines. Intricate ecological science-fiction storybook illustration, translucent ink shadows, precise natural-history linework, restrained cold palette with amber route lights, final accounting before movement.",
+        "visible_characters": [
+          {
+            "agent_id": "junior_tithe_tender",
+            "default_stance": "at the public rack between both forks",
+            "visual_ref": "visual_character_refs.characters.junior_tithe_tender"
+          },
+          {
+            "agent_id": "elder_contract_tender",
+            "default_stance": "upslope beside the junior tender",
+            "visual_ref": "visual_character_refs.characters.elder_contract_tender"
+          },
+          {
+            "agent_id": "scar_vane_threadwing_broker",
+            "default_stance": "poised on the launch bar with ribbons spread",
+            "visual_ref": "visual_character_refs.characters.scar_vane_threadwing_broker"
+          },
+          {
+            "agent_id": "terrace_threadwing_flock",
+            "default_stance": "waiting in two possible launch lines",
+            "visual_ref": "visual_character_refs.groups.terrace_threadwing_flock"
+          },
+          {
+            "agent_id": "lattice_ant_audit_colony",
+            "default_stance": "on assay slab or public rack around the glyph",
+            "visual_ref": "visual_character_refs.groups.lattice_ant_audit_colony"
+          },
+          {
+            "agent_id": "boundary_matriarch",
+            "default_stance": "buttress roots enclosing the terrace",
+            "visual_ref": "visual_character_refs.characters.boundary_matriarch"
+          },
+          {
+            "agent_id": "route_lantern_tree",
+            "default_stance": "uphill knots lighting launch lines",
+            "visual_ref": "visual_character_refs.characters.route_lantern_tree"
+          },
+          {
+            "agent_id": "candle_road_edge",
+            "default_stance": "forking downhill under the root arch",
+            "visual_ref": "visual_character_refs.characters.candle_road_edge"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "route_light >= 4",
+            "modifier_prompt": "Four bright cold lantern knots create two crisp illuminated launch lanes above the roost membranes."
+          },
+          {
+            "trigger": "route_light <= 2",
+            "modifier_prompt": "Two weak lantern knots leave the roost membranes soft-edged in shadow and the launch lanes visually uncertain."
+          },
+          {
+            "trigger": "road_credit <= 1",
+            "modifier_prompt": "A narrow rival corridor glows beneath a visibly spent household road ribbon while surrounding fungal beads stay dark."
+          },
+          {
+            "trigger": "ant_testimony >= 3",
+            "modifier_prompt": "The living three-line ant accusation glyph occupies the highest crossbar of the public rack."
+          },
+          {
+            "trigger": "matriarch_favor >= 5",
+            "modifier_prompt": "A warm oval gestation marker opens in the local buttress beside the household seal."
+          },
+          {
+            "trigger": "matriarch_favor <= 1",
+            "modifier_prompt": "The household's oval gestation marker stays dark and cool beside the seal."
+          },
+          {
+            "trigger": "rival_relief >= 3",
+            "modifier_prompt": "A thin connected chain of amber beads and loaded courier bodies points down the rival fork."
+          },
+          {
+            "trigger": "rival_relief <= 0",
+            "modifier_prompt": "The red-edged rival fiber curls dry above a completely dark rival road fork."
+          },
+          {
+            "trigger": "household_standing >= 4",
+            "modifier_prompt": "Several neighboring household ribbons face outward beside the junior tender's seal in a compact visible bloc."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "tangle_ending_local",
+        "ink_anchor": "ending_local_success|ending_local_cost",
+        "base_image_prompt": "Local-coalition aftermath on the eclipsed root terrace: cold lantern knots and a bright amber fungal lane point into the local Matriarch canopy while the rival fork descends dark beneath the root arch. A warm oval gestation marker glows beside the household seal in the massive buttress. The young teal-gray six-limbed Airawa tender stands beneath it with the older ochre-gray elder. The dark-green left-scarred threadwing broker and ribbon-vaned flock gather on the launch bar; the public rack, salt basins, roosts, and assay slab remain visible. Intricate ecological science-fiction storybook illustration, translucent ink, precise living infrastructure, amber reward against cold political shadow.",
+        "visible_characters": [
+          {
+            "agent_id": "junior_tithe_tender",
+            "default_stance": "beneath the warm household gestation marker",
+            "visual_ref": "visual_character_refs.characters.junior_tithe_tender"
+          },
+          {
+            "agent_id": "elder_contract_tender",
+            "default_stance": "beside the tender facing the road forks",
+            "visual_ref": "visual_character_refs.characters.elder_contract_tender"
+          },
+          {
+            "agent_id": "scar_vane_threadwing_broker",
+            "default_stance": "at the launch bar evaluating the closed rival route",
+            "visual_ref": "visual_character_refs.characters.scar_vane_threadwing_broker"
+          },
+          {
+            "agent_id": "terrace_threadwing_flock",
+            "default_stance": "gathered on the launch line before outcome movement",
+            "visual_ref": "visual_character_refs.groups.terrace_threadwing_flock"
+          },
+          {
+            "agent_id": "boundary_matriarch",
+            "default_stance": "warm gestation marker open in local buttress",
+            "visual_ref": "visual_character_refs.characters.boundary_matriarch"
+          },
+          {
+            "agent_id": "route_lantern_tree",
+            "default_stance": "lighting only the local launch lane",
+            "visual_ref": "visual_character_refs.characters.route_lantern_tree"
+          },
+          {
+            "agent_id": "candle_road_edge",
+            "default_stance": "local fork bright and rival fork dark",
+            "visual_ref": "visual_character_refs.characters.candle_road_edge"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_ending_audit",
+        "ink_anchor": "ending_audit_success|ending_audit_cost",
+        "base_image_prompt": "Public-audit aftermath on the eclipsed bark terrace: the vertical contract rack stands between two fungal road forks under cold lantern knots. A living lattice-ant glyph of angular joined bodies occupies the rack beside the household seal and red-edged rival fiber. The young teal-gray six-limbed Airawa tender has stepped back with all lower hands open; the older ochre-gray elder watches the account; the dark-green left-scarred threadwing broker holds the grievance pellet while a ribbon-vaned flock faces both possible routes. Massive Matriarch buttresses frame the hearing. Intricate ecological science-fiction storybook illustration, translucent ink washes, natural-history precision, restrained blue-green amber and rose, evidence made physically portable.",
+        "visible_characters": [
+          {
+            "agent_id": "junior_tithe_tender",
+            "default_stance": "stepped back from the rack with lower hands open",
+            "visual_ref": "visual_character_refs.characters.junior_tithe_tender"
+          },
+          {
+            "agent_id": "elder_contract_tender",
+            "default_stance": "watching the public account from upslope",
+            "visual_ref": "visual_character_refs.characters.elder_contract_tender"
+          },
+          {
+            "agent_id": "scar_vane_threadwing_broker",
+            "default_stance": "holding the grievance pellet at the rack",
+            "visual_ref": "visual_character_refs.characters.scar_vane_threadwing_broker"
+          },
+          {
+            "agent_id": "terrace_threadwing_flock",
+            "default_stance": "facing both road forks",
+            "visual_ref": "visual_character_refs.groups.terrace_threadwing_flock"
+          },
+          {
+            "agent_id": "lattice_ant_audit_colony",
+            "default_stance": "forming the public glyph",
+            "visual_ref": "visual_character_refs.groups.lattice_ant_audit_colony"
+          },
+          {
+            "agent_id": "boundary_matriarch",
+            "default_stance": "buttress roots framing the rack and household marker",
+            "visual_ref": "visual_character_refs.characters.boundary_matriarch"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_ending_relief",
+        "ink_anchor": "ending_relief_success|ending_relief_cost",
+        "base_image_prompt": "Rival-corridor aftermath during deep eclipse: a narrow amber fungal lane runs beneath a colored household ribbon from the central assay slab through the downhill root arch toward the rival fork. A young teal-gray six-limbed Airawa tender braces the ribbon with taloned feet and one large clawed upper hand while two smaller lower hands secure its public knot; an older ochre-gray elder offers a visibly bent white salt spoon. The dark-green left-scarred threadwing broker and several ribbon-vaned couriers cluster with dense pale pollen caught among warm ventral ribbon vanes near the open corridor. The local Matriarch buttress carries a dark oval household gestation marker; other household ribbons may face outward nearby. Intricate ecological science-fiction storybook illustration, translucent ink, precise body mechanics and route geometry, faint amber survival line against cold blue-black shadow.",
+        "visible_characters": [
+          {
+            "agent_id": "junior_tithe_tender",
+            "default_stance": "physically anchoring the household ribbon across the rival fork",
+            "visual_ref": "visual_character_refs.characters.junior_tithe_tender"
+          },
+          {
+            "agent_id": "elder_contract_tender",
+            "default_stance": "offering the bent salt spoon beside the ribbon",
+            "visual_ref": "visual_character_refs.characters.elder_contract_tender"
+          },
+          {
+            "agent_id": "scar_vane_threadwing_broker",
+            "default_stance": "beside couriers carrying pale pollen in warm ventral vanes at the rival corridor",
+            "visual_ref": "visual_character_refs.characters.scar_vane_threadwing_broker"
+          },
+          {
+            "agent_id": "terrace_threadwing_flock",
+            "default_stance": "arrayed for rival-route launch",
+            "visual_ref": "visual_character_refs.groups.terrace_threadwing_flock"
+          },
+          {
+            "agent_id": "boundary_matriarch",
+            "default_stance": "local buttress with household gestation marker dark",
+            "visual_ref": "visual_character_refs.characters.boundary_matriarch"
+          },
+          {
+            "agent_id": "candle_road_edge",
+            "default_stance": "narrow amber corridor beneath the household ribbon",
+            "visual_ref": "visual_character_refs.characters.candle_road_edge"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "tangle_ending_compact",
+        "ink_anchor": "ending_compact_success|ending_compact_cost",
+        "base_image_prompt": "Partner-compact aftermath across the eclipsed terrace: two modest cold lantern lanes point toward two woven roosts; two amber fungal-road forks meet beneath the central assay slab; lattice ants hold a living accusation glyph between two account ribbons; a threadwing flock waits in a loose central cluster. The young teal-gray six-limbed Airawa tender stands at center with two smaller lower hands open and empty; the older ochre-gray elder waits upslope; the dark-green left-scarred broker occupies the public rack. Huge sentient Matriarch buttresses frame the negotiation while salt basins, road ribbons, household seals, and route beads show the material terms. Intricate ecological science-fiction storybook illustration, translucent ink washes, precise natural-history linework, restrained mineral palette, collective action shown through routes and body placement.",
+        "visible_characters": [
+          {
+            "agent_id": "junior_tithe_tender",
+            "default_stance": "centered with both lower hands open and no seal laid",
+            "visual_ref": "visual_character_refs.characters.junior_tithe_tender"
+          },
+          {
+            "agent_id": "elder_contract_tender",
+            "default_stance": "waiting upslope behind the tender",
+            "visual_ref": "visual_character_refs.characters.elder_contract_tender"
+          },
+          {
+            "agent_id": "scar_vane_threadwing_broker",
+            "default_stance": "on the public rack between route lines",
+            "visual_ref": "visual_character_refs.characters.scar_vane_threadwing_broker"
+          },
+          {
+            "agent_id": "terrace_threadwing_flock",
+            "default_stance": "waiting in a loose central cluster before the outcome",
+            "visual_ref": "visual_character_refs.groups.terrace_threadwing_flock"
+          },
+          {
+            "agent_id": "lattice_ant_audit_colony",
+            "default_stance": "dividing or holding the glyph at the rack",
+            "visual_ref": "visual_character_refs.groups.lattice_ant_audit_colony"
+          },
+          {
+            "agent_id": "boundary_matriarch",
+            "default_stance": "buttress roots enclosing both sides of the negotiation",
+            "visual_ref": "visual_character_refs.characters.boundary_matriarch"
+          },
+          {
+            "agent_id": "route_lantern_tree",
+            "default_stance": "lighting two modest route lanes",
+            "visual_ref": "visual_character_refs.characters.route_lantern_tree"
+          },
+          {
+            "agent_id": "candle_road_edge",
+            "default_stance": "holding two priced amber forks",
+            "visual_ref": "visual_character_refs.characters.candle_road_edge"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_courier_credit_visual",
+        "trigger": "branch_label == prime_courier_credit",
+        "apply_to_visual_scene_ids": [
+          "tangle_morning_tithe",
+          "tangle_coalition_muster"
+        ],
+        "modifier_prompt": "One salt basin is freshly filled; the scar-vane broker eats with feet planted; a clean shed vane ribbon rests beside the household marker."
+      },
+      {
+        "modifier_id": "prime_road_credit_visual",
+        "trigger": "branch_label == prime_road_credit",
+        "apply_to_visual_scene_ids": [
+          "tangle_morning_tithe",
+          "tangle_coalition_muster"
+        ],
+        "modifier_prompt": "Clean fruit husks and shed tissue lie beside the fungal boundary; white mycelial threads sort them into a bright local lane."
+      },
+      {
+        "modifier_id": "prime_route_light_visual",
+        "trigger": "branch_label == prime_route_light",
+        "apply_to_visual_scene_ids": [
+          "tangle_morning_tithe",
+          "tangle_eclipse_accounting"
+        ],
+        "modifier_prompt": "The lowest woven roost membrane is taut and repaired beneath a fourth cold blue-green lantern knot."
+      },
+      {
+        "modifier_id": "prime_public_account_visual",
+        "trigger": "branch_label == prime_public_account",
+        "apply_to_visual_scene_ids": [
+          "tangle_morning_tithe",
+          "tangle_coalition_muster"
+        ],
+        "modifier_prompt": "The red-edged rival fiber stays on the public rack inside a narrow loop of joined lattice-ant bodies."
+      },
+      {
+        "modifier_id": "hear_courier_first_visual",
+        "trigger": "branch_label == hear_courier_first",
+        "apply_to_visual_scene_ids": [
+          "tangle_grievance_hearing",
+          "tangle_coalition_muster"
+        ],
+        "modifier_prompt": "The scar-vane broker eats once from the shallow salt basin while a fresh shed fiber crosses the lattice-ant glyph."
+      },
+      {
+        "modifier_id": "audit_diversion_visual",
+        "trigger": "branch_label == audit_diversion",
+        "apply_to_visual_scene_ids": [
+          "tangle_grievance_hearing",
+          "tangle_coalition_muster",
+          "tangle_eclipse_accounting"
+        ],
+        "modifier_prompt": "Lattice ants bridge grievance pellet, red root residue, and fungal glue into three clean angular lines; one lantern knot fades during the long assay."
+      },
+      {
+        "modifier_id": "endorse_local_terms_visual",
+        "trigger": "branch_label == endorse_local_terms",
+        "apply_to_visual_scene_ids": [
+          "tangle_grievance_hearing",
+          "tangle_coalition_muster"
+        ],
+        "modifier_prompt": "The household marker hangs on the bright local road fork; the local buttress glows warm while threadwings increase their distance from the rack."
+      },
+      {
+        "modifier_id": "shelter_rival_claim_visual",
+        "trigger": "branch_label == shelter_rival_claim",
+        "apply_to_visual_scene_ids": [
+          "tangle_grievance_hearing",
+          "tangle_coalition_muster",
+          "tangle_eclipse_accounting"
+        ],
+        "modifier_prompt": "The red-edged rival fiber is braided into an empty loop on the junior tender's mantle; the root shelf rises slightly beneath one taloned foot."
+      },
+      {
+        "modifier_id": "bind_local_coalition_visual",
+        "trigger": "branch_label == bind_local_coalition",
+        "apply_to_visual_scene_ids": [
+          "tangle_coalition_terms",
+          "tangle_eclipse_accounting",
+          "tangle_ending_local"
+        ],
+        "modifier_prompt": "A crisp household seal is pressed into root clay beside the bright local fork; the rival fork is fully dark."
+      },
+      {
+        "modifier_id": "publish_ant_finding_visual",
+        "trigger": "branch_label == publish_ant_finding",
+        "apply_to_visual_scene_ids": [
+          "tangle_coalition_terms",
+          "tangle_eclipse_accounting",
+          "tangle_ending_audit"
+        ],
+        "modifier_prompt": "Lattice ants rebuild the three-line deliberate-diversion glyph high on the public rack; one rival fungal bead stays lit and one rival-facing lantern knot glows at half brightness."
+      },
+      {
+        "modifier_id": "fund_fungal_corridor_visual",
+        "trigger": "branch_label == fund_fungal_corridor",
+        "apply_to_visual_scene_ids": [
+          "tangle_coalition_terms",
+          "tangle_eclipse_accounting",
+          "tangle_ending_relief"
+        ],
+        "modifier_prompt": "A household road ribbon lies across bitter beads while white mycelium opens a narrow amber mineral corridor beneath it toward the rival fork."
+      },
+      {
+        "modifier_id": "fund_neutral_passage_visual",
+        "trigger": "branch_label == fund_neutral_passage",
+        "apply_to_visual_scene_ids": [
+          "tangle_coalition_terms",
+          "tangle_eclipse_accounting"
+        ],
+        "modifier_prompt": "Two filled salt basins flank the assay slab, both household markers faceup, and one ribbon-vaned courier lands at each basin."
+      },
+      {
+        "modifier_id": "ending_local_success_visual",
+        "trigger": "ending_label == local_matriarch_success",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_local"
+        ],
+        "modifier_prompt": "Loaded threadwings launch into the bright local canopy; the household gestation marker glows warm; the rival fork stays dark and the fungal return lane is thin."
+      },
+      {
+        "modifier_id": "ending_local_cost_visual",
+        "trigger": "ending_label == local_matriarch_cost",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_local"
+        ],
+        "modifier_prompt": "The warm household gestation marker remains open while the scar-vane broker and flock fly away empty; local fungal beads extinguish sequentially behind them."
+      },
+      {
+        "modifier_id": "ending_audit_success_visual",
+        "trigger": "ending_label == public_audit_success",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_audit"
+        ],
+        "modifier_prompt": "The scar-vane broker carries the grievance pellet above the rack; half the flock launches along each illuminated fork; the clear ant glyph remains attached to the public account."
+      },
+      {
+        "modifier_id": "ending_audit_cost_visual",
+        "trigger": "ending_label == public_audit_cost",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_audit"
+        ],
+        "modifier_prompt": "The ant glyph breaks into ambiguous fragments; the broker leaves with the pellet; the household gestation marker and rival fork both remain dark."
+      },
+      {
+        "modifier_id": "ending_relief_success_visual",
+        "trigger": "ending_label == rival_corridor_success",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_relief"
+        ],
+        "modifier_prompt": "A connected amber corridor reaches through the root arch; couriers launch with dense pale pollen caught in warm ventral ribbon vanes; neighboring household ribbons face outward beside the dark local gestation marker."
+      },
+      {
+        "modifier_id": "ending_relief_cost_visual",
+        "trigger": "ending_label == rival_corridor_cost",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_relief"
+        ],
+        "modifier_prompt": "The root shelf lifts under the tender's foot, the fungal corridor withdraws, lantern knots go dark, and the broker snatches the red-edged rival fiber into flight."
+      },
+      {
+        "modifier_id": "ending_compact_success_visual",
+        "trigger": "ending_label == partner_compact_success",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_compact"
+        ],
+        "modifier_prompt": "Two modest lantern lanes and two higher-priced amber road forks remain open; ants attach half the glyph to each account; threadwings form ordered local-first and rival-second cargo lines."
+      },
+      {
+        "modifier_id": "ending_compact_cost_visual",
+        "trigger": "ending_label == partner_compact_cost",
+        "apply_to_visual_scene_ids": [
+          "tangle_ending_compact"
+        ],
+        "modifier_prompt": "One lantern knot pulses uncertainly, fungal beads wait dark for food, ants cluster around an unpaid sugar point, and threadwings separate into small private-bargain groups along the local fork."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "shared_pollen_terrace.scene_set.draft",
+      "geometry_authority_level": "draft_plan_view_not_3d_blockout",
+      "room_model": "One open bark shelf roughly twelve Airawa body lengths wide and six deep between two local Matriarch buttresses, with a vertical climb face upslope-left, a lantern-tree rim upslope, a central account zone, and a downhill root arch feeding two fungal-road forks toward local-right and rival-left canopy routes.",
+      "fixed_zones": [
+        {
+          "zone_id": "matriarch_buttress_shelf",
+          "visible_form": "broad silver-brown living bark floor enclosed laterally by two enormous ridged buttress roots",
+          "used_for": "root pressure, warmth, gestation markers, Airawa bracing, and lateral scene boundary"
+        },
+        {
+          "zone_id": "airawa_climb_face",
+          "visible_form": "near-vertical ridged bark face at upslope-left with talon and claw holds",
+          "used_for": "junior tender arrival and six-limb body staging"
+        },
+        {
+          "zone_id": "lantern_uphill_rim",
+          "visible_form": "separate lantern tree rooted above the terrace with hanging cold bioluminescent knots",
+          "used_for": "route-light ownership, roost illumination, and eclipse-state modifiers"
+        },
+        {
+          "zone_id": "salt_and_roost_station",
+          "visible_form": "three shallow mineral-salt basins beneath two woven oval courier roost membranes",
+          "used_for": "threadwing payment, launch support, and neutral-passage staging"
+        },
+        {
+          "zone_id": "public_contract_rack",
+          "visible_form": "vertical fiber frame at terrace center holding colored ribbons, household markers, seals, and living ant glyphs",
+          "used_for": "public obligation, custody, constituency formation, and evidence display"
+        },
+        {
+          "zone_id": "assay_slab",
+          "visible_form": "waist-low flat bark-and-stone table immediately downhill of the public rack",
+          "used_for": "grievance pellet, sugar payment, residue assay, and unclaimed courier landing edge"
+        },
+        {
+          "zone_id": "root_arch_and_road_forks",
+          "visible_form": "low broad opening beneath the downhill buttress where white mycelial braid splits into amber-beaded local-right and rival-left surface lanes",
+          "used_for": "mineral movement, route closure, corridor state, and branch-persistent spatial consequence"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "wide_terrace_from_downhill",
+          "supports_visual_scene_ids": [
+            "tangle_terrace_establishing",
+            "tangle_coalition_muster",
+            "tangle_eclipse_accounting",
+            "tangle_ending_compact"
+          ]
+        },
+        {
+          "camera_id": "medium_climb_from_rack",
+          "supports_visual_scene_ids": [
+            "tangle_routine_bodies"
+          ]
+        },
+        {
+          "camera_id": "broker_close_from_upslope",
+          "supports_visual_scene_ids": [
+            "tangle_courier_broker"
+          ]
+        },
+        {
+          "camera_id": "account_overhead_oblique",
+          "supports_visual_scene_ids": [
+            "tangle_morning_tithe",
+            "tangle_grievance_hearing",
+            "tangle_coalition_terms",
+            "tangle_ending_audit"
+          ]
+        },
+        {
+          "camera_id": "road_fork_from_local_buttress",
+          "supports_visual_scene_ids": [
+            "tangle_grievance_arrival",
+            "tangle_diversion_order",
+            "tangle_ending_local",
+            "tangle_ending_relief"
+          ]
+        }
+      ],
+      "sightline_lanes": [
+        {
+          "lane_id": "rack_to_both_road_forks",
+          "path": "public_contract_rack -> assay_slab -> local-right and rival-left fungal lanes under root arch",
+          "supports": [
+            "bind_local_coalition",
+            "publish_ant_finding",
+            "fund_fungal_corridor",
+            "fund_neutral_passage"
+          ]
+        },
+        {
+          "lane_id": "roost_to_lantern_knots",
+          "path": "salt_and_roost_station -> hanging lantern knots -> two courier launch arcs above road forks",
+          "supports": [
+            "prime_route_light",
+            "prioritize_local_matriarch",
+            "prioritize_partner_compact"
+          ]
+        },
+        {
+          "lane_id": "matriarch_pressure_to_household_marker",
+          "path": "local buttress gestation sign -> public rack household seal -> junior tender stance",
+          "supports": [
+            "endorse_local_terms",
+            "shelter_rival_claim",
+            "prioritize_rival_relief"
+          ]
+        }
+      ],
+      "route_states": [
+        {
+          "value": 0,
+          "label": "closed",
+          "visible_form": "dark fungal lane, extinguished amber beads, dim lantern launch face"
+        },
+        {
+          "value": 1,
+          "label": "minimum_corridor",
+          "visible_form": "one narrow amber mycelial line beneath a public ribbon with a single cold launch knot"
+        },
+        {
+          "value": 2,
+          "label": "paid_open",
+          "visible_form": "evenly spaced amber beads, clear white mycelial braid, filled salt point, and two cold launch knots"
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable visual identities for named or recurring bodies. Prompt assembly includes only refs for agents listed as visible in the selected scene.",
+    "characters": {
+      "junior_tithe_tender": "Junior tithe-tender: young adult Airawa with a six-limbed reptilian-adjacent body, tiny soft teal-gray scales, narrow wedge-shaped head, minimal nose and ear slits, dark wide-set eyes, grown shoulder and chest plates with fine blue bioluminescent seams. Two large clawed upper arms for climbing and hauling; two smaller lower arms ending in blunt clawless four-digit hands arranged as opposing pairs for precise craft; long digitigrade legs ending in four-toed opposing grasping feet with hooked climbing talons. Wears a short asymmetric bark-fiber waist mantle with pale lantern thread, amber fungal thread, one household marker, and empty contract loops. Posture combines secure four-point climbing anchors with careful lower-hand gestures. Stable details: teal-gray scales, blue plate seams, undamaged right upper claw, one rose household marker at left hip, six limbs with distinct upper and lower functions.",
+      "elder_contract_tender": "Elder contract-tender: older Airawa with a six-limbed reptilian-adjacent body, weathered ochre-gray scales, narrow head, dark eyes, scarred plate edges, faint green bioluminescent seams. Large clawed upper arms and taloned digitigrade feet support a grounded wide stance; smaller clawless lower hands carry a fungal-bead scraper, bent white salt spoon, ribbons, and seals. Wears a longer asymmetric mantle braided from pale lantern fibers, amber fungal threads, colored contract loops, and several deliberate empty loops. Stable details: ochre-gray scales, green seams, chipped left shoulder plate, bent white salt spoon, dry observant posture.",
+      "scar_vane_threadwing_broker": "Scar-vane threadwing broker: small alien gliding courier with a narrow dark-green body, pointed black beak, small gripping feet, two broad gliding limbs, and dozens of long translucent sensory ribbon vanes overlapping along wings and tail. The vanes catch static and chemical gradients in pale blue, rose, and colorless silver. One old pale diagonal scar crosses the left-side outer sensory vane. Dense pale pollen can cling among warm ventral ribbon vanes when the broker is loaded. Body language uses landing distance, vane spread, beak taps, route circles, gripping tension, and refusal to settle. Stable details: dark-green body, left outer vane scar, translucent ribbon anatomy, pointed beak.",
+      "boundary_matriarch": "Local boundary Matriarch: colossal sentient gestator and archive tree with silver-brown layered bark, two enormous ridged buttress roots enclosing a broad living shelf, shallow channels of amber sap light, oval gestation markers embedded in inner bark, colored contract fibers grown into selected seams, and high unseen canopy mass extending beyond the frame. Body language appears through root pressure, shelf flexion, bark warmth, sap brightness, contract-ribbon tremor, and opened or dark gestation signs. Stable details: two enclosing buttresses, silver-brown bark, amber sap channels, oval gestation markers, central downhill root arch.",
+      "route_lantern_tree": "Umbros-facing route lantern tree: medium alien tree rooted on the uphill terrace rim, dark fan-shaped leaves angled toward a fixed giant planet, layered gray-green trunk with memory-cambium rings, and hanging clusters of cold blue-green bioluminescent knots beneath the canopy. Knots form separate local-facing and rival-facing route lines above woven courier roosts. Body language appears through knot count, brightness, pulse sequence, pollen mist, and selective darkness. Stable details: uphill position, fan leaves, gray-green layered trunk, hanging cold knots in two route faces.",
+      "candle_road_edge": "Candle fungal road edge: braided white and pale-amber mycelium emerging through a downhill root arch, mixed with mineral threads and borrowed root sheaths, then splitting into local-right and rival-left surface lanes. Each lane carries small amber fruiting beads whose spacing, light, and bitter surface growth show open traffic, hunger, credit, or quarantine. Body language appears through brightening, bead growth, corridor width, sour dark ground, and withdrawal. Stable details: root-arch origin, white braid, amber beads, local-right fork, rival-left fork."
+    },
+    "groups": {
+      "terrace_threadwing_flock": "Terrace threadwing flock: several small alien gliders with narrow dark bodies, small gripping feet, pointed beaks, broad gliding limbs, and long translucent sensory ribbon vanes in pale blue, rose, and silver. Individuals vary in vane length and residue staining; all communicate through landing distance, vane spread, route circles, flock silence, and cargo placement. Dense pale pollen can cling among their warm ventral ribbon vanes. Stable group anatomy: ribbon vanes, pointed beaks, compact gliding bodies.",
+      "lattice_ant_audit_colony": "Lattice-ant audit colony: hundreds of small jointed dark copper insects with pale shed-fiber spools and glossy microbial glue carried beneath the abdomen. Individuals lock bodies and fibers into temporary bridges, loops, nets, and angular glyph lines across bark and stone. Colony posture is the shape of the assembled circuit. Stable details: dark copper bodies, pale fibers, glossy glue, geometric joined formations."
+    }
+  },
+  "review_notes": [
+    "The draft scene_set map fixes the terrace zones, camera slots, sightlines, Airawa climbing face, and route-state anchors for branch-consistent replay.",
+    "Every base image prompt repeats visible geometry, materials, lighting, body anatomy, props, and position so it can stand alone for a general image model.",
+    "The distant rival Matriarch has no visible-character ref in any frame; its agency is represented by courier cargo, residue, ribbons, and the rival route state.",
+    "Four prompted self-review verdicts are recorded in the training annotation audit after revision."
+  ]
+}
