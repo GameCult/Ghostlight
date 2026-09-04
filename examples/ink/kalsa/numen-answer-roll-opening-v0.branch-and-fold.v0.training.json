@@ -1,0 +1,442 @@
+{
+  "schema_version": "ghostlight.ink_training_annotation.v0",
+  "annotation_id": "kalsa-numen-answer-roll-opening-branch-and-fold-v0-training",
+  "ink_ref": "examples/ink/kalsa/numen-answer-roll-opening-v0.branch-and-fold.v0.ink",
+  "source_fixture_ref": "examples/lore-grounding/kalsa/numen-answer-roll-opening-v0.v0.json",
+  "visual_plan_ref": "examples/visual/kalsa/numen-answer-roll-opening-v0.branch-and-fold.v0.visual.json",
+  "scene_id": "numen-answer-roll-opening-v0.first-and-second-horn",
+  "protagonist_agent_id": "melka",
+  "npc_agent_ids": [
+    "taru",
+    "nema",
+    "sedren",
+    "vael",
+    "orsa",
+    "daro",
+    "court_workers",
+    "delver_witness"
+  ],
+  "purpose": "Interactive Fiction Weaver compile of the Ash-Halo answer-roll opening from Melka's bounded mortuary-witness perspective, with threshold routine preceding a numinous answer that arrives before the ritual question.",
+  "tonal_mode": "Ritual quiet and furnace-yard wit turning into procedural dread and bounded numinous wonder.",
+  "artifact_role": "Playable illustrated-fiction website collateral and a branch-local lore stress test; not a selected outcome for the canonical Ash-Halo Court and not core social-model training signal.",
+  "local_awareness_summary": [
+    {
+      "text": "Melka knows the answer roll's observed signs, custody marks, supporting copies, and mortuary limits. She can open, copy, carry, withdraw, or present the roll, but cannot identify a manifestation or command the branch, forge, God, or dead.",
+      "source_refs": [
+        "examples/lore-grounding/kalsa/numen-answer-roll-opening-v0.v0.json",
+        "Kalsa/Spoilers/Institutions/Death and Binding Law.md"
+      ]
+    },
+    {
+      "text": "Melka can observe the threshold table, quench water, physical route marks, horns, workers, records, and spoken claims. She cannot know what Orsa or the Iron Shelter perceives except through observable speech and intervention.",
+      "source_refs": [
+        "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md",
+        "Kalsa/Spoilers/Reference/Canon and Provenance.md"
+      ]
+    },
+    {
+      "text": "Taru can compare a present gesture with a household record but cannot turn resemblance into proof of identity; Sedren can stop machinery at his material perimeter without ruling on the dead; Vael can record allocation costs without counting divine intention.",
+      "source_refs": [
+        "Kalsa/Spoilers/Institutions/God-Cult Covenants.md",
+        "Kalsa/Spoilers/Institutions/The Potential Economy.md",
+        "Kalsa/Spoilers/Institutions/Death and Binding Law.md"
+      ]
+    },
+    {
+      "text": "The fixture's face, wet thumbprint, extra finger, knocks, and upward-moving water are branch-local possible manifestations. Their identity and mechanism remain unresolved even when witnesses preserve sequence and resemblance.",
+      "source_refs": [
+        "Kalsa/Spoilers/Foundations/Projections, God Beasts, and Thaumavores.md",
+        "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md"
+      ]
+    }
+  ],
+  "projection_controls": {
+    "frame_controls": [
+      {
+        "text": "Playable perspective remains Melka's embodied mortuary-witness viewpoint at the court threshold and along routes she physically walks. Narration may explain the office split for the reader but cannot expose divine or posthumous truth.",
+        "source_refs": [
+          "prompts/interactive-fiction-weaver.md",
+          "examples/lore-grounding/kalsa/numen-answer-roll-opening-v0.v0.json"
+        ]
+      },
+      {
+        "text": "The opening establishes the two stairs, threshold table, fitting dais, furnace wall, rack aisles, quench trough, and routine preparation before the first face appears.",
+        "source_refs": [
+          "AGENTS.md",
+          "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md"
+        ]
+      }
+    ],
+    "authority_boundaries": [
+      {
+        "text": "Melka owns the original answer roll and the accuracy of her observations. Taru owns his household comparison. Nema owns the branch record. None owns the identity of what answers.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Death and Binding Law.md",
+          "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md"
+        ]
+      },
+      {
+        "text": "Sedren owns the furnace configuration and material stop; Vael owns the grant docket and recorded costs; Orsa may present one recognized claim and the hierarchy's offered terms. The ritual routes claims among these owners instead of merging them.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/God-Cult Covenants.md",
+          "Kalsa/Spoilers/Institutions/The Potential Economy.md",
+          "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md"
+        ]
+      },
+      {
+        "text": "The Iron Shelter can respond through its route but does not gain custody of the roll, the forge, the household copy, or author truth by being divine.",
+        "source_refs": [
+          "Kalsa/Spoilers/Foundations/Projections, God Beasts, and Thaumavores.md",
+          "Kalsa/Spoilers/Institutions/God-Cult Covenants.md"
+        ]
+      }
+    ],
+    "object_custody": [
+      {
+        "text": "Melka controls the sealed original and its mortuary cord; Taru controls the household copy; a delver may carry a corrected copy beyond the north stair; Nema records seals without receiving the original; Sedren controls covers, chalk route marks, and counterweight brakes.",
+        "source_refs": [
+          "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md",
+          "examples/ink/kalsa/numen-answer-roll-opening-v0.branch-and-fold.v0.ink"
+        ]
+      }
+    ],
+    "required_semantics": [
+      {
+        "text": "The answer-roll opening must preserve the difference among witnessed resemblance, recognized claim, allocation share, physical interruption, divine response, later silence, and metaphysical identity.",
+        "source_refs": [
+          "Kalsa/Spoilers/Reference/Canon and Provenance.md",
+          "Kalsa/Spoilers/Institutions/Death and Binding Law.md"
+        ]
+      },
+      {
+        "text": "Every delay must remain attached to the assault interval and to households whose hostel or shrine protection has been withdrawn; caution cannot become costless virtue.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/The Potential Economy.md",
+          "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md"
+        ]
+      },
+      {
+        "text": "The strange answer must remain strange to clergy and witnesses. Procedure can make its sequence reviewable without making its identity or intention legible.",
+        "source_refs": [
+          "Kalsa/Spoilers/Foundations/Projections, God Beasts, and Thaumavores.md",
+          "Kalsa/Spoilers/Institutions/Soiru'i Sects.md"
+        ]
+      }
+    ],
+    "forbidden_resolutions": [
+      {
+        "text": "Do not establish which dead presence or feeder answers, whether any Projection released, what the Iron Shelter understood, or whether silence proves destruction.",
+        "source_refs": [
+          "Kalsa/Spoilers/Events/The Ash-Halo Armament.md",
+          "Kalsa/Spoilers/Dungeons/The Ash-Halo Court.md"
+        ]
+      },
+      {
+        "text": "Do not turn this Ninth Furnace addendum into universal Kalsan, Jamnai, or Soiru'i liturgy, and do not invent native office names the vault leaves unresolved.",
+        "source_refs": [
+          "Kalsa/Spoilers/Institutions/Soiru'i Sects.md",
+          "Kalsa/Spoilers/Polities/Sorcery - Jamnai and the Terjamna.md"
+        ]
+      },
+      {
+        "text": "Do not make the roll, signs, chalk, horns, or ritual words mechanically command potential. Their force is evidentiary, social, allocative, or operational unless an actual owner acts.",
+        "source_refs": [
+          "Kalsa/Spoilers/Foundations/Kaos.md",
+          "Kalsa/Spoilers/Institutions/God-Cult Covenants.md"
+        ]
+      }
+    ]
+  },
+  "branch_and_fold_plan": {
+    "mode": "branch_and_fold",
+    "summary": "Four choice layers fold through threshold preparation, a manifestation before the question, one bounded claim, and the second-horn custody decision, then select one of seven state-sensitive endings.",
+    "choice_layers": [
+      "threshold_preparation",
+      "answer_before_opening",
+      "bounded_claim",
+      "record_position_at_route_opening"
+    ],
+    "variables": [
+      "roll_copy_strength",
+      "outside_copy",
+      "route_trace",
+      "registrar_access",
+      "witness_support",
+      "branch_pressure",
+      "opening_delay",
+      "shrine_exposure",
+      "feeder_attention",
+      "claimant_standing",
+      "sedren_stop",
+      "request_kind"
+    ],
+    "ending_gates": [
+      "ending_gallery_witnessed",
+      "ending_gallery_cost",
+      "ending_threshold_petition",
+      "ending_stop_recorded",
+      "ending_departure",
+      "ending_proceed_observed",
+      "ending_proceed_hungry"
+    ]
+  },
+  "branches": [
+    {
+      "branch_id": "prime_household_copy",
+      "ink_path": "preparation_choice",
+      "action_type": "copy_object",
+      "actor_intent": "Strengthen independent custody while preserving disagreement between the mortuary and household records.",
+      "state_basis": ["Melka and Taru can copy observed signs without supplying an identity the roll does not establish."],
+      "reviewed_consequences": ["Raises roll_copy_strength and branch_pressure; later custody options and Nema's challenge read the stronger copy state."],
+      "training_hooks": ["divided_archive_authority", "visible_correction", "copying_as_action"]
+    },
+    {
+      "branch_id": "prime_route_trace",
+      "ink_path": "preparation_choice",
+      "action_type": "move",
+      "actor_intent": "Learn the material quench route with its actual custodian before exposing the roll to it.",
+      "state_basis": ["Sedren can expose the inspected physical path and retain a stop without identifying its supernatural passenger."],
+      "reviewed_consequences": ["Raises route_trace, sedren_stop, opening_delay, and shrine_exposure; enables the gallery route and later material response."],
+      "training_hooks": ["material_route_before_metaphysics", "delay_has_beneficiaries", "bounded_custodian"]
+    },
+    {
+      "branch_id": "prime_registrar_seal",
+      "ink_path": "preparation_choice",
+      "action_type": "show_object",
+      "actor_intent": "Make the branch registrar a witness to custody without surrendering the original.",
+      "state_basis": ["Nema can inspect and copy seal marks but cannot erase household or mortuary custody."],
+      "reviewed_consequences": ["Raises registrar_access and roll_copy_strength while lowering immediate branch_pressure; later branch certification changes."],
+      "training_hooks": ["bounded_access", "custody_without_transfer", "registrar_pressure"]
+    },
+    {
+      "branch_id": "prime_witness_support",
+      "ink_path": "preparation_choice",
+      "action_type": "use_object",
+      "actor_intent": "Preserve Taru's bodily capacity and stage his safe exit before asking him to recognize a sign.",
+      "state_basis": ["Witness work consumes food, water, placement, and a route out; Taru's comparison is not an abstract data source."],
+      "reviewed_consequences": ["Raises witness_support, claimant_standing, and opening_delay; later gallery success and pressure callbacks read Taru's readiness."],
+      "training_hooks": ["care_as_evidence_infrastructure", "routine_before_pressure", "witness_embodiment"]
+    },
+    {
+      "branch_id": "answer_open_now",
+      "ink_path": "first_answer_choice",
+      "action_type": "open_object",
+      "actor_intent": "Open the roll under the named witness set before the branch can interpret the first manifestation alone.",
+      "state_basis": ["Melka controls the original and the procedure permits an opening before the second horn."],
+      "reviewed_consequences": ["Raises claimant_standing, feeder_attention, opening_delay, and branch_pressure; later visible manifestations and custody conflict intensify."],
+      "training_hooks": ["answer_before_question", "witnessed_opening", "attention_cost"]
+    },
+    {
+      "branch_id": "answer_cover_and_trace",
+      "ink_path": "first_answer_choice",
+      "action_type": "block_object",
+      "actor_intent": "Reduce exposure and extend the route inspection before opening the roll.",
+      "state_basis": ["Sedren controls the fitted trough cover and physical route inspection."],
+      "reviewed_consequences": ["Raises route_trace, sedren_stop, opening_delay, and shrine_exposure while lowering feeder_attention; route-aware final actions become safer."],
+      "training_hooks": ["cover_as_containment", "safety_delay_cost", "physical_trace"]
+    },
+    {
+      "branch_id": "answer_send_copy_out",
+      "ink_path": "first_answer_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Put one corrected record beyond branch threshold custody before the divine route opens.",
+      "state_basis": ["A delver witness can carry a copy up the open north stair; the original remains with Melka."],
+      "reviewed_consequences": ["Raises outside_copy, roll_copy_strength, branch_pressure, and opening_delay; gallery and departure endings preserve stronger evidence."],
+      "training_hooks": ["archive_escape", "copy_costs_time", "outside_witness"]
+    },
+    {
+      "branch_id": "answer_registrar_comparison",
+      "ink_path": "first_answer_choice",
+      "action_type": "show_object",
+      "actor_intent": "Let Nema establish procedural legitimacy without receiving the case.",
+      "state_basis": ["Nema can attest the seals but her branch office benefits from narrowing Taru's claim."],
+      "reviewed_consequences": ["Raises registrar_access and lowers branch_pressure and claimant_standing; the threshold ending gains certification but weaker claimant leverage."],
+      "training_hooks": ["legitimacy_tradeoff", "office_interest", "show_without_transfer"]
+    },
+    {
+      "branch_id": "request_warning",
+      "ink_path": "request_choice",
+      "action_type": "speak",
+      "actor_intent": "Ask for one returnable warning without claiming identity or hereditary duty.",
+      "state_basis": ["The present court permits Taru to name warning as a bounded act."],
+      "reviewed_consequences": ["Sets request_kind to warning and raises claimant_standing; later endings interpret only the attempted warning surface."],
+      "training_hooks": ["bounded_request", "warning_not_identity", "speech_as_procedure"]
+    },
+    {
+      "branch_id": "request_share",
+      "ink_path": "request_choice",
+      "action_type": "write",
+      "actor_intent": "Admit a one-interval share so the claimant can approach without automatic interception.",
+      "state_basis": ["Orsa and Vael can enter a recognized share before the route opens; Taru can refuse binding in the claimant's name."],
+      "reviewed_consequences": ["Sets request_kind to share and raises feeder_attention, shrine_exposure, and branch_pressure; later text shows the grant thinning and the ambiguity of what received it."],
+      "training_hooks": ["ritual_share", "recognition_risk", "allocation_cost"]
+    },
+    {
+      "branch_id": "request_withdrawal",
+      "ink_path": "request_choice",
+      "action_type": "speak",
+      "actor_intent": "Preserve a request to leave this working without claiming that silence proves release.",
+      "state_basis": ["Mortuary procedure can preserve refusal while remaining unable to compel a God or Projection."],
+      "reviewed_consequences": ["Sets request_kind to withdrawal and raises branch_pressure and claimant_standing; later silence becomes an unresolved evidentiary result."],
+      "training_hooks": ["refusal_without_metaphysical_verdict", "branch_opposition", "silence_not_release"]
+    },
+    {
+      "branch_id": "request_interruption",
+      "ink_path": "request_choice",
+      "action_type": "show_object",
+      "actor_intent": "Tie the mortuary entry to Sedren's material stop when a visible crossing reaches his perimeter.",
+      "state_basis": ["Sedren can stop weights and heat paths; Melka can present observed route evidence; neither can command the God."],
+      "reviewed_consequences": ["Sets request_kind to interruption and raises sedren_stop, opening_delay, and shrine_exposure; enables a strongly grounded stop ending."],
+      "training_hooks": ["request_routes_to_owner", "material_stop", "divine_limit"]
+    },
+    {
+      "branch_id": "carry_roll_below",
+      "ink_path": "second_horn_choice",
+      "action_type": "move",
+      "actor_intent": "Place the original where the route-connected dead may answer while preserving a physical exit and outside evidence if prior preparation allows it.",
+      "state_basis": ["Available only after enough route inspection; outcome also reads outside_copy, witness_support, and route_trace."],
+      "reviewed_consequences": ["Routes to a witnessed or costly gallery ending based on earlier route inspection and whether an outside copy already preserves the record."],
+      "training_hooks": ["state_gated_route", "witness_body_at_risk", "strange_answer"]
+    },
+    {
+      "branch_id": "divide_roll_custody",
+      "ink_path": "second_horn_choice",
+      "action_type": "transfer_object",
+      "actor_intent": "Keep the original outside the working while moving a corrected copy to the marked quench line.",
+      "state_basis": ["Available only when prior copying created a strong second record."],
+      "reviewed_consequences": ["Routes to a threshold petition ending whose observable result reads request_kind and registrar_access."],
+      "training_hooks": ["divided_custody", "copy_as_route_interface", "conditional_petition"]
+    },
+    {
+      "branch_id": "call_material_stop",
+      "ink_path": "second_horn_choice",
+      "action_type": "show_object",
+      "actor_intent": "Put the interruption evidence under the forge custodian's hand and ask the owner of the brake to act.",
+      "state_basis": ["Available only when Sedren's stop authority has been prepared through inspection or request."],
+      "reviewed_consequences": ["Routes to a stopped working with visible assault, charcoal, fitting-time, and withdrawn-protection costs."],
+      "training_hooks": ["authority_at_consequence", "stop_has_cost", "ritual_not_magic_switch"]
+    },
+    {
+      "branch_id": "withdraw_mortuary_custody",
+      "ink_path": "second_horn_choice",
+      "action_type": "withdraw",
+      "actor_intent": "Remove mortuary participation and preserve the roll rather than let the branch turn presence into endorsement.",
+      "state_basis": ["Melka can leave by the north stair with the original; departure does not stop the grant."],
+      "reviewed_consequences": ["Routes to an evidence-preservation ending whose archive strength reads outside_copy, while the branch proceeds without mortuary coverage."],
+      "training_hooks": ["refusal_boundary", "evidence_not_safety", "owner_exit"]
+    },
+    {
+      "branch_id": "witness_route_from_threshold",
+      "ink_path": "second_horn_choice",
+      "action_type": "wait",
+      "actor_intent": "Keep the original visible at the threshold and observe what reaches it without endorsing or obstructing the grant.",
+      "state_basis": ["Outcome reads feeder_attention and route_trace rather than rewarding passive neutrality automatically."],
+      "reviewed_consequences": ["Routes to an observed opening or hungry-route ending based on prior attention and material inspection."],
+      "training_hooks": ["wait_as_action", "observation_has_limits", "great_working_crowding"]
+    }
+  ],
+  "mutation_policy": {
+    "automated": [
+      "Ink variable changes for local playthrough state",
+      "Conditional prose callbacks",
+      "Ending gate selection",
+      "Visual trigger selection for branch-local replay"
+    ],
+    "manual_review_required": [
+      "Selection of any Ash-Halo Court outcome as standing canon",
+      "Character memory or relationship updates",
+      "Promotion of local court geometry or visual character design into Kalsa canon",
+      "Any claim about the feeder's identity, the Iron Shelter's understanding, or posthumous release"
+    ]
+  },
+  "audit": {
+    "reviewer": "Titled Numen elaborator applying four repository reviewer prompts as separate self-review passes",
+    "review_status": "accepted",
+    "review_notes": [
+      "Narrative review accepted the deliberate blend of ritual quiet, furnace-yard wit, procedural dread, and numinous ambiguity after the court-role introduction was split into its own replay beat.",
+      "Lore review checked all cited Public and Spoilers owner notes. The fixture remains a possible present branch, and the authored vault patch owns only the answer-roll opening procedure rather than the feeder, God, or standing court outcome.",
+      "Visual review accepted fourteen complete standalone scene prompts, visible-character-only refs, eighteen branch or ending deltas, and the fixture-level scene_set map after negative prompt language and a duplicate group ref were removed.",
+      "Spatial review accepted the north threshold, east furnaces, central dais, west allocation desk, south trough, southwest gallery stair, and branch-persistent custody routes after table sides and moving-role staging slots were made explicit.",
+      "Static Ink inspection found eighteen defined knots, eighteen resolved diverts, four choice layers, seventeen material branches, seven endings, and no declared variable lacking a later conditional, gate, callback, or visual consequence.",
+      "Ink was not compiled, as required by the scheduler task; rendering and image generation were deferred."
+    ],
+    "review_passes": {
+      "narrative_quality": {
+        "verdict": "accepted",
+        "scores": {
+          "reader_orientation": 5,
+          "coherence": 5,
+          "pacing": 4,
+          "voice": 5,
+          "tonal_fit": 5,
+          "if_playability": 5
+        },
+        "findings": [
+          {
+            "severity": "minor",
+            "status": "resolved",
+            "location": "threshold_routine",
+            "problem": "The first draft introduced the threshold trio and four court owners inside one replay beat.",
+            "fix": "Split Sedren, Vael, Orsa, and Daro into the court_roles knot before the first choice."
+          }
+        ]
+      },
+      "lore_grounding": {
+        "verdict": "accepted",
+        "scores": {
+          "source_coverage": 5,
+          "canon_fit": 5,
+          "grounding_quality": 5,
+          "vault_backfill_value": 5
+        },
+        "findings": []
+      },
+      "visual_continuity": {
+        "verdict": "accepted",
+        "scores": {
+          "segmentation": 5,
+          "visual_prompt": 5,
+          "character_visibility": 5,
+          "branch_visual_continuity": 5,
+          "website_replay": 4
+        },
+        "findings": [
+          {
+            "severity": "minor",
+            "status": "resolved",
+            "location": "visual plan prompt and character refs",
+            "problem": "The first draft contained negative prompt phrasing and duplicated the court_workers ref under characters and groups.",
+            "fix": "Rewrote prompt-visible facts affirmatively and kept court_workers only as a group ref."
+          }
+        ]
+      },
+      "spatial_cohesion": {
+        "verdict": "accepted",
+        "scores": {
+          "layout_cohesion": 5,
+          "sightline": 5,
+          "body_affordance": 5,
+          "movement_access": 5,
+          "object_system_geometry": 5,
+          "branch_spatial_state": 5
+        },
+        "findings": [
+          {
+            "severity": "major",
+            "status": "resolved",
+            "location": "threshold_routine and scene_set staging_slots",
+            "problem": "The first draft placed Taru south of the threshold table while also putting the north exit at his back, and one slot tried to cover Sedren and the delver in two different zones.",
+            "fix": "Placed Melka on the court side and Taru on the stair side, then split Sedren's trough/brake positions and the delver's exit/gallery positions into explicit slots."
+          }
+        ]
+      }
+    },
+    "checks": {
+      "uses_standard_branching_format": true,
+      "actor_local_context_only": true,
+      "includes_non_speech_actions": true,
+      "fuzzy_updates_marked_for_manual_review": true,
+      "aetheria_lore_content_readable": true
+    }
+  }
+}

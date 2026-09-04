@@ -1,0 +1,766 @@
+{
+  "schema_version": "ghostlight.ink_visual_plan.v0",
+  "visual_plan_id": "kalsa-numen-answer-roll-opening-branch-and-fold-visual-v0",
+  "ink_ref": "examples/ink/kalsa/numen-answer-roll-opening-v0.branch-and-fold.v0.ink",
+  "source_training_annotation_ref": "examples/ink/kalsa/numen-answer-roll-opening-v0.branch-and-fold.v0.training.json",
+  "scene_id": "numen-answer-roll-opening-v0.first-and-second-horn",
+  "purpose": "Illustrated Ink replay segmentation and image prompt controls for the Ash-Halo answer-roll opening fixture.",
+  "visual_scene_plan": {
+    "purpose": "Click-through visual anchors for the Ash-Halo furnace court, ordinary threshold preparation, the face before the opening, the bounded request, second-horn custody, and branch-state aftermaths.",
+    "segmentation_rule": "Use separate visual_scene_id anchors for court establishment, threshold work, the preparation affordance, the first-horn face, answer response, roll opening, bounded request, second-horn record position, and each ending family. The upward water and first face receive a pivotal frame before the player acts.",
+    "prompting_rule": "Each base image prompt supplies complete visible geometry, material, light, and character appearance for a general image model. Continuity notes remain tooling constraints; prompt assembly uses only visible refs plus triggered state or branch deltas.",
+    "global_style_cue": "Hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, strong readable silhouettes, monumental basalt and iron geometry, ember orange and cold mineral teal light, restrained numinous strangeness, tactile work-worn materials, abstract unlettered record marks, humane faces under institutional pressure.",
+    "prompt_assembly_rule": "Assemble each image prompt from the global_style_cue, the complete scene base_image_prompt, visual refs only for named characters or groups listed as visible in that frame, and triggered state_image_modifiers or global_branch_image_modifiers. Exclude off-frame refs and continuity notes. Each render uses the fixture style cue and its camera-specific scene_set description as the complete geometry and art-direction input.",
+    "scene_set_guidance": {
+      "current_mode": "scene_set_map_draft",
+      "scope_reason": "The fixture includes a durable plan-level map of the rectangular court, two stairs, furnace wall, fitting dais, racks, threshold, quench route, and fixed camera slots. It is sufficient for B-level replay staging.",
+      "future_scene_set_need": "For high-consistency website art, convert this plan into a simple hand-built blockout with the named camera and staging slots before image generation."
+    },
+    "scenes": [
+      {
+        "visual_scene_id": "numen_court_establishing",
+        "ink_anchor": "start",
+        "camera_slot": "court_wide_from_northwest",
+        "base_image_prompt": "Wide establishing view from the northwest corner of a long rectangular underground furnace court built from soot-dark basalt. Four open furnace mouths glow along the east wall. Marked iron racks surround a low circular fitting dais at center, holding iron scales, copper wire, pale ceramic splints, resin jars, charcoal baskets, and quench buckets. Heavy counterweight tracks cross the high ceiling. A long stone quench trough runs along the south wall to a grated channel beside a southwest stair descending under the floor; a broad north stair rises behind a waist-high black-stone threshold table. At the center, a broad-bodied fasting champion lies on the dais under padded cloth and slack copper anchor wires while mixed-build furnace workers in layered wool, leather aprons, gloves, and soot scarves check racks. Ember light from the east meets cold teal reflection from the trough.",
+        "visible_characters": [
+          {
+            "agent_id": "daro",
+            "default_stance": "reclined on the central fitting dais beneath slack anchor wires",
+            "visual_ref": "visual_character_refs.characters.daro"
+          },
+          {
+            "agent_id": "court_workers",
+            "default_stance": "distributed among rack aisles and furnace mouths performing ordinary setup",
+            "visual_ref": "visual_character_refs.groups.court_workers"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The east furnace wall, central fitting dais, south quench trough, north threshold table and stair, and southwest under-gallery stair keep the same relative positions in every court frame.",
+          "The court is one large working room beneath a Crown City, not the whole Ninth Furnace arcology."
+        ]
+      },
+      {
+        "visual_scene_id": "numen_threshold_routine",
+        "ink_anchor": "threshold_routine",
+        "camera_slot": "threshold_medium_southward",
+        "base_image_prompt": "Medium view at the north threshold table looking south into the furnace court. On the south court side, Melka, a sturdy middle-aged woman with medium-brown skin, cropped black hair streaked silver, an ash-gray hooded wool mantle, clay-red tunic, leather document satchel, and ink-stained fingers, braces both hands on a rectangular brass-bound blackwood answer-roll case. Across from her on the north stair side sits Taru, an older broad-faced man with deep-brown skin, close gray beard, ochre quilted coat, green wool scarf, household wax tablet, and three dense travel cakes; the exit stair rises behind him. Nema, a slim adult clerk with copper-brown skin, long dark braid, indigo layered robe, bronze stylus, and wax tablets, stands at the table's east end with her stylus above the case seal. Behind Melka the central fitting dais, east furnaces, south trough, and southwest stair remain visible. The mood is routine, watchful, and almost companionable.",
+        "visible_characters": [
+          {
+            "agent_id": "melka",
+            "default_stance": "standing north of the table with both hands on the case",
+            "visual_ref": "visual_character_refs.characters.melka"
+          },
+          {
+            "agent_id": "taru",
+            "default_stance": "seated north of the table on the stair side with copy and food, exit stair behind him",
+            "visual_ref": "visual_character_refs.characters.taru"
+          },
+          {
+            "agent_id": "nema",
+            "default_stance": "standing at the table's east end observing the seal",
+            "visual_ref": "visual_character_refs.characters.nema"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The answer-roll case remains under Melka's hands unless a later ending moves it.",
+          "Taru is placed with the north stair at his back and the south trough in view."
+        ]
+      },
+      {
+        "visual_scene_id": "numen_court_roles",
+        "ink_anchor": "court_roles",
+        "camera_slot": "court_medium_from_threshold",
+        "base_image_prompt": "Medium-wide view southward from the threshold into the prepared basalt court. Sedren, a broad heavy-set furnace custodian with umber skin, shaved head, old heat scars on his forearms, charcoal leather apron, thick gloves, and white chalk, crouches beside the south quench trough and points toward its grated drain. Vael, a slight older steward with tawny skin, shaved temples, long dark braid, layered gray wool robe, wooden counting board, and wax grant leaves, stands at a narrow allocation desk west of the fitting dais. Orsa, a tall woman with dark skin, shaved sides and braided crown, severe iron-thread mantle, plain black tunic, and an iron ring at her throat, waits at the dais in matte ember and teal work light. Daro lies beneath slack wires while healers in pale aprons test his hands. East furnaces, marked racks, counterweights, and both stair routes remain readable.",
+        "visible_characters": [
+          {
+            "agent_id": "sedren",
+            "default_stance": "crouched at the quench trough with chalk and gloved hand on stone",
+            "visual_ref": "visual_character_refs.characters.sedren"
+          },
+          {
+            "agent_id": "vael",
+            "default_stance": "at the west allocation desk with counting board and wax leaves",
+            "visual_ref": "visual_character_refs.characters.vael"
+          },
+          {
+            "agent_id": "orsa",
+            "default_stance": "waiting upright beside the fitting dais",
+            "visual_ref": "visual_character_refs.characters.orsa"
+          },
+          {
+            "agent_id": "daro",
+            "default_stance": "reclined on the dais while healers test his hands",
+            "visual_ref": "visual_character_refs.characters.daro"
+          },
+          {
+            "agent_id": "court_workers",
+            "default_stance": "healers and furnace workers at their named work surfaces",
+            "visual_ref": "visual_character_refs.groups.court_workers"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "This frame introduces the allocation, forge, intermediary, and champion roles before any folded scene relies on them."
+        ]
+      },
+      {
+        "visual_scene_id": "numen_preparation_choice",
+        "ink_anchor": "preparation_choice",
+        "camera_slot": "threshold_choice_overhead_oblique",
+        "base_image_prompt": "High oblique view over the north threshold table presenting four physical preparation affordances in one coherent court: Melka, a sturdy middle-aged mortuary witness in ash-gray mantle and clay-red tunic, stands beside the sealed brass-bound blackwood case; Taru, an older man in ochre coat and green scarf, has a household wax copy and travel cakes; Nema, a slim indigo-robed registrar with long dark braid, holds a stylus near visible seal cords; farther south Sedren, a broad scarred custodian in leather apron, chalks the route from the stone quench trough toward the southwest stair. The north stair, central dais, east furnace glow, and south trough fix the choice geometry.",
+        "visible_characters": [
+          {
+            "agent_id": "melka",
+            "default_stance": "at the case between copy, seal, food, and route affordances",
+            "visual_ref": "visual_character_refs.characters.melka"
+          },
+          {
+            "agent_id": "taru",
+            "default_stance": "at the household copy and travel cakes",
+            "visual_ref": "visual_character_refs.characters.taru"
+          },
+          {
+            "agent_id": "nema",
+            "default_stance": "at the seal side of the table",
+            "visual_ref": "visual_character_refs.characters.nema"
+          },
+          {
+            "agent_id": "sedren",
+            "default_stance": "at the south trough marking the route",
+            "visual_ref": "visual_character_refs.characters.sedren"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_first_horn_face",
+        "ink_anchor": "first_answer",
+        "camera_slot": "trough_close_from_north",
+        "base_image_prompt": "Pivotal close view of the south-wall quench trough at first horn. Black mineral water rises above its normal stone lip and forms a translucent human-like face beneath a square iron drain grate. A watery hand touches its thumb to two knuckles, then opens toward the sealed brass-bound blackwood answer-roll case visible on the north threshold table in the far background. Taru, an older man in ochre coat and green scarf, freezes in profile near the table; Melka, a sturdy middle-aged woman in ash-gray mantle and clay-red tunic, keeps both hands on the case; Nema, a slim indigo-robed registrar, stands rigid beside them. East-furnace ember light and cold teal water light pull in opposite directions. The face is materially strange, incomplete, and solemn.",
+        "visible_characters": [
+          {
+            "agent_id": "melka",
+            "default_stance": "background at the north threshold with hands on the case",
+            "visual_ref": "visual_character_refs.characters.melka"
+          },
+          {
+            "agent_id": "taru",
+            "default_stance": "frozen between table and trough sightline",
+            "visual_ref": "visual_character_refs.characters.taru"
+          },
+          {
+            "agent_id": "nema",
+            "default_stance": "rigid beside the table",
+            "visual_ref": "visual_character_refs.characters.nema"
+          }
+        ],
+        "state_image_modifiers": [],
+        "visual_continuity_notes": [
+          "The face forms beneath the grate in the south trough before the case opens.",
+          "The gesture is visible; identity is not represented through heraldry, label, or portrait certainty."
+        ]
+      },
+      {
+        "visual_scene_id": "numen_answer_response_choice",
+        "ink_anchor": "first_answer_choice",
+        "camera_slot": "threshold_to_trough_diagonal",
+        "base_image_prompt": "Diagonal medium-wide view from the north threshold toward the south trough after the first face. Melka, a sturdy middle-aged mortuary witness in ash-gray mantle, stands at the sealed brass-bound blackwood case with a cord knife, while four reachable actions remain visible: Taru and his household copy at the table, Nema and the custody seals at the east end, a delver in brown travel cloak waiting on the broad north stair, and Sedren beside the fitted stone trough cover and chalk route toward the southwest stair. Cold teal water glows under the grate; the central dais and east furnaces remain behind the action.",
+        "visible_characters": [
+          {
+            "agent_id": "melka",
+            "default_stance": "at the sealed case with cord knife ready",
+            "visual_ref": "visual_character_refs.characters.melka"
+          },
+          {
+            "agent_id": "taru",
+            "default_stance": "beside household copy and trough sightline",
+            "visual_ref": "visual_character_refs.characters.taru"
+          },
+          {
+            "agent_id": "nema",
+            "default_stance": "at the seal side of the table",
+            "visual_ref": "visual_character_refs.characters.nema"
+          },
+          {
+            "agent_id": "sedren",
+            "default_stance": "beside stone cover and chalked quench route",
+            "visual_ref": "visual_character_refs.characters.sedren"
+          },
+          {
+            "agent_id": "delver_witness",
+            "default_stance": "waiting on the north stair with an empty document tube",
+            "visual_ref": "visual_character_refs.groups.delver_witness"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_opening_ritual",
+        "ink_anchor": "opening_fold",
+        "camera_slot": "threshold_table_close_southward",
+        "base_image_prompt": "Close-medium ritual evidence frame at the north threshold table. The brass-bound blackwood case lies open under Melka's ink-stained hands; inside are rolled pale waxed cloth leaves marked with abstract unlettered gestures and site shapes. Taru's smaller household wax copy lies beside it with visible corrections. Melka, sturdy and silver-streaked in an ash-gray mantle, reads from the original; Taru, older and broad-faced in ochre coat and green scarf, points to one correction; Nema, slim in indigo layers with bronze stylus, records their disagreement. Far south, the covered stone quench trough sits on the same sightline. One wet thumbprint appears on a dry unread margin.",
+        "visible_characters": [
+          {
+            "agent_id": "melka",
+            "default_stance": "reading the open original while retaining both-hand custody",
+            "visual_ref": "visual_character_refs.characters.melka"
+          },
+          {
+            "agent_id": "taru",
+            "default_stance": "pointing to a household correction on the separate copy",
+            "visual_ref": "visual_character_refs.characters.taru"
+          },
+          {
+            "agent_id": "nema",
+            "default_stance": "recording the disagreement at the table end",
+            "visual_ref": "visual_character_refs.characters.nema"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "feeder_attention >= 2",
+            "modifier_prompt": "Ash rises from a floor seam between the threshold and trough and sketches an open hand with one finger too many; Taru leans toward it while Melka keeps the page pinned."
+          },
+          {
+            "trigger": "feeder_attention <= 1",
+            "modifier_prompt": "The trough cover stays still while one fresh wet thumbprint marks the dry unread margin under cold teal reflection."
+          },
+          {
+            "trigger": "outside_copy >= 2",
+            "modifier_prompt": "The delver's brown-cloaked back and sealed document tube are visible high on the north stair, already beyond the court threshold."
+          }
+        ],
+        "visual_continuity_notes": [
+          "The original has cut mortuary cord and remains open under Melka; the household copy stays distinct."
+        ]
+      },
+      {
+        "visual_scene_id": "numen_bounded_request",
+        "ink_anchor": "request_choice",
+        "camera_slot": "threshold_group_medium",
+        "base_image_prompt": "Medium group frame around the open answer roll at the north threshold. Melka, sturdy middle-aged mortuary witness in ash-gray mantle, holds a bronze stylus above four empty abstract request marks. Taru, older in ochre coat and green scarf, stands at her left with household copy. Orsa, tall and dark-skinned with braided crown, black tunic, severe iron-thread mantle, and iron throat ring, stands across the table facing the fitting dais. Sedren, broad and heat-scarred in leather apron, waits beside three white chalk route marks and a brake lever. Vael, slight and older in layered gray wool with long braid, counting board, and wax grant leaves, has the borrowed hostel and shrine entries open. Ember furnaces and cold trough light frame the request as practical sacred work.",
+        "visible_characters": [
+          {
+            "agent_id": "melka",
+            "default_stance": "stylus above the open roll",
+            "visual_ref": "visual_character_refs.characters.melka"
+          },
+          {
+            "agent_id": "taru",
+            "default_stance": "beside the household copy, prepared to countersign",
+            "visual_ref": "visual_character_refs.characters.taru"
+          },
+          {
+            "agent_id": "orsa",
+            "default_stance": "across the table, body oriented toward the fitting dais",
+            "visual_ref": "visual_character_refs.characters.orsa"
+          },
+          {
+            "agent_id": "sedren",
+            "default_stance": "at the edge of the group with chalk and brake in reach",
+            "visual_ref": "visual_character_refs.characters.sedren"
+          },
+          {
+            "agent_id": "vael",
+            "default_stance": "at the allocation leaves with counting board",
+            "visual_ref": "visual_character_refs.characters.vael"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_second_horn_threshold",
+        "ink_anchor": "second_horn_choice",
+        "camera_slot": "court_wide_from_threshold",
+        "base_image_prompt": "Whole-court decision frame from the north threshold just before the second horn. The open brass-bound answer-roll case sits on the black-stone table under Melka's hands. Taru stands between the table and three white chalk marks leading to the south trough. Sedren grips the counterweight brake at the west edge of the central dais. Vael stands at the allocation desk with wax leaves open. Orsa faces Daro, who lies under slack copper anchor wires on the dais. Branch attendants in dark layered wool stand beside the threshold while mixed-build workers wait at iron racks. The north exit stair, southwest gallery stair, east furnaces, south trough, and every custody route remain visible.",
+        "visible_characters": [
+          {
+            "agent_id": "melka",
+            "default_stance": "at the open original on the north threshold table",
+            "visual_ref": "visual_character_refs.characters.melka"
+          },
+          {
+            "agent_id": "taru",
+            "default_stance": "between table and chalked quench line",
+            "visual_ref": "visual_character_refs.characters.taru"
+          },
+          {
+            "agent_id": "sedren",
+            "default_stance": "at the counterweight brake",
+            "visual_ref": "visual_character_refs.characters.sedren"
+          },
+          {
+            "agent_id": "vael",
+            "default_stance": "at the allocation desk",
+            "visual_ref": "visual_character_refs.characters.vael"
+          },
+          {
+            "agent_id": "orsa",
+            "default_stance": "facing Daro from the threshold side of the dais",
+            "visual_ref": "visual_character_refs.characters.orsa"
+          },
+          {
+            "agent_id": "daro",
+            "default_stance": "reclined beneath slack anchor wires",
+            "visual_ref": "visual_character_refs.characters.daro"
+          },
+          {
+            "agent_id": "court_workers",
+            "default_stance": "waiting at racks and threshold under branch pressure",
+            "visual_ref": "visual_character_refs.groups.court_workers"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "roll_copy_strength >= 3",
+            "modifier_prompt": "A corrected second copy lies beside Taru's hand, clearly separate from the open original case."
+          },
+          {
+            "trigger": "route_trace >= 2",
+            "modifier_prompt": "Three bright white chalk bars visibly connect the trough lip, maintenance throat, and southwest gallery stair."
+          },
+          {
+            "trigger": "witness_support >= 3",
+            "modifier_prompt": "Taru stands steady with an empty cup and broken travel cake beside his copy, north stair clear behind him."
+          },
+          {
+            "trigger": "branch_pressure >= 4",
+            "modifier_prompt": "Two dark-clad branch attendants stand openly between the threshold table and fitting dais, hands near hooked utility blades."
+          },
+          {
+            "trigger": "opening_delay >= 4",
+            "modifier_prompt": "One east furnace burns low, a fitting rack remains unheated, and Vael adds a fresh dark mark to the borrowed-protection leaves."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "numen_ending_gallery",
+        "ink_anchor": "ending_gallery_witnessed|ending_gallery_cost",
+        "camera_slot": "under_gallery_from_stair",
+        "base_image_prompt": "Underground gallery below the furnace court, seen from the southwest stair. A low barrel-vaulted basalt passage runs beside the quench channel toward an old circular slag-cistern grate. Mineral water shines cold teal under the grate; three white chalk route bars descend from the stair. Melka, sturdy and middle-aged in ash-gray mantle and clay-red tunic, kneels with the open brass-bound blackwood answer-roll case on a dry stone ledge. Taru, older in ochre coat and green scarf, stands one step above with household wax copy and one hand ready to make the two-knuckle sign. A brown-cloaked delver braces at the stair as route witness. Furnace-orange light falls from above while the water makes an incomplete face.",
+        "visible_characters": [
+          {
+            "agent_id": "melka",
+            "default_stance": "kneeling at a dry ledge with the open original",
+            "visual_ref": "visual_character_refs.characters.melka"
+          },
+          {
+            "agent_id": "taru",
+            "default_stance": "one step above Melka with copy and gesture hand ready",
+            "visual_ref": "visual_character_refs.characters.taru"
+          },
+          {
+            "agent_id": "delver_witness",
+            "default_stance": "braced on the southwest stair maintaining the exit",
+            "visual_ref": "visual_character_refs.groups.delver_witness"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_ending_threshold",
+        "ink_anchor": "ending_threshold_petition",
+        "camera_slot": "threshold_to_trough_diagonal",
+        "base_image_prompt": "Divided-custody aftermath across the furnace court. At the north black-stone threshold table, Melka, sturdy and silver-streaked in ash-gray mantle, holds the open original answer roll while Nema, slim in indigo layers, records beside it. At Sedren's three white chalk marks nearer the south trough, Taru, older in ochre coat and green scarf, holds the corrected household copy toward the quench line. Orsa, tall in iron-thread mantle, stands between the fitting dais and the claimants. The east furnaces glow, the central racks wait, and the trough carries a cold ambiguous response. Original and copy are visibly separate across one stable room.",
+        "visible_characters": [
+          {
+            "agent_id": "melka",
+            "default_stance": "at the threshold with original",
+            "visual_ref": "visual_character_refs.characters.melka"
+          },
+          {
+            "agent_id": "nema",
+            "default_stance": "recording beside the original",
+            "visual_ref": "visual_character_refs.characters.nema"
+          },
+          {
+            "agent_id": "taru",
+            "default_stance": "at the chalked quench line with corrected copy",
+            "visual_ref": "visual_character_refs.characters.taru"
+          },
+          {
+            "agent_id": "orsa",
+            "default_stance": "between fitting dais and divided records",
+            "visual_ref": "visual_character_refs.characters.orsa"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_ending_stop",
+        "ink_anchor": "ending_stop_recorded",
+        "camera_slot": "dais_brake_medium",
+        "base_image_prompt": "Material-stop aftermath beside the central fitting dais. Sedren, broad and heat-scarred in charcoal leather apron, grips a heavy iron counterweight brake with both gloved hands. Iron scales sway motionless above Daro, a broad-bodied fasting champion on the dais under slack wires. Melka, sturdy in ash-gray mantle, pins one open answer-roll leaf beside the brake with her right hand while her left hand rests on the original brass-bound case on a dry stone ledge. Orsa, tall in iron-thread mantle, faces Sedren across the stalled machinery; Vael, slight in gray wool with counting board, marks wasted charcoal and borrowed protection. At the south wall, the covered trough and three chalk route marks sit under cold teal light.",
+        "visible_characters": [
+          {
+            "agent_id": "sedren",
+            "default_stance": "both hands locked on the brake",
+            "visual_ref": "visual_character_refs.characters.sedren"
+          },
+          {
+            "agent_id": "daro",
+            "default_stance": "reclined under arrested iron scales",
+            "visual_ref": "visual_character_refs.characters.daro"
+          },
+          {
+            "agent_id": "melka",
+            "default_stance": "beside the brake with open entry under one hand",
+            "visual_ref": "visual_character_refs.characters.melka"
+          },
+          {
+            "agent_id": "orsa",
+            "default_stance": "facing Sedren across the stopped dais",
+            "visual_ref": "visual_character_refs.characters.orsa"
+          },
+          {
+            "agent_id": "vael",
+            "default_stance": "recording costs at the allocation desk",
+            "visual_ref": "visual_character_refs.characters.vael"
+          }
+        ],
+        "state_image_modifiers": []
+      },
+      {
+        "visual_scene_id": "numen_ending_departure",
+        "ink_anchor": "ending_departure",
+        "camera_slot": "north_stair_outward",
+        "base_image_prompt": "Departure view up the broad north basalt stair from the furnace-court threshold. Melka, sturdy middle-aged woman in ash-gray mantle and clay-red tunic, climbs carrying the closed brass-bound blackwood answer-roll case against her chest; its severed mortuary cord is retied visibly around the case. Taru, older in ochre quilted coat and green scarf, climbs beside her holding the household wax copy and empty cup. Below them, the distant court glows ember orange around racks and fitting dais while a closed black-stone threshold door begins to separate witnesses from the working. A wet hand-shaped shadow strikes the stone on the court side.",
+        "visible_characters": [
+          {
+            "agent_id": "melka",
+            "default_stance": "climbing with retied closed case held to chest",
+            "visual_ref": "visual_character_refs.characters.melka"
+          },
+          {
+            "agent_id": "taru",
+            "default_stance": "climbing beside Melka with copy and cup",
+            "visual_ref": "visual_character_refs.characters.taru"
+          }
+        ],
+        "state_image_modifiers": [
+          {
+            "trigger": "outside_copy >= 2",
+            "modifier_prompt": "A brown-cloaked delver waits higher on the stair with a sealed document tube, making three separately held records visible."
+          }
+        ]
+      },
+      {
+        "visual_scene_id": "numen_ending_proceed",
+        "ink_anchor": "ending_proceed_observed|ending_proceed_hungry",
+        "camera_slot": "court_centerline_from_threshold",
+        "base_image_prompt": "Divine armament opening seen from the north threshold. Melka, sturdy in ash-gray mantle, keeps both hands on the open answer-roll case in the foreground. At center, Daro rises from the fitting dais as counterweights lower iron scales, copper wire, softened resin, and pale ceramic splints around his padded body. Orsa stands beside the dais in an iron-thread mantle; Sedren reaches toward the brake; Vael guards a small reserve leaf at the west allocation desk; Taru watches from the threshold edge. East furnaces burn ember orange, south-trough water shines mineral teal, and ash begins to move along the prepared physical routes.",
+        "visible_characters": [
+          {
+            "agent_id": "melka",
+            "default_stance": "foreground at the threshold with the original open",
+            "visual_ref": "visual_character_refs.characters.melka"
+          },
+          {
+            "agent_id": "daro",
+            "default_stance": "rising on the fitting dais as iron descends",
+            "visual_ref": "visual_character_refs.characters.daro"
+          },
+          {
+            "agent_id": "orsa",
+            "default_stance": "beside the dais oriented toward Daro and the quench route",
+            "visual_ref": "visual_character_refs.characters.orsa"
+          },
+          {
+            "agent_id": "sedren",
+            "default_stance": "reaching toward the brake",
+            "visual_ref": "visual_character_refs.characters.sedren"
+          },
+          {
+            "agent_id": "vael",
+            "default_stance": "at the west desk guarding the reserve leaf",
+            "visual_ref": "visual_character_refs.characters.vael"
+          },
+          {
+            "agent_id": "taru",
+            "default_stance": "at the threshold edge watching the south trough",
+            "visual_ref": "visual_character_refs.characters.taru"
+          }
+        ],
+        "state_image_modifiers": []
+      }
+    ],
+    "global_branch_image_modifiers": [
+      {
+        "modifier_id": "prime_household_copy_visual",
+        "trigger": "branch_label == prime_household_copy",
+        "apply_to_visual_scene_ids": ["numen_preparation_choice", "numen_opening_ritual", "numen_second_horn_threshold"],
+        "modifier_prompt": "A freshly copied waxed-cloth roll lies beside Taru's household tablet with every correction visibly preserved as a second mark."
+      },
+      {
+        "modifier_id": "prime_route_trace_visual",
+        "trigger": "branch_label == prime_route_trace",
+        "apply_to_visual_scene_ids": ["numen_preparation_choice", "numen_answer_response_choice", "numen_second_horn_threshold"],
+        "modifier_prompt": "Melka and Sedren stand along three white chalk bars connecting trough lip, maintenance throat, and southwest stair; Sedren points only to the stone-and-water route."
+      },
+      {
+        "modifier_id": "prime_registrar_seal_visual",
+        "trigger": "branch_label == prime_registrar_seal",
+        "apply_to_visual_scene_ids": ["numen_preparation_choice", "numen_opening_ritual"],
+        "modifier_prompt": "Nema copies three distinct seal impressions while Melka keeps the brass-bound case on her side of the threshold table."
+      },
+      {
+        "modifier_id": "prime_witness_support_visual",
+        "trigger": "branch_label == prime_witness_support",
+        "apply_to_visual_scene_ids": ["numen_preparation_choice", "numen_second_horn_threshold", "numen_ending_gallery"],
+        "modifier_prompt": "A broken travel cake and empty cup sit beside Taru; his stance is steady and the exit stair remains clear behind him."
+      },
+      {
+        "modifier_id": "answer_open_now_visual",
+        "trigger": "branch_label == answer_open_now",
+        "apply_to_visual_scene_ids": ["numen_answer_response_choice", "numen_opening_ritual"],
+        "modifier_prompt": "Melka cuts the mortuary cord immediately while Taru and the brown-cloaked delver both watch; the uncovered trough face remains visible on the same diagonal."
+      },
+      {
+        "modifier_id": "answer_cover_and_trace_visual",
+        "trigger": "branch_label == answer_cover_and_trace",
+        "apply_to_visual_scene_ids": ["numen_answer_response_choice", "numen_second_horn_threshold"],
+        "modifier_prompt": "A fitted basalt slab covers the south trough; a cold teal line leaks beneath it toward freshly reinforced chalk marks and the southwest stair."
+      },
+      {
+        "modifier_id": "answer_send_copy_out_visual",
+        "trigger": "branch_label == answer_send_copy_out",
+        "apply_to_visual_scene_ids": ["numen_answer_response_choice", "numen_opening_ritual", "numen_ending_departure"],
+        "modifier_prompt": "A brown-cloaked delver carries a sealed document tube up the north stair, visibly beyond the threshold attendants."
+      },
+      {
+        "modifier_id": "answer_registrar_comparison_visual",
+        "trigger": "branch_label == answer_registrar_comparison",
+        "apply_to_visual_scene_ids": ["numen_answer_response_choice", "numen_opening_ritual", "numen_ending_threshold"],
+        "modifier_prompt": "Nema's bronze stylus points to mortuary cord, household wax, delver mark, and unbroken hinge while Melka retains the case."
+      },
+      {
+        "modifier_id": "request_warning_visual",
+        "trigger": "branch_label == request_warning",
+        "apply_to_visual_scene_ids": ["numen_bounded_request", "numen_second_horn_threshold", "numen_ending_threshold", "numen_ending_proceed"],
+        "modifier_prompt": "Melka and Taru mark one open-palm warning sign on the request leaf; Orsa repeats the act toward the dais while leaving the identity space blank."
+      },
+      {
+        "modifier_id": "request_share_visual",
+        "trigger": "branch_label == request_share",
+        "apply_to_visual_scene_ids": ["numen_bounded_request", "numen_second_horn_threshold", "numen_ending_threshold", "numen_ending_proceed"],
+        "modifier_prompt": "Vael places one small dark interval counter beside the hostel and shrine withdrawal leaves; the south trough glows more strongly while Taru holds a palm outward in refusal."
+      },
+      {
+        "modifier_id": "request_withdrawal_visual",
+        "trigger": "branch_label == request_withdrawal",
+        "apply_to_visual_scene_ids": ["numen_bounded_request", "numen_second_horn_threshold", "numen_ending_threshold", "numen_ending_proceed"],
+        "modifier_prompt": "The request leaf carries an open path turning away from the fitting dais; Taru stands angled toward the north stair while Nema records a visible hesitation mark."
+      },
+      {
+        "modifier_id": "request_interruption_visual",
+        "trigger": "branch_label == request_interruption",
+        "apply_to_visual_scene_ids": ["numen_bounded_request", "numen_second_horn_threshold", "numen_ending_stop", "numen_ending_proceed"],
+        "modifier_prompt": "Melka places Sedren's three chalk route marks beside the request entry; Sedren's gloved hand rests on the heavy counterweight brake."
+      },
+      {
+        "modifier_id": "gallery_success_visual",
+        "trigger": "ending_label == gallery_route_witnessed",
+        "apply_to_visual_scene_ids": ["numen_ending_gallery"],
+        "modifier_prompt": "Melka and Taru occupy dry stone ledges, the brown-cloaked delver holds a clear stair mouth above them, and one water face touches the roll edge before falling."
+      },
+      {
+        "modifier_id": "gallery_cost_visual",
+        "trigger": "ending_label == gallery_route_cost",
+        "apply_to_visual_scene_ids": ["numen_ending_gallery"],
+        "modifier_prompt": "Quench water surges across the ledge, Taru braces against the stair wall, one wax correction washes pale, and furnace heat crosses the uppermost chalk mark."
+      },
+      {
+        "modifier_id": "stop_recorded_visual",
+        "trigger": "ending_label == material_stop_before_route",
+        "apply_to_visual_scene_ids": ["numen_ending_stop"],
+        "modifier_prompt": "Three wet hand-shaped marks stop at Sedren's dry chalk boundary while suspended iron scales remain arrested above Daro."
+      },
+      {
+        "modifier_id": "departure_copy_visual",
+        "trigger": "ending_label == mortuary_custody_withdrawn && outside_copy >= 2",
+        "apply_to_visual_scene_ids": ["numen_ending_departure"],
+        "modifier_prompt": "The delver waits higher on the north stair with a sealed tube, so original, household copy, and outside copy form three visible custody points."
+      },
+      {
+        "modifier_id": "proceed_observed_visual",
+        "trigger": "ending_label == route_opened_under_observation",
+        "apply_to_visual_scene_ids": ["numen_ending_proceed"],
+        "modifier_prompt": "Iron descends in clean marked order; the trough holds low beneath visible chalk routes; the request leaf changes subtly while every witness remains at a distinct station."
+      },
+      {
+        "modifier_id": "proceed_hungry_visual",
+        "trigger": "ending_label == hungry_route_opened",
+        "apply_to_visual_scene_ids": ["numen_ending_proceed"],
+        "modifier_prompt": "Quench water streams upward in thin ribbons and several incomplete ash faces form around Daro: one makes Taru's gesture, one faces the north stair, and one mouth shapes Orsa's offered terms."
+      }
+    ],
+    "scene_set": {
+      "scene_set_id": "ash_halo_court_answer_opening.scene_set.draft",
+      "geometry_authority_level": "durable_fixture_plan_not_3d_blockout",
+      "room_model": "Long rectangular double-height basalt furnace court, north-south axis, with east furnace wall, central fitting dais and rack aisles, south quench trough, north threshold table and exit stair, and southwest stair descending beside the quench route to the under-gallery.",
+      "fixed_zones": [
+        {
+          "zone_id": "north_threshold_table",
+          "visible_form": "waist-high black-stone table across the court's north entrance, with broad stair rising behind it",
+          "used_for": "answer-roll custody, copying, seal comparison, bounded requests, and departure"
+        },
+        {
+          "zone_id": "north_exit_stair",
+          "visible_form": "broad dry basalt stair rising northward beyond the threshold door",
+          "used_for": "outside-copy transfer, witness escape, and mortuary withdrawal"
+        },
+        {
+          "zone_id": "east_furnace_wall",
+          "visible_form": "four open furnace mouths, heat trunk housings, charcoal staging, and orange light along the east wall",
+          "used_for": "heat source, ordinary forge routine, and visible delay"
+        },
+        {
+          "zone_id": "central_fitting_dais",
+          "visible_form": "low round stone platform under overhead counterweights, surrounded by marked iron racks and anchor-wire points",
+          "used_for": "Daro's preparation, Orsa's divine route, raiment assembly, and stopped weights"
+        },
+        {
+          "zone_id": "west_allocation_desk",
+          "visible_form": "narrow stone-and-wood desk west of the dais with counting board, wax grant leaves, and reserve case",
+          "used_for": "Vael's grant, withdrawn protections, shares, delay, and recovery records"
+        },
+        {
+          "zone_id": "south_quench_trough",
+          "visible_form": "long rectangular stone basin along the south wall with fitted basalt cover and square iron drain grate",
+          "used_for": "first face, visible route crossing, cover, warning signs, and feeding pressure"
+        },
+        {
+          "zone_id": "southwest_gallery_stair",
+          "visible_form": "narrow basalt stair descending from the southwest trough end beside the quench channel",
+          "used_for": "access to the under-gallery and physical witness route"
+        },
+        {
+          "zone_id": "under_gallery_cistern",
+          "visible_form": "low barrel-vaulted passage below the court with a stone ledge, quench channel, and old circular slag-cistern grate",
+          "used_for": "route-connected answer, gallery risk, and witnessed retreat"
+        }
+      ],
+      "camera_slots": [
+        {
+          "camera_id": "court_wide_from_northwest",
+          "supports_visual_scene_ids": ["numen_court_establishing"]
+        },
+        {
+          "camera_id": "threshold_medium_southward",
+          "supports_visual_scene_ids": ["numen_threshold_routine"]
+        },
+        {
+          "camera_id": "court_medium_from_threshold",
+          "supports_visual_scene_ids": ["numen_court_roles"]
+        },
+        {
+          "camera_id": "threshold_choice_overhead_oblique",
+          "supports_visual_scene_ids": ["numen_preparation_choice"]
+        },
+        {
+          "camera_id": "trough_close_from_north",
+          "supports_visual_scene_ids": ["numen_first_horn_face"]
+        },
+        {
+          "camera_id": "threshold_to_trough_diagonal",
+          "supports_visual_scene_ids": ["numen_answer_response_choice", "numen_ending_threshold"]
+        },
+        {
+          "camera_id": "threshold_table_close_southward",
+          "supports_visual_scene_ids": ["numen_opening_ritual"]
+        },
+        {
+          "camera_id": "threshold_group_medium",
+          "supports_visual_scene_ids": ["numen_bounded_request"]
+        },
+        {
+          "camera_id": "court_wide_from_threshold",
+          "supports_visual_scene_ids": ["numen_second_horn_threshold"]
+        },
+        {
+          "camera_id": "under_gallery_from_stair",
+          "supports_visual_scene_ids": ["numen_ending_gallery"]
+        },
+        {
+          "camera_id": "dais_brake_medium",
+          "supports_visual_scene_ids": ["numen_ending_stop"]
+        },
+        {
+          "camera_id": "north_stair_outward",
+          "supports_visual_scene_ids": ["numen_ending_departure"]
+        },
+        {
+          "camera_id": "court_centerline_from_threshold",
+          "supports_visual_scene_ids": ["numen_ending_proceed"]
+        }
+      ],
+      "staging_slots": [
+        {"slot_id": "melka_threshold_court_side", "zone_id": "north_threshold_table", "occupants": ["melka"]},
+        {"slot_id": "taru_threshold_stair_side", "zone_id": "north_threshold_table", "occupants": ["taru"]},
+        {"slot_id": "nema_table_east", "zone_id": "north_threshold_table", "occupants": ["nema"]},
+        {"slot_id": "sedren_trough", "zone_id": "south_quench_trough", "occupants": ["sedren"]},
+        {"slot_id": "sedren_brake", "zone_id": "central_fitting_dais", "occupants": ["sedren"]},
+        {"slot_id": "vael_allocation", "zone_id": "west_allocation_desk", "occupants": ["vael"]},
+        {"slot_id": "orsa_dais_north", "zone_id": "central_fitting_dais", "occupants": ["orsa"]},
+        {"slot_id": "daro_dais_center", "zone_id": "central_fitting_dais", "occupants": ["daro"]},
+        {"slot_id": "delver_exit", "zone_id": "north_exit_stair", "occupants": ["delver_witness"]},
+        {"slot_id": "delver_gallery_stair", "zone_id": "southwest_gallery_stair", "occupants": ["delver_witness"]}
+      ],
+      "route_lanes": [
+        {
+          "lane_id": "mortuary_copy_exit",
+          "path": "north_threshold_table -> north_exit_stair",
+          "supports": ["answer_send_copy_out", "withdraw_mortuary_custody"]
+        },
+        {
+          "lane_id": "quench_to_gallery",
+          "path": "south_quench_trough -> southwest_gallery_stair -> under_gallery_cistern",
+          "supports": ["prime_route_trace", "answer_cover_and_trace", "carry_roll_below"]
+        },
+        {
+          "lane_id": "threshold_to_quench_sightline",
+          "path": "north_threshold_table -> east side of central_fitting_dais -> south_quench_trough",
+          "supports": ["first_answer", "divide_roll_custody", "witness_route_from_threshold"]
+        }
+      ],
+      "occluders": [
+        {
+          "occluder_id": "central_rack_aisles",
+          "effect": "Racks partially block the direct centerline; the east-side sightline remains open from threshold to trough."
+        },
+        {
+          "occluder_id": "threshold_door",
+          "effect": "When closed, it blocks sight and speech between the north stair and court but does not block wet impact sounds through stone."
+        },
+        {
+          "occluder_id": "trough_cover",
+          "effect": "The fitted slab hides the water surface while cold leakage, knocks, and route effects can remain visible or audible at its edges."
+        }
+      ]
+    }
+  },
+  "visual_character_refs": {
+    "purpose": "Stable named-character and group visual identities for prompt assembly. Include only refs for characters or groups visible in a scene.",
+    "characters": {
+      "melka": "Melka: sturdy middle-aged human woman, medium-brown skin, cropped black hair streaked silver, square attentive face, ash-gray hooded wool mantle over clay-red layered tunic, narrow leather document satchel, ink-stained fingers, compact cord knife, brass-bound blackwood answer-roll case usually under both hands; posture precise, protective, and physically aware of exits.",
+      "taru": "Taru: older human man, broad face, deep-brown skin, close gray beard, ochre quilted wool coat, faded green scarf, household wax tablet and wrapped travel cakes; heavy tired hands, grief held as exact correction, open-palm and two-knuckle gesture performed once.",
+      "nema": "Nema: slim adult human woman, copper-brown skin, long dark braid, narrow alert face, indigo layered clerk's robe with plain bronze fasteners, bronze stylus and stacked wax tablets; hands kept near records but visibly clear of the mortuary case unless invited.",
+      "sedren": "Sedren: broad heavy-set adult human man, umber skin, shaved head, old pale heat scars on both forearms, charcoal leather apron over thick brown wool, heavy gloves, white route chalk and iron brake tools; grounded stance oriented to stone, water, racks, and machinery.",
+      "vael": "Vael: slight older human man, tawny skin, shaved temples with one long dark braid, layered gray wool robe, wooden counting board, separate wax grant leaves, small iron reserve case; economical movement and eyes fixed on counting marks and material costs.",
+      "orsa": "Orsa: tall adult human woman, dark skin, shaved sides with braided crown, severe iron-thread mantle over plain black tunic, broad iron ring at throat, empty hands; ceremonial stillness directed between threshold claimant and fitting dais, lit only by ember furnaces and cold teal water.",
+      "daro": "Daro: broad-bodied adult human man, deep tan skin, shaved scalp, padded dark fitting cloth around torso and limbs, slack copper anchor wires laid across the padding, bare hands watched by healers; fasting fatigue visible in cheekbones and controlled breath."
+    },
+    "groups": {
+      "court_workers": "Ninth Furnace court workers: mixed ages, skin tones, and builds in layered soot-dark wool, leather aprons, heat gloves, cloth head wraps, and practical boots; healers wear pale washable aprons; branch attendants wear dark layered wool with hooked utility blades; each body occupies a rack, furnace, threshold, or patient-care station.",
+      "delver_witness": "Independent delver witness: one adult human of compact build in a weathered brown travel cloak, gray wool underlayers, practical boots, leather gloves, and a rigid sealed document tube; posture keeps a clear stair route and gaze fixed on the custody handoff."
+    }
+  },
+  "review_notes": [
+    "The visual plan carries a fixture-level scene_set map with fixed zones, camera slots, staging slots, route lanes, and occluders; generated images remain painterly replay collateral rather than geometry authority.",
+    "All base prompts restate visible room geometry, materials, lighting, bodies, objects, and character appearance without relying on prior generated frames or private Kalsa terminology.",
+    "Branch modifiers describe visible changes to record custody, route marks, witness support, request type, stopped machinery, water behavior, and divine armament state.",
+    "The exact character appearances and court plan are local visual design for this fixture, not canonical Kalsan phenotype, universal Jamnai architecture, or a selected Ash-Halo outcome."
+  ]
+}

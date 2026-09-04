@@ -1,0 +1,68 @@
+{
+  "schema_version": "ghostlight.bfl_prompt_batch.v0",
+  "batch_id": "kalsa-numen-answer-roll-opening-v0.bfl-simple-v0",
+  "fixture_id": "numen-answer-roll-opening-v0",
+  "model": "flux-2-pro-preview",
+  "width": 1024,
+  "height": 1024,
+  "output_format": "jpeg",
+  "style_prefix": "Hand-painted high-fantasy interactive-fiction illustration, gouache and ink on textured paper, strong readable silhouettes, monumental basalt and iron geometry, ember orange and cold mineral teal light, restrained numinous strangeness, tactile work-worn materials, abstract unlettered record marks, humane faces under institutional pressure.",
+  "prompts": [
+    {
+      "id": "01_court_establishing",
+      "prompt": "Wide northwest view of a long underground basalt furnace court: four east-wall furnace mouths, marked iron racks around a central fitting dais, overhead counterweight tracks, a south-wall stone quench trough, north threshold table and stair, southwest stair descending beside a grated water channel; mixed-build workers prepare iron scales, copper wire, ceramic splints, resin, charcoal, weights, and a fasting champion under slack anchor wires."
+    },
+    {
+      "id": "02_threshold_routine",
+      "prompt": "North threshold table looking south into the furnace court: sturdy silver-streaked mortuary witness in ash-gray mantle guards a brass-bound blackwood case; older broad-faced household recognizer in ochre coat sits with wax copy and travel cakes; slim indigo-robed registrar checks seal marks with hands clear; the fitting dais, furnace glow, quench trough, and two stairs remain visible."
+    },
+    {
+      "id": "03_court_roles",
+      "prompt": "Medium-wide furnace court work scene: broad heat-scarred custodian chalks the quench route, slight gray-robed steward counts grant leaves at a west desk, tall dark-skinned intermediary in iron-thread mantle waits beside a fasting champion on the central dais, healers test his hands, workers inspect marked racks beneath counterweights."
+    },
+    {
+      "id": "04_preparation_choice",
+      "prompt": "High oblique threshold choice frame inside the basalt court: sealed brass-bound case at center, corrected household wax copy and travel cakes to one side, registrar's seal tablets to another, and three white chalk route marks leading toward the south quench trough and southwest stair; mortuary witness stands between the four practical preparations."
+    },
+    {
+      "id": "05_first_horn_face",
+      "prompt": "Pivotal close view of black mineral water rising above a south-wall stone trough and forming an incomplete face beneath an iron grate; a watery hand touches thumb to two knuckles and opens toward a sealed case on the far north threshold table; three human witnesses freeze between ember furnace light and cold teal water light."
+    },
+    {
+      "id": "06_answer_response",
+      "prompt": "Diagonal threshold-to-trough decision frame: silver-streaked mortuary witness stands at the sealed case with cord knife; older recognizer guards a household copy; indigo registrar observes seals; brown-cloaked delver waits on the north stair; scarred forge custodian holds a fitted trough cover beside chalk marks leading southwest."
+    },
+    {
+      "id": "07_opening_ritual",
+      "prompt": "Close ritual evidence table: open brass-bound blackwood case holds pale waxed-cloth leaves with abstract gesture marks; separate household copy preserves visible corrections; mortuary witness reads while older recognizer points and indigo registrar records disagreement; one wet thumbprint appears on a dry unread margin with the covered trough far behind."
+    },
+    {
+      "id": "08_bounded_request",
+      "prompt": "Medium group around the open answer roll at a black-stone threshold: mortuary witness holds stylus over four abstract request marks, household recognizer prepares to countersign, tall iron-mantled divine intermediary faces the fitting dais, scarred custodian keeps chalk and brake in reach, slight steward records borrowed hostel and shrine protection."
+    },
+    {
+      "id": "09_second_horn_threshold",
+      "prompt": "Whole basalt court at second-horn commitment: open original on north threshold table, corrected copy near the chalked quench line, forge custodian at counterweight brake, grant steward at west desk, iron-mantled intermediary facing the fasting champion, workers waiting at racks, branch attendants near the threshold, both stairs and the south trough readable."
+    },
+    {
+      "id": "10_gallery_end",
+      "prompt": "Low barrel-vaulted under-gallery beside the quench channel: cold mineral water rises at an old circular slag-cistern grate; mortuary witness kneels with open brass-bound case on a dry ledge; older recognizer stands one stair above with wax copy and two-knuckle gesture ready; brown-cloaked delver braces at the southwest stair under orange light from the court."
+    },
+    {
+      "id": "11_threshold_petition_end",
+      "prompt": "Divided-custody aftermath across one furnace court: mortuary witness keeps the open original with indigo registrar at the north threshold while older recognizer holds a corrected copy at three white chalk marks near the south trough; tall iron-mantled intermediary stands between the claim and central fitting dais."
+    },
+    {
+      "id": "12_material_stop_end",
+      "prompt": "Stopped armament at the central dais: broad scarred forge custodian grips heavy counterweight brake, iron scales hang motionless over fasting champion, mortuary witness lays one open record leaf beside the brake, iron-mantled intermediary faces the stop, gray-robed steward marks wasted charcoal and borrowed protection, three wet hand marks end at a dry chalk boundary."
+    },
+    {
+      "id": "13_departure_end",
+      "prompt": "View up a broad north basalt stair: ash-gray-mantled mortuary witness climbs with a closed brass-bound case and visibly retied severed cord; older recognizer in ochre coat carries household wax copy and empty cup; a brown-cloaked delver waits higher with sealed document tube; ember-lit furnace court recedes below a closing threshold door."
+    },
+    {
+      "id": "14_route_opening_end",
+      "prompt": "Divine armament opens inside the basalt court: fasting champion rises as counterweights lower iron scales, copper wire, softened resin, and pale ceramic splints around padded limbs; mortuary witness guards an open roll at the north threshold, intermediary stands by the dais, custodian reaches for brake, steward guards reserve, older recognizer watches as teal quench water and ash lift through prepared routes."
+    }
+  ]
+}
